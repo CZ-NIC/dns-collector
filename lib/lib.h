@@ -116,6 +116,7 @@ void obj_dump(struct odes *);
 struct odes *obj_new(struct mempool *);
 int obj_read(struct fastbuf *, struct odes *);
 void obj_write(struct fastbuf *, struct odes *);
+void obj_write_nocheck(struct fastbuf *, struct odes *);
 struct oattr *obj_find_attr(struct odes *, uns);
 struct oattr *obj_find_attr_last(struct odes *, uns);
 uns obj_del_attr(struct odes *, struct oattr *);

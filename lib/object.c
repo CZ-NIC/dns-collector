@@ -17,10 +17,8 @@
 void
 obj_dump(struct odes *o)
 {
-  struct oattr *a, *b;
-
-  for(a=o->attrs; a; a=a->next)
-    for(b=a; b; b=b->same)
+  for(struct oattr *a=o->attrs; a; a=a->next)
+    for(struct oattr *b=a; b; b=b->same)
       printf("%c%s\n", (a==b ? a->attr : ' '), b->val);
 }
 
@@ -38,9 +36,7 @@ oa_new(struct odes *o, uns x, byte *v)
 struct odes *
 obj_new(struct mempool *pool)
 {
-  struct odes *o;
-
-  o = mp_alloc(pool, sizeof(struct odes));
+  struct odes *o = mp_alloc(pool, sizeof(struct odes));
   o->pool = pool;
   o->attrs = NULL;
   o->cached_attr = NULL;
@@ -64,14 +60,11 @@ obj_read(struct fastbuf *f, struct odes *o)
 void
 obj_write(struct fastbuf *f, struct odes *d)
 {
-  struct oattr *a, *b;
-  byte *z;
-
-  for(a=d->attrs; a; a=a->next)
-    for(b=a; b; b=b->same)
+  for(struct oattr *a=d->attrs; a; a=a->next)
+    for(struct oattr *b=a; b; b=b->same)
       {
 	bputc(f, a->attr);
-	for(z = b->val; *z; z++)
+	for(byte *z = b->val; *z; z++)
 	  if (*z >= ' ' || *z == '\t')
 	    bputc(f, *z);
 	  else
@@ -83,11 +76,21 @@ obj_write(struct fastbuf *f, struct odes *d)
       }
 }
 
+void
+obj_write_nocheck(struct fastbuf *f, struct odes *d)
+{
+  for(struct oattr *a=d->attrs; a; a=a->next)
+    for(struct oattr *b=a; b; b=b->same)
+      {
+	bputc(f, a->attr);
+	bputsn(f, b->val);
+      }
+}
+
 struct oattr *
 obj_find_attr(struct odes *o, uns x)
 {
   struct oattr *a;
-
   for(a=o->attrs; a && a->attr != x; a=a->next)
     ;
   return a;
@@ -233,9 +236,7 @@ obj_prepend_attr(struct odes *o, uns x, byte *v)
 struct oattr *
 obj_insert_attr(struct odes *o, struct oattr *first, struct oattr *after, byte *v)
 {
-  struct oattr *b;
-
-  b = oa_new(o, first->attr, v);
+  struct oattr *b = oa_new(o, first->attr, v);
   b->same = after->same;
   after->same = b;
   return b;
