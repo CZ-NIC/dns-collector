@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Miscellaneous Functions
  *
- *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
  */
 
 /*
@@ -43,28 +43,21 @@ void open_temp(struct tempfile *, byte *);
 void delete_temp(struct tempfile *);
 u32 temprand(uns);
 
-/* FIXME: Remove? */
-#define TF_GENERIC "t"
-#define TF_QUEUE_CONTROL "c"
-#define TF_QUEUE_DATA "d"
-#define TF_DECODE "x"
-#define TF_TRANSFORM "s"
-#define TF_OBJECT "o"
-
 /* Logging */
 
-/* FIXME: Define new logging mechanism? */
+#define L_DEBUG		'D'		/* Debugging messages */
+#define L_INFO		'I'		/* Informational msgs, warnings and errors */
+#define L_WARN		'W'
+#define L_ERROR		'E'
+#define L_INFO_R	'i'		/* Errors caused by external events */
+#define L_WARN_R	'w'
+#define L_ERROR_R	'e'
+#define L_FATAL		'!'		/* die() */
 
-#define L_DEBUG "<0>"
-#define L_INFO "<2>"
-#define L_WARN "<4>"
-#define L_ERROR "<6>"
-#define L_FATAL "<9>"
-
-void log(byte *, ...);
+void log(unsigned int cat, byte *msg, ...);
 void die(byte *, ...) NONRET;
-void initlog(byte *);
-void open_log_file(byte *);
+void log_init(byte *);
+void log_file(byte *);
 
 #ifdef DEBUG
 #define ASSERT(x) do { if (!(x)) die("Assertion `%s' failed at %s:%d", #x, __FILE__, __LINE__); } while(0)
@@ -72,7 +65,13 @@ void open_log_file(byte *);
 #define ASSERT(x) do { } while(0)
 #endif
 
-/* Allocation */
+#ifdef LOCAL_DEBUG
+#define DBG(x,y...) log(L_DEBUG, x,##y)
+#else
+#define DBG(x,y...) do { } while(0)
+#endif
+
+/* Memory allocation */
 
 #ifdef DMALLOC
 /*
@@ -91,7 +90,7 @@ void open_log_file(byte *);
  * their own xmalloc and we don't want to interfere with them, hence
  * the renaming.
  */
-#define xmalloc bird_xmalloc
+#define xmalloc sh_xmalloc
 void *xmalloc(unsigned);
 void *xrealloc(void *, unsigned);
 #define xfree(x) free(x)
@@ -103,7 +102,7 @@ byte *stralloc(byte *);
 
 int match_ct_patt(byte *, byte *);
 
-/* Binary log */
+/* log2.c */
 
 int log2(u32);
 
@@ -111,7 +110,7 @@ int log2(u32);
 
 int wordsplit(byte *, byte **, uns);
 
-/* pat(i)match.c */
+/* pat(i)match.c: Matching of shell patterns */
 
 int match_pattern(byte *, byte *);
 int match_pattern_nocase(byte *, byte *);

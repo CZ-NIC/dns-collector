@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Logging
  *
- *	(c) 1997 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
  */
 
 #include "lib/lib.h"
@@ -13,38 +13,34 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-static byte *progname = "???";
-static pid_t pid;
+static byte *log_progname;
+static pid_t log_pid;
 
 static void
-logit(int level, byte *msg, va_list args)
+vlog(unsigned int cat, byte *msg, va_list args)
 {
-  time_t tim;
-  struct tm *tm;
+  time_t tim = time(NULL);
+  struct tm *tm = localtime(&tim);
   char buf[32];
 
-  tim = time(NULL);
-  tm = localtime(&tim);
-  strftime(buf, sizeof(buf), "%d-%m-%Y %H:%M:%S", tm);
-  fprintf(stderr, "%s %s [%d] <%d> ", buf, progname, pid, level);
+  if (!log_pid)
+    log_pid = getpid();
+  strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", tm);
+  fprintf(stderr, "%c %s ", cat, buf);
+  if (log_progname)
+    fprintf(stderr, "[%s (%d)] ", log_progname, log_pid);
   vfprintf(stderr, msg, args);
   fputc('\n', stderr);
   fflush(stderr);
 }
 
 void
-log(byte *msg, ...)
+log(unsigned int cat, byte *msg, ...)
 {
-  int level = 2;
   va_list args;
 
   va_start(args, msg);
-  if (msg[0] == '<' && msg[1] >= '0' && msg[1] <= '9' && msg[2] == '>')
-	{
-	  level = msg[1] - '0';
-	  msg += 3;
-	}
-  logit(level, msg, args);
+  vlog(cat, msg, args);
   va_end(args);
 }
 
@@ -54,9 +50,9 @@ die(byte *msg, ...)
   va_list args;
 
   va_start(args, msg);
-  logit(9, msg, args);
+  vlog(L_FATAL, msg, args);
   va_end(args);
-  exit(99);
+  exit(1);
 }
 
 static byte *
@@ -71,21 +67,20 @@ basename(byte *n)
 }
 
 void
-initlog(byte *argv0)
+log_init(byte *argv0)
 {
   if (argv0)
-    progname = basename(argv0);
-  pid = getpid();
+    log_progname = basename(argv0);
 }
 
 void
-open_log_file(byte *name)
+log_file(byte *name)
 {
   if (name)
     {
       int fd = open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
       if (fd < 0)
-	die("Unable to open log file");
+	die("Unable to open log file %s: %m", name);
       close(2);
       dup(fd);
       close(fd);
