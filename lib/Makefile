@@ -8,7 +8,7 @@ SHLIB_OBJS=alloc.o alloc_str.o ctmatch.o db.o fastbuf.o fb-file.o fb-mem.o lists
 	prime.o random.o realloc.o regex.o timer.o url.o wildmatch.o \
 	wordsplit.o str_ctype.o str_upper.o bucket.o conf.o object.o sorter.o \
 	finger.o proctitle.o ipaccess.o profile.o bitsig.o randomkey.o \
-	hash-string.o hash-istring.o custom.o base224.o
+	hash-string.o hash-istring.o custom.o base224.o str_hash.o
 
 obj/lib/libsh.a: $(addprefix obj/lib/,$(SHLIB_OBJS))
 
@@ -20,3 +20,4 @@ obj/lib/sort-test: obj/lib/sort-test.o obj/lib/libsh.a
 obj/lib/lfs-test: obj/lib/lfs-test.o obj/lib/libsh.a
 obj/lib/regex-test: obj/lib/regex-test.o obj/lib/libsh.a
 obj/lib/hash-test: obj/lib/hash-test.o obj/lib/libsh.a
+obj/lib/str-test: obj/lib/str-test.o obj/lib/libsh.a
