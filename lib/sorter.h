@@ -345,6 +345,7 @@ P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
 	(out2 ? (int)((btell(out2) + 1023) / 1024) : 0));
   *fb1 = P(flush_out)(out1);
   *fb2 = P(flush_out)(out2);
+  xfree(buffer);
 }
 
 #endif		/* SORT_PRESORT */
