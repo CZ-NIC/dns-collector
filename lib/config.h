@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Configuration-Dependent Definitions
  *
- *	(c) 1997--2000 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef _SHERLOCK_CONFIG_H
@@ -17,6 +17,8 @@
 #define SHERLOCK_CONFIG_LARGE_DB	/* Support for DB files >4GB */
 #define SHERLOCK_CONFIG_LFS		/* Large files on 32-bit systems */
 #undef  SHERLOCK_CONFIG_LFS_LIBC	/* LFS supported directly by libc */
+#undef  SHERLOCK_CONFIG_LONG_TAGS	/* Section tags are 32-bit */
+#undef  SHERLOCK_CONFIG_SPLIT_GATHERER	/* Don't merge documents from different sections */
 
 /* Types */
 
