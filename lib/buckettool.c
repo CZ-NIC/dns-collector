@@ -118,14 +118,19 @@ insert(byte *arg)
   obuck_init(1);
   do
     {
-      b = obuck_create(type);
+      b = NULL;
       while ((e = bgets(in, buf, sizeof(buf))) && buf[0])
 	{
 	  *e++ = '\n';
+	  if (!b)
+	    b = obuck_create(type);
 	  bwrite(b, buf, e-buf);
 	}
-      obuck_create_end(b, &h);
-      printf("%08x %d %08x\n", h.oid, h.length, h.type);
+      if (b)
+	{
+	  obuck_create_end(b, &h);
+	  printf("%08x %d %08x\n", h.oid, h.length, h.type);
+	}
     }
   while (e);
   obuck_cleanup();
