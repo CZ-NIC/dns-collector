@@ -12,11 +12,6 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
-#ifndef MAP_FAILED
-#warning System includes do not define MAP_FAILED.
-#define MAP_FAILED ((void *)-1L)
-#endif
-
 void *
 mmap_file(byte *name, unsigned *len, int writeable)
 {
