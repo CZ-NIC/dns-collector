@@ -9,6 +9,8 @@
  *	GBUF_PREFIX(x)	add a name prefix to all global symbols
  */
 
+#include <stdlib.h>
+
 #define	BUF_T	GBUF_PREFIX(t)
 
 typedef struct
