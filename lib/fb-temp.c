@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Temporary Fastbufs
  *
- *	(c) 2002 Martin Mares <mj@ucw.cz>
+ *	(c) 2002--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -35,7 +35,7 @@ bopen_tmp(uns bufsize)
   static uns temp_counter;
 
   sprintf(buf, temp_template, (int) getpid(), temp_counter++);
-  f = bopen(buf, O_RDWR | O_CREAT | O_EXCL, bufsize);
+  f = bopen(buf, O_RDWR | O_CREAT | O_TRUNC, bufsize);
   bconfig(f, BCONFIG_IS_TEMP_FILE, 1);
   return f;
 }
