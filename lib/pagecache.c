@@ -1,8 +1,10 @@
 /*
  *	Sherlock Library -- File Page Cache
  *
- *	(c) 1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1999--2000 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
  */
+
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -114,7 +116,7 @@ flush_page(struct page_cache *c, struct page *p)
   if (s < 0)
     die("pgc_write(%d): %m", p->fd);
   if (s != (int) c->page_size)
-    die("pgc_write(%d): incomplete page (only %d of %d)", s, c->page_size);
+    die("pgc_write(%d): incomplete page (only %d of %d)", p->fd, s, c->page_size);
   p->flags &= ~PG_FLAG_DIRTY;
   c->stat_write++;
 }
@@ -291,7 +293,7 @@ pgc_read(struct page_cache *c, int fd, sh_off_t pos)
       if (s < 0)
 	die("pgc_read(%d): %m", fd);
       if (s != (int) c->page_size)
-	die("pgc_read(%d): incomplete page (only %d of %d)", s, c->page_size);
+	die("pgc_read(%d): incomplete page (only %d of %d)", p->fd, s, c->page_size);
       p->flags |= PG_FLAG_VALID;
     }
   return p;
