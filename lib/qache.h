@@ -11,6 +11,7 @@ struct qache_params {
   byte *file_name;
   uns block_size;			/* Cache block size (a power of two) */
   uns cache_size;			/* Size of the whole cache */
+  uns max_entries;			/* Maximum number of cached entries */
   int force_reset;			/* Force creation of a new cache even if the old one seems usable, -1 if reset should never be done */
   uns format_id;			/* Data format ID (old cache not used if formats differ) */
 };

@@ -4,6 +4,8 @@
  *	(c) 2005 Martin Mares <mj@ucw.cz>
  */
 
+#define LOCAL_DEBUG
+
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 #include "lib/qache.h"
@@ -15,12 +17,13 @@
 #include <sys/user.h>
 
 /*
- *  On-disk format:
+ *  The cache lives in a mmapped file of the following format:
  *	qache_header
  *	qache_entry[max_entries]	table of entries and their keys
  *	u32 qache_hash[hash_size]	hash table pointing to keys
+ *	u32 block_next[num_blocks]	next block pointers
  *	padding				to a multiple of block size
- *	blocks[]			data blocks, each block starts with u32 next_ptr
+ *	blocks[]			data blocks
  */
 
 struct qache_header {
@@ -33,6 +36,7 @@ struct qache_header {
   u32 max_entries;
   u32 hash_table_start;			/* Hash table containing all keys */
   u32 hash_size;
+  u32 next_table_start;			/* Array of next pointers */
   u32 first_data_block;
 };
 
@@ -50,17 +54,26 @@ struct qache {
   struct qache_header *hdr;
   struct qache_entry *entry_table;
   u32 *hash_table;
+  u32 *next_table;
   int fd;
   byte *mmap_data;
   uns file_size;
   byte *file_name;
   uns locked;
-  uns data_block_size;
 };
 
 #define first_free_entry entry_table[0].hash_next
 #define first_free_block entry_table[0].first_data_block
 #define num_free_blocks entry_table[0].data_len
+
+static inline byte *
+format_key(qache_key_t *key)
+{
+  static byte keybuf[2*sizeof(qache_key_t)+1];
+  for (uns i=0; i<sizeof(qache_key_t); i++)
+    sprintf(keybuf+2*i, "%02x", (*key)[i]);
+  return keybuf;
+}
 
 static int
 qache_open_existing(struct qache *q, struct qache_params *par)
@@ -90,6 +103,7 @@ qache_open_existing(struct qache *q, struct qache_params *par)
   err = "incompatible format";
   if (h->magic != QACHE_MAGIC ||
       h->block_size != par->block_size ||
+      h->max_entries != par->max_entries ||
       h->format_id != par->format_id)
     goto unmap_and_fail;
 
@@ -123,15 +137,16 @@ qache_create(struct qache *q, struct qache_params *par)
   h.magic = QACHE_MAGIC;
   h.block_size = par->block_size;
   h.block_shift = fls(h.block_size);
-  h.num_blocks = par->cache_size / par->block_size;
+  h.num_blocks = par->cache_size >> h.block_shift;
   h.format_id = par->format_id;
   h.entry_table_start = sizeof(h);
-  h.max_entries = h.num_blocks;
+  h.max_entries = par->max_entries;
   h.hash_table_start = h.entry_table_start + (h.max_entries+1) * sizeof(struct qache_entry);
   h.hash_size = 1;
   while (h.hash_size < h.max_entries)
     h.hash_size *= 2;
-  h.first_data_block = (h.hash_table_start + h.hash_size * 4 + h.block_size - 1) >> h.block_shift;
+  h.next_table_start = h.hash_table_start + h.hash_size * 4;
+  h.first_data_block = (h.next_table_start + 4*h.num_blocks + h.block_size - 1) >> h.block_shift;
   if (h.first_data_block >= h.num_blocks)
     die("Cache %s: Requested size is too small even to hold the maintenance structures", q->file_name);
   bwrite(fb, &h, sizeof(h));
@@ -159,6 +174,11 @@ qache_create(struct qache *q, struct qache_params *par)
   for (uns i=0; i<h.hash_size; i++)
     bputl(fb, 0);
 
+  /* The next pointers */
+  ASSERT(btell(fb) == h.next_table_start);
+  for (uns i=0; i<h.num_blocks; i++)
+    bputl(fb, (i < h.first_data_block || i == h.num_blocks-1) ? 0 : i+1);
+
   /* Padding */
   ASSERT(btell(fb) <= h.first_data_block << h.block_shift);
   while (btell(fb) < h.first_data_block << h.block_shift)
@@ -166,11 +186,8 @@ qache_create(struct qache *q, struct qache_params *par)
 
   /* Data blocks */
   for (uns i=h.first_data_block; i<h.num_blocks; i++)
-    {
-      bputl(fb, (i == h.num_blocks-1 ? 0 : i+1));
-      for (uns i=4; i<h.block_size; i+=4)
-	bputl(fb, 0);
-    }
+    for (uns j=0; j<h.block_size; j+=4)
+      bputl(fb, 0);
 
   ASSERT(btell(fb) == par->cache_size);
   bclose(fb);
@@ -202,7 +219,7 @@ qache_open(struct qache_params *par)
   q->hdr = (struct qache_header *) q->mmap_data;
   q->entry_table = (struct qache_entry *) (q->mmap_data + q->hdr->entry_table_start);
   q->hash_table = (u32 *) (q->mmap_data + q->hdr->hash_table_start);
-  q->data_block_size = q->hdr->block_size - 4;
+  q->next_table = (u32 *) (q->mmap_data + q->hdr->next_table_start);
   return q;
 }
 
@@ -231,6 +248,7 @@ qache_msync(struct qache *q, uns start, uns len)
 static void
 qache_msync_block(struct qache *q, uns blk)
 {
+  DBG("\tSyncing block %d", blk);
   qache_msync(q, blk << q->hdr->block_shift, q->hdr->block_size);
 }
 
@@ -243,6 +261,7 @@ qache_lock(struct qache *q)
   if (fcntl(q->fd, F_SETLKW, &fl) < 0)
     die("fcntl lock on %s: %m", q->file_name);
   q->locked = 1;
+  DBG("Locked cache %s", q->file_name);
 }
 
 static void
@@ -255,6 +274,7 @@ qache_unlock(struct qache *q, uns dirty)
   if (fcntl(q->fd, F_SETLKW, &fl) < 0)
     die("fcntl unlock on %s: %m", q->file_name);
   q->locked = 0;
+  DBG("Unlocked cache %s (dirty=%d)", q->file_name, dirty);
 }
 
 static uns
@@ -291,8 +311,8 @@ static void
 qache_hash_remove(struct qache *q, uns e)
 {
   struct qache_entry *entry = &q->entry_table[e];
-  uns *hh = &q->hash_table[qache_hash(q, &entry->key)];
-  for (uns f = *hh; f; hh=&(q->entry_table[f].hash_next))
+  uns f, *hh;
+  for (hh=&q->hash_table[qache_hash(q, &entry->key)]; f=*hh; hh=&(q->entry_table[f].hash_next))
     if (!memcmp(q->entry_table[f].key, entry->key, sizeof(qache_key_t)))
       {
 	*hh = entry->hash_next;
@@ -330,31 +350,14 @@ get_block_start(struct qache *q, uns block)
   return q->mmap_data + (block << q->hdr->block_shift);
 }
 
-static inline void *
-get_block_data(struct qache *q, uns block)
-{
-  return (byte*)get_block_start(q, block) + 4;
-}
-
-static inline u32
-get_block_next(struct qache *q, uns block)
-{
-  return *(u32*)get_block_start(q, block);
-}
-
-static inline void
-set_block_next(struct qache *q, uns block, uns next)
-{
-  *(u32*)get_block_start(q, block) = next;
-}
-
 static uns
 qache_alloc_block(struct qache *q)
 {
   ASSERT(q->locked && q->num_free_blocks);
   uns blk = q->first_free_block;
-  q->first_free_block = get_block_next(q, blk);
+  q->first_free_block = q->next_table[blk];
   q->num_free_blocks--;
+  DBG("\tAllocated block %d", blk);
   return blk;
 }
 
@@ -362,10 +365,10 @@ static void
 qache_free_block(struct qache *q, uns blk)
 {
   ASSERT(q->locked);
-  set_block_next(q, blk, q->first_free_block);
-  qache_msync_block(q, blk);
+  q->next_table[blk] = q->first_free_block;
   q->first_free_block = blk;
   q->num_free_blocks++;
+  DBG("\tFreed block %d", blk);
 }
 
 static void
@@ -405,11 +408,11 @@ qache_ll_delete(struct qache *q, uns e)
   uns blk = entry->first_data_block;
   while (entry->data_len)
     {
-      uns next = get_block_next(q, blk);
+      uns next = q->next_table[blk];
       qache_free_block(q, blk);
       blk = next;
-      if (entry->data_len >= q->data_block_size)
-	entry->data_len -= q->data_block_size;
+      if (entry->data_len >= q->hdr->block_size)
+	entry->data_len -= q->hdr->block_size;
       else
 	entry->data_len = 0;
     }
@@ -425,17 +428,21 @@ qache_insert(struct qache *q, qache_key_t *key, uns pos_hint, void *data, uns si
 
   uns e = qache_hash_find(q, key, pos_hint);
   if (e)
-    qache_ll_delete(q ,e);
+    {
+      qache_ll_delete(q ,e);
+      DBG("Insert <%s>: deleting old entry %d", format_key(key), e);
+    }
 
-  uns blocks = (size + q->data_block_size - 1) / q->data_block_size;
+  uns blocks = (size + q->hdr->block_size - 1) >> q->hdr->block_shift;
   if (blocks > q->hdr->num_blocks - q->hdr->first_data_block)
     {
       qache_unlock(q, 0);
       return 0;
     }
-  while (q->num_free_blocks < blocks)
+  while (q->num_free_blocks < blocks || !q->first_free_entry)
     {
       e = qache_lru_get(q);
+      DBG("Insert <%s>: evicting entry %d to make room for %d blocks", format_key(key), e, blocks);
       ASSERT(e);
       qache_ll_delete(q, e);
     }
@@ -443,14 +450,15 @@ qache_insert(struct qache *q, qache_key_t *key, uns pos_hint, void *data, uns si
   struct qache_entry *entry = &q->entry_table[e];
   entry->data_len = size;
   memcpy(entry->key, key, sizeof(*key));
+  DBG("Insert <%s>: created entry %d with %d data blocks", format_key(key), e, blocks);
 
   entry->first_data_block = 0;
   while (size)
     {
-      uns chunk = (size % q->data_block_size ) ? : q->data_block_size;
+      uns chunk = (size & (q->hdr->block_size-1)) ? : q->hdr->block_size;
       uns blk = qache_alloc_block(q);
-      set_block_next(q, blk, entry->first_data_block);
-      memcpy(get_block_data(q, blk), data+size-chunk, chunk);
+      q->next_table[blk] = entry->first_data_block;
+      memcpy(get_block_start(q, blk), data+size-chunk, chunk);
       qache_msync_block(q, blk);
       entry->first_data_block = blk;
       size -= chunk;
@@ -470,6 +478,7 @@ qache_lookup(struct qache *q, qache_key_t *key, uns pos_hint, void **datap, uns 
   if (e)
     {
       struct qache_entry *entry = &q->entry_table[e];
+      DBG("Lookup <%s>: found entry %d", format_key(key), e);
       qache_lru_remove(q, e);
       qache_lru_insert(q, e);
       if (sizep)
@@ -483,17 +492,17 @@ qache_lookup(struct qache *q, qache_key_t *key, uns pos_hint, void **datap, uns 
 	      if (!*datap)
 		*datap = xmalloc(xfer);
 	      uns blk = entry->first_data_block;
-	      while (start >= q->data_block_size)
+	      while (start >= q->hdr->block_size)
 		{
-		  blk = get_block_next(q, blk);
-		  start -= q->data_block_size;
+		  blk = q->next_table[blk];
+		  start -= q->hdr->block_size;
 		}
 	      byte *data = *datap;
 	      while (xfer)
 		{
-		  uns len = MIN(xfer, q->data_block_size - start);
-		  memcpy(data, get_block_data(q, blk), len);
-		  blk = get_block_next(q, blk);
+		  uns len = MIN(xfer, q->hdr->block_size - start);
+		  memcpy(data, get_block_start(q, blk), len);
+		  blk = q->next_table[blk];
 		  data += len;
 		  xfer -= len;
 		  start = 0;
@@ -502,8 +511,13 @@ qache_lookup(struct qache *q, qache_key_t *key, uns pos_hint, void **datap, uns 
 	}
       else
 	ASSERT(!datap);
+      qache_unlock(q, 1);     /* Yes, modified -- we update the LRU */
     }
-  qache_unlock(q, 1);			/* Yes, modified -- we update the LRU */
+  else
+    {
+      DBG("Lookup <%s>: not found", format_key(key));
+      qache_unlock(q, 0);
+    }
   return e;
 }
 
@@ -513,7 +527,12 @@ qache_delete(struct qache *q, qache_key_t *key, uns pos_hint)
   qache_lock(q);
   uns e = qache_hash_find(q, key, pos_hint);
   if (e)
-    qache_ll_delete(q, e);
+    {
+      DBG("Delete <%s: deleting entry %d", format_key(key), e);
+      qache_ll_delete(q, e);
+    }
+  else
+    DBG("Delete <%s>: No match", format_key(key));
   qache_unlock(q, 1);
   return e;
 }
@@ -521,8 +540,8 @@ qache_delete(struct qache *q, qache_key_t *key, uns pos_hint)
 void
 qache_debug(struct qache *q)
 {
-  log(L_DEBUG, "Cache %s: block_size=%d (%d data), num_blocks=%d (%d first data), %d entries, %d hash slots",
-      q->file_name, q->hdr->block_size, q->data_block_size, q->hdr->num_blocks, q->hdr->first_data_block,
+  log(L_DEBUG, "Cache %s: block_size=%d (%d data), num_blocks=%d (%d first data), %d slots, %d hash buckets",
+      q->file_name, q->hdr->block_size, q->hdr->block_size, q->hdr->num_blocks, q->hdr->first_data_block,
       q->hdr->max_entries, q->hdr->hash_size);
 
   log(L_DEBUG, "Table of cache entries:");
@@ -530,11 +549,8 @@ qache_debug(struct qache *q)
   for (uns e=0; e<=q->hdr->max_entries; e++)
     {
       struct qache_entry *ent = &q->entry_table[e];
-      byte ky[2*sizeof(qache_key_t)+1];
-      for (uns i=0; i<sizeof(qache_key_t); i++)
-	sprintf(ky+2*i, "%02x", ent->key[i]);
       log(L_DEBUG, "\t%d\t%d\t%d\t%d\t%d\t%d\t%s", e, ent->lru_prev, ent->lru_next, ent->data_len,
-	  ent->first_data_block, ent->hash_next, ky);
+	  ent->first_data_block, ent->hash_next, format_key(&ent->key));
     }
 
   log(L_DEBUG, "Hash table:");
@@ -543,7 +559,7 @@ qache_debug(struct qache *q)
 
   log(L_DEBUG, "Next pointers:");
   for (uns blk=q->hdr->first_data_block; blk<q->hdr->num_blocks; blk++)
-    log(L_DEBUG, "\t%d\t%d", blk, get_block_next(q, blk));
+    log(L_DEBUG, "\t%d\t%d", blk, q->next_table[blk]);
 }
 
 #ifdef TEST
@@ -554,6 +570,7 @@ int main(int argc UNUSED, char **argv UNUSED)
     .file_name = "tmp/test",
     .block_size = 256,
     .cache_size = 65536,
+    .max_entries = 123,
     .force_reset = 0,
     .format_id = 0xfeedcafe
   };
@@ -561,7 +578,11 @@ int main(int argc UNUSED, char **argv UNUSED)
 
   qache_key_t key = { 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef };
   byte data[1000] = { '1', '2', '3', '4', '5' };
-  qache_insert(q, &key, 0, data, 1000);
+  for (uns i=0; i<100; i++)
+    {
+      qache_insert(q, &key, 0, data, 10*i);
+      key[15]++;
+    }
   qache_debug(q);
 
   qache_lookup(q, &key, 0, NULL, NULL, 0);
