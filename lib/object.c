@@ -103,7 +103,7 @@ obj_write(struct fastbuf *f, struct odes *d)
       {
 	bputc(f, a->attr);
 	for(z = b->val; *z; z++)
-	  if (*z >= ' ')
+	  if (*z >= ' ' || *z == '\t')
 	    bputc(f, *z);
 	  else
 	    {
