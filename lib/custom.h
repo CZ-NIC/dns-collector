@@ -7,6 +7,11 @@
  *	of the GNU Lesser General Public License.
  */
 
+/* Structures we'll need in function parameters */
+
+struct card_attr;
+struct odes;
+
 /* Word types (at most 7 of them + WT_RESERVED and WT_MAX) */
 
 #define WT_RESERVED		0	/* Reserved word type */
@@ -83,6 +88,16 @@
 /* These must be indexed in lowercase form */
 #define STRING_TYPES_CASE_INSENSITIVE ((1 << ST_HOST) | (1 << ST_DOMAIN))
 
+static inline void
+custom_index_strings(struct odes *o UNUSED, void (*f)(byte *text, uns type) UNUSED)
+{
+  /*
+   * Call f for all strings you want to add to the index.
+   * ST_URL, ST_HOST, ST_DOMAIN and ST_REF are indexed automatically
+   * if they are defined.
+   */
+}
+
 /*
  *  Definitions of custom attributes:
  *
@@ -111,9 +126,6 @@
  *
  *  A good place for definitions of the functions is lib/custom.c.
  */
-
-struct card_attr;
-struct odes;
 
 /* No custom attributes defined yet */
 
