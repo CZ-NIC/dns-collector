@@ -114,9 +114,10 @@ FILE *create_obj_file(byte *, ulg);
 
 int wordsplit(byte *, byte **, uns);
 
-/* patmatch.c */
+/* pat(i)match.c */
 
 int match_pattern(byte *, byte *);
+int match_pattern_nocase(byte *, byte *);
 
 /* md5hex.c */
 
