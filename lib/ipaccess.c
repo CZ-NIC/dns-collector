@@ -26,7 +26,7 @@ struct ipaccess_list *
 ipaccess_init(void)
 {
   /* Cannot use cfg_malloc() here as the pool can be uninitialized now */
-  struct ipaccess_list *l = malloc(sizeof(*l));
+  struct ipaccess_list *l = xmalloc(sizeof(*l));
 
   init_list(&l->l);
   return l;
