@@ -18,6 +18,8 @@
 
 typedef unsigned char byte;		/* exactly 8 bits, unsigned */
 typedef signed char sbyte;		/* exactly 8 bits, signed */
+typedef unsigned char u8;		/* exactly 8 bits, unsigned */
+typedef signed char s8;			/* exactly 8 bits, signed */
 typedef unsigned short word;		/* exactly 16 bits, unsigned */
 typedef short sword;			/* exactly 16 bits, signed */
 typedef unsigned short u16;		/* exactly 16 bits, unsigned */
