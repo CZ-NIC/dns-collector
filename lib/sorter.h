@@ -18,10 +18,14 @@
  *  SORT_KEY	    [*]	data type capable of storing a single key
  *  SORT_PREFIX(x)  [*] add a name prefix (used on all global names
  *			defined by the sorter)
- *  SORT_PRESORT	include an in-core presorting pass. Beware, when in
+ *  SORT_PRESORT	include an in-core pre-sorting pass. Beware, when in
  *			the pre-sorting mode, it's quite possible that the
  *			comparison function will be called with both arguments
  *			identical.
+ *  SORT_PRESORT_ONLY	a C expression which, if evaluated to non-zero, makes
+ *			the sorter stop after the pre-sorting pass, resulting
+ *			in a file which is not necessarily sorted, but which
+ *			contains long runs. Implies SORT_PRESORT.
  *  SORT_UNIFY		merge items with identical keys
  *  SORT_UNIQUE		all items have distinct keys (checked in debug mode)
  *  SORT_REGULAR	all items are equally long and they don't contain
@@ -118,6 +122,13 @@ extern uns sorter_pass_counter;
 
 #if defined(SORT_UNIQUE) && defined(DEBUG)
 #define SORT_ASSERT_UNIQUE
+#endif
+
+#ifdef SORT_PRESORT_ONLY
+#undef SORT_PRESORT
+#define SORT_PRESORT
+#else
+#define SORT_PRESORT_ONLY 0
 #endif
 
 #ifdef SORT_REGULAR
@@ -385,7 +396,8 @@ P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
   leftover = NULL;
   while (cont)
     {
-      SWAP(out1, out2, tbuf);
+      if (!(SORT_PRESORT_ONLY))
+	SWAP(out1, out2, tbuf);
       if (!out1)
 	out1 = bopen_tmp(sorter_stream_bufsize);
       current = buffer;
@@ -539,5 +551,7 @@ struct fastbuf *fb1, struct fastbuf *fb2
 #undef SORT_INPUT_FBPAIR
 #undef SORT_OUTPUT_FILE
 #undef SORT_OUTPUT_FB
+#undef SORT_PRESORT
+#undef SORT_PRESORT_ONLY
 
 #endif		/* !SORT_DECLARE_ONLY */
