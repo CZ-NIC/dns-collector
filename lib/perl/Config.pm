@@ -9,12 +9,18 @@ use Getopt::Long;
 
 our %Sections = ();
 
+our $DefaultConfigFile = "";
+
 sub Parse(@) {
 	my @options = @_;
 	my $defargs = "";
-	push @options, "config|C=s" => sub { my ($o,$a)=@_; $defargs .= " -C'$a'"; };
+	my $override_config = 0;
+	push @options, "config|C=s" => sub { my ($o,$a)=@_; $defargs .= " -C'$a'"; $override_config=1; };
 	push @options, "set|S=s" => sub { my ($o,$a)=@_; $defargs .= " -S'$a'"; };
 	Getopt::Long::GetOptions(@options) or return 0;
+	if (!$override_config && $DefaultConfigFile) {
+		$defargs = "-C'$DefaultConfigFile' $defargs";
+	}
 	foreach my $section (keys %Sections) {
 		my $opts = $Sections{$section};
 		my $optlist = join(" ", keys %$opts);
