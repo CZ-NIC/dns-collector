@@ -25,13 +25,13 @@ struct page {
 
 struct page_cache *pgc_open(uns page_size, uns max_pages);
 void pgc_close(struct page_cache *);
-void pgc_debug(struct page_cache *);
+void pgc_debug(struct page_cache *, int mode);
 void pgc_flush(struct page_cache *);				/* Write all unwritten pages */
 void pgc_cleanup(struct page_cache *);				/* Deallocate all unused buffers */
 struct page *pgc_read(struct page_cache *, int fd, sh_off_t);	/* Read page and lock it */
 struct page *pgc_get(struct page_cache *, int fd, sh_off_t);	/* Get page for writing */
 void pgc_put(struct page_cache *, struct page *);		/* Release page */
-void pgc_put_dirty(struct page_cache *, struct page *);		/* Mark page as dirty and release it */
+void pgc_mark_dirty(struct page_cache *, struct page *);	/* Mark locked page as dirty */
 byte *pgc_read_data(struct page_cache *, int fd, sh_off_t, uns *);	/* Partial reading */
 
 #endif
