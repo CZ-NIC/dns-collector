@@ -22,10 +22,9 @@ struct regex {
 regex *
 rx_compile(byte *p)
 {
-  regex *r = xmalloc(sizeof(regex));
+  regex *r = xmalloc_zero(sizeof(regex));
   const char *msg;
 
-  bzero(r, sizeof(struct regex));
   r->buf.buffer = xmalloc(INITIAL_MEM);
   r->buf.allocated = INITIAL_MEM;
   msg = re_compile_pattern(p, strlen(p), &r->buf);

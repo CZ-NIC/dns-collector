@@ -103,8 +103,7 @@ wp_compile(byte *p, struct mempool *pool)
 
   if (strlen(p) >= MAX_STATES)		/* Too long */
     return NULL;
-  w = mp_alloc(pool, sizeof(*w));
-  bzero(w, sizeof(*w));
+  w = mp_alloc_zero(pool, sizeof(*w));
   w->pool = pool;
   for(i=1; *p; p++)
     {

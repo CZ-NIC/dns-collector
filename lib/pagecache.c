@@ -39,10 +39,9 @@ struct page_cache {
 struct page_cache *
 pgc_open(uns page_size, uns max_pages)
 {
-  struct page_cache *c = xmalloc(sizeof(struct page_cache));
+  struct page_cache *c = xmalloc_zero(sizeof(struct page_cache));
   uns i;
 
-  bzero(c, sizeof(*c));
   init_list(&c->free_pages);
   init_list(&c->locked_pages);
   init_list(&c->dirty_pages);

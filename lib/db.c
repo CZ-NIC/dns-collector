@@ -38,8 +38,7 @@ sdbm_open(struct sdbm_options *o)
   struct sdbm_root root, *r;
   uns cache_size = o->cache_size ? o->cache_size : 16;
 
-  d = xmalloc(sizeof(struct sdbm));
-  bzero(d, sizeof(*d));
+  d = xmalloc_zero(sizeof(struct sdbm));
   d->flags = o->flags;
   d->fd = sh_open(o->name, ((d->flags & SDBM_WRITE) ? O_RDWR : O_RDONLY), 0666);
   if (d->fd >= 0)			/* Already exists, let's check it */
