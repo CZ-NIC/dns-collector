@@ -33,9 +33,7 @@ bopen(byte *name, uns mode, uns buffer)
 {
   int fd;
 
-#ifdef SHERLOCK_CONFIG_LFS
-  mode |= O_LARGEFILE;
-#endif
+  mode |= SHERLOCK_O_LARGEFILE;
   fd = open(name, mode, 0666);
 
   if (fd < 0)
@@ -80,15 +78,22 @@ static void
 wrbuf(struct fastbuf *f)
 {
   int l = f->bptr - f->buffer;
+  char *c = f->buffer;
 
-  if (l)
+  while (l)
     {
-      if (write(f->fd, f->buffer, l) != l)
+      int z = write(f->fd, c, l);
+      if (z <= 0)
 	die("Error writing %s: %m", f->name);
-      f->bptr = f->buffer;
-      f->fdpos += l;
-      f->pos = f->fdpos;
+      /* FIXME */
+      if (z != l)
+	log(L_ERROR "wrbuf: %d != %d (pos %Ld)", z, l, sh_seek(f->fd, 0, SEEK_CUR));
+      f->fdpos += z;
+      l -= z;
+      c += z;
     }
+  f->bptr = f->buffer;
+  f->pos = f->fdpos;
 }
 
 void bflush(struct fastbuf *f)

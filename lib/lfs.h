@@ -17,6 +17,8 @@
 #endif
 #endif
 
+#define SHERLOCK_O_LARGEFILE O_LARGEFILE
+
 #if 0
 
 /* A "do it yourself" solution */
@@ -45,6 +47,7 @@ extern loff_t llseek(int fd, loff_t pos, int whence);
 #else	/* !SHERLOCK_CONFIG_LFS */
 
 #define sh_seek(f,o,w) lseek(f,o,w)
+#define SHERLOCK_O_LARGEFILE 0
 
 #endif	/* !SHERLOCK_CONFIG_LFS */
 #endif	/* !_SHERLOCK_LFS_H */
