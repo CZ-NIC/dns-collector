@@ -1,0 +1,14 @@
+# List of character set tables for tabgen
+# Ordering defines internal charset numbers
+
+set/ascii
+set/latin1
+set/latin2
+set/win-1250
+set/kamen-ctrl
+set/koi8
+set/pc-latin-2
+set/macce
+#set/cork
+#set/ibm-ctrl
+#set/mac

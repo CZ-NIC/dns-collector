@@ -2,7 +2,8 @@
 
 CLIB=../lib/libunicode.a
 
-OBJS=toupper.o tolower.o tocat.o utf8.o unaccent.o tosig.o strlen.o debug.o
+OBJS=toupper.o tolower.o tocat.o utf8.o unaccent.o tosig.o strlen.o debug.o \
+	charconv.o setnames.o
 
 all: .stamp $(CLIB)
 
@@ -23,6 +24,8 @@ unaccent.o: unaccent.c unicode.h U-unacc.h
 tosig.o: tosig.c unicode.h U-sig.h
 strlen.o: strlen.c unicode.h
 debug.o: debug.c unicode.h
+charconv.o: charconv.c charconv.h chartable.h
+setnames.o: setnames.c charconv.h
 
 test: test.o $(CLIB) $(TOPDIR)/lib/libsh.a
 	$(CC) $(LDFLAGS) test.o -o test -lsh -lunicode
@@ -40,9 +43,10 @@ buildall: cleanall
 	misc/gentab _U_unaccent word <misc/u-unacc >U-unacc.h
 	misc/mksig >misc/u-sig
 	misc/gentab _U_sig byte <misc/u-sig >U-sig.h
+	misc/tabgen <misc/chartable.in >chartable.h
 
 cleanall:
-	rm -rf exp misc/u-* U-*.h
+	rm -rf exp misc/u-* U-*.h chartable.h
 
 tags:
 	etags *.[ch]
