@@ -34,7 +34,7 @@ typedef unsigned int sh_time_t;		/* Timestamp */
 #define NULL (void *)0
 #endif
 
-#ifdef CONFIG_LARGE_FILES		/* File positions */
+#ifdef CONFIG_LFS			/* File positions */
 typedef s64 sh_off_t;
 #else
 typedef s32 sh_off_t;

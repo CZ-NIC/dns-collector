@@ -13,7 +13,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#ifdef CONFIG_LARGE_FILES
+#ifdef CONFIG_LFS
 
 #define sh_open open64
 #define sh_seek lseek64
@@ -24,7 +24,7 @@
 #define sh_pread pread64
 #define sh_pwrite pwrite64
 
-#else	/* !CONFIG_LARGE_FILES */
+#else	/* !CONFIG_LFS */
 
 #define sh_open open
 #define sh_seek(f,o,w) lseek(f,o,w)
@@ -33,7 +33,7 @@
 #define sh_pread pread
 #define sh_pwrite pwrite
 
-#endif	/* !CONFIG_LARGE_FILES */
+#endif	/* !CONFIG_LFS */
 
 #define HAVE_PREAD
 
