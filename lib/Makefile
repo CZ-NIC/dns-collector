@@ -16,3 +16,4 @@ obj/lib/db-rebuild: obj/lib/db-rebuild.o obj/lib/libsh.a
 obj/lib/buckettool: obj/lib/buckettool.o obj/lib/libsh.a
 obj/lib/conf-test: obj/lib/conf-test.o obj/lib/libsh.a
 obj/lib/sort-test: obj/lib/sort-test.o obj/lib/libsh.a
+obj/lib/lfs-test: obj/lib/lfs-test.o obj/lib/libsh.a
