@@ -258,7 +258,7 @@ url_normalize(struct url *u, struct url *b)
       && u->rest && (k = strchr(u->rest, '#')))
     *k = 0;				/* Kill fragment reference */
 
-  if (u->port == ~0)
+  if (u->port == ~0U)
     u->port = std_ports[u->protoid];
 
   if (   u->protocol && !u->host
@@ -365,7 +365,7 @@ url_pack(struct url *u, byte *d)
 	  d = append(d, "@", e);
 	}
       d = append(d, u->host, e);
-      if (u->port != std_ports[u->protoid] && u->port != ~0)
+      if (u->port != std_ports[u->protoid] && u->port != ~0U)
 	{
 	  char z[10];
 	  sprintf(z, "%d", u->port);

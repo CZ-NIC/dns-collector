@@ -12,7 +12,7 @@
 int
 wordsplit(byte *src, byte **dst, uns max)
 {
-  int cnt = 0;
+  uns cnt = 0;
 
   for(;;)
     {

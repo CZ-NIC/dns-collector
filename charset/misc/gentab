@@ -1,0 +1,43 @@
+#!/usr/bin/perl
+#
+#  Generate C Language Table for UniCode Data
+#  (c) 1997 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+#
+
+$name=$ARGV[0];
+$type=$ARGV[1];
+
+while (<STDIN>) {
+	chomp;
+	($i,$j) = split/\s+/;
+	($i =~ /^(..)(..)$/) || die "Syntax error at $i";
+	$table{$1} = "$name" . "_$1";
+	$val{$i} = $j;
+}
+
+print "/* Generated automatically by gentab. Please don't edit. */\n\n";
+
+for($i=0; $i<256; $i++) {
+	$x = sprintf("%02X", $i);
+	if (defined($table{$x})) {
+		print "static $type $table{$x}\[256\] = \{\n";
+		for($j=0; $j<256; $j++) {
+			$y = $x . sprintf("%02X", $j);
+			if ($val{$y}) { print $val{$y}; }
+			else { print "0"; }
+			if ($j != 255) { print ","; }
+			if ($j % 16 == 15) { print "\n"; }
+		}
+		print "\};\n\n";
+	}
+}
+
+print "$type \*$name\[256\] = \{\n";
+for($j=0; $j<256; $j++) {
+	$y = sprintf("%02X", $j);
+	if (defined $table{$y}) { print $table{$y}; }
+	else { print "NULL"; }
+	if ($j != 255) { print ","; }
+	if ($j % 16 == 15) { print "\n"; }
+}
+print "\};\n";

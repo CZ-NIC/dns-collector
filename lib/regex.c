@@ -44,7 +44,7 @@ rx_free(regex *r)
 int
 rx_match(regex *r, byte *s)
 {
-  uns len = strlen(s);
+  int len = strlen(s);
 
   r->len_cache = len;
   if (re_match(&r->buf, s, len, 0, &r->regs) < 0)
@@ -69,7 +69,7 @@ rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
 	  by++;
 	  if (*by >= '0' && *by <= '9')	/* \0 gets replaced by entire pattern */
 	    {
-	      int j = *by++ - '0';
+	      uns j = *by++ - '0';
 	      if (j < r->regs.num_regs)
 		{
 		  byte *s = src + r->regs.start[j];

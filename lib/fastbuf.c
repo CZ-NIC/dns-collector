@@ -78,7 +78,7 @@ wrbuf(struct fastbuf *f)
   if (l)
     {
       if (write(f->fd, f->buffer, l) != l)
-	die("Error writing %s: %m");
+	die("Error writing %s: %m", f->name);
       f->bptr = f->buffer;
       f->fdpos += l;
       f->pos = f->fdpos;
@@ -295,7 +295,7 @@ void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
   while (l >= t->buflen)
     {
       wrbuf(t);
-      if (read(f->fd, t->buffer, t->buflen) != t->buflen)
+      if ((uns) read(f->fd, t->buffer, t->buflen) != t->buflen)
 	die("bbcopy: %s exhausted", f->name);
       f->fdpos += t->buflen;
       t->bptr = t->bufend;

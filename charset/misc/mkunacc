@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+#
+#  Create Unicode Unaccenting Table
+#  (c) 1997 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+#
+
+open (UNI, "/tmp/unicode") || die "No Unicode Data File";
+while (<UNI>) {
+    chomp;
+    ($num,$name,$cat,$_,$_,$exp) = split /;/;
+    if ($cat =~ /^L[ul]$/) { $letter{$num} = 1; }
+    if ($cat =~ /^Mn$/) { $accent{$num} = 1; }
+}
+close UNI;
+
+open (UNI, "/tmp/unicode") || die "No Unicode Data File";
+while (<UNI>) {
+    chomp;
+    ($num,$name,$cat,$_,$_,$exp) = split /;/;
+    if ($exp ne "") {
+	$exp =~ s/^<.*> *//g;
+	$good = 1;
+	$e = "";
+	foreach $a (split(/\s+/, $exp)) {
+	    if ($accent{$a}) { }
+	    elsif ($letter{$a}) {
+		if ($e ne "") { $good = 0; }
+		else { $e = $a; }
+	    } else { $good = 0; }
+	}
+	if ($good && $e ne "") { print "$num\t0x$e\n"; }
+    }
+}
+close UNI;

@@ -4,9 +4,12 @@
  *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
  */
 
+#ifndef _SHERLOCK_CONFIG_H
+#define _SHERLOCK_CONFIG_H
+
 /* Version */
 
-#define SHER_VER "0.1"
+#define SHER_VER "1.0"
 
 /* Types */
 
@@ -17,6 +20,10 @@ typedef short sword;			/* exactly 16 bits, signed */
 typedef unsigned int ulg;		/* exactly 32 bits, unsigned */
 typedef int slg;			/* exactly 32 bits, signed */
 typedef unsigned int uns;		/* at least 32 bits */
+
+#ifndef NULL
+#define NULL (void *)0
+#endif
 
 /* CPU characteristics */
 
@@ -37,5 +44,7 @@ typedef unsigned int uns;		/* at least 32 bits */
 
 #define inline
 #define NONRET
+
+#endif
 
 #endif

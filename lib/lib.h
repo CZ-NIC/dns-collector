@@ -4,6 +4,9 @@
  *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
  */
 
+#ifndef _SHERLOCK_LIB_H
+#define _SHERLOCK_LIB_H
+
 #include <lib/config.h>
 
 /* Temporary Files */
@@ -60,6 +63,7 @@ void open_log_file(byte *);
 /* Allocation */
 
 void *xmalloc(uns);
+void *xrealloc(void *, uns);
 byte *stralloc(byte *);
 
 /* Content-Type pattern matching and filters */
@@ -107,6 +111,9 @@ struct oattr *prepend_attr(struct odes *, uns, byte *);
 
 /* oname.c */
 
+#define OID_MIN 0x10000		/* Values less than this have special meaning */
+
+ulg new_oid(uns);
 void mk_obj_name(byte *, ulg, byte *);
 int dump_obj_to_file(byte *, ulg, struct odes *, int);
 
@@ -145,3 +152,5 @@ regex *rx_compile(byte *r);
 void rx_free(regex *r);
 int rx_match(regex *r, byte *s);
 int rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen);
+
+#endif
