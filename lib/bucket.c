@@ -430,6 +430,7 @@ obuck_slurp_refill(struct fastbuf *f)
   slurp_remains -= l;
   f->bptr = f->buffer;
   f->bufend = f->bstop = f->buffer + l;
+  f->pos += l;
   return 1;
 }
 
