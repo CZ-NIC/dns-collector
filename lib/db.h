@@ -18,11 +18,6 @@ struct sdbm_options {			/* Set to 0 for default */
   int val_size;				/* Value size, -1=variable */
 };
 
-struct sdbm_buf {
-  uns size;
-  byte data[0];
-};
-
 struct sdbm *sdbm_open(struct sdbm_options *);
 void sdbm_close(struct sdbm *);
 int sdbm_store(struct sdbm *, byte *key, uns keylen, byte *val, uns vallen);
