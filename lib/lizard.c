@@ -19,7 +19,7 @@ struct hash_record {
 };
 
 #define	HASH_SIZE	((1<<14) + 27)	// prime, size of hash-table
-#define	HASH_RECORDS	((1<<15) - 1)	// maximum number of records in hash-table
+#define	HASH_RECORDS	(1<<15)		// maximum number of records in hash-table, 0 is unused ==> subtract 1
 #define	CHAIN_MAX_TESTS	16		// crop longer collision chains
 #define	CHAIN_GOOD_MATCH	16	// we already have a good match => end
 
@@ -44,50 +44,42 @@ hashf(byte *string)
 
 static inline uns
 find_match(uns list_id, hash_ptr_t *hash_tab, struct hash_record *hash_rec, uns hash, byte *string, byte *string_end, byte **best_ptr)
-  /* We heavily rely on gcc optimisations (e.g. list_id is a constant hence
+  /*
+   * We heavily rely on gcc optimisations (e.g. list_id is a constant hence
    * some branches of the code will be pruned).
    *
-   * hash_tab[hash] points to the 1st record of the link-list of strings with the
-   * same hash.  The records are statically stored in circular array hash_rec
-   * (with 1st entry unused), and the pointers are just 16-bit indices.  In one
-   * array, we store 2 independent link-lists: with 3 and 4 hashed characters.
+   * hash_tab[hash] points to the head of the link-list of strings with
+   * the same hash.  The records are statically stored in circular array
+   * hash_rec (with 1st entry unused), and the pointers are just 16-bit
+   * indices.  In one array, we store 2 independent link-lists: with 3 and 4
+   * hashed characters.
    *
-   * Updates are performed more often than searches, so they are lazy: we only
-   * add new records in front of link-lists and never delete them.  By reusing
-   * an already allocated space in the circular array we necessarily modify
-   * records that are already pointed at in the middle of some link-list.  To
-   * prevent confusion, this function checks 2 invariants: the strings in a
-   * collision chain are ordered, and the hash of the 1st record in the chain
-   * must match.  */
+   * The data structure fulfills 2 invariants: the strings in every collision
+   * chain are ordered by age, and the head of every link-list is placed
+   * correctly.  The records in the middle of the link-lists may be placed
+   * wrong, and this is handled here by checking the string order.
+   */
 {
-  if (list_id == 3)				/* Find the 1st record in the collision chain.  */
-    hash = hash & MASK_4TH_CHAR;
+  if (list_id == 3)				/* Find the 1st record in the collision chain.  It is correct.  */
+    hash &= MASK_4TH_CHAR;
   hash %= HASH_SIZE;
   if (!hash_tab[hash])
     return 0;
   struct hash_record *record = hash_rec + hash_tab[hash];
-  uns hash2 = hashf(record->string);
-  if (list_id == 3)
-    hash2 = hash2 & MASK_4TH_CHAR;
-  hash2 %= HASH_SIZE;
-  if (hash2 != hash)				/* Verify the hash-value.  */
-  {
-    hash_tab[hash] = 0;				/* prune */
-    return 0;
-  }
 
   uns count = CHAIN_MAX_TESTS;
   uns best_len = 0;
-  byte *last_string = string_end;
+  byte *last_cmp = string_end;
   hash_ptr_t *last_ptr = NULL;
   while (count-- > 0)
   {
     byte *cmp = record->string;
-    if (cmp >= last_string)			/* collision chain is ordered by age */
+    if (cmp >= last_cmp)			/* collision chain is ordered by age */
     {
       *last_ptr = 0;				/* prune */
       break;
     }
+    last_cmp = cmp;
     if (cmp[0] == string[0] && cmp[2] == string[2])
     {
       if (cmp[3] == string[3])
@@ -98,7 +90,7 @@ find_match(uns list_id, hash_ptr_t *hash_tab, struct hash_record *hash_rec, uns 
 	    && *cmp++ == string[6] && *cmp++ == string[7])
 	{
 	  byte *str = string + 8;
-	  while (str <= string_end && *cmp++ == *string++);
+	  while (str <= string_end && *cmp++ == *str++);
 	}
       }
       else if (list_id == 3)
@@ -117,38 +109,54 @@ find_match(uns list_id, hash_ptr_t *hash_tab, struct hash_record *hash_rec, uns 
       }
     }
 next_collision:
-    if (list_id == 3)
-    {
-      if (!record->next3)
-	break;
+    if (list_id == 3)				/* move to the next collision */
       last_ptr = &record->next3;
-      record = hash_rec + record->next3;
-    }
     else
-    {
-      if (!record->next4)
-	break;
       last_ptr = &record->next4;
-      record = hash_rec + record->next4;
-    }
+    uns next = *last_ptr;
+    if (!next)
+      break;
+    record = hash_rec + next;
   }
   return best_len;
 }
 
-static inline uns
+static uns
 hash_string(byte *string, uns hash, hash_ptr_t *tab3, hash_ptr_t *tab4, struct hash_record *hash_rec, uns head)
+  /*
+   * Updates are performed more often than searches, so they are a bit lazy: we
+   * add new records in front of the link-lists, but only delete them when they
+   * are the _head_ of some link-list.  This is done in constant time.
+   *
+   * By reusing an already allocated space in the circular array we necessarily
+   * alter records that are referred in the _middle_ of some link-list.
+   * However the newly inserted string is younger than anything else in the
+   * table and it can be checked easily.
+   */
 {
+  struct hash_record *rec = hash_rec + head;
+  if (rec->string)				/* unlink the original record if it was the _head_ of some link-list */
+  {
+    uns h4 = hashf(rec->string);
+    uns h3 = h4 & MASK_4TH_CHAR;
+    h3 %= HASH_SIZE;
+    h4 %= HASH_SIZE;
+    if (tab3[h3] == head)
+      tab3[h3] = 0;
+    if (tab4[h4] == head)
+      tab4[h4] = 0;
+
+  }
   uns h3 = (hash & MASK_4TH_CHAR) % HASH_SIZE;
   uns h4 = hash % HASH_SIZE;
-  struct hash_record *rec = hash_rec + head;
-  rec->string = string;
+  rec->string = string;				/* is younger than any string inserted before */
   rec->next3 = tab3[h3];
   rec->next4 = tab4[h4];
   tab3[h3] = head;				/* add the new record before the link-list */
   tab4[h4] = head;
-  head++;					/* circular buffer, reuse old records */
+  head++;					/* circular buffer, reuse old records, 0 is unused */
   if (head >= HASH_RECORDS)
-    head = 0;
+    head = 1;
   return head;
 }
 
@@ -190,9 +198,9 @@ flush_copy_command(uns bof, byte *out, byte *start, uns len)
 
 int
 lizzard_compress(byte *in, uns in_len, byte *out)
-  /* Requires out being allocated for at least in_len * LIZZARD_MAX_PROLONG_FACTOR.
-   * There must be at least 8 characters allocated after in.
-   * Returns the actual compressed length. */
+  /* Requires out being allocated for at least in_len * LIZZARD_MAX_MULTIPLY +
+   * LIZZARD_MAX_ADD.  There must be at least LIZZARD_NEEDS_CHARS characters
+   * allocated after in.  Returns the actual compressed length. */
 {
   hash_ptr_t hash_tab3[HASH_SIZE], hash_tab4[HASH_SIZE];
   struct hash_record hash_rec[HASH_RECORDS];
@@ -200,7 +208,7 @@ lizzard_compress(byte *in, uns in_len, byte *out)
   byte *in_end = in + in_len;
   byte *out_start = out;
   byte *copy_start = in;
-  uns head = 0;
+  uns head = 1;					/* 0 in unused */
   bzero(hash_tab3, sizeof(hash_tab3));		/* init the hash-table */
   bzero(hash_tab4, sizeof(hash_tab4));
   while (in < in_end)
@@ -247,7 +255,7 @@ dump_2sequence:
       *out++ = (shift>>6) & ~3;			/* shift fits into 10 bits */
       *out++ = shift & 0xff;
     }
-    else if (len == 3 && is_in_copy_mode && shift >= (1<<11) && shift < (1<<11 + 1<<10))
+    else if (len == 3 && is_in_copy_mode && shift >= (1<<11) && shift < (1<<11) + (1<<10))
     {
       /* optimisation for length-3 matches after a copy command */
       shift -= 1<<11;
@@ -345,15 +353,18 @@ lizzard_decompress(byte *in, byte *out)
       if (expect_copy_command == 1)
       {
 	if (!c)
+	{
 	  in = read_unary_value(in, &len);
+	  len += 18;
+	}
 	else
-	  len = c;
+	  len = c + 3;
 	expect_copy_command = 2;
 	goto perform_copy_command;
       }
       else
       {
-	pos = (c&0xc)<<6 | *in++;
+	pos = ((c&0xc)<<6) | *in++;
 	if (expect_copy_command == 2)
 	{
 	  pos += 1<<11;
@@ -361,12 +372,13 @@ lizzard_decompress(byte *in, byte *out)
 	}
 	else
 	  len = 2;
+	pos++;
       }
     else if (c < 0x20)
     {
       pos = (c&0x8)<<11;
       len = c&0x7;
-      if (len)
+      if (!len)
       {
 	in = read_unary_value(in, &len);
 	len += 9;
@@ -377,13 +389,12 @@ lizzard_decompress(byte *in, byte *out)
       pos |= *in++;
       if (!pos)					/* EOF */
 	break;
-      else					/* shift it back */
-	pos--;
+      /* do NOT pos++ */
     }
     else if (c < 0x40)
     {
       len = c&0x1f;
-      if (len)
+      if (!len)
       {
 	in = read_unary_value(in, &len);
 	len += 33;
@@ -392,25 +403,37 @@ lizzard_decompress(byte *in, byte *out)
 	len += 2;
       pos = (*in++ & 0xfc)<<6;
       pos |= *in++;
+      pos++;
     }
     else /* high bits encode the length */
     {
-      len = (c&0xe)>>5 -2 +3;
+      len = ((c&0xe0)>>5) -2 +3;
       pos = (c&0x1c)<<6;
       pos |= *in++;
+      pos++;
     }
     /* take from the sliding window */
-    memcpy(out, in-1-pos, len);			//FIXME: overlapping
-    out += len;
+    if (len <= pos)
+    {
+      memcpy(out, out-pos, len);
+      out += len;
+    }
+    else
+    {						/* overlapping */
+      for (; len-- > 0; out++)
+	*out = out[-pos];
+    }
     /* extract the copy-bits */
     len = in[-2] & 0x3;
     if (len)
-      expect_copy_command = 0;			/* and fall-thru */
-    else
     {
-      expect_copy_command = 1;
-      continue;
+      expect_copy_command = 0;
+      while (len-- > 0)
+	*out++ = *in++;
     }
+    else
+      expect_copy_command = 1;
+    continue;
 
 perform_copy_command:
     memcpy(out, in, len);
