@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Universal Sorter
  *
- *	(c) 2001--2002 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2003 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -20,6 +20,10 @@
  *			defined by the sorter)
  *  SORT_PRESORT	include an in-core presorting pass
  *  SORT_UNIFY		merge items with identical keys
+ *  SORT_REGULAR	all items are equally long and they don't contain
+ *			anything else than the key. In this case, the sorter
+ *			automatically supplies fetch_key, copy_data, fetch_item
+ *			and store_item functions.
  *  SORT_DELETE_INPUT	a C expression, if true, the input files are
  *			deleted as soon as possible
  *  SORT_INPUT_FILE	input is a file with this name
@@ -105,6 +109,34 @@ extern uns sorter_pass_counter;
 #define LESS <
 #else
 #define LESS <=
+#endif
+
+#ifdef SORT_REGULAR
+
+static inline int
+P(fetch_key)(struct fastbuf *in, SORT_KEY *x)
+{
+  return breadb(in, x, sizeof(*x));
+}
+
+static inline void
+P(copy_data)(struct fastbuf *in UNUSED, struct fastbuf *out, SORT_KEY *x)
+{
+  bwrite(out, x, sizeof(*x));
+}
+
+static inline byte *
+P(fetch_item)(struct fastbuf *in UNUSED, SORT_KEY *x UNUSED, byte *limit UNUSED)
+{
+  return (byte *)(x+1);
+}
+
+static inline void
+P(store_item)(struct fastbuf *out, SORT_KEY *x)
+{
+  bwrite(out, x, sizeof(*x));
+}
+
 #endif
 
 static struct fastbuf *
@@ -416,6 +448,7 @@ struct fastbuf *fb1, struct fastbuf *fb2
 #undef SORT_KEY
 #undef SORT_PREFIX
 #undef SORT_UNIFY
+#undef SORT_REGULAR
 #undef SORT_DELETE_INPUT
 #undef SORT_INPUT_FILE
 #undef SORT_INPUT_FB
