@@ -7,7 +7,7 @@ SHLIB_OBJS=alloc.o alloc_str.o ctmatch.o db.o fastbuf.o fb-file.o fb-mem.o lists
 	log.o log2.o md5.o md5hex.o mmap.o pagecache.o patimatch.o patmatch.o pool.o \
 	prime.o random.o realloc.o regex.o timer.o url.o wildmatch.o \
 	wordsplit.o str_ctype.o str_upper.o bucket.o conf.o object.o sorter.o \
-	finger.o proctitle.o ipaccess.o
+	finger.o proctitle.o ipaccess.o profile.o
 
 obj/lib/libsh.a: $(addprefix obj/lib/,$(SHLIB_OBJS))
 
