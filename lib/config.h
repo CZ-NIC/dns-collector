@@ -76,6 +76,18 @@ typedef s32 sh_off_t;
 #define PUT_P(p,x) PUT_U32(p,x)
 #endif
 
+/* Data type for area ID's */
+
+#ifdef CONFIG_AREAS
+typedef u32 area_t;
+#define AREA_NONE 0
+#define AREA_ANY ~0U
+#else
+typedef struct { } area_t;
+#define AREA_NONE (area_t){}
+#define AREA_ANY (area_t){}
+#endif
+
 /* Misc */
 
 #ifdef __GNUC__

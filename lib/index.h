@@ -25,7 +25,7 @@
 
 #define MAX_WORD_LEN		64	/* a multiple of 4 */
 
-/* Word and string types are defined in lib/custom.h */
+/* Word and string types are defined in custom/lib/custom.h */
 
 /* Types used for storing contexts */
 
@@ -61,6 +61,7 @@ struct card_attr {
 #ifdef CONFIG_SITES
   u32 site_id;
 #endif
+  area_t area;
   CUSTOM_CARD_ATTRS			/* Include all custom attributes */
   byte weight;
   byte flags;
@@ -131,12 +132,20 @@ byte *ext_lang_parse(u32 *dest, byte *value, uns intval);
 #define LANG_ATTRS
 #endif
 
+#ifdef CONFIG_AREAS
+#define CA_GET_AREA(a) ((a)->area)
+#define SPLIT_ATTRS INT_ATTR(area, AREA, CA_GET_AREA, ext_area_parse)
+byte *ext_area_parse(u32 *dest, byte *value, uns intval);
+#else
+#define SPLIT_ATTRS
+#endif
+
 /*
  * A list of all extended attributes: custom attributes and also some
  * built-in attributes treated in the same way.
  */
 
-#define EXTENDED_ATTRS CUSTOM_ATTRS FILETYPE_ATTRS LANG_ATTRS
+#define EXTENDED_ATTRS CUSTOM_ATTRS FILETYPE_ATTRS LANG_ATTRS SPLIT_ATTRS
 
 /*
  * A list of all statistics collectors, also composed of custom parts
