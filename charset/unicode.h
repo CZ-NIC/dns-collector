@@ -42,14 +42,14 @@ static inline uns Uunaccent(uns x)
 extern const word *Uexpand_lig(uns x);
 
 enum unicode_char_type {
-  _U_LETTER,			/* Letters */
-  _U_UPPER,			/* Upper-case letters */
-  _U_LOWER,			/* Lower-case letters */
-  _U_CTRL,			/* Control characters */
-  _U_DIGIT,			/* Digits */
-  _U_XDIGIT,			/* Hexadecimal digits */
-  _U_SPACE,			/* White spaces (spaces, tabs, newlines) */
-  _U_LIGATURE,			/* Compatibility ligature (to be expanded) */
+  _U_LETTER = 1,		/* Letters */
+  _U_UPPER = 2,			/* Upper-case letters */
+  _U_LOWER = 4,			/* Lower-case letters */
+  _U_CTRL = 8,			/* Control characters */
+  _U_DIGIT = 16,		/* Digits */
+  _U_XDIGIT = 32,		/* Hexadecimal digits */
+  _U_SPACE = 64,		/* White spaces (spaces, tabs, newlines) */
+  _U_LIGATURE = 128,		/* Compatibility ligature (to be expanded) */
 };
 
 #define _U_LUPPER (_U_LETTER | _U_UPPER)
