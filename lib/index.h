@@ -34,8 +34,10 @@ struct card_attr {
 };
 
 enum card_flag {
-  CARD_FLAG_EMPTY = 1,			/* Empty document (redirect, robot file etc.) */
-  CARD_FLAG_ACCENTED = 2		/* Document contains accented characters */
+  CARD_FLAG_EMPTY = 1,			/* Empty document (redirect, robot file etc.) [scanner] */
+  CARD_FLAG_ACCENTED = 2,		/* Document contains accented characters [scanner] */
+  CARD_FLAG_DUP = 4,			/* Removed as a duplicate [merger] */
+  CARD_FLAG_MERGED = 8,			/* Destination of a merge [merger] */
 };
 
 /* String fingerprints */
