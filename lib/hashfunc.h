@@ -8,8 +8,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_HASHFUNC_H
-#define _SHERLOCK_HASHFUNC_H
+#ifndef _UCW_HASHFUNC_H
+#define _UCW_HASHFUNC_H
 
 #include "lib/lib.h"
 

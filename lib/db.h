@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Fast Database Management Routines
+ *	UCW Library -- Fast Database Management Routines
  *
  *	(c) 1999--2001 Martin Mares <mj@ucw.cz>
  *
@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_DB_H
-#define _SHERLOCK_DB_H
+#ifndef _UCW_DB_H
+#define _UCW_DB_H
 
 struct sdbm;
 

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Binomial Heaps: Testing
+ *	UCW Library -- Binomial Heaps: Testing
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
  *

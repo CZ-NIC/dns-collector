@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Unbiased Range Correction for random()
+ *	UCW Library -- Unbiased Range Correction for random()
  *
  *	(c) 1998 Martin Mares <mj@ucw.cz>
  *

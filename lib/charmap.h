@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Character Code Map (UTF-8 Version)
+ *	UCW Library -- Character Code Map (UTF-8 Version)
  *
  *	(c) 1998--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>

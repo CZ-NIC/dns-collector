@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Shell Interface to Configuration Files
+ *	UCW Library -- Shell Interface to Configuration Files
  *
  *	(c) 2002 Martin Mares <mj@ucw.cz>
  *

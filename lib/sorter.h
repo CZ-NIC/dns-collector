@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Universal Sorter
+ *	UCW Library -- Universal Sorter
  *
  *	(c) 2001--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>

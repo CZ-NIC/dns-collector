@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Keeping of Log Files
+ *	UCW Library -- Keeping of Log Files
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Character Types
+ *	UCW Library -- Character Types
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *
@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_CHARTYPE_H
-#define _SHERLOCK_CHARTYPE_H
+#ifndef _UCW_CHARTYPE_H
+#define _UCW_CHARTYPE_H
 
 #define _C_UPPER 1			/* Upper-case letters */
 #define _C_LOWER 2			/* Lower-case letters */

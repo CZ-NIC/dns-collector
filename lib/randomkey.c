@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Cryptographically Safe Random Key Generator
+ *	UCW Library -- Cryptographically Safe Random Key Generator
  *
  *	(c) 2002 Martin Mares <mj@ucw.cz>
  *

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- File Page Cache
+ *	UCW Library -- File Page Cache
  *
  *	(c) 1999--2002 Martin Mares <mj@ucw.cz>
  *
@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_PAGECACHE_H
-#define _SHERLOCK_PAGECACHE_H
+#ifndef _UCW_PAGECACHE_H
+#define _UCW_PAGECACHE_H
 
 #include "lib/lists.h"
 

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Fast Buffered I/O
+ *	UCW Library -- Fast Buffered I/O
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *

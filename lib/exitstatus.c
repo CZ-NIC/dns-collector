@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Formatting of Process Exit Status
+ *	UCW Library -- Formatting of Process Exit Status
  *
  *	(c) 2004 Martin Mares <mj@ucw.cz>
  *

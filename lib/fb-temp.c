@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Temporary Fastbufs
+ *	UCW Library -- Temporary Fastbufs
  *
  *	(c) 2002--2004 Martin Mares <mj@ucw.cz>
  *

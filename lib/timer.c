@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Execution Timing
+ *	UCW Library -- Execution Timing
  *
  *	(c) 1997 Martin Mares <mj@ucw.cz>
  *

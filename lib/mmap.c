@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Mapping of Files
+ *	UCW Library -- Mapping of Files
  *
  *	(c) 1999--2002 Martin Mares <mj@ucw.cz>
  *

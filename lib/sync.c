@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Syncing Directories
+ *	UCW Library -- Syncing Directories
  *
  *	(c) 2004 Martin Mares <mj@ucw.cz>
  */

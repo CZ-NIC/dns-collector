@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Setting of Process Title
+ *	UCW Library -- Setting of Process Title
  *
  *	(c) 2001 Martin Mares <mj@ucw.cz>
  *

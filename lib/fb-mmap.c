@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Fast Buffered I/O on Memory-Mapped Files
+ *	UCW Library -- Fast Buffered I/O on Memory-Mapped Files
  *
  *	(c) 2002 Martin Mares <mj@ucw.cz>
  *

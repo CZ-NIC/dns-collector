@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Fast Database Management Routines -- Internal Declarations
+ *	UCW Library -- Fast Database Management Routines -- Internal Declarations
  *
  *	(c) 1999--2001 Martin Mares <mj@ucw.cz>
  *

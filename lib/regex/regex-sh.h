@@ -3,8 +3,8 @@
  *  (renamed to sh_* to avoid clashes with the system libraries)
  */
 
-#ifndef _SHERLOCK_REGEX_H
-#define _SHERLOCK_REGEX_H
+#ifndef _UCW_REGEX_H
+#define _UCW_REGEX_H
 
 #define regfree sh_regfree
 #define regexec sh_regexec

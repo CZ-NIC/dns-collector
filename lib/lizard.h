@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_LIZARD_H
-#define _SHERLOCK_LIZARD_H
+#ifndef _UCW_LIZARD_H
+#define _UCW_LIZARD_H
 
 #define	LIZARD_NEEDS_CHARS	8
   /* The compression routine needs input buffer 8 characters longer, because it

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Memory Pools (One-Time Allocation)
+ *	UCW Library -- Memory Pools (One-Time Allocation)
  *
  *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
  *

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library: Reading and writing of UTF-8 on Fastbuf Streams
+ *	UCW Library: Reading and writing of UTF-8 on Fastbuf Streams
  *
  *	(c) 2001--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>

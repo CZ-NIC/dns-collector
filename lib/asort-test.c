@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Universal Array Sorter Test and Benchmark
+ *	UCW Library -- Universal Array Sorter Test and Benchmark
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
  *

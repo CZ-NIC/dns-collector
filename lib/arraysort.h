@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Universal Array Sorter
+ *	UCW Library -- Universal Array Sorter
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
  *

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Fast Buffered I/O on Memory Streams
+ *	UCW Library -- Fast Buffered I/O on Memory Streams
  *
  *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
  *

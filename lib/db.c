@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Fast Database Management Routines
+ *	UCW Library -- Fast Database Management Routines
  *
  *	(c) 1999--2001 Martin Mares <mj@ucw.cz>
  *

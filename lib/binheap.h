@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Binomial Heaps
+ *	UCW Library -- Binomial Heaps
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
  *

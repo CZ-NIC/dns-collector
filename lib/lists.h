@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Linked Lists
+ *	UCW Library -- Linked Lists
  *
  *	(c) 1997--1999 Martin Mares <mj@ucw.cz>
  *
@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_LISTS_H
-#define _SHERLOCK_LISTS_H
+#ifndef _UCW_LISTS_H
+#define _UCW_LISTS_H
 
 /*
  * I admit the list structure is very tricky and also somewhat awkward,
@@ -53,7 +53,7 @@ void add_tail_list(list *, list *);
 void init_list(list *);
 void insert_node(node *, node *);
 
-#if !defined(_SHERLOCK_LISTS_C) && defined(__GNUC__)
+#if !defined(_UCW_LISTS_C) && defined(__GNUC__)
 #define LIST_INLINE extern inline
 #include "lib/lists.c"
 #undef LIST_INLINE

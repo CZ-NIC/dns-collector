@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Prime Number Tests
+ *	UCW Library -- Prime Number Tests
  *
  *	(c) 1997 Martin Mares <mj@ucw.cz>
  *

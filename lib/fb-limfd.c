@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Fast Buffered Input on Limited File Descriptors
+ *	UCW Library -- Fast Buffered Input on Limited File Descriptors
  *
  *	(c) 2003--2004 Martin Mares <mj@ucw.cz>
  *

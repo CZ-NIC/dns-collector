@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_LFS_H
-#define _SHERLOCK_LFS_H
+#ifndef _UCW_LFS_H
+#define _UCW_LFS_H
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -48,4 +48,4 @@ sh_file_size(byte *name)
   return len;
 }
 
-#endif	/* !_SHERLOCK_LFS_H */
+#endif	/* !_UCW_LFS_H */

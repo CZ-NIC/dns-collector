@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- IP address access lists
+ *	UCW Library -- IP address access lists
  *
  *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
  *

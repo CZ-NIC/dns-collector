@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Interface to Regular Expression Libraries
+ *	UCW Library -- Interface to Regular Expression Libraries
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2001 Robert Spalek <robert@ucw.cz>

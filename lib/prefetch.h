@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Prefetch
+ *	UCW Library -- Prefetch
  *
  *	(c) 1997--2003 Martin Mares <mj@ucw.cz>
  *
@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_PREFETCH_H
-#define _SHERLOCK_PREFETCH_H
+#ifndef _UCW_PREFETCH_H
+#define _UCW_PREFETCH_H
 
 #if defined(__athlon) || defined(__i686)
 

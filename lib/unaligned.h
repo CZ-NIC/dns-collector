@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Fast Access to Unaligned Data
+ *	UCW Library -- Fast Access to Unaligned Data
  *
  *	(c) 1997--2003 Martin Mares <mj@ucw.cz>
  *
@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_UNALIGNED_H
-#define _SHERLOCK_UNALIGNED_H
+#ifndef _UCW_UNALIGNED_H
+#define _UCW_UNALIGNED_H
 
 #ifdef CPU_ALLOW_UNALIGNED
 #define GET_U16(p) (*((u16 *)(p)))

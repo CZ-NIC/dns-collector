@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Shell-Like Case-Insensitive Pattern Matching (currently only '?' and '*')
+ *	UCW Library -- Shell-Like Case-Insensitive Pattern Matching (currently only '?' and '*')
  *
  *	(c) 1997 Martin Mares <mj@ucw.cz>
  *

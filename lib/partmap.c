@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Mapping of File Parts
+ *	UCW Library -- Mapping of File Parts
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
  *	(c) 2003 Robert Spalek <robert@ucw.cz>

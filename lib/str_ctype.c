@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Character Classes
+ *	UCW Library -- Character Classes
  *
  *	(c) 1998--2004 Martin Mares <mj@ucw.cz>
  *

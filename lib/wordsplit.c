@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Word Splitting
+ *	UCW Library -- Word Splitting
  *
  *	(c) 1997 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>

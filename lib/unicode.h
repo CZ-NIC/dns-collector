@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Unicode Characters
+ *	UCW Library -- Unicode Characters
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>

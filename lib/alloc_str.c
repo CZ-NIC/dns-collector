@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- String Allocation
+ *	UCW Library -- String Allocation
  *
  *	(c) 1997 Martin Mares <mj@ucw.cz>
  *

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Poor Man's Profiler
+ *	UCW Library -- Poor Man's Profiler
  *
  *	(c) 2001 Martin Mares <mj@ucw.cz>
  *

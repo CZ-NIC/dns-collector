@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Universal Hash Table
+ *	UCW Library -- Universal Hash Table
  *
  *	(c) 2002--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2002 Robert Spalek <robert@ucw.cz>
@@ -116,7 +116,7 @@
  *  undef'd.
  */
 
-#ifndef _SHERLOCK_HASHFUNC_H
+#ifndef _UCW_HASHFUNC_H
 #include "lib/hashfunc.h"
 #endif
 

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Database Manager -- Tests and Benchmarks
+ *	UCW Library -- Database Manager -- Tests and Benchmarks
  *
  *	(c) 1999 Martin Mares <mj@ucw.cz>
  *

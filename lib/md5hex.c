@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- MD5 Binary <-> Hex Conversions
+ *	UCW Library -- MD5 Binary <-> Hex Conversions
  *
  *	(c) 1997 Martin Mares <mj@ucw.cz>
  *

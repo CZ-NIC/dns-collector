@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Circular Linked Lists
+ *	UCW Library -- Circular Linked Lists
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
  *
@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_CLISTS_H
-#define _SHERLOCK_CLISTS_H
+#ifndef _UCW_CLISTS_H
+#define _UCW_CLISTS_H
 
 typedef struct cnode {
   struct cnode *next, *prev;

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- UTF-8 Functions
+ *	UCW Library -- UTF-8 Functions
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2003 Robert Spalek <robert@ucw.cz>

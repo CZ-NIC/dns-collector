@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Binary Logarithm
+ *	UCW Library -- Binary Logarithm
  *
  *	(c) 1997 Martin Mares <mj@ucw.cz>
  *

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- URL Functions
+ *	UCW Library -- URL Functions
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2001 Robert Spalek <robert@ucw.cz>
@@ -8,8 +8,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_URL_H
-#define _SHERLOCK_URL_H
+#ifndef _UCW_URL_H
+#define _UCW_URL_H
 
 #define MAX_URL_SIZE 1024
 

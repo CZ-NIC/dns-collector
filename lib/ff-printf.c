@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Printf on Fastbuf Streams
+ *	UCW Library -- Printf on Fastbuf Streams
  *
  *	(c) 2002 Martin Mares <mj@ucw.cz>
  *

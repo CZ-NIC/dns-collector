@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_BBUF_H
-#define _SHERLOCK_BBUF_H
+#ifndef _UCW_BBUF_H
+#define _UCW_BBUF_H
 
 #define	GBUF_TYPE	byte
 #define	GBUF_PREFIX(x)	bb_##x

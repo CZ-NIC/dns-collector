@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Stub for including math.h, avoiding name collisions
+ *	UCW Library -- Stub for including math.h, avoiding name collisions
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
  *

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Running of Commands
+ *	UCW Library -- Running of Commands
  *
  *	(c) 2004 Martin Mares <mj@ucw.cz>
  *

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- SDBM emulator at top of GDBM
+ *	UCW Library -- SDBM emulator at top of GDBM
  *
  *	(c) 1999 Martin Mares <mj@ucw.cz>
  *

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Memory Allocation
+ *	UCW Library -- Memory Allocation
  *
  *	(c) 2000 Martin Mares <mj@ucw.cz>
  *

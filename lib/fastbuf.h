@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Fast Buffered I/O
+ *	UCW Library -- Fast Buffered I/O
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>
@@ -8,8 +8,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_FASTBUF_H
-#define _SHERLOCK_FASTBUF_H
+#ifndef _UCW_FASTBUF_H
+#define _UCW_FASTBUF_H
 
 #ifndef EOF
 #include <stdio.h>

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Memory Pools
+ *	UCW Library -- Memory Pools
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *
@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_POOLS_H
-#define _SHERLOCK_POOLS_H
+#ifndef _UCW_POOLS_H
+#define _UCW_POOLS_H
 
 #ifndef POOL_ALIGN
 #define POOL_ALIGN CPU_STRUCT_ALIGN

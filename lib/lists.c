@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Linked Lists
+ *	UCW Library -- Linked Lists
  *
  *	(c) 1997--1999 Martin Mares <mj@ucw.cz>
  *
@@ -9,7 +9,7 @@
 
 #include "lib/lib.h"
 
-#define _SHERLOCK_LISTS_C
+#define _UCW_LISTS_C
 #include "lib/lists.h"
 
 LIST_INLINE void

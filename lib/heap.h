@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Universal Heap Macros
+ *	UCW Library -- Universal Heap Macros
  *
  *	(c) 2001 Martin Mares <mj@ucw.cz>
  *

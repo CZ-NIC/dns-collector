@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Careful Read/Write
+ *	UCW Library -- Careful Read/Write
  *
  *	(c) 2004 Martin Mares <mj@ucw.cz>
  *

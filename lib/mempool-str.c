@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Memory Pools (String Operations)
+ *	UCW Library -- Memory Pools (String Operations)
  *
  *	(c) 2004 Martin Mares <mj@ucw.cz>
  *

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Utilities -- A Simple Logger for use in shell scripts
+ *	UCW Library Utilities -- A Simple Logger for use in shell scripts
  *
  *	(c) 2001 Martin Mares <mj@ucw.cz>
  *

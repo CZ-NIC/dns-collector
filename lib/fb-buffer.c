@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Fast Buffered I/O on Static Buffers
+ *	UCW Library -- Fast Buffered I/O on Static Buffers
  *
  *	(c) 2003--2004 Martin Mares <mj@ucw.cz>
  *

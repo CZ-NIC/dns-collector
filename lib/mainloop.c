@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Main Loop
+ *	UCW Library -- Main Loop
  *
  *	(c) 2004 Martin Mares <mj@ucw.cz>
  *

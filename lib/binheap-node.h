@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Binomial Heaps: Declarations
+ *	UCW Library -- Binomial Heaps: Declarations
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
  *

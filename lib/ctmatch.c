@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Content-Type Pattern Matching
+ *	UCW Library -- Content-Type Pattern Matching
  *
  *	(c) 1997 Martin Mares <mj@ucw.cz>
  *

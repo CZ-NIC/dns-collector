@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Lowercase Map
+ *	UCW Library -- Lowercase Map
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *

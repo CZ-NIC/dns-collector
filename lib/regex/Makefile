@@ -1,4 +1,4 @@
-# Makefile for the Sherlock Regex Library (c) 2004 Martin Mares <mj@ucw.cz>
+# Makefile for the UCW Regex Library (c) 2004 Martin Mares <mj@ucw.cz>
 
 DIRS+=lib/regex
 
