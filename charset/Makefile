@@ -2,7 +2,7 @@
 
 DIRS+=charset
 
-LIBCHARSET_MODS=toupper tolower tocat utf8 unaccent strlen debug \
+LIBCHARSET_MODS=toupper tolower tocat toligatures utf8 unaccent strlen debug \
 	charconv setnames unistream fb-charconv
 LIBCHARSET=obj/charset/libcharset.$(LS)
 
