@@ -9,34 +9,7 @@
 
 #include "lib.h"
 
-int
-match_pattern(byte *p, byte *s)
-{
-  while (*p)
-    {
-      if (*p == '?' && *s)
-	p++, s++;
-      else if (*p == '*')
-	{
-	  int z = p[1];
+#define Convert(x) (x)
+#define MATCH_FUNC_NAME match_pattern
 
-	  if (!z)
-	    return 1;
-	  while (s = strchr(s, z))
-	    {
-	      if (match_pattern(p+1, s))
-		return 1;
-	      s++;
-	    }
-	  return 0;
-	}
-      else
-	{
-	  if (*p == '\\' && p[1])
-	    p++;
-	  if (*p++ != *s++)
-	    return 0;
-	}
-    }
-  return !*s;
-}
+#include "patmatch.h"
