@@ -159,7 +159,7 @@ P(pass)(struct fastbuf **fb1, struct fastbuf **fb2)
 	{
 	  P(merge_data)(in1, in2, out1, kin1, kin2);
 	  SWAP(kin1, kprev1, ktmp);
-	  next1 = P(fetch_key)(in1, kin1); /* FIXME: Re-use other code? */
+	  next1 = P(fetch_key)(in1, kin1);
 	  run1 = next1 && (P(compare)(kprev1, kin1) LESS 0);
 	  SWAP(kin2, kprev2, ktmp);
 	  next2 = P(fetch_key)(in2, kin2);
