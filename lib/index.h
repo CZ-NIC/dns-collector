@@ -28,7 +28,9 @@ struct index_params {
 
 struct card_attr {
   u32 card;				/* Reference to card description (either oid or filepos) */
+#ifdef CONFIG_SITES
   u32 site_id;
+#endif
   CUSTOM_CARD_ATTRS			/* Include all custom attributes */
   byte weight;
   byte flags;
