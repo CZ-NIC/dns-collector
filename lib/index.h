@@ -43,7 +43,7 @@ enum card_flag {
 /* String fingerprints */
 
 struct fingerprint {
-  u32 hash[3];
+  byte hash[12];
 };
 
 void fingerprint(byte *string, struct fingerprint *fp);
