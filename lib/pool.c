@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Memory Pools (One-Time Allocation)
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
  */
 
 #include <stdio.h>
@@ -71,9 +71,12 @@ pool_alloc(struct mempool *p, uns s)
 	{
 	  struct memchunk *c;
 
-	  if (p->current && p->current->next)
-	    /* Still have free chunks from previous incarnation */
-	    c = p->current->next;
+	  if (p->current)
+	    {
+	      /* Still have free chunks from previous incarnation */
+	      c = p->current;
+	      p->current = c->next;
+	    }
 	  else
 	    {
 	      c = xmalloc(sizeof(struct memchunk) + p->chunk_size);
@@ -81,7 +84,6 @@ pool_alloc(struct mempool *p, uns s)
 	      p->plast = &c->next;
 	      c->next = NULL;
 	    }
-	  p->current = c;
 	  x = c->data;
 	  p->last = x + p->chunk_size;
 	}
