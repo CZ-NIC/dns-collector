@@ -4,7 +4,9 @@
  *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
  */
 
-#define POOL_ALIGN 4
+#ifndef POOL_ALIGN
+#define POOL_ALIGN CPU_STRUCT_ALIGN
+#endif
 
 struct mempool {
   struct memchunk *chunks;

@@ -24,6 +24,7 @@ typedef unsigned int uns;		/* at least 32 bits */
 #undef CPU_BIG_ENDIAN
 #define CPU_CAN_DO_UNALIGNED_WORDS
 #define CPU_CAN_DO_UNALIGNED_LONGS
+#define CPU_STRUCT_ALIGN 4
 
 /* Misc */
 
