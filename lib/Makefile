@@ -9,7 +9,7 @@ LIBSH_MODS=alloc alloc_str ctmatch db fastbuf fb-file fb-mem lists \
 	prime random realloc regex timer url wildmatch \
 	wordsplit str_ctype str_upper str_lower bucket conf object sorter \
 	finger proctitle ipaccess profile bitsig randomkey \
-	hashfunc base64 base224 fb-temp fb-mmap fb-printf urlkey \
+	hashfunc base64 base224 fb-temp fb-mmap ff-printf urlkey \
 	partmap fb-limfd fb-buffer mainloop exitstatus runcmd carefulio \
 	lizard lizard-safe sighandler buck2obj obj2buck \
 	unicode-utf8 ff-utf8
