@@ -7,22 +7,10 @@
  *	of the GNU Lesser General Public License.
  */
 
-/*
- *  FIXME:
- *  - O_WRONLY ? (& generally processing of mode bits)
- */
-
-#ifdef TEST
-#define MMAP_WINDOW_SIZE 16*PAGE_SIZE
-#define MMAP_EXTEND_SIZE 4*PAGE_SIZE
-#else
-#define MMAP_WINDOW_SIZE 256*PAGE_SIZE
-#define MMAP_EXTEND_SIZE 256*PAGE_SIZE
-#endif
-
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 #include "lib/lfs.h"
+#include "lib/conf.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -31,6 +19,21 @@
 #include <sys/mman.h>
 #include <sys/user.h>
 
+static uns mmap_window_size = 16*PAGE_SIZE;
+static uns mmap_extend_size = 4*PAGE_SIZE;
+
+static struct cfitem obuck_config[] = {
+  { "FBMMap",		CT_SECTION,	NULL },
+  { "WindowSize",	CT_INT,		&mmap_window_size },
+  { "ExtendSize",	CT_INT,		&mmap_extend_size },
+  { NULL,		CT_STOP,	NULL }
+};
+
+static void CONSTRUCTOR obuck_init_config(void)
+{
+  cf_register(obuck_config);
+}
+
 struct fb_mmap {
   struct fastbuf fb;
   int fd;
@@ -38,7 +41,7 @@ struct fb_mmap {
   sh_off_t file_size;
   sh_off_t file_extend;
   sh_off_t window_pos;
-  int is_writeable;
+  int mode;
 };
 #define FB_MMAP(f) ((struct fb_mmap *)(f)->is_fastbuf)
 
@@ -47,13 +50,13 @@ bfmm_map_window(struct fastbuf *f)
 {
   struct fb_mmap *F = FB_MMAP(f);
   sh_off_t pos0 = f->pos & ~(sh_off_t)(PAGE_SIZE-1);
-  int l = MIN((sh_off_t)MMAP_WINDOW_SIZE, F->file_extend - pos0);
+  int l = MIN((sh_off_t)mmap_window_size, F->file_extend - pos0);
   uns ll = ALIGN(l, PAGE_SIZE);
   uns oll = ALIGN(f->bufend - f->buffer, PAGE_SIZE);
-  int prot = F->is_writeable ? (PROT_READ | PROT_WRITE) : PROT_READ;
+  int prot = ((F->mode & O_ACCMODE) == O_RDONLY) ? PROT_READ : (PROT_READ | PROT_WRITE);
 
   DBG(" ... Mapping %x(%x)+%x(%x) len=%x extend=%x", (int)pos0, (int)f->pos, ll, l, (int)F->file_size, (int)F->file_extend);
-  if (ll != oll)
+  if (ll != oll && f->buffer)
     {
       munmap(f->buffer, oll);
       f->buffer = NULL;
@@ -70,7 +73,7 @@ bfmm_map_window(struct fastbuf *f)
 #endif
   f->bufend = f->buffer + l;
   f->bptr = f->buffer + (f->pos - pos0);
-  F->window_pos = f->pos;
+  F->window_pos = pos0;
 }
 
 static int
@@ -106,7 +109,7 @@ bfmm_spout(struct fastbuf *f)
   f->pos = end;
   if (f->pos >= F->file_extend)
     {
-      F->file_extend = ALIGN(F->file_extend + MMAP_EXTEND_SIZE, (sh_off_t)PAGE_SIZE);
+      F->file_extend = ALIGN(F->file_extend + mmap_extend_size, (sh_off_t)PAGE_SIZE);
       if (sh_ftruncate(F->fd, F->file_extend))
 	die("ftruncate(%s): %m", f->name);
     }
@@ -176,9 +179,7 @@ bfmmopen_internal(int fd, byte *name, uns mode)
   F->file_extend = F->file_size = sh_seek(fd, 0, SEEK_END);
   if (mode & O_APPEND)
     f->pos = F->file_size;
-  mode &= ~O_APPEND;
-  if (mode & O_WRONLY || mode & O_RDWR)
-    F->is_writeable = 1;
+  F->mode = mode;
 
   f->refill = bfmm_refill;
   f->spout = bfmm_spout;
@@ -191,7 +192,11 @@ bfmmopen_internal(int fd, byte *name, uns mode)
 struct fastbuf *
 bopen_mm(byte *name, uns mode)
 {
-  int fd = sh_open(name, mode, 0666);
+  int fd;
+
+  if ((mode & O_ACCMODE) == O_WRONLY)
+    mode = (mode & ~O_ACCMODE) | O_RDWR;
+  fd = sh_open(name, mode, 0666);
   if (fd < 0)
     die("Unable to %s file %s: %m",
 	(mode & O_CREAT) ? "create" : "open", name);
