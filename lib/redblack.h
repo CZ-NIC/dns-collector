@@ -104,7 +104,7 @@
  *  TREE_ATOMIC_TYPE=t	Atomic values are of type `t' instead of int.
  *  TREE_USE_POOL=pool	Allocate all nodes from given mempool.
  *			Collides with delete/remove functions.
- *  TREE_STATIC		Functions are declared as static.
+ *  TREE_GLOBAL		Functions are exported (i.e., not static).
  *  TREE_CONSERVE_SPACE	Use as little space as possible at the price of a
  *			little slowdown.
  *  TREE_MAX_DEPTH	Maximal depth of a tree (for stack allocation).
@@ -121,7 +121,7 @@
  *    }
  *  TREE_END_FOR;
  *
- *  Then include <lib/redblack.h> and voila, you have a tree suiting all your
+ *  Then include "lib/redblack.h" and voila, you have a tree suiting all your
  *  needs (at least those which you've revealed :) ).
  *
  *  After including this file, all parameter macros are automatically
@@ -312,10 +312,10 @@ static inline void P(init_data) (P(node) *n UNUSED)
 #	define TREE_SAFE_FREE(x)	P(free) (x)
 #endif
 
-#ifdef TREE_STATIC
-#	define STATIC static
-#else
+#ifdef TREE_GLOBAL
 #	define STATIC
+#else
+#	define STATIC static
 #endif
 
 #ifndef TREE_MAX_DEPTH
@@ -349,7 +349,7 @@ STATIC void P(cleanup) (T *t)
 }
 #endif
 
-static uns P(fill_stack) (P(stack_entry) *stack, uns max_depth, P(bucket) *node, TREE_KEY_DECL, uns son_id)
+static uns P(fill_stack) (P(stack_entry) *stack, uns max_depth, P(bucket) *node, TREE_KEY_DECL, uns son_id UNUSED)
 {
 	uns i;
 	stack[0].buck = node;
@@ -476,14 +476,17 @@ STATIC P(node) * P(search) (T *t, TREE_KEY_DECL)
 }
 #endif
 
-//#define TRACE(txt...) do { printf(txt); fflush(stdout); } while (0)
-#define TRACE(txt...)
+#if 0
+#define TREE_TRACE(txt...) do { printf(txt); fflush(stdout); } while (0)
+#else
+#define TREE_TRACE(txt...)
+#endif
 
 static inline P(bucket) * P(rotation) (P(bucket) *node, uns son_id)
 {
 	/* Destroys red_flag's in node, son.  Returns new root.  */
 	P(bucket) *son = P(tree_son) (node, son_id);
-	TRACE("Rotation (node %d, son %d), direction %d\n", node->n.key, son->n.key, son_id);
+	TREE_TRACE("Rotation (node %d, son %d), direction %d\n", node->n.key, son->n.key, son_id);
 	node->son[son_id] = P(tree_son) (son, 1-son_id);
 	son->son[1-son_id] = node;
 #ifdef TREE_STORE_PARENT
@@ -536,7 +539,7 @@ try_it_again:
 		P(set_red_flag) (uncle, 0);
 		P(set_red_flag) (grand, 1);
 		depth -= 2;
-		TRACE("Swapping colours (parent %d, uncle %d, grand %d), passing thru\n", parent->n.key, uncle->n.key, grand->n.key);
+		TREE_TRACE("Swapping colours (parent %d, uncle %d, grand %d), passing thru\n", parent->n.key, uncle->n.key, grand->n.key);
 		goto try_it_again;
 	}
 	/* Black uncle and grandparent, we need to rotate.  Test
@@ -658,7 +661,7 @@ missing_black:
 			{
 				depth--;
 				iteration++;
-				TRACE("Swapping colours (parent %d, sibling %d), passing thru\n", parent->n.key, sibling->n.key);
+				TREE_TRACE("Swapping colours (parent %d, sibling %d), passing thru\n", parent->n.key, sibling->n.key);
 				goto missing_black;
 			}
 		} else if (!red[del_son])
@@ -847,7 +850,7 @@ STATIC int P(delete) (T *t, TREE_KEY_DECL)
 #endif
 
 #ifdef TREE_WANT_DUMP
-static void P(dump_subtree) (struct fastbuf *fb, T *t, P(bucket) *node, P(bucket) *parent, int cmp_res, int level, int black)
+static void P(dump_subtree) (struct fastbuf *fb, T *t, P(bucket) *node, P(bucket) *parent, int cmp_res, int level, uns black)
 {
 	uns flag;
 	int i;
@@ -970,4 +973,5 @@ do											\
 #undef TREE_KEY
 #undef TREE_EXTRA_SIZE
 #undef TREE_SAFE_FREE
+#undef TREE_TRACE
 #undef STATIC
