@@ -10,7 +10,7 @@
  */
 
 #include "lib/lib.h"
-#include "lib/pools.h"
+#include "lib/mempool.h"
 #include "lib/wildmatch.h"
 
 #include <stdio.h>

@@ -11,7 +11,7 @@
 #include "lib/lib.h"
 #include "lib/chartype.h"
 #include "lib/fastbuf.h"
-#include "lib/pools.h"
+#include "lib/mempool.h"
 
 #include "lib/conf.h"
 

@@ -13,7 +13,7 @@
 #include "lib/fastbuf.h"
 #include "lib/lfs.h"
 #include "lib/conf.h"
-#include "lib/pools.h"
+#include "lib/mempool.h"
 #include "lib/object.h"
 #include "lib/lizard.h"
 #include "lib/bbuf.h"

@@ -9,7 +9,7 @@
  */
 
 #include "lib/lib.h"
-#include "lib/pools.h"
+#include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "lib/object.h"
 

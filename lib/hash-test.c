@@ -116,7 +116,7 @@ static void test(void)
 
 /* TEST 3: internal strings + pools */
 
-#include "lib/pools.h"
+#include "lib/mempool.h"
 
 static struct mempool *pool;
 

@@ -268,14 +268,14 @@ static inline void P(cleanup_alloc) (void) { }
 
 #elif defined(HASH_USE_POOL)
 /* If the caller has requested to use his mempool, do so */
-#include "lib/pools.h"
+#include "lib/mempool.h"
 static inline void * P(alloc) (unsigned int size) { return mp_alloc_fast(HASH_USE_POOL, size); }
 static inline void P(init_alloc) (void) { }
 static inline void P(cleanup_alloc) (void) { }
 
 #elif defined(HASH_AUTO_POOL)
 /* Use our own pools */
-#include "lib/pools.h"
+#include "lib/mempool.h"
 static struct mempool *P(pool);
 static inline void * P(alloc) (unsigned int size) { return mp_alloc_fast(P(pool), size); }
 static inline void P(init_alloc) (void) { P(pool) = mp_new(HASH_AUTO_POOL); }
