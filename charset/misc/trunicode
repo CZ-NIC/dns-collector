@@ -15,8 +15,10 @@ foreach $file (@ARGV)
 	{
 		next if /^#/;
 		chop;
-		($code, $unicode, $comment) = /^0x(..)\t0x(....)\t#\t(.*)$/;
-		print fo "$code\t$unicode\t$comment\n";
+		if (($code, $unicode, $comment) = /^0x(..)\t0x(....)\t#\t?(.*)$/)
+		{
+			print fo "$code\t$unicode\t$comment\n";
+		}
 	}
 	close(fo);
 	close(fi);
