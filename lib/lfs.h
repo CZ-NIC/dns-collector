@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Large File Support
  *
- *	(c) 1999--2000 Martin Mares <mj@ucw.cz>
+ *	(c) 1999--2001 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef _SHERLOCK_LFS_H
@@ -24,12 +24,13 @@
 #define sh_seek lseek64
 #define sh_pread pread64
 #define sh_pwrite pwrite64
+#define sh_ftruncate ftruncate64
 #define SHERLOCK_HAVE_PREAD
 
 #else
 
 /*
- *  Talk directly with the kernel. The LFS implementations of LFS in Linux 2.2
+ *  Talk directly with the kernel. The implementations of LFS in Linux 2.2
  *  and 2.4 differ, but fortunately for us only in things like stat64 which
  *  we don't need to use.
  */
@@ -84,6 +85,7 @@ extern loff_t llseek(int fd, loff_t pos, int whence);
 
 #define sh_open open
 #define sh_seek(f,o,w) lseek(f,o,w)
+#define sh_ftruncate(f,o) ftruncate(f,o)
 
 #endif	/* !SHERLOCK_CONFIG_LFS */
 
