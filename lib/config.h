@@ -9,7 +9,13 @@
 
 /* Version */
 
-#define SHER_VER "1.2"
+#define SHER_VER "1.3"
+
+/* Features */
+
+#define SHERLOCK_CONFIG_REF_WEIGHTS
+#undef SHERLOCK_CONFIG_LARGE_DB
+#undef SHERLOCK_CONFIG_LFS
 
 /* Types */
 
@@ -31,6 +37,20 @@ typedef unsigned long addr_int_t;	/* Both integer and address */
 #endif
 
 typedef u32 oid_t;			/* Object ID */
+
+#ifdef SHERLOCK_CONFIG_LFS		/* off_t as passed to file functions */
+typedef s64 sh_off_t;
+#define BYTES_PER_FILE_POINTER 5
+#else
+typedef int sh_off_t;
+#define BYTES_PER_FILE_POINTER 4
+#endif
+
+#ifdef SHERLOCK_CONFIG_LARGE_DB		/* off_t as present in database files */
+typedef s64 sh_foff_t;
+#else
+typedef s32 sh_foff_t;
+#endif
 
 /* CPU characteristics */
 
