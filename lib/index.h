@@ -11,6 +11,7 @@
 /* Word types */
 
 enum word_type {
+  WT_RESERVED,				/* Reserved word type */
   WT_TEXT,				/* Ordinary text */
   WT_EMPH,				/* Emphasized text */
   WT_SMALL,				/* Small font */
