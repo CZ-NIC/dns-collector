@@ -343,17 +343,20 @@ brewind(struct fastbuf *f)
   bsetpos(f, 0);
 }
 
-void
+int
 bskip(struct fastbuf *f, uns len)
 {
   while (len)
     {
       byte *buf;
       uns l = bdirect_read_prepare(f, &buf);
+      if (!l)
+	return 0;
       l = MIN(l, len);
       bdirect_read_commit(f, buf+l);
       len -= l;
     }
+  return 1;
 }
 
 sh_off_t
