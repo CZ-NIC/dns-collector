@@ -1,6 +1,6 @@
 #!/usr/bin/perl
-# Configuration file preprocessor
-# (c) 2003 Martin Mares <mj@ucw.cz>
+# Configuration file and script preprocessor
+# (c) 2004 Martin Mares <mj@ucw.cz>
 
 use strict;
 use warnings;
@@ -17,21 +17,21 @@ close CF;
 
 open IN, $ARGV[0] or die "Unable to open $ARGV[0]";
 open OUT, ">$ARGV[1]" or die "Unable to create $ARGV[1]";
-my @ifs = ();	# stack of conditions, 1=satisfied
+my @ifs = ();	# stack of conditions, 1=satisfied, -1=unsatisfied, 0=shadowed
 my $empty = 0;	# last line was empty
 while (<IN>) {
-	if (/^#?ifdef\s+(\w+)/) {
-		push @ifs, !defined $options{$1};
+	if (/^#ifdef\s+(\w+)/) {
+		push @ifs, (@ifs && $ifs[$#ifs] <= 0) ? 0 : (defined $options{$1}) ? 1 : -1;
 	} elsif (/^#ifndef\s+(\w+)/) {
-		push @ifs, defined $options{$1};
-	} elsif (/^#?endif/) {
+		push @ifs, (@ifs && $ifs[$#ifs] <= 0) ? 0 : (defined $options{$1}) ? -1 : 1;
+	} elsif (/^#endif/) {
 		defined pop @ifs || die "Improper nesting of conditionals";
-	} elsif (/^#?else/) {
+	} elsif (/^#else/) {
 		my $x = pop @ifs;
 		defined $x || die "Improper nesting of conditionals";
-		push @ifs, !$x;
+		push @ifs, -$x;
 	} else {
-		@ifs && $ifs[$#ifs] && next;
+		@ifs && $ifs[$#ifs] <= 0 && next;
 		if (/^$/) {
 			$empty && next;
 			$empty = 1;
