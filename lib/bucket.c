@@ -2,6 +2,7 @@
  *	Sherlock Library -- Object Buckets
  *
  *	(c) 2001--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -130,6 +131,7 @@ obuck_unlock(void)
 
 struct fb_bucket {
   struct fastbuf fb;
+  int can_overwrite;
   sh_off_t start_pos;
   uns bucket_size;
   byte buffer[0];
@@ -301,12 +303,15 @@ obuck_find_next(struct obuck_header *hdrp, int full)
 }
 
 static int
-obuck_bconfig(struct fastbuf *f UNUSED, uns item, int value UNUSED)
+obuck_bconfig(struct fastbuf *f, uns item, int value)
 {
   switch (item)
     {
-    case BCONFIG_CAN_OVERWRITE:
-      return 2;
+    case BCONFIG_CAN_OVERWRITE: ;
+      int old_value = FB_BUCKET(f)->can_overwrite;
+      if (value >= 0 && value <= 2)
+	FB_BUCKET(f)->can_overwrite = value;
+      return old_value;
     default:
       return -1;
     }
@@ -370,6 +375,7 @@ obuck_create(u32 type)
   b->config = NULL;
   FB_BUCKET(b)->start_pos = start;
   FB_BUCKET(b)->bucket_size = 0;
+  FB_BUCKET(b)->can_overwrite = 2;
   bwrite(b, &obuck_create_hdr, sizeof(obuck_create_hdr));
 
   return b;

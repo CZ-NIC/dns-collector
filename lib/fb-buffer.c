@@ -2,6 +2,7 @@
  *	Sherlock Library -- Fast Buffered I/O on Static Buffers
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
+ *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -9,6 +10,19 @@
 
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
+
+static int
+fbbuf_config(struct fastbuf *f UNUSED, uns item, int value UNUSED)
+{
+  switch (item)
+    {
+    case BCONFIG_CAN_OVERWRITE:
+      // XXX: should we enable changing the value?
+      return 1;
+    default:
+      return -1;
+    }
+}
 
 static int
 fbbuf_refill(struct fastbuf *f UNUSED)
@@ -27,25 +41,13 @@ fbbuf_init_read(struct fastbuf *f, byte *buf, uns size)
   f->spout = NULL;
   f->seek = NULL;
   f->close = NULL;
-  f->config = NULL;
+  f->config = fbbuf_config;
 }
 
 static void
 fbbuf_spout(struct fastbuf *f UNUSED)
 {
   die("fbbuf: buffer overflow on write");
-}
-
-static int
-fbbuf_config(struct fastbuf *f UNUSED, uns item, int value UNUSED)
-{
-  switch (item)
-    {
-    case BCONFIG_CAN_OVERWRITE:
-      return 1;
-    default:
-      return -1;
-    }
 }
 
 void

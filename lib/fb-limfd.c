@@ -2,6 +2,7 @@
  *	Sherlock Library -- Fast Buffered Input on Limited File Descriptors
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
+ *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -17,6 +18,7 @@ struct fb_limfd {
   struct fastbuf fb;
   int fd;				/* File descriptor */
   int limit;
+  int can_overwrite;
 };
 #define FB_LIMFD(f) ((struct fb_limfd *)(f)->is_fastbuf)
 
@@ -40,12 +42,15 @@ bfl_close(struct fastbuf *f)
 }
 
 static int
-bfl_config(struct fastbuf *f UNUSED, uns item, int value UNUSED)
+bfl_config(struct fastbuf *f, uns item, int value)
 {
   switch (item)
     {
-    case BCONFIG_CAN_OVERWRITE:
-      return 2;
+    case BCONFIG_CAN_OVERWRITE: ;
+      int old_value = FB_LIMFD(f)->can_overwrite;
+      if (value >= 0 && value <= 2)
+	FB_LIMFD(f)->can_overwrite = value;
+      return old_value;
     default:
       return -1;
     }
@@ -67,6 +72,7 @@ bopen_limited_fd(int fd, uns buflen, uns limit)
   f->refill = bfl_refill;
   f->close = bfl_close;
   f->config = bfl_config;
+  F->can_overwrite = 2;
   return f;
 }
 

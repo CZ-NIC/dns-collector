@@ -2,6 +2,7 @@
  *	Sherlock Library -- Fast Buffered I/O on Files
  *
  *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
+ *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -20,6 +21,7 @@ struct fb_file {
   struct fastbuf fb;
   int fd;				/* File descriptor, -1 if not a real file */
   int is_temp_file;			/* 0=normal file, 1=temporary file, delete on close, -1=shared FD */
+  int can_overwrite;
 };
 #define FB_FILE(f) ((struct fb_file *)(f)->is_fastbuf)
 
@@ -89,8 +91,11 @@ bfd_config(struct fastbuf *f, uns item, int value)
     case BCONFIG_IS_TEMP_FILE:
       FB_FILE(f)->is_temp_file = value;
       return 0;
-    case BCONFIG_CAN_OVERWRITE:
-      return 2;
+    case BCONFIG_CAN_OVERWRITE: ;
+      int old_value = FB_FILE(f)->can_overwrite;
+      if (value >= 0 && value <= 2)
+	FB_FILE(f)->can_overwrite = value;
+      return old_value;
     default:
       return -1;
     }
@@ -115,6 +120,7 @@ bfdopen_internal(int fd, uns buflen, byte *name)
   f->seek = bfd_seek;
   f->close = bfd_close;
   f->config = bfd_config;
+  F->can_overwrite = 2;
   return f;
 }
 

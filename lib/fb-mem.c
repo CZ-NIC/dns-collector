@@ -2,6 +2,7 @@
  *	Sherlock Library -- Fast Buffered I/O on Memory Streams
  *
  *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
+ *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -29,6 +30,7 @@ struct fb_mem {
   struct fastbuf fb;
   struct memstream *stream;
   struct msblock *block;
+  int can_overwrite;
 };
 #define FB_MEM(f) ((struct fb_mem *)(f)->is_fastbuf)
 
@@ -150,12 +152,15 @@ fbmem_close(struct fastbuf *f)
 }
 
 static int
-fbmem_config(struct fastbuf *f UNUSED, uns item, int value UNUSED)
+fbmem_config(struct fastbuf *f, uns item, int value)
 {
   switch (item)
     {
-    case BCONFIG_CAN_OVERWRITE:
-      return 1;
+    case BCONFIG_CAN_OVERWRITE: ;
+      int old_value = FB_MEM(f)->can_overwrite;
+      if (value >= 0 && value <= 1)
+	FB_MEM(f)->can_overwrite = value;
+      return old_value;
     default:
       return -1;
     }
@@ -193,6 +198,7 @@ fbmem_clone_read(struct fastbuf *b)
   f->seek = fbmem_seek;
   f->close = fbmem_close;
   f->config = fbmem_config;
+  FB_MEM(f)->can_overwrite = 1;
   return f;
 }
 
