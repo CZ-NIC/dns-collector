@@ -11,15 +11,11 @@
 
 /*
  *  Magic number which should help to avoid mixing incompatible indices.
- *  Syntax: <magic-byte><version><revision><custom-dependent-part>
+ *  Syntax: <version><revision><custom-type><custom-version>
  *  Remember to increase with each change of index format.
  */
 
-#ifndef CUSTOM_INDEX_VERSION
-#define CUSTOM_INDEX_VERSION sizeof(struct card_attr)
-#endif
-
-#define INDEX_VERSION (0x32340100+CUSTOM_INDEX_VERSION)
+#define INDEX_VERSION (0x34010000|((CUSTOM_INDEX_TYPE)<< 8)|(CUSTOM_INDEX_VERSION))
 
 /*
  *  Words
