@@ -1,16 +1,34 @@
 /*
  *	Sherlock Library -- URL Functions (according to RFC 1738 and 1808)
  *
- *	(c) 1997--1999 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
  */
 
 #include "lib/lib.h"
 #include "lib/url.h"
 #include "lib/chartype.h"
+#include "lib/conf.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+/* Configuration */
+
+static uns url_ignore_spaces;
+static uns url_ignore_underflow;
+
+static struct cfitem url_config[] = {
+  { "URL",		CT_SECTION,	NULL },
+  { "IgnoreSpaces",	CT_INT,		&url_ignore_spaces },
+  { "IgnoreUnderflow",	CT_INT,		&url_ignore_underflow },
+  { NULL,		CT_STOP,	NULL }
+};
+
+static void CONSTRUCTOR url_init_config(void)
+{
+  cf_register(url_config);
+}
 
 /* Escaping and de-escaping */
 
@@ -23,6 +41,7 @@ enhex(uns x)
 int
 url_deescape(byte *s, byte *d)
 {
+  byte *dstart = d;
   byte *end = d + MAX_URL_SIZE - 10;
   while (*s)
     {
@@ -58,8 +77,23 @@ url_deescape(byte *s, byte *d)
 	  *d++ = val;
 	  s += 3;
 	}
-      else if (*s >= 0x20)
+      else if (*s > 0x20)
 	*d++ = *s++;
+      else if (Cspace(*s))
+	{
+	  byte *s0 = s;
+	  while (Cspace(*s))
+	    s++;
+	  if (!url_ignore_spaces || !(!*s || d == dstart))
+	    {
+	      while (Cspace(*s0))
+		{
+		  if (d >= end)
+		    return URL_ERR_TOO_LONG;
+		  *d++ = *s0++;
+		}
+	    }
+	}
       else
 	return URL_ERR_INVALID_CHAR;
     }
@@ -256,17 +290,23 @@ relpath_merge(struct url *u, struct url *b)
 	  else if (a[1] == '.' && (a[2] == '/' || !a[2])) /* "../" */
 	    {
 	      a += 2;
-	      if (d <= u->buf + 1)
-		/*
-		 * RFC 1808 says we should leave ".." as a path segment, but
-		 * we intentionally break the rule and refuse the URL.
-		 */
-		return URL_PATH_UNDERFLOW;
-	      d--;			/* Discard trailing slash */
-	      while (d[-1] != '/')
-		d--;
 	      if (a[0])
 		a++;
+	      if (d <= u->buf + 1)
+		{
+		  /*
+		   * RFC 1808 says we should leave ".." as a path segment, but
+		   * we intentionally break the rule and refuse the URL.
+		   */
+		  if (!url_ignore_underflow)
+		    return URL_PATH_UNDERFLOW;
+		}
+	      else
+		{
+		  d--;			/* Discard trailing slash */
+		  while (d[-1] != '/')
+		    d--;
+		}
 	      continue;
 	    }
 	}
