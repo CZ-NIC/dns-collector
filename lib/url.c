@@ -1,11 +1,19 @@
 /*
- *	Sherlock Library -- URL Functions (according to RFC 1738 and 1808)
+ *	Sherlock Library -- URL Functions
  *
- *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2001 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
+ *
+ *	The URL syntax corresponds to RFC 2396 with several exceptions:
+ *
+ *	   o  Escaping of special characters still follows RFC 1738.
+ *	   o  Interpretation of path parameters follows RFC 1808.
+ *	   o  Parsing a relative URL "x" wrt. base "http://hell.org?y"
+ *	      gives an error, which might be wrong. However, I failed
+ *	      to find any rule applying to this case in the RFC.
  */
 
 #include "lib/lib.h"
@@ -27,13 +35,13 @@ static uns url_min_repeat_count = 0x7fffffff;
 static uns url_max_repeat_length = 0;
 
 static struct cfitem url_config[] = {
-  { "URL",		CT_SECTION,	NULL },
-  { "IgnoreSpaces",	CT_INT,		&url_ignore_spaces },
-  { "IgnoreUnderflow",	CT_INT,		&url_ignore_underflow },
-  { "ComponentSeparators",	CT_STRING,	&url_component_separators },
-  { "MinRepeatCount",		CT_INT,		&url_min_repeat_count },
-  { "MaxRepeatLength",		CT_INT,		&url_max_repeat_length },
-  { NULL,		CT_STOP,	NULL }
+  { "URL",				CT_SECTION,	NULL },
+  { "IgnoreSpaces",			CT_INT,		&url_ignore_spaces },
+  { "IgnoreUnderflow",			CT_INT,		&url_ignore_underflow },
+  { "ComponentSeparators",		CT_STRING,	&url_component_separators },
+  { "MinRepeatCount",			CT_INT,		&url_min_repeat_count },
+  { "MaxRepeatLength",			CT_INT,		&url_max_repeat_length },
+  { NULL,				CT_STOP,	NULL }
 };
 
 static void CONSTRUCTOR url_init_config(void)
@@ -199,7 +207,7 @@ url_split(byte *s, struct url *u, byte *d)
 
 	  s += 2;
 	  q = d;
-	  while (*s && *s != '/')	/* Copy user:passwd@host:port */
+	  while (*s && *s != '/' && *s != '?')	/* Copy user:passwd@host:port */
 	    *d++ = *s++;
 	  *d++ = 0;
 	  w = strchr(q, '@');
@@ -250,7 +258,7 @@ relpath_merge(struct url *u, struct url *b)
 
   if (a[0] == '/')			/* Absolute path => OK */
     return 0;
-  if (o[0] != '/')
+  if (o[0] != '/' && o[0] != '?')
     return URL_PATH_UNDERFLOW;
 
   if (!a[0])				/* Empty URL -> inherit everything */
@@ -554,9 +562,12 @@ int main(int argc, char **argv)
   char buf1[MAX_URL_SIZE], buf2[MAX_URL_SIZE], buf3[MAX_URL_SIZE], buf4[MAX_URL_SIZE];
   int err;
   struct url url, url0;
+  char *base = "http://mj@www.hell.org/123/sub_dir/index.html;param?query&zzz/subquery#fragment";
 
-  if (argc != 2)
+  if (argc != 2 && argc != 3)
     return 1;
+  if (argc == 3)
+    base = argv[2];
   if (err = url_deescape(argv[1], buf1))
     {
       printf("deesc: error %d\n", err);
@@ -569,7 +580,7 @@ int main(int argc, char **argv)
       return 1;
     }
   printf("split: @%s@%s@%s@%s@%d@%s\n", url.protocol, url.user, url.pass, url.host, url.port, url.rest);
-  if (err = url_split("http://mj@www.hell.org/123/sub_dir/index.html;param?query&zzz/subquery#fragment", &url0, buf3))
+  if (err = url_split(base, &url0, buf3))
     {
       printf("split base: error %d\n", err);
       return 1;
