@@ -32,7 +32,7 @@ function try
 	echo $APP | tr ! '\n' >>custom/config.mk
 
 	make clean >>$LOG 2>&1
-	rm run/cf/*
+	rm -f run/cf/*
 	if ! make >>$LOG 2>&1 ; then
 		echo "	FAILED"
 		exit 1
