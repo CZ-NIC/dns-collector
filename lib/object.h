@@ -71,12 +71,14 @@ byte *put_attr_str(byte *ptr, uns type, byte *val);
 byte *put_attr_vformat(byte *ptr, uns type, byte *mask, va_list va);
 byte *put_attr_format(byte *ptr, uns type, char *mask, ...) __attribute__((format(printf,3,4)));
 byte *put_attr_num(byte *ptr, uns type, uns val);
+byte *put_attr_separator(byte *ptr);
 
 void bput_attr(struct fastbuf *b, uns type, byte *val, uns len);
 void bput_attr_str(struct fastbuf *b, uns type, byte *val);
 void bput_attr_vformat(struct fastbuf *b, uns type, byte *mask, va_list va);
 void bput_attr_format(struct fastbuf *b, uns type, char *mask, ...) __attribute__((format(printf,3,4)));
 void bput_attr_num(struct fastbuf *b, uns type, uns val);
+void bput_attr_separator(struct fastbuf *b);
 
 void obj_write(struct fastbuf *, struct odes *);
 void obj_write_nocheck(struct fastbuf *, struct odes *);

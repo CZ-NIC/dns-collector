@@ -17,6 +17,7 @@
 #include <stdarg.h>
 
 static uns use_v33;
+static int hdr_sep;
 
 void
 attr_set_type(uns type)
@@ -24,12 +25,17 @@ attr_set_type(uns type)
   switch (type)
     {
     case BUCKET_TYPE_PLAIN:
+      use_v33 = 0;
+      hdr_sep = -1;
+      break;
     case BUCKET_TYPE_V30:
       use_v33 = 0;
+      hdr_sep = '\n';
       break;
     case BUCKET_TYPE_V33:
     case BUCKET_TYPE_V33_LIZARD:
       use_v33 = 1;
+      hdr_sep = 0;
       break;
     default:
       die("Don't know how to generate buckets of type %08x", type);
@@ -118,6 +124,14 @@ put_attr_num(byte *ptr, uns type, uns val)
   return ptr;
 }
 
+byte *
+put_attr_separator(byte *ptr)
+{
+  if (hdr_sep >= 0)
+    *ptr++ = hdr_sep;
+  return ptr;
+}
+
 inline void
 bput_attr(struct fastbuf *b, uns type, byte *val, uns len)
 {
@@ -183,6 +197,13 @@ bput_attr_num(struct fastbuf *b, uns type, uns val)
   }
   else
     bprintf(b, "%c%d\n", type, val);
+}
+
+void
+bput_attr_separator(struct fastbuf *b)
+{
+  if (hdr_sep >= 0)
+    bputc(b, hdr_sep);
 }
 
 void
