@@ -1,4 +1,4 @@
-# Makefile for the Sherlock Library (c) 1997--2002 Martin Mares <mj@ucw.cz>
+# Makefile for the Sherlock Library (c) 1997--2003 Martin Mares <mj@ucw.cz>
 
 DIRS+=lib
 PROGS+=obj/lib/db-tool obj/lib/buckettool
@@ -25,6 +25,7 @@ obj/lib/lfs-test: obj/lib/lfs-test.o obj/lib/libsh.$(LS)
 obj/lib/regex-test: obj/lib/regex-test.o obj/lib/libsh.$(LS)
 obj/lib/hash-test: obj/lib/hash-test.o obj/lib/libsh.$(LS)
 obj/lib/str-test: obj/lib/str-test.o obj/lib/libsh.$(LS)
+obj/lib/asort-test: obj/lib/asort-test.o obj/lib/libsh.$(LS)
 
 include lib/perl/Makefile
 include lib/shell/Makefile
