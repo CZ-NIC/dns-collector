@@ -32,9 +32,14 @@ mmap_file(byte *name, unsigned *len, int writeable)
     {
       if (len)
 	*len = st.st_size;
-      x = mmap(NULL, st.st_size, writeable ? (PROT_READ | PROT_WRITE) : PROT_READ, MAP_SHARED, fd, 0);
-      if (x == MAP_FAILED)
-	x = NULL;
+      if (st.st_size)
+	{
+	  x = mmap(NULL, st.st_size, writeable ? (PROT_READ | PROT_WRITE) : PROT_READ, MAP_SHARED, fd, 0);
+	  if (x == MAP_FAILED)
+	    x = NULL;
+	}
+      else	/* For empty file, we can return any non-zero address */
+	return "";
     }
   close(fd);
   return x;
