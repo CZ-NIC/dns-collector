@@ -26,6 +26,8 @@
 #include "lib/index.h"
 #include "lib/md5.h"
 
+#include <string.h>
+
 void
 fingerprint(byte *string, struct fingerprint *fp)
 {
