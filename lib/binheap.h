@@ -20,11 +20,11 @@
  *			names mentioned here except for macro names will be
  *			implicitly prefixed.
  *
- *  Then you continue by including "lib/binheap-node.h" which defines struct node
- *  (also prefixed) and struct root. The heap elements are always allocated by
- *  you and they must include struct node which serves as a handle used for all
+ *  Then you continue by including "lib/binheap-node.h" which defines struct bh_node
+ *  and struct bh_root (both without prefix). The heap elements are always allocated by
+ *  you and they must include struct bh_node which serves as a handle used for all
  *  the heap functions and it contains all information needed for heap-keeping.
- *  The heap itself is also allocated by you and it's represented by struct root.
+ *  The heap itself is also allocated by you and it's represented by struct bh_heap.
  *
  *  When you have the declaration of heap nodes, you continue with defining:
  *
@@ -33,17 +33,31 @@
  *
  *  Then specify what operations you request:
  *
- *  <always defined>	init(heap) -- initialize the heap.
- *  BH_WANT_INSERT	insert(heap, node*) -- insert the node to the heap.
- *  BH_WANT_FINDMIN	node *findmin(heap) -- find node with minimum key.
- *  BH_WANT_DELETEMIN	node *deletemin(heap) -- findmin and delete the node.
+ *  <always defined>	init(heap*) -- initialize the heap.
+ *  BH_WANT_INSERT	insert(heap*, node*) -- insert the node to the heap.
+ *  BH_WANT_FINDMIN	node *findmin(heap*) -- find node with minimum key.
+ *  BH_WANT_DELETEMIN	node *deletemin(heap*) -- findmin and delete the node.
  *
- *  Then include "lib/binheap.h| and voila, you have a binomial heap
+ *  Then include "lib/binheap.h" and voila, you have a binomial heap
  *  suiting all your needs (at least those which you've revealed :) ).
+ *
+ *  You also get a iterator macro at no extra charge:
+ *
+ *  BH_FOR_ALL(bh_prefix, hash*, variable)
+ *    {
+ *      // node *variable gets declared automatically
+ *      do_something_with_node(variable);
+ *      // use BH_BREAK and BH_CONTINUE instead of break and continue
+ *	// you must not alter contents of the hash table here
+ *    }
+ *  BH_END_FOR;
  *
  *  After including this file, all parameter macros are automatically
  *  undef'd.
  */
+
+#define BH_NODE struct bh_node
+#define BH_HEAP struct bh_heap
 
 static void
 BH_PREFIX(merge)(BH_NODE *a, BH_NODE *b)
@@ -157,6 +171,28 @@ BH_PREFIX(init)(BH_HEAP *heap)
 {
   bzero(heap, sizeof(*heap));
 }
+
+#ifndef BH_FOR_ALL
+
+#define BH_FOR_ALL(bh_px, bh_heap, bh_var)	\
+do {						\
+  struct bh_node *bh_stack[32];			\
+  bh_stack[0] = (bh_heap)->root.first_son;	\
+  uns bh_sp = 1;				\
+  while (bh_sp) {				\
+    struct bh_node *bh_var = bh_stack[--bh_sp];	\
+    if (bh_var->next_sibling)			\
+      bh_stack[bh_sp++] = bh_var->next_sibling; \
+    if (bh_var->first_son)			\
+      bh_stack[bh_sp++] = bh_var->first_son;
+#define BH_END_FOR				\
+  }						\
+} while (0)
+
+#define BH_BREAK { bh_sp=0; break; }
+#define BH_CONTINUE continue
+
+#endif
 
 #undef BH_PREFIX
 #undef BH_NODE

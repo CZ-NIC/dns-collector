@@ -7,16 +7,13 @@
  *	of the GNU Lesser General Public License.
  */
 
-#define BH_NODE struct BH_PREFIX(node)
-#define BH_HEAP struct BH_PREFIX(heap)
-
-BH_NODE {
-  BH_NODE *first_son;
-  BH_NODE *last_son;
-  BH_NODE *next_sibling;
+struct bh_node {
+  struct bh_node *first_son;
+  struct bh_node *last_son;
+  struct bh_node *next_sibling;
   byte order;
 };
 
-BH_HEAP {
-  BH_NODE root;
+struct bh_heap {
+  struct bh_node root;
 };
