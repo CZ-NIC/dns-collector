@@ -236,7 +236,7 @@ cat(void)
 
   obuck_init(0);
   out = bfdopen_shared(1, 65536);
-  while (b = obuck_slurp_pool(&h))
+  while (b = obuck_slurp_pool(&h, OBUCK_OID_ANY))
     {
       bprintf(out, "### %08x %6d %08x\n", h.oid, h.length, h.type);
       if (h.type < BUCKET_TYPE_V33 || !buck_buf)

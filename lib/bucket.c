@@ -434,8 +434,19 @@ obuck_slurp_refill(struct fastbuf *f)
   return 1;
 }
 
+void
+obuck_slurp_end(void)
+{
+  if (obuck_rpf)
+    {
+      bclose(obuck_rpf);
+      obuck_rpf = NULL;
+      obuck_unlock();
+    }
+}
+
 struct fastbuf *
-obuck_slurp_pool(struct obuck_header *hdrp)
+obuck_slurp_pool(struct obuck_header *hdrp, oid_t next_oid)
 {
   static struct fastbuf limiter;
   uns l;
@@ -455,16 +466,18 @@ obuck_slurp_pool(struct obuck_header *hdrp)
 	  if (bgetl(obuck_rpf) != OBUCK_TRAILER)
 	    obuck_broken("Missing trailer", slurp_start);
 	}
-      slurp_start = btell(obuck_rpf);
+      if (next_oid == OBUCK_OID_ANY)
+	slurp_start = btell(obuck_rpf);
+      else
+	{
+	  slurp_start = obuck_get_pos(next_oid);
+	  bsetpos(obuck_rpf, slurp_start);
+	}
       if (slurp_start < slurp_end)
 	l = bread(obuck_rpf, hdrp, sizeof(struct obuck_header));
       else
-	l = 0;
-      if (!l)
 	{
-	  bclose(obuck_rpf);
-	  obuck_rpf = NULL;
-	  obuck_unlock();
+	  obuck_slurp_end();
 	  return NULL;
 	}
       if (l != sizeof(struct obuck_header))

@@ -32,6 +32,7 @@ extern byte *obuck_name;	/* Internal, for use by buckettool only! */
 #define OBUCK_INCOMPLETE_MAGIC 0xdeadfeel
 #define OBUCK_TRAILER 0xfeedcafe
 #define OBUCK_OID_DELETED (~(oid_t)0)
+#define OBUCK_OID_ANY (~(oid_t)0)
 #define OBUCK_OID_FIRST_SPECIAL (~(oid_t)0xffff)
 
 struct obuck_header {
@@ -76,7 +77,8 @@ void obuck_create_end(struct fastbuf *b, struct obuck_header *hdrp);
 void obuck_delete(oid_t oid);
 
 /* Fast reading of the whole pool */
-struct fastbuf *obuck_slurp_pool(struct obuck_header *hdrp);
+struct fastbuf *obuck_slurp_pool(struct obuck_header *hdrp, oid_t next_oid);
+void obuck_slurp_end(void);
 
 /* Convert bucket ID to file position (for size limitations etc.) */
 
