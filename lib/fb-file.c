@@ -63,9 +63,14 @@ bfd_seek(struct fastbuf *f, sh_off_t pos, int whence)
 static void
 bfd_close(struct fastbuf *f)
 {
-  close(FB_FILE(f)->fd);
-  if (FB_FILE(f)->is_temp_file && unlink(f->name) < 0)
-    die("unlink(%s): %m", f->name);
+  switch (FB_FILE(f)->is_temp_file)
+    {
+    case 1:
+      if (unlink(f->name) < 0)
+	log(L_ERROR, "unlink(%s): %m", f->name);
+    case 0:
+      close(FB_FILE(f)->fd);
+    }
   xfree(f);
 }
 
@@ -111,6 +116,14 @@ bfdopen(int fd, uns buffer)
 
   sprintf(x, "fd%d", fd);
   return bfdopen_internal(fd, buffer, x);
+}
+
+struct fastbuf *
+bfdopen_shared(int fd, uns buffer)
+{
+  struct fastbuf *f = bfdopen(fd, buffer);
+  FB_FILE(f)->is_temp_file = -1;
+  return f;
 }
 
 void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)

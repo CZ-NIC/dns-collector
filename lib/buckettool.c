@@ -108,7 +108,7 @@ insert(void)
   struct obuck_header h;
   byte *e;
 
-  in = bfdopen(0, 4096);
+  in = bfdopen_shared(0, 4096);
   obuck_init(1);
   do
     {
@@ -123,7 +123,7 @@ insert(void)
     }
   while (e);
   obuck_cleanup();
-  /* bclose(in) not done, we don't want fd 0 closed */
+  bclose(in);
 }
 
 static void

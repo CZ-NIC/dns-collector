@@ -69,13 +69,14 @@ struct fastbuf {
 struct fb_file {
   struct fastbuf fb;
   int fd;				/* File descriptor, -1 if not a real file */
-  int is_temp_file;			/* Is a temporary file, delete on close */
+  int is_temp_file;			/* 0=normal file, 1=temporary file, delete on close, -1=shared FD */
 };
 #define FB_FILE(f) ((struct fb_file *)(f)->is_fastbuf)
 
 struct fastbuf *bopen(byte *name, uns mode, uns buffer);
 struct fastbuf *bopen_tmp(uns buffer);
 struct fastbuf *bfdopen(int fd, uns buffer);
+struct fastbuf *bfdopen_shared(int fd, uns buffer);
 void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l);
 #define FB_IS_TEMP_FILE(f) FB_FILE(f)->is_temp_file
 
