@@ -11,6 +11,8 @@
 #include <stdio.h>
 #endif
 
+#include "lib/unaligned.h"
+
 /*
  *  Generic buffered I/O on a top of buffer swapping functions.
  *
@@ -107,16 +109,7 @@ static inline word bgetw(struct fastbuf *f)
   word w;
   if (f->bptr + 2 <= f->bstop)
     {
-      byte *p = f->bptr;
-#ifdef CPU_CAN_DO_UNALIGNED_WORDS
-      w = * ((word *) p);
-#else
-#ifdef CPU_BIG_ENDIAN
-      w = (p[0] << 8) | p[1];
-#else
-      w = (p[1] << 8) | p[0];
-#endif
-#endif
+      w = GET_U16(f->bptr);
       f->bptr += 2;
       return w;
     }
@@ -130,16 +123,7 @@ static inline u32 bgetl(struct fastbuf *f)
   u32 l;
   if (f->bptr + 4 <= f->bstop)
     {
-      byte *p = f->bptr;
-#ifdef CPU_CAN_DO_UNALIGNED_LONGS
-      l = * ((u32 *) p);
-#else
-#ifdef CPU_BIG_ENDIAN
-      l = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
-#else
-      l = (p[3] << 24) | (p[2] << 16) | (p[1] << 8) | p[0];
-#endif
-#endif
+      l = GET_U32(f->bptr);
       f->bptr += 4;
       return l;
     }
@@ -150,10 +134,10 @@ static inline u32 bgetl(struct fastbuf *f)
 u64 bgetq_slow(struct fastbuf *f);
 static inline u64 bgetq(struct fastbuf *f)
 {
+  u64 l;
   if (f->bptr + 8 <= f->bstop)
     {
-      u64 l;
-      memcpy(&l, f->bptr, 8);
+      l = GET_U64(f->bptr);
       f->bptr += 8;
       return l;
     }
@@ -167,12 +151,7 @@ static inline u64 bget5(struct fastbuf *f)
   u64 l;
   if (f->bptr + 5 <= f->bstop)
     {
-      byte *p = f->bptr;
-#ifdef CPU_BIG_ENDIAN
-      l = ((u64)p[0] << 32) | (u32)((p[1] << 24) | (p[2] << 16) | (p[3] << 8) | p[4]);
-#else
-      l = ((u64)p[4] << 32) | (u32)((p[3] << 24) | (p[2] << 16) | (p[1] << 8) | p[0]);
-#endif
+      l = GET_U40(f->bptr);
       f->bptr += 5;
       return l;
     }
@@ -185,18 +164,7 @@ static inline void bputw(struct fastbuf *f, word w)
 {
   if (f->bptr + 2 <= f->bufend)
     {
-      byte *p = f->bptr;
-#ifdef CPU_CAN_DO_UNALIGNED_WORDS
-      * ((word *) p) = w;
-#else
-#ifdef CPU_BIG_ENDIAN
-      p[0] = w >> 8U;
-      p[1] = w;
-#else
-      p[1] = w >> 8U;
-      p[0] = w;
-#endif
-#endif
+      PUT_U16(f->bptr, w);
       f->bptr += 2;
     }
   else
@@ -208,22 +176,7 @@ static inline void bputl(struct fastbuf *f, u32 l)
 {
   if (f->bptr + 4 <= f->bufend)
     {
-      byte *p = f->bptr;
-#ifdef CPU_CAN_DO_UNALIGNED_LONGS
-      * ((u32 *) p) = l;
-#else
-#ifdef CPU_BIG_ENDIAN
-      p[0] = l >> 24U;
-      p[1] = l >> 16U;
-      p[2] = l >> 8U;
-      p[3] = l;
-#else
-      p[3] = l >> 24U;
-      p[2] = l >> 16U;
-      p[1] = l >> 8U;
-      p[0] = l;
-#endif
-#endif
+      PUT_U32(f->bptr, l);
       f->bptr += 4;
     }
   else
@@ -235,7 +188,7 @@ static inline void bputq(struct fastbuf *f, u64 l)
 {
   if (f->bptr + 8 <= f->bufend)
     {
-      memcpy(f->bptr, &l, 8);
+      PUT_U64(f->bptr, l);
       f->bptr += 8;
     }
   else
@@ -247,21 +200,7 @@ static inline void bput5(struct fastbuf *f, u64 l)
 {
   if (f->bptr + 5 <= f->bufend)
     {
-      byte *p = f->bptr;
-      u32 low = l;
-#ifdef CPU_BIG_ENDIAN
-      p[0] = l >> 32U;
-      p[1] = low >> 24U;
-      p[2] = low >> 16U;
-      p[3] = low >> 8U;
-      p[4] = low;
-#else
-      p[4] = l >> 32U;
-      p[3] = low >> 24U;
-      p[2] = low >> 16U;
-      p[1] = low >> 8U;
-      p[0] = low;
-#endif
+      PUT_U40(f->bptr, l);
       f->bptr += 5;
     }
   else
@@ -332,23 +271,5 @@ bputsn(struct fastbuf *f, byte *b)
 int bdirect_read(struct fastbuf *f, byte **buf);
 int bdirect_write_prepare(struct fastbuf *f, byte **buf);
 void bdirect_write_commit(struct fastbuf *f, byte *pos);
-
-/* Depending on compile-time configuration, we select the right function for reading/writing of file offsets */
-
-#ifdef SHERLOCK_CONFIG_LARGE_DB
-#define bgeto(f) bget5(f)
-#define bputo(f,l) bput5(f,l)
-#define bgetp(f) bgetq(f)
-#define bputp(f,l) bputq(f,l)
-#define FASTBUF_BYTES_PER_O 5
-#define FASTBUF_BYTES_PER_P 8
-#else
-#define bgeto(f) bgetl(f)
-#define bputo(f,l) bputl(f,l)
-#define bgetp(f) bgetl(f)
-#define bputp(f,l) bputl(f,l)
-#define FASTBUF_BYTES_PER_O 4
-#define FASTBUF_BYTES_PER_P 4
-#endif
 
 #endif

@@ -13,9 +13,16 @@
 
 /* Features */
 
-#undef  SHERLOCK_CONFIG_LARGE_DB	/* Support for DB files >4GB */
-#undef  SHERLOCK_CONFIG_LFS		/* Large files on 32-bit systems */
-#undef  SHERLOCK_CONFIG_LFS_LIBC	/* LFS supported directly by libc */
+#define  SHERLOCK_CONFIG_LARGE_DB	/* Support for DB files >4GB */
+#define  SHERLOCK_CONFIG_LFS		/* Large files on 32-bit systems */
+#define  SHERLOCK_CONFIG_LFS_LIBC	/* LFS supported directly by libc */
+
+/* CPU characteristics */
+
+#define CPU_LITTLE_ENDIAN
+#undef CPU_BIG_ENDIAN
+#define CPU_ALLOW_UNALIGNED
+#define CPU_STRUCT_ALIGN 4
 
 /* Paths */
 
@@ -43,27 +50,29 @@ typedef unsigned int sh_time_t;		/* Timestamp */
 
 typedef u32 oid_t;			/* Object ID */
 
-#ifdef SHERLOCK_CONFIG_LFS		/* off_t as passed to file functions */
+/* Data types and functions for accessing file positions */
+
+#ifdef SHERLOCK_CONFIG_LARGE_DB
 typedef s64 sh_off_t;
-#define BYTES_PER_FILE_POINTER 5
+#define BYTES_PER_O 5
+#define BYTES_PER_P 8
+#define bgeto(f) bget5(f)
+#define bputo(f,l) bput5(f,l)
+#define bgetp(f) bgetq(f)
+#define bputp(f,l) bputq(f,l)
+#define GET_O(p) GET_U40(p)
+#define GET_P(p) GET_U64(p)
 #else
-typedef int sh_off_t;
-#define BYTES_PER_FILE_POINTER 4
+typedef s32 sh_off_t;
+#define BYTES_PER_O 4
+#define BYTES_PER_P 4
+#define bgeto(f) bgetl(f)
+#define bputo(f,l) bputl(f,l)
+#define bgetp(f) bgetl(f)
+#define bputp(f,l) bputl(f,l)
+#define GET_O(p) GET_U32(p)
+#define GET_P(p) GET_U32(p)
 #endif
-
-#ifdef SHERLOCK_CONFIG_LARGE_DB		/* off_t as present in database files */
-typedef s64 sh_foff_t;
-#else
-typedef s32 sh_foff_t;
-#endif
-
-/* CPU characteristics */
-
-#define CPU_LITTLE_ENDIAN
-#undef CPU_BIG_ENDIAN
-#define CPU_CAN_DO_UNALIGNED_WORDS
-#define CPU_CAN_DO_UNALIGNED_LONGS
-#define CPU_STRUCT_ALIGN 4
 
 /* Misc */
 
