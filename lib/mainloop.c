@@ -12,6 +12,7 @@
 #include "lib/lib.h"
 #include "lib/mainloop.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -25,7 +26,7 @@
 sh_time_t now;
 uns main_shutdown;
 
-static clist main_timer_list, main_file_list, main_hook_list, main_process_list;
+clist main_timer_list, main_file_list, main_hook_list, main_process_list;
 static uns main_file_cnt;
 static uns main_poll_table_obsolete, main_poll_table_size;
 static struct pollfd *main_poll_table;
@@ -357,6 +358,17 @@ main_loop(void)
 		  {
 		    pr->status = stat;
 		    process_del(pr);
+		    if (WIFEXITED(stat) && WEXITSTATUS(stat) < 256)
+		      {
+			if (WEXITSTATUS(stat))
+			  sprintf(pr->status_msg, "died with exit code %d", WEXITSTATUS(stat));
+			else
+			  pr->status_msg[0] = 0;
+		      }
+		    else if (WIFSIGNALED(stat))
+		      sprintf(pr->status_msg, "died on signal %d", WTERMSIG(stat));
+		    else
+		      sprintf(pr->status_msg, "died with status %x", stat);
 		    DBG("MAIN: Calling process exit handler");
 		    pr->handler(pr);
 		    break;

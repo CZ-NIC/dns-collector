@@ -11,6 +11,7 @@
 
 extern sh_time_t now;				/* Current time */
 extern uns main_shutdown;
+extern clist main_timer_list, main_file_list, main_hook_list, main_process_list;
 
 /* User-defined fields are marked with [*], all other fields must be initialized to zero. */
 
@@ -75,6 +76,7 @@ struct main_process {
   cnode n;
   int pid;
   int status;					/* Exit status */
+  byte status_msg[32];
   void (*handler)(struct main_process *mp);	/* [*] Called when the process exits; process_del done automatically */
   void *data;					/* [*] For use by the handler */
 };
