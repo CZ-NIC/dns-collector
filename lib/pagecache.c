@@ -142,7 +142,7 @@ static void
 flush_pages(struct page_cache *c, uns force)
 {
   uns cnt = 0;
-  uns max = force ? ~0U : c->free_count / 2; /* FIXME: Needs tuning */
+  uns max = force ? ~0U : c->free_count / 2;
   uns i;
   struct page *p, *q, **req, **rr;
 
