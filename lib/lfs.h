@@ -40,7 +40,7 @@
 static inline sh_off_t
 sh_file_size(byte *name)
 {
-  int fd = open(name, O_RDONLY);
+  int fd = sh_open(name, O_RDONLY);
   if (fd < 0)
     die("Cannot open %s: %m", name);
   sh_off_t len = sh_seek(fd, 0, SEEK_SET);
