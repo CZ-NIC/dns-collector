@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Buffered I/O on Static Buffers
  *
- *	(c) 2003 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -17,7 +17,7 @@ fbbuf_refill(struct fastbuf *f UNUSED)
 }
 
 void
-fbbuf_init_read(struct fastbuf *f, byte *buf, uns size)
+fbbuf_init_read(struct fastbuf *f, byte *buf, uns size, uns can_overwrite)
 {
   f->buffer = f->bptr = buf;
   f->bstop = f->bufend = buf + size;
@@ -28,7 +28,7 @@ fbbuf_init_read(struct fastbuf *f, byte *buf, uns size)
   f->seek = NULL;
   f->close = NULL;
   f->config = NULL;
-  f->can_overwrite_buffer = 1;
+  f->can_overwrite_buffer = can_overwrite;
 }
 
 static void
