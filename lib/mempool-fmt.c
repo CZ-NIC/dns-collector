@@ -66,9 +66,9 @@ mp_printf(struct mempool *p, char *fmt, ...)
 int main(void)
 {
   struct mempool *mp = mp_new(64);
-  char *x = mp_printf(mp, "Hello, %s!\n", "World");
+  char *x = mp_printf(mp, "<Hello, %s!>", "World");
   fputs(x, stdout);
-  x = mp_printf(mp, "Hello, %100s!\n", "World");
+  x = mp_printf(mp, "<Hello, %50s!>\n", "World");
   fputs(x, stdout);
   return 0;
 }

@@ -51,10 +51,11 @@ obj/lib/redblack-test: obj/lib/redblack-test.o $(LIBUCW)
 obj/lib/binheap-test: obj/lib/binheap-test.o $(LIBUCW)
 obj/lib/lizard-test: obj/lib/lizard-test.o $(LIBUCW)
 
-TESTS+=$(addprefix obj/lib/,regex.test unicode-utf8.test hash-test.test)
+TESTS+=$(addprefix obj/lib/,regex.test unicode-utf8.test hash-test.test mempool.test)
 obj/lib/regex.test: obj/lib/regex-t
 obj/lib/unicode-utf8.test: obj/lib/unicode-utf8-t
 obj/lib/hash-test.test: obj/lib/hash-test
+obj/lib/mempool.test: obj/lib/mempool-fmt-t obj/lib/mempool-str-t
 
 ifdef CONFIG_UCW_PERL
 include lib/perl/Makefile

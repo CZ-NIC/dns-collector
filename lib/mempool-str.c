@@ -50,3 +50,18 @@ mp_multicat(struct mempool *p, ...)
   *y = 0;
   return buf;
 }
+
+#ifdef TEST
+
+#include <stdio.h>
+
+int main(void)
+{
+  struct mempool *p = mp_new(64);
+  char *s = mp_strdup(p, "12345");
+  char *c = mp_multicat(p, "<<", s, ">>", NULL);
+  puts(c);
+  return 0;
+}
+
+#endif
