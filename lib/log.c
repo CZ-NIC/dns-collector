@@ -19,7 +19,7 @@
 #include <alloca.h>
 
 static char log_progname[32], *log_name_patt, *log_name;
-char *log_title = log_progname;
+char *log_title;
 static pid_t log_pid;
 static int log_params;
 static int log_name_size;
@@ -164,6 +164,7 @@ log_init(byte *argv0)
     {
       strncpy(log_progname, log_basename(argv0), sizeof(log_progname)-1);
       log_progname[sizeof(log_progname)-1] = 0;
+      log_title = log_progname;
     }
 }
 
