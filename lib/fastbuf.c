@@ -291,6 +291,7 @@ void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
       wrbuf(t);
       if ((uns) read(f->fd, t->buffer, t->buflen) != t->buflen)
 	die("bbcopy: %s exhausted", f->name);
+      f->pos = f->fdpos;
       f->fdpos += t->buflen;
       f->bstop = f->bptr = f->buffer;
       t->bptr = t->bufend;
