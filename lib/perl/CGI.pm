@@ -23,7 +23,7 @@ BEGIN {
 
 sub url_escape($) {
 	my $x = shift @_;
-	$x =~ s/([^-\$_.+!*'(),0-9A-Za-z\x80-\xff ])/"%".unpack('H2',$1)/ge;
+	$x =~ s/([^-\$_.!*'(),0-9A-Za-z\x80-\xff ])/"%".unpack('H2',$1)/ge;
 	$x =~ s/ /+/g;
 	return $x;
 }
@@ -42,7 +42,7 @@ our $arg_table;
 sub parse_arg_string($) {
 	my ($s) = @_;
 	$s =~ s/\s+//;
-	foreach $_ (split /&/,$s) {
+	foreach $_ (split /[&:]/,$s) {
 		(/^([^=]+)=(.*)$/) or next;
 		my $arg = $arg_table->{$1} or next;
 		$_ = $2;
@@ -106,7 +106,7 @@ sub make_out_args($) {
 sub self_ref(@) {
 	my %h = @_;
 	my $out = make_out_args(\%h);
-	return "?" . join('&', map { "$_=" . url_escape($out->{$_}) } sort keys %$out);
+	return "?" . join(':', map { "$_=" . url_escape($out->{$_}) } sort keys %$out);
 }
 
 sub self_form(@) {
