@@ -22,16 +22,16 @@
 static uns mmap_window_size = 16*PAGE_SIZE;
 static uns mmap_extend_size = 4*PAGE_SIZE;
 
-static struct cfitem obuck_config[] = {
+static struct cfitem fbmm_config[] = {
   { "FBMMap",		CT_SECTION,	NULL },
   { "WindowSize",	CT_INT,		&mmap_window_size },
   { "ExtendSize",	CT_INT,		&mmap_extend_size },
   { NULL,		CT_STOP,	NULL }
 };
 
-static void CONSTRUCTOR obuck_init_config(void)
+static void CONSTRUCTOR fbmm_init_config(void)
 {
-  cf_register(obuck_config);
+  cf_register(fbmm_config);
 }
 
 struct fb_mmap {
