@@ -57,14 +57,17 @@
 extern char *log_title;			/* NULL - print no title, default is log_progname */
 extern char *log_filename;		/* Expanded name of the current log file */
 extern int log_switch_nest;		/* log_switch() nesting counter, increment to disable automatic switches */
+extern int log_pid;			/* 0 if shouldn't be logged */
 extern void (*log_die_hook)(void);
+struct tm;
+extern void (*log_switch_hook)(struct tm *tm);
 
 void log_msg(unsigned int cat, const char *msg, ...) __attribute__((format(printf,2,3)));
 #define log log_msg
 void vlog_msg(unsigned int cat, const char *msg, va_list args);
 void die(byte *, ...) NONRET;
-void log_init(byte *);
-void log_file(byte *);
+void log_init(byte *argv0);
+void log_file(byte *name);
 void log_fork(void);
 void log_switch(void);
 

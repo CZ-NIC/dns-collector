@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Logging
  *
- *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -13,67 +13,16 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
 #include <alloca.h>
 
-static char log_progname[32], *log_name_patt;
+static char log_progname[32];
 char *log_filename;
 char *log_title;
-static int log_pid;
-static int log_params;
-static int log_filename_size;
-int log_switch_nest;
+int log_pid;
 void (*log_die_hook)(void);
-
-void
-log_fork(void)
-{
-  log_pid = getpid();
-}
-
-static void
-do_log_switch(struct tm *tm)
-{
-  int fd, l;
-  char name[log_filename_size];
-
-  if (!log_name_patt ||
-      log_filename[0] && !log_params)
-    return;
-  log_switch_nest++;
-  l = strftime(name, log_filename_size, log_name_patt, tm);
-  if (l < 0 || l >= log_filename_size)
-    die("Error formatting log file name: %m");
-  if (strcmp(name, log_filename))
-    {
-      strcpy(log_filename, name);
-      fd = open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
-      if (fd < 0)
-	die("Unable to open log file %s: %m", name);
-      close(2);
-      dup(fd);
-      close(fd);
-      close(1);
-      dup(2);
-    }
-  log_switch_nest--;
-}
-
-void
-log_switch(void)
-{
-  time_t tim = time(NULL);
-  do_log_switch(localtime(&tim));
-}
-
-static inline void
-internal_log_switch(struct tm *tm)
-{
-  if (!log_switch_nest)
-    do_log_switch(tm);
-}
+void (*log_switch_hook)(struct tm *tm);
 
 void
 vlog_msg(unsigned int cat, const char *msg, va_list args)
@@ -84,7 +33,8 @@ vlog_msg(unsigned int cat, const char *msg, va_list args)
   int buflen = 256;
   int l, l0, r;
 
-  internal_log_switch(tm);
+  if (log_switch_hook)
+    log_switch_hook(tm);
   while (1)
     {
       p = buf = alloca(buflen);
@@ -171,8 +121,8 @@ log_basename(byte *n)
   byte *p = n;
 
   while (*n)
-	if (*n++ == '/')
-	  p = n;
+    if (*n++ == '/')
+      p = n;
   return p;
 }
 
@@ -184,28 +134,5 @@ log_init(byte *argv0)
       strncpy(log_progname, log_basename(argv0), sizeof(log_progname)-1);
       log_progname[sizeof(log_progname)-1] = 0;
       log_title = log_progname;
-    }
-}
-
-void
-log_file(byte *name)
-{
-  if (name)
-    {
-      if (log_name_patt)
-	xfree(log_name_patt);
-      if (log_filename)
-	{
-	  xfree(log_filename);
-	  log_filename = NULL;
-	}
-      log_name_patt = xstrdup(name);
-      log_params = !!strchr(name, '%');
-      log_filename_size = strlen(name) + 64;	/* 63 is an upper bound on expansion of % escapes */
-      log_filename = xmalloc(log_filename_size);
-      log_filename[0] = 0;
-      log_switch();
-      close(0);
-      open("/dev/null", O_RDWR, 0);
     }
 }

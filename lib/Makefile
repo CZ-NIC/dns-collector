@@ -5,7 +5,7 @@ PROGS+=obj/lib/db-tool obj/lib/buckettool
 TESTS+=obj/lib/regex-ut
 
 LIBSH_MODS=alloc alloc_str ctmatch db fastbuf fb-file fb-mem lists \
-	log log2 md5 md5hex mmap pagecache patimatch patmatch pool pool-str \
+	log log-file log2 md5 md5hex mmap pagecache patimatch patmatch pool pool-str \
 	prime random realloc regex timer url wildmatch \
 	wordsplit str_ctype str_upper str_lower bucket conf object sorter \
 	finger proctitle ipaccess profile bitsig randomkey \
