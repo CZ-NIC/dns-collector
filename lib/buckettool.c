@@ -16,6 +16,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+static int verbose;
+
 static void
 help(void)
 {
@@ -31,6 +33,8 @@ Commands:\n\
 -c\t\tconcatenate and dump all buckets\n\
 -f\t\taudit bucket file structure\n\
 -F\t\taudit and fix bucket file structure\n\
+-s\t\tshake down bucket file (without updating other structures!!!)\n\
+-v\t\tbe verbose\n\
 ");
   exit(1);
 }
@@ -220,6 +224,28 @@ fsck(int fix)
     exit(1);
 }
 
+static int
+shake_kibitz(struct obuck_header *old, oid_t new, byte *buck UNUSED)
+{
+  if (verbose)
+    {
+      printf("%08x -> ", old->oid);
+      if (new == OBUCK_OID_DELETED)
+	puts("DELETED");
+      else
+	printf("%08x\n", new);
+    }
+  return 1;
+}
+
+static void
+shake(void)
+{
+  obuck_init(1);
+  obuck_shakedown(shake_kibitz);
+  obuck_cleanup();
+}
+
 int
 main(int argc, char **argv)
 {
@@ -228,9 +254,11 @@ main(int argc, char **argv)
 
   log_init(NULL);
   op = 0;
-  while ((i = cf_getopt(argc, argv, CF_SHORT_OPTS "lLd:x:icfF", CF_NO_LONG_OPTS, NULL)) != -1)
+  while ((i = cf_getopt(argc, argv, CF_SHORT_OPTS "lLd:x:icfFsv", CF_NO_LONG_OPTS, NULL)) != -1)
     if (i == '?' || op)
       help();
+    else if (i == 'v')
+      verbose++;
     else
       {
 	op = i;
@@ -264,6 +292,9 @@ main(int argc, char **argv)
       break;
     case 'F':
       fsck(1);
+      break;
+    case 's':
+      shake();
       break;
     default:
       help();
