@@ -11,7 +11,7 @@
 
 #include <stdlib.h>
 
-#ifndef DMALLOC
+#ifndef DEBUG_DMALLOC
 
 void *
 xrealloc(void *old, uns size)

@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef DMALLOC
+#ifndef DEBUG_DMALLOC
 
 void *
 xmalloc(uns size)

@@ -71,7 +71,7 @@ void assert_failed(void) NONRET;
 
 /* Memory allocation */
 
-#ifdef DMALLOC
+#ifdef DEBUG_DMALLOC
 /*
  * The standard dmalloc macros tend to produce lots of namespace
  * conflicts and we use only xmalloc and xfree, so we can define
