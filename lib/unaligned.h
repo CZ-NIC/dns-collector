@@ -21,17 +21,17 @@
 #ifdef CPU_BIG_ENDIAN
 #define GET_U16(p) (((p)[0] << 8) | (p)[1])
 #define GET_U32(p) (((p)[0] << 24) | ((p)[1] << 16) | ((p)[2] << 8) | (p)[3])
-#define GET_U32_16(p) (((p)[0] << 16) | (p)[1])
 #define PUT_U16(p,x) (void)(((p)[0] = ((x) >> 8)), (((p)[1]) = (x)))
 #define PUT_U32(p,x) (void)(((p)[0] = ((x) >> 24)), (((p)[1]) = ((x) >> 16)), (((p)[2]) = ((x) >> 8)), (((p)[3]) = (x)))
 #else
 #define GET_U16(p) (((p)[1] << 8) | (p)[0])
 #define GET_U32(p) (((p)[3] << 24) | ((p)[2] << 16) | ((p)[1] << 8) | (p)[0])
-#define GET_U32_16(p) (((p)[1] << 16) | (p)[0])
 #define PUT_U16(p,x) (void)(((p)[1] = ((x) >> 8)), (((p)[0]) = (x)))
 #define PUT_U32(p,x) (void)(((p)[3] = ((x) >> 24)), (((p)[2]) = ((x) >> 16)), (((p)[1]) = ((x) >> 8)), (((p)[0]) = (x)))
 #endif
 #endif
+
+#define GET_U32_BE16(p) (((p)[0] << 16) | (p)[1])
 
 #ifdef CPU_BIG_ENDIAN
 #define GET_U40(p) (((u64) (p)[0] << 32) | GET_U32((p)+1))
