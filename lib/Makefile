@@ -27,7 +27,7 @@ obj/lib/hashfunc.o obj/lib/hashfunc.oo: CFLAGS += -funroll-loops
 
 obj/lib/db-test: obj/lib/db-test.o $(LIBSH)
 obj/lib/db-tool: obj/lib/db-tool.o $(LIBSH)
-obj/lib/buckettool: obj/lib/buckettool.o $(LIBSH) $(LIBCHARSET)
+obj/lib/buckettool: obj/lib/buckettool.o $(LIBSH)
 obj/lib/conf-test: obj/lib/conf-test.o $(LIBSH)
 obj/lib/sort-test: obj/lib/sort-test.o $(LIBSH)
 obj/lib/lfs-test: obj/lib/lfs-test.o $(LIBSH)
