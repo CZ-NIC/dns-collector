@@ -1,7 +1,7 @@
 /*
  *	Sherlock -- Configuration-Dependent Definitions
  *
- *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef _SHERLOCK_CONFIG_H
@@ -13,7 +13,7 @@
 
 /* Version */
 
-#define SHER_VER "2.0" SHER_SUFFIX
+#define SHER_VER "2.2a" SHER_SUFFIX
 
 /* CPU characteristics */
 
