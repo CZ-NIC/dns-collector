@@ -1,7 +1,10 @@
 # Makefile for the UCW Library (c) 1997--2004 Martin Mares <mj@ucw.cz>
 
 DIRS+=lib
+
+ifdef CONFIG_UCW_DBTOOL
 PROGS+=obj/lib/db-tool
+endif
 
 LIBUCW_MODS= \
 	alloc alloc_str realloc mempool mempool-str \
