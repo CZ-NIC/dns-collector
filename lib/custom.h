@@ -54,11 +54,11 @@ enum word_type {
 #define WORD_TYPES_HIDDEN ((1 << WT_URL1) | (1 << WT_URL2) | (1 << WT_FILE))
 
 /* These types are separated out when printing contexts */
-#define WORD_TYPES_META (WORD_TYPES_HIDDEN | (1 << WT_TITLE) | (1 << WT_KEYWORD) | \
+#define WORD_TYPES_META ((1 << WT_TITLE) | (1 << WT_KEYWORD) | \
 	(1 << WT_META) | (1 << WT_CAT_TITLE) | (1 << WT_CAT_DESC))
 
 /* These types are always matched without accents if accent mode is set to "auto" */
-#define WORD_TYPES_NO_AUTO_ACCENT ((1 << WT_URL1) | (1 << WT_URL2) | (1 << WT_FILE) | (1 << WT_LINK))
+#define WORD_TYPES_NO_AUTO_ACCENT ((1 << WT_URL1) | (1 << WT_URL2) | (1 << WT_FILE)
 
 /* String types */
 
