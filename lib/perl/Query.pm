@@ -235,6 +235,7 @@ sub do_parse_tree($$$$) {
 			$i++;
 		}
 	}
+	return $i;
 }
 
 sub format_tree($$$) {
