@@ -18,7 +18,7 @@
 
 static uns url_ignore_spaces;
 static uns url_ignore_underflow;
-static byte *url_component_separators = "/&?";
+static byte *url_component_separators = "";
 static uns url_min_repeat_count = 0x7fffffff;
 static uns url_max_repeat_length = 0;
 
@@ -630,6 +630,8 @@ url_has_repeated_component(byte *url)
 		if (c)
 			c++;
 	}
+	if (comps < url_min_repeat_count)
+		return 0;
 	comp = alloca(comps * sizeof(struct component));
 	for (i=0, c=url; c; i++)
 	{
