@@ -69,7 +69,7 @@ void assert_failed(void) NONRET;
 #define ASSERT(x) do { if (__builtin_constant_p(x) && !(x)) assert_failed(); } while(0)
 #endif
 
-#define CPP_ASSERT(name,x) typedef char _CPP_ASSERT_##name[!!(x)-1]
+#define COMPILE_ASSERT(name,x) typedef char _COMPILE_ASSERT_##name[!!(x)-1]
 
 #ifdef LOCAL_DEBUG
 #define DBG(x,y...) log(L_DEBUG, x,##y)
