@@ -66,20 +66,18 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
   }
   volatile sh_sighandler_t old_handler = signal_handler[SIGSEGV];
   signal_handler[SIGSEGV] = sigsegv_handler;
-  int len, err;
+  int len;
   if (!setjmp(safe_decompress_jump))
   {
     buf->ptr = buf->start + buf->len - lock_offset;
     len = lizard_decompress(in, buf->ptr);
-    err = errno;
   }
   else
   {
     buf->ptr = NULL;
     len = -1;
-    err = EFAULT;
+    errno = EFAULT;
   }
   signal_handler[SIGSEGV] = old_handler;
-  errno = err;
   return len;
 }
