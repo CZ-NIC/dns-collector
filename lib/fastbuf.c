@@ -314,14 +314,19 @@ bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uns l)
 
       favail = bdirect_read_prepare(f, &fptr);
       if (!favail)
-	die("bbcopy: source exhausted");
+	{
+	  if (l == ~0U)
+	    return;
+	  die("bbcopy: source exhausted");
+	}
       tavail = bdirect_write_prepare(t, &tptr);
       n = MIN(l, favail);
       n = MIN(n, tavail);
       memcpy(tptr, fptr, n);
       bdirect_read_commit(f, fptr + n);
       bdirect_write_commit(t, tptr + n);
-      l -= n;
+      if (l != ~0U)
+	l -= n;
     }
 }
 
