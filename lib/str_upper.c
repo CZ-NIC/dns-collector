@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Uppercase Map
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
 
 #include "lib/chartype.h"

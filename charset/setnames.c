@@ -7,11 +7,10 @@
  *	of the GNU General Public License.
  */
 
-#include <stdio.h>
-#include <string.h>
-
 #include "lib/lib.h"
-#include "charconv.h"
+#include "charset/charconv.h"
+
+#include <string.h>
 
 char *cs_names[] = {
 	"US-ASCII",

@@ -1,13 +1,12 @@
 /*
  *	The UniCode Library
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
  */
 
 #ifndef _UNICODE_H
 #define _UNICODE_H
 
-#include "lib/config.h"
 #include "lib/chartype.h"
 
 extern byte *_U_cat[], *_U_sig[];

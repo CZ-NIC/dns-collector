@@ -1,11 +1,14 @@
 /*
  *	Sherlock Library -- Large File Support
  *
- *	(c) 1999--2000 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1999--2000 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef _SHERLOCK_LFS_H
 #define _SHERLOCK_LFS_H
+
+#include <fcntl.h>
+#include <unistd.h>
 
 #ifdef SHERLOCK_CONFIG_LFS
 

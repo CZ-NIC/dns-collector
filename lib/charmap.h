@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Character Code Map (UTF-8 Version)
  *
- *	(c) 1998 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1998 Martin Mares <mj@ucw.cz>
  */
 
 /* Syntax: CHAR(code, uppercase, unaccented_version, accent_code, category) */

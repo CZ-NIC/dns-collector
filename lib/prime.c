@@ -1,11 +1,8 @@
 /*
  *	Sherlock Library -- Prime Number Tests
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
-
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "lib/lib.h"
 
@@ -61,7 +58,9 @@ nextprime(uns x)			/* Returns some prime greater than X, usually the next one or
     }
 }
 
-#ifdef PRIME_DEBUG
+#ifdef TEST
+
+#include <stdio.h>
 
 int
 main(int argc, char **argv)

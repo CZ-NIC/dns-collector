@@ -1,16 +1,13 @@
 /*
  *	Sherlock Library -- MD5 Binary <-> Hex Conversions
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
 
 #include "lib/lib.h"
 #include "lib/chartype.h"
+
+#include <stdio.h>
 
 void
 md5_to_hex(byte *s, byte *d)

@@ -1,13 +1,27 @@
 /*
  *	Sherlock Library -- Miscellaneous Functions
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
+ */
+
+/*
+ *  This file should be included as the very first include in all
+ *  source files, especially before all OS includes since it sets
+ *  up libc feature macros.
  */
 
 #ifndef _SHERLOCK_LIB_H
 #define _SHERLOCK_LIB_H
 
 #include "lib/config.h"
+
+/* Tell libc we're going to use all extensions available */
+
+#define _GNU_SOURCE
+
+#ifndef NULL
+#define NULL ((void *)0)
+#endif
 
 /* Ugly structure handling macros */
 
@@ -71,47 +85,6 @@ int match_ct_patt(byte *, byte *);
 /* Binary log */
 
 int log2(u32);
-
-/* obj.c */
-
-/* FIXME: What to do with this? */
-
-struct odes {				/* Object description */
-  struct oattr *attrs;
-  struct mempool *pool;
-};
-
-struct oattr {				/* Object attribute */
-  struct oattr *next, *same;
-  byte attr;
-  byte val[1];
-};
-
-void obj_dump(struct odes *);
-struct odes *obj_fload(FILE *, byte *);
-struct odes *obj_new(void);
-struct odes *obj_load(byte *);
-void obj_fwrite(FILE *, struct odes *);
-void obj_write(byte *, struct odes *);
-void obj_free(struct odes *);
-struct oattr *find_attr(struct odes *, uns);
-struct oattr *find_attr_last(struct odes *, uns);
-uns del_attr(struct odes *, struct oattr *);
-byte *find_aval(struct odes *, uns);
-struct oattr *set_attr(struct odes *, uns, byte *);
-struct oattr *set_attr_num(struct odes *, uns, uns);
-struct oattr *add_attr(struct odes *, struct oattr *, uns, byte *);
-struct oattr *prepend_attr(struct odes *, uns, byte *);
-
-/* oname.c */
-
-/* FIXME: Kill? */
-
-#define OID_MIN 0x10000		/* Values less than this have special meaning */
-
-oid_t new_oid(uns);
-void mk_obj_name(byte *, oid_t, byte *);
-int dump_obj_to_file(byte *, oid_t, struct odes *, int);
 
 /* wordsplit.c */
 

@@ -1,15 +1,15 @@
 /*
  *	Sherlock Library -- Regular Expressions
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
+
+#include "lib/lib.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <regex.h>
-
-#include "lib/lib.h"
 
 #define INITIAL_MEM 1024		/* Initial space allocated for each pattern */
 

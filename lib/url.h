@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- URL Functions
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
 
 #define MAX_URL_SIZE 1024

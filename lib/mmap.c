@@ -1,16 +1,16 @@
 /*
  *	Sherlock Library -- Mapping of Files
  *
- *	(c) 1999 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1999 Martin Mares <mj@ucw.cz>
  */
+
+#include "lib/lib.h"
 
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-
-#include "lib/lib.h"
 
 #ifndef MAP_FAILED
 #define MAP_FAILED ((void *)-1L)

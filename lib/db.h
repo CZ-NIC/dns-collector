@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Database Management Routines
  *
- *	(c) 1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1999 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef _SHERLOCK_DB_H

@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Memory Pools
  *
- *	(c) 1997--1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--1999 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef POOL_ALIGN

@@ -4,14 +4,14 @@
  *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
  */
 
+#include "lib/lib.h"
+#include "lib/fastbuf.h"
+#include "lib/lfs.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
-
-#include "lib/lib.h"
-#include "lib/fastbuf.h"
-#include "lib/lfs.h"
 
 static int
 bfd_refill(struct fastbuf *f)

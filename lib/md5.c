@@ -15,8 +15,10 @@
  * will fill a supplied 16-byte array with the digest.
  */
 
-#include <string.h>		/* for memcpy() */
+#include "lib/lib.h"
 #include "lib/md5.h"
+
+#include <string.h>		/* for memcpy() */
 
 #ifndef HIGHFIRST
 #define byteReverse(buf, len)	/* Nothing */

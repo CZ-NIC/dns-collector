@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Database Manager -- Tests and Benchmarks
  *
- *	(c) 1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1999 Martin Mares <mj@ucw.cz>
  */
 
 #if 1

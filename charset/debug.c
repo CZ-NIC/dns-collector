@@ -1,10 +1,8 @@
 /*
  *	The UniCode Library -- Debugging Support Functions
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
-
-#include <stdio.h>
 
 #include "lib/lib.h"
 #include "charset/unicode.h"

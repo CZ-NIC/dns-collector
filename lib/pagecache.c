@@ -1,18 +1,18 @@
 /*
  *	Sherlock Library -- File Page Cache
  *
- *	(c) 1999--2000 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1999--2000 Martin Mares <mj@ucw.cz>
  */
+
+#include "lib/lib.h"
+#include "lib/pagecache.h"
+#include "lib/lfs.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
-
-#include "lib/lib.h"
-#include "lib/pagecache.h"
-#include "lib/lfs.h"
 
 struct page_cache {
   list free_pages;			/* LRU queue of free non-dirty pages */

@@ -7,12 +7,9 @@
  *	of the GNU General Public License.
  */
 
+#include "lib/lib.h"
 #include "charset/charconv.h"
 #include "charset/chartable.h"
-
-#ifndef NULL
-#define NULL ((void *)0)
-#endif
 
 void
 conv_init(struct conv_context *c)

@@ -1,8 +1,10 @@
 /*
  *	Sherlock Library -- Logging
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
+
+#include "lib/lib.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,8 +12,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/time.h>
-
-#include "lib/lib.h"
 
 static byte *progname = "???";
 static pid_t pid;

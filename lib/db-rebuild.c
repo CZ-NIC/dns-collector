@@ -4,14 +4,14 @@
  *	(c) 2000 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
  */
 
+#include "lib/db.c"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-
-#include "lib/db.c"
 
 int
 main(int argc, char **argv)

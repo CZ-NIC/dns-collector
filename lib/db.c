@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Database Management Routines
  *
- *	(c) 1999--2000 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1999--2000 Martin Mares <mj@ucw.cz>
  */
 
 /*
@@ -19,17 +19,17 @@
  *	and we assume it's sorted.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
-
 #include "lib/lib.h"
 #include "lib/lfs.h"
 #include "lib/pagecache.h"
 #include "lib/db.h"
 #include "lib/db_internal.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 struct sdbm *
 sdbm_open(struct sdbm_options *o)

@@ -1,11 +1,8 @@
 /*
  *	Sherlock Library -- Shell-Like Pattern Matching (currently only '?' and '*')
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
-
-#include <stdio.h>
-#include <string.h>
 
 #include "lib/lib.h"
 

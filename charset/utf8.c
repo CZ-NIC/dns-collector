@@ -1,9 +1,10 @@
 /*
  *	The UniCode Library -- UTF-8 Functions
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
  */
 
+#include "lib/lib.h"
 #include "charset/unicode.h"
 
 uns

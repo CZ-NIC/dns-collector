@@ -1,13 +1,12 @@
 /*
  *	Sherlock Library -- Memory Re-allocation
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "lib/lib.h"
+
+#include <stdlib.h>
 
 void *
 xrealloc(void *old, uns size)

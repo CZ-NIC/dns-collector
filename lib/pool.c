@@ -1,14 +1,13 @@
 /*
  *	Sherlock Library -- Memory Pools (One-Time Allocation)
  *
- *	(c) 1997--1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--1999 Martin Mares <mj@ucw.cz>
  */
-
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "lib/lib.h"
 #include "lib/pools.h"
+
+#include <stdlib.h>
 
 struct memchunk {
   struct memchunk *next;

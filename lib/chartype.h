@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Character Types
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef _SHERLOCK_CHARTYPE_H

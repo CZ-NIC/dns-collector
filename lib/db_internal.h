@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Database Management Routines -- Internal Declarations
  *
- *	(c) 1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1999 Martin Mares <mj@ucw.cz>
  */
 
 #define SDBM_NUM_FREE_PAGE_POOLS 32

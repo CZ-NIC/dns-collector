@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Generic Shell-Like Pattern Matching (currently only '?' and '*')
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
 
 int

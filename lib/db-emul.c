@@ -1,15 +1,15 @@
 /*
  *	Sherlock Library -- SDBM emulator at top of GDBM
  *
- *	(c) 1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1999 Martin Mares <mj@ucw.cz>
  */
+
+#include "lib/lib.h"
+#include "lib/db.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "lib/lib.h"
-#include "lib/db.h"
 
 #include <gdbm.h>
 

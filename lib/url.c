@@ -1,16 +1,16 @@
 /*
  *	Sherlock Library -- URL Functions (according to RFC 1738 and 1808)
  *
- *	(c) 1997--1999 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--1999 Martin Mares <mj@ucw.cz>
  */
-
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 #include "lib/lib.h"
 #include "lib/url.h"
 #include "lib/chartype.h"
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 /* Escaping and de-escaping */
 

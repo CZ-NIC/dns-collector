@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Logging
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
 
 #define L_DEBUG "<0>"

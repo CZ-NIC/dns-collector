@@ -4,11 +4,11 @@
  *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 
 void bclose(struct fastbuf *f)
 {
