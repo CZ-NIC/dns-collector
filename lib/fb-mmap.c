@@ -64,8 +64,10 @@ bfmm_map_window(struct fastbuf *f)
     f->buffer = sh_mmap(f->buffer, ll, prot, MAP_SHARED | MAP_FIXED, F->fd, pos0);
   if (f->buffer == (byte *) MAP_FAILED)
     die("mmap(%s): %m", f->name);
+#ifdef MADV_SEQUENTIAL
   if (ll > PAGE_SIZE)
     madvise(f->buffer, ll, MADV_SEQUENTIAL);
+#endif
   f->bufend = f->buffer + l;
   f->bptr = f->buffer + (f->pos - pos0);
   F->window_pos = f->pos;
