@@ -37,4 +37,5 @@ struct lizard_buffer {
 
 struct lizard_buffer *lizard_alloc(uns max_len);
 void lizard_free(struct lizard_buffer *buf);
+void lizard_realloc(struct lizard_buffer *buf, uns max_len);
 int lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length);

@@ -18,16 +18,22 @@
 #include <setjmp.h>
 #include <errno.h>
 
-struct lizard_buffer *
-lizard_alloc(uns max_len)
+static void
+lizard_alloc_internal(struct lizard_buffer *buf, uns max_len)
 {
-  struct lizard_buffer *buf = xmalloc(sizeof(struct lizard_buffer));
   buf->len = ALIGN(max_len + 3, PAGE_SIZE);		// +3 due to the unaligned access
   buf->start = mmap(NULL, buf->len + PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   if (buf->start == MAP_FAILED)
     die("mmap(anonymous): %m");
   if (mprotect(buf->start + buf->len, PAGE_SIZE, PROT_NONE) < 0)
     die("mprotect: %m");
+}
+
+struct lizard_buffer *
+lizard_alloc(uns max_len)
+{
+  struct lizard_buffer *buf = xmalloc(sizeof(struct lizard_buffer));
+  lizard_alloc_internal(buf, max_len);
   buf->old_sigsegv_handler = xmalloc(sizeof(struct sigaction));
   handle_signal(SIGSEGV, buf->old_sigsegv_handler);
   return buf;
@@ -40,6 +46,13 @@ lizard_free(struct lizard_buffer *buf)
   unhandle_signal(SIGSEGV, buf->old_sigsegv_handler);
   xfree(buf->old_sigsegv_handler);
   xfree(buf);
+}
+
+void
+lizard_realloc(struct lizard_buffer *buf, uns max_len)
+{
+  munmap(buf->start, buf->len + PAGE_SIZE);
+  lizard_alloc_internal(buf, max_len);
 }
 
 static jmp_buf safe_decompress_jump;
