@@ -146,7 +146,7 @@ fsck(int fix)
   int errors = 0;
   int fatal_errors = 0;
 
-  fd = open(obuck_name, O_RDWR);
+  fd = sh_open(obuck_name, O_RDWR);
   if (fd < 0)
     die("Unable to open the bucket file %s: %m", obuck_name);
   for(;;)
