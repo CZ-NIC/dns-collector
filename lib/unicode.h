@@ -15,136 +15,147 @@
 
 #define UNI_REPLACEMENT 0xfffc
 
-#define PUT_UTF8(p,u) do {		\
-  if (u < 0x80)				\
-    *p++ = u;				\
-  else if (u < 0x800)			\
-    {					\
-      *p++ = 0xc0 | (u >> 6);		\
-      *p++ = 0x80 | (u & 0x3f);		\
-    }					\
-  else					\
-    {					\
-      *p++ = 0xe0 | (u >> 12);		\
-      *p++ = 0x80 | ((u >> 6) & 0x3f);	\
-      *p++ = 0x80 | (u & 0x3f);		\
-    }					\
-  } while(0)
+static inline byte *
+utf8_put(byte *p, uns u)
+{
+  if (u < 0x80)
+    *p++ = u;
+  else if (u < 0x800)
+    {
+      *p++ = 0xc0 | (u >> 6);
+      *p++ = 0x80 | (u & 0x3f);
+    }
+  else
+    {
+      ASSERT(u < 0x10000);
+      *p++ = 0xe0 | (u >> 12);
+      *p++ = 0x80 | ((u >> 6) & 0x3f);
+      *p++ = 0x80 | (u & 0x3f);
+    }
+  return p;
+}
 
-#define PUT_UTF8_32(p,u) do {		\
-  if (u < (1<<16))			\
-    PUT_UTF8(p,u);			\
-  else if (u < (1<<21))			\
-    {					\
-      *p++ = 0xf0 | (u >> 18);		\
-      *p++ = 0x80 | ((u >> 12) & 0x3f);	\
-      *p++ = 0x80 | ((u >> 6) & 0x3f);	\
-      *p++ = 0x80 | (u & 0x3f);		\
-    }					\
-  else if (u < (1<<26))			\
-    {					\
-      *p++ = 0xf8 | (u >> 24);		\
-      *p++ = 0x80 | ((u >> 18) & 0x3f);	\
-      *p++ = 0x80 | ((u >> 12) & 0x3f);	\
-      *p++ = 0x80 | ((u >> 6) & 0x3f);	\
-      *p++ = 0x80 | (u & 0x3f);		\
-    }					\
-  else if (u < (1U<<31))		\
-    {					\
-      *p++ = 0xfc | (u >> 30);		\
-      *p++ = 0x80 | ((u >> 24) & 0x3f);	\
-      *p++ = 0x80 | ((u >> 18) & 0x3f);	\
-      *p++ = 0x80 | ((u >> 12) & 0x3f);	\
-      *p++ = 0x80 | ((u >> 6) & 0x3f);	\
-      *p++ = 0x80 | (u & 0x3f);		\
-    }					\
-  } while(0)
+static inline byte *
+utf8_32_put(byte *p, uns u)
+{
+  if (u < 0x80)
+    *p++ = u;
+  else if (u < 0x800)
+    {
+      *p++ = 0xc0 | (u >> 6);
+      goto put1;
+    }
+  else if (u < (1<<16))
+    {
+      *p++ = 0xe0 | (u >> 12);
+      goto put2;
+    }
+  else if (u < (1<<21))
+    {
+      *p++ = 0xf0 | (u >> 18);
+      goto put3;
+    }
+  else if (u < (1<<26))
+    {
+      *p++ = 0xf8 | (u >> 24);
+      goto put4;
+    }
+  else if (u < (1U<<31))
+    {
+      *p++ = 0xfc | (u >> 30);
+      *p++ = 0x80 | ((u >> 24) & 0x3f);
+put4: *p++ = 0x80 | ((u >> 18) & 0x3f);
+put3: *p++ = 0x80 | ((u >> 12) & 0x3f);
+put2: *p++ = 0x80 | ((u >> 6) & 0x3f);
+put1: *p++ = 0x80 | (u & 0x3f);
+    }
+  else
+    ASSERT(0);
+}
 
-#define IS_UTF8(c) ((c) >= 0xc0)
+#define UTF8_GET_NEXT if (unlikely((*p & 0xc0) != 0x80)) goto bad; u = (u << 6) | (*p++ & 0x3f)
 
-#define GET_UTF8_CHAR(p,u) do {		\
-    if (*p >= 0xf0)			\
-      {	/* Too large, use replacement char */	\
-	p++;				\
-	while ((*p & 0xc0) == 0x80)	\
-	  p++;				\
-	u = UNI_REPLACEMENT;		\
-      }					\
-    else if (*p >= 0xe0)		\
-      {					\
-	u = *p++ & 0x0f;		\
-	if ((*p & 0xc0) == 0x80)       	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-	if ((*p & 0xc0) == 0x80)	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-      }					\
-    else				\
-      {					\
-	u = *p++ & 0x1f;		\
-	if ((*p & 0xc0) == 0x80)	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-      }					\
-  } while (0)				\
+static inline const byte *
+utf8_get(const byte *p, uns *uu)
+{
+  uns u = *p++;
+  if (u < 0x80)
+    ;
+  else if (unlikely(u < 0xc0))
+    {
+      /* Incorrect byte sequence */
+    bad:
+      u = UNI_REPLACEMENT;
+    }
+  else if (u < 0xe0)
+    {
+      u &= 0x1f;
+      UTF8_GET_NEXT;
+    }
+  else if (likely(u < 0xf0))
+    {
+      u &= 0x0f;
+      UTF8_GET_NEXT;
+      UTF8_GET_NEXT;
+    }
+  else
+    goto bad;
+  *uu = u;
+  return p;
+}
 
-#define GET_UTF8_32_CHAR(p,u) do {	\
-    if (*p < 0xf0)			\
-      GET_UTF8_CHAR(p,u);		\
-    else if (*p < 0xf8)			\
-      {					\
-	u = *p++ & 0x07;		\
-	if ((*p & 0xc0) == 0x80)       	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-	if ((*p & 0xc0) == 0x80)	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-	if ((*p & 0xc0) == 0x80)	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-      }					\
-    else if (*p < 0xfc)			\
-      {					\
-	u = *p++ & 0x03;		\
-	if ((*p & 0xc0) == 0x80)       	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-	if ((*p & 0xc0) == 0x80)       	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-	if ((*p & 0xc0) == 0x80)	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-	if ((*p & 0xc0) == 0x80)	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-      }					\
-    else if (*p < 0xfe)			\
-      {					\
-	u = *p++ & 0x01;		\
-	if ((*p & 0xc0) == 0x80)       	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-	if ((*p & 0xc0) == 0x80)       	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-	if ((*p & 0xc0) == 0x80)       	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-	if ((*p & 0xc0) == 0x80)	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-	if ((*p & 0xc0) == 0x80)	\
-	  u = (u << 6) | (*p++ & 0x3f);	\
-      }					\
-    else				\
-      {	/* Too large, use replacement char */	\
-	p++;				\
-	while ((*p & 0xc0) == 0x80)	\
-	  p++;				\
-	u = UNI_REPLACEMENT;		\
-      }					\
-  } while (0)				\
+static inline byte *
+utf8_32_get(byte *p, uns *uu)
+{
+  uns u = *p++;
+  if (u < 0x80)
+    ;
+  else if (unlikely(u < 0xc0))
+    {
+      /* Incorrect byte sequence */
+    bad:
+      u = UNI_REPLACEMENT;
+    }
+  else if (u < 0xe0)
+    {
+      u &= 0x1f;
+      goto get1;
+    }
+  else if (u < 0xf0)
+    {
+      u &= 0x0f;
+      goto get2;
+    }
+  else if (u < 0xf8)
+    {
+      u &= 0x07;
+      goto get3;
+    }
+  else if (u < 0xfc)
+    {
+      u &= 0x03;
+      goto get4;
+    }
+  else if (u < 0xfe)
+    {
+      u &= 0x01;
+      UTF8_GET_NEXT;
+get4: UTF8_GET_NEXT;
+get3: UTF8_GET_NEXT;
+get2: UTF8_GET_NEXT;
+get1: UTF8_GET_NEXT;
+    }
+  else
+    goto bad;
+  *uu = u;
+  return p;
+}
 
-#define GET_UTF8(p,u)			\
-    if (IS_UTF8(*p))			\
-      GET_UTF8_CHAR(p,u);		\
-    else				\
-      u = *p++
+#define PUT_UTF8(p,u) p = utf8_put(p, u)
+#define GET_UTF8(p,u) p = (byte*)utf8_get(p, &(u))
 
-#define GET_UTF8_32(p,u)		\
-    if (IS_UTF8(*p))			\
-      GET_UTF8_32_CHAR(p,u);		\
-    else				\
-      u = *p++
+#define PUT_UTF8_32(p,u) p = utf8_32_put(p, u)
+#define GET_UTF8_32(p,u) p = (byte*)utf8_32_get(p, &(u))
 
 #define UTF8_SKIP(p) do {				\
     uns c = *p++;					\
