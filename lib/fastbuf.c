@@ -290,7 +290,7 @@ bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uns l)
       uns favail, tavail, n;
 
       favail = bdirect_read_prepare(f, &fptr);
-      if (favail == (uns)EOF)
+      if (!favail)
 	die("bbcopy: source exhausted");
       tavail = bdirect_write_prepare(t, &tptr);
       n = MIN(l, favail);

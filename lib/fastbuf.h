@@ -65,7 +65,7 @@ struct fastbuf {
   int (*config)(struct fastbuf *, uns, int);	/* Configure the stream */
 };
 
-/* FastIO on standard files */
+/* FastIO on standard files (specify buffer size 0 to enable mmaping) */
 
 struct fastbuf *bopen(byte *name, uns mode, uns buffer);
 struct fastbuf *bopen_tmp(uns buffer);
@@ -315,11 +315,11 @@ bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
 
 /* Direct I/O on buffers */
 
-static inline int
+static inline uns
 bdirect_read_prepare(struct fastbuf *f, byte **buf)
 {
   if (f->bptr == f->bstop && !f->refill(f))
-    return EOF;
+    return 0;
   *buf = f->bptr;
   return f->bstop - f->bptr;
 }
@@ -330,7 +330,7 @@ bdirect_read_commit(struct fastbuf *f, byte *pos)
   f->bptr = pos;
 }
 
-static inline int
+static inline uns
 bdirect_write_prepare(struct fastbuf *f, byte **buf)
 {
   if (f->bptr == f->bufend)
