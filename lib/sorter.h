@@ -67,6 +67,9 @@
  *			from the list of items, but not deallocated, so
  *			the remaining item can freely reference data of the
  *			other one.
+ *
+ *  After including this file, all parameter macros are automatically
+ *  undef'd.
  */
 
 /* Declarations of externals from sorter.c */
@@ -410,5 +413,14 @@ struct fastbuf *fb1, struct fastbuf *fb2
 #undef LESS
 #undef SWAP
 #undef SORT_NODE
+#undef SORT_KEY
+#undef SORT_PREFIX
+#undef SORT_UNIFY
+#undef SORT_DELETE_INPUT
+#undef SORT_INPUT_FILE
+#undef SORT_INPUT_FB
+#undef SORT_INPUT_FBPAIR
+#undef SORT_OUTPUT_FILE
+#undef SORT_OUTPUT_FB
 
 #endif		/* !SORT_DECLARE_ONLY */
