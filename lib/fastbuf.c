@@ -276,19 +276,13 @@ bgets(struct fastbuf *f, byte *b, uns l)
 void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
 {
   uns rf = f->bstop - f->bptr;
-  uns rt = t->bufend - t->bptr;
 
   if (!l)
     return;
-  if (rf && rt)
+  if (rf)
     {
-      uns k = l;
-      if (k > rf)
-	k = rf;
-      if (k > rt)
-	k = rt;
-      memcpy(t->bptr, f->bptr, k);
-      t->bptr += k;
+      uns k = (rf <= l) ? rf : l;
+      bwrite(t, f->bptr, k);
       f->bptr += k;
       l -= k;
     }
@@ -298,6 +292,7 @@ void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
       if ((uns) read(f->fd, t->buffer, t->buflen) != t->buflen)
 	die("bbcopy: %s exhausted", f->name);
       f->fdpos += t->buflen;
+      f->bstop = f->bptr = f->buffer;
       t->bptr = t->bufend;
       l -= t->buflen;
     }
