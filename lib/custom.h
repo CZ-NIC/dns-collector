@@ -4,10 +4,6 @@
  *	(c) 2001--2002 Martin Mares <mj@ucw.cz>
  */
 
-/* Name of this customization (version suffix) */
-
-#define SHER_SUFFIX ""
-
 /* Word types */
 
 enum word_type {
@@ -84,34 +80,79 @@ enum string_type {
 /*
  *  Definitions of custom attributes:
  *
- *  INT_ATTR(type, id, oattr, keyword, get_func, parse_func)
+ *  First of all, you need to define your own card_attr fields which will
+ *  contain your attributes: CUSTOM_CARD_ATTRS lists them.
+ *  Please order the attributes by decreasing size to get optimum padding.
  *
- *  type	data type used to hold the value
+ *  Then define custom_create_attrs() which will get the object description
+ *  and set your card_attr fields accordingly.
+ *
+ *  Finally, you have to define CUSTOM_ATTRS with matching rules:
+ *
+ *  INT_ATTR(id, keyword, get_func, parse_func) -- unsigned integer attribute
+ *
  *  id		C identifier of the attribute
- *  oattr	object attribute we get the value from
  *  keywd	search server keyword for the attribute
- *  void get_func(struct card_attr *ca, byte *attr)
- *		parse object attribute (may be NULL)
+ *  type get_func(struct card_attr *ca, byte *attr)
+ *		get attribute value from the card_attr
  *  byte *parse_func(u32 *dest, byte *value, uns intval)
  *		parse value in query (returns error message or NULL)
  *		for KEYWD = "string", it gets value="string", intval=0
  *		for KEYWD = num, it gets value=NULL, intval=num.
  *
- *  A good place for definitions of the functions is lib/custom.c.
+ *  SMALL_SET_ATTR(id, keyword, get_func, parse_func)
+ *    -- integers 0..31 with set matching
  *
- *  Please order the attributes by decreasing size to get optimum padding.
+ *  A good place for definitions of the functions is lib/custom.c.
  */
 
-#if 0		/* Example */
-
-#define CUSTOM_ATTRS INT_ATTR(u32, lm, 'L', LM, custom_get_lm, custom_parse_lm)
-
 struct card_attr;
-void custom_get_lm(struct card_attr *ca, byte *attr);
-byte *custom_parse_lm(u32 *dest, byte *value, uns intval);
+struct odes;
+
+#ifdef CONFIG_IMAGES
+
+/*
+ *  We store several image properties to card_attr->image_flags and
+ *  match them as custom attributes. The image_flags byte contains:
+ *
+ *  bits 0--1	image format (0: not an image, 1: JPEG, 2: PNG, 3: GIF)
+ *  bits 2--3   image size (0: <=100x100, 1: <=320x200, 2: <=640x480, 3: other)
+ *  bits 4--5   image colors (0: grayscale, 1: <=16, 2: <=256, 3: >256)
+ */
+
+#define CUSTOM_CARD_ATTRS \
+	byte image_flags;
+
+#define CUSTOM_ATTRS \
+	SMALL_SET_ATTR(ifmt, IMGTYPE, custom_it_get, custom_it_parse)		\
+	SMALL_SET_ATTR(isize, IMGSIZE, custom_is_get, custom_is_parse)		\
+	SMALL_SET_ATTR(icolors, IMGCOLORS, custom_ic_get, custom_ic_parse)
+
+void custom_create_attrs(struct odes *odes, struct card_attr *ca);
+
+/* These must be macros instead of inline functions, struct card_attr is not fully defined yet */
+#define custom_it_get(ca) ((ca)->image_flags & 3)
+#define custom_is_get(ca) (((ca)->image_flags >> 2) & 3)
+#define custom_ic_get(ca) (((ca)->image_flags >> 4) & 3)
+
+byte *custom_it_parse(u32 *dest, byte *value, uns intval);
+byte *custom_is_parse(u32 *dest, byte *value, uns intval);
+byte *custom_ic_parse(u32 *dest, byte *value, uns intval);
 
 #else
 
+#if 0
+
+/* FIXME: Add a simple example */
+
+#else
+
+/* No custom attributes defined */
+
+#define CUSTOM_CARD_ATTRS
 #define CUSTOM_ATTRS
+static inline void custom_create_attrs(struct odes *odes UNUSED, struct card_attr *ca UNUSED) { }
+
+#endif
 
 #endif

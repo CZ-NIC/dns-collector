@@ -8,6 +8,7 @@
 #define _SHERLOCK_INDEX_H
 
 #include "lib/fastbuf.h"
+#include SHERLOCK_CUSTOM
 #include "charset/unistream.h"
 
 /* Words */
@@ -28,9 +29,7 @@ struct index_params {
 struct card_attr {
   u32 card;				/* Reference to card description (either oid or filepos) */
   u32 site_id;
-#define INT_ATTR(t,i,o,k,g,p) t i;
-  CUSTOM_ATTRS				/* Include all custom attributes */
-#undef INT_ATTR
+  CUSTOM_CARD_ATTRS			/* Include all custom attributes */
   byte weight;
   byte flags;
   byte age;				/* Document age in pseudo-logarithmic units wrt. reference time */

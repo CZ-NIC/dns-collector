@@ -8,9 +8,9 @@ SHLIB_OBJS=alloc.o alloc_str.o ctmatch.o db.o fastbuf.o fb-file.o fb-mem.o lists
 	prime.o random.o realloc.o regex.o timer.o url.o wildmatch.o \
 	wordsplit.o str_ctype.o str_upper.o bucket.o conf.o object.o sorter.o \
 	finger.o proctitle.o ipaccess.o profile.o bitsig.o randomkey.o \
-	hashfunc.o custom.o base224.o fb-temp.o
+	hashfunc.o base224.o fb-temp.o
 
-obj/lib/libsh.a: $(addprefix obj/lib/,$(SHLIB_OBJS))
+obj/lib/libsh.a: $(addprefix obj/lib/,$(SHLIB_OBJS)) $(CUSTOM_MODULES)
 
 obj/lib/hashfunc.o: CFLAGS += -funroll-loops
 

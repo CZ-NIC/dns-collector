@@ -13,7 +13,7 @@
 
 /* Version */
 
-#define SHER_VER "2.2a" SHER_SUFFIX
+#define SHER_VER "2.2a" SHERLOCK_VERSION_SUFFIX
 
 /* Paths */
 
@@ -40,10 +40,6 @@ typedef unsigned int sh_time_t;		/* Timestamp */
 #endif
 
 typedef u32 oid_t;			/* Object ID */
-
-/* Custom stuff */
-
-#include "lib/custom.h"
 
 /* Data types and functions for accessing file positions */
 
