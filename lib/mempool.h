@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Memory Pools
  *
- *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2005 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -60,7 +60,7 @@ mp_end_string(struct mempool *p, void *stop)
   p->free = stop;
 }
 
-/* pool-str.c */
+/* mempool-str.c */
 
 char *mp_strdup(struct mempool *, char *);
 char *mp_multicat(struct mempool *, ...);
@@ -69,5 +69,10 @@ mp_strcat(struct mempool *mp, char *x, char *y)
 {
   return mp_multicat(mp, x, y, NULL);
 }
+
+/* mempool-fmt.c */
+
+char *mp_printf(struct mempool *p, char *fmt, ...);
+char *mp_vprintf(struct mempool *p, char *fmt, va_list args);
 
 #endif

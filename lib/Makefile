@@ -7,7 +7,7 @@ PROGS+=obj/lib/db-tool
 endif
 
 LIBUCW_MODS= \
-	alloc alloc_str realloc mempool mempool-str \
+	alloc alloc_str realloc mempool mempool-str mempool-fmt \
 	mmap pagecache partmap hashfunc \
 	lists sorter bitsig \
 	log log-file proctitle \
