@@ -57,7 +57,7 @@ void log_fork(void);
 
 #ifdef DEBUG
 void assert_failed(char *assertion, char *file, int line) NONRET;
-#define ASSERT(x) do { if (!(x)) assert_failed(#x, __FILE__, __LINE__); } while(0)
+#define ASSERT(x) do { if (unlikely(!(x))) assert_failed(#x, __FILE__, __LINE__); } while(0)
 #else
 void assert_failed(void) NONRET;
 #define ASSERT(x) do { if (__builtin_constant_p(x) && !(x)) assert_failed(); } while(0)
