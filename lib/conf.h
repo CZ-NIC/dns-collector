@@ -10,11 +10,8 @@
  * Allocation in configuration memory pool.
  */
 
-void *
-cfg_malloc(uns size);
-
-byte *
-cfg_stralloc(byte *s);
+void *cfg_malloc(uns size);
+byte *cfg_stralloc(byte *s);
 
 /*
  * Every module places its configuration setting into some section.  Section is
