@@ -75,8 +75,8 @@
  *  HASH_GIVE_INIT_DATA	void init_data(node *) -- initialize data fields in a
  *			newly created node. Very useful for lookup operations.
  *  HASH_GIVE_ALLOC	void *alloc(unsigned int size) -- allocate space for
- *			a node. Default is either normal or pooled allocation
- *			depending on whether we want deletions.
+ *			a node. Default is xmalloc() or pooled allocation, depending
+ *			on HASH_USE_POOL and HASH_AUTO_POOL switches.
  *			void free(void *) -- the converse.
  *
  *  ... and a couple of extra parameters:
@@ -86,9 +86,13 @@
  *  HASH_CONSERVE_SPACE	use as little space as possible.
  *  HASH_FN_BITS=n	The hash function gives only `n' significant bits.
  *  HASH_ATOMIC_TYPE=t	Atomic values are of type `t' instead of int.
- *  HASH_USE_POOL=pool	Allocate all nodes from given mempool.
- *			Collides with delete/remove functions.
+ *  HASH_USE_POOL=pool	Allocate all nodes from given mempool. Note, however, that
+ *			deallocation is not supported by mempools, so delete/remove
+ *			will leak pool memory.
  *  HASH_AUTO_POOL=size	Create a pool of the given block size automatically.
+ *  HASH_TABLE_ALLOC	The hash table itself will be allocated and freed using
+ *			the same allocation functions as the nodes instead of
+ *			the default xmalloc().
  *
  *  You also get a iterator macro at no extra charge:
  *
@@ -114,8 +118,14 @@
 
 #include <string.h>
 
+/* Initial setup of parameters */
+
 #if !defined(HASH_NODE) || !defined(HASH_PREFIX)
 #error Some of the mandatory configuration macros are missing.
+#endif
+
+#if defined(HASH_KEY_ATOMIC) && !defined(HASH_CONSERVE_SPACE)
+#define HASH_CONSERVE_SPACE
 #endif
 
 #define P(x) HASH_PREFIX(x)
@@ -167,10 +177,6 @@ struct P(table) {
 #  define HASH_GIVE_INIT_KEY
    static inline void P(init_key) (P(node) *n, HASH_ATOMIC_TYPE k)
    { HASH_KEY(n->) = k; }
-#endif
-
-#ifndef HASH_CONSERVE_SPACE
-#define HASH_CONSERVE_SPACE
 #endif
 
 #elif defined(HASH_KEY_STRING) || defined(HASH_KEY_ENDSTRING)
@@ -270,6 +276,7 @@ static inline void P(cleanup_alloc) (void) { }
 /* If the caller has requested to use his mempool, do so */
 #include "lib/mempool.h"
 static inline void * P(alloc) (unsigned int size) { return mp_alloc_fast(HASH_USE_POOL, size); }
+static inline void P(free) (void *x UNUSED) { }
 static inline void P(init_alloc) (void) { }
 static inline void P(cleanup_alloc) (void) { }
 
@@ -278,6 +285,7 @@ static inline void P(cleanup_alloc) (void) { }
 #include "lib/mempool.h"
 static struct mempool *P(pool);
 static inline void * P(alloc) (unsigned int size) { return mp_alloc_fast(P(pool), size); }
+static inline void P(free) (void *x UNUSED) { }
 static inline void P(init_alloc) (void) { P(pool) = mp_new(HASH_AUTO_POOL); }
 static inline void P(cleanup_alloc) (void) { mp_delete(P(pool)); }
 
@@ -288,6 +296,14 @@ static inline void P(free) (void *x) { xfree(x); }
 static inline void P(init_alloc) (void) { }
 static inline void P(cleanup_alloc) (void) { }
 
+#endif
+
+#ifdef HASH_TABLE_ALLOC
+static inline void * P(table_alloc) (unsigned int size) { return P(alloc)(size); }
+static inline void P(table_free) (void *x) { P(free)(x); }
+#else
+static inline void * P(table_alloc) (unsigned int size) { return xmalloc(size); }
+static inline void P(table_free) (void *x) { xfree(x); }
 #endif
 
 #ifndef HASH_DEFAULT_SIZE
@@ -303,7 +319,7 @@ static inline void P(cleanup_alloc) (void) { }
 static void P(alloc_table) (void)
 {
   T.hash_size = nextprime(T.hash_size);
-  T.ht = xmalloc(sizeof(void *) * T.hash_size);
+  T.ht = P(table_alloc)(sizeof(void *) * T.hash_size);
   bzero(T.ht, sizeof(void *) * T.hash_size);
   if (2*T.hash_size < T.hash_hard_max)
     T.hash_max = 2*T.hash_size;
@@ -343,7 +359,7 @@ static void P(cleanup) (void)
       }
 #endif
   P(cleanup_alloc)();
-  xfree(T.ht);
+  P(table_free)(T.ht);
 }
 #endif
 
@@ -363,7 +379,7 @@ static void P(rehash) (uns size)
   uns oldsize = T.hash_size;
   uns i, h;
 
-  // log(L_DEBUG, "Rehashing %d->%d at count %d", oldsize, size, T.hash_count);
+  DBG("Rehashing %d->%d at count %d", oldsize, size, T.hash_count);
   T.hash_size = size;
   P(alloc_table)();
   newt = T.ht;
@@ -379,7 +395,7 @@ static void P(rehash) (uns size)
 	  b = nb;
 	}
     }
-  xfree(oldt);
+  P(table_free)(oldt);
 }
 
 #ifdef HASH_WANT_FIND
@@ -572,3 +588,4 @@ do {											\
 #undef HASH_WANT_LOOKUP
 #undef HASH_WANT_NEW
 #undef HASH_WANT_REMOVE
+#undef HASH_TABLE_ALLOC
