@@ -21,7 +21,7 @@ bget_utf8(struct fastbuf *b)
 {
   uns u;
 
-  if (b->bptr + 5 <= b->bufend)
+  if (b->bptr + 5 <= b->bstop)
     {
       GET_UTF8(b->bptr, u);
       return u;
