@@ -29,7 +29,7 @@ void *mp_alloc_zero(struct mempool *, uns);
 
 static inline void *mp_alloc_fast(struct mempool *p, uns l)
 {
-  byte *f = (void *) (((uns) p->free + POOL_ALIGN - 1) & ~(POOL_ALIGN - 1));
+  byte *f = (void *) (((addr_int_t) p->free + POOL_ALIGN - 1) & ~(addr_int_t)(POOL_ALIGN - 1));
   byte *ee = f + l;
   if (ee > p->last)
     return mp_alloc(p, l);

@@ -1,7 +1,7 @@
 /*
  *	The UCW Library -- Miscellaneous Functions
  *
- *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2005 Martin Mares <mj@ucw.cz>
  *	(c) 2005 Tomas Valla <tom@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -24,7 +24,7 @@
 #define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))
 #define ALIGN(s, a) (((s)+a-1)&~(a-1))
 #define ALIGN_PTR(p, s) ((addr_int_t)(p) % (s) ? (typeof(p))((addr_int_t)(p) + (s) - (addr_int_t)(p) % (s)) : (p))
-#define UNALIGNED_PART(ptr, type) (((long) (ptr)) % sizeof(type))
+#define UNALIGNED_PART(ptr, type) (((addr_int_t) (ptr)) % sizeof(type))
 
 /* Some other macros */
 

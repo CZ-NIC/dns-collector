@@ -69,7 +69,7 @@ mp_alloc(struct mempool *p, uns s)
 {
   if (s <= p->threshold)
     {
-      byte *x = (byte *)(((uns) p->free + POOL_ALIGN - 1) & ~(POOL_ALIGN - 1));
+      byte *x = (byte *)(((addr_int_t) p->free + POOL_ALIGN - 1) & ~(addr_int_t)(POOL_ALIGN - 1));
       if (x + s > p->last)
 	{
 	  struct memchunk *c;
