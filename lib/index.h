@@ -108,6 +108,11 @@ fp_hash(struct fingerprint *fp)
   return fp->hash[0] ^ fp->hash[1] ^ fp->hash[2] ^ fp->hash[3];
 }
 
+/* URL keys */
+
+byte *url_key(byte *url, byte *buf);
+void url_fingerprint(byte *url, struct fingerprint *fp);
+
 /* Reading of tagged text (Unicode values, tags mapped to 0x80000000 and higher) */
 
 #define GET_TAGGED_CHAR(p,u) do {				\
