@@ -59,6 +59,16 @@ obj_read(struct fastbuf *f, struct odes *o)
 }
 
 void
+obj_read_multi(struct fastbuf *f, struct odes *o)
+{
+  /* Read a multi-part object ending with either EOF or a NUL character */
+  byte buf[MAX_ATTR_SIZE];
+  while (bpeekc(f) > 0 && bgets(f, buf, sizeof(buf)))
+    if (buf[0])
+      obj_add_attr(o, buf[0], buf+1);
+}
+
+void
 obj_write(struct fastbuf *f, struct odes *d)
 {
   for(struct oattr *a=d->attrs; a; a=a->next)
