@@ -1,7 +1,7 @@
 /*
- *	Character Set Conversion Library 1.1
+ *	Character Set Conversion Library 1.2
  *
- *	(c) 1998--2001 Martin Mares <mj@ucw.cz>
+ *	(c) 1998--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -20,9 +20,11 @@ struct conv_context {
   /* Internal variables */
 
   int (*convert)(struct conv_context *);
+  int source_charset, dest_charset;
   unsigned short int *in_to_x;
   unsigned short int *x_to_out;
-  unsigned int state, value;
+  unsigned int state, code, remains;
+  unsigned char *string_at;
 };
 
 void conv_init(struct conv_context *);

@@ -1,7 +1,7 @@
 /*
- *	Character Set Conversion Library 1.1
+ *	Character Set Conversion Library 1.2
  *
- *	(c) 1998--2001 Martin Mares <mj@ucw.cz>
+ *	(c) 1998--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -26,20 +26,123 @@ conv_none(struct conv_context *c)
   return CONV_SOURCE_END | CONV_DEST_END | CONV_SKIP;
 }
 
+enum state {
+  CLEAN,
+  SINGLE_WRITE,
+  SEQ_WRITE,
+  UTF8_READ,
+  UTF8_WRITE_START,
+  UTF8_WRITE_CONT
+};
+
 static int
-conv_from_utf8(struct conv_context *c)
+conv_slow(struct conv_context *c)
 {
-  unsigned short *x_to_out = c->x_to_out;
   const unsigned char *s = c->source;
   const unsigned char *se = c->source_end;
   unsigned char *d = c->dest;
   unsigned char *de = c->dest_end;
-  unsigned char *strings = string_table - 0x100;
-  unsigned int counter, code, cc;
 
-  if (c->state)
-    goto go_slow;
+  switch (c->state)
+    {
+    case SINGLE_WRITE:
+      if (d >= de)
+	goto cde;
+      *d++ = c->code;
+      break;
+    case SEQ_WRITE:
+      while (c->remains)
+	{
+	  if (d >= de)
+	    goto cde;
+	  *d++ = *c->string_at++;
+	  c->remains--;
+	}
+      break;
+    case UTF8_READ:
+      while (c->remains)
+	{
+	  if (s >= se)
+	    goto cse;
+	  if ((*s & 0xc0) != 0x80)
+	    {
+	      c->code = 0xfffd;
+	      break;
+	    }
+	  c->code = (c->code << 6) | (*s++ & 0x3f);
+	  c->remains--;
+	}
+      if (c->code >= 0x10000)
+	c->code = 0xfffd;
+      c->source = s;
+      c->state = 0;
+      return -1;
+    case UTF8_WRITE_START:
+      if (d >= de)
+	goto cde;
+      if (c->code < 0x80)
+	{
+	  *d++ = c->code;
+	  break;
+	}
+      else if (c->code < 0x800)
+	{
+	  *d++ = 0xc0 | (c->code >> 6);
+	  c->code <<= 10;
+	  c->remains = 1;
+	}
+      else
+	{
+	  *d++ = 0xe0 | (c->code >> 12);
+	  c->code <<= 4;
+	  c->remains = 2;
+	}
+      c->state = UTF8_WRITE_CONT;
+      /* fall-thru */
+    case UTF8_WRITE_CONT:
+      while (c->remains)
+	{
+	  if (d >= de)
+	    goto cde;
+	  *d++ = 0x80 | (c->code >> 10);
+	  c->code <<= 6;
+	  c->remains--;
+	}
+      break;
+    default:
+      ASSERT(0);
+    }
+  c->source = s;
+  c->dest = d;
+  c->state = 0;
+  return 0;
 
+ cse:
+  c->source = s;
+  return CONV_SOURCE_END;
+
+ cde:
+  c->dest = d;
+  return CONV_DEST_END;
+}
+
+static int
+conv_from_utf8(struct conv_context *c)
+{
+  unsigned short *x_to_out = c->x_to_out;
+  const unsigned char *s, *se;
+  unsigned char *d, *de, *k;
+  unsigned int code, cc, len;
+  int e;
+
+  if (unlikely(c->state))
+    goto slow;
+
+main:
+  s = c->source;
+  se = c->source_end;
+  d = c->dest;
+  de = c->dest_end;
   while (s < se)			/* Optimized for speed, beware of spaghetti code */
     {
       cc = *s++;
@@ -48,7 +151,7 @@ conv_from_utf8(struct conv_context *c)
       else if (cc >= 0xc0)
 	{
 	  if (s + 6 > se)
-	    goto go_slow_1;
+	    goto send_utf;
 	  if (cc < 0xe0)
 	    {
 	      if ((s[0] & 0xc0) != 0x80)
@@ -82,88 +185,90 @@ conv_from_utf8(struct conv_context *c)
 	nocode:
 	  code = 0xfffd;
 	}
-    uni_again:
+    got_code:
       code = x_to_out[uni_to_x[code >> 8U][code & 0xff]];
-    code_again:
       if (code < 0x100)
 	{
 	  if (d >= de)
-	    goto dend;
+	    goto dend_char;
 	  *d++ = code;
 	}
       else
 	{
-	  unsigned char *k = strings + code;
-	  unsigned int len = *k++;
-
+	  k = string_table + code - 0x100;
+	  len = *k++;
 	  if (d + len > de)
-	    goto dend;
+	    goto dend_str;
 	  while (len--)
 	    *d++ = *k++;
 	}
     }
-  c->state = 0;
-send_noreset:
   c->source = s;
   c->dest = d;
   return CONV_SOURCE_END;
 
-dend:
-  c->state = ~0;
-  c->value = code;
-  c->source = s;
-  c->dest = d;
-  return CONV_DEST_END;
-
-go_slow:
-  code = c->value;
-  counter = c->state;
-  if (counter == ~0U)
-    goto code_again;
-  goto go_slow_2;
-
-go_slow_1:
-  if (cc < 0xe0) { code = cc & 0x1f; counter = 1; }
-  else if (cc < 0xf0) { code = cc & 0x0f; counter = 2; }
+send_utf:
+  c->state = UTF8_WRITE_START;
+  if (cc < 0xe0)		{ c->code = cc & 0x1f; c->remains = 1; }
+  else if (cc < 0xf0)		{ c->code = cc & 0x0f; c->remains = 2; }
   else
     {
-      code = ~0;
-      if (cc < 0xf8) counter = 3;
-      else if (cc < 0xfc) counter = 4;
-      else if (cc < 0xfe) counter = 5;
+      c->code = ~0U;
+      if (cc < 0xf8)		c->remains = 3;
+      else if (cc < 0xfc)      	c->remains = 4;
+      else if (cc < 0xfe)	c->remains = 5;
       else goto nocode;
     }
-go_slow_2:
-  while (counter)
+  goto go_slow;
+
+dend_str:
+  c->state = SEQ_WRITE;
+  c->string_at = k;
+  c->remains = len;
+
+dend_char:
+  c->state = SINGLE_WRITE;
+  c->code = code;
+  goto go_slow;
+go_slow:
+  c->source = s;
+  c->dest = d;
+slow:
+  e = conv_slow(c);
+  if (e < 0)
     {
-      if (s >= se)
-	{
-	  c->state = counter;
-	  c->value = code;
-	  goto send_noreset;
-	}
-      if ((*s & 0xc0) != 0x80)
-	goto nocode;
-      code = (code << 6) | (*s++ & 0x3f);
-      counter--;
+      code = c->code;
+      s = c->source;
+      se = c->source_end;
+      d = c->dest;
+      de = c->dest_end;
+      goto got_code;
     }
-  if (code >= 0x10000)
-    goto nocode;
-  goto uni_again;
+  if (e)
+    return e;
+  goto main;
 }
 
 static int
 conv_to_utf8(struct conv_context *c)
 {
   unsigned short *in_to_x = c->in_to_x;
-  const unsigned char *s = c->source;
-  const unsigned char *se = c->source_end;
-  unsigned char *d = c->dest;
-  unsigned char *de = c->dest_end;
+  const unsigned char *s, *se;
+  unsigned char *d, *de;
+  unsigned int code;
+  int e;
 
+  if (unlikely(c->state))
+    goto slow;
+
+main:
+  s = c->source;
+  se = c->source_end;
+  d = c->dest;
+  de = c->dest_end;
   while (s < se)
     {
-      unsigned int code = x_to_uni[in_to_x[*s]];
+      code = x_to_uni[in_to_x[*s]];
       if (code < 0x80)
 	{
 	  if (d >= de)
@@ -173,14 +278,14 @@ conv_to_utf8(struct conv_context *c)
       else if (code < 0x800)
 	{
 	  if (d + 2 > de)
-	    goto dend;
+	    goto dend_utf;
 	  *d++ = 0xc0 | (code >> 6);
 	  *d++ = 0x80 | (code & 0x3f);
 	}
       else
 	{
 	  if (d + 3 > de)
-	    goto dend;
+	    goto dend_utf;
 	  *d++ = 0xe0 | (code >> 12);
 	  *d++ = 0x80 | ((code >> 6) & 0x3f);
 	  *d++ = 0x80 | (code & 0x3f);
@@ -195,6 +300,17 @@ dend:
   c->source = s;
   c->dest = d;
   return CONV_DEST_END;
+
+dend_utf:
+  c->source = s;
+  c->dest = d;
+  c->state = UTF8_WRITE_START;
+  c->code = code;
+slow:
+  e = conv_slow(c);
+  if (e)
+    return e;
+  goto main;
 }
 
 static int
@@ -202,28 +318,33 @@ conv_standard(struct conv_context *c)
 {
   unsigned short *in_to_x = c->in_to_x;
   unsigned short *x_to_out = c->x_to_out;
-  const unsigned char *s = c->source;
-  const unsigned char *se = c->source_end;
-  unsigned char *d = c->dest;
-  unsigned char *de = c->dest_end;
-  unsigned char *strings = string_table - 0x100;
+  const unsigned char *s, *se;
+  unsigned char *d, *de, *k;
+  unsigned int len, e;
 
+  if (unlikely(c->state))
+    goto slow;
+
+main:
+  s = c->source;
+  se = c->source_end;
+  d = c->dest;
+  de = c->dest_end;
   while (s < se)
     {
       unsigned int code = x_to_out[in_to_x[*s]];
       if (code < 0x100)
 	{
-	  if (d >= de)
+	  if (unlikely(d >= de))
 	    goto dend;
 	  *d++ = code;
 	}
       else
 	{
-	  unsigned char *k = strings + code;
-	  unsigned int len = *k++;
-
-	  if (d + len > de)
-	    goto dend;
+	  k = string_table + code - 0x100;
+	  len = *k++;
+	  if (unlikely(d + len > de))
+	    goto dend_str;
 	  while (len--)
 	    *d++ = *k++;
 	}
@@ -237,11 +358,25 @@ dend:
   c->source = s;
   c->dest = d;
   return CONV_DEST_END;
+
+dend_str:
+  c->source = s;
+  c->dest = d;
+  c->state = SEQ_WRITE;
+  c->string_at = k;
+  c->remains = len;
+slow:
+  e = conv_slow(c);
+  if (e)
+    return e;
+  goto main;
 }
 
 void
 conv_set_charset(struct conv_context *c, int src, int dest)
 {
+  c->source_charset = src;
+  c->dest_charset = dest;
   if (src == dest)
     c->convert = conv_none;
   else
