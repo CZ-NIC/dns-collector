@@ -94,7 +94,7 @@ flush_page(struct page_cache *c, struct page *p)
   s = write(fd, p->data, c->page_size);
   if (s < 0)
     die("pgc_write(%d): %m", fd);
-  if (s != c->page_size)
+  if (s != (int) c->page_size)
     die("pgc_write(%d): incomplete page (only %d of %d)", s, c->page_size);
   p->flags &= ~PG_FLAG_DIRTY;
 }
@@ -216,7 +216,7 @@ pgc_read(struct page_cache *c, int fd, sh_off_t pos)
       s = read(fd, p->data, c->page_size);
       if (s < 0)
 	die("pgc_read(%d): %m", fd);
-      if (s != c->page_size)
+      if (s != (int) c->page_size)
 	die("pgc_read(%d): incomplete page (only %d of %d)", s, c->page_size);
       p->flags |= PG_FLAG_VALID;
     }
