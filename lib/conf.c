@@ -53,6 +53,16 @@ void cf_register(struct cfitem *items)
 	cfsection=items;
 }
 
+int cf_item_count(void)
+{
+	struct cfitem *sect, *item;
+	int count = 0;
+	for (sect = cfsection; sect; sect = sect->var)
+		for (item = sect+1; sect->type; sect++)
+			count++;
+	return count;
+}
+
 struct cfitem *cf_get_item(byte *sect, byte *name)
 {
 	struct cfitem *item;

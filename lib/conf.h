@@ -39,6 +39,7 @@ void cf_register(struct cfitem *items);
  * Direct setting of configuration items and parsing the configuration file.
  */
 
+int cf_item_count(void);
 struct cfitem *cf_get_item(byte *sect, byte *name);
 byte *cf_set_item(byte *sect, byte *name, byte *value);
 void cf_read(byte *filename);
