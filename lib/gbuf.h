@@ -58,3 +58,4 @@ GBUF_PREFIX(grow)(BUF_T *b, uns len)
 
 #undef	GBUF_TYPE
 #undef	GBUF_PREFIX
+#undef	BUF_T
