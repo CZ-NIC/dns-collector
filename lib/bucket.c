@@ -79,8 +79,8 @@ obuck_broken(char *msg, sh_off_t pos)
  *			byte0		byte1
  *	Read		<read>		<read>
  *	Write		<write>		<write>
- *	Append		-		<write>
- *	Scan		<read>		-
+ *	Append		<write>		-
+ *	Scan		-		<read>
  */
 
 static inline void
