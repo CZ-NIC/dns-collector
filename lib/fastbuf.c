@@ -187,7 +187,7 @@ void bput5_slow(struct fastbuf *f, u64 o)
 #endif
 }
 
-uns bread_slow(struct fastbuf *f, void *b, uns l)
+uns bread_slow(struct fastbuf *f, void *b, uns l, uns check)
 {
   uns total = 0;
   while (l)
@@ -209,6 +209,8 @@ uns bread_slow(struct fastbuf *f, void *b, uns l)
       l -= k;
       total += k;
     }
+  if (check && total && total != l)
+    die("breadb: short read");
   return total;
 }
 

@@ -268,7 +268,7 @@ static inline void bput5(struct fastbuf *f, u64 l)
     bput5_slow(f, l);
 }
 
-uns bread_slow(struct fastbuf *f, void *b, uns l);
+uns bread_slow(struct fastbuf *f, void *b, uns l, uns check);
 static inline uns bread(struct fastbuf *f, void *b, uns l)
 {
   if (f->bptr + l <= f->bstop)
@@ -278,7 +278,19 @@ static inline uns bread(struct fastbuf *f, void *b, uns l)
       return l;
     }
   else
-    return bread_slow(f, b, l);
+    return bread_slow(f, b, l, 0);
+}
+
+static inline uns breadb(struct fastbuf *f, void *b, uns l)
+{
+  if (f->bptr + l <= f->bstop)
+    {
+      memcpy(b, f->bptr, l);
+      f->bptr += l;
+      return l;
+    }
+  else
+    return bread_slow(f, b, l, 1);
 }
 
 void bwrite_slow(struct fastbuf *f, void *b, uns l);
