@@ -98,6 +98,34 @@ void *xrealloc(void *, unsigned);
 
 byte *stralloc(byte *);
 
+/* Objects */
+
+struct fastbuf;
+
+struct odes {				/* Object description */
+  struct oattr *attrs;
+  struct mempool *pool, *local_pool;
+};
+
+struct oattr {				/* Object attribute */
+  struct oattr *next, *same, *last_same;
+  byte attr;
+  byte val[1];
+};
+
+void obj_dump(struct odes *);
+struct odes *obj_new(struct mempool *);
+void obj_free(struct odes *);
+int obj_read(struct fastbuf *, struct odes *);
+void obj_write(struct fastbuf *, struct odes *);
+struct oattr *obj_find_attr(struct odes *, uns);
+struct oattr *obj_find_attr_last(struct odes *, uns);
+uns obj_del_attr(struct odes *, struct oattr *);
+byte *obj_find_aval(struct odes *, uns);
+struct oattr *obj_set_attr(struct odes *, uns, byte *);
+struct oattr *obj_set_attr_num(struct odes *, uns, uns);
+struct oattr *obj_add_attr(struct odes *, struct oattr *, uns, byte *);
+
 /* Content-Type pattern matching and filters */
 
 int match_ct_patt(byte *, byte *);
