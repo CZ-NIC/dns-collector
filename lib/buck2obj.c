@@ -130,7 +130,7 @@ buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fas
     }
     if (buck_type == BUCKET_TYPE_V33_LIZARD)		// decompression
     {
-      if (ptr + 4 > end)
+      if (ptr + 8 > end)
 	RET_ERR(EINVAL);
       len = GET_U32(ptr);
       ptr += 4;
