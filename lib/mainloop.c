@@ -254,9 +254,16 @@ process_del(struct main_process *mp)
 int
 process_fork(struct main_process *mp)
 {
+  ASSERT(!mp->pid);
   pid_t pid = fork();
   if (pid < 0)
-    return -1;
+    {
+      DBG("MAIN: Fork failed");
+      mp->status = -1;
+      format_exit_status(mp->status_msg, -1);
+      mp->handler(mp);
+      return 1;
+    }
   else if (!pid)
     return 0;
   else
@@ -359,17 +366,7 @@ main_loop(void)
 		  {
 		    pr->status = stat;
 		    process_del(pr);
-		    if (WIFEXITED(stat) && WEXITSTATUS(stat) < 256)
-		      {
-			if (WEXITSTATUS(stat))
-			  sprintf(pr->status_msg, "died with exit code %d", WEXITSTATUS(stat));
-			else
-			  pr->status_msg[0] = 0;
-		      }
-		    else if (WIFSIGNALED(stat))
-		      sprintf(pr->status_msg, "died on signal %d", WTERMSIG(stat));
-		    else
-		      sprintf(pr->status_msg, "died with status %x", stat);
+		    format_exit_status(pr->status_msg, pr->status);
 		    DBG("MAIN: Calling process exit handler");
 		    pr->handler(pr);
 		    break;
