@@ -2,3 +2,8 @@ This directory contains regular expression routines from the GNU libc 2.3.2
 which are significantly faster than the default regex libraries on most systems.
 
 They are distributed under the GNU LGPL.
+
+All files are exact copies of the original distribution, I only provided my
+own regex.c, regex-sh.h and Makefile.
+
+					Martin Mares, March 2004
