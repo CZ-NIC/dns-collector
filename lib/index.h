@@ -21,13 +21,14 @@ enum word_type {
   WT_KEYWORD,				/* Explicitly marked keyword */
   WT_META,				/* Various meta-information */
   WT_ALT,				/* Alternate texts for graphical elements */
+  WT_URL,				/* Word extracted from document URL */
   WT_MAX
 };
 
 /* Descriptive names used for user output */
 #define WORD_TYPE_USER_NAMES							\
    "reserved", "text", "emph", "small", "title", "hdr1", "hdr2", "keywd",	\
-   "meta", "alt", "type10", "type11", "type12", "type13", "type14", "type15"
+   "meta", "alt", "url", "type11", "type12", "type13", "type14", "type15"
 
 /* Keywords for word type names */
 #define WORD_TYPE_NAMES	       			\
@@ -42,6 +43,9 @@ enum word_type {
 	T(KEYWD, 1 << WT_KEYWORD)		\
 	T(META, 1 << WT_META)			\
 	T(ALT, 1 << WT_ALT)
+
+/* These types are not shown in document contexts */
+#define WORD_TYPES_HIDDEN (1 << WT_URL)
 
 /* String types */
 
