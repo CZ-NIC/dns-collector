@@ -37,19 +37,21 @@ hashfunc_init(void)
 static inline uns CONST
 str_len_uns(uns x)
 {
-	const uns sub = ((uns) -1) / 0xff;
+	const uns sub = ~0U / 0xff;
 	const uns and = sub * 0x80;
 	uns a, i;
 	byte *bytes;
-	a = (x ^ (x - sub)) & and;
+	a = ~x & (x - sub) & and;
 	/* 
 	 * x_2 = x - 0x01010101;
-	 * x_3 = x ^ x_2;
+	 * x_3 = ~x & x_2;
 	 * a = x_3 & 0x80808080;
 	 *
-	 * If no byte of x is in {0, 0x80}, then the highest bit of each byte
-	 * of x_2 is the same as of x.  Hence x_3 has all these highest bits
-	 * cleared.  If a == 0, then we are sure there is no zero byte in x.
+	 * If all bytes of x are nonzero, then the highest bit of each byte of
+	 * x_2 is lower or equal to the corresponding bit of x.  Hence x_3 has
+	 * all these highest bits cleared (the target bit is set iff the source
+	 * bit has changed from 0 to 1).  If a == 0, then we are sure there is
+	 * no zero byte in x.
 	 */
 	if (!a)
 		return sizeof(uns);
