@@ -5,11 +5,16 @@
  */
 
 #include "lib/lib.h"
+#include "lib/lists.h"
 #include "lib/conf.h"
 #include "lib/chartype.h"
 #include "lib/ipaccess.h"
 
 #include <string.h>
+
+struct ipaccess_list {
+  list l;
+};
 
 struct ipaccess_entry {
   node n;
@@ -17,10 +22,14 @@ struct ipaccess_entry {
   u32 addr, mask;
 };
 
-void
-ipaccess_init(ipaccess_list *l)
+struct ipaccess_list *
+ipaccess_init(void)
 {
-  init_list(l);
+  /* Cannot use cfg_malloc() here as the pool can be uninitialized now */
+  struct ipaccess_list *l = malloc(sizeof(*l));
+
+  init_list(&l->l);
+  return l;
 }
 
 static byte *
@@ -47,7 +56,7 @@ parse_ip(byte *x, u32 *a)
 }
 
 byte *
-ipaccess_parse(ipaccess_list *l, byte *c, int is_allow)
+ipaccess_parse(struct ipaccess_list *l, byte *c, int is_allow)
 {
   byte *p = strchr(c, '/');
   byte *q;
@@ -62,16 +71,16 @@ ipaccess_parse(ipaccess_list *l, byte *c, int is_allow)
     }
   else
     a->mask = ~0;
-  add_tail(l, &a->n);
+  add_tail(&l->l, &a->n);
   return parse_ip(c, &a->addr);
 }
 
 int
-ipaccess_check(ipaccess_list *l, u32 ip)
+ipaccess_check(struct ipaccess_list *l, u32 ip)
 {
   struct ipaccess_entry *a;
 
-  DO_FOR_ALL(a, *l)
+  DO_FOR_ALL(a, l->l)
     if (! ((ip ^ a->addr) & a->mask))
       return a->allow;
   return 0;
