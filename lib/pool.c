@@ -21,8 +21,9 @@ new_pool(uns size)
   struct mempool *p = xmalloc(sizeof(struct mempool));
 
   size -= sizeof(struct memchunk);
-  p->chunks = NULL;
   p->free = p->last = NULL;
+  p->first = p->current = p->first_large = NULL;
+  p->plast = &p->first;
   p->chunk_size = size;
   p->threshold = size / 3;
   return p;
@@ -31,15 +32,33 @@ new_pool(uns size)
 void
 free_pool(struct mempool *p)
 {
-  struct memchunk *c = p->chunks;
+  struct memchunk *c, *d;
 
-  while (c)
+  for(d=p->first; d; d = c)
     {
-      struct memchunk *n = c->next;
-      free(c);
-      c = n;
+      c = d->next;
+      free(d);
+    }
+  for(d=p->first_large; d; d = c)
+    {
+      c = d->next;
+      free(d);
     }
   free(p);
+}
+
+void
+flush_pool(struct mempool *p)
+{
+  struct memchunk *c;
+
+  p->free = p->last = NULL;
+  p->current = p->first;
+  while (c = p->first_large)
+    {
+      p->first_large = c->next;
+      free(c);
+    }
 }
 
 void *
@@ -50,9 +69,19 @@ pool_alloc(struct mempool *p, uns s)
       byte *x = (byte *)(((uns) p->free + POOL_ALIGN - 1) & ~(POOL_ALIGN - 1));
       if (x + s > p->last)
 	{
-	  struct memchunk *c = xmalloc(sizeof(struct memchunk) + p->chunk_size);
-	  c->next = p->chunks;
-	  p->chunks = c;
+	  struct memchunk *c;
+
+	  if (p->current && p->current->next)
+	    /* Still have free chunks from previous incarnation */
+	    c = p->current->next;
+	  else
+	    {
+	      c = xmalloc(sizeof(struct memchunk) + p->chunk_size);
+	      *p->plast = c;
+	      p->plast = &c->next;
+	      c->next = NULL;
+	    }
+	  p->current = c;
 	  x = c->data;
 	  p->last = x + p->chunk_size;
 	}
@@ -62,8 +91,8 @@ pool_alloc(struct mempool *p, uns s)
   else
     {
       struct memchunk *c = xmalloc(sizeof(struct memchunk) + s);
-      c->next = p->chunks;
-      p->chunks = c;
+      c->next = p->first_large;
+      p->first_large = c;
       return c->data;
     }
 }
