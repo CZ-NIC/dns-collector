@@ -1,7 +1,7 @@
 /*
  *	Sherlock: Data structures used in indices
  *
- *	(c) 2001--2002 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2003 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef _SHERLOCK_INDEX_H
@@ -60,6 +60,7 @@ enum card_flag {
   CARD_FLAG_DUP = 4,			/* Removed as a duplicate [merger] */
   CARD_FLAG_MERGED = 8,			/* Destination of a merge [merger] */
   CARD_FLAG_IMAGE = 16,			/* Is an image object [scanner] */
+  CARD_FLAG_FRAMESET = 32,		/* Contains a frameset [scanner] */
 };
 
 #define CARD_POS_SHIFT 5		/* Card positions are shifted this # of bits to the right */
