@@ -44,8 +44,8 @@
  *  HASH_WANT_CLEANUP	cleanup() -- deallocate the hash table.
  *  HASH_WANT_FIND	node *find(key) -- find first node with the specified
  *			key, return NULL if no such node exists.
- *  HASH_WANT_FIND_NEXT	node *find(key, node *start) -- find next node with
- *			the specified key, return NULL if no such node exists.
+ *  HASH_WANT_FIND_NEXT	node *find(node *start) -- find next node with the
+ *			specified key, return NULL if no such node exists.
  *  HASH_WANT_NEW	node *new(key) -- create new node with given key.
  *			Doesn't check whether it already exists.
  *  HASH_WANT_LOOKUP	node *lookup(key) -- find node with given key,
@@ -385,20 +385,20 @@ static P(node) * P(find) (HASH_KEY_DECL)
 #endif
 
 #ifdef HASH_WANT_FIND_NEXT
-static P(node) * P(find_next) (HASH_KEY_DECL, P(node) *start)
+static P(node) * P(find_next) (P(node) *start)
 {
 #ifndef HASH_CONSERVE_SPACE
-  uns h0 = P(hash) (HASH_KEY( ));
+  uns h0 = P(hash) (HASH_KEY(start->));
 #endif
   P(bucket) *b = SKIP_BACK(P(bucket), n, start);
 
-  for (; b; b=b->next)
+  for (b=b->next; b; b=b->next)
     {
       if (
 #ifndef HASH_CONSERVE_SPACE
 	  b->hash == h0 &&
 #endif
-	  P(eq)(HASH_KEY( ), HASH_KEY(b->n.)))
+	  P(eq)(HASH_KEY(start->), HASH_KEY(b->n.)))
 	return &b->n;
     }
   return NULL;
