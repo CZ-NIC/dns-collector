@@ -53,7 +53,7 @@ include lib/regex/Makefile
 endif
 
 LIBUCW=obj/lib/libucw.$(LS)
-LIBUCW_MOD_PATHS=$(addprefix obj/lib/,$(LIBUCW_MODS)) $(CUSTOM_LIB_MODULES)
+LIBUCW_MOD_PATHS=$(addprefix obj/lib/,$(LIBUCW_MODS))
 
 obj/lib/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
 obj/lib/libucw.so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
