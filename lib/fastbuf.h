@@ -100,6 +100,7 @@ fbbuf_count_written(struct fastbuf *f)
 int bconfig(struct fastbuf *f, uns type, int data);
 
 #define BCONFIG_IS_TEMP_FILE 0
+#define BCONFIG_CAN_OVERWRITE 1
 
 /* Universal functions working on all fastbuf's */
 

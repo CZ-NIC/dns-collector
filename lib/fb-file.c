@@ -89,6 +89,8 @@ bfd_config(struct fastbuf *f, uns item, int value)
     case BCONFIG_IS_TEMP_FILE:
       FB_FILE(f)->is_temp_file = value;
       return 0;
+    case BCONFIG_CAN_OVERWRITE:
+      return 1;
     default:
       return -1;
     }
