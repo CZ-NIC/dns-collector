@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Object Buckets
  *
- *	(c) 2001--2002 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2003 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -270,6 +270,13 @@ obuck_fetch(void)
 void
 obuck_fetch_end(struct fastbuf *b UNUSED)
 {
+}
+
+oid_t
+obuck_predict_last_oid(void)
+{
+  sh_off_t size = sh_seek(obuck_fd, 0, SEEK_END);
+  return size >> OBUCK_SHIFT;
 }
 
 struct fastbuf *

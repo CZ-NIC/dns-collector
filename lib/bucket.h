@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Object Buckets
  *
- *	(c) 2001 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2003 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -45,6 +45,7 @@ void obuck_sync(void);		/* Flush all buffers to disk */
 void obuck_lock_read(void);	/* Explicit locking to make sure other threads don't touch buckets now */
 void obuck_lock_write(void);
 void obuck_unlock(void);
+oid_t obuck_predict_last_oid(void); /* Get OID corresponding to the next to be created bucket (i.e., bucket file size estimate) */
 
 /* Searching for buckets */
 void obuck_find_by_oid(struct obuck_header *hdrp);
