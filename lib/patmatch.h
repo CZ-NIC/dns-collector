@@ -20,15 +20,16 @@ MATCH_FUNC_NAME(byte *p, byte *s)
 	  if (z == '\\' && p[2])
 	    z = p[2];
 	  z = Convert(z);
-	  while (*s)
+	  for(;;)
 	    {
 	      while (*s && Convert(*s) != z)
 		s++;
-	      if (*s && match_pattern(p+1, s))
+	      if (!*s)
+		return 0;
+	      if (MATCH_FUNC_NAME(p+1, s))
 		return 1;
 	      s++;
 	    }
-	  return 0;
 	}
       else
 	{
