@@ -80,9 +80,10 @@ byte *cf_parse_double(byte *value, double *varp);
 	{"set",		1, 0, 'S'},\
 	{"config",	1, 0, 'C'},
 #define CF_NO_LONG_OPTS (const struct option []){ CF_LONG_OPTS { NULL, 0, 0, 0 } }
+#define CF_USAGE_TAB ""
 #define	CF_USAGE	\
-"-S, --set sec.item=val\tManual setting of a configuration item\n\
--C, --config filename\tOverwrite default config filename\n"
+"-S, --set sec.item=val\t" CF_USAGE_TAB "Manual setting of a configuration item\n\
+-C, --config filename\t" CF_USAGE_TAB "Overwrite default config filename\n"
 
 extern byte *cfdeffile;
 
