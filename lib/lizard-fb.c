@@ -8,7 +8,7 @@
 #include "lib/lizard.h"
 #include "lib/bbuf.h"
 #include "lib/fastbuf.h"
-#include "lib/bucket.h"
+#include "sherlock/bucket.h"		/* FIXME */
 
 #include <errno.h>
 

@@ -1,5 +1,5 @@
 /*
- *	Sherlock -- Configuration-Dependent Definitions
+ *	UCW Library -- Configuration-Dependent Definitions
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *
@@ -7,20 +7,12 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_CONFIG_H
-#define _SHERLOCK_CONFIG_H
+#ifndef _UCW_CONFIG_H
+#define _UCW_CONFIG_H
 
 /* Configuration switches */
 
 #include "lib/autoconf.h"
-
-#ifdef CONFIG_MAX_CONTEXTS
-#define CONFIG_CONTEXTS
-#endif
-
-/* Version */
-
-#define SHER_VER SHERLOCK_VERSION SHERLOCK_VERSION_SUFFIX
 
 /* Types */
 
@@ -42,64 +34,7 @@ typedef unsigned int sh_time_t;		/* Timestamp */
 #define NULL (void *)0
 #endif
 
-typedef u32 oid_t;			/* Object ID */
-
-/* Data types and functions for accessing file positions */
-
-#ifdef CONFIG_LARGE_DB
-typedef s64 sh_off_t;
-#define BYTES_PER_O 5
-#define BYTES_PER_P 8
-#define bgeto(f) bget5(f)
-#define bputo(f,l) bput5(f,l)
-#define bgetp(f) bgetq(f)
-#define bputp(f,l) bputq(f,l)
-#define GET_O(p) GET_U40(p)
-#define GET_P(p) GET_U64(p)
-#define PUT_O(p,x) PUT_U40(p,x)
-#define PUT_P(p,x) PUT_U64(p,x)
-#else
-typedef s32 sh_off_t;
-#define BYTES_PER_O 4
-#define BYTES_PER_P 4
-#define bgeto(f) bgetl(f)
-#define bputo(f,l) bputl(f,l)
-#define bgetp(f) bgetl(f)
-#define bputp(f,l) bputl(f,l)
-#define GET_O(p) GET_U32(p)
-#define GET_P(p) GET_U32(p)
-#define PUT_O(p,x) PUT_U32(p,x)
-#define PUT_P(p,x) PUT_U32(p,x)
-#endif
-
-/* Data type for area ID's */
-
-#ifdef CONFIG_AREAS
-typedef u32 area_t;
-#define AREA_NONE 0
-#define AREA_ANY ~0U
-#else
-typedef struct { } area_t;
-#define AREA_NONE (area_t){}
-#define AREA_ANY (area_t){}
-#endif
-
-/* Misc */
-
-#ifdef __GNUC__
-
-#undef inline
-#define NONRET __attribute__((noreturn))
-#define UNUSED __attribute__((unused))
-#define CONSTRUCTOR __attribute__((constructor))
-#define PACKED __attribute__((packed))
-#define CONST __attribute__((const))
-#define PURE __attribute__((const))
-#define likely(x) __builtin_expect((x),1)
-#define unlikely(x) __builtin_expect((x),0)
-
-#else
-#error This program requires the GNU C compiler.
-#endif
+typedef s64 sh_off_t;			/* FIXME */
+typedef u32 oid_t;			/* Object ID */  /* FIXME */
 
 #endif

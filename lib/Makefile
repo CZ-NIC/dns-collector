@@ -1,9 +1,9 @@
-# Makefile for the Sherlock Library (c) 1997--2004 Martin Mares <mj@ucw.cz>
+# Makefile for the UCW Library (c) 1997--2004 Martin Mares <mj@ucw.cz>
 
 DIRS+=lib
-PROGS+=obj/lib/db-tool obj/lib/buckettool
+PROGS+=obj/lib/db-tool
 
-LIBSH_MODS= \
+LIBUCW_MODS= \
 	alloc alloc_str realloc mempool mempool-str \
 	mmap pagecache partmap hashfunc \
 	lists sorter bitsig \
@@ -14,10 +14,9 @@ LIBSH_MODS= \
 	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer \
 	str_ctype str_upper str_lower unicode-utf8 \
 	wildmatch wordsplit ctmatch patimatch patmatch regex \
-	bucket object buck2obj obj2buck \
 	prime random timer log2 randomkey \
 	db \
-	url urlkey finger \
+	url \
 	mainloop exitstatus runcmd sighandler \
 	lizard lizard-safe lizard-fb adler32 \
 	md5 md5hex \
@@ -28,26 +27,26 @@ ifdef CONFIG_OWN_REGEX
 include lib/regex/Makefile
 endif
 
-LIBSH_MOD_PATHS=$(addprefix obj/lib/,$(LIBSH_MODS)) $(CUSTOM_LIB_MODULES)
+LIBUCW=obj/lib/libucw.$(LS)
+LIBUCW_MOD_PATHS=$(addprefix obj/lib/,$(LIBUCW_MODS)) $(CUSTOM_LIB_MODULES)
 
-obj/lib/libsh.a: $(addsuffix .o,$(LIBSH_MOD_PATHS))
-obj/lib/libsh.so: $(addsuffix .oo,$(LIBSH_MOD_PATHS))
+obj/lib/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
+obj/lib/libucw.so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 
 obj/lib/hashfunc.o obj/lib/hashfunc.oo: CFLAGS += -funroll-loops
 obj/lib/lizard.o: CFLAGS += -O6 -funroll-loops
 
-obj/lib/db-test: obj/lib/db-test.o $(LIBSH)
-obj/lib/db-tool: obj/lib/db-tool.o $(LIBSH)
-obj/lib/buckettool: obj/lib/buckettool.o $(LIBSH)
-obj/lib/conf-test: obj/lib/conf-test.o $(LIBSH)
-obj/lib/sort-test: obj/lib/sort-test.o $(LIBSH)
-obj/lib/lfs-test: obj/lib/lfs-test.o $(LIBSH)
-obj/lib/hash-test: obj/lib/hash-test.o $(LIBSH)
-obj/lib/str-test: obj/lib/str-test.o $(LIBSH)
-obj/lib/asort-test: obj/lib/asort-test.o $(LIBSH)
-obj/lib/redblack-test: obj/lib/redblack-test.o $(LIBSH)
-obj/lib/binheap-test: obj/lib/binheap-test.o $(LIBSH)
-obj/lib/lizard-test: obj/lib/lizard-test.o $(LIBSH)
+obj/lib/db-test: obj/lib/db-test.o $(LIBUCW)
+obj/lib/db-tool: obj/lib/db-tool.o $(LIBUCW)
+obj/lib/conf-test: obj/lib/conf-test.o $(LIBUCW)
+obj/lib/sort-test: obj/lib/sort-test.o $(LIBUCW)
+obj/lib/lfs-test: obj/lib/lfs-test.o $(LIBUCW)
+obj/lib/hash-test: obj/lib/hash-test.o $(LIBUCW)
+obj/lib/str-test: obj/lib/str-test.o $(LIBUCW)
+obj/lib/asort-test: obj/lib/asort-test.o $(LIBUCW)
+obj/lib/redblack-test: obj/lib/redblack-test.o $(LIBUCW)
+obj/lib/binheap-test: obj/lib/binheap-test.o $(LIBUCW)
+obj/lib/lizard-test: obj/lib/lizard-test.o $(LIBUCW)
 
 TESTS+=$(addprefix obj/lib/,regex.test unicode-utf8.test hash-test.test)
 obj/lib/regex.test: obj/lib/regex-t

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Miscellaneous Functions
+ *	The UCW Library -- Miscellaneous Functions
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *
@@ -7,14 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-/*
- *  This file should be included as the very first include in all
- *  source files, especially before all OS includes since it sets
- *  up libc feature macros.
- */
-
-#ifndef _SHERLOCK_LIB_H
-#define _SHERLOCK_LIB_H
+#ifndef _UCW_LIB_H
+#define _UCW_LIB_H
 
 #include "lib/config.h"
 #include <stdarg.h>
@@ -45,6 +39,24 @@
 #define REV_COMPARE(x,y) COMPARE(y,x)
 #define COMPARE_LT(x,y) do { if ((x)<(y)) return 1; if ((x)>(y)) return 0; } while(0)
 #define COMPARE_GT(x,y) COMPARE_LT(y,x)
+
+/* GCC Extensions */
+
+#ifdef __GNUC__
+
+#undef inline
+#define NONRET __attribute__((noreturn))
+#define UNUSED __attribute__((unused))
+#define CONSTRUCTOR __attribute__((constructor))
+#define PACKED __attribute__((packed))
+#define CONST __attribute__((const))
+#define PURE __attribute__((const))
+#define likely(x) __builtin_expect((x),1)
+#define unlikely(x) __builtin_expect((x),0)
+
+#else
+#error This program requires the GNU C compiler.
+#endif
 
 /* Logging */
 

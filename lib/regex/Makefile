@@ -2,6 +2,6 @@
 
 DIRS+=lib/regex
 
-LIBSH_MODS+=regex/regex
+LIBUCW_MODS+=regex/regex
 
 obj/lib/regex/regex.o: CWARNS=
