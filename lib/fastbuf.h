@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Buffered I/O
  *
- *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -108,6 +108,7 @@ void bclose(struct fastbuf *f);
 void bflush(struct fastbuf *f);
 void bseek(struct fastbuf *f, sh_off_t pos, int whence);
 void bsetpos(struct fastbuf *f, sh_off_t pos);
+void brewind(struct fastbuf *f);
 
 static inline sh_off_t btell(struct fastbuf *f)
 {

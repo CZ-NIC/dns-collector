@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Buffered I/O
  *
- *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -334,4 +334,11 @@ int
 bconfig(struct fastbuf *f, uns item, int value)
 {
   return f->config ? f->config(f, item, value) : -1;
+}
+
+void
+brewind(struct fastbuf *f)
+{
+  bflush(f);
+  bsetpos(f, 0);
 }
