@@ -154,9 +154,10 @@ obuck_fb_refill(struct fastbuf *f)
   uns remains, bufsize, size, datasize;
 
   remains = FB_BUCKET(f)->bucket_size - (uns)f->pos;
-  bufsize = f->bufend - f->buffer;
   if (!remains)
     return 0;
+  f->buffer = FB_BUCKET(f)->buffer;	/* Could have been trimmed by bdirect_read_commit_modified() */
+  bufsize = f->bufend - f->buffer;
   sh_off_t start = FB_BUCKET(f)->start_pos;
   sh_off_t pos = start + sizeof(struct obuck_header) + f->pos;
   if (remains <= bufsize)
@@ -406,14 +407,15 @@ static sh_off_t slurp_start, slurp_current, slurp_end;
 static int
 obuck_slurp_refill(struct fastbuf *f)
 {
-  uns l;
-
   if (!slurp_remains)
     return 0;
-  l = bdirect_read_prepare(obuck_rpf, &f->buffer);
+  uns l = bdirect_read_prepare(obuck_rpf, &f->buffer);
   if (!l)
     obuck_broken("Incomplete object", slurp_start);
   l = MIN(l, slurp_remains);
+  /* XXX: This probably should be bdirect_read_commit_modified() in some cases,
+   *      but it doesn't hurt since we aren't going to seek.
+   */
   bdirect_read_commit(obuck_rpf, f->buffer + l);
   slurp_remains -= l;
   f->bptr = f->buffer;
@@ -470,6 +472,7 @@ obuck_slurp_pool(struct obuck_header *hdrp)
   limiter.name = "Bucket";
   limiter.pos = 0;
   limiter.refill = obuck_slurp_refill;
+  limiter.can_overwrite_buffer = obuck_rpf->can_overwrite_buffer;
   return &limiter;
 }
 
