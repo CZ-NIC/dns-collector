@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Character Classes
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1998 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
  */
 
 #include "string.h"
