@@ -49,8 +49,8 @@ cfg_stralloc(byte *s)
 
 void cf_register(struct cfitem *items)
 {
-	if(items[0].type!=CT_SECTION)
-		die("Invalid configuration section, first item must be of type CT_SECTION");
+	if(items[0].type!=CT_SECTION && items[0].type!=CT_INCOMPLETE_SECTION)
+		die("cf_register: Invalid section type");
 	items[0].var=cfsection;
 	cfsection=items;
 }
@@ -67,15 +67,18 @@ int cf_item_count(void)
 
 struct cfitem *cf_get_item(byte *sect, byte *name)
 {
-	struct cfitem *item;
+	struct cfitem *item, *section;
 
 	item=cfsection;
 	while(item && strcasecmp(item->name,sect))
 		item=item->var;
 	if(!item)	/* unknown section */
 		return NULL;
+	section = item;
 
 	for(item++; item->type && strcasecmp(item->name,name); item++);
+	if (!item->type && section->type == CT_INCOMPLETE_SECTION)
+		return NULL;
 
 	return item;	/* item->type == 0 if not found */
 }

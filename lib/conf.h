@@ -22,11 +22,14 @@ byte *cfg_stralloc(byte *s);
  * the name of the section.  The configuration sections are registered by
  * calling cf_register().
  *
+ * CT_INCOMPLETE_SECTION is identical to CT_SECTION, but when an unknown variable
+ * is spotted, we ignore it instead of bailing out with an error message.
+ *
  * item->var is a pointer to the destination variable or to the special parsing
  * function.
  */
 
-enum cftype { CT_STOP, CT_SECTION, CT_INT, CT_STRING, CT_FUNCTION };
+enum cftype { CT_STOP, CT_SECTION, CT_INCOMPLETE_SECTION, CT_INT, CT_STRING, CT_FUNCTION };
 
 struct cfitem {
 	byte *name;
