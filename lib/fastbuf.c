@@ -44,8 +44,6 @@ inline void bsetpos(struct fastbuf *f, sh_off_t pos)
 
 void bseek(struct fastbuf *f, sh_off_t pos, int whence)
 {
-  sh_off_t l;
-
   switch (whence)
     {
     case SEEK_SET:

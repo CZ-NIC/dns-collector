@@ -66,30 +66,30 @@ void bflush(struct fastbuf *f);
 void bseek(struct fastbuf *f, sh_off_t pos, int whence);
 void bsetpos(struct fastbuf *f, sh_off_t pos);
 
-extern inline sh_off_t btell(struct fastbuf *f)
+static inline sh_off_t btell(struct fastbuf *f)
 {
   return f->pos + (f->bptr - f->buffer);
 }
 
 int bgetc_slow(struct fastbuf *f);
-extern inline int bgetc(struct fastbuf *f)
+static inline int bgetc(struct fastbuf *f)
 {
   return (f->bptr < f->bstop) ? (int) *f->bptr++ : bgetc_slow(f);
 }
 
 int bpeekc_slow(struct fastbuf *f);
-extern inline int bpeekc(struct fastbuf *f)
+static inline int bpeekc(struct fastbuf *f)
 {
   return (f->bptr < f->bstop) ? (int) *f->bptr : bpeekc_slow(f);
 }
 
-extern inline void bungetc(struct fastbuf *f, byte c)
+static inline void bungetc(struct fastbuf *f, byte c)
 {
   *--f->bptr = c;
 }
 
 void bputc_slow(struct fastbuf *f, byte c);
-extern inline void bputc(struct fastbuf *f, byte c)
+static inline void bputc(struct fastbuf *f, byte c)
 {
   if (f->bptr < f->bufend)
     *f->bptr++ = c;
@@ -98,7 +98,7 @@ extern inline void bputc(struct fastbuf *f, byte c)
 }
 
 word bgetw_slow(struct fastbuf *f);
-extern inline word bgetw(struct fastbuf *f)
+static inline word bgetw(struct fastbuf *f)
 {
   word w;
   if (f->bptr + 2 <= f->bstop)
@@ -121,7 +121,7 @@ extern inline word bgetw(struct fastbuf *f)
 }
 
 u32 bgetl_slow(struct fastbuf *f);
-extern inline u32 bgetl(struct fastbuf *f)
+static inline u32 bgetl(struct fastbuf *f)
 {
   u32 l;
   if (f->bptr + 4 <= f->bstop)
@@ -144,7 +144,7 @@ extern inline u32 bgetl(struct fastbuf *f)
 }
 
 u64 bgetq_slow(struct fastbuf *f);
-extern inline u64 bgetq(struct fastbuf *f)
+static inline u64 bgetq(struct fastbuf *f)
 {
   if (f->bptr + 8 <= f->bstop)
     {
@@ -158,7 +158,7 @@ extern inline u64 bgetq(struct fastbuf *f)
 }
 
 u64 bget5_slow(struct fastbuf *f);
-extern inline u64 bget5(struct fastbuf *f)
+static inline u64 bget5(struct fastbuf *f)
 {
   u64 l;
   if (f->bptr + 5 <= f->bstop)
@@ -177,7 +177,7 @@ extern inline u64 bget5(struct fastbuf *f)
 }
 
 void bputw_slow(struct fastbuf *f, word w);
-extern inline void bputw(struct fastbuf *f, word w)
+static inline void bputw(struct fastbuf *f, word w)
 {
   if (f->bptr + 2 <= f->bufend)
     {
@@ -200,7 +200,7 @@ extern inline void bputw(struct fastbuf *f, word w)
 }
 
 void bputl_slow(struct fastbuf *f, u32 l);
-extern inline void bputl(struct fastbuf *f, u32 l)
+static inline void bputl(struct fastbuf *f, u32 l)
 {
   if (f->bptr + 4 <= f->bufend)
     {
@@ -227,7 +227,7 @@ extern inline void bputl(struct fastbuf *f, u32 l)
 }
 
 void bputq_slow(struct fastbuf *f, u64 l);
-extern inline void bputq(struct fastbuf *f, u64 l)
+static inline void bputq(struct fastbuf *f, u64 l)
 {
   if (f->bptr + 8 <= f->bufend)
     {
@@ -239,7 +239,7 @@ extern inline void bputq(struct fastbuf *f, u64 l)
 }
 
 void bput5_slow(struct fastbuf *f, u64 l);
-extern inline void bput5(struct fastbuf *f, u64 l)
+static inline void bput5(struct fastbuf *f, u64 l)
 {
   if (f->bptr + 5 <= f->bufend)
     {
@@ -265,7 +265,7 @@ extern inline void bput5(struct fastbuf *f, u64 l)
 }
 
 void bread_slow(struct fastbuf *f, void *b, uns l);
-extern inline void bread(struct fastbuf *f, void *b, uns l)
+static inline void bread(struct fastbuf *f, void *b, uns l)
 {
   if (f->bptr + l <= f->bstop)
     {
@@ -277,7 +277,7 @@ extern inline void bread(struct fastbuf *f, void *b, uns l)
 }
 
 void bwrite_slow(struct fastbuf *f, void *b, uns l);
-extern inline void bwrite(struct fastbuf *f, void *b, uns l)
+static inline void bwrite(struct fastbuf *f, void *b, uns l)
 {
   if (f->bptr + l <= f->bufend)
     {
@@ -290,13 +290,13 @@ extern inline void bwrite(struct fastbuf *f, void *b, uns l)
 
 byte *bgets(struct fastbuf *f, byte *b, uns l);	/* Non-std */
 
-extern inline void
+static inline void
 bputs(struct fastbuf *f, byte *b)
 {
   bwrite(f, b, strlen(b));
 }
 
-extern inline void
+static inline void
 bputsn(struct fastbuf *f, byte *b)
 {
   bputs(f, b);

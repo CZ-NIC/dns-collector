@@ -302,7 +302,6 @@ copy:					/* Combine part of old URL with the new one */
 int
 url_normalize(struct url *u, struct url *b)
 {
-  byte *k;
   int err;
 
   /* Basic checks */
@@ -382,7 +381,7 @@ url_canonicalize(struct url *u)
 
 /* Pack a broken-down URL */
 
-byte *
+static byte *
 append(byte *d, byte *s, byte *e)
 {
   if (d)

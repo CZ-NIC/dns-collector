@@ -39,7 +39,7 @@
 #endif
 #endif
 
-extern inline int
+static inline int
 sh_open(char *name, int flags, int mode)
 {
   return open(name, flags | O_LARGEFILE, mode);
@@ -54,7 +54,7 @@ sh_open(char *name, int flags, int mode)
 
 _syscall5(int, _llseek, int, fd, int, hi, int, lo, loff_t *, result, int, whence);
 
-extern inline loff_t sh_seek(int fd, sh_off_t pos, int whence)
+static inline loff_t sh_seek(int fd, sh_off_t pos, int whence)
 {
   loff_t result;
   int err;

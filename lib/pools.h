@@ -20,7 +20,7 @@ void free_pool(struct mempool *);
 void flush_pool(struct mempool *);
 void *pool_alloc(struct mempool *, uns);
 
-extern inline void *fast_alloc(struct mempool *p, uns l)
+static inline void *fast_alloc(struct mempool *p, uns l)
 {
   byte *f = (void *) (((uns) p->free + POOL_ALIGN - 1) & ~(POOL_ALIGN - 1));
   byte *ee = f + l;
@@ -30,7 +30,7 @@ extern inline void *fast_alloc(struct mempool *p, uns l)
   return f;
 }
 
-extern inline void *fast_alloc_noalign(struct mempool *p, uns l)
+static inline void *fast_alloc_noalign(struct mempool *p, uns l)
 {
   byte *f = p->free;
   byte *ee = f + l;

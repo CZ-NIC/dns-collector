@@ -22,7 +22,7 @@ struct msblock {
   byte data[0];
 };
 
-int
+static int
 fbmem_refill(struct fastbuf *f)
 {
   struct memstream *s = f->lldata;
@@ -52,7 +52,7 @@ fbmem_refill(struct fastbuf *f)
   return 1;
 }
 
-void
+static void
 fbmem_spout(struct fastbuf *f)
 {
   struct memstream *s = f->lldata;
@@ -78,7 +78,7 @@ fbmem_spout(struct fastbuf *f)
   f->llpos = bb;
 }
 
-void
+static void
 fbmem_seek(struct fastbuf *f, sh_off_t pos, int whence)
 {
   struct memstream *m = f->lldata;
@@ -103,7 +103,7 @@ fbmem_seek(struct fastbuf *f, sh_off_t pos, int whence)
   die("fbmem_seek to invalid offset");
 }
 
-void
+static void
 fbmem_close(struct fastbuf *f)
 {
   struct memstream *m = f->lldata;

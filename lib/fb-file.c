@@ -66,7 +66,7 @@ bfd_close(struct fastbuf *f)
   close(f->fd);
 }
 
-struct fastbuf *
+static struct fastbuf *
 bfdopen_internal(int fd, uns buflen, byte *name)
 {
   int namelen = strlen(name) + 1;
