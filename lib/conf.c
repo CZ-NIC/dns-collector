@@ -149,6 +149,35 @@ byte *cf_parse_int(byte *value, uns *varp)
 	return msg;
 }
 
+byte *cf_parse_u64(byte *value, u64 *varp)
+{
+	char *msg = NULL;
+	const struct unit *u;
+
+	if (!*value)
+		msg = "Missing number";
+	else {
+		errno = 0;
+		char *end;
+		u64 x = strtoull(value, &end, 0);
+		if (errno == ERANGE)
+			msg = cf_rngerr;
+		else if (u = cf_lookup_unit(value, end, &msg)) {
+			if (x > ~(u64)0 / u->num)
+				msg = "Number out of range";
+			else {
+				x *= u->num;
+				if (x % u->den)
+					msg = "Number is not an integer";
+				else
+					*varp = x / u->den;
+			}
+		} else
+			*varp = x;
+	}
+	return msg;
+}
+
 byte *cf_parse_double(byte *value, double *varp)
 {
 	char *msg = NULL;
@@ -193,6 +222,9 @@ byte *cf_set_item(byte *sect, byte *name, byte *value)
 			break;
 		case CT_DOUBLE:
 			msg = cf_parse_double(value, (double *) item->var);
+			break;
+		case CT_U64:
+			msg = cf_parse_u64(value, (u64 *) item->var);
 			break;
 		default:
 			msg = "Unknown keyword";

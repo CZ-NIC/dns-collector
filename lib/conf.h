@@ -34,7 +34,7 @@ byte *cfg_stralloc(byte *s);
  * function.
  */
 
-enum cftype { CT_STOP, CT_SECTION, CT_INCOMPLETE_SECTION, CT_INT, CT_STRING, CT_FUNCTION, CT_DOUBLE };
+enum cftype { CT_STOP, CT_SECTION, CT_INCOMPLETE_SECTION, CT_INT, CT_STRING, CT_FUNCTION, CT_DOUBLE, CT_U64 };
 
 struct cfitem {
 	byte *name;
@@ -60,6 +60,7 @@ void cf_read(byte *filename);
  */
 
 byte *cf_parse_int(byte *value, uns *varp);
+byte *cf_parse_u64(byte *value, u64 *varp);
 byte *cf_parse_double(byte *value, double *varp);
 
 /*

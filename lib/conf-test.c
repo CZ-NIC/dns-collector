@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static int robert=14;
+static u64 robert=14;
 static int spalek=-3;
 static char *heslo="prazdne";
 static int nastaveni1=0,nastaveni2=1;
@@ -36,7 +36,7 @@ static byte *set_nastaveni(struct cfitem *item, byte *value)
 
 static struct cfitem jmeno[]={
 	{"jmeno",	CT_SECTION,	NULL},
-	{"robert",	CT_INT,		&robert},
+	{"robert",	CT_U64,		&robert},
 	{"spalek",	CT_INT,		&spalek},
 	{"heslo",	CT_STRING,	&heslo},
 	{"nastaveni1",	CT_FUNCTION,	&set_nastaveni},
@@ -120,8 +120,8 @@ int main(int argc, char *argv[])
 		printf ("\n");
 	}
 
-	printf("robert=%d, spalek=%d, heslo=%s, nastaveni1/2=%d/%d decker=%f\n",
-			robert,spalek,heslo,nastaveni1,nastaveni2,decker);
+	printf("robert=%Ld, spalek=%d, heslo=%s, nastaveni1/2=%d/%d decker=%f\n",
+			(long long)robert,spalek,heslo,nastaveni1,nastaveni2,decker);
 	printf("vek=%d, vyska=%d, vaha=%d\n",
 			vek,vyska,vaha);
 
