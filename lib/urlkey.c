@@ -229,10 +229,10 @@ static void CONSTRUCTOR urlkey_conf_init(void)
 }
 
 void
-url_key_init(void)
+url_key_init(uns load_prefixes)
 {
   pxtab_init();
-  if (urlkey_pxtab_path)
+  if (load_prefixes && urlkey_pxtab_path)
     pxtab_load(urlkey_pxtab_path);
 }
 
