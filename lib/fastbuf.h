@@ -77,7 +77,6 @@ struct fastbuf *bopen(byte *name, uns mode, uns buffer);
 struct fastbuf *bopen_tmp(uns buffer);
 struct fastbuf *bfdopen(int fd, uns buffer);
 struct fastbuf *bfdopen_shared(int fd, uns buffer);
-void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l);
 #define FB_IS_TEMP_FILE(f) FB_FILE(f)->is_temp_file
 
 /* FastIO on in-memory streams */
@@ -286,6 +285,21 @@ bputsn(struct fastbuf *f, byte *b)
   bputc(f, '\n');
 }
 
+void bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uns l);
+static inline void
+bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
+{
+  if (f->bptr + l <= f->bstop &&
+      t->bptr + l <= t->bufend)
+    {
+      memcpy(t->bptr, f->bptr, l);
+      t->bptr += l;
+      f->bptr += l;
+    }
+  else
+    bbcopy_slow(f, t, l);
+}
+
 /* I/O on addr_int_t */
 
 #ifdef CPU_64BIT_POINTERS
@@ -298,9 +312,34 @@ bputsn(struct fastbuf *f, byte *b)
 
 /* Direct I/O on buffers */
 
-int bdirect_read_prepare(struct fastbuf *f, byte **buf);
-void bdirect_read_commit(struct fastbuf *f, byte *pos);
-int bdirect_write_prepare(struct fastbuf *f, byte **buf);
-void bdirect_write_commit(struct fastbuf *f, byte *pos);
+static inline int
+bdirect_read_prepare(struct fastbuf *f, byte **buf)
+{
+  if (f->bptr == f->bstop && !f->refill(f))
+    return EOF;
+  *buf = f->bptr;
+  return f->bstop - f->bptr;
+}
+
+static inline void
+bdirect_read_commit(struct fastbuf *f, byte *pos)
+{
+  f->bptr = pos;
+}
+
+static inline int
+bdirect_write_prepare(struct fastbuf *f, byte **buf)
+{
+  if (f->bptr == f->bufend)
+    f->spout(f);
+  *buf = f->bptr;
+  return f->bufend - f->bptr;
+}
+
+static inline void
+bdirect_write_commit(struct fastbuf *f, byte *pos)
+{
+  f->bptr = pos;
+}
 
 #endif

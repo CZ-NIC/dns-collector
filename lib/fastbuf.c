@@ -284,32 +284,23 @@ bgets0(struct fastbuf *f, byte *b, uns l)
   die("%s: Line too long", f->name);
 }
 
-int
-bdirect_read_prepare(struct fastbuf *f, byte **buf)
-{
-  if (f->bptr == f->bstop && !f->refill(f))
-    return EOF;
-  *buf = f->bptr;
-  return f->bstop - f->bptr;
-}
-
 void
-bdirect_read_commit(struct fastbuf *f, byte *pos)
+bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uns l)
 {
-  f->bptr = pos;
-}
+  while (l)
+    {
+      byte *fptr, *tptr;
+      uns favail, tavail, n;
 
-int
-bdirect_write_prepare(struct fastbuf *f, byte **buf)
-{
-  if (f->bptr == f->bufend)
-    f->spout(f);
-  *buf = f->bptr;
-  return f->bufend - f->bptr;
-}
-
-void
-bdirect_write_commit(struct fastbuf *f, byte *pos)
-{
-  f->bptr = pos;
+      favail = bdirect_read_prepare(f, &fptr);
+      if (favail == (uns)EOF)
+	die("bbcopy: source exhausted");
+      tavail = bdirect_write_prepare(t, &tptr);
+      n = MIN(l, favail);
+      n = MIN(n, tavail);
+      memcpy(tptr, fptr, n);
+      bdirect_read_commit(f, fptr + n);
+      bdirect_write_commit(t, tptr + n);
+      l -= n;
+    }
 }

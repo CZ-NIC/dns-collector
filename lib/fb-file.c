@@ -126,51 +126,6 @@ bfdopen_shared(int fd, uns buffer)
   return f;
 }
 
-void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
-{
-  uns rf = f->bstop - f->bptr;
-  uns tbuflen = t->bufend - t->buffer;
-
-  ASSERT(f->close == bfd_close);
-  ASSERT(t->close == bfd_close);
-  if (!l)
-    return;
-  if (rf)
-    {
-      uns k = MIN(rf, l);
-      bwrite(t, f->bptr, k);
-      f->bptr += k;
-      l -= k;
-      if (!l)
-	return;
-    }
-  while (l >= tbuflen)
-    {
-      t->spout(t);
-      if ((uns) read(FB_FILE(f)->fd, t->buffer, tbuflen) != tbuflen)
-	die("bbcopy: %s exhausted", f->name);
-      f->pos += tbuflen;
-      f->bstop = f->bptr = f->buffer;
-      t->bptr = t->bufend;
-      l -= tbuflen;
-    }
-  while (l)
-    {
-      uns k = t->bufend - t->bptr;
-
-      if (!k)
-	{
-	  t->spout(t);
-	  k = t->bufend - t->bptr;
-	}
-      if (k > l)
-	k = l;
-      bread(f, t->bptr, k);
-      t->bptr += k;
-      l -= k;
-    }
-}
-
 #ifdef TEST
 
 int main(int argc, char **argv)
