@@ -38,25 +38,40 @@ static inline void *clist_prev(clist *l, cnode *n)
   return (n->prev != &l->head) ? (void *) n->prev : NULL;
 }
 
-#define CLIST_WALK(n,list) for(n=(void*)(list).head.next; (cnode*)(n) != &(list).head; n=(void*)((cnode*)(n))->next)
+static inline int clist_empty(clist *l)
+{
+  return (l->head.next == &l->head);
+}
 
-static inline void clist_insert(cnode *what, cnode *after)
+#define CLIST_WALK(n,list) for(n=(void*)(list).head.next; (cnode*)(n) != &(list).head; n=(void*)((cnode*)(n))->next)
+#define CLIST_WALK_DELSAFE(n,list,tmp) for(n=(void*)(list).head.next; tmp=(void*)((cnode*)(n))->next, (cnode*)(n) != &(list).head; n=(void*)tmp)
+
+static inline void clist_insert_after(cnode *what, cnode *after)
 {
   cnode *before = after->next;
   what->next = before;
-  what->prev = before->prev;
+  what->prev = after;
+  before->prev = what;
+  after->next = what;
+}
+
+static inline void clist_insert_before(cnode *what, cnode *before)
+{
+  cnode *after = before->prev;
+  what->next = before;
+  what->prev = after;
   before->prev = what;
   after->next = what;
 }
 
 static inline void clist_add_tail(clist *l, cnode *n)
 {
-  clist_insert(n, l->head.prev);
+  clist_insert_before(n, &l->head);
 }
 
 static inline void clist_add_head(clist *l, cnode *n)
 {
-  clist_insert(n, &l->head);
+  clist_insert_after(n, &l->head);
 }
 
 static inline void clist_remove(cnode *n)
