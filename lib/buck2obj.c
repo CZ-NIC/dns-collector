@@ -1,5 +1,5 @@
 /*
- *	Bucket -> Object Converter
+ *	Generating Objects from Buckets
  *
  *	(c) 2004, Robert Spalek <robert@ucw.cz>
  *	(c) 2004, Martin Mares <mj@ucw.cz>
@@ -13,7 +13,6 @@
 #include "lib/object.h"
 #include "lib/bucket.h"
 #include "lib/lizard.h"
-#include "lib/buck2obj.h"
 #include "lib/bbuf.h"
 
 #include <stdlib.h>

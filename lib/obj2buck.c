@@ -1,13 +1,16 @@
 /*
- *	Generating V33 buckets
+ *	Generating Buckets from Objects
  *
  *	(c) 2004, Robert Spalek <robert@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
-#include "lib/obj2buck.h"
 #include "lib/bucket.h"
+#include "lib/object.h"
 #include "charset/unistream.h"
 
 #include <string.h>
