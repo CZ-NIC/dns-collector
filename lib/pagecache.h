@@ -30,6 +30,7 @@ void pgc_flush(struct page_cache *);				/* Write all unwritten pages */
 void pgc_cleanup(struct page_cache *);				/* Deallocate all unused buffers */
 struct page *pgc_read(struct page_cache *, int fd, sh_off_t);	/* Read page and lock it */
 struct page *pgc_get(struct page_cache *, int fd, sh_off_t);	/* Get page for writing */
+struct page *pgc_get_zero(struct page_cache *, int fd, sh_off_t); /* ... and clear it */
 void pgc_put(struct page_cache *, struct page *);		/* Release page */
 void pgc_mark_dirty(struct page_cache *, struct page *);	/* Mark locked page as dirty */
 byte *pgc_read_data(struct page_cache *, int fd, sh_off_t, uns *);	/* Partial reading */

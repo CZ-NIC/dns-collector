@@ -278,6 +278,21 @@ pgc_get(struct page_cache *c, int fd, sh_off_t pos)
   return p;
 }
 
+struct page *
+pgc_get_zero(struct page_cache *c, int fd, sh_off_t pos)
+{
+  sh_off_t key;
+  struct page *p;
+
+  ASSERT(!PAGE_OFFSET(pos));
+  ASSERT(!PAGE_NUMBER(fd));
+  key = pos | fd;
+  p = get_and_lock_page(c, key);
+  bzero(p->data, c->page_size);
+  p->flags |= PG_FLAG_VALID | PG_FLAG_DIRTY;
+  return p;
+}
+
 void
 pgc_put(struct page_cache *c, struct page *p)
 {
