@@ -7,6 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
+/* META FIXME */
+
 /* Word types (at most 15 of them + WT_RESERVED and WT_MAX) */
 
 enum word_type {
