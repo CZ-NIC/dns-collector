@@ -8,5 +8,5 @@
  */
 
 #include "lib/lib.h"
-#include "charset/unicode.h"
+#include "charset/unicat.h"
 #include "charset/U-upper.h"
