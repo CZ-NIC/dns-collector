@@ -32,7 +32,8 @@ enum string_type {
   ST_URL,				/* URL of the document */
   ST_HOST,				/* Host name */
   ST_DOMAIN,				/* Domain name */
-  ST_REF				/* URL reference */
+  ST_REF,				/* URL reference */
+  ST_BACKREF,				/* Back-reference (frame or redirect source) */
 };
 
 /* Index card attributes */
