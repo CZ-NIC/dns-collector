@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Bucket Manipulation Tool
  *
- *	(c) 2001 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -18,6 +18,7 @@
 #include "lib/buck2obj.h"
 #include "lib/obj2buck.h"
 #include "lib/lizard.h"
+#include "lib/bbuf.h"
 #include "charset/unistream.h"
 
 #include <stdio.h>
@@ -140,10 +141,6 @@ extract(char *id)
   bclose(out);
   obuck_cleanup();
 }
-
-#define	GBUF_TYPE	byte
-#define	GBUF_PREFIX(x)	bb_##x
-#include "lib/gbuf.h"
 
 static void
 insert(byte *arg)
