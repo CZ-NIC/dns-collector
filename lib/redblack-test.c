@@ -191,13 +191,6 @@ main(int argc, char **argv)
 		my_dump(NULL, &t);
 	}
 	my_dump(dump_fb, &t);
-	for (i=0; i<997; i++)
-	{
-		int res UNUSED = my_delete(&t, i*111 % 997);
-		ASSERT(res);
-		my_dump(NULL, &t);
-	}
-	my_dump(dump_fb, &t);
 	i = 0;
 	TREE_FOR_ALL(my, &t, n)
 	{
@@ -205,6 +198,14 @@ main(int argc, char **argv)
 		i++;
 	}
 	TREE_END_FOR;
+	ASSERT(i == 997);
+	for (i=0; i<997; i++)
+	{
+		int res UNUSED = my_delete(&t, i*111 % 997);
+		ASSERT(res);
+		my_dump(NULL, &t);
+	}
+	my_dump(dump_fb, &t);
 	my_cleanup(&t);
 	if (verbose > 0)
 		bputs(fb, "Complete tree passed\n");
