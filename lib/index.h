@@ -49,6 +49,9 @@ enum word_type {
 /* These types are not shown in document contexts */
 #define WORD_TYPES_HIDDEN ((1 << WT_URL1) | (1 << WT_URL2))
 
+/* These types are always matched without accents if accent mode is set to "auto" */
+#define WORD_TYPES_NO_AUTO_ACCENT ((1 << WT_URL1) | (1 << WT_URL2))
+
 /* String types */
 
 enum string_type {
