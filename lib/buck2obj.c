@@ -119,13 +119,18 @@ decode_attributes(byte *ptr, byte *end, struct odes *o, uns can_overwrite)
 }
 
 struct odes *
-buck2obj_convert(struct buck2obj_buf *buf, uns buck_type, struct fastbuf *body)
+buck2obj_convert(struct buck2obj_buf *buf, uns buck_type, struct fastbuf *body, uns want_body)
 {
   mp_flush(buf->mp);
   struct odes *o = obj_new(buf->mp);
 
   if (buck_type < BUCKET_TYPE_V33)
-    obj_read_multi(body, o);
+  {
+    if (want_body)			// ignore empty lines, read until EOF
+      obj_read_multi(body, o);
+    else				// end on EOF or the first empty line
+      obj_read(body, o);
+  }
   else
   {
     /* Compute the length of the bucket.  We cannot fetch this attribute
@@ -158,6 +163,8 @@ buck2obj_convert(struct buck2obj_buf *buf, uns buck_type, struct fastbuf *body)
     end = ptr + len;
 
     ptr = decode_attributes(ptr, end, o, can_overwrite);// header
+    if (!want_body)
+      return o;
     if (buck_type == BUCKET_TYPE_V33)
       ;
     else if (buck_type == BUCKET_TYPE_V33_LIZARD)	// decompression
