@@ -11,7 +11,7 @@ LIBSH_MODS=alloc alloc_str ctmatch db fastbuf fb-file fb-mem lists \
 	finger proctitle ipaccess profile bitsig randomkey \
 	hashfunc base64 base224 fb-temp fb-mmap fb-printf urlkey \
 	partmap fb-limfd fb-buffer mainloop exitstatus runcmd carefulio \
-	lizard lizard-safe sighandler buck2obj
+	lizard lizard-safe sighandler buck2obj obj2buck
 
 ifdef CONFIG_OWN_REGEX
 include lib/regex/Makefile
@@ -26,7 +26,7 @@ obj/lib/hashfunc.o obj/lib/hashfunc.oo: CFLAGS += -funroll-loops
 
 obj/lib/db-test: obj/lib/db-test.o $(LIBSH)
 obj/lib/db-tool: obj/lib/db-tool.o $(LIBSH)
-obj/lib/buckettool: obj/lib/buckettool.o $(LIBCHARSET) $(LIBSH)
+obj/lib/buckettool: obj/lib/buckettool.o $(LIBSH) $(LIBCHARSET)
 obj/lib/conf-test: obj/lib/conf-test.o $(LIBSH)
 obj/lib/sort-test: obj/lib/sort-test.o $(LIBSH)
 obj/lib/lfs-test: obj/lib/lfs-test.o $(LIBSH)

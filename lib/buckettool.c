@@ -102,20 +102,22 @@ dump_oattr(struct fastbuf *out, struct oattr *oa)
 static void
 dump_parsed_bucket(struct fastbuf *out, struct obuck_header *h, struct fastbuf *b)
 {
+  struct odes *o_hdr, *o_body;
   mp_flush(pool);
-  struct odes *o = obj_read_bucket(buck_buf, pool, h->type, h->length, b, NULL);
-  if (!o)
+  o_hdr = obj_new(pool);
+  o_body = obj_new(pool);
+  if (buck2obj_parse(buck_buf, h->type, h->length, b, o_hdr, NULL, o_body) < 0)
+  {
     bprintf(out, "Cannot parse bucket %x of type %x and length %d: %m\n", h->oid, h->type, h->length);
+    return;
+  }
   else
   {
-#define	IS_HEADER(x) (x=='O' || x=='U')
-    for (struct oattr *oa = o->attrs; oa; oa = oa->next)
-      if (IS_HEADER(oa->attr))
-	dump_oattr(out, oa);
+    for (struct oattr *oa = o_hdr->attrs; oa; oa = oa->next)
+      dump_oattr(out, oa);
     bputc(out, '\n');
-    for (struct oattr *oa = o->attrs; oa; oa = oa->next)
-      if (!IS_HEADER(oa->attr))
-	dump_oattr(out, oa);
+    for (struct oattr *oa = o_body->attrs; oa; oa = oa->next)
+      dump_oattr(out, oa);
   }
 }
 
@@ -164,6 +166,7 @@ insert(byte *arg)
     type = BUCKET_TYPE_PLAIN;
   else if (sscanf(arg, "%x", &type) != 1)
     die("Type `%s' is not a hexadecimal number");
+  attr_set_type(type);
 
   in = bfdopen_shared(0, 4096);
   obuck_init(1);
@@ -182,26 +185,21 @@ insert(byte *arg)
 	  }
 	  if (!b)
 	    b = obuck_create(type);
-	  if (type < BUCKET_TYPE_V33)
-	  {
-	    *e++ = '\n';
-	    bwrite(b, buf, e-buf);
-	  }
-	  else if (in_body == 1)
+	  if (in_body == 1)
 	  {
 	    bputc(b, 0);
 	    in_body = 2;
 	  }
-	  else if (type == BUCKET_TYPE_V33 || !in_body)
+	  else if (type <= BUCKET_TYPE_V33 || !in_body)
 	  {
-	    bwrite_v33(b, buf[0], buf+1, e-buf-1);
+	    bput_attr(b, buf[0], buf+1, e-buf-1);
 	  }
 	  else
 	  {
 	    uns want_len = lizard_filled + (e-buf) + 6 + LIZARD_NEEDS_CHARS;	// +6 is the maximum UTF-8 length
 	    bb_grow(&lizard_buf, want_len);
 	    byte *ptr = lizard_buf.ptr + lizard_filled;
-	    WRITE_V33(ptr, buf[0], buf+1, e-buf-1);
+	    ptr = put_attr(ptr, buf[0], buf+1, e-buf-1);
 	    lizard_filled = ptr - lizard_buf.ptr;
 	  }
 	}
