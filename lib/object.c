@@ -2,6 +2,7 @@
  *	Sherlock Library -- Object Functions
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -87,17 +88,14 @@ obj_write(struct fastbuf *f, struct odes *d)
     for(struct oattr *b=a; b; b=b->same)
       {
 	byte *z;
-	bputc(f, a->attr);
-	for(z = b->val; *z; z++)
-	  if (*z >= ' ' || *z == '\t')
-	    bputc(f, *z);
-	  else
+	for (z = b->val; *z; z++)
+	  if (*z < ' ' && *z != '\t')
 	    {
-	      bputc(f, '?');
 	      log(L_ERROR, "obj_dump: Found non-ASCII characters (URL might be %s)", obj_find_aval(d, 'U'));
+	      *z = '?';
 	    }
 	ASSERT(z - b->val <= MAX_ATTR_SIZE-2);
-	bputc(f, '\n');
+	bput_attr_str(f, a->attr, b->val);
       }
 }
 
@@ -106,10 +104,7 @@ obj_write_nocheck(struct fastbuf *f, struct odes *d)
 {
   for(struct oattr *a=d->attrs; a; a=a->next)
     for(struct oattr *b=a; b; b=b->same)
-      {
-	bputc(f, a->attr);
-	bputsn(f, b->val);
-      }
+      bput_attr_str(f, a->attr, b->val);
 }
 
 struct oattr *
