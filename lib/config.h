@@ -17,11 +17,16 @@ typedef unsigned char byte;		/* exactly 8 bits, unsigned */
 typedef signed char sbyte;		/* exactly 8 bits, signed */
 typedef unsigned short word;		/* exactly 16 bits, unsigned */
 typedef short sword;			/* exactly 16 bits, signed */
+typedef unsigned short u16;		/* exactly 16 bits, unsigned */
+typedef short s16;			/* exactly 16 bits, signed */
 typedef unsigned int ulg;		/* exactly 32 bits, unsigned */
 typedef int slg;			/* exactly 32 bits, signed */
+typedef unsigned int u32;		/* exactly 32 bits, unsigned */
+typedef int s32;			/* exactly 32 bits, signed */
 typedef unsigned int uns;		/* at least 32 bits */
 typedef unsigned long long int u64;	/* exactly 64 bits, unsigned */
 typedef long long int s64;		/* exactly 64 bits, signed */
+typedef unsigned long addr_int_t;	/* Both integer and address */
 
 #ifndef NULL
 #define NULL (void *)0
