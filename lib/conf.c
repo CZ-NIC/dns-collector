@@ -24,6 +24,8 @@
 static struct cfitem *cfsection;
 static struct mempool *cfpool;
 
+static byte *cfdeffile = NULL;
+
 static void CONSTRUCTOR
 conf_init(void)
 {
@@ -210,6 +212,19 @@ void cf_read(byte *filename)
 {
 	if(!cf_subread(filename,0))
 		die("Reading config file %s failed",filename);
+	cfdeffile = NULL;
+}
+
+void
+cf_default_init(byte *filename)
+{
+	cfdeffile = filename;
+}
+
+void cf_default_done(void)
+{
+	if (cfdeffile)
+		cf_read(cfdeffile);
 }
 
 int cf_getopt(int argc,char * const argv[],
@@ -243,6 +258,8 @@ int cf_getopt(int argc,char * const argv[],
 					name=c;
 				}
 
+				if (cfdeffile)
+					cf_read(cfdeffile);
 				msg=cf_set_item(sect,name,value);
 			}
 			if(msg)
