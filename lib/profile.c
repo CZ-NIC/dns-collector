@@ -39,12 +39,12 @@ prof_tod_switch(struct prof_tod *o, struct prof_tod *n)
       if (o->usec < 0)
 	{
 	  o->usec += 1000000;
-	  o->sec++;
+	  o->sec--;
 	}
       else while (o->usec >= 1000000)
 	{
 	  o->usec -= 1000000;
-	  o->sec--;
+	  o->sec++;
 	}
     }
 }
