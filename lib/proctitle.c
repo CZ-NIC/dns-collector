@@ -11,40 +11,42 @@
 #include <stdarg.h>
 #include <unistd.h>
 
+static char **spt_argv;
 static char *spt_start, *spt_end;
 
 void
 setproctitle_init(int argc, char **argv)
 {
 #ifdef linux
-#if 0					/* FIXME: This doesn't work. Why? */
-  uns i, len;
-  char **env, *t;
+  int i, len;
+  char **env, **oldenv, *t;
+
+  spt_argv = argv;
 
   /* Create a backup copy of environment */
+  oldenv = __environ;
   len = 0;
-  for (i=0; __environ[i]; i++)
-    len += strlen(__environ[i]) + 1;
-  env = xmalloc(sizeof(char *)*(i+1));
+  for (i=0; oldenv[i]; i++)
+    len += strlen(oldenv[i]) + 1;
+  __environ = env = xmalloc(sizeof(char *)*(i+1));
   t = xmalloc(len);
-  spt_end = __environ[0];
-  for (i=0; __environ[i]; i++)
+  for (i=0; oldenv[i]; i++)
     {
       env[i] = t;
-      len = strlen(__environ[i]) + 1;
-      memcpy(t, __environ[i], len);
+      len = strlen(oldenv[i]) + 1;
+      memcpy(t, oldenv[i], len);
       t += len;
-      spt_end = MAX(spt_end, __environ[i] + len);
     }
   env[i] = NULL;
-  __environ[0] = NULL;
-  spt_start = (byte *)(__environ+1);
-  __environ = env;
-  argv[0] = spt_start;
-#else
-  spt_start = argv[0];
-  spt_end = argv[argc-1] + strlen(argv[argc-1]) - 1;
-#endif
+
+  /* Scan for consecutive free space */
+  spt_start = spt_end = argv[0];
+  for (i=0; i<argc; i++)
+    if (!i || spt_end+1 == argv[i])
+      spt_end = argv[i] + strlen(argv[i]);
+  for (i=0; oldenv[i]; i++)
+    if (spt_end+1 == oldenv[i])
+      spt_end = oldenv[i] + strlen(oldenv[i]);
 #endif
 }
 
@@ -64,6 +66,8 @@ setproctitle(char *msg, ...)
       n = spt_end - spt_start;
       strncpy(spt_start, buf, n);
       spt_start[n] = 0;
+      spt_argv[0] = spt_start;
+      spt_argv[1] = NULL;
     }
   va_end(args);
 }
