@@ -103,24 +103,3 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
   signal_handler[SIGSEGV] = old_handler;
   return ptr;
 }
-
-#define BASE 65521 /* largest prime smaller than 65536 */
-
-inline uns
-update_adler32(uns adler, byte *ptr, uns len)
-  /* taken from RFC1950 */
-{
-  uns s1 = adler & 0xffff;
-  uns s2 = (adler >> 16) & 0xffff;
-  for (uns n = 0; n < len; n++) {
-    s1 = (s1 + ptr[n]) % BASE;
-    s2 = (s2 + s1)     % BASE;
-  }
-  return (s2 << 16) + s1;
-}
-
-uns
-adler32(byte *ptr, uns len)
-{
-  return update_adler32(1, ptr, len);
-}

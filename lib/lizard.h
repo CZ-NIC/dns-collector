@@ -37,6 +37,7 @@ struct lizard_buffer *lizard_alloc(void);
 void lizard_free(struct lizard_buffer *buf);
 byte *lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length);
 
+/* adler32.c */
 uns update_adler32(uns adler, byte *ptr, uns len);
 uns adler32(byte *ptr, uns len);
 
