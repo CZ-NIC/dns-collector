@@ -119,7 +119,7 @@ decode_attributes(byte *ptr, byte *end, struct odes *o, uns can_overwrite)
 }
 
 struct odes *
-buck2obj_convert(struct buck2obj_buf *buf, uns buck_type, struct fastbuf *body, uns want_body)
+obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, struct fastbuf *body, uns want_body)
 {
   mp_flush(buf->mp);
   struct odes *o = obj_new(buf->mp);
