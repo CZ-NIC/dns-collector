@@ -124,6 +124,8 @@ enum unicode_char_type {
         p++, c <<= 1;					\
   } while (0)
 
+#define UTF8_SKIP_BWD(p) while ((--*(p) & 0xc0) == 0x80)
+
 #define UTF8_SPACE(u) ((u) < 0x80 ? 1 : (u) < 0x800 ? 2 : 3)
 
 uns ucs2_to_utf8(byte *, word *);
