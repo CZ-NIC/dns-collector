@@ -120,20 +120,17 @@ static void
 extract(char *id)
 {
   struct fastbuf *b, *out;
-  byte buf[1024];
-  int l;
   struct obuck_header h;
 
   h.oid = parse_id(id);
   obuck_init(0);
   obuck_find_by_oid(&h);
   out = bfdopen_shared(1, 65536);
+  if (verbose)
+    bprintf(out, "### %08x %6d %08x\n", h.oid, h.length, h.type);
   b = obuck_fetch();
   if (h.type < BUCKET_TYPE_V33 || !buck_buf)
-  {
-    while ((l = bread(b, buf, sizeof(buf))))
-      bwrite(out, buf, l);
-  }
+    bbcopy_slow(b, out, ~0U);
   else
     dump_parsed_bucket(out, &h, b);
   bclose(b);
