@@ -4,8 +4,6 @@
  *	(c) 2001 Martin Mares <mj@ucw.cz>
  */
 
-#define CLAMP(x,min,max) ({ int _t=x; (_t < min) ? min : (_t > max) ? max : _t; })
-
 /* Words */
 
 #define MAX_WORD_LEN		64
