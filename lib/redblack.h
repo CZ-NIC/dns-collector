@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Red-black trees
  *
- *	(c) 2002, Robert Spalek <robert@ucw.cz>
+ *	(c) 2002--2005, Robert Spalek <robert@ucw.cz>
  *
  *	Skeleton based on hash-tables by:
  *
