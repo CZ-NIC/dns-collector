@@ -46,7 +46,7 @@ typedef u32 oid_t;			/* Object ID */
 
 /* Data types and functions for accessing file positions */
 
-#ifdef SHERLOCK_CONFIG_LARGE_DB
+#ifdef CONFIG_LARGE_DB
 typedef s64 sh_off_t;
 #define BYTES_PER_O 5
 #define BYTES_PER_P 8
