@@ -22,9 +22,11 @@ static void
 help(void)
 {
   fprintf(stderr, "\
-Usage: buckettool <command>\n\
+Usage: buckettool [<options>] <command>\n\
 \n\
-Commands:\n\
+Options:\n"
+CF_USAGE
+"\nCommands:\n\
 -l\t\tlist all buckets\n\
 -L\t\tlist all buckets including deleted ones\n\
 -d <obj>\tdelete bucket\n\
