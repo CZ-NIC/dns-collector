@@ -38,6 +38,8 @@ sub html_escape($) {
 
 our $arg_table;
 
+our $value_separator = "&";
+
 sub parse_arg_string($) {
 	my ($s) = @_;
 	$s =~ s/\s+//;
@@ -56,7 +58,7 @@ sub parse_arg_string($) {
 		if (${$arg->{'var'}} eq $arg->{'default'}) {
 			${$arg->{'var'}} = $_;
 		} else {
-			${$arg->{'var'}} .= "&".$_;
+			${$arg->{'var'}} .= $value_separator.$_;
 		}
 	}
 }
