@@ -30,7 +30,7 @@ lizard_bwrite(struct fastbuf *fb_out, byte *ptr_in, uns len_in)
   byte *ptr_out;
   uns len_out;
   uns type = liz_type;
-  if (type == BUCKET_TYPE_V33_LIZARD)
+  if (type == BUCKET_TYPE_V33_LIZARD && liz_min_compr)
   {
     uns est_out = len_in * LIZARD_MAX_MULTIPLY + LIZARD_MAX_ADD + 16;
     uns aval_out = bdirect_write_prepare(fb_out, &ptr_out);
@@ -69,7 +69,7 @@ lizard_bwrite(struct fastbuf *fb_out, byte *ptr_in, uns len_in)
 }
 
 int
-lizard_bbcopy(struct fastbuf *fb_out, struct fastbuf *fb_in, uns len_in)
+lizard_bbcopy_compress(struct fastbuf *fb_out, struct fastbuf *fb_in, uns len_in)
 {
   byte *ptr_in;
   uns i = bdirect_read_prepare(fb_in, &ptr_in);
@@ -105,6 +105,11 @@ int
 lizard_memread(struct lizard_buffer *liz_buf, byte *ptr_in, byte **ptr_out, uns *type)
 {
   *type = GET_U32(ptr_in);
+  if (*type < BUCKET_TYPE_PLAIN || *type > BUCKET_TYPE_V33_LIZARD)
+  {
+    errno = EINVAL;
+    return -1;
+  }
   uns stored_len = GET_U32(ptr_in + 4);
   ptr_in += 8;
   if (*type == BUCKET_TYPE_V33_LIZARD)
@@ -120,6 +125,14 @@ int
 lizard_bread(struct lizard_buffer *liz_buf, struct fastbuf *fb_in, byte **ptr_out, uns *type)
 {
   *type = bgetl(fb_in);
+  if (*type < BUCKET_TYPE_PLAIN || *type > BUCKET_TYPE_V33_LIZARD)
+  {
+    if (*type == ~0U)			// EOF
+      errno = EBADF;
+    else
+      errno = EINVAL;
+    return -1;
+  }
   uns stored_len = bgetl(fb_in);
   uns want_len = stored_len + (*type == BUCKET_TYPE_V33_LIZARD ? 8 : 0);
   byte *ptr_in;
