@@ -17,19 +17,13 @@ enum word_type {
   WT_KEYWORD,				/* Explicitly marked keyword */
   WT_META,				/* Various meta-information */
   WT_ALT,				/* Alternate texts for graphical elements */
-  WT_URL1,				/* Word extracted from document URL (low and high weight) */
-  WT_URL2,
-  WT_FILE,				/* Part of file name */
-  WT_LINK,				/* Link text */
-  WT_CAT_TITLE,				/* Catalog title */
-  WT_CAT_DESC,				/* Catalog description */
   WT_MAX
 };
 
 /* Descriptive names used for user output */
 #define WORD_TYPE_USER_NAMES							\
    "reserved", "text", "emph", "small", "title", "hdr1", "hdr2", "keywd",	\
-   "meta", "alt", "urlword1", "urlword2", "nameword", "link", "ctitle", "cdesc"
+   "meta", "alt"
 
 /* Keywords for word type names */
 #define WORD_TYPE_NAMES	       			\
@@ -43,22 +37,17 @@ enum word_type {
 	T(HDR2, 1 << WT_BIG_HEADING)		\
 	T(KEYWD, 1 << WT_KEYWORD)		\
 	T(META, 1 << WT_META)			\
-	T(ALT, 1 << WT_ALT)			\
-	T(URLWORD, (1 << WT_URL1) | (1 << WT_URL2))	\
-	T(FILE, 1 << WT_FILE)			\
-	T(LINK, 1 << WT_LINK)			\
-	T(CTITLE, 1 << WT_CAT_TITLE)		\
-	T(CDESC, 1 << WT_CAT_DESC)
+	T(ALT, 1 << WT_ALT)
 
 /* These types are not shown in document contexts */
-#define WORD_TYPES_HIDDEN ((1 << WT_URL1) | (1 << WT_URL2) | (1 << WT_FILE))
+#define WORD_TYPES_HIDDEN 0
 
 /* These types are separated out when printing contexts */
 #define WORD_TYPES_META ((1 << WT_TITLE) | (1 << WT_KEYWORD) | \
-	(1 << WT_META) | (1 << WT_CAT_TITLE) | (1 << WT_CAT_DESC))
+	(1 << WT_META))
 
 /* These types are always matched without accents if accent mode is set to "auto" */
-#define WORD_TYPES_NO_AUTO_ACCENT ((1 << WT_URL1) | (1 << WT_URL2) | (1 << WT_FILE))
+#define WORD_TYPES_NO_AUTO_ACCENT 0
 
 /* String types */
 
@@ -114,45 +103,8 @@ enum string_type {
  *  A good place for definitions of the functions is lib/custom.c.
  */
 
-struct card_attr;
-struct odes;
-
-#ifdef CONFIG_IMAGES
-
-/*
- *  We store several image properties to card_attr->image_flags and
- *  match them as custom attributes. The image_flags byte contains:
- *
- *  bits 0--1	image format (0: not an image, 1: JPEG, 2: PNG, 3: GIF)
- *  bits 2--3   image size (0: <=100x100, 1: <=320x200, 2: <=640x480, 3: other)
- *  bits 4--5   image colors (0: grayscale, 1: <=16, 2: <=256, 3: >256)
- */
-
-#define CUSTOM_CARD_ATTRS \
-	byte image_flags;
-
-#define CUSTOM_ATTRS \
-	SMALL_SET_ATTR(ifmt, IMGTYPE, custom_it_get, custom_it_parse)		\
-	SMALL_SET_ATTR(isize, IMGSIZE, custom_is_get, custom_is_parse)		\
-	SMALL_SET_ATTR(icolors, IMGCOLORS, custom_ic_get, custom_ic_parse)
-
-void custom_create_attrs(struct odes *odes, struct card_attr *ca);
-
-/* These must be macros instead of inline functions, struct card_attr is not fully defined yet */
-#define custom_it_get(ca) ((ca)->image_flags & 3)
-#define custom_is_get(ca) (((ca)->image_flags >> 2) & 3)
-#define custom_ic_get(ca) (((ca)->image_flags >> 4) & 3)
-
-byte *custom_it_parse(u32 *dest, byte *value, uns intval);
-byte *custom_is_parse(u32 *dest, byte *value, uns intval);
-byte *custom_ic_parse(u32 *dest, byte *value, uns intval);
-
-#else
-
-/* No custom attributes defined */
+/* No custom attributes defined yet */
 
 #define CUSTOM_CARD_ATTRS
 #define CUSTOM_ATTRS
 static inline void custom_create_attrs(struct odes *odes UNUSED, struct card_attr *ca UNUSED) { }
-
-#endif
