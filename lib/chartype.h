@@ -13,7 +13,7 @@
 #define _C_DIGIT 8			/* Digits */
 #define _C_CTRL 16			/* Control characters */
 #define _C_XDIGIT 32			/* Hexadecimal digits */
-#define _C_BLANK 64			/* Blanks */
+#define _C_BLANK 64			/* White spaces (spaces, tabs, newlines) */
 #define _C_INNER 128			/* `inner punctuation' -- underscore etc. */
 
 #define _C_ALPHA (_C_UPPER | _C_LOWER)

@@ -16,10 +16,10 @@ CHAR(0x06,0x06,0x06,CA_NONE,		_C_CTRL)				//	<control>
 CHAR(0x07,0x07,0x07,CA_NONE,		_C_CTRL)				//	<control>
 CHAR(0x08,0x08,0x08,CA_NONE,		_C_CTRL)				//	<control>
 CHAR(0x09,0x09,0x09,CA_NONE,		_C_CTRL | _C_BLANK | _C_PRINT)		//	<control>
-CHAR(0x0A,0x0A,0x0A,CA_NONE,		_C_CTRL)				//	<control>
+CHAR(0x0A,0x0A,0x0A,CA_NONE,		_C_CTRL | _C_BLANK)			//	<control>
 CHAR(0x0B,0x0B,0x0B,CA_NONE,		_C_CTRL)				//	<control>
 CHAR(0x0C,0x0C,0x0C,CA_NONE,		_C_CTRL)				//	<control>
-CHAR(0x0D,0x0D,0x0D,CA_NONE,		_C_CTRL)				//	<control>
+CHAR(0x0D,0x0D,0x0D,CA_NONE,		_C_CTRL | _C_BLANK)			//	<control>
 CHAR(0x0E,0x0E,0x0E,CA_NONE,		_C_CTRL)				//	<control>
 CHAR(0x0F,0x0F,0x0F,CA_NONE,		_C_CTRL)				//	<control>
 CHAR(0x10,0x10,0x10,CA_NONE,		_C_CTRL)				//	<control>
