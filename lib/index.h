@@ -9,7 +9,7 @@
 
 #include "custom/lib/custom.h"
 
-#define INDEX_VERSION (0x32260200+sizeof(struct card_attr))	/* Increase with each incompatible change in index format */
+#define INDEX_VERSION (0x32330100+sizeof(struct card_attr))	/* Increase with each incompatible change in index format */
 
 /*
  *  Words
