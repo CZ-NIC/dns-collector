@@ -120,18 +120,11 @@ struct fastbuf *
 bopen(byte *name, uns mode, uns buffer)
 {
   struct fastbuf *b;
+  int fd;
 
-#if 0 /* FIXME: Dirty hack for testing fb-mmap */
-  if (buffer >= 65536 && (mode == O_RDONLY))
-    {
-      log(L_DEBUG, "bopen_mm hack: %s", name);
-      if (mode & O_WRONLY)
-	mode = (mode & ~O_WRONLY) | O_RDWR;
-      return bopen_mm(name, mode);
-    }
-#endif
-
-  int fd = sh_open(name, mode, 0666);
+  if (!buffer)
+    return bopen_mm(name, mode);
+  fd = sh_open(name, mode, 0666);
   if (fd < 0)
     die("Unable to %s file %s: %m",
 	(mode & O_CREAT) ? "create" : "open", name);
