@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Memory Pools
  *
- *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2003 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -45,6 +45,19 @@ static inline void *mp_alloc_fast_noalign(struct mempool *p, uns l)
     return mp_alloc(p, l);
   p->free = ee;
   return f;
+}
+
+static inline void *
+mp_start_string(struct mempool *p, uns l)
+{
+  ASSERT(l <= p->chunk_size);
+  return mp_alloc(p, l);
+}
+
+static inline void
+mp_end_string(struct mempool *p, void *stop)
+{
+  p->free = stop;
 }
 
 #endif
