@@ -43,6 +43,7 @@ struct fastbuf {
   sh_off_t pos;				/* Position of buffer start in the file */
   sh_off_t fdpos;			/* Current position in the non-buffered file */
   int fd;				/* File descriptor, -1 if not a real file */
+  int is_temp_file;			/* Is a temporary file, delete on close */
   void *lldata;				/* Data private to access functions below */
   void *llpos;				/* ... continued ... */
   int (*refill)(struct fastbuf *);	/* Get a buffer with new data */

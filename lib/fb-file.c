@@ -64,6 +64,8 @@ static void
 bfd_close(struct fastbuf *f)
 {
   close(f->fd);
+  if (f->is_temp_file && unlink(f->name) < 0)
+    die("unlink(%s): %m", f->name);
 }
 
 static struct fastbuf *
