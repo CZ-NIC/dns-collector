@@ -80,15 +80,15 @@ extern inline word bgetw(struct fastbuf *f)
     return bgetw_slow(f);
 }
 
-ulg bgetl_slow(struct fastbuf *f);
-extern inline ulg bgetl(struct fastbuf *f)
+u32 bgetl_slow(struct fastbuf *f);
+extern inline u32 bgetl(struct fastbuf *f)
 {
-  ulg l;
+  u32 l;
   if (f->bptr + 4 <= f->bstop)
     {
       byte *p = f->bptr;
 #ifdef CPU_CAN_DO_UNALIGNED_LONGS
-      l = * ((ulg *) p);
+      l = * ((u32 *) p);
 #else
 #ifdef CPU_BIG_ENDIAN
       l = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
@@ -126,14 +126,14 @@ extern inline void bputw(struct fastbuf *f, word w)
     bputw_slow(f, w);
 }
 
-void bputl_slow(struct fastbuf *f, ulg l);
-extern inline void bputl(struct fastbuf *f, ulg l)
+void bputl_slow(struct fastbuf *f, u32 l);
+extern inline void bputl(struct fastbuf *f, u32 l)
 {
   if (f->bptr + 4 <= f->bufend)
     {
       byte *p = f->bptr;
 #ifdef CPU_CAN_DO_UNALIGNED_LONGS
-      * ((ulg *) p) = l;
+      * ((u32 *) p) = l;
 #else
 #ifdef CPU_BIG_ENDIAN
       p[0] = l >> 24U;

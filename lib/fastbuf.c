@@ -169,9 +169,9 @@ word bgetw_slow(struct fastbuf *f)
 #endif
 }
 
-ulg bgetl_slow(struct fastbuf *f)
+u32 bgetl_slow(struct fastbuf *f)
 {
-  ulg l = bgetc_slow(f);
+  u32 l = bgetc_slow(f);
 #ifdef CPU_BIG_ENDIAN
   l = (l << 8) | bgetc_slow(f);
   l = (l << 8) | bgetc_slow(f);
@@ -194,7 +194,7 @@ void bputw_slow(struct fastbuf *f, word w)
 #endif
 }
 
-void bputl_slow(struct fastbuf *f, ulg l)
+void bputl_slow(struct fastbuf *f, u32 l)
 {
 #ifdef CPU_BIG_ENDIAN
   bputc_slow(f, l >> 24);

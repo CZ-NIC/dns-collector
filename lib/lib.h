@@ -21,7 +21,7 @@ struct tempfile {
 
 void open_temp(struct tempfile *, byte *);
 void delete_temp(struct tempfile *);
-ulg temprand(uns);
+u32 temprand(uns);
 
 #define TF_GENERIC "t"
 #define TF_QUEUE_CONTROL "c"
@@ -79,7 +79,7 @@ int match_ct_filter(struct ct_filter *, byte *);
 
 /* Binary log */
 
-int log2(ulg);
+int log2(u32);
 
 /* obj.c */
 
@@ -114,9 +114,9 @@ struct oattr *prepend_attr(struct odes *, uns, byte *);
 
 #define OID_MIN 0x10000		/* Values less than this have special meaning */
 
-ulg new_oid(uns);
-void mk_obj_name(byte *, ulg, byte *);
-int dump_obj_to_file(byte *, ulg, struct odes *, int);
+oid_t new_oid(uns);
+void mk_obj_name(byte *, oid_t, byte *);
+int dump_obj_to_file(byte *, oid_t, struct odes *, int);
 
 /* wordsplit.c */
 
@@ -156,7 +156,7 @@ int rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen);
 
 /* objwalk.c */
 
-void scan_obj_tree(byte *, void (*)(ulg, byte *));
+void scan_obj_tree(byte *, void (*)(oid_t, byte *));
 
 /* random.c */
 

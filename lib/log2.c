@@ -11,9 +11,9 @@
 #undef log2
 
 int
-log2(ulg x)
+log2(u32 x)
 {
-  ulg l;
+  uns l;
 
   if (!x)
 	return 0;

@@ -11,11 +11,11 @@
 
 #include "lib.h"
 
-ulg
+u32
 temprand(uns key)
 {
   static int seeded = 0;
-  ulg rand;
+  u32 rand;
 
   if (!seeded)
     {
