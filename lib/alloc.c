@@ -14,6 +14,6 @@ xmalloc(uns size)
 {
   void *x = malloc(size);
   if (!x)
-	die("Cannot allocate %d bytes of memory", size);
+    die("Cannot allocate %d bytes of memory", size);
   return x;
 }
