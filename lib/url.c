@@ -11,9 +11,8 @@
  *
  *	   o  Escaping of special characters still follows RFC 1738.
  *	   o  Interpretation of path parameters follows RFC 1808.
- *	   o  Parsing a relative URL "x" wrt. base "http://hell.org?y"
- *	      gives an error, which might be wrong. However, I failed
- *	      to find any rule applying to this case in the RFC.
+ *
+ *	XXX: The buffer handling in this module is really horrible, but it works.
  */
 
 #include "lib/lib.h"
@@ -394,6 +393,18 @@ url_normalize(struct url *u, struct url *b)
 	  if (err = relpath_merge(u, b))
 	    return err;
 	}
+    }
+
+  /* Change path "?" to "/?" because it's the true meaning */
+  if (u->rest[0] == '?')
+    {
+      int l = strlen(u->rest);
+      if (u->bufend - u->buf < l+1)
+	return URL_ERR_TOO_LONG;
+      u->buf[0] = '/';
+      memcpy(u->buf+1, u->rest, l+1);
+      u->rest = u->buf;
+      u->buf += l+2;
     }
 
   /* Fill in missing info */
