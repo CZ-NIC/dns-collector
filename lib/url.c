@@ -368,8 +368,7 @@ url_normalize(struct url *u, struct url *b)
   int err;
 
   /* Basic checks */
-  if (url_proto_path_flags[u->protoid] && !u->host ||
-      u->host && !*u->host ||
+  if (url_proto_path_flags[u->protoid] && (!u->host || !*u->host) ||
       !u->host && u->user ||
       !u->user && u->pass ||
       !u->rest)
