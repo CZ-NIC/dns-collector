@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- File Page Cache
+ *	UCW Library -- File Page Cache
  *
  *	(c) 1999--2002 Martin Mares <mj@ucw.cz>
  *
@@ -31,7 +31,7 @@ struct page_cache {
   uns stat_miss;			/* Number of cache misses */
   uns stat_write;			/* Number of writes */
   list *hash_table;			/* List heads corresponding to hash buckets */
-#ifndef SHERLOCK_HAVE_PREAD
+#ifndef HAVE_PREAD
   sh_off_t pos;				/* Current position in the file */
   int pos_fd;				/* FD the position corresponds to */
 #endif
@@ -55,7 +55,7 @@ pgc_open(uns page_size, uns max_pages)
   c->hash_table = xmalloc(sizeof(list) * c->hash_size);
   for(i=0; i<c->hash_size; i++)
     init_list(&c->hash_table[i]);
-#ifndef SHERLOCK_HAVE_PREAD
+#ifndef HAVE_PREAD
   c->pos_fd = -1;
 #endif
   return c;
@@ -105,7 +105,7 @@ flush_page(struct page_cache *c, struct page *p)
   int s;
 
   ASSERT(p->flags & PG_FLAG_DIRTY);
-#ifdef SHERLOCK_HAVE_PREAD
+#ifdef HAVE_PREAD
   s = sh_pwrite(p->fd, p->data, c->page_size, p->pos);
 #else
   if (c->pos != p->pos || c->pos_fd != (int) p->fd)
@@ -282,7 +282,7 @@ pgc_read(struct page_cache *c, int fd, sh_off_t pos)
   else
     {
       c->stat_miss++;
-#ifdef SHERLOCK_HAVE_PREAD
+#ifdef HAVE_PREAD
       s = sh_pread(fd, p->data, c->page_size, pos);
 #else
       if (c->pos != pos || c->pos_fd != (int)fd)

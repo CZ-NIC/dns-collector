@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Large File Support
+ *	UCW Library -- Large File Support
  *
  *	(c) 1999--2002 Martin Mares <mj@ucw.cz>
  *
@@ -35,7 +35,7 @@
 
 #endif	/* !CONFIG_LARGE_FILES */
 
-#define SHERLOCK_HAVE_PREAD
+#define HAVE_PREAD
 
 static inline sh_off_t
 sh_file_size(byte *name)
