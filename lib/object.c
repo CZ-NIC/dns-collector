@@ -63,7 +63,7 @@ obj_free(struct odes *o)
 int
 obj_read(struct fastbuf *f, struct odes *o)
 {
-  byte buf[4096];
+  byte buf[1024];
   struct oattr **last = &o->attrs;
   struct oattr *a, *la;
 
