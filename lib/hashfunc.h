@@ -40,6 +40,6 @@ uns hash_string_nocase(const byte *str) CONST;
  *  instructions are slow).
  */
 static inline uns CONST hash_int(uns x) { return 0x01008041*x; }
-static inline uns CONST hash_pointer(void *x) { return hash_int((uns)x); }
+static inline uns CONST hash_pointer(void *x) { return hash_int((uns)(addr_int_t)x); }
 
 #endif
