@@ -143,6 +143,8 @@ fsck(int fix)
   sh_off_t end;
   oid_t oid;
   u32 chk;
+  int errors = 0;
+  int fatal_errors = 0;
 
   fd = open(obuck_name, O_RDWR);
   if (fd < 0)
@@ -172,12 +174,14 @@ fsck(int fix)
 	  pos = end;
 	  continue;
 	}
+      errors++;
       end = pos;
       do
 	{
 	  if (pos - end > 0x10000000)
 	    {
 	      printf("*** skipped for too long, giving up\n");
+	      fatal_errors++;
 	      goto finish;
 	    }
 	  end += OBUCK_ALIGN;
@@ -211,6 +215,8 @@ fsck(int fix)
     }
  finish:
   close(fd);
+  if (!fix && errors || fatal_errors)
+    exit(1);
 }
 
 int
