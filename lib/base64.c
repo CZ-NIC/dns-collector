@@ -59,7 +59,7 @@ uns
 base64_decode(byte *dest, byte *src, uns len)
 {
 	byte *current = src;
-	byte ch;
+	uns ch;
 	uns i = 0, j = 0;
 	static byte reverse_table[256];
 	static uns table_built = 0;
