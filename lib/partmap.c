@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/user.h>
 
 struct partmap {
   int fd;
@@ -32,14 +33,9 @@ struct partmap {
 #define PARTMAP_WINDOW 16777216
 #endif
 
-static uns page_size;
-
 struct partmap *
 partmap_open(byte *name, int writeable)
 {
-  if (!page_size)
-    page_size = getpagesize();
-
   struct partmap *p = xmalloc_zero(sizeof(struct partmap));
 
   p->fd = sh_open(name, writeable ? O_RDWR : O_RDONLY);
@@ -76,7 +72,7 @@ partmap_map(struct partmap *p, sh_off_t start, uns size)
       uns win = PARTMAP_WINDOW;
       ASSERT(win >= size);
       sh_off_t end = start + size;
-      start = start/page_size * page_size;
+      start = start/PAGE_SIZE * PAGE_SIZE;
       if (start+win > p->file_size)
 	win = p->file_size - start;
       if (start+win < end)
