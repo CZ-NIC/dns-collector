@@ -2,6 +2,7 @@
 
 DIRS+=lib
 PROGS+=obj/lib/db-tool obj/lib/buckettool
+TESTS+=obj/lib/regex-ut
 
 LIBSH_MODS=alloc alloc_str ctmatch db fastbuf fb-file fb-mem lists \
 	log log2 md5 md5hex mmap pagecache patimatch patmatch pool \
@@ -23,7 +24,6 @@ obj/lib/buckettool: obj/lib/buckettool.o $(LIBSH)
 obj/lib/conf-test: obj/lib/conf-test.o $(LIBSH)
 obj/lib/sort-test: obj/lib/sort-test.o $(LIBSH)
 obj/lib/lfs-test: obj/lib/lfs-test.o $(LIBSH)
-obj/lib/regex-test: obj/lib/regex-test.o $(LIBSH)
 obj/lib/hash-test: obj/lib/hash-test.o $(LIBSH)
 obj/lib/str-test: obj/lib/str-test.o $(LIBSH)
 obj/lib/asort-test: obj/lib/asort-test.o $(LIBSH)

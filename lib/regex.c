@@ -312,9 +312,16 @@ rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
 int main(int argc, char **argv)
 {
   regex *r;
-  byte buf1[256], buf2[256];
+  byte buf1[4096], buf2[4096];
+  int opt_i = 0;
 
-  r = rx_compile(argv[1], 0);
+  if (!strcmp(argv[1], "-i"))
+    {
+      opt_i = 1;
+      argv++;
+      argc--;
+    }
+  r = rx_compile(argv[1], opt_i);
   while (fgets(buf1, sizeof(buf1), stdin))
     {
       char *p = strchr(buf1, '\n');
