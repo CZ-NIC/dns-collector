@@ -24,7 +24,7 @@
 #define _C_WORD (_C_ALNUM | _C_INNER)
 #define _C_WSTART (_C_ALPHA | _C_INNER)
 
-extern unsigned char _c_cat[256], _c_upper[256], _c_collate[256], _c_order[256];
+extern const unsigned char _c_cat[256], _c_upper[256];
 
 #define Category(x) (_c_cat[(unsigned char)(x)])
 #define Ccat(x,y) (Category(x) & y)

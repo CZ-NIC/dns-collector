@@ -9,7 +9,7 @@
 
 #include "lib/chartype.h"
 
-unsigned char _c_cat[256] = {
+const unsigned char _c_cat[256] = {
 #define CHAR(code,upper,unacc,acc,cat) cat,
 #include "lib/charmap.h"
 #undef CHAR
