@@ -184,6 +184,16 @@ obuck_fb_refill(struct fastbuf *f)
 }
 
 static void
+obuck_fb_seek(struct fastbuf *f, sh_off_t pos, int whence)
+{
+  ASSERT(whence == SEEK_SET || whence == SEEK_END);
+  if (whence == SEEK_END)
+    pos += FB_BUCKET(f)->bucket_size;
+  ASSERT(pos >= 0 && pos <= FB_BUCKET(f)->bucket_size);
+  f->pos = pos;
+}
+
+static void
 obuck_fb_spout(struct fastbuf *f)
 {
   int l = f->bptr - f->buffer;
@@ -316,7 +326,7 @@ obuck_fetch(void)
   b->pos = 0;
   b->refill = obuck_fb_refill;
   b->spout = NULL;
-  b->seek = NULL;
+  b->seek = obuck_fb_seek;
   b->close = obuck_fb_close;
   b->config = NULL;
   b->can_overwrite_buffer = 2;
