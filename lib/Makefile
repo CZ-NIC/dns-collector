@@ -21,7 +21,7 @@ LIBUCW_MODS= \
 	db \
 	url \
 	mainloop exitstatus runcmd sighandler \
-	lizard lizard-safe lizard-fb adler32 \
+	lizard lizard-safe adler32 \
 	md5 md5hex \
 	base64 base224 \
 	sync
