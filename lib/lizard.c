@@ -133,8 +133,18 @@ flush_copy_command(uns bof, byte *out, byte *start, uns len)
   if (bof && len <= 238)
     *out++ = len + 17;
   else if (len < 4)
+  {
     /* cannot happen when !!bof */
     out[-2] |= len;				/* invariant: lowest 2 bits 2 bytes back */
+#ifdef	CPU_ALLOW_UNALIGNED
+    * (u32*) out = * (u32*) start;
+    return out + len;
+#else
+    while (len-- > 0)
+      *out++ = *start++;
+    return out;
+#endif
+  }
   else
   {
     /* leave 2 least significant bits of out[-2] set to 0 */
@@ -146,9 +156,8 @@ flush_copy_command(uns bof, byte *out, byte *start, uns len)
       out = dump_unary_value(out, len - 18);
     }
   }
-  while (len-- > 0)
-    *out++ = *start++;
-  return out;
+  memcpy(out, start, len);
+  return out + len;
 }
 
 int
@@ -159,12 +168,11 @@ lizard_compress(byte *in, uns in_len, byte *out)
 {
   hash_ptr_t hash_tab[HASH_SIZE];
   struct hash_record hash_rec[HASH_RECORDS];
-  byte *in_start = in;
   byte *in_end = in + in_len;
   byte *out_start = out;
   byte *copy_start = in;
   uns head = 1;					/* 0 in unused */
-  uns to_delete = 0;
+  uns to_delete = 0, bof = 1;
   bzero(hash_tab, sizeof(hash_tab));		/* init the hash-table */
   while (in < in_end)
   {
@@ -192,7 +200,7 @@ literal:
     }
     /* Record the match.  */
     uns copy_len = in - copy_start;
-    uns is_in_copy_mode = copy_start==in_start || copy_len >= 4;
+    uns is_in_copy_mode = bof || copy_len >= 4;
     uns shift = in - best - 1;
     /* Try to use a 2-byte sequence.  */
 #if 0
@@ -209,8 +217,8 @@ literal:
       /* optimisation for length-3 matches after a copy command */
       shift -= 1<<11;
 dump_2sequence:
-      if (copy_len > 0)
-	out = flush_copy_command(copy_start==in_start, out, copy_start, copy_len);
+      if (copy_len)
+	out = flush_copy_command(bof, out, copy_start, copy_len);
       *out++ = (shift>>6) & ~3;			/* shift fits into 10 bits */
       *out++ = shift & 0xff;
     }
@@ -226,8 +234,8 @@ dump_2sequence:
       goto literal;
     else
     {
-      if (copy_len > 0)
-	out = flush_copy_command(copy_start==in_start, out, copy_start, copy_len);
+      if (copy_len)
+	out = flush_copy_command(bof, out, copy_start, copy_len);
       if (shift < (1<<14))
       {
 	if (len <= 33)
@@ -241,12 +249,12 @@ dump_2sequence:
       else /* shift < (1<<15)-1 becase of HASH_RECORDS */
       {
 	shift++;				/* because shift==0 is reserved for EOF */
-	byte pos_bit = (shift>>11) & (1<<3);
+	byte pos_bit = ((shift>>11) & (1<<3)) | (1<<4);
 	if (len <= 9)
-	  *out++ = (1<<4) | pos_bit | (len-2);
+	  *out++ = pos_bit | (len-2);
 	else
 	{
-	  *out++ = (1<<4) | pos_bit;
+	  *out++ = pos_bit;
 	  out = dump_unary_value(out, len - 9);
 	}
       }
@@ -259,12 +267,11 @@ dump_2sequence:
       head = hash_string(hash_tab, hashf(in+i), hash_rec, head, &to_delete);
     in += len;
     copy_start = in;
+    bof = 0;
   }
-  if (in > in_end)				/* crop at BOF */
-    in = in_end;
   uns copy_len = in - copy_start;
-  if (copy_len > 0)
-    out = flush_copy_command(copy_start==in_start, out, copy_start, copy_len);
+  if (copy_len)
+    out = flush_copy_command(bof, out, copy_start, copy_len);
   *out++ = 17;					/* add EOF */
   *out++ = 0;
   *out++ = 0;
@@ -295,7 +302,6 @@ lizard_decompress(byte *in, byte *out)
   if (*in > 17)					/* short copy command at BOF */
   {
     len = *in++ - 17;
-    expect_copy_command = 2;
     goto perform_copy_command;
   }
   while (1)
@@ -312,7 +318,6 @@ lizard_decompress(byte *in, byte *out)
 	}
 	else
 	  len = c + 3;
-	expect_copy_command = 2;
 	goto perform_copy_command;
       }
       else
@@ -381,14 +386,21 @@ lizard_decompress(byte *in, byte *out)
     if (len)
     {
       expect_copy_command = 0;
+#ifdef	CPU_ALLOW_UNALIGNED
+      * (u32*) out = * (u32*) in;
+      out += len;
+      in += len;
+#else
       while (len-- > 0)
 	*out++ = *in++;
+#endif
     }
     else
       expect_copy_command = 1;
     continue;
 
 perform_copy_command:
+    expect_copy_command = 2;
     memcpy(out, in, len);
     out += len;
     in += len;
