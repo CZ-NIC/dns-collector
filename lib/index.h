@@ -25,6 +25,19 @@ enum word_type {
   WT_ALT				/* Alternate texts for graphical elements */
 };
 
+#define WORD_TYPE_NAMES	       			\
+	T(WORD, ~0)				\
+	T(TEXT, 1 << WT_TEXT)			\
+	T(EMPH, 1 << WT_EMPH)			\
+	T(SMALL, 1 << WT_SMALL)			\
+	T(TITLE, 1 << WT_TITLE)			\
+	T(HDR, (1 << WT_SMALL_HEADING) | (1 << WT_BIG_HEADING))  \
+	T(HDR1, 1 << WT_SMALL_HEADING)		\
+	T(HDR2, 1 << WT_BIG_HEADING)		\
+	T(KEYWD, 1 << WT_KEYWORD)		\
+	T(META, 1 << WT_META)			\
+	T(ALT, 1 << WT_ALT)
+
 /* String types */
 
 enum string_type {
@@ -35,6 +48,13 @@ enum string_type {
   ST_REF,				/* URL reference */
   ST_BACKREF,				/* Back-reference (frame or redirect source) */
 };
+
+#define STRING_TYPE_NAMES			\
+	T(URL, 1 << ST_URL)			\
+	T(HOST, 1 << ST_HOST)			\
+	T(DOMAIN, 1 << ST_DOMAIN)		\
+	T(REF, 1 << ST_REF)			\
+	T(BACKREF, 1 << ST_BACKREF)
 
 #define STRING_TYPES_URL ((1 << ST_URL) | (1 << ST_REF) | (1 << ST_BACKREF))
 #define STRING_TYPES_CASE_INSENSITIVE ((1 << ST_HOST) | (1 << ST_DOMAIN))
