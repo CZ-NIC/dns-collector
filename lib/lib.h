@@ -178,6 +178,7 @@ uns random_max(uns);
 
 /* mmap.c */
 
-void *mmap_file(byte *name, unsigned *len);
+void *mmap_file(byte *name, unsigned *len, int writeable);
+void munmap_file(void *start, unsigned len);
 
 #endif
