@@ -321,7 +321,7 @@ obuck_delete(oid_t oid)
 void
 obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
 {
-  byte *rbuf, *wbuf;
+  byte *rbuf, *wbuf, *msg;
   sh_off_t rstart, wstart, w_bucket_start;
   int roff, woff, rsize, l;
   struct obuck_header *rhdr, *whdr;
@@ -343,12 +343,18 @@ obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
       rhdr = (struct obuck_header *)(rbuf + roff);
       if (rhdr->magic != OBUCK_MAGIC ||
 	  rhdr->oid != OBUCK_OID_DELETED && rhdr->oid != (bucket_start >> OBUCK_SHIFT))
-	obuck_broken("header mismatch during shakedown");
+	{
+	  msg = "header mismatch";
+	  goto broken;
+	}
       l = (sizeof(struct obuck_header) + rhdr->length + 4 + OBUCK_ALIGN - 1) & ~(OBUCK_ALIGN-1);
       if (rsize - roff < l)
 	goto reread;
       if (GET_U32(rbuf + roff + l - 4) != OBUCK_TRAILER)
-	obuck_broken("missing trailer during shakedown");
+	{
+	  msg = "missing trailer";
+	  goto broken;
+	}
       if (rhdr->oid != OBUCK_OID_DELETED)
 	{
 	  if (kibitz(rhdr, w_bucket_start >> OBUCK_SHIFT, (byte *)(rhdr+1)))
@@ -394,7 +400,8 @@ obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
 	{
 	  if (!rsize)
 	    break;
-	  obuck_broken("unexpected EOF during shakedown");
+	  msg = "unexpected EOF";
+	  goto broken;
 	}
       rsize += l;
     }
@@ -409,6 +416,30 @@ obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
   obuck_unlock();
   xfree(rbuf);
   xfree(wbuf);
+  return;
+
+ broken:
+  log(L_ERROR, "Error during object pool shakedown: %s (pos=%Ld), gathering debris", msg, (long long) bucket_start);
+  if (woff)
+    {
+      sh_pwrite(obuck_fd, wbuf, woff, wstart);
+      wstart += woff;
+    }
+  while (wstart + OBUCK_ALIGN <= bucket_start)
+    {
+      u32 check = OBUCK_TRAILER;
+      obuck_hdr.magic = OBUCK_MAGIC;
+      obuck_hdr.oid = OBUCK_OID_DELETED;
+      if (bucket_start - wstart < 0x40000000)
+	obuck_hdr.length = bucket_start - wstart - sizeof(obuck_hdr) - 4;
+      else
+	obuck_hdr.length = 0x40000000 - sizeof(obuck_hdr) - 4;
+      obuck_hdr.orig_length = obuck_hdr.length;
+      sh_pwrite(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), wstart);
+      wstart += sizeof(obuck_hdr) + obuck_hdr.length + 4;
+      sh_pwrite(obuck_fd, &check, 4, wstart-4);
+    }
+  die("Fatal error during object pool shakedown");
 }
 
 /*** Testing ***/
