@@ -7,6 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
+#ifndef _SHERLOCK_BUCKET_H
+#define _SHERLOCK_BUCKET_H
+
 /*
  * Format: The object pool is merely a sequence of object buckets.
  * Each bucket starts with struct obuck_header and it's padded
@@ -32,9 +35,16 @@ extern byte *obuck_name;	/* Internal, for use by buckettool only! */
 struct obuck_header {
   u32 magic;			/* OBUCK_MAGIC should dwell here */
   oid_t oid;			/* ID of this object or OBUCK_OID_DELETED */
-  u32 length;			/* Length of compressed data in the bucket */
-  u32 orig_length;		/* Length of uncompressed data */
+  u32 length;			/* Length of data in the bucket */
+  u32 type;			/* Data type */
   /* Bucket data continue here */
+};
+
+enum bucket_type {
+  BUCKET_TYPE_COMPAT = 0x7fffffff,	/* and less -- buckets created by older versions of Sherlock */
+  BUCKET_TYPE_PLAIN = 0x80000000,	/* plain textual buckets */
+  BUCKET_TYPE_V30 = 0x80000001,		/* v3.0 uncompressed buckets */
+  BUCKET_TYPE_V30C = 0x80000002		/* v3.0 compressed buckets */
 };
 
 struct fastbuf;
@@ -57,7 +67,7 @@ struct fastbuf *obuck_fetch(void);
 void obuck_fetch_end(struct fastbuf *b);
 
 /* Creating buckets */
-struct fastbuf *obuck_create(void);
+struct fastbuf *obuck_create(u32 type);
 void obuck_create_end(struct fastbuf *b, struct obuck_header *hdrp);
 
 /* Deleting buckets */
@@ -75,3 +85,5 @@ static inline sh_off_t obuck_get_pos(oid_t oid)
 
 /* Shaking down bucket file */
 void obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck));
+
+#endif

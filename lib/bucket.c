@@ -280,7 +280,7 @@ obuck_predict_last_oid(void)
 }
 
 struct fastbuf *
-obuck_create(void)
+obuck_create(u32 type)
 {
   obuck_lock_write();
   bflush(obuck_fb);
@@ -289,7 +289,8 @@ obuck_create(void)
     obuck_broken("Misaligned file");
   obuck_hdr.magic = OBUCK_INCOMPLETE_MAGIC;
   obuck_hdr.oid = bucket_start >> OBUCK_SHIFT;
-  obuck_hdr.length = obuck_hdr.orig_length = 0;
+  obuck_hdr.length = 0;
+  obuck_hdr.type = type;
   bucket_current = bucket_start;
   bwrite(obuck_fb, &obuck_hdr, sizeof(obuck_hdr));
   obuck_fb->pos = -sizeof(obuck_hdr);
@@ -301,7 +302,7 @@ obuck_create_end(struct fastbuf *b UNUSED, struct obuck_header *hdrp)
 {
   int pad;
   obuck_hdr.magic = OBUCK_MAGIC;
-  obuck_hdr.length = obuck_hdr.orig_length = btell(obuck_fb);
+  obuck_hdr.length = btell(obuck_fb);
   pad = (OBUCK_ALIGN - sizeof(obuck_hdr) - obuck_hdr.length - 4) & (OBUCK_ALIGN - 1);
   while (pad--)
     bputc(obuck_fb, 0);
@@ -521,7 +522,6 @@ obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
 	obuck_hdr.length = bucket_start - wstart - sizeof(obuck_hdr) - 4;
       else
 	obuck_hdr.length = 0x40000000 - sizeof(obuck_hdr) - 4;
-      obuck_hdr.orig_length = obuck_hdr.length;
       sh_pwrite(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), wstart);
       wstart += sizeof(obuck_hdr) + obuck_hdr.length + 4;
       sh_pwrite(obuck_fd, &check, 4, wstart-4);
@@ -561,7 +561,7 @@ int main(int argc, char **argv)
       for(i=0; i<LEN(j); i++)
         bputc(b, (i+j) % 256);
       obuck_create_end(b, &h);
-      printf("Writing %08x %d -> %d\n", h.oid, h.orig_length, h.length);
+      printf("Writing %08x %d\n", h.oid, h.length);
       ids[j] = h.oid;
     }
   for(j=0; j<COUNT; j++)
@@ -578,10 +578,10 @@ int main(int argc, char **argv)
 	h.oid = ids[j];
 	obuck_find_by_oid(&h);
 	b = obuck_fetch();
-	printf("Reading %08x %d -> %d\n", h.oid, h.orig_length, h.length);
-	if (h.orig_length != LEN(j))
+	printf("Reading %08x %d\n", h.oid, h.length);
+	if (h.length != LEN(j))
 	  die("Invalid length");
-	for(i=0; i<h.orig_length; i++)
+	for(i=0; i<h.length; i++)
 	  if ((unsigned) bgetc(b) != (i+j) % 256)
 	    die("Contents mismatch");
 	if (bgetc(b) != EOF)
@@ -591,7 +591,7 @@ int main(int argc, char **argv)
   if (obuck_find_first(&h, 0))
     do
       {
-	printf("<<< %08x\t%d\n", h.oid, h.orig_length);
+	printf("<<< %08x\t%d\n", h.oid, h.length);
 	cnt--;
       }
     while (obuck_find_next(&h, 0));

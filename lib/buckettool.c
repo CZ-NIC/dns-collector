@@ -34,7 +34,7 @@ CF_USAGE
 -L\t\tlist all buckets including deleted ones\n\
 -d <obj>\tdelete bucket\n\
 -x <obj>\textract bucket\n\
--i\t\tinsert buckets separated by blank lines\n\
+-i[<type>]\tinsert buckets separated by blank lines\n\
 -c\t\tconcatenate and dump all buckets\n\
 -f\t\taudit bucket file structure\n\
 -F\t\taudit and fix bucket file structure\n\
@@ -67,7 +67,7 @@ list(int full)
 	if (h.oid == OBUCK_OID_DELETED)
 	  printf("DELETED  %6d\n", h.length);
 	else
-	  printf("%08x %6d %6d\n", h.oid, h.length, h.orig_length);
+	  printf("%08x %6d %08x\n", h.oid, h.length, h.type);
       }
     while (obuck_find_next(&h, full));
   obuck_cleanup();
@@ -101,25 +101,31 @@ extract(char *id)
 }
 
 static void
-insert(void)
+insert(byte *arg)
 {
   struct fastbuf *b, *in;
   byte buf[4096];
   struct obuck_header h;
   byte *e;
+  u32 type;
+
+  if (!arg)
+    type = BUCKET_TYPE_PLAIN;
+  else if (sscanf(arg, "%x", &type) != 1)
+    die("Type `%s' is not a hexadecimal number");
 
   in = bfdopen_shared(0, 4096);
   obuck_init(1);
   do
     {
-      b = obuck_create();
+      b = obuck_create(type);
       while ((e = bgets(in, buf, sizeof(buf))) && buf[0])
 	{
 	  *e++ = '\n';
 	  bwrite(b, buf, e-buf);
 	}
       obuck_create_end(b, &h);
-      printf("%08x %d %d\n", h.oid, h.length, h.orig_length);
+      printf("%08x %d %08x\n", h.oid, h.length, h.type);
     }
   while (e);
   obuck_cleanup();
@@ -137,7 +143,7 @@ cat(void)
   obuck_init(0);
   while (b = obuck_slurp_pool(&h))
     {
-      printf("### %08x %6d %6d\n", h.oid, h.length, h.orig_length);
+      printf("### %08x %6d %08x\n", h.oid, h.length, h.type);
       lf = 1;
       while ((l = bread(b, buf, sizeof(buf))))
 	{
@@ -224,7 +230,7 @@ fsck(int fix)
 	{
 	  h.magic = OBUCK_MAGIC;
 	  h.oid = OBUCK_OID_DELETED;
-	  h.length = h.orig_length = end - pos - sizeof(h) - 4;
+	  h.length = end - pos - sizeof(h) - 4;
 	  sh_pwrite(fd, &h, sizeof(h), pos);
 	  chk = OBUCK_TRAILER;
 	  sh_pwrite(fd, &chk, 4, end-4);
@@ -277,7 +283,7 @@ main(int argc, char **argv)
 
   log_init(NULL);
   op = 0;
-  while ((i = cf_getopt(argc, argv, CF_SHORT_OPTS "lLd:x:icfFqsv", CF_NO_LONG_OPTS, NULL)) != -1)
+  while ((i = cf_getopt(argc, argv, CF_SHORT_OPTS "lLd:x:i::cfFqsv", CF_NO_LONG_OPTS, NULL)) != -1)
     if (i == '?' || op)
       help();
     else if (i == 'v')
@@ -305,7 +311,7 @@ main(int argc, char **argv)
       extract(arg);
       break;
     case 'i':
-      insert();
+      insert(arg);
       break;
     case 'c':
       cat();
