@@ -1,4 +1,4 @@
-# Makefile for the Sherlock Library (c) 1997--2003 Martin Mares <mj@ucw.cz>
+# Makefile for the Sherlock Library (c) 1997--2004 Martin Mares <mj@ucw.cz>
 
 DIRS+=lib
 PROGS+=obj/lib/db-tool obj/lib/buckettool
@@ -6,7 +6,7 @@ PROGS+=obj/lib/db-tool obj/lib/buckettool
 LIBSH_MODS=alloc alloc_str ctmatch db fastbuf fb-file fb-mem lists \
 	log log2 md5 md5hex mmap pagecache patimatch patmatch pool \
 	prime random realloc regex timer url wildmatch \
-	wordsplit str_ctype str_upper bucket conf object sorter \
+	wordsplit str_ctype str_upper str_lower bucket conf object sorter \
 	finger proctitle ipaccess profile bitsig randomkey \
 	hashfunc base64 base224 fb-temp fb-mmap fb-printf urlkey \
 	partmap fb-limfd fb-buffer

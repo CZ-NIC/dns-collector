@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Character Types
  *
- *	(c) 1997 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -24,7 +24,7 @@
 #define _C_WORD (_C_ALNUM | _C_INNER)
 #define _C_WSTART (_C_ALPHA | _C_INNER)
 
-extern const unsigned char _c_cat[256], _c_upper[256];
+extern const unsigned char _c_cat[256], _c_upper[256], _c_lower[256];
 
 #define Category(x) (_c_cat[(unsigned char)(x)])
 #define Ccat(x,y) (Category(x) & y)
@@ -42,6 +42,7 @@ extern const unsigned char _c_cat[256], _c_upper[256];
 #define Cspace(x) Cblank(x)
 
 #define Cupcase(x) _c_upper[(unsigned char)(x)]
+#define Clocase(x) _c_lower[(unsigned char)(x)]
 
 #define Cxvalue(x) (((x)<'A')?((x)-'0'):(((x)&0xdf)-'A'+10))
 
