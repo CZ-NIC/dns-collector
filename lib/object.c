@@ -26,11 +26,23 @@ obj_dump(struct odes *o)
 static struct oattr *
 oa_new(struct odes *o, uns x, byte *v)
 {
-  struct oattr *a = mp_alloc(o->pool, sizeof(struct oattr) + strlen(v));
+  struct oattr *a = mp_alloc(o->pool, sizeof(struct oattr) + strlen(v)+1);
 
   a->next = a->same = NULL;
   a->attr = x;
+  a->val = (byte*) (a+1);
   strcpy(a->val, v);
+  return a;
+}
+
+static struct oattr *
+oa_new_ref(struct odes *o, uns x, byte *v)
+{
+  struct oattr *a = mp_alloc(o->pool, sizeof(struct oattr));
+
+  a->next = a->same = NULL;
+  a->attr = x;
+  a->val = v;
   return a;
 }
 
@@ -199,12 +211,15 @@ obj_set_attr_num(struct odes *o, uns a, uns v)
   return obj_set_attr(o, a, x);
 }
 
-struct oattr *
-obj_add_attr(struct odes *o, uns x, byte *v)
+static inline struct oattr *
+obj_add_attr_internal(struct odes *o, uns x, byte *v, uns just_ref)
 {
   struct oattr *a, *b;
 
-  b = oa_new(o, x, v);
+  if (just_ref)
+    b = oa_new_ref(o, x, v);
+  else
+    b = oa_new(o, x, v);
   if (!(a = o->cached_attr) || a->attr != x)
     {
       if (!(a = obj_find_attr(o, x)))
@@ -220,6 +235,18 @@ obj_add_attr(struct odes *o, uns x, byte *v)
  done:
   o->cached_attr = b;
   return b;
+}
+
+struct oattr *
+obj_add_attr(struct odes *o, uns x, byte *v)
+{
+  return obj_add_attr_internal(o, x, v, 0);
+}
+
+struct oattr *
+obj_add_attr_ref(struct odes *o, uns x, byte *v)
+{
+  return obj_add_attr_internal(o, x, v, 1);
 }
 
 struct oattr *
