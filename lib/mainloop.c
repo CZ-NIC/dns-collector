@@ -217,6 +217,13 @@ file_set_timeout(struct main_file *fi, timestamp_t expires)
 }
 
 void
+file_close_all(void)
+{
+  CLIST_FOR_EACH(struct main_file *, f, main_file_list)
+    close(f->fd);
+}
+
+void
 hook_add(struct main_hook *ho)
 {
   ASSERT(!ho->n.next);
