@@ -70,7 +70,7 @@ wp_new_state(struct wildpatt *w, u32 set)
   if (d = w->free_states)
     w->free_states = d->next;
   else
-    d = pool_alloc(w->pool, sizeof(*d));
+    d = mp_alloc(w->pool, sizeof(*d));
   w->hash[h] = d;
   bzero(d, sizeof(*d));
   d->nfa_set = set;
@@ -103,7 +103,7 @@ wp_compile(byte *p, struct mempool *pool)
 
   if (strlen(p) >= MAX_STATES)		/* Too long */
     return NULL;
-  w = pool_alloc(pool, sizeof(*w));
+  w = mp_alloc(pool, sizeof(*w));
   bzero(w, sizeof(*w));
   w->pool = pool;
   for(i=1; *p; p++)
@@ -209,7 +209,7 @@ int main(int argc, char **argv)
   char buf[1024];
 
   if (argc != 2) return 1;
-  w = wp_compile(argv[1], new_pool(65536));
+  w = wp_compile(argv[1], mp_new(65536));
   if (!w)
     {
       puts("Compile error");
