@@ -46,7 +46,16 @@ void obj_move_attr_to_tail(struct odes *o, uns);
 
 /* buck2obj.c: Reading of objects from buckets */
 
+struct parsed_attr {
+  int attr;
+  byte *val;
+  uns len;
+};
 struct buck2obj_buf;
+
+void get_attr_set_type(uns type);
+int get_attr(byte **pos, byte *end, struct parsed_attr *attr);
+int bget_attr(struct fastbuf *b, struct parsed_attr *attr);
 
 struct buck2obj_buf *buck2obj_alloc(void);
 void buck2obj_free(struct buck2obj_buf *buf);
@@ -64,7 +73,7 @@ int obj_read(struct fastbuf *, struct odes *);
 
 /* obj2buck.c: Generating buckets from objects */
 
-void attr_set_type(uns type);
+void put_attr_set_type(uns type);
 
 uns size_attr(uns len);
 
