@@ -14,6 +14,10 @@
 
 #include "lib/autoconf.h"
 
+#ifdef CONFIG_MAX_CONTEXTS
+#define CONFIG_CONTEXTS
+#endif
+
 /* Version */
 
 #define SHER_VER "2.5" SHERLOCK_VERSION_SUFFIX
