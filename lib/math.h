@@ -14,3 +14,5 @@
 #undef log
 #define log log_msg
 #undef exception
+
+float logf(float);
