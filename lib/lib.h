@@ -50,15 +50,16 @@
 
 void log(unsigned int cat, const char *msg, ...) __attribute__((format(printf,2,3)));
 void die(byte *, ...) NONRET;
-void assert_failed(char *assertion, char *file, int line) NONRET;
 void log_init(byte *);
 void log_file(byte *);
 void log_fork(void);
 
 #ifdef DEBUG
+void assert_failed(char *assertion, char *file, int line) NONRET;
 #define ASSERT(x) do { if (!(x)) assert_failed(#x, __FILE__, __LINE__); } while(0)
 #else
-#define ASSERT(x) do { } while(0)
+void assert_failed(void) NONRET;
+#define ASSERT(x) do { if (__builtin_constant_p(x) && !(x)) assert_failed(); } while(0)
 #endif
 
 #ifdef LOCAL_DEBUG
