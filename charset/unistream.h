@@ -1,11 +1,13 @@
 /*
  *	The UniCode Library: Reading and writing of UTF-8 on Fastbuf Streams
  *
- *	(c) 2001 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2002 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef _UNISTREAM_H
 #define _UNISTREAM_H
+
+#include "charset/unicode.h"
 
 int bget_utf8_slow(struct fastbuf *b);
 void bput_utf8_slow(struct fastbuf *b, uns u);
