@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Miscellaneous Functions
  *
- *	(c) 1997--2003 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -36,6 +36,8 @@
 #define CLAMP(x,min,max) ({ int _t=x; (_t < min) ? min : (_t > max) ? max : _t; })
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
+#define GLUE(x,y) x##y
+#define GLUE_(x,y) x##_##y
 
 /* Logging */
 
