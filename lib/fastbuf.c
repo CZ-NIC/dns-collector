@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast File Buffering
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
  */
 
 #include <stdio.h>
@@ -12,6 +12,7 @@
 
 #include "lib.h"
 #include "fastbuf.h"
+#include "lfs.h"
 
 struct fastbuf *__bfdopen(int fd, uns buffer, byte *name)
 {
@@ -30,7 +31,12 @@ struct fastbuf *__bfdopen(int fd, uns buffer, byte *name)
 struct fastbuf *
 bopen(byte *name, uns mode, uns buffer)
 {
-  int fd = open(name, mode, 0666);
+  int fd;
+
+#ifdef SHERLOCK_CONFIG_LFS
+  mode |= O_LARGEFILE;
+#endif
+  fd = open(name, mode, 0666);
 
   if (fd < 0)
     die("Unable to %s file %s: %m",
@@ -99,22 +105,22 @@ void bflush(struct fastbuf *f)
     }
 }
 
-inline void bsetpos(struct fastbuf *f, uns pos)
+inline void bsetpos(struct fastbuf *f, sh_off_t pos)
 {
   if (pos >= f->pos && (pos <= f->pos + (f->bptr - f->buffer) || pos <= f->pos + (f->bstop - f->buffer)))
     f->bptr = f->buffer + (pos - f->pos);
   else
     {
       bflush(f);
-      if (f->fdpos != pos && lseek(f->fd, pos, SEEK_SET) < 0)
+      if (f->fdpos != pos && sh_seek(f->fd, pos, SEEK_SET) < 0)
 	die("lseek on %s: %m", f->name);
       f->fdpos = f->pos = pos;
     }
 }
 
-void bseek(struct fastbuf *f, uns pos, int whence)
+void bseek(struct fastbuf *f, sh_off_t pos, int whence)
 {
-  int l;
+  sh_off_t l;
 
   switch (whence)
     {
@@ -124,7 +130,7 @@ void bseek(struct fastbuf *f, uns pos, int whence)
       return bsetpos(f, btell(f) + pos);
     case SEEK_END:
       bflush(f);
-      l = lseek(f->fd, pos, whence);
+      l = sh_seek(f->fd, pos, whence);
       if (l < 0)
 	die("lseek on %s: %m", f->name);
       f->fdpos = f->pos = l;
@@ -183,6 +189,32 @@ u32 bgetl_slow(struct fastbuf *f)
 #endif
 }
 
+u64 bgetq_slow(struct fastbuf *f)
+{
+  u32 l, h;
+#ifdef CPU_BIG_ENDIAN
+  h = bgetl_slow(f);
+  l = bgetl_slow(f);
+#else
+  l = bgetl_slow(f);
+  h = bgetl_slow(f);
+#endif
+  return ((u64) h << 32) | l;
+}
+
+u64 bget5_slow(struct fastbuf *f)
+{
+  u32 l, h;
+#ifdef CPU_BIG_ENDIAN
+  h = bgetc_slow(f);
+  l = bgetl_slow(f);
+#else
+  l = bgetl_slow(f);
+  h = bgetc_slow(f);
+#endif
+  return ((u64) h << 32) | l;
+}
+
 void bputw_slow(struct fastbuf *f, word w)
 {
 #ifdef CPU_BIG_ENDIAN
@@ -206,6 +238,30 @@ void bputl_slow(struct fastbuf *f, u32 l)
   bputc_slow(f, l >> 8);
   bputc_slow(f, l >> 16);
   bputc_slow(f, l >> 24);
+#endif
+}
+
+void bputq_slow(struct fastbuf *f, u64 q)
+{
+#ifdef CPU_BIG_ENDIAN
+  bputl_slow(f, q >> 32);
+  bputl_slow(f, q);
+#else
+  bputl_slow(f, q);
+  bputl_slow(f, q >> 32);
+#endif
+}
+
+void bput5_slow(struct fastbuf *f, u64 o)
+{
+  u32 hi = o >> 32;
+  u32 low = o;
+#ifdef CPU_BIG_ENDIAN
+  bputc_slow(f, hi);
+  bputl_slow(f, low);
+#else
+  bputl_slow(f, low);
+  bputc_slow(f, hi);
 #endif
 }
 

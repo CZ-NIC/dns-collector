@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast File Buffering
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
  */
 
 #ifndef EOF
@@ -13,8 +13,8 @@ struct fastbuf {
   byte *buffer, *bufend;		/* Start and end of the buffer */
   byte *name;				/* File name for error messages */
   uns buflen;				/* Size of standard portion of the buffer */
-  uns pos;				/* Position of bptr in the file */
-  uns fdpos;				/* Current position in the file */
+  sh_off_t pos;				/* Position of bptr in the file */
+  sh_off_t fdpos;			/* Current position in the file */
   int fd;				/* File descriptor */
 };
 
@@ -23,10 +23,10 @@ struct fastbuf *bfdopen(int fd, uns buffer);
 void bclose(struct fastbuf *f);
 void bflush(struct fastbuf *f);
 
-void bseek(struct fastbuf *f, uns pos, int whence);
-void bsetpos(struct fastbuf *f, uns pos);
+void bseek(struct fastbuf *f, sh_off_t pos, int whence);
+void bsetpos(struct fastbuf *f, sh_off_t pos);
 
-extern inline uns btell(struct fastbuf *f)
+extern inline sh_off_t btell(struct fastbuf *f)
 {
   return f->pos + (f->bptr - f->buffer);
 }
@@ -103,6 +103,39 @@ extern inline u32 bgetl(struct fastbuf *f)
     return bgetl_slow(f);
 }
 
+u64 bgetq_slow(struct fastbuf *f);
+extern inline u64 bgetq(struct fastbuf *f)
+{
+  if (f->bptr + 8 <= f->bstop)
+    {
+      u64 l;
+      memcpy(&l, f->bptr, 8);
+      f->bptr += 8;
+      return l;
+    }
+  else
+    return bgetq_slow(f);
+}
+
+u64 bget5_slow(struct fastbuf *f);
+extern inline u64 bget5(struct fastbuf *f)
+{
+  u64 l;
+  if (f->bptr + 5 <= f->bstop)
+    {
+      byte *p = f->bptr;
+#ifdef CPU_BIG_ENDIAN
+      l = ((u64)p[0] << 32) | ((p[1] << 24) | (p[2] << 16) | (p[3] << 8) | p[4]);
+#else
+      l = ((u64)p[4] << 32) | ((p[3] << 24) | (p[2] << 16) | (p[1] << 8) | p[0]);
+#endif
+      f->bptr += 5;
+      return l;
+    }
+  else
+    return bget5_slow(f);
+}
+
 void bputw_slow(struct fastbuf *f, word w);
 extern inline void bputw(struct fastbuf *f, word w)
 {
@@ -153,6 +186,44 @@ extern inline void bputl(struct fastbuf *f, u32 l)
     bputl_slow(f, l);
 }
 
+void bputq_slow(struct fastbuf *f, u64 l);
+extern inline void bputq(struct fastbuf *f, u64 l)
+{
+  if (f->bptr + 8 <= f->bufend)
+    {
+      memcpy(f->bptr, &l, 8);
+      f->bptr += 8;
+    }
+  else
+    bputq_slow(f, l);
+}
+
+void bput5_slow(struct fastbuf *f, u64 l);
+extern inline void bput5(struct fastbuf *f, u64 l)
+{
+  if (f->bptr + 5 <= f->bufend)
+    {
+      byte *p = f->bptr;
+      u32 low = l;
+#ifdef CPU_BIG_ENDIAN
+      p[0] = l >> 32;
+      p[1] = low >> 24U;
+      p[2] = low >> 16U;
+      p[3] = low >> 8U;
+      p[4] = low;
+#else
+      p[4] = l >> 32;
+      p[3] = low >> 24U;
+      p[2] = low >> 16U;
+      p[1] = low >> 8U;
+      p[0] = low;
+#endif
+      f->bptr += 5;
+    }
+  else
+    bput5_slow(f, l);
+}
+
 void bread_slow(struct fastbuf *f, void *b, uns l);
 extern inline void bread(struct fastbuf *f, void *b, uns l)
 {
@@ -193,3 +264,14 @@ bputsn(struct fastbuf *f, byte *b)
   bputc(f, '\n');
 }
 
+#ifdef SHERLOCK_CONFIG_LARGE_DB
+#define bgeto(f) bget5(f)
+#define bputo(f,l) bput5(f,l)
+#define bgetp(f) bgetq(f)
+#define bputp(f,l) bputq(f,l)
+#else
+#define bgeto(f) bgetl(f)
+#define bputo(f,l) bputl(f,l)
+#define bgetp(f) bgetl(f)
+#define bputp(f,l) bputl(f,l)
+#endif
