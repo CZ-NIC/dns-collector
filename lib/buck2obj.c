@@ -165,7 +165,10 @@ buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fas
       bdirect_read_commit_modified(body, ptr);
   }
   else
-    RET_ERR(EINVAL);
+    {
+      bskip(body, buck_len);
+      RET_ERR(EINVAL);
+    }
   return 0;
 }
 
