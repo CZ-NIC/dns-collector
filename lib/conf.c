@@ -339,9 +339,14 @@ int cf_getopt(int argc,char * const argv[],
 		int *longindex)
 {
 	int res;
+	static int other_options;
 
 	do{
 		res=getopt_long(argc,argv,shortopts,longopts,longindex);
+		if(res == 'S' || res == 'C') {
+			if(other_options)
+				die("The -S and -C options must precede all other arguments");
+		}
 		if(res=='S'){
 			byte *sect,*name,*value;
 			byte *c;
@@ -370,7 +375,7 @@ int cf_getopt(int argc,char * const argv[],
 				msg=cf_set_item(sect,name,value);
 			}
 			if(msg)
-				die("Invalid command line argument %s.%s=%s: %s",sect,name,value,msg);
+				die("Invalid command line argument -S%s.%s=%s: %s",sect,name,value,msg);
 
 		}else if(res=='C'){
 			cf_read(optarg);
@@ -378,6 +383,7 @@ int cf_getopt(int argc,char * const argv[],
 			/* unhandled option or end of options */
 			if(cfdeffile)
 				cf_read(cfdeffile);
+			other_options++;
 			return res;
 		}
 	}while(1);
