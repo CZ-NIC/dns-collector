@@ -5,7 +5,7 @@ echo "Installing to $DEST"
 for d in "" cf $SH_EXTRA_RUNDIRS ; do
 	if [ ! -d $DEST/$d ] ; then
 		echo "Creating $DEST/$d"
-		mkdir $DEST/$d
+		mkdir -p $DEST/$d
 	fi
 done
 echo "Installing binaries..."
