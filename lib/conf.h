@@ -4,6 +4,8 @@
  *	(c) 2001 Robert Spalek <robert@ucw.cz>
  */
 
+#include <getopt.h>
+
 /*
  * Every module places its configuration setting into some section.  Section is
  * an array of cfitem, whose first record is of type CT_SECTION and contains
@@ -42,6 +44,7 @@ void cf_read(byte *filename);
 #define	CF_LONG_OPTS	\
 	{"set",		1, 0, 'S'},\
 	{"config",	1, 0, 'C'},
+#define CF_NO_LONG_OPTS (const struct option []){ CF_LONG_OPTS { NULL, 0, 0, 0 } }
 
 int cf_getopt(int argc,char * const argv[],
 		const char *shortopts,const struct option *longopts,
