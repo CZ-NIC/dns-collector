@@ -119,6 +119,7 @@ void bflush(struct fastbuf *f);
 void bseek(struct fastbuf *f, sh_off_t pos, int whence);
 void bsetpos(struct fastbuf *f, sh_off_t pos);
 void brewind(struct fastbuf *f);
+void bskip(struct fastbuf *f, uns len);
 
 static inline sh_off_t btell(struct fastbuf *f)
 {
