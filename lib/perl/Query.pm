@@ -13,7 +13,7 @@ use IO::Socket::INET;
 
 sub parse_tree($$);
 sub do_parse_tree($$$$);
-sub print_tree($$);
+sub format_tree($$$);
 
 sub new($$) {
 	my $class = shift @_;
@@ -156,37 +156,40 @@ sub do_parse_tree($$$$) {
 	}
 }
 
-sub print_tree($$) {
-	my $a = shift @_;
-	my $indent = shift @_;
-
+sub format_tree($$$) {
+	my ($func, $a, $indent) = @_;
 	if (ref $a eq "ARRAY") {
-		if (@{$a} == 0) { print "[]\n"; }
+		if (@{$a} == 0) { &$func("[]\n"); }
 		else {
-			print "[\n";
+			&$func("[\n");
 			foreach my $k (@{$a}) {
-				print "$indent\t";
-				print_tree($k, "$indent\t");
+				&$func("$indent\t");
+				format_tree($func, $k, "$indent\t");
 			}
-			print $indent, "]\n";
+			&$func($indent . "]\n");
 		}
 	} elsif (ref $a) {
-		print "{\n";
+		&$func("{\n");
 		foreach my $k (sort keys %{$a}) {
-			print "$indent\t$k => ";
-			print_tree($a->{$k}, "$indent\t");
+			&$func("$indent\t$k => ");
+			format_tree($func, $a->{$k}, "$indent\t");
 		}
-		print $indent, "}\n";
+		&$func($indent . "}\n");
 	} elsif (defined $a) {
-		print "$a\n";
+		&$func("$a\n");
 	} else {
-		print "UNDEF\n";
+		&$func("UNDEF\n");
 	}
+}
+
+sub format($&$) {
+	my ($q, $func, $what) = @_;
+	format_tree($func, $what, "");
 }
 
 sub print($) {
 	my $q = shift @_;
-	print_tree($q, "");
+	format_tree(sub { print $_[0]; }, $q, "");
 }
 
 1;  # OK
