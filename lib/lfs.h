@@ -50,4 +50,38 @@ extern loff_t llseek(int fd, loff_t pos, int whence);
 #define SHERLOCK_O_LARGEFILE 0
 
 #endif	/* !SHERLOCK_CONFIG_LFS */
+
+/*
+ *  We'd like to use pread/pwrite for our file accesses, but unfortunately it
+ *  isn't simple at all since all libc's until glibc 2.1 don't define it.
+ */
+
+#ifdef __linux__
+#if defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ > 0
+/* glibc 2.1 or newer -> pread/pwrite supported automatically */
+#define SHERLOCK_HAVE_PREAD
+#elif defined(i386) && defined(__GLIBC__)
+/* glibc 2.0 on i386 -> call syscalls directly */
+#include <asm/unistd.h>
+#include <syscall-list.h>
+#ifndef SYS_pread
+#define SYS_pread 180
+#endif
+static int pread(unsigned int fd, void *buf, size_t size, loff_t where)
+{ return syscall(SYS_pread, fd, buf, size, where); }
+#ifndef SYS_pwrite
+#define SYS_pwrite 181
+#endif
+static int pwrite(unsigned int fd, void *buf, size_t size, loff_t where)
+{ return syscall(SYS_pwrite, fd, buf, size, where); }
+#define SHERLOCK_HAVE_PREAD
+#elif defined(i386)
+/* old libc on i386 -> call syscalls directly the old way */
+#include <asm/unistd.h>
+static _syscall4(int, pread, unsigned int, fd, void *, buf, size_t, size, loff_t, where);
+static _syscall4(int, pwrite, unsigned int, fd, void *, buf, size_t, size, loff_t, where);
+#define SHERLOCK_HAVE_PREAD
+#endif
+#endif	/* __linux__ */
+
 #endif	/* !_SHERLOCK_LFS_H */
