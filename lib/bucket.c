@@ -423,6 +423,18 @@ obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
 	  goto broken;
 	}
       l = (sizeof(struct obuck_header) + rhdr->length + 4 + OBUCK_ALIGN - 1) & ~(OBUCK_ALIGN-1);
+      if (l > obuck_shake_buflen)
+	{
+	  if (rhdr->oid != OBUCK_OID_DELETED)
+	    {
+	      msg = "bucket longer than ShakeBufSize";
+	      goto broken;
+	    }
+	  rstart = bucket_start + l;
+	  roff = 0;
+	  rsize = 0;
+	  goto reread;
+	}
       if (rsize - roff < l)
 	goto reread;
       if (GET_U32(rbuf + roff + l - 4) != OBUCK_TRAILER)
@@ -494,7 +506,7 @@ obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
   return;
 
  broken:
-  log(L_ERROR, "Error during object pool shakedown: %s (pos=%Ld), gathering debris", msg, (long long) bucket_start);
+  log(L_ERROR, "Error during object pool shakedown: %s (pos=%Ld, id=%x), gathering debris", msg, (long long) bucket_start, (uns)(bucket_start >> OBUCK_SHIFT));
   if (woff)
     {
       sh_pwrite(obuck_fd, wbuf, woff, wstart);
