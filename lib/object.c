@@ -42,7 +42,7 @@ obj_new(struct mempool *pool)
 {
   struct odes *o;
 
-  o = mp_alloc(lp, sizeof(struct odes));
+  o = mp_alloc(pool, sizeof(struct odes));
   o->pool = pool;
   o->attrs = NULL;
   o->cached_attr = NULL;
