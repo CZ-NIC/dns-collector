@@ -175,7 +175,8 @@ main(int argc, char **argv)
 	}
 	for (i=0; i<100; i++)
 	{
-		int res UNUSED = my_delete(&t, i);
+		int a = i/10, b = i%10, j = a*10 + (b + a) % 10;
+		int res UNUSED = my_delete(&t, j);
 		ASSERT(res);
 		my_dump(dump_fb, &t);
 	}
