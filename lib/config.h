@@ -35,6 +35,7 @@ typedef unsigned int uns;		/* at least 32 bits */
 typedef unsigned long long int u64;	/* exactly 64 bits, unsigned */
 typedef long long int s64;		/* exactly 64 bits, signed */
 typedef unsigned long addr_int_t;	/* Both integer and address */
+typedef unsigned int sh_time_t;		/* Timestamp */
 
 #ifndef NULL
 #define NULL (void *)0
