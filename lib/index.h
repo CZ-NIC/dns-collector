@@ -4,6 +4,12 @@
  *	(c) 2001--2002 Martin Mares <mj@ucw.cz>
  */
 
+#ifndef _SHERLOCK_INDEX_H
+#define _SHERLOCK_INDEX_H
+
+#include "lib/fastbuf.h"
+#include "charset/unistream.h"
+
 /* Words */
 
 #define MAX_WORD_LEN		64
@@ -64,8 +70,7 @@ fp_hash(struct fingerprint *fp)
       p++;							\
       if (u >= 0xb0)						\
         {							\
-	  if (u != 0xb0)					\
-            ASSERT(0);						\
+	  ASSERT(u == 0xb0);					\
 	  u += 0x80020000;					\
         }							\
       else if (u >= 0xa0)					\
@@ -79,6 +84,36 @@ fp_hash(struct fingerprint *fp)
   else								\
     p++;							\
 } while (0)
+
+static inline uns
+bget_tagged_char(struct fastbuf *f)
+{
+  uns u = bgetc(f);
+  if ((int)u < 0x80)
+    ;
+  else if (u < 0xc0)
+    {
+      if (u >= 0xb0)
+	{
+	  ASSERT(u == 0xb0);
+	  u += 0x80020000;
+	}
+      else if (u >= 0xa0)
+	{
+	  uns v = bgetc(f);
+	  ASSERT(v >= 0x80 && v <= 0xbf);
+	  u = 0x80010000 + ((u & 0x0f) << 6) + (v & 0x3f);
+	}
+      else
+	u += 0x80000000;
+    }
+  else
+    {
+      bungetc(f);
+      u = bget_utf8(f);
+    }
+  return u;
+}
 
 /* Conversion of document age from seconds to our internal units */
 
@@ -102,3 +137,5 @@ convert_age(sh_time_t lastmod, sh_time_t reftime)
     return 247 + age;
   return 255;				/* then just "infinite future" */
 }
+
+#endif
