@@ -29,7 +29,13 @@ struct card_attr {
   u32 card;				/* Reference to card description (either oid or filepos) */
   u32 site_id;
   byte weight;
-  byte rfu[3];
+  byte flags;
+  byte rfu[2];
+};
+
+enum card_flag {
+  CARD_FLAG_EMPTY = 1,			/* Empty document (redirect, robot file etc.) */
+  CARD_FLAG_ACCENTED = 2		/* Document contains accented characters */
 };
 
 /* String fingerprints */
