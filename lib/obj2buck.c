@@ -20,7 +20,7 @@ static uns use_v33;
 static int hdr_sep;
 
 void
-attr_set_type(uns type)
+put_attr_set_type(uns type)
 {
   switch (type)
     {
@@ -60,7 +60,7 @@ put_attr(byte *ptr, uns type, byte *val, uns len)
 {
   if (use_v33)
   {
-    PUT_UTF8(ptr, len+1);
+    PUT_UTF8_32(ptr, len+1);
     memcpy(ptr, val, len);
     ptr += len;
     *ptr++ = type;
@@ -90,7 +90,7 @@ put_attr_vformat(byte *ptr, uns type, byte *mask, va_list va)
     if (len >= 127)
     {
       byte tmp[6], *tmp_end = tmp;
-      PUT_UTF8(tmp_end, len+1);
+      PUT_UTF8_32(tmp_end, len+1);
       uns l = tmp_end - tmp;
       memmove(ptr+l, ptr+1, len);
       memcpy(ptr, tmp, l);
@@ -150,7 +150,7 @@ bput_attr(struct fastbuf *b, uns type, byte *val, uns len)
 {
   if (use_v33)
   {
-    bput_utf8(b, len+1);
+    bput_utf8_32(b, len+1);
     bwrite(b, val, len);
     bputc(b, type);
   }
@@ -176,7 +176,7 @@ bput_attr_vformat(struct fastbuf *b, uns type, byte *mask, va_list va)
     int len = vsnprintf(NULL, 0, mask, va);
     if (len < 0)
       die("vsnprintf() does not support size=0");
-    bput_utf8(b, len+1);
+    bput_utf8_32(b, len+1);
     vbprintf(b, mask, va);
     bputc(b, type);
   }
