@@ -20,7 +20,7 @@
 
 static char log_progname[32], *log_name_patt, *log_name;
 char *log_title;
-static pid_t log_pid;
+static int log_pid;
 static int log_params;
 static int log_name_size;
 static int log_switching;
