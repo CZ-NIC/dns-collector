@@ -12,19 +12,6 @@
 #include "lib/fastbuf.h"
 
 static int
-fbbuf_config(struct fastbuf *f UNUSED, uns item, int value UNUSED)
-{
-  switch (item)
-    {
-    case BCONFIG_CAN_OVERWRITE:
-      // XXX: should we enable changing the value?
-      return 1;
-    default:
-      return -1;
-    }
-}
-
-static int
 fbbuf_refill(struct fastbuf *f UNUSED)
 {
   return 0;
@@ -41,7 +28,8 @@ fbbuf_init_read(struct fastbuf *f, byte *buf, uns size)
   f->spout = NULL;
   f->seek = NULL;
   f->close = NULL;
-  f->config = fbbuf_config;
+  f->config = NULL;
+  f->can_overwrite_buffer = 1;
 }
 
 static void
@@ -61,5 +49,6 @@ fbbuf_init_write(struct fastbuf *f, byte *buf, uns size)
   f->spout = fbbuf_spout;
   f->seek = NULL;
   f->close = NULL;
-  f->config = fbbuf_config;
+  f->config = NULL;
+  f->can_overwrite_buffer = 0;
 }

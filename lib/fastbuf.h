@@ -51,6 +51,17 @@
  *	as after the data you've read.
  *    - The spout/refill hooks can change not only bptr and bstop, but also
  *	the location of the buffer; fb-mem.c takes advantage of it.
+ *    - In some cases, the user of the bdirect interface can be allowed to modify
+ *	the data in the buffer to avoid unnecessary copying. If the back-end
+ *	allows such modifications, it can set can_overwrite_buffer accordingly:
+ *		*  0 if no modification is allowed,
+ *		*  1 if the user can modify the buffer on the condition that
+ *		     the modifications will be undone before calling the next
+ *		     fastbuf operation
+ *		*  2 if the user is allowed to overwrite the data in the buffer
+ *		     if bdirect_read_commit_modified() is called afterwards.
+ *		     In this case, the back-end must be prepared for trimming
+ *		     of the buffer which is done by the commit function.
  */
 
 struct fastbuf {
@@ -64,14 +75,15 @@ struct fastbuf {
   void (*seek)(struct fastbuf *, sh_off_t, int);  /* Slow path for bseek(), buffer already flushed */
   void (*close)(struct fastbuf *);	/* Close the stream */
   int (*config)(struct fastbuf *, uns, int);	/* Configure the stream */
+  int can_overwrite_buffer;		/* Can the buffer be altered? (see discussion above) 0=never, 1=temporarily, 2=permanently */
 };
 
 /* FastIO on standard files (specify buffer size 0 to enable mmaping) */
 
-struct fastbuf *bopen(byte *name, uns mode, uns buffer);
-struct fastbuf *bopen_tmp(uns buffer);
-struct fastbuf *bfdopen(int fd, uns buffer);
-struct fastbuf *bfdopen_shared(int fd, uns buffer);
+struct fastbuf *bopen(byte *name, uns mode, uns buflen);
+struct fastbuf *bopen_tmp(uns buflen);
+struct fastbuf *bfdopen(int fd, uns buflen);
+struct fastbuf *bfdopen_shared(int fd, uns buflen);
 
 /* FastIO on in-memory streams */
 
@@ -101,16 +113,6 @@ fbbuf_count_written(struct fastbuf *f)
 int bconfig(struct fastbuf *f, uns type, int data);
 
 #define BCONFIG_IS_TEMP_FILE 0
-#define BCONFIG_CAN_OVERWRITE 1
-  /* Specifies whether the caller is allowed to perform the following optimized
-   * 0-copy write operation:
-   * 	- get the buffer by bdirect_read_prepare()
-   * 	- modify the buffer, e.g. by putting \0's inside
-   * 	- call bflush() to let the fastbuf know
-   * Values:
-   * 0: read-only memory
-   * 1: you can write into read-write memory, if you restore the original value
-   * 2: you can rewrite the original content */
 
 /* Universal functions working on all fastbuf's */
 
@@ -356,6 +358,13 @@ static inline void
 bdirect_read_commit(struct fastbuf *f, byte *pos)
 {
   f->bptr = pos;
+}
+
+static inline void
+bdirect_read_commit_modified(struct fastbuf *f, byte *pos)
+{
+  f->bptr = pos;
+  f->buffer = pos;	/* Avoid seeking backwards in the buffer */
 }
 
 static inline uns

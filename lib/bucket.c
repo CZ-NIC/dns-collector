@@ -131,7 +131,6 @@ obuck_unlock(void)
 
 struct fb_bucket {
   struct fastbuf fb;
-  int can_overwrite;
   sh_off_t start_pos;
   uns bucket_size;
   byte buffer[0];
@@ -302,21 +301,6 @@ obuck_find_next(struct obuck_header *hdrp, int full)
     }
 }
 
-static int
-obuck_bconfig(struct fastbuf *f, uns item, int value)
-{
-  switch (item)
-    {
-    case BCONFIG_CAN_OVERWRITE: ;
-      int old_value = FB_BUCKET(f)->can_overwrite;
-      if (value >= 0 && value <= 2)
-	FB_BUCKET(f)->can_overwrite = value;
-      return old_value;
-    default:
-      return -1;
-    }
-}
-
 struct fastbuf *
 obuck_fetch(void)
 {
@@ -333,7 +317,8 @@ obuck_fetch(void)
   b->spout = NULL;
   b->seek = NULL;
   b->close = obuck_fb_close;
-  b->config = obuck_bconfig;
+  b->config = NULL;
+  b->can_overwrite_buffer = 2;
   FB_BUCKET(b)->start_pos = bucket_find_pos;
   FB_BUCKET(b)->bucket_size = obuck_hdr.length;
   obuck_fb_count++;
@@ -373,9 +358,9 @@ obuck_create(u32 type)
   b->seek = NULL;
   b->close = NULL;
   b->config = NULL;
+  b->can_overwrite_buffer = 0;
   FB_BUCKET(b)->start_pos = start;
   FB_BUCKET(b)->bucket_size = 0;
-  FB_BUCKET(b)->can_overwrite = 2;
   bwrite(b, &obuck_create_hdr, sizeof(obuck_create_hdr));
 
   return b;

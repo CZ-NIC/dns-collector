@@ -18,7 +18,6 @@ struct fb_limfd {
   struct fastbuf fb;
   int fd;				/* File descriptor */
   int limit;
-  int can_overwrite;
 };
 #define FB_LIMFD(f) ((struct fb_limfd *)(f)->is_fastbuf)
 
@@ -41,21 +40,6 @@ bfl_close(struct fastbuf *f)
   xfree(f);
 }
 
-static int
-bfl_config(struct fastbuf *f, uns item, int value)
-{
-  switch (item)
-    {
-    case BCONFIG_CAN_OVERWRITE: ;
-      int old_value = FB_LIMFD(f)->can_overwrite;
-      if (value >= 0 && value <= 2)
-	FB_LIMFD(f)->can_overwrite = value;
-      return old_value;
-    default:
-      return -1;
-    }
-}
-
 struct fastbuf *
 bopen_limited_fd(int fd, uns buflen, uns limit)
 {
@@ -71,8 +55,7 @@ bopen_limited_fd(int fd, uns buflen, uns limit)
   F->limit = limit;
   f->refill = bfl_refill;
   f->close = bfl_close;
-  f->config = bfl_config;
-  F->can_overwrite = 2;
+  f->can_overwrite_buffer = 2;
   return f;
 }
 

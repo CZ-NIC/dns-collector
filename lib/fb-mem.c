@@ -30,7 +30,6 @@ struct fb_mem {
   struct fastbuf fb;
   struct memstream *stream;
   struct msblock *block;
-  int can_overwrite;
 };
 #define FB_MEM(f) ((struct fb_mem *)(f)->is_fastbuf)
 
@@ -151,21 +150,6 @@ fbmem_close(struct fastbuf *f)
   xfree(f);
 }
 
-static int
-fbmem_config(struct fastbuf *f, uns item, int value)
-{
-  switch (item)
-    {
-    case BCONFIG_CAN_OVERWRITE: ;
-      int old_value = FB_MEM(f)->can_overwrite;
-      if (value >= 0 && value <= 1)
-	FB_MEM(f)->can_overwrite = value;
-      return old_value;
-    default:
-      return -1;
-    }
-}
-
 struct fastbuf *
 fbmem_create(unsigned blocksize)
 {
@@ -179,7 +163,6 @@ fbmem_create(unsigned blocksize)
   f->name = "<fbmem-write>";
   f->spout = fbmem_spout;
   f->close = fbmem_close;
-  f->config = fbmem_config;
   return f;
 }
 
@@ -197,8 +180,7 @@ fbmem_clone_read(struct fastbuf *b)
   f->refill = fbmem_refill;
   f->seek = fbmem_seek;
   f->close = fbmem_close;
-  f->config = fbmem_config;
-  FB_MEM(f)->can_overwrite = 1;
+  f->can_overwrite_buffer = 1;
   return f;
 }
 

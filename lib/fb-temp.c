@@ -28,14 +28,14 @@ static void CONSTRUCTOR temp_init_config(void)
 }
 
 struct fastbuf *
-bopen_tmp(uns bufsize)
+bopen_tmp(uns buflen)
 {
   byte buf[256];
   struct fastbuf *f;
   static uns temp_counter;
 
   sprintf(buf, temp_template, (int) getpid(), temp_counter++);
-  f = bopen(buf, O_RDWR | O_CREAT | O_TRUNC, bufsize);
+  f = bopen(buf, O_RDWR | O_CREAT | O_TRUNC, buflen);
   bconfig(f, BCONFIG_IS_TEMP_FILE, 1);
   return f;
 }
