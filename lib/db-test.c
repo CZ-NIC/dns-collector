@@ -260,7 +260,7 @@ int main(int argc, char **argv)
   char *ch;
   int dont_delete = 0;
 
-  initlog("dbtest");
+  log_init("dbtest");
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
   while ((c = getopt(argc, argv, "c:p:k:n:d:vsStF")) >= 0)

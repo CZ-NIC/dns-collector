@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 {
 	int c;
 
-	initlog(argv[0]);
+	log_init(argv[0]);
 
 	cf_register(jmeno);
 	cf_register(telo);

@@ -76,13 +76,13 @@ static int cf_subread(byte *filename,int level)
 	byte *msg=NULL;
 
 	if(level>=MAX_LEVEL){
-		log(L_ERROR "Too many (%d) nested files when reading %s",level,filename);
+		log(L_ERROR,"Too many (%d) nested files when reading %s",level,filename);
 		return 0;
 	}
 		
 	fd=sh_open(filename,O_RDONLY, 0666);
 	if(fd<0){
-		log(L_ERROR "Cannot open file %s",filename);
+		log(L_ERROR,"Cannot open configuration file %s: %m",filename);
 		return 0;
 	}
 	b=bfdopen(fd,4096);
@@ -149,7 +149,7 @@ static int cf_subread(byte *filename,int level)
 	}	/* for every line */
 
 	if(msg)
-		log(L_ERROR "%s, line %d: %s",filename,line,msg);
+		log(L_ERROR,"%s, line %d: %s",filename,line,msg);
 	bclose(b);
 	return !msg;
 }
