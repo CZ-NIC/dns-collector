@@ -3,5 +3,3 @@
 DIRS+=build
 
 obj/build/genhash: obj/build/genhash.o
-
-.SECONDARY: obj/build/genhash obj/build/genhash.o
