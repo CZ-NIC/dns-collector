@@ -1,11 +1,12 @@
-# Makefile for the Sherlock Charset Library (c) 1997--2001 Martin Mares <mj@ucw.cz>
+# Makefile for the Sherlock Charset Library (c) 1997--2002 Martin Mares <mj@ucw.cz>
 
 DIRS+=charset
 
-UNI_OBJS=toupper.o tolower.o tocat.o utf8.o unaccent.o strlen.o debug.o \
-	charconv.o setnames.o unistream.o
+LIBCHARSET_MODS=toupper tolower tocat utf8 unaccent strlen debug \
+	charconv setnames unistream
 
-obj/charset/libcharset.a: $(addprefix obj/charset/,$(UNI_OBJS))
+obj/charset/libcharset.a: $(addsuffix .o,$(addprefix obj/charset/,$(LIBCHARSET_MODS)))
+obj/charset/libcharset.so: $(addsuffix .oo,$(addprefix obj/charset/,$(LIBCHARSET_MODS)))
 
 build_charsets:
 	cd charset && sh misc/generate
