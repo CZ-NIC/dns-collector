@@ -54,6 +54,8 @@ log_switch(struct tm *tm)
       close(2);
       dup(fd);
       close(fd);
+      close(1);
+      dup(2);
     }
   log_switching--;
 }
@@ -188,5 +190,7 @@ log_file(byte *name)
       log_name = xmalloc(log_name_size);
       log_name[0] = 0;
       log_switch(tm);
+      close(0);
+      open("/dev/null", O_RDWR, 0);
     }
 }
