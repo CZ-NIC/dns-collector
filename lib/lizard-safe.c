@@ -55,7 +55,7 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
    * is caught in the case of buffer-overflow.  The function is not re-entrant
    * because of a static longjmp handler.  */
 {
-  uns lock_offset = ALIGN(expected_length, PAGE_SIZE);
+  volatile uns lock_offset = ALIGN(expected_length, PAGE_SIZE);
   if (lock_offset + PAGE_SIZE > buf->len)
   {
     errno = EFBIG;
