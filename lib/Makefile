@@ -8,7 +8,8 @@ LIBSH_MODS=alloc alloc_str ctmatch db fastbuf fb-file fb-mem lists \
 	prime random realloc regex timer url wildmatch \
 	wordsplit str_ctype str_upper bucket conf object sorter \
 	finger proctitle ipaccess profile bitsig randomkey \
-	hashfunc base64 base224 fb-temp fb-mmap fb-printf urlkey
+	hashfunc base64 base224 fb-temp fb-mmap fb-printf urlkey \
+	partmap
 LIBSH_MOD_PATHS=$(addprefix obj/lib/,$(LIBSH_MODS)) $(CUSTOM_LIB_MODULES)
 
 obj/lib/libsh.a: $(addsuffix .o,$(LIBSH_MOD_PATHS))

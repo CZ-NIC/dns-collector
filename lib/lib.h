@@ -150,6 +150,14 @@ uns random_max(uns);
 void *mmap_file(byte *name, unsigned *len, int writeable);
 void munmap_file(void *start, unsigned len);
 
+/* partmap.c */
+
+struct partmap;
+struct partmap *partmap_open(byte *name, int writeable);
+void *partmap_map(struct partmap *p, sh_off_t offset, uns size);
+void partmap_close(struct partmap *p);
+sh_off_t partmap_size(struct partmap *p);
+
 /* proctitle.c */
 
 void setproctitle_init(int argc, char **argv);
