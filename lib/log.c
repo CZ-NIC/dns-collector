@@ -18,12 +18,14 @@
 #include <time.h>
 #include <alloca.h>
 
-static char log_progname[32], *log_name_patt, *log_name;
+static char log_progname[32], *log_name_patt;
+char *log_filename;
 char *log_title;
 static int log_pid;
 static int log_params;
-static int log_name_size;
+static int log_filename_size;
 int log_switch_nest;
+void (*log_die_hook)(void);
 
 void
 log_fork(void)
@@ -35,18 +37,18 @@ static void
 do_log_switch(struct tm *tm)
 {
   int fd, l;
-  char name[log_name_size];
+  char name[log_filename_size];
 
   if (!log_name_patt ||
-      log_name[0] && !log_params)
+      log_filename[0] && !log_params)
     return;
   log_switch_nest++;
-  l = strftime(name, log_name_size, log_name_patt, tm);
-  if (l < 0 || l >= log_name_size)
+  l = strftime(name, log_filename_size, log_name_patt, tm);
+  if (l < 0 || l >= log_filename_size)
     die("Error formatting log file name: %m");
-  if (strcmp(name, log_name))
+  if (strcmp(name, log_filename))
     {
-      strcpy(log_name, name);
+      strcpy(log_filename, name);
       fd = open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
       if (fd < 0)
 	die("Unable to open log file %s: %m", name);
@@ -139,6 +141,8 @@ die(byte *msg, ...)
   va_start(args, msg);
   vlog_msg(L_FATAL, msg, args);
   va_end(args);
+  if (log_die_hook)
+    log_die_hook();
 #ifdef DEBUG_DIE_BY_ABORT
   abort();
 #else
@@ -190,16 +194,16 @@ log_file(byte *name)
     {
       if (log_name_patt)
 	xfree(log_name_patt);
-      if (log_name)
+      if (log_filename)
 	{
-	  xfree(log_name);
-	  log_name = NULL;
+	  xfree(log_filename);
+	  log_filename = NULL;
 	}
       log_name_patt = xstrdup(name);
       log_params = !!strchr(name, '%');
-      log_name_size = strlen(name) + 64;	/* 63 is an upper bound on expansion of % escapes */
-      log_name = xmalloc(log_name_size);
-      log_name[0] = 0;
+      log_filename_size = strlen(name) + 64;	/* 63 is an upper bound on expansion of % escapes */
+      log_filename = xmalloc(log_filename_size);
+      log_filename[0] = 0;
       log_switch();
       close(0);
       open("/dev/null", O_RDWR, 0);

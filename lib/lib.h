@@ -55,7 +55,9 @@
 #define L_FATAL		'!'		/* die() */
 
 extern char *log_title;			/* NULL - print no title, default is log_progname */
+extern char *log_filename;		/* Expanded name of the current log file */
 extern int log_switch_nest;		/* log_switch() nesting counter, increment to disable automatic switches */
+extern void (*log_die_hook)(void);
 
 void log_msg(unsigned int cat, const char *msg, ...) __attribute__((format(printf,2,3)));
 #define log log_msg
@@ -82,8 +84,8 @@ void assert_failed(void) NONRET;
 #define DBG(x,y...) do { } while(0)
 #endif
 
-static inline void log_switch_enable(void) { log_switch_nest++; }
-static inline void log_switch_disable(void) { ASSERT(log_switch_nest); log_switch_nest--; }
+static inline void log_switch_disable(void) { log_switch_nest++; }
+static inline void log_switch_enable(void) { ASSERT(log_switch_nest); log_switch_nest--; }
 
 /* Memory allocation */
 
