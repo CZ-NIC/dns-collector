@@ -2,6 +2,7 @@
  *	Sherlock Library -- URL Functions (according to RFC 1738 and 1808)
  *
  *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
+ *	(c) 2001 Robert Spalek <robert@ucw.cz>
  */
 
 #include "lib/lib.h"
@@ -17,11 +18,17 @@
 
 static uns url_ignore_spaces;
 static uns url_ignore_underflow;
+static byte *url_component_separators = "/&?";
+static uns url_min_repeat_count = 0x7fffffff;
+static uns url_max_repeat_length = 0;
 
 static struct cfitem url_config[] = {
   { "URL",		CT_SECTION,	NULL },
   { "IgnoreSpaces",	CT_INT,		&url_ignore_spaces },
   { "IgnoreUnderflow",	CT_INT,		&url_ignore_underflow },
+  { "ComponentSeparators",	CT_STRING,	&url_component_separators },
+  { "MinRepeatCount",		CT_INT,		&url_min_repeat_count },
+  { "MaxRepeatLength",		CT_INT,		&url_max_repeat_length },
   { NULL,		CT_STOP,	NULL }
 };
 
@@ -572,3 +579,9 @@ int main(int argc, char **argv)
 }
 
 #endif
+
+int
+url_has_repeated_component(byte *url)
+{
+	return 0;
+}

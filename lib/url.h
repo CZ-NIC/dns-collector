@@ -2,6 +2,7 @@
  *	Sherlock Library -- URL Functions
  *
  *	(c) 1997 Martin Mares <mj@ucw.cz>
+ *	(c) 2001 Robert Spalek <robert@ucw.cz>
  */
 
 #ifndef _SHERLOCK_URL_H
@@ -46,6 +47,7 @@ int url_canonicalize(struct url *);
 int url_pack(struct url *, byte *);
 int url_canon_split(byte *, byte *, byte *, struct url *);
 uns identify_protocol(byte *);
+int url_has_repeated_component(byte *url);
 
 /* Error codes */
 
