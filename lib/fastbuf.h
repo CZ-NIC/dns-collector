@@ -122,6 +122,7 @@ void bseek(struct fastbuf *f, sh_off_t pos, int whence);
 void bsetpos(struct fastbuf *f, sh_off_t pos);
 void brewind(struct fastbuf *f);
 void bskip(struct fastbuf *f, uns len);
+sh_off_t bfilesize(struct fastbuf *f);
 
 static inline sh_off_t btell(struct fastbuf *f)
 {

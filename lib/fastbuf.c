@@ -355,3 +355,15 @@ bskip(struct fastbuf *f, uns len)
       len -= l;
     }
 }
+
+sh_off_t
+bfilesize(struct fastbuf *f)
+{
+  if (!f)
+    return 0;
+  sh_off_t pos = btell(f);
+  bseek(f, 0, SEEK_END);
+  sh_off_t len = btell(f);
+  bsetpos(f, pos);
+  return len;
+}
