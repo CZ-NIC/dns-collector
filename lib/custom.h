@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-/* Word types */
+/* Word types (at most 15 of them + WT_RESERVED and WT_MAX) */
 
 enum word_type {
   WT_RESERVED,				/* Reserved word type */
