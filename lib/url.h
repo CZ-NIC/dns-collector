@@ -68,7 +68,8 @@ char *url_error(uns);
 #define URL_PROTO_HTTP 1
 #define URL_PROTO_FTP 2
 #define URL_PROTO_FILE 3
-#define URL_PROTO_MAX 4
+#define URL_PROTO_SQL 4
+#define URL_PROTO_MAX 5
 
 #define URL_PNAMES { "unknown", "http", "ftp", "file" }
 #define URL_DEFPORTS { ~0, 80, 21, 0 }
