@@ -42,6 +42,9 @@ struct fastbuf;
 void obuck_init(int writeable);	/* Initialize the bucket module */
 void obuck_cleanup(void);	/* Clean up the bucket module */
 void obuck_sync(void);		/* Flush all buffers to disk */
+void obuck_lock_read(void);	/* Explicit locking to make sure other threads don't touch buckets now */
+void obuck_lock_write(void);
+void obuck_unlock(void);
 
 /* Searching for buckets */
 void obuck_find_by_oid(struct obuck_header *hdrp);

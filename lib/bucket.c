@@ -73,19 +73,19 @@ obuck_do_lock(int type)
     die("fcntl lock: %m");
 }
 
-static inline void
+inline void
 obuck_lock_read(void)
 {
   obuck_do_lock(F_RDLCK);
 }
 
-static inline void
+inline void
 obuck_lock_write(void)
 {
   obuck_do_lock(F_WRLCK);
 }
 
-static inline void
+inline void
 obuck_unlock(void)
 {
   obuck_do_lock(F_UNLCK);
