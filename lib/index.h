@@ -23,6 +23,17 @@ enum word_type {
   WT_ALT				/* Alternate texts for graphical elements */
 };
 
+#define WT_NAMES	       			\
+	T(WORD, ~0)				\
+	T(TEXT, 1 << WT_TEXT)			\
+	T(EMPH, 1 << WT_EMPH)			\
+	T(SMALL, 1 << WT_SMALL)			\
+	T(TITLE, 1 << WT_TITLE)			\
+	T(HDR1, 1 << WT_SMALL_HEADING)		\
+	T(HDR2, 1 << WT_BIG_HEADING)		\
+	T(KEYWD, 1 << WT_KEYWORD)		\
+	T(META, 1 << WT_META)			\
+	T(ALT, 1 << WT_ALT)
 #define WORD_TYPE_NAMES	       			\
 	T(WORD, ~0)				\
 	T(TEXT, 1 << WT_TEXT)			\
