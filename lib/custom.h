@@ -20,13 +20,14 @@ enum word_type {
   WT_KEYWORD,				/* Explicitly marked keyword */
   WT_META,				/* Various meta-information */
   WT_ALT,				/* Alternate texts for graphical elements */
+  WT_LINK,				/* Link text */
   WT_MAX
 };
 
 /* Descriptive names used for user output */
 #define WORD_TYPE_USER_NAMES							\
    "reserved", "text", "emph", "small", "title", "hdr1", "hdr2", "keywd",	\
-   "meta", "alt"
+   "meta", "alt", "link"
 
 /* Keywords for word type names */
 #define WORD_TYPE_NAMES	       			\
@@ -40,7 +41,8 @@ enum word_type {
 	T(HDR2, 1 << WT_BIG_HEADING)		\
 	T(KEYWD, 1 << WT_KEYWORD)		\
 	T(META, 1 << WT_META)			\
-	T(ALT, 1 << WT_ALT)
+	T(ALT, 1 << WT_ALT)			\
+	T(LINK, 1 << WT_LINK)
 
 /* These types are not shown in document contexts */
 #define WORD_TYPES_HIDDEN 0
