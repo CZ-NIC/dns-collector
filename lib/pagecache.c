@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- File Page Cache
  *
- *	(c) 1999--2000 Martin Mares <mj@ucw.cz>
+ *	(c) 1999--2002 Martin Mares <mj@ucw.cz>
  */
 
 #include "lib/lib.h"
@@ -104,7 +104,7 @@ flush_page(struct page_cache *c, struct page *p)
 #ifdef SHERLOCK_HAVE_PREAD
   s = sh_pwrite(p->fd, p->data, c->page_size, p->pos);
 #else
-  if (c->pos != p->pos || c->pos_fd != p->fd)
+  if (c->pos != p->pos || c->pos_fd != (int) p->fd)
     sh_seek(p->fd, p->pos, SEEK_SET);
   s = write(p->fd, p->data, c->page_size);
   c->pos = p->pos + s;
@@ -281,7 +281,7 @@ pgc_read(struct page_cache *c, int fd, sh_off_t pos)
 #ifdef SHERLOCK_HAVE_PREAD
       s = sh_pread(fd, p->data, c->page_size, pos);
 #else
-      if (c->pos != pos || c->pos_fd != fd)
+      if (c->pos != pos || c->pos_fd != (int)fd)
 	sh_seek(fd, pos, SEEK_SET);
       s = read(fd, p->data, c->page_size);
       c->pos = pos + s;

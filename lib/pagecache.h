@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- File Page Cache
  *
- *	(c) 1999 Martin Mares <mj@ucw.cz>
+ *	(c) 1999--2002 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef _SHERLOCK_PAGECACHE_H
