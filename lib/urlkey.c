@@ -275,6 +275,7 @@ url_fingerprint(byte *url, struct fingerprint *fp)
 
 int main(int argc, char **argv)
 {
+  cf_read(cfdeffile);
   url_key_init();
   for (int i=1; i<argc; i++)
     {
