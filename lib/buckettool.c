@@ -8,6 +8,7 @@
 #include "lib/bucket.h"
 #include "lib/fastbuf.h"
 #include "lib/lfs.h"
+#include "lib/conf.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,7 +20,7 @@ static void
 help(void)
 {
   fprintf(stderr, "\
-Usage: buckettool <commands>\n\
+Usage: buckettool <command>\n\
 \n\
 Commands:\n\
 -l\t\tlist all buckets\n\
@@ -223,48 +224,50 @@ int
 main(int argc, char **argv)
 {
   int i, op;
+  char *arg = NULL;
 
+  log_init(NULL);
   op = 0;
-  while ((i = getopt(argc, argv, "lLd:x:icfF")) != -1)
-    switch (i)
+  while ((i = cf_getopt(argc, argv, CF_SHORT_OPTS "lLd:x:icfF", CF_NO_LONG_OPTS, NULL)) != -1)
+    if (i == '?' || op)
+      help();
+    else
       {
-      case 'l':
-	list(0);
-	op++;
-	break;
-      case 'L':
-	list(1);
-	op++;
-	break;
-      case 'd':
-	delete(optarg);
-	op++;
-	break;
-      case 'x':
-	extract(optarg);
-	op++;
-	break;
-      case 'i':
-	insert();
-	op++;
-	break;
-      case 'c':
-	cat();
-	op++;
-	break;
-      case 'f':
-	fsck(0);
-	op++;
-	break;
-      case 'F':
-	fsck(1);
-	op++;
-	break;
-      default:
-	help();
+	op = i;
+	arg = optarg;
       }
-  if (optind < argc || !op)
+  if (optind < argc)
     help();
+
+  switch (op)
+    {
+    case 'l':
+      list(0);
+      break;
+    case 'L':
+      list(1);
+      break;
+    case 'd':
+      delete(arg);
+      break;
+    case 'x':
+      extract(arg);
+      break;
+    case 'i':
+      insert();
+      break;
+    case 'c':
+      cat();
+      break;
+    case 'f':
+      fsck(0);
+      break;
+    case 'F':
+      fsck(1);
+      break;
+    default:
+      help();
+    }
 
   return 0;
 }
