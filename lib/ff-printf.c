@@ -16,7 +16,24 @@ int
 vbprintf(struct fastbuf *b, byte *msg, va_list args)
 {
   byte *buf;
-  int r, len = 256;
+  int len, r;
+
+  len = bdirect_write_prepare(b, &buf);
+  if (len >= 16)
+    {
+      r = vsnprintf(buf, len, msg, args);
+      if (r < 0)
+	len = 256;
+      else if (r < len)
+	{
+	  bdirect_write_commit(b, buf+r);
+	  return r;
+	}
+      else
+	len = r+1;
+    }
+  else
+    len = 256;
 
   while (1)
     {
@@ -51,7 +68,8 @@ bprintf(struct fastbuf *b, byte *msg, ...)
 int main(void)
 {
   struct fastbuf *b = bfdopen_shared(1, 65536);
-  bprintf(b, "13=%d str=<%s> msg=%m\n", 13, "str");
+  for (int i=0; i<10000; i++)
+    bprintf(b, "13=%d str=<%s> msg=%m\n", 13, "str");
   bclose(b);
   return 0;
 }
