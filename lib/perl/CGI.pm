@@ -23,8 +23,7 @@ BEGIN {
 
 sub url_escape($) {
 	my $x = shift @_;
-	$x =~ s/([^-\$_.!*'(),0-9A-Za-z\x80-\xff ])/"%".unpack('H2',$1)/ge;
-	$x =~ s/ /+/g;
+	$x =~ s/([^-\$_.!*'(),0-9A-Za-z\x80-\xff])/"%".unpack('H2',$1)/ge;
 	return $x;
 }
 
