@@ -1,6 +1,6 @@
 #	Perl module for sending queries to Sherlock search servers and parsing answers
 #
-#	(c) 2002 Martin Mares <mj@ucw.cz>
+#	(c) 2002--2003 Martin Mares <mj@ucw.cz>
 #
 #	This software may be freely distributed and used according to the terms
 #	of the GNU Lesser General Public License.
@@ -141,41 +141,26 @@ sub command($$) {
 }
 
 our $hdr_syntax = {
-	'D' => {
-		'D' => "",
+	'(D' => {
 		'W' => [],
 		'P' => [],
 		'n' => [],
-		'T' => "",
-		'-' => "",
 		'.' => [],
 	},
 	'.' => [],
-	'' => ""
 };
 
 our $card_syntax = {
-	'U' => {
-		'U' => "",
-		'D' => "",
-		'E' => "",
-		'L' => "",
-		'T' => "",
-		'c' => "",
-		's' => "",
+	'(U' => {
 		'V' => [],
-		'b' => "",
-		'i' => "",
 		'y' => [],
-		'z' => "",
+		'E' => [],
 	},
 	'M' => [],
 	'X' => [],
-	'' => ""
 };
 
 our $footer_syntax = {
-	'' => ""
 };
 
 sub query($$) {
@@ -221,18 +206,19 @@ sub do_parse_tree($$$$) {
 	my $syntax = shift @_;
 
 	while ($i < @$raw) {
-		$raw->[$i] =~ /^(.)(.*)/;
-		if (!defined($syntax->{$1}) && !defined($syntax->{''})) { return $i; }
-		if (ref $syntax->{$1} eq "ARRAY") {
+		$raw->[$i] =~ /^([^(]|\(.)(.*)/;
+		if ($1 eq ")") {
+			return $i;
+		} elsif (!defined($syntax->{$1})) {
+			$cooked->{$1} = $2 if !defined($cooked->{$1});
+			$i++;
+		} elsif (ref $syntax->{$1} eq "ARRAY") {
 			push @{$cooked->{$1}}, $2;
 			$i++;
 		} elsif (ref $syntax->{$1} eq "HASH") {
 			my $block = {};
 			push @{$cooked->{$1}}, $block;
-			$i = do_parse_tree($raw, $i, $block, $syntax->{$1});
-		} else {
-			$cooked->{$1} = $2 if !defined($cooked->{$1});
-			$i++;
+			$i = do_parse_tree($raw, $i+1, $block, $syntax->{$1});
 		}
 	}
 	return $i;
