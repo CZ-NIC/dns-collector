@@ -1,4 +1,4 @@
-/* Test for configuration parser */
+/* Test of large files */
 
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
