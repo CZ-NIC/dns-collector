@@ -70,7 +70,7 @@ static struct fastbuf *
 bfdopen_internal(int fd, uns buflen, byte *name)
 {
   int namelen = strlen(name) + 1;
-  struct fastbuf *b = xmalloc(sizeof(struct fastbuf) + buflen + namelen);
+  struct fastbuf *b = xmalloc_zero(sizeof(struct fastbuf) + buflen + namelen);
 
   b->buflen = buflen;
   b->buffer = (char *)(b+1);
@@ -78,7 +78,6 @@ bfdopen_internal(int fd, uns buflen, byte *name)
   b->bufend = b->buffer + buflen;
   b->name = b->bufend;
   strcpy(b->name, name);
-  b->pos = b->fdpos = 0;
   b->fd = fd;
   b->refill = bfd_refill;
   b->spout = bfd_spout;
