@@ -53,7 +53,7 @@
 #define ASORT_EXTRA_ARGS
 #endif
 
-static void ASORT_PREFIX(sort)(uns array_size)
+static void ASORT_PREFIX(sort)(uns array_size ASORT_EXTRA_ARGS)
 {
   struct stk { int l, r; } stack[8*sizeof(uns)];
   int l, r, left, right, m;
