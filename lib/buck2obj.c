@@ -14,16 +14,13 @@
 #include "lib/bucket.h"
 #include "lib/lizard.h"
 #include "lib/buck2obj.h"
+#include "lib/bbuf.h"
 
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
 
 #define	RET_ERR(num)	({ errno = num; return -1; })
-
-#define	GBUF_TYPE	byte
-#define	GBUF_PREFIX(x)	bb_##x
-#include "lib/gbuf.h"
 
 struct buck2obj_buf
 {
