@@ -609,20 +609,20 @@ obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
 	  int status = kibitz(rhdr, w_bucket_start >> OBUCK_SHIFT, (byte *)(rhdr+1));
 	  if (status)
 	    {
+	      int lnew = l;
 	      if (status > 1)
 		{
 		  /* Changed! Reconstruct the trailer. */
-		  int l2 = obuck_bucket_size(rhdr->length);
-		  ASSERT(l2 <= l);
-		  PUT_U32((byte *)rhdr + l2 - 4, OBUCK_TRAILER);
-		  l = l2;
+		  lnew = obuck_bucket_size(rhdr->length);
+		  ASSERT(lnew <= l);
+		  PUT_U32((byte *)rhdr + lnew - 4, OBUCK_TRAILER);
 		  changed = 1;
 		}
 	      whdr = (struct obuck_header *)(buf+woff);
 	      if (rhdr != whdr)
-		memmove(whdr, rhdr, l);
+		memmove(whdr, rhdr, lnew);
 	      whdr->oid = w_bucket_start >> OBUCK_SHIFT;
-	      woff += l;
+	      woff += lnew;
 	    }
 	  else
 	    changed = 1;
