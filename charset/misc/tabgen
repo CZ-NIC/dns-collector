@@ -93,7 +93,7 @@ for($i=0; $i<256; $i++) {
 print "};\n\n";
 
 print STDERR "UniData file...\n";
-open (U, "/tmp/unicode") || die "No UnicodeData file";
+open (U, "unicode/UnicodeData.txt") || die "No UnicodeData file";
 while (<U>) {
 	chomp;
 	($num,$name,$_,$_,$_,$exp) = split /;/;

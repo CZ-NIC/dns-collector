@@ -9,7 +9,7 @@
 
 #include "lib/chartype.h"
 
-extern byte *_U_cat[], *_U_sig[];
+extern byte *_U_cat[];
 extern word *_U_upper[], *_U_lower[], *_U_unaccent[];
 
 static inline uns Ucategory(word x)
@@ -36,14 +36,6 @@ static inline word Uunaccent(word x)
 {
   word w = (_U_unaccent[x >> 8U]) ? _U_unaccent[x >> 8U][x & 0xff] : 0;
   return w ? w : x;
-}
-
-static inline byte Usig(word x)
-{
-  if (_U_sig[x >> 8U])
-    return _U_sig[x >> 8U][x & 0xff] ? : 0xff;
-  else
-    return 0xff;
 }
 
 #define UCat(x,y) (Ucategory(x) & (y))

@@ -9,6 +9,6 @@ set/kamen-ctrl
 set/koi8
 set/pc-latin-2
 set/macce
-#set/cork
-#set/ibm-ctrl
-#set/mac
+set/cork
+set/ibm-ctrl
+set/mac

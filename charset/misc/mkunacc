@@ -4,7 +4,7 @@
 #  (c) 1997 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
 #
 
-open (UNI, "/tmp/unicode") || die "No Unicode Data File";
+open (UNI, "unicode/UnicodeData.txt") || die "No Unicode Data File";
 while (<UNI>) {
     chomp;
     ($num,$name,$cat,$_,$_,$exp) = split /;/;
@@ -13,10 +13,11 @@ while (<UNI>) {
 }
 close UNI;
 
-open (UNI, "/tmp/unicode") || die "No Unicode Data File";
+open (UNI, "unicode/UnicodeData.txt") || die "No Unicode Data File";
 while (<UNI>) {
     chomp;
     ($num,$name,$cat,$_,$_,$exp) = split /;/;
+    $num =~ /^....$/ || next;
     if ($exp ne "") {
 	$exp =~ s/^<.*> *//g;
 	$good = 1;

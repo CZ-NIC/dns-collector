@@ -1,0 +1,14 @@
+#!/bin/sh
+# Generate all data files for the charset conversion library
+# (c) 2001 Martin Mares <mj@ucw.cz>
+
+set -ex
+rm -f U-*.h chartable.h misc/u-*
+chmod +x misc/{unisplit,tabgen,mkunacc,table2h}
+misc/unisplit
+misc/table2h _U_cat byte <misc/u-cat >U-cat.h
+misc/table2h _U_lower word <misc/u-lower >U-lower.h
+misc/table2h _U_upper word <misc/u-upper >U-upper.h
+misc/mkunacc >misc/u-unacc
+misc/table2h _U_unaccent word <misc/u-unacc >U-unacc.h
+misc/tabgen <misc/chartable.in >chartable.h
