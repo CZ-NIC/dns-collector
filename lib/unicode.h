@@ -71,7 +71,26 @@
 
 #define UTF8_SKIP_BWD(p) while ((--*(p) & 0xc0) == 0x80)
 
-#define UTF8_SPACE(u) ((u) < 0x80 ? 1 : (u) < 0x800 ? 2 : 3)
+static inline uns
+utf8_space(uns u)
+{
+  if (u < 0x80)
+    return 1;
+  if (u < 0x800)
+    return 2;
+  return 3;
+}
+
+static inline uns
+utf8_encoding_len(uns c)
+{
+  if (c < 0x80)
+    return 1;
+  ASSERT(c >= 0xc0 && c < 0xf0);
+  if (c < 0xe0)
+    return 2;
+  return 3;
+}
 
 /* unicode-utf8.c */
 
