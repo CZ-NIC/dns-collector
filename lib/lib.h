@@ -84,11 +84,11 @@ void log_fork(void);
  */
 #define xmalloc sh_xmalloc
 void *xmalloc(unsigned);
-void *xmalloc_zero(unsigned);
 void *xrealloc(void *, unsigned);
 #define xfree(x) free(x)
 #endif
 
+void *xmalloc_zero(unsigned);
 byte *stralloc(byte *);
 
 /* Objects */

@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef DMALLOC
+
 void *
 xmalloc(uns size)
 {
@@ -17,6 +19,8 @@ xmalloc(uns size)
     die("Cannot allocate %d bytes of memory", size);
   return x;
 }
+
+#endif
 
 void *
 xmalloc_zero(uns size)
