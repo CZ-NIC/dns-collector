@@ -2,6 +2,7 @@
  *	Sherlock Library -- Character Code Map (UTF-8 Version)
  *
  *	(c) 1998--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -21,7 +22,7 @@ CHAR(0x08,0x08,0x08,_C_CTRL)				//	<control>
 CHAR(0x09,0x09,0x09,_C_CTRL | _C_BLANK | _C_PRINT)	//	<control>
 CHAR(0x0A,0x0A,0x0A,_C_CTRL | _C_BLANK)			//	<control>
 CHAR(0x0B,0x0B,0x0B,_C_CTRL)				//	<control>
-CHAR(0x0C,0x0C,0x0C,_C_CTRL)				//	<control>
+CHAR(0x0C,0x0C,0x0C,_C_CTRL | _C_BLANK)			//	<control>
 CHAR(0x0D,0x0D,0x0D,_C_CTRL | _C_BLANK)			//	<control>
 CHAR(0x0E,0x0E,0x0E,_C_CTRL)				//	<control>
 CHAR(0x0F,0x0F,0x0F,_C_CTRL)				//	<control>
