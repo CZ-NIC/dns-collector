@@ -12,6 +12,10 @@
 
 #include "lib.h"
 
+#ifndef MAP_FAILED
+#define MAP_FAILED ((void *)-1L)
+#endif
+
 void *
 mmap_file(byte *name, unsigned *len)
 {
