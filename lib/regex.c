@@ -16,6 +16,7 @@
 struct regex {
   struct re_pattern_buffer buf;
   struct re_registers regs;		/* Must not change between re_match() calls */
+  int len_cache;
 };
 
 regex *
@@ -24,7 +25,7 @@ rx_compile(byte *p)
   regex *r = xmalloc(sizeof(regex));
   const char *msg;
 
-  bzero(r, sizeof(*r));
+  bzero(r, sizeof(struct regex));
   r->buf.buffer = xmalloc(INITIAL_MEM);
   r->buf.allocated = INITIAL_MEM;
   msg = re_compile_pattern(p, strlen(p), &r->buf);
@@ -45,6 +46,7 @@ rx_match(regex *r, byte *s)
 {
   uns len = strlen(s);
 
+  r->len_cache = len;
   if (re_match(&r->buf, s, len, 0, &r->regs) < 0)
     return 0;
   if (r->regs.start[0] || r->regs.end[0] != len) /* XXX: Why regex doesn't enforce implicit "^...$" ? */
@@ -68,13 +70,18 @@ rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
 	  if (*by >= '0' && *by <= '9')	/* \0 gets replaced by entire pattern */
 	    {
 	      int j = *by++ - '0';
-	      byte *s = src + r->regs.start[j];
-	      int i = r->regs.end[j] - r->regs.start[j];
-	      if (dest + i >= end)
-		return -1;
-	      memcpy(dest, s, i);
-	      dest += i;
-	      continue;
+	      if (j < r->regs.num_regs)
+		{
+		  byte *s = src + r->regs.start[j];
+		  uns i = r->regs.end[j] - r->regs.start[j];
+		  if (r->regs.start[j] > r->len_cache || r->regs.end[j] > r->len_cache)
+		    return -1;
+		  if (dest + i >= end)
+		    return -1;
+		  memcpy(dest, s, i);
+		  dest += i;
+		  continue;
+		}
 	    }
 	}
       if (dest < end)
