@@ -249,6 +249,8 @@ parse_size(int *min, int *max, char *c)
     *min = *max = atol(c);
 }
 
+#define PROGRESS(i) if ((verbose > 2) || (verbose > 1 && !(i & 1023))) fprintf(stderr, "%d\r", i)
+
 int main(int argc, char **argv)
 {
   int c, i, j, k, l, m;
@@ -329,7 +331,7 @@ int main(int argc, char **argv)
 	  printf("create %d: ", num_keys);
 	  for(i=0; i<num_keys; i++)
 	    {
-	      verb("^2%d\r", i);
+	      PROGRESS(i);
 	      ks = keygen(kb, i);
 	      vs = valgen(vb, i);
 	      if (sdbm_store(d, kb, ks, vb, vs) != 1) die("store failed");
@@ -339,7 +341,7 @@ int main(int argc, char **argv)
 	  printf("rewrite %d: ", num_keys);
 	  for(i=0; i<num_keys; i++)
 	    {
-	      verb("^2%d\r", i);
+	      PROGRESS(i);
 	      ks = keygen(kb, i);
 	      vs = valgen(vb, i);
 	      if (sdbm_replace(d, kb, ks, vb, vs) != 1) die("replace failed");
@@ -374,7 +376,7 @@ int main(int argc, char **argv)
 		i++;
 	      else
 		i = random_max(num_keys) + ((random_max(100) < perc) ? 0 : num_keys);
-	      verb("^2%d\r", i);
+	      PROGRESS(i);
 	      ks = keygen(kb, i);
 	      if (c)
 		{
@@ -399,7 +401,7 @@ int main(int argc, char **argv)
 	  printf("delete %d: ", num_keys);
 	  for(i=0; i<num_keys; i++)
 	    {
-	      verb("^2%d\r", i);
+	      PROGRESS(i);
 	      ks = keygen(kb, i);
 	      if (sdbm_delete(d, kb, ks) != 1) die("delete failed");
 	    }
@@ -425,7 +427,7 @@ int main(int argc, char **argv)
 	      i = keydec(kb);
 	      if (i < 0 || i >= num_keys)
 		die("get_next: %d out of range", i);
-	      verb("^2%d\r", i);
+	      PROGRESS(i);
 	      vs2 = keygen(vb2, i);
 	      if (ks != vs2 || memcmp(kb, vb2, ks))
 		die("get_next: key mismatch at %d", i);
