@@ -83,6 +83,8 @@ typedef s32 sh_off_t;
 #define PACKED __attribute__((packed))
 #define CONST __attribute__((const))
 #define PURE __attribute__((const))
+#define likely(x) __builtin_expect((x),1)
+#define unlikely(x) __builtin_expect((x),0)
 
 #else
 #error This program requires the GNU C compiler.
