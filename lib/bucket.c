@@ -132,7 +132,7 @@ obuck_fb_refill(struct fastbuf *f)
   if (remains <= bufsize)
     {
       datasize = remains;
-      size = start + ALIGN(FB_BUCKET(f)->bucket_size + sizeof(struct obuck_header) + 4, OBUCK_ALIGN) - pos;
+      size = start + obuck_bucket_size(FB_BUCKET(f)->bucket_size) - pos;
     }
   else
     size = datasize = bufsize;
@@ -253,8 +253,7 @@ obuck_find_next(struct obuck_header *hdrp, int full)
   for(;;)
     {
       if (obuck_hdr.magic)
-	bucket_find_pos = (bucket_find_pos + sizeof(obuck_hdr) + obuck_hdr.length +
-			   4 + OBUCK_ALIGN - 1) & ~((sh_off_t)(OBUCK_ALIGN - 1));
+	bucket_find_pos += obuck_bucket_size(obuck_hdr.length);
       obuck_lock_read();
       c = sh_pread(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), bucket_find_pos);
       obuck_unlock();
@@ -425,8 +424,7 @@ obuck_slurp_pool(struct obuck_header *hdrp)
 	obuck_broken("Short header read", slurp_start);
       if (hdrp->magic != OBUCK_MAGIC)
 	obuck_broken("Missing magic number", slurp_start);
-      slurp_current = (slurp_start + sizeof(obuck_hdr) + hdrp->length +
-		       4 + OBUCK_ALIGN - 1) & ~((sh_off_t)(OBUCK_ALIGN - 1));
+      slurp_current = slurp_start + obuck_bucket_size(hdrp->length);
     }
   while (hdrp->oid == OBUCK_OID_DELETED);
   if (obuck_get_pos(hdrp->oid) != slurp_start)
@@ -476,7 +474,7 @@ shake_write_backup(sh_off_t bpos, byte *norm_buf, int norm_size, byte *fragment,
       /* This needn't be optimized for speed. */
       bhdr = (struct obuck_header *) (norm_buf + boff);
       ASSERT(bhdr->magic == OBUCK_MAGIC);
-      l = ALIGN(sizeof(struct obuck_header) + bhdr->length + 4, OBUCK_ALIGN);
+      l = obuck_bucket_size(bhdr->length);
       old_oid = bhdr->oid;
       bhdr->oid = bpos >> OBUCK_SHIFT;
       shake_write(bhdr, l, bpos);
@@ -581,7 +579,7 @@ obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
 	  msg = "header mismatch";
 	  goto broken;
 	}
-      l = ALIGN(sizeof(struct obuck_header) + rhdr->length + 4, OBUCK_ALIGN);
+      l = obuck_bucket_size(rhdr->length);
       if (l > buflen)
 	{
 	  if (rhdr->oid != OBUCK_OID_DELETED)
@@ -614,7 +612,7 @@ obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
 	      if (status > 1)
 		{
 		  /* Changed! Reconstruct the trailer. */
-		  int l2 = ALIGN(sizeof(struct obuck_header) + rhdr->length + 4, OBUCK_ALIGN);
+		  int l2 = obuck_bucket_size(rhdr->length);
 		  ASSERT(l2 <= l);
 		  PUT_U32((byte *)rhdr + l2 - 4, OBUCK_TRAILER);
 		  l = l2;
