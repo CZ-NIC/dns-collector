@@ -63,18 +63,19 @@
  *  TREE_WANT_CLEANUP	cleanup() -- deallocate the tree.
  *  TREE_WANT_FIND	node *find(key) -- find first node with the specified
  *			key, return NULL if no such node exists.
- *  TREE_WANT_FIND_NEXT	node *find(node *start) -- find next node with the
+ *  TREE_WANT_FIND_NEXT	node *find_next(node *start) -- find next node with the
  *			specified key, return NULL if no such node exists.
  *  TREE_WANT_SEARCH	node *search(key) -- find the node with the specified
  *			or, if it does not exist, the nearest one.
- *  TREE_WANT_ADJACENT	node *adjacent(node *) -- finds next/previous node.
+ *  TREE_WANT_ADJACENT	node *adjacent(node *, uns direction) -- finds next
+ *			(direction==1) or previous (direction==0) node.
  *  TREE_WANT_NEW	node *new(key) -- create new node with given key.
  *			If it already exists, it is created as the last one.
  *  TREE_WANT_LOOKUP	node *lookup(key) -- find node with given key,
  *			if it doesn't exist, create it. Defining
  *			TREE_GIVE_INIT_DATA is strongly recommended.
  *  TREE_WANT_DELETE	int delete(key) -- delete and deallocate node
- *			with given key. Returns success.
+ *			with a given key. Returns success.
  *  TREE_WANT_REMOVE	remove(node *) -- delete and deallocate given node.
  *
  *  TREE_WANT_DUMP	dump() -- dumps the whole tree to stdout
