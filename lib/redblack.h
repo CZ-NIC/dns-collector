@@ -68,6 +68,8 @@
  *			Implies TREE_DUPLICATES.
  *  TREE_WANT_SEARCH	node *search(key) -- find the node with the specified
  *			or, if it does not exist, the nearest one.
+ *  TREE_WANT_BOUNDARY	node *boundary(uns direction) -- finds smallest
+ *  			(direction==0) or largest (direction==1) node.
  *  TREE_WANT_ADJACENT	node *adjacent(node *, uns direction) -- finds next
  *			(direction==1) or previous (direction==0) node.
  *  TREE_WANT_NEW	node *new(key) -- create new node with given key.
@@ -407,6 +409,22 @@ STATIC P(node) * P(find) (T *t, TREE_KEY_DECL)
 	uns depth;
 	depth = P(fill_stack) (stack, TREE_MAX_DEPTH, t->root, TREE_KEY(), 0);
 	return stack[depth].buck ? &stack[depth].buck->n : NULL;
+}
+#endif
+
+#ifdef TREE_WANT_BOUNDARY
+STATIC P(node) * P(boundary) (T *t, uns direction)
+{
+	P(bucket) *n = t->root, *ns;
+	if (!n)
+		return NULL;
+	else
+	{
+		uns son = !!direction;
+		while ((ns = P(tree_son) (n, son)))
+			n = ns;
+		return &n->n;
+	}
 }
 #endif
 
@@ -966,6 +984,7 @@ do											\
 #undef TREE_WANT_FIND
 #undef TREE_WANT_FIND_NEXT
 #undef TREE_WANT_SEARCH
+#undef TREE_WANT_BOUNDARY
 #undef TREE_WANT_ADJACENT
 #undef TREE_WANT_NEW
 #undef TREE_WANT_LOOKUP
