@@ -152,10 +152,7 @@ static struct fastbuf *
 P(flush_out)(struct fastbuf *out)
 {
   if (out)
-    {
-      bflush(out);
-      bsetpos(out, 0);
-    }
+    brewind(out);
   return out;
 }
 
