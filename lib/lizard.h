@@ -31,6 +31,7 @@ int lizard_decompress(byte *in, byte *out);
 struct lizard_buffer {
   uns len;
   void *start, *ptr;
+  void *old_sigsegv_handler;
 };
 
 struct lizard_buffer *lizard_alloc(uns max_len);

@@ -22,12 +22,13 @@ struct lizard_buffer *
 lizard_alloc(uns max_len)
 {
   struct lizard_buffer *buf = xmalloc(sizeof(struct lizard_buffer));
-  buf->len = ALIGN(max_len, PAGE_SIZE);
+  buf->len = ALIGN(max_len + 3, PAGE_SIZE);		// +3 due to the unaligned access
   buf->start = mmap(NULL, buf->len + PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   if (buf->start == MAP_FAILED)
     die("mmap(anonymous): %m");
   if (mprotect(buf->start + buf->len, PAGE_SIZE, PROT_NONE) < 0)
     die("mprotect: %m");
+  buf->old_sigsegv_handler = handle_signal(SIGSEGV);
   return buf;
 }
 
@@ -35,12 +36,13 @@ void
 lizard_free(struct lizard_buffer *buf)
 {
   munmap(buf->start, buf->len + PAGE_SIZE);
+  signal(SIGSEGV, buf->old_sigsegv_handler);
   xfree(buf);
 }
 
 static jmp_buf safe_decompress_jump;
 static void
-sigsegv_handler(int UNUSED whatsit)
+sigsegv_handler(void)
 {
   log(L_ERROR, "SIGSEGV caught in lizard_decompress()");
   longjmp(safe_decompress_jump, 1);
@@ -59,7 +61,8 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
     errno = EFBIG;
     return -1;
   }
-  volatile sighandler_t old_handler = signal(SIGSEGV, sigsegv_handler);
+  volatile my_sighandler_t old_handler = signal_handler[SIGSEGV];
+  signal_handler[SIGSEGV] = sigsegv_handler;
   int len, err;
   if (!setjmp(safe_decompress_jump))
   {
@@ -73,7 +76,7 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
     len = -1;
     err = EFAULT;
   }
-  signal(SIGSEGV, old_handler);
+  signal_handler[SIGSEGV] = old_handler;
   errno = err;
   return len;
 }
