@@ -2,7 +2,6 @@
 
 DIRS+=lib
 PROGS+=obj/lib/db-tool obj/lib/buckettool
-TESTS+=obj/lib/regex-ut
 
 LIBSH_MODS= \
 	alloc alloc_str realloc mempool mempool-str \
@@ -35,6 +34,7 @@ obj/lib/libsh.a: $(addsuffix .o,$(LIBSH_MOD_PATHS))
 obj/lib/libsh.so: $(addsuffix .oo,$(LIBSH_MOD_PATHS))
 
 obj/lib/hashfunc.o obj/lib/hashfunc.oo: CFLAGS += -funroll-loops
+obj/lib/lizard.o: CFLAGS += -O6 -funroll-loops
 
 obj/lib/db-test: obj/lib/db-test.o $(LIBSH)
 obj/lib/db-tool: obj/lib/db-tool.o $(LIBSH)
@@ -49,7 +49,10 @@ obj/lib/redblack-test: obj/lib/redblack-test.o $(LIBSH)
 obj/lib/binheap-test: obj/lib/binheap-test.o $(LIBSH)
 obj/lib/lizard-test: obj/lib/lizard-test.o $(LIBSH)
 
-obj/lib/lizard.o: CFLAGS += -O6 -funroll-loops
+TESTS+=$(addprefix obj/lib/,regex.test unicode-utf8.test hash-test.test)
+obj/lib/regex.test: obj/lib/regex-t
+obj/lib/unicode-utf8.test: obj/lib/unicode-utf8-t
+obj/lib/hash-test.test: obj/lib/hash-test
 
 include lib/perl/Makefile
 include lib/shell/Makefile
