@@ -123,7 +123,11 @@ die(byte *msg, ...)
   va_start(args, msg);
   vlog(L_FATAL, msg, args);
   va_end(args);
+#ifdef DEBUG_DIE_BY_ABORT
+  abort();
+#else
   exit(1);
+#endif
 }
 
 #ifdef DEBUG
