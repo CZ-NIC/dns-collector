@@ -168,7 +168,7 @@ static void ASORT_PREFIX(sort)(uns array_size ASORT_EXTRA_ARGS)
 #undef ASORT_PREFIX
 #undef ASORT_TYPE
 #undef ASORT_ELT
-#undef ASORT_EQ
+#undef ASORT_LT
 #undef ASORT_SWAP
 #undef ASORT_THRESHOLD
 #undef ASORT_EXTRA_ARGS
