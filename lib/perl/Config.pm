@@ -1,5 +1,9 @@
-# Perl module for parsing Sherlock configuration files (using the config utility)
-# (c) 2002 Martin Mares <mj@ucw.cz>
+#	Perl module for parsing Sherlock configuration files (using the config utility)
+#
+#	(c) 2002 Martin Mares <mj@ucw.cz>
+#
+#	This software may be freely distributed and used according to the terms
+#	of the GNU Lesser General Public License.
 
 package Sherlock::Config;
 
