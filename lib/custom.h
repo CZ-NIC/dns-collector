@@ -64,22 +64,20 @@ enum string_type {
   ST_HOST,				/* Host name */
   ST_DOMAIN,				/* Domain name */
   ST_REF,				/* URL reference */
-  ST_BACKREF,				/* Back-reference (frame or redirect source) */
   ST_MAX
 };
 
 #define STRING_TYPE_USER_NAMES							\
-   "URL", "host", "domain", "ref", "backref", "type5", "type6", "type7",	\
+   "URL", "host", "domain", "ref", "type4", "type5", "type6", "type7",	\
    "type8", "type9", "type10", "type11", "type12", "type13", "type14", "type15"
 
 #define STRING_TYPE_NAMES			\
 	T(URL, 1 << ST_URL)			\
 	T(HOST, 1 << ST_HOST)			\
 	T(DOMAIN, 1 << ST_DOMAIN)		\
-	T(REF, 1 << ST_REF)			\
-	T(BACKREF, 1 << ST_BACKREF)
+	T(REF, 1 << ST_REF)
 
-#define STRING_TYPES_URL ((1 << ST_URL) | (1 << ST_REF) | (1 << ST_BACKREF))
+#define STRING_TYPES_URL ((1 << ST_URL) | (1 << ST_REF))
 /* These must be indexed in lowercase form */
 #define STRING_TYPES_CASE_INSENSITIVE ((1 << ST_HOST) | (1 << ST_DOMAIN))
 
