@@ -46,7 +46,7 @@ bget_utf8_slow(struct fastbuf *b)
 
  wrong:
   if (c >= 0)
-    bungetc(b, c);
+    bungetc(b);
   return UNI_REPLACEMENT;
 }
 
