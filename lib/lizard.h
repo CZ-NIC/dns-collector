@@ -30,7 +30,7 @@ int lizard_decompress(byte *in, byte *out);
 /* lizard-safe.c */
 struct lizard_buffer {
   uns len;
-  void *ptr;
+  void *start, *ptr;
 };
 
 struct lizard_buffer *lizard_alloc(uns max_len);

@@ -22,17 +22,19 @@ struct lizard_buffer *
 lizard_alloc(uns max_len)
 {
   struct lizard_buffer *buf = xmalloc(sizeof(struct lizard_buffer));
-  buf->len = ALIGN(max_len + PAGE_SIZE, PAGE_SIZE);
-  buf->ptr = mmap(NULL, buf->len, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-  if (buf->ptr == MAP_FAILED)
+  buf->len = ALIGN(max_len, PAGE_SIZE);
+  buf->start = mmap(NULL, buf->len + PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+  if (buf->start == MAP_FAILED)
     die("mmap(anonymous): %m");
+  if (mprotect(buf->start + buf->len, PAGE_SIZE, PROT_NONE) < 0)
+    die("mprotect: %m");
   return buf;
 }
 
 void
 lizard_free(struct lizard_buffer *buf)
 {
-  munmap(buf->ptr, buf->len);
+  munmap(buf->start, buf->len + PAGE_SIZE);
   xfree(buf);
 }
 
@@ -51,27 +53,27 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
    * is caught in the case of buffer-overflow.  The function is not re-entrant
    * because of a static longjmp handler.  */
 {
-  volatile uns lock_offset = ALIGN(expected_length, PAGE_SIZE);
-  if (lock_offset + PAGE_SIZE > buf->len)
+  uns lock_offset = ALIGN(expected_length, PAGE_SIZE);
+  if (lock_offset > buf->len)
   {
     errno = EFBIG;
     return -1;
   }
-  mprotect(buf->ptr + lock_offset, PAGE_SIZE, PROT_NONE);
   volatile sighandler_t old_handler = signal(SIGSEGV, sigsegv_handler);
   int len, err;
   if (!setjmp(safe_decompress_jump))
   {
+    buf->ptr = buf->start + buf->len - lock_offset;
     len = lizard_decompress(in, buf->ptr);
     err = errno;
   }
   else
   {
+    buf->ptr = NULL;
     len = -1;
     err = EFAULT;
   }
   signal(SIGSEGV, old_handler);
-  mprotect(buf->ptr + lock_offset, PAGE_SIZE, PROT_READ | PROT_WRITE);
   errno = err;
   return len;
 }
