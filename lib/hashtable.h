@@ -2,6 +2,7 @@
  *	Sherlock Library -- Universal Hash Table
  *
  *	(c) 2002 Martin Mares <mj@ucw.cz>
+ *	(c) 2002 Robert Spalek <robert@ucw.cz>
  */
 
 /*
@@ -41,8 +42,10 @@
  *
  *  <always defined>	init() -- initialize the hash table.
  *  HASH_WANT_CLEANUP	cleanup() -- deallocate the hash table.
- *  HASH_WANT_FIND	node *find(key) -- find node with the specified
+ *  HASH_WANT_FIND	node *find(key) -- find first node with the specified
  *			key, return NULL if no such node exists.
+ *  HASH_WANT_FIND_NEXT	node *find(key, node *start) -- find next node with
+ *			the specified key, return NULL if no such node exists.
  *  HASH_WANT_NEW	node *new(key) -- create new node with given key.
  *			Doesn't check whether it already exists.
  *  HASH_WANT_LOOKUP	node *lookup(key) -- find node with given key,
@@ -381,6 +384,27 @@ static P(node) * P(find) (HASH_KEY_DECL)
 }
 #endif
 
+#ifdef HASH_WANT_FIND_NEXT
+static P(node) * P(find_next) (HASH_KEY_DECL, P(node) *start)
+{
+#ifndef HASH_CONSERVE_SPACE
+  uns h0 = P(hash) (HASH_KEY( ));
+#endif
+  P(bucket) *b = SKIP_BACK(P(bucket), n, start);
+
+  for (; b; b=b->next)
+    {
+      if (
+#ifndef HASH_CONSERVE_SPACE
+	  b->hash == h0 &&
+#endif
+	  P(eq)(HASH_KEY( ), HASH_KEY(b->n.)))
+	return &b->n;
+    }
+  return NULL;
+}
+#endif
+
 #ifdef HASH_WANT_NEW
 static P(node) * P(new) (HASH_KEY_DECL)
 {
@@ -526,6 +550,7 @@ do {											\
 #undef HASH_WANT_CLEANUP
 #undef HASH_WANT_DELETE
 #undef HASH_WANT_FIND
+#undef HASH_WANT_FIND_NEXT
 #undef HASH_WANT_LOOKUP
 #undef HASH_WANT_NEW
 #undef HASH_WANT_REMOVE
