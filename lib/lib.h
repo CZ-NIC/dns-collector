@@ -58,9 +58,15 @@ void initlog(byte *);
 void *xmalloc(uns);
 byte *stralloc(byte *);
 
-/* Content-Type pattern matching */
+/* Content-Type pattern matching and filters */
+
+struct ct_filter;
 
 int match_ct_patt(byte *, byte *);
+
+struct ct_filter *new_ct_filter(void);
+byte *add_ct_filter(struct ct_filter *, byte *);
+int match_ct_filter(struct ct_filter *, byte *);
 
 /* Binary log */
 

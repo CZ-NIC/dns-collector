@@ -28,10 +28,10 @@ match_ct_patt(byte *p, byte *t)
 	  return 0;
       p++;
     }
-  if (*t != '/')
+  if (*t++ != '/')
     return 0;
 
-  if (*p == '*' && p[1] == '/')		/* "*" on the right-hand side */
+  if (*p == '*' && !p[1])		/* "*" on the right-hand side */
     return 1;
   while (*p)
     if (Cupcase(*p++) != Cupcase(*t++))
