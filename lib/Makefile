@@ -4,15 +4,25 @@ DIRS+=lib
 PROGS+=obj/lib/db-tool obj/lib/buckettool
 TESTS+=obj/lib/regex-ut
 
-LIBSH_MODS=alloc alloc_str ctmatch db fastbuf fb-file fb-mem lists \
-	log log-file log2 md5 md5hex mmap pagecache patimatch patmatch pool pool-str \
-	prime random realloc regex timer url wildmatch \
-	wordsplit str_ctype str_upper str_lower bucket conf object sorter \
-	finger proctitle ipaccess profile bitsig randomkey \
-	hashfunc base64 base224 fb-temp fb-mmap ff-printf urlkey \
-	partmap fb-limfd fb-buffer mainloop exitstatus runcmd carefulio \
-	lizard lizard-safe sighandler buck2obj obj2buck \
-	unicode-utf8 ff-utf8
+LIBSH_MODS= \
+	alloc alloc_str realloc pool pool-str \
+	mmap pagecache partmap hashfunc \
+	lists sorter bitsig \
+	log log-file proctitle \
+	conf ipaccess \
+	profile \
+	fastbuf ff-printf ff-utf8 \
+	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer \
+	str_ctype str_upper str_lower unicode-utf8 \
+	wildmatch wordsplit ctmatch patimatch patmatch regex \
+	bucket object buck2obj obj2buck \
+	prime random timer log2 randomkey \
+	db \
+	url urlkey finger \
+	mainloop exitstatus runcmd sighandler \
+	lizard lizard-safe \
+	md5 md5hex \
+	base64 base224
 
 ifdef CONFIG_OWN_REGEX
 include lib/regex/Makefile
