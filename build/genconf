@@ -10,7 +10,7 @@ use warnings;
 open CF, $ARGV[2] or die "Unable to open $ARGV[2]";
 my %options = ();
 while (<CF>) {
-	/^(CONFIG_\w+)=1/ || next;
+	/^(CONFIG_\w+)=[^0]/ || next;
 	$options{$1} = 1;
 }
 close CF;
