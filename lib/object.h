@@ -10,8 +10,7 @@
 #ifndef _SHERLOCK_OBJECT_H
 #define _SHERLOCK_OBJECT_H
 
-/* FIXME: Buggy objects with long attributes still exist in old databases. Decrease to 1024 one day. */
-#define MAX_ATTR_SIZE 4096		/* Maximum length an attribute can ever have (including name and trailing 0) */
+#define MAX_ATTR_SIZE 1024		/* Maximum length an attribute can ever have (including name and trailing 0) */
 
 struct fastbuf;
 
