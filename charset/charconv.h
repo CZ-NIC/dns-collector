@@ -1,7 +1,7 @@
 /*
- *	Character Set Conversion Library 1.0
+ *	Character Set Conversion Library 1.1
  *
- *	(c) 1998 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1998--2001 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU General Public License. See file COPYING in any of the GNU packages.
@@ -38,6 +38,13 @@ void conv_set_charset(struct conv_context *, int, int);
 #define CONV_CHARSET_LATIN2 2
 #define CONV_CHARSET_UTF8 8
 #define CONV_NUM_CHARSETS 9
+
+/* For those brave ones who want to mess with charconv internals */
+unsigned int conv_x_to_ucs(unsigned int x);
+unsigned int conv_ucs_to_x(unsigned int ucs);
+unsigned int conv_x_count(void);
+
+/* Charset names */
 
 int find_charset_by_name(char *);
 char *charset_name(int);

@@ -1,7 +1,7 @@
 /*
  *	Character Set Conversion Library 1.0 -- Character Set Names
  *
- *	(c) 1998 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1998--2001 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU General Public License.
@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-char *cs_names[] = {
+static char *cs_names[] = {
 	"US-ASCII",
 	"ISO-8859-1",
 	"ISO-8859-2",

@@ -1,7 +1,7 @@
 /*
- *	Character Set Conversion Library 1.0
+ *	Character Set Conversion Library 1.1
  *
- *	(c) 1998 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1998--2001 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU General Public License.
@@ -257,4 +257,22 @@ conv_set_charset(struct conv_context *c, int src, int dest)
 	c->x_to_out = x_to_output[dest];
     }
   c->state = 0;
+}
+
+unsigned int
+conv_x_to_ucs(unsigned int x)
+{
+  return x_to_uni[x];
+}
+
+unsigned int
+conv_ucs_to_x(unsigned int ucs)
+{
+  return uni_to_x[ucs >> 8U][ucs & 0xff];
+}
+
+unsigned int
+conv_x_count(void)
+{
+  return sizeof(x_to_uni) / sizeof(x_to_uni[0]);
 }
