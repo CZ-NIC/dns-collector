@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if 1
+#if 0
 
 /* TEST 1: integers */
 
@@ -111,7 +111,7 @@ static void test(void)
   log(L_INFO, "OK");
 }
 
-#elif 0
+#elif 1
 
 /* TEST 3: internal strings + pools */
 
@@ -141,13 +141,13 @@ static void test(void)
 
   pool = mp_new(16384);
   test_init();
-  for (i=0; i<1024; i+=2)
+  for (i=0; i<1048576; i+=2)
     {
       char x[32];
       sprintf(x, "abc%d", i);
       test_new(x);
     }
-  for (i=0; i<1024; i++)
+  for (i=0; i<1048576; i++)
     {
       char x[32];
       struct node *n;

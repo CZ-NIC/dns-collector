@@ -76,8 +76,7 @@
  *  ... and a couple of extra parameters:
  *
  *  HASH_NOCASE		string comparisons should be case-insensitive.
- *  HASH_DEFAULT_SIZE=n	initially, use hash table of `n' entries.
- *			The `n' has to be a power of two.
+ *  HASH_DEFAULT_SIZE=n	initially, use hash table of approx. `n' entries.
  *  HASH_CONSERVE_SPACE	use as little space as possible.
  *  HASH_FN_BITS=n	The hash function gives only `n' significant bits.
  *  HASH_ATOMIC_TYPE=t	Atomic values are of type `t' instead of int.
@@ -128,7 +127,7 @@ typedef struct P(bucket) {
 
 struct P(table) {
   uns hash_size;
-  uns hash_count, hash_max, hash_min, hash_hard_max, hash_mask;
+  uns hash_count, hash_max, hash_min, hash_hard_max;
   P(bucket) **ht;
 } P(table);
 
@@ -284,13 +283,17 @@ static inline void P(free) (void *x)
 
 static void P(alloc_table) (void)
 {
+  T.hash_size = nextprime(T.hash_size);
   T.ht = xmalloc(sizeof(void *) * T.hash_size);
   bzero(T.ht, sizeof(void *) * T.hash_size);
-  T.hash_max = T.hash_size * 2;
-  if (T.hash_max > T.hash_hard_max)
-    T.hash_max = T.hash_hard_max;
-  T.hash_min = T.hash_size / 4;
-  T.hash_mask = T.hash_size - 1;
+  if (2*T.hash_size < T.hash_hard_max)
+    T.hash_max = 2*T.hash_size;
+  else
+    T.hash_max = ~0U;
+  if (T.hash_size/2 > HASH_DEFAULT_SIZE)
+    T.hash_min = T.hash_size/4;
+  else
+    T.hash_min = 0;
 }
 
 static void P(init) (void)
@@ -349,7 +352,7 @@ static void P(rehash) (uns size)
       while (b)
 	{
 	  nb = b->next;
-	  h = P(bucket_hash)(b) & T.hash_mask;
+	  h = P(bucket_hash)(b) % T.hash_size;
 	  b->next = newt[h];
 	  newt[h] = b;
 	  b = nb;
@@ -362,7 +365,7 @@ static void P(rehash) (uns size)
 static P(node) * P(find) (HASH_KEY_DECL)
 {
   uns h0 = P(hash) (HASH_KEY( ));
-  uns h = h0 & T.hash_mask;
+  uns h = h0 % T.hash_size;
   P(bucket) *b;
 
   for (b=T.ht[h]; b; b=b->next)
@@ -385,7 +388,7 @@ static P(node) * P(new) (HASH_KEY_DECL)
   P(bucket) *b;
 
   h0 = P(hash) (HASH_KEY( ));
-  h = h0 & T.hash_mask;
+  h = h0 % T.hash_size;
   b = P(alloc) (sizeof(struct P(bucket)) + HASH_EXTRA_SIZE(HASH_KEY( )));
   b->next = T.ht[h];
   T.ht[h] = b;
@@ -404,7 +407,7 @@ static P(node) * P(new) (HASH_KEY_DECL)
 static P(node) * P(lookup) (HASH_KEY_DECL)
 {
   uns h0 = P(hash) (HASH_KEY( ));
-  uns h = h0 & T.hash_mask;
+  uns h = h0 % T.hash_size;
   P(bucket) *b;
 
   for (b=T.ht[h]; b; b=b->next)
@@ -435,7 +438,7 @@ static P(node) * P(lookup) (HASH_KEY_DECL)
 static int P(delete) (HASH_KEY_DECL)
 {
   uns h0 = P(hash) (HASH_KEY( ));
-  uns h = h0 & T.hash_mask;
+  uns h = h0 % T.hash_size;
   P(bucket) *b, **bb;
 
   for (bb=&T.ht[h]; b=*bb; bb=&b->next)
@@ -462,7 +465,7 @@ static void P(remove) (P(node) *n)
 {
   P(bucket) *x = SKIP_BACK(struct P(bucket), n, n);
   uns h0 = P(bucket_hash)(x);
-  uns h = h0 & T.hash_mask;
+  uns h = h0 % T.hash_size;
   P(bucket) *b, **bb;
 
   for (bb=&T.ht[h]; (b=*bb) && b != x; bb=&b->next)
