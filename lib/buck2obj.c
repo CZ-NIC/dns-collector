@@ -126,26 +126,24 @@ decode_attributes(byte *ptr, byte *end, struct odes *o, uns can_overwrite)
 }
 
 struct odes *
-obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, struct fastbuf *body, uns want_body)
+obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fastbuf *body, uns want_body)
 {
   struct odes *o = obj_new(buf->mp);
 
   if (buck_type < BUCKET_TYPE_V33)
   {
-    if (want_body)			// ignore empty lines, read until EOF
-      obj_read_multi(body, o);
+    if (want_body)			// ignore empty lines, read until NUL or EOF
+      {
+	obj_read_multi(body, o);
+	bgetc(body);
+      }
     else				// end on EOF or the first empty line
       obj_read(body, o);
   }
   else
   {
-    /* Compute the length of the bucket.  We cannot fetch this attribute
-     * directly due to remote indexing.  */
-    bseek(body, 0, SEEK_END);
-    sh_off_t buck_len = btell(body);
-    bsetpos(body, 0);
-
     /* Read all the bucket into 1 buffer, 0-copy if possible.  */
+    /* FIXME: This could be cached in buck2obj_buf */
     int can_overwrite = bconfig(body, BCONFIG_CAN_OVERWRITE, 0);
     if (can_overwrite < 0)
       can_overwrite = 0;
@@ -206,4 +204,38 @@ decompress:
     /* If (overwritten), bflush(body) might be needed.  */
   }
   return o;
+}
+
+byte *
+obj_attr_to_bucket(byte *buf, uns buck_type, uns attr, byte *val)
+{
+  uns l;
+
+  switch (buck_type)
+    {
+    case BUCKET_TYPE_PLAIN:
+    case BUCKET_TYPE_V30:
+      buf += sprintf(buf, "%c%s\n", attr, val);
+      break;
+    case BUCKET_TYPE_V33:
+    case BUCKET_TYPE_V33_LIZARD:
+      l = strlen(val) + 1;
+      PUT_UTF8(buf, l);
+      l--;
+      memcpy(buf, val, l);
+      buf += l;
+      *buf++ = attr;
+      break;
+    default:
+      die("obj_attr_to_bucket called for unknown type %08x", buck_type);
+    }
+  return buf;
+}
+
+byte *
+obj_attr_to_bucket_num(byte *buf, uns buck_type, uns attr, uns val)
+{
+  byte vbuf[16];
+  sprintf(vbuf, "%d", val);
+  return obj_attr_to_bucket(buf, buck_type, attr, vbuf);
 }
