@@ -15,6 +15,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 void
 obj_dump(struct odes *o)
@@ -115,6 +116,13 @@ obj_find_aval(struct odes *o, uns x)
 {
   struct oattr *a = obj_find_attr(o, x);
   return a ? a->val : NULL;
+}
+
+uns
+obj_find_anum(struct odes *o, uns x, uns def)
+{
+  struct oattr *a = obj_find_attr(o, x);
+  return a ? (uns)atol(a->val) : def;
 }
 
 struct oattr *

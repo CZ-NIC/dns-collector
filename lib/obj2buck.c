@@ -42,6 +42,19 @@ attr_set_type(uns type)
     }
 }
 
+uns
+size_attr(uns len)
+{
+  ASSERT(len <= MAX_ATTR_SIZE);
+  if (use_v33)
+    {
+      len++;
+      return len + utf8_space(len);
+    }
+  else
+    return len + 2;
+}
+
 inline byte *
 put_attr(byte *ptr, uns type, byte *val, uns len)
 {

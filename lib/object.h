@@ -34,6 +34,7 @@ struct oattr *obj_find_attr(struct odes *, uns);
 struct oattr *obj_find_attr_last(struct odes *, uns);
 uns obj_del_attr(struct odes *, struct oattr *);
 byte *obj_find_aval(struct odes *, uns);
+uns obj_find_anum(struct odes *, uns, uns);
 struct oattr *obj_set_attr(struct odes *, uns, byte *);
 struct oattr *obj_set_attr_num(struct odes *, uns, uns);
 struct oattr *obj_add_attr(struct odes *, uns, byte *);
@@ -64,6 +65,8 @@ int obj_read(struct fastbuf *, struct odes *);
 /* obj2buck.c: Generating buckets from objects */
 
 void attr_set_type(uns type);
+
+uns size_attr(uns len);
 
 byte *put_attr(byte *ptr, uns type, byte *val, uns len);
 byte *put_attr_str(byte *ptr, uns type, byte *val);
