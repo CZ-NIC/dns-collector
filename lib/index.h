@@ -135,7 +135,7 @@ fp_hash(struct fingerprint *fp)
 #define URL_KEY_BUF_SIZE (3*MAX_URL_SIZE)
 byte *url_key(byte *url, byte *buf);
 void url_fingerprint(byte *url, struct fingerprint *fp);
-void url_key_init(uns load_prefixes);
+void url_key_init(void);
 
 /* Conversion of document age from seconds to our internal units */
 
