@@ -537,7 +537,7 @@ url_error(uns err)
 /* Standard cookbook recipes */
 
 int
-url_canon_split(byte *u, byte *buf1, byte *buf2, struct url *url)
+url_canon_split_rel(byte *u, byte *buf1, byte *buf2, struct url *url, struct url *base)
 {
   int err;
 
@@ -545,19 +545,19 @@ url_canon_split(byte *u, byte *buf1, byte *buf2, struct url *url)
     return err;
   if (err = url_split(buf1, url, buf2))
     return err;
-  if (err = url_normalize(url, NULL))
+  if (err = url_normalize(url, base))
     return err;
   return url_canonicalize(url);
 }
 
 int
-url_auto_canonicalize(byte *src, byte *dst)
+url_auto_canonicalize_rel(byte *src, byte *dst, struct url *base)
 {
   byte buf1[MAX_URL_SIZE], buf2[MAX_URL_SIZE], buf3[MAX_URL_SIZE];
   int err;
   struct url ur;
 
-  (void)((err = url_canon_split(src, buf1, buf2, &ur)) ||
+  (void)((err = url_canon_split_rel(src, buf1, buf2, &ur, base)) ||
    (err = url_pack(&ur, buf3)) ||
    (err = url_enescape(buf3, dst)));
   return err;

@@ -29,8 +29,8 @@
 
 /* Remove/Introduce '%' escapes */
 
-int url_deescape(byte *, byte *);
-int url_enescape(byte *, byte *);
+int url_deescape(byte *s, byte *d);
+int url_enescape(byte *s, byte *d);
 
 /* URL splitting and normalization */
 
@@ -45,14 +45,20 @@ struct url {
   byte *buf, *bufend;
 };
 
-int url_split(byte *, struct url *, byte *);
-int url_normalize(struct url *, struct url *);
-int url_canonicalize(struct url *);
-int url_pack(struct url *, byte *);
-int url_canon_split(byte *, byte *, byte *, struct url *);
-int url_auto_canonicalize(byte *, byte *);
-uns identify_protocol(byte *);
+int url_split(byte *s, struct url *u, byte *d);
+int url_normalize(struct url *u, struct url *b);
+int url_canonicalize(struct url *u);
+int url_pack(struct url *u, byte *d);
+int url_canon_split_rel(byte *url, byte *buf1, byte *buf2, struct url *u, struct url *base);
+int url_auto_canonicalize_rel(byte *src, byte *dst, struct url *base);
+uns identify_protocol(byte *p);
 int url_has_repeated_component(byte *url);
+
+static inline int url_canon_split(byte *url, byte *buf1, byte *buf2, struct url *u)
+{ return url_canon_split_rel(url, buf1, buf2, u, NULL); }
+
+static inline int url_auto_canonicalize(byte *src, byte *dst)
+{ return url_auto_canonicalize_rel(src, dst, NULL); }
 
 /* Error codes */
 
