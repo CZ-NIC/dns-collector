@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Main Loop
  *
- *	(c) 2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2004--2005 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -22,8 +22,10 @@
 #include <time.h>
 #include <sys/poll.h>
 #include <sys/wait.h>
+#include <sys/time.h>
 
-sh_time_t now;
+timestamp_t main_now;
+sh_time_t main_now_seconds;
 uns main_shutdown;
 
 clist main_timer_list, main_file_list, main_hook_list, main_process_list;
@@ -31,6 +33,16 @@ static uns main_file_cnt;
 static uns main_poll_table_obsolete, main_poll_table_size;
 static struct pollfd *main_poll_table;
 static uns main_sigchld_set_up;
+
+static void
+main_get_time(void)
+{
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  main_now_seconds = tv.tv_sec;
+  main_now = (timestamp_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
+  DBG("It's %Ld o'clock", (long long) main_now);
+}
 
 void
 main_init(void)
@@ -40,11 +52,11 @@ main_init(void)
   clist_init(&main_file_list);
   clist_init(&main_hook_list);
   clist_init(&main_process_list);
-  now = time(NULL);
+  main_get_time();
 }
 
 void
-timer_add(struct main_timer *tm, sh_time_t expires)
+timer_add(struct main_timer *tm, timestamp_t expires)
 {
   if (tm->expires)
     clist_remove(&tm->n);
@@ -198,7 +210,7 @@ file_write(struct main_file *fi, void *buf, uns len)
 }
 
 void
-file_set_timeout(struct main_file *fi, sh_time_t expires)
+file_set_timeout(struct main_file *fi, timestamp_t expires)
 {
   ASSERT(fi->n.next);
   timer_add(&fi->timer, expires);
@@ -279,16 +291,17 @@ void
 main_debug(void)
 {
 #ifdef CONFIG_DEBUG
-  log(L_DEBUG, "### Main loop status on %d", (int)now);
+  log(L_DEBUG, "### Main loop status on %Ld", (long long)main_now);
   log(L_DEBUG, "\tActive timers:");
   struct main_timer *tm;
   CLIST_WALK(tm, main_timer_list)
-    log(L_DEBUG, "\t\t%p (expires %d, data %p)", tm, (int)tm->expires, tm->data);
+    log(L_DEBUG, "\t\t%p (expires %Ld, data %p)", tm, (long long)(tm->expires ? tm->expires-main_now : 999999), tm->data);
   struct main_file *fi;
   log(L_DEBUG, "\tActive files:");
   CLIST_WALK(fi, main_file_list)
-    log(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, eh %p, expires %d, data %p)",
-	fi, fi->fd, fi->read_handler, fi->write_handler, fi->error_handler, fi->timer.expires, fi->data);
+    log(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, eh %p, expires %Ld, data %p)",
+	fi, fi->fd, fi->read_handler, fi->write_handler, fi->error_handler,
+	(long long)(fi->timer.expires ? fi->timer.expires-main_now : 999999), fi->data);
   log(L_DEBUG, "\tActive hooks:");
   struct main_hook *ho;
   CLIST_WALK(ho, main_hook_list)
@@ -339,11 +352,11 @@ main_loop(void)
 
   while (!main_shutdown)
     {
-      now = time(NULL);
-      sh_time_t wake = now + 60;
-      while ((tm = clist_head(&main_timer_list)) && tm->expires <= now)
+      main_get_time();
+      timestamp_t wake = main_now + 1000000000;
+      while ((tm = clist_head(&main_timer_list)) && tm->expires <= main_now)
 	{
-	  DBG("MAIN: Timer %p expired", tm);
+	  DBG("MAIN: Timer %p expired at %Ld", tm, (long long) tm->expires);
 	  tm->handler(tm);
 	}
       CLIST_WALK_DELSAFE(ho, main_hook_list, tmp)
@@ -358,6 +371,7 @@ main_loop(void)
 	{
 	  int stat;
 	  pid_t pid;
+	  wake = MIN(wake, main_now + 10000);
 	  while ((pid = waitpid(-1, &stat, WNOHANG)) > 0)
 	    {
 	      DBG("MAIN: Child %d exited with status %x", pid, stat);
@@ -377,12 +391,12 @@ main_loop(void)
       /* FIXME: Here is a small race window where SIGCHLD can come unnoticed. */
       if ((tm = clist_head(&main_timer_list)) && tm->expires < wake)
 	wake = tm->expires;
-      int timeout = (wake ? (wake - now) * 1000 : 0);
+      int timeout = (wake ? wake - main_now : 0);
       DBG("MAIN: Poll for %d fds and timeout %d ms", main_file_cnt, timeout);
       if (poll(main_poll_table, main_file_cnt, timeout))
 	{
 	  struct pollfd *p = main_poll_table;
-	  now = time(NULL);
+	  main_get_time();
 	  CLIST_WALK(fi, main_file_list)
 	    {
 	      if (p->revents & (POLLIN | POLLHUP | POLLERR))
@@ -450,14 +464,15 @@ static int dhook(struct main_hook *ho UNUSED)
 static void dtimer(struct main_timer *tm)
 {
   log(L_INFO, "Timer tick");
-  timer_add(tm, now + 10);
+  timer_add(tm, main_now + 10000);
 }
 
-static void dentry(struct main_process *pr UNUSED)
+static void dentry(void)
 {
   log(L_INFO, "*** SUBPROCESS START ***");
   sleep(2);
   log(L_INFO, "*** SUBPROCESS FINISH ***");
+  exit(0);
 }
 
 static void dexit(struct main_process *pr)
@@ -487,7 +502,7 @@ main(void)
   hook_add(&hook);
 
   tm.handler = dtimer;
-  timer_add(&tm, now + 1);
+  timer_add(&tm, main_now + 1000);
 
   mp.handler = dexit;
   if (!process_fork(&mp))

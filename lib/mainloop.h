@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Main Loop
  *
- *	(c) 2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2004--2005 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -9,7 +9,9 @@
 
 #include "lib/clists.h"
 
-extern sh_time_t now;				/* Current time */
+typedef s64 timestamp_t;			/* We measure time in milliseconds */
+extern timestamp_t main_now;			/* Current time in milliseconds since UNIX epoch */
+extern sh_time_t main_now_seconds;		/* Current time in seconds since the epoch */
 extern uns main_shutdown;
 extern clist main_timer_list, main_file_list, main_hook_list, main_process_list;
 
@@ -19,12 +21,12 @@ extern clist main_timer_list, main_file_list, main_hook_list, main_process_list;
 
 struct main_timer {
   cnode n;
-  sh_time_t expires;
+  timestamp_t expires;
   void (*handler)(struct main_timer *tm); 	/* [*] Function to be called when the timer expires. Must re-add/del the timer.*/
   void *data;					/* [*] Data for use by the handler */
 };
 
-void timer_add(struct main_timer *tm, sh_time_t expires);	/* Can modify a running timer, too */
+void timer_add(struct main_timer *tm, timestamp_t expires);	/* Can modify a running timer, too */
 void timer_del(struct main_timer *tm);
 
 /* Files to poll */
@@ -57,7 +59,7 @@ void file_chg(struct main_file *fi);
 void file_del(struct main_file *fi);
 void file_read(struct main_file *fi, void *buf, uns len);
 void file_write(struct main_file *fi, void *buf, uns len);
-void file_set_timeout(struct main_file *fi, sh_time_t expires);
+void file_set_timeout(struct main_file *fi, timestamp_t expires);
 
 /* Hooks to be called in each iteration of the main loop */
 
