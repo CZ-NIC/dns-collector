@@ -13,11 +13,11 @@ cp -aL run/bin/* $DEST/bin/
 cp -aL run/lib/* $DEST/lib/
 echo "Installing config files..."
 for a in cf/* ; do
-	if [ -f $a ] ; then
+	if [ -f run/$a ] ; then
 		if [ ! -f $DEST/$a ] ; then
 			echo "$a: new, installed"
-			cp $a $DEST/$a
-		elif diff -u $DEST/$a $a ; then
+			cp run/$a $DEST/$a
+		elif diff -u $DEST/$a run/$a ; then
 			echo "$a: no differences"
 		else
 			echo -n "$a differs, replace it [Yn]? "
@@ -25,10 +25,10 @@ for a in cf/* ; do
 			if [ -z "$x" -o "$x" == "y" -o "$x" == "Y" ] ; then
 				echo "$a: replacing and keeping the old version as $a.old"
 				mv $DEST/$a $DEST/$a.old
-				cp $a $DEST/$a
+				cp run/$a $DEST/$a
 			else
 				echo "$a: installing the new version as $a.dist"
-				cp $a $DEST/$a.dist
+				cp run/$a $DEST/$a.dist
 			fi
 		fi
 	fi

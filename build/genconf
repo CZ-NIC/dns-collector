@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+# Configuration file preprocessor
+# (c) 2003 Martin Mares <mj@ucw.cz>
+
+use strict;
+use warnings;
+
+@ARGV == 3 or die "Usage: genconf <src> <dest> <config.mk>";
+
+open CF, $ARGV[2] or die "Unable to open $ARGV[2]";
+my %options = ();
+while (<CF>) {
+	/^(CONFIG_\w+)=1/ || next;
+	$options{$1} = 1;
+}
+close CF;
+
+open IN, $ARGV[0] or die "Unable to open $ARGV[0]";
+open OUT, ">$ARGV[1]" or die "Unable to create $ARGV[1]";
+my @ifs = ();	# stack of conditions, 1=satisfied
+my $empty = 0;	# last line was empty
+while (<IN>) {
+	if (/^#?ifdef\s+(\w+)/) {
+		push @ifs, !defined $options{$1};
+	} elsif (/^#ifndef\s+(\w+)/) {
+		push @ifs, defined $options{$1};
+	} elsif (/^#?endif/) {
+		defined pop @ifs || die "Improper nesting of conditionals";
+	} elsif (/^#?else/) {
+		my $x = pop @ifs;
+		defined $x || die "Improper nesting of conditionals";
+		push @ifs, !$x;
+	} else {
+		@ifs && $ifs[$#ifs] && next;
+		if (/^$/) {
+			$empty && next;
+			$empty = 1;
+		} else { $empty = 0; }
+		print OUT;
+	}
+}
+@ifs && die "Unterminated #ifdef";
+close IN;
+close OUT;
