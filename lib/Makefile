@@ -16,16 +16,16 @@ obj/lib/libsh.so: $(addsuffix .oo,$(LIBSH_MOD_PATHS))
 
 obj/lib/hashfunc.o obj/lib/hashfunc.oo: CFLAGS += -funroll-loops
 
-obj/lib/db-test: obj/lib/db-test.o obj/lib/libsh.$(LS)
-obj/lib/db-tool: obj/lib/db-tool.o obj/lib/libsh.$(LS)
-obj/lib/buckettool: obj/lib/buckettool.o obj/lib/libsh.$(LS)
-obj/lib/conf-test: obj/lib/conf-test.o obj/lib/libsh.$(LS)
-obj/lib/sort-test: obj/lib/sort-test.o obj/lib/libsh.$(LS)
-obj/lib/lfs-test: obj/lib/lfs-test.o obj/lib/libsh.$(LS)
-obj/lib/regex-test: obj/lib/regex-test.o obj/lib/libsh.$(LS)
-obj/lib/hash-test: obj/lib/hash-test.o obj/lib/libsh.$(LS)
-obj/lib/str-test: obj/lib/str-test.o obj/lib/libsh.$(LS)
-obj/lib/asort-test: obj/lib/asort-test.o obj/lib/libsh.$(LS)
+obj/lib/db-test: obj/lib/db-test.o $(LIBSH)
+obj/lib/db-tool: obj/lib/db-tool.o $(LIBSH)
+obj/lib/buckettool: obj/lib/buckettool.o $(LIBSH)
+obj/lib/conf-test: obj/lib/conf-test.o $(LIBSH)
+obj/lib/sort-test: obj/lib/sort-test.o $(LIBSH)
+obj/lib/lfs-test: obj/lib/lfs-test.o $(LIBSH)
+obj/lib/regex-test: obj/lib/regex-test.o $(LIBSH)
+obj/lib/hash-test: obj/lib/hash-test.o $(LIBSH)
+obj/lib/str-test: obj/lib/str-test.o $(LIBSH)
+obj/lib/asort-test: obj/lib/asort-test.o $(LIBSH)
 
 include lib/perl/Makefile
 include lib/shell/Makefile
