@@ -428,7 +428,10 @@ int main(int argc, char **argv)
   log_init(NULL);
   if (cf_getopt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) >= 0 ||
       optind < argc)
-    die("This program supports only the following command-line arguments:\n" CF_USAGE);
+  {
+    fputs("This program supports only the following command-line arguments:\n" CF_USAGE, stderr);
+    exit(1);
+  }
 
   unlink(obuck_name);
   obuck_init(1);
