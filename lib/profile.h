@@ -17,7 +17,7 @@
  *		prof_start(&cnt);
  *		...
  *		prof_stop(&cnt);
- *		printf("%s\n", PROF_STRING(&cnt));
+ *		printf("%s\n", PROF_STR(cnt));
  */
 
 /* PROFILE_TOD: gettimeofday() profiler */
