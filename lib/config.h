@@ -20,7 +20,7 @@
 
 /* Version */
 
-#define SHER_VER "3.2" SHERLOCK_VERSION_SUFFIX
+#define SHER_VER "3.2.1" SHERLOCK_VERSION_SUFFIX
 
 /* Paths */
 
