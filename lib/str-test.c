@@ -13,6 +13,9 @@
 /* It will be divided by (10 + strlen()).  */
 #define TEST_TIME	1000000
 
+/* The shift of the string according to the alignment.  */
+static uns alignment = 0;
+
 static void
 random_string(char *str, int len)
 {
@@ -34,7 +37,7 @@ elapsed_time(void)
 }
 
 int
-main(void)
+main(int argc, char **argv)
 {
 	char *strings[] = {
 		"",
@@ -70,6 +73,9 @@ main(void)
 		-1
 	};
 	int i;
+	if (argc > 1)
+		alignment = atoi(argv[1]);
+	printf("Alignment set to %d\n", alignment);
 	for (i=0; strings[i]; i++)
 		if (strlen(strings[i]) != str_len(strings[i]))
 			die("Internal error on string %d", i);
@@ -78,22 +84,22 @@ main(void)
 		printf("hash %2d = %08x\n", i, str_hash(strings[i]));
 	for (i=0; lengths[i] >= 0; i++)
 	{
-		char str[lengths[i] + 1];
+		char str[lengths[i] + 1 + alignment];
 		uns count = TEST_TIME / (lengths[i] + 10);
 		uns el1 = 0, el2 = 0, elh = 0;
 		uns tot1 = 0, tot2 = 0, hash = 0;
 		uns j;
 		for (j=0; j<count; j++)
 		{
-			random_string(str, lengths[i]);
+			random_string(str + alignment, lengths[i]);
 			elapsed_time();
 			/* Avoid "optimizing" by gcc, since the functions are
 			 * attributed as ((const)).  */
-			tot1 += strlen(str);
+			tot1 += strlen(str + alignment);
 			el1 += elapsed_time();
-			tot2 += str_len(str);
+			tot2 += str_len(str + alignment);
 			el2 += elapsed_time();
-			hash ^= str_hash(str);
+			hash ^= str_hash(str + alignment);
 			elh += elapsed_time();
 		}
 		if (tot1 != tot2)
