@@ -1,7 +1,7 @@
 /*
- *	The UniCode Library: Reading and writing of UTF-8 on Fastbuf Streams
+ *	Sherlock Library: Reading and writing of UTF-8 on Fastbuf Streams
  *
- *	(c) 2001 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -9,8 +9,8 @@
 
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
-#include "charset/unicode.h"
-#include "charset/unistream.h"
+#include "lib/unicode.h"
+#include "lib/ff-utf8.h"
 
 int
 bget_utf8_slow(struct fastbuf *b)
