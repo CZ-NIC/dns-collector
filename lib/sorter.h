@@ -21,6 +21,8 @@
  *			deleted as soon as possible
  *  SORT_INPUT_FILE	input is a file with this name
  *  SORT_INPUT_FB	input is a fastbuf stream
+ *			(can be safely NULL if you want to treat original
+ *			input in a different way by file read functions)
  *  SORT_INPUT_FBPAIR	input is a pair of fastbuf streams
  *			(not supported by the presorter)
  *  SORT_OUTPUT_FILE	output is a file with this name
@@ -46,9 +48,11 @@
  *			fetch data belonging to a just fetched key and store
  *			them to memory following the key, but not over limit.
  *			Returns a pointer to first byte after the data
- *			or NULL if the data don't fit.
- *			Important: keys carrying no data must be position
- *			independent.
+ *			or NULL if the data don't fit. For variable-length
+ *			keys, it can use the rest of SORT_KEY and even return
+ *			pointer before end of the key.
+ *			Important: before PREFIX_fetch_item() succeeds, the key
+ *			must be position independent, the sorter can copy it.
  *  void PREFIX_store_item(struct fastbuf *f, SORT_KEY *k)
  *			[used only with SORT_PRESORT]
  *			write key and all its data read with PREFIX_fetch_data
