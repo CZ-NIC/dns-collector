@@ -32,3 +32,10 @@ handle_signal(int signum, struct sigaction *oldact)
   if (sigaction(signum, &act, oldact) < 0)
     die("sigaction: %m");
 }
+
+void
+unhandle_signal(int signum, struct sigaction *oldact)
+{
+  if (sigaction(signum, oldact, NULL) < 0)
+    die("sigaction: %m");
+}

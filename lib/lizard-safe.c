@@ -37,7 +37,7 @@ void
 lizard_free(struct lizard_buffer *buf)
 {
   munmap(buf->start, buf->len + PAGE_SIZE);
-  sigaction(SIGSEGV, buf->old_sigsegv_handler, NULL);
+  unhandle_signal(SIGSEGV, buf->old_sigsegv_handler);
   xfree(buf->old_sigsegv_handler);
   xfree(buf);
 }

@@ -215,5 +215,6 @@ extern sh_sighandler_t signal_handler[];
 
 struct sigaction;
 void handle_signal(int signum, struct sigaction *oldact);
+void unhandle_signal(int signum, struct sigaction *oldact);
 
 #endif
