@@ -9,17 +9,15 @@
 
 /* Word types (at most 7 of them + WT_RESERVED and WT_MAX) */
 
-enum word_type {
-  WT_RESERVED,				/* Reserved word type */
-  WT_TEXT,				/* Ordinary text */
-  WT_EMPH,				/* Emphasized text */
-  WT_SMALL,				/* Small font */
-  WT_SMALL_HEADING,			/* Heading */
-  WT_BIG_HEADING,			/* Larger heading */
-  WT_ALT,				/* Alternate texts for graphical elements */
-  WT_LINK,				/* Link text */
-  WT_MAX
-};
+#define WT_RESERVED		0	/* Reserved word type */
+#define WT_TEXT			1	/* Ordinary text */
+#define WT_EMPH			2	/* Emphasized text */
+#define WT_SMALL		3	/* Small font */
+#define WT_SMALL_HEADING	4	/* Heading */
+#define WT_BIG_HEADING		5	/* Larger heading */
+#define WT_ALT			6	/* Alternate texts for graphical elements */
+#define WT_LINK			7	/* Link text */
+#define WT_MAX			8
 
 /* Descriptive names used for user output */
 #define WORD_TYPE_USER_NAMES							\
@@ -45,12 +43,10 @@ enum word_type {
 
 /* Meta information types (at most 16 of them + MT_MAX) */
 
-enum meta_type {
-  MT_TITLE,				/* Document title */
-  MT_KEYWORD,				/* Keyword from the document */
-  MT_MISC,				/* Unclassified metas */
-  MT_MAX
-};
+#define MT_TITLE		0	/* Document title */
+#define MT_KEYWORD		1	/* Keyword from the document */
+#define MT_MISC			2	/* Unclassified metas */
+#define MT_MAX			3
 
 #define META_TYPE_USER_NAMES			\
    "title", "keywd", "misc"
@@ -66,14 +62,12 @@ enum meta_type {
 
 /* String types */
 
-enum string_type {
-  ST_RESERVED,				/* Reserved string type */
-  ST_URL,				/* URL of the document */
-  ST_HOST,				/* Host name */
-  ST_DOMAIN,				/* Domain name */
-  ST_REF,				/* URL reference */
-  ST_MAX
-};
+#define ST_RESERVED		0	/* Reserved string type */
+#define ST_URL			1	/* URL of the document */
+#define ST_HOST			2	/* Host name */
+#define ST_DOMAIN		3	/* Domain name */
+#define ST_REF			4	/* URL reference */
+#define ST_MAX			5
 
 #define STRING_TYPE_USER_NAMES							\
    "URL", "host", "domain", "ref", "type4", "type5", "type6", "type7",	\
