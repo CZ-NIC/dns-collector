@@ -140,3 +140,12 @@ uns nextprime(uns);
 
 void init_timer(void);
 uns get_timer(void);
+
+/* regex.c */
+
+typedef struct regex regex;
+
+regex *rx_compile(byte *r);
+void rx_free(regex *r);
+int rx_match(regex *r, byte *s);
+int rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen);
