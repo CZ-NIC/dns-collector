@@ -222,3 +222,39 @@ obj_add_attr(struct odes *o, struct oattr *a, uns x, byte *v)
   a->last_same = b;
   return a;
 }
+
+struct oattr *
+obj_prepend_attr(struct odes *o, uns x, byte *v)
+{
+  struct oattr *a, *b, **z;
+
+  b = oa_new(o, x, v);
+  z = &o->attrs;
+  while (a = *z)
+    {
+      if (a->attr == x)
+	{
+	  b->same = a;
+	  *z = b;
+	  b->last_same = a->last_same;
+	  return b;
+	}
+      z = &a->next;
+    }
+  b->next = o->attrs;
+  o->attrs = b;
+  return b;
+}
+
+struct oattr *
+obj_insert_attr(struct odes *o, struct oattr *first, struct oattr *after, byte *v)
+{
+  struct oattr *b;
+
+  b = oa_new(o, first->attr, v);
+  b->same = after->same;
+  after->same = b;
+  if (first->last_same == after)
+    first->last_same = b;
+  return b;
+}
