@@ -60,7 +60,7 @@ int cf_item_count(void)
 	struct cfitem *sect, *item;
 	int count = 0;
 	for (sect = cfsection; sect; sect = sect->var)
-		for (item = sect+1; sect->type; sect++)
+		for (item = sect+1; item->type; item++)
 			count++;
 	return count;
 }
