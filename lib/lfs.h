@@ -32,4 +32,6 @@
 
 #endif	/* !SHERLOCK_CONFIG_LFS */
 
+#define SHERLOCK_HAVE_PREAD
+
 #endif	/* !_SHERLOCK_LFS_H */
