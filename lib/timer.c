@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Prime Number Tests
+ *	Sherlock Library -- Execution Timing
  *
  *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
  */
