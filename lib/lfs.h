@@ -64,6 +64,8 @@ extern loff_t llseek(int fd, loff_t pos, int whence);
 /* glibc 2.0 on i386 -> call syscalls directly */
 #include <asm/unistd.h>
 #include <syscall-list.h>
+#include <sys/types.h>
+#include <unistd.h>
 #ifndef SYS_pread
 #define SYS_pread 180
 #endif
