@@ -51,6 +51,8 @@ void
 rx_free(regex *r)
 {
   xfree(r->buf.buffer);
+  if (r->buf.translate)
+    xfree(r->buf.translate);
   xfree(r);
 }
 
