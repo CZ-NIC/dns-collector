@@ -2,6 +2,7 @@
  *	Sherlock Library -- Universal Sorter
  *
  *	(c) 2001--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -22,10 +23,9 @@
  *			the pre-sorting mode, it's quite possible that the
  *			comparison function will be called with both arguments
  *			identical.
- *  SORT_PRESORT_ONLY	a C expression which, if evaluated to non-zero, makes
- *			the sorter stop after the pre-sorting pass, resulting
- *			in a file which is not necessarily sorted, but which
- *			contains long runs. Implies SORT_PRESORT.
+ *  SORT_UP_TO		a C expression, if defined, sorting is stopped after the
+ *			average run length in the file exceeds the value of this
+ *			expression (in bytes)
  *  SORT_UNIFY		merge items with identical keys
  *  SORT_UNIQUE		all items have distinct keys (checked in debug mode)
  *  SORT_REGULAR	all items are equally long and they don't contain
@@ -124,13 +124,6 @@ extern uns sorter_pass_counter;
 #define SORT_ASSERT_UNIQUE
 #endif
 
-#ifdef SORT_PRESORT_ONLY
-#undef SORT_PRESORT
-#define SORT_PRESORT
-#else
-#define SORT_PRESORT_ONLY 0
-#endif
-
 #ifdef SORT_REGULAR
 
 static inline int
@@ -167,8 +160,12 @@ P(flush_out)(struct fastbuf *out)
   return out;
 }
 
-static void
-P(pass)(struct fastbuf **fb1, struct fastbuf **fb2)
+static uns
+P(pass)(struct fastbuf **fb1, struct fastbuf **fb2
+#ifdef SORT_UP_TO
+    , uns stop_sorting
+#endif
+)
 {
   struct fastbuf *in1 = *fb1;
   struct fastbuf *in2 = *fb2;
@@ -199,7 +196,10 @@ P(pass)(struct fastbuf **fb1, struct fastbuf **fb2)
       if (!kout || !(P(compare)(kout, ktmp) LESS 0))
 	{
 	  struct fastbuf *t;
-	  SWAP(out1, out2, t);
+#ifdef SORT_UP_TO
+	  if (!stop_sorting)
+#endif
+	    SWAP(out1, out2, t);
 	  if (!out1)
 	    out1 = bopen_tmp(sorter_stream_bufsize);
 	  run_count++;
@@ -252,6 +252,7 @@ P(pass)(struct fastbuf **fb1, struct fastbuf **fb2)
   *fb1 = P(flush_out)(out1);
   *fb2 = P(flush_out)(out2);
   sorter_pass_counter++;
+  return run_count;
 }
 
 #ifdef SORT_PRESORT
@@ -302,7 +303,10 @@ P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
       if (!run_count || P(compare)(&last_out, &array[0]) > 0)
 	{
 	  run_count++;
-	  SWAP(out1, out2, tbuf);
+#ifdef SORT_UP_TO
+	  if (sorter_presort_bufsize < SORT_UP_TO)
+#endif
+	    SWAP(out1, out2, tbuf);
 	  if (!out1)
 	    out1 = bopen_tmp(sorter_stream_bufsize);
 	}
@@ -396,7 +400,9 @@ P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
   leftover = NULL;
   while (cont)
     {
-      if (!(SORT_PRESORT_ONLY))
+#ifdef SORT_UP_TO
+      if (sorter_presort_bufsize < SORT_UP_TO)
+#endif
 	SWAP(out1, out2, tbuf);
       if (!out1)
 	out1 = bopen_tmp(sorter_stream_bufsize);
@@ -521,7 +527,22 @@ struct fastbuf *fb1, struct fastbuf *fb2
   P(presort)(&fb1, &fb2);
   if (fb2)
 #endif
+#ifndef SORT_UP_TO
     do P(pass)(&fb1, &fb2); while (fb1 && fb2);
+#else
+    {
+      uns run_count = ~0U, max_run_count = 0;
+      if (fb1)
+	max_run_count += bfilesize(fb1);
+      if (fb2)
+	max_run_count += bfilesize(fb2);
+      if (SORT_UP_TO)
+	max_run_count /= SORT_UP_TO;
+      do
+	run_count = P(pass)(&fb1, &fb2, run_count < max_run_count);
+      while (fb1 && fb2);
+    }
+#endif
   if (!fb1)
     fb1 = bopen_tmp(sorter_stream_bufsize);
 
@@ -552,6 +573,6 @@ struct fastbuf *fb1, struct fastbuf *fb2
 #undef SORT_OUTPUT_FILE
 #undef SORT_OUTPUT_FB
 #undef SORT_PRESORT
-#undef SORT_PRESORT_ONLY
+#undef SORT_UP_TO
 
 #endif		/* !SORT_DECLARE_ONLY */
