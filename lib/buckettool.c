@@ -92,10 +92,11 @@ delete(char *id)
 }
 
 static inline void
-dump_oattrs(struct fastbuf *out, struct oattr *a)
+dump_oattrs(struct fastbuf *out, struct oattr *oa)
 {
-  for (; a; a = a->same)
-    bprintf(out, "%c%s\n", a->attr, a->val);
+  for (; oa; oa = oa->next)
+    for (struct oattr *a=oa; a; a = a->same)
+      bprintf(out, "%c%s\n", a->attr, a->val);
 }
 
 static void
