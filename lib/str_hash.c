@@ -33,7 +33,7 @@ str_hash_init(void)
 	}
 }
 
-static inline uns str_len_uns(uns x) __attribute__((const));
+static inline uns str_len_uns(uns x) CONST;
 
 static inline uns
 str_len_uns(uns x)
