@@ -229,6 +229,7 @@ void
 process_add(struct main_process *mp)
 {
   ASSERT(!mp->n.next);
+  ASSERT(mp->handler);
   clist_add_tail(&main_process_list, &mp->n);
   if (!main_sigchld_set_up)
     {
