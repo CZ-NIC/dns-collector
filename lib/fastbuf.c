@@ -1,95 +1,20 @@
 /*
- *	Sherlock Library -- Fast File Buffering
+ *	Sherlock Library -- Fast Buffered I/O
  *
- *	(c) 1997--1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
  */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
 
 #include "lib.h"
 #include "fastbuf.h"
-#include "lfs.h"
-
-struct fastbuf *__bfdopen(int fd, uns buffer, byte *name)
-{
-  struct fastbuf *b = xmalloc(sizeof(struct fastbuf));
-
-  b->buflen = buffer;
-  b->buffer = xmalloc(buffer);
-  b->bptr = b->bstop = b->buffer;
-  b->bufend = b->buffer + buffer;
-  b->name = stralloc(name);
-  b->pos = b->fdpos = 0;
-  b->fd = fd;
-  return b;
-}
-
-struct fastbuf *
-bopen(byte *name, uns mode, uns buffer)
-{
-  int fd = sh_open(name, mode, 0666);
-  if (fd < 0)
-    die("Unable to %s file %s: %m",
-	(mode & O_CREAT) ? "create" : "open", name);
-  return __bfdopen(fd, buffer, name);
-}
-
-struct fastbuf *
-bfdopen(int fd, uns buffer)
-{
-  byte x[32];
-
-  sprintf(x, "fd%d", fd);
-  return __bfdopen(fd, buffer, x);
-}
 
 void bclose(struct fastbuf *f)
 {
   bflush(f);
-  close(f->fd);
-  free(f->name);
-  free(f->buffer);
+  f->close(f);
   free(f);
-}
-
-static int
-rdbuf(struct fastbuf *f)
-{
-  int l = read(f->fd, f->buffer, f->buflen);
-
-  if (l < 0)
-    die("Error reading %s: %m", f->name);
-  f->bptr = f->buffer;
-  f->bstop = f->buffer + l;
-  f->pos = f->fdpos;
-  f->fdpos += l;
-  return l;
-}
-
-static void
-wrbuf(struct fastbuf *f)
-{
-  int l = f->bptr - f->buffer;
-  char *c = f->buffer;
-
-  while (l)
-    {
-      int z = write(f->fd, c, l);
-      if (z <= 0)
-	die("Error writing %s: %m", f->name);
-      /* FIXME */
-      if (z != l)
-	log(L_ERROR "wrbuf: %d != %d (pos %Ld)", z, l, sh_seek(f->fd, 0, SEEK_CUR));
-      f->fdpos += z;
-      l -= z;
-      c += z;
-    }
-  f->bptr = f->buffer;
-  f->pos = f->fdpos;
 }
 
 void bflush(struct fastbuf *f)
@@ -102,7 +27,7 @@ void bflush(struct fastbuf *f)
 	  f->pos = f->fdpos;
 	}
       else				/* Write data... */
-	wrbuf(f);
+	f->spout(f);
     }
 }
 
@@ -113,9 +38,7 @@ inline void bsetpos(struct fastbuf *f, sh_off_t pos)
   else
     {
       bflush(f);
-      if (f->fdpos != pos && sh_seek(f->fd, pos, SEEK_SET) < 0)
-	die("lseek on %s: %m", f->name);
-      f->fdpos = f->pos = pos;
+      f->seek(f, pos, SEEK_SET);
     }
 }
 
@@ -131,10 +54,7 @@ void bseek(struct fastbuf *f, sh_off_t pos, int whence)
       return bsetpos(f, btell(f) + pos);
     case SEEK_END:
       bflush(f);
-      l = sh_seek(f->fd, pos, whence);
-      if (l < 0)
-	die("lseek on %s: %m", f->name);
-      f->fdpos = f->pos = l;
+      f->seek(f, pos, SEEK_END);
       break;
     default:
       die("bseek: invalid whence=%d", whence);
@@ -145,7 +65,7 @@ int bgetc_slow(struct fastbuf *f)
 {
   if (f->bptr < f->bstop)
     return *f->bptr++;
-  if (!rdbuf(f))
+  if (!f->refill(f))
     return EOF;
   return *f->bptr++;
 }
@@ -154,7 +74,7 @@ int bpeekc_slow(struct fastbuf *f)
 {
   if (f->bptr < f->bstop)
     return *f->bptr;
-  if (!rdbuf(f))
+  if (!f->refill(f))
     return EOF;
   return *f->bptr;
 }
@@ -162,7 +82,7 @@ int bpeekc_slow(struct fastbuf *f)
 void bputc_slow(struct fastbuf *f, byte c)
 {
   if (f->bptr >= f->bufend)
-    wrbuf(f);
+    f->spout(f);
   *f->bptr++ = c;
 }
 
@@ -274,7 +194,7 @@ void bread_slow(struct fastbuf *f, void *b, uns l)
 
       if (!k)
 	{
-	  rdbuf(f);
+	  f->refill(f);
 	  k = f->bstop - f->bptr;
 	  if (!k)
 	    die("bread on %s: file exhausted", f->name);
@@ -296,7 +216,7 @@ void bwrite_slow(struct fastbuf *f, void *b, uns l)
 
       if (!k)
 	{
-	  wrbuf(f);
+	  f->spout(f);
 	  k = f->bufend - f->bptr;
 	}
       if (k > l)
@@ -329,60 +249,3 @@ bgets(struct fastbuf *f, byte *b, uns l)
     }
   die("%s: Line too long", f->name);
 }
-
-void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
-{
-  uns rf = f->bstop - f->bptr;
-
-  if (!l)
-    return;
-  if (rf)
-    {
-      uns k = (rf <= l) ? rf : l;
-      bwrite(t, f->bptr, k);
-      f->bptr += k;
-      l -= k;
-    }
-  while (l >= t->buflen)
-    {
-      wrbuf(t);
-      if ((uns) read(f->fd, t->buffer, t->buflen) != t->buflen)
-	die("bbcopy: %s exhausted", f->name);
-      f->pos = f->fdpos;
-      f->fdpos += t->buflen;
-      f->bstop = f->bptr = f->buffer;
-      t->bptr = t->bufend;
-      l -= t->buflen;
-    }
-  while (l)
-    {
-      uns k = t->bufend - t->bptr;
-
-      if (!k)
-	{
-	  wrbuf(t);
-	  k = t->bufend - t->bptr;
-	}
-      if (k > l)
-	k = l;
-      bread(f, t->bptr, k);
-      t->bptr += k;
-      l -= k;
-    }
-}
-
-#ifdef TEST
-
-int main(int argc, char **argv)
-{
-  struct fastbuf *f, *t;
-  int c;
-
-  f = bopen("/etc/profile", O_RDONLY, 16);
-  t = bfdopen(1, 13);
-  bbcopy(f, t, 100);
-  bclose(f);
-  bclose(t);
-}
-
-#endif

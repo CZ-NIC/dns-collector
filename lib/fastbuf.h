@@ -1,28 +1,68 @@
 /*
- *	Sherlock Library -- Fast File Buffering
+ *	Sherlock Library -- Fast Buffered I/O
  *
- *	(c) 1997--1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef EOF
 #include <stdio.h>
 #endif
 
+/*
+ *  Generic buffered I/O on a top of buffer swapping functions.
+ *
+ *  Buffer layout when reading:
+ *
+ *  +----------------+---------------------------+
+ *  | read data      | free space                |
+ *  +----------------+---------------------------+
+ *  ^        ^        ^                           ^
+ *  buffer   bptr     bstop                       bufend
+ *
+ *  After the last character is read, bptr == bstop and buffer refill
+ *  is deferred to the next read attempt. This gives us an easy way
+ *  how to implement bungetc().
+ *
+ *  When writing:
+ *
+ *  +----------------+---------------------------+
+ *  | written data   | free space                |
+ *  +----------------+---------------------------+
+ *  ^                 ^                           ^
+ *  buffer=bstop      bptr                        bufend
+ */
+
 struct fastbuf {
   byte *bptr, *bstop;			/* Access pointers */
   byte *buffer, *bufend;		/* Start and end of the buffer */
   byte *name;				/* File name for error messages */
-  uns buflen;				/* Size of standard portion of the buffer */
-  sh_off_t pos;				/* Position of bptr in the file */
-  sh_off_t fdpos;			/* Current position in the file */
-  int fd;				/* File descriptor */
+  uns buflen;				/* Size of the buffer */
+  sh_off_t pos;				/* Position of buffer start in the file */
+  sh_off_t fdpos;			/* Current position in the non-buffered file */
+  int fd;				/* File descriptor, -1 if not a real file */
+  void *lldata;				/* Data private to access functions below */
+  void *llpos;				/* ... continued ... */
+  int (*refill)(struct fastbuf *);	/* Get a buffer with new data */
+  void (*spout)(struct fastbuf *);	/* Write buffer data to the file */
+  void (*seek)(struct fastbuf *, sh_off_t, int);  /* Slow path for bseek(), buffer already flushed */
+  void (*close)(struct fastbuf *);	/* Close the stream */
 };
+
+/* FastIO on standard files */
 
 struct fastbuf *bopen(byte *name, uns mode, uns buffer);
 struct fastbuf *bfdopen(int fd, uns buffer);
+void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l);
+
+/* FastIO on in-memory streams */
+
+struct fastbuf *fbmem_create(unsigned blocksize);	/* Create stream and return its writing fastbuf */
+struct fastbuf *fbmem_clone_read(struct fastbuf *);	/* Create reading fastbuf */
+
+/* Universal functions working on all fastbuf's */
+
 void bclose(struct fastbuf *f);
 void bflush(struct fastbuf *f);
-
 void bseek(struct fastbuf *f, sh_off_t pos, int whence);
 void bsetpos(struct fastbuf *f, sh_off_t pos);
 
@@ -248,7 +288,6 @@ extern inline void bwrite(struct fastbuf *f, void *b, uns l)
     bwrite_slow(f, b, l);
 }
 
-void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l);
 byte *bgets(struct fastbuf *f, byte *b, uns l);	/* Non-std */
 
 extern inline void
@@ -263,6 +302,8 @@ bputsn(struct fastbuf *f, byte *b)
   bputs(f, b);
   bputc(f, '\n');
 }
+
+/* Depending on compile-time configuration, we select the right function for reading/writing of file offsets */
 
 #ifdef SHERLOCK_CONFIG_LARGE_DB
 #define bgeto(f) bget5(f)
