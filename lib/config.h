@@ -9,7 +9,7 @@
 
 /* Version */
 
-#define SHER_VER "1.1"
+#define SHER_VER "1.2"
 
 /* Types */
 
