@@ -23,7 +23,7 @@ log_fork(void)
 }
 
 static void
-vlog(unsigned int cat, byte *msg, va_list args)
+vlog(unsigned int cat, const char *msg, va_list args)
 {
   time_t tim = time(NULL);
   struct tm *tm = localtime(&tim);
@@ -41,7 +41,7 @@ vlog(unsigned int cat, byte *msg, va_list args)
 }
 
 void
-log(unsigned int cat, byte *msg, ...)
+log(unsigned int cat, const char *msg, ...)
 {
   va_list args;
 

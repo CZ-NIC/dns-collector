@@ -54,7 +54,7 @@ u32 temprand(uns);
 #define L_ERROR_R	'e'
 #define L_FATAL		'!'		/* die() */
 
-void log(unsigned int cat, byte *msg, ...);
+void log(unsigned int cat, const char *msg, ...) __attribute__((format(printf,2,3)));
 void die(byte *, ...) NONRET;
 void log_init(byte *);
 void log_file(byte *);
