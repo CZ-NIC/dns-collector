@@ -300,6 +300,18 @@ obuck_find_next(struct obuck_header *hdrp, int full)
     }
 }
 
+static int
+obuck_bconfig(struct fastbuf *f UNUSED, uns item, int value UNUSED)
+{
+  switch (item)
+    {
+    case BCONFIG_CAN_OVERWRITE:
+      return 2;
+    default:
+      return -1;
+    }
+}
+
 struct fastbuf *
 obuck_fetch(void)
 {
@@ -316,7 +328,7 @@ obuck_fetch(void)
   b->spout = NULL;
   b->seek = NULL;
   b->close = obuck_fb_close;
-  b->config = NULL;
+  b->config = obuck_bconfig;
   FB_BUCKET(b)->start_pos = bucket_find_pos;
   FB_BUCKET(b)->bucket_size = obuck_hdr.length;
   obuck_fb_count++;
