@@ -49,7 +49,7 @@ enum word_type {
 
 /* These types are separated out when printing contexts */
 #define WORD_TYPES_META ((1 << WT_TITLE) | (1 << WT_KEYWORD) | \
-	(1 << WT_META))
+	(1 << WT_META) | (1 << WT_LINK))
 
 /* These types are always matched without accents if accent mode is set to "auto" */
 #define WORD_TYPES_NO_AUTO_ACCENT 0
