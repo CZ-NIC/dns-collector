@@ -11,6 +11,8 @@
 #include SHERLOCK_CUSTOM
 #include "charset/unistream.h"
 
+#define INDEX_VERSION (0x32240100+sizeof(struct card_attr))	/* Increase with each incompatible change in index format */
+
 /*
  *  Words and word complexes
  *
@@ -29,12 +31,6 @@
 #define MAX_COMPLEX_LEN		10
 
 /* Word and string types are defined in lib/custom.h */
-
-/* Global index parameters */
-
-struct index_params {
-  sh_time_t ref_time;			/* Reference time (for document ages etc.) */
-};
 
 /* Index card attributes */
 
