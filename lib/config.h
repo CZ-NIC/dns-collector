@@ -9,24 +9,12 @@
 
 /* Custom configuration */
 
+#include "lib/autoconf.h"
 #include "lib/custom.h"
 
 /* Version */
 
 #define SHER_VER "2.2a" SHER_SUFFIX
-
-/* CPU characteristics */
-
-#define CPU_I386
-#define CPU_LITTLE_ENDIAN
-#undef CPU_BIG_ENDIAN
-#define CPU_ALLOW_UNALIGNED
-#define CPU_STRUCT_ALIGN 4
-#undef CPU_64BIT_POINTERS
-
-/* OS characteristics */
-
-#define CONFIG_LINUX
 
 /* Paths */
 
