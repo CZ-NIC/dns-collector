@@ -1,26 +1,30 @@
 #!/usr/bin/perl
 #
 #  Split Unicode Data File
-#  (c) 1997--2001 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+#  (c) 1997--2003 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
 #
 
 open(I, "unidata/UnicodeData.txt") || die "Unable to open UniCode data file";
 open(C, ">misc/u-cat") || die "cat file open";
 open(U, ">misc/u-upper") || die "upper file open";
 open(L, ">misc/u-lower") || die "lower file open";
+open(G, ">misc/u-ligatures") || die "lig file open";
 while (<I>) {
 	chomp;
 	(/^$/ || /^#/) && next;
 	($code,$name,$cat,$comb,$bidir,$decomp,$d0,$d1,$n0,$mirr,$cmt1,$cmt2,$upper,$lower,$title) = split /;/;
 	$code =~ /^....$/ || next;
-	if ($cat =~ /^C/) { $ccat = "_C_CTRL"; }
-	elsif ($cat =~ /^Z/) { $ccat = "_C_BLANK"; }
-	elsif ($cat =~ /^Ll/) { $ccat = "_C_LOWER"; }
-	elsif ($cat =~ /^Lu/) { $ccat = "_C_UPPER"; }
-	elsif ($code ge "0030" && $code le "0039") { $ccat = "_C_DIGIT|_C_XDIGIT"; }
-	elsif ($code eq "005F") { $ccat = "_C_INNER"; }
+	if ($cat =~ /^C/) { $ccat = "_U_CTRL"; }
+	elsif ($cat =~ /^Z/) { $ccat = "_U_SPACE"; }
+	elsif ($decomp =~ /<compat>/ && $name =~ / LIGATURE /) {
+		$ccat = "_U_LIGATURE";
+		print G "$code\n";
+	} elsif ($cat =~ /^Ll/) { $ccat = "_U_LLOWER"; }
+	elsif ($cat =~ /^Lu/) { $ccat = "_U_LUPPER"; }
+	elsif ($cat =~ /^L/) { $ccat = "_U_LETTER"; }
+	elsif ($code ge "0030" && $code le "0039") { $ccat = "_U_DIGIT | _U_XDIGIT"; }
 	else { $ccat = ""; }
-	if ($code ge "0041" && $code le "0046" || $code ge "0061" && $code le "0066") { $ccat = $ccat . "|_C_XDIGIT"; }
+	if ($code ge "0041" && $code le "0046" || $code ge "0061" && $code le "0066") { $ccat = $ccat . "|_U_XDIGIT"; }
 	if ($ccat ne "") { print C "$code\t$ccat\n"; }
 	if ($upper ne "") { print U "$code\t0x$upper\n"; }
 	if ($lower ne "") { print L "$code\t0x$lower\n"; }
@@ -29,3 +33,4 @@ close I;
 close C;
 close U;
 close L;
+close G;

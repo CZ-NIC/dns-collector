@@ -10,12 +10,10 @@
 #ifndef _UNICODE_H
 #define _UNICODE_H
 
-#include "lib/chartype.h"
+extern const byte *_U_cat[];
+extern const word *_U_upper[], *_U_lower[], *_U_unaccent[];
 
-extern byte *_U_cat[];
-extern word *_U_upper[], *_U_lower[], *_U_unaccent[];
-
-static inline uns Ucategory(word x)
+static inline uns Ucategory(uns x)
 {
   if (_U_cat[x >> 8U])
     return _U_cat[x >> 8U][x & 0xff];
@@ -23,37 +21,51 @@ static inline uns Ucategory(word x)
     return 0;
 }
 
-static inline word Utoupper(word x)
+static inline uns Utoupper(uns x)
 {
   word w = (_U_upper[x >> 8U]) ? _U_upper[x >> 8U][x & 0xff] : 0;
   return w ? w : x;
 }
 
-static inline word Utolower(word x)
+static inline uns Utolower(uns x)
 {
   word w = (_U_lower[x >> 8U]) ? _U_lower[x >> 8U][x & 0xff] : 0;
   return w ? w : x;
 }
 
-static inline word Uunaccent(word x)
+static inline uns Uunaccent(uns x)
 {
   word w = (_U_unaccent[x >> 8U]) ? _U_unaccent[x >> 8U][x & 0xff] : 0;
   return w ? w : x;
 }
 
+extern const word *Uexpand_lig(uns x);
+
+enum unicode_char_type {
+  _U_LETTER,			/* Letters */
+  _U_UPPER,			/* Upper-case letters */
+  _U_LOWER,			/* Lower-case letters */
+  _U_CTRL,			/* Control characters */
+  _U_DIGIT,			/* Digits */
+  _U_XDIGIT,			/* Hexadecimal digits */
+  _U_SPACE,			/* White spaces (spaces, tabs, newlines) */
+  _U_LIGATURE,			/* Compatibility ligature (to be expanded) */
+};
+
+#define _U_LUPPER (_U_LETTER | _U_UPPER)
+#define _U_LLOWER (_U_LETTER | _U_LOWER)
+
 #define UCat(x,y) (Ucategory(x) & (y))
 
-#define Uupper(x) UCat(x, _C_UPPER)
-#define Ulower(x) UCat(x, _C_LOWER)
-#define Ualpha(x) UCat(x, _C_ALPHA)
-#define Ualnum(x) UCat(x, _C_ALNUM)
+#define Ualpha(x) UCat(x, _U_LETTER)
+#define Uupper(x) UCat(x, _U_UPPER)
+#define Ulower(x) UCat(x, _U_LOWER)
+#define Udigit(x) UCat(x, _U_DIGIT)
+#define Uxdigit(x) UCat(x, (_U_DIGIT | _U_XDIGIT))
+#define Ualnum(x) UCat(x, (_U_LETTER | _U_DIGIT))
+#define Uctrl(x) UCat(x, _U_CTRL)
 #define Uprint(x) !Uctrl(x)
-#define Udigit(x) UCat(x, _C_DIGIT)
-#define Uxdigit(x) UCat(x, _C_XDIGIT)
-#define Uword(x) UCat(x, _C_WORD)
-#define Ublank(x) UCat(x, _C_BLANK)
-#define Uctrl(x) UCat(x, _C_CTRL)
-#define Uspace(x) Ublank(x)
+#define Uspace(x) UCat(x, _U_SPACE)
 
 #define UNI_REPLACEMENT 0xfffc
 
