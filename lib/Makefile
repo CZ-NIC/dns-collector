@@ -12,6 +12,8 @@ SHLIB_OBJS=alloc.o alloc_str.o ctmatch.o db.o fastbuf.o fb-file.o fb-mem.o lists
 
 obj/lib/libsh.a: $(addprefix obj/lib/,$(SHLIB_OBJS))
 
+obj/lib/hashfunc.o: CFLAGS += -funroll-loops
+
 obj/lib/db-test: obj/lib/db-test.o obj/lib/libsh.a
 obj/lib/db-tool: obj/lib/db-tool.o obj/lib/libsh.a
 obj/lib/buckettool: obj/lib/buckettool.o obj/lib/libsh.a
