@@ -19,7 +19,7 @@ for a in $SH_CONFIGS ; do
 		if [ ! -f $DEST/cf/$a ] ; then
 			echo "cf/$a: new, installed"
 			cp run/cf/$a $DEST/cf/$a
-		elif [ $a == catalog-rules -o $a == url-equiv ] ; then
+		elif [ $a == catalog-rules ] ; then
 			echo "cf/$a: will be regenerated automatically"
 		elif diff -u $DEST/cf/$a run/cf/$a ; then
 			echo "cf/$a: no differences"
