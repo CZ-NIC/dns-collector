@@ -100,7 +100,7 @@ vlog(unsigned int cat, const char *msg, va_list args)
 	  write(2, buf, l + l0);
 	  return;
 	}
-      buflen = l + l0;
+      buflen = l + l0 + 1;
     }
 }
 
