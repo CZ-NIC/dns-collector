@@ -30,12 +30,14 @@ static sh_off_t bucket_start, bucket_current;
 byte *obuck_name = "not/configured";
 static uns obuck_io_buflen = 65536;
 static int obuck_shake_buflen = 1048576;
+static uns obuck_slurp_buflen = 65536;
 
 static struct cfitem obuck_config[] = {
   { "Buckets",		CT_SECTION,	NULL },
   { "BucketFile",	CT_STRING,	&obuck_name },
   { "BufSize",		CT_INT,		&obuck_io_buflen },
   { "ShakeBufSize",	CT_INT,		&obuck_shake_buflen },
+  { "SlurpBufSize",	CT_INT,		&obuck_slurp_buflen },
   { NULL,		CT_STOP,	NULL }
 };
 
@@ -312,6 +314,73 @@ obuck_delete(oid_t oid)
   obuck_hdr.oid = OBUCK_OID_DELETED;
   sh_pwrite(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), bucket_start);
   obuck_unlock();
+}
+
+/*** Fast reading of the whole pool ***/
+
+static struct fastbuf *obuck_rpf;
+
+static int
+obuck_slurp_refill(struct fastbuf *f)
+{
+  uns l;
+
+  if (!obuck_remains)
+    return 0;
+  l = bdirect_read_prepare(obuck_rpf, &f->buffer);
+  if (!l)
+    obuck_broken("Incomplete object");
+  l = MIN(l, obuck_remains);
+  bdirect_read_commit(obuck_rpf, f->buffer + l);
+  obuck_remains -= l;
+  f->bptr = f->buffer;
+  f->bufend = f->bstop = f->buffer + l;
+  return 1;
+}
+
+struct fastbuf *
+obuck_slurp_pool(struct obuck_header *hdrp)
+{
+  static struct fastbuf limiter;
+  uns l;
+
+  do
+    {
+      if (!obuck_rpf)
+	{
+	  obuck_lock_read();
+	  obuck_rpf = bopen(obuck_name, O_RDONLY, obuck_slurp_buflen);
+	}
+      else
+	{
+	  bsetpos(obuck_rpf, bucket_current - 4);
+	  if (bgetl(obuck_rpf) != OBUCK_TRAILER)
+	    obuck_broken("Missing trailer");
+	}
+      bucket_start = btell(obuck_rpf);
+      l = bread(obuck_rpf, hdrp, sizeof(struct obuck_header));
+      if (!l)
+	{
+	  bclose(obuck_rpf);
+	  obuck_unlock();
+	  return NULL;
+	}
+      if (l != sizeof(struct obuck_header))
+	obuck_broken("Short header read");
+      if (hdrp->magic != OBUCK_MAGIC)
+	obuck_broken("Missing magic number");
+      bucket_current = (bucket_start + sizeof(obuck_hdr) + hdrp->length +
+			4 + OBUCK_ALIGN - 1) & ~((sh_off_t)(OBUCK_ALIGN - 1));
+    }
+  while (hdrp->oid == OBUCK_OID_DELETED);
+  if (obuck_get_pos(hdrp->oid) != bucket_start)
+    obuck_broken("Invalid backlink");
+  obuck_remains = hdrp->length;
+  limiter.bptr = limiter.bstop = limiter.buffer = limiter.bufend = NULL;
+  limiter.name = "Bucket";
+  limiter.pos = 0;
+  limiter.refill = obuck_slurp_refill;
+  return &limiter;
 }
 
 /*** Shakedown ***/

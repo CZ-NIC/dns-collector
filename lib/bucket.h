@@ -62,6 +62,9 @@ void obuck_create_end(struct fastbuf *b, struct obuck_header *hdrp);
 /* Deleting buckets */
 void obuck_delete(oid_t oid);
 
+/* Fast reading of the whole pool */
+struct fastbuf *obuck_slurp_pool(struct obuck_header *hdrp);
+
 /* Convert bucket ID to file position (for size limitations etc.) */
 
 static inline sh_off_t obuck_get_pos(oid_t oid)

@@ -135,22 +135,18 @@ cat(void)
   int l, lf;
 
   obuck_init(0);
-  if (obuck_find_first(&h, 0))
-    do
-      {
-	printf("### %08x %6d %6d\n", h.oid, h.length, h.orig_length);
-	b = obuck_fetch();
-	lf = 1;
-	while ((l = bread(b, buf, sizeof(buf))))
-	  {
-	    fwrite(buf, 1, l, stdout);
-	    lf = (buf[l-1] == '\n');
-	  }
-	obuck_fetch_end(b);
-	if (!lf)
-	  printf("\n# <missing EOL>\n");
-      }
-    while (obuck_find_next(&h, 0));
+  while (b = obuck_slurp_pool(&h))
+    {
+      printf("### %08x %6d %6d\n", h.oid, h.length, h.orig_length);
+      lf = 1;
+      while ((l = bread(b, buf, sizeof(buf))))
+	{
+	  fwrite(buf, 1, l, stdout);
+	  lf = (buf[l-1] == '\n');
+	}
+      if (!lf)
+	printf("\n# <missing EOL>\n");
+    }
   obuck_cleanup();
 }
 
