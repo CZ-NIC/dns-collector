@@ -82,6 +82,10 @@ struct fastbuf *fbmem_clone_read(struct fastbuf *);	/* Create reading fastbuf */
 
 struct fastbuf *bopen_mm(byte *name, uns mode);
 
+/* FastI on file descriptors with limit */
+
+struct fastbuf *bopen_limited_fd(int fd, uns bufsize, uns limit);
+
 /* Configuring stream parameters */
 
 int bconfig(struct fastbuf *f, uns type, int data);
