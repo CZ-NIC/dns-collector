@@ -1,6 +1,6 @@
 /* Reading conf files
  * Robert Spalek, (c) 2001, robert@ucw.cz
- * $Id: conf.c,v 1.1 2001/01/07 21:21:53 robert Exp $
+ * $Id: conf.c,v 1.2 2001/01/08 10:26:37 robert Exp $
  */
 
 #include <stdlib.h>
@@ -112,6 +112,7 @@ static int cf_subread(byte *filename,int level)
 
 		if(!bgets(b,buf,BUFFER))
 			break;
+		line++;
 
 		c=buf;
 		while(*c && isspace(*c))
@@ -129,7 +130,7 @@ static int cf_subread(byte *filename,int level)
 				break;
 			}
 
-		}else if(*c='<'){
+		}else if(*c=='<'){
 			if(!cf_subread(c+1,level+1)){
 				msg="";
 				break;
@@ -141,7 +142,7 @@ static int cf_subread(byte *filename,int level)
 			name=c;
 			c=strpbrk(c," \t");
 			while(c && *c && isspace(*c))
-				c++;
+				*c++=0;
 			if(!c || !*c){
 				msg="Missing argument";
 				break;
@@ -165,7 +166,7 @@ static int cf_subread(byte *filename,int level)
 	}	/* for every line */
 
 	if(msg)
-		log("%s, line %d: %s",msg);
+		log("%s, line %d: %s",filename,line,msg);
 	bclose(b);
 	return !msg;
 }
