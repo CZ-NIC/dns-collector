@@ -132,7 +132,8 @@ obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, u
     }
     if (buck_type == BUCKET_TYPE_V33_LIZARD)		// decompression
     {
-      /* FIXME: Add checks for len<4 and other format violations */
+      if (ptr + 4 > end)
+	RET_ERR(EINVAL);
       len = GET_U32(ptr);
       ptr += 4;
       byte *new_ptr = lizard_decompress_safe(ptr, buf->lizard, len);
