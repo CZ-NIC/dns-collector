@@ -17,6 +17,8 @@
  *		printf("%s\n", PROF_STRING(&cnt));
  */
 
+#include <string.h>
+
 /* PROFILE_TOD: gettimeofday() profiler */
 
 struct prof_tod {
