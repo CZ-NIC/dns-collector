@@ -103,10 +103,10 @@ static inline void bputc(struct fastbuf *f, byte c)
     bputc_slow(f, c);
 }
 
-word bgetw_slow(struct fastbuf *f);
-static inline word bgetw(struct fastbuf *f)
+int bgetw_slow(struct fastbuf *f);
+static inline int bgetw(struct fastbuf *f)
 {
-  word w;
+  int w;
   if (f->bptr + 2 <= f->bstop)
     {
       w = GET_U16(f->bptr);

@@ -87,13 +87,19 @@ void bputc_slow(struct fastbuf *f, byte c)
   *f->bptr++ = c;
 }
 
-word bgetw_slow(struct fastbuf *f)
+int bgetw_slow(struct fastbuf *f)
 {
-  word w = bgetc_slow(f);
+  int w1, w2;
+  w1 = bgetc_slow(f);
+  if (w1 < 0)
+    return w1;
+  w2 = bgetc_slow(f);
+  if (w2 < 0)
+    return w2;
 #ifdef CPU_BIG_ENDIAN
-  return (w << 8) | bgetc_slow(f);
+  return (w1 << 8) | w2;
 #else
-  return w | (bgetc_slow(f) << 8);
+  return w1 | (w2 << 8);
 #endif
 }
 
