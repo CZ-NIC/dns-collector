@@ -298,9 +298,11 @@ obuck_fetch(void)
 oid_t
 obuck_predict_last_oid(void)
 {
-  /* BEWARE: This is not fork-safe. */
+  obuck_lock_write();
   sh_off_t size = sh_seek(obuck_fd, 0, SEEK_END);
-  return size >> OBUCK_SHIFT;
+  oid_t ss = size >> OBUCK_SHIFT;
+  obuck_unlock();
+  return ss;
 }
 
 struct fastbuf *
