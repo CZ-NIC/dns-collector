@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
+#include <alloca.h>
 
 static char log_progname[32], *log_name_patt, *log_name;
 static pid_t log_pid;

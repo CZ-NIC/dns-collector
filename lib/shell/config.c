@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <alloca.h>
 
 static struct cfitem *items;
 static byte *flags;

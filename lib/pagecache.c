@@ -16,6 +16,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <alloca.h>
 
 struct page_cache {
   list free_pages;			/* LRU queue of free non-dirty pages */
