@@ -51,6 +51,8 @@ lizard_bwrite(struct fastbuf *fb_out, byte *ptr_in, uns len_in)
   }
   else
   {
+    if (type == BUCKET_TYPE_V33_LIZARD)
+      type = BUCKET_TYPE_V33;
     ptr_out = ptr_in;
     len_out = len_in;
   }
@@ -65,7 +67,7 @@ lizard_bwrite(struct fastbuf *fb_out, byte *ptr_in, uns len_in)
     bwrite(fb_out, ptr_out, len_out);
   else
     bdirect_write_commit(fb_out, ptr_out + len_out);
-  return len_out + 8 + (type == BUCKET_TYPE_V33_LIZARD ? 8 : 0);
+  return type;
 }
 
 int
