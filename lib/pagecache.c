@@ -29,6 +29,7 @@ struct page_cache {
   list *hash_table;			/* List heads corresponding to hash buckets */
 #ifndef SHERLOCK_HAVE_PREAD
   sh_off_t pos;				/* Current position in the file */
+  int pos_fd;				/* FD the position corresponds to */
 #endif
 };
 
@@ -54,6 +55,9 @@ pgc_open(uns page_size, uns max_pages)
   c->hash_table = xmalloc(sizeof(list) * c->hash_size);
   for(i=0; i<c->hash_size; i++)
     init_list(&c->hash_table[i]);
+#ifndef SHERLOCK_HAVE_PREAD
+  c->pos_fd = -1;
+#endif
   return c;
 }
 
@@ -106,10 +110,11 @@ flush_page(struct page_cache *c, struct page *p)
 #ifdef SHERLOCK_HAVE_PREAD
   s = pwrite(fd, p->data, c->page_size, pos);
 #else
-  if (c->pos != pos)
+  if (c->pos != pos || c->pos_fd != fd)
     sh_seek(fd, pos, SEEK_SET);
   s = write(fd, p->data, c->page_size);
-  c->pos += s;
+  c->pos = pos + s;
+  c->pos_fd = fd;
 #endif
   if (s < 0)
     die("pgc_write(%d): %m", fd);
@@ -244,10 +249,11 @@ pgc_read(struct page_cache *c, int fd, sh_off_t pos)
 #ifdef SHERLOCK_HAVE_PREAD
       s = pread(fd, p->data, c->page_size, pos);
 #else
-      if (c->pos != pos)
+      if (c->pos != pos || c->pos_fd != fd)
 	sh_seek(fd, pos, SEEK_SET);
       s = read(fd, p->data, c->page_size);
-      c->pos += s;
+      c->pos = pos + s;
+      c->pos_fd = fd;
 #endif
       if (s < 0)
 	die("pgc_read(%d): %m", fd);
