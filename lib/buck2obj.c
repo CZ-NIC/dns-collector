@@ -59,6 +59,7 @@ get_attr(byte **pos, byte *end, struct parsed_attr *attr)
     else if (*ptr == '\n')
     {
       *pos = ++ptr;
+      attr->attr = 0;
       return 0;
     }
     attr->attr = *ptr++;
@@ -74,6 +75,7 @@ get_attr(byte **pos, byte *end, struct parsed_attr *attr)
     if (!len--)
     {
       *pos = ptr;
+      attr->attr = 0;
       return 0;
     }
     attr->attr = ptr[len];
@@ -104,7 +106,10 @@ bget_attr(struct fastbuf *b, struct parsed_attr *attr)
 	return -1;
     }
     else if (c == '\n')
+    {
+      attr->attr = 0;
       return 0;
+    }
     attr->attr = c;
 
     byte *ptr, *end;
@@ -136,8 +141,13 @@ bget_attr(struct fastbuf *b, struct parsed_attr *attr)
   else
   {
     int len = bget_utf8_32(b);
-    if (len <= 0)
-      return len < 0 ? -1 : 0;
+    if (len < 0)
+      return -1;
+    if (!len)
+    {
+      attr->attr = 0;
+      return 0;
+    }
     attr->len = len-1;
 
     byte *ptr;
