@@ -33,5 +33,6 @@ struct page *pgc_get(struct page_cache *, int fd, sh_off_t);	/* Get page for wri
 void pgc_put(struct page_cache *, struct page *);		/* Release page */
 void pgc_mark_dirty(struct page_cache *, struct page *);	/* Mark locked page as dirty */
 byte *pgc_read_data(struct page_cache *, int fd, sh_off_t, uns *);	/* Partial reading */
+sh_off_t pgc_page_pos(struct page_cache *, struct page *);	/* Get page position */
 
 #endif

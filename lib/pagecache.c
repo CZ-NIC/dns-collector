@@ -162,6 +162,7 @@ get_page(struct page_cache *c, sh_off_t key)
 	{
 	  /* There are only dirty pages here */
 	  p = HEAD(c->dirty_pages);
+	  ASSERT(p->n.next);
 	  flush_page(c, p);
 	}
       ASSERT(!p->lock_count);
@@ -206,6 +207,7 @@ pgc_cleanup(struct page_cache *c)
     {
       ASSERT(!(p->flags & PG_FLAG_DIRTY) && !p->lock_count);
       rem_node(&p->n);
+      rem_node(&p->hn);
       c->free_count--;
       c->total_count--;
       free(p);
@@ -289,6 +291,7 @@ pgc_put(struct page_cache *c, struct page *p)
     }
   else
     {
+      rem_node(&p->hn);
       free(p);
       c->total_count--;
     }
@@ -317,6 +320,12 @@ pgc_read_data(struct page_cache *c, int fd, sh_off_t pos, uns *len)
   pgc_put(c, p);
   *len = c->page_size - offset;
   return p->data + offset;
+}
+
+sh_off_t
+pgc_page_pos(struct page_cache *c, struct page *p)
+{
+  return PAGE_NUMBER(p->key);
 }
 
 #ifdef TEST
