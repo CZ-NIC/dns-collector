@@ -5,6 +5,8 @@
  *	(c) 2004, Martin Mares <mj@ucw.cz>
  */
 
+#undef LOCAL_DEBUG
+
 #include "lib/lib.h"
 #include "lib/unaligned.h"
 #include "lib/mempool.h"
@@ -144,18 +146,25 @@ buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fas
     {
       /* Copy if the original buffer is too small.
        * If it is write-protected, copy it also if it is uncompressed.  */
+      DBG("NO ZC: %d < %d, %d %08x", len, buck_len, body->can_overwrite_buffer, buck_type);
       bb_grow(&buf->bb, buck_len);
       len = bread(body, buf->bb.ptr, buck_len);
       ptr = buf->bb.ptr;
       copied = 1;
     }
+    else
+      DBG("ZC (%d >= %d, %d %08x)", len, buck_len, body->can_overwrite_buffer, buck_type);
     end = ptr + buck_len;
 
     ptr = decode_attributes(ptr, end, o_hdr, 0);		// header
     if (buck_type == BUCKET_TYPE_V33_LIZARD)		// decompression
     {
       if (ptr + 8 > end)
-	RET_ERR(EINVAL);
+	{
+	  if (ptr == end)				// truncated bucket
+	    goto commit;
+	  RET_ERR(EINVAL);
+	}
       len = GET_U32(ptr);
       ptr += 4;
       uns adler = GET_U32(ptr);
@@ -174,6 +183,7 @@ buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fas
     ptr = decode_attributes(ptr, end, o_body, 2);	// body
     if (ptr != end)
       RET_ERR(EINVAL);
+  commit:
     if (!copied)
       bdirect_read_commit_modified(body, ptr);
   }
