@@ -375,7 +375,7 @@ url_canonicalize(struct url *u)
   kill_end_dot(u->host);
   if ((!u->rest || !*u->rest) && url_proto_path_flags[u->protoid])
     u->rest = "/";
-  if (c = strchr(u->rest, '#'))		/* Kill fragment reference */
+  if (u->rest && (c = strchr(u->rest, '#')))	/* Kill fragment reference */
     *c = 0;
   return 0;
 }
