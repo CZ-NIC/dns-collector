@@ -36,6 +36,7 @@
 #define CLAMP(x,min,max) ({ int _t=x; (_t < min) ? min : (_t > max) ? max : _t; })
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
+#define STRINGIFY(x) #x
 #define GLUE(x,y) x##y
 #define GLUE_(x,y) x##_##y
 
