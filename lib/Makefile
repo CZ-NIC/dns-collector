@@ -26,6 +26,7 @@ obj/lib/regex-test: obj/lib/regex-test.o $(LIBSH)
 obj/lib/hash-test: obj/lib/hash-test.o $(LIBSH)
 obj/lib/str-test: obj/lib/str-test.o $(LIBSH)
 obj/lib/asort-test: obj/lib/asort-test.o $(LIBSH)
+obj/lib/redblack-test: obj/lib/redblack-test.o $(LIBSH)
 
 include lib/perl/Makefile
 include lib/shell/Makefile
