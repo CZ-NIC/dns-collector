@@ -25,9 +25,12 @@
 #define sh_pread pread64
 #define sh_pwrite pwrite64
 #define sh_ftruncate ftruncate64
+#define sh_mmap(a,l,p,f,d,o) mmap64(a,l,p,f,d,o)
 #define SHERLOCK_HAVE_PREAD
 
 #else
+
+#error Non-libc interface to LFS is currently broken, you have to fix it.
 
 /*
  *  Talk directly with the kernel. The implementations of LFS in Linux 2.2
@@ -86,6 +89,7 @@ extern loff_t llseek(int fd, loff_t pos, int whence);
 #define sh_open open
 #define sh_seek(f,o,w) lseek(f,o,w)
 #define sh_ftruncate(f,o) ftruncate(f,o)
+#define sh_mmap(a,l,p,f,d,o) mmap(a,l,p,f,d,o)
 
 #endif	/* !SHERLOCK_CONFIG_LFS */
 
