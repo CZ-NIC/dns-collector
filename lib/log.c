@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <time.h>
 
-static char *log_progname, *log_name_patt, *log_name;
+static char log_progname[32], *log_name_patt, *log_name;
 static pid_t log_pid;
 static int log_params;
 static int log_name_size;
@@ -71,7 +71,7 @@ vlog(unsigned int cat, const char *msg, va_list args)
       p = buf = alloca(buflen);
       *p++ = cat;
       p += strftime(p, buflen, " %Y-%m-%d %H:%M:%S ", tm);
-      if (log_progname)
+      if (log_progname[0])
 	{
 	  if (log_pid)
 	    p += sprintf(p, "[%s (%d)] ", log_progname, log_pid);
@@ -155,7 +155,10 @@ void
 log_init(byte *argv0)
 {
   if (argv0)
-    log_progname = log_basename(argv0);
+    {
+      strncpy(log_progname, log_basename(argv0), sizeof(log_progname)-1);
+      log_progname[sizeof(log_progname)-1] = 0;
+    }
 }
 
 void
