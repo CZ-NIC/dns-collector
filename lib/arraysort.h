@@ -28,8 +28,10 @@
  *  ASORT_ELT(i)    [*]	returns the key of i-th element
  *  ASORT_LT(x,y)	x < y for ASORT_TYPE (default: "x<y")
  *  ASORT_SWAP(i,j)	swap i-th and j-th element (default: assume _ELT
- *			is a l-value and swap just the keys)
+ *			is an l-value and swap just the keys)
  *  ASORT_THRESHOLD	threshold for switching between quicksort and insertsort
+ *  ASORT_EXTRA_ARGS	extra arguments for the sort function (they are always
+ *			visible in all the macros supplied above), starts with comma
  *
  *  After including this file, a function ASORT_PREFIX(sort)(uns array_size)
  *  is declared and all parameter macros are automatically undef'd.
@@ -45,6 +47,10 @@
 
 #ifndef ASORT_THRESHOLD
 #define ASORT_THRESHOLD 8		/* Guesswork and experimentation */
+#endif
+
+#ifndef ASORT_EXTRA_ARGS
+#define ASORT_EXTRA_ARGS
 #endif
 
 static void ASORT_PREFIX(sort)(uns array_size)
@@ -165,3 +171,4 @@ static void ASORT_PREFIX(sort)(uns array_size)
 #undef ASORT_EQ
 #undef ASORT_SWAP
 #undef ASORT_THRESHOLD
+#undef ASORT_EXTRA_ARGS
