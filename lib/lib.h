@@ -154,4 +154,8 @@ void rx_free(regex *r);
 int rx_match(regex *r, byte *s);
 int rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen);
 
+/* objwalk.c */
+
+void scan_obj_tree(byte *, void (*)(ulg, byte *));
+
 #endif
