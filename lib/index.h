@@ -28,7 +28,7 @@ enum word_type {
 /* Descriptive names used for user output */
 #define WORD_TYPE_USER_NAMES							\
    "reserved", "text", "emph", "small", "title", "hdr1", "hdr2", "keywd",	\
-   "meta", "alt", "url", "type11", "type12", "type13", "type14", "type15"
+   "meta", "alt", "urlword", "type11", "type12", "type13", "type14", "type15"
 
 /* Keywords for word type names */
 #define WORD_TYPE_NAMES	       			\
@@ -42,7 +42,8 @@ enum word_type {
 	T(HDR2, 1 << WT_BIG_HEADING)		\
 	T(KEYWD, 1 << WT_KEYWORD)		\
 	T(META, 1 << WT_META)			\
-	T(ALT, 1 << WT_ALT)
+	T(ALT, 1 << WT_ALT)			\
+	T(URLWORD, 1 << WT_URL)
 
 /* These types are not shown in document contexts */
 #define WORD_TYPES_HIDDEN (1 << WT_URL)
