@@ -3,8 +3,8 @@
  *
  *	(c) 2004, Robert Spalek <robert@ucw.cz>
  *
- *	The file format is based on LZO1X and 
- *	the compression method is based on zlib.
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #define	LIZARD_NEEDS_CHARS	8
@@ -23,9 +23,11 @@
    * total length is 2(header) + 2(link) + 19(string) = 23.
    */
 
+/* lizard.c */
 int lizard_compress(byte *in, uns in_len, byte *out);
 int lizard_decompress(byte *in, byte *out);
 
+/* lizard-safe.c */
 struct lizard_buffer {
   uns len;
   void *ptr;

@@ -3,6 +3,9 @@
  *
  *	(c) 2004, Robert Spalek <robert@ucw.cz>
  *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
+ *
  *	The file format is based on LZO1X and 
  *	the compression method is based on zlib.
  */
@@ -11,11 +14,6 @@
 #include "lib/lizard.h"
 
 #include <string.h>
-#include <stdlib.h>
-#include <sys/mman.h>
-#include <sys/user.h>
-#include <fcntl.h>
-#include <signal.h>
 
 typedef u16 hash_ptr_t;
 struct hash_record {
@@ -397,50 +395,6 @@ perform_copy_command:
   }
 
   return out - out_start;
-}
-
-struct lizard_buffer *
-lizard_alloc(uns max_len)
-{
-  int fd = open("/dev/zero", O_RDWR);
-  if (fd < 0)
-    die("open(/dev/zero): %m");
-  struct lizard_buffer *buf = xmalloc(sizeof(struct lizard_buffer));
-  buf->len = (max_len + 2*PAGE_SIZE - 1) / PAGE_SIZE * PAGE_SIZE;
-  buf->ptr = mmap(NULL, buf->len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-  if (buf->ptr == MAP_FAILED)
-    die("mmap(/dev/zero): %m");
-  return buf;
-}
-
-void
-lizard_free(struct lizard_buffer *buf)
-{
-  munmap(buf->ptr, buf->len);
-  xfree(buf);
-}
-
-static void
-sigsegv_handler(int UNUSED whatsit)
-{
-  die("SIGSEGV caught when decompressing.");
-}
-
-int
-lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
-  /* Decompresses into buf->ptr and returns the length of the uncompressed
-   * file.  Negative return values signalise errors.  If something goes wrong
-   * and buffer would overflow, SIGSEGV is raised.  */
-{
-  uns lock_offset = (expected_length + PAGE_SIZE - 1) / PAGE_SIZE * PAGE_SIZE;
-  if (lock_offset + PAGE_SIZE > buf->len)
-    return -1;
-  mprotect(buf->ptr, lock_offset, PROT_READ | PROT_WRITE);
-  mprotect(buf->ptr + lock_offset, PAGE_SIZE, PROT_READ);
-  sighandler_t old_handler = signal(SIGSEGV, sigsegv_handler);
-  int len = lizard_decompress(in, buf->ptr);
-  signal(SIGSEGV, old_handler);
-  return len;
 }
 
 /*
