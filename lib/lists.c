@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 #define _SHERLOCK_LISTS_C
-#include "lists.h"
+#include "lib/lists.h"
 
 LIST_INLINE void
 add_tail(list *l, node *n)

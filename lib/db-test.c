@@ -5,10 +5,10 @@
  */
 
 #if 1
-#include "db.c"
+#include "lib/db.c"
 #define NAME "SDBM"
 #else
-#include "db-emul.c"
+#include "lib/db-emul.c"
 #define NAME "GDBM"
 #endif
 

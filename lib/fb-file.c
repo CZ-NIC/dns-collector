@@ -9,9 +9,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "lib.h"
-#include "fastbuf.h"
-#include "lfs.h"
+#include "lib/lib.h"
+#include "lib/fastbuf.h"
+#include "lib/lfs.h"
 
 static int
 bfd_refill(struct fastbuf *f)

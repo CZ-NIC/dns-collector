@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "lib.h"
-#include "fastbuf.h"
+#include "lib/lib.h"
+#include "lib/fastbuf.h"
 
 void bclose(struct fastbuf *f)
 {

@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
-#include "lib.h"
+#include "lib/lib.h"
 
 #ifndef MAP_FAILED
 #define MAP_FAILED ((void *)-1L)

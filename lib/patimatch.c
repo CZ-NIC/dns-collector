@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "lib.h"
-#include "string.h"
+#include "lib/lib.h"
+#include "lib/chartype.h"
 
 #define Convert(x) Cupcase(x)
 #define MATCH_FUNC_NAME match_pattern_nocase
 
-#include "patmatch.h"
+#include "lib/patmatch.h"

@@ -16,7 +16,7 @@
  */
 
 #include <string.h>		/* for memcpy() */
-#include "md5.h"
+#include "lib/md5.h"
 
 #ifndef HIGHFIRST
 #define byteReverse(buf, len)	/* Nothing */

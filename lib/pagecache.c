@@ -10,9 +10,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "lib.h"
-#include "pagecache.h"
-#include "lfs.h"
+#include "lib/lib.h"
+#include "lib/pagecache.h"
+#include "lib/lfs.h"
 
 struct page_cache {
   list free_pages;			/* LRU queue of free non-dirty pages */

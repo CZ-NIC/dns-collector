@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <regex.h>
 
-#include "lib.h"
+#include "lib/lib.h"
 
 #define INITIAL_MEM 1024		/* Initial space allocated for each pattern */
 

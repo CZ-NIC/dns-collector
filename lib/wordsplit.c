@@ -6,8 +6,8 @@
 
 #include <stdio.h>
 
-#include "lib.h"
-#include "string.h"
+#include "lib/lib.h"
+#include "lib/chartype.h"
 
 int
 wordsplit(byte *src, byte **dst, uns max)

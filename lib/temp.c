@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "lib.h"
+#include "lib/lib.h"
 
 u32
 temprand(uns key)

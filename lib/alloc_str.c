@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "lib.h"
+#include "lib/lib.h"
 
 byte *
 stralloc(byte *s)

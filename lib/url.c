@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "lib.h"
-#include "url.h"
-#include "string.h"
+#include "lib/lib.h"
+#include "lib/url.h"
+#include "lib/chartype.h"
 
 /* Escaping and de-escaping */
 

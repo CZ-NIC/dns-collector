@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "lib.h"
+#include "lib/lib.h"
 
 static int				/* Sequential search */
 __isprime(uns x)			/* We know x != 2 && x != 3 */

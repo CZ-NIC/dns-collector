@@ -9,8 +9,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "lib.h"
-#include "string.h"
+#include "lib/lib.h"
+#include "lib/chartype.h"
 
 void
 md5_to_hex(byte *s, byte *d)

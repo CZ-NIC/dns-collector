@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "db.c"
+#include "lib/db.c"
 
 int
 main(int argc, char **argv)

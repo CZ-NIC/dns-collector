@@ -38,7 +38,7 @@ void init_list(list *);
 void insert_node(node *, node *);
 
 #if !defined(_SHERLOCK_LISTS_C) && defined(__GNUC__)
-#define LIST_INLINE extern inline
+#define LIST_INLINE static inline
 #include "lib/lists.c"
 #undef LIST_INLINE
 #else

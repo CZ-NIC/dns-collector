@@ -25,11 +25,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "lib.h"
-#include "lfs.h"
-#include "pagecache.h"
-#include "db.h"
-#include "db_internal.h"
+#include "lib/lib.h"
+#include "lib/lfs.h"
+#include "lib/pagecache.h"
+#include "lib/db.h"
+#include "lib/db_internal.h"
 
 struct sdbm *
 sdbm_open(struct sdbm_options *o)

@@ -7,7 +7,7 @@
 #ifndef _SHERLOCK_LIB_H
 #define _SHERLOCK_LIB_H
 
-#include <lib/config.h>
+#include "lib/config.h"
 
 /* Ugly structure handling macros */
 

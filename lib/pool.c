@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "lib.h"
-#include "pools.h"
+#include "lib/lib.h"
+#include "lib/pools.h"
 
 struct memchunk {
   struct memchunk *next;

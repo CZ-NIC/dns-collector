@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-#include "lib.h"
+#include "lib/lib.h"
 
 #undef log2
 

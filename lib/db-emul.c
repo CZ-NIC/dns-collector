@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "lib.h"
-#include "db.h"
+#include "lib/lib.h"
+#include "lib/db.h"
 
 #include <gdbm.h>
 

@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#include "lib.h"
+#include "lib/lib.h"
 
 static byte *progname = "???";
 static pid_t pid;

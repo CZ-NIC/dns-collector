@@ -4,10 +4,10 @@
  *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
  */
 
-#include "string.h"
+#include "lib/chartype.h"
 
 unsigned char _c_upper[256] = {
 #define CHAR(code,upper,unacc,acc,cat) upper,
-#include "charmap.h"
+#include "lib/charmap.h"
 #undef CHAR
 };

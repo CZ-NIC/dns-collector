@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "lib.h"
+#include "lib/lib.h"
 
 #define Convert(x) (x)
 #define MATCH_FUNC_NAME match_pattern
 
-#include "patmatch.h"
+#include "lib/patmatch.h"

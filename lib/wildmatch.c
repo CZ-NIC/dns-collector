@@ -9,9 +9,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "lib.h"
-#include "pools.h"
-#include "wildmatch.h"
+#include "lib/lib.h"
+#include "lib/pools.h"
+#include "lib/wildmatch.h"
 
 #define MAX_STATES 32		/* Must be <= 32, state 0 is reserved, state 1 is initial */
 #define MAX_CACHED 256		/* Maximum number of cached DFA states */

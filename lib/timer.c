@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#include "lib.h"
+#include "lib/lib.h"
 
 static struct timeval last_tv;
 
