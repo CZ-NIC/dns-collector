@@ -88,7 +88,7 @@ obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, u
 {
   struct odes *o = obj_new(pool);
 
-  if (buck_type < BUCKET_TYPE_V33)
+  if (buck_type == BUCKET_TYPE_PLAIN || buck_type == BUCKET_TYPE_V30)
   {
     if (!body_start)			// header + body: ignore empty lines, read until EOF
     {
@@ -102,7 +102,7 @@ obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, u
       *body_start = btell(body) - start;
     }
   }
-  else
+  else if (buck_type == BUCKET_TYPE_V33 || buck_type == BUCKET_TYPE_V33_LIZARD)
   {
     /* Read all the bucket into 1 buffer, 0-copy if possible.  */
     int can_overwrite = bconfig(body, BCONFIG_CAN_OVERWRITE, -1);
@@ -149,5 +149,7 @@ obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, u
      * buck_type == BUCKET_TYPE_V33, then bflush(body) is needed before
      * anything else than sequential read.  */
   }
+  else
+    RET_ERR(EINVAL);
   return o;
 }
