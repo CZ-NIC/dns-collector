@@ -1,14 +1,17 @@
 #!/usr/bin/perl
+#	Import charset tables from ftp.unicode.org
+#	(c) 2003, Robert Spalek <robert@ucw.cz>
 
 foreach $file (@ARGV)
 {
 	print "Converting $file\n";
+	($prefix, $filename) = $file =~ m|^(.*/)([^/]*)$|;
 
 	open(fi, "<$file") || die;
 	open(fo, ">$file-tr") || die;
-	print fo "# $file charset file
+	print fo "# $filename charset file
 # Imported from ftp://ftp.unicode.org/Public/MAPPINGS/$file
-# (c) 2003, Robert Spalek <robert@ucw.cz>
+# (c) 2003, Robert Spalek <robert\@ucw.cz>
 
 ";
 	while (<fi>)
