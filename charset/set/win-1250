@@ -1,6 +1,6 @@
-# VENDORS/MICSFT/WINDOWS/CP1250.TXT charset file
+# CP1250.TXT charset file
 # Imported from ftp://ftp.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1250.TXT
-# (c) 2003, Robert Spalek <robert.cz>
+# (c) 2003, Robert Spalek <robert@ucw.cz>
 
 00	0000	NULL
 01	0001	START OF HEADING
