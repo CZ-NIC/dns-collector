@@ -14,6 +14,7 @@
 #include "lib/bucket.h"
 #include "lib/lizard.h"
 #include "lib/bbuf.h"
+#include "lib/ff-utf8.h"
 
 #include <stdlib.h>
 #include <errno.h>
@@ -114,6 +115,26 @@ buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fas
   }
   else if (buck_type == BUCKET_TYPE_V33 || buck_type == BUCKET_TYPE_V33_LIZARD)
   {
+    /* Avoid reading the whole bucket if only its header is needed.  */
+    if (body_start)
+    {
+      sh_off_t start = btell(body);
+      sh_off_t end = start + buck_len;
+      while (btell(body) < end)
+      {
+	uns len = bget_utf8(body);
+	if (!len--)
+	  break;
+	byte buf[MAX_ATTR_SIZE];
+	bread(body, buf, len);
+	buf[len] = 0;
+	byte type = bgetc(body);
+	obj_add_attr_ref(o_hdr, type, buf);
+      }
+      *body_start = btell(body) - start;
+      return 0;
+    }
+
     /* Read all the bucket into 1 buffer, 0-copy if possible.  */
     byte *ptr, *end;
     uns len = bdirect_read_prepare(body, &ptr);
@@ -130,15 +151,7 @@ buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fas
     }
     end = ptr + buck_len;
 
-    byte *start = ptr;
     ptr = decode_attributes(ptr, end, o_hdr, 0);		// header
-    if (body_start)
-    {
-      *body_start = ptr - start;
-      if (!copied)
-	bdirect_read_commit(body, ptr);
-      return 0;
-    }
     if (buck_type == BUCKET_TYPE_V33_LIZARD)		// decompression
     {
       if (ptr + 8 > end)
