@@ -55,3 +55,10 @@ void obuck_create_end(struct fastbuf *b, struct obuck_header *hdrp);
 
 /* Deleting buckets */
 void obuck_delete(oid_t oid);
+
+/* Convert bucket ID to file position (for size limitations etc.) */
+
+static inline sh_off_t obuck_get_pos(oid_t oid)
+{
+  return ((sh_off_t) oid) << OBUCK_SHIFT;
+}

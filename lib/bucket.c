@@ -157,7 +157,7 @@ obuck_get(oid_t oid)
 {
   struct fastbuf *b = obuck_fb;
 
-  bucket_start = ((sh_off_t) oid) << OBUCK_SHIFT;
+  bucket_start = obuck_get_pos(oid);
   bflush(b);
   if (sh_pread(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), bucket_start) != sizeof(obuck_hdr))
     obuck_broken("Short header read");
