@@ -35,6 +35,5 @@ typedef unsigned int sh_time_t;		/* Timestamp */
 #endif
 
 typedef s64 sh_off_t;			/* FIXME */
-typedef u32 oid_t;			/* Object ID */  /* FIXME */
 
 #endif
