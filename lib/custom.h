@@ -95,7 +95,7 @@ enum string_type {
  *
  *  id		C identifier of the attribute
  *  keywd	search server keyword for the attribute
- *  type get_func(struct card_attr *ca, byte *attr)
+ *  int get_func(struct card_attr *ca)
  *		get attribute value from the card_attr
  *  byte *parse_func(u32 *dest, byte *value, uns intval)
  *		parse value in query (returns error message or NULL)
