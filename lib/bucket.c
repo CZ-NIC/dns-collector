@@ -435,9 +435,7 @@ obuck_slurp_pool(struct obuck_header *hdrp)
 	{
 	  obuck_lock_read();
 	  obuck_rpf = bopen(obuck_name, O_RDONLY, obuck_slurp_buflen);
-	  bseek(obuck_rpf, 0, SEEK_END);
-	  slurp_end = btell(obuck_rpf);
-	  bsetpos(obuck_rpf, 0);
+	  slurp_end = bfilesize(obuck_rpf);
 	  obuck_lock_read_to_scan();
 	}
       else
