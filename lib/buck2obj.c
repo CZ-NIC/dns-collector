@@ -187,37 +187,3 @@ obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fa
   }
   return o;
 }
-
-byte *
-obj_attr_to_bucket(byte *buf, uns buck_type, uns attr, byte *val)
-{
-  uns l;
-
-  switch (buck_type)
-    {
-    case BUCKET_TYPE_PLAIN:
-    case BUCKET_TYPE_V30:
-      buf += sprintf(buf, "%c%s\n", attr, val);
-      break;
-    case BUCKET_TYPE_V33:
-    case BUCKET_TYPE_V33_LIZARD:
-      l = strlen(val) + 1;
-      PUT_UTF8(buf, l);
-      l--;
-      memcpy(buf, val, l);
-      buf += l;
-      *buf++ = attr;
-      break;
-    default:
-      die("obj_attr_to_bucket called for unknown type %08x", buck_type);
-    }
-  return buf;
-}
-
-byte *
-obj_attr_to_bucket_num(byte *buf, uns buck_type, uns attr, uns val)
-{
-  byte vbuf[16];
-  sprintf(vbuf, "%d", val);
-  return obj_attr_to_bucket(buf, buck_type, attr, vbuf);
-}

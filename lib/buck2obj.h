@@ -18,7 +18,3 @@ struct odes *obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_l
    * been tampered with (unless the bucket is larger than the buffer).  In such
    * a case, you must call bflush(body) before you do anything else than
    * sequential read.  */
-
-/* FIXME: These functions should be put somewhere else */
-byte *obj_attr_to_bucket(byte *buf, uns buck_type, uns attr, byte *val);
-byte *obj_attr_to_bucket_num(byte *buf, uns buck_type, uns attr, uns val);
