@@ -1,7 +1,7 @@
 /*
  *	Bit Array Operations
  *
- *	(c) 2003 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -11,12 +11,13 @@
 
 typedef u32 *bitarray_t;
 #define BIT_ARRAY_WORDS(n) (((n)+31)/32)
+#define BIT_ARRAY_BYTES(n) (4*BIT_ARRAY_WORDS(n))
 #define BIT_ARRAY(name,size) u32 name[BIT_ARRAY_WORDS(size)]
 
 static inline void
 bit_array_zero(bitarray_t a, uns n)
 {
-  bzero(a, 4*BIT_ARRAY_WORDS(n));
+  bzero(a, BIT_ARRAY_BYTES(n));
 }
 
 static inline void
