@@ -209,7 +209,7 @@ sub do_parse_tree($$$$) {
 	while ($i < @$raw) {
 		$raw->[$i] =~ /^([^(]|\(.)(.*)/;
 		if ($1 eq ")") {
-			return $i;
+			return $i+1;
 		} elsif (!defined($syntax->{$1})) {
 			$cooked->{$1} = $2 if !defined($cooked->{$1});
 			$i++;
