@@ -1,7 +1,7 @@
 /*
  *	The UniCode Library
  *
- *	(c) 1997 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2003 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -119,5 +119,6 @@ uns utf8_to_ucs2(word *, byte *);
 byte *static_ucs2_to_utf8(word *);
 uns Ustrlen(word *);
 uns utf8_strlen(byte *str);
+uns utf8_strnlen(byte *str, uns n);
 
 #endif
