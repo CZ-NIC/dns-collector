@@ -15,6 +15,7 @@
 #include <sys/mman.h>
 #include <sys/user.h>
 #include <fcntl.h>
+#include <signal.h>
 
 typedef u16 hash_ptr_t;
 struct hash_record {
@@ -419,6 +420,12 @@ lizard_free(struct lizard_buffer *buf)
   xfree(buf);
 }
 
+static void
+sigsegv_handler(int UNUSED whatsit)
+{
+  die("SIGSEGV caught when decompressing.");
+}
+
 int
 lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
   /* Decompresses into buf->ptr and returns the length of the uncompressed
@@ -430,7 +437,10 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
     return -1;
   mprotect(buf->ptr, lock_offset, PROT_READ | PROT_WRITE);
   mprotect(buf->ptr + lock_offset, PAGE_SIZE, PROT_READ);
-  return lizard_decompress(in, buf->ptr);
+  sighandler_t old_handler = signal(SIGSEGV, sigsegv_handler);
+  int len = lizard_decompress(in, buf->ptr);
+  signal(SIGSEGV, old_handler);
+  return len;
 }
 
 /*
