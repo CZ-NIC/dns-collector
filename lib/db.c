@@ -419,7 +419,7 @@ sdbm_access(struct sdbm *d, byte *key, uns keylen, byte *val, uns *vallen, uns m
 
   if ((d->key_size >= 0 && keylen != (uns) d->key_size) || keylen > 65535)
     return SDBM_ERROR_BAD_KEY_SIZE;
-  if (val && ((d->val_size >= 0 && *vallen != (uns) d->val_size) || *vallen >= 65535))
+  if (val && ((d->val_size >= 0 && *vallen != (uns) d->val_size) || *vallen >= 65535) && mode)
     return SDBM_ERROR_BAD_VAL_SIZE;
   if (!mode && !(d->flags & SDBM_WRITE))
     return SDBM_ERROR_READ_ONLY;
@@ -448,7 +448,7 @@ sdbm_access(struct sdbm *d, byte *key, uns keylen, byte *val, uns *vallen, uns m
 	    case 0:			/* fetch: found */
 	      rc = sdbm_put_user(D, Dl, val, vallen);
 	      pgc_put(d->cache, q);
-	      return rc ? 1 : SDBM_ERROR_TOO_LARGE;
+	      return rc ? SDBM_ERROR_TOO_LARGE : 1;
 	    case 1:			/* store: already present */
 	      pgc_put(d->cache, q);
 	      return 0;
@@ -473,6 +473,11 @@ insert:
       while (b->used + size > d->page_size - sizeof(struct sdbm_bucket))
 	{
 	  /* Page overflow, need to split */
+	  if (size >= d->page_size - sizeof(struct sdbm_bucket))
+	    {
+	      pgc_put(d->cache, q);
+	      return SDBM_ERROR_GIANT;
+	    }
 	  q = sdbm_split_page(d, q, hash, h);
 	  b = (void *) q->data;
 	}

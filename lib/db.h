@@ -41,5 +41,6 @@ void sdbm_sync(struct sdbm *);
 #define SDBM_ERROR_BAD_VAL_SIZE -2	/* Fixed value size doesn't match */
 #define SDBM_ERROR_TOO_LARGE	-3	/* Key/value doesn't fit in buffer supplied */
 #define SDBM_ERROR_READ_ONLY	-4	/* Database has been opened read only */
+#define SDBM_ERROR_GIANT	-5	/* Key/value too large to fit in a page */
 
 #endif
