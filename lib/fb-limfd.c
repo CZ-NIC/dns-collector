@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Buffered Input on Limited File Descriptors
  *
- *	(c) 2003 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -19,15 +19,16 @@ struct fb_limfd {
   int limit;
 };
 #define FB_LIMFD(f) ((struct fb_limfd *)(f)->is_fastbuf)
+#define FB_BUFFER(f) (byte *)(FB_LIMFD(f) + 1)
 
 static int
 bfl_refill(struct fastbuf *f)
 {
+  f->bptr = f->buffer = FB_BUFFER(f);
   int max = MIN(FB_LIMFD(f)->limit - f->pos, f->bufend - f->buffer);
   int l = read(FB_LIMFD(f)->fd, f->buffer, max);
   if (l < 0)
     die("Error reading %s: %m", f->name);
-  f->bptr = f->buffer;
   f->bstop = f->buffer + l;
   f->pos += l;
   return l;
