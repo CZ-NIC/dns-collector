@@ -9,9 +9,9 @@
 
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
+#include "lib/ff-utf8.h"
 #include "lib/bucket.h"
 #include "lib/object.h"
-#include "charset/unistream.h"
 
 #include <string.h>
 #include <stdarg.h>

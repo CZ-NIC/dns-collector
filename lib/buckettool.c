@@ -17,7 +17,7 @@
 #include "lib/object.h"
 #include "lib/lizard.h"
 #include "lib/bbuf.h"
-#include "charset/unistream.h"
+#include "lib/ff-utf8.h"
 
 #include <stdio.h>
 #include <stdlib.h>

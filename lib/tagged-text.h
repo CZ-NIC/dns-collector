@@ -8,7 +8,7 @@
 #define _SHERLOCK_TAGGED_TEXT_H
 
 #include "lib/fastbuf.h"
-#include "charset/unistream.h"
+#include "lib/ff-utf8.h"
 
 /* Reading of tagged text (Unicode values, tags mapped to 0x80000000 and higher) */
 

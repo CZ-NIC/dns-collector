@@ -9,7 +9,7 @@
 #include "lib/unaligned.h"
 #include "lib/pools.h"
 #include "lib/fastbuf.h"
-#include "charset/unicode.h"
+#include "lib/unicode.h"
 #include "lib/object.h"
 #include "lib/bucket.h"
 #include "lib/lizard.h"
