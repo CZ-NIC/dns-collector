@@ -35,12 +35,13 @@ static byte *set_nastaveni(struct cfitem *item, byte *value)
 }
 
 static struct cfitem jmeno[]={
-	{"robert",	ct_int,	&robert},
-	{"spalek",	ct_int,	&spalek},
-	{"heslo",	ct_string,	&heslo},
-	{"nastaveni1",	ct_function,	&set_nastaveni},
-	{"nastaveni2",	ct_function,	&set_nastaveni},
-	{NULL,		0,	NULL}
+	{"jmeno",	CT_SECTION,	NULL},
+	{"robert",	CT_INT,		&robert},
+	{"spalek",	CT_INT,		&spalek},
+	{"heslo",	CT_STRING,	&heslo},
+	{"nastaveni1",	CT_FUNCTION,	&set_nastaveni},
+	{"nastaveni2",	CT_FUNCTION,	&set_nastaveni},
+	{NULL,		CT_STOP,	NULL}
 };
 
 static int vek=22;
@@ -48,15 +49,17 @@ static int vyska=178;
 static int vaha=66;
 
 static struct cfitem telo[]={
-	{"vek",		ct_int,	&vek},
-	{"vyska",	ct_int,	&vyska},
-	{"vaha",	ct_int,	&vaha},
-	{NULL,		0,	NULL}
+	{"telo",	CT_SECTION,	NULL},
+	{"vek",		CT_INT,		&vek},
+	{"vyska",	CT_INT,		&vyska},
+	{"vaha",	CT_INT,		&vaha},
+	{NULL,		CT_STOP,	NULL}
 };
 
-static byte shortopts[] = "abcp:q:r::";
+static byte shortopts[] = CF_SHORT_OPTS "abcp:q:r::";
 static struct option longopts[] =
 {
+	CF_LONG_OPTS
 	{"ahoj",	0, 0, 'a'},
 	{"bida",	0, 0, 'b'},
 	{"citron",	0, 0, 'c'},
@@ -70,12 +73,13 @@ int main(int argc, char *argv[])
 {
 	int c;
 
-	cf_register("jmeno",jmeno);
-	cf_register("telo",telo);
-	cf_register_opts(shortopts,longopts);
+	initlog(argv[0]);
+
+	cf_register(jmeno);
+	cf_register(telo);
 
 	while(1){
-		c=cf_getopt(argc,argv,NULL);
+		c=cf_getopt(argc,argv,shortopts,longopts,NULL);
 		if(c==-1)
 			break;
 		else switch(c){

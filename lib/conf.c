@@ -1,70 +1,51 @@
-/* Reading conf files
- * Robert Spalek, (c) 2001, robert@ucw.cz
- * $Id: conf.c,v 1.2 2001/01/08 10:26:37 robert Exp $
+/*
+ *	Sherlock Library -- Reading configuration files
+ *
+ *	(c) 2001 Robert Spalek <robert@ucw.cz>
  */
+
+#include "lib/lib.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 #include <fcntl.h>
 #include <getopt.h>
 
-#include "lib/lib.h"
+#include "lib/chartype.h"
 #include "lib/fastbuf.h"
+#include "lib/lfs.h"
 
 #include "lib/conf.h"
 
 #define	BUFFER		1024
 #define	MAX_LEVEL	8
 
-#define	MAX_SECTIONS	64
+static struct cfitem *cfsection;
 
-static struct {
-	byte *section;
-	struct cfitem *items;
-} cfsection[MAX_SECTIONS];
-static int cfsections;
-
-#define	MAX_SHORT_OPTS	128
-#define	MAX_LONG_OPTS	64
-
-static byte shortopts[MAX_SHORT_OPTS] = "S:C:";
-static int shortlen=4;
-
-static struct option longopts[MAX_LONG_OPTS] =
+void cf_register(struct cfitem *items)
 {
-	{"set",		1, 0, 'S'},
-	{"config",	1, 0, 'C'}
-};
-static int longlen=2;
-
-void cf_register(byte *section,struct cfitem *items)
-{
-	if(cfsections>=MAX_SECTIONS)
-		die("too many modules %d",cfsections);
-	cfsection[cfsections].section=section;
-	cfsection[cfsections].items=items;
-	cfsections++;
+	if(items[0].type!=CT_SECTION)
+		die("Invalid configuration section, first item must be of type CT_SECTION");
+	items[0].var=cfsection;
+	cfsection=items;
 }
 
-static byte *cf_set_item(byte *sect, byte *name, byte *value)
+byte *cf_set_item(byte *sect, byte *name, byte *value)
 {
-	int idsect;
 	struct cfitem *item;
 	byte *msg=NULL;
 
-	idsect=0;
-	while(idsect<cfsections && strcasecmp(sect,cfsection[idsect].section))
-		idsect++;
-	if(idsect>=cfsections)	/* ignore unknown section */
+	item=cfsection;
+	while(item && strcasecmp(item->name,sect))
+		item=item->var;
+	if(!item)	/* ignore unknown section */
 		return NULL;
 
-	item=cfsection[idsect].items;
-	while(item->type && strcasecmp(name,item->name))
-		item++;
+	for(item++; item->type && strcasecmp(item->name,name); item++);
+
 	switch(item->type){
-		case ct_int:
+		case CT_INT:
 			{
 				char *end;
 				*((uns *) item->var) = strtoul(value, &end, 0);
@@ -72,10 +53,10 @@ static byte *cf_set_item(byte *sect, byte *name, byte *value)
 					msg = "Invalid number";
 				break;
 			}
-		case ct_string:
+		case CT_STRING:
 			*((byte **) item->var) = stralloc(value);
 			break;
-		case ct_function:
+		case CT_FUNCTION:
 			msg = ((ci_func) item->var)(item, value);
 			break;
 		default:
@@ -88,21 +69,23 @@ static byte *cf_set_item(byte *sect, byte *name, byte *value)
 
 static int cf_subread(byte *filename,int level)
 {
+	int fd;
 	struct fastbuf *b;
 	byte def_section[BUFFER];
 	int line;
 	byte *msg=NULL;
 
 	if(level>=MAX_LEVEL){
-		log("Too many nested files %d",level);
+		log(L_ERROR "Too many (%d) nested files when reading %s",level,filename);
 		return 0;
 	}
 		
-	b=bopen(filename,O_RDONLY,4096);
-	if(!b){
-		log("Cannot open file %s",filename);
+	fd=sh_open(filename,O_RDONLY, 0666);
+	if(fd<0){
+		log(L_ERROR "Cannot open file %s",filename);
 		return 0;
 	}
+	b=bfdopen(fd,4096);
 
 	def_section[0]=0;
 	line=0;
@@ -115,7 +98,7 @@ static int cf_subread(byte *filename,int level)
 		line++;
 
 		c=buf;
-		while(*c && isspace(*c))
+		while(*c && Cspace(*c))
 			c++;
 		if(!*c || *c=='#')
 			continue;
@@ -141,7 +124,7 @@ static int cf_subread(byte *filename,int level)
 
 			name=c;
 			c=strpbrk(c," \t");
-			while(c && *c && isspace(*c))
+			while(c && *c && Cspace(*c))
 				*c++=0;
 			if(!c || !*c){
 				msg="Missing argument";
@@ -166,40 +149,20 @@ static int cf_subread(byte *filename,int level)
 	}	/* for every line */
 
 	if(msg)
-		log("%s, line %d: %s",filename,line,msg);
+		log(L_ERROR "%s, line %d: %s",filename,line,msg);
 	bclose(b);
 	return !msg;
 }
 
-int cf_read(byte *filename)
+void cf_read(byte *filename)
 {
-	return cf_subread(filename,0);
-}
-
-void cf_read_err(byte *filename)
-{
-	if(!cf_read(filename))
+	if(!cf_subread(filename,0))
 		die("Reading config file %s failed",filename);
 }
 
-void cf_register_opts(byte *so,struct option *lo)
-{
-	int l;
-
-	l=strlen(so);
-	if(shortlen+l>=MAX_SHORT_OPTS)
-		die("Too many short options %d",shortlen+l);
-	strcat(shortopts,so);
-
-	l=longlen;
-	while(lo->name){
-		if(l>=MAX_LONG_OPTS)
-			die("Too many long options %d",l);
-		longopts[l++]=*lo++;
-	}
-}
-
-int cf_getopt(int argc,char * const argv[], int *longindex)
+int cf_getopt(int argc,char * const argv[],
+		const char *shortopts,const struct option *longopts,
+		int *longindex)
 {
 	int res;
 
@@ -209,7 +172,6 @@ int cf_getopt(int argc,char * const argv[], int *longindex)
 			byte *sect,*name,*value;
 			byte *c;
 			byte *msg=NULL;
-
 
 			name=optarg;
 			c=strchr(name,'=');
@@ -235,12 +197,10 @@ int cf_getopt(int argc,char * const argv[], int *longindex)
 				die("Invalid command line argument %s.%s=%s: %s",sect,name,value,msg);
 
 		}else if(res=='C'){
-			cf_read_err(optarg);
-
+			cf_read(optarg);
 		}else{	/* unhandled option */
 			return res;
 		}
-
 	}while(1);
 }
 
