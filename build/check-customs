@@ -9,7 +9,8 @@ TEST=0
 function try
 {
 	TEST=$(($TEST+1))
-	echo "### Test $TEST: $@ ###"
+	LOG=test$TEST.log
+	echo "### Test $TEST: $@ ###" | tee $LOG
 
 	CUST=$1
 	shift
@@ -26,14 +27,13 @@ function try
 		shift
 	done
 	rm -rf custom
-	mkdir custom custom/lib
-	cp $CUST/lib/custom.h custom/lib/
-	cp $CUST/Makefile custom/
+	cp -a $CUST custom
 	sed "$SUBST;p;d" <$CUST/config.mk >custom/config.mk
 	echo $APP | tr ! '\n' >>custom/config.mk
 
-	make clean >test$TEST.log 2>&1
-	if ! make >>test$TEST.log 2>&1 ; then
+	make clean >>$LOG 2>&1
+	rm run/cf/*
+	if ! make >>$LOG 2>&1 ; then
 		echo "	FAILED"
 		exit 1
 	fi
