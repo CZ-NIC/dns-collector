@@ -15,8 +15,6 @@
 #include "lib/conf.h"
 #include "lib/pools.h"
 #include "lib/object.h"
-#include "lib/buck2obj.h"
-#include "lib/obj2buck.h"
 #include "lib/lizard.h"
 #include "lib/bbuf.h"
 #include "charset/unistream.h"
