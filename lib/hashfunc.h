@@ -33,6 +33,13 @@ uns hash_block(const byte *str, uns len) CONST;
 
 uns hash_string_nocase(const byte *str) CONST;
 
-static inline uns CONST hash_int(uns x) { return 6442450967*x; }
+/*
+ *  We hash integers by multiplying by a reasonably large prime with
+ *  few ones in its binary form (to gave the compiler the possibility
+ *  of using shifts and adds on architectures where multiplication
+ *  instructions are slow).
+ */
+static inline uns CONST hash_int(uns x) { return 0x01008041*x; }
+static inline uns CONST hash_pointer(void *x) { return hash_int((uns)x); }
 
 #endif
