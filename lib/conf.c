@@ -85,6 +85,8 @@ byte *cf_set_item(byte *sect, byte *name, byte *value)
 	struct cfitem *item;
 	byte *msg=NULL;
 
+	if (!*sect)
+		return "Empty section name";
 	item=cf_get_item(sect,name);
 	if(!item)	/* ignore unknown section */
 		return NULL;
