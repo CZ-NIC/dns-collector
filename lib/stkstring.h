@@ -18,6 +18,6 @@
 
 uns stk_array_len(char **s, uns cnt);
 void stk_array_copy(char *x, char **s, uns cnt);
-uns stk_printf_internal(char *x, ...);
+uns stk_printf_internal(char *x, ...) __attribute__((format(printf,1,2)));
 
 extern char *stk_printf_buf;
