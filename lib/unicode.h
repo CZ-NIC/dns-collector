@@ -71,6 +71,7 @@ put1: *p++ = 0x80 | (u & 0x3f);
     }
   else
     ASSERT(0);
+  return p;
 }
 
 #define UTF8_GET_NEXT if (unlikely((*p & 0xc0) != 0x80)) goto bad; u = (u << 6) | (*p++ & 0x3f)
