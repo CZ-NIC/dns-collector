@@ -539,7 +539,7 @@ struct fastbuf *fb1, struct fastbuf *fb2
       if (SORT_UP_TO)
 	max_run_count /= SORT_UP_TO;
       do
-	run_count = P(pass)(&fb1, &fb2, run_count < max_run_count);
+	run_count = P(pass)(&fb1, &fb2, (run_count+1)/2 <= max_run_count);
       while (fb1 && fb2);
     }
 #endif
