@@ -4,8 +4,6 @@
  *	(c) 1999--2000 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
  */
 
-#define _GNU_SOURCE
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -105,7 +103,7 @@ flush_page(struct page_cache *c, struct page *p)
 
   ASSERT(p->flags & PG_FLAG_DIRTY);
 #ifdef SHERLOCK_HAVE_PREAD
-  s = pwrite(p->fd, p->data, c->page_size, p->pos);
+  s = sh_pwrite(p->fd, p->data, c->page_size, p->pos);
 #else
   if (c->pos != p->pos || c->pos_fd != p->fd)
     sh_seek(p->fd, p->pos, SEEK_SET);
@@ -282,7 +280,7 @@ pgc_read(struct page_cache *c, int fd, sh_off_t pos)
     {
       c->stat_miss++;
 #ifdef SHERLOCK_HAVE_PREAD
-      s = pread(fd, p->data, c->page_size, pos);
+      s = sh_pread(fd, p->data, c->page_size, pos);
 #else
       if (c->pos != pos || c->pos_fd != fd)
 	sh_seek(fd, pos, SEEK_SET);

@@ -1,13 +1,35 @@
 /*
  *	Sherlock Library -- Large File Support
  *
- *	(c) 1999 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1999--2000 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
  */
 
 #ifndef _SHERLOCK_LFS_H
 #define _SHERLOCK_LFS_H
 
 #ifdef SHERLOCK_CONFIG_LFS
+
+#ifdef SHERLOCK_CONFIG_LFS_LIBC
+
+/*
+ *  Unfortunately, we need to configure this manually since
+ *  out-of-the-box glibc 2.1 offers the 64-bit calls, but
+ *  converts them to 32-bit syscalls. Damn it!
+ */
+
+#define sh_open open64
+#define sh_seek lseek64
+#define sh_pread pread64
+#define sh_pwrite pwrite64
+#define SHERLOCK_HAVE_PREAD
+
+#else
+
+/*
+ *  Talk directly with the kernel. The LFS implementations of LFS in Linux 2.2
+ *  and 2.4 differ, but fortunately for us only in things like stat64 which
+ *  we don't need to use.
+ */
 
 #ifndef O_LARGEFILE
 #if defined(__linux__) && defined(__i386__)
@@ -17,7 +39,11 @@
 #endif
 #endif
 
-#define SHERLOCK_O_LARGEFILE O_LARGEFILE
+extern inline int
+sh_open(char *name, int flags, int mode)
+{
+  return open(name, flags | O_LARGEFILE, mode);
+}
 
 #if 0
 
@@ -38,16 +64,23 @@ extern inline loff_t sh_seek(int fd, sh_off_t pos, int whence)
 }
 #else
 
+#if defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ > 0
+/* glibc 2.1 or newer -> has lseek64 */
+#define sh_seek(f,o,w) lseek64(f,o,w)
+#else
 /* Touching hidden places in glibc */
 extern loff_t llseek(int fd, loff_t pos, int whence);
 #define sh_seek(f,o,w) llseek(f,o,w)
+#endif
 
 #endif
 
+#endif  /* !SHERLOCK_CONFIG_LFS_LIBC */
+
 #else	/* !SHERLOCK_CONFIG_LFS */
 
+#define sh_open open
 #define sh_seek(f,o,w) lseek(f,o,w)
-#define SHERLOCK_O_LARGEFILE 0
 
 #endif	/* !SHERLOCK_CONFIG_LFS */
 
@@ -56,10 +89,20 @@ extern loff_t llseek(int fd, loff_t pos, int whence);
  *  isn't simple at all since all libc's until glibc 2.1 don't define it.
  */
 
+#ifndef SHERLOCK_HAVE_PREAD
+
 #ifdef __linux__
+#define SHERLOCK_HAVE_PREAD
 #if defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ > 0
 /* glibc 2.1 or newer -> pread/pwrite supported automatically */
-#define SHERLOCK_HAVE_PREAD
+#ifdef SHERLOCK_CONFIG_LFS
+/* but have to use the 64-bit versions explicitly */
+#define sh_pread pread64
+#define sh_pwrite pwrite64
+#else
+#define sh_pread pread
+#define sh_pwrite pwrite
+#endif
 #elif defined(i386) && defined(__GLIBC__)
 /* glibc 2.0 on i386 -> call syscalls directly */
 #include <asm/unistd.h>
@@ -69,21 +112,29 @@ extern loff_t llseek(int fd, loff_t pos, int whence);
 #ifndef SYS_pread
 #define SYS_pread 180
 #endif
-static int pread(unsigned int fd, void *buf, size_t size, loff_t where)
+static int sh_pread(unsigned int fd, void *buf, size_t size, loff_t where)
 { return syscall(SYS_pread, fd, buf, size, where); }
 #ifndef SYS_pwrite
 #define SYS_pwrite 181
 #endif
-static int pwrite(unsigned int fd, void *buf, size_t size, loff_t where)
+static int sh_pwrite(unsigned int fd, void *buf, size_t size, loff_t where)
 { return syscall(SYS_pwrite, fd, buf, size, where); }
-#define SHERLOCK_HAVE_PREAD
 #elif defined(i386)
 /* old libc on i386 -> call syscalls directly the old way */
 #include <asm/unistd.h>
 static _syscall4(int, pread, unsigned int, fd, void *, buf, size_t, size, loff_t, where);
 static _syscall4(int, pwrite, unsigned int, fd, void *, buf, size_t, size, loff_t, where);
-#define SHERLOCK_HAVE_PREAD
+#define sh_pread pread
+#define sh_pwrite pwrite
+#else
+#undef SHERLOCK_HAVE_PREAD
 #endif
 #endif	/* __linux__ */
+
+#endif  /* !SHERLOCK_HAVE_PREAD */
+
+#ifndef SHERLOCK_HAVE_PREAD
+#error pread/pwrite not available, need to work around
+#endif
 
 #endif	/* !_SHERLOCK_LFS_H */

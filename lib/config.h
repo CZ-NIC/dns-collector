@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Configuration-Dependent Definitions
  *
- *	(c) 1997--1999 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--2000 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
  */
 
 #ifndef _SHERLOCK_CONFIG_H
@@ -13,9 +13,10 @@
 
 /* Features */
 
-#define SHERLOCK_CONFIG_REF_WEIGHTS
-#define SHERLOCK_CONFIG_LARGE_DB
-#define SHERLOCK_CONFIG_LFS
+#define SHERLOCK_CONFIG_REF_WEIGHTS	/* Weighed references */
+#define SHERLOCK_CONFIG_LARGE_DB	/* Support for DB files >4GB */
+#define SHERLOCK_CONFIG_LFS		/* Large files on 32-bit systems */
+#undef  SHERLOCK_CONFIG_LFS_LIBC	/* LFS supported directly by libc */
 
 /* Types */
 

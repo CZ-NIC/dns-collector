@@ -31,11 +31,7 @@ struct fastbuf *__bfdopen(int fd, uns buffer, byte *name)
 struct fastbuf *
 bopen(byte *name, uns mode, uns buffer)
 {
-  int fd;
-
-  mode |= SHERLOCK_O_LARGEFILE;
-  fd = open(name, mode, 0666);
-
+  int fd = sh_open(name, mode, 0666);
   if (fd < 0)
     die("Unable to %s file %s: %m",
 	(mode & O_CREAT) ? "create" : "open", name);
