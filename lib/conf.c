@@ -258,6 +258,7 @@ int cf_getopt(int argc,char * const argv[],
 		}else if(res==-1){
 			if(cfdeffile)
 				cf_read(cfdeffile);
+			return res;
 		}else{	/* unhandled option */
 			return res;
 		}
