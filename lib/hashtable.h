@@ -527,15 +527,14 @@ static void P(remove) (P(node) *n)
 #define HASH_FOR_ALL(h_px, h_var)							\
 do {											\
   uns h_slot;										\
-  struct HASH_GLUE(h_px,bucket) *h_buck;						\
-  for (h_slot=0; h_slot < HASH_GLUE(h_px,table).hash_size; h_slot++)			\
-    for (h_buck = HASH_GLUE(h_px,table).ht[h_slot]; h_buck; h_buck = h_buck->next)	\
+  struct GLUE_(h_px,bucket) *h_buck;							\
+  for (h_slot=0; h_slot < GLUE_(h_px,table).hash_size; h_slot++)			\
+    for (h_buck = GLUE_(h_px,table).ht[h_slot]; h_buck; h_buck = h_buck->next)	\
       {											\
-	HASH_GLUE(h_px,node) *h_var = &h_buck->n;
+	GLUE_(h_px,node) *h_var = &h_buck->n;
 #define HASH_END_FOR } } while(0)
 #define HASH_BREAK 
 #define HASH_CONTINUE continue
-#define HASH_GLUE(x,y) x##_##y
 
 #endif
 
