@@ -31,7 +31,7 @@ enum word_type {
 
 /* Keywords for word type names */
 #define WORD_TYPE_NAMES	       			\
-	T(WORD, ~((1 << WT_FILE) | (1 << WT_LINK)))	\
+	T(WORD, ~(1 << WT_LINK))		\
 	T(TEXT, 1 << WT_TEXT)			\
 	T(EMPH, 1 << WT_EMPH)			\
 	T(SMALL, 1 << WT_SMALL)			\
