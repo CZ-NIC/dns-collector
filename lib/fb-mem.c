@@ -115,9 +115,9 @@ fbmem_close(struct fastbuf *f)
   while (b = m->first)
     {
       m->first = b->next;
-      free(b);
+      xfree(b);
     }
-  free(m);
+  xfree(m);
 }
 
 struct fastbuf *

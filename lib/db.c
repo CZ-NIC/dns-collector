@@ -102,7 +102,7 @@ sdbm_close(struct sdbm *d)
     pgc_close(d->cache);
   if (d->fd >= 0)
     close(d->fd);
-  free(d);
+  xfree(d);
 }
 
 static uns

@@ -37,8 +37,8 @@ rx_compile(byte *p)
 void
 rx_free(regex *r)
 {
-  free(r->buf.buffer);
-  free(r);
+  xfree(r->buf.buffer);
+  xfree(r);
 }
 
 int

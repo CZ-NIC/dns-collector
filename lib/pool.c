@@ -36,14 +36,14 @@ free_pool(struct mempool *p)
   for(d=p->first; d; d = c)
     {
       c = d->next;
-      free(d);
+      xfree(d);
     }
   for(d=p->first_large; d; d = c)
     {
       c = d->next;
-      free(d);
+      xfree(d);
     }
-  free(p);
+  xfree(p);
 }
 
 void
@@ -56,7 +56,7 @@ flush_pool(struct mempool *p)
   while (c = p->first_large)
     {
       p->first_large = c->next;
-      free(c);
+      xfree(c);
     }
 }
 

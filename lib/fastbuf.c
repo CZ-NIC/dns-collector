@@ -14,7 +14,7 @@ void bclose(struct fastbuf *f)
 {
   bflush(f);
   f->close(f);
-  free(f);
+  xfree(f);
 }
 
 void bflush(struct fastbuf *f)

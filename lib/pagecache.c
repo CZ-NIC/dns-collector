@@ -65,8 +65,8 @@ pgc_close(struct page_cache *c)
   ASSERT(EMPTY_LIST(c->locked_pages));
   ASSERT(EMPTY_LIST(c->dirty_pages));
   ASSERT(EMPTY_LIST(c->free_pages));
-  free(c->hash_table);
-  free(c);
+  xfree(c->hash_table);
+  xfree(c);
 }
 
 static void
@@ -251,7 +251,7 @@ pgc_cleanup(struct page_cache *c)
       rem_node(&p->hn);
       c->free_count--;
       c->total_count--;
-      free(p);
+      xfree(p);
     }
   ASSERT(!c->free_count);
 }

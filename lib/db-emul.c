@@ -39,7 +39,7 @@ sdbm_close(struct sdbm *d)
 {
   sdbm_rewind(d);
   gdbm_close(d->db);
-  free(d);
+  xfree(d);
 }
 
 static int
@@ -110,7 +110,7 @@ sdbm_fetch(struct sdbm *d, byte *key, uns keylen, byte *val, uns *vallen)
   if (!V.dptr)
     return 0;
   rc = sdbm_put_user(V.dptr, V.dsize, val, vallen);
-  free(V.dptr);
+  xfree(V.dptr);
   return rc ? SDBM_ERROR_TOO_LARGE : 1;
 }
 
@@ -119,7 +119,7 @@ sdbm_rewind(struct sdbm *d)
 {
   if (d->prevkey.dptr)
     {
-      free(d->prevkey.dptr);
+      xfree(d->prevkey.dptr);
       d->prevkey.dptr = NULL;
     }
 }
@@ -132,7 +132,7 @@ sdbm_get_next(struct sdbm *d, byte *key, uns *keylen, byte *val, uns *vallen)
   if (d->prevkey.dptr)
     {
       K = gdbm_nextkey(d->db, d->prevkey);
-      free(d->prevkey.dptr);
+      xfree(d->prevkey.dptr);
     }
   else
     K = gdbm_firstkey(d->db);

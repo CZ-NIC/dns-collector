@@ -74,8 +74,29 @@ void open_log_file(byte *);
 
 /* Allocation */
 
-void *xmalloc(uns);
-void *xrealloc(void *, uns);
+#ifdef DMALLOC
+/*
+ * The standard dmalloc macros tend to produce lots of namespace
+ * conflicts and we use only xmalloc and xfree, so we can define
+ * the stubs ourselves.
+ */
+#define DMALLOC_DISABLE
+#include <dmalloc.h>
+#define xmalloc(size) _xmalloc_leap(__FILE__, __LINE__, size)
+#define xrealloc(ptr,size) _xrealloc_leap(__FILE__, __LINE__, ptr, size)
+#define xfree(ptr) _xfree_leap(__FILE__, __LINE__, ptr)
+#else
+/*
+ * Unfortunately, several libraries we might want to link to define
+ * their own xmalloc and we don't want to interfere with them, hence
+ * the renaming.
+ */
+#define xmalloc bird_xmalloc
+void *xmalloc(unsigned);
+void *xrealloc(void *, unsigned);
+#define xfree(x) free(x)
+#endif
+
 byte *stralloc(byte *);
 
 /* Content-Type pattern matching and filters */
