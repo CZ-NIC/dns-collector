@@ -220,5 +220,5 @@ obj_add_attr(struct odes *o, struct oattr *a, uns x, byte *v)
   b = oa_new(o, x, v);
   a->last_same->same = b;
   a->last_same = b;
-  return b;
+  return a;
 }
