@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Memory Pools (One-Time Allocation)
  *
- *	(c) 1997--1999 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
  */
 
 #include "lib/lib.h"
@@ -15,7 +15,7 @@ struct memchunk {
 };
 
 struct mempool *
-new_pool(uns size)
+mp_new(uns size)
 {
   struct mempool *p = xmalloc(sizeof(struct mempool));
 
@@ -29,7 +29,7 @@ new_pool(uns size)
 }
 
 void
-free_pool(struct mempool *p)
+mp_delete(struct mempool *p)
 {
   struct memchunk *c, *d;
 
@@ -47,7 +47,7 @@ free_pool(struct mempool *p)
 }
 
 void
-flush_pool(struct mempool *p)
+mp_flush(struct mempool *p)
 {
   struct memchunk *c;
 
@@ -61,7 +61,7 @@ flush_pool(struct mempool *p)
 }
 
 void *
-pool_alloc(struct mempool *p, uns s)
+mp_alloc(struct mempool *p, uns s)
 {
   if (s <= p->threshold)
     {

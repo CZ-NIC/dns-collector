@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Memory Pools
  *
- *	(c) 1997--1999 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef POOL_ALIGN
@@ -15,27 +15,27 @@ struct mempool {
   uns chunk_size, threshold;
 };
 
-struct mempool *new_pool(uns);
-void free_pool(struct mempool *);
-void flush_pool(struct mempool *);
-void *pool_alloc(struct mempool *, uns);
+struct mempool *mp_new(uns);
+void mp_delete(struct mempool *);
+void mp_flush(struct mempool *);
+void *mp_alloc(struct mempool *, uns);
 
-static inline void *fast_alloc(struct mempool *p, uns l)
+static inline void *mp_alloc_fast(struct mempool *p, uns l)
 {
   byte *f = (void *) (((uns) p->free + POOL_ALIGN - 1) & ~(POOL_ALIGN - 1));
   byte *ee = f + l;
   if (ee > p->last)
-    return pool_alloc(p, l);
+    return mp_alloc(p, l);
   p->free = ee;
   return f;
 }
 
-static inline void *fast_alloc_noalign(struct mempool *p, uns l)
+static inline void *mp_alloc_fast_noalign(struct mempool *p, uns l)
 {
   byte *f = p->free;
   byte *ee = f + l;
   if (ee > p->last)
-    return pool_alloc(p, l);
+    return mp_alloc(p, l);
   p->free = ee;
   return f;
 }
