@@ -112,7 +112,7 @@ struct oattr *prepend_attr(struct odes *, uns, byte *);
 /* oname.c */
 
 void mk_obj_name(byte *, ulg, byte *);
-FILE *create_obj_file(byte *, ulg);
+int dump_obj_to_file(byte *, ulg, struct odes *, int);
 
 /* wordsplit.c */
 
