@@ -9,7 +9,7 @@
 
 #include "custom/lib/custom.h"
 
-#define INDEX_VERSION (0x32330100+sizeof(struct card_attr))	/* Increase with each incompatible change in index format */
+#define INDEX_VERSION (0x34010000+sizeof(struct card_attr))	/* Increase with each incompatible change in index format */
 
 /*
  *  Words
@@ -96,11 +96,11 @@ enum card_flag {
  */
 
 #ifdef CONFIG_FILETYPE
-#define CA_GET_FILE_TYPE(a) ((a)->type_flags >> 5)
-#define CA_GET_FILE_INFO(a) ((a)->type_flags & 0x1f)
+#define CA_GET_FILE_TYPE(a) ((a)->type_flags >> 4)
+#define CA_GET_FILE_INFO(a) ((a)->type_flags & 0x0f)
 #define CA_GET_FILE_LANG(a) ((a)->type_flags & 0x80 ? 0 : CA_GET_FILE_INFO(a))
-#define MAX_FILE_TYPES 8
-#define FILETYPE_IS_TEXT(f) ((f) < 4)
+#define MAX_FILE_TYPES 16
+#define FILETYPE_IS_TEXT(f) ((f) < 8)
 byte *ext_ft_parse(u32 *dest, byte *value, uns intval);
 extern byte *custom_file_type_names[MAX_FILE_TYPES];
 #define FILETYPE_STAT_VARS uns matching_per_type[MAX_FILE_TYPES];
