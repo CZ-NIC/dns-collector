@@ -26,6 +26,28 @@ LIBUCW_MODS= \
 	base64 base224 \
 	sync
 
+LIBUCW_INCLUDES= \
+	lib.h config.h math.h \
+	mempool.h pagecache.h \
+	sorter.h arraysort.h \
+	lists.h clists.h \
+	unaligned.h prefetch.h \
+	bbuf.h gbuf.h bitarray.h bitsig.h \
+	hashfunc.h hashtable.h \
+	heap.h binheap.h binheap-node.h \
+	redblack.h \
+	conf.h ipaccess.h \
+	profile.h \
+	fastbuf.h lfs.h ff-utf8.h \
+	chartype.h unicode.h stkstring.h \
+	wildmatch.h patmatch.h \
+	db.h \
+	url.h \
+	mainloop.h \
+	lizard.h \
+	md5.h \
+	base64.h base224.h \
+
 ifdef CONFIG_OWN_REGEX
 include lib/regex/Makefile
 endif
@@ -57,6 +79,11 @@ obj/lib/unicode-utf8.test: obj/lib/unicode-utf8-t
 obj/lib/hash-test.test: obj/lib/hash-test
 obj/lib/mempool.test: obj/lib/mempool-fmt-t obj/lib/mempool-str-t
 obj/lib/stkstring.test: obj/lib/stkstring-t
+
+INCLUDES+=obj/lib/.include-stamp
+obj/lib/.include-stamp: $(addprefix lib/,$(LIBUCW_INCLUDES))
+	build/install-includes lib run/include/lib $(?F)
+	touch obj/lib/.include-stamp
 
 ifdef CONFIG_UCW_PERL
 include lib/perl/Makefile
