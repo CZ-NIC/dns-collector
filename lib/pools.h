@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Memory Pools
  *
- *	(c) 1997--2003 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -26,6 +26,7 @@ void mp_delete(struct mempool *);
 void mp_flush(struct mempool *);
 void *mp_alloc(struct mempool *, uns);
 void *mp_alloc_zero(struct mempool *, uns);
+char *mp_strdup(struct mempool *, char *);
 
 static inline void *mp_alloc_fast(struct mempool *p, uns l)
 {

@@ -109,3 +109,12 @@ mp_alloc_zero(struct mempool *p, uns s)
   bzero(x, s);
   return x;
 }
+
+char *
+mp_strdup(struct mempool *p, char *s)
+{
+  uns l = strlen(s) + 1;
+  char *t = mp_alloc_fast_noalign(p, l);
+  memcpy(t, s, l);
+  return t;
+}
