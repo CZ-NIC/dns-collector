@@ -32,7 +32,6 @@ oa_new(struct odes *o, uns x, byte *v)
   struct oattr *a = mp_alloc(o->pool, sizeof(struct oattr) + strlen(v));
 
   a->next = a->same = NULL;
-  a->last_same = a;
   a->attr = x;
   strcpy(a->val, v);
   return a;
@@ -50,6 +49,7 @@ obj_new(struct mempool *pool)
   o->pool = lp;
   o->local_pool = (pool == lp) ? NULL : lp;
   o->attrs = NULL;
+  o->cached_attr = NULL;
   return o;
 }
 
@@ -64,30 +64,12 @@ int
 obj_read(struct fastbuf *f, struct odes *o)
 {
   byte buf[1024];
-  struct oattr **last = &o->attrs;
-  struct oattr *a, *la;
 
-  la = NULL;
-  *last = NULL;
   while (bgets(f, buf, sizeof(buf)))
     {
       if (!buf[0])
 	return 1;
-      a = oa_new(o, buf[0], buf+1);
-      if (!la || la->attr != a->attr)
-	for(la=o->attrs; la && la->attr != a->attr; la=la->next)
-	  ;
-      if (la)
-	{
-	  la->last_same->same = a;
-	  la->last_same = a;
-	}
-      else
-	{
-	  *last = a;
-	  last = &a->next;
-	  la = a;
-	}
+      obj_add_attr(o, buf[0], buf+1);
     }
   return 0;
 }
@@ -129,7 +111,12 @@ obj_find_attr_last(struct odes *o, uns x)
 {
   struct oattr *a = obj_find_attr(o, x);
 
-  return a ? a->last_same : NULL;
+  if (a)
+    {
+      while (a->same)
+	a = a->same;
+    }
+  return a;
 }
 
 uns
@@ -138,6 +125,7 @@ obj_del_attr(struct odes *o, struct oattr *a)
   struct oattr *x, **p, *y, *l;
   byte aa = a->attr;
 
+  o->cached_attr = NULL;
   p = &o->attrs;
   while (x = *p)
     {
@@ -150,8 +138,6 @@ obj_del_attr(struct odes *o, struct oattr *a)
 	      if (x == a)
 		{
 		  *p = x->same;
-		  if (y->last_same == x)
-		    y->last_same = l;
 		  return 1;
 		}
 	      p = &x->same;
@@ -197,6 +183,7 @@ obj_set_attr(struct odes *o, uns x, byte *v)
     }
   else
     a = NULL;
+  o->cached_attr = a;
   return a;
 }
 
@@ -210,20 +197,26 @@ obj_set_attr_num(struct odes *o, uns a, uns v)
 }
 
 struct oattr *
-obj_add_attr(struct odes *o, struct oattr *a, uns x, byte *v)
+obj_add_attr(struct odes *o, uns x, byte *v)
 {
-  struct oattr *b;
+  struct oattr *a, *b;
 
-  if (!a)
-    {
-      a = obj_find_attr(o, x);
-      if (!a)
-	return obj_set_attr(o, x, v);
-    }
   b = oa_new(o, x, v);
-  a->last_same->same = b;
-  a->last_same = b;
-  return a;
+  if (!(a = o->cached_attr) || a->attr != x)
+    {
+      if (!(a = obj_find_attr(o, x)))
+	{
+	  b->next = o->attrs;
+	  o->attrs = b;
+	  goto done;
+	}
+    }
+  while (a->same)
+    a = a->same;
+  a->same = b;
+ done:
+  o->cached_attr = b;
+  return b;
 }
 
 struct oattr *
@@ -241,7 +234,6 @@ obj_prepend_attr(struct odes *o, uns x, byte *v)
 	  b->next = a->next;
 	  a->next = NULL;
 	  *z = b;
-	  b->last_same = a->last_same;
 	  return b;
 	}
       z = &a->next;
@@ -259,7 +251,5 @@ obj_insert_attr(struct odes *o, struct oattr *first, struct oattr *after, byte *
   b = oa_new(o, first->attr, v);
   b->same = after->same;
   after->same = b;
-  if (first->last_same == after)
-    first->last_same = b;
   return b;
 }

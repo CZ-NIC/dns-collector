@@ -103,10 +103,11 @@ struct fastbuf;
 struct odes {				/* Object description */
   struct oattr *attrs;
   struct mempool *pool, *local_pool;
+  struct oattr *cached_attr;
 };
 
 struct oattr {				/* Object attribute */
-  struct oattr *next, *same, *last_same;
+  struct oattr *next, *same;
   byte attr;
   byte val[1];
 };
@@ -122,7 +123,7 @@ uns obj_del_attr(struct odes *, struct oattr *);
 byte *obj_find_aval(struct odes *, uns);
 struct oattr *obj_set_attr(struct odes *, uns, byte *);
 struct oattr *obj_set_attr_num(struct odes *, uns, uns);
-struct oattr *obj_add_attr(struct odes *, struct oattr *, uns, byte *);
+struct oattr *obj_add_attr(struct odes *, uns, byte *);
 struct oattr *obj_prepend_attr(struct odes *, uns, byte *);
 struct oattr *obj_insert_attr(struct odes *o, struct oattr *first, struct oattr *after, byte *v);
 
