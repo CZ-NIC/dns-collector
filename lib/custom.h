@@ -40,6 +40,9 @@ enum word_type {
 /* These types are always matched without accents if accent mode is set to "auto" */
 #define WORD_TYPES_NO_AUTO_ACCENT 0
 
+/* These types belong to all languages */
+#define WORD_TYPES_ALL_LANGS (1 << WT_LINK)
+
 /* Meta information types (at most 16 of them + MT_MAX) */
 
 enum meta_type {
@@ -59,6 +62,7 @@ enum meta_type {
 	T(META, 1 << MT_MISC)
 
 #define META_TYPES_NO_AUTO_ACCENT 0
+#define META_TYPES_ALL_LANGS 0
 
 /* String types */
 
