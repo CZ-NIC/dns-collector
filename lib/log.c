@@ -23,7 +23,7 @@ char *log_title;
 static int log_pid;
 static int log_params;
 static int log_name_size;
-static int log_switching;
+int log_switch_nest;
 
 void
 log_fork(void)
@@ -32,16 +32,15 @@ log_fork(void)
 }
 
 static void
-log_switch(struct tm *tm)
+do_log_switch(struct tm *tm)
 {
   int fd, l;
   char name[log_name_size];
 
   if (!log_name_patt ||
-      log_name[0] && !log_params ||
-      log_switching)
+      log_name[0] && !log_params)
     return;
-  log_switching++;
+  log_switch_nest++;
   l = strftime(name, log_name_size, log_name_patt, tm);
   if (l < 0 || l >= log_name_size)
     die("Error formatting log file name: %m");
@@ -57,7 +56,21 @@ log_switch(struct tm *tm)
       close(1);
       dup(2);
     }
-  log_switching--;
+  log_switch_nest--;
+}
+
+void
+log_switch(void)
+{
+  time_t tim = time(NULL);
+  do_log_switch(localtime(&tim));
+}
+
+static inline void
+internal_log_switch(struct tm *tm)
+{
+  if (!log_switch_nest)
+    do_log_switch(tm);
 }
 
 void
@@ -69,7 +82,7 @@ vlog_msg(unsigned int cat, const char *msg, va_list args)
   int buflen = 256;
   int l, l0, r;
 
-  log_switch(tm);
+  internal_log_switch(tm);
   while (1)
     {
       p = buf = alloca(buflen);
@@ -175,8 +188,6 @@ log_file(byte *name)
 {
   if (name)
     {
-      time_t tim = time(NULL);
-      struct tm *tm = localtime(&tim);
       if (log_name_patt)
 	xfree(log_name_patt);
       if (log_name)
@@ -184,12 +195,12 @@ log_file(byte *name)
 	  xfree(log_name);
 	  log_name = NULL;
 	}
-      log_name_patt = stralloc(name);
+      log_name_patt = xstrdup(name);
       log_params = !!strchr(name, '%');
       log_name_size = strlen(name) + 64;	/* 63 is an upper bound on expansion of % escapes */
       log_name = xmalloc(log_name_size);
       log_name[0] = 0;
-      log_switch(tm);
+      log_switch();
       close(0);
       open("/dev/null", O_RDWR, 0);
     }
