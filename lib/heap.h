@@ -82,3 +82,6 @@
     else										\
       HEAP_BUBBLE_DOWN_J(heap,num,less,swap);						\
   } while(0)
+
+/* Default swapping macro */
+#define HEAP_SWAP(heap,a,b,t) (t=heap[a], heap[a]=heap[b], heap[b]=t)
