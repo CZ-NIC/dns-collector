@@ -9,7 +9,7 @@
 
 /* Version */
 
-#define SHER_VER "2.0-alpha"
+#define SHER_VER "2.0"
 
 /* Features */
 
