@@ -141,23 +141,25 @@ static void
 cat(void)
 {
   struct obuck_header h;
-  struct fastbuf *b;
+  struct fastbuf *b, *out;
   byte buf[1024];
   int l, lf;
 
   obuck_init(0);
+  out = bfdopen_shared(1, 65536);
   while (b = obuck_slurp_pool(&h))
     {
-      printf("### %08x %6d %08x\n", h.oid, h.length, h.type);
+      bprintf(out, "### %08x %6d %08x\n", h.oid, h.length, h.type);
       lf = 1;
       while ((l = bread(b, buf, sizeof(buf))))
 	{
-	  fwrite(buf, 1, l, stdout);
+	  bwrite(out, buf, l);
 	  lf = (buf[l-1] == '\n');
 	}
       if (!lf)
-	printf("\n# <missing EOL>\n");
+	bprintf(out, "\n# <missing EOL>\n");
     }
+  bclose(out);
   obuck_cleanup();
 }
 
