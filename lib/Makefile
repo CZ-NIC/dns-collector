@@ -1,0 +1,14 @@
+# Makefile for the Sherlock Library (c) 1997--2000 Martin Mares <mj@ucw.cz>
+
+DIRS+=lib
+PROGS+=obj/lib/db-test obj/lib/db-rebuild
+
+SHLIB_OBJS=alloc.o alloc_str.o ctmatch.o db.o fastbuf.o fb-file.o fb-mem.o lists.o \
+	log.o log2.o md5.o md5hex.o mmap.o pagecache.o patimatch.o patmatch.o pool.o \
+	prime.o random.o realloc.o regex.o temp.o timer.o url.o wildmatch.o \
+	wordsplit.o
+
+obj/lib/libsh.a: $(addprefix obj/lib/,$(SHLIB_OBJS))
+
+obj/lib/db-test: obj/lib/db-test.o obj/lib/libsh.a
+obj/lib/db-rebuild: obj/lib/db-rebuild.o obj/lib/libsh.a
