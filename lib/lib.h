@@ -176,4 +176,8 @@ void munmap_file(void *start, unsigned len);
 void setproctitle_init(int argc, char **argv);
 void setproctitle(char *msg, ...) __attribute__((format(printf,1,2)));
 
+/* randomkey.c */
+
+void randomkey(byte *buf, uns size);
+
 #endif
