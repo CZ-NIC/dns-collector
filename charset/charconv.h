@@ -33,11 +33,20 @@ void conv_set_charset(struct conv_context *, int, int);
 #define CONV_DEST_END 2
 #define CONV_SKIP 4
 
-#define CONV_CHARSET_ASCII 0
-#define CONV_CHARSET_LATIN1 1
-#define CONV_CHARSET_LATIN2 2
-#define CONV_CHARSET_UTF8 8
-#define CONV_NUM_CHARSETS 9
+enum charset_id {
+	CONV_CHARSET_ASCII,
+	CONV_CHARSET_LATIN1,
+	CONV_CHARSET_LATIN2,
+	CONV_CHARSET_WIN1250,
+	CONV_CHARSET_WIN1252,
+	CONV_CHARSET_KAMCS,
+	CONV_CHARSET_CSN369103,
+	CONV_CHARSET_CP852,
+	CONV_CHARSET_MACCE,
+	CONV_CHARSET_CORK,
+	CONV_CHARSET_UTF8,
+	CONV_NUM_CHARSETS
+};
 
 /* For those brave ones who want to mess with charconv internals */
 unsigned int conv_x_to_ucs(unsigned int x);

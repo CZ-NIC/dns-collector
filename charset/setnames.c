@@ -17,10 +17,12 @@ static char *cs_names[] = {
 	"ISO-8859-1",
 	"ISO-8859-2",
 	"windows-1250",
+	"windows-1252",
 	"x-kam-cs",
 	"CSN_369103",
 	"cp852",
 	"x-mac-ce",
+	"x-cork",
 	"utf-8"
 };
 
