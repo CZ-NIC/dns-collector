@@ -46,9 +46,3 @@ update_adler32(uns adler, byte *buf, uns len)
   }
   return (s2 << 16) | s1;
 }
-
-uns
-adler32(byte *buf, uns len)
-{
-  return update_adler32(1, buf, len);
-}
