@@ -86,6 +86,17 @@ fp_hash(struct fingerprint *fp)
     p++;							\
 } while (0)
 
+#define SKIP_TAGGED_CHAR(p) do {				\
+  if (*p >= 0x80 && *p < 0xc0)					\
+    {								\
+      uns u = *p++;						\
+      if (u >= 0xa0 && u < 0xb0 && *p >= 0x80 && *p < 0xc0)	\
+	p++;							\
+    }								\
+  else								\
+    UTF8_SKIP(p);						\
+} while (0)
+
 static inline uns
 bget_tagged_char(struct fastbuf *f)
 {
