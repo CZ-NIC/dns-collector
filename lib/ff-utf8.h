@@ -21,7 +21,7 @@ bget_utf8(struct fastbuf *b)
 {
   uns u;
 
-  if (b->bptr + 5 <= b->bstop)
+  if (bavailr(b) >= 5)
     {
       GET_UTF8(b->bptr, u);
       return u;
@@ -34,7 +34,7 @@ static inline void
 bput_utf8(struct fastbuf *b, uns u)
 {
   ASSERT(u < 65536);
-  if (b->bptr + 5 <= b->bufend)
+  if (bavailw(b) >= 3)
     PUT_UTF8(b->bptr, u);
   else
     bput_utf8_slow(b, u);

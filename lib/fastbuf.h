@@ -156,11 +156,23 @@ static inline void bputc(struct fastbuf *f, uns c)
     bputc_slow(f, c);
 }
 
+static inline uns
+bavailr(struct fastbuf *f)
+{
+  return f->bstop - f->bptr;
+}
+
+static inline uns
+bavailw(struct fastbuf *f)
+{
+  return f->bufend - f->bptr;
+}
+
 int bgetw_slow(struct fastbuf *f);
 static inline int bgetw(struct fastbuf *f)
 {
   int w;
-  if (f->bptr + 2 <= f->bstop)
+  if (bavailr(f) >= 2)
     {
       w = GET_U16(f->bptr);
       f->bptr += 2;
@@ -174,7 +186,7 @@ u32 bgetl_slow(struct fastbuf *f);
 static inline u32 bgetl(struct fastbuf *f)
 {
   u32 l;
-  if (f->bptr + 4 <= f->bstop)
+  if (bavailr(f) >= 4)
     {
       l = GET_U32(f->bptr);
       f->bptr += 4;
@@ -188,7 +200,7 @@ u64 bgetq_slow(struct fastbuf *f);
 static inline u64 bgetq(struct fastbuf *f)
 {
   u64 l;
-  if (f->bptr + 8 <= f->bstop)
+  if (bavailr(f) >= 8)
     {
       l = GET_U64(f->bptr);
       f->bptr += 8;
@@ -202,7 +214,7 @@ u64 bget5_slow(struct fastbuf *f);
 static inline u64 bget5(struct fastbuf *f)
 {
   u64 l;
-  if (f->bptr + 5 <= f->bstop)
+  if (bavailr(f) >= 5)
     {
       l = GET_U40(f->bptr);
       f->bptr += 5;
@@ -215,7 +227,7 @@ static inline u64 bget5(struct fastbuf *f)
 void bputw_slow(struct fastbuf *f, uns w);
 static inline void bputw(struct fastbuf *f, uns w)
 {
-  if (f->bptr + 2 <= f->bufend)
+  if (bavailw(f) >= 2)
     {
       PUT_U16(f->bptr, w);
       f->bptr += 2;
@@ -227,7 +239,7 @@ static inline void bputw(struct fastbuf *f, uns w)
 void bputl_slow(struct fastbuf *f, u32 l);
 static inline void bputl(struct fastbuf *f, u32 l)
 {
-  if (f->bptr + 4 <= f->bufend)
+  if (bavailw(f) >= 4)
     {
       PUT_U32(f->bptr, l);
       f->bptr += 4;
@@ -239,7 +251,7 @@ static inline void bputl(struct fastbuf *f, u32 l)
 void bputq_slow(struct fastbuf *f, u64 l);
 static inline void bputq(struct fastbuf *f, u64 l)
 {
-  if (f->bptr + 8 <= f->bufend)
+  if (bavailw(f) >= 8)
     {
       PUT_U64(f->bptr, l);
       f->bptr += 8;
@@ -251,7 +263,7 @@ static inline void bputq(struct fastbuf *f, u64 l)
 void bput5_slow(struct fastbuf *f, u64 l);
 static inline void bput5(struct fastbuf *f, u64 l)
 {
-  if (f->bptr + 5 <= f->bufend)
+  if (bavailw(f) >= 5)
     {
       PUT_U40(f->bptr, l);
       f->bptr += 5;
@@ -263,7 +275,7 @@ static inline void bput5(struct fastbuf *f, u64 l)
 uns bread_slow(struct fastbuf *f, void *b, uns l, uns check);
 static inline uns bread(struct fastbuf *f, void *b, uns l)
 {
-  if (f->bptr + l <= f->bstop)
+  if (bavailr(f) >= l)
     {
       memcpy(b, f->bptr, l);
       f->bptr += l;
@@ -275,7 +287,7 @@ static inline uns bread(struct fastbuf *f, void *b, uns l)
 
 static inline uns breadb(struct fastbuf *f, void *b, uns l)
 {
-  if (f->bptr + l <= f->bstop)
+  if (bavailr(f) >= l)
     {
       memcpy(b, f->bptr, l);
       f->bptr += l;
@@ -288,7 +300,7 @@ static inline uns breadb(struct fastbuf *f, void *b, uns l)
 void bwrite_slow(struct fastbuf *f, void *b, uns l);
 static inline void bwrite(struct fastbuf *f, void *b, uns l)
 {
-  if (f->bptr + l <= f->bufend)
+  if (bavailw(f) >= l)
     {
       memcpy(f->bptr, b, l);
       f->bptr += l;
@@ -324,8 +336,7 @@ void bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uns l);
 static inline void
 bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
 {
-  if (f->bptr + l <= f->bstop &&
-      t->bptr + l <= t->bufend)
+  if (bavailr(f) >= l && bavailw(t) >= l)
     {
       memcpy(t->bptr, f->bptr, l);
       t->bptr += l;
@@ -353,7 +364,7 @@ bdirect_read_prepare(struct fastbuf *f, byte **buf)
   if (f->bptr == f->bstop && !f->refill(f))
     return 0;
   *buf = f->bptr;
-  return f->bstop - f->bptr;
+  return bavailr(f);
 }
 
 static inline void
@@ -375,7 +386,7 @@ bdirect_write_prepare(struct fastbuf *f, byte **buf)
   if (f->bptr == f->bufend)
     f->spout(f);
   *buf = f->bptr;
-  return f->bufend - f->bptr;
+  return bavailw(f);
 }
 
 static inline void
