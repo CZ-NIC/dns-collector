@@ -107,22 +107,14 @@ dump_parsed_bucket(struct fastbuf *out, struct obuck_header *h, struct fastbuf *
     bprintf(out, "Cannot parse bucket %x of type %x and length %d: %m\n", h->oid, h->type, h->length);
   else
   {
-    if (h->type < BUCKET_TYPE_V30)
-    {
-      for (struct oattr *oa = o->attrs; oa; oa = oa->next)
-	dump_oattr(out, oa);
-    }
-    else
-    {
 #define	IS_HEADER(x) (x=='O' || x=='U')
-      for (struct oattr *oa = o->attrs; oa; oa = oa->next)
-	if (IS_HEADER(oa->attr))
-	  dump_oattr(out, oa);
-      bputc(out, '\n');
-      for (struct oattr *oa = o->attrs; oa; oa = oa->next)
-	if (!IS_HEADER(oa->attr))
-	  dump_oattr(out, oa);
-    }
+    for (struct oattr *oa = o->attrs; oa; oa = oa->next)
+      if (IS_HEADER(oa->attr))
+	dump_oattr(out, oa);
+    bputc(out, '\n');
+    for (struct oattr *oa = o->attrs; oa; oa = oa->next)
+      if (!IS_HEADER(oa->attr))
+	dump_oattr(out, oa);
   }
 }
 
