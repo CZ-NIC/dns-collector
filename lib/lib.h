@@ -192,4 +192,9 @@ int run_command_v(byte *cmd, va_list args);
 void NONRET exec_command_v(byte *cmd, va_list args);
 void echo_command_v(byte *buf, int size, byte *cmd, va_list args);
 
+/* carefulio.c */
+
+int careful_read(int fd, void *buf, int len);
+int careful_write(int fd, void *buf, int len);
+
 #endif
