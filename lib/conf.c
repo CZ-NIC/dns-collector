@@ -14,7 +14,7 @@
 
 #include "lib/chartype.h"
 #include "lib/fastbuf.h"
-#include "lib/lfs.h"
+#include "lib/pools.h"
 
 #include "lib/conf.h"
 
@@ -22,6 +22,28 @@
 #define	MAX_LEVEL	8
 
 static struct cfitem *cfsection;
+static struct mempool *cfpool;
+
+static void CONSTRUCTOR
+conf_init(void)
+{
+	cfpool = mp_new(4096);
+}
+
+void *
+cfg_malloc(uns size)
+{
+	return mp_alloc(cfpool, size);
+}
+
+byte *
+cfg_stralloc(byte *s)
+{
+  uns l = strlen(s);
+  byte *k = cfg_malloc(l + 1);
+  strcpy(k, s);
+  return k;
+}
 
 void cf_register(struct cfitem *items)
 {
@@ -58,10 +80,10 @@ byte *cf_set_item(byte *sect, byte *name, byte *value)
 				break;
 			}
 		case CT_STRING:
-			*((byte **) item->var) = stralloc(value);
+			*((byte **) item->var) = cfg_stralloc(value);
 			break;
 		case CT_FUNCTION:
-			msg = ((ci_func) item->var)(item, value);
+			msg = ((ci_func) item->var)(item, cfg_stralloc(value));
 			break;
 		default:
 			msg = "Unknown keyword";
@@ -84,7 +106,7 @@ static int cf_subread(byte *filename,int level)
 		return 0;
 	}
 		
-	fd=sh_open(filename,O_RDONLY, 0666);
+	fd=open(filename,O_RDONLY, 0666);
 	if(fd<0){
 		log(L_ERROR,"Cannot open configuration file %s: %m",filename);
 		return 0;

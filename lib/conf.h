@@ -7,6 +7,16 @@
 #include <getopt.h>
 
 /*
+ * Allocation in configuration memory pool.
+ */
+
+void *
+cfg_malloc(uns size);
+
+byte *
+cfg_stralloc(byte *s);
+
+/*
  * Every module places its configuration setting into some section.  Section is
  * an array of cfitem, whose first record is of type CT_SECTION and contains
  * the name of the section.  The configuration sections are registered by
