@@ -1,0 +1,479 @@
+/*
+ *	Sherlock Library -- URL Functions (according to RFC 1738 and 1808)
+ *
+ *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ */
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "lib.h"
+#include "url.h"
+#include "string.h"
+
+/* Escaping and de-escaping */
+
+static uns
+enhex(uns x)
+{
+  return (x<10) ? (x + '0') : (x - 10 + 'A');
+}
+
+int
+url_deescape(byte *s, byte *d)
+{
+  byte *end = d + MAX_URL_SIZE - 10;
+  while (*s)
+    {
+      if (d >= end)
+	return URL_ERR_TOO_LONG;
+      if (*s == '%')
+	{
+	  unsigned int val;
+	  if (!Cxdigit(s[1]) || !Cxdigit(s[2]))
+	    return URL_ERR_INVALID_ESCAPE;
+	  val = Cxvalue(s[1])*16 + Cxvalue(s[2]);
+	  if (!Cprint(val))
+	    return URL_ERR_INVALID_ESCAPED_CHAR;
+	  switch (val)
+	    {
+	    case ';':
+	      val = NCC_SEMICOLON; break;
+	    case '/':
+	      val = NCC_SLASH; break;
+	    case '?':
+	      val = NCC_QUEST; break;
+	    case ':':
+	      val = NCC_COLON; break;
+	    case '@':
+	      val = NCC_AT; break;
+	    case '=':
+	      val = NCC_EQUAL; break;
+	    case '&':
+	      val = NCC_AND; break;
+	    }
+	  *d++ = val;
+	  s += 3;
+	}
+      else if (*s >= 0x20 && *s <= 0x7e)
+	*d++ = *s++;
+      else
+	return URL_ERR_INVALID_CHAR;
+    }
+  *d = 0;
+  return 0;
+}
+
+int
+url_enescape(byte *s, byte *d)
+{
+  byte *end = d + MAX_URL_SIZE - 10;
+
+  while (*s)
+    {
+      if (d >= end)
+	return URL_ERR_TOO_LONG;
+      if (   *s >= 'A' && *s <= 'Z'
+	     || *s >= 'a' && *s <= 'z'
+	     || *s >= '0' && *s <= '9'
+	     || *s == '$' || *s == '-' || *s == '.' || *s == '+'
+	     || *s == '!' || *s == '*' || *s == '\'' || *s == '('
+	     || *s == ')' || *s == '_' || *s == ';' || *s == '/'
+	     || *s == '?' || *s == ':' || *s == '@' || *s == '='
+	     || *s == '&')
+	*d++ = *s++;
+      else
+	{
+	  uns val = (*s < NCC_MAX) ? ";/?:@=&"[*s] : *s;
+	  *d++ = '%';
+	  *d++ = enhex(val >> 4);
+	  *d++ = enhex(val & 0x0f);
+	  s++;
+	}
+    }
+  *d = 0;
+  return 0;
+}
+
+/* Split an URL (several parts may be copied to the destination buffer) */
+
+uns
+identify_protocol(byte *p)
+{
+  if (!strcasecmp(p, "http"))
+    return URL_PROTO_HTTP;
+  if (!strcasecmp(p, "ftp"))
+    return URL_PROTO_FTP;
+  return 0;
+}
+
+int
+url_split(byte *s, struct url *u, byte *d)
+{
+  bzero(u, sizeof(struct url));
+  u->port = ~0;
+  u->bufend = d + MAX_URL_SIZE - 10;
+
+  if (s[0] != '/')			/* Seek for "protocol:" */
+    {
+      byte *p = s;
+      while (*p && Calnum(*p))
+	p++;
+      if (p != s && *p == ':')
+	{
+	  u->protocol = d;
+	  while (s < p)
+	    *d++ = *s++;
+	  *d++ = 0;
+	  u->protoid = identify_protocol(u->protocol);
+	  s++;
+	}
+    }
+
+  if (s[0] == '/')			/* Host spec or absolute path */
+    {
+      if (s[1] == '/')			/* Host spec */
+	{
+	  byte *q, *w, *e;
+	  char *ep;
+
+	  s += 2;
+	  q = d;
+	  while (*s && *s != '/')	/* Copy user:passwd@host:port */
+	    *d++ = *s++;
+	  *d++ = 0;
+	  w = strchr(q, '@');
+	  if (w)			/* user:passwd present */
+	    {
+	      *w++ = 0;
+	      u->user = q;
+	    }
+	  else
+	    w = q;
+	  e = strchr(w, ':');
+	  if (e)			/* host:port present */
+	    {
+	      *e++ = 0;
+	      u->port = strtoul(e, &ep, 10);
+	      if (ep && *ep || u->port > 65535 || !u->port)
+		return URL_ERR_INVALID_PORT;
+	    }
+	  u->host = w;
+	}
+    }
+
+  u->rest = s;
+  u->buf = d;
+  return 0;
+}
+
+/* Normalization according to given base URL */
+
+static uns std_ports[] = { ~0, 80, 21 }; /* Default port numbers */
+
+static int
+relpath_merge(struct url *u, struct url *b)
+{
+  byte *a = u->rest;
+  byte *o = b->rest;
+  byte *d = u->buf;
+  byte *e = u->bufend;
+  byte *p;
+
+  if (a[0] == '/')			/* Absolute path => OK */
+    return 0;
+  if (o[0] != '/')
+    return URL_PATH_UNDERFLOW;
+
+  if (!a[0])				/* Empty relative URL is a special case */
+    {
+      u->rest = b->rest;
+      return 0;
+    }
+
+  u->rest = d;
+  p = strrchr(o, '/');			/* Must be found! */
+  while (o <= p)			/* Copy original path */
+    {
+      if (d >= e)
+	return URL_ERR_TOO_LONG;
+      *d++ = *o++;
+    }
+
+  while (*a)
+    {
+      if (a[0] == '.')
+	{
+	  if (a[1] == '/' || !a[1])	/* Skip "./" and ".$" */
+	    {
+	      a++;
+	      if (a[0])
+		a++;
+	      continue;
+	    }
+	  else if (a[1] == '.' && (a[2] == '/' || !a[2])) /* "../" */
+	    {
+	      a += 2;
+	      if (d <= u->buf + 1)
+		return URL_PATH_UNDERFLOW;
+	      d--;			/* Discard trailing slash */
+	      while (d[-1] != '/')
+		d--;
+	      if (a[0])
+		a++;
+	      continue;
+	    }
+	}
+      while (a[0] && a[0] != '/')
+	{
+	  if (d >= e)
+	    return URL_ERR_TOO_LONG;
+	  *d++ = *a++;
+	}
+      if (a[0])
+	*d++ = *a++;
+    }
+
+  *d++ = 0;
+  u->buf = d;
+  return 0;
+}
+
+int
+url_normalize(struct url *u, struct url *b)
+{
+  byte *k;
+
+  if (u->protocol && !u->protoid)
+    return 0;
+
+  if ((u->protoid == URL_PROTO_HTTP || (!u->protoid && b && b->protoid == URL_PROTO_HTTP))
+      && u->rest && (k = strchr(u->rest, '#')))
+    *k = 0;				/* Kill fragment reference */
+
+  if (u->port == ~0)
+    u->port = std_ports[u->protoid];
+
+  if (   u->protocol && !u->host
+	 || u->host && !*u->host
+	 || !u->host && u->user
+	 || !u->rest)
+    return URL_SYNTAX_ERROR;
+
+  if (u->protocol)			/* Absolute URL */
+    return 0;
+
+  if (!b)				/* Relative to something? */
+    return URL_ERR_REL_NOTHING;
+  if (!b->protoid)
+    return URL_ERR_UNKNOWN_PROTOCOL;
+
+  if (!u->protocol)
+    {
+      u->protocol = b->protocol;
+      u->protoid = b->protoid;
+    }
+
+  if (!u->host)
+    {
+      u->host = b->host;
+      u->user = b->user;
+      u->port = b->port;
+      return relpath_merge(u, b); 
+    }
+
+  return 0;
+}
+
+/* Name canonicalization */
+
+static void
+lowercase(byte *b)
+{
+  if (b)
+    while (*b)
+      {
+	if (*b >= 'A' && *b <= 'Z')
+	  *b = *b + 0x20;
+	b++;
+      }
+}
+
+static void
+kill_end_dot(byte *b)
+{
+  byte *k;
+
+  if (b)
+    {
+      k = b + strlen(b) - 1;
+      if (k > b && *k == '.')
+	*k = 0;
+    }
+}
+
+int
+url_canonicalize(struct url *u)
+{
+  lowercase(u->protocol);
+  lowercase(u->host);
+  kill_end_dot(u->host);
+  if ((!u->rest || !*u->rest) && (u->protoid == URL_PROTO_HTTP || u->protoid == URL_PROTO_FTP))
+    u->rest = "/";
+  return 0;
+}
+
+/* Pack a broken-down URL */
+
+byte *
+append(byte *d, byte *s, byte *e)
+{
+  if (d)
+    while (*s)
+      {
+	if (d >= e)
+	  return NULL;
+	*d++ = *s++;
+      }
+  return d;
+}
+
+int
+url_pack(struct url *u, byte *d)
+{
+  byte *e = d + MAX_URL_SIZE - 10;
+
+  if (u->protocol)
+    {
+      d = append(d, u->protocol, e);
+      d = append(d, ":", e);
+      u->protoid = identify_protocol(u->protocol);
+    }
+  if (u->host)
+    {
+      d = append(d, "//", e);
+      if (u->user)
+	{
+	  d = append(d, u->user, e);
+	  d = append(d, "@", e);
+	}
+      d = append(d, u->host, e);
+      if (u->port != std_ports[u->protoid] && u->port != ~0)
+	{
+	  char z[10];
+	  sprintf(z, "%d", u->port);
+	  d = append(d, ":", e);
+	  d = append(d, z, e);
+	}
+    }
+  if (u->rest)
+    d = append(d, u->rest, e);
+  if (!d)
+    return URL_ERR_TOO_LONG;
+  *d = 0;
+  return 0;
+}
+
+/* Error messages */
+
+static char *errmsg[] = {
+  "Something is wrong",
+  "Too long",
+  "Invalid character",
+  "Invalid escape",
+  "Invalid escaped character",
+  "Invalid port number",
+  "Relative URL not allowed",
+  "Unknown protocol",
+  "Syntax error",
+  "Path underflow"
+};
+
+char *
+url_error(uns err)
+{
+  if (err >= sizeof(errmsg) / sizeof(char *))
+    err = 0;
+  return errmsg[err];
+}
+
+/* A "macro" for canonical split */
+
+int
+url_canon_split(byte *u, byte *buf1, byte *buf2, struct url *url)
+{
+  int err;
+
+  if (err = url_deescape(u, buf1))
+    return err;
+  if (err = url_split(buf1, url, buf2))
+    return err;
+  if (err = url_normalize(url, NULL))
+    return err;
+  return url_canonicalize(url);
+}
+
+/* Testing */
+
+#ifdef TEST
+
+int main(int argc, char **argv)
+{
+  char buf1[MAX_URL_SIZE], buf2[MAX_URL_SIZE], buf3[MAX_URL_SIZE], buf4[MAX_URL_SIZE];
+  int err;
+  struct url url, url0;
+
+  if (argc != 2)
+    return 1;
+  if (err = url_deescape(argv[1], buf1))
+    {
+      printf("deesc: error %d\n", err);
+      return 1;
+    }
+  printf("deesc: %s\n", buf1);
+  if (err = url_split(buf1, &url, buf2))
+    {
+      printf("split: error %d\n", err);
+      return 1;
+    }
+  printf("split: @%s@%s@%s@%d@%s\n", url.protocol, url.user, url.host, url.port, url.rest);
+  if (err = url_split("http://mj@www.hell.org/123/sub_dir/index.html", &url0, buf3))
+    {
+      printf("split base: error %d\n", err);
+      return 1;
+    }
+  if (err = url_normalize(&url0, NULL))
+    {
+      printf("normalize base: error %d\n", err);
+      return 1;
+    }
+  printf("base: @%s@%s@%s@%d@%s\n", url0.protocol, url0.user, url0.host, url0.port, url0.rest);
+  if (err = url_normalize(&url, &url0))
+    {
+      printf("normalize: error %d\n", err);
+      return 1;
+    }
+  printf("normalize: @%s@%s@%s@%d@%s\n", url.protocol, url.user, url.host, url.port, url.rest);
+  if (err = url_canonicalize(&url))
+    {
+      printf("canonicalize: error %d\n", err);
+      return 1;
+    }
+  printf("canonicalize: @%s@%s@%s@%d@%s\n", url.protocol, url.user, url.host, url.port, url.rest);
+  if (err = url_pack(&url, buf4))
+    {
+      printf("pack: error %d\n", err);
+      return 1;
+    }
+  printf("pack: %s\n", buf1);
+  if (err = url_enescape(buf4, buf2))
+    {
+      printf("enesc: error %d\n", err);
+      return 1;
+    }
+  printf("enesc: %s\n", buf2);
+  return 0;
+}
+
+#endif
