@@ -216,7 +216,7 @@ obj_write(struct fastbuf *f, struct odes *d)
 	for (z = b->val; *z; z++)
 	  if (*z < ' ' && *z != '\t')
 	    {
-	      log(L_ERROR, "obj_dump: Found non-ASCII characters (URL might be %s)", obj_find_aval(d, 'U'));
+	      log(L_ERROR, "obj_dump: Found non-ASCII character %02x (URL might be %s) in %c%s", *z, obj_find_aval(d, 'U'), a->attr, b->val);
 	      *z = '?';
 	    }
 	ASSERT(z - b->val <= MAX_ATTR_SIZE-2);
