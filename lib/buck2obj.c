@@ -61,19 +61,24 @@ extract_odes(struct obuck_header *hdr, struct fastbuf *body, struct odes *o, byt
     byte *p = decode_attributes(start, end, o);
 
     /* Decompress the body.  */
-    GET_UTF8(p, len);
-    int res = lizard_decompress_safe(p, lizard_buf, len);
-    if (res < 0)
-      return res;
-    if (res != (int) len)
+    if (hdr->type == BUCKET_TYPE_V30C)
     {
-      errno = EINVAL;
-      return -1;
+      GET_UTF8(p, len);
+      int res = lizard_decompress_safe(p, lizard_buf, len);
+      if (res < 0)
+	return res;
+      if (res != (int) len)
+      {
+	errno = EINVAL;
+	return -1;
+      }
+      start = lizard_buf->ptr;
+      end = start + len;
     }
+    else
+      start = p;
 
     /* Decode the body, 0-copy.  */
-    start = lizard_buf->ptr;
-    end = start + len;
     p = decode_attributes(start, end, o);
     if (p != end)
     {
