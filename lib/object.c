@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Object Functions
  *
- *	(c) 1997--2003 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -169,7 +169,6 @@ byte *
 obj_find_aval(struct odes *o, uns x)
 {
   struct oattr *a = obj_find_attr(o, x);
-
   return a ? a->val : NULL;
 }
 
@@ -212,17 +211,13 @@ obj_set_attr_num(struct odes *o, uns a, uns v)
 }
 
 static inline struct oattr *
-obj_add_attr_internal(struct odes *o, uns x, byte *v, uns just_ref)
+obj_add_attr_internal(struct odes *o, struct oattr *b)
 {
-  struct oattr *a, *b;
+  struct oattr *a;
 
-  if (just_ref)
-    b = oa_new_ref(o, x, v);
-  else
-    b = oa_new(o, x, v);
-  if (!(a = o->cached_attr) || a->attr != x)
+  if (!(a = o->cached_attr) || a->attr != b->attr)
     {
-      if (!(a = obj_find_attr(o, x)))
+      if (!(a = obj_find_attr(o, b->attr)))
 	{
 	  b->next = o->attrs;
 	  o->attrs = b;
@@ -240,13 +235,13 @@ obj_add_attr_internal(struct odes *o, uns x, byte *v, uns just_ref)
 struct oattr *
 obj_add_attr(struct odes *o, uns x, byte *v)
 {
-  return obj_add_attr_internal(o, x, v, 0);
+  return obj_add_attr_internal(o, oa_new(o, x, v));
 }
 
 struct oattr *
 obj_add_attr_ref(struct odes *o, uns x, byte *v)
 {
-  return obj_add_attr_internal(o, x, v, 1);
+  return obj_add_attr_internal(o, oa_new_ref(o, x, v));
 }
 
 struct oattr *
