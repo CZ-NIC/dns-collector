@@ -20,21 +20,16 @@ enum word_type {
   WT_BIG_HEADING,			/* Larger heading */
   WT_KEYWORD,				/* Explicitly marked keyword */
   WT_META,				/* Various meta-information */
-  WT_ALT				/* Alternate texts for graphical elements */
+  WT_ALT,				/* Alternate texts for graphical elements */
+  WT_MAX
 };
 
-#define WT_NAMES	       			\
-	T(word, ~0)				\
-	T(text, 1 << WT_TEXT)			\
-	T(emph, 1 << WT_EMPH)			\
-	T(small, 1 << WT_SMALL)			\
-	T(title, 1 << WT_TITLE)			\
-	T(hdr1, 1 << WT_SMALL_HEADING)		\
-	T(hdr2, 1 << WT_BIG_HEADING)		\
-	T(keywd, 1 << WT_KEYWORD)		\
-	T(meta, 1 << WT_META)			\
-	T(alt, 1 << WT_ALT)
+/* Descriptive names used for user output */
+#define WORD_TYPE_USER_NAMES							\
+   "reserved", "text", "emph", "small", "title", "hdr1", "hdr2", "keywd",	\
+   "meta", "alt", "type10", "type11", "type12", "type13", "type14", "type15"
 
+/* Keywords for word type names */
 #define WORD_TYPE_NAMES	       			\
 	T(WORD, ~0)				\
 	T(TEXT, 1 << WT_TEXT)			\
@@ -57,7 +52,12 @@ enum string_type {
   ST_DOMAIN,				/* Domain name */
   ST_REF,				/* URL reference */
   ST_BACKREF,				/* Back-reference (frame or redirect source) */
+  ST_MAX
 };
+
+#define STRING_TYPE_USER_NAMES							\
+   "URL", "host", "domain", "ref", "backref", "type5", "type6", "type7",	\
+   "type8", "type9", "type10", "type11", "type12", "type13", "type14", "type15"
 
 #define STRING_TYPE_NAMES			\
 	T(URL, 1 << ST_URL)			\
