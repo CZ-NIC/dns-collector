@@ -102,6 +102,12 @@ static inline word Uunaccent(word x)
     else				\
       u = *p++
 
+#define UTF8_SKIP(p) do {		\
+    if (*p++ >= 0xc0)			\
+      while (*p >= 0x80 && *p < 0xc0)	\
+        p++; 				\
+  } while (0)
+
 #define UTF8_SPACE(u) ((u) < 0x80 ? 1 : (u) < 0x800 ? 2 : 3)
 
 uns ucs2_to_utf8(byte *, word *);
