@@ -45,6 +45,8 @@ struct sdbm {
   uns dir_shift;			/* Number of significant bits of hash function */
   uns file_size;
   uns flags;
+  uns find_pos;				/* Current pointer for sdbm_find_next() */
+  uns find_free_list;			/* First free list entry not skipped by sdbm_find_next() */
 };
 
 #define SDBM_MAGIC 0x5344424d

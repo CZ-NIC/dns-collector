@@ -52,7 +52,6 @@ sdbm_open(struct sdbm_options *o)
       d->cache = pgc_open(d->page_size, cache_size);
       d->root_page = pgc_read(d->cache, d->fd, 0);
       d->root = (void *) d->root_page->data;
-      /* FIXME: Should we do some locking? */
     }
   else if ((d->flags & SDBM_CREAT) && (d->fd = open(o->name, O_RDWR | O_CREAT, 0666)) >= 0)
     {
@@ -148,10 +147,10 @@ sdbm_hash(byte *key, uns keylen)
 {
   /*
    *  This is the same hash function as GDBM uses.
-   *  FIXME: Use a faster one?
+   *  It seems to work well.
    */
   u32 value;
-  int index;
+  uns index;
 
   /* Set the initial value from key. */
   value = 0x238F13AF * keylen;
@@ -263,7 +262,7 @@ static void
 sdbm_expand_directory(struct sdbm *d)
 {
   struct page *b, *c;
-  int i;
+  int i, ent;
   u32 *dir, *t;
 
   if (4*d->dir_size < d->page_size)
@@ -280,7 +279,7 @@ sdbm_expand_directory(struct sdbm *d)
     {
       uns old_dir = d->root->dir_start;
       uns old_dir_pages = 1 << (d->root->dir_order + 2 - d->page_order);
-      uns page, ent, new_dir;
+      uns page, new_dir;
       new_dir = d->root->dir_start = sdbm_alloc_pages(d, 2*old_dir_pages);
       ent = 1 << (d->page_order - 3);
       for(page=0; page < old_dir_pages; page++)
@@ -382,17 +381,31 @@ sdbm_split_page(struct sdbm *d, struct page *b, u32 hash, uns dirpos)
       dirpos *= 2;
     }
   rank_log = 1;				/* rank_log = log2(rank) */
-  while ((1 << rank_log) < rank)
+  while ((1U << rank_log) < rank)
     rank_log++;
   sigbit = d->dir_shift + rank_log - 1;	/* sigbit = bit we split on */
   p[0] = b;
-  p[1] = pgc_get_zero(d->cache, d->fd, sdbm_alloc_page(d));
+  p[1] = pgc_get(d->cache, d->fd, sdbm_alloc_page(d));
   sdbm_split_data(d, (void *) b->data, (void *) p[0]->data, (void *) p[1]->data, sigbit);
   sdbm_split_dir(d, (dirpos & ~(4*rank - 1))+2*rank, rank/2, pgc_page_pos(d->cache, p[1]));
   pgc_mark_dirty(d->cache, p[0]);
   i = (hash & (1 << sigbit)) ? 1 : 0;
   pgc_put(d->cache, p[!i]);
   return p[i];
+}
+
+static int
+sdbm_put_user(byte *D, uns Dl, byte *val, uns *vallen)
+{
+  if (vallen)
+    {
+      if (*vallen < Dl)
+	return 1;
+      *vallen = Dl;
+    }
+  if (val)
+    memcpy(val, D, Dl);
+  return 0;
 }
 
 static int
@@ -404,9 +417,9 @@ sdbm_access(struct sdbm *d, byte *key, uns keylen, byte *val, uns *vallen, uns m
   byte *c, *e;
   int rc;
 
-  if ((d->key_size >= 0 && keylen != d->key_size) || keylen > 65535)
+  if ((d->key_size >= 0 && keylen != (uns) d->key_size) || keylen > 65535)
     return SDBM_ERROR_BAD_KEY_SIZE;
-  if (val && ((d->val_size >= 0 && *vallen != d->val_size) || *vallen >= 65535))
+  if (val && ((d->val_size >= 0 && *vallen != (uns) d->val_size) || *vallen >= 65535))
     return SDBM_ERROR_BAD_VAL_SIZE;
   if (!mode && !(d->flags & SDBM_WRITE))
     return SDBM_ERROR_READ_ONLY;
@@ -433,17 +446,9 @@ sdbm_access(struct sdbm *d, byte *key, uns keylen, byte *val, uns *vallen, uns m
 	  switch (mode)
 	    {
 	    case 0:			/* fetch: found */
-	      rc = 1;
-	      if (vallen)
-		{
-		  if (*vallen < Dl)
-		    rc = -3;
-		  *vallen = Dl;
-		}
-	      if (val)
-		memcpy(val, D, Dl);
+	      rc = sdbm_put_user(D, Dl, val, vallen);
 	      pgc_put(d->cache, q);
-	      return rc;
+	      return rc ? 1 : SDBM_ERROR_TOO_LARGE;
 	    case 1:			/* store: already present */
 	      pgc_put(d->cache, q);
 	      return 0;
@@ -508,11 +513,50 @@ sdbm_fetch(struct sdbm *d, byte *key, uns keylen, byte *val, uns *vallen)
 void
 sdbm_rewind(struct sdbm *d)
 {
+  d->find_pos = d->page_size;
+  d->find_free_list = 0;
 }
 
 int
 sdbm_get_next(struct sdbm *d, byte *key, uns *keylen, byte *val, uns *vallen)
 {
+  uns pos = d->find_pos;
+  byte *K, *V;
+  uns c, Kl, Vl;
+  struct page *p;
+  struct sdbm_bucket *b;
+
+  for(;;)
+    {
+      c = pos & d->page_mask;
+      if (!c)
+	{
+	  if (pos >= d->file_size)
+	    break;
+	  if (pos == d->root->dir_start)
+	    pos += (4*d->dir_size + d->page_size - 1) & ~d->page_mask;
+	  else if (pos == d->root->free_pool[d->find_free_list].first)
+	    pos += d->root->free_pool[d->find_free_list++].count << d->page_order;
+	  else
+	    pos += 4;
+	  continue;
+	}
+      p = pgc_read(d->cache, d->fd, pos & ~d->page_mask);
+      b = (void *) p->data;
+      if (c - 4 >= b->used)
+	{
+	  pos = (pos & ~d->page_mask) + d->page_size;
+	  pgc_put(d->cache, p);
+	  continue;
+	}
+      c = sdbm_get_entry(d, p->data + c, &K, &Kl, &V, &Vl);
+      d->find_pos = pos + c;
+      c = sdbm_put_user(K, Kl, key, keylen) ||
+	  sdbm_put_user(V, Vl, val, vallen);
+      pgc_put(d->cache, p);
+      return c ? SDBM_ERROR_TOO_LARGE : 1;
+    }
+  d->find_pos = pos;
   return 0;
 }
 
@@ -535,10 +579,11 @@ int main(void)
     page_order: 10,
     cache_size: 1024,
     key_size: -1,
-    val_size: -1
+    val_size: 4
   };
   byte buf[256];
-  int i, j, k;
+  int i, j, k, l, m, n;
+#define BIGN 100000
 
   puts("OPEN");
   d = sdbm_open(&o);
@@ -546,7 +591,7 @@ int main(void)
     die("failed: %m");
 
   puts("WRITE");
-  for(i=0; i<1000000; i++)
+  for(i=0; i<BIGN; i++)
     {
       sprintf(buf, "%d", i);
       k = sdbm_store(d, buf, strlen(buf), (byte *) &i, sizeof(i));
@@ -555,8 +600,19 @@ int main(void)
     }
   sdbm_sync(d);
 
+  puts("REWRITE");
+  for(i=0; i<BIGN; i++)
+    {
+      sprintf(buf, "%d", i);
+      k = sdbm_replace(d, buf, strlen(buf), (byte *) &i, sizeof(i));
+//      printf("%s:%d\r", buf, k);
+      if (!k) { printf("XXX %s %d\n", buf, k); return 1; }
+      fflush(stdout);
+    }
+  sdbm_sync(d);
+
   puts("READ");
-  for(i=0; i<1000000; i++)
+  for(i=0; i<BIGN; i++)
     {
       sprintf(buf, "%d", i);
       j = sdbm_fetch(d, buf, strlen(buf), NULL, NULL);
@@ -565,7 +621,41 @@ int main(void)
       if (!j)
 	{ printf("\nERR: %s %d %x %d\n", buf, j, sdbm_hash(buf, strlen(buf)), d->dir_shift); return 1; }
     }
-  puts("");
+
+  puts("FETCH");
+  sdbm_rewind(d);
+  l = 0;
+  m = 0;
+  n = 0;
+  for(;;)
+    {
+      j = sizeof(buf);
+      i = sdbm_get_next(d, buf, &j, (byte *) &k, NULL);
+      if (i < 0) { puts("ERRRR\n"); return 1; }
+      if (!i) break;
+      buf[j] = 0;
+//      printf("%s %d\n", buf, k);
+      l += k;
+      m += n++;
+    }
+  if (n != BIGN) { printf("MISMATCH COUNT %d\n", n); return 1; }
+  if (l != m) { printf("MISMATCH %d != %d\n", l, m); return 1; }
+
+  puts("DELETE");
+  for(i=0; i<BIGN; i++)
+    {
+      sprintf(buf, "%d", i);
+      j = sdbm_delete(d, buf, strlen(buf));
+//      printf("%s:%d\r", buf, j);
+      fflush(stdout);
+      if (!j)
+	{ printf("\nERR: %s %d %x %d\n", buf, j, sdbm_hash(buf, strlen(buf)), d->dir_shift); return 1; }
+    }
+  sdbm_sync(d);
+
+  puts("CHECK");
+  sdbm_rewind(d);
+  if (sdbm_get_next(d, buf, NULL, NULL, NULL)) { puts("NOT EMPTY!"); return 1; }
 
   puts("CLOSE");
   sdbm_close(d);
