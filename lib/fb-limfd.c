@@ -2,7 +2,6 @@
  *	Sherlock Library -- Fast Buffered Input on Limited File Descriptors
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
- *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
