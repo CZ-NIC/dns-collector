@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Database Management Routines
  *
- *	(c) 1999--2000 Martin Mares <mj@ucw.cz>
+ *	(c) 1999--2001 Martin Mares <mj@ucw.cz>
  */
 
 /*
@@ -17,6 +17,8 @@
  *   o	The only pages which can be freed are those of the directory (during
  *	directory split), so we keep only a simple 32-entry free block list
  *	and we assume it's sorted.
+ *   o  All pointers are always given in pages from start of the file.
+ *	This gives us page_size*2^32 limit for file size which should be enough.
  */
 
 #include "lib/lib.h"
@@ -30,6 +32,11 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+
+#define GET_PAGE(d,x) pgc_get((d)->cache, (d)->fd, ((sh_off_t)(x)) << (d)->page_order)
+#define GET_ZERO_PAGE(d,x) pgc_get_zero((d)->cache, (d)->fd, ((sh_off_t)(x)) << (d)->page_order)
+#define READ_PAGE(d,x) pgc_read((d)->cache, (d)->fd, ((sh_off_t)(x)) << (d)->page_order)
+#define READ_DIR(d,off) pgc_read((d)->cache, (d)->fd, (((sh_off_t)(d)->root->dir_start) << (d)->page_order) + (off))
 
 struct sdbm *
 sdbm_open(struct sdbm_options *o)
@@ -47,7 +54,8 @@ sdbm_open(struct sdbm_options *o)
 	goto bad;
       if (root.magic != SDBM_MAGIC || root.version != SDBM_VERSION)
 	goto bad;
-      d->file_size = sh_seek(d->fd, 0, SEEK_END);
+      d->file_size = sh_seek(d->fd, 0, SEEK_END) >> root.page_order;
+      d->page_order = root.page_order;
       d->page_size = 1 << root.page_order;
       d->cache = pgc_open(d->page_size, cache_size);
       d->root_page = pgc_read(d->cache, d->fd, 0);
@@ -61,27 +69,26 @@ sdbm_open(struct sdbm_options *o)
 	page_order = 10;
       d->page_size = 1 << page_order;
       d->cache = pgc_open(d->page_size, cache_size);
-      d->root_page = pgc_get_zero(d->cache, d->fd, 0);
+      d->root_page = GET_ZERO_PAGE(d, 0);
       r = d->root = (void *) d->root_page->data;		 /* Build root page */
       r->magic = SDBM_MAGIC;
       r->version = SDBM_VERSION;
-      r->page_order = page_order;
+      r->page_order = d->page_order = page_order;
       r->key_size = o->key_size;
       r->val_size = o->val_size;
-      r->dir_start = d->page_size;
+      r->dir_start = 1;
       r->dir_order = 0;
-      d->file_size = 3*d->page_size;
-      q = pgc_get_zero(d->cache, d->fd, d->page_size);		/* Build page directory */
-      ((u32 *)q->data)[0] = 2*d->page_size;
+      d->file_size = 3;
+      q = GET_ZERO_PAGE(d, 1);					/* Build page directory */
+      GET32(q->data, 0) = 2;
       pgc_put(d->cache, q);
-      q = pgc_get_zero(d->cache, d->fd, 2*d->page_size);	/* Build single data page */
+      q = GET_ZERO_PAGE(d, 2);					/* Build single data page */
       pgc_put(d->cache, q);
     }
   else
     goto bad;
   d->dir_size = 1 << d->root->dir_order;
   d->dir_shift = 32 - d->root->dir_order;
-  d->page_order = d->root->page_order;
   d->page_mask = d->page_size - 1;
   d->key_size = d->root->key_size;
   d->val_size = d->root->val_size;
@@ -108,10 +115,9 @@ static uns
 sdbm_alloc_pages(struct sdbm *d, uns number)
 {
   uns where = d->file_size;
-  uns size = number << d->page_order;
-  if (d->file_size + size < d->file_size)	/* Wrap around? */
+  if (where + number < where)	/* Wrap around? */
     die("SDB: Database file too large, giving up");
-  d->file_size += size;
+  d->file_size += number;
   return where;
 }
 
@@ -123,10 +129,10 @@ sdbm_alloc_page(struct sdbm *d)
   if (!d->root->free_pool[0].count)
     return sdbm_alloc_pages(d, 1);
   pos = d->root->free_pool[0].first;
-  d->root->free_pool[0].first += d->page_size;
+  d->root->free_pool[0].first++;
   if (!--d->root->free_pool[0].count)
     {
-      memmove(d->root->free_pool, d->root->free_pool+1, SDBM_NUM_FREE_PAGE_POOLS * sizeof(d->root->free_pool[0]));
+      memmove(d->root->free_pool, d->root->free_pool+1, (SDBM_NUM_FREE_PAGE_POOLS-1) * sizeof(d->root->free_pool[0]));
       d->root->free_pool[SDBM_NUM_FREE_PAGE_POOLS-1].count = 0;
     }
   pgc_mark_dirty(d->cache, d->root_page);
@@ -140,12 +146,13 @@ sdbm_free_pages(struct sdbm *d, uns start, uns number)
 
   while (d->root->free_pool[i].count)
     i++;
+  ASSERT(i < SDBM_NUM_FREE_PAGE_POOLS);
   d->root->free_pool[i].first = start;
   d->root->free_pool[i].count = number;
   pgc_mark_dirty(d->cache, d->root_page);
 }
 
-static u32
+u32
 sdbm_hash(byte *key, uns keylen)
 {
   /*
@@ -222,7 +229,7 @@ sdbm_page_rank(struct sdbm *d, uns dirpos)
   uns l, r;
   uns pm = d->page_mask;
 
-  b = pgc_read(d->cache, d->fd, d->root->dir_start + (dirpos & ~pm));
+  b = READ_DIR(d, dirpos & ~pm);
   pg = GET32(b->data, dirpos & pm);
   l = dirpos;
   while ((l & pm) && GET32(b->data, (l - 4) & pm) == pg)
@@ -238,7 +245,7 @@ sdbm_page_rank(struct sdbm *d, uns dirpos)
       /* Note that if it spans page boundary, it must contain an integer number of pages */
       while (l)
 	{
-	  b = pgc_read(d->cache, d->fd, d->root->dir_start + ((l - 4) & ~pm));
+	  b = READ_DIR(d, (l - 4) & ~pm);
 	  x = GET32(b->data, 0);
 	  pgc_put(d->cache, b);
 	  if (x != pg)
@@ -247,7 +254,7 @@ sdbm_page_rank(struct sdbm *d, uns dirpos)
 	}
       while (r < 4*d->dir_size)
 	{
-	  b = pgc_read(d->cache, d->fd, d->root->dir_start + (r & ~pm));
+	  b = READ_DIR(d, r & ~pm);
 	  x = GET32(b->data, 0);
 	  pgc_put(d->cache, b);
 	  if (x != pg)
@@ -265,10 +272,13 @@ sdbm_expand_directory(struct sdbm *d)
   int i, ent;
   u32 *dir, *t;
 
+  if (d->root->dir_order >= 31)
+    die("SDB: Database directory too large, giving up");
+
   if (4*d->dir_size < d->page_size)
     {
       /* It still fits within single page */
-      b = pgc_read(d->cache, d->fd, d->root->dir_start);
+      b = READ_DIR(d, 0);
       dir = (u32 *) b->data;
       for(i=d->dir_size-1; i>=0; i--)
 	dir[2*i] = dir[2*i+1] = dir[i];
@@ -284,14 +294,14 @@ sdbm_expand_directory(struct sdbm *d)
       ent = 1 << (d->page_order - 3);
       for(page=0; page < old_dir_pages; page++)
 	{
-	  b = pgc_read(d->cache, d->fd, old_dir + (page << d->page_order));
+	  b = READ_PAGE(d, old_dir + page);
 	  dir = (u32 *) b->data;
-	  c = pgc_get(d->cache, d->fd, new_dir + (page << (d->page_order + 1)));
+	  c = GET_PAGE(d, new_dir + 2*page);
 	  t = (u32 *) c->data;
 	  for(i=0; i<ent; i++)
 	    t[2*i] = t[2*i+1] = dir[i];
 	  pgc_put(d->cache, c);
-	  c = pgc_get(d->cache, d->fd, new_dir + (page << (d->page_order + 1)) + d->page_size);
+	  c = GET_PAGE(d, new_dir + 2*page + 1);
 	  t = (u32 *) c->data;
 	  for(i=0; i<ent; i++)
 	    t[2*i] = t[2*i+1] = dir[ent+i];
@@ -307,7 +317,7 @@ sdbm_expand_directory(struct sdbm *d)
 	   */
 	  for(page=0; page < old_dir_pages; page++)
 	    {
-	      b = pgc_get_zero(d->cache, d->fd, old_dir + (page << d->page_order));
+	      b = GET_ZERO_PAGE(d, old_dir + page);
 	      pgc_put(d->cache, b);
 	    }
 	}
@@ -351,7 +361,7 @@ sdbm_split_dir(struct sdbm *d, uns dirpos, uns count, uns pos)
   count *= 4;
   while (count)
     {
-      b = pgc_read(d->cache, d->fd, d->root->dir_start + (dirpos & ~d->page_mask));
+      b = READ_DIR(d, dirpos & ~d->page_mask);
       i = d->page_size - (dirpos & d->page_mask);
       if (i > count)
 	i = count;
@@ -380,7 +390,7 @@ static struct page *
 sdbm_split_page(struct sdbm *d, struct page *b, u32 hash)
 {
   struct page *p[2];
-  uns i, rank, sigbit, rank_log, dirpos;
+  uns i, rank, sigbit, rank_log, dirpos, newpg;
 
   dirpos = sdbm_dirpos(d, hash);
   rank = sdbm_page_rank(d, dirpos);	/* rank = # of pointers to this page */
@@ -395,9 +405,10 @@ sdbm_split_page(struct sdbm *d, struct page *b, u32 hash)
     rank_log++;
   sigbit = d->dir_shift + rank_log - 1;	/* sigbit = bit we split on */
   p[0] = b;
-  p[1] = pgc_get(d->cache, d->fd, sdbm_alloc_page(d));
+  newpg = sdbm_alloc_page(d);
+  p[1] = GET_PAGE(d, newpg);
   sdbm_split_data(d, (void *) b->data, (void *) p[0]->data, (void *) p[1]->data, sigbit);
-  sdbm_split_dir(d, (dirpos & ~(4*rank - 1))+2*rank, rank/2, p[1]->pos);
+  sdbm_split_dir(d, (dirpos & ~(4*rank - 1))+2*rank, rank/2, newpg);
   pgc_mark_dirty(d->cache, p[0]);
   i = (hash & (1 << sigbit)) ? 1 : 0;
   pgc_put(d->cache, p[!i]);
@@ -435,10 +446,10 @@ sdbm_access(struct sdbm *d, byte *key, uns keylen, byte *val, uns *vallen, uns m
     return SDBM_ERROR_READ_ONLY;
   hash = sdbm_hash(key, keylen);
   h = sdbm_dirpos(d, hash);
-  p = pgc_read(d->cache, d->fd, d->root->dir_start + (h & ~d->page_mask));
+  p = READ_DIR(d, h & ~d->page_mask);
   pos = GET32(p->data, h & d->page_mask);
   pgc_put(d->cache, p);
-  q = pgc_read(d->cache, d->fd, pos);
+  q = READ_PAGE(d, pos);
   b = (void *) q->data;
   c = b->data;
   e = c + b->used;
@@ -525,13 +536,15 @@ sdbm_fetch(struct sdbm *d, byte *key, uns keylen, byte *val, uns *vallen)
 void
 sdbm_rewind(struct sdbm *d)
 {
-  d->find_pos = d->page_size;
+  d->find_page = 1;
+  d->find_pos = 0;
   d->find_free_list = 0;
 }
 
 int
 sdbm_get_next(struct sdbm *d, byte *key, uns *keylen, byte *val, uns *vallen)
 {
+  uns page = d->find_page;
   uns pos = d->find_pos;
   byte *K, *V;
   uns c, Kl, Vl;
@@ -540,34 +553,36 @@ sdbm_get_next(struct sdbm *d, byte *key, uns *keylen, byte *val, uns *vallen)
 
   for(;;)
     {
-      c = pos & d->page_mask;
-      if (!c)
+      if (!pos)
 	{
-	  if (pos >= d->file_size)
+	  if (page >= d->file_size)
 	    break;
-	  if (pos == d->root->dir_start)
-	    pos += (4*d->dir_size + d->page_size - 1) & ~d->page_mask;
-	  else if (pos == d->root->free_pool[d->find_free_list].first)
-	    pos += d->root->free_pool[d->find_free_list++].count << d->page_order;
+	  if (page == d->root->dir_start)
+	    page += (4*d->dir_size + d->page_size - 1) >> d->page_order;
+	  else if (page == d->root->free_pool[d->find_free_list].first)
+	    page += d->root->free_pool[d->find_free_list++].count;
 	  else
-	    pos += 4;
+	    pos = 4;
 	  continue;
 	}
-      p = pgc_read(d->cache, d->fd, pos & ~d->page_mask);
+      p = READ_PAGE(d, page);
       b = (void *) p->data;
-      if (c - 4 >= b->used)
+      if (pos - 4 >= b->used)
 	{
-	  pos = (pos & ~d->page_mask) + d->page_size;
+	  pos = 0;
+	  page++;
 	  pgc_put(d->cache, p);
 	  continue;
 	}
-      c = sdbm_get_entry(d, p->data + c, &K, &Kl, &V, &Vl);
+      c = sdbm_get_entry(d, p->data + pos, &K, &Kl, &V, &Vl);
+      d->find_page = page;
       d->find_pos = pos + c;
       c = sdbm_put_user(K, Kl, key, keylen) ||
 	  sdbm_put_user(V, Vl, val, vallen);
       pgc_put(d->cache, p);
       return c ? SDBM_ERROR_TOO_LARGE : 1;
     }
+  d->find_page = page;
   d->find_pos = pos;
   return 0;
 }

@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Database Management Routines
  *
- *	(c) 1999 Martin Mares <mj@ucw.cz>
+ *	(c) 1999--2001 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef _SHERLOCK_DB_H
@@ -27,6 +27,7 @@ int sdbm_fetch(struct sdbm *, byte *key, uns keylen, byte *val, uns *vallen);		/
 void sdbm_rewind(struct sdbm *);
 int sdbm_get_next(struct sdbm *, byte *key, uns *keylen, byte *val, uns *vallen);	/* val can be NULL */
 void sdbm_sync(struct sdbm *);
+u32 sdbm_hash(byte *key, uns keylen);
 
 #define SDBM_CREAT		1	/* Create the database if it doesn't exist */
 #define SDBM_WRITE		2	/* Open the database in read/write mode */
