@@ -1,6 +1,7 @@
 #	Poor Man's CGI Module for Perl
 #
 #	(c) 2002 Martin Mares <mj@ucw.cz>
+#	Slightly modified by Tomas Valla <tom@ucw.cz>
 #
 #	This software may be freely distributed and used according to the terms
 #	of the GNU Lesser General Public License.
@@ -38,8 +39,6 @@ sub html_escape($) {
 
 our $arg_table;
 
-our $value_separator = "&";
-
 sub parse_arg_string($) {
 	my ($s) = @_;
 	$s =~ s/\s+//;
@@ -55,10 +54,11 @@ sub parse_arg_string($) {
 		if (my $rx = $arg->{'check'}) {
 			if (!/^$rx$/) { $_ = $arg->{'default'}; }
 		}
-		if (${$arg->{'var'}} eq $arg->{'default'}) {
-			${$arg->{'var'}} = $_;
+		
+		if (defined $arg->{'array'}) {
+			push @{$arg->{'array'}}, $_;
 		} else {
-			${$arg->{'var'}} .= $value_separator.$_;
+			${$arg->{'var'}} = $_;
 		}
 	}
 }
@@ -67,7 +67,9 @@ sub parse_args($) {
 	$arg_table = shift @_;
 	foreach my $a (values %$arg_table) {
 		defined($a->{'default'}) or $a->{'default'}="";
-		${$a->{'var'}} = $a->{'default'};
+		die "Should define either 'var' or 'array'" if defined($a->{'var'})+defined($a->{'array'})!=1;
+		defined $a->{'var'} and ${$a->{'var'}} = $a->{'default'};
+		defined $a->{'array'} and @{$a->{'array'}} = ();
 	}
 	defined $ENV{"GATEWAY_INTERFACE"} or die "Not called as a CGI script";
 	my $method = $ENV{"REQUEST_METHOD"};
