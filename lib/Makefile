@@ -5,7 +5,7 @@ PROGS+=obj/lib/db-tool obj/lib/buckettool
 TESTS+=obj/lib/regex-ut
 
 LIBSH_MODS= \
-	alloc alloc_str realloc pool pool-str \
+	alloc alloc_str realloc mempool mempool-str \
 	mmap pagecache partmap hashfunc \
 	lists sorter bitsig \
 	log log-file proctitle \

@@ -8,7 +8,7 @@
  */
 
 #include "lib/lib.h"
-#include "lib/pools.h"
+#include "lib/mempool.h"
 
 #include <alloca.h>
 #include <string.h>
