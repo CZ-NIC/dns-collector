@@ -48,9 +48,13 @@ byte *cf_set_item(byte *sect, byte *name, byte *value)
 		case CT_INT:
 			{
 				char *end;
-				*((uns *) item->var) = strtoul(value, &end, 0);
-				if (end && *end)
-					msg = "Invalid number";
+				if(!*value)
+					msg="Missing number";
+				else{
+					*((uns *) item->var) = strtoul(value, &end, 0);
+					if (end && *end)
+						msg = "Invalid number";
+				}
 				break;
 			}
 		case CT_STRING:
@@ -97,6 +101,9 @@ static int cf_subread(byte *filename,int level)
 			break;
 		line++;
 
+		c=buf+strlen(buf);
+		while(c>buf && Cspace(c[-1]))
+			*--c=0;
 		c=buf;
 		while(*c && Cspace(*c))
 			c++;
@@ -106,42 +113,44 @@ static int cf_subread(byte *filename,int level)
 		if(*c=='['){
 			strcpy(def_section,c+1);
 			c=strchr(def_section,']');
-			if(c)
+			if(c){
 				*c=0;
-			else{
+				if(c[1]){
+					msg="Garbage after ]";
+					break;
+				}
+			}else{
 				msg="Missing ]";
 				break;
 			}
 
-		}else if(*c=='<'){
-			if(!cf_subread(c+1,level+1)){
-				msg="";
-				break;
-			}
-		
 		}else{
 			byte *sect,*name,*value;
 
 			name=c;
-			c=strpbrk(c," \t");
-			while(c && *c && Cspace(*c))
+			while(*c && !Cspace(*c))
+				c++;
+			while(*c && Cspace(*c))
 				*c++=0;
-			if(!c || !*c){
-				msg="Missing argument";
-				break;
-			}
 			value=c;
 
-			c=strchr(name,'.');
-			if(!c)
-				sect=def_section;
-			else{
-				sect=name;
-				*c++=0;
-				name=c;
-			}
+			if(!strcasecmp(name,"include")){
+				if(!cf_subread(value,level+1)){
+					msg="Included from here";
+					break;
+				}
+			}else{
+				c=strchr(name,'.');
+				if(!c)
+					sect=def_section;
+				else{
+					sect=name;
+					*c++=0;
+					name=c;
+				}
 
-			msg=cf_set_item(sect,name,value);
+				msg=cf_set_item(sect,name,value);
+			}
 			if(msg)
 				break;
 		}
