@@ -580,8 +580,75 @@ int main(int argc, char **argv)
 
 #endif
 
+struct component {
+	byte *start;
+	int length;
+	u32 hash;
+};
+
+static inline u32
+hashf(byte *start, int length)
+{
+	u32 hf = length;
+	while (length-- > 0)
+		hf = (hf << 8 | hf >> 24) ^ *start++;
+	return hf;
+}
+
+static inline uns
+repeat_count(struct component *comp, uns count, uns len)
+{
+	struct component *orig_comp = comp;
+	uns found = 0;
+	while (1)
+	{
+		uns i;
+		comp += len;
+		count -= len;
+		found++;
+		if (count < len)
+			return found;
+		for (i=0; i<len; i++)
+			if (comp[i].hash != orig_comp[i].hash
+			|| comp[i].length != orig_comp[i].length
+			|| memcmp(comp[i].start, orig_comp[i].start, comp[i].length))
+				return found;
+	}
+}
+
 int
 url_has_repeated_component(byte *url)
 {
+	struct component *comp;
+	uns comps, comp_len, rep_prefix;
+	byte *c;
+	uns i;
+
+	for (comps=0, c=url; c; comps++)
+	{
+		c = strpbrk(c, url_component_separators);
+		if (c)
+			c++;
+	}
+	comp = alloca(comps * sizeof(struct component));
+	for (i=0, c=url; c; i++)
+	{
+		comp[i].start = c;
+		c = strpbrk(c, url_component_separators);
+		if (c)
+		{
+			comp[i].length = c - comp[i].start;
+			c++;
+		}
+		else
+			comp[i].length = strlen(comp[i].start);
+	}
+	ASSERT(i == comps);
+	for (i=0; i<comps; i++)
+		comp[i].hash = hashf(comp[i].start, comp[i].length);
+	for (comp_len = 1; comp_len <= url_max_repeat_length && comp_len <= comps; comp_len++)
+		for (rep_prefix = 0; rep_prefix <= comps - comp_len; rep_prefix++)
+			if (repeat_count(comp + rep_prefix, comps - rep_prefix, comp_len) >= url_min_repeat_count)
+				return comp_len;
 	return 0;
 }
