@@ -45,6 +45,7 @@ Options:\n\
 -kU		Use keys with URL distribution\n\
 -n<n>		Number of distinct keys\n\
 -d<m>[-<n>]	Use specified value size (see -k<m>-<n>)\n\
+-t		Perform the tests on an existing database file\n\
 -v		Be verbose\n\
 -s		Turn on synchronous mode\n\
 -S		Turn on supersynchronous mode\n\
@@ -257,11 +258,12 @@ int main(int argc, char **argv)
   byte kb[2048], vb[2048], vb2[2048];
   uns ks, vs, vs2, perc, cnt;
   char *ch;
+  int dont_delete = 0;
 
   initlog("dbtest");
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
-  while ((c = getopt(argc, argv, "c:p:k:n:d:vsSF")) >= 0)
+  while ((c = getopt(argc, argv, "c:p:k:n:d:vsStF")) >= 0)
     switch (c)
       {
       case 'c':
@@ -294,6 +296,9 @@ int main(int argc, char **argv)
       case 'F':
 	opts.flags |= SDBM_FAST;
 	break;
+      case 't':
+	dont_delete = 1;
+	break;
       default:
 	help();
       }
@@ -316,7 +321,8 @@ int main(int argc, char **argv)
 
   verb("OPEN(%s, key=%d, val=%d, cache=%d, pgorder=%d)\n", opts.name, opts.key_size, opts.val_size,
        opts.cache_size, opts.page_order);
-  unlink(opts.name);
+  if (!dont_delete)
+    unlink(opts.name);
   d = sdbm_open(&opts);
   if (!d)
     die("open failed: %m");
