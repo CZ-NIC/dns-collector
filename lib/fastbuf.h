@@ -306,6 +306,7 @@ static inline void bwrite(struct fastbuf *f, void *b, uns l)
 }
 
 byte *bgets(struct fastbuf *f, byte *b, uns l);	/* Non-std */
+byte *bgets0(struct fastbuf *f, byte *b, uns l);
 
 static inline void
 bputs(struct fastbuf *f, byte *b)

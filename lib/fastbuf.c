@@ -256,6 +256,28 @@ bgets(struct fastbuf *f, byte *b, uns l)
   die("%s: Line too long", f->name);
 }
 
+byte *
+bgets0(struct fastbuf *f, byte *b, uns l)
+{
+  byte *e = b + l - 1;
+  int k;
+
+  k = bgetc(f);
+  if (k == EOF)
+    return NULL;
+  while (b < e)
+    {
+      if (!k || k == EOF)
+	{
+	  *b = 0;
+	  return b;
+	}
+      *b++ = k;
+      k = bgetc(f);
+    }
+  die("%s: Line too long", f->name);
+}
+
 int
 bdirect_read(struct fastbuf *f, byte **buf)
 {
