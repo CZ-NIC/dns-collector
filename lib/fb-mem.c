@@ -89,7 +89,7 @@ fbmem_seek(struct fastbuf *f, sh_off_t pos, int whence)
     die("fbmem_seek: only SEEK_SET supported");
   for (b=m->first; b; b=b->next)
     {
-      if (pos <= p + b->size)	/* <=, because we need to be able to seek just after file end */
+      if ((unsigned) pos <= p + b->size) /* <=, because we need to be able to seek just after file end */
 	{
 	  f->pos = p;
 	  f->buffer = b->data;
