@@ -40,8 +40,11 @@
 #define STRINGIFY(x) #x
 #define GLUE(x,y) x##y
 #define GLUE_(x,y) x##_##y
+
 #define COMPARE(x,y) do { if ((x)<(y)) return -1; if ((x)>(y)) return 1; } while(0)
 #define REV_COMPARE(x,y) COMPARE(y,x)
+#define COMPARE_LT(x,y) do { if ((x)<(y)) return 1; if ((x)>(y)) return 0; } while(0)
+#define COMPARE_GT(x,y) COMPARE_LT(y,x)
 
 /* Logging */
 
