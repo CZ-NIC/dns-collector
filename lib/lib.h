@@ -9,6 +9,12 @@
 
 #include <lib/config.h>
 
+/* Ugly structure handling macros */
+
+#define OFFSETOF(s, i) ((unsigned int)&((s *)0)->i)
+#define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))
+#define ALIGN(s, a) (((s)+a-1)&~(a-1))
+
 /* Temporary Files */
 
 #define TMP_DIR "tmp"
@@ -60,6 +66,12 @@ void log(byte *, ...);
 void die(byte *, ...) NONRET;
 void initlog(byte *);
 void open_log_file(byte *);
+
+#ifdef DEBUG
+#define ASSERT(x) do { if (!(x)) die("Assertion `%s' failed at %s:%d", #x, __FILE__, __LINE__); } while(0)
+#else
+#define ASSERT(x) do { } while(0)
+#endif
 
 /* Allocation */
 
