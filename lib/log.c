@@ -93,6 +93,13 @@ die(byte *msg, ...)
   exit(1);
 }
 
+void
+assert_failed(char *assertion, char *file, int line)
+{
+  log(L_FATAL, "Assertion `%s' failed at %s:%d", assertion, file, line);
+  abort();
+}
+
 static byte *
 log_basename(byte *n)
 {

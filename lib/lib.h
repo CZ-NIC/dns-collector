@@ -47,12 +47,13 @@
 
 void log(unsigned int cat, const char *msg, ...) __attribute__((format(printf,2,3)));
 void die(byte *, ...) NONRET;
+void assert_failed(char *assertion, char *file, int line) NONRET;
 void log_init(byte *);
 void log_file(byte *);
 void log_fork(void);
 
 #ifdef DEBUG
-#define ASSERT(x) do { if (!(x)) die("Assertion `%s' failed at %s:%d", #x, __FILE__, __LINE__); } while(0)
+#define ASSERT(x) do { if (!(x)) assert_failed(#x, __FILE__, __LINE__); } while(0)
 #else
 #define ASSERT(x) do { } while(0)
 #endif
