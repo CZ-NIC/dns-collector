@@ -1,8 +1,10 @@
 /*
- *	Base 64 Encoding & Decoding
+ *	UCW Library -- Base 64 Encoding & Decoding
  *
  *	(c) 2002, Robert Spalek <robert@ucw.cz>
  *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #undef LOCAL_DEBUG

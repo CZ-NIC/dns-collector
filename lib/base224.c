@@ -1,5 +1,5 @@
 /*
- *	Base 224 Encoding & Decoding
+ *	UCW Library -- Base 224 Encoding & Decoding
  *
  *	(c) 2002 Martin Mares <mj@ucw.cz>
  *

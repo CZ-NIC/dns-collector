@@ -1,5 +1,5 @@
 /*
- *	Base 64 Encoding & Decoding
+ *	UCW Library -- Base 64 Encoding & Decoding
  *
  *	(c) 2002, Robert Spalek <robert@ucw.cz>
  *

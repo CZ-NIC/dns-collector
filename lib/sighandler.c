@@ -1,5 +1,5 @@
 /*
- *	Catching of signals and calling callback functions
+ *	UCW Library -- Catching of signals and calling callback functions
  *
  *	(c) 2004, Robert Spalek <robert@ucw.cz>
  */

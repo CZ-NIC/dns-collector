@@ -1,6 +1,6 @@
 /*
- *	Hyper-super-meta-alt-control-shift extra fast str_len() and hash_*()
- *	routines
+ *	UCW Library -- Hyper-super-meta-alt-control-shift extra fast
+ *	str_len() and hash_*() routines
  *
  *	It is always at least as fast as the classical strlen() routine and for
  *	strings longer than 100 characters, it is substantially faster.

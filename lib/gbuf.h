@@ -1,5 +1,5 @@
 /*
- *	A simple growing buffer
+ *	UCW Library -- A simple growing buffer
  *
  *	(c) 2004, Robert Spalek <robert@ucw.cz>
  *
@@ -7,6 +7,9 @@
  *
  *	GBUF_TYPE	data type of records stored in the buffer
  *	GBUF_PREFIX(x)	add a name prefix to all global symbols
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #include <stdlib.h>

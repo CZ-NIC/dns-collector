@@ -1,3 +1,9 @@
+/*
+ *	UCW Library -- MD5 Message Digest
+ *
+ *	This file is in public domain (see lib/md5.c).
+ */
+
 #ifndef MD5_H
 #define MD5_H
 

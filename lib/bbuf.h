@@ -1,5 +1,5 @@
 /*
- *	A simple growing buffer for byte-sized items.
+ *	UCW Library -- A simple growing buffer for byte-sized items.
  *
  *	(c) 2004 Martin Mares <mj@ucw.cz>
  *

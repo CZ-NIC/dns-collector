@@ -1,5 +1,5 @@
 /*
- *	Red-black trees
+ *	UCW Library -- Red-black trees
  *
  *	(c) 2002, Robert Spalek <robert@ucw.cz>
  *

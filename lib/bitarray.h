@@ -1,5 +1,5 @@
 /*
- *	Bit Array Operations
+ *	UCW Library -- Bit Array Operations
  *
  *	(c) 2003--2004 Martin Mares <mj@ucw.cz>
  *

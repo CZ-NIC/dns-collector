@@ -1,6 +1,6 @@
 /*
- *	Hyper-super-meta-alt-control-shift extra fast str_len() and hash_*()
- *	routines
+ *	UCW Library -- Hyper-super-meta-alt-control-shift extra fast
+ *	str_len() and hash_*() routines
  *
  *	(c) 2002, Robert Spalek <robert@ucw.cz>
  *

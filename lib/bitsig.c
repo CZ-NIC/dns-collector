@@ -1,5 +1,5 @@
 /*
- *	Bit Array Signatures -- A Dubious Detector of Duplicates
+ *	UCW Library -- Bit Array Signatures -- A Dubious Detector of Duplicates
  *
  *	(c) 2002 Martin Mares <mj@ucw.cz>
  *

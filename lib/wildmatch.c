@@ -1,5 +1,5 @@
 /*
- *	Fast Pattern Matcher for Short Wildcard Patterns (only `?' and `*' supported)
+ *	UCW Library -- Fast Pattern Matcher for Short Wildcard Patterns (only `?' and `*' supported)
  *
  *	Traditional NFA -> DFA method with on-the-fly DFA construction.
  *
