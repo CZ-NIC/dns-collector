@@ -1,4 +1,4 @@
 # Perl modules
 
 DIRS+=lib/perl
-PROGS+=obj/lib/perl/Config.pm
+PROGS+=$(addprefix obj/lib/perl/,Config.pm Query.pm)
