@@ -40,10 +40,7 @@ static inline void
 GBUF_PREFIX(realloc)(BUF_T *b, uns len)
 {
   b->len = len;
-  if (b->ptr)
-    b->ptr = xrealloc(b->ptr, len * sizeof(GBUF_TYPE));
-  else
-    b->ptr = xmalloc(len * sizeof(GBUF_TYPE));
+  b->ptr = xrealloc(b->ptr, len * sizeof(GBUF_TYPE));
 }
 
 static inline void
