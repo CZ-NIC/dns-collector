@@ -62,7 +62,7 @@ enum card_flag {
   CARD_FLAG_IMAGE = 16,			/* Is an image object [scanner] */
 };
 
-#define CARD_POS_SHIFT 5		/* Card positions are shifted this # of bytes to the right */
+#define CARD_POS_SHIFT 5		/* Card positions are shifted this # of bits to the right */
 
 /*
  *  We store document type and several other properties in card_attr->type_flags.
