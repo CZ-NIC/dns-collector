@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- URL Functions
  *
- *	(c) 1997 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
  *	(c) 2001 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -38,6 +38,7 @@ struct url {
   byte *protocol;
   uns protoid;
   byte *user;
+  byte *pass;
   byte *host;
   uns port;				/* ~0 if unspec */
   byte *rest;

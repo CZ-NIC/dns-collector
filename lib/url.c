@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- URL Functions (according to RFC 1738 and 1808)
  *
- *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
  *	(c) 2001 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -206,6 +206,11 @@ url_split(byte *s, struct url *u, byte *d)
 	    {
 	      *w++ = 0;
 	      u->user = q;
+	      if (e = strchr(q, ':'))
+		{
+		  *e++ = 0;
+		  u->pass = e;
+		}
 	    }
 	  else
 	    w = q;
@@ -358,6 +363,7 @@ url_normalize(struct url *u, struct url *b)
   if (url_proto_path_flags[u->protoid] && !u->host ||
       u->host && !*u->host ||
       !u->host && u->user ||
+      !u->user && u->pass ||
       !u->rest)
     return URL_SYNTAX_ERROR;
 
@@ -374,6 +380,7 @@ url_normalize(struct url *u, struct url *b)
 	{
 	  u->host = b->host;
 	  u->user = b->user;
+	  u->pass = b->pass;
 	  u->port = b->port;
 	  if (err = relpath_merge(u, b))
 	    return err;
@@ -461,6 +468,11 @@ url_pack(struct url *u, byte *d)
       if (u->user)
 	{
 	  d = append(d, u->user, e);
+	  if (u->pass)
+	    {
+	      d = append(d, ":", e);
+	      d = append(d, u->pass, e);
+	    }
 	  d = append(d, "@", e);
 	}
       d = append(d, u->host, e);
@@ -555,7 +567,7 @@ int main(int argc, char **argv)
       printf("split: error %d\n", err);
       return 1;
     }
-  printf("split: @%s@%s@%s@%d@%s\n", url.protocol, url.user, url.host, url.port, url.rest);
+  printf("split: @%s@%s@%s@%s@%d@%s\n", url.protocol, url.user, url.pass, url.host, url.port, url.rest);
   if (err = url_split("http://mj@www.hell.org/123/sub_dir/index.html;param?query&zzz/subquery#fragment", &url0, buf3))
     {
       printf("split base: error %d\n", err);
@@ -566,19 +578,19 @@ int main(int argc, char **argv)
       printf("normalize base: error %d\n", err);
       return 1;
     }
-  printf("base: @%s@%s@%s@%d@%s\n", url0.protocol, url0.user, url0.host, url0.port, url0.rest);
+  printf("base: @%s@%s@%s@%s@%d@%s\n", url0.protocol, url0.user, url0.pass, url0.host, url0.port, url0.rest);
   if (err = url_normalize(&url, &url0))
     {
       printf("normalize: error %d\n", err);
       return 1;
     }
-  printf("normalize: @%s@%s@%s@%d@%s\n", url.protocol, url.user, url.host, url.port, url.rest);
+  printf("normalize: @%s@%s@%s@%s@%d@%s\n", url.protocol, url.user, url.pass, url.host, url.port, url.rest);
   if (err = url_canonicalize(&url))
     {
       printf("canonicalize: error %d\n", err);
       return 1;
     }
-  printf("canonicalize: @%s@%s@%s@%d@%s\n", url.protocol, url.user, url.host, url.port, url.rest);
+  printf("canonicalize: @%s@%s@%s@%s@%d@%s\n", url.protocol, url.user, url.pass, url.host, url.port, url.rest);
   if (err = url_pack(&url, buf4))
     {
       printf("pack: error %d\n", err);
