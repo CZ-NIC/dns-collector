@@ -97,6 +97,7 @@ conv_slow(struct conv_context *c)
 	  c->code <<= 4;
 	  c->remains = 2;
 	}
+      c->code &= 0xffff;
       c->state = UTF8_WRITE_CONT;
       /* fall-thru */
     case UTF8_WRITE_CONT:
@@ -208,7 +209,6 @@ main:
   return CONV_SOURCE_END;
 
 send_utf:
-  c->state = UTF8_WRITE_START;
   if (cc < 0xe0)		{ c->code = cc & 0x1f; c->remains = 1; }
   else if (cc < 0xf0)		{ c->code = cc & 0x0f; c->remains = 2; }
   else
@@ -219,17 +219,18 @@ send_utf:
       else if (cc < 0xfe)	c->remains = 5;
       else goto nocode;
     }
+  c->state = UTF8_READ;
   goto go_slow;
 
 dend_str:
   c->state = SEQ_WRITE;
   c->string_at = k;
   c->remains = len;
+  goto go_slow;
 
 dend_char:
   c->state = SINGLE_WRITE;
   c->code = code;
-  goto go_slow;
 go_slow:
   c->source = s;
   c->dest = d;
@@ -302,7 +303,7 @@ dend:
   return CONV_DEST_END;
 
 dend_utf:
-  c->source = s;
+  c->source = s+1;
   c->dest = d;
   c->state = UTF8_WRITE_START;
   c->code = code;
