@@ -47,6 +47,7 @@ stk_printf_internal(char *fmt, ...)
 	return l+1;
       else
 	stk_printf_len = MAX(stk_printf_len*2, l+1);
+      stk_printf_buf = xrealloc(stk_printf_buf, stk_printf_len);
     }
 }
 
