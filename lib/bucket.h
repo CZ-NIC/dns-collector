@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Object Buckets
  *
- *	(c) 2001--2003 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -82,6 +82,13 @@ struct fastbuf *obuck_slurp_pool(struct obuck_header *hdrp);
 static inline sh_off_t obuck_get_pos(oid_t oid)
 {
   return ((sh_off_t) oid) << OBUCK_SHIFT;
+}
+
+/* Calculate size of bucket which contains given amount of data */
+
+static inline uns obuck_bucket_size(uns len)
+{
+  return ALIGN(sizeof(struct obuck_header) + len + 4, OBUCK_ALIGN);
 }
 
 /* Shaking down bucket file */
