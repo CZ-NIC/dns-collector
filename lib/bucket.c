@@ -369,6 +369,7 @@ obuck_slurp_pool(struct obuck_header *hdrp)
       if (!l)
 	{
 	  bclose(obuck_rpf);
+	  obuck_rpf = NULL;
 	  obuck_unlock();
 	  return NULL;
 	}
