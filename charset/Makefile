@@ -4,7 +4,6 @@ DIRS+=charset
 
 LIBCHARSET_MODS=toupper tolower tocat toligatures utf8 unaccent strlen debug \
 	charconv setnames unistream fb-charconv
-LIBCHARSET=obj/charset/libcharset.$(LS)
 
 obj/charset/libcharset.a: $(addsuffix .o,$(addprefix obj/charset/,$(LIBCHARSET_MODS)))
 obj/charset/libcharset.so: $(addsuffix .oo,$(addprefix obj/charset/,$(LIBCHARSET_MODS)))
