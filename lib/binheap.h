@@ -177,8 +177,9 @@ BH_PREFIX(init)(BH_HEAP *heap)
 #define BH_FOR_ALL(bh_px, bh_heap, bh_var)	\
 do {						\
   struct bh_node *bh_stack[32];			\
-  bh_stack[0] = (bh_heap)->root.first_son;	\
-  uns bh_sp = 1;				\
+  uns bh_sp = 0;				\
+  if (bh_stack[0] = (bh_heap)->root.first_son)  \
+    bh_sp++;					\
   while (bh_sp) {				\
     struct bh_node *bh_var = bh_stack[--bh_sp];	\
     if (bh_var->next_sibling)			\
