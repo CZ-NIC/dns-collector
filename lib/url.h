@@ -4,6 +4,9 @@
  *	(c) 1997 Martin Mares <mj@ucw.cz>
  */
 
+#ifndef _SHERLOCK_URL_H
+#define _SHERLOCK_URL_H
+
 #define MAX_URL_SIZE 1024
 
 /* Non-control meanings of control characters */
@@ -69,3 +72,5 @@ char *url_error(uns);
 #define URL_PATH_FLAGS { 0, 1, 1, 1 }
 
 extern byte *url_proto_names[];
+
+#endif
