@@ -412,3 +412,18 @@ conv_x_count(void)
 {
   return sizeof(x_to_uni) / sizeof(x_to_uni[0]);
 }
+
+int
+conv_in_to_ucs(struct conv_context *c, unsigned int y)
+{
+  return x_to_uni[c->in_to_x[y]];
+}
+
+int conv_ucs_to_out(struct conv_context *c, unsigned int ucs)
+{
+  uns x = uni_to_x[ucs >> 8U][ucs & 0xff];
+  if (x == 256 || c->x_to_out[x] >= 256)
+    return -1;
+  else
+    return c->x_to_out[x];
+}
