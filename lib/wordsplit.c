@@ -22,9 +22,21 @@ wordsplit(byte *src, byte **dst, uns max)
 	break;
       if (cnt >= max)
 	return -1;
-      dst[cnt++] = src;
-      while (*src && !Cspace(*src))
-	src++;
+      if (*src == '"')
+	{
+	  src++;
+	  dst[cnt++] = src;
+	  while (*src && *src != '"')
+	    src++;
+	  if (*src)
+	    *src++ = 0;
+	}
+      else
+	{
+	  dst[cnt++] = src;
+	  while (*src && !Cspace(*src))
+	    src++;
+	}
     }
   return cnt;
 }

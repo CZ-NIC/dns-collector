@@ -24,7 +24,7 @@ logit(int level, byte *msg, va_list args)
 
   tim = time(NULL);
   tm = localtime(&tim);
-  strftime(buf, sizeof(buf), "%d-%m-%y %H-%M-%S", tm);
+  strftime(buf, sizeof(buf), "%d-%m-%y %H:%M:%S", tm);
   fprintf(stderr, "%s %s [%d] <%d> ", buf, progname, pid, level);
   vfprintf(stderr, msg, args);
   fputc('\n', stderr);

@@ -24,6 +24,8 @@ ulg temprand(uns);
 #define TF_QUEUE_CONTROL "c"
 #define TF_QUEUE_DATA "d"
 #define TF_DECODE "x"
+#define TF_TRANSFORM "s"
+#define TF_OBJECT "o"
 
 /* Config Files */
 
@@ -115,3 +117,11 @@ int wordsplit(byte *, byte **, uns);
 /* patmatch.c */
 
 int match_pattern(byte *, byte *);
+
+/* md5hex.c */
+
+void md5_to_hex(byte *, byte *);
+void hex_to_md5(byte *, byte *);
+
+#define MD5_SIZE 16
+#define MD5_HEX_SIZE 33
