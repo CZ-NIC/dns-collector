@@ -244,11 +244,11 @@ bgets(struct fastbuf *f, byte *b, uns l)
   int k;
 
   k = bgetc(f);
-  if (k == EOF)
+  if (k < 0)
     return NULL;
   while (b < e)
     {
-      if (k == '\n' || k == EOF)
+      if (k == '\n' || k < 0)
 	{
 	  *b = 0;
 	  return b;
@@ -259,6 +259,29 @@ bgets(struct fastbuf *f, byte *b, uns l)
   die("%s: Line too long", f->name);
 }
 
+int
+bgets_nodie(struct fastbuf *f, byte *b, uns l)
+{
+  byte *start = b;
+  byte *e = b + l - 1;
+  int k;
+
+  k = bgetc(f);
+  if (k < 0)
+    return 0;
+  while (b < e)
+    {
+      if (k == '\n' || k < 0)
+	{
+	  *b++ = 0;
+	  return b - start;
+	}
+      *b++ = k;
+      k = bgetc(f);
+    }
+  return -1;
+}
+
 byte *
 bgets0(struct fastbuf *f, byte *b, uns l)
 {
@@ -266,11 +289,11 @@ bgets0(struct fastbuf *f, byte *b, uns l)
   int k;
 
   k = bgetc(f);
-  if (k == EOF)
+  if (k < 0)
     return NULL;
   while (b < e)
     {
-      if (!k || k == EOF)
+      if (k <= 0)
 	{
 	  *b = 0;
 	  return b;

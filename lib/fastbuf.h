@@ -268,6 +268,7 @@ static inline void bwrite(struct fastbuf *f, void *b, uns l)
 }
 
 byte *bgets(struct fastbuf *f, byte *b, uns l);	/* Non-std */
+int bgets_nodie(struct fastbuf *f, byte *b, uns l);
 byte *bgets0(struct fastbuf *f, byte *b, uns l);
 
 static inline void
