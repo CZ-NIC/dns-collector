@@ -92,6 +92,10 @@ static inline void log_switch_enable(void) { ASSERT(log_switch_nest); log_switch
 
 /* Memory allocation */
 
+#define xmalloc sh_xmalloc
+#define xrealloc sh_xrealloc
+#define xfree sh_xfree
+
 #ifdef DEBUG_DMALLOC
 /*
  * The standard dmalloc macros tend to produce lots of namespace
@@ -100,19 +104,18 @@ static inline void log_switch_enable(void) { ASSERT(log_switch_nest); log_switch
  */
 #define DMALLOC_DISABLE
 #include <dmalloc.h>
-#define xmalloc(size) _xmalloc_leap(__FILE__, __LINE__, size)
-#define xrealloc(ptr,size) _xrealloc_leap(__FILE__, __LINE__, ptr, size)
-#define xfree(ptr) _xfree_leap(__FILE__, __LINE__, ptr)
+#define sh_xmalloc(size) _xmalloc_leap(__FILE__, __LINE__, size)
+#define sh_xrealloc(ptr,size) _xrealloc_leap(__FILE__, __LINE__, ptr, size)
+#define sh_xfree(ptr) _xfree_leap(__FILE__, __LINE__, ptr)
 #else
 /*
  * Unfortunately, several libraries we might want to link to define
  * their own xmalloc and we don't want to interfere with them, hence
  * the renaming.
  */
-#define xmalloc sh_xmalloc
 void *xmalloc(unsigned);
 void *xrealloc(void *, unsigned);
-#define xfree(x) free(x)
+#define sh_xfree(x) free(x)
 #endif
 
 void *xmalloc_zero(unsigned);
