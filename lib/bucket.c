@@ -43,25 +43,46 @@ static void CONSTRUCTOR obuck_init_config(void)
 static void
 obuck_broken(char *msg)
 {
-  die("Object pool corrupted: %s (pos=%Lx)", msg, (long long) bucket_start);	/* FIXME */
+  die("Object pool corrupted: %s (pos=%Lx)", msg, (long long) bucket_start);
+}
+
+/*
+ *  Unfortunately we cannot use flock() here since it happily permits
+ *  locking a shared fd (e.g., after fork()) multiple times. The fcntl
+ *  locks are very ugly and they don't support 64-bit offsets, but we
+ *  can work around the problem by always locking the first header
+ *  in the file.
+ */
+
+static inline void
+obuck_do_lock(int type)
+{
+  struct flock fl;
+
+  fl.l_type = type;
+  fl.l_whence = SEEK_SET;
+  fl.l_start = 0;
+  fl.l_len = sizeof(struct obuck_header);
+  if (fcntl(obuck_fd, F_SETLKW, &fl) < 0)
+    die("fcntl lock: %m");
 }
 
 static inline void
 obuck_lock_read(void)
 {
-  flock(obuck_fd, LOCK_SH);
+  obuck_do_lock(F_RDLCK);
 }
 
 static inline void
 obuck_lock_write(void)
 {
-  flock(obuck_fd, LOCK_EX);
+  obuck_do_lock(F_WRLCK);
 }
 
 static inline void
 obuck_unlock(void)
 {
-  flock(obuck_fd, LOCK_UN);
+  obuck_do_lock(F_UNLCK);
 }
 
 /*** FastIO emulation ***/
@@ -163,7 +184,7 @@ obuck_cleanup(void)
   bclose(obuck_fb);
 }
 
-void					/* FIXME: Call somewhere :) */
+void
 obuck_sync(void)
 {
   bflush(obuck_fb);
