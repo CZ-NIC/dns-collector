@@ -11,7 +11,7 @@
 #include <stdarg.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/time.h>
+#include <time.h>
 
 static char *log_progname;
 static pid_t log_pid;
