@@ -349,27 +349,29 @@ obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
 	goto reread;
       if (GET_U32(rbuf + roff + l - 4) != OBUCK_TRAILER)
 	obuck_broken("missing trailer during shakedown");
-      if (rhdr->oid != OBUCK_OID_DELETED &&
-	  kibitz(rhdr, w_bucket_start >> OBUCK_SHIFT, (byte *)(rhdr+1)))
+      if (rhdr->oid != OBUCK_OID_DELETED)
 	{
-	  if (bucket_start == w_bucket_start)
+	  if (kibitz(rhdr, w_bucket_start >> OBUCK_SHIFT, (byte *)(rhdr+1)))
 	    {
-	      /* No copying needed now nor ever in the past, hence woff==0 */
-	      wstart += l;
-	    }
-	  else
-	    {
-	      if (obuck_shake_buflen - woff < l)
+	      if (bucket_start == w_bucket_start)
 		{
-		  if (sh_pwrite(obuck_fd, wbuf, woff, wstart) != woff)
-		    die("obuck_shakedown write failed: %m");
-		  wstart += woff;
-		  woff = 0;
+		  /* No copying needed now nor ever in the past, hence woff==0 */
+		  wstart += l;
 		}
-	      whdr = (struct obuck_header *)(wbuf+woff);
-	      memcpy(whdr, rhdr, l);
-	      whdr->oid = w_bucket_start >> OBUCK_SHIFT;
-	      woff += l;
+	      else
+		{
+		  if (obuck_shake_buflen - woff < l)
+		    {
+		      if (sh_pwrite(obuck_fd, wbuf, woff, wstart) != woff)
+			die("obuck_shakedown write failed: %m");
+		      wstart += woff;
+		      woff = 0;
+		    }
+		  whdr = (struct obuck_header *)(wbuf+woff);
+		  memcpy(whdr, rhdr, l);
+		  whdr->oid = w_bucket_start >> OBUCK_SHIFT;
+		  woff += l;
+		}
 	    }
 	}
       else
