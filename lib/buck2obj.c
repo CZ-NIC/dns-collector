@@ -30,6 +30,136 @@ struct buck2obj_buf
   struct lizard_buffer *lizard;
 };
 
+static uns get_attr_type;
+
+void
+get_attr_set_type(uns type)
+{
+  if (type < BUCKET_TYPE_PLAIN || type > BUCKET_TYPE_V33_LIZARD)
+    die("Unknown buckettype %x", type);
+  get_attr_type = type;
+}
+
+int
+get_attr(byte **pos, byte *end, struct parsed_attr *attr)
+{
+  byte *ptr = *pos;
+  if (ptr >= end)
+    return -1;
+  if (get_attr_type < BUCKET_TYPE_V33)
+  {
+    if (get_attr_type == BUCKET_TYPE_PLAIN)
+    {
+      while (ptr < end && *ptr == '\n')
+	ptr++;
+      *pos = ptr;
+      if (ptr >= end)
+	return -1;
+    }
+    else if (*ptr == '\n')
+    {
+      *pos = ++ptr;
+      return 0;
+    }
+    attr->attr = *ptr++;
+    attr->val = ptr;
+    while (ptr < end && *ptr != '\n')
+      ptr++;
+    attr->len = ptr++ - attr->val;
+  }
+  else
+  {
+    uns len;
+    GET_UTF8_32(ptr, len);
+    if (!len--)
+    {
+      *pos = ptr;
+      return 0;
+    }
+    attr->attr = ptr[len];
+    attr->val = ptr;
+    attr->len = len;
+    ptr += len+1;
+  }
+  if (ptr > end)
+    die("Incomplete attribute %c", attr->attr);
+  *pos = ptr;
+  return attr->attr;
+}
+
+int
+bget_attr(struct fastbuf *b, struct parsed_attr *attr)
+{
+  static bb_t buf;
+  if (get_attr_type < BUCKET_TYPE_V33)
+  {
+    int c = bgetc(b);
+    if (c < 0)
+      return -1;
+    if (get_attr_type == BUCKET_TYPE_PLAIN)
+    {
+      while (c == '\n')
+	c = bgetc(b);
+      if (c < 0)
+	return -1;
+    }
+    else if (c == '\n')
+      return 0;
+    attr->attr = c;
+
+    byte *ptr, *end;
+    uns len = bdirect_read_prepare(b, &ptr);
+    end = ptr + len;
+    attr->val = ptr;
+    while (ptr < end && *ptr != '\n')
+      ptr++;
+    if (ptr < end)
+    {
+      bdirect_read_commit(b, ptr+1);
+      attr->len = ptr - attr->val;
+      return attr->attr;
+    }
+
+    len = 0;
+    c = bgetc(b);
+    while (c >= 0 && c != '\n')
+    {
+      bb_grow(&buf, len+1);
+      buf.ptr[len++] = c;
+      c = bgetc(b);
+    }
+    if (c < 0)
+      die("Incomplete attribute %c", attr->attr);
+    attr->val = buf.ptr;
+    attr->len = len;
+  }
+  else
+  {
+    int len = bget_utf8_32(b);
+    if (len <= 0)
+      return len < 0 ? -1 : 0;
+    attr->len = len-1;
+
+    byte *ptr;
+    int avail = bdirect_read_prepare(b, &ptr);
+    if (avail >= len)
+    {
+      attr->val = ptr;
+      attr->attr = ptr[len-1];
+      bdirect_read_commit(b, ptr + len);
+      return attr->attr;
+    }
+    bb_grow(&buf, --len);
+    breadb(b, buf.ptr, len);
+    attr->val = buf.ptr;
+    attr->len = len;
+    attr->attr = bgetc(b);
+    if (attr->attr < 0)
+      die("Incomplete attribute %c", attr->attr);
+  }
+  return attr->attr;
+}
+
 struct buck2obj_buf *
 buck2obj_alloc(void)
 {
@@ -54,7 +184,7 @@ decode_attributes(byte *ptr, byte *end, struct odes *o, uns can_overwrite)
     while (ptr < end)
     {
       uns len;
-      GET_UTF8(ptr, len);
+      GET_UTF8_32(ptr, len);
       if (!len--)
 	break;
       byte type = ptr[len];
@@ -68,7 +198,7 @@ decode_attributes(byte *ptr, byte *end, struct odes *o, uns can_overwrite)
     while (ptr < end)
     {
       uns len;
-      GET_UTF8(ptr, len);
+      GET_UTF8_32(ptr, len);
       if (!len--)
 	break;
       byte type = ptr[len];
@@ -124,7 +254,7 @@ buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fas
       sh_off_t end = start + buck_len;
       while (btell(body) < end)
       {
-	uns len = bget_utf8(body);
+	uns len = bget_utf8_32(body);
 	if (!len)
 	  break;
 	byte *buf = mp_alloc_fast_noalign(o_hdr->pool, len);
