@@ -4,6 +4,9 @@
  *	(c) 2001 Robert Spalek <robert@ucw.cz>
  */
 
+#ifndef	_LIB_CONF_H
+#define	_LIB_CONF_H
+
 #include <getopt.h>
 
 /*
@@ -61,6 +64,9 @@ void cf_read(byte *filename);
 	{"set",		1, 0, 'S'},\
 	{"config",	1, 0, 'C'},
 #define CF_NO_LONG_OPTS (const struct option []){ CF_LONG_OPTS { NULL, 0, 0, 0 } }
+#define	CF_USAGE	\
+"-S, --set sec.item=val\tManual setting of a configuration item\n\
+-C, --config filename\tOverwrite default config filename\n"
 
 extern byte *cfdeffile;
 
@@ -68,3 +74,4 @@ int cf_getopt(int argc,char * const argv[],
 		const char *shortopts,const struct option *longopts,
 		int *longindex);
 
+#endif
