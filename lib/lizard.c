@@ -1,5 +1,5 @@
 /*
- *	LiZzaRd -- Fast compression method based on Lempel-Ziv 77
+ *	LiZaRd -- Fast compression method based on Lempel-Ziv 77
  *
  *	(c) 2004, Robert Spalek <robert@ucw.cz>
  *
@@ -8,7 +8,7 @@
  */
 
 #include "lib/lib.h"
-#include "lib/lizzard.h"
+#include "lib/lizard.h"
 
 #include <string.h>
 
@@ -149,9 +149,9 @@ flush_copy_command(uns bof, byte *out, byte *start, uns len)
 }
 
 int
-lizzard_compress(byte *in, uns in_len, byte *out)
-  /* Requires out being allocated for at least in_len * LIZZARD_MAX_MULTIPLY +
-   * LIZZARD_MAX_ADD.  There must be at least LIZZARD_NEEDS_CHARS characters
+lizard_compress(byte *in, uns in_len, byte *out)
+  /* Requires out being allocated for at least in_len * LIZARD_MAX_MULTIPLY +
+   * LIZARD_MAX_ADD.  There must be at least LIZARD_NEEDS_CHARS characters
    * allocated after in.  Returns the actual compressed length. */
 {
   hash_ptr_t hash_tab[HASH_SIZE];
@@ -280,7 +280,7 @@ read_unary_value(byte *in, uns *val)
 }
 
 int
-lizzard_decompress(byte *in, byte *out)
+lizard_decompress(byte *in, byte *out)
   /* Requires out being allocated for the decompressed length must be known
    * beforehand.  It is desirable to lock the following memory page for
    * read-only access to prevent buffer overflow.  Returns the actual

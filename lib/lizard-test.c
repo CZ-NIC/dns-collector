@@ -1,7 +1,7 @@
 #include "lib/lib.h"
 #include "lib/conf.h"
 #include "lib/fastbuf.h"
-#include "lib/lizzard.h"
+#include "lib/lizard.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -9,7 +9,7 @@
 
 static char *options = CF_SHORT_OPTS "cdt";
 static char *help = "\
-Usage: lizzard-test <options> input-file [output-file]\n\
+Usage: lizard-test <options> input-file [output-file]\n\
 \n\
 Options:\n"
 CF_USAGE
@@ -55,8 +55,8 @@ main(int argc, char **argv)
   struct fastbuf *fi = bopen(argv[optind], O_RDONLY, 1<<16);
   if (action != 'd')
   {
-    lo = li * LIZZARD_MAX_MULTIPLY + LIZZARD_MAX_ADD;
-    li += LIZZARD_NEEDS_CHARS;
+    lo = li * LIZARD_MAX_MULTIPLY + LIZARD_MAX_ADD;
+    li += LIZARD_NEEDS_CHARS;
   }
   else
   {
@@ -73,9 +73,9 @@ main(int argc, char **argv)
     printf("->expected %d ", lo);
   fflush(stdout);
   if (action != 'd')
-    lo = lizzard_compress(mi, li, mo);
+    lo = lizard_compress(mi, li, mo);
   else
-    lo = lizzard_decompress(mi, mo);
+    lo = lizard_decompress(mi, mo);
   printf("-> %d ", lo);
   fflush(stdout);
 
@@ -92,7 +92,7 @@ main(int argc, char **argv)
     void *mv;
     uns lv;
     mv = xmalloc(li);
-    lv = lizzard_decompress(mo, mv);
+    lv = lizard_decompress(mo, mv);
     printf("-> %d ", lv);
     fflush(stdout);
     if (lv != li || memcmp(mi, mv, lv))

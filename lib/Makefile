@@ -10,7 +10,7 @@ LIBSH_MODS=alloc alloc_str ctmatch db fastbuf fb-file fb-mem lists \
 	wordsplit str_ctype str_upper str_lower bucket conf object sorter \
 	finger proctitle ipaccess profile bitsig randomkey \
 	hashfunc base64 base224 fb-temp fb-mmap fb-printf urlkey \
-	partmap fb-limfd fb-buffer mainloop exitstatus runcmd carefulio lizzard
+	partmap fb-limfd fb-buffer mainloop exitstatus runcmd carefulio lizard
 
 ifdef CONFIG_OWN_REGEX
 include lib/regex/Makefile
@@ -34,9 +34,9 @@ obj/lib/str-test: obj/lib/str-test.o $(LIBSH)
 obj/lib/asort-test: obj/lib/asort-test.o $(LIBSH)
 obj/lib/redblack-test: obj/lib/redblack-test.o $(LIBSH)
 obj/lib/binheap-test: obj/lib/binheap-test.o $(LIBSH)
-obj/lib/lizzard-test: obj/lib/lizzard-test.o $(LIBSH)
+obj/lib/lizard-test: obj/lib/lizard-test.o $(LIBSH)
 
-obj/lib/lizzard.o: CFLAGS += -O6 -funroll-loops
+obj/lib/lizard.o: CFLAGS += -O6 -funroll-loops
 
 include lib/perl/Makefile
 include lib/shell/Makefile

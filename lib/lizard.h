@@ -1,5 +1,5 @@
 /*
- *	LiZzaRd -- Fast compression method based on Lempel-Ziv 77
+ *	LiZaRd -- Fast compression method based on Lempel-Ziv 77
  *
  *	(c) 2004, Robert Spalek <robert@ucw.cz>
  *
@@ -7,11 +7,11 @@
  *	the compression method is based on zlib.
  */
 
-#define	LIZZARD_NEEDS_CHARS	8
+#define	LIZARD_NEEDS_CHARS	8
   /* The compression routine needs input buffer 8 characters longer, because it
    * does not check the input bounds all the time.  */
-#define	LIZZARD_MAX_MULTIPLY	23./22
-#define	LIZZARD_MAX_ADD		4
+#define	LIZARD_MAX_MULTIPLY	23./22
+#define	LIZARD_MAX_ADD		4
   /* In the worst case, the compressed file will not be longer than its
    * original length * 23/22 + 4.
    *
@@ -23,5 +23,5 @@
    * total length is 2(header) + 2(link) + 19(string) = 23.
    */
 
-int lizzard_compress(byte *in, uns in_len, byte *out);
-int lizzard_decompress(byte *in, byte *out);
+int lizard_compress(byte *in, uns in_len, byte *out);
+int lizard_decompress(byte *in, byte *out);
