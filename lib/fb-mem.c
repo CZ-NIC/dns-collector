@@ -90,6 +90,17 @@ fbmem_seek(struct fastbuf *f, sh_off_t pos, int whence)
   struct msblock *b;
   unsigned int p = 0;
 
+  /* FIXME: Milan's quick hack to allow SEEK_END */
+  if (whence == SEEK_END)
+  {
+	  for (b=m->first; b; b=b->next)
+		  p += b->size;
+	  pos += p;
+	  p=0;
+	  whence = SEEK_SET;
+  }
+  /* EOQH */
+  
   if (whence != SEEK_SET)
     die("fbmem_seek: only SEEK_SET supported");
   for (b=m->first; b; b=b->next)
