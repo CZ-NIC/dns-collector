@@ -302,6 +302,12 @@ bputs(struct fastbuf *f, byte *b)
 }
 
 static inline void
+bputs0(struct fastbuf *f, byte *b)
+{
+  bwrite(f, b, strlen(b)+1);
+}
+
+static inline void
 bputsn(struct fastbuf *f, byte *b)
 {
   bputs(f, b);
