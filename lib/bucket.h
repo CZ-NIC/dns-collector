@@ -64,7 +64,6 @@ int obuck_find_next(struct obuck_header *hdrp, int full);
 
 /* Reading current bucket */
 struct fastbuf *obuck_fetch(void);
-void obuck_fetch_end(struct fastbuf *b);
 
 /* Creating buckets */
 struct fastbuf *obuck_create(u32 type);

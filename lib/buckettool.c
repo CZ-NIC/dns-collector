@@ -96,7 +96,7 @@ extract(char *id)
   b = obuck_fetch();
   while ((l = bread(b, buf, sizeof(buf))))
     fwrite(buf, 1, l, stdout);
-  obuck_fetch_end(b);
+  bclose(b);
   obuck_cleanup();
 }
 

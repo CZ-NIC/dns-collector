@@ -267,11 +267,6 @@ obuck_fetch(void)
   return obuck_fb;
 }
 
-void
-obuck_fetch_end(struct fastbuf *b UNUSED)
-{
-}
-
 oid_t
 obuck_predict_last_oid(void)
 {
@@ -586,7 +581,7 @@ int main(int argc, char **argv)
 	    die("Contents mismatch");
 	if (bgetc(b) != EOF)
 	  die("EOF mismatch");
-	obuck_fetch_end(b);
+	bclose(b);
       }
   if (obuck_find_first(&h, 0))
     do
