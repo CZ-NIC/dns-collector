@@ -13,6 +13,7 @@
 /* Words */
 
 #define MAX_WORD_LEN		64
+#define MAX_COMPLEX_LEN		10
 
 /* Word and string types are defined in lib/custom.h */
 
