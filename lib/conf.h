@@ -1,7 +1,8 @@
 /*
- *	Sherlock Library -- Reading configuration files
+ *	Sherlock Library -- Reading of configuration files
  *
  *	(c) 2001 Robert Spalek <robert@ucw.cz>
+ *	(c) 2003 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -33,7 +34,7 @@ byte *cfg_stralloc(byte *s);
  * function.
  */
 
-enum cftype { CT_STOP, CT_SECTION, CT_INCOMPLETE_SECTION, CT_INT, CT_STRING, CT_FUNCTION };
+enum cftype { CT_STOP, CT_SECTION, CT_INCOMPLETE_SECTION, CT_INT, CT_STRING, CT_FUNCTION, CT_DOUBLE };
 
 struct cfitem {
 	byte *name;
@@ -53,6 +54,13 @@ int cf_item_count(void);
 struct cfitem *cf_get_item(byte *sect, byte *name);
 byte *cf_set_item(byte *sect, byte *name, byte *value);
 void cf_read(byte *filename);
+
+/*
+ * Number parsing functions which could be useful in CT_FUNCTION callbacks.
+ */
+
+byte *cf_parse_int(byte *value, uns *varp);
+byte *cf_parse_double(byte *value, double *varp);
 
 /*
  * When using cf_getopt, you must prefix your own short/long options by the

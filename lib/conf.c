@@ -1,25 +1,26 @@
 /*
- *	Sherlock Library -- Reading configuration files
+ *	Sherlock Library -- Reading of configuration files
  *
  *	(c) 2001 Robert Spalek <robert@ucw.cz>
+ *	(c) 2003 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  */
 
 #include "lib/lib.h"
+#include "lib/chartype.h"
+#include "lib/fastbuf.h"
+#include "lib/pools.h"
+
+#include "lib/conf.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
 #include <getopt.h>
-
-#include "lib/chartype.h"
-#include "lib/fastbuf.h"
-#include "lib/pools.h"
-
-#include "lib/conf.h"
+#include <errno.h>
 
 #define	BUFFER		1024
 #define	MAX_LEVEL	8
@@ -44,10 +45,10 @@ cfg_malloc(uns size)
 byte *
 cfg_stralloc(byte *s)
 {
-  uns l = strlen(s);
-  byte *k = cfg_malloc(l + 1);
-  strcpy(k, s);
-  return k;
+	uns l = strlen(s);
+	byte *k = cfg_malloc(l + 1);
+	strcpy(k, s);
+	return k;
 }
 
 void cf_register(struct cfitem *items)
@@ -86,6 +87,89 @@ struct cfitem *cf_get_item(byte *sect, byte *name)
 	return item;	/* item->type == 0 if not found */
 }
 
+struct unit {
+	uns name;			/* One-letter name of the unit */
+	uns num, den;			/* Fraction */
+};
+
+static const struct unit units[] = {
+	{ 'k', 1000, 1 },
+	{ 'm', 1000000, 1 },
+	{ 'g', 1000000000, 1 },
+	{ 'K', 1024, 1 },
+	{ 'M', 1048576, 1 },
+	{ 'G', 1073741824, 1 },
+	{ '%', 1, 100 },
+	{ 0, 0, 0 }
+};
+
+static const struct unit *cf_lookup_unit(byte *value, byte *end, char **msg)
+{
+	if (end && *end) {
+		if (end == value || end[1] || *end >= '0' && *end <= '9')
+			*msg = "Invalid number";
+		else {
+			for (const struct unit *u=units; u->name; u++)
+				if (u->name == *end)
+					return u;
+			*msg = "Invalid unit";
+		}
+	}
+	return NULL;
+}
+
+static char cf_rngerr[] = "Number out of range";
+
+byte *cf_parse_int(byte *value, uns *varp)
+{
+	char *msg = NULL;
+	const struct unit *u;
+
+	if (!*value)
+		msg = "Missing number";
+	else {
+		errno = 0;
+		char *end;
+		uns x = strtoul(value, &end, 0);
+		if (errno == ERANGE)
+			msg = cf_rngerr;
+		else if (u = cf_lookup_unit(value, end, &msg)) {
+			u64 y = (u64)x * u->num;
+			if (y % u->den)
+				msg = "Number is not an integer";
+			else {
+				y /= u->den;
+				if (y > 0xffffffff)
+					msg = cf_rngerr;
+				*varp = y;
+			}
+		} else
+			*varp = x;
+	}
+	return msg;
+}
+
+byte *cf_parse_double(byte *value, double *varp)
+{
+	char *msg = NULL;
+	const struct unit *u;
+
+	if (!*value)
+		msg = "Missing number";
+	else {
+		errno = 0;
+		char *end;
+		double x = strtoul(value, &end, 0);
+		if (errno == ERANGE)
+			msg = cf_rngerr;
+		else if (u = cf_lookup_unit(value, end, &msg))
+			*varp = x * u->num / u->den;
+		else
+			*varp = x;
+	}
+	return msg;
+}
+
 byte *cf_set_item(byte *sect, byte *name, byte *value)
 {
 	struct cfitem *item;
@@ -99,26 +183,19 @@ byte *cf_set_item(byte *sect, byte *name, byte *value)
 
 	switch(item->type){
 		case CT_INT:
-			{
-				char *end;
-				if(!*value)
-					msg="Missing number";
-				else{
-					*((uns *) item->var) = strtoul(value, &end, 0);
-					if (end && *end)
-						msg = "Invalid number";
-				}
-				break;
-			}
+			msg = cf_parse_int(value, (uns *) item->var);
+			break;
 		case CT_STRING:
 			*((byte **) item->var) = cfg_stralloc(value);
 			break;
 		case CT_FUNCTION:
 			msg = ((ci_func) item->var)(item, cfg_stralloc(value));
 			break;
+		case CT_DOUBLE:
+			msg = cf_parse_double(value, (double *) item->var);
+			break;
 		default:
 			msg = "Unknown keyword";
-			break;
 	}
 
 	return msg;

@@ -10,6 +10,7 @@ static int robert=14;
 static int spalek=-3;
 static char *heslo="prazdne";
 static int nastaveni1=0,nastaveni2=1;
+static double decker = 0;		/* The famous London buses :-) */
 
 static byte *set_nastaveni(struct cfitem *item, byte *value)
 {
@@ -40,6 +41,7 @@ static struct cfitem jmeno[]={
 	{"heslo",	CT_STRING,	&heslo},
 	{"nastaveni1",	CT_FUNCTION,	&set_nastaveni},
 	{"nastaveni2",	CT_FUNCTION,	&set_nastaveni},
+	{"decker",	CT_DOUBLE,	&decker},
 	{NULL,		CT_STOP,	NULL}
 };
 
@@ -118,8 +120,8 @@ int main(int argc, char *argv[])
 		printf ("\n");
 	}
 
-	printf("robert=%d, spalek=%d, heslo=%s, nastaveni1/2=%d/%d\n",
-			robert,spalek,heslo,nastaveni1,nastaveni2);
+	printf("robert=%d, spalek=%d, heslo=%s, nastaveni1/2=%d/%d decker=%f\n",
+			robert,spalek,heslo,nastaveni1,nastaveni2,decker);
 	printf("vek=%d, vyska=%d, vaha=%d\n",
 			vek,vyska,vaha);
 
