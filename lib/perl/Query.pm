@@ -31,18 +31,18 @@ sub command($$) {
 	$q->{RAW} = [];
 
 	my $sock = IO::Socket::INET->new(PeerAddr => $q->{SERVER}, Proto => 'tcp')
-		or return "900 Cannot connect to search server: $!";
+		or return "-900 Cannot connect to search server: $!";
 	print $sock $string, "\n";
 
 	# Status line
-	my $res = <$sock>;
-	$res =~ /^-(.*)/ and return $1;
-	$res =~ /^\+/ or return "901 Reply parse error";
+	my $stat = <$sock>;
+	chomp $stat;
+	$stat =~ /^[+-]/ or return "-901 Reply parse error";
 
 	# Blocks of output
 	my $block = undef;
 	for(;;) {
-		$res = <$sock>;
+		my $res = <$sock>;
 		last if $sock->eof;
 		chomp $res;
 		if ($res eq "") {
@@ -56,10 +56,10 @@ sub command($$) {
 		}
 	}
 
-	return "";
+	return $stat;
 }
 
-my $hdr_syntax = {
+our $hdr_syntax = {
 	'D' => {
 		'D' => "",
 		'W' => [],
@@ -73,7 +73,7 @@ my $hdr_syntax = {
 	'' => ""
 };
 
-my $card_syntax = {
+our $card_syntax = {
 	'U' => {
 		'U' => "",
 		'D' => "",
@@ -93,7 +93,7 @@ my $card_syntax = {
 	'' => ""
 };
 
-my $footer_syntax = {
+our $footer_syntax = {
 	'' => ""
 };
 
@@ -101,19 +101,20 @@ sub query($$) {
 	my ($q,$string) = @_;
 
 	# Send the query and gather results
-	if (my $err = $q->command($string)) { return $err; }
-	my $raw = $q->{RAW};
-	@$raw > 0 or return "902 Reply truncated";
+	my $stat = $q->command($string);
+	my @raw = @{$q->{RAW}};
 
 	# Split results to header, cards and footer
-	$q->{HEADER} = { RAW => shift @$raw };
+	$q->{HEADER} = { RAW => [] };
+	if (@raw) { $q->{HEADER}{RAW} = shift @raw; }
+	elsif (!$stat) { return "-902 Incomplete reply"; }
 	$q->{FOOTER} = { RAW => [] };
-	if (@$raw && $raw->[@$raw-1]->[0] =~ /^\+/) {
-		$q->{FOOTER}{RAW} = pop @$raw;
+	if (@raw && $raw[@raw-1]->[0] =~ /^\+/) {
+		$q->{FOOTER}{RAW} = pop @raw;
 	}
 	$q->{CARDS} = [];
-	while (my $r = shift @$raw) {
-		push @{$q->{CARDS}}, { RAW => $r };
+	while (@raw) {
+		push @{$q->{CARDS}}, { RAW => pop @raw };
 	}
 
 	# Parse everything
@@ -123,8 +124,7 @@ sub query($$) {
 	}
 	parse_tree($q->{FOOTER}, $footer_syntax);
 
-	# OK
-	return "";
+	return $stat;
 }
 
 sub parse_tree($$) {
@@ -150,7 +150,7 @@ sub do_parse_tree($$$$) {
 			push @{$cooked->{$1}}, $block;
 			$i = do_parse_tree($raw, $i, $block, $syntax->{$1});
 		} else {
-			$cooked->{$1} = $2;
+			$cooked->{$1} = $2 if !defined($cooked->{$1});
 			$i++;
 		}
 	}
