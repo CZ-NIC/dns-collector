@@ -8,11 +8,11 @@ for d in "" cf $SH_EXTRA_RUNDIRS ; do
 		mkdir -p $DEST/$d
 	fi
 done
-echo "Installing binaries..."
-rm -rf $DEST/{bin,lib}
-mkdir -p $DEST/{bin,lib}
-cp -aL run/bin/* $DEST/bin/
-cp -aL run/lib/* $DEST/lib/
+for d in $SH_INSTALL_RUNDIRS ; do
+	echo "Installing to $DEST/$d"
+	rm -rf $DEST/$d
+	cp -aL run/$d $DEST/$d
+done
 echo "Installing config files..."
 for a in $SH_CONFIGS ; do
 	if [ -f run/cf/$a ] ; then
