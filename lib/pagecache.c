@@ -27,6 +27,9 @@ struct page_cache {
   uns stat_miss;			/* Number of cache misses */
   uns stat_write;			/* Number of writes */
   list *hash_table;			/* List heads corresponding to hash buckets */
+#ifndef SHERLOCK_HAVE_PREAD
+  sh_off_t pos;				/* Current position in the file */
+#endif
 };
 
 #define PAGE_NUMBER(pos) ((pos) & ~(sh_off_t)(c->page_size - 1))
@@ -100,9 +103,14 @@ flush_page(struct page_cache *c, struct page *p)
   int s;
 
   ASSERT(p->flags & PG_FLAG_DIRTY);
-  /* FIXME: Use pwrite() */
-  sh_seek(fd, pos, SEEK_SET);
+#ifdef SHERLOCK_HAVE_PREAD
+  s = pwrite(fd, p->data, c->page_size, pos);
+#else
+  if (c->pos != pos)
+    sh_seek(fd, pos, SEEK_SET);
   s = write(fd, p->data, c->page_size);
+  c->pos += s;
+#endif
   if (s < 0)
     die("pgc_write(%d): %m", fd);
   if (s != (int) c->page_size)
@@ -114,7 +122,7 @@ flush_page(struct page_cache *c, struct page *p)
 static inline uns
 hash_page(struct page_cache *c, sh_off_t key)
 {
-  return key % c->hash_size;		/* FIXME: Use better hash function */
+  return key % c->hash_size;
 }
 
 static struct page *
@@ -231,9 +239,14 @@ pgc_read(struct page_cache *c, int fd, sh_off_t pos)
   else
     {
       c->stat_miss++;
-      /* FIXME: Use pread() */
-      sh_seek(fd, pos, SEEK_SET);
+#ifdef SHERLOCK_HAVE_PREAD
+      s = pread(fd, p->data, c->page_size, pos);
+#else
+      if (c->pos != pos)
+	sh_seek(fd, pos, SEEK_SET);
       s = read(fd, p->data, c->page_size);
+      c->pos += s;
+#endif
       if (s < 0)
 	die("pgc_read(%d): %m", fd);
       if (s != (int) c->page_size)
@@ -350,6 +363,7 @@ int main(int argc, char **argv)
   pgc_debug(c, 1);
   p = pgc_get(c, fd, 3072);
   pgc_debug(c, 1);
+  strcpy(p->data, "four");
   pgc_put(c, p);
   pgc_debug(c, 1);
   pgc_cleanup(c);
