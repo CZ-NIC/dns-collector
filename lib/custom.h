@@ -103,6 +103,9 @@ enum string_type {
  *  A good place for definitions of the functions is lib/custom.c.
  */
 
+struct card_attr;
+struct odes;
+
 /* No custom attributes defined yet */
 
 #define CUSTOM_CARD_ATTRS
