@@ -71,9 +71,9 @@
   do {											\
     uns j, l, u;									\
     type x;										\
-    swap(heap,pos,num,x);								\
-    num--;										\
     j = pos;										\
+    swap(heap,j,num,x);									\
+    num--;										\
     if (less(heap[j], heap[num+1]))							\
       HEAP_BUBBLE_UP_J(heap,num,less,swap)						\
     else										\
