@@ -18,37 +18,25 @@
 #include <errno.h>
 #include <unistd.h>
 
-#define	MAX_HEADER_SIZE	1024		// extra space for the header not counted in MaxObjSize
 #define	RET_ERR(num)	({ errno = num; return NULL; })
+
+#define	GBUF_TYPE	byte
+#define	GBUF_PREFIX(x)	bb_##x
+#include "lib/gbuf.h"
 
 struct buck2obj_buf
 {
-  uns max_len, raw_len;
-  byte *raw;
+  bb_t bb;
   struct lizard_buffer *lizard;
   struct mempool *mp;
 };
-
-static void
-buck2obj_alloc_internal(struct buck2obj_buf *buf, uns max_len)
-{
-  buf->max_len = max_len;
-  if (!max_len)
-  {
-    buf->raw_len = 0;
-    buf->raw = NULL;
-    return;
-  }
-  buf->raw_len = max_len * LIZARD_MAX_MULTIPLY + LIZARD_MAX_ADD + MAX_HEADER_SIZE;
-  buf->raw = xmalloc(buf->raw_len);
-}
 
 struct buck2obj_buf *
 buck2obj_alloc(struct mempool *mp)
 {
   struct buck2obj_buf *buf = xmalloc(sizeof(struct buck2obj_buf));
-  buck2obj_alloc_internal(buf, 0);
-  buf->lizard = lizard_alloc(0);
+  bb_init(&buf->bb);
+  buf->lizard = lizard_alloc();
   buf->mp = mp;
   return buf;
 }
@@ -57,21 +45,14 @@ void
 buck2obj_free(struct buck2obj_buf *buf)
 {
   lizard_free(buf->lizard);
-  if (buf->raw)
-    xfree(buf->raw);
+  bb_done(&buf->bb);
   xfree(buf);
 }
 
-static void
-buck2obj_realloc(struct buck2obj_buf *buf, uns max_len)
+void
+buck2obj_flush(struct buck2obj_buf *buf)
 {
-  if (max_len <= buf->max_len)
-    return;
-  if (max_len < 2*buf->max_len)		// to ensure amortized logarithmic complexity
-    max_len = 2*buf->max_len;
-  if (buf->raw)
-    xfree(buf->raw);
-  buck2obj_alloc_internal(buf, max_len);
+  mp_flush(buf->mp);
 }
 
 static inline byte *
@@ -126,25 +107,29 @@ decode_attributes(byte *ptr, byte *end, struct odes *o, uns can_overwrite)
 }
 
 struct odes *
-obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fastbuf *body, uns want_body)
+obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fastbuf *body, uns *body_start)
 {
   struct odes *o = obj_new(buf->mp);
 
   if (buck_type < BUCKET_TYPE_V33)
   {
-    if (want_body)			// ignore empty lines, read until NUL or EOF
-      {
-	obj_read_multi(body, o);
-	bgetc(body);
-      }
-    else				// end on EOF or the first empty line
+    if (!body_start)			// header + body: ignore empty lines, read until EOF
+    {
+      obj_read_multi(body, o);
+      bgetc(body);
+    }
+    else				// header only: end on EOF or the first empty line
+    {
+      sh_off_t start = btell(body);
       obj_read(body, o);
+      *body_start = btell(body) - start;
+    }
   }
   else
   {
     /* Read all the bucket into 1 buffer, 0-copy if possible.  */
+    int can_overwrite = bconfig(body, BCONFIG_CAN_OVERWRITE, -1);
     /* FIXME: This could be cached in buck2obj_buf */
-    int can_overwrite = bconfig(body, BCONFIG_CAN_OVERWRITE, 0);
     if (can_overwrite < 0)
       can_overwrite = 0;
     uns overwritten;
@@ -155,10 +140,9 @@ obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fa
     {
       /* Copy if the original buffer is too small.
        * If it is write-protected, copy it also if it is uncompressed.  */
-      if (buck_len > buf->raw_len)
-	buck2obj_realloc(buf, buck_len);
-      len = bread(body, buf->raw, buck_len);
-      ptr = buf->raw;
+      bb_grow(&buf->bb, buck_len);
+      len = bread(body, buf->bb.ptr, buck_len);
+      ptr = buf->bb.ptr;
       can_overwrite = 2;
       overwritten = 0;
     }
@@ -166,9 +150,13 @@ obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fa
       overwritten = can_overwrite > 1;
     end = ptr + len;
 
+    byte *start = ptr;
     ptr = decode_attributes(ptr, end, o, can_overwrite);// header
-    if (!want_body)
+    if (body_start)
+    {
+      *body_start = ptr - start;
       return o;
+    }
     if (buck_type == BUCKET_TYPE_V33)
       ;
     else if (buck_type == BUCKET_TYPE_V33_LIZARD)	// decompression
@@ -176,21 +164,15 @@ obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fa
       len = GET_U32(ptr);
       ptr += 4;
       int res;
-decompress:
-      res = lizard_decompress_safe(ptr, buf->lizard, len);
+      byte *new_ptr;
+      res = lizard_decompress_safe(ptr, buf->lizard, len, &new_ptr);
       if (res != (int) len)
       {
 	if (res >= 0)
 	  errno = EINVAL;
-	else if (errno == EFBIG)
-	{
-	  lizard_realloc(buf->lizard, len);
-	  goto decompress;
-	}
-	else
-	  return NULL;
+	return NULL;
       }
-      ptr = buf->lizard->ptr;
+      ptr = new_ptr;
       end = ptr + len;
       can_overwrite = 2;
     }
