@@ -34,7 +34,7 @@ fbmem_refill(struct fastbuf *f)
       if (!b)
 	return 0;
     }
-  else if (f->bstop < b->data + b->size)
+  else if (f->buffer == b->data && f->bstop < b->data + b->size)
     {
       f->bstop = b->data + b->size;
       return 1;
@@ -147,12 +147,14 @@ fbmem_clone_read(struct fastbuf *b)
   struct fastbuf *f = xmalloc(sizeof(struct fastbuf));
   struct memstream *s = b->lldata;
 
+  bflush(b);
   s->uc++;
 
   f->bptr = f->bstop = f->buffer = f->bufend = NULL;
   f->pos = f->fdpos = 0;
   f->name = "<fbmem-read>";
   f->lldata = s;
+  f->llpos = NULL;
   f->refill = fbmem_refill;
   f->spout = NULL;
   f->seek = fbmem_seek;
