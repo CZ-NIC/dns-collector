@@ -51,33 +51,51 @@ buck2obj_free(struct buck2obj_buf *buf)
 static inline byte *
 decode_attributes(byte *ptr, byte *end, struct odes *o, uns can_overwrite)
 {
-  while (ptr < end)
-  {
-    uns len;
-    GET_UTF8(ptr, len);
-    if (!len--)
-      break;
-    byte type = ptr[len];
-    if (can_overwrite == 2)
+  if (can_overwrite >= 2)
+    while (ptr < end)
     {
+      uns len;
+      GET_UTF8(ptr, len);
+      if (!len--)
+	break;
+      byte type = ptr[len];
+
       ptr[len] = 0;
       obj_add_attr_ref(o, type, ptr);
+
+      ptr += len + 1;
     }
-    else if (can_overwrite == 1)
+  else if (can_overwrite == 1)
+    while (ptr < end)
     {
+      uns len;
+      GET_UTF8(ptr, len);
+      if (!len--)
+	break;
+      byte type = ptr[len];
+
       ptr[len] = 0;
       obj_add_attr(o, type, ptr);
       ptr[len] = type;
+
+      ptr += len + 1;
     }
-    else
+  else
+    while (ptr < end)
     {
-      byte *dup = mp_alloc(o->pool, len+1);
+      uns len;
+      GET_UTF8(ptr, len);
+      if (!len--)
+	break;
+      byte type = ptr[len];
+
+      byte *dup = mp_alloc_fast_noalign(o->pool, len+1);
       memcpy(dup, ptr, len);
       dup[len] = 0;
-      obj_add_attr_ref(o, type, ptr);
+      obj_add_attr_ref(o, type, dup);
+
+      ptr += len + 1;
     }
-    ptr += len + 1;
-  }
   return ptr;
 }
 
@@ -98,7 +116,9 @@ buck2obj_convert(struct buck2obj_buf *buf, uns buck_type, struct fastbuf *body)
     bsetpos(body, 0);
 
     /* Read all the bucket into 1 buffer, 0-copy if possible.  */
-    int can_overwrite = MAX(bconfig(body, BCONFIG_CAN_OVERWRITE, 0), 0);
+    int can_overwrite = bconfig(body, BCONFIG_CAN_OVERWRITE, 0);
+    if (can_overwrite < 0)
+      can_overwrite = 0;
     uns overwritten;
     byte *ptr, *end;
     uns len = bdirect_read_prepare(body, &ptr);
@@ -143,8 +163,7 @@ buck2obj_convert(struct buck2obj_buf *buf, uns buck_type, struct fastbuf *body)
 
     if (ptr != end)
       RET_ERR(EINVAL);
-    if (overwritten)
-      bflush(body);
+    /* If (overwritten), bflush(body) might be needed.  */
   }
   return o;
 }
