@@ -53,18 +53,29 @@ void cf_register(struct cfitem *items)
 	cfsection=items;
 }
 
+struct cfitem *cf_get_item(byte *sect, byte *name)
+{
+	struct cfitem *item;
+
+	item=cfsection;
+	while(item && strcasecmp(item->name,sect))
+		item=item->var;
+	if(!item)	/* unknown section */
+		return NULL;
+
+	for(item++; item->type && strcasecmp(item->name,name); item++);
+
+	return item;	/* item->type == 0 if not found */
+}
+
 byte *cf_set_item(byte *sect, byte *name, byte *value)
 {
 	struct cfitem *item;
 	byte *msg=NULL;
 
-	item=cfsection;
-	while(item && strcasecmp(item->name,sect))
-		item=item->var;
+	item=cf_get_item(sect,name);
 	if(!item)	/* ignore unknown section */
 		return NULL;
-
-	for(item++; item->type && strcasecmp(item->name,name); item++);
 
 	switch(item->type){
 		case CT_INT:
