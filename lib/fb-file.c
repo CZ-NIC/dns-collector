@@ -91,11 +91,15 @@ bfdopen_internal(int fd, uns buflen, byte *name)
 struct fastbuf *
 bopen(byte *name, uns mode, uns buffer)
 {
+  struct fastbuf *b;
   int fd = sh_open(name, mode, 0666);
   if (fd < 0)
     die("Unable to %s file %s: %m",
 	(mode & O_CREAT) ? "create" : "open", name);
-  return bfdopen_internal(fd, buffer, name);
+  b = bfdopen_internal(fd, buffer, name);
+  if (mode & O_APPEND)
+    bfd_seek(b, 0, SEEK_END);
+  return b;
 }
 
 struct fastbuf *
