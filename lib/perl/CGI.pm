@@ -53,7 +53,11 @@ sub parse_arg_string($) {
 		if (my $rx = $arg->{'check'}) {
 			if (!/^$rx$/) { $_ = $arg->{'default'}; }
 		}
-		${$arg->{'var'}} = $_;
+		if (${$arg->{'var'}} eq $arg->{'default'}) {
+			${$arg->{'var'}} = $_;
+		} else {
+			${$arg->{'var'}} .= "&".$_;
+		}
 	}
 }
 
