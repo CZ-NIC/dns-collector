@@ -71,7 +71,7 @@ void log_file(byte *name);
 void log_fork(void);
 void log_switch(void);
 
-#ifdef DEBUG
+#ifdef CONFIG_DEBUG
 void assert_failed(char *assertion, char *file, int line) NONRET;
 #define ASSERT(x) do { if (unlikely(!(x))) assert_failed(#x, __FILE__, __LINE__); } while(0)
 #else

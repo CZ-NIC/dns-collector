@@ -99,7 +99,7 @@ die(byte *msg, ...)
 #endif
 }
 
-#ifdef DEBUG
+#ifdef CONFIG_DEBUG
 void
 assert_failed(char *assertion, char *file, int line)
 {

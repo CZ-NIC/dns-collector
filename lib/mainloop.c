@@ -278,7 +278,7 @@ process_fork(struct main_process *mp)
 void
 main_debug(void)
 {
-#ifdef DEBUG
+#ifdef CONFIG_DEBUG
   log(L_DEBUG, "### Main loop status on %d", (int)now);
   log(L_DEBUG, "\tActive timers:");
   struct main_timer *tm;
