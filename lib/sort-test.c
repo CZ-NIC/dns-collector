@@ -59,13 +59,13 @@ s_store_item(struct fastbuf *f, struct key *k)
 
 #ifdef SORT_UNIFY
 static inline void
-s_merge_data(struct fastbuf *src1, struct fastbuf *src2, struct fastbuf *dest, struct key *k1, struct key *k2)
+s_merge_data(struct fastbuf *src1 UNUSED, struct fastbuf *src2 UNUSED, struct fastbuf *dest, struct key *k1, struct key *k2 UNUSED)
 {
   s_copy_data(NULL, dest, k1);
 }
 
 static inline struct key *
-s_merge_items(struct key *a, struct key *b)
+s_merge_items(struct key *a, struct key *b UNUSED)
 {
   return a;
 }
