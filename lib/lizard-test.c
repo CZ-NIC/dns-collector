@@ -14,9 +14,9 @@ Usage: lizard-test <options> input-file [output-file]\n\
 \n\
 Options:\n"
 CF_USAGE
-"-c\t\tCompress (default)\n\
+"-c\t\tCompress\n\
 -d\t\tDecompress\n\
--t\t\tCompress, decompress, and compare (in memory only)\n\
+-t\t\tCompress, decompress, and compare (in memory only, default)\n\
 -x, -xx\t\tLet the test crash by shrinking the output buffer\n\
 ";
 
@@ -31,7 +31,7 @@ int
 main(int argc, char **argv)
 {
   int opt;
-  uns action = 'c';
+  uns action = 't';
   uns crash = 0;
   log_init(argv[0]);
   while ((opt = cf_getopt(argc, argv, options, CF_NO_LONG_OPTS, NULL)) >= 0)
