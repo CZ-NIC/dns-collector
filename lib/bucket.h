@@ -24,6 +24,7 @@ extern byte *obuck_name;	/* Internal, for use by buckettool only! */
 #define OBUCK_INCOMPLETE_MAGIC 0xdeadfeel
 #define OBUCK_TRAILER 0xfeedcafe
 #define OBUCK_OID_DELETED (~(oid_t)0)
+#define OBUCK_OID_FIRST_SPECIAL (~(oid_t)0xffff)
 
 struct obuck_header {
   u32 magic;			/* OBUCK_MAGIC should dwell here */

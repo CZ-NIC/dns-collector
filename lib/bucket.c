@@ -175,6 +175,7 @@ obuck_find_by_oid(struct obuck_header *hdrp)
 {
   oid_t oid = hdrp->oid;
 
+  ASSERT(oid < OBUCK_OID_FIRST_SPECIAL);
   obuck_lock_read();
   obuck_get(oid);
   obuck_unlock();
