@@ -10,6 +10,8 @@
 #ifndef _SHERLOCK_OBJECT_H
 #define _SHERLOCK_OBJECT_H
 
+#define MAX_ATTR_SIZE 1024		/* Maximum length an attribute can ever have (including name and trailing 0) */
+
 struct fastbuf;
 
 struct odes {				/* Object description */

@@ -47,7 +47,7 @@ obj_new(struct mempool *pool)
 int
 obj_read(struct fastbuf *f, struct odes *o)
 {
-  byte buf[1024];
+  byte buf[MAX_ATTR_SIZE];
 
   while (bgets(f, buf, sizeof(buf)))
     {
@@ -64,8 +64,9 @@ obj_write(struct fastbuf *f, struct odes *d)
   for(struct oattr *a=d->attrs; a; a=a->next)
     for(struct oattr *b=a; b; b=b->same)
       {
+	byte *z;
 	bputc(f, a->attr);
-	for(byte *z = b->val; *z; z++)
+	for(z = b->val; *z; z++)
 	  if (*z >= ' ' || *z == '\t')
 	    bputc(f, *z);
 	  else
@@ -73,6 +74,7 @@ obj_write(struct fastbuf *f, struct odes *d)
 	      bputc(f, '?');
 	      log(L_ERROR, "obj_dump: Found non-ASCII characters (URL might be %s)", obj_find_aval(d, 'U'));
 	    }
+	ASSERT(z - b->val <= MAX_ATTR_SIZE-2);
 	bputc(f, '\n');
       }
 }
