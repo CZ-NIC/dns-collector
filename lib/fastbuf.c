@@ -12,9 +12,12 @@
 
 void bclose(struct fastbuf *f)
 {
-  bflush(f);
-  f->close(f);
-  xfree(f);
+  if (f)
+    {
+      bflush(f);
+      f->close(f);
+      xfree(f);
+    }
 }
 
 void bflush(struct fastbuf *f)
