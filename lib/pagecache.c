@@ -36,9 +36,6 @@ struct page_cache {
 #define PAGE_NUMBER(pos) ((pos) & ~(sh_off_t)(c->page_size - 1))
 #define PAGE_OFFSET(pos) ((pos) & (c->page_size - 1))
 
-#define KEY_PAGE(key) PAGE_NUMBER(key)
-#define KEY_FD(key) PAGE_OFFSET(key)
-
 struct page_cache *
 pgc_open(uns page_size, uns max_pages)
 {
@@ -75,7 +72,7 @@ pgc_close(struct page_cache *c)
 static void
 pgc_debug_page(struct page *p)
 {
-  printf("\tk=%08x f=%x c=%d\n", (uns) p->key, p->flags, p->lock_count);
+  printf("\tp=%08x d=%d f=%x c=%d\n", (uns) p->pos, p->fd, p->flags, p->lock_count);
 }
 
 void
@@ -102,40 +99,84 @@ pgc_debug(struct page_cache *c, int mode)
 static void
 flush_page(struct page_cache *c, struct page *p)
 {
-  int fd = KEY_FD(p->key);
-  sh_off_t pos = KEY_PAGE(p->key);
   int s;
 
   ASSERT(p->flags & PG_FLAG_DIRTY);
 #ifdef SHERLOCK_HAVE_PREAD
-  s = pwrite(fd, p->data, c->page_size, pos);
+  s = pwrite(p->fd, p->data, c->page_size, p->pos);
 #else
-  if (c->pos != pos || c->pos_fd != fd)
-    sh_seek(fd, pos, SEEK_SET);
-  s = write(fd, p->data, c->page_size);
-  c->pos = pos + s;
-  c->pos_fd = fd;
+  if (c->pos != p->pos || c->pos_fd != p->fd)
+    sh_seek(p->fd, p->pos, SEEK_SET);
+  s = write(p->fd, p->data, c->page_size);
+  c->pos = p->pos + s;
+  c->pos_fd = p->fd;
 #endif
   if (s < 0)
-    die("pgc_write(%d): %m", fd);
+    die("pgc_write(%d): %m", p->fd);
   if (s != (int) c->page_size)
     die("pgc_write(%d): incomplete page (only %d of %d)", s, c->page_size);
   p->flags &= ~PG_FLAG_DIRTY;
   c->stat_write++;
 }
 
-static inline uns
-hash_page(struct page_cache *c, sh_off_t key)
+static int
+flush_cmp(const void *X, const void *Y)
 {
-  return key % c->hash_size;
+  struct page *x = *((struct page **)X);
+  struct page *y = *((struct page **)Y);
+
+  if (x->fd < y->fd)
+    return -1;
+  if (x->fd > y->fd)
+    return 1;
+  if (x->pos < y->pos)
+    return -1;
+  if (x->pos > y->pos)
+    return 1;
+  return 0;
+}
+
+static void
+flush_pages(struct page_cache *c, uns force)
+{
+  uns cnt = 0;
+  uns max = force ? ~0 : c->free_count / 2; /* FIXME: Needs tuning */
+  uns i;
+  struct page *p, *q, **req, **rr;
+
+  WALK_LIST(p, c->dirty_pages)
+    {
+      cnt++;
+      if (cnt >= max)
+	break;
+    }
+  req = rr = alloca(cnt * sizeof(struct page *));
+  i = cnt;
+  p = HEAD(c->dirty_pages);
+  while ((q = (struct page *) p->n.next) && i--)
+    {
+      rem_node(&p->n);
+      add_tail(&c->free_pages, &p->n);
+      *rr++ = p;
+      p = q;
+    }
+  qsort(req, cnt, sizeof(struct page *), flush_cmp);
+  for(i=0; i<cnt; i++)
+    flush_page(c, req[i]);
+}
+
+static inline uns
+hash_page(struct page_cache *c, sh_off_t pos, uns fd)
+{
+  return (pos + fd) % c->hash_size;
 }
 
 static struct page *
-get_page(struct page_cache *c, sh_off_t key)
+get_page(struct page_cache *c, sh_off_t pos, uns fd)
 {
   node *n;
   struct page *p;
-  uns hash = hash_page(c, key);
+  uns hash = hash_page(c, pos, fd);
 
   /*
    *  Return locked buffer for given page.
@@ -144,7 +185,7 @@ get_page(struct page_cache *c, sh_off_t key)
   WALK_LIST(n, c->hash_table[hash])
     {
       p = SKIP_BACK(struct page, hn, n);
-      if (p->key == key)
+      if (p->pos == pos && p->fd == fd)
 	{
 	  /* Found in the cache */
 	  rem_node(&p->n);
@@ -166,16 +207,17 @@ get_page(struct page_cache *c, sh_off_t key)
       if (!p->n.next)
 	{
 	  /* There are only dirty pages here */
-	  p = HEAD(c->dirty_pages);
+	  flush_pages(c, 0);
+	  p = HEAD(c->free_pages);
 	  ASSERT(p->n.next);
-	  flush_page(c, p);
 	}
       ASSERT(!p->lock_count);
       rem_node(&p->n);
       rem_node(&p->hn);
       c->free_count--;
     }
-  p->key = key;
+  p->pos = pos;
+  p->fd = fd;
   p->flags = 0;
   p->lock_count = 0;
   add_tail(&c->hash_table[hash], &p->hn);
@@ -186,14 +228,8 @@ void
 pgc_flush(struct page_cache *c)
 {
   struct page *p;
-  node *n;
 
-  WALK_LIST_DELSAFE(p, n, c->dirty_pages)
-    {
-      flush_page(c, p);
-      rem_node(&p->n);
-      add_tail(&c->free_pages, &p->n);
-    }
+  flush_pages(c, 1);
   WALK_LIST(p, c->locked_pages)
     if (p->flags & PG_FLAG_DIRTY)
       flush_page(c, p);
@@ -221,9 +257,9 @@ pgc_cleanup(struct page_cache *c)
 }
 
 static inline struct page *
-get_and_lock_page(struct page_cache *c, sh_off_t key)
+get_and_lock_page(struct page_cache *c, sh_off_t pos, uns fd)
 {
-  struct page *p = get_page(c, key);
+  struct page *p = get_page(c, pos, fd);
 
   add_tail(&c->locked_pages, &p->n);
   p->lock_count++;
@@ -233,14 +269,12 @@ get_and_lock_page(struct page_cache *c, sh_off_t key)
 struct page *
 pgc_read(struct page_cache *c, int fd, sh_off_t pos)
 {
-  sh_off_t key;
   struct page *p;
   int s;
 
   ASSERT(!PAGE_OFFSET(pos));
   ASSERT(!PAGE_NUMBER(fd));
-  key = pos | fd;
-  p = get_and_lock_page(c, key);
+  p = get_and_lock_page(c, pos, fd);
   if (p->flags & PG_FLAG_VALID)
     c->stat_hit++;
   else
@@ -267,13 +301,11 @@ pgc_read(struct page_cache *c, int fd, sh_off_t pos)
 struct page *
 pgc_get(struct page_cache *c, int fd, sh_off_t pos)
 {
-  sh_off_t key;
   struct page *p;
 
   ASSERT(!PAGE_OFFSET(pos));
   ASSERT(!PAGE_NUMBER(fd));
-  key = pos | fd;
-  p = get_and_lock_page(c, key);
+  p = get_and_lock_page(c, pos, fd);
   p->flags |= PG_FLAG_VALID | PG_FLAG_DIRTY;
   return p;
 }
@@ -281,13 +313,11 @@ pgc_get(struct page_cache *c, int fd, sh_off_t pos)
 struct page *
 pgc_get_zero(struct page_cache *c, int fd, sh_off_t pos)
 {
-  sh_off_t key;
   struct page *p;
 
   ASSERT(!PAGE_OFFSET(pos));
   ASSERT(!PAGE_NUMBER(fd));
-  key = pos | fd;
-  p = get_and_lock_page(c, key);
+  p = get_and_lock_page(c, pos, fd);
   bzero(p->data, c->page_size);
   p->flags |= PG_FLAG_VALID | PG_FLAG_DIRTY;
   return p;
@@ -341,12 +371,6 @@ pgc_read_data(struct page_cache *c, int fd, sh_off_t pos, uns *len)
   pgc_put(c, p);
   *len = c->page_size - offset;
   return p->data + offset;
-}
-
-sh_off_t
-pgc_page_pos(struct page_cache *c, struct page *p)
-{
-  return PAGE_NUMBER(p->key);
 }
 
 #ifdef TEST
