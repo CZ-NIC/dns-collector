@@ -1,0 +1,77 @@
+#!/usr/bin/perl
+# A simple unit testing script
+# (c) 2004 Martin Mares <mj@ucw.cz>
+
+my @tests = ();
+my $tt;
+my $append_to;
+
+while (<>) {
+	/^#/ && next;
+	if (/^\s*$/) {
+		$tt = undef;
+		$append_to = undef;
+	} elsif (defined($append_to) && /^\s+(.*)$/) {
+		$$append_to .= "\n$1";
+	} elsif (my ($n,$v) = /^(\w+):\s+(.*)$/) {
+		if (!$tt) {
+			$tt = {};
+			push @tests, $tt;
+		}
+		($tt->{$n}) && die "$n already defined";
+		$tt->{$n} = $v;
+		$append_to = \($tt->{$n});
+	} else {
+		die "Test script syntax error";
+	}
+}
+
+my $i = 0;
+my $errors = 0;
+foreach $tt (@tests) {
+	$i++;
+	print "Test $i: ";
+	my $run = $tt->{'Run'} or die "Don't know what to run";
+	my ($ifi, $ofi);
+	if (defined $tt->{'In'}) {
+		$ifi = "run/tmp/test$i.in";
+		open X, ">$ifi" or die "Unable to create $ifi";
+		print X $tt->{'In'}, "\n";
+		close X;
+		$run .= " <$ifi";
+	} else {
+		$run .= " </dev/null";
+	}
+	if (defined $tt->{'Out'}) {
+		$ofi = "run/tmp/test$i.out";
+		unlink $ofi;
+		$run .= " >$ofi";
+	} else {
+		$run .= " >/dev/null";
+	}
+	`$run`;
+	if ($?) {
+		print "FAILED with exit code $?\n";
+		$errors++;
+		next;
+	}
+	if (defined $tt->{'Out'}) {
+		open X, "<$ofi" or die "Unable to read $ofi";
+		my $out;
+		{
+			local $/ = undef;
+			$out = <X>;
+		}
+		close X;
+		if ($out ne $tt->{'Out'} . "\n") {
+			print "FAILED (see $ofi)\n";
+			$errors++;
+			next;
+		}
+	}
+	unlink $ifi if $ifi;
+	unlink $ofi if $ofi;
+	print "OK\n";
+}
+
+exit !!$errors;
