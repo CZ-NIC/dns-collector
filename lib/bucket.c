@@ -19,7 +19,7 @@ static unsigned int obuck_remains, obuck_check_pad;
 static struct fastbuf *obuck_fb;
 static struct obuck_header obuck_hdr;
 static sh_off_t bucket_start;
-static char *obuck_name = "db/objects";		/* FIXME */
+byte *obuck_name = "db/objects";		/* FIXME */
 
 /*** Internal operations ***/
 
@@ -60,7 +60,7 @@ obuck_fb_refill(struct fastbuf *f)
 
   if (!limit)
     return 0;
-  l = pread(f->fd, f->buffer, size, f->fdpos);
+  l = sh_pread(f->fd, f->buffer, size, f->fdpos);
   if (l < 0)
     die("Error reading bucket: %m");
   if ((unsigned) l != size)
@@ -88,7 +88,7 @@ obuck_fb_spout(struct fastbuf *f)
 
   while (l)
     {
-      int z = pwrite(f->fd, c, l, f->fdpos);
+      int z = sh_pwrite(f->fd, c, l, f->fdpos);
       if (z <= 0)
 	die("Error writing bucket: %m");
       f->fdpos += z;
@@ -133,7 +133,7 @@ obuck_init(int writeable)
       /* If the bucket pool is not empty, check consistency of its end */
       u32 check;
       bucket_start = size - 4;	/* for error reporting */
-      if (pread(obuck_fd, &check, 4, size-4) != 4 ||
+      if (sh_pread(obuck_fd, &check, 4, size-4) != 4 ||
 	  check != OBUCK_TRAILER)
 	obuck_broken("Missing trailer of last object");
     }
@@ -160,7 +160,7 @@ obuck_get(oid_t oid)
 
   bucket_start = ((sh_off_t) oid) << OBUCK_SHIFT;
   bflush(b);
-  if (pread(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), bucket_start) != sizeof(obuck_hdr))
+  if (sh_pread(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), bucket_start) != sizeof(obuck_hdr))
     obuck_broken("Short header read");
   b->fdpos = bucket_start + sizeof(obuck_hdr);
   if (obuck_hdr.magic != OBUCK_MAGIC)
@@ -183,15 +183,15 @@ obuck_find_by_oid(struct obuck_header *hdrp)
 }
 
 int
-obuck_find_first(struct obuck_header *hdrp)
+obuck_find_first(struct obuck_header *hdrp, int full)
 {
   bucket_start = 0;
   obuck_hdr.magic = 0;
-  return obuck_find_next(hdrp);
+  return obuck_find_next(hdrp, full);
 }
 
 int
-obuck_find_next(struct obuck_header *hdrp)
+obuck_find_next(struct obuck_header *hdrp, int full)
 {
   int c;
   struct fastbuf *b = obuck_fb;
@@ -203,7 +203,7 @@ obuck_find_next(struct obuck_header *hdrp)
 			4 + OBUCK_ALIGN - 1) & ~((sh_off_t)(OBUCK_ALIGN - 1));
       bflush(b);
       obuck_lock_read();
-      c = pread(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), bucket_start);
+      c = sh_pread(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), bucket_start);
       obuck_unlock();
       if (!c)
 	return 0;
@@ -212,7 +212,7 @@ obuck_find_next(struct obuck_header *hdrp)
       b->fdpos = bucket_start + sizeof(obuck_hdr);
       if (obuck_hdr.magic != OBUCK_MAGIC)
 	obuck_broken("Missing magic number");
-      if (obuck_hdr.oid != OBUCK_OID_DELETED)
+      if (obuck_hdr.oid != OBUCK_OID_DELETED || full)
 	{
 	  memcpy(hdrp, &obuck_hdr, sizeof(obuck_hdr));
 	  return 1;
@@ -241,7 +241,7 @@ obuck_create(void)
   bucket_start = sh_seek(obuck_fd, 0, SEEK_END);
   if (bucket_start & (OBUCK_ALIGN - 1))
     obuck_broken("Misaligned file");
-  obuck_hdr.magic = 0;
+  obuck_hdr.magic = OBUCK_INCOMPLETE_MAGIC;
   obuck_hdr.oid = bucket_start >> OBUCK_SHIFT;
   obuck_hdr.length = obuck_hdr.orig_length = 0;
   obuck_fb->fdpos = obuck_fb->pos = bucket_start;
@@ -261,7 +261,7 @@ obuck_create_end(struct fastbuf *b UNUSED, struct obuck_header *hdrp)
   bputl(obuck_fb, OBUCK_TRAILER);
   bflush(obuck_fb);
   ASSERT(!(btell(obuck_fb) & (OBUCK_ALIGN - 1)));
-  pwrite(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), bucket_start);
+  sh_pwrite(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), bucket_start);
   obuck_unlock();
   memcpy(hdrp, &obuck_hdr, sizeof(obuck_hdr));
 }
@@ -272,7 +272,7 @@ obuck_delete(oid_t oid)
   obuck_lock_write();
   obuck_get(oid);
   obuck_hdr.oid = OBUCK_OID_DELETED;
-  pwrite(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), bucket_start);
+  sh_pwrite(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), bucket_start);
   obuck_unlock();
 }
 
@@ -326,13 +326,13 @@ int main(void)
 	  die("EOF mismatch");
 	obuck_fetch_end(b);
       }
-  if (obuck_find_first(&h))
+  if (obuck_find_first(&h, 0))
     do
       {
 	printf("<<< %08x\t%d\n", h.oid, h.orig_length);
 	cnt--;
       }
-    while (obuck_find_next(&h));
+    while (obuck_find_next(&h, 0));
   if (cnt)
     die("Walk mismatch");
   obuck_cleanup();

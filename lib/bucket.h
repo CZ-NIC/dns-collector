@@ -16,9 +16,12 @@
  * fork()'ing if you don't have any bucket open is safe.
  */
 
+extern byte *obuck_name;	/* Internal, for use by buckettool only! */
+
 #define OBUCK_SHIFT 7
 #define OBUCK_ALIGN (1<<OBUCK_SHIFT)
 #define OBUCK_MAGIC 0xdeadf00d
+#define OBUCK_INCOMPLETE_MAGIC 0xdeadfeel
 #define OBUCK_TRAILER 0xfeedcafe
 #define OBUCK_OID_DELETED (~(oid_t)0)
 
@@ -38,8 +41,8 @@ void obuck_sync(void);		/* Flush all buffers to disk */
 
 /* Searching for buckets */
 void obuck_find_by_oid(struct obuck_header *hdrp);
-int obuck_find_first(struct obuck_header *hdrp);
-int obuck_find_next(struct obuck_header *hdrp);
+int obuck_find_first(struct obuck_header *hdrp, int full);
+int obuck_find_next(struct obuck_header *hdrp, int full);
 
 /* Reading current bucket */
 struct fastbuf *obuck_fetch(void);
