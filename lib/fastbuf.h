@@ -340,11 +340,15 @@ void bdirect_write_commit(struct fastbuf *f, byte *pos);
 #define bputo(f,l) bput5(f,l)
 #define bgetp(f) bgetq(f)
 #define bputp(f,l) bputq(f,l)
+#define FASTBUF_BYTES_PER_O 5
+#define FASTBUF_BYTES_PER_P 8
 #else
 #define bgeto(f) bgetl(f)
 #define bputo(f,l) bputl(f,l)
 #define bgetp(f) bgetl(f)
 #define bputp(f,l) bputl(f,l)
+#define FASTBUF_BYTES_PER_O 4
+#define FASTBUF_BYTES_PER_P 4
 #endif
 
 #endif
