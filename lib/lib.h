@@ -128,6 +128,7 @@ int fls(u32);
 
 /* wordsplit.c */
 
+int sepsplit(byte *str, byte sep, byte **rec, uns max);
 int wordsplit(byte *, byte **, uns);
 
 /* pat(i)match.c: Matching of shell patterns */
