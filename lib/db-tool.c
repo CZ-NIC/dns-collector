@@ -158,7 +158,7 @@ rebuild(char *sdb, char *ddb)
     die("unlink: %m");
   op.cache_size = cache;
   op.flags = SDBM_CREAT | SDBM_WRITE | SDBM_FAST;
-  op.page_order = (force_page >= 0) ? force_page : src->root->page_order;
+  op.page_order = (force_page >= 0) ? (u32) force_page : src->root->page_order;
   op.key_size = (force_key >= -1) ? force_key : src->root->key_size;
   op.val_size = (force_val >= -1) ? force_val : src->root->val_size;
   dest = sdbm_open(&op);
