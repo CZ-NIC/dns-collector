@@ -25,3 +25,12 @@
 
 int lizard_compress(byte *in, uns in_len, byte *out);
 int lizard_decompress(byte *in, byte *out);
+
+struct lizard_buffer {
+  uns len;
+  void *ptr;
+};
+
+struct lizard_buffer *lizard_alloc(uns max_len);
+void lizard_free(struct lizard_buffer *buf);
+int lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length);
