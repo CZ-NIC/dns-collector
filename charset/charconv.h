@@ -63,7 +63,7 @@ enum charset_id {
 	CONV_NUM_CHARSETS
 };
 
-/* Conversion of a single character between current charset and Unicode */
+/* Conversion of a single character between current non-UTF8 charset and Unicode */
 int conv_in_to_ucs(struct conv_context *c, unsigned int y);
 int conv_ucs_to_out(struct conv_context *c, unsigned int ucs);
 
