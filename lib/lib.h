@@ -126,3 +126,17 @@ void hex_to_md5(byte *, byte *);
 
 #define MD5_SIZE 16
 #define MD5_HEX_SIZE 33
+
+/* fcopy.c */
+
+void fcopy(FILE *, FILE *, uns, byte *, uns);
+
+/* prime.c */
+
+int isprime(uns);
+uns nextprime(uns);
+
+/* timer.c */
+
+void init_timer(void);
+uns get_timer(void);

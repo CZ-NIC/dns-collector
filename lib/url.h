@@ -17,6 +17,8 @@
 #define NCC_AND 7
 #define NCC_MAX 8
 
+#define NCC_CHARS " ;/?:@=&"
+
 /* Remove/Introduce '%' escapes */
 
 int url_deescape(byte *, byte *);
@@ -58,6 +60,10 @@ char *url_error(uns);
 #define URL_PROTO_UNKNOWN 0
 #define URL_PROTO_HTTP 1
 #define URL_PROTO_FTP 2
-#define URL_PROTO_MAX 3
+#define URL_PROTO_FILE 3
+#define URL_PROTO_MAX 4
 
-#define URL_PNAMES { "unknown", "http", "ftp" }
+#define URL_PNAMES { "unknown", "http", "ftp", "file" }
+#define URL_DEFPORTS { ~0, 80, 21, 0 }
+
+extern byte *url_proto_names[];

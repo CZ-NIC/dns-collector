@@ -72,6 +72,7 @@ basename(byte *n)
 void
 initlog(byte *argv0)
 {
-  progname = basename(argv0);
+  if (argv0)
+    progname = basename(argv0);
   pid = getpid();
 }

@@ -85,7 +85,7 @@ url_enescape(byte *s, byte *d)
 	*d++ = *s++;
       else
 	{
-	  uns val = (*s < NCC_MAX) ? ";/?:@=&"[*s] : *s;
+	  uns val = (*s < NCC_MAX) ? NCC_CHARS[*s] : *s;
 	  *d++ = '%';
 	  *d++ = enhex(val >> 4);
 	  *d++ = enhex(val & 0x0f);
@@ -98,14 +98,17 @@ url_enescape(byte *s, byte *d)
 
 /* Split an URL (several parts may be copied to the destination buffer) */
 
+byte *url_proto_names[URL_PROTO_MAX] = URL_PNAMES;
+
 uns
 identify_protocol(byte *p)
 {
-  if (!strcasecmp(p, "http"))
-    return URL_PROTO_HTTP;
-  if (!strcasecmp(p, "ftp"))
-    return URL_PROTO_FTP;
-  return 0;
+  uns i;
+
+  for(i=1; i<URL_PROTO_MAX; i++)
+    if (!strcasecmp(p, url_proto_names[i]))
+      return i;
+  return URL_PROTO_UNKNOWN;
 }
 
 int
@@ -173,7 +176,7 @@ url_split(byte *s, struct url *u, byte *d)
 
 /* Normalization according to given base URL */
 
-static uns std_ports[] = { ~0, 80, 21 }; /* Default port numbers */
+static uns std_ports[] = URL_DEFPORTS;	/* Default port numbers */
 
 static int
 relpath_merge(struct url *u, struct url *b)

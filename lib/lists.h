@@ -20,6 +20,8 @@ typedef struct list list;
 #define DO_FOR_ALL(n,list) for((n)=HEAD(list);(NODE (n))->next; \
 				 n=(void *)((NODE (n))->next))
 #define EMPTY_LIST(list) (!(list).head.next->next)
+#define OFFSETOF(s, i) ((unsigned int)&((s *)0)->i)
+#define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))
 
 void add_tail(list *, node *);
 void add_head(list *, node *);
