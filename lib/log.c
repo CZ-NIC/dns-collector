@@ -27,7 +27,6 @@ vlog(unsigned int cat, const char *msg, va_list args)
 {
   time_t tim = time(NULL);
   struct tm *tm = localtime(&tim);
-  char *prog = log_progname ?: "?";
   char buf[32];
 
   strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", tm);
