@@ -39,7 +39,6 @@ struct fastbuf;
 void obuck_init(int writeable);	/* Initialize the bucket module */
 void obuck_cleanup(void);	/* Clean up the bucket module */
 void obuck_sync(void);		/* Flush all buffers to disk */
-sh_off_t obuck_size(void);	/* Returns current size of bucket file */
 
 /* Searching for buckets */
 void obuck_find_by_oid(struct obuck_header *hdrp);

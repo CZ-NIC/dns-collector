@@ -152,12 +152,6 @@ obuck_sync(void)
   fsync(obuck_fd);
 }
 
-sh_off_t
-obuck_size(void)
-{
-  return sh_seek(obuck_fd, 0, SEEK_END);
-}
-
 static void
 obuck_get(oid_t oid)
 {
