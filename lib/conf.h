@@ -19,7 +19,7 @@
 
 extern struct mempool *cfpool;
 void *cfg_malloc(uns size);
-byte *cfg_stralloc(byte *s);
+byte *cfg_strdup(byte *s);
 
 /*
  * Every module places its configuration setting into some section.  Section is

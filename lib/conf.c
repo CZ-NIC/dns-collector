@@ -43,12 +43,9 @@ cfg_malloc(uns size)
 }
 
 byte *
-cfg_stralloc(byte *s)
+cfg_strdup(byte *s)
 {
-	uns l = strlen(s);
-	byte *k = cfg_malloc(l + 1);
-	strcpy(k, s);
-	return k;
+	return mp_strdup(cfpool, s);
 }
 
 void cf_register(struct cfitem *items)
@@ -217,10 +214,10 @@ byte *cf_set_item(byte *sect, byte *name, byte *value)
 			msg = cf_parse_int(value, (uns *) item->var);
 			break;
 		case CT_STRING:
-			*((byte **) item->var) = cfg_stralloc(value);
+			*((byte **) item->var) = cfg_strdup(value);
 			break;
 		case CT_FUNCTION:
-			msg = ((ci_func) item->var)(item, cfg_stralloc(value));
+			msg = ((ci_func) item->var)(item, cfg_strdup(value));
 			break;
 		case CT_DOUBLE:
 			msg = cf_parse_double(value, (double *) item->var);
