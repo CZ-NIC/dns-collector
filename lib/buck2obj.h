@@ -6,6 +6,8 @@
 
 struct buck2obj_buf;
 
+#define	BUCK2OBJ_INITIAL_MAX_LEN	(1<<16)
+
 struct buck2obj_buf *buck2obj_alloc(uns max_len, struct mempool *mp);
 void buck2obj_free(struct buck2obj_buf *buf);
 void buck2obj_realloc(struct buck2obj_buf *buf, uns max_len);
