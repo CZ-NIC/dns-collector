@@ -47,7 +47,7 @@ bfmm_map_window(struct fastbuf *f)
 {
   struct fb_mmap *F = FB_MMAP(f);
   sh_off_t pos0 = f->pos & ~(sh_off_t)(PAGE_SIZE-1);
-  int l = MIN(MMAP_WINDOW_SIZE, F->file_extend - pos0);
+  int l = MIN((sh_off_t)MMAP_WINDOW_SIZE, F->file_extend - pos0);
   uns ll = ALIGN(l, PAGE_SIZE);
   uns oll = ALIGN(f->bufend - f->buffer, PAGE_SIZE);
   int prot = F->is_writeable ? (PROT_READ | PROT_WRITE) : PROT_READ;
