@@ -416,8 +416,8 @@ kill_end_dot(byte *b)
   if (b)
     {
       k = b + strlen(b) - 1;
-      if (k > b && *k == '.')
-	*k = 0;
+      while (k > b && *k == '.')
+	*k-- = 0;
     }
 }
 
