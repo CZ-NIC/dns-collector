@@ -62,3 +62,23 @@ struct fingerprint {
 };
 
 void fingerprint(byte *string, struct fingerprint *fp);
+
+/* Reading of tagged text (Unicode values, tags mapped to 0x80000000 and higher) */
+
+#define GET_TAGGED_CHAR(p,u) do {				\
+  u = *p;							\
+  if (u >= 0xc0)						\
+    GET_UTF8(p,u);						\
+  else if (u >= 0x80)						\
+    {								\
+      p++;							\
+      if (u >= 0xb0)						\
+	u += 0x80020000;					\
+      else if (u >= 0xa0)					\
+	u = 0x80010000 + ((u & 0x0f) << 6) + (*p++ & 0x3f);	\
+      else							\
+	u += 0x80000000;					\
+    }								\
+  else								\
+    p++;							\
+} while (0)
