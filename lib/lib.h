@@ -74,11 +74,7 @@ int match_ct_filter(struct ct_filter *, byte *);
 
 /* Binary log */
 
-#ifdef HAVE_FFS
-#define log2(x) (ffs(x) - 1)
-#else
 int log2(ulg);
-#endif
 
 /* obj.c */
 

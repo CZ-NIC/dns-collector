@@ -39,7 +39,3 @@ typedef unsigned int uns;		/* at least 32 bits */
 #define NONRET
 
 #endif
-
-#ifdef linux
-#define HAVE_FFS
-#endif
