@@ -1,6 +1,7 @@
 #!/bin/sh
 set -e
 DEST=`eval echo $1`
+shift
 echo "Installing to $DEST"
 if [ ! -d $DEST/cf ] ; then
 	echo "Creating $DEST and the whole directory hierarchy under it."
@@ -12,23 +13,25 @@ mkdir -p $DEST/{bin,lib}
 cp -aL run/bin/* $DEST/bin/
 cp -aL run/lib/* $DEST/lib/
 echo "Installing config files..."
-for a in cf/* ; do
-	if [ -f run/$a ] ; then
-		if [ ! -f $DEST/$a ] ; then
-			echo "$a: new, installed"
-			cp run/$a $DEST/$a
-		elif diff -u $DEST/$a run/$a ; then
-			echo "$a: no differences"
+for a in "$@" ; do
+	if [ -f run/cf/$a ] ; then
+		if [ ! -f $DEST/cf/$a ] ; then
+			echo "cf/$a: new, installed"
+			cp run/cf/$a $DEST/cf/$a
+		elif [ $a == catalog-rules ] ; then
+			echo "cf/$a: will be regenerated automatically"
+		elif diff -u $DEST/cf/$a run/cf/$a ; then
+			echo "cf/$a: no differences"
 		else
-			echo -n "$a differs, replace it [Yn]? "
+			echo -n "cf/$a differs, replace it [Yn]? "
 			read x
 			if [ -z "$x" -o "$x" == "y" -o "$x" == "Y" ] ; then
-				echo "$a: replacing and keeping the old version as $a.old"
-				mv $DEST/$a $DEST/$a.old
-				cp run/$a $DEST/$a
+				echo "cf/$a: replacing and keeping the old version as cf/$a.old"
+				mv $DEST/cf/$a $DEST/cf/$a.old
+				cp run/cf/$a $DEST/cf/$a
 			else
-				echo "$a: installing the new version as $a.dist"
-				cp run/$a $DEST/$a.dist
+				echo "cf/$a: installing the new version as cf/$a.dist"
+				cp run/cf/$a $DEST/cf/$a.dist
 			fi
 		fi
 	fi
