@@ -40,6 +40,7 @@
 #define GLUE(x,y) x##y
 #define GLUE_(x,y) x##_##y
 #define COMPARE(x,y) do { if ((x)<(y)) return -1; if ((x)>(y)) return 1; } while(0)
+#define REV_COMPARE(x,y) COMPARE(y,x)
 
 /* Logging */
 
