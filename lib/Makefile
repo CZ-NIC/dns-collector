@@ -56,5 +56,10 @@ obj/lib/regex.test: obj/lib/regex-t
 obj/lib/unicode-utf8.test: obj/lib/unicode-utf8-t
 obj/lib/hash-test.test: obj/lib/hash-test
 
+ifdef CONFIG_UCW_PERL
 include lib/perl/Makefile
+endif
+
+ifdef CONFIG_UCW_SHELL_UTILS
 include lib/shell/Makefile
+endif
