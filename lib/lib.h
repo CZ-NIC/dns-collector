@@ -207,4 +207,10 @@ void echo_command_v(byte *buf, int size, byte *cmd, va_list args);
 int careful_read(int fd, void *buf, int len);
 int careful_write(int fd, void *buf, int len);
 
+/* sighandler.c */
+typedef void (*my_sighandler_t)(void);
+extern my_sighandler_t signal_handler[];
+
+void *handle_signal(int signum);
+
 #endif

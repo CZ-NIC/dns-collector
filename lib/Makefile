@@ -11,7 +11,7 @@ LIBSH_MODS=alloc alloc_str ctmatch db fastbuf fb-file fb-mem lists \
 	finger proctitle ipaccess profile bitsig randomkey \
 	hashfunc base64 base224 fb-temp fb-mmap fb-printf urlkey \
 	partmap fb-limfd fb-buffer mainloop exitstatus runcmd carefulio \
-	lizard lizard-safe
+	lizard lizard-safe sighandler
 
 ifdef CONFIG_OWN_REGEX
 include lib/regex/Makefile
