@@ -266,7 +266,6 @@ url_key(byte *url, byte *buf)
       url = buf;
       buf += MAX_URL_SIZE;
     }
-  url = url_key_remove_www(url, &buf);
   DBG("\tOutput: %s", url);
   return url;
 }
