@@ -207,6 +207,10 @@ void echo_command_v(byte *buf, int size, byte *cmd, va_list args);
 int careful_read(int fd, void *buf, int len);
 int careful_write(int fd, void *buf, int len);
 
+/* sync.c */
+
+void sync_dir(byte *name);
+
 /* sighandler.c */
 
 typedef int (*sh_sighandler_t)(int);

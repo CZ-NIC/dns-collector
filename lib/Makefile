@@ -22,7 +22,8 @@ LIBSH_MODS= \
 	mainloop exitstatus runcmd sighandler \
 	lizard lizard-safe adler32 \
 	md5 md5hex \
-	base64 base224
+	base64 base224 \
+	sync
 
 ifdef CONFIG_OWN_REGEX
 include lib/regex/Makefile
