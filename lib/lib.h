@@ -24,6 +24,7 @@
 #define OFFSETOF(s, i) ((unsigned int)&((s *)0)->i)
 #define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))
 #define ALIGN(s, a) (((s)+a-1)&~(a-1))
+#define UNALIGNED_PART(ptr, type) (((long) (ptr)) % sizeof(type))
 
 /* Some other macros */
 
