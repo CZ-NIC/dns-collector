@@ -17,7 +17,7 @@ CF_USAGE
 "-c\t\tCompress\n\
 -d\t\tDecompress\n\
 -t\t\tCompress, decompress, and compare (in memory only, default)\n\
--x, -xx\t\tLet the test crash by shrinking the output buffer\n\
+-x\t\tLet the test crash by shrinking the output buffer\n\
 ";
 
 static void NONRET
@@ -100,13 +100,14 @@ main(int argc, char **argv)
       smaller_li = li - PAGE_SIZE;
     else
       smaller_li = 0;
-    struct lizard_buffer *buf = lizard_alloc(crash==1 ? smaller_li : li);
-    int lv = lizard_decompress_safe(mo, buf, crash==2 ? smaller_li : li);
+    struct lizard_buffer *buf = lizard_alloc();
+    byte *ptr;
+    int lv = lizard_decompress_safe(mo, buf, crash ? smaller_li : li, &ptr);
     printf("-> %d ", lv);
     fflush(stdout);
     if (lv < 0)
       printf("err:%m ");
-    else if (lv != li || memcmp(mi, buf->ptr, li))
+    else if (lv != li || memcmp(mi, ptr, li))
       printf("WRONG");
     else
       printf("OK");
