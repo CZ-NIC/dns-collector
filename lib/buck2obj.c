@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
 
 #define	MAX_HEADER_SIZE	1024		// extra space for the header not counted in MaxObjSize
 #define	RET_ERR(num)	({ errno = num; return NULL; })
@@ -81,28 +82,34 @@ decode_attributes(byte *ptr, byte *end, struct odes *o, uns can_overwrite)
 }
 
 struct odes *
-buck2obj_convert(struct buck2obj_buf *buf, struct obuck_header *hdr, struct fastbuf *body)
+buck2obj_convert(struct buck2obj_buf *buf, uns buck_type, struct fastbuf *body)
 {
   mp_flush(buf->mp);
   struct odes *o = obj_new(buf->mp);
 
-  if (hdr->type < BUCKET_TYPE_V33)
+  if (buck_type < BUCKET_TYPE_V33)
     obj_read_multi(body, o);
   else
   {
+    /* Compute the length of the bucket.  We cannot fetch this attribute
+     * directly due to remote indexing.  */
+    bseek(body, 0, SEEK_END);
+    sh_off_t buck_len = btell(body);
+    bsetpos(body, 0);
+
     /* Read all the bucket into 1 buffer, 0-copy if possible.  */
     int can_overwrite = MAX(bconfig(body, BCONFIG_CAN_OVERWRITE, 0), 0);
     uns overwritten;
     byte *ptr, *end;
     uns len = bdirect_read_prepare(body, &ptr);
-    if (len < hdr->length
-    || (can_overwrite < 2 && hdr->type == BUCKET_TYPE_V33))
+    if (len < buck_len
+    || (can_overwrite < 2 && buck_type == BUCKET_TYPE_V33))
     {
       /* Copy if the original buffer is too small.
        * If it is write-protected, copy it also if it is uncompressed.  */
-      if (hdr->length > buf->raw_len)
+      if (buck_len > buf->raw_len)
 	RET_ERR(EFBIG);
-      len = bread(body, buf->raw, hdr->length);
+      len = bread(body, buf->raw, buck_len);
       ptr = buf->raw;
       can_overwrite = 2;
       overwritten = 0;
@@ -112,9 +119,9 @@ buck2obj_convert(struct buck2obj_buf *buf, struct obuck_header *hdr, struct fast
     end = ptr + len;
 
     ptr = decode_attributes(ptr, end, o, can_overwrite);// header
-    if (hdr->type == BUCKET_TYPE_V33)
+    if (buck_type == BUCKET_TYPE_V33)
       ;
-    else if (hdr->type == BUCKET_TYPE_V33_LIZARD)	// decompression
+    else if (buck_type == BUCKET_TYPE_V33_LIZARD)	// decompression
     {
       len = GET_U32(ptr);
       ptr += 4;
