@@ -82,6 +82,7 @@ typedef s32 sh_off_t;
 #define CONSTRUCTOR __attribute__((constructor))
 #define PACKED __attribute__((packed))
 #define CONST __attribute__((const))
+#define PURE __attribute__((const))
 
 #else
 #error This program requires the GNU C compiler.
