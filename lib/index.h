@@ -100,6 +100,7 @@ enum card_flag {
 #define CA_GET_FILE_LANG(a) ((a)->type_flags & 0x80 ? 0 : CA_GET_FILE_INFO(a))
 #define FILETYPE_ATTRS SMALL_SET_ATTR(ftype, FILETYPE, CA_GET_FILE_TYPE, ext_ft_parse)
 #define MAX_FILE_TYPES 8
+#define FILETYPE_IS_TEXT(f) ((f) < 4)
 byte *ext_ft_parse(u32 *dest, byte *value, uns intval);
 extern byte *custom_file_type_names[MAX_FILE_TYPES];
 #else
