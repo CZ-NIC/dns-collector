@@ -114,7 +114,7 @@ obuck_init(int writeable)
   int buflen = 65536;
   sh_off_t size;
 
-  obuck_fd = open(obuck_name, (writeable ? O_RDWR | O_CREAT : O_RDONLY), 0666);
+  obuck_fd = sh_open(obuck_name, (writeable ? O_RDWR | O_CREAT : O_RDONLY), 0666);
   obuck_fb = b = xmalloc_zero(sizeof(struct fastbuf) + buflen + OBUCK_ALIGN + 4);
   b->buflen = buflen;
   b->buffer = (char *)(b+1);
