@@ -117,3 +117,16 @@ echo_command(byte *buf, int len, byte *cmd, ...)
   echo_command_v(buf, len, cmd, args);
   va_end(args);
 }
+
+#ifdef TEST
+
+int main(void)
+{
+  byte msg[1024];
+  echo_command(msg, sizeof(msg), "/bin/echo", "datel", "strakapoud", NULL);
+  log(L_INFO, "Running <%s>", msg);
+  run_command("/bin/echo", "datel", "strakapoud", NULL);
+  return 0;
+}
+
+#endif
