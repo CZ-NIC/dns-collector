@@ -7,6 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
+#ifndef _SHERLOCK_LIZARD_H
+#define _SHERLOCK_LIZARD_H
+
 #define	LIZARD_NEEDS_CHARS	8
   /* The compression routine needs input buffer 8 characters longer, because it
    * does not check the input bounds all the time.  */
@@ -33,3 +36,5 @@ struct lizard_buffer;
 struct lizard_buffer *lizard_alloc(void);
 void lizard_free(struct lizard_buffer *buf);
 byte *lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length);
+
+#endif
