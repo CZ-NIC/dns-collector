@@ -133,8 +133,4 @@ static _syscall4(int, pwrite, unsigned int, fd, void *, buf, size_t, size, loff_
 
 #endif  /* !SHERLOCK_HAVE_PREAD */
 
-#ifndef SHERLOCK_HAVE_PREAD
-#error pread/pwrite not available, need to work around
-#endif
-
 #endif	/* !_SHERLOCK_LFS_H */
