@@ -122,6 +122,7 @@ static int sh_pwrite(unsigned int fd, void *buf, size_t size, loff_t where)
 #elif defined(i386)
 /* old libc on i386 -> call syscalls directly the old way */
 #include <asm/unistd.h>
+#include <errno.h>
 static _syscall4(int, pread, unsigned int, fd, void *, buf, size_t, size, loff_t, where);
 static _syscall4(int, pwrite, unsigned int, fd, void *, buf, size_t, size, loff_t, where);
 #define sh_pread pread
