@@ -113,12 +113,12 @@ rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
 
 #ifdef TEST
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
   regex *r;
   byte buf1[256], buf2[256];
 
-  r = rx_compile(argv[1]);
+  r = rx_compile(argv[1], 0);
   while (fgets(buf1, sizeof(buf1), stdin))
     {
       char *p = strchr(buf1, '\n');
