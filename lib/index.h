@@ -1,7 +1,7 @@
 /*
  *	Sherlock: Data structures used in indices
  *
- *	(c) 2001 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2002 Martin Mares <mj@ucw.cz>
  */
 
 /* Words */

@@ -98,6 +98,9 @@ enum string_type {
  *  A good place for definitions of the functions is lib/custom.c.
  *
  *  Please order the attributes by decreasing size to get optimum padding.
+ *
+ *  If you also want the search server to sort by a custom attribute
+ *  on ties, define CUSTOM_SORTING.
  */
 
 #if 0		/* Example */
@@ -107,6 +110,8 @@ enum string_type {
 struct card_attr;
 void custom_get_lm(struct card_attr *ca, byte *attr);
 byte *custom_parse_lm(u32 *dest, byte *value, uns intval);
+
+#define CUSTOM_SORTING
 
 #else
 
