@@ -583,7 +583,7 @@ do {											\
 #undef TA
 #undef TAC
 #undef TAU
-#undef TACU
+#undef TAUC
 #undef TT
 #undef TTC
 
