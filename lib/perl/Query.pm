@@ -117,6 +117,7 @@ sub command($$) {
 
 	# Status line
 	my $stat = <$sock>;
+	$stat = "-903 Incomplete reply" if !defined $stat;
 	chomp $stat;
 	$stat =~ /^[+-]/ or return "-901 Reply parse error";
 
