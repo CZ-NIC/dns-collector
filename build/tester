@@ -28,10 +28,12 @@ while (<>) {
 
 my $i = 0;
 my $errors = 0;
+my $prev_run = undef;
 foreach $tt (@tests) {
 	$i++;
 	print "Test $i: ";
-	my $run = $tt->{'Run'} or die "Don't know what to run";
+	$run = ($tt->{'Run'} || $prev_run) or die "Don't know what to run";
+	$prev_run = $run;
 	my ($ifi, $ofi);
 	if (defined $tt->{'In'}) {
 		$ifi = "run/tmp/test$i.in";
