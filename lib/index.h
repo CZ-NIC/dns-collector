@@ -98,13 +98,29 @@ enum card_flag {
 #define CA_GET_FILE_TYPE(a) ((a)->type_flags >> 5)
 #define CA_GET_FILE_INFO(a) ((a)->type_flags & 0x1f)
 #define CA_GET_FILE_LANG(a) ((a)->type_flags & 0x80 ? 0 : CA_GET_FILE_INFO(a))
-#define FILETYPE_ATTRS SMALL_SET_ATTR(ftype, FILETYPE, CA_GET_FILE_TYPE, ext_ft_parse)
 #define MAX_FILE_TYPES 8
 #define FILETYPE_IS_TEXT(f) ((f) < 4)
 byte *ext_ft_parse(u32 *dest, byte *value, uns intval);
 extern byte *custom_file_type_names[MAX_FILE_TYPES];
+#define FILETYPE_STAT_VARS uns matching_per_type[MAX_FILE_TYPES];
+#define FILETYPE_SHOW_STATS(q,f) ext_ft_show(q,f)
+#define FILETYPE_INIT_STATS(q) bzero(q->matching_per_type, sizeof(q->matching_per_type))
+#ifdef CONFIG_COUNT_ALL_FILETYPES
+#define FILETYPE_ATTRS LATE_SMALL_SET_ATTR(ftype, FILETYPE, CA_GET_FILE_TYPE, ext_ft_parse)
+#define FILETYPE_EARLY_STATS(q,a) q->matching_per_type[CA_GET_FILE_TYPE(a)]++
+#define FILETYPE_LATE_STATS(q,a)
+#else
+#define FILETYPE_ATTRS SMALL_SET_ATTR(ftype, FILETYPE, CA_GET_FILE_TYPE, ext_ft_parse)
+#define FILETYPE_EARLY_STATS(q,a)
+#define FILETYPE_LATE_STATS(q,a) q->matching_per_type[CA_GET_FILE_TYPE(a)]++
+#endif
 #else
 #define FILETYPE_ATTRS
+#define FILETYPE_STAT_VARS
+#define FILETYPE_INIT_STATS(q)
+#define FILETYPE_EARLY_STATS(q,a)
+#define FILETYPE_LATE_STATS(q,a)
+#define FILETYPE_SHOW_STATS(q,f)
 #endif
 
 #ifdef CONFIG_LANG
@@ -115,7 +131,31 @@ byte *ext_lang_parse(u32 *dest, byte *value, uns intval);
 #define LANG_ATTRS
 #endif
 
-#define EXTENDED_ATTRS CUSTOM_ATTRS LANG_ATTRS		/* Beware, FILETYPE_ATTRS are handled separately */
+/*
+ * A list of all extended attributes: custom attributes and also some
+ * built-in attributes treated in the same way.
+ */
+
+#define EXTENDED_ATTRS CUSTOM_ATTRS FILETYPE_ATTRS LANG_ATTRS
+
+/*
+ * A list of all statistics collectors, also composed of custom parts
+ * and built-in parts.
+ */
+
+#ifndef CUSTOM_STAT_VARS
+#define CUSTOM_STAT_VARS
+#define CUSTOM_INIT_STATS(q)
+#define CUSTOM_EARLY_STATS(q,a)
+#define CUSTOM_LATE_STATS(q,a)
+#define CUSTOM_SHOW_STATS(q,f)
+#endif
+
+#define EXTENDED_STAT_VARS CUSTOM_STAT_VARS FILETYPE_STAT_VARS
+#define EXTENDED_INIT_STATS(q) CUSTOM_INIT_STATS(q) FILETYPE_INIT_STATS(q)
+#define EXTENDED_EARLY_STATS(q,a) CUSTOM_EARLY_STATS(q,a) FILETYPE_EARLY_STATS(q,a)
+#define EXTENDED_LATE_STATS(q,a) CUSTOM_LATE_STATS(q,a) FILETYPE_LATE_STATS(q,a)
+#define EXTENDED_SHOW_STATS(q,f) CUSTOM_SHOW_STATS(q,f) FILETYPE_SHOW_STATS(q,f)
 
 /* String fingerprints */
 
