@@ -3,10 +3,12 @@ set -e
 DEST=`eval echo $1`
 shift
 echo "Installing to $DEST"
-if [ ! -d $DEST/cf ] ; then
-	echo "Creating $DEST and the whole directory hierarchy under it."
-	mkdir -p $DEST/{cf,db,index,log,tmp}
-fi
+for d in $DEST/{,cf,db,index,log,tmp} ; do
+	if [ ! -d $d ] ; then
+		echo "Creating $d"
+		mkdir $d
+	fi
+done
 echo "Installing binaries..."
 rm -rf $DEST/{bin,lib}
 mkdir -p $DEST/{bin,lib}
