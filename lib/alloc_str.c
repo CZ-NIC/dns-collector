@@ -12,10 +12,8 @@
 #include <string.h>
 
 byte *
-stralloc(byte *s)
+xstrdup(byte *s)
 {
-  uns l = strlen(s);
-  byte *k = xmalloc(l + 1);
-  strcpy(k, s);
-  return k;
+  uns l = strlen(s) + 1;
+  return memcpy(xmalloc(l), s, l);
 }
