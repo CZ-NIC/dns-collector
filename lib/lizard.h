@@ -28,10 +28,11 @@ int lizard_compress(byte *in, uns in_len, byte *out);
 int lizard_decompress(byte *in, byte *out);
 
 /* lizard-safe.c */
+struct sigaction;
 struct lizard_buffer {
   uns len;
   void *start, *ptr;
-  void *old_sigsegv_handler;
+  struct sigaction *old_sigsegv_handler;
 };
 
 struct lizard_buffer *lizard_alloc(uns max_len);

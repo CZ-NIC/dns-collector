@@ -28,7 +28,8 @@ lizard_alloc(uns max_len)
     die("mmap(anonymous): %m");
   if (mprotect(buf->start + buf->len, PAGE_SIZE, PROT_NONE) < 0)
     die("mprotect: %m");
-  buf->old_sigsegv_handler = handle_signal(SIGSEGV);
+  buf->old_sigsegv_handler = xmalloc(sizeof(struct sigaction));
+  handle_signal(SIGSEGV, buf->old_sigsegv_handler);
   return buf;
 }
 
@@ -36,16 +37,18 @@ void
 lizard_free(struct lizard_buffer *buf)
 {
   munmap(buf->start, buf->len + PAGE_SIZE);
-  signal(SIGSEGV, buf->old_sigsegv_handler);
+  sigaction(SIGSEGV, buf->old_sigsegv_handler, NULL);
+  xfree(buf->old_sigsegv_handler);
   xfree(buf);
 }
 
 static jmp_buf safe_decompress_jump;
-static void
-sigsegv_handler(void)
+static int
+sigsegv_handler(int signal UNUSED)
 {
   log(L_ERROR, "SIGSEGV caught in lizard_decompress()");
   longjmp(safe_decompress_jump, 1);
+  return 1;
 }
 
 int
@@ -61,7 +64,7 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
     errno = EFBIG;
     return -1;
   }
-  volatile my_sighandler_t old_handler = signal_handler[SIGSEGV];
+  volatile sh_sighandler_t old_handler = signal_handler[SIGSEGV];
   signal_handler[SIGSEGV] = sigsegv_handler;
   int len, err;
   if (!setjmp(safe_decompress_jump))
