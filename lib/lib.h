@@ -92,6 +92,7 @@ void log_file(byte *);
  */
 #define xmalloc sh_xmalloc
 void *xmalloc(unsigned);
+void *xmalloc_zero(unsigned);
 void *xrealloc(void *, unsigned);
 #define xfree(x) free(x)
 #endif

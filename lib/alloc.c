@@ -7,6 +7,7 @@
 #include "lib/lib.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 void *
 xmalloc(uns size)
@@ -14,5 +15,13 @@ xmalloc(uns size)
   void *x = malloc(size);
   if (!x)
     die("Cannot allocate %d bytes of memory", size);
+  return x;
+}
+
+void *
+xmalloc_zero(uns size)
+{
+  void *x = xmalloc(size);
+  bzero(x, size);
   return x;
 }
