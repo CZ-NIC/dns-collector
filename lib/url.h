@@ -15,9 +15,10 @@
 #define NCC_AT 5
 #define NCC_EQUAL 6
 #define NCC_AND 7
-#define NCC_MAX 8
+#define NCC_HASH 8
+#define NCC_MAX 9
 
-#define NCC_CHARS " ;/?:@=&"
+#define NCC_CHARS " ;/?:@=&#"
 
 /* Remove/Introduce '%' escapes */
 
@@ -65,5 +66,6 @@ char *url_error(uns);
 
 #define URL_PNAMES { "unknown", "http", "ftp", "file" }
 #define URL_DEFPORTS { ~0, 80, 21, 0 }
+#define URL_PATH_FLAGS { 0, 1, 1, 1 }
 
 extern byte *url_proto_names[];

@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- URL Functions (according to RFC 1738 and 1808)
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--1999 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
  */
 
 #include <string.h>
@@ -34,7 +34,7 @@ url_deescape(byte *s, byte *d)
 	  if (!Cxdigit(s[1]) || !Cxdigit(s[2]))
 	    return URL_ERR_INVALID_ESCAPE;
 	  val = Cxvalue(s[1])*16 + Cxvalue(s[2]);
-	  if (!Cprint(val))
+	  if (val < 0x20)
 	    return URL_ERR_INVALID_ESCAPED_CHAR;
 	  switch (val)
 	    {
@@ -52,11 +52,13 @@ url_deescape(byte *s, byte *d)
 	      val = NCC_EQUAL; break;
 	    case '&':
 	      val = NCC_AND; break;
+	    case '#':
+	      val = NCC_HASH; break;
 	    }
 	  *d++ = val;
 	  s += 3;
 	}
-      else if (*s >= 0x20 && *s <= 0x7e || *s >= 0xa0)
+      else if (*s >= 0x20)
 	*d++ = *s++;
       else
 	return URL_ERR_INVALID_CHAR;
@@ -69,19 +71,18 @@ int
 url_enescape(byte *s, byte *d)
 {
   byte *end = d + MAX_URL_SIZE - 10;
+  unsigned int c;
 
-  while (*s)
+  while (c = *s)
     {
       if (d >= end)
 	return URL_ERR_TOO_LONG;
-      if (   *s >= 'A' && *s <= 'Z'
-	     || *s >= 'a' && *s <= 'z'
-	     || *s >= '0' && *s <= '9'
-	     || *s == '$' || *s == '-' || *s == '.'
-	     || *s == '!' || *s == '*' || *s == '\'' || *s == '('
-	     || *s == ')' || *s == '_' || *s == ';' || *s == '/'
-	     || *s == '?' || *s == ':' || *s == '@' || *s == '='
-	     || *s == '&')
+      if (Calnum(c) ||							/* RFC 1738(2.2): Only alphanumerics ... */
+	  c == '$' || c == '-' || c == '_' || c == '.' || c == '+' ||	/* ... and several other exceptions ... */
+	  c == '!' || c == '*' || c == '\'' || c == '(' || c == ')' ||
+	  c == ',' ||
+	  c == '/' || c == '?' || c == ':' || c == '@' ||		/* ... and reserved chars used for reserved purpose */
+	  c == '=' || c == '&' || c == '#' || c == ';')
 	*d++ = *s++;
       else
 	{
@@ -99,6 +100,7 @@ url_enescape(byte *s, byte *d)
 /* Split an URL (several parts may be copied to the destination buffer) */
 
 byte *url_proto_names[URL_PROTO_MAX] = URL_PNAMES;
+static int url_proto_path_flags[URL_PROTO_MAX] = URL_PATH_FLAGS;
 
 uns
 identify_protocol(byte *p)
@@ -131,6 +133,15 @@ url_split(byte *s, struct url *u, byte *d)
 	  *d++ = 0;
 	  u->protoid = identify_protocol(u->protocol);
 	  s++;
+	  if (url_proto_path_flags[u->protoid] && (s[0] != '/' || s[1] != '/'))
+	    {
+	      /* The protocol requires complete host spec, but it's missing -> treat as a relative path instead */
+	      int len = d - u->protocol;
+	      d -= len;
+	      s -= len;
+	      u->protocol = NULL;
+	      u->protoid = 0;
+	    }
 	}
     }
 
@@ -192,20 +203,44 @@ relpath_merge(struct url *u, struct url *b)
   if (o[0] != '/')
     return URL_PATH_UNDERFLOW;
 
-  if (!a[0])				/* Empty relative URL is a special case */
+  if (!a[0])				/* Empty URL -> inherit everything */
     {
       u->rest = b->rest;
       return 0;
     }
 
-  u->rest = d;
-  p = strrchr(o, '/');			/* Must be found! */
-  while (o <= p)			/* Copy original path */
+  u->rest = d;				/* We know we'll need to copy the path somewhere else */
+
+  if (a[0] == '#')			/* Another fragment */
+    {
+      for(p=o; *p && *p != '#'; p++)
+	;
+      goto copy;
+    }
+  if (a[0] == '?')			/* New query */
+    {
+      for(p=o; *p && *p != '#' && *p != '?'; p++)
+	;
+      goto copy;
+    }
+  if (a[0] == ';')			/* Change parameters */
+    {
+      for(p=o; *p && *p != ';' && *p != '?' && *p != '#'; p++)
+	;
+      goto copy;
+    }
+
+  p = NULL;				/* Copy original path and find the last slash */
+  while (*o && *o != ';' && *o != '?' && *o != '#')
     {
       if (d >= e)
 	return URL_ERR_TOO_LONG;
-      *d++ = *o++;
+      if ((*d++ = *o++) == '/')
+	p = d;
     }
+  if (!p)
+    return URL_ERR_REL_NOTHING;
+  d = p;
 
   while (*a)
     {
@@ -222,6 +257,10 @@ relpath_merge(struct url *u, struct url *b)
 	    {
 	      a += 2;
 	      if (d <= u->buf + 1)
+		/*
+		 * RFC 1808 says we should leave ".." as a path segment, but
+		 * we intentionally break the rule and refuse the URL.
+		 */
 		return URL_PATH_UNDERFLOW;
 	      d--;			/* Discard trailing slash */
 	      while (d[-1] != '/')
@@ -241,53 +280,60 @@ relpath_merge(struct url *u, struct url *b)
 	*d++ = *a++;
     }
 
+okay:
   *d++ = 0;
   u->buf = d;
   return 0;
+
+copy:					/* Combine part of old URL with the new one */
+  while (o < p)
+    if (d < e)
+      *d++ = *o++;
+    else
+      return URL_ERR_TOO_LONG;
+  while (*a)
+    if (d < e)
+      *d++ = *a++;
+    else
+      return URL_ERR_TOO_LONG;
+  goto okay;
 }
 
 int
 url_normalize(struct url *u, struct url *b)
 {
   byte *k;
+  int err;
 
-  if (u->protocol && !u->protoid)
-    return 0;
-
-  if ((u->protoid == URL_PROTO_HTTP || (!u->protoid && b && b->protoid == URL_PROTO_HTTP))
-      && u->rest && (k = strchr(u->rest, '#')))
-    *k = 0;				/* Kill fragment reference */
-
-  if (u->port == ~0U)
-    u->port = std_ports[u->protoid];
-
-  if (   u->protocol && !u->host
-	 || u->host && !*u->host
-	 || !u->host && u->user
-	 || !u->rest)
+  /* Basic checks */
+  if (url_proto_path_flags[u->protoid] && !u->host ||
+      u->host && !*u->host ||
+      !u->host && u->user ||
+      !u->rest)
     return URL_SYNTAX_ERROR;
-
-  if (u->protocol)			/* Absolute URL */
-    return 0;
-
-  if (!b)				/* Relative to something? */
-    return URL_ERR_REL_NOTHING;
-  if (!b->protoid)
-    return URL_ERR_UNKNOWN_PROTOCOL;
 
   if (!u->protocol)
     {
+      /* Now we know it's a relative URL. Do we have any base? */
+      if (!b || !url_proto_path_flags[b->protoid])
+	return URL_ERR_REL_NOTHING;
       u->protocol = b->protocol;
       u->protoid = b->protoid;
+
+      /* Reference to the same host */
+      if (!u->host)
+	{
+	  u->host = b->host;
+	  u->user = b->user;
+	  u->port = b->port;
+	  if (err = relpath_merge(u, b))
+	    return err;
+	}
     }
 
-  if (!u->host)
-    {
-      u->host = b->host;
-      u->user = b->user;
-      u->port = b->port;
-      return relpath_merge(u, b); 
-    }
+  /* Fill in missing info */
+  if (u->port == ~0U)
+    u->port = std_ports[u->protoid];
 
   return 0;
 }
@@ -322,11 +368,15 @@ kill_end_dot(byte *b)
 int
 url_canonicalize(struct url *u)
 {
+  char *c;
+
   lowercase(u->protocol);
   lowercase(u->host);
   kill_end_dot(u->host);
-  if ((!u->rest || !*u->rest) && (u->protoid == URL_PROTO_HTTP || u->protoid == URL_PROTO_FTP))
+  if ((!u->rest || !*u->rest) && url_proto_path_flags[u->protoid])
     u->rest = "/";
+  if (c = strchr(u->rest, '#'))		/* Kill fragment reference */
+    *c = 0;
   return 0;
 }
 
@@ -444,7 +494,7 @@ int main(int argc, char **argv)
       return 1;
     }
   printf("split: @%s@%s@%s@%d@%s\n", url.protocol, url.user, url.host, url.port, url.rest);
-  if (err = url_split("http://mj@www.hell.org/123/sub_dir/index.html", &url0, buf3))
+  if (err = url_split("http://mj@www.hell.org/123/sub_dir/index.html;param?query&zzz/subquery#fragment", &url0, buf3))
     {
       printf("split base: error %d\n", err);
       return 1;
@@ -472,7 +522,7 @@ int main(int argc, char **argv)
       printf("pack: error %d\n", err);
       return 1;
     }
-  printf("pack: %s\n", buf1);
+  printf("pack: %s\n", buf4);
   if (err = url_enescape(buf4, buf2))
     {
       printf("enesc: error %d\n", err);
