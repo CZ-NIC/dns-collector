@@ -28,16 +28,14 @@ struct buck2obj_buf
 {
   bb_t bb;
   struct lizard_buffer *lizard;
-  struct mempool *mp;
 };
 
 struct buck2obj_buf *
-buck2obj_alloc(struct mempool *mp)
+buck2obj_alloc(void)
 {
   struct buck2obj_buf *buf = xmalloc(sizeof(struct buck2obj_buf));
   bb_init(&buf->bb);
   buf->lizard = lizard_alloc();
-  buf->mp = mp;
   return buf;
 }
 
@@ -47,12 +45,6 @@ buck2obj_free(struct buck2obj_buf *buf)
   lizard_free(buf->lizard);
   bb_done(&buf->bb);
   xfree(buf);
-}
-
-void
-buck2obj_flush(struct buck2obj_buf *buf)
-{
-  mp_flush(buf->mp);
 }
 
 static inline byte *
@@ -92,9 +84,9 @@ decode_attributes(byte *ptr, byte *end, struct odes *o, uns can_overwrite)
 }
 
 struct odes *
-obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fastbuf *body, uns *body_start)
+obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, uns buck_len, struct fastbuf *body, uns *body_start)
 {
-  struct odes *o = obj_new(buf->mp);
+  struct odes *o = obj_new(pool);
 
   if (buck_type < BUCKET_TYPE_V33)
   {

@@ -102,8 +102,7 @@ dump_oattr(struct fastbuf *out, struct oattr *oa)
 static void
 dump_parsed_bucket(struct fastbuf *out, struct obuck_header *h, struct fastbuf *b)
 {
-  mp_flush(pool);
-  struct odes *o = obj_read_bucket(buck_buf, h->type, h->length, b, NULL);
+  struct odes *o = obj_read_bucket(buck_buf, pool, h->type, h->length, b, NULL);
   if (!o)
     bprintf(out, "Cannot parse bucket %x of type %x and length %d: %m\n", h->oid, h->type, h->length);
   else
@@ -417,7 +416,7 @@ main(int argc, char **argv)
   if (!raw)
   {
     pool = mp_new(1<<14);
-    buck_buf = buck2obj_alloc(pool);
+    buck_buf = buck2obj_alloc();
   }
   switch (op)
     {
