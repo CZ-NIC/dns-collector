@@ -100,7 +100,7 @@
  *    }
  *  HASH_END_FOR;
  *
- *  Then include <lib/hashtable.h> and voila, you have a hash table
+ *  Then include "lib/hashtable.h" and voila, you have a hash table
  *  suiting all your needs (at least those which you've revealed :) ).
  *
  *  After including this file, all parameter macros are automatically
