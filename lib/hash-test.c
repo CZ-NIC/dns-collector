@@ -98,7 +98,7 @@ static void test(void)
     {
       char x[32];
       sprintf(x, "abc%d", i);
-      test_new(stralloc(x));
+      test_new(xstrdup(x));
     }
   for (i=0; i<1024; i++)
     {
