@@ -91,13 +91,13 @@ static inline int bpeekc(struct fastbuf *f)
   return (f->bptr < f->bstop) ? (int) *f->bptr : bpeekc_slow(f);
 }
 
-static inline void bungetc(struct fastbuf *f, byte c)
+static inline void bungetc(struct fastbuf *f)
 {
-  *--f->bptr = c;
+  f->bptr--;
 }
 
-void bputc_slow(struct fastbuf *f, byte c);
-static inline void bputc(struct fastbuf *f, byte c)
+void bputc_slow(struct fastbuf *f, uns c);
+static inline void bputc(struct fastbuf *f, uns c)
 {
   if (f->bptr < f->bufend)
     *f->bptr++ = c;
@@ -161,8 +161,8 @@ static inline u64 bget5(struct fastbuf *f)
     return bget5_slow(f);
 }
 
-void bputw_slow(struct fastbuf *f, word w);
-static inline void bputw(struct fastbuf *f, word w)
+void bputw_slow(struct fastbuf *f, uns w);
+static inline void bputw(struct fastbuf *f, uns w)
 {
   if (f->bptr + 2 <= f->bufend)
     {

@@ -80,7 +80,7 @@ int bpeekc_slow(struct fastbuf *f)
   return *f->bptr;
 }
 
-void bputc_slow(struct fastbuf *f, byte c)
+void bputc_slow(struct fastbuf *f, uns c)
 {
   if (f->bptr >= f->bufend)
     f->spout(f);
@@ -143,7 +143,7 @@ u64 bget5_slow(struct fastbuf *f)
   return ((u64) h << 32) | l;
 }
 
-void bputw_slow(struct fastbuf *f, word w)
+void bputw_slow(struct fastbuf *f, uns w)
 {
 #ifdef CPU_BIG_ENDIAN
   bputc_slow(f, w >> 8);
