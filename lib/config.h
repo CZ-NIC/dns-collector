@@ -73,6 +73,7 @@ typedef s32 sh_foff_t;
 #define NONRET __attribute__((noreturn))
 #define UNUSED __attribute__((unused))
 #define CONSTRUCTOR __attribute__((constructor))
+#define PACKED __attribute__((packed))
 
 #else
 #error This program requires the GNU C compiler.
