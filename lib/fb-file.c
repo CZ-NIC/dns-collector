@@ -153,6 +153,14 @@ bfdopen_shared(int fd, uns buflen)
   return f;
 }
 
+void
+bfilesync(struct fastbuf *b)
+{
+  bflush(b);
+  if (fsync(FB_FILE(b)->fd) < 0)
+    log(L_ERROR, "fsync(%s) failed: %m", b->name);
+}
+
 #ifdef TEST
 
 int main(int argc, char **argv)

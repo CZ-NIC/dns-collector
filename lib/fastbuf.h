@@ -84,6 +84,7 @@ struct fastbuf *bopen(byte *name, uns mode, uns buflen);
 struct fastbuf *bopen_tmp(uns buflen);
 struct fastbuf *bfdopen(int fd, uns buflen);
 struct fastbuf *bfdopen_shared(int fd, uns buflen);
+void bfilesync(struct fastbuf *b);
 
 /* FastIO on in-memory streams */
 
