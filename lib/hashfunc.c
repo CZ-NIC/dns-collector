@@ -1,5 +1,5 @@
 /*
- *	Hyper-super-meta-alt-control-shift extra fast str_len() and str_hash()
+ *	Hyper-super-meta-alt-control-shift extra fast str_len() and hash_*()
  *	routines
  *
  *	It is always at least as fast as the classical strlen() routine and for
@@ -9,9 +9,10 @@
  */
 
 #include "lib/lib.h"
-#include "lib/str_hash.h"
+#include "lib/hashfunc.h"
+#include "lib/chartype.h"
 
-/* The number of bits the hash in the function str_hash() is rotated by after
+/* The number of bits the hash in the function hash_*() is rotated by after
  * every pass.  It should be prime with the word size.  */
 #define	SHIFT_BITS	5
 
@@ -19,13 +20,13 @@
 static uns mask_higher_bits[sizeof(uns)];
 
 static void CONSTRUCTOR
-str_hash_init(void)
+hashfunc_init(void)
 {
 	uns i, j;
-	char *str;
+	byte *str;
 	for (i=0; i<sizeof(uns); i++)
 	{
-		str = (char *) (mask_higher_bits + i);
+		str = (byte *) (mask_higher_bits + i);
 		for (j=0; j<i; j++)
 			str[j] = -1;
 		for (j=i; j<sizeof(uns); j++)
@@ -41,7 +42,7 @@ str_len_uns(uns x)
 	const uns sub = ((uns) -1) / 0xff;
 	const uns and = sub * 0x80;
 	uns a, i;
-	char *bytes;
+	byte *bytes;
 	a = (x ^ (x - sub)) & and;
 	/* 
 	 * x_2 = x - 0x01010101;
@@ -54,13 +55,13 @@ str_len_uns(uns x)
 	 */
 	if (!a)
 		return sizeof(uns);
-	bytes = (char *) &x;
+	bytes = (byte *) &x;
 	for (i=0; i<sizeof(uns) && bytes[i]; i++);
 	return i;
 }
 
 inline uns
-str_len_aligned(const char *str)
+str_len_aligned(const byte *str)
 {
 	const uns *u = (const uns *) str;
 	uns len = 0;
@@ -74,7 +75,7 @@ str_len_aligned(const char *str)
 }
 
 inline uns
-str_hash_aligned(const char *str)
+hash_string_aligned(const byte *str)
 {
 	const uns *u = (const uns *) str;
 	uns hash = 0;
@@ -92,9 +93,23 @@ str_hash_aligned(const char *str)
 	}
 }
 
+inline uns
+hash_block_aligned(const byte *str, uns len)
+{
+	const uns *u = (const uns *) str;
+	uns hash = 0;
+	while (len >= sizeof(uns))
+	{
+		hash = ROL(hash, SHIFT_BITS) ^ *u++;
+		len -= sizeof(uns);
+	}
+	hash = ROL(hash, SHIFT_BITS) ^ (*u & mask_higher_bits[len]);
+	return hash;
+}
+
 #ifndef	CPU_ALLOW_UNALIGNED
 uns
-str_len(const char *str)
+str_len(const byte *str)
 {
 	uns shift = UNALIGNED_PART(str, uns);
 	if (!shift)
@@ -111,11 +126,11 @@ str_len(const char *str)
 }
 
 uns
-str_hash(const char *str)
+hash_string(const byte *str)
 {
 	uns shift = UNALIGNED_PART(str, uns);
 	if (!shift)
-		return str_hash_aligned(str);
+		return hash_string_aligned(str);
 	else
 	{
 		uns hash = 0;
@@ -133,9 +148,61 @@ str_hash(const char *str)
 				hash = ROL(hash, SHIFT_BITS);
 			if (!str[i])
 				break;
-			hash ^= ((unsigned char) str[i]) << (shift * 8);
+			hash ^= str[i] << (shift * 8);
+		}
+		return hash;
+	}
+}
+
+uns
+hash_block(const byte *str, uns len)
+{
+	uns shift = UNALIGNED_PART(str, uns);
+	if (!shift)
+		return hash_block_aligned(str, len);
+	else
+	{
+		uns hash = 0;
+		uns i;
+		for (i=0; ; i++)
+		{
+			uns modulo = i % sizeof(uns);
+			uns shift;
+#ifdef	CPU_LITTLE_ENDIAN
+			shift = modulo;
+#else
+			shift = sizeof(uns) - 1 - modulo;
+#endif
+			if (!modulo)
+				hash = ROL(hash, SHIFT_BITS);
+			if (i >= len)
+				break;
+			hash ^= str[i] << (shift * 8);
 		}
 		return hash;
 	}
 }
 #endif
+
+uns
+hash_string_nocase(const byte *str)
+{
+	uns hash = 0;
+	uns i;
+	for (i=0; ; i++)
+	{
+		uns modulo = i % sizeof(uns);
+		uns shift;
+#ifdef	CPU_LITTLE_ENDIAN
+		shift = modulo;
+#else
+		shift = sizeof(uns) - 1 - modulo;
+#endif
+		if (!modulo)
+			hash = ROL(hash, SHIFT_BITS);
+		if (!str[i])
+			break;
+		hash ^= Cupcase(str[i]) << (shift * 8);
+	}
+	return hash;
+}

@@ -1,9 +1,9 @@
 /*
- *	Checking the correctness of str_len() and str_hash() and proving, that
+ *	Checking the correctness of str_len() and hash_*() and proving, that
  *	it is faster than the classical version ;-)
  */
 
-#include "lib/str_hash.h"
+#include "lib/hashfunc.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -17,7 +17,7 @@
 static uns alignment = 0;
 
 static void
-random_string(char *str, int len)
+random_string(byte *str, int len)
 {
 	int i;
 	for (i=0; i<len; i++)
@@ -39,7 +39,7 @@ elapsed_time(void)
 int
 main(int argc, char **argv)
 {
-	char *strings[] = {
+	byte *strings[] = {
 		"",
 		"a",
 		"aa",
@@ -51,6 +51,7 @@ main(int argc, char **argv)
 		"aaaaaaaa",
 		"aaaaaaaaa",
 		"aaaaaaaaaa",
+		"AHOJ",
 		"\200aaaa",
 		"\200",
 		"\200\200",
@@ -78,16 +79,26 @@ main(int argc, char **argv)
 	printf("Alignment set to %d\n", alignment);
 	for (i=0; strings[i]; i++)
 		if (strlen(strings[i]) != str_len(strings[i]))
-			die("Internal error on string %d", i);
+			die("Internal str_len() error on string %d", i);
 	printf("%d strings tested OK\n", i);
 	for (i=0; strings[i]; i++)
-		printf("hash %2d = %08x\n", i, str_hash(strings[i]));
+	{
+		uns h1, h2;
+		h1 = hash_string(strings[i]);
+		h2 = hash_string_nocase(strings[i]);
+		if (h1 != hash_block(strings[i], str_len(strings[i])))
+			die("Internal hash_string() error on string %d", i);
+		printf("hash %2d = %08x %08x", i, h1, h2);
+		if (h1 == h2)
+			printf(" upper case?");
+		printf("\n");
+	}
 	for (i=0; lengths[i] >= 0; i++)
 	{
-		char str[lengths[i] + 1 + alignment];
+		byte str[lengths[i] + 1 + alignment];
 		uns count = TEST_TIME / (lengths[i] + 10);
-		uns el1 = 0, el2 = 0, elh = 0;
-		uns tot1 = 0, tot2 = 0, hash = 0;
+		uns el1 = 0, el2 = 0, elh = 0, elhn = 0;
+		uns tot1 = 0, tot2 = 0, hash = 0, hashn = 0;
 		uns j;
 		for (j=0; j<count; j++)
 		{
@@ -99,14 +110,16 @@ main(int argc, char **argv)
 			el1 += elapsed_time();
 			tot2 += str_len(str + alignment);
 			el2 += elapsed_time();
-			hash ^= str_hash(str + alignment);
+			hash ^= hash_string(str + alignment);
 			elh += elapsed_time();
+			hashn ^= hash_string_nocase(str + alignment);
+			elhn += elapsed_time();
 		}
 		if (tot1 != tot2)
 			die("Internal error during test %d", i);
 		printf("Test %d: strlen = %d, passes = %d, classical = %d usec, speedup = %.4f\n",
 			i, lengths[i], count, el1, (el1 + 0.) / el2);
-		printf("\t\t total hash = %08x, hash time = %d usec\n", hash, elh);
+		printf("\t\t total hash = %08x/%08x, hash time = %d/%d usec\n", hash, hashn, elh, elhn);
 	}
 /*
 	printf("test1: %d\n", hash_modify(10000000, 10000000, 99777555));
