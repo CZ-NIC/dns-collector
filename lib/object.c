@@ -14,8 +14,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define OBJ_POOL_SIZE 4096
-
 void
 obj_dump(struct odes *o)
 {
