@@ -940,13 +940,12 @@ static P(node) * P(first_node) (T *t, uns direction)
 #define TREE_FOR_ALL(t_px, t_ptr, t_var)						\
 do											\
 {											\
-	TREE_GLUE(t_px,node) *t_var = TREE_GLUE(t_px,first_node)(t_ptr, 0);		\
-	for (; t_var; t_var = TREE_GLUE(t_px,adjacent)(t_var, 1))			\
+	GLUE_(t_px,node) *t_var = GLUE_(t_px,first_node)(t_ptr, 0);			\
+	for (; t_var; t_var = GLUE_(t_px,adjacent)(t_var, 1))				\
 	{
 #define TREE_END_FOR } } while(0)
 #define TREE_BREAK break
 #define TREE_CONTINUE continue
-#define TREE_GLUE(x,y) x##_##y
 
 #endif
 #endif
