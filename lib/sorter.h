@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Universal Sorter
  *
- *	(c) 2001--2003 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2004 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -18,12 +18,17 @@
  *  SORT_KEY	    [*]	data type capable of storing a single key
  *  SORT_PREFIX(x)  [*] add a name prefix (used on all global names
  *			defined by the sorter)
- *  SORT_PRESORT	include an in-core presorting pass
+ *  SORT_PRESORT	include an in-core presorting pass. Beware, when in
+ *			the pre-sorting mode, it's quite possible that the
+ *			comparison function will be called with both arguments
+ *			identical.
  *  SORT_UNIFY		merge items with identical keys
+ *  SORT_UNIQUE		all items have distinct keys (checked in debug mode)
  *  SORT_REGULAR	all items are equally long and they don't contain
  *			anything else than the key. In this case, the sorter
  *			automatically supplies fetch_key, copy_data, fetch_item
- *			and store_item functions.
+ *			and store_item functions. Item size is also expected
+ *			to be small.
  *  SORT_DELETE_INPUT	a C expression, if true, the input files are
  *			deleted as soon as possible
  *  SORT_INPUT_FILE	input is a file with this name
@@ -109,6 +114,10 @@ extern uns sorter_pass_counter;
 #define LESS <
 #else
 #define LESS <=
+#endif
+
+#if defined(SORT_UNIQUE) && defined(DEBUG)
+#define SORT_ASSERT_UNIQUE
 #endif
 
 #ifdef SORT_REGULAR
@@ -208,6 +217,10 @@ P(pass)(struct fastbuf **fb1, struct fastbuf **fb2)
 	  kout = kprev2;
 	}
 #endif
+#ifdef SORT_ASSERT_UNIQUE
+      else if (unlikely(comp == 0))
+	ASSERT(0);
+#endif
       else
 	{
 	  P(copy_data)(in2, out1, kin2);
@@ -234,6 +247,73 @@ P(pass)(struct fastbuf **fb1, struct fastbuf **fb2)
 }
 
 #ifdef SORT_PRESORT
+
+#if defined(SORT_REGULAR) && !defined(SORT_UNIFY)
+
+/* If we are doing a simple sort on a regular file, we can use a faster presorting strategy */
+
+static SORT_KEY *P(array);
+
+#define ASORT_PREFIX(x) SORT_PREFIX(x##_array)
+#define ASORT_KEY_TYPE SORT_KEY
+#define ASORT_ELT(i) P(array)[i]
+#define ASORT_LT(x,y) (P(compare)(&(x),&(y)) < 0)
+
+#include "lib/arraysort.h"
+
+static void
+P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
+{
+  struct fastbuf *in = *fb1;
+  struct fastbuf *out1 = NULL;
+  struct fastbuf *out2 = NULL;
+  struct fastbuf *tbuf;
+  uns buf_items = sorter_presort_bufsize / sizeof(SORT_KEY);
+  uns run_count = 0;
+  SORT_KEY last_out, *array;
+
+  ASSERT(!*fb2);
+  if (buf_items < 2)
+    die("PresortBuffer set too low");
+  P(array) = array = xmalloc(buf_items * sizeof(SORT_KEY));
+
+  for(;;)
+    {
+      uns s = bread(in, array, buf_items * sizeof(SORT_KEY));
+      uns n = s / sizeof(SORT_KEY);
+      ASSERT(!(s % sizeof(SORT_KEY)));
+      if (!n)
+	break;
+      P(sort_array)(n);
+#ifdef SORT_ASSERT_UNIQUE
+      for (uns i=0; i<n-1; i++)
+	if (unlikely(P(compare)(&array[i], &array[i+1]) >= 0))
+	  ASSERT(0);
+      ASSERT(!run_count || P(compare)(&last_out, &array[0]));
+#endif
+      if (!run_count || P(compare)(&last_out, &array[0]) > 0)
+	{
+	  run_count++;
+	  SWAP(out1, out2, tbuf);
+	  if (!out1)
+	    out1 = bopen_tmp(sorter_stream_bufsize);
+	}
+      last_out = array[n-1];
+      bwrite(out1, array, n * sizeof(SORT_KEY));
+    }
+
+  bclose(in);
+  if (sorter_trace)
+    log(L_INFO, "Pass 0: %d runs, %d+%d KB",
+	run_count,
+	(out1 ? (int)((btell(out1) + 1023) / 1024) : 0),
+	(out2 ? (int)((btell(out2) + 1023) / 1024) : 0));
+  *fb1 = P(flush_out)(out1);
+  *fb2 = P(flush_out)(out2);
+  xfree(array);
+}
+
+#else
 
 #define SORT_NODE struct P(presort_node)
 
@@ -370,6 +450,9 @@ P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
 	      continue;
 	    }
 #endif
+#ifdef SORT_ASSERT_UNIQUE
+	  ASSERT(!first->next || P(compare)(&first->key, &first->next->key));
+#endif
 	  P(store_item)(out1, &first->key);
 	  first = first->next;
 	}
@@ -385,6 +468,8 @@ P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
   *fb2 = P(flush_out)(out2);
   xfree(buffer);
 }
+
+#endif		/* SORT_REGULAR && !SORT_UNIFY */
 
 #endif		/* SORT_PRESORT */
 
@@ -448,6 +533,8 @@ struct fastbuf *fb1, struct fastbuf *fb2
 #undef SORT_KEY
 #undef SORT_PREFIX
 #undef SORT_UNIFY
+#undef SORT_UNIQUE
+#undef SORT_ASSERT_UNIQUE
 #undef SORT_REGULAR
 #undef SORT_DELETE_INPUT
 #undef SORT_INPUT_FILE
