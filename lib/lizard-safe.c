@@ -21,7 +21,7 @@
 struct lizard_buffer {
   uns len;
   void *ptr;
-  struct sigaction *old_sigsegv_handler;
+  struct sigaction old_sigsegv_handler;
 };
 
 struct lizard_buffer *
@@ -30,8 +30,7 @@ lizard_alloc(void)
   struct lizard_buffer *buf = xmalloc(sizeof(struct lizard_buffer));
   buf->len = 0;
   buf->ptr = NULL;
-  buf->old_sigsegv_handler = xmalloc(sizeof(struct sigaction));
-  handle_signal(SIGSEGV, buf->old_sigsegv_handler);
+  handle_signal(SIGSEGV, &buf->old_sigsegv_handler);
   return buf;
 }
 
@@ -40,8 +39,7 @@ lizard_free(struct lizard_buffer *buf)
 {
   if (buf->ptr)
     munmap(buf->ptr, buf->len + PAGE_SIZE);
-  unhandle_signal(SIGSEGV, buf->old_sigsegv_handler);
-  xfree(buf->old_sigsegv_handler);
+  unhandle_signal(SIGSEGV, &buf->old_sigsegv_handler);
   xfree(buf);
 }
 
