@@ -33,16 +33,22 @@ static void
 buck2obj_alloc_internal(struct buck2obj_buf *buf, uns max_len)
 {
   buf->max_len = max_len;
+  if (!max_len)
+  {
+    buf->raw_len = 0;
+    buf->raw = NULL;
+    return;
+  }
   buf->raw_len = max_len * LIZARD_MAX_MULTIPLY + LIZARD_MAX_ADD + MAX_HEADER_SIZE;
   buf->raw = xmalloc(buf->raw_len);
 }
 
 struct buck2obj_buf *
-buck2obj_alloc(uns max_len, struct mempool *mp)
+buck2obj_alloc(struct mempool *mp)
 {
   struct buck2obj_buf *buf = xmalloc(sizeof(struct buck2obj_buf));
-  buck2obj_alloc_internal(buf, max_len);
-  buf->lizard = lizard_alloc(max_len);
+  buck2obj_alloc_internal(buf, 0);
+  buf->lizard = lizard_alloc(0);
   buf->mp = mp;
   return buf;
 }
@@ -51,20 +57,21 @@ void
 buck2obj_free(struct buck2obj_buf *buf)
 {
   lizard_free(buf->lizard);
-  xfree(buf->raw);
+  if (buf->raw)
+    xfree(buf->raw);
   xfree(buf);
 }
 
-void
+static void
 buck2obj_realloc(struct buck2obj_buf *buf, uns max_len)
 {
   if (max_len <= buf->max_len)
     return;
-  if (max_len < 2*buf->max_len + 1)		// to ensure amortized logarithmic complexity
-    max_len = 2*buf->max_len + 1;
-  xfree(buf->raw);
+  if (max_len < 2*buf->max_len)		// to ensure amortized logarithmic complexity
+    max_len = 2*buf->max_len;
+  if (buf->raw)
+    xfree(buf->raw);
   buck2obj_alloc_internal(buf, max_len);
-  lizard_realloc(buf->lizard, max_len);
 }
 
 static inline byte *
@@ -171,12 +178,20 @@ obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, struct fastbuf *body, u
     {
       len = GET_U32(ptr);
       ptr += 4;
-      int res = lizard_decompress_safe(ptr, buf->lizard, len);
+      int res;
+decompress:
+      res = lizard_decompress_safe(ptr, buf->lizard, len);
       if (res != (int) len)
       {
 	if (res >= 0)
 	  errno = EINVAL;
-	return NULL;
+	else if (errno == EFBIG)
+	{
+	  lizard_realloc(buf->lizard, len);
+	  goto decompress;
+	}
+	else
+	  return NULL;
       }
       ptr = buf->lizard->ptr;
       end = ptr + len;
