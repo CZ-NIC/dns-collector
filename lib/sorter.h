@@ -531,7 +531,7 @@ struct fastbuf *fb1, struct fastbuf *fb2
     do P(pass)(&fb1, &fb2); while (fb1 && fb2);
 #else
     {
-      uns run_count = ~0U, max_run_count = 0;
+      sh_off_t run_count = ~0U, max_run_count = 0;
       if (fb1)
 	max_run_count += bfilesize(fb1);
       if (fb2)
