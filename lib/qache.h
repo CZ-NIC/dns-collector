@@ -37,12 +37,15 @@ uns qache_insert(struct qache *q, qache_key_t *key, uns pos_hint, void *data, un
  * can be greater than the original value requested). The start indicates starting offset inside the
  * entry's data.
  */
-uns qache_lookup(struct qache *q, qache_key_t *key, uns pos_hint, void **datap, uns *sizep, uns start);
+uns qache_lookup(struct qache *q, qache_key_t *key, uns pos_hint, byte **datap, uns *sizep, uns start);
 
 /* Delete data from the cache, given a key and a position hint. */
 uns qache_delete(struct qache *q, qache_key_t *key, uns pos_hint);
 
 /* Debugging dump (beware, doesn't lock the cache!) */
 void qache_debug(struct qache *q);
+
+/* Check consistency of the cache structure */
+void qache_audit(struct qache *q);
 
 #endif
