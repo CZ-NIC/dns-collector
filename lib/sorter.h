@@ -304,7 +304,7 @@ P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
 	{
 	  run_count++;
 #ifdef SORT_UP_TO
-	  if (sorter_presort_bufsize < SORT_UP_TO)
+	  if (sorter_presort_bufsize < (uns) SORT_UP_TO)
 #endif
 	    SWAP(out1, out2, tbuf);
 	  if (!out1)

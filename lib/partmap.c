@@ -65,16 +65,16 @@ partmap_close(struct partmap *p)
 void *
 partmap_map(struct partmap *p, sh_off_t start, uns size)
 {
-  if (!p->start_map || start < p->start_off || start+size > p->end_off)
+  if (!p->start_map || start < p->start_off || (sh_off_t) (start+size) > p->end_off)
     {
       if (p->start_map)
 	munmap(p->start_map, p->end_off - p->start_off);
       sh_off_t end = start + size;
       sh_off_t win_start = start/PAGE_SIZE * PAGE_SIZE;
       uns win_len = PARTMAP_WINDOW;
-      if (win_start+win_len > p->file_size)
+      if ((sh_off_t) (win_start+win_len) > p->file_size)
 	win_len = ALIGN(p->file_size - win_start, PAGE_SIZE);
-      if (win_start+win_len < end)
+      if ((sh_off_t) (win_start+win_len) < end)
 	die("partmap_map: Window is too small for mapping %d bytes", size);
       p->start_map = sh_mmap(NULL, win_len, p->writeable ? (PROT_READ | PROT_WRITE) : PROT_READ, MAP_SHARED, p->fd, win_start);
       if (p->start_map == MAP_FAILED)
