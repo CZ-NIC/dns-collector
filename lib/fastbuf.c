@@ -288,7 +288,7 @@ bgets0(struct fastbuf *f, byte *b, uns l)
 }
 
 int
-bdirect_read(struct fastbuf *f, byte **buf)
+bdirect_read_prepare(struct fastbuf *f, byte **buf)
 {
   int len;
 
@@ -296,8 +296,13 @@ bdirect_read(struct fastbuf *f, byte **buf)
     return EOF;
   *buf = f->bptr;
   len = f->bstop - f->bptr;
-  f->bptr += len;
   return len;
+}
+
+void
+bdirect_read_commit(struct fastbuf *f, byte *pos)
+{
+  f->bptr = pos;
 }
 
 int

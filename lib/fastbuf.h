@@ -284,7 +284,8 @@ bputsn(struct fastbuf *f, byte *b)
 
 /* Direct I/O on buffers */
 
-int bdirect_read(struct fastbuf *f, byte **buf);
+int bdirect_read_prepare(struct fastbuf *f, byte **buf);
+void bdirect_read_commit(struct fastbuf *f, byte *pos);
 int bdirect_write_prepare(struct fastbuf *f, byte **buf);
 void bdirect_write_commit(struct fastbuf *f, byte *pos);
 
