@@ -120,7 +120,7 @@ extern uns sorter_pass_counter;
 #define LESS <=
 #endif
 
-#if defined(SORT_UNIQUE) && defined(DEBUG)
+#if defined(SORT_UNIQUE) && defined(DEBUG_ASSERTS)
 #define SORT_ASSERT_UNIQUE
 #endif
 
