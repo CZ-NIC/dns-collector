@@ -8,6 +8,7 @@
 #include "lib/pools.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 struct memchunk {
   struct memchunk *next;
@@ -96,4 +97,12 @@ mp_alloc(struct mempool *p, uns s)
       p->first_large = c;
       return c->data;
     }
+}
+
+void *
+mp_alloc_zero(struct mempool *p, uns s)
+{
+  void *x = mp_alloc(p, s);
+  bzero(x, s);
+  return x;
 }

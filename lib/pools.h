@@ -19,6 +19,7 @@ struct mempool *mp_new(uns);
 void mp_delete(struct mempool *);
 void mp_flush(struct mempool *);
 void *mp_alloc(struct mempool *, uns);
+void *mp_alloc_zero(struct mempool *, uns);
 
 static inline void *mp_alloc_fast(struct mempool *p, uns l)
 {
