@@ -9,10 +9,11 @@
 
 /* Version */
 
-#define SHER_VER "1.3"
+#define SHER_VER "2.0-alpha"
 
 /* Features */
 
+/* FIXME: Prune */
 #define SHERLOCK_CONFIG_REF_WEIGHTS	/* Weighed references */
 #define SHERLOCK_CONFIG_LARGE_DB	/* Support for DB files >4GB */
 #define SHERLOCK_CONFIG_LFS		/* Large files on 32-bit systems */
@@ -69,11 +70,13 @@ typedef s32 sh_foff_t;
 
 #undef inline
 #define NONRET __attribute__((noreturn))
+#define UNUSED __attribute__((unused))
 
 #else
 
 #define inline
 #define NONRET
+#define UNUSED
 
 #endif
 

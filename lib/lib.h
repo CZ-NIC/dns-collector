@@ -29,6 +29,7 @@ void open_temp(struct tempfile *, byte *);
 void delete_temp(struct tempfile *);
 u32 temprand(uns);
 
+/* FIXME: Remove? */
 #define TF_GENERIC "t"
 #define TF_QUEUE_CONTROL "c"
 #define TF_QUEUE_DATA "d"
@@ -36,25 +37,9 @@ u32 temprand(uns);
 #define TF_TRANSFORM "s"
 #define TF_OBJECT "o"
 
-/* Config Files */
-
-struct cfitem {
-  byte *name;
-  int type;
-  void *var;
-};
-
-#define CI_STOP 0
-#define CI_INT 1
-#define CI_STRING 2
-#define CI_FUNCTION 3
-
-typedef byte *(*ci_func)(struct cfitem *, byte *);
-
-void cf_read(byte *, struct cfitem *);
-int cf_read_err(byte *, struct cfitem *); /* Read with possible error, 1 = succeeded */
-
 /* Logging */
+
+/* FIXME: Define new logging mechanism? */
 
 #define L_DEBUG "<0>"
 #define L_INFO "<2>"
@@ -81,19 +66,15 @@ byte *stralloc(byte *);
 
 /* Content-Type pattern matching and filters */
 
-struct ct_filter;
-
 int match_ct_patt(byte *, byte *);
-
-struct ct_filter *new_ct_filter(void);
-byte *add_ct_filter(struct ct_filter *, byte *);
-int match_ct_filter(struct ct_filter *, byte *);
 
 /* Binary log */
 
 int log2(u32);
 
 /* obj.c */
+
+/* FIXME: What to do with this? */
 
 struct odes {				/* Object description */
   struct oattr *attrs;
@@ -123,6 +104,8 @@ struct oattr *add_attr(struct odes *, struct oattr *, uns, byte *);
 struct oattr *prepend_attr(struct odes *, uns, byte *);
 
 /* oname.c */
+
+/* FIXME: Kill? */
 
 #define OID_MIN 0x10000		/* Values less than this have special meaning */
 
@@ -165,10 +148,6 @@ regex *rx_compile(byte *r);
 void rx_free(regex *r);
 int rx_match(regex *r, byte *s);
 int rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen);
-
-/* objwalk.c */
-
-void scan_obj_tree(byte *, void (*)(oid_t, byte *));
 
 /* random.c */
 
