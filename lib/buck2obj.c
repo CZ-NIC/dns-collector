@@ -83,11 +83,17 @@ decode_attributes(byte *ptr, byte *end, struct odes *o, uns can_overwrite)
 int
 buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fastbuf *body, struct odes *o_hdr, uns *body_start, struct odes *o_body)
 {
-  if (buck_type == BUCKET_TYPE_PLAIN)
+  if (buck_type <= BUCKET_TYPE_PLAIN)
   {
-    if (body_start)
+    if (body_start)			// there is no header part
       *body_start = 0;
-    obj_read_multi(body, o_hdr);	// ignore empty lines, read until EOF or NUL
+    // ignore empty lines and read until the end of the bucket
+    sh_off_t end = btell(body) + buck_len;
+    byte buf[MAX_ATTR_SIZE];
+    while (btell(body) < end && bgets(body, buf, sizeof(buf)))
+      if (buf[0])
+	obj_add_attr(o_hdr, buf[0], buf+1);
+    ASSERT(btell(body) == end);
   }
   else if (buck_type == BUCKET_TYPE_V30)
   {
@@ -185,14 +191,4 @@ obj_read(struct fastbuf *f, struct odes *o)
       obj_add_attr(o, buf[0], buf+1);
     }
   return 0;
-}
-
-void
-obj_read_multi(struct fastbuf *f, struct odes *o)
-{
-  /* Read a multi-part object ending with either EOF or a NUL character */
-  byte buf[MAX_ATTR_SIZE];
-  while (bpeekc(f) > 0 && bgets(f, buf, sizeof(buf)))
-    if (buf[0])
-      obj_add_attr(o, buf[0], buf+1);
 }

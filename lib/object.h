@@ -60,7 +60,6 @@ struct odes *obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns
    */
 
 int obj_read(struct fastbuf *, struct odes *);
-void obj_read_multi(struct fastbuf *, struct odes *);
 
 /* obj2buck.c: Generating buckets from objects */
 
