@@ -4,7 +4,7 @@
  *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
  */
 
-#include "unicode.h"
+#include "charset/unicode.h"
 
 uns
 ucs2_to_utf8(byte *d, word *s)

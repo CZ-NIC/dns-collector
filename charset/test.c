@@ -2,8 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <lib/lib.h>
-#include <charset/unicode.h>
+#include "lib/lib.h"
+#include "charset/unicode.h"
 
 int main(void)
 {

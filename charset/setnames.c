@@ -9,8 +9,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <lib/lib.h>
 
+#include "lib/lib.h"
 #include "charconv.h"
 
 char *cs_names[] = {

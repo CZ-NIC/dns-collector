@@ -4,7 +4,7 @@
  *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
  */
 
-#include "unicode.h"
+#include "charset/unicode.h"
 
 uns
 Ustrlen(word *w)

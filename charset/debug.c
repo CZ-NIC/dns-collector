@@ -5,9 +5,9 @@
  */
 
 #include <stdio.h>
-#include <lib/lib.h>
 
-#include "unicode.h"
+#include "lib/lib.h"
+#include "charset/unicode.h"
 
 static byte *
 get_static_buffer(uns size)

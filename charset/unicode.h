@@ -8,23 +8,10 @@
 #define _UNICODE_H
 
 #include "lib/config.h"
+#include "lib/chartype.h"
 
 extern byte *_U_cat[], *_U_sig[];
 extern word *_U_upper[], *_U_lower[], *_U_unaccent[];
-
-#define _C_UPPER 1			/* Upper-case letters */
-#define _C_LOWER 2			/* Lower-case letters */
-#define _C_PRINT 4			/* Printable */
-#define _C_DIGIT 8			/* Digits */
-#define _C_CTRL 16			/* Control characters */
-#define _C_XDIGIT 32			/* Hexadecimal digits */
-#define _C_BLANK 64			/* Blanks */
-#define _C_INNER 128			/* `inner punctuation' -- underscore etc. */
-
-#define _C_ALPHA (_C_UPPER | _C_LOWER)
-#define _C_ALNUM (_C_ALPHA | _C_DIGIT)
-#define _C_WORD (_C_ALNUM | _C_INNER)
-#define _C_WSTART (_C_ALPHA | _C_INNER)
 
 static inline uns Ucategory(word x)
 {

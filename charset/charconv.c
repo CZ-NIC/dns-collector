@@ -7,8 +7,8 @@
  *	of the GNU General Public License.
  */
 
-#include "charconv.h"
-#include "chartable.h"
+#include "charset/charconv.h"
+#include "charset/chartable.h"
 
 #ifndef NULL
 #define NULL ((void *)0)
