@@ -46,6 +46,8 @@ fbmem_refill(struct fastbuf *f)
       f->pos += b->size;
       b = b->next;
     }
+  if (!b->size)
+    return 0;
   f->buffer = f->bptr = b->data;
   f->bufend = f->bstop = b->data + b->size;
   f->llpos = b;
