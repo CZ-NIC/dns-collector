@@ -39,6 +39,12 @@ uns qache_insert(struct qache *q, qache_key_t *key, uns pos_hint, void *data, un
  */
 uns qache_lookup(struct qache *q, qache_key_t *key, uns pos_hint, byte **datap, uns *sizep, uns start);
 
+/* Inspect data in the cache (but don't modify LRU nor anything else), given a position.
+ * If key is non-NULL, it's filled with the cache key. The rest works as in qache_lookup.
+ * Returns 0 if the entry is empty, ~0 for position out of range, entry number otherwise.
+ */
+uns qache_probe(struct qache *q, qache_key_t *key, uns pos, byte **datap, uns *sizep, uns start);
+
 /* Delete data from the cache, given a key and a position hint. */
 uns qache_delete(struct qache *q, qache_key_t *key, uns pos_hint);
 

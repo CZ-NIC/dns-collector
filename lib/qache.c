@@ -417,7 +417,7 @@ qache_hash_find(struct qache *q, qache_key_t *key, uns pos_hint)
 {
   ASSERT(q->locked);
 
-  if (pos_hint && pos_hint < q->hdr->max_entries && !memcmp(q->entry_table[pos_hint].key, key, sizeof(*key)))
+  if (pos_hint && pos_hint < q->hdr->max_entries && q->entry_table[pos_hint].data_len != ~0U && !memcmp(q->entry_table[pos_hint].key, key, sizeof(*key)))
     return pos_hint;
 
   uns h = qache_hash(q, key);
@@ -598,6 +598,41 @@ qache_insert(struct qache *q, qache_key_t *key, uns pos_hint, void *data, uns si
   return e;
 }
 
+static void
+copy_out(struct qache *q, struct qache_entry *entry, byte **datap, uns *sizep, uns start)
+{
+  if (sizep)
+    {
+      uns size = *sizep;
+      uns avail = (start > entry->data_len) ? 0 : entry->data_len - start;
+      uns xfer = MIN(size, avail);
+      *sizep = avail;
+      if (datap)
+	{
+	  if (!*datap)
+	    *datap = xmalloc(xfer);
+	  uns blk = entry->first_data_block;
+	  while (start >= q->hdr->block_size)
+	    {
+	      blk = q->next_table[blk];
+	      start -= q->hdr->block_size;
+	    }
+	  byte *data = *datap;
+	  while (xfer)
+	    {
+	      uns len = MIN(xfer, q->hdr->block_size - start);
+	      memcpy(data, get_block_start(q, blk), len);
+	      blk = q->next_table[blk];
+	      data += len;
+	      xfer -= len;
+	      start = 0;
+	    }
+	}
+    }
+  else
+    ASSERT(!datap);
+}
+
 uns
 qache_lookup(struct qache *q, qache_key_t *key, uns pos_hint, byte **datap, uns *sizep, uns start)
 {
@@ -609,36 +644,7 @@ qache_lookup(struct qache *q, qache_key_t *key, uns pos_hint, byte **datap, uns 
       DBG("Lookup <%s>: found entry %d", format_key(key), e);
       qache_lru_remove(q, e);
       qache_lru_insert(q, e);
-      if (sizep)
-	{
-	  uns size = *sizep;
-	  uns avail = (start > entry->data_len) ? 0 : entry->data_len - start;
-	  uns xfer = MIN(size, avail);
-	  *sizep = avail;
-	  if (datap)
-	    {
-	      if (!*datap)
-		*datap = xmalloc(xfer);
-	      uns blk = entry->first_data_block;
-	      while (start >= q->hdr->block_size)
-		{
-		  blk = q->next_table[blk];
-		  start -= q->hdr->block_size;
-		}
-	      byte *data = *datap;
-	      while (xfer)
-		{
-		  uns len = MIN(xfer, q->hdr->block_size - start);
-		  memcpy(data, get_block_start(q, blk), len);
-		  blk = q->next_table[blk];
-		  data += len;
-		  xfer -= len;
-		  start = 0;
-		}
-	    }
-	}
-      else
-	ASSERT(!datap);
+      copy_out(q, entry, datap, sizep, start);
       qache_unlock(q, 1);     /* Yes, modified -- we update the LRU */
     }
   else
@@ -647,6 +653,32 @@ qache_lookup(struct qache *q, qache_key_t *key, uns pos_hint, byte **datap, uns 
       qache_unlock(q, 0);
     }
   return e;
+}
+
+uns
+qache_probe(struct qache *q, qache_key_t *key, uns pos, byte **datap, uns *sizep, uns start)
+{
+  if (!pos || pos >= q->hdr->max_entries)
+    {
+      DBG("Probe %d: Out of range", pos);
+      return ~0U;
+    }
+
+  qache_lock(q);
+  uns ret = 0;
+  struct qache_entry *entry = &q->entry_table[pos];
+  if (entry->data_len != ~0U)
+    {
+      DBG("Probe %d: Found key <%s>", format_key(entry->key));
+      if (key)
+	memcpy(key, entry->key, sizeof(qache_key_t));
+      copy_out(q, entry, datap, sizep, start);
+      ret = pos;
+    }
+  else
+    DBG("Probe %d: Empty", pos);
+  qache_unlock(q, 0);
+  return ret;
 }
 
 uns
