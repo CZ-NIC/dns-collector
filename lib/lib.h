@@ -208,9 +208,12 @@ int careful_read(int fd, void *buf, int len);
 int careful_write(int fd, void *buf, int len);
 
 /* sighandler.c */
-typedef void (*my_sighandler_t)(void);
-extern my_sighandler_t signal_handler[];
 
-void *handle_signal(int signum);
+typedef int (*sh_sighandler_t)(int);
+  /* obtains signum, returns nonzero if abort() should be called */
+extern sh_sighandler_t signal_handler[];
+
+struct sigaction;
+void handle_signal(int signum, struct sigaction *oldact);
 
 #endif

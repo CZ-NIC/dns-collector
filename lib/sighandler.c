@@ -7,21 +7,28 @@
 #include "lib/lib.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <signal.h>
 
-my_sighandler_t signal_handler[_NSIG];
+sh_sighandler_t signal_handler[_NSIG];
 
 static void
 signal_handler_internal(int sig)
 {
-  signal(sig, signal_handler_internal);
   if (signal_handler[sig])
-    signal_handler[sig]();
+  {
+    if (!signal_handler[sig](sig))
+      return;
+  }
   abort();
 }
 
-void *
-handle_signal(int signum)
+void
+handle_signal(int signum, struct sigaction *oldact)
 {
-  return signal(signum, signal_handler_internal);
+  struct sigaction act;
+  bzero(&act, sizeof(act));
+  act.sa_handler = signal_handler_internal;
+  if (sigaction(signum, &act, oldact) < 0)
+    die("sigaction: %m");
 }
