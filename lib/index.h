@@ -46,8 +46,12 @@ struct card_attr {
   CUSTOM_CARD_ATTRS			/* Include all custom attributes */
   byte weight;
   byte flags;
+#ifdef CONFIG_LASTMOD
   byte age;				/* Document age in pseudo-logarithmic units wrt. reference time */
-  // byte rfu[1];			/* If no custom attributes are defined */
+#endif
+#ifdef CONFIG_FILETYPE
+  byte type_flags;			/* File type flags (see below) */
+#endif
 };
 
 enum card_flag {
@@ -59,6 +63,19 @@ enum card_flag {
 };
 
 #define CARD_POS_SHIFT 5		/* Card positions are shifted this # of bytes to the right */
+
+/*
+ *  We store document type and several other properties in card_attr->type_flags.
+ *  Here we define only the basic structure, the details and also how to match the
+ *  types are defined in custom.h.
+ *
+ *  bits 7--5	file type: (0-3: text types, 4-7: other types, defined by custom.h)
+ *  bits 4--0	type-dependent information, for text types it's document language code
+ */
+
+#define CA_GET_FILE_TYPE(a) ((a)->type_flags >> 5)
+#define CA_GET_FILE_INFO(a) ((a)->type_flags & 0x1f)
+#define CA_GET_FILE_LANG(a) ((a)->type_flags & 0x80 ? 0 : CA_GET_FILE_INFO(a))
 
 /* String fingerprints */
 
