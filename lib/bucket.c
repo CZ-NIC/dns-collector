@@ -8,6 +8,7 @@
 #include "lib/bucket.h"
 #include "lib/fastbuf.h"
 #include "lib/lfs.h"
+#include "lib/conf.h"
 
 #include <string.h>
 #include <fcntl.h>
@@ -19,7 +20,23 @@ static unsigned int obuck_remains, obuck_check_pad;
 static struct fastbuf *obuck_fb;
 static struct obuck_header obuck_hdr;
 static sh_off_t bucket_start;
-byte *obuck_name = "db/objects";		/* FIXME */
+
+/*** Configuration ***/
+
+byte *obuck_name = "not/configured";
+static int obuck_io_buflen = 65536;
+
+static struct cfitem obuck_config[] = {
+  { "Buckets",		CT_SECTION,	NULL },
+  { "BucketFile",	CT_STRING,	&obuck_name },
+  { "BufSize",		CT_INT,		&obuck_io_buflen },
+  { NULL,		CT_STOP,	NULL }
+};
+
+static void CONSTRUCTOR obuck_init_config(void)
+{
+  cf_register(obuck_config);
+}
 
 /*** Internal operations ***/
 
@@ -111,15 +128,16 @@ void
 obuck_init(int writeable)
 {
   struct fastbuf *b;
-  int buflen = 65536;
   sh_off_t size;
 
   obuck_fd = sh_open(obuck_name, (writeable ? O_RDWR | O_CREAT : O_RDONLY), 0666);
-  obuck_fb = b = xmalloc_zero(sizeof(struct fastbuf) + buflen + OBUCK_ALIGN + 4);
-  b->buflen = buflen;
+  if (obuck_fd < 0)
+    die("Unable to open bucket file %s: %m", obuck_name);
+  obuck_fb = b = xmalloc_zero(sizeof(struct fastbuf) + obuck_io_buflen + OBUCK_ALIGN + 4);
+  b->buflen = obuck_io_buflen;
   b->buffer = (char *)(b+1);
   b->bptr = b->bstop = b->buffer;
-  b->bufend = b->buffer + buflen;
+  b->bufend = b->buffer + obuck_io_buflen;
   b->name = "bucket";
   b->fd = obuck_fd;
   b->refill = obuck_fb_refill;
@@ -280,17 +298,23 @@ obuck_delete(oid_t oid)
 
 #ifdef TEST
 
-#define COUNT 100
+#define COUNT 5000
 #define MAXLEN 10000
 #define KILLPERC 13
 #define LEN(i) ((259309*(i))%MAXLEN)
 
-int main(void)
+int main(int argc, char **argv)
 {
   int ids[COUNT];
   unsigned int i, j, cnt;
   struct obuck_header h;
   struct fastbuf *b;
+
+  log_init(NULL);
+  if (cf_getopt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) >= 0 ||
+      optind < argc)
+    die("This program has no command-line arguments.");
+
   unlink(obuck_name);
   obuck_init(1);
   for(j=0; j<COUNT; j++)
