@@ -23,13 +23,15 @@ enum word_type {
   WT_ALT,				/* Alternate texts for graphical elements */
   WT_URL1,				/* Word extracted from document URL (low and high weight) */
   WT_URL2,
+  WT_FILE,				/* Part of file name */
+  WT_LINK,				/* Link text */
   WT_MAX
 };
 
 /* Descriptive names used for user output */
 #define WORD_TYPE_USER_NAMES							\
    "reserved", "text", "emph", "small", "title", "hdr1", "hdr2", "keywd",	\
-   "meta", "alt", "urlword1", "urlword2", "type12", "type13", "type14", "type15"
+   "meta", "alt", "urlword1", "urlword2", "nameword", "link", "type14", "type15"
 
 /* Keywords for word type names */
 #define WORD_TYPE_NAMES	       			\
@@ -44,13 +46,15 @@ enum word_type {
 	T(KEYWD, 1 << WT_KEYWORD)		\
 	T(META, 1 << WT_META)			\
 	T(ALT, 1 << WT_ALT)			\
-	T(URLWORD, (1 << WT_URL1) | (1 << WT_URL2))
+	T(URLWORD, (1 << WT_URL1) | (1 << WT_URL2))	\
+	T(FILE, 1 << WT_FILE)			\
+	T(LINK, 1 << WT_LINK)
 
 /* These types are not shown in document contexts */
-#define WORD_TYPES_HIDDEN ((1 << WT_URL1) | (1 << WT_URL2))
+#define WORD_TYPES_HIDDEN ((1 << WT_URL1) | (1 << WT_URL2) | (1 << WT_FILE))
 
 /* These types are always matched without accents if accent mode is set to "auto" */
-#define WORD_TYPES_NO_AUTO_ACCENT ((1 << WT_URL1) | (1 << WT_URL2))
+#define WORD_TYPES_NO_AUTO_ACCENT ((1 << WT_URL1) | (1 << WT_URL2) | (1 << WT_FILE) | (1 << WT_LINK))
 
 /* String types */
 
