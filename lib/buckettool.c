@@ -186,9 +186,12 @@ fsck(int fix)
 	    printf("%08x  missing trailer\n", oid);
 	  else if (chk != OBUCK_TRAILER)
 	    printf("%08x  mismatched trailer\n", oid);
-	  /* OK */
-	  pos = end;
-	  continue;
+	  else
+	    {
+	      /* OK */
+	      pos = end;
+	      continue;
+	    }
 	}
       errors++;
       end = pos;
@@ -227,6 +230,8 @@ fsck(int fix)
 	  sh_pwrite(fd, &chk, 4, end-4);
 	  printf("*** replaced the invalid chunk by a DELETED bucket of size %d\n", (uns)(end - pos));
 	}
+      else
+	printf("*** would mark %d bytes as DELETED\n", (uns)(end - pos));
       pos = end;
     }
  finish:
