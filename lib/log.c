@@ -99,20 +99,18 @@ die(byte *msg, ...)
 #endif
 }
 
-#ifdef CONFIG_DEBUG
 void
 assert_failed(char *assertion, char *file, int line)
 {
   log(L_FATAL, "Assertion `%s' failed at %s:%d", assertion, file, line);
   abort();
 }
-#else
+
 void
-assert_failed(void)
+assert_failed_noinfo(void)
 {
   die("Internal error: Assertion failed.");
 }
-#endif
 
 static byte *
 log_basename(byte *n)
