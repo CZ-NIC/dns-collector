@@ -65,6 +65,7 @@
  *			key, return NULL if no such node exists.
  *  TREE_WANT_FIND_NEXT	node *find_next(node *start) -- find next node with the
  *			specified key, return NULL if no such node exists.
+ *			Implies TREE_DUPLICATES.
  *  TREE_WANT_SEARCH	node *search(key) -- find the node with the specified
  *			or, if it does not exist, the nearest one.
  *  TREE_WANT_ADJACENT	node *adjacent(node *, uns direction) -- finds next
@@ -108,6 +109,7 @@
  *  TREE_GLOBAL		Functions are exported (i.e., not static).
  *  TREE_CONSERVE_SPACE	Use as little space as possible at the price of a
  *			little slowdown.
+ *  TREE_DUPLICATES	Records with duplicate keys are allowed.
  *  TREE_MAX_DEPTH	Maximal depth of a tree (for stack allocation).
  *
  *  If you set TREE_WANT_ITERATOR, you also get a iterator macro at no
@@ -323,6 +325,19 @@ static inline void P(init_data) (P(node) *n UNUSED)
 #	define TREE_MAX_DEPTH 64
 #endif
 
+#if defined(TREE_WANT_FIND_NEXT) && !defined(TREE_DUPLICATES)
+#	define TREE_DUPLICATES
+#endif
+
+#ifdef TREE_WANT_LOOKUP
+#ifndef TREE_WANT_FIND
+#	define TREE_WANT_FIND
+#endif
+#ifndef TREE_WANT_NEW
+#	define TREE_WANT_NEW
+#endif
+#endif
+
 /* Now the operations */
 
 STATIC void P(init) (T *t)
@@ -367,7 +382,7 @@ static uns P(fill_stack) (P(stack_entry) *stack, uns max_depth, P(bucket) *node,
 		ASSERT(i+1 < max_depth);
 		stack[i+1].buck = P(tree_son) (stack[i].buck, stack[i].son);
 	}
-#ifdef TREE_WANT_FIND_NEXT
+#ifdef TREE_DUPLICATES
 	if (stack[i].buck)
 	{
 		uns idx;
@@ -385,7 +400,7 @@ static uns P(fill_stack) (P(stack_entry) *stack, uns max_depth, P(bucket) *node,
 	return i;
 }
 
-#if defined(TREE_WANT_FIND) || defined(TREE_WANT_LOOKUP)
+#ifdef TREE_WANT_FIND
 STATIC P(node) * P(find) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
@@ -426,7 +441,7 @@ STATIC P(node) * P(adjacent) (P(node) *start, uns direction)
 }
 #endif
 
-#if defined(TREE_WANT_FIND_NEXT) || defined(TREE_WANT_DELETE) || defined(TREE_WANT_REMOVE)
+#if defined(TREE_DUPLICATES) || defined(TREE_WANT_DELETE) || defined(TREE_WANT_REMOVE)
 static int P(find_next_node) (P(stack_entry) *stack, uns max_depth, uns direction)
 {
 	uns depth = 0;
@@ -565,14 +580,14 @@ try_it_again:
 		t->root = node;
 }
 
-#if defined(TREE_WANT_NEW) || defined(TREE_WANT_LOOKUP)
+#ifdef TREE_WANT_NEW
 STATIC P(node) * P(new) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	P(bucket) *added;
 	uns depth;
 	depth = P(fill_stack) (stack, TREE_MAX_DEPTH, t->root, TREE_KEY(), 1);
-#ifdef TREE_WANT_FIND_NEXT
+#ifdef TREE_DUPLICATES
 	/* It is the last found value, hence everything in the right subtree is
 	 * strongly _bigger_.  */
 	depth += P(find_next_node) (stack+depth, TREE_MAX_DEPTH-depth, 1);
@@ -868,7 +883,7 @@ static void P(dump_subtree) (struct fastbuf *fb, T *t, P(bucket) *node, P(bucket
 	{
 		ASSERT(!flag || !P(red_flag) (parent));
 		cmp_res *= P(cmp) (TREE_KEY(node->n.), TREE_KEY(parent->n.));
-#ifdef TREE_WANT_FIND_NEXT
+#ifdef TREE_DUPLICATES
 		ASSERT(cmp_res >= 0);
 #else
 		ASSERT(cmp_res > 0);
@@ -969,6 +984,7 @@ do											\
 #undef TREE_USE_POOL
 #undef TREE_STATIC
 #undef TREE_CONSERVE_SPACE
+#undef TREE_DUPLICATES
 #undef TREE_MAX_DEPTH
 #undef TREE_STORE_PARENT
 #undef TREE_KEY
