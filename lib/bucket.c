@@ -297,11 +297,8 @@ obuck_fetch(void)
 oid_t
 obuck_predict_last_oid(void)
 {
-  obuck_lock_write();
   sh_off_t size = sh_seek(obuck_fd, 0, SEEK_END);
-  oid_t ss = size >> OBUCK_SHIFT;
-  obuck_unlock();
-  return ss;
+  return (oid_t)(size >> OBUCK_SHIFT);
 }
 
 struct fastbuf *
