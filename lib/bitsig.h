@@ -7,5 +7,6 @@
 struct bitsig;
 
 struct bitsig *bitsig_init(uns perrlog, uns maxn);
+void bitsig_free(struct bitsig *b);
 int bitsig_member(struct bitsig *b, byte *item);
 int bitsig_insert(struct bitsig *b, byte *item);

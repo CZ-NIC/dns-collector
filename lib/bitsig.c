@@ -43,6 +43,7 @@
 #include "lib/md5.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 struct bitsig {
   uns l, m, n, maxn, max_m_mult;
@@ -71,6 +72,12 @@ bitsig_init(uns perrlog, uns maxn)
   bzero(b->array, mbytes);
   log(L_DEBUG, "Initialized bitsig array with l=%d, m=%u (%u KB), expecting %d items", b->l, b->m, (mbytes+1023)/1024, maxn);
   return b;
+}
+
+void
+bitsig_free(struct bitsig *b)
+{
+  xfree(b);
 }
 
 static void
