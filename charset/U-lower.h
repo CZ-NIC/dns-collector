@@ -1,6 +1,6 @@
 /* Generated automatically by gentab. Please don't edit. */
 
-static word _U_lower_00[256] = {
+static const word _U_lower_00[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -19,7 +19,7 @@ static word _U_lower_00[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static word _U_lower_01[256] = {
+static const word _U_lower_01[256] = {
 0x0101,0,0x0103,0,0x0105,0,0x0107,0,0x0109,0,0x010B,0,0x010D,0,0x010F,0,
 0x0111,0,0x0113,0,0x0115,0,0x0117,0,0x0119,0,0x011B,0,0x011D,0,0x011F,0,
 0x0121,0,0x0123,0,0x0125,0,0x0127,0,0x0129,0,0x012B,0,0x012D,0,0x012F,0,
@@ -38,7 +38,7 @@ static word _U_lower_01[256] = {
 0,0x01F3,0x01F3,0,0x01F5,0,0x0195,0x01BF,0x01F9,0,0x01FB,0,0x01FD,0,0x01FF,0
 };
 
-static word _U_lower_02[256] = {
+static const word _U_lower_02[256] = {
 0x0201,0,0x0203,0,0x0205,0,0x0207,0,0x0209,0,0x020B,0,0x020D,0,0x020F,0,
 0x0211,0,0x0213,0,0x0215,0,0x0217,0,0x0219,0,0x021B,0,0x021D,0,0x021F,0,
 0x019E,0,0x0223,0,0x0225,0,0x0227,0,0x0229,0,0x022B,0,0x022D,0,0x022F,0,
@@ -57,7 +57,7 @@ static word _U_lower_02[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static word _U_lower_03[256] = {
+static const word _U_lower_03[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -76,7 +76,7 @@ static word _U_lower_03[256] = {
 0,0,0,0,0x03B8,0,0,0x03F8,0,0x03F2,0x03FB,0,0,0,0,0
 };
 
-static word _U_lower_04[256] = {
+static const word _U_lower_04[256] = {
 0x0450,0x0451,0x0452,0x0453,0x0454,0x0455,0x0456,0x0457,0x0458,0x0459,0x045A,0x045B,0x045C,0x045D,0x045E,0x045F,
 0x0430,0x0431,0x0432,0x0433,0x0434,0x0435,0x0436,0x0437,0x0438,0x0439,0x043A,0x043B,0x043C,0x043D,0x043E,0x043F,
 0x0440,0x0441,0x0442,0x0443,0x0444,0x0445,0x0446,0x0447,0x0448,0x0449,0x044A,0x044B,0x044C,0x044D,0x044E,0x044F,
@@ -95,7 +95,7 @@ static word _U_lower_04[256] = {
 0x04F1,0,0x04F3,0,0x04F5,0,0,0,0x04F9,0,0,0,0,0,0,0
 };
 
-static word _U_lower_05[256] = {
+static const word _U_lower_05[256] = {
 0x0501,0,0x0503,0,0x0505,0,0x0507,0,0x0509,0,0x050B,0,0x050D,0,0x050F,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -114,7 +114,7 @@ static word _U_lower_05[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static word _U_lower_1E[256] = {
+static const word _U_lower_1E[256] = {
 0x1E01,0,0x1E03,0,0x1E05,0,0x1E07,0,0x1E09,0,0x1E0B,0,0x1E0D,0,0x1E0F,0,
 0x1E11,0,0x1E13,0,0x1E15,0,0x1E17,0,0x1E19,0,0x1E1B,0,0x1E1D,0,0x1E1F,0,
 0x1E21,0,0x1E23,0,0x1E25,0,0x1E27,0,0x1E29,0,0x1E2B,0,0x1E2D,0,0x1E2F,0,
@@ -133,7 +133,7 @@ static word _U_lower_1E[256] = {
 0x1EF1,0,0x1EF3,0,0x1EF5,0,0x1EF7,0,0x1EF9,0,0,0,0,0,0,0
 };
 
-static word _U_lower_1F[256] = {
+static const word _U_lower_1F[256] = {
 0,0,0,0,0,0,0,0,0x1F00,0x1F01,0x1F02,0x1F03,0x1F04,0x1F05,0x1F06,0x1F07,
 0,0,0,0,0,0,0,0,0x1F10,0x1F11,0x1F12,0x1F13,0x1F14,0x1F15,0,0,
 0,0,0,0,0,0,0,0,0x1F20,0x1F21,0x1F22,0x1F23,0x1F24,0x1F25,0x1F26,0x1F27,
@@ -152,7 +152,7 @@ static word _U_lower_1F[256] = {
 0,0,0,0,0,0,0,0,0x1F78,0x1F79,0x1F7C,0x1F7D,0x1FF3,0,0,0
 };
 
-static word _U_lower_21[256] = {
+static const word _U_lower_21[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0x03C9,0,0,0,0x006B,0x00E5,0,0,0,0,
@@ -171,7 +171,7 @@ static word _U_lower_21[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static word _U_lower_24[256] = {
+static const word _U_lower_24[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -190,7 +190,7 @@ static word _U_lower_24[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static word _U_lower_FF[256] = {
+static const word _U_lower_FF[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0xFF41,0xFF42,0xFF43,0xFF44,0xFF45,0xFF46,0xFF47,0xFF48,0xFF49,0xFF4A,0xFF4B,0xFF4C,0xFF4D,0xFF4E,0xFF4F,
@@ -209,7 +209,7 @@ static word _U_lower_FF[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-word *_U_lower[256] = {
+const word *_U_lower[256] = {
 _U_lower_00,_U_lower_01,_U_lower_02,_U_lower_03,_U_lower_04,_U_lower_05,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,_U_lower_1E,_U_lower_1F,
 NULL,_U_lower_21,NULL,NULL,_U_lower_24,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
