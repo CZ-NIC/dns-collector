@@ -30,6 +30,7 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define CLAMP(x,min,max) ({ int _t=x; (_t < min) ? min : (_t > max) ? max : _t; })
+#define ABS(x) ((x) < 0 ? -(x) : (x))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
 
 /* Temporary Files */
