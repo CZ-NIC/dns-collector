@@ -342,7 +342,7 @@ pgc_put(struct page_cache *c, struct page *p)
   else
     {
       rem_node(&p->hn);
-      free(p);
+      xfree(p);
       c->total_count--;
     }
 }
