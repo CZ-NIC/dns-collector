@@ -254,6 +254,7 @@ cat(void)
       }
       else
 	dump_parsed_bucket(out, &h, b);
+      bputc(out, '\n');
     }
   bclose(out);
   obuck_cleanup();
