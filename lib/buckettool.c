@@ -38,6 +38,7 @@ CF_USAGE
 -c\t\tconcatenate and dump all buckets\n\
 -f\t\taudit bucket file structure\n\
 -F\t\taudit and fix bucket file structure\n\
+-q\t\tquick check of bucket file consistency\n\
 -s\t\tshake down bucket file (without updating other structures!!!)\n\
 -v\t\tbe verbose\n\
 ");
@@ -265,6 +266,13 @@ shake(void)
   obuck_cleanup();
 }
 
+static void
+quickcheck(void)
+{
+  obuck_init(1);
+  obuck_cleanup();
+}
+
 int
 main(int argc, char **argv)
 {
@@ -273,7 +281,7 @@ main(int argc, char **argv)
 
   log_init(NULL);
   op = 0;
-  while ((i = cf_getopt(argc, argv, CF_SHORT_OPTS "lLd:x:icfFsv", CF_NO_LONG_OPTS, NULL)) != -1)
+  while ((i = cf_getopt(argc, argv, CF_SHORT_OPTS "lLd:x:icfFqsv", CF_NO_LONG_OPTS, NULL)) != -1)
     if (i == '?' || op)
       help();
     else if (i == 'v')
@@ -311,6 +319,9 @@ main(int argc, char **argv)
       break;
     case 'F':
       fsck(1);
+      break;
+    case 'q':
+      quickcheck();
       break;
     case 's':
       shake();
