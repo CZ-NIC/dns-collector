@@ -20,11 +20,7 @@
 
 /* Version */
 
-#define SHER_VER "3.4" SHERLOCK_VERSION_SUFFIX
-
-/* Paths */
-
-#define DEFAULT_CONFIG "cf/sherlock"
+#define SHER_VER SHERLOCK_VERSION SHERLOCK_VERSION_SUFFIX
 
 /* Types */
 
