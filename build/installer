@@ -9,8 +9,8 @@ fi
 echo "Installing binaries..."
 rm -rf $DEST/{bin,lib}
 mkdir -p $DEST/{bin,lib}
-cp -a run/bin/* $DEST/bin/
-cp -a run/lib/* $DEST/lib/
+cp -aL run/bin/* $DEST/bin/
+cp -aL run/lib/* $DEST/lib/
 echo "Installing config files..."
 for a in cf/* ; do
 	if [ -f $a ] ; then
