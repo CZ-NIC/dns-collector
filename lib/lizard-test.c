@@ -1,25 +1,59 @@
 #include "lib/lib.h"
+#include "lib/conf.h"
 #include "lib/fastbuf.h"
 #include "lib/lizzard.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+
+static char *options = CF_SHORT_OPTS "cdt";
+static char *help = "\
+Usage: lizzard-test <options> input-file [output-file]\n\
+\n\
+Options:\n"
+CF_USAGE
+"-c\t\tCompress (default)\n\
+-d\t\tDecompress\n\
+-t\t\tCompress, decompress, and compare (in memory only)\n\
+";
+
+static void NONRET
+usage(void)
+{
+  fputs(help, stderr);
+  exit(1);
+}
 
 int
 main(int argc, char **argv)
 {
-  if (argc < 4)
-    die("Syntax: lizzard-test -cd input-file output-file");
-  uns compress = !strcmp(argv[1], "-c");
-  struct fastbuf *fi, *fo;
+  int opt;
+  uns action = 'c';
+  log_init(argv[0]);
+  while ((opt = cf_getopt(argc, argv, options, CF_NO_LONG_OPTS, NULL)) >= 0)
+    switch (opt)
+    {
+      case 'c':
+      case 'd':
+      case 't':
+	action = opt;
+	break;
+      default:
+	usage();
+    }
+  if (action == 't' && argc != optind+1
+  || action != 't' && argc != optind+2)
+    usage();
+
   void *mi, *mo;
   uns li, lo;
 
   struct stat st;
-  stat(argv[2], &st);
+  stat(argv[optind], &st);
   li = st.st_size;
-  fi = bopen(argv[2], O_RDONLY, 1<<16);
-  if (compress)
+  struct fastbuf *fi = bopen(argv[optind], O_RDONLY, 1<<16);
+  if (action != 'd')
   {
     lo = li * LIZZARD_MAX_MULTIPLY + LIZZARD_MAX_ADD;
     li += LIZZARD_NEEDS_CHARS;
@@ -35,19 +69,36 @@ main(int argc, char **argv)
   bclose(fi);
 
   printf("%d ", li);
-  if (!compress)
+  if (action == 'd')
     printf("->expected %d ", lo);
   fflush(stdout);
-  if (compress)
+  if (action != 'd')
     lo = lizzard_compress(mi, li, mo);
   else
     lo = lizzard_decompress(mi, mo);
-  printf("-> %d\n", lo);
+  printf("-> %d ", lo);
   fflush(stdout);
 
-  fo = bopen(argv[3], O_CREAT | O_TRUNC | O_WRONLY, 1<<16);
-  if (compress)
-    bputl(fo, li);
-  bwrite(fo, mo, lo);
-  bclose(fo);
+  if (action != 't')
+  {
+    struct fastbuf *fo = bopen(argv[optind+1], O_CREAT | O_TRUNC | O_WRONLY, 1<<16);
+    if (action == 'c')
+      bputl(fo, li);
+    bwrite(fo, mo, lo);
+    bclose(fo);
+  }
+  else
+  {
+    void *mv;
+    uns lv;
+    mv = xmalloc(li);
+    lv = lizzard_decompress(mo, mv);
+    printf("-> %d ", lv);
+    fflush(stdout);
+    if (lv != li || memcmp(mi, mv, lv))
+      printf("WRONG");
+    else
+      printf("OK");
+  }
+  printf("\n");
 }
