@@ -32,4 +32,4 @@ struct lizard_buffer;
 
 struct lizard_buffer *lizard_alloc(void);
 void lizard_free(struct lizard_buffer *buf);
-int lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length, byte **ptr);
+byte *lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length);

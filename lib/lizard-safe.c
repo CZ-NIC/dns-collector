@@ -71,8 +71,8 @@ sigsegv_handler(int signal UNUSED)
   return 1;
 }
 
-int
-lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length, byte **ptr)
+byte *
+lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
   /* Decompresses in into buf, sets *ptr to the data, and returns the
    * uncompressed length.  If an error has occured, -1 is returned and errno is
    * set.  The buffer buf is automatically reallocated.  SIGSEGV is caught in
@@ -84,18 +84,22 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length,
     lizard_realloc(buf, lock_offset);
   volatile sh_sighandler_t old_handler = signal_handler[SIGSEGV];
   signal_handler[SIGSEGV] = sigsegv_handler;
-  int len;
+  byte *ptr;
   if (!setjmp(safe_decompress_jump))
   {
-    *ptr = buf->ptr + buf->len - lock_offset;
-    len = lizard_decompress(in, *ptr);
+    ptr = buf->ptr + buf->len - lock_offset;
+    int len = lizard_decompress(in, ptr);
+    if (len != (int) expected_length)
+    {
+      ptr = NULL;
+      errno = EINVAL;
+    }
   }
   else
   {
-    *ptr = NULL;
-    len = -1;
+    ptr = NULL;
     errno = EFAULT;
   }
   signal_handler[SIGSEGV] = old_handler;
-  return len;
+  return ptr;
 }

@@ -101,13 +101,10 @@ main(int argc, char **argv)
     else
       smaller_li = 0;
     struct lizard_buffer *buf = lizard_alloc();
-    byte *ptr;
-    int lv = lizard_decompress_safe(mo, buf, crash ? smaller_li : li, &ptr);
-    printf("-> %d ", lv);
-    fflush(stdout);
-    if (lv < 0)
-      printf("err:%m ");
-    else if (lv != li || memcmp(mi, ptr, li))
+    byte *ptr = lizard_decompress_safe(mo, buf, crash ? smaller_li : li);
+    if (!ptr)
+      printf("err: %m");
+    else if (memcmp(mi, ptr, li))
       printf("WRONG");
     else
       printf("OK");

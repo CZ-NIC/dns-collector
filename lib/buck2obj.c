@@ -141,15 +141,9 @@ obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fa
     {
       len = GET_U32(ptr);
       ptr += 4;
-      int res;
-      byte *new_ptr;
-      res = lizard_decompress_safe(ptr, buf->lizard, len, &new_ptr);
-      if (res != (int) len)
-      {
-	if (res >= 0)
-	  errno = EINVAL;
+      byte *new_ptr = lizard_decompress_safe(ptr, buf->lizard, len);
+      if (!new_ptr)
 	return NULL;
-      }
       ptr = new_ptr;
       end = ptr + len;
     }
