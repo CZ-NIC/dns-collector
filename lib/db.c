@@ -146,16 +146,13 @@ static u32
 sdbm_hash(byte *key, uns keylen)
 {
   /*
-   *  This is the same hash function as GDBM uses.
-   *  It seems to work well.
+   *  This used to be the same hash function as GDBM uses,
+   *  but it turned out that it tends to give the same results
+   *  on similar keys. Damn it.
    */
-  u32 value;
-  uns index;
-
-  /* Set the initial value from key. */
-  value = 0x238F13AF * keylen;
-  for (index = 0; index < keylen; index++)
-    value = value + (key[index] << (index*5 % 24));
+  u32 value = 0x238F13AF * keylen;
+  while (keylen--)
+    value = 37*value + *key++;
   return (1103515243 * value + 12345);
 }
 
