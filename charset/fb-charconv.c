@@ -49,7 +49,7 @@ fb_cc_spout(struct fastbuf *f)
 static void
 fb_cc_close(struct fastbuf *f)
 {
-  bclose(FB_CC(f)->out);
+  bflush(FB_CC(f)->out);
   xfree(f);
 }
 
