@@ -102,7 +102,7 @@ struct fastbuf;
 
 struct odes {				/* Object description */
   struct oattr *attrs;
-  struct mempool *pool, *local_pool;
+  struct mempool *pool;
   struct oattr *cached_attr;
 };
 
@@ -114,7 +114,6 @@ struct oattr {				/* Object attribute */
 
 void obj_dump(struct odes *);
 struct odes *obj_new(struct mempool *);
-void obj_free(struct odes *);
 int obj_read(struct fastbuf *, struct odes *);
 void obj_write(struct fastbuf *, struct odes *);
 struct oattr *obj_find_attr(struct odes *, uns);

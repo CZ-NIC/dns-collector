@@ -40,24 +40,13 @@ oa_new(struct odes *o, uns x, byte *v)
 struct odes *
 obj_new(struct mempool *pool)
 {
-  struct mempool *lp = pool;
   struct odes *o;
 
-  if (!lp)
-    lp = mp_new(OBJ_POOL_SIZE);
   o = mp_alloc(lp, sizeof(struct odes));
-  o->pool = lp;
-  o->local_pool = (pool == lp) ? NULL : lp;
+  o->pool = pool;
   o->attrs = NULL;
   o->cached_attr = NULL;
   return o;
-}
-
-void
-obj_free(struct odes *o)
-{
-  if (o->local_pool)
-    mp_delete(o->local_pool);
 }
 
 int
