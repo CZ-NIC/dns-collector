@@ -500,7 +500,7 @@ url_error(uns err)
   return errmsg[err];
 }
 
-/* A "macro" for canonical split */
+/* Standard cookbook recipes */
 
 int
 url_canon_split(byte *u, byte *buf1, byte *buf2, struct url *url)
@@ -514,6 +514,19 @@ url_canon_split(byte *u, byte *buf1, byte *buf2, struct url *url)
   if (err = url_normalize(url, NULL))
     return err;
   return url_canonicalize(url);
+}
+
+int
+url_auto_canonicalize(byte *src, byte *dst)
+{
+  byte buf1[MAX_URL_SIZE], buf2[MAX_URL_SIZE], buf3[MAX_URL_SIZE];
+  int err;
+  struct url ur;
+
+  (void)((err = url_canon_split(src, buf1, buf2, &ur)) ||
+   (err = url_pack(&ur, buf3)) ||
+   (err = url_enescape(buf3, dst)));
+  return err;
 }
 
 /* Testing */

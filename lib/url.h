@@ -46,6 +46,7 @@ int url_normalize(struct url *, struct url *);
 int url_canonicalize(struct url *);
 int url_pack(struct url *, byte *);
 int url_canon_split(byte *, byte *, byte *, struct url *);
+int url_auto_canonicalize(byte *, byte *);
 uns identify_protocol(byte *);
 int url_has_repeated_component(byte *url);
 
