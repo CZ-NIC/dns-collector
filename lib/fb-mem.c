@@ -149,6 +149,18 @@ fbmem_close(struct fastbuf *f)
   xfree(f);
 }
 
+static int
+fbmem_config(struct fastbuf *f UNUSED, uns item, int value UNUSED)
+{
+  switch (item)
+    {
+    case BCONFIG_CAN_OVERWRITE:
+      return 1;
+    default:
+      return -1;
+    }
+}
+
 struct fastbuf *
 fbmem_create(unsigned blocksize)
 {
@@ -162,6 +174,7 @@ fbmem_create(unsigned blocksize)
   f->name = "<fbmem-write>";
   f->spout = fbmem_spout;
   f->close = fbmem_close;
+  f->config = fbmem_config;
   return f;
 }
 
@@ -179,6 +192,7 @@ fbmem_clone_read(struct fastbuf *b)
   f->refill = fbmem_refill;
   f->seek = fbmem_seek;
   f->close = fbmem_close;
+  f->config = fbmem_config;
   return f;
 }
 

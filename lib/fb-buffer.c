@@ -36,6 +36,18 @@ fbbuf_spout(struct fastbuf *f UNUSED)
   die("fbbuf: buffer overflow on write");
 }
 
+static int
+fbbuf_config(struct fastbuf *f UNUSED, uns item, int value UNUSED)
+{
+  switch (item)
+    {
+    case BCONFIG_CAN_OVERWRITE:
+      return 1;
+    default:
+      return -1;
+    }
+}
+
 void
 fbbuf_init_write(struct fastbuf *f, byte *buf, uns size)
 {
@@ -47,5 +59,5 @@ fbbuf_init_write(struct fastbuf *f, byte *buf, uns size)
   f->spout = fbbuf_spout;
   f->seek = NULL;
   f->close = NULL;
-  f->config = NULL;
+  f->config = fbbuf_config;
 }

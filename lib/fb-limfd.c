@@ -39,6 +39,18 @@ bfl_close(struct fastbuf *f)
   xfree(f);
 }
 
+static int
+bfl_config(struct fastbuf *f UNUSED, uns item, int value UNUSED)
+{
+  switch (item)
+    {
+    case BCONFIG_CAN_OVERWRITE:
+      return 2;
+    default:
+      return -1;
+    }
+}
+
 struct fastbuf *
 bopen_limited_fd(int fd, uns buflen, uns limit)
 {
@@ -54,6 +66,7 @@ bopen_limited_fd(int fd, uns buflen, uns limit)
   F->limit = limit;
   f->refill = bfl_refill;
   f->close = bfl_close;
+  f->config = bfl_config;
   return f;
 }
 

@@ -161,7 +161,7 @@ bfmm_config(struct fastbuf *f, uns item, int value)
       FB_MMAP(f)->is_temp_file = value;
       return 0;
     case BCONFIG_CAN_OVERWRITE:
-      return 0;
+      return 0;				/* cannot use 1, because the pages would become dirty */
     default:
       return -1;
     }
