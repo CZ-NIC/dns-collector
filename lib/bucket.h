@@ -12,6 +12,8 @@
  * Locking: Each operation on the pool is protected by a flock.
  *
  * The buckets emulate non-seekable fastbuf streams.
+ *
+ * fork()'ing if you don't have any bucket open is safe.
  */
 
 #define OBUCK_SHIFT 7
@@ -30,14 +32,22 @@ struct obuck_header {
 
 struct fastbuf;
 
-void obuck_init(int writeable);
-void obuck_cleanup(void);
-struct fastbuf * obuck_fetch(struct obuck_header *hdrp);
-void obuck_fetch_abort(struct fastbuf *b);
+void obuck_init(int writeable);	/* Initialize the bucket module */
+void obuck_cleanup(void);	/* Clean up the bucket module */
+void obuck_sync(void);		/* Flush all buffers to disk */
+
+/* Searching for buckets */
+void obuck_find_by_oid(struct obuck_header *hdrp);
+int obuck_find_first(struct obuck_header *hdrp);
+int obuck_find_next(struct obuck_header *hdrp);
+
+/* Reading current bucket */
+struct fastbuf *obuck_fetch(void);
 void obuck_fetch_end(struct fastbuf *b);
-struct fastbuf * obuck_write(void);
-void obuck_write_end(struct fastbuf *b, struct obuck_header *hdrp);
+
+/* Creating buckets */
+struct fastbuf *obuck_create(void);
+void obuck_create_end(struct fastbuf *b, struct obuck_header *hdrp);
+
+/* Deleting buckets */
 void obuck_delete(oid_t oid);
-struct fastbuf * obuck_walk_init(void);
-struct fastbuf * obuck_walk_next(struct fastbuf *b, struct obuck_header *hdrp);
-void obuck_walk_end(struct fastbuf *b);
