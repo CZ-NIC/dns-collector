@@ -192,7 +192,7 @@ fsck(int fix)
 	      if (fix)
 		{
 		  printf("*** truncating file\n");
-		  ftruncate(fd, pos);
+		  sh_ftruncate(fd, pos);
 		}
 	      else
 		printf("*** would truncate the file here\n");
