@@ -195,7 +195,7 @@ sub query($$) {
 	}
 	$q->{CARDS} = [];
 	while (@raw) {
-		push @{$q->{CARDS}}, { RAW => pop @raw };
+		push @{$q->{CARDS}}, { RAW => shift @raw };
 	}
 
 	# Parse everything
