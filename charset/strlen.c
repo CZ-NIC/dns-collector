@@ -2,6 +2,7 @@
  *	The UniCode Library -- String Length
  *
  *	(c) 1997 Martin Mares <mj@ucw.cz>
+ *	(c) 2003 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -19,3 +20,18 @@ Ustrlen(word *w)
     z++;
   return z - w;
 }
+
+uns
+utf8_strlen(byte *str)
+{
+  uns len = 0;
+  while (1)
+  {
+    uns c;
+    GET_UTF8(str, c);
+    if (!c)
+      return len;
+    len++;
+  }
+}
+

@@ -118,5 +118,6 @@ uns ucs2_to_utf8(byte *, word *);
 uns utf8_to_ucs2(word *, byte *);
 byte *static_ucs2_to_utf8(word *);
 uns Ustrlen(word *);
+uns utf8_strlen(byte *str);
 
 #endif
