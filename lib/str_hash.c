@@ -11,8 +11,8 @@
 #include "lib/lib.h"
 #include "lib/str_hash.h"
 
-/* The number of bits the hash (in the function str_hash()) is rotated after
- * every pass by.  It should be prime with the word size.  */
+/* The number of bits the hash in the function str_hash() is rotated by after
+ * every pass.  It should be prime with the word size.  */
 #define	SHIFT_BITS	5
 
 /* A bit-mask which clears higher bytes than a given threshold.  */
@@ -25,7 +25,7 @@ str_hash_init(void)
 	char *str;
 	for (i=0; i<sizeof(uns); i++)
 	{
-		str = (char *) mask_higher_bits + i;
+		str = (char *) (mask_higher_bits + i);
 		for (j=0; j<i; j++)
 			str[j] = -1;
 		for (j=i; j<sizeof(uns); j++)
@@ -59,8 +59,8 @@ str_len_uns(uns x)
 	return i;
 }
 
-uns
-str_len(const char *str)
+inline uns
+str_len_aligned(const char *str)
 {
 	const uns *u = (const uns *) str;
 	uns len = 0;
@@ -73,8 +73,8 @@ str_len(const char *str)
 	}
 }
 
-uns
-str_hash(const char *str)
+inline uns
+str_hash_aligned(const char *str)
 {
 	const uns *u = (const uns *) str;
 	uns hash = 0;
@@ -91,3 +91,51 @@ str_hash(const char *str)
 		hash ^= *u++;
 	}
 }
+
+#ifndef	CPU_ALLOW_UNALIGNED
+uns
+str_len(const char *str)
+{
+	uns shift = UNALIGNED_PART(str, uns);
+	if (!shift)
+		return str_len_aligned(str);
+	else
+	{
+		uns i;
+		shift = sizeof(uns) - shift;
+		for (i=0; i<shift; i++)
+			if (!str[i])
+				return i;
+		return shift + str_len_aligned(str + shift);
+	}
+}
+
+uns
+str_hash(const char *str)
+{
+	uns shift = UNALIGNED_PART(str, uns);
+	if (!shift)
+		return str_hash_aligned(str);
+	else
+	{
+		uns hash = 0;
+		uns i;
+		for (i=0; ; i++)
+		{
+			uns modulo = i % sizeof(uns);
+			uns shift;
+#ifdef	CPU_LITTLE_ENDIAN
+			shift = modulo;
+#else
+			shift = sizeof(uns) - 1 - modulo;
+#endif
+			if (!modulo)
+				hash = ROL(hash, SHIFT_BITS);
+			if (!str[i])
+				break;
+			hash ^= ((unsigned char) str[i]) << (shift * 8);
+		}
+		return hash;
+	}
+}
+#endif
