@@ -58,8 +58,8 @@ log_switch(struct tm *tm)
   log_switching--;
 }
 
-static void
-vlog(unsigned int cat, const char *msg, va_list args)
+void
+vlog_msg(unsigned int cat, const char *msg, va_list args)
 {
   time_t tim = time(NULL);
   struct tm *tm = localtime(&tim);
@@ -112,7 +112,7 @@ log_msg(unsigned int cat, const char *msg, ...)
   va_list args;
 
   va_start(args, msg);
-  vlog(cat, msg, args);
+  vlog_msg(cat, msg, args);
   va_end(args);
 }
 
@@ -122,7 +122,7 @@ die(byte *msg, ...)
   va_list args;
 
   va_start(args, msg);
-  vlog(L_FATAL, msg, args);
+  vlog_msg(L_FATAL, msg, args);
   va_end(args);
 #ifdef DEBUG_DIE_BY_ABORT
   abort();
