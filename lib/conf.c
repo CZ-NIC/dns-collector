@@ -93,6 +93,8 @@ struct unit {
 };
 
 static const struct unit units[] = {
+	{ 'd', 86400, 1 },
+	{ 'h', 1440, 1 },
 	{ 'k', 1000, 1 },
 	{ 'm', 1000000, 1 },
 	{ 'g', 1000000000, 1 },
