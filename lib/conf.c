@@ -331,6 +331,41 @@ void cf_read(byte *filename)
 	cfdeffile = NULL;
 }
 
+static void cf_opt_S(void)
+{
+	byte *sect,*name,*value;
+	byte *c;
+	byte *msg=NULL;
+	byte arg[strlen(optarg)+1];
+
+	strcpy(arg, optarg);
+	name = arg;
+	c=strchr(name,'=');
+	if(!c){
+		msg="Missing argument";
+		sect=value="";
+	}else{
+		*c++=0;
+		value=c;
+
+		c=strchr(name,'.');
+		if(!c)
+			sect="";
+		else{
+			sect=name;
+			*c++=0;
+			name=c;
+		}
+
+		if (cfdeffile)
+			cf_read(cfdeffile);
+		msg=cf_set_item(sect,name,value);
+	}
+	if(msg)
+		die("Invalid command line argument -S%s.%s=%s: %s",sect,name,value,msg);
+
+}
+
 int cf_getopt(int argc,char * const argv[],
 		const char *shortopts,const struct option *longopts,
 		int *longindex)
@@ -345,35 +380,7 @@ int cf_getopt(int argc,char * const argv[],
 				die("The -S and -C options must precede all other arguments");
 		}
 		if(res=='S'){
-			byte *sect,*name,*value;
-			byte *c;
-			byte *msg=NULL;
-
-			name=optarg;
-			c=strchr(name,'=');
-			if(!c){
-				msg="Missing argument";
-				sect=value="";
-			}else{
-				*c++=0;
-				value=c;
-
-				c=strchr(name,'.');
-				if(!c)
-					sect="";
-				else{
-					sect=name;
-					*c++=0;
-					name=c;
-				}
-
-				if (cfdeffile)
-					cf_read(cfdeffile);
-				msg=cf_set_item(sect,name,value);
-			}
-			if(msg)
-				die("Invalid command line argument -S%s.%s=%s: %s",sect,name,value,msg);
-
+			cf_opt_S();
 		}else if(res=='C'){
 			cf_read(optarg);
 		}else{
