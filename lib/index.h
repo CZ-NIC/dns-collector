@@ -101,9 +101,16 @@ fp_hash(struct fingerprint *fp)
     {								\
       p++;							\
       if (u >= 0xb0)						\
-	u += 0x80020000;					\
+        {							\
+	  if (u != 0xb0)					\
+            ASSERT(0);						\
+	  u += 0x80020000;					\
+        }							\
       else if (u >= 0xa0)					\
-	u = 0x80010000 + ((u & 0x0f) << 6) + (*p++ & 0x3f);	\
+        {							\
+	  ASSERT(*p >= 0x80 && *p <= 0xbf);			\
+	  u = 0x80010000 + ((u & 0x0f) << 6) + (*p++ & 0x3f);	\
+        }							\
       else							\
 	u += 0x80000000;					\
     }								\
