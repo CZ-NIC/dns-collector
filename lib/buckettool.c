@@ -48,9 +48,9 @@ CF_USAGE
 -f\t\taudit bucket file structure\n\
 -F\t\taudit and fix bucket file structure\n\
 -q\t\tquick check of bucket file consistency\n\
+-r\t\tdo not parse V33 buckets, but print the raw content\n\
 -s\t\tshake down bucket file (without updating other structures!!!)\n\
 -v\t\tbe verbose\n\
--r\t\tdo not parse V33 buckets, but print the raw content\n\
 ");
   exit(1);
 }
@@ -93,9 +93,9 @@ delete(char *id)
 }
 
 static inline void
-dump_oattr(struct fastbuf *out, struct oattr *oa)
+dump_oattrs(struct fastbuf *out, struct oattr *a)
 {
-  for (struct oattr *a = oa; a; a = a->same)
+  for (; a; a = a->same)
     bprintf(out, "%c%s\n", a->attr, a->val);
 }
 
@@ -107,18 +107,13 @@ dump_parsed_bucket(struct fastbuf *out, struct obuck_header *h, struct fastbuf *
   o_hdr = obj_new(pool);
   o_body = obj_new(pool);
   if (buck2obj_parse(buck_buf, h->type, h->length, b, o_hdr, NULL, o_body) < 0)
-  {
-    bprintf(out, "Cannot parse bucket %x of type %x and length %d: %m\n", h->oid, h->type, h->length);
-    return;
-  }
+    bprintf(out, ".Cannot parse bucket %x of type %x and length %d: %m\n", h->oid, h->type, h->length);
   else
-  {
-    for (struct oattr *oa = o_hdr->attrs; oa; oa = oa->next)
-      dump_oattr(out, oa);
-    bputc(out, '\n');
-    for (struct oattr *oa = o_body->attrs; oa; oa = oa->next)
-      dump_oattr(out, oa);
-  }
+    {
+      dump_oattrs(out, o_hdr->attrs);
+      bputc(out, '\n');
+      dump_oattrs(out, o_body->attrs);
+    }
 }
 
 static void
@@ -196,6 +191,7 @@ insert(byte *arg)
 	  }
 	  else
 	  {
+	    ASSERT(BUCKET_TYPE_V33_LIZARD);
 	    uns want_len = lizard_filled + (e-buf) + 6 + LIZARD_NEEDS_CHARS;	// +6 is the maximum UTF-8 length
 	    bb_grow(&lizard_buf, want_len);
 	    byte *ptr = lizard_buf.ptr + lizard_filled;
@@ -389,7 +385,7 @@ main(int argc, char **argv)
 
   log_init(NULL);
   op = 0;
-  while ((i = cf_getopt(argc, argv, CF_SHORT_OPTS "lLd:x:i::cfFqsvr", CF_NO_LONG_OPTS, NULL)) != -1)
+  while ((i = cf_getopt(argc, argv, CF_SHORT_OPTS "lLd:x:i::cfFqrsv", CF_NO_LONG_OPTS, NULL)) != -1)
     if (i == '?' || op)
       help();
     else if (i == 'v')
