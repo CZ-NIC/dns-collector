@@ -56,7 +56,7 @@ url_deescape(byte *s, byte *d)
 	  *d++ = val;
 	  s += 3;
 	}
-      else if (*s >= 0x20 && *s <= 0x7e)
+      else if (*s >= 0x20 && *s <= 0x7e || *s >= 0xa0)
 	*d++ = *s++;
       else
 	return URL_ERR_INVALID_CHAR;
@@ -154,10 +154,13 @@ url_split(byte *s, struct url *u, byte *d)
 	  e = strchr(w, ':');
 	  if (e)			/* host:port present */
 	    {
+	      uns p;
 	      *e++ = 0;
-	      u->port = strtoul(e, &ep, 10);
-	      if (ep && *ep || u->port > 65535 || !u->port)
+	      p = strtoul(e, &ep, 10);
+	      if (ep && *ep || p > 65535)
 		return URL_ERR_INVALID_PORT;
+	      else if (p)		/* Port 0 (e.g. in :/) is treated as default port */
+		u->port = p;
 	    }
 	  u->host = w;
 	}
