@@ -268,5 +268,25 @@ void
 url_fingerprint(byte *url, struct fingerprint *fp)
 {
   byte buf[URL_KEY_BUF_SIZE];
-  return fingerprint(url_key(url, buf), fp);
+  fingerprint(url_key(url, buf), fp);
 }
+
+#ifdef TEST
+
+int main(int argc, char **argv)
+{
+  url_key_init();
+  for (int i=1; i<argc; i++)
+    {
+      byte buf[URL_KEY_BUF_SIZE];
+      struct fingerprint fp;
+      byte *key = url_key(argv[i], buf);
+      fingerprint(key, &fp);
+      for (int j=0; j<12; j++)
+	printf("%02x", fp.hash[j]);
+      printf(" %s\n", key);
+    }
+  return 0;
+}
+
+#endif
