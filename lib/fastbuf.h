@@ -266,6 +266,16 @@ bputsn(struct fastbuf *f, byte *b)
   bputc(f, '\n');
 }
 
+/* I/O on addr_int_t */
+
+#ifdef CPU_64BIT_POINTERS
+#define bputa(x,p) bputq(x,p)
+#define bgeta(x) bgetq(x)
+#else
+#define bputa(x,p) bputl(x,p)
+#define bgeta(x) bgetl(x)
+#endif
+
 /* Direct I/O on buffers */
 
 int bdirect_read(struct fastbuf *f, byte **buf);
