@@ -273,7 +273,6 @@ pgc_read(struct page_cache *c, int fd, sh_off_t pos)
   int s;
 
   ASSERT(!PAGE_OFFSET(pos));
-  ASSERT(!PAGE_NUMBER(fd));
   p = get_and_lock_page(c, pos, fd);
   if (p->flags & PG_FLAG_VALID)
     c->stat_hit++;
@@ -304,7 +303,6 @@ pgc_get(struct page_cache *c, int fd, sh_off_t pos)
   struct page *p;
 
   ASSERT(!PAGE_OFFSET(pos));
-  ASSERT(!PAGE_NUMBER(fd));
   p = get_and_lock_page(c, pos, fd);
   p->flags |= PG_FLAG_VALID | PG_FLAG_DIRTY;
   return p;
@@ -316,7 +314,6 @@ pgc_get_zero(struct page_cache *c, int fd, sh_off_t pos)
   struct page *p;
 
   ASSERT(!PAGE_OFFSET(pos));
-  ASSERT(!PAGE_NUMBER(fd));
   p = get_and_lock_page(c, pos, fd);
   bzero(p->data, c->page_size);
   p->flags |= PG_FLAG_VALID | PG_FLAG_DIRTY;
