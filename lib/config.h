@@ -1,7 +1,7 @@
 /*
  *	Sherlock -- Configuration-Dependent Definitions
  *
- *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2003 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -16,7 +16,7 @@
 
 /* Version */
 
-#define SHER_VER "2.3" SHERLOCK_VERSION_SUFFIX
+#define SHER_VER "2.4" SHERLOCK_VERSION_SUFFIX
 
 /* Paths */
 
