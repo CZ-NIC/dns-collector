@@ -43,7 +43,7 @@ sh_file_size(byte *name)
   int fd = sh_open(name, O_RDONLY);
   if (fd < 0)
     die("Cannot open %s: %m", name);
-  sh_off_t len = sh_seek(fd, 0, SEEK_SET);
+  sh_off_t len = sh_seek(fd, 0, SEEK_END);
   close(fd);
   return len;
 }
