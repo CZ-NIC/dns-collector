@@ -21,6 +21,12 @@
 static void
 lizard_alloc_internal(struct lizard_buffer *buf, uns max_len)
 {
+  if (!max_len)
+  {
+    buf->len = 0;
+    buf->start = NULL;
+    return;
+  }
   buf->len = ALIGN(max_len + 3, PAGE_SIZE);		// +3 due to the unaligned access
   buf->start = mmap(NULL, buf->len + PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   if (buf->start == MAP_FAILED)
@@ -42,7 +48,8 @@ lizard_alloc(uns max_len)
 void
 lizard_free(struct lizard_buffer *buf)
 {
-  munmap(buf->start, buf->len + PAGE_SIZE);
+  if (buf->start)
+    munmap(buf->start, buf->len + PAGE_SIZE);
   unhandle_signal(SIGSEGV, buf->old_sigsegv_handler);
   xfree(buf->old_sigsegv_handler);
   xfree(buf);
@@ -51,7 +58,13 @@ lizard_free(struct lizard_buffer *buf)
 void
 lizard_realloc(struct lizard_buffer *buf, uns max_len)
 {
-  munmap(buf->start, buf->len + PAGE_SIZE);
+  max_len += 3;
+  if (max_len <= buf->len)
+    return;
+  if (max_len < 2*buf->len)				// to ensure amortized logarithmic complexity
+    max_len = 2*buf->len;
+  if (buf->start)
+    munmap(buf->start - 3, buf->len + PAGE_SIZE);
   lizard_alloc_internal(buf, max_len);
 }
 
