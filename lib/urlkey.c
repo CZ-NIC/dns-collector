@@ -45,7 +45,7 @@ struct pxtab_node {
 #define HASH_GIVE_EQ
 #define HASH_GIVE_EXTRA_SIZE
 #define HASH_GIVE_INIT_KEY
-#define HASH_GIVE_ALLOC
+#define HASH_USE_POOL cfpool
 
 static inline uns
 pxtab_hash(HASH_KEY_DECL)
@@ -72,12 +72,6 @@ pxtab_init_key(struct pxtab_node *node, HASH_KEY_DECL)
   node->len = len;
   memcpy(node->component, component, len);
   node->rhs = NULL;
-}
-
-static inline void *
-pxtab_alloc(uns size)
-{
-  return cfg_malloc(size);
 }
 
 #include "lib/hashtable.h"
