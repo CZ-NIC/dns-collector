@@ -10,7 +10,6 @@
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 void bclose(struct fastbuf *f)
@@ -18,8 +17,8 @@ void bclose(struct fastbuf *f)
   if (f)
     {
       bflush(f);
-      f->close(f);
-      xfree(f);
+      if (f->close)
+	f->close(f);
     }
 }
 
@@ -28,10 +27,7 @@ void bflush(struct fastbuf *f)
   if (f->bptr != f->buffer)
     {					/* Have something to flush */
       if (f->bstop > f->buffer)		/* Read data? */
-	{
-	  f->bptr = f->bstop = f->buffer;
-	  f->pos = f->fdpos;
-	}
+	f->bptr = f->bstop = f->buffer;
       else				/* Write data... */
 	f->spout(f);
     }
@@ -39,8 +35,9 @@ void bflush(struct fastbuf *f)
 
 inline void bsetpos(struct fastbuf *f, sh_off_t pos)
 {
-  if (pos >= f->pos && (pos <= f->pos + (f->bptr - f->buffer) || pos <= f->pos + (f->bstop - f->buffer)))
-    f->bptr = f->buffer + (pos - f->pos);
+  /* We can optimize seeks only when reading */
+  if (pos >= f->pos - (f->bstop - f->buffer) && pos <= f->pos)
+    f->bptr = f->bstop + (pos - f->pos);
   else
     {
       bflush(f);
@@ -290,13 +287,10 @@ bgets0(struct fastbuf *f, byte *b, uns l)
 int
 bdirect_read_prepare(struct fastbuf *f, byte **buf)
 {
-  int len;
-
   if (f->bptr == f->bstop && !f->refill(f))
     return EOF;
   *buf = f->bptr;
-  len = f->bstop - f->bptr;
-  return len;
+  return f->bstop - f->bptr;
 }
 
 void
