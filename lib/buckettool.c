@@ -156,7 +156,7 @@ insert(byte *arg)
     die("Type `%s' is not a hexadecimal number");
   if (type < 10)
     type += BUCKET_TYPE_PLAIN;
-  attr_set_type(type);
+  put_attr_set_type(type);
 
   in = bfdopen_shared(0, 4096);
   obuck_init(1);
