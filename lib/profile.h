@@ -6,6 +6,8 @@
 
 /*
  *  Usage:
+ *		#define PROFILE_xxx
+ *		#include "lib/profile.h"
  *		prof_t cnt;
  *		prof_init(&cnt);
  *		...
@@ -15,31 +17,66 @@
  *		printf("%s\n", PROF_STRING(&cnt));
  */
 
-/* Profiling method to use */
-#define CONFIG_PROFILE_TOD		/* gettimeofday() */
-#undef CONFIG_PROFILE_TSC		/* i386 TSC */
-#undef CONFIG_PROFILE_KTSC		/* kernel TSC profiler */
+/* PROFILE_TOD: gettimeofday() profiler */
 
-#ifdef CONFIG_PROFILE_TOD
-#define CONFIG_PROFILE
-#define PROF_STR_SIZE 21
-
-typedef struct {
+struct prof_tod {
   u32 start_sec, start_usec;
   s32 sec, usec;
-} prof_t;
+};
+
+void prof_tod_init(struct prof_tod *);
+void prof_tod_switch(struct prof_tod *, struct prof_tod *);
+int prof_tod_format(char *, struct prof_tod *);
+
+/* PROFILE_TSC: i386 TSC profiler */
+
+#ifdef CPU_I386
+
+struct prof_tsc {
+  u64 start_tsc;
+  u64 ticks;
+};
+
+void prof_tsc_init(struct prof_tsc *);
+int prof_tsc_format(char *, struct prof_tsc *);
 
 #endif
 
-#ifdef CONFIG_PROFILE_TSC
-#define CONFIG_PROFILE
-#define CONFIG_PROFILE_INLINE
+/* PROFILE_KTSC: Linux kernel TSC profiler */
+
+#ifdef CONFIG_LINUX
+
+struct prof_ktsc {
+  u64 start_user, start_sys;
+  u64 ticks_user, ticks_sys;
+};
+
+void prof_ktsc_init(struct prof_ktsc *);
+void prof_ktsc_switch(struct prof_ktsc *, struct prof_ktsc *);
+int prof_ktsc_format(char *, struct prof_ktsc *);
+
+#endif
+
+/* Select the right profiler */
+
+#if defined(PROFILE_TOD)
+
+#define PROFILER
+#define PROF_STR_SIZE 21
+typedef struct prof_tod prof_t;
+#define prof_init prof_tod_init
+#define prof_switch prof_tod_switch
+#define prof_format prof_tod_format
+
+#elif defined(PROFILE_TSC)
+
+#define PROFILER
+#define PROFILER_INLINE
 #define PROF_STR_SIZE 24
 
-typedef struct {
-  u64 start_tsc;
-  u64 ticks;
-} prof_t;
+typedef struct prof_tsc prof_t;
+#define prof_init prof_tsc_init
+#define prof_format prof_tsc_format
 
 #define rdtscll(val) __asm__ __volatile__("rdtsc" : "=A" (val))
 
@@ -64,28 +101,26 @@ static inline void prof_switch(prof_t *o, prof_t *n)
   tsc -= o->start_tsc;
   o->ticks += tsc;
 }
-#endif
 
-#ifdef CONFIG_PROFILE_KTSC
-#define CONFIG_PROFILE
+#elif defined(PROFILE_KTSC)
+
+#define PROFILER
 #define PROF_STR_SIZE 50
+typedef struct prof_ktsc prof_t;
+#define prof_init prof_ktsc_init
+#define prof_switch prof_ktsc_switch
+#define prof_format prof_ktsc_format
 
-typedef struct {
-  u64 start_user, start_sys;
-  u64 ticks_user, ticks_sys;
-} prof_t;
 #endif
 
-#ifdef CONFIG_PROFILE
+#ifdef PROFILER
 
 /* Stuff common for all profilers */
-#ifndef CONFIG_PROFILE_INLINE
-void prof_switch(prof_t *, prof_t *);
+#ifndef PROFILER_INLINE
 static inline void prof_start(prof_t *c) { prof_switch(NULL, c); }
 static inline void prof_stop(prof_t *c) { prof_switch(c, NULL); }
 #endif
-int prof_format(char *, prof_t *);
-void prof_init(prof_t *);
+#define PROF_STR(c) ({ static byte _x[PROF_STR_SIZE]; prof_format(_x, &(C)); _x })
 
 #else
 

@@ -9,17 +9,18 @@
 
 #include <stdio.h>
 
-#ifdef CONFIG_PROFILE_TOD
+/* PROFILE_TOD */
+
 #include <sys/time.h>
 
 void
-prof_init(prof_t *c)
+prof_tod_init(struct prof_tod *c)
 {
   c->sec = c->usec = 0;
 }
 
 void
-prof_switch(prof_t *o, prof_t *n)
+prof_tod_switch(struct prof_tod *o, struct prof_tod *n)
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);
@@ -46,33 +47,39 @@ prof_switch(prof_t *o, prof_t *n)
 }
 
 int
-prof_format(char *buf, prof_t *c)
+prof_tod_format(char *buf, struct prof_tod *c)
 {
   return sprintf(buf, "%d.%06d", c->sec, c->usec);
 }
-#endif
 
-#ifdef CONFIG_PROFILE_TSC
+/* PROFILE_TSC */
+
+#ifdef CPU_I386
+
 void
-prof_init(prof_t *c)
+prof_tsc_init(struct prof_tsc *c)
 {
   c->ticks = 0;
 }
 
 int
-prof_format(char *buf, prof_t *c)
+prof_tsc_format(char *buf, struct prof_tsc *c)
 {
   return sprintf(buf, "%Ld", c->ticks);
 }
+
 #endif
 
-#ifdef CONFIG_PROFILE_KTSC
+/* PROFILE_KTSC */
+
+#ifdef CONFIG_LINUX
+
 #include <fcntl.h>
 #include <unistd.h>
 static int self_prof_fd = -1;
 
 void
-prof_init(prof_t *c)
+prof_ktsc_init(struct prof_ktsc *c)
 {
   if (self_prof_fd < 0)
     {
@@ -85,7 +92,7 @@ prof_init(prof_t *c)
 }
 
 void
-prof_switch(prof_t *o, prof_t *n)
+prof_ktsc_switch(struct prof_ktsc *o, struct prof_ktsc *n)
 {
   u64 u, s;
   byte buf[256];
@@ -111,8 +118,9 @@ prof_switch(prof_t *o, prof_t *n)
 }
 
 int
-prof_format(char *buf, prof_t *c)
+prof_ktsc_format(char *buf, struct prof_ktsc *c)
 {
   return sprintf(buf, "%Ld+%Ld", c->ticks_user, c->ticks_sys);
 }
+
 #endif
