@@ -184,4 +184,9 @@ uns random_max(uns);
 void *mmap_file(byte *name, unsigned *len, int writeable);
 void munmap_file(void *start, unsigned len);
 
+/* proctitle.c */
+
+void setproctitle_init(int argc, char **argv);
+void setproctitle(char *msg, ...) __attribute__((format(printf,1,2)));
+
 #endif
