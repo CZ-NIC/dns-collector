@@ -235,6 +235,8 @@ obj_prepend_attr(struct odes *o, uns x, byte *v)
       if (a->attr == x)
 	{
 	  b->same = a;
+	  b->next = a->next;
+	  a->next = NULL;
 	  *z = b;
 	  b->last_same = a->last_same;
 	  return b;
