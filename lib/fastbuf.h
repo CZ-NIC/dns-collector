@@ -102,11 +102,12 @@ int bconfig(struct fastbuf *f, uns type, int data);
 
 #define BCONFIG_IS_TEMP_FILE 0
 #define BCONFIG_CAN_OVERWRITE 1
-  /* Specified whether the caller is allowed to perform the following optimized
+  /* Specifies whether the caller is allowed to perform the following optimized
    * 0-copy write operation:
    * 	- get the buffer by bdirect_read_prepare()
    * 	- modify the buffer, e.g. by putting \0's inside
    * 	- call bflush() to let the fastbuf know
+   * Values:
    * 0: read-only memory
    * 1: you can write into read-write memory, if you restore the original value
    * 2: you can rewrite the original content */
