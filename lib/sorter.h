@@ -372,14 +372,14 @@ struct fastbuf *fb1, struct fastbuf *fb2
 #ifdef SORT_INPUT_FILE
   struct fastbuf *fb1, *fb2;
   fb1 = bopen(inname, O_RDONLY, sorter_stream_bufsize);
-#ifdef SORT_DELETE_INPUT
-  fb1->is_temp_file = SORT_DELETE_INPUT;
-#endif
   fb2 = NULL;
 #elif defined(SORT_INPUT_FB)
   struct fastbuf *fb2 = NULL;
 #endif
 
+#ifdef SORT_DELETE_INPUT
+  fb1->is_temp_file = SORT_DELETE_INPUT;
+#endif
   sorter_pass_counter = 1;
 #ifdef SORT_PRESORT
   P(presort)(&fb1, &fb2);
