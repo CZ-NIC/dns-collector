@@ -38,5 +38,5 @@ utf8_to_ucs2(word *d, byte *s)
     else
       *d++ = *s++;
   *d = 0;
-  return d0 - d;
+  return d - d0;
 }
