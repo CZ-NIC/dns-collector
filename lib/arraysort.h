@@ -100,7 +100,7 @@ static void ASORT_PREFIX(sort)(uns array_size ASORT_EXTRA_ARGS)
 	    }
 	}
       while (l <= r);
-      if ((r - left) > ASORT_THRESHOLD && (right - l) > ASORT_THRESHOLD)
+      if ((r - left) >= ASORT_THRESHOLD && (right - l) >= ASORT_THRESHOLD)
 	{
 	  /* Both partitions ok => push the larger one */
 	  if ((r - left) > (right - l))
@@ -117,12 +117,12 @@ static void ASORT_PREFIX(sort)(uns array_size ASORT_EXTRA_ARGS)
 	    }
 	  sp++;
 	}
-      else if ((r - left) > ASORT_THRESHOLD)
+      else if ((r - left) >= ASORT_THRESHOLD)
 	{
 	  /* Left partition OK, right undersize */
 	  right = r;
 	}
-      else if ((right - l) > ASORT_THRESHOLD)
+      else if ((right - l) >= ASORT_THRESHOLD)
 	{
 	  /* Right partition OK, left undersize */
 	  left = l;
