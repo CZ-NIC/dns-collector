@@ -15,7 +15,6 @@
 #endif
 
 #include <string.h>
-#include <stdarg.h>
 
 #include "lib/unaligned.h"
 
