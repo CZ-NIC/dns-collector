@@ -1,26 +1,21 @@
 /*
  *	Sherlock: Custom Parts of Configuration
  *
- *	(c) 2001--2002 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2003 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  */
 
-/* META FIXME */
-
-/* Word types (at most 15 of them + WT_RESERVED and WT_MAX) */
+/* Word types (at most 7 of them + WT_RESERVED and WT_MAX) */
 
 enum word_type {
   WT_RESERVED,				/* Reserved word type */
   WT_TEXT,				/* Ordinary text */
   WT_EMPH,				/* Emphasized text */
   WT_SMALL,				/* Small font */
-  WT_TITLE,				/* Document title */
   WT_SMALL_HEADING,			/* Heading */
   WT_BIG_HEADING,			/* Larger heading */
-  WT_KEYWORD,				/* Explicitly marked keyword */
-  WT_META,				/* Various meta-information */
   WT_ALT,				/* Alternate texts for graphical elements */
   WT_LINK,				/* Link text */
   WT_MAX
@@ -28,8 +23,7 @@ enum word_type {
 
 /* Descriptive names used for user output */
 #define WORD_TYPE_USER_NAMES							\
-   "reserved", "text", "emph", "small", "title", "hdr1", "hdr2", "keywd",	\
-   "meta", "alt", "link"
+   "reserved", "text", "emph", "small", "hdr1", "hdr2", "alt", "link"
 
 /* Keywords for word type names */
 #define WORD_TYPE_NAMES	       			\
@@ -37,24 +31,34 @@ enum word_type {
 	T(TEXT, 1 << WT_TEXT)			\
 	T(EMPH, 1 << WT_EMPH)			\
 	T(SMALL, 1 << WT_SMALL)			\
-	T(TITLE, 1 << WT_TITLE)			\
 	T(HDR, (1 << WT_SMALL_HEADING) | (1 << WT_BIG_HEADING))  \
 	T(HDR1, 1 << WT_SMALL_HEADING)		\
 	T(HDR2, 1 << WT_BIG_HEADING)		\
-	T(KEYWD, 1 << WT_KEYWORD)		\
-	T(META, 1 << WT_META)			\
 	T(ALT, 1 << WT_ALT)			\
 	T(LINK, 1 << WT_LINK)
 
-/* These types are not shown in document contexts */
-#define WORD_TYPES_HIDDEN 0
-
-/* These types are separated out when printing contexts */
-#define WORD_TYPES_META ((1 << WT_TITLE) | (1 << WT_KEYWORD) | \
-	(1 << WT_META) | (1 << WT_LINK))
-
 /* These types are always matched without accents if accent mode is set to "auto" */
 #define WORD_TYPES_NO_AUTO_ACCENT 0
+
+/* Meta information types (at most 16 of them + MT_MAX) */
+
+enum meta_type {
+  MT_TITLE,				/* Document title */
+  MT_KEYWORD,				/* Keyword from the document */
+  MT_MISC,				/* Unclassified metas */
+  MT_MAX
+};
+
+#define META_TYPE_USER_NAMES			\
+   "title", "keywd", "misc"
+
+/* Keywords for meta type names */
+#define META_TYPE_NAMES	       			\
+	T(TITLE, 1 << MT_TITLE)			\
+	T(KEYWD, 1 << MT_KEYWORD)		\
+	T(META, 1 << MT_MISC)
+
+#define META_TYPES_NO_AUTO_ACCENT 0
 
 /* String types */
 
