@@ -47,32 +47,32 @@ isprime(uns x)
 }
 
 uns
-nextprime(uns x)			/* Returns some prime greater than X, usually the next one or the second next one */
+nextprime(uns x)			/* Returns some prime greater than x */
 {
   x += 5 - (x % 6);			/* x is 6k-1 */
   for(;;)
     {
-      if (__isprime(x))
-	return x;
       x += 2;				/* 6k+1 */
       if (__isprime(x))
 	return x;
       x += 4;				/* 6k-1 */
+      if (__isprime(x))
+	return x;
     }
 }
 
 #ifdef TEST
 
 #include <stdio.h>
+#include <stdlib.h>
 
 int
 main(int argc, char **argv)
 {
   uns k = atol(argv[1]);
-  if (isprime(k))
-    printf("%d is prime\n");
-  else
-    printf("Next prime is %d\n", nextprime(k));
+  printf("%d is%s prime\n", k, isprime(k) ? "" : "n't");
+  printf("Next prime is %d\n", nextprime(k));
+  return 0;
 }
 
 #endif
