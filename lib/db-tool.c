@@ -225,7 +225,7 @@ Options:\n\
 -k<n>\t\tSet key size to <n> (-1=variable) [restore,rebuild]\n\
 -p<n>\t\tSet page order to <n> [restore,rebuild]\n\
 \n\
-Commands:
+Commands:\n\
 b <db> <new>\tRebuild database\n\
 d <db> <dump>\tDump database\n\
 r <dump> <db>\tRestore database from dump\n\
