@@ -92,13 +92,18 @@ buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fas
   else if (buck_type == BUCKET_TYPE_V30)
   {
     sh_off_t start = btell(body);
-    obj_read(body, o_hdr);		// end on EOF or the first empty line
+    sh_off_t end = start + buck_len;
+    byte buf[MAX_ATTR_SIZE];
+    while (btell(body) < end && bgets(body, buf, sizeof(buf)) && buf[0])
+      obj_add_attr(o_hdr, buf[0], buf+1);
     if (body_start)
       *body_start = btell(body) - start;
     else
     {
-      obj_read(body, o_body);
-      bgetc(body);
+      while (btell(body) < end && bgets(body, buf, sizeof(buf)))
+	if (buf[0])
+	  obj_add_attr(o_hdr, buf[0], buf+1);
+      ASSERT(btell(body) == end);
     }
   }
   else if (buck_type == BUCKET_TYPE_V33 || buck_type == BUCKET_TYPE_V33_LIZARD)
