@@ -3,7 +3,9 @@
  *
  *	(c) 2002 Martin Mares <mj@ucw.cz>
  *
- *	FIXME: Ref to the original article.
+ *	Greatly inspired by: Faloutsos, C. and Christodoulakis, S.: Signature files
+ *	(An access method for documents and its analytical performance evaluation),
+ *	ACM Trans. Office Inf. Syst., 2(4):267--288, Oct. 1984.
  *
  *	This data structure provides a very compact representation
  *	of a set of strings with insertion and membership search,
@@ -44,7 +46,8 @@
 
 struct bitsig {
   uns l, m, n, maxn, max_m_mult;
-  u32 tmp;
+  u32 hash[4];
+  uns hindex;
   byte array[0];
 };
 
@@ -74,24 +77,25 @@ static void
 bitsig_hash_init(struct bitsig *b, byte *item)
 {
   struct MD5Context c;
-  u32 digest[4];
 
   MD5Init(&c);
   MD5Update(&c, item, strlen(item));
-  MD5Final((byte *) digest, &c);
-  b->tmp = digest[0];
+  MD5Final((byte *) b->hash, &c);
+  b->hindex = 0;
 }
 
 static inline uns
 bitsig_hash_bit(struct bitsig *b)
 {
+  u32 h;
   do
     {
-      /* FIXME: Check */
-      b->tmp *= 3006477127U;
+      h = b->hash[b->hindex];
+      b->hash[b->hindex] *= 3006477127U;
+      b->hindex = (b->hindex+1) % 4;
     }
-  while (b->tmp >= b->max_m_mult);
-  return b->tmp % b->m;
+  while (h >= b->max_m_mult);
+  return h % b->m;
 }
 
 int
@@ -133,10 +137,11 @@ bitsig_insert(struct bitsig *b, byte *item)
 #ifdef TEST
 
 #include <stdio.h>
+#include <stdlib.h>
 
-int main(void)
+int main(int argc, char **argv)
 {
-  struct bitsig *b = bitsig_init(10, 23000);
+  struct bitsig *b = bitsig_init(atol(argv[1]), atol(argv[2]));
   byte buf[1024];
 
   while (fgets(buf, 1024, stdin))
