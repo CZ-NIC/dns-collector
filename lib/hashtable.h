@@ -81,9 +81,9 @@
  *
  *  ... and a couple of extra parameters:
  *
- *  HASH_NOCASE		string comparisons should be case-insensitive.
- *  HASH_DEFAULT_SIZE=n	initially, use hash table of approx. `n' entries.
- *  HASH_CONSERVE_SPACE	use as little space as possible.
+ *  HASH_NOCASE		String comparisons should be case-insensitive.
+ *  HASH_DEFAULT_SIZE=n	Initially, use hash table of approx. `n' entries.
+ *  HASH_CONSERVE_SPACE	Use as little space as possible.
  *  HASH_FN_BITS=n	The hash function gives only `n' significant bits.
  *  HASH_ATOMIC_TYPE=t	Atomic values are of type `t' instead of int.
  *  HASH_USE_POOL=pool	Allocate all nodes from given mempool. Note, however, that
@@ -93,6 +93,8 @@
  *  HASH_TABLE_ALLOC	The hash table itself will be allocated and freed using
  *			the same allocation functions as the nodes instead of
  *			the default xmalloc().
+ *  HASH_TABLE_DYNAMIC	Support multiple hash tables; the first parameter of all
+ *			hash table operations is struct HASH_PREFIX(table) *.
  *
  *  You also get a iterator macro at no extra charge:
  *
@@ -104,6 +106,8 @@
  *	// you must not alter contents of the hash table here
  *    }
  *  HASH_END_FOR;
+ *
+ *  (For dynamic tables, use HASH_FOR_ALL_DYNAMIC(hash_prefix, hash_table, variable) instead.)
  *
  *  Then include "lib/hashtable.h" and voila, you have a hash table
  *  suiting all your needs (at least those which you've revealed :) ).
@@ -146,9 +150,26 @@ struct P(table) {
   uns hash_size;
   uns hash_count, hash_max, hash_min, hash_hard_max;
   P(bucket) **ht;
-} P(table);
+};
 
+#ifdef HASH_TABLE_DYNAMIC
+#define T (*table)
+#define TA struct P(table) *table
+#define TAC TA,
+#define TAU TA UNUSED
+#define TAUC TA UNUSED,
+#define TT table
+#define TTC table,
+#else
+struct P(table) P(table);
 #define T P(table)
+#define TA void
+#define TAC
+#define TAU void
+#define TAUC
+#define TT
+#define TTC
+#endif
 
 /* Preset parameters */
 
@@ -163,19 +184,19 @@ struct P(table) {
 
 #ifndef HASH_GIVE_HASHFN
 #  define HASH_GIVE_HASHFN
-   static inline int P(hash) (HASH_ATOMIC_TYPE x)
+   static inline int P(hash) (TAUC HASH_ATOMIC_TYPE x)
    { return hash_int(x); }
 #endif
 
 #ifndef HASH_GIVE_EQ
 #  define HASH_GIVE_EQ
-   static inline int P(eq) (HASH_ATOMIC_TYPE x, HASH_ATOMIC_TYPE y)
+   static inline int P(eq) (TAUC HASH_ATOMIC_TYPE x, HASH_ATOMIC_TYPE y)
    { return x == y; }
 #endif
 
 #ifndef HASH_GIVE_INIT_KEY
 #  define HASH_GIVE_INIT_KEY
-   static inline void P(init_key) (P(node) *n, HASH_ATOMIC_TYPE k)
+   static inline void P(init_key) (TAUC P(node) *n, HASH_ATOMIC_TYPE k)
    { HASH_KEY(n->) = k; }
 #endif
 
@@ -185,17 +206,17 @@ struct P(table) {
 #  define HASH_KEY(x) x HASH_KEY_STRING
 #  ifndef HASH_GIVE_INIT_KEY
 #    define HASH_GIVE_INIT_KEY
-     static inline void P(init_key) (P(node) *n, char *k)
+     static inline void P(init_key) (TAUC P(node) *n, char *k)
      { HASH_KEY(n->) = k; }
 #  endif
 #else
 #  define HASH_KEY(x) x HASH_KEY_ENDSTRING
 #  define HASH_GIVE_EXTRA_SIZE
-   static inline int P(extra_size) (char *k)
+   static inline int P(extra_size) (TAUC char *k)
    { return strlen(k); }
 #  ifndef HASH_GIVE_INIT_KEY
 #    define HASH_GIVE_INIT_KEY
-     static inline void P(init_key) (P(node) *n, char *k)
+     static inline void P(init_key) (TAUC P(node) *n, char *k)
      { strcpy(HASH_KEY(n->), k); }
 #  endif
 #endif
@@ -203,7 +224,7 @@ struct P(table) {
 
 #ifndef HASH_GIVE_HASHFN
 #define HASH_GIVE_HASHFN
-  static inline uns P(hash) (char *k)
+  static inline uns P(hash) (TAUC char *k)
    {
 #    ifdef HASH_NOCASE
        return hash_string_nocase(k);
@@ -215,7 +236,7 @@ struct P(table) {
 
 #ifndef HASH_GIVE_EQ
 #  define HASH_GIVE_EQ
-   static inline int P(eq) (char *x, char *y)
+   static inline int P(eq) (TAUC char *x, char *y)
    {
 #    ifdef HASH_NOCASE
        return !strcasecmp(x,y);
@@ -245,7 +266,7 @@ struct P(table) {
 
 #ifdef HASH_GIVE_EXTRA_SIZE
 /* This trickery is needed to avoid `unused parameter' warnings */
-#define HASH_EXTRA_SIZE P(extra_size)
+#define HASH_EXTRA_SIZE(x) P(extra_size)(TTC x)
 #else
 /*
  *  Beware, C macros are expanded iteratively, not recursively,
@@ -260,7 +281,7 @@ struct P(table) {
 #endif
 
 #ifndef HASH_GIVE_INIT_DATA
-static inline void P(init_data) (P(node) *n UNUSED)
+static inline void P(init_data) (TAUC P(node) *n UNUSED)
 {
 }
 #endif
@@ -269,41 +290,41 @@ static inline void P(init_data) (P(node) *n UNUSED)
 
 #ifdef HASH_GIVE_ALLOC
 /* If the caller has requested to use his own allocation functions, do so */
-static inline void P(init_alloc) (void) { }
-static inline void P(cleanup_alloc) (void) { }
+static inline void P(init_alloc) (TAU) { }
+static inline void P(cleanup_alloc) (TAU) { }
 
 #elif defined(HASH_USE_POOL)
 /* If the caller has requested to use his mempool, do so */
 #include "lib/mempool.h"
-static inline void * P(alloc) (unsigned int size) { return mp_alloc_fast(HASH_USE_POOL, size); }
-static inline void P(free) (void *x UNUSED) { }
-static inline void P(init_alloc) (void) { }
-static inline void P(cleanup_alloc) (void) { }
+static inline void * P(alloc) (TAUC unsigned int size) { return mp_alloc_fast(HASH_USE_POOL, size); }
+static inline void P(free) (TAUC void *x UNUSED) { }
+static inline void P(init_alloc) (TAU) { }
+static inline void P(cleanup_alloc) (TAU) { }
 
 #elif defined(HASH_AUTO_POOL)
 /* Use our own pools */
 #include "lib/mempool.h"
 static struct mempool *P(pool);
-static inline void * P(alloc) (unsigned int size) { return mp_alloc_fast(P(pool), size); }
-static inline void P(free) (void *x UNUSED) { }
-static inline void P(init_alloc) (void) { P(pool) = mp_new(HASH_AUTO_POOL); }
-static inline void P(cleanup_alloc) (void) { mp_delete(P(pool)); }
+static inline void * P(alloc) (TAUC unsigned int size) { return mp_alloc_fast(P(pool), size); }
+static inline void P(free) (TAUC void *x UNUSED) { }
+static inline void P(init_alloc) (TAU) { P(pool) = mp_new(HASH_AUTO_POOL); }
+static inline void P(cleanup_alloc) (TAU) { mp_delete(P(pool)); }
 
 #else
 /* The default allocation method */
-static inline void * P(alloc) (unsigned int size) { return xmalloc(size); }
-static inline void P(free) (void *x) { xfree(x); }
-static inline void P(init_alloc) (void) { }
-static inline void P(cleanup_alloc) (void) { }
+static inline void * P(alloc) (TAUC unsigned int size) { return xmalloc(size); }
+static inline void P(free) (TAUC void *x) { xfree(x); }
+static inline void P(init_alloc) (TAU) { }
+static inline void P(cleanup_alloc) (TAU) { }
 
 #endif
 
 #ifdef HASH_TABLE_ALLOC
-static inline void * P(table_alloc) (unsigned int size) { return P(alloc)(size); }
-static inline void P(table_free) (void *x) { P(free)(x); }
+static inline void * P(table_alloc) (TAUC unsigned int size) { return P(alloc)(size); }
+static inline void P(table_free) (TAUC void *x) { P(free)(x); }
 #else
-static inline void * P(table_alloc) (unsigned int size) { return xmalloc(size); }
-static inline void P(table_free) (void *x) { xfree(x); }
+static inline void * P(table_alloc) (TAUC unsigned int size) { return xmalloc(size); }
+static inline void P(table_free) (TAUC void *x) { xfree(x); }
 #endif
 
 #ifndef HASH_DEFAULT_SIZE
@@ -316,10 +337,10 @@ static inline void P(table_free) (void *x) { xfree(x); }
 
 /* Now the operations */
 
-static void P(alloc_table) (void)
+static void P(alloc_table) (TAU)
 {
   T.hash_size = nextprime(T.hash_size);
-  T.ht = P(table_alloc)(sizeof(void *) * T.hash_size);
+  T.ht = P(table_alloc)(TTC sizeof(void *) * T.hash_size);
   bzero(T.ht, sizeof(void *) * T.hash_size);
   if (2*T.hash_size < T.hash_hard_max)
     T.hash_max = 2*T.hash_size;
@@ -331,7 +352,7 @@ static void P(alloc_table) (void)
     T.hash_min = 0;
 }
 
-static void P(init) (void)
+static void P(init) (TA)
 {
   T.hash_count = 0;
   T.hash_size = HASH_DEFAULT_SIZE;
@@ -340,12 +361,12 @@ static void P(init) (void)
 #else
   T.hash_hard_max = 1 << 28;
 #endif
-  P(alloc_table)();
-  P(init_alloc)();
+  P(alloc_table)(TT);
+  P(init_alloc)(TT);
 }
 
 #ifdef HASH_WANT_CLEANUP
-static void P(cleanup) (void)
+static void P(cleanup) (TA)
 {
 #ifndef HASH_USE_POOL
   uns i;
@@ -355,24 +376,24 @@ static void P(cleanup) (void)
     for (b=T.ht[i]; b; b=bb)
       {
 	bb = b->next;
-	P(free)(b);
+	P(free)(TTC b);
       }
 #endif
-  P(cleanup_alloc)();
-  P(table_free)(T.ht);
+  P(cleanup_alloc)(TT);
+  P(table_free)(TTC T.ht);
 }
 #endif
 
-static inline uns P(bucket_hash) (P(bucket) *b)
+static inline uns P(bucket_hash) (TAUC P(bucket) *b)
 {
 #ifdef HASH_CONSERVE_SPACE
-  return P(hash)(HASH_KEY(b->n.));
+  return P(hash)(TTC HASH_KEY(b->n.));
 #else
   return b->hash;
 #endif
 }
 
-static void P(rehash) (uns size)
+static void P(rehash) (TAC uns size)
 {
   P(bucket) *b, *nb;
   P(bucket) **oldt = T.ht, **newt;
@@ -381,7 +402,7 @@ static void P(rehash) (uns size)
 
   DBG("Rehashing %d->%d at count %d", oldsize, size, T.hash_count);
   T.hash_size = size;
-  P(alloc_table)();
+  P(alloc_table)(TT);
   newt = T.ht;
   for (i=0; i<oldsize; i++)
     {
@@ -389,19 +410,19 @@ static void P(rehash) (uns size)
       while (b)
 	{
 	  nb = b->next;
-	  h = P(bucket_hash)(b) % T.hash_size;
+	  h = P(bucket_hash)(TTC b) % T.hash_size;
 	  b->next = newt[h];
 	  newt[h] = b;
 	  b = nb;
 	}
     }
-  P(table_free)(oldt);
+  P(table_free)(TTC oldt);
 }
 
 #ifdef HASH_WANT_FIND
-static P(node) * P(find) (HASH_KEY_DECL)
+static P(node) * P(find) (TAC HASH_KEY_DECL)
 {
-  uns h0 = P(hash) (HASH_KEY( ));
+  uns h0 = P(hash) (TTC HASH_KEY( ));
   uns h = h0 % T.hash_size;
   P(bucket) *b;
 
@@ -411,7 +432,7 @@ static P(node) * P(find) (HASH_KEY_DECL)
 #ifndef HASH_CONSERVE_SPACE
 	  b->hash == h0 &&
 #endif
-	  P(eq)(HASH_KEY( ), HASH_KEY(b->n.)))
+	  P(eq)(TTC HASH_KEY( ), HASH_KEY(b->n.)))
 	return &b->n;
     }
   return NULL;
@@ -419,10 +440,10 @@ static P(node) * P(find) (HASH_KEY_DECL)
 #endif
 
 #ifdef HASH_WANT_FIND_NEXT
-static P(node) * P(find_next) (P(node) *start)
+static P(node) * P(find_next) (TAC P(node) *start)
 {
 #ifndef HASH_CONSERVE_SPACE
-  uns h0 = P(hash) (HASH_KEY(start->));
+  uns h0 = P(hash) (TTC HASH_KEY(start->));
 #endif
   P(bucket) *b = SKIP_BACK(P(bucket), n, start);
 
@@ -432,7 +453,7 @@ static P(node) * P(find_next) (P(node) *start)
 #ifndef HASH_CONSERVE_SPACE
 	  b->hash == h0 &&
 #endif
-	  P(eq)(HASH_KEY(start->), HASH_KEY(b->n.)))
+	  P(eq)(TTC HASH_KEY(start->), HASH_KEY(b->n.)))
 	return &b->n;
     }
   return NULL;
@@ -440,31 +461,31 @@ static P(node) * P(find_next) (P(node) *start)
 #endif
 
 #ifdef HASH_WANT_NEW
-static P(node) * P(new) (HASH_KEY_DECL)
+static P(node) * P(new) (TAC HASH_KEY_DECL)
 {
   uns h0, h;
   P(bucket) *b;
 
-  h0 = P(hash) (HASH_KEY( ));
+  h0 = P(hash) (TTC HASH_KEY( ));
   h = h0 % T.hash_size;
-  b = P(alloc) (sizeof(struct P(bucket)) + HASH_EXTRA_SIZE(HASH_KEY( )));
+  b = P(alloc) (TTC sizeof(struct P(bucket)) + HASH_EXTRA_SIZE(HASH_KEY( )));
   b->next = T.ht[h];
   T.ht[h] = b;
 #ifndef HASH_CONSERVE_SPACE
   b->hash = h0;
 #endif
-  P(init_key)(&b->n, HASH_KEY( ));
-  P(init_data)(&b->n);
+  P(init_key)(TTC &b->n, HASH_KEY( ));
+  P(init_data)(TTC &b->n);
   if (T.hash_count++ >= T.hash_max)
-    P(rehash)(2*T.hash_size);
+    P(rehash)(TTC 2*T.hash_size);
   return &b->n;
 }
 #endif
 
 #ifdef HASH_WANT_LOOKUP
-static P(node) * P(lookup) (HASH_KEY_DECL)
+static P(node) * P(lookup) (TAC HASH_KEY_DECL)
 {
-  uns h0 = P(hash) (HASH_KEY( ));
+  uns h0 = P(hash) (TTC HASH_KEY( ));
   uns h = h0 % T.hash_size;
   P(bucket) *b;
 
@@ -474,28 +495,28 @@ static P(node) * P(lookup) (HASH_KEY_DECL)
 #ifndef HASH_CONSERVE_SPACE
 	  b->hash == h0 &&
 #endif
-	  P(eq)(HASH_KEY( ), HASH_KEY(b->n.)))
+	  P(eq)(TTC HASH_KEY( ), HASH_KEY(b->n.)))
 	return &b->n;
     }
 
-  b = P(alloc) (sizeof(struct P(bucket)) + HASH_EXTRA_SIZE(HASH_KEY( )));
+  b = P(alloc) (TTC sizeof(struct P(bucket)) + HASH_EXTRA_SIZE(HASH_KEY( )));
   b->next = T.ht[h];
   T.ht[h] = b;
 #ifndef HASH_CONSERVE_SPACE
   b->hash = h0;
 #endif
-  P(init_key)(&b->n, HASH_KEY( ));
-  P(init_data)(&b->n);
+  P(init_key)(TTC &b->n, HASH_KEY( ));
+  P(init_data)(TTC &b->n);
   if (T.hash_count++ >= T.hash_max)
-    P(rehash)(2*T.hash_size);
+    P(rehash)(TTC 2*T.hash_size);
   return &b->n;
 }
 #endif
 
 #ifdef HASH_WANT_DELETE
-static int P(delete) (HASH_KEY_DECL)
+static int P(delete) (TAC HASH_KEY_DECL)
 {
-  uns h0 = P(hash) (HASH_KEY( ));
+  uns h0 = P(hash) (TTC HASH_KEY( ));
   uns h = h0 % T.hash_size;
   P(bucket) *b, **bb;
 
@@ -505,12 +526,12 @@ static int P(delete) (HASH_KEY_DECL)
 #ifndef HASH_CONSERVE_SPACE
 	  b->hash == h0 &&
 #endif
-	  P(eq)(HASH_KEY( ), HASH_KEY(b->n.)))
+	  P(eq)(TTC HASH_KEY( ), HASH_KEY(b->n.)))
 	{
 	  *bb = b->next;
-	  P(free)(b);
+	  P(free)(TTC b);
 	  if (--T.hash_count < T.hash_min)
-	    P(rehash)(T.hash_size/2);
+	    P(rehash)(TTC T.hash_size/2);
 	  return 1;
 	}
     }
@@ -519,10 +540,10 @@ static int P(delete) (HASH_KEY_DECL)
 #endif
 
 #ifdef HASH_WANT_REMOVE
-static void P(remove) (P(node) *n)
+static void P(remove) (TAC P(node) *n)
 {
   P(bucket) *x = SKIP_BACK(struct P(bucket), n, n);
-  uns h0 = P(bucket_hash)(x);
+  uns h0 = P(bucket_hash)(TTC x);
   uns h = h0 % T.hash_size;
   P(bucket) *b, **bb;
 
@@ -530,9 +551,9 @@ static void P(remove) (P(node) *n)
     ;
   ASSERT(b);
   *bb = b->next;
-  P(free)(b);
+  P(free)(TTC b);
   if (--T.hash_count < T.hash_min)
-    P(rehash)(T.hash_size/2);
+    P(rehash)(TTC T.hash_size/2);
 }
 #endif
 
@@ -540,14 +561,15 @@ static void P(remove) (P(node) *n)
 
 #ifndef HASH_FOR_ALL
 
-#define HASH_FOR_ALL(h_px, h_var)							\
+#define HASH_FOR_ALL_DYNAMIC(h_px, h_table, h_var)					\
 do {											\
   uns h_slot;										\
   struct GLUE_(h_px,bucket) *h_buck;							\
-  for (h_slot=0; h_slot < GLUE_(h_px,table).hash_size; h_slot++)			\
-    for (h_buck = GLUE_(h_px,table).ht[h_slot]; h_buck; h_buck = h_buck->next)	\
+  for (h_slot=0; h_slot < (h_table)->hash_size; h_slot++)				\
+    for (h_buck = (h_table)->ht[h_slot]; h_buck; h_buck = h_buck->next)			\
       {											\
 	GLUE_(h_px,node) *h_var = &h_buck->n;
+#define HASH_FOR_ALL(h_px, h_var) HASH_FOR_ALL_DYNAMIC(h_px, &GLUE_(h_px,table), h_var)
 #define HASH_END_FOR } } while(0)
 #define HASH_BREAK 
 #define HASH_CONTINUE continue
@@ -558,6 +580,12 @@ do {											\
 
 #undef P
 #undef T
+#undef TA
+#undef TAC
+#undef TAU
+#undef TACU
+#undef TT
+#undef TTC
 
 #undef HASH_ATOMIC_TYPE
 #undef HASH_CONSERVE_SPACE
@@ -589,3 +617,4 @@ do {											\
 #undef HASH_WANT_NEW
 #undef HASH_WANT_REMOVE
 #undef HASH_TABLE_ALLOC
+#undef HASH_TABLE_DYNAMIC
