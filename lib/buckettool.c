@@ -203,6 +203,11 @@ insert(byte *arg)
 	    +1
 #endif
 	    );
+	bputl(b, adler32(lizard_buf.ptr, lizard_filled)
+#if 0	//TEST error resilience: write wrong checksum
+	    +1
+#endif
+	    );
 	uns want_len = lizard_filled * LIZARD_MAX_MULTIPLY + LIZARD_MAX_ADD;
 	bb_grow(&compressed_buf, want_len);
 	want_len = lizard_compress(lizard_buf.ptr, lizard_filled, compressed_buf.ptr);

@@ -54,6 +54,7 @@ main(int argc, char **argv)
 
   void *mi, *mo;
   int li, lo;
+  uns adler = 0;
 
   struct stat st;
   stat(argv[optind], &st);
@@ -67,7 +68,8 @@ main(int argc, char **argv)
   else
   {
     lo = bgetl(fi);
-    li -= 4;
+    adler = bgetl(fi);
+    li -= 8;
   }
   mi = xmalloc(li);
   mo = xmalloc(lo);
@@ -76,12 +78,16 @@ main(int argc, char **argv)
 
   printf("%d ", li);
   if (action == 'd')
-    printf("->expected %d ", lo);
+    printf("->expected %d (%08x) ", lo, adler);
   fflush(stdout);
   if (action != 'd')
     lo = lizard_compress(mi, li, mo);
   else
+  {
     lo = lizard_decompress(mi, mo);
+    if (adler32(mo, lo) != adler)
+      printf("wrong Adler32 ");
+  }
   printf("-> %d ", lo);
   fflush(stdout);
 
@@ -89,7 +95,10 @@ main(int argc, char **argv)
   {
     struct fastbuf *fo = bopen(argv[optind+1], O_CREAT | O_TRUNC | O_WRONLY, 1<<16);
     if (action == 'c')
+    {
       bputl(fo, li);
+      bputl(fo, adler32(mi, li));
+    }
     bwrite(fo, mo, lo);
     bclose(fo);
   }

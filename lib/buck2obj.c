@@ -134,9 +134,13 @@ buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fas
 	RET_ERR(EINVAL);
       len = GET_U32(ptr);
       ptr += 4;
+      uns adler = GET_U32(ptr);
+      ptr += 4;
       byte *new_ptr = lizard_decompress_safe(ptr, buf->lizard, len);
       if (!new_ptr)
 	return -1;
+      if (adler32(new_ptr, len) != adler)
+	RET_ERR(EINVAL);
       if (!copied)
 	bdirect_read_commit(body, end);
       ptr = new_ptr;
