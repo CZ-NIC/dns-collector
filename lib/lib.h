@@ -23,6 +23,7 @@ ulg temprand(uns);
 #define TF_GENERIC "t"
 #define TF_QUEUE_CONTROL "c"
 #define TF_QUEUE_DATA "d"
+#define TF_DECODE "x"
 
 /* Config Files */
 
@@ -100,6 +101,7 @@ byte *find_aval(struct odes *, uns);
 struct oattr *set_attr(struct odes *, uns, byte *);
 struct oattr *set_attr_num(struct odes *, uns, uns);
 struct oattr *add_attr(struct odes *, struct oattr *, uns, byte *);
+struct oattr *prepend_attr(struct odes *, uns, byte *);
 
 /* oname.c */
 
