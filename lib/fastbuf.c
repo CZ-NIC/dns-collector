@@ -184,8 +184,9 @@ void bput5_slow(struct fastbuf *f, u64 o)
 #endif
 }
 
-void bread_slow(struct fastbuf *f, void *b, uns l)
+uns bread_slow(struct fastbuf *f, void *b, uns l)
 {
+  uns total = 0;
   while (l)
     {
       uns k = f->bstop - f->bptr;
@@ -195,7 +196,7 @@ void bread_slow(struct fastbuf *f, void *b, uns l)
 	  f->refill(f);
 	  k = f->bstop - f->bptr;
 	  if (!k)
-	    die("bread on %s: file exhausted", f->name);
+	    break;
 	}
       if (k > l)
 	k = l;
@@ -203,7 +204,9 @@ void bread_slow(struct fastbuf *f, void *b, uns l)
       f->bptr += k;
       b = (byte *)b + k;
       l -= k;
+      total += k;
     }
+  return total;
 }
 
 void bwrite_slow(struct fastbuf *f, void *b, uns l)
