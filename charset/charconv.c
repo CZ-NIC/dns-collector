@@ -4,7 +4,7 @@
  *	(c) 1998--2001 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
- *	of the GNU General Public License.
+ *	of the GNU Lesser General Public License.
  */
 
 #include "lib/lib.h"

@@ -2,6 +2,9 @@
  *	Sherlock Library -- Memory Pools
  *
  *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #ifndef _SHERLOCK_POOLS_H

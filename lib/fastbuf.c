@@ -2,6 +2,9 @@
  *	Sherlock Library -- Fast Buffered I/O
  *
  *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #include "lib/lib.h"

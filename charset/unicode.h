@@ -1,7 +1,10 @@
 /*
  *	The UniCode Library
  *
- *	(c) 1997 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997 Martin Mares <mj@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #ifndef _UNICODE_H

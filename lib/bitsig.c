@@ -36,6 +36,9 @@
  *	We leave L and an upper bound for N as parameters set during
  *	creation of the structure. Currently, the structure is limited
  *	to 4 Gb = 512 MB.
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #include "lib/lib.h"

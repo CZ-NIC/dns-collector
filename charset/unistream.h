@@ -2,6 +2,9 @@
  *	The UniCode Library: Reading and writing of UTF-8 on Fastbuf Streams
  *
  *	(c) 2001--2002 Martin Mares <mj@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #ifndef _UNISTREAM_H

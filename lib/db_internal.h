@@ -2,6 +2,9 @@
  *	Sherlock Library -- Fast Database Management Routines -- Internal Declarations
  *
  *	(c) 1999--2001 Martin Mares <mj@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #define SDBM_NUM_FREE_PAGE_POOLS 32

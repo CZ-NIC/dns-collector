@@ -6,6 +6,9 @@
  *	strings longer than 100 characters, it is substantially faster.
  *
  *	(c) 2002, Robert Spalek <robert@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #include "lib/lib.h"

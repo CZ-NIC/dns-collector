@@ -2,6 +2,9 @@
  *	Base 224 Encoding & Decoding
  *
  *	(c) 2002 Martin Mares <mj@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 uns base224_encode(byte *dest, byte *src, uns len);

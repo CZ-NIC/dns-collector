@@ -2,6 +2,9 @@
  *	Sherlock -- Configuration-Dependent Definitions
  *
  *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #ifndef _SHERLOCK_CONFIG_H

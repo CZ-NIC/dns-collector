@@ -3,6 +3,9 @@
  *	routines
  *
  *	(c) 2002, Robert Spalek <robert@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #ifndef _SHERLOCK_HASHFUNC_H

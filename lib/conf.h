@@ -2,6 +2,9 @@
  *	Sherlock Library -- Reading configuration files
  *
  *	(c) 2001 Robert Spalek <robert@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #ifndef	_LIB_CONF_H

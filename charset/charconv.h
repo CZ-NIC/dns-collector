@@ -4,7 +4,7 @@
  *	(c) 1998--2001 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
- *	of the GNU General Public License. See file COPYING in any of the GNU packages.
+ *	of the GNU Lesser General Public License.
  */
 
 struct conv_context {

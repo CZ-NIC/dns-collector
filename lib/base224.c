@@ -18,6 +18,9 @@
  *
  *	We transform 39 source bits to 40 destination bits, stretching the data
  *	by 1/39 = approx. 2.56%.
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #undef LOCAL_DEBUG

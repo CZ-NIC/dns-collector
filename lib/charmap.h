@@ -2,6 +2,9 @@
  *	Sherlock Library -- Character Code Map (UTF-8 Version)
  *
  *	(c) 1998 Martin Mares <mj@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 /* Syntax: CHAR(code, uppercase, unaccented_version, accent_code, category) */
