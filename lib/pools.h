@@ -26,7 +26,6 @@ void mp_delete(struct mempool *);
 void mp_flush(struct mempool *);
 void *mp_alloc(struct mempool *, uns);
 void *mp_alloc_zero(struct mempool *, uns);
-char *mp_strdup(struct mempool *, char *);
 
 static inline void *mp_alloc_fast(struct mempool *p, uns l)
 {
@@ -59,6 +58,16 @@ static inline void
 mp_end_string(struct mempool *p, void *stop)
 {
   p->free = stop;
+}
+
+/* pool-str.c */
+
+char *mp_strdup(struct mempool *, char *);
+char *mp_multicat(struct mempool *, ...);
+static inline char *
+mp_strcat(struct mempool *mp, char *x, char *y)
+{
+  mp_multicat(mp, x, y, NULL);
 }
 
 #endif
