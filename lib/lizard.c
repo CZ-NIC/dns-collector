@@ -181,7 +181,7 @@ lizard_compress(byte *in, uns in_len, byte *out)
     uns len = find_match(hash_tab[hash], hash_rec, in, in_end, &best, head);
     if (len < 3)
 #if 0			// TODO: now, our routine does not detect matches of length 2
-      if (len == 2 && (in - best->string) < ((1<<10) + 1))
+      if (len == 2 && (in - best->string - 1) < (1<<10))
       { /* pass-thru */ }
       else
 #endif
@@ -212,26 +212,27 @@ literal:
 	goto dump_2sequence;
     } else
 #endif
-    if (len == 3 && is_in_copy_mode && shift >= (1<<11) && shift < (1<<11) + (1<<10))
+    /* now, len >= 3 */
+    if (shift < (1<<11) && len <= 8)
     {
-      /* optimisation for length-3 matches after a copy command */
-      shift -= 1<<11;
+      shift |= (len-3 + 2)<<11;
 dump_2sequence:
       if (copy_len)
 	out = flush_copy_command(bof, out, copy_start, copy_len);
       *out++ = (shift>>6) & ~3;			/* shift fits into 10 bits */
       *out++ = shift & 0xff;
     }
-    /* now, len >= 3 */
-    else if (shift < (1<<11) && len <= 8)
+    else if (len == 3 && is_in_copy_mode)
     {
-      shift |= (len-3 + 2)<<11;
-      goto dump_2sequence;			/* shift has 11 bits and contains also len */
+      if (shift < (1<<11) + (1<<10))		/* optimisation for length-3 matches after a copy command */
+      {
+	shift -= 1<<11;
+	goto dump_2sequence;			/* shift has 11 bits and contains also len */
+      }
+      else					/* avoid 3-sequence compressed to 3 sequence if it can simply be appended */
+	goto literal;
     }
     /* We have to use a 3-byte sequence.  */
-    else if (len == 3 && is_in_copy_mode)
-      /* avoid 3-sequence compressed to 3 sequence if it can simply be appended */
-      goto literal;
     else
     {
       if (copy_len)
