@@ -4,7 +4,7 @@
 #  (c) 1997--2001 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
 #
 
-open(I, "unicode/UnicodeData.txt") || die "Unable to open UniCode data file";
+open(I, "unidata/UnicodeData.txt") || die "Unable to open UniCode data file";
 open(C, ">misc/u-cat") || die "cat file open";
 open(U, ">misc/u-upper") || die "upper file open";
 open(L, ">misc/u-lower") || die "lower file open";
