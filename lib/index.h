@@ -53,6 +53,8 @@ enum card_flag {
   CARD_FLAG_MERGED = 8,			/* Destination of a merge [merger] */
 };
 
+#define CARD_POS_SHIFT 5		/* Card positions are shifted this # of bytes to the right */
+
 /* String fingerprints */
 
 struct fingerprint {
