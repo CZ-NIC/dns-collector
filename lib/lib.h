@@ -48,6 +48,8 @@
 #define L_ERROR_R	'e'
 #define L_FATAL		'!'		/* die() */
 
+extern char *log_title;			/* NULL - print no title, default is log_progname */
+
 void log_msg(unsigned int cat, const char *msg, ...) __attribute__((format(printf,2,3)));
 #define log log_msg
 void die(byte *, ...) NONRET;

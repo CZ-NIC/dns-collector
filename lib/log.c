@@ -18,8 +18,8 @@
 #include <time.h>
 #include <alloca.h>
 
-char log_progname[32];
-static char *log_name_patt, *log_name;
+static char log_progname[32], *log_name_patt, *log_name;
+char *log_title = log_progname;
 static pid_t log_pid;
 static int log_params;
 static int log_name_size;
@@ -73,12 +73,12 @@ vlog(unsigned int cat, const char *msg, va_list args)
       p = buf = alloca(buflen);
       *p++ = cat;
       p += strftime(p, buflen, " %Y-%m-%d %H:%M:%S ", tm);
-      if (log_progname[0])
+      if (log_title)
 	{
 	  if (log_pid)
-	    p += sprintf(p, "[%s (%d)] ", log_progname, log_pid);
+	    p += sprintf(p, "[%s (%d)] ", log_title, log_pid);
 	  else
-	    p += sprintf(p, "[%s] ", log_progname);
+	    p += sprintf(p, "[%s] ", log_title);
 	}
       else
 	{
