@@ -253,3 +253,31 @@ bgets(struct fastbuf *f, byte *b, uns l)
     }
   die("%s: Line too long", f->name);
 }
+
+int
+bdirect_read(struct fastbuf *f, byte **buf)
+{
+  int len;
+
+  if (f->bptr == f->bstop && !f->refill(f))
+    return EOF;
+  *buf = f->bptr;
+  len = f->bstop - f->bptr;
+  f->bptr += len;
+  return len;
+}
+
+int
+bdirect_write_prepare(struct fastbuf *f, byte **buf)
+{
+  if (f->bptr == f->bufend)
+    f->spout(f);
+  *buf = f->bptr;
+  return f->bufend - f->bptr;
+}
+
+void
+bdirect_write_commit(struct fastbuf *f, byte *pos)
+{
+  f->bptr = pos;
+}

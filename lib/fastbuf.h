@@ -307,6 +307,12 @@ bputsn(struct fastbuf *f, byte *b)
   bputc(f, '\n');
 }
 
+/* Direct I/O on buffers */
+
+int bdirect_read(struct fastbuf *f, byte **buf);
+int bdirect_write_prepare(struct fastbuf *f, byte **buf);
+void bdirect_write_commit(struct fastbuf *f, byte *pos);
+
 /* Depending on compile-time configuration, we select the right function for reading/writing of file offsets */
 
 #ifdef SHERLOCK_CONFIG_LARGE_DB
