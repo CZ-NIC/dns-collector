@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Database Management Routines
  *
- *	(c) 1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1999--2000 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
  */
 
 /*
@@ -26,6 +26,7 @@
 #include <unistd.h>
 
 #include "lib.h"
+#include "lfs.h"
 #include "pagecache.h"
 #include "db.h"
 #include "db_internal.h"
@@ -40,20 +41,20 @@ sdbm_open(struct sdbm_options *o)
   d = xmalloc(sizeof(struct sdbm));
   bzero(d, sizeof(*d));
   d->flags = o->flags;
-  d->fd = open(o->name, ((d->flags & SDBM_WRITE) ? O_RDWR : O_RDONLY), 0666);
+  d->fd = sh_open(o->name, ((d->flags & SDBM_WRITE) ? O_RDWR : O_RDONLY), 0666);
   if (d->fd >= 0)			/* Already exists, let's check it */
     {
       if (read(d->fd, &root, sizeof(root)) != sizeof(root))
 	goto bad;
       if (root.magic != SDBM_MAGIC || root.version != SDBM_VERSION)
 	goto bad;
-      d->file_size = lseek(d->fd, 0, SEEK_END);
+      d->file_size = sh_seek(d->fd, 0, SEEK_END);
       d->page_size = 1 << root.page_order;
       d->cache = pgc_open(d->page_size, cache_size);
       d->root_page = pgc_read(d->cache, d->fd, 0);
       d->root = (void *) d->root_page->data;
     }
-  else if ((d->flags & SDBM_CREAT) && (d->fd = open(o->name, O_RDWR | O_CREAT, 0666)) >= 0)
+  else if ((d->flags & SDBM_CREAT) && (d->fd = sh_open(o->name, O_RDWR | O_CREAT, 0666)) >= 0)
     {
       struct page *q;
       uns page_order = o->page_order;
@@ -108,7 +109,10 @@ static uns
 sdbm_alloc_pages(struct sdbm *d, uns number)
 {
   uns where = d->file_size;
-  d->file_size += number << d->page_order;
+  uns size = number << d->page_order;
+  if (d->file_size + size < d->file_size)	/* Wrap around? */
+    die("SDB: Database file too large, giving up");
+  d->file_size += size;
   return where;
 }
 
