@@ -56,6 +56,7 @@ else
 	try centrum !CONFIG_GATHERER !CONFIG_GATHERD !CONFIG_SHEPHERD !CONFIG_REAPD !CONFIG_MUX !CONFIG_WATSON	# indexing server
 	try centrum !CONFIG_GATHERD !CONFIG_SHEPHERD !CONFIG_INDEXER !CONFIG_SEARCH !CONFIG_MUX !CONFIG_WATSON	# reapd server
 	try centrum 		 							# full Centrum config
+	try debug/custom CONFIG_SHARED							# debugging configuration with shared libs
 	try debug/custom								# debugging configuration
 fi
 
