@@ -15,7 +15,7 @@
 #define GET_TAGGED_CHAR(p,u) do {				\
   u = *p;							\
   if (u >= 0xc0)						\
-    GET_UTF8_CHAR(p,u);						\
+    GET_UTF8(p,u);						\
   else if (u >= 0x80)						\
     {								\
       p++;							\
