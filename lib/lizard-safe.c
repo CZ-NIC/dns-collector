@@ -21,15 +21,11 @@
 struct lizard_buffer *
 lizard_alloc(uns max_len)
 {
-  static byte *zero = "/dev/zero";
-  int fd = open(zero, O_RDWR);
-  if (fd < 0)
-    die("open(%s): %m", zero);
   struct lizard_buffer *buf = xmalloc(sizeof(struct lizard_buffer));
   buf->len = ALIGN(max_len + PAGE_SIZE, PAGE_SIZE);
-  buf->ptr = mmap(NULL, buf->len, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+  buf->ptr = mmap(NULL, buf->len, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   if (buf->ptr == MAP_FAILED)
-    die("mmap(%s): %m", zero);
+    die("mmap(anonymous): %m");
   return buf;
 }
 
