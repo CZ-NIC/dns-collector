@@ -126,7 +126,6 @@ void fingerprint(byte *string, struct fingerprint *fp);
 static inline u32
 fp_hash(struct fingerprint *fp)
 {
-  /* This hash is expected to be monotonic wrt. fpsort's order by fprecog */
   return (fp->hash[0] << 24) | (fp->hash[1] << 16) | (fp->hash[2] << 8) | fp->hash[3];
 }
 
