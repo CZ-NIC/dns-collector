@@ -17,6 +17,10 @@
 #undef  SHERLOCK_CONFIG_LFS		/* Large files on 32-bit systems */
 #undef  SHERLOCK_CONFIG_LFS_LIBC	/* LFS supported directly by libc */
 
+/* Paths */
+
+#define DEFAULT_CONFIG "cf/sherlock"
+
 /* Types */
 
 typedef unsigned char byte;		/* exactly 8 bits, unsigned */
@@ -67,13 +71,10 @@ typedef s32 sh_foff_t;
 #undef inline
 #define NONRET __attribute__((noreturn))
 #define UNUSED __attribute__((unused))
+#define CONSTRUCTOR __attribute__((constructor))
 
 #else
-
-#define inline
-#define NONRET
-#define UNUSED
-
+#error This program requires the GNU C compiler.
 #endif
 
 #endif
