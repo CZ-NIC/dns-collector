@@ -79,7 +79,6 @@ enum card_flag {
   CARD_FLAG_MERGED = 8,			/* Destination of a merge [merger] */
   CARD_FLAG_IMAGE = 16,			/* Is an image object [scanner] */
   CARD_FLAG_FRAMESET = 32,		/* Contains a frameset to be ignored [scanner] */
-  CARD_FLAG_GIANT_CLASS = 64,		/* Belongs to a very large class, subject to penalties [merger] */
 };
 
 #define CARD_POS_SHIFT 5		/* Card positions are shifted this # of bits to the right */
