@@ -25,6 +25,16 @@ enum word_type {
   WT_ALT				/* Alternate texts for graphical elements */
 };
 
+/* String types */
+
+enum string_type {
+  ST_RESERVED,				/* Reserved string type */
+  ST_URL,				/* URL of the document */
+  ST_HOST,				/* Host name */
+  ST_DOMAIN,				/* Domain name */
+  ST_REF				/* URL reference */
+};
+
 /* Index card attributes */
 
 struct card_attr {
