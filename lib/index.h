@@ -41,6 +41,7 @@ enum card_flag {
   CARD_FLAG_ACCENTED = 2,		/* Document contains accented characters [scanner] */
   CARD_FLAG_DUP = 4,			/* Removed as a duplicate [merger] */
   CARD_FLAG_MERGED = 8,			/* Destination of a merge [merger] */
+  CARD_FLAG_IMAGE = 16,			/* Is an image object [scanner] */
 };
 
 #define CARD_POS_SHIFT 5		/* Card positions are shifted this # of bytes to the right */
