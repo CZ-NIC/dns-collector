@@ -45,13 +45,18 @@ if [ -e custom -a ! -e custom.old ] ; then
 fi
 
 rm -f test*.log
-try free									# the free version
-try bare !CONFIG_INDEXER !CONFIG_SEARCH						# absolutely stripped version
-try bare									# the bare version
-try centrum !CONFIG_GATHERER !CONFIG_GATHERD !CONFIG_SHEPHERD !CONFIG_REAPD !CONFIG_INDEXER !CONFIG_MUX !CONFIG_WATSON	# search servers
-try centrum !CONFIG_GATHERER !CONFIG_GATHERD !CONFIG_SHEPHERD !CONFIG_REAPD !CONFIG_MUX !CONFIG_WATSON	# indexing server
-try centrum !CONFIG_GATHERD !CONFIG_SHEPHERD !CONFIG_INDEXER !CONFIG_SEARCH !CONFIG_MUX !CONFIG_WATSON	# reapd server
-try centrum 		 							# full config
+if [ -n "$1" ] ; then
+	try "$@"
+else
+	try debug/custom								# debugging configuration
+	try free									# the free version
+	try bare !CONFIG_INDEXER !CONFIG_SEARCH						# absolutely stripped version
+	try bare									# the bare version
+	try centrum !CONFIG_GATHERER !CONFIG_GATHERD !CONFIG_SHEPHERD !CONFIG_REAPD !CONFIG_INDEXER !CONFIG_MUX !CONFIG_WATSON	# search servers
+	try centrum !CONFIG_GATHERER !CONFIG_GATHERD !CONFIG_SHEPHERD !CONFIG_REAPD !CONFIG_MUX !CONFIG_WATSON	# indexing server
+	try centrum !CONFIG_GATHERD !CONFIG_SHEPHERD !CONFIG_INDEXER !CONFIG_SEARCH !CONFIG_MUX !CONFIG_WATSON	# reapd server
+	try centrum 		 							# full Centrum config
+fi
 
 rm -rf custom
 if [ -e custom.old ] ; then
