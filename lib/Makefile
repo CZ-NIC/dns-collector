@@ -23,3 +23,6 @@ obj/lib/lfs-test: obj/lib/lfs-test.o obj/lib/libsh.a
 obj/lib/regex-test: obj/lib/regex-test.o obj/lib/libsh.a
 obj/lib/hash-test: obj/lib/hash-test.o obj/lib/libsh.a
 obj/lib/str-test: obj/lib/str-test.o obj/lib/libsh.a
+
+include lib/perl/Makefile
+include lib/shell/Makefile
