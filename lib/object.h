@@ -30,10 +30,6 @@ struct oattr {				/* Object attribute */
 
 void obj_dump(struct odes *);
 struct odes *obj_new(struct mempool *);
-int obj_read(struct fastbuf *, struct odes *);
-void obj_read_multi(struct fastbuf *, struct odes *);
-void obj_write(struct fastbuf *, struct odes *);
-void obj_write_nocheck(struct fastbuf *, struct odes *);
 struct oattr *obj_find_attr(struct odes *, uns);
 struct oattr *obj_find_attr_last(struct odes *, uns);
 uns obj_del_attr(struct odes *, struct oattr *);
@@ -63,6 +59,9 @@ struct odes *obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns
    * However, no such things are performed when reading the header only.
    */
 
+int obj_read(struct fastbuf *, struct odes *);
+void obj_read_multi(struct fastbuf *, struct odes *);
+
 /* obj2buck.c: Generating buckets from objects */
 
 void attr_set_type(uns type);
@@ -78,5 +77,8 @@ void bput_attr_str(struct fastbuf *b, uns type, byte *val);
 void bput_attr_vformat(struct fastbuf *b, uns type, byte *mask, va_list va);
 void bput_attr_format(struct fastbuf *b, uns type, char *mask, ...) __attribute__((format(printf,3,4)));
 void bput_attr_num(struct fastbuf *b, uns type, uns val);
+
+void obj_write(struct fastbuf *, struct odes *);
+void obj_write_nocheck(struct fastbuf *, struct odes *);
 
 #endif

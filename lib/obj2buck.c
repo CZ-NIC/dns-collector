@@ -184,3 +184,29 @@ bput_attr_num(struct fastbuf *b, uns type, uns val)
   else
     bprintf(b, "%c%d\n", type, val);
 }
+
+void
+obj_write(struct fastbuf *f, struct odes *d)
+{
+  for(struct oattr *a=d->attrs; a; a=a->next)
+    for(struct oattr *b=a; b; b=b->same)
+      {
+	byte *z;
+	for (z = b->val; *z; z++)
+	  if (*z < ' ' && *z != '\t')
+	    {
+	      log(L_ERROR, "obj_dump: Found non-ASCII characters (URL might be %s)", obj_find_aval(d, 'U'));
+	      *z = '?';
+	    }
+	ASSERT(z - b->val <= MAX_ATTR_SIZE-2);
+	bput_attr_str(f, a->attr, b->val);
+      }
+}
+
+void
+obj_write_nocheck(struct fastbuf *f, struct odes *d)
+{
+  for(struct oattr *a=d->attrs; a; a=a->next)
+    for(struct oattr *b=a; b; b=b->same)
+      bput_attr_str(f, a->attr, b->val);
+}

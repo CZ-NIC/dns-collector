@@ -57,56 +57,6 @@ obj_new(struct mempool *pool)
   return o;
 }
 
-int
-obj_read(struct fastbuf *f, struct odes *o)
-{
-  byte buf[MAX_ATTR_SIZE];
-
-  while (bgets(f, buf, sizeof(buf)))
-    {
-      if (!buf[0])
-	return 1;
-      obj_add_attr(o, buf[0], buf+1);
-    }
-  return 0;
-}
-
-void
-obj_read_multi(struct fastbuf *f, struct odes *o)
-{
-  /* Read a multi-part object ending with either EOF or a NUL character */
-  byte buf[MAX_ATTR_SIZE];
-  while (bpeekc(f) > 0 && bgets(f, buf, sizeof(buf)))
-    if (buf[0])
-      obj_add_attr(o, buf[0], buf+1);
-}
-
-void
-obj_write(struct fastbuf *f, struct odes *d)
-{
-  for(struct oattr *a=d->attrs; a; a=a->next)
-    for(struct oattr *b=a; b; b=b->same)
-      {
-	byte *z;
-	for (z = b->val; *z; z++)
-	  if (*z < ' ' && *z != '\t')
-	    {
-	      log(L_ERROR, "obj_dump: Found non-ASCII characters (URL might be %s)", obj_find_aval(d, 'U'));
-	      *z = '?';
-	    }
-	ASSERT(z - b->val <= MAX_ATTR_SIZE-2);
-	bput_attr_str(f, a->attr, b->val);
-      }
-}
-
-void
-obj_write_nocheck(struct fastbuf *f, struct odes *d)
-{
-  for(struct oattr *a=d->attrs; a; a=a->next)
-    for(struct oattr *b=a; b; b=b->same)
-      bput_attr_str(f, a->attr, b->val);
-}
-
 struct oattr *
 obj_find_attr(struct odes *o, uns x)
 {
