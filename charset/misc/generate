@@ -10,4 +10,5 @@ misc/table2h _U_lower word <misc/u-lower >U-lower.h
 misc/table2h _U_upper word <misc/u-upper >U-upper.h
 misc/gen-unacc >misc/u-unacc
 misc/table2h _U_unaccent word <misc/u-unacc >U-unacc.h
+misc/gen-ligatures >U-ligatures.h
 misc/gen-charconv <misc/chartable.in >chartable.h
