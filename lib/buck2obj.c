@@ -15,20 +15,22 @@
 #include <errno.h>
 
 static inline byte *
-decode_attributes(byte *start, byte *end, struct odes *o)
+decode_attributes(byte *ptr, byte *end, struct odes *o)
 {
-  byte *p = start;
-  while (p < end)
+  /* FIXME: this forbids storing attributes with empty string as a value.
+   * Verify whether it is used or not.  */
+  while (ptr < end)
   {
     uns len;
-    GET_UTF8(p, len);
+    GET_UTF8(ptr, len);
     if (!len)
       break;
-    byte type = p[len];
-    p[len] = 0;
-    obj_add_attr(o, type, p);
+    byte type = ptr[len];
+    ptr[len] = 0;
+    obj_add_attr(o, type, ptr);
+    ptr += len + 1;
   }
-  return p;
+  return ptr;
 }
 
 int
@@ -42,9 +44,10 @@ extract_odes(struct obuck_header *hdr, struct fastbuf *body, struct odes *o, byt
   else
   {
     oa_allocate = 0;
+
     /* Read all the bucket into 1 buffer, 0-copy if possible.  */
-    byte *start, *end;
-    uns len = bdirect_read_prepare(body, &start);
+    byte *ptr, *end;
+    uns len = bdirect_read_prepare(body, &ptr);		// WARNING: must NOT use mmaped-I/O
     if (len < hdr->length)
     {
       if (hdr->length > buf_len)
@@ -53,34 +56,28 @@ extract_odes(struct obuck_header *hdr, struct fastbuf *body, struct odes *o, byt
 	return -1;
       }
       len = bread(body, buf, hdr->length);
-      start = buf;
+      ptr = buf;
     }
-    end = start + len;
+    end = ptr + len;
 
-    /* Decode the header, 0-copy.  */
-    byte *p = decode_attributes(start, end, o);
-
-    /* Decompress the body.  */
-    if (hdr->type == BUCKET_TYPE_V30C)
+    ptr = decode_attributes(ptr, end, o);		// header
+    if (hdr->type == BUCKET_TYPE_V30C)			// decompression
     {
-      GET_UTF8(p, len);
-      int res = lizard_decompress_safe(p, lizard_buf, len);
-      if (res < 0)
-	return res;
+      GET_UTF8(ptr, len);
+      int res = lizard_decompress_safe(ptr, lizard_buf, len);
       if (res != (int) len)
       {
+	if (res < 0)
+	  return res;
 	errno = EINVAL;
 	return -1;
       }
-      start = lizard_buf->ptr;
-      end = start + len;
+      ptr = lizard_buf->ptr;
+      end = ptr + len;
     }
-    else
-      start = p;
+    ptr = decode_attributes(ptr, end, o);		// body
 
-    /* Decode the body, 0-copy.  */
-    p = decode_attributes(start, end, o);
-    if (p != end)
+    if (ptr != end)
     {
       errno = EINVAL;
       return -1;
