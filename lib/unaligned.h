@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Access to Unaligned Data
  *
- *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2003 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -43,5 +43,10 @@
 #define GET_U40(p) (((u64) (p)[4] << 32) | GET_U32(p))
 #define PUT_U40(p,x) do { (p)[4] = ((x) >> 32); PUT_U32(p, x); } while(0)
 #endif
+
+/* Just for completeness */
+
+#define GET_U8(p) (*(byte *)(p))
+#define PUT_U8(p,x) *((byte *)(p)) = (x)
 
 #endif
