@@ -8,7 +8,7 @@ SHLIB_OBJS=alloc.o alloc_str.o ctmatch.o db.o fastbuf.o fb-file.o fb-mem.o lists
 	prime.o random.o realloc.o regex.o timer.o url.o wildmatch.o \
 	wordsplit.o str_ctype.o str_upper.o bucket.o conf.o object.o sorter.o \
 	finger.o proctitle.o ipaccess.o profile.o bitsig.o randomkey.o \
-	hashfunc.o base64.o base224.o fb-temp.o printf.o
+	hashfunc.o base64.o base224.o fb-temp.o printf.o fb-mmap.o
 
 obj/lib/libsh.a: $(addprefix obj/lib/,$(SHLIB_OBJS)) $(CUSTOM_MODULES)
 
