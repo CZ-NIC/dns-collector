@@ -2,13 +2,15 @@
 set -e
 DEST=`eval echo $1`
 echo "Installing to $DEST"
-if [ ! -d $DEST/bin ] ; then
+if [ ! -d $DEST/cf ] ; then
 	echo "Creating $DEST and the whole directory hierarchy under it."
-	mkdir -p $DEST/{bin,cf,db,index,log,tmp}
+	mkdir -p $DEST/{cf,db,index,log,tmp}
 fi
 echo "Installing binaries..."
-rm -f $DEST/bin/*
-cp run/bin/* $DEST/bin/
+rm -rf $DEST/{bin,lib}
+mkdir -p $DEST/{bin,lib}
+cp -a run/bin/* $DEST/bin/
+cp -a run/lib/* $DEST/lib/
 echo "Installing config files..."
 for a in cf/* ; do
 	if [ -f $a ] ; then
