@@ -20,7 +20,7 @@
 
 #include <string.h>		/* for memcpy() */
 
-#ifndef HIGHFIRST
+#ifdef CPU_LITTLE_ENDIAN
 #define byteReverse(buf, len)	/* Nothing */
 #else
 void byteReverse(unsigned char *buf, unsigned longs);
