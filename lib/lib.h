@@ -55,6 +55,7 @@ void cf_read(byte *, struct cfitem *);
 void log(byte *, ...);
 void die(byte *, ...) NONRET;
 void initlog(byte *);
+void open_log_file(byte *);
 
 /* Allocation */
 
@@ -96,10 +97,12 @@ void obj_dump(struct odes *);
 struct odes *obj_fload(FILE *);
 struct odes *obj_new(void);
 struct odes *obj_load(byte *);
-void obj_fwrite(FILE *, struct odes *);	/* Closes the file afterwards... */
+void obj_fwrite(FILE *, struct odes *);
+void obj_write(byte *, struct odes *);
 void obj_free(struct odes *);
 struct oattr *find_attr(struct odes *, uns);
 struct oattr *find_attr_last(struct odes *, uns);
+uns del_attr(struct odes *, struct oattr *);
 byte *find_aval(struct odes *, uns);
 struct oattr *set_attr(struct odes *, uns, byte *);
 struct oattr *set_attr_num(struct odes *, uns, uns);

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/time.h>
 
@@ -75,4 +76,18 @@ initlog(byte *argv0)
   if (argv0)
     progname = basename(argv0);
   pid = getpid();
+}
+
+void
+open_log_file(byte *name)
+{
+  if (name)
+    {
+      int fd = open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
+      if (fd < 0)
+	die("Unable to open log file");
+      close(2);
+      dup(fd);
+      close(fd);
+    }
 }
