@@ -55,6 +55,7 @@
 #define L_FATAL		'!'		/* die() */
 
 extern char *log_title;			/* NULL - print no title, default is log_progname */
+extern int log_switch_nest;		/* log_switch() nesting counter, increment to disable automatic switches */
 
 void log_msg(unsigned int cat, const char *msg, ...) __attribute__((format(printf,2,3)));
 #define log log_msg
@@ -63,6 +64,7 @@ void die(byte *, ...) NONRET;
 void log_init(byte *);
 void log_file(byte *);
 void log_fork(void);
+void log_switch(void);
 
 #ifdef DEBUG
 void assert_failed(char *assertion, char *file, int line) NONRET;
@@ -79,6 +81,9 @@ void assert_failed(void) NONRET;
 #else
 #define DBG(x,y...) do { } while(0)
 #endif
+
+static inline void log_switch_enable(void) { log_switch_nest++; }
+static inline void log_switch_disable(void) { ASSERT(log_switch_nest); log_switch_nest--; }
 
 /* Memory allocation */
 
@@ -106,7 +111,7 @@ void *xrealloc(void *, unsigned);
 #endif
 
 void *xmalloc_zero(unsigned);
-byte *stralloc(byte *);
+byte *xstrdup(byte *);
 
 /* Content-Type pattern matching and filters */
 
