@@ -4,6 +4,9 @@
  *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
  */
 
+#ifndef _SHERLOCK_FASTBUF_H
+#define _SHERLOCK_FASTBUF_H
+
 #ifndef EOF
 #include <stdio.h>
 #endif
@@ -316,4 +319,6 @@ bputsn(struct fastbuf *f, byte *b)
 #define bputo(f,l) bputl(f,l)
 #define bgetp(f) bgetl(f)
 #define bputp(f,l) bputl(f,l)
+#endif
+
 #endif
