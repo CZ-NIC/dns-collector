@@ -17,8 +17,6 @@
  *		printf("%s\n", PROF_STRING(&cnt));
  */
 
-#include <string.h>
-
 /* PROFILE_TOD: gettimeofday() profiler */
 
 struct prof_tod {
@@ -132,7 +130,7 @@ static inline void prof_init(prof_t *c UNUSED) { }
 static inline void prof_start(prof_t *c UNUSED) { }
 static inline void prof_stop(prof_t *c UNUSED) { }
 static inline void prof_switch(prof_t *c UNUSED, prof_t *d UNUSED) { }
-static inline void prof_format(char *b, prof_t *c UNUSED) { strcpy(b, "?"); }
+static inline void prof_format(char *b, prof_t *c UNUSED) { b[0]='?'; b[1]=0; }
 #define PROF_STR_SIZE 2
 
 #endif
