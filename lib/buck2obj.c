@@ -108,7 +108,7 @@ buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fas
     {
       while (btell(body) < end && bgets(body, buf, sizeof(buf)))
 	if (buf[0])
-	  obj_add_attr(o_hdr, buf[0], buf+1);
+	  obj_add_attr(o_body, buf[0], buf+1);
       ASSERT(btell(body) == end);
     }
   }
@@ -128,7 +128,7 @@ buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fas
       ptr = buf->bb.ptr;
       copied = 1;
     }
-    end = ptr + len;
+    end = ptr + buck_len;
 
     byte *start = ptr;
     ptr = decode_attributes(ptr, end, o_hdr, 0);		// header
