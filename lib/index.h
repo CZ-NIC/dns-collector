@@ -9,10 +9,10 @@
 
 #include SHERLOCK_CUSTOM
 
-#define INDEX_VERSION (0x32240100+sizeof(struct card_attr))	/* Increase with each incompatible change in index format */
+#define INDEX_VERSION (0x32250100+sizeof(struct card_attr))	/* Increase with each incompatible change in index format */
 
 /*
- *  Words and word complexes
+ *  Words
  *
  *  MAX_WORD_LEN is the maximum length (measured in UTF-8 characters, excluding
  *  the terminating zero byte if there's any) of any word which may appear in the
@@ -21,14 +21,38 @@
  *
  *  Caveat: If you are upcasing/downcasing the word, the UTF-8 encoding can
  *  expand, although at most twice, so you need to reserve 2*MAX_WORD_LEN bytes.
- *
- *  MAX_COMPLEX_LEN is the upper bound on number of words in any word complex.
  */
 
 #define MAX_WORD_LEN		64	/* a multiple of 4 */
-#define MAX_COMPLEX_LEN		10
 
 /* Word and string types are defined in lib/custom.h */
+
+/* Types used for storing contexts */
+
+#ifdef CONFIG_CONTEXTS
+#if CONFIG_MAX_CONTEXTS == 32768
+typedef u16 context_t;
+#define bget_context bgetw
+#define bput_context bputw
+#define GET_CONTEXT GET_U16
+#define PUT_CONTEXT PUT_U16
+#elif CONFIG_MAX_CONTEXTS == 256
+typedef byte context_t;
+#define bget_context bgetc
+#define bput_context bputc
+#define GET_CONTEXT GET_U8
+#define PUT_CONTEXT PUT_U8
+#else
+#error CONFIG_MAX_CONTEXTS set to an invalid value.
+#endif
+#else
+struct fastbuf;
+typedef struct { } context_t;
+static inline uns bget_context(struct fastbuf *b UNUSED) { return 0; }
+static inline void bput_context(struct fastbuf *b UNUSED, uns context UNUSED) { }
+#define GET_CONTEXT(p) 0
+#define PUT_CONTEXT(p,x) do {} while(0)
+#endif
 
 /* Index card attributes */
 
@@ -103,7 +127,8 @@ void fingerprint(byte *string, struct fingerprint *fp);
 static inline u32
 fp_hash(struct fingerprint *fp)
 {
-  return fp->hash[0] ^ fp->hash[1] ^ fp->hash[2] ^ fp->hash[3];
+  /* This hash is expected to be monotonic wrt. fpsort's order by fprecog */
+  return (fp->hash[0] << 24) | (fp->hash[1] << 16) | (fp->hash[2] << 8) | fp->hash[3];
 }
 
 /* URL keys */
