@@ -14,6 +14,7 @@
 #include "lib/ipaccess.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 struct ipaccess_list {
   list l;
@@ -61,19 +62,25 @@ parse_ip(byte *x, u32 *a)
 byte *
 ipaccess_parse(struct ipaccess_list *l, byte *c, int is_allow)
 {
-  byte *p = strchr(c, '/');
-  byte *q;
+  char *p = strchr(c, '/');
+  char *q;
   struct ipaccess_entry *a = cfg_malloc(sizeof(struct ipaccess_entry));
+  unsigned long pxlen;
 
   a->allow = is_allow;
+  a->mask = ~0U;
   if (p)
     {
       *p++ = 0;
-      if (q = parse_ip(p, &a->mask))
+      pxlen = strtoul(p, &q, 10);
+      if ((!q || !*q) && pxlen <= 32)
+	{
+	  if (pxlen != 32)
+	    a->mask = ~(~0U >> (uns) pxlen);
+	}
+      else if (q = parse_ip(p, &a->mask))
 	return q;
     }
-  else
-    a->mask = ~0;
   add_tail(&l->l, &a->n);
   return parse_ip(c, &a->addr);
 }
