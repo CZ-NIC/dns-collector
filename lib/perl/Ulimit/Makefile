@@ -1,4 +1,4 @@
-# Perl modules
+# Makefile for the Ulimit Perl module  (c) 2003 Tomas Valla <tom@ucw.cz>
 
 DIRS+=lib/perl/Ulimit/arch/auto/Sherlock/Ulimit
 

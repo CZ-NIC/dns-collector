@@ -1,3 +1,21 @@
+# Perl module for setting process limits
+#
+# (c) 2003 Tomas Valla <tom@ucw.cz>
+#
+# This software may be freely distributed and used according to the terms
+# of the GNU Lesser General Public License.
+#
+#
+#
+# Interface:
+#   Sherlock::Ulimit::setlimit( $resource, $softlimit, $hardlimit)
+#   Sherlock::Ulimit::getlimit( $resource, $softlimit, $hardlimit)
+# 
+# setlimit sets limit to values supplied in softlimit and hardlimit
+# getlimit reads limits into softlimit and hardlimit
+# $resource constants are defined below
+#
+
 package Sherlock::Ulimit;
 
 use 5.006;
@@ -9,10 +27,6 @@ require DynaLoader;
 
 our @ISA = qw(Exporter DynaLoader);
 unshift @DynaLoader::dl_library_path, "lib";
-
-# Items to export into callers namespace by default. Note: do not export
-# names by default without a very good reason. Use EXPORT_OK instead.
-# Do not simply export all your public functions/methods/constants.
 
 our $CPU = 0;
 our $FSIZE = 1;

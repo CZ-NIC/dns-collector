@@ -1,3 +1,10 @@
+/*
+ * PerlXS module for managing process limits
+ *
+ * (c) 2003 Tomas Valla <tom@ucw.cz>
+ *
+ */
+
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
