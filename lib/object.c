@@ -10,6 +10,7 @@
 #include "lib/lib.h"
 #include "lib/pools.h"
 #include "lib/fastbuf.h"
+#include "lib/object.h"
 
 #include <string.h>
 #include <stdio.h>
