@@ -89,7 +89,9 @@ enum card_flag {
   CARD_FLAG_OVERRIDEN = 64,		/* Overriden by another index [sherlockd] */
 };
 
+#ifndef CARD_POS_SHIFT			/* (can be overriden in custom.h) */
 #define CARD_POS_SHIFT 5		/* Card positions are shifted this # of bits to the right */
+#endif
 
 /*
  *  We store document type and several other properties in card_attr->type_flags.
