@@ -360,7 +360,7 @@ int main(int argc, char **argv)
 	      ch = o;
 	      perc = 100;
 	    }
-	  cnt = atol(o);
+	  cnt = atol(ch);
 	  if (!cnt)
 	    {
 	      cnt = num_keys;
