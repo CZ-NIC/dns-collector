@@ -17,7 +17,7 @@ CF_USAGE
 "-c\t\tCompress (default)\n\
 -d\t\tDecompress\n\
 -t\t\tCompress, decompress, and compare (in memory only)\n\
--x, -xx, -xxx\tMake the test crash by underestimating the output buffer\n\
+-x, -xx\t\tLet the test crash by shrinking the output buffer\n\
 ";
 
 static void NONRET
@@ -95,39 +95,18 @@ main(int argc, char **argv)
   }
   else
   {
-    struct lizard_buffer *buf = lizard_alloc(li);
-    uns exp_len = li;
-    if (crash==1)
-    {
-      if (exp_len >= PAGE_SIZE)
-	exp_len -= PAGE_SIZE;
-      else
-	exp_len = 0;
-      printf("Setting shorter output buffer to %d: ", exp_len);
-      fflush(stdout);
-    }
-    int lv = lizard_decompress_safe(mo, buf, exp_len);
+    int smaller_li;
+    if (li >= (int) PAGE_SIZE)
+      smaller_li = li - PAGE_SIZE;
+    else
+      smaller_li = 0;
+    struct lizard_buffer *buf = lizard_alloc(crash==1 ? smaller_li : li);
+    int lv = lizard_decompress_safe(mo, buf, crash==2 ? smaller_li : li);
     printf("-> %d ", lv);
     fflush(stdout);
-    if (crash >= 2)
-    {
-      uns guarded_pos = (lv + PAGE_SIZE-1)/PAGE_SIZE * PAGE_SIZE;
-      printf("Reading from guarded memory: %d\n", ((byte *) (buf->ptr)) [guarded_pos]);
-      if (crash == 2)
-      {
-	printf("Writing to guarded memory: ");
-	fflush(stdout);
-	((byte *) (buf->ptr)) [guarded_pos] = 0;
-	printf("succeeded\n");
-      }
-      if (crash == 3)
-      {
-	printf("Reading behind guarded memory: ");
-	fflush(stdout);
-	printf("%d\n", ((byte *) (buf->ptr)) [guarded_pos + PAGE_SIZE] = 0);
-      }
-    }
-    if (lv != li || memcmp(mi, buf->ptr, li))
+    if (lv < 0)
+      printf("err:%m ");
+    else if (lv != li || memcmp(mi, buf->ptr, li))
       printf("WRONG");
     else
       printf("OK");
