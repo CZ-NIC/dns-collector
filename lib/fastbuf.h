@@ -36,11 +36,11 @@
  *
  *  When writing:
  *
- *  +----------------+---------------------------+
- *  | written data   | free space                |
- *  +----------------+---------------------------+
- *  ^                 ^                           ^
- *  buffer=bstop      bptr                        bufend
+ *  +--------+--------------+--------------------+
+ *  | unused | written data | free space         |
+ *  +--------+--------------+--------------------+
+ *  ^         ^              ^                    ^
+ *  buffer    bstop          bptr                 bufend
  *
  *  Dirty tricks:
  *

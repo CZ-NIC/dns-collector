@@ -24,13 +24,10 @@ void bclose(struct fastbuf *f)
 
 void bflush(struct fastbuf *f)
 {
-  if (f->bptr != f->buffer)
-    {					/* Have something to flush */
-      if (f->bstop > f->buffer)		/* Read data? */
-	f->bptr = f->bstop = f->buffer;
-      else				/* Write data... */
-	f->spout(f);
-    }
+  if (f->bptr > f->bstop)
+    f->spout(f);
+  else if (f->bstop > f->buffer)
+    f->bptr = f->bstop = f->buffer;
 }
 
 inline void bsetpos(struct fastbuf *f, sh_off_t pos)
