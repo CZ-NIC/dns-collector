@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Universal Hash Table
  *
- *	(c) 2002 Martin Mares <mj@ucw.cz>
+ *	(c) 2002--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2002 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -88,6 +88,7 @@
  *  HASH_ATOMIC_TYPE=t	Atomic values are of type `t' instead of int.
  *  HASH_USE_POOL=pool	Allocate all nodes from given mempool.
  *			Collides with delete/remove functions.
+ *  HASH_AUTO_POOL=size	Create a pool of the given block size automatically.
  *
  *  You also get a iterator macro at no extra charge:
  *
@@ -260,21 +261,33 @@ static inline void P(init_data) (P(node) *n UNUSED)
 
 #include <stdlib.h>
 
-#ifndef HASH_GIVE_ALLOC
-#ifdef HASH_USE_POOL
+#ifdef HASH_GIVE_ALLOC
+/* If the caller has requested to use his own allocation functions, do so */
+static inline void * P(init_alloc) (void) { }
+static inline void * P(cleanup_alloc) (void) { }
 
-static inline void * P(alloc) (unsigned int size)
-{ return mp_alloc_fast(HASH_USE_POOL, size); }
+#elif defined(HASH_USE_POOL)
+/* If the caller has requested to use his mempool, do so */
+#include "lib/pools.h"
+static inline void * P(alloc) (unsigned int size) { return mp_alloc_fast(HASH_USE_POOL, size); }
+static inline void * P(init_alloc) (void) { }
+static inline void * P(cleanup_alloc) (void) { }
+
+#elif defined(HASH_AUTO_POOL)
+/* Use our own pools */
+#include "lib/pools.h"
+static struct mempool *P(pool);
+static inline void * P(alloc) (unsigned int size) { return mp_alloc_fast(P(pool), size); }
+static inline void P(init_alloc) (void) { P(pool) = mp_new(HASH_AUTO_POOL); }
+static inline void P(cleanup_alloc) (void) { mp_delete(P(pool)); }
 
 #else
+/* The default allocation method */
+static inline void * P(alloc) (unsigned int size) { return xmalloc(size); }
+static inline void P(free) (void *x) { xfree(x); }
+static inline void * P(init_alloc) (void) { }
+static inline void * P(cleanup_alloc) (void) { }
 
-static inline void * P(alloc) (unsigned int size)
-{ return xmalloc(size); }
-
-static inline void P(free) (void *x)
-{ xfree(x); }
-
-#endif
 #endif
 
 #ifndef HASH_DEFAULT_SIZE
@@ -312,6 +325,7 @@ static void P(init) (void)
   T.hash_hard_max = 1 << 28;
 #endif
   P(alloc_table)();
+  P(init_alloc)();
 }
 
 #ifdef HASH_WANT_CLEANUP
@@ -328,6 +342,7 @@ static void P(cleanup) (void)
 	P(free)(b);
       }
 #endif
+  P(cleanup_alloc)();
   xfree(T.ht);
 }
 #endif
@@ -550,6 +565,7 @@ do {											\
 #undef HASH_NODE
 #undef HASH_PREFIX
 #undef HASH_USE_POOL
+#undef HASH_AUTO_POOL
 #undef HASH_WANT_CLEANUP
 #undef HASH_WANT_DELETE
 #undef HASH_WANT_FIND

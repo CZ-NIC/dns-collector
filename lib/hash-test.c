@@ -69,7 +69,7 @@ static void test(void)
   log(L_INFO, "OK");
 }
 
-#elif 0
+#elif 1
 
 /* TEST 2: external strings */
 
@@ -82,6 +82,7 @@ struct node {
 #define HASH_PREFIX(x) test_##x
 #define HASH_KEY_STRING key
 #define HASH_NOCASE
+#define HASH_AUTO_POOL 4096
 
 #define HASH_WANT_FIND
 #define HASH_WANT_NEW
