@@ -181,7 +181,7 @@ conv_to_utf8(struct conv_context *c)
 	{
 	  if (d + 3 > de)
 	    goto dend;
-	  *d++ = 0xc0 | (code >> 12);
+	  *d++ = 0xe0 | (code >> 12);
 	  *d++ = 0x80 | ((code >> 6) & 0x3f);
 	  *d++ = 0x80 | (code & 0x3f);
 	}
