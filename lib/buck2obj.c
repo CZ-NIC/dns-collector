@@ -1,7 +1,8 @@
 /*
- *	Bucket -> Object converter
+ *	Bucket -> Object Converter
  *
  *	(c) 2004, Robert Spalek <robert@ucw.cz>
+ *	(c) 2004, Martin Mares <mj@ucw.cz>
  */
 
 #include "lib/lib.h"
@@ -90,7 +91,7 @@ obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, u
 
   if (buck_type == BUCKET_TYPE_PLAIN || buck_type == BUCKET_TYPE_V30)
   {
-    if (!body_start)			// header + body: ignore empty lines, read until EOF
+    if (!body_start)			// header + body: ignore empty lines, read until EOF or NUL
     {
       obj_read_multi(body, o);
       bgetc(body);
@@ -105,18 +106,18 @@ obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, u
   else if (buck_type == BUCKET_TYPE_V33 || buck_type == BUCKET_TYPE_V33_LIZARD)
   {
     /* Read all the bucket into 1 buffer, 0-copy if possible.  */
-    int can_overwrite = bconfig(body, BCONFIG_CAN_OVERWRITE, -1);
-    /* FIXME: This could be cached in buck2obj_buf */
     byte *ptr, *end;
     uns len = bdirect_read_prepare(body, &ptr);
+    uns copied = 0;
     if (len < buck_len
-    || (can_overwrite < 2 && buck_type == BUCKET_TYPE_V33))
+    || (body->can_overwrite_buffer < 2 && buck_type == BUCKET_TYPE_V33))
     {
       /* Copy if the original buffer is too small.
        * If it is write-protected, copy it also if it is uncompressed.  */
       bb_grow(&buf->bb, buck_len);
       len = bread(body, buf->bb.ptr, buck_len);
       ptr = buf->bb.ptr;
+      copied = 1;
     }
     end = ptr + len;
 
@@ -125,29 +126,29 @@ obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, u
     if (body_start)
     {
       *body_start = ptr - start;
+      if (!copied)
+	bdirect_read_commit(body, ptr);
       return o;
     }
-    if (buck_type == BUCKET_TYPE_V33)
-      ;
-    else if (buck_type == BUCKET_TYPE_V33_LIZARD)	// decompression
+    if (buck_type == BUCKET_TYPE_V33_LIZARD)		// decompression
     {
+      /* FIXME: Add checks for len<4 and other format violations */
       len = GET_U32(ptr);
       ptr += 4;
       byte *new_ptr = lizard_decompress_safe(ptr, buf->lizard, len);
       if (!new_ptr)
 	return NULL;
+      if (!copied)
+	bdirect_read_commit(body, end);
       ptr = new_ptr;
       end = ptr + len;
+      copied = 1;
     }
-    else						// unknown bucket type
-      RET_ERR(EINVAL);
     ptr = decode_attributes(ptr, end, o, 2);		// body
-
     if (ptr != end)
       RET_ERR(EINVAL);
-    /* If the bucket fit into the fastbuf buffer, can_overwrite == 2, and
-     * buck_type == BUCKET_TYPE_V33, then bflush(body) is needed before
-     * anything else than sequential read.  */
+    if (!copied)
+      bdirect_read_commit_modified(body, ptr);
   }
   else
     RET_ERR(EINVAL);
