@@ -57,6 +57,7 @@ enum string_type {
 	T(BACKREF, 1 << ST_BACKREF)
 
 #define STRING_TYPES_URL ((1 << ST_URL) | (1 << ST_REF) | (1 << ST_BACKREF))
+/* These must be indexed in lowercase form */
 #define STRING_TYPES_CASE_INSENSITIVE ((1 << ST_HOST) | (1 << ST_DOMAIN))
 
 /* Index card attributes */
