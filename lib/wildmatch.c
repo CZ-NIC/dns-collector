@@ -39,8 +39,8 @@ struct wildpatt {
   struct nfa_state nfa[MAX_STATES];
   struct dfa_state *hash[HASH_SIZE];
   struct dfa_state *dfa_start;
-  int nfa_states;
-  int dfa_cache_counter;
+  uns nfa_states;
+  uns dfa_cache_counter;
   struct mempool *pool;
   struct dfa_state *free_states;
 };
@@ -104,7 +104,7 @@ wp_compile(byte *p, struct mempool *pool)
   if (strlen(p) >= MAX_STATES)		/* Too long */
     return NULL;
   w = pool_alloc(pool, sizeof(*w));
-  bzero(w, sizeof(w));
+  bzero(w, sizeof(*w));
   w->pool = pool;
   for(i=1; *p; p++)
     {
@@ -170,6 +170,17 @@ wp_match(struct wildpatt *w, byte *s)
       s++;
     }
   return d->final;
+}
+
+int
+wp_min_size(byte *p)
+{
+  int s = 0;
+
+  while (*p)
+    if (*p++ != '*')
+      s++;
+  return s;
 }
 
 #ifdef TEST
