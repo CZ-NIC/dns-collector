@@ -4,7 +4,6 @@
  *	(c) 2002, Robert Spalek <robert@ucw.cz>
  */
 
-#define DEBUG
 #include "lib/lib.h"
 #include "lib/conf.h"
 #include "lib/fastbuf.h"
@@ -39,7 +38,6 @@ static void my_dump_data(struct fastbuf *fb, struct my1_node *n)
 #define TREE_WANT_DELETE
 #define TREE_WANT_ITERATOR
 #define TREE_WANT_DUMP
-#define TREE_STATIC
 #define TREE_CONSERVE_SPACE
 #include "redblack.h"
 
@@ -123,7 +121,7 @@ usage(void)
 int
 main(int argc, char **argv)
 {
-	uns verbose = 0, number = 1000, asserts = 0;
+	int verbose = 0, number = 1000, asserts = 0;
 	int opt;
 	struct fastbuf *fb, *dump_fb;
 	struct my_tree t;
