@@ -3,7 +3,7 @@
 DIRS+=charset
 
 UNI_OBJS=toupper.o tolower.o tocat.o utf8.o unaccent.o strlen.o debug.o \
-	charconv.o setnames.o
+	charconv.o setnames.o unistream.o
 
 obj/charset/libcharset.a: $(addprefix obj/charset/,$(UNI_OBJS))
 
