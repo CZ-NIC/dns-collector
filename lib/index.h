@@ -13,6 +13,7 @@
 enum word_type {
   WT_TEXT,				/* Ordinary text */
   WT_EMPH,				/* Emphasized text */
+  WT_SMALL,				/* Small font */
   WT_TITLE,				/* Document title */
   WT_SMALL_HEADING,			/* Heading */
   WT_BIG_HEADING,			/* Larger heading */
