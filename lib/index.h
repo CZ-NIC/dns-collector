@@ -7,7 +7,7 @@
 #ifndef _SHERLOCK_INDEX_H
 #define _SHERLOCK_INDEX_H
 
-#include SHERLOCK_CUSTOM
+#include "custom/lib/custom.h"
 
 #define INDEX_VERSION (0x32250100+sizeof(struct card_attr))	/* Increase with each incompatible change in index format */
 
