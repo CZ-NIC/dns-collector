@@ -48,9 +48,10 @@ rm -f test*.log
 try free									# the free version
 try bare !CONFIG_INDEXER !CONFIG_SEARCH						# absolutely stripped version
 try bare									# the bare version
-try centrum !CONFIG_GATHERD !CONFIG_GATHERER !CONFIG_REAPD !CONFIG_INDEXER	# search servers
-try centrum !CONFIG_GATHERD !CONFIG_GATHERER !CONFIG_REAPD			# indexing server
-try centrum !CONFIG_GATHERD							# gathering server
+try centrum !CONFIG_GATHERER !CONFIG_GATHERD !CONFIG_SHEPHERD !CONFIG_REAPD !CONFIG_INDEXER	# search servers
+try centrum !CONFIG_GATHERER !CONFIG_GATHERD !CONFIG_SHEPHERD !CONFIG_REAPD	# indexing server
+try centrum !CONFIG_GATHERD !CONFIG_SHEPHERD !CONFIG_INDEXER !CONFIG_SEARCH	# reapd server
+try centrum 		 							# full config
 
 rm -rf custom
 if [ -e custom.old ] ; then
