@@ -15,7 +15,7 @@ LIBUCW_MODS= \
 	profile \
 	fastbuf ff-printf ff-utf8 \
 	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer \
-	str_ctype str_upper str_lower unicode-utf8 \
+	str_ctype str_upper str_lower unicode-utf8 stkstring \
 	wildmatch wordsplit ctmatch patimatch patmatch regex \
 	prime random timer log2 randomkey \
 	db \
@@ -51,11 +51,12 @@ obj/lib/redblack-test: obj/lib/redblack-test.o $(LIBUCW)
 obj/lib/binheap-test: obj/lib/binheap-test.o $(LIBUCW)
 obj/lib/lizard-test: obj/lib/lizard-test.o $(LIBUCW)
 
-TESTS+=$(addprefix obj/lib/,regex.test unicode-utf8.test hash-test.test mempool.test)
+TESTS+=$(addprefix obj/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test)
 obj/lib/regex.test: obj/lib/regex-t
 obj/lib/unicode-utf8.test: obj/lib/unicode-utf8-t
 obj/lib/hash-test.test: obj/lib/hash-test
 obj/lib/mempool.test: obj/lib/mempool-fmt-t obj/lib/mempool-str-t
+obj/lib/stkstring.test: obj/lib/stkstring-t
 
 ifdef CONFIG_UCW_PERL
 include lib/perl/Makefile
