@@ -120,7 +120,7 @@ typedef struct prof_ktsc prof_t;
 static inline void prof_start(prof_t *c) { prof_switch(NULL, c); }
 static inline void prof_stop(prof_t *c) { prof_switch(c, NULL); }
 #endif
-#define PROF_STR(c) ({ static byte _x[PROF_STR_SIZE]; prof_format(_x, &(C)); _x })
+#define PROF_STR(C) ({ static byte _x[PROF_STR_SIZE]; prof_format(_x, &(C)); _x; })
 
 #else
 
@@ -132,5 +132,6 @@ static inline void prof_stop(prof_t *c UNUSED) { }
 static inline void prof_switch(prof_t *c UNUSED, prof_t *d UNUSED) { }
 static inline void prof_format(char *b, prof_t *c UNUSED) { b[0]='?'; b[1]=0; }
 #define PROF_STR_SIZE 2
+#define PROF_STR(C) "?"
 
 #endif
