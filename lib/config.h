@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Configuration-Dependent Definitions
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997, 1998 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
  */
 
 #ifndef _SHERLOCK_CONFIG_H
@@ -9,7 +9,7 @@
 
 /* Version */
 
-#define SHER_VER "1.0"
+#define SHER_VER "1.1"
 
 /* Types */
 
@@ -20,6 +20,8 @@ typedef short sword;			/* exactly 16 bits, signed */
 typedef unsigned int ulg;		/* exactly 32 bits, unsigned */
 typedef int slg;			/* exactly 32 bits, signed */
 typedef unsigned int uns;		/* at least 32 bits */
+typedef unsigned long long int u64;	/* exactly 64 bits, unsigned */
+typedef long long int s64;		/* exactly 64 bits, signed */
 
 #ifndef NULL
 #define NULL (void *)0
