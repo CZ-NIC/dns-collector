@@ -20,7 +20,7 @@
    * The multiplicative constant comes from 19-byte incompressible string
    * followed by a 3-sequence that can be compressed into 2-byte link.  This
    * breaks the copy-mode and it needs to be restarted with a new header.  The
-   * total length is 2(header) + 2(link) + 19(string) = 23.
+   * total length is 2(header) + 19(string) + 2(link) = 23.
    */
 
 /* lizard.c */
@@ -28,14 +28,8 @@ int lizard_compress(byte *in, uns in_len, byte *out);
 int lizard_decompress(byte *in, byte *out);
 
 /* lizard-safe.c */
-struct sigaction;
-struct lizard_buffer {
-  uns len;
-  void *start, *ptr;
-  struct sigaction *old_sigsegv_handler;
-};
+struct lizard_buffer;
 
-struct lizard_buffer *lizard_alloc(uns max_len);
+struct lizard_buffer *lizard_alloc(void);
 void lizard_free(struct lizard_buffer *buf);
-void lizard_realloc(struct lizard_buffer *buf, uns max_len);
-int lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length);
+int lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length, byte **ptr);
