@@ -105,7 +105,7 @@ void fingerprint(byte *string, struct fingerprint *fp);
 static inline u32
 fp_hash(struct fingerprint *fp)
 {
-  return (fp->hash[0] << 24) | (fp->hash[1] << 16) | (fp->hash[2] << 8) | fp->hash[3];
+  return fp->hash[0] ^ fp->hash[1] ^ fp->hash[2] ^ fp->hash[3];
 }
 
 /* Reading of tagged text (Unicode values, tags mapped to 0x80000000 and higher) */
