@@ -1,11 +1,10 @@
 /* Test for configuration parser */
 
-#include <stdio.h>
-#include <string.h>
-#include <getopt.h>
-
 #include "lib/lib.h"
 #include "lib/conf.h"
+
+#include <stdio.h>
+#include <string.h>
 
 static int robert=14;
 static int spalek=-3;
