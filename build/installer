@@ -1,12 +1,11 @@
 #!/bin/sh
 set -e
 DEST=`eval echo $1`
-shift
 echo "Installing to $DEST"
-for d in $DEST/{,cf,db,index,log,tmp} ; do
-	if [ ! -d $d ] ; then
-		echo "Creating $d"
-		mkdir $d
+for d in "" cf $SH_EXTRA_RUNDIRS ; do
+	if [ ! -d $DEST/$d ] ; then
+		echo "Creating $DEST/$d"
+		mkdir $DEST/$d
 	fi
 done
 echo "Installing binaries..."
@@ -15,7 +14,7 @@ mkdir -p $DEST/{bin,lib}
 cp -aL run/bin/* $DEST/bin/
 cp -aL run/lib/* $DEST/lib/
 echo "Installing config files..."
-for a in "$@" ; do
+for a in $SH_CONFIGS ; do
 	if [ -f run/cf/$a ] ; then
 		if [ ! -f $DEST/cf/$a ] ; then
 			echo "cf/$a: new, installed"
