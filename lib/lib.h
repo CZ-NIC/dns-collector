@@ -162,4 +162,8 @@ void scan_obj_tree(byte *, void (*)(ulg, byte *));
 
 uns random_max(uns);
 
+/* mmap.c */
+
+void *mmap_file(byte *name, unsigned *len);
+
 #endif
