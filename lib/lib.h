@@ -17,6 +17,7 @@
 #define _SHERLOCK_LIB_H
 
 #include "lib/config.h"
+#include <stdarg.h>
 
 /* Tell libc we're going to use all extensions available */
 
@@ -57,6 +58,7 @@ extern char *log_title;			/* NULL - print no title, default is log_progname */
 
 void log_msg(unsigned int cat, const char *msg, ...) __attribute__((format(printf,2,3)));
 #define log log_msg
+void vlog_msg(unsigned int cat, const char *msg, va_list args);
 void die(byte *, ...) NONRET;
 void log_init(byte *);
 void log_file(byte *);
@@ -175,5 +177,19 @@ void setproctitle(char *msg, ...) __attribute__((format(printf,1,2)));
 /* randomkey.c */
 
 void randomkey(byte *buf, uns size);
+
+/* exitstatus.c */
+
+#define EXIT_STATUS_MSG_SIZE 32
+int format_exit_status(byte *msg, int stat);
+
+/* runcmd.c */
+
+int run_command(byte *cmd, ...);
+void NONRET exec_command(byte *cmd, ...);
+void echo_command(byte *buf, int size, byte *cmd, ...);
+int run_command_v(byte *cmd, va_list args);
+void NONRET exec_command_v(byte *cmd, va_list args);
+void echo_command_v(byte *buf, int size, byte *cmd, va_list args);
 
 #endif
