@@ -24,7 +24,7 @@
  *  SORT_INPUT_FBPAIR	input is a pair of fastbuf streams
  *			(not supported by the presorter)
  *  SORT_OUTPUT_FILE	output is a file with this name
- *  SORT_OUTPUT_FB	output is a fastbuf stream
+ *  SORT_OUTPUT_FB	output is a temporary fastbuf stream
  *
  *  You also need to define some (usually inline) functions which
  *  are called by the sorter to process your data:
@@ -41,7 +41,7 @@
  *			write just fetched key k to dest and merge data from
  *			two records with the same key (k1 and k2 are key occurences
  *			in the corresponding streams).
- *  char * PREFIX_fetch_item(struct fastbuf *f, SORT_KEY *k, char *limit)
+ *  byte * PREFIX_fetch_item(struct fastbuf *f, SORT_KEY *k, byte *limit)
  *			[used only with SORT_PRESORT]
  *			fetch data belonging to a just fetched key and store
  *			them to memory following the key, but not over limit.
@@ -83,6 +83,7 @@ struct fastbuf *sorter_open_tmp(void);
 #include "lib/fastbuf.h"
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
 
 #if !defined(SORT_KEY) || !defined(SORT_PREFIX)
 #error Some of the mandatory configuration macros are missing.
@@ -96,6 +97,17 @@ struct fastbuf *sorter_open_tmp(void);
 #else
 #define LESS <=
 #endif
+
+static struct fastbuf *
+P(flush_out)(struct fastbuf *out)
+{
+  if (out)
+    {
+      bflush(out);
+      bsetpos(out, 0);
+    }
+  return out;
+}
 
 static void
 P(pass)(struct fastbuf **fb1, struct fastbuf **fb2)
@@ -175,20 +187,164 @@ P(pass)(struct fastbuf **fb1, struct fastbuf **fb2)
     log(L_INFO, "Pass %d: %d runs, %d+%d KB", sorter_pass_counter, run_count,
 	(out1 ? (int)((btell(out1) + 1023) / 1024) : 0),
 	(out2 ? (int)((btell(out2) + 1023) / 1024) : 0));
-  if (out1)				/* FIXME: What about empty output? */
-    {
-      bflush(out1);
-      bsetpos(out1, 0);
-    }
-  if (out2)
-    {
-      bflush(out2);
-      bsetpos(out2, 0);
-    }
-  *fb1 = out1;
-  *fb2 = out2;
+  *fb1 = P(flush_out)(out1);
+  *fb2 = P(flush_out)(out2);
   sorter_pass_counter++;
 }
+
+#ifdef SORT_PRESORT
+
+#define SORT_NODE struct P(presort_node)
+
+SORT_NODE {
+  SORT_NODE *next;
+  SORT_KEY key;
+};
+
+static SORT_NODE *
+P(mergesort)(SORT_NODE *x)
+{
+  SORT_NODE *f1, **l1, *f2, **l2, **l;
+
+  l1 = &f1;
+  l2 = &f2;
+  while (x)
+    {
+      *l1 = x;
+      l1 = &x->next;
+      x = x->next;
+      if (!x)
+	break;
+      *l2 = x;
+      l2 = &x->next;
+      x = x->next;
+    }
+  *l1 = *l2 = NULL;
+
+  if (f1 && f1->next)
+    f1 = P(mergesort)(f1);
+  if (f2 && f2->next)
+    f2 = P(mergesort)(f2);
+  l = &x;
+  while (f1 && f2)
+    {
+      if (P(compare)(&f1->key, &f2->key) <= 0)
+	{
+	  *l = f1;
+	  l = &f1->next;
+	  f1 = f1->next;
+	}
+      else
+	{
+	  *l = f2;
+	  l = &f2->next;
+	  f2 = f2->next;
+	}
+    }
+  *l = f1 ? : f2;
+  return x;
+}
+
+static void
+P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
+{
+  struct fastbuf *in = *fb1;
+  struct fastbuf *out1 = NULL;
+  struct fastbuf *out2 = NULL;
+  struct fastbuf *tbuf;
+  byte *buffer, *bufend, *current;
+  SORT_NODE *first, **last, *this, *leftover;
+  int cont = 1;
+  uns run_count = 0;
+  uns giant_count = 0;
+  uns split_count = 0;
+
+  ASSERT(!*fb2);
+  if (sorter_presort_bufsize < 2*sizeof(SORT_NODE))
+    die("PresortBuffer set too low");
+  buffer = xmalloc(sorter_presort_bufsize);
+  bufend = buffer + sorter_presort_bufsize;
+  leftover = NULL;
+  while (cont)
+    {
+      SWAP(out1, out2, tbuf);
+      if (!out1)
+	out1 = sorter_open_tmp();
+      current = buffer;
+      last = &first;
+      if (leftover)
+	{
+	  memmove(buffer, leftover, sizeof(SORT_NODE));
+	  this = leftover = (SORT_NODE *) buffer;
+	  split_count++;
+	  goto get_data;
+	}
+      for(;;)
+	{
+	  current = (byte *) ALIGN((addr_int_t) current, CPU_STRUCT_ALIGN);
+	  if (current + sizeof(*this) > bufend)
+	    break;
+	  this = (SORT_NODE *) current;
+	  cont = P(fetch_key)(in, &this->key);
+	  if (!cont)
+	    break;
+	get_data:
+	  current = P(fetch_item)(in, &this->key, bufend);
+	  if (!current)
+	    {
+	      if (leftover)		/* Single node too large */
+		{
+		  P(copy_data)(in, out1, &leftover->key);
+		  leftover = NULL;
+		  run_count++;
+		  giant_count++;
+		}
+	      else			/* Node will be left over to the next phase */
+		leftover = this;
+	      break;
+	    }
+	  *last = this;
+	  last = &this->next;
+	  leftover = NULL;
+	}
+      *last = NULL;
+      if (!first)
+	continue;
+
+      first = P(mergesort)(first);
+      run_count++;
+      while (first)
+	{
+#ifdef SORT_UNIFY
+	  SORT_NODE *second = first->next;
+	  if (second && !P(compare)(&first->key, &second->key))
+	    {
+	      SORT_KEY *n = P(merge_items)(&first->key, &second->key);
+	      if (n == &first->key)
+		first->next = second->next;
+	      else if (n)
+		first = first->next;
+	      else
+		first = second->next;
+	      continue;
+	    }
+#endif
+	  P(store_item)(out1, &first->key);
+	  first = first->next;
+	}
+    }
+
+  bclose(in);
+  if (sorter_trace)
+    log(L_INFO, "Pass 0: %d runs (%d giants, %d splits), %d+%d KB",
+	run_count, giant_count, split_count,
+	(out1 ? (int)((btell(out1) + 1023) / 1024) : 0),
+	(out2 ? (int)((btell(out2) + 1023) / 1024) : 0));
+  *fb1 = P(flush_out)(out1);
+  *fb2 = P(flush_out)(out2);
+}
+
+#endif		/* SORT_PRESORT */
 
 static
 #ifdef SORT_OUTPUT_FB
@@ -225,21 +381,27 @@ struct fastbuf *fb1, struct fastbuf *fb2
 #endif
 
   sorter_pass_counter = 1;
-  do P(pass)(&fb1, &fb2); while (fb1 && fb2);
+#ifdef SORT_PRESORT
+  P(presort)(&fb1, &fb2);
+  if (fb2)
+#endif
+    do P(pass)(&fb1, &fb2); while (fb1 && fb2);
   if (!fb1)
-    fb1 = fb2;
-  fb1->is_temp_file = 0;
+    fb1 = sorter_open_tmp();
 
 #ifdef SORT_OUTPUT_FB
   return fb1;
 #else
+  fb1->is_temp_file = 0;
   if (rename(fb1->name, outname) < 0)
     die("rename(%s,%s): %m", fb1->name, outname);
+  bclose(fb1);
 #endif
 }
 
 #undef P
 #undef LESS
 #undef SWAP
+#undef SORT_NODE
 
 #endif		/* !SORT_DECLARE_ONLY */
