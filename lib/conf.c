@@ -28,6 +28,10 @@
 static struct cfitem *cfsection;
 struct mempool *cfpool;
 
+#ifndef DEFAULT_CONFIG
+#define DEFAULT_CONFIG NULL
+#endif
+
 byte *cfdeffile = DEFAULT_CONFIG;
 
 static void CONSTRUCTOR
