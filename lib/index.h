@@ -10,6 +10,12 @@
 
 /* Word and string types are defined in lib/custom.h */
 
+/* Global index parameters */
+
+struct index_params {
+  sh_time_t ref_time;			/* Reference time (for document ages etc.) */
+};
+
 /* Index card attributes */
 
 struct card_attr {
@@ -20,7 +26,8 @@ struct card_attr {
 #undef INT_ATTR
   byte weight;
   byte flags;
-  // byte rfu[2];			/* If no custom attributes are defined */
+  byte age;				/* Document age in pseudo-logarithmic units wrt. reference time */
+  // byte rfu[1];			/* If no custom attributes are defined */
 };
 
 enum card_flag {
@@ -72,3 +79,26 @@ fp_hash(struct fingerprint *fp)
   else								\
     p++;							\
 } while (0)
+
+/* Conversion of document age from seconds to our internal units */
+
+static inline int
+convert_age(sh_time_t lastmod, sh_time_t reftime)
+{
+  sh_time_t age;
+  if (reftime < lastmod)		/* past times */
+    return -1;
+  age = (reftime - lastmod) / 3600;
+  if (age < 48)				/* last 2 days: 1 hour resolution */
+    return age;
+  age = (age-48) / 24;
+  if (age < 64)				/* next 64 days: 1 day resolution */
+    return 48 + age;
+  age = (age-64) / 7;
+  if (age < 135)			/* next 135 weeks: 1 week resolution */
+    return 112 + age;
+  age = (age-135) / 52;
+  if (age < 8)				/* next 8 years: 1 year resolution */
+    return 247 + age;
+  return 255;				/* then just "infinite future" */
+}
