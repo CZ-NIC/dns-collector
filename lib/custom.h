@@ -1,18 +1,12 @@
 /*
  *	Sherlock: Custom Parts of Configuration
  *
- *	(c) 2001 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2002 Martin Mares <mj@ucw.cz>
  */
 
 /* Name of this customization (version suffix) */
 
 #define SHER_SUFFIX ""
-
-/* Features */
-
-#define  SHERLOCK_CONFIG_LARGE_DB	/* Support for DB files >4GB */
-#define  SHERLOCK_CONFIG_LFS		/* Large files on 32-bit systems */
-#define  SHERLOCK_CONFIG_LFS_LIBC	/* LFS supported directly by libc */
 
 /* Word types */
 
@@ -84,3 +78,38 @@ enum string_type {
 #define STRING_TYPES_URL ((1 << ST_URL) | (1 << ST_REF) | (1 << ST_BACKREF))
 /* These must be indexed in lowercase form */
 #define STRING_TYPES_CASE_INSENSITIVE ((1 << ST_HOST) | (1 << ST_DOMAIN))
+
+/*
+ *  Definitions of custom attributes:
+ *
+ *  INT_ATTR(type, id, oattr, keyword, get_func, parse_func)
+ *
+ *  type	data type used to hold the value
+ *  id		C identifier of the attribute
+ *  oattr	object attribute we get the value from
+ *  keywd	search server keyword for the attribute
+ *  void get_func(struct card_attr *ca, byte *attr)
+ *		parse object attribute (may be NULL)
+ *  byte *parse_func(u32 *dest, byte *value, uns intval)
+ *		parse value in query (returns error message or NULL)
+ *		for KEYWD = "string", it gets value="string", intval=0
+ *		for KEYWD = num, it gets value=NULL, intval=num.
+ *
+ *  A good place for definitions of the functions is lib/custom.c.
+ *
+ *  Please order the attributes by decreasing size to get optimum padding.
+ */
+
+#if 0		/* Example */
+
+#define CUSTOM_ATTRS INT_ATTR(u32, lm, 'L', LM, custom_get_lm, custom_parse_lm)
+
+struct card_attr;
+void custom_get_lm(struct card_attr *ca, byte *attr);
+byte *custom_parse_lm(u32 *dest, byte *value, uns intval);
+
+#else
+
+#define CUSTOM_ATTRS
+
+#endif

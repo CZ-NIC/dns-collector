@@ -15,9 +15,12 @@
 struct card_attr {
   u32 card;				/* Reference to card description (either oid or filepos) */
   u32 site_id;
+#define INT_ATTR(t,i,o,k,g,p) t i;
+  CUSTOM_ATTRS				/* Include all custom attributes */
+#undef INT_ATTR
   byte weight;
   byte flags;
-  byte rfu[2];
+  // byte rfu[2];			/* If no custom attributes are defined */
 };
 
 enum card_flag {
