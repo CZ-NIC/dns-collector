@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Mapping of Files
  *
- *	(c) 1999 Martin Mares <mj@ucw.cz>
+ *	(c) 1999--2002 Martin Mares <mj@ucw.cz>
  */
 
 #include "lib/lib.h"
@@ -20,22 +20,19 @@ mmap_file(byte *name, unsigned *len, int writeable)
   void *x;
 
   if (fd < 0)
-    return NULL;
+    die("open(%s): %m", name);
   if (fstat(fd, &st) < 0)
-    x = NULL;
-  else
+    die("fstat(%s): %m", name);
+  if (len)
+    *len = st.st_size;
+  if (st.st_size)
     {
-      if (len)
-	*len = st.st_size;
-      if (st.st_size)
-	{
-	  x = mmap(NULL, st.st_size, writeable ? (PROT_READ | PROT_WRITE) : PROT_READ, MAP_SHARED, fd, 0);
-	  if (x == MAP_FAILED)
-	    x = NULL;
-	}
-      else	/* For empty file, we can return any non-zero address */
-	return "";
+      x = mmap(NULL, st.st_size, writeable ? (PROT_READ | PROT_WRITE) : PROT_READ, MAP_SHARED, fd, 0);
+      if (x == MAP_FAILED)
+	die("mmap(%s): %m", name);
     }
+  else	/* For empty file, we can return any non-zero address */
+    x = "";
   close(fd);
   return x;
 }
