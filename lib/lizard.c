@@ -14,77 +14,53 @@
 
 typedef u16 hash_ptr_t;
 struct hash_record {
-  byte *string;				// in original text
-  hash_ptr_t next4, next3;		// 0=end
+  /* the position in the original text is implicit; it is computed by locate_string() */
+  hash_ptr_t next;			// 0=end
+  hash_ptr_t prev;			// high bit: 0=record in array, 1=head in hash-table (i.e. value of hashf)
 };
 
-#define	HASH_SIZE	((1<<14) + 27)	// prime, size of hash-table
+#define	HASH_SIZE	(1<<14)		// size of hash-table
 #define	HASH_RECORDS	(1<<15)		// maximum number of records in hash-table, 0 is unused ==> subtract 1
-#define	CHAIN_MAX_TESTS	16		// crop longer collision chains
-#define	CHAIN_GOOD_MATCH	16	// we already have a good match => end
+#define	CHAIN_MAX_TESTS		8	// crop longer collision chains
+#define	CHAIN_GOOD_MATCH	32	// we already have a good match => end
 
 static inline uns
 hashf(byte *string)
+  /* 0..HASH_SIZE-1 */
 {
-    uns hash;
-#ifdef	CPU_ALLOW_UNALIGNED
-    hash = * (uns *) string;
-#elif	CPU_LITTLE_ENDIAN
-    hash = string[0] | (string[1]<<8) | (string[2]<<16) | (string[3]<<24);
-#else
-    hash = string[3] | (string[2]<<8) | (string[1]<<16) | (string[0]<<24);
-#endif
-    return hash;
+    return string[0] ^ (string[1]<<3) ^ (string[2]<<6);
 }
-#ifdef	CPU_LITTLE_ENDIAN
-#define	MASK_4TH_CHAR	(~(0xff << 24))
-#else
-#define	MASK_4TH_CHAR	(~0xff)
-#endif
+
+static inline byte *
+locate_string(byte *string, uns record_id, uns head)
+  /* The strings are recorded into the hash-table regularly, hence there is no
+   * need to store the pointer there.  */
+{
+  string += record_id - head;
+  if (record_id >= head)
+    string -= HASH_RECORDS-1;
+  return string;
+}
 
 static inline uns
-find_match(uns list_id, hash_ptr_t *hash_tab, struct hash_record *hash_rec, uns hash, byte *string, byte *string_end, byte **best_ptr)
-  /*
-   * We heavily rely on gcc optimisations (e.g. list_id is a constant hence
-   * some branches of the code will be pruned).
-   *
-   * hash_tab[hash] points to the head of the link-list of strings with
-   * the same hash.  The records are statically stored in circular array
-   * hash_rec (with 1st entry unused), and the pointers are just 16-bit
-   * indices.  In one array, we store 2 independent link-lists: with 3 and 4
-   * hashed characters.
-   *
-   * The data structure fulfills 2 invariants: the strings in every collision
-   * chain are ordered by age, and the head of every link-list is placed
-   * correctly.  The records in the middle of the link-lists may be placed
-   * wrong, and this is handled here by checking the string order.
-   */
+find_match(uns record_id, struct hash_record *hash_rec, byte *string, byte *string_end, byte **best_ptr, uns head)
+  /* hash_tab[hash] == record_id points to the head of the double-linked
+   * link-list of strings with the same hash.  The records are statically
+   * stored in circular array hash_rec (with the 1st entry unused), and the
+   * pointers are just 16-bit indices.  The strings in every collision chain
+   * are ordered by age.  */
 {
-  if (list_id == 3)				/* Find the 1st record in the collision chain.  It is correct.  */
-    hash &= MASK_4TH_CHAR;
-  hash %= HASH_SIZE;
-  if (!hash_tab[hash])
-    return 0;
-  struct hash_record *record = hash_rec + hash_tab[hash];
-
   uns count = CHAIN_MAX_TESTS;
   uns best_len = 0;
-  byte *last_cmp = string_end;
-  hash_ptr_t *last_ptr = NULL;
-  while (count-- > 0)
+  while (record_id && count-- > 0)
   {
-    byte *cmp = record->string;
-    if (cmp >= last_cmp)			/* collision chain is ordered by age */
-    {
-      *last_ptr = 0;				/* prune */
-      break;
-    }
-    last_cmp = cmp;
+    byte *record_string = locate_string(string, record_id, head);
+    byte *cmp = record_string;
     if (cmp[0] == string[0] && cmp[2] == string[2])
+    /* implies cmp[1] == string[1] */
     {
       if (cmp[3] == string[3])
       {
-	/* implies cmp[1] == string[1], becase we hash into 14+eps bits */
 	cmp += 4;
 	if (*cmp++ == string[4] && *cmp++ == string[5]
 	    && *cmp++ == string[6] && *cmp++ == string[7])
@@ -93,70 +69,46 @@ find_match(uns list_id, hash_ptr_t *hash_tab, struct hash_record *hash_rec, uns 
 	  while (str <= string_end && *cmp++ == *str++);
 	}
       }
-      else if (list_id == 3)
-	/* hashing 3 characters implies cmp[1] == string[1]
-	   hashing 4 characters implies cmp[1] != string[1] */
-	cmp += 4;
       else
-	goto next_collision;
-      uns len = cmp - record->string - 1;	/* cmp points 2 characters after the last match */
+	cmp += 4;
+      uns len = cmp - record_string - 1;	/* cmp points 2 characters after the last match */
       if (len > best_len)
       {
 	best_len = len;
-	*best_ptr = record->string;
-	if (best_len >= CHAIN_GOOD_MATCH)	/* optimisation */
+	*best_ptr = record_string;
+	if (best_len >= CHAIN_GOOD_MATCH)	/* optimization */
 	  break;
       }
     }
-next_collision:
-    if (list_id == 3)				/* move to the next collision */
-      last_ptr = &record->next3;
-    else
-      last_ptr = &record->next4;
-    uns next = *last_ptr;
-    if (!next)
-      break;
-    record = hash_rec + next;
+    record_id = hash_rec[record_id].next;
   }
   return best_len;
 }
 
 static uns
-hash_string(byte *string, uns hash, hash_ptr_t *tab3, hash_ptr_t *tab4, struct hash_record *hash_rec, uns head)
-  /*
-   * Updates are performed more often than searches, so they are a bit lazy: we
-   * add new records in front of the link-lists, but only delete them when they
-   * are the _head_ of some link-list.  This is done in constant time.
-   *
-   * By reusing an already allocated space in the circular array we necessarily
-   * alter records that are referred in the _middle_ of some link-list.
-   * However the newly inserted string is younger than anything else in the
-   * table and it can be checked easily.
-   */
+hash_string(hash_ptr_t *hash_tab, uns hash, struct hash_record *hash_rec, /*byte *string,*/ uns head, uns *to_delete)
+  /* We reuse hash-records stored in a circular array.  First, delete the old
+   * one and then add the new one in front of the link-list.  */
 {
   struct hash_record *rec = hash_rec + head;
-  if (rec->string)				/* unlink the original record if it was the _head_ of some link-list */
+  if (*to_delete)				/* unlink the original record */
   {
-    uns h4 = hashf(rec->string);
-    uns h3 = h4 & MASK_4TH_CHAR;
-    h3 %= HASH_SIZE;
-    h4 %= HASH_SIZE;
-    if (tab3[h3] == head)
-      tab3[h3] = 0;
-    if (tab4[h4] == head)
-      tab4[h4] = 0;
-
+    uns prev_id = rec->prev & ((1<<15)-1);
+    if (rec->prev & (1<<15))			/* was a head */
+      hash_tab[prev_id] = 0;
+    else					/* thanks to the ordering, this was a tail */
+      hash_rec[prev_id].next = 0;
   }
-  uns h3 = (hash & MASK_4TH_CHAR) % HASH_SIZE;
-  uns h4 = hash % HASH_SIZE;
-  rec->string = string;				/* is younger than any string inserted before */
-  rec->next3 = tab3[h3];
-  rec->next4 = tab4[h4];
-  tab3[h3] = head;				/* add the new record before the link-list */
-  tab4[h4] = head;
-  head++;					/* circular buffer, reuse old records, 0 is unused */
-  if (head >= HASH_RECORDS)
+  rec->next = hash_tab[hash];
+  rec->prev = (1<<15) | hash;
+  hash_rec[rec->next].prev = head;
+  hash_tab[hash] = head;			/* add the new record before the link-list */
+
+  if (++head >= HASH_RECORDS)			/* circular buffer, reuse old records, 0 is unused */
+  {
     head = 1;
+    *to_delete = 1;
+  }
   return head;
 }
 
@@ -202,64 +154,62 @@ lizzard_compress(byte *in, uns in_len, byte *out)
    * LIZZARD_MAX_ADD.  There must be at least LIZZARD_NEEDS_CHARS characters
    * allocated after in.  Returns the actual compressed length. */
 {
-  hash_ptr_t hash_tab3[HASH_SIZE], hash_tab4[HASH_SIZE];
+  hash_ptr_t hash_tab[HASH_SIZE];
   struct hash_record hash_rec[HASH_RECORDS];
   byte *in_start = in;
   byte *in_end = in + in_len;
   byte *out_start = out;
   byte *copy_start = in;
   uns head = 1;					/* 0 in unused */
-  bzero(hash_tab3, sizeof(hash_tab3));		/* init the hash-table */
-  bzero(hash_tab4, sizeof(hash_tab4));
+  uns to_delete = 0;
+  bzero(hash_tab, sizeof(hash_tab));		/* init the hash-table */
   while (in < in_end)
   {
     uns hash = hashf(in);
     byte *best;
-    uns len = find_match(4, hash_tab4, hash_rec, hash, in, in_end, &best);
-    if (len >= 3)
-      goto match;
-    len = find_match(3, hash_tab3, hash_rec, hash, in, in_end, &best);
-
-match_found:
-    if (len >= 3)
-      goto match;
+    uns len = find_match(hash_tab[hash], hash_rec, in, in_end, &best, head);
+    if (len < 3)
 #if 0			// TODO: now, our routine does not detect matches of length 2
-    if (len == 2 && (in - best->string) < ((1<<10) + 1))
-      goto match;
+      if (len == 2 && (in - best->string) < ((1<<10) + 1))
+      { /* pass-thru */ }
+      else
 #endif
+      {
 literal:
-    head = hash_string(in, hash, hash_tab3, hash_tab4, hash_rec, head);
-    in++;					/* add a literal */
-    continue;
+	head = hash_string(hash_tab, hash, hash_rec, head, &to_delete);
+	in++;					/* add a literal */
+	continue;
+      }
 
-match:
     if (in + len > in_end)			/* crop EOF */
     {
       len = in_end - in;
       if (len < 3)
-	goto match_found;
+	goto literal;
     }
     /* Record the match.  */
     uns copy_len = in - copy_start;
     uns is_in_copy_mode = copy_start==in_start || copy_len >= 4;
     uns shift = in - best - 1;
     /* Try to use a 2-byte sequence.  */
+#if 0
     if (len == 2)
     {
       if (is_in_copy_mode || !copy_len)		/* cannot use with 0 copied characters, because this bit pattern is reserved for copy mode */
 	goto literal;
-
+      else
+	goto dump_2sequence;
+    } else
+#endif
+    if (len == 3 && is_in_copy_mode && shift >= (1<<11) && shift < (1<<11) + (1<<10))
+    {
+      /* optimisation for length-3 matches after a copy command */
+      shift -= 1<<11;
 dump_2sequence:
       if (copy_len > 0)
 	out = flush_copy_command(copy_start==in_start, out, copy_start, copy_len);
       *out++ = (shift>>6) & ~3;			/* shift fits into 10 bits */
       *out++ = shift & 0xff;
-    }
-    else if (len == 3 && is_in_copy_mode && shift >= (1<<11) && shift < (1<<11) + (1<<10))
-    {
-      /* optimisation for length-3 matches after a copy command */
-      shift -= 1<<11;
-      goto dump_2sequence;
     }
     /* now, len >= 3 */
     else if (shift < (1<<11) && len <= 8)
@@ -301,9 +251,9 @@ dump_2sequence:
       *out++ = shift & 0xff;
     }
     /* Update the hash-table.  */
-    head = hash_string(in, hash, hash_tab3, hash_tab4, hash_rec, head);
+    head = hash_string(hash_tab, hash, hash_rec, head, &to_delete);
     for (uns i=1; i<len; i++)
-      head = hash_string(in+i, hashf(in+i), hash_tab3, hash_tab4, hash_rec, head);
+      head = hash_string(hash_tab, hashf(in+i), hash_rec, head, &to_delete);
     in += len;
     copy_start = in;
   }
