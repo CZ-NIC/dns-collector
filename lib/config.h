@@ -18,6 +18,13 @@ typedef unsigned int ulg;		/* exactly 32 bits, unsigned */
 typedef int slg;			/* exactly 32 bits, signed */
 typedef unsigned int uns;		/* at least 32 bits */
 
+/* CPU characteristics */
+
+#define CPU_LITTLE_ENDIAN
+#undef CPU_BIG_ENDIAN
+#define CPU_CAN_DO_UNALIGNED_WORDS
+#define CPU_CAN_DO_UNALIGNED_LONGS
+
 /* Misc */
 
 #ifdef __GNUC__
