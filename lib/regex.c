@@ -8,7 +8,6 @@
 #include "lib/lib.h"
 #include "lib/chartype.h"
 
-#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -37,7 +36,7 @@ rx_compile(byte *p, int icase)
       r->buf.translate = xmalloc (CHAR_SET_SIZE);
       /* Map uppercase characters to corresponding lowercase ones.  */
       for (i = 0; i < CHAR_SET_SIZE; i++)
-        r->buf.translate[i] = Cupper(i) ? tolower (i) : i;
+        r->buf.translate[i] = Clower(i) ? Cupcase(i) : i;
     }
   else
     r->buf.translate = NULL;
