@@ -31,8 +31,13 @@ match_pattern_nocase(byte *p, byte *s)
 	    }
 	  return 0;
 	}
-      else if (Cupcase(*p++) != Cupcase(*s++))
-	return 0;
+      else
+	{
+	  if (*p == '\\' && p[1])
+	    p++;
+	  if (Cupcase(*p++) != Cupcase(*s++))
+	    return 0;
+	}
     }
   return !*s;
 }

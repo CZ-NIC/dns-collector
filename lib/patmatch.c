@@ -30,8 +30,13 @@ match_pattern(byte *p, byte *s)
 	    }
 	  return 0;
 	}
-      else if (*p++ != *s++)
-	return 0;
+      else
+	{
+	  if (*p == '\\' && p[1])
+	    p++;
+	  if (*p++ != *s++)
+	    return 0;
+	}
     }
   return !*s;
 }
