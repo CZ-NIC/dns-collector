@@ -58,6 +58,7 @@ void log(unsigned int cat, byte *msg, ...);
 void die(byte *, ...) NONRET;
 void log_init(byte *);
 void log_file(byte *);
+void log_fork(void);
 
 #ifdef DEBUG
 #define ASSERT(x) do { if (!(x)) die("Assertion `%s' failed at %s:%d", #x, __FILE__, __LINE__); } while(0)

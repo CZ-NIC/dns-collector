@@ -16,6 +16,12 @@
 static byte *log_progname;
 static pid_t log_pid;
 
+void
+log_fork(void)
+{
+  log_pid = 0;
+}
+
 static void
 vlog(unsigned int cat, byte *msg, va_list args)
 {
