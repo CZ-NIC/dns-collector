@@ -29,6 +29,7 @@ handle_signal(int signum, struct sigaction *oldact)
   struct sigaction act;
   bzero(&act, sizeof(act));
   act.sa_handler = signal_handler_internal;
+  act.sa_flags = SA_NOMASK;
   if (sigaction(signum, &act, oldact) < 0)
     die("sigaction: %m");
 }
