@@ -345,7 +345,7 @@ obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
 	goto reread;
       rhdr = (struct obuck_header *)(rbuf + roff);
       if (rhdr->magic != OBUCK_MAGIC ||
-	  rhdr->oid != OBUCK_OID_DELETED && rhdr->oid != (bucket_start >> OBUCK_SHIFT))
+	  rhdr->oid != OBUCK_OID_DELETED && rhdr->oid != (oid_t)(bucket_start >> OBUCK_SHIFT))
 	{
 	  msg = "header mismatch";
 	  goto broken;
