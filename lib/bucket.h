@@ -17,7 +17,9 @@
  *
  * Locking: Each operation on the pool is protected by a flock.
  *
- * The buckets emulate non-seekable fastbuf streams.
+ * The buckets emulate fastbuf streams. Read streams act as normal files,
+ * but there can be only one write stream which is non-seekable and you
+ * also shouldn't open new read streams when writing.
  *
  * fork()'ing if you don't have any bucket open is safe.
  */
