@@ -120,6 +120,14 @@ fbmem_seek(struct fastbuf *f, sh_off_t pos, int whence)
 	  return;
 	}
     }
+  if (!m->first && !pos)
+    {
+      /* Seeking to offset 0 in an empty file needs an exception */
+      f->buffer = f->bptr = f->bufend = NULL;
+      f->pos = 0;
+      FB_MEM(f)->block = NULL;
+      return;
+    }
   die("fbmem_seek to invalid offset");
 }
 
