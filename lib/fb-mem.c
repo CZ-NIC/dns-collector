@@ -123,20 +123,15 @@ fbmem_close(struct fastbuf *f)
 struct fastbuf *
 fbmem_create(unsigned blocksize)
 {
-  struct fastbuf *f = xmalloc(sizeof(struct fastbuf));
-  struct memstream *m = xmalloc(sizeof(struct memstream));
+  struct fastbuf *f = xmalloc_zero(sizeof(struct fastbuf));
+  struct memstream *m = xmalloc_zero(sizeof(struct memstream));
 
   m->blocksize = blocksize;
   m->uc = 1;
-  m->first = NULL;
 
-  f->bptr = f->bstop = f->buffer = f->bufend = NULL;
-  f->pos = f->fdpos = 0;
   f->name = "<fbmem-write>";
   f->lldata = m;
-  f->refill = NULL;
   f->spout = fbmem_spout;
-  f->seek = NULL;
   f->close = fbmem_close;
   return f;
 }
@@ -144,19 +139,15 @@ fbmem_create(unsigned blocksize)
 struct fastbuf *
 fbmem_clone_read(struct fastbuf *b)
 {
-  struct fastbuf *f = xmalloc(sizeof(struct fastbuf));
+  struct fastbuf *f = xmalloc_zero(sizeof(struct fastbuf));
   struct memstream *s = b->lldata;
 
   bflush(b);
   s->uc++;
 
-  f->bptr = f->bstop = f->buffer = f->bufend = NULL;
-  f->pos = f->fdpos = 0;
   f->name = "<fbmem-read>";
   f->lldata = s;
-  f->llpos = NULL;
   f->refill = fbmem_refill;
-  f->spout = NULL;
   f->seek = fbmem_seek;
   f->close = fbmem_close;
   return f;
