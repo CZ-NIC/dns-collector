@@ -125,9 +125,9 @@ extern inline u64 bget5(struct fastbuf *f)
     {
       byte *p = f->bptr;
 #ifdef CPU_BIG_ENDIAN
-      l = ((u64)p[0] << 32) | ((p[1] << 24) | (p[2] << 16) | (p[3] << 8) | p[4]);
+      l = ((u64)p[0] << 32) | (u32)((p[1] << 24) | (p[2] << 16) | (p[3] << 8) | p[4]);
 #else
-      l = ((u64)p[4] << 32) | ((p[3] << 24) | (p[2] << 16) | (p[1] << 8) | p[0]);
+      l = ((u64)p[4] << 32) | (u32)((p[3] << 24) | (p[2] << 16) | (p[1] << 8) | p[0]);
 #endif
       f->bptr += 5;
       return l;
@@ -206,13 +206,13 @@ extern inline void bput5(struct fastbuf *f, u64 l)
       byte *p = f->bptr;
       u32 low = l;
 #ifdef CPU_BIG_ENDIAN
-      p[0] = l >> 32;
+      p[0] = l >> 32U;
       p[1] = low >> 24U;
       p[2] = low >> 16U;
       p[3] = low >> 8U;
       p[4] = low;
 #else
-      p[4] = l >> 32;
+      p[4] = l >> 32U;
       p[3] = low >> 24U;
       p[2] = low >> 16U;
       p[1] = low >> 8U;
