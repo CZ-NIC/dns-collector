@@ -86,6 +86,16 @@ struct fastbuf *bopen_mm(byte *name, uns mode);
 
 struct fastbuf *bopen_limited_fd(int fd, uns bufsize, uns limit);
 
+/* FastIO on static buffers */
+
+void fbbuf_init_read(struct fastbuf *f, byte *buffer, uns size);
+void fbbuf_init_write(struct fastbuf *f, byte *buffer, uns size);
+static inline uns
+fbbuf_count_written(struct fastbuf *f)
+{
+  return f->bptr - f->bstop;
+}
+
 /* Configuring stream parameters */
 
 int bconfig(struct fastbuf *f, uns type, int data);
