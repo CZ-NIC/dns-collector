@@ -89,24 +89,20 @@ void bflush(struct fastbuf *f)
 {
   if (f->bptr != f->buffer)
     {					/* Have something to flush */
-      if (f->bstop > f->buffer)
-	{				/* And it's read data */
+      if (f->bstop > f->buffer)		/* Read data? */
+	{
 	  f->bptr = f->bstop = f->buffer;
+	  f->pos = f->fdpos;
 	}
-      else
-	{				/* Write data */
-	  wrbuf(f);
-	}
+      else				/* Write data... */
+	wrbuf(f);
     }
 }
 
 inline void bsetpos(struct fastbuf *f, uns pos)
 {
-  if (pos >= f->pos
-      && (pos <= f->pos + (f->bptr - f->buffer) || pos <= f->pos + (f->bstop - f->buffer)))
-    {
-      f->bptr = f->buffer + (pos - f->pos);
-    }
+  if (pos >= f->pos && (pos <= f->pos + (f->bptr - f->buffer) || pos <= f->pos + (f->bstop - f->buffer)))
+    f->bptr = f->buffer + (pos - f->pos);
   else
     {
       bflush(f);
@@ -145,6 +141,15 @@ int bgetc_slow(struct fastbuf *f)
   if (!rdbuf(f))
     return EOF;
   return *f->bptr++;
+}
+
+int bpeekc_slow(struct fastbuf *f)
+{
+  if (f->bptr < f->bstop)
+    return *f->bptr;
+  if (!rdbuf(f))
+    return EOF;
+  return *f->bptr;
 }
 
 void bputc_slow(struct fastbuf *f, byte c)
@@ -244,6 +249,28 @@ void bwrite_slow(struct fastbuf *f, void *b, uns l)
       b = (byte *)b + k;
       l -= k;
     }
+}
+
+byte *					/* Non-standard */
+bgets(struct fastbuf *f, byte *b, uns l)
+{
+  byte *e = b + l - 1;
+  int k;
+
+  k = bgetc(f);
+  if (k == EOF)
+    return NULL;
+  while (b < e)
+    {
+      if (k == '\n' || k == EOF)
+	{
+	  *b = 0;
+	  return b;
+	}
+      *b++ = k;
+      k = bgetc(f);
+    }
+  die("%s: Line too long", f->name);
 }
 
 void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
