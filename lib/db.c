@@ -387,7 +387,7 @@ sdbm_split_page(struct sdbm *d, struct page *b, u32 hash, uns dirpos)
   p[0] = b;
   p[1] = pgc_get(d->cache, d->fd, sdbm_alloc_page(d));
   sdbm_split_data(d, (void *) b->data, (void *) p[0]->data, (void *) p[1]->data, sigbit);
-  sdbm_split_dir(d, (dirpos & ~(4*rank - 1))+2*rank, rank/2, pgc_page_pos(d->cache, p[1]));
+  sdbm_split_dir(d, (dirpos & ~(4*rank - 1))+2*rank, rank/2, p[1]->pos);
   pgc_mark_dirty(d->cache, p[0]);
   i = (hash & (1 << sigbit)) ? 1 : 0;
   pgc_put(d->cache, p[!i]);
