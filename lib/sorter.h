@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Universal Sorter
  *
- *	(c) 2001 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2002 Martin Mares <mj@ucw.cz>
  */
 
 /*
@@ -75,8 +75,7 @@ extern uns sorter_trace;
 extern uns sorter_presort_bufsize;
 extern uns sorter_stream_bufsize;
 
-extern uns sorter_pass_counter, sorter_file_counter;
-struct fastbuf *sorter_open_tmp(void);
+extern uns sorter_pass_counter;
 
 #endif		/* !SORT_DECLS_READ */
 
@@ -147,7 +146,7 @@ P(pass)(struct fastbuf **fb1, struct fastbuf **fb2)
 	  struct fastbuf *t;
 	  SWAP(out1, out2, t);
 	  if (!out1)
-	    out1 = sorter_open_tmp();
+	    out1 = bopen_tmp(sorter_stream_bufsize);
 	  run_count++;
 	}
       if (comp LESS 0)
@@ -273,7 +272,7 @@ P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
     {
       SWAP(out1, out2, tbuf);
       if (!out1)
-	out1 = sorter_open_tmp();
+	out1 = bopen_tmp(sorter_stream_bufsize);
       current = buffer;
       last = &first;
       if (leftover)
@@ -391,7 +390,7 @@ struct fastbuf *fb1, struct fastbuf *fb2
 #endif
     do P(pass)(&fb1, &fb2); while (fb1 && fb2);
   if (!fb1)
-    fb1 = sorter_open_tmp();
+    fb1 = bopen_tmp(sorter_stream_bufsize);
 
 #ifdef SORT_OUTPUT_FB
   return fb1;

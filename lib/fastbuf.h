@@ -59,6 +59,7 @@ struct fastbuf {
 /* FastIO on standard files */
 
 struct fastbuf *bopen(byte *name, uns mode, uns buffer);
+struct fastbuf *bopen_tmp(uns buffer);
 struct fastbuf *bfdopen(int fd, uns buffer);
 void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l);
 
