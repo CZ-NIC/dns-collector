@@ -55,10 +55,11 @@ sub parse_arg_string($) {
 			if (!/^$rx$/) { $_ = $arg->{'default'}; }
 		}
 		
-		if (defined $arg->{'array'}) {
-			push @{$arg->{'array'}}, $_;
-		} else {
+		my $r = ref($arg->{'var'});
+		if ($r eq 'SCALAR') {
 			${$arg->{'var'}} = $_;
+		} elsif ($r eq 'ARRAY') {
+			push @{$arg->{'var'}}, $_;
 		}
 	}
 }
@@ -66,10 +67,13 @@ sub parse_arg_string($) {
 sub parse_args($) {
 	$arg_table = shift @_;
 	foreach my $a (values %$arg_table) {
+		my $r = ref($a->{'var'});
 		defined($a->{'default'}) or $a->{'default'}="";
-		die "Should define either 'var' or 'array'" if defined($a->{'var'})+defined($a->{'array'})!=1;
-		defined $a->{'var'} and ${$a->{'var'}} = $a->{'default'};
-		defined $a->{'array'} and @{$a->{'array'}} = ();
+		if ($r eq 'SCALAR') {
+			${$a->{'var'}} = $a->{'default'};
+		} elsif ($r eq 'ARRAY') {
+			@{$a->{'var'}} = ();
+		}
 	}
 	defined $ENV{"GATEWAY_INTERFACE"} or die "Not called as a CGI script";
 	my $method = $ENV{"REQUEST_METHOD"};
