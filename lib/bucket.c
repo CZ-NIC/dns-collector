@@ -11,6 +11,7 @@
 #include "lib/conf.h"
 
 #include <string.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/file.h>
@@ -25,11 +26,13 @@ static sh_off_t bucket_start;
 
 byte *obuck_name = "not/configured";
 static int obuck_io_buflen = 65536;
+static int obuck_shake_buflen = 1048576;
 
 static struct cfitem obuck_config[] = {
   { "Buckets",		CT_SECTION,	NULL },
   { "BucketFile",	CT_STRING,	&obuck_name },
   { "BufSize",		CT_INT,		&obuck_io_buflen },
+  { "ShakeBufSize",	CT_INT,		&obuck_shake_buflen },
   { NULL,		CT_STOP,	NULL }
 };
 
@@ -110,9 +113,7 @@ obuck_fb_refill(struct fastbuf *f)
   obuck_remains -= limit;
   if (!obuck_remains)	/* Should check the trailer */
     {
-      u32 check;
-      memcpy(&check, f->buffer + size - 4, 4);
-      if (check != OBUCK_TRAILER)
+      if (GET_U32(f->buffer + size - 4) != OBUCK_TRAILER)
 	obuck_broken("Missing trailer");
     }
   return limit;
@@ -313,6 +314,99 @@ obuck_delete(oid_t oid)
   obuck_hdr.oid = OBUCK_OID_DELETED;
   sh_pwrite(obuck_fd, &obuck_hdr, sizeof(obuck_hdr), bucket_start);
   obuck_unlock();
+}
+
+/*** Shakedown ***/
+
+void
+obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck))
+{
+  byte *rbuf, *wbuf;
+  sh_off_t rstart, wstart, w_bucket_start;
+  int roff, woff, rsize, l;
+  struct obuck_header *rhdr, *whdr;
+
+  rbuf = xmalloc(obuck_shake_buflen);
+  wbuf = xmalloc(obuck_shake_buflen);
+  rstart = wstart = 0;
+  roff = woff = rsize = 0;
+
+  /* We need to be the only accessor, all the object ID's are becoming invalid */
+  obuck_lock_write();
+
+  for(;;)
+    {
+      bucket_start = rstart + roff;
+      w_bucket_start = wstart + woff;
+      if (rsize - roff < OBUCK_ALIGN)
+	goto reread;
+      rhdr = (struct obuck_header *)(rbuf + roff);
+      if (rhdr->magic != OBUCK_MAGIC ||
+	  rhdr->oid != OBUCK_OID_DELETED && rhdr->oid != (bucket_start >> OBUCK_SHIFT))
+	obuck_broken("header mismatch during shakedown");
+      l = (sizeof(struct obuck_header) + rhdr->length + 4 + OBUCK_ALIGN - 1) & ~(OBUCK_ALIGN-1);
+      if (rsize - roff < l)
+	goto reread;
+      if (GET_U32(rbuf + roff + l - 4) != OBUCK_TRAILER)
+	obuck_broken("missing trailer during shakedown");
+      if (rhdr->oid != OBUCK_OID_DELETED &&
+	  kibitz(rhdr, w_bucket_start >> OBUCK_SHIFT, (byte *)(rhdr+1)))
+	{
+	  if (bucket_start == w_bucket_start)
+	    {
+	      /* No copying needed now nor ever in the past, hence woff==0 */
+	      wstart += l;
+	    }
+	  else
+	    {
+	      if (obuck_shake_buflen - woff < l)
+		{
+		  if (sh_pwrite(obuck_fd, wbuf, woff, wstart) != woff)
+		    die("obuck_shakedown write failed: %m");
+		  wstart += woff;
+		  woff = 0;
+		}
+	      whdr = (struct obuck_header *)(wbuf+woff);
+	      memcpy(whdr, rhdr, l);
+	      whdr->oid = w_bucket_start >> OBUCK_SHIFT;
+	      woff += l;
+	    }
+	}
+      else
+	kibitz(rhdr, OBUCK_OID_DELETED, NULL);
+      roff += l;
+      continue;
+
+    reread:
+      if (roff)
+	{
+	  memmove(rbuf, rbuf+roff, rsize-roff);
+	  rsize -= roff;
+	  rstart += roff;
+	  roff = 0;
+	}
+      l = sh_pread(obuck_fd, rbuf+rsize, obuck_shake_buflen-rsize, rstart+rsize);
+      if (l < 0)
+	die("obuck_shakedown read error: %m");
+      if (!l)
+	{
+	  if (!rsize)
+	    break;
+	  obuck_broken("unexpected EOF during shakedown");
+	}
+      rsize += l;
+    }
+  if (woff)
+    {
+      if (sh_pwrite(obuck_fd, wbuf, woff, wstart) != woff)
+	die("obuck_shakedown write failed: %m");
+      wstart += woff;
+    }
+  sh_ftruncate(obuck_fd, wstart);
+
+  obuck_unlock();
+  xfree(rbuf);
+  xfree(wbuf);
 }
 
 /*** Testing ***/

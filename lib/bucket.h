@@ -62,3 +62,6 @@ static inline sh_off_t obuck_get_pos(oid_t oid)
 {
   return ((sh_off_t) oid) << OBUCK_SHIFT;
 }
+
+/* Shaking down bucket file */
+void obuck_shakedown(int (*kibitz)(struct obuck_header *old, oid_t new, byte *buck));
