@@ -141,18 +141,10 @@ byte *custom_ic_parse(u32 *dest, byte *value, uns intval);
 
 #else
 
-#if 0
-
-/* FIXME: Add a simple example */
-
-#else
-
 /* No custom attributes defined */
 
 #define CUSTOM_CARD_ATTRS
 #define CUSTOM_ATTRS
 static inline void custom_create_attrs(struct odes *odes UNUSED, struct card_attr *ca UNUSED) { }
-
-#endif
 
 #endif

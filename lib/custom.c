@@ -95,27 +95,3 @@ custom_ic_parse(u32 *dest, byte *value, uns intval)
 }
 
 #endif
-
-#if 0		/* Example */
-
-/* FIXME: The example is wrong */
-
-void
-custom_get_lm(struct card_attr *ca, byte *attr)
-{
-  if (attr)
-    ca->lm = atol(attr);
-  else
-    ca->lm = 0;
-}
-
-byte *
-custom_parse_lm(u32 *dest, byte *value, uns intval)
-{
-  if (value)
-    return "LM is an integer, not a string";
-  *dest = intval;
-  return NULL;
-}
-
-#endif
