@@ -1,0 +1,58 @@
+#!/bin/bash
+# A script for testing compilability of different configurations
+# (c) 2004 Martin Mares <mj@ucw.cz>
+
+set -e
+
+TEST=0
+
+function try
+{
+	TEST=$(($TEST+1))
+	echo "### Test $TEST: $@ ###"
+
+	CUST=$1
+	shift
+	SUBST=
+	APP="!!### Added by check-customs:"
+	while [ -n "$1" ] ; do
+		X=$1
+		Y=${X#!}
+		if [ "$X" != "$Y" ] ; then
+			SUBST="${S}/^$Y/s/^/# /;"
+		else
+			APP="$APP!$X"
+		fi
+		shift
+	done
+	rm -rf custom
+	mkdir custom custom/lib
+	cp $CUST/lib/custom.h custom/lib/
+	cp $CUST/Makefile custom/
+	sed "$SUBST;p;d" <$CUST/config.mk >custom/config.mk
+	echo $APP | tr ! '\n' >>custom/config.mk
+
+	make clean >test$TEST.log 2>&1
+	if ! make >>test$TEST.log 2>&1 ; then
+		echo "	FAILED"
+		exit 1
+	fi
+	echo "	PASSED"
+}
+
+if [ -e custom -a ! -e custom.old ] ; then
+	mv custom custom.old
+fi
+
+rm -f test*.log
+try free									# the free version
+try bare !CONFIG_INDEXER !CONFIG_SEARCH						# absolutely stripped version
+try bare									# the bare version
+try centrum !CONFIG_GATHERD !CONFIG_GATHERER !CONFIG_REAPD !CONFIG_INDEXER	# search servers
+try centrum !CONFIG_GATHERD !CONFIG_GATHERER !CONFIG_REAPD			# indexing server
+try centrum !CONFIG_GATHERD							# gathering server
+
+rm -rf custom
+if [ -e custom.old ] ; then
+	mv custom.old custom
+fi
