@@ -15,8 +15,8 @@ foreach $charset (@ARGV)
 	while (<fi>)
 	{
 		chop;
-		(($number, $char) = /^([0-9A-F]{2})\t(.)$/) || die "Cannot parse $_";
-		$recode[hex $number] = ord $char;
+		(($number, $char) = /^([0-9A-F]{2})\t(.?)$/) || die "Cannot parse $_";
+		$recode[hex $number] = $char ne "" ? ord $char : -1;
 	}
 	$#recode >= 0 || die "Empty recoding table";
 	$recode[10] = 10;
@@ -24,7 +24,8 @@ foreach $charset (@ARGV)
 
 	for ($i=0; $i<=$#recode; $i++)
 	{
-		printf fo "%02X\t%04X\n", $i, $recode[$i];
+		printf fo "%02X\t%04X\n", $i, $recode[$i]
+			if $recode[$i] >= 0;
 	}
 
 	close(fo);
