@@ -46,7 +46,8 @@ enum bucket_type {
   BUCKET_TYPE_COMPAT = 0x7fffffff,	/* and less -- buckets created by older versions of Sherlock */
   BUCKET_TYPE_PLAIN = 0x80000000,	/* plain textual buckets */
   BUCKET_TYPE_V30 = 0x80000001,		/* v3.0 uncompressed buckets */
-  BUCKET_TYPE_V30C = 0x80000002		/* v3.0 compressed buckets */
+  BUCKET_TYPE_V33 = 0x80000002,		/* v3.3 uncompressed buckets */
+  BUCKET_TYPE_V33_LIZARD = 0x80000003	/* v3.3 buckets compressed by lizard */
 };
 
 struct fastbuf;
