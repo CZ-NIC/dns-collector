@@ -15,7 +15,8 @@ my %names= (
 	'tomhol'	=> 'Tomas Holusa <tomas.holusa@netcentrum.cz>',
 	'centrum'	=> 'Tomas Holusa <tomas.holusa@netcentrum.cz>',
 	'root'		=> 'Tomas Holusa <tomas.holusa@netcentrum.cz>',
-	'pavel'		=> 'Pavel Machek <pavel@ucw.cz>'
+	'pavel'		=> 'Pavel Machek <pavel@ucw.cz>',
+	'th2'		=> 'Tomas Holenda <tomas.holenda@netcentrum.cz>',
 );
 
 while (<STDIN>) {
