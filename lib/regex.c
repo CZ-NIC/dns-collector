@@ -41,6 +41,7 @@ rx_compile(byte *p, int icase)
     }
   else
     r->buf.translate = NULL;
+  re_set_syntax(RE_SYNTAX_POSIX_EXTENDED);
   msg = re_compile_pattern(p, strlen(p), &r->buf);
   if (!msg)
     return r;
