@@ -34,9 +34,7 @@ hashfunc_init(void)
 	}
 }
 
-static inline uns str_len_uns(uns x) CONST;
-
-static inline uns
+static inline uns CONST
 str_len_uns(uns x)
 {
 	const uns sub = ((uns) -1) / 0xff;
@@ -49,7 +47,7 @@ str_len_uns(uns x)
 	 * x_3 = x ^ x_2;
 	 * a = x_3 & 0x80808080;
 	 *
-	 * If none byte of x is in {0, 0x80}, then the highest bit of each byte
+	 * If no byte of x is in {0, 0x80}, then the highest bit of each byte
 	 * of x_2 is the same as of x.  Hence x_3 has all these highest bits
 	 * cleared.  If a == 0, then we are sure there is no zero byte in x.
 	 */

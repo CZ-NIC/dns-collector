@@ -30,7 +30,6 @@ uns hash_block(const byte *str, uns len) CONST;
 
 uns hash_string_nocase(const byte *str) CONST;
 
-static inline uns hash_int(uns x) CONST;
-static inline uns hash_int(uns x) { return 6442450967*x; }
+static inline uns CONST hash_int(uns x) { return 6442450967*x; }
 
 #endif
