@@ -1,27 +1,34 @@
 /*
  *	Sherlock Library -- Linked Lists
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
  */
 
-struct node {
-  struct node *next, *prev;
-};
-typedef struct node node;
+#ifndef _SHERLOCK_LISTS_H
+#define _SHERLOCK_LISTS_H
 
-struct list {
-  struct node head, tail;
-};
-typedef struct list list;
+typedef struct node {
+  struct node *next, *prev;
+} node;
+
+typedef struct list {			/* In fact two overlayed nodes */
+  struct node *head, *null, *tail;
+} list;
 
 #define NODE (node *)
-#define HEAD(list) ((void *)((list).head.next))
-#define TAIL(list) ((void *)((list).tail.prev))
-#define DO_FOR_ALL(n,list) for((n)=HEAD(list);(NODE (n))->next; \
-				 n=(void *)((NODE (n))->next))
-#define EMPTY_LIST(list) (!(list).head.next->next)
-#define OFFSETOF(s, i) ((unsigned int)&((s *)0)->i)
-#define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))
+#define HEAD(list) ((void *)((list).head))
+#define TAIL(list) ((void *)((list).tail))
+#define WALK_LIST(n,list) for(n=HEAD(list);(NODE (n))->next; \
+				n=(void *)((NODE (n))->next))
+#define DO_FOR_ALL(n,list) WALK_LIST(n,list)
+#define WALK_LIST_DELSAFE(n,nxt,list) \
+     for(n=HEAD(list); nxt=(void *)((NODE (n))->next); n=(void *) nxt)
+#define WALK_LIST_BACKWARDS(n,list) for(n=TAIL(list);(NODE (n))->prev; \
+				n=(void *)((NODE (n))->prev))
+#define WALK_LIST_BACKWARDS_DELSAFE(n,prv,list) \
+     for(n=TAIL(list); prv=(void *)((NODE (n))->prev); n=(void *) prv)
+
+#define EMPTY_LIST(list) (!(list).head->next)
 
 void add_tail(list *, node *);
 void add_head(list *, node *);
@@ -30,71 +37,12 @@ void add_tail_list(list *, list *);
 void init_list(list *);
 void insert_node(node *, node *);
 
-#ifdef __GNUC__
-
-extern inline void
-add_tail(list *l, node *n)
-{
-  node *z = l->tail.prev;
-
-  n->next = &l->tail;
-  n->prev = z;
-  z->next = n;
-  l->tail.prev = n;
-}
-
-extern inline void
-add_head(list *l, node *n)
-{
-  node *z = l->head.next;
-
-  n->next = z;
-  n->prev = &l->head;
-  z->prev = n;
-  l->head.next = n;
-}
-
-extern inline void
-insert_node(node *n, node *after)
-{
-  node *z = after->next;
-
-  n->next = z;
-  n->prev = after;
-  after->next = n;
-  z->prev = n;
-}
-
-extern inline void
-rem_node(node *n)
-{
-  node *z = n->prev;
-  node *x = n->next;
-
-  z->next = x;
-  x->prev = z;
-}
-
-extern inline void
-init_list(list *l)
-{
-  l->head.next = &l->tail;
-  l->head.prev = NULL;
-  l->tail.next = NULL;
-  l->tail.prev = &l->head;
-}
-
-extern inline void
-add_tail_list(list *to, list *l)
-{
-  node *p = to->tail.prev;
-  node *q = l->head.next;
-
-  p->next = q;
-  q->prev = p;
-  q = l->tail.prev;
-  q->next = &to->tail;
-  to->tail.prev = q;
-}
+#if !defined(_SHERLOCK_LISTS_C) && defined(__GNUC__)
+#define LIST_INLINE extern inline
+#include "lib/lists.c"
+#undef LIST_INLINE
+#else
+#define LIST_INLINE
+#endif
 
 #endif

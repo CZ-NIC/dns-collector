@@ -1,36 +1,37 @@
 /*
  *	Sherlock Library -- Linked Lists
  *
- *	(c) 1997 Martin Mares, <mj@atrey.karlin.mff.cuni.cz>
+ *	(c) 1997--1999 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
  */
 
 #include <stdio.h>
 
+#define _SHERLOCK_LISTS_C
 #include "lists.h"
 
-void
+LIST_INLINE void
 add_tail(list *l, node *n)
 {
-  node *z = l->tail.prev;
+  node *z = l->tail;
 
-  n->next = &l->tail;
+  n->next = (node *) &l->null;
   n->prev = z;
   z->next = n;
-  l->tail.prev = n;
+  l->tail = n;
 }
 
-void
+LIST_INLINE void
 add_head(list *l, node *n)
 {
-  node *z = l->head.next;
+  node *z = l->head;
 
   n->next = z;
-  n->prev = &l->head;
+  n->prev = (node *) &l->head;
   z->prev = n;
-  l->head.next = n;
+  l->head = n;
 }
 
-void
+LIST_INLINE void
 insert_node(node *n, node *after)
 {
   node *z = after->next;
@@ -41,7 +42,7 @@ insert_node(node *n, node *after)
   z->prev = n;
 }
 
-void
+LIST_INLINE void
 rem_node(node *n)
 {
   node *z = n->prev;
@@ -51,24 +52,23 @@ rem_node(node *n)
   x->prev = z;
 }
 
-void
+LIST_INLINE void
 init_list(list *l)
 {
-  l->head.next = &l->tail;
-  l->head.prev = NULL;
-  l->tail.next = NULL;
-  l->tail.prev = &l->head;
+  l->head = (node *) &l->null;
+  l->null = NULL;
+  l->tail = (node *) &l->head;
 }
 
-void
+LIST_INLINE void
 add_tail_list(list *to, list *l)
 {
-  node *p = to->tail.prev;
-  node *q = l->head.next;
+  node *p = to->tail;
+  node *q = l->head;
 
   p->next = q;
   q->prev = p;
-  q = l->tail.prev;
-  q->next = &to->tail;
-  to->tail.prev = q;
+  q = l->tail;
+  q->next = (node *) &to->null;
+  to->tail = q;
 }
