@@ -14,7 +14,7 @@
 
 /* The number of bits the hash in the function hash_*() is rotated by after
  * every pass.  It should be prime with the word size.  */
-#define	SHIFT_BITS	5
+#define	SHIFT_BITS	7
 
 /* A bit-mask which clears higher bytes than a given threshold.  */
 static uns mask_higher_bits[sizeof(uns)];
