@@ -344,7 +344,7 @@ brewind(struct fastbuf *f)
 }
 
 int
-bskip(struct fastbuf *f, uns len)
+bskip_slow(struct fastbuf *f, uns len)
 {
   while (len)
     {

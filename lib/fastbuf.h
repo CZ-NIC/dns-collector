@@ -122,7 +122,6 @@ void bflush(struct fastbuf *f);
 void bseek(struct fastbuf *f, sh_off_t pos, int whence);
 void bsetpos(struct fastbuf *f, sh_off_t pos);
 void brewind(struct fastbuf *f);
-int bskip(struct fastbuf *f, uns len);
 sh_off_t bfilesize(struct fastbuf *f);
 
 static inline sh_off_t btell(struct fastbuf *f)
@@ -344,6 +343,18 @@ bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
     }
   else
     bbcopy_slow(f, t, l);
+}
+
+int bskip_slow(struct fastbuf *f, uns len);
+static inline int bskip(struct fastbuf *f, uns len)
+{
+  if (bavailr(f) >= len)
+    {
+      f->bptr += len;
+      return 1;
+    }
+  else
+    return bskip_slow(f, len);
 }
 
 /* I/O on addr_int_t */
