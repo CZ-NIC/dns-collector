@@ -158,14 +158,17 @@ obj_set_attr_num(struct odes *o, uns a, uns v)
 static inline struct oattr *
 obj_add_attr_internal(struct odes *o, struct oattr *b)
 {
-  struct oattr *a;
+  struct oattr *a, **z;
 
   if (!(a = o->cached_attr) || a->attr != b->attr)
     {
-      if (!(a = obj_find_attr(o, b->attr)))
+      z = &o->attrs;
+      while ((a = *z) && a->attr != b->attr)
+	z = &a->next;
+      if (!a)
 	{
-	  b->next = o->attrs;
-	  o->attrs = b;
+	  *z = b;
+	  /* b->next is NULL */
 	  goto done;
 	}
     }
