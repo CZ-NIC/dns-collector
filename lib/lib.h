@@ -158,4 +158,8 @@ int rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen);
 
 void scan_obj_tree(byte *, void (*)(ulg, byte *));
 
+/* random.c */
+
+uns random_max(uns);
+
 #endif
