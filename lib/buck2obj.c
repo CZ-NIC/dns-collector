@@ -35,14 +35,6 @@ buck2obj_alloc_internal(struct buck2obj_buf *buf, uns max_len)
   buf->max_len = max_len;
   buf->raw_len = max_len * LIZARD_MAX_MULTIPLY + LIZARD_MAX_ADD + MAX_HEADER_SIZE;
   buf->raw = xmalloc(buf->raw_len);
-  buf->lizard = lizard_alloc(max_len);
-}
-
-static void
-buck2obj_free_internal(struct buck2obj_buf *buf)
-{
-  lizard_free(buf->lizard);
-  xfree(buf->raw);
 }
 
 struct buck2obj_buf *
@@ -50,6 +42,7 @@ buck2obj_alloc(uns max_len, struct mempool *mp)
 {
   struct buck2obj_buf *buf = xmalloc(sizeof(struct buck2obj_buf));
   buck2obj_alloc_internal(buf, max_len);
+  buf->lizard = lizard_alloc(max_len);
   buf->mp = mp;
   return buf;
 }
@@ -57,7 +50,8 @@ buck2obj_alloc(uns max_len, struct mempool *mp)
 void
 buck2obj_free(struct buck2obj_buf *buf)
 {
-  buck2obj_free_internal(buf);
+  lizard_free(buf->lizard);
+  xfree(buf->raw);
   xfree(buf);
 }
 
@@ -68,8 +62,9 @@ buck2obj_realloc(struct buck2obj_buf *buf, uns max_len)
     return;
   if (max_len < 2*buf->max_len + 1)		// to ensure amortized logarithmic complexity
     max_len = 2*buf->max_len + 1;
-  buck2obj_free_internal(buf);
+  xfree(buf->raw);
   buck2obj_alloc_internal(buf, max_len);
+  lizard_realloc(buf->lizard, max_len);
 }
 
 static inline byte *
