@@ -200,7 +200,7 @@ fsck(int fix)
 	}
       while (nh.magic != OBUCK_MAGIC ||
 	     (nh.oid != (oid_t)(end >> OBUCK_SHIFT) && nh.oid != OBUCK_OID_DELETED));
-      printf("*** match at oid %08x\n", end >> OBUCK_SHIFT);
+      printf("*** match at oid %08x\n", (uns)(end >> OBUCK_SHIFT));
       if (fix)
 	{
 	  h.magic = OBUCK_MAGIC;
@@ -209,7 +209,7 @@ fsck(int fix)
 	  sh_pwrite(fd, &h, sizeof(h), pos);
 	  chk = OBUCK_TRAILER;
 	  sh_pwrite(fd, &chk, 4, end-4);
-	  printf("*** replaced the invalid chunk by a DELETED bucket of size %d\n", end - pos);
+	  printf("*** replaced the invalid chunk by a DELETED bucket of size %d\n", (uns)(end - pos));
 	}
       pos = end;
     }
