@@ -20,7 +20,7 @@ LIBSH_MODS= \
 	db \
 	url urlkey finger \
 	mainloop exitstatus runcmd sighandler \
-	lizard lizard-safe adler32 \
+	lizard lizard-safe lizard-fb lizard-fb adler32 \
 	md5 md5hex \
 	base64 base224 \
 	sync

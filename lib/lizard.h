@@ -46,4 +46,14 @@ adler32(byte *buf, uns len)
   return update_adler32(1, buf, len);
 }
 
+/* lizard-fb.c */
+struct fastbuf;
+
+void lizard_set_type(uns type, float min_compr);
+int lizard_bwrite(struct fastbuf *fb_out, byte *ptr_in, uns len_in);
+int lizard_bbcopy(struct fastbuf *fb_out, struct fastbuf *fb_in, uns len_in);
+int lizard_memread(struct lizard_buffer *liz_buf, byte *ptr_in, byte **ptr_out, uns *type);
+int lizard_bread(struct lizard_buffer *liz_buf, struct fastbuf *fb_in, byte **ptr_out, uns *type);
+  /* These functions use static variables, hence they are not re-entrant.  */
+
 #endif
