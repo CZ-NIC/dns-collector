@@ -72,21 +72,6 @@ decode_attributes(byte *ptr, byte *end, struct odes *o, uns can_overwrite)
 
       ptr += len + 1;
     }
-  else if (can_overwrite == 1)
-    while (ptr < end)
-    {
-      uns len;
-      GET_UTF8(ptr, len);
-      if (!len--)
-	break;
-      byte type = ptr[len];
-
-      ptr[len] = 0;
-      obj_add_attr(o, type, ptr);
-      ptr[len] = type;
-
-      ptr += len + 1;
-    }
   else
     while (ptr < end)
     {
@@ -130,9 +115,6 @@ obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fa
     /* Read all the bucket into 1 buffer, 0-copy if possible.  */
     int can_overwrite = bconfig(body, BCONFIG_CAN_OVERWRITE, -1);
     /* FIXME: This could be cached in buck2obj_buf */
-    if (can_overwrite < 0)
-      can_overwrite = 0;
-    uns overwritten;
     byte *ptr, *end;
     uns len = bdirect_read_prepare(body, &ptr);
     if (len < buck_len
@@ -143,15 +125,11 @@ obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fa
       bb_grow(&buf->bb, buck_len);
       len = bread(body, buf->bb.ptr, buck_len);
       ptr = buf->bb.ptr;
-      can_overwrite = 2;
-      overwritten = 0;
     }
-    else
-      overwritten = can_overwrite > 1;
     end = ptr + len;
 
     byte *start = ptr;
-    ptr = decode_attributes(ptr, end, o, can_overwrite);// header
+    ptr = decode_attributes(ptr, end, o, 0);		// header
     if (body_start)
     {
       *body_start = ptr - start;
@@ -174,16 +152,16 @@ obj_read_bucket(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fa
       }
       ptr = new_ptr;
       end = ptr + len;
-      can_overwrite = 2;
     }
     else						// unknown bucket type
       RET_ERR(EINVAL);
-    ASSERT(can_overwrite == 2);				// because of the policy and decompression
     ptr = decode_attributes(ptr, end, o, 2);		// body
 
     if (ptr != end)
       RET_ERR(EINVAL);
-    /* If (overwritten), bflush(body) might be needed.  */
+    /* If the bucket fit into the fastbuf buffer, can_overwrite == 2, and
+     * buck_type == BUCKET_TYPE_V33, then bflush(body) is needed before
+     * anything else than sequential read.  */
   }
   return o;
 }
