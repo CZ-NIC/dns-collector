@@ -16,6 +16,7 @@
  * Allocation in configuration memory pool.
  */
 
+extern struct mempool *cfpool;
 void *cfg_malloc(uns size);
 byte *cfg_stralloc(byte *s);
 

@@ -25,7 +25,7 @@
 #define	MAX_LEVEL	8
 
 static struct cfitem *cfsection;
-static struct mempool *cfpool;
+struct mempool *cfpool;
 
 byte *cfdeffile = DEFAULT_CONFIG;
 
