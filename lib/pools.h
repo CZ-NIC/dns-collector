@@ -4,6 +4,9 @@
  *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
  */
 
+#ifndef _SHERLOCK_POOLS_H
+#define _SHERLOCK_POOLS_H
+
 #ifndef POOL_ALIGN
 #define POOL_ALIGN CPU_STRUCT_ALIGN
 #endif
@@ -40,3 +43,5 @@ static inline void *mp_alloc_fast_noalign(struct mempool *p, uns l)
   p->free = ee;
   return f;
 }
+
+#endif
