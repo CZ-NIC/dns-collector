@@ -19,15 +19,18 @@
 
 #define _GNU_SOURCE
 
-#ifndef NULL
-#define NULL ((void *)0)
-#endif
-
 /* Ugly structure handling macros */
 
 #define OFFSETOF(s, i) ((unsigned int)&((s *)0)->i)
 #define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))
 #define ALIGN(s, a) (((s)+a-1)&~(a-1))
+
+/* Some other macros */
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#define CLAMP(x,min,max) ({ int _t=x; (_t < min) ? min : (_t > max) ? max : _t; })
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
 
 /* Temporary Files */
 
