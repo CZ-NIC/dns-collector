@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Miscellaneous Functions
  *
- *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2003 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -48,7 +48,8 @@
 #define L_ERROR_R	'e'
 #define L_FATAL		'!'		/* die() */
 
-void log(unsigned int cat, const char *msg, ...) __attribute__((format(printf,2,3)));
+void log_msg(unsigned int cat, const char *msg, ...) __attribute__((format(printf,2,3)));
+#define log log_msg
 void die(byte *, ...) NONRET;
 void log_init(byte *);
 void log_file(byte *);
@@ -102,7 +103,7 @@ int match_ct_patt(byte *, byte *);
 
 /* log2.c */
 
-int log2(u32);
+int fls(u32);
 
 /* wordsplit.c */
 

@@ -105,7 +105,7 @@ vlog(unsigned int cat, const char *msg, va_list args)
 }
 
 void
-log(unsigned int cat, const char *msg, ...)
+log_msg(unsigned int cat, const char *msg, ...)
 {
   va_list args;
 

@@ -9,10 +9,8 @@
 
 #include "lib/lib.h"
 
-#undef log2
-
 int
-log2(u32 x)
+fls(u32 x)
 {
   uns l;
 
