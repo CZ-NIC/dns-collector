@@ -33,20 +33,6 @@
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
 
-/* Temporary Files */
-
-#define TMP_DIR "tmp"
-#define TMP_DIR_LEN 3
-
-struct tempfile {
-  int fh;
-  byte name[32];
-};
-
-void open_temp(struct tempfile *, byte *);
-void delete_temp(struct tempfile *);
-u32 temprand(uns);
-
 /* Logging */
 
 #define L_DEBUG		'D'		/* Debugging messages */
