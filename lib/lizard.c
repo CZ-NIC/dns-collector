@@ -415,18 +415,22 @@ perform_copy_command:
 Description of the LZO1X format :
 =================================
 
+The meaning of the commands depends on the current mode. It can be either
+the compressed mode or the copy mode. In some cases, the compressed mode
+also distinguishes whether we just left the copy mode or not.
+
 Beginning of file:
 ------------------
 
-If the first byte is 00010001, it means probably EOF (empty file), so switch
-to the compressed mode.  If it is bigger, subtract 17 and copy this number of
-the following characters to the ouput and switch to the compressed mode.  If
-it is smaller, go to the copy mode.
+Start in copy mode. If the first byte is 00010001, it means probably EOF (empty file),
+so switch to the compressed mode.  If it is bigger, subtract 17 and copy this number of
+the following characters to the output and switch to the compressed mode.
+If it is smaller, interpret it as a regular copy mode command.
 
-Compressed mode :
------------------
+Compressed mode:
+----------------
 
-Read the first byte of the sequence and determine the type of bit-encoding by
+Read the first byte of the sequence and determine the type of bit encoding by
 looking at the most significant bits.  The sequence is always at least 2 bytes
 long.  Decode sequences of these types until the EOF or END marker is read.
 
@@ -450,20 +454,18 @@ long.  Decode sequences of these types until the EOF or END marker is read.
 
 pattern					length		position
 
-0000ppCC 		 pppppppp	2		10 bits (*)
-0001pLLL L*	ppppppCC pppppppp	3..9 + extend	15 bits + EOF
+0000ppCC 		 pppppppp	2		10 bits		[default interpretation]
+0000ppCC 		 pppppppp	3		10 bits + 2048	[just after return from copy mode]
+0001pLLL L*	ppppppCC pppppppp	3..9 + extend	15 bits		[pos 0 interpreted as EOF]
 001LLLLL L*	ppppppCC pppppppp	3..33 + extend	14 bits
-01\
-10 \
-11  \
-LLLpppCC		 pppppppp	3..8		11 bits
+LLLpppCC		 pppppppp	3..8		11 bits		[LLL >= 010]
 
-Copy mode :
------------
+Copy mode:
+----------
 
 Read the first byte and, if the most significant bits are 0000, perform the
 following command, otherwise switch to the compressed mode (and evaluate the
-command).
+command there).
 
 pattern					length		position
 
@@ -471,10 +473,5 @@ pattern					length		position
 
   Copy L characters from the compressed text to the output.  The overhead for
   incompressible strings is only roughly 1/256 + epsilon.
-
-(*) After reading one copy command, switch to the compressed mode with the
-following "optimisation": the pattern 0000ppCC expands to length 3 instead of 2
-and 2048 is added to the position (now it is slightly more than 11 bits),
-because a sequence of length 2 would never be used.
 
 */
