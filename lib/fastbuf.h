@@ -15,6 +15,7 @@
 #endif
 
 #include <string.h>
+#include <stdarg.h>
 
 #include "lib/unaligned.h"
 
@@ -344,5 +345,10 @@ bdirect_write_commit(struct fastbuf *f, byte *pos)
 {
   f->bptr = pos;
 }
+
+/* Formatted output */
+
+int bprintf(struct fastbuf *b, byte *msg, ...);
+int vbprintf(struct fastbuf *b, byte *msg, va_list args);
 
 #endif
