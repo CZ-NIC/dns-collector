@@ -18,7 +18,19 @@ static uns use_v33;
 void
 attr_set_type(uns type)
 {
-  use_v33 = (type == BUCKET_TYPE_V33 || type == BUCKET_TYPE_V33_LIZARD);
+  switch (type)
+    {
+    case BUCKET_TYPE_PLAIN:
+    case BUCKET_TYPE_V30:
+      use_v33 = 0;
+      break;
+    case BUCKET_TYPE_V33:
+    case BUCKET_TYPE_V33_LIZARD:
+      use_v33 = 1;
+      break;
+    default:
+      die("Don't know how to generate buckets of type %08x", type);
+    }
 }
 
 inline byte *
