@@ -2,6 +2,7 @@
  *	Sherlock Library -- Mapping of File Parts
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
+ *	(c) 2003 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -31,9 +32,14 @@ struct partmap {
 #define PARTMAP_WINDOW 16777216
 #endif
 
+static uns page_size;
+
 struct partmap *
 partmap_open(byte *name, int writeable)
 {
+  if (!page_size)
+    page_size = getpagesize();
+
   struct partmap *p = xmalloc_zero(sizeof(struct partmap));
 
   p->fd = sh_open(name, writeable ? O_RDWR : O_RDONLY);
@@ -69,8 +75,12 @@ partmap_map(struct partmap *p, sh_off_t start, uns size)
 	munmap(p->start_map, p->end_off - p->start_off);
       uns win = PARTMAP_WINDOW;
       ASSERT(win >= size);
+      sh_off_t end = start + size;
+      start = start/page_size * page_size;
       if (start+win > p->file_size)
 	win = p->file_size - start;
+      if (start+win < end)
+	die("cannot mmap, the window is too small");
       p->start_map = sh_mmap(NULL, win, p->writeable ? (PROT_READ | PROT_WRITE) : PROT_READ, MAP_SHARED, p->fd, start);
       if (p->start_map == MAP_FAILED)
 	die("mmap failed at position %Ld: %m", (long long)start);
