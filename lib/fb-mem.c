@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Buffered I/O on Memory Streams
  *
- *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -10,7 +10,6 @@
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 struct memstream {
@@ -21,15 +20,23 @@ struct memstream {
 
 struct msblock {
   struct msblock *next;
+  sh_off_t pos;
   unsigned size;
   byte data[0];
 };
 
+struct fb_mem {
+  struct fastbuf fb;
+  struct memstream *stream;
+  struct msblock *block;
+};
+#define FB_MEM(f) ((struct fb_mem *)(f)->is_fastbuf)
+
 static int
 fbmem_refill(struct fastbuf *f)
 {
-  struct memstream *s = f->lldata;
-  struct msblock *b = f->llpos;
+  struct memstream *s = FB_MEM(f)->stream;
+  struct msblock *b = FB_MEM(f)->block;
 
   if (!b)
     {
@@ -40,28 +47,27 @@ fbmem_refill(struct fastbuf *f)
   else if (f->buffer == b->data && f->bstop < b->data + b->size)
     {
       f->bstop = b->data + b->size;
+      f->pos = b->pos + b->size;
       return 1;
     }
+  else if (!b->next)
+    return 0;
   else
-    {
-      if (!b->next)
-	return 0;
-      f->pos += b->size;
-      b = b->next;
-    }
+    b = b->next;
   if (!b->size)
     return 0;
   f->buffer = f->bptr = b->data;
   f->bufend = f->bstop = b->data + b->size;
-  f->llpos = b;
+  f->pos = b->pos + b->size;
+  FB_MEM(f)->block = b;
   return 1;
 }
 
 static void
 fbmem_spout(struct fastbuf *f)
 {
-  struct memstream *s = f->lldata;
-  struct msblock *b = f->llpos;
+  struct memstream *s = FB_MEM(f)->stream;
+  struct msblock *b = FB_MEM(f)->block;
   struct msblock *bb;
 
   if (b)
@@ -69,52 +75,50 @@ fbmem_spout(struct fastbuf *f)
       b->size = f->bptr - b->data;
       if (b->size < s->blocksize)
 	return;
-      f->pos += b->size;
     }
   bb = xmalloc(sizeof(struct msblock) + s->blocksize);
   if (b)
-    b->next = bb;
+    {
+      b->next = bb;
+      bb->pos = b->pos + b->size;
+    }
   else
-    s->first = bb;
+    {
+      s->first = bb;
+      bb->pos = 0;
+    }
   bb->next = NULL;
   bb->size = 0;
   f->buffer = f->bptr = f->bstop = bb->data;
   f->bufend = bb->data + s->blocksize;
-  f->llpos = bb;
+  f->pos = bb->pos;
+  FB_MEM(f)->block = bb;
 }
 
 static void
 fbmem_seek(struct fastbuf *f, sh_off_t pos, int whence)
 {
-  struct memstream *m = f->lldata;
+  struct memstream *m = FB_MEM(f)->stream;
   struct msblock *b;
-  unsigned int p = 0;
 
-  /* FIXME: Milan's quick hack to allow SEEK_END */
+  ASSERT(whence == SEEK_SET || whence == SEEK_END);
   if (whence == SEEK_END)
-  {
-	  for (b=m->first; b; b=b->next)
-		  p += b->size;
-	  pos += p;
-	  p=0;
-	  whence = SEEK_SET;
-  }
-  /* EOQH */
-  
-  if (whence != SEEK_SET)
-    die("fbmem_seek: only SEEK_SET supported");
+    {
+      for (b=m->first; b; b=b->next)
+	pos += b->size;
+    }
+  /* Yes, this is linear. But considering the average number of buckets, it doesn't matter. */
   for (b=m->first; b; b=b->next)
     {
-      if ((unsigned) pos <= p + b->size) /* <=, because we need to be able to seek just after file end */
+      if (pos <= b->pos + b->size) /* <=, because we need to be able to seek just after file end */
 	{
-	  f->pos = p;
 	  f->buffer = b->data;
-	  f->bptr = b->data + (pos - p);
+	  f->bptr = b->data + (pos - b->pos);
 	  f->bufend = f->bstop = b->data + b->size;
-	  f->llpos = b;
+	  f->pos = b->pos + b->size;
+	  FB_MEM(f)->block = b;
 	  return;
 	}
-      p += b->size;
     }
   die("fbmem_seek to invalid offset");
 }
@@ -122,31 +126,32 @@ fbmem_seek(struct fastbuf *f, sh_off_t pos, int whence)
 static void
 fbmem_close(struct fastbuf *f)
 {
-  struct memstream *m = f->lldata;
+  struct memstream *m = FB_MEM(f)->stream;
   struct msblock *b;
 
-  if (--m->uc)
-    return;
-
-  while (b = m->first)
+  if (!--m->uc)
     {
-      m->first = b->next;
-      xfree(b);
+      while (b = m->first)
+	{
+	  m->first = b->next;
+	  xfree(b);
+	}
+      xfree(m);
     }
-  xfree(m);
+  xfree(f);
 }
 
 struct fastbuf *
 fbmem_create(unsigned blocksize)
 {
-  struct fastbuf *f = xmalloc_zero(sizeof(struct fastbuf));
-  struct memstream *m = xmalloc_zero(sizeof(struct memstream));
+  struct fastbuf *f = xmalloc_zero(sizeof(struct fb_mem));
+  struct memstream *s = xmalloc_zero(sizeof(struct memstream));
 
-  m->blocksize = blocksize;
-  m->uc = 1;
+  s->blocksize = blocksize;
+  s->uc = 1;
 
+  FB_MEM(f)->stream = s;
   f->name = "<fbmem-write>";
-  f->lldata = m;
   f->spout = fbmem_spout;
   f->close = fbmem_close;
   return f;
@@ -155,14 +160,14 @@ fbmem_create(unsigned blocksize)
 struct fastbuf *
 fbmem_clone_read(struct fastbuf *b)
 {
-  struct fastbuf *f = xmalloc_zero(sizeof(struct fastbuf));
-  struct memstream *s = b->lldata;
+  struct fastbuf *f = xmalloc_zero(sizeof(struct fb_mem));
+  struct memstream *s = FB_MEM(b)->stream;
 
   bflush(b);
   s->uc++;
 
+  FB_MEM(f)->stream = s;
   f->name = "<fbmem-read>";
-  f->lldata = s;
   f->refill = fbmem_refill;
   f->seek = fbmem_seek;
   f->close = fbmem_close;
@@ -180,23 +185,23 @@ int main(void)
   r = fbmem_clone_read(w);
   bwrite(w, "12345", 5);
   bwrite(w, "12345", 5);
-  printf("<%d>", btell(w));
+  printf("<%d>", (int)btell(w));
   bflush(w);
-  printf("<%d>", btell(w));
-  printf("<%d>", btell(r));
+  printf("<%d>", (int)btell(w));
+  printf("<%d>", (int)btell(r));
   while ((t = bgetc(r)) >= 0)
     putchar(t);
-  printf("<%d>", btell(r));
+  printf("<%d>", (int)btell(r));
   bwrite(w, "12345", 5);
   bwrite(w, "12345", 5);
-  printf("<%d>", btell(w));
+  printf("<%d>", (int)btell(w));
   bclose(w);
   bsetpos(r, 0);
-  printf("<!%d>", btell(r));
+  printf("<!%d>", (int)btell(r));
   while ((t = bgetc(r)) >= 0)
     putchar(t);
   bsetpos(r, 3);
-  printf("<!%d>", btell(r));
+  printf("<!%d>", (int)btell(r));
   while ((t = bgetc(r)) >= 0)
     putchar(t);
   fflush(stdout);

@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Buffered I/O on Files
  *
- *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -11,7 +11,7 @@
 #include "lib/fastbuf.h"
 #include "lib/lfs.h"
 
-#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -19,14 +19,12 @@
 static int
 bfd_refill(struct fastbuf *f)
 {
-  int l = read(f->fd, f->buffer, f->buflen);
-
+  int l = read(FB_FILE(f)->fd, f->buffer, f->bufend-f->buffer);
   if (l < 0)
     die("Error reading %s: %m", f->name);
   f->bptr = f->buffer;
   f->bstop = f->buffer + l;
-  f->pos = f->fdpos;
-  f->fdpos += l;
+  f->pos += l;
   return l;
 }
 
@@ -36,17 +34,16 @@ bfd_spout(struct fastbuf *f)
   int l = f->bptr - f->buffer;
   char *c = f->buffer;
 
+  f->pos += l;
   while (l)
     {
-      int z = write(f->fd, c, l);
+      int z = write(FB_FILE(f)->fd, c, l);
       if (z <= 0)
 	die("Error writing %s: %m", f->name);
-      f->fdpos += z;
       l -= z;
       c += z;
     }
   f->bptr = f->buffer;
-  f->pos = f->fdpos;
 }
 
 static void
@@ -54,41 +51,43 @@ bfd_seek(struct fastbuf *f, sh_off_t pos, int whence)
 {
   sh_off_t l;
 
-  if (whence == SEEK_SET && pos == f->fdpos)
+  if (whence == SEEK_SET && pos == f->pos)
     return;
 
-  l = sh_seek(f->fd, pos, whence);
+  l = sh_seek(FB_FILE(f)->fd, pos, whence);
   if (l < 0)
     die("lseek on %s: %m", f->name);
-  f->fdpos = f->pos = l;
+  f->pos = l;
 }
 
 static void
 bfd_close(struct fastbuf *f)
 {
-  close(f->fd);
-  if (f->is_temp_file && unlink(f->name) < 0)
+  close(FB_FILE(f)->fd);
+  if (FB_FILE(f)->is_temp_file && unlink(f->name) < 0)
     die("unlink(%s): %m", f->name);
+  xfree(f);
 }
 
 static struct fastbuf *
 bfdopen_internal(int fd, uns buflen, byte *name)
 {
   int namelen = strlen(name) + 1;
-  struct fastbuf *b = xmalloc_zero(sizeof(struct fastbuf) + buflen + namelen);
+  struct fb_file *F = xmalloc(sizeof(struct fb_file) + buflen + namelen);
+  struct fastbuf *f = &F->fb;
 
-  b->buflen = buflen;
-  b->buffer = (char *)(b+1);
-  b->bptr = b->bstop = b->buffer;
-  b->bufend = b->buffer + buflen;
-  b->name = b->bufend;
-  strcpy(b->name, name);
-  b->fd = fd;
-  b->refill = bfd_refill;
-  b->spout = bfd_spout;
-  b->seek = bfd_seek;
-  b->close = bfd_close;
-  return b;
+  bzero(F, sizeof(*F));
+  f->buffer = (char *)(F+1);
+  f->bptr = f->bstop = f->buffer;
+  f->bufend = f->buffer + buflen;
+  f->name = f->bufend;
+  memcpy(f->name, name, namelen);
+  F->fd = fd;
+  f->refill = bfd_refill;
+  f->spout = bfd_spout;
+  f->seek = bfd_seek;
+  f->close = bfd_close;
+  return f;
 }
 
 struct fastbuf *
@@ -117,26 +116,30 @@ bfdopen(int fd, uns buffer)
 void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
 {
   uns rf = f->bstop - f->bptr;
+  uns tbuflen = t->bufend - t->buffer;
 
+  ASSERT(f->close == bfd_close);
+  ASSERT(t->close == bfd_close);
   if (!l)
     return;
   if (rf)
     {
-      uns k = (rf <= l) ? rf : l;
+      uns k = MIN(rf, l);
       bwrite(t, f->bptr, k);
       f->bptr += k;
       l -= k;
+      if (!l)
+	return;
     }
-  while (l >= t->buflen)
+  while (l >= tbuflen)
     {
       t->spout(t);
-      if ((uns) read(f->fd, t->buffer, t->buflen) != t->buflen)
+      if ((uns) read(FB_FILE(f)->fd, t->buffer, tbuflen) != tbuflen)
 	die("bbcopy: %s exhausted", f->name);
-      f->pos = f->fdpos;
-      f->fdpos += t->buflen;
+      f->pos += tbuflen;
       f->bstop = f->bptr = f->buffer;
       t->bptr = t->bufend;
-      l -= t->buflen;
+      l -= tbuflen;
     }
   while (l)
     {
@@ -160,13 +163,14 @@ void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
 int main(int argc, char **argv)
 {
   struct fastbuf *f, *t;
-  int c;
 
   f = bopen("/etc/profile", O_RDONLY, 16);
   t = bfdopen(1, 13);
   bbcopy(f, t, 100);
+  printf("%d %d\n", (int)btell(f), (int)btell(t));
   bclose(f);
   bclose(t);
+  return 0;
 }
 
 #endif

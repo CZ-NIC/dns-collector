@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Fast Buffered I/O
  *
- *	(c) 1997--2000 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -19,7 +19,8 @@
 #include "lib/unaligned.h"
 
 /*
- *  Generic buffered I/O on a top of buffer swapping functions.
+ *  Generic buffered I/O. You supply hooks to be called for low-level operations
+ *  (swapping of buffers, seeking and closing), we do the rest.
  *
  *  Buffer layout when reading:
  *
@@ -40,19 +41,23 @@
  *  +----------------+---------------------------+
  *  ^                 ^                           ^
  *  buffer=bstop      bptr                        bufend
+ *
+ *  Dirty tricks:
+ *
+ *    - You can mix reads and writes on the same stream, but you must
+ *	call bflush() in between and remember that the file position
+ *	points after the flushed buffer which is not necessarily the same
+ *	as after the data you've read.
+ *    - The spout/refill hooks can change not only bptr and bstop, but also
+ *	the location of the buffer; fb-mem.c takes advantage of it.
  */
 
 struct fastbuf {
+  byte is_fastbuf[0];			/* Dummy field for checking of type casts */
   byte *bptr, *bstop;			/* Access pointers */
   byte *buffer, *bufend;		/* Start and end of the buffer */
   byte *name;				/* File name for error messages */
-  uns buflen;				/* Size of the buffer */
-  sh_off_t pos;				/* Position of buffer start in the file */
-  sh_off_t fdpos;			/* Current position in the non-buffered file */
-  int fd;				/* File descriptor, -1 if not a real file */
-  int is_temp_file;			/* Is a temporary file, delete on close */
-  void *lldata;				/* Data private to access functions below */
-  void *llpos;				/* ... continued ... */
+  sh_off_t pos;				/* Position of bstop in the file */
   int (*refill)(struct fastbuf *);	/* Get a buffer with new data */
   void (*spout)(struct fastbuf *);	/* Write buffer data to the file */
   void (*seek)(struct fastbuf *, sh_off_t, int);  /* Slow path for bseek(), buffer already flushed */
@@ -61,10 +66,18 @@ struct fastbuf {
 
 /* FastIO on standard files */
 
+struct fb_file {
+  struct fastbuf fb;
+  int fd;				/* File descriptor, -1 if not a real file */
+  int is_temp_file;			/* Is a temporary file, delete on close */
+};
+#define FB_FILE(f) ((struct fb_file *)(f)->is_fastbuf)
+
 struct fastbuf *bopen(byte *name, uns mode, uns buffer);
 struct fastbuf *bopen_tmp(uns buffer);
 struct fastbuf *bfdopen(int fd, uns buffer);
 void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l);
+#define FB_IS_TEMP_FILE(f) FB_FILE(f)->is_temp_file
 
 /* FastIO on in-memory streams */
 
@@ -80,7 +93,7 @@ void bsetpos(struct fastbuf *f, sh_off_t pos);
 
 static inline sh_off_t btell(struct fastbuf *f)
 {
-  return f->pos + (f->bptr - f->buffer);
+  return f->pos + (f->bptr - f->bstop);
 }
 
 int bgetc_slow(struct fastbuf *f);
