@@ -95,7 +95,7 @@ struct oattr {				/* Object attribute */
 };
 
 void obj_dump(struct odes *);
-struct odes *obj_fload(FILE *);
+struct odes *obj_fload(FILE *, byte *);
 struct odes *obj_new(void);
 struct odes *obj_load(byte *);
 void obj_fwrite(FILE *, struct odes *);
