@@ -17,9 +17,11 @@ struct qache_params {
 
 typedef byte qache_key_t[16];
 
+struct qache;
+
 /* Create and destroy a cache */
-struct qache *qache_init(struct qache_params *p);
-void qache_cleanup(struct qache *q, uns retain_data);
+struct qache *qache_open(struct qache_params *p);
+void qache_close(struct qache *q, uns retain_data);
 
 /* Insert new item to the cache with a given key and data. If pos_hint is non-zero, it serves
  * as a hint about the position of the entry (if it's known that an entry with the particular key
@@ -34,9 +36,12 @@ uns qache_insert(struct qache *q, qache_key_t *key, uns pos_hint, void *data, un
  * can be greater than the original value requested). The start indicates starting offset inside the
  * entry's data.
  */
-uns qache_lookup(struct qache *q, qache_key_t *key, uns pos_hint, void **datap, uns **sizep, uns start);
+uns qache_lookup(struct qache *q, qache_key_t *key, uns pos_hint, void **datap, uns *sizep, uns start);
 
 /* Delete data from the cache, given a key and a position hint. */
 uns qache_delete(struct qache *q, qache_key_t *key, uns pos_hint);
+
+/* Debugging dump (beware, doesn't lock the cache!) */
+void qache_debug(struct qache *q);
 
 #endif

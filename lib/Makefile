@@ -24,7 +24,8 @@ LIBUCW_MODS= \
 	lizard lizard-safe adler32 \
 	md5 md5hex \
 	base64 base224 \
-	sync
+	sync \
+	qache
 
 LIBUCW_INCLUDES= \
 	lib.h config.h math.h \
@@ -47,6 +48,7 @@ LIBUCW_INCLUDES= \
 	lizard.h \
 	md5.h \
 	base64.h base224.h \
+	qache.h
 
 ifdef CONFIG_OWN_REGEX
 include lib/regex/Makefile
