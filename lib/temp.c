@@ -22,7 +22,7 @@ temprand(uns key)
       seeded = 1;
       srand(getpid());
     }
-  rand = random();
+  rand = random() << 1;
   rand += key * 0xdeadbeef;
   return rand;
 }
