@@ -41,5 +41,7 @@ struct oattr *obj_set_attr_num(struct odes *, uns, uns);
 struct oattr *obj_add_attr(struct odes *, uns, byte *);
 struct oattr *obj_prepend_attr(struct odes *, uns, byte *);
 struct oattr *obj_insert_attr(struct odes *o, struct oattr *first, struct oattr *after, byte *v);
+void obj_move_attr_to_head(struct odes *o, uns);
+void obj_move_attr_to_tail(struct odes *o, uns);
 
 #endif

@@ -244,3 +244,43 @@ obj_insert_attr(struct odes *o, struct oattr *first, struct oattr *after, byte *
   after->same = b;
   return b;
 }
+
+void
+obj_move_attr_to_head(struct odes *o, uns x)
+{
+  struct oattr *a, **z;
+
+  z = &o->attrs;
+  while (a = *z)
+    {
+      if (a->attr == x)
+	{
+	  *z = a->next;
+	  a->next = o->attrs;
+	  o->attrs = a;
+	  break;
+	}
+      z = &a->next;
+    }
+}
+
+void
+obj_move_attr_to_tail(struct odes *o, uns x)
+{
+  struct oattr *a, **z;
+
+  z = &o->attrs;
+  while (a = *z)
+    {
+      if (a->attr == x)
+	{
+	  *z = a->next;
+	  while (*z)
+	    z = &(*z)->next;
+	  *z = a;
+	  a->next = NULL;
+	  break;
+	}
+      z = &a->next;
+    }
+}
