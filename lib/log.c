@@ -13,13 +13,13 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-static byte *log_progname;
+static char *log_progname;
 static pid_t log_pid;
 
 void
 log_fork(void)
 {
-  log_pid = 0;
+  log_pid = getpid();
 }
 
 static void
@@ -27,14 +27,23 @@ vlog(unsigned int cat, const char *msg, va_list args)
 {
   time_t tim = time(NULL);
   struct tm *tm = localtime(&tim);
+  char *prog = log_progname ?: "?";
   char buf[32];
 
-  if (!log_pid)
-    log_pid = getpid();
   strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", tm);
   fprintf(stderr, "%c %s ", cat, buf);
   if (log_progname)
-    fprintf(stderr, "[%s (%d)] ", log_progname, log_pid);
+    {
+      if (log_pid)
+	fprintf(stderr, "[%s (%d)] ", log_progname, log_pid);
+      else
+	fprintf(stderr, "[%s] ", log_progname);
+    }
+  else
+    {
+      if (log_pid)
+	fprintf(stderr, "[%d] ", log_pid);
+    }
   vfprintf(stderr, msg, args);
   fputc('\n', stderr);
   fflush(stderr);
