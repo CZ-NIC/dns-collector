@@ -157,7 +157,7 @@ uns get_timer(void);
 
 typedef struct regex regex;
 
-regex *rx_compile(byte *r);
+regex *rx_compile(byte *r, int icase);
 void rx_free(regex *r);
 int rx_match(regex *r, byte *s);
 int rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen);

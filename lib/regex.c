@@ -2,16 +2,20 @@
  *	Sherlock Library -- Regular Expressions
  *
  *	(c) 1997 Martin Mares <mj@ucw.cz>
+ *	(c) 2001 Robert Spalek <robert@ucw.cz>
  */
 
 #include "lib/lib.h"
+#include "lib/chartype.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <regex.h>
 
 #define INITIAL_MEM 1024		/* Initial space allocated for each pattern */
+#define CHAR_SET_SIZE 256		/* How many characters in the character set.  */
 
 struct regex {
   struct re_pattern_buffer buf;
@@ -20,13 +24,23 @@ struct regex {
 };
 
 regex *
-rx_compile(byte *p)
+rx_compile(byte *p, int icase)
 {
   regex *r = xmalloc_zero(sizeof(regex));
   const char *msg;
 
   r->buf.buffer = xmalloc(INITIAL_MEM);
   r->buf.allocated = INITIAL_MEM;
+  if (icase)
+    {
+      unsigned i;
+      r->buf.translate = xmalloc (CHAR_SET_SIZE);
+      /* Map uppercase characters to corresponding lowercase ones.  */
+      for (i = 0; i < CHAR_SET_SIZE; i++)
+        r->buf.translate[i] = Cupper(i) ? tolower (i) : i;
+    }
+  else
+    r->buf.translate = NULL;
   msg = re_compile_pattern(p, strlen(p), &r->buf);
   if (!msg)
     return r;
