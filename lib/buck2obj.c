@@ -123,12 +123,12 @@ buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fas
       while (btell(body) < end)
       {
 	uns len = bget_utf8(body);
-	if (!len--)
+	if (!len)
 	  break;
-	byte buf[MAX_ATTR_SIZE];
+	byte *buf = mp_alloc_fast_noalign(o_hdr->pool, len);
 	bread(body, buf, len);
+	uns type = buf[--len];
 	buf[len] = 0;
-	byte type = bgetc(body);
 	obj_add_attr_ref(o_hdr, type, buf);
       }
       *body_start = btell(body) - start;
