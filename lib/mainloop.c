@@ -157,7 +157,7 @@ file_write_handler(struct main_file *fi)
 }
 
 void
-file_read(struct main_file *fi, byte *buf, uns len)
+file_read(struct main_file *fi, void *buf, uns len)
 {
   ASSERT(fi->n.next);
   if (len)
@@ -177,7 +177,7 @@ file_read(struct main_file *fi, byte *buf, uns len)
 }
 
 void
-file_write(struct main_file *fi, byte *buf, uns len)
+file_write(struct main_file *fi, void *buf, uns len)
 {
   ASSERT(fi->n.next);
   if (len)

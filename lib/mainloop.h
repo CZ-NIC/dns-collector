@@ -54,8 +54,8 @@ enum main_file_err_cause {
 void file_add(struct main_file *fi);
 void file_chg(struct main_file *fi);
 void file_del(struct main_file *fi);
-void file_read(struct main_file *fi, byte *buf, uns len);
-void file_write(struct main_file *fi, byte *buf, uns len);
+void file_read(struct main_file *fi, void *buf, uns len);
+void file_write(struct main_file *fi, void *buf, uns len);
 void file_set_timeout(struct main_file *fi, sh_time_t expires);
 
 /* Hooks to be called in each iteration of the main loop */
