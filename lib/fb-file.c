@@ -16,6 +16,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+struct fb_file {
+  struct fastbuf fb;
+  int fd;				/* File descriptor, -1 if not a real file */
+  int is_temp_file;			/* 0=normal file, 1=temporary file, delete on close, -1=shared FD */
+};
+#define FB_FILE(f) ((struct fb_file *)(f)->is_fastbuf)
+
 static int
 bfd_refill(struct fastbuf *f)
 {
@@ -74,6 +81,19 @@ bfd_close(struct fastbuf *f)
   xfree(f);
 }
 
+static int
+bfd_config(struct fastbuf *f, uns item, int value)
+{
+  switch (item)
+    {
+    case BCONFIG_IS_TEMP_FILE:
+      FB_FILE(f)->is_temp_file = value;
+      return 0;
+    default:
+      return -1;
+    }
+}
+
 static struct fastbuf *
 bfdopen_internal(int fd, uns buflen, byte *name)
 {
@@ -92,6 +112,7 @@ bfdopen_internal(int fd, uns buflen, byte *name)
   f->spout = bfd_spout;
   f->seek = bfd_seek;
   f->close = bfd_close;
+  f->config = bfd_config;
   return f;
 }
 

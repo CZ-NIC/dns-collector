@@ -36,6 +36,6 @@ bopen_tmp(uns bufsize)
 
   sprintf(buf, temp_template, (int) getpid(), temp_counter++);
   f = bopen(buf, O_RDWR | O_CREAT | O_EXCL, bufsize);
-  FB_IS_TEMP_FILE(f) = 1;
+  bconfig(f, BCONFIG_IS_TEMP_FILE, 1);
   return f;
 }

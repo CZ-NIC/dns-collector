@@ -9,7 +9,6 @@
 
 /*
  *  FIXME:
- *  - problems with temp files
  *  - O_WRONLY ? (& generally processing of mode bits)
  */
 
@@ -35,7 +34,7 @@
 struct fb_mmap {
   struct fastbuf fb;
   int fd;
-  int dummy;				/* FIXME: dirty hack for is_temp_file, remove */
+  int is_temp_file;
   sh_off_t file_size;
   sh_off_t file_extend;
   sh_off_t window_pos;
@@ -137,8 +136,28 @@ bfmm_close(struct fastbuf *f)
   if (F->file_extend > F->file_size &&
       sh_ftruncate(F->fd, F->file_size))
     die("ftruncate(%s): %m", f->name);
-  close(F->fd);
+  switch (F->is_temp_file)
+    {
+    case 1:
+      if (unlink(f->name) < 0)
+	log(L_ERROR, "unlink(%s): %m", f->name);
+    case 0:
+      close(F->fd);
+    }
   xfree(f);
+}
+
+static int
+bfmm_config(struct fastbuf *f, uns item, int value)
+{
+  switch (item)
+    {
+    case BCONFIG_IS_TEMP_FILE:
+      FB_MMAP(f)->is_temp_file = value;
+      return 0;
+    default:
+      return -1;
+    }
 }
 
 static struct fastbuf *
@@ -163,6 +182,7 @@ bfmmopen_internal(int fd, byte *name, uns mode)
   f->spout = bfmm_spout;
   f->seek = bfmm_seek;
   f->close = bfmm_close;
+  f->config = bfmm_config;
   return f;
 }
 

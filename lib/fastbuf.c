@@ -301,3 +301,9 @@ bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uns l)
       l -= n;
     }
 }
+
+int
+bconfig(struct fastbuf *f, uns item, int value)
+{
+  return f->config ? f->config(f, item, value) : -1;
+}

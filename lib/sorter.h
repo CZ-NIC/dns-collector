@@ -385,7 +385,7 @@ struct fastbuf *fb1, struct fastbuf *fb2
 #endif
 
 #ifdef SORT_DELETE_INPUT
-  FB_IS_TEMP_FILE(fb1) = SORT_DELETE_INPUT;
+  bconfig(fb1, BCONFIG_IS_TEMP_FILE, SORT_DELETE_INPUT);
 #endif
   sorter_pass_counter = 1;
 #ifdef SORT_PRESORT
@@ -399,7 +399,7 @@ struct fastbuf *fb1, struct fastbuf *fb2
 #ifdef SORT_OUTPUT_FB
   return fb1;
 #else
-  FB_IS_TEMP_FILE(fb1) = 0;
+  bconfig(fb1, BCONFIG_IS_TEMP_FILE, 0);
   if (rename(fb1->name, outname) < 0)
     die("rename(%s,%s): %m", fb1->name, outname);
   bclose(fb1);

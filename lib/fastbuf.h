@@ -62,27 +62,30 @@ struct fastbuf {
   void (*spout)(struct fastbuf *);	/* Write buffer data to the file */
   void (*seek)(struct fastbuf *, sh_off_t, int);  /* Slow path for bseek(), buffer already flushed */
   void (*close)(struct fastbuf *);	/* Close the stream */
+  int (*config)(struct fastbuf *, uns, int);	/* Configure the stream */
 };
 
 /* FastIO on standard files */
-
-struct fb_file {
-  struct fastbuf fb;
-  int fd;				/* File descriptor, -1 if not a real file */
-  int is_temp_file;			/* 0=normal file, 1=temporary file, delete on close, -1=shared FD */
-};
-#define FB_FILE(f) ((struct fb_file *)(f)->is_fastbuf)
 
 struct fastbuf *bopen(byte *name, uns mode, uns buffer);
 struct fastbuf *bopen_tmp(uns buffer);
 struct fastbuf *bfdopen(int fd, uns buffer);
 struct fastbuf *bfdopen_shared(int fd, uns buffer);
-#define FB_IS_TEMP_FILE(f) FB_FILE(f)->is_temp_file
 
 /* FastIO on in-memory streams */
 
 struct fastbuf *fbmem_create(unsigned blocksize);	/* Create stream and return its writing fastbuf */
 struct fastbuf *fbmem_clone_read(struct fastbuf *);	/* Create reading fastbuf */
+
+/* FastIO on memory mapped files */
+
+struct fastbuf *bopen_mm(byte *name, uns mode);
+
+/* Configuring stream parameters */
+
+int bconfig(struct fastbuf *f, uns type, int data);
+
+#define BCONFIG_IS_TEMP_FILE 0
 
 /* Universal functions working on all fastbuf's */
 
