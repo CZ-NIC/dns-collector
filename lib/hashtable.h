@@ -263,15 +263,15 @@ static inline void P(init_data) (P(node) *n UNUSED)
 
 #ifdef HASH_GIVE_ALLOC
 /* If the caller has requested to use his own allocation functions, do so */
-static inline void * P(init_alloc) (void) { }
-static inline void * P(cleanup_alloc) (void) { }
+static inline void P(init_alloc) (void) { }
+static inline void P(cleanup_alloc) (void) { }
 
 #elif defined(HASH_USE_POOL)
 /* If the caller has requested to use his mempool, do so */
 #include "lib/pools.h"
 static inline void * P(alloc) (unsigned int size) { return mp_alloc_fast(HASH_USE_POOL, size); }
-static inline void * P(init_alloc) (void) { }
-static inline void * P(cleanup_alloc) (void) { }
+static inline void P(init_alloc) (void) { }
+static inline void P(cleanup_alloc) (void) { }
 
 #elif defined(HASH_AUTO_POOL)
 /* Use our own pools */
@@ -285,8 +285,8 @@ static inline void P(cleanup_alloc) (void) { mp_delete(P(pool)); }
 /* The default allocation method */
 static inline void * P(alloc) (unsigned int size) { return xmalloc(size); }
 static inline void P(free) (void *x) { xfree(x); }
-static inline void * P(init_alloc) (void) { }
-static inline void * P(cleanup_alloc) (void) { }
+static inline void P(init_alloc) (void) { }
+static inline void P(cleanup_alloc) (void) { }
 
 #endif
 
