@@ -364,12 +364,22 @@ sdbm_split_dir(struct sdbm *d, uns dirpos, uns count, uns pos)
     }
 }
 
+static inline uns
+sdbm_dirpos(struct sdbm *d, uns hash)
+{
+  if (d->dir_shift != 32)		/* avoid shifting by 32 bits */
+    return (hash >> d->dir_shift) << 2;	/* offset in the directory */
+  else
+    return 0;
+}
+
 static struct page *
-sdbm_split_page(struct sdbm *d, struct page *b, u32 hash, uns dirpos)
+sdbm_split_page(struct sdbm *d, struct page *b, u32 hash)
 {
   struct page *p[2];
-  uns i, rank, sigbit, rank_log;
+  uns i, rank, sigbit, rank_log, dirpos;
 
+  dirpos = sdbm_dirpos(d, hash);
   rank = sdbm_page_rank(d, dirpos);	/* rank = # of pointers to this page */
   if (rank == 1)
     {
@@ -421,10 +431,7 @@ sdbm_access(struct sdbm *d, byte *key, uns keylen, byte *val, uns *vallen, uns m
   if (!mode && !(d->flags & SDBM_WRITE))
     return SDBM_ERROR_READ_ONLY;
   hash = sdbm_hash(key, keylen);
-  if (d->dir_shift != 32)		/* avoid shifting by 32 bits */
-    h = (hash >> d->dir_shift) << 2;	/* offset in the directory */
-  else
-    h = 0;
+  h = sdbm_dirpos(d, hash);
   p = pgc_read(d->cache, d->fd, d->root->dir_start + (h & ~d->page_mask));
   pos = GET32(p->data, h & d->page_mask);
   pgc_put(d->cache, p);
@@ -475,7 +482,7 @@ insert:
 	      pgc_put(d->cache, q);
 	      return SDBM_ERROR_GIANT;
 	    }
-	  q = sdbm_split_page(d, q, hash, h);
+	  q = sdbm_split_page(d, q, hash);
 	  b = (void *) q->data;
 	}
       sdbm_store_entry(d, b->data + b->used, key, keylen, val, *vallen);
