@@ -24,7 +24,7 @@
 static struct cfitem *cfsection;
 static struct mempool *cfpool;
 
-static byte *cfdeffile = NULL;
+byte *cfdeffile = DEFAULT_CONFIG;
 
 static void CONSTRUCTOR
 conf_init(void)
@@ -215,18 +215,6 @@ void cf_read(byte *filename)
 	cfdeffile = NULL;
 }
 
-void
-cf_default_init(byte *filename)
-{
-	cfdeffile = filename;
-}
-
-void cf_default_done(void)
-{
-	if (cfdeffile)
-		cf_read(cfdeffile);
-}
-
 int cf_getopt(int argc,char * const argv[],
 		const char *shortopts,const struct option *longopts,
 		int *longindex)
@@ -267,6 +255,9 @@ int cf_getopt(int argc,char * const argv[],
 
 		}else if(res=='C'){
 			cf_read(optarg);
+		}else if(res==-1){
+			if(cfdeffile)
+				cf_read(cfdeffile);
 		}else{	/* unhandled option */
 			return res;
 		}

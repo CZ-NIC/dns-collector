@@ -48,9 +48,12 @@ void cf_read(byte *filename);
  * When using cf_getopt, you must prefix your own short/long options by the
  * CF_(SHORT|LONG)_OPTS.
  *
- * If you want to automatically load default config file before first option is
- * overriden, register it by cf_default_init and call cf_default_done after
- * parsing is done.  It will not be loaded if another config file is specified.
+ * cfdeffile contains filename of config file automatically loaded before a
+ * first --set option is executed.  If none --set option occures, it will be
+ * loaded after getopt returns -1 (at the end of configuration options).  It
+ * will be ignored, if another config file is set by --config option at first.
+ * Its initial value is DEFAULT_CONFIG from config.h, but you can override it
+ * manually.
  */
 
 #define	CF_SHORT_OPTS	"S:C:"
@@ -59,8 +62,8 @@ void cf_read(byte *filename);
 	{"config",	1, 0, 'C'},
 #define CF_NO_LONG_OPTS (const struct option []){ CF_LONG_OPTS { NULL, 0, 0, 0 } }
 
-void cf_default_init(byte *filename);
-void cf_default_done(void);
+extern byte *cfdeffile;
+
 int cf_getopt(int argc,char * const argv[],
 		const char *shortopts,const struct option *longopts,
 		int *longindex);
