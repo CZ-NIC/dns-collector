@@ -31,7 +31,7 @@ CF_USAGE
 -L\t\tlist all buckets including deleted ones\n\
 -d <obj>\tdelete bucket\n\
 -x <obj>\textract bucket\n\
--i\t\tinsert bucket\n\
+-i\t\tinsert buckets separated by blank lines\n\
 -c\t\tconcatenate and dump all buckets\n\
 -f\t\taudit bucket file structure\n\
 -F\t\taudit and fix bucket file structure\n\
@@ -99,18 +99,27 @@ extract(char *id)
 static void
 insert(void)
 {
-  struct fastbuf *b;
-  byte buf[1024];
-  int l;
+  struct fastbuf *b, *in;
+  byte buf[4096];
   struct obuck_header h;
+  byte *e;
 
+  in = bfdopen(0, 4096);
   obuck_init(1);
-  b = obuck_create();
-  while ((l = fread(buf, 1, sizeof(buf), stdin)))
-    bwrite(b, buf, l);
-  obuck_create_end(b, &h);
+  do
+    {
+      b = obuck_create();
+      while ((e = bgets(in, buf, sizeof(buf))) && buf[0])
+	{
+	  *e++ = '\n';
+	  bwrite(b, buf, e-buf);
+	}
+      obuck_create_end(b, &h);
+      printf("%08x %d %d\n", h.oid, h.length, h.orig_length);
+    }
+  while (e);
   obuck_cleanup();
-  printf("%08x %d %d\n", h.oid, h.length, h.orig_length);
+  /* bclose(in) not done, we don't want fd 0 closed */
 }
 
 static void
