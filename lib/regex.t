@@ -34,7 +34,7 @@ Out:	MATCH
 
 Run:	obj/lib/regex-t '(.*b)*'
 In:	ababababab
-	abababababa
+	ababababababababababababababababababababababababababababa
 Out:	MATCH
 	NO MATCH
 

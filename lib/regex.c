@@ -16,7 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if 1
+#if !defined(CONFIG_PCRE) && !defined(CONFIG_POSIX_RE)
 
 /* BSD regular expression library */
 
@@ -117,7 +117,7 @@ rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
   return 1;
 }
 
-#elif 0
+#elif defined(CONFIG_POSIX_RE)
 
 /* POSIX regular expression library */
 
