@@ -46,6 +46,7 @@ struct cfitem {
 typedef byte *(*ci_func)(struct cfitem *, byte *);
 
 void cf_read(byte *, struct cfitem *);
+int cf_read_err(byte *, struct cfitem *); /* Read with possible error, 1 = succeeded */
 
 /* Logging */
 
