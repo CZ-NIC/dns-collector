@@ -57,6 +57,8 @@ typedef s64 sh_off_t;
 #define bputp(f,l) bputq(f,l)
 #define GET_O(p) GET_U40(p)
 #define GET_P(p) GET_U64(p)
+#define PUT_O(p,x) PUT_U40(p,x)
+#define PUT_P(p,x) PUT_U64(p,x)
 #else
 typedef s32 sh_off_t;
 #define BYTES_PER_O 4
@@ -67,6 +69,8 @@ typedef s32 sh_off_t;
 #define bputp(f,l) bputl(f,l)
 #define GET_O(p) GET_U32(p)
 #define GET_P(p) GET_U32(p)
+#define PUT_O(p,x) PUT_U32(p,x)
+#define PUT_P(p,x) PUT_U32(p,x)
 #endif
 
 /* Misc */
