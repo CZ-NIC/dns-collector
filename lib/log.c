@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- Logging
  *
- *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2002 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -17,9 +17,11 @@
 #include <unistd.h>
 #include <time.h>
 
-static char *log_progname, log_name_patt[64], log_name[64];
+static char *log_progname, *log_name_patt, *log_name;
 static pid_t log_pid;
 static int log_params;
+static int log_name_size;
+static int log_switching;
 
 void
 log_fork(void)
@@ -30,22 +32,28 @@ log_fork(void)
 static void
 log_switch(struct tm *tm)
 {
-  int fd;
-  char name[64];
+  int fd, l;
+  char name[log_name_size];
 
-  if (!log_name_patt[0] ||
-      log_name[0] && !log_params)
+  if (!log_name_patt ||
+      log_name[0] && !log_params ||
+      log_switching)
     return;
-  strftime(name, sizeof(name), log_name_patt, tm);
-  if (!strcmp(name, log_name))
-    return;
-  strcpy(log_name, name);
-  fd = open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
-  if (fd < 0)
-    die("Unable to open log file %s: %m", name);
-  close(2);
-  dup(fd);
-  close(fd);
+  log_switching++;
+  l = strftime(name, log_name_size, log_name_patt, tm);
+  if (l < 0 || l >= log_name_size)
+    die("Error formatting log file name: %m");
+  if (strcmp(name, log_name))
+    {
+      strcpy(log_name, name);
+      fd = open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
+      if (fd < 0)
+	die("Unable to open log file %s: %m", name);
+      close(2);
+      dup(fd);
+      close(fd);
+    }
+  log_switching--;
 }
 
 static void
@@ -53,26 +61,47 @@ vlog(unsigned int cat, const char *msg, va_list args)
 {
   time_t tim = time(NULL);
   struct tm *tm = localtime(&tim);
-  char buf[32];
+  byte *buf, *p;
+  int buflen = 256;
+  int l, l0, r;
 
   log_switch(tm);
-  strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", tm);
-  fprintf(stderr, "%c %s ", cat, buf);
-  if (log_progname)
+  while (1)
     {
-      if (log_pid)
-	fprintf(stderr, "[%s (%d)] ", log_progname, log_pid);
+      p = buf = alloca(buflen);
+      *p++ = cat;
+      p += strftime(p, buflen, " %Y-%m-%d %H:%M:%S ", tm);
+      if (log_progname)
+	{
+	  if (log_pid)
+	    p += sprintf(p, "[%s (%d)] ", log_progname, log_pid);
+	  else
+	    p += sprintf(p, "[%s] ", log_progname);
+	}
       else
-	fprintf(stderr, "[%s] ", log_progname);
+	{
+	  if (log_pid)
+	    p += sprintf(p, "[%d] ", log_pid);
+	}
+      l0 = p - buf + 1;
+      r = buflen - l0;
+      l = vsnprintf(p, r, msg, args);
+      if (l < 0)
+	l = r;
+      else if (l < r)
+	{
+	  while (*p)
+	    {
+	      if (*p < 0x20 && *p != '\t')
+		*p = 0x7f;
+	      p++;
+	    }
+	  *p = '\n';
+	  write(2, buf, l + l0);
+	  return;
+	}
+      buflen = l + l0;
     }
-  else
-    {
-      if (log_pid)
-	fprintf(stderr, "[%d] ", log_pid);
-    }
-  vfprintf(stderr, msg, args);
-  fputc('\n', stderr);
-  fflush(stderr);
 }
 
 void
@@ -136,8 +165,17 @@ log_file(byte *name)
     {
       time_t tim = time(NULL);
       struct tm *tm = localtime(&tim);
-      strcpy(log_name_patt, name);
+      if (log_name_patt)
+	xfree(log_name_patt);
+      if (log_name)
+	{
+	  xfree(log_name);
+	  log_name = NULL;
+	}
+      log_name_patt = stralloc(name);
       log_params = !!strchr(name, '%');
+      log_name_size = strlen(name) + 64;	/* 63 is an upper bound on expansion of % escapes */
+      log_name = xmalloc(log_name_size);
       log_name[0] = 0;
       log_switch(tm);
     }
