@@ -11,9 +11,21 @@
 #include SHERLOCK_CUSTOM
 #include "charset/unistream.h"
 
-/* Words */
+/*
+ *  Words and word complexes
+ *
+ *  MAX_WORD_LEN is the maximum length (measured in UTF-8 characters, excluding
+ *  the terminating zero byte if there's any) of any word which may appear in the
+ *  indices or in the bucket file. Naturally, the same constant also bounds
+ *  the number of UCS-2 characters in a word.
+ *
+ *  Caveat: If you are upcasing/downcasing the word, the UTF-8 encoding can
+ *  expand, although at most twice, so you need to reserve 2*MAX_WORD_LEN bytes.
+ *
+ *  MAX_COMPLEX_LEN is the upper bound on number of words in any word complex.
+ */
 
-#define MAX_WORD_LEN		64
+#define MAX_WORD_LEN		64	/* a multiple of 4 */
 #define MAX_COMPLEX_LEN		10
 
 /* Word and string types are defined in lib/custom.h */
