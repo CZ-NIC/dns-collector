@@ -19,7 +19,7 @@
 #include <errno.h>
 #include <unistd.h>
 
-#define	RET_ERR(num)	({ errno = num; return NULL; })
+#define	RET_ERR(num)	({ errno = num; return -1; })
 
 #define	GBUF_TYPE	byte
 #define	GBUF_PREFIX(x)	bb_##x
@@ -84,23 +84,25 @@ decode_attributes(byte *ptr, byte *end, struct odes *o, uns can_overwrite)
   return ptr;
 }
 
-struct odes *
-obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, uns buck_len, struct fastbuf *body, uns *body_start)
+int
+buck2obj_parse(struct buck2obj_buf *buf, uns buck_type, uns buck_len, struct fastbuf *body, struct odes *o_hdr, uns *body_start, struct odes *o_body)
 {
-  struct odes *o = obj_new(pool);
-
-  if (buck_type == BUCKET_TYPE_PLAIN || buck_type == BUCKET_TYPE_V30)
+  if (buck_type == BUCKET_TYPE_PLAIN)
   {
-    if (!body_start)			// header + body: ignore empty lines, read until EOF or NUL
-    {
-      obj_read_multi(body, o);
-      bgetc(body);
-    }
-    else				// header only: end on EOF or the first empty line
-    {
-      sh_off_t start = btell(body);
-      obj_read(body, o);
+    if (body_start)
+      *body_start = 0;
+    obj_read_multi(body, o_hdr);	// ignore empty lines, read until EOF or NUL
+  }
+  else if (buck_type == BUCKET_TYPE_V30)
+  {
+    sh_off_t start = btell(body);
+    obj_read(body, o_hdr);		// end on EOF or the first empty line
+    if (body_start)
       *body_start = btell(body) - start;
+    else
+    {
+      obj_read(body, o_body);
+      bgetc(body);
     }
   }
   else if (buck_type == BUCKET_TYPE_V33 || buck_type == BUCKET_TYPE_V33_LIZARD)
@@ -122,13 +124,13 @@ obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, u
     end = ptr + len;
 
     byte *start = ptr;
-    ptr = decode_attributes(ptr, end, o, 0);		// header
+    ptr = decode_attributes(ptr, end, o_hdr, 0);		// header
     if (body_start)
     {
       *body_start = ptr - start;
       if (!copied)
 	bdirect_read_commit(body, ptr);
-      return o;
+      return 0;
     }
     if (buck_type == BUCKET_TYPE_V33_LIZARD)		// decompression
     {
@@ -138,14 +140,14 @@ obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, u
       ptr += 4;
       byte *new_ptr = lizard_decompress_safe(ptr, buf->lizard, len);
       if (!new_ptr)
-	return NULL;
+	return -1;
       if (!copied)
 	bdirect_read_commit(body, end);
       ptr = new_ptr;
       end = ptr + len;
       copied = 1;
     }
-    ptr = decode_attributes(ptr, end, o, 2);		// body
+    ptr = decode_attributes(ptr, end, o_body, 2);	// body
     if (ptr != end)
       RET_ERR(EINVAL);
     if (!copied)
@@ -153,5 +155,15 @@ obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, u
   }
   else
     RET_ERR(EINVAL);
-  return o;
+  return 0;
+}
+
+struct odes *
+obj_read_bucket(struct buck2obj_buf *buf, struct mempool *pool, uns buck_type, uns buck_len, struct fastbuf *body, uns *body_start)
+{
+  struct odes *o = obj_new(pool);
+  if (buck2obj_parse(buf, buck_type, buck_len, body, o, body_start, o) < 0)
+    return NULL;
+  else
+    return o;
 }
