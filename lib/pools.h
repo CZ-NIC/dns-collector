@@ -67,7 +67,7 @@ char *mp_multicat(struct mempool *, ...);
 static inline char *
 mp_strcat(struct mempool *mp, char *x, char *y)
 {
-  mp_multicat(mp, x, y, NULL);
+  return mp_multicat(mp, x, y, NULL);
 }
 
 #endif
