@@ -9,8 +9,9 @@ TEST=0
 function try
 {
 	TEST=$(($TEST+1))
-	LOG=test$TEST.log
-	echo "### Test $TEST: $@ ###" | tee $LOG
+	TDIR=tests/$TEST
+	mkdir $TDIR
+	echo "### Test $TEST: $@ ###" | tee $TDIR/log
 
 	CUST=$1
 	shift
@@ -26,25 +27,22 @@ function try
 		fi
 		shift
 	done
-	rm -rf custom
-	cp -a $CUST custom
-	sed "$SUBST;p;d" <$CUST/config.mk >custom/config.mk
-	echo $APP | tr ! '\n' >>custom/config.mk
 
-	make clean >>$LOG 2>&1
-	rm -f run/cf/*
-	if ! make >>$LOG 2>&1 ; then
-		echo "	FAILED"
-		exit 1
-	fi
-	echo "	PASSED"
+	(
+		cd $TDIR
+		cp -a ../../$CUST custom
+		sed "$SUBST;p;d" <../../$CUST/config.mk >custom/config.mk
+		echo $APP | tr ! '\n' >>custom/config.mk
+		if ! make -f ../../Makefile s=../.. >>log 2>&1 ; then
+			echo "	FAILED"
+			exit 1
+		fi
+		echo "	PASSED"
+	)
 }
 
-if [ -e custom -a ! -e custom.old ] ; then
-	mv custom custom.old
-fi
-
-rm -f test*.log
+rm -rf tests
+mkdir tests
 if [ -n "$1" ] ; then
 	try "$@"
 else
@@ -58,9 +56,4 @@ else
 	try centrum 		 							# full Centrum config
 	try debug/custom CONFIG_SHARED=1						# debugging configuration with shared libs
 	try debug/custom								# debugging configuration
-fi
-
-rm -rf custom
-if [ -e custom.old ] ; then
-	mv custom.old custom
 fi

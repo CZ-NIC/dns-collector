@@ -4,4 +4,4 @@ DIRS+=lib/regex
 
 LIBUCW_MODS+=regex/regex
 
-obj/lib/regex/regex.o obj/lib/regex/regex.oo: CWARNS=
+$(o)/lib/regex/regex.o $(o)/lib/regex/regex.oo: CWARNS=

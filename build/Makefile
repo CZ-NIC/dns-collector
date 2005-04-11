@@ -2,4 +2,4 @@
 
 DIRS+=build
 
-obj/build/genhash: obj/build/genhash.o
+$(o)/build/genhash: $(o)/build/genhash.o

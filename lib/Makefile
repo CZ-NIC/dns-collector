@@ -3,7 +3,7 @@
 DIRS+=lib
 
 ifdef CONFIG_UCW_DBTOOL
-PROGS+=obj/lib/db-tool
+PROGS+=$(o)/lib/db-tool
 endif
 
 LIBUCW_MODS= \
@@ -51,46 +51,46 @@ LIBUCW_INCLUDES= \
 	qache.h
 
 ifdef CONFIG_OWN_REGEX
-include lib/regex/Makefile
+include $(s)/lib/regex/Makefile
 endif
 
-LIBUCW=obj/lib/libucw.$(LS)
-LIBUCW_MOD_PATHS=$(addprefix obj/lib/,$(LIBUCW_MODS))
+LIBUCW=$(o)/lib/libucw.$(LS)
+LIBUCW_MOD_PATHS=$(addprefix $(o)/lib/,$(LIBUCW_MODS))
 
-obj/lib/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
-obj/lib/libucw.so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
+$(o)/lib/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
+$(o)/lib/libucw.so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 
-obj/lib/hashfunc.o obj/lib/hashfunc.oo: CFLAGS += -funroll-loops
-obj/lib/lizard.o: CFLAGS += -O6 -funroll-loops
+$(o)/lib/hashfunc.o $(o)/lib/hashfunc.oo: CFLAGS += -funroll-loops
+$(o)/lib/lizard.o: CFLAGS += -O6 -funroll-loops
 
-obj/lib/db-test: obj/lib/db-test.o $(LIBUCW)
-obj/lib/db-tool: obj/lib/db-tool.o $(LIBUCW)
-obj/lib/conf-test: obj/lib/conf-test.o $(LIBUCW)
-obj/lib/sort-test: obj/lib/sort-test.o $(LIBUCW)
-obj/lib/lfs-test: obj/lib/lfs-test.o $(LIBUCW)
-obj/lib/hash-test: obj/lib/hash-test.o $(LIBUCW)
-obj/lib/str-test: obj/lib/str-test.o $(LIBUCW)
-obj/lib/asort-test: obj/lib/asort-test.o $(LIBUCW)
-obj/lib/redblack-test: obj/lib/redblack-test.o $(LIBUCW)
-obj/lib/binheap-test: obj/lib/binheap-test.o $(LIBUCW)
-obj/lib/lizard-test: obj/lib/lizard-test.o $(LIBUCW)
+$(o)/lib/db-test: $(o)/lib/db-test.o $(LIBUCW)
+$(o)/lib/db-tool: $(o)/lib/db-tool.o $(LIBUCW)
+$(o)/lib/conf-test: $(o)/lib/conf-test.o $(LIBUCW)
+$(o)/lib/sort-test: $(o)/lib/sort-test.o $(LIBUCW)
+$(o)/lib/lfs-test: $(o)/lib/lfs-test.o $(LIBUCW)
+$(o)/lib/hash-test: $(o)/lib/hash-test.o $(LIBUCW)
+$(o)/lib/str-test: $(o)/lib/str-test.o $(LIBUCW)
+$(o)/lib/asort-test: $(o)/lib/asort-test.o $(LIBUCW)
+$(o)/lib/redblack-test: $(o)/lib/redblack-test.o $(LIBUCW)
+$(o)/lib/binheap-test: $(o)/lib/binheap-test.o $(LIBUCW)
+$(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
 
-TESTS+=$(addprefix obj/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test)
-obj/lib/regex.test: obj/lib/regex-t
-obj/lib/unicode-utf8.test: obj/lib/unicode-utf8-t
-obj/lib/hash-test.test: obj/lib/hash-test
-obj/lib/mempool.test: obj/lib/mempool-fmt-t obj/lib/mempool-str-t
-obj/lib/stkstring.test: obj/lib/stkstring-t
+TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test)
+$(o)/lib/regex.test: $(o)/lib/regex-t
+$(o)/lib/unicode-utf8.test: $(o)/lib/unicode-utf8-t
+$(o)/lib/hash-test.test: $(o)/lib/hash-test
+$(o)/lib/mempool.test: $(o)/lib/mempool-fmt-t $(o)/lib/mempool-str-t
+$(o)/lib/stkstring.test: $(o)/lib/stkstring-t
 
-INCLUDES+=obj/lib/.include-stamp
-obj/lib/.include-stamp: $(addprefix lib/,$(LIBUCW_INCLUDES))
-	build/install-includes lib run/include/lib $(?F)
-	touch obj/lib/.include-stamp
+INCLUDES+=$(o)/lib/.include-stamp
+$(o)/lib/.include-stamp: $(addprefix $(s)/lib/,$(LIBUCW_INCLUDES))
+	$(s)/build/install-includes $(s)/lib run/include/lib $(?F)
+	touch $(o)/lib/.include-stamp
 
 ifdef CONFIG_UCW_PERL
-include lib/perl/Makefile
+include $(s)/lib/perl/Makefile
 endif
 
 ifdef CONFIG_UCW_SHELL_UTILS
-include lib/shell/Makefile
+include $(s)/lib/shell/Makefile
 endif

@@ -5,16 +5,16 @@ DIRS+=charset
 LIBCHARSET_MODS=toupper tolower tocat toligatures unaccent charconv setnames fb-charconv
 LIBCHARSET_INCLUDES=charconv.h unicat.h fb-charconv.h
 
-obj/charset/libcharset.a: $(addsuffix .o,$(addprefix obj/charset/,$(LIBCHARSET_MODS)))
-obj/charset/libcharset.so: $(addsuffix .oo,$(addprefix obj/charset/,$(LIBCHARSET_MODS)))
+$(o)/charset/libcharset.a: $(addsuffix .o,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
+$(o)/charset/libcharset.so: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
 
-INCLUDES+=obj/charset/.include-stamp
-obj/charset/.include-stamp: $(addprefix charset/,$(LIBCHARSET_INCLUDES))
-	build/install-includes charset run/include/charset $(?F)
-	touch obj/charset/.include-stamp
+INCLUDES+=$(o)/charset/.include-stamp
+$(o)/charset/.include-stamp: $(addprefix $(s)/charset/,$(LIBCHARSET_INCLUDES))
+	$(s)/build/install-includes $(s)/charset run/include/charset $(?F)
+	touch $(o)/charset/.include-stamp
 
 build_charsets:
-	cd charset && sh misc/generate
+	cd $(s)/charset && sh misc/generate
 
 clean::
-	rm -f charset/misc/u-*
+	rm -f $(s)/charset/misc/u-*
