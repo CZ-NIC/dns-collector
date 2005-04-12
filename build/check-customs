@@ -19,7 +19,7 @@ function try
 			echo "	CANNOT CONFIGURE"
 			exit 1
 		fi
-		if ! make NEWCONFIG=1 >>log 2>&1 ; then
+		if ! make >>log 2>&1 ; then
 			echo "	FAILED"
 			exit 1
 		fi
