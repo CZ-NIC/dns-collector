@@ -124,7 +124,7 @@ sub Init($$) {
 		} elsif ($x =~ /^(\w+)$/) {
 			Override($1 => 1);
 		} else {
-			print STDERR "Invalid option $_\n";
+			print STDERR "Invalid option $x\n";
 			exit 1;
 		}
 	}
