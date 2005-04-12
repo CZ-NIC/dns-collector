@@ -16,7 +16,7 @@ BEGIN {
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 	$VERSION = 1.0;
 	@ISA = qw(Exporter);
-	@EXPORT = qw(&Init &Log &Fail &IsSet &Set &UnSet &Override &Get &Test &Include);
+	@EXPORT = qw(&Init &Log &Fail &IsSet &Set &UnSet &Override &Get &Test &Include &Finish &FindFile &TryFindFile);
 	@EXPORT_OK = qw();
 	%EXPORT_TAGS = ();
 }
@@ -127,6 +127,49 @@ sub Include($) {
 	$f = FindFile($f);
 	Log "Loading configuration $f\n";
 	require $f;
+}
+
+sub Finish() {
+	print "\n";
+
+	if (Get("SRCDIR") ne ".") {
+		Log "Preparing for compilation from directory " . Get("SRCDIR") . " to obj/ ... ";
+		-l "src" and unlink "src";
+		symlink Get("SRCDIR"), "src" or Fail "Cannot link source directory to src: $!";
+		Override("SRCDIR" => "src");
+		-l "Makefile" and unlink "Makefile";
+		-f "Makefile" and Fail "Makefile already exists";
+		symlink "src/Makefile", "Makefile" or Fail "Cannot link Makefile: $!";
+	} else {
+		Log "Preparing for compilation from current directory to obj/ ... ";
+	}
+	`rm -rf obj` if -d "obj"; Fail "Cannot delete old obj directory" if $?;
+	-d "obj" or mkdir("obj", 0777) or Fail "Cannot create obj directory: $!";
+	-d "obj/lib" or mkdir("obj/lib", 0777) or Fail "Cannot create obj/lib directory: $!";
+	Log "done\n";
+
+	Log "Generating autoconf.h... ";
+	open X, ">obj/lib/autoconf.h" or Fail $!;
+	print X "/* Generated automatically by $0, please don't touch manually. */\n";
+	foreach my $x (sort keys %vars) {
+		# Don't export variables which contain no underscores
+		next unless $x =~ /_/;
+		my $v = $vars{$x};
+		# Try to add quotes if necessary
+		$v = '"' . $v . '"' unless ($v =~ /^"/ || $v =~ /^\d*$/);
+		print X "#define $x $v\n";
+	}
+	close X;
+	Log "done\n";
+
+	Log "Generating config.mk... ";
+	open X, ">obj/config.mk" or Fail $!;
+	print X "# Generated automatically by $0, please don't touch manually.\n";
+	foreach my $x (sort keys %vars) {
+		print X "$x=$vars{$x}\n";
+	}
+	close X;
+	Log "done\n";
 }
 
 1;  # OK
