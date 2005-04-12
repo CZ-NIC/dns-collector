@@ -16,7 +16,7 @@ BEGIN {
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 	$VERSION = 1.0;
 	@ISA = qw(Exporter);
-	@EXPORT = qw(&Init &Log &Fail &IsSet &Set &UnSet &Override &Get &Test &Include &Finish &FindFile &TryFindFile);
+	@EXPORT = qw(&Init &Log &Notice &Fail &IsSet &Set &UnSet &Append &Override &Get &Test &Include &Finish &FindFile &TryFindFile);
 	@EXPORT_OK = qw();
 	%EXPORT_TAGS = ();
 }
@@ -26,6 +26,10 @@ our %overriden = ();
 
 sub Log($) {
 	print @_;
+}
+
+sub Notice($) {
+	print @_ if $vars{"VERBOSE"};
 }
 
 sub Fail($) {
@@ -54,6 +58,11 @@ sub UnSet($) {
 	delete $vars{$x} unless $overriden{$x};
 }
 
+sub Append($$) {
+	my ($x,$y) = @_;
+	Set($x, (IsSet($x) ? (Get($x) . " $y") : $y));
+}
+
 sub Override($;$) {
 	my ($x,$y) = @_;
 	$y=1 unless defined $y;
@@ -63,7 +72,7 @@ sub Override($;$) {
 
 sub Test($$$) {
 	my ($var,$msg,$sub) = @_;
-	Log "$msg... ";
+	Log "$msg ... ";
 	if (!IsSet($var)) {
 		Set $var, &$sub();
 	}
@@ -125,7 +134,7 @@ sub Init($$) {
 sub Include($) {
 	my ($f) = @_;
 	$f = FindFile($f);
-	Log "Loading configuration $f\n";
+	Notice "Loading configuration $f\n";
 	require $f;
 }
 
@@ -148,7 +157,7 @@ sub Finish() {
 	-d "obj/lib" or mkdir("obj/lib", 0777) or Fail "Cannot create obj/lib directory: $!";
 	Log "done\n";
 
-	Log "Generating autoconf.h... ";
+	Log "Generating autoconf.h ... ";
 	open X, ">obj/lib/autoconf.h" or Fail $!;
 	print X "/* Generated automatically by $0, please don't touch manually. */\n";
 	foreach my $x (sort keys %vars) {
@@ -162,7 +171,7 @@ sub Finish() {
 	close X;
 	Log "done\n";
 
-	Log "Generating config.mk... ";
+	Log "Generating config.mk ... ";
 	open X, ">obj/config.mk" or Fail $!;
 	print X "# Generated automatically by $0, please don't touch manually.\n";
 	foreach my $x (sort keys %vars) {
