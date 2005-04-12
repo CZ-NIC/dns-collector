@@ -16,7 +16,7 @@ BEGIN {
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 	$VERSION = 1.0;
 	@ISA = qw(Exporter);
-	@EXPORT = qw(&Init &Log &Notice &Fail &IsSet &Set &UnSet &Append &Override &Get &Test &Include &Finish &FindFile &TryFindFile);
+	@EXPORT = qw(&Init &Log &Notice &Warn &Fail &IsSet &Set &UnSet &Append &Override &Get &Test &Include &Finish &FindFile &TryFindFile);
 	@EXPORT_OK = qw();
 	%EXPORT_TAGS = ();
 }
@@ -32,8 +32,12 @@ sub Notice($) {
 	print @_ if $vars{"VERBOSE"};
 }
 
+sub Warn($) {
+	print "WARNING: ", @_;
+}
+
 sub Fail($) {
-	Log((shift @_) . "\n");
+	Log("ERROR: " . (shift @_) . "\n");
 	exit 1;
 }
 
