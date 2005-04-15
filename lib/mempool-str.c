@@ -29,25 +29,27 @@ mp_multicat(struct mempool *p, ...)
   va_start(args, p);
   char *x, *y;
   uns cnt = 0;
-  a = args;
+  va_copy(a, args);
   while (x = va_arg(a, char *))
     cnt++;
   uns *sizes = alloca(cnt * sizeof(uns));
   uns len = 1;
   cnt = 0;
-  a = args;
+  va_end(a);
+  va_copy(a, args);
   while (x = va_arg(a, char *))
     len += sizes[cnt++] = strlen(x);
   char *buf = mp_alloc_fast_noalign(p, len);
   y = buf;
-  a = args;
+  va_end(a);
   cnt = 0;
-  while (x = va_arg(a, char *))
+  while (x = va_arg(args, char *))
     {
       memcpy(y, x, sizes[cnt]);
       y += sizes[cnt++];
     }
   *y = 0;
+  va_end(args);
   return buf;
 }
 
