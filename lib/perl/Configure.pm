@@ -119,7 +119,7 @@ sub Init($$) {
 		if ($x =~ /^(\w+)=(.*)/) {
 			Override($1 => $2);
 		} elsif ($x =~ /^-(\w+)$/) {
-			Override($1 => 1);
+			Override($1 => 0);
 			delete $vars{$1};
 		} elsif ($x =~ /^(\w+)$/) {
 			Override($1 => 1);
