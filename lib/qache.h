@@ -26,7 +26,7 @@ void qache_close(struct qache *q, uns retain_data);
 
 /* Insert new item to the cache with a given key and data. If pos_hint is non-zero, it serves
  * as a hint about the position of the entry (if it's known that an entry with the particular key
- * was located there a moment ago. Returns position of the new entry.
+ * was located there a moment ago). Returns position of the new entry.
  */
 uns qache_insert(struct qache *q, qache_key_t *key, uns pos_hint, void *data, uns size);
 
