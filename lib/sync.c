@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Syncing Directories
  *
- *	(c) 2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2004--2005 Martin Mares <mj@ucw.cz>
  */
 
 #include "lib/lib.h"
@@ -12,7 +12,11 @@
 void
 sync_dir(byte *name)
 {
-  int fd = open(name, O_RDONLY | O_DIRECTORY);
+  int fd = open(name, O_RDONLY
+#ifdef CONFIG_LINUX
+		| O_DIRECTORY
+#endif
+);
   if (fd < 0)
     goto err;
   int err = fsync(fd);
