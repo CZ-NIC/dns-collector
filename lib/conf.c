@@ -2,7 +2,7 @@
  *	UCW Library -- Reading of configuration files
  *
  *	(c) 2001 Robert Spalek <robert@ucw.cz>
- *	(c) 2003 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2005 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -44,6 +44,12 @@ void *
 cfg_malloc(uns size)
 {
 	return mp_alloc(cfpool, size);
+}
+
+void *
+cfg_malloc_zero(uns size)
+{
+	return mp_alloc_zero(cfpool, size);
 }
 
 byte *

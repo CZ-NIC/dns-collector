@@ -2,7 +2,7 @@
  *	UCW Library -- Reading of configuration files
  *
  *	(c) 2001 Robert Spalek <robert@ucw.cz>
- *	(c) 2003 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2005 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -19,6 +19,7 @@
 
 extern struct mempool *cfpool;
 void *cfg_malloc(uns size);
+void *cfg_malloc_zero(uns size);
 byte *cfg_strdup(byte *s);
 
 /*
