@@ -21,6 +21,12 @@ bit_array_zero(bitarray_t a, uns n)
 }
 
 static inline void
+bit_array_set_all(bitarray_t a, uns n)
+{
+  memset(a, 255, BIT_ARRAY_BYTES(n));
+}
+
+static inline void
 bit_array_set(bitarray_t a, uns i)
 {
   a[i/32] |= (1 << (i%32));
