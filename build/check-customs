@@ -39,7 +39,7 @@ else
 	try centrum/cz ROLE=search							# various Centrum.cz configurations
 	try centrum/cz ROLE=indexer
 	try centrum/cz ROLE=gather
-	try centrum/cz ROLE=reap
+	try centrum/cz ROLE=reap+watson
 	try centrum/cz ROLE=all
 	try debug CONFIG_SHARED								# debugging configuration with shared libs
 	try debug									# debugging configuration
