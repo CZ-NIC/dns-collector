@@ -41,6 +41,7 @@ else
 	try centrum/cz ROLE=gather
 	try centrum/cz ROLE=reap+watson
 	try centrum/cz ROLE=all
+	try centrum/pl
 	try debug CONFIG_SHARED								# debugging configuration with shared libs
 	try debug									# debugging configuration
 fi
