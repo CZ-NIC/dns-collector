@@ -1,7 +1,7 @@
 /*
  *	Character Set Conversion Library 1.2
  *
- *	(c) 1998--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 1998--2005 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -53,6 +53,7 @@ enum charset_id {
 	CONV_CHARSET_ISO_8859_15,
 	CONV_CHARSET_ISO_8859_16,
 	CONV_CHARSET_WIN1250,
+	CONV_CHARSET_WIN1251,
 	CONV_CHARSET_WIN1252,
 	CONV_CHARSET_KAMCS,
 	CONV_CHARSET_CSN369103,

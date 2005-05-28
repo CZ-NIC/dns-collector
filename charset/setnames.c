@@ -1,7 +1,7 @@
 /*
  *	Character Set Conversion Library 1.0 -- Character Set Names
  *
- *	(c) 1998--2001 Martin Mares <mj@ucw.cz>
+ *	(c) 1998--2005 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU General Public License.
@@ -30,6 +30,7 @@ static char *cs_names[] = {
 	"ISO-8859-15",
 	"ISO-8859-16",
 	"windows-1250",
+	"windows-1251",
 	"windows-1252",
 	"x-kam-cs",
 	"CSN_369103",
