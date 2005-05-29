@@ -373,7 +373,10 @@ static inline uns
 bdirect_read_prepare(struct fastbuf *f, byte **buf)
 {
   if (f->bptr == f->bstop && !f->refill(f))
-    return 0;
+    {
+      *buf = NULL;  // This is not needed, but it helps to get rid of spurious warnings
+      return 0;
+    }
   *buf = f->bptr;
   return bavailr(f);
 }
