@@ -279,7 +279,7 @@ P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
   struct fastbuf *tbuf;
   uns buf_items = sorter_presort_bufsize / sizeof(SORT_KEY);
   uns run_count = 0;
-  SORT_KEY last_out, *array;
+  SORT_KEY last_out = { }, *array;
 
   ASSERT(!*fb2);
   if (buf_items < 2)
