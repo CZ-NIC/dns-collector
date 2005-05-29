@@ -86,7 +86,7 @@ void die(byte *, ...) NONRET;
 void log_init(byte *argv0);
 void log_file(byte *name);
 void log_fork(void);
-void log_switch(void);
+int log_switch(void);
 
 void assert_failed(char *assertion, char *file, int line) NONRET;
 void assert_failed_noinfo(void) NONRET;

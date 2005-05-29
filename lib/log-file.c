@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Keeping of Log Files
  *
- *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2005 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -21,15 +21,16 @@ static int log_params;
 static int log_filename_size;
 int log_switch_nest;
 
-static void
+static int
 do_log_switch(struct tm *tm)
 {
   int fd, l;
   char name[log_filename_size];
+  int switched = 0;
 
   if (!log_name_patt ||
       log_filename[0] && !log_params)
-    return;
+    return 0;
   log_switch_nest++;
   l = strftime(name, log_filename_size, log_name_patt, tm);
   if (l < 0 || l >= log_filename_size)
@@ -45,15 +46,17 @@ do_log_switch(struct tm *tm)
       close(fd);
       close(1);
       dup(2);
+      switched = 1;
     }
   log_switch_nest--;
+  return switched;
 }
 
-void
+int
 log_switch(void)
 {
   time_t tim = time(NULL);
-  do_log_switch(localtime(&tim));
+  return do_log_switch(localtime(&tim));
 }
 
 static void
