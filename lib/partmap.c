@@ -65,7 +65,7 @@ partmap_close(struct partmap *p)
 void *
 partmap_map(struct partmap *p, sh_off_t start, uns size)
 {
-  if (!p->start_map || start < p->start_off || (sh_off_t) (start+size) > p->end_off)
+  if (unlikely(!p->start_map || start < p->start_off || (sh_off_t) (start+size) > p->end_off))
     {
       if (p->start_map)
 	munmap(p->start_map, p->end_off - p->start_off);
