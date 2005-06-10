@@ -83,7 +83,7 @@ log_msg(unsigned int cat, const char *msg, ...)
 }
 
 void
-die(byte *msg, ...)
+die(const char *msg, ...)
 {
   va_list args;
 

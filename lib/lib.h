@@ -82,7 +82,7 @@ extern void (*log_switch_hook)(struct tm *tm);
 void log_msg(unsigned int cat, const char *msg, ...) __attribute__((format(printf,2,3)));
 #define log log_msg
 void vlog_msg(unsigned int cat, const char *msg, va_list args);
-void die(byte *, ...) NONRET;
+void die(const char *, ...) NONRET __attribute__((format(printf,1,2)));
 void log_init(byte *argv0);
 void log_file(byte *name);
 void log_fork(void);
