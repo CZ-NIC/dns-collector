@@ -371,7 +371,7 @@ qache_create(struct qache *q, struct qache_params *par)
   log(L_INFO, "Cache %s: created (%d bytes, %d slots, %d buckets)", q->file_name, par->cache_size, h.max_entries, h.hash_size);
 
   if ((q->mmap_data = mmap(NULL, par->cache_size, PROT_READ | PROT_WRITE, MAP_SHARED, q->fd, 0)) == MAP_FAILED)
-    die("Cache %s: mmap failed (%m)", par->cache_size);
+    die("Cache %s: mmap failed (%m)", par->file_name);
   q->file_size = par->cache_size;
   qache_setup_pointers(q);
 }
@@ -388,7 +388,7 @@ qache_open(struct qache_params *par)
   if (par->force_reset <= 0 && qache_open_existing(q, par))
     ;
   else if (par->force_reset < 0)
-    die("Cache %s: read-only access requested, but no data available");
+    die("Cache %s: read-only access requested, but no data available", q->file_name);
   else
     qache_create(q, par);
   return q;
