@@ -39,7 +39,8 @@ uns hash_string_nocase(const byte *str) CONST;
  *  of using shifts and adds on architectures where multiplication
  *  instructions are slow).
  */
-static inline uns CONST hash_int(uns x) { return 0x01008041*x; }
-static inline uns CONST hash_pointer(void *x) { return hash_int((uns)(addr_int_t)x); }
+static inline uns CONST hash_u32(uns x) { return 0x01008041*x; }
+static inline uns CONST hash_u64(u64 x) { return hash_u32((uns)x ^ (uns)(x >> 32)); }
+static inline uns CONST hash_pointer(void *x) { return ((sizeof(x) <= 4) ? hash_u32((uns)(addr_int_t)x) : hash_u64((u64)(addr_int_t)x)); }
 
 #endif

@@ -185,7 +185,7 @@ struct P(table) P(table);
 #ifndef HASH_GIVE_HASHFN
 #  define HASH_GIVE_HASHFN
    static inline int P(hash) (TAUC HASH_ATOMIC_TYPE x)
-   { return hash_int(x); }
+   { return ((sizeof(x) <= 4) ? hash_u32(x) : hash_u64(x)); }
 #endif
 
 #ifndef HASH_GIVE_EQ

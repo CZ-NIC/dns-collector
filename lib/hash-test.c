@@ -171,7 +171,7 @@ struct node4 {
 #define HASH_GIVE_HASHFN
 static uns test4_hash(char *host, int port)
 {
-  return hash_string_nocase(host) ^ hash_int(port);
+  return hash_string_nocase(host) ^ hash_u32(port);
 }
 
 #define HASH_GIVE_EQ
