@@ -72,7 +72,7 @@ mp_strcat(struct mempool *mp, char *x, char *y)
 
 /* mempool-fmt.c */
 
-char *mp_printf(struct mempool *p, char *fmt, ...);
+char *mp_printf(struct mempool *p, char *fmt, ...) FORMAT_CHECK(printf,2,3);
 char *mp_vprintf(struct mempool *p, char *fmt, va_list args);
 
 #endif

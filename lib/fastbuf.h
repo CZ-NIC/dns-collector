@@ -411,7 +411,7 @@ bdirect_write_commit(struct fastbuf *f, byte *pos)
 
 /* Formatted output */
 
-int bprintf(struct fastbuf *b, byte *msg, ...);
-int vbprintf(struct fastbuf *b, byte *msg, va_list args);
+int bprintf(struct fastbuf *b, char *msg, ...) FORMAT_CHECK(printf,2,3);
+int vbprintf(struct fastbuf *b, char *msg, va_list args);
 
 #endif

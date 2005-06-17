@@ -53,6 +53,7 @@
 #define PACKED __attribute__((packed))
 #define CONST __attribute__((const))
 #define PURE __attribute__((const))
+#define FORMAT_CHECK(x,y,z) __attribute__((format(x,y,z)))
 #define likely(x) __builtin_expect((x),1)
 #define unlikely(x) __builtin_expect((x),0)
 
@@ -79,10 +80,10 @@ extern void (*log_die_hook)(void);
 struct tm;
 extern void (*log_switch_hook)(struct tm *tm);
 
-void log_msg(unsigned int cat, const char *msg, ...) __attribute__((format(printf,2,3)));
+void log_msg(unsigned int cat, const char *msg, ...) FORMAT_CHECK(printf,2,3);
 #define log log_msg
 void vlog_msg(unsigned int cat, const char *msg, va_list args);
-void die(const char *, ...) NONRET __attribute__((format(printf,1,2)));
+void die(const char *, ...) NONRET FORMAT_CHECK(printf,1,2);
 void log_init(byte *argv0);
 void log_file(byte *name);
 void log_fork(void);
@@ -204,7 +205,7 @@ sh_off_t partmap_size(struct partmap *p);
 /* proctitle.c */
 
 void setproctitle_init(int argc, char **argv);
-void setproctitle(char *msg, ...) __attribute__((format(printf,1,2)));
+void setproctitle(char *msg, ...) FORMAT_CHECK(printf,1,2);
 
 /* randomkey.c */
 
