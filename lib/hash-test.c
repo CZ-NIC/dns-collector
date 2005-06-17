@@ -17,6 +17,7 @@ struct node1 {
 #define HASH_PREFIX(x) test1_##x
 #define HASH_KEY_ATOMIC key
 #define HASH_ATOMIC_TYPE int
+#define HASH_ZERO_FILL
 
 #define HASH_GIVE_INIT_DATA
 static inline void test1_init_data(struct node1 *n)

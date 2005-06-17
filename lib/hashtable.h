@@ -90,6 +90,7 @@
  *			deallocation is not supported by mempools, so delete/remove
  *			will leak pool memory.
  *  HASH_AUTO_POOL=size	Create a pool of the given block size automatically.
+ *  HASH_ZERO_FILL	New entries should be initialized to all zeroes.
  *  HASH_TABLE_ALLOC	The hash table itself will be allocated and freed using
  *			the same allocation functions as the nodes instead of
  *			the default xmalloc().
@@ -335,6 +336,17 @@ static inline void P(table_free) (TAUC void *x) { xfree(x); }
 #define HASH_FN_BITS 32
 #endif
 
+#ifdef HASH_ZERO_FILL
+static inline void * P(new_bucket)(TAUC uns size)
+{
+  byte *buck = P(alloc)(TTC size);
+  bzero(buck, size);
+  return buck;
+}
+#else
+static inline void * P(new_bucket)(TAUC uns size) { return P(alloc)(TTC size); }
+#endif
+
 /* Now the operations */
 
 static void P(alloc_table) (TAU)
@@ -468,7 +480,7 @@ static P(node) * P(new) (TAC HASH_KEY_DECL)
 
   h0 = P(hash) (TTC HASH_KEY( ));
   h = h0 % T.hash_size;
-  b = P(alloc) (TTC sizeof(struct P(bucket)) + HASH_EXTRA_SIZE(HASH_KEY( )));
+  b = P(new_bucket) (TTC sizeof(struct P(bucket)) + HASH_EXTRA_SIZE(HASH_KEY( )));
   b->next = T.ht[h];
   T.ht[h] = b;
 #ifndef HASH_CONSERVE_SPACE
@@ -499,7 +511,7 @@ static P(node) * P(lookup) (TAC HASH_KEY_DECL)
 	return &b->n;
     }
 
-  b = P(alloc) (TTC sizeof(struct P(bucket)) + HASH_EXTRA_SIZE(HASH_KEY( )));
+  b = P(new_bucket) (TTC sizeof(struct P(bucket)) + HASH_EXTRA_SIZE(HASH_KEY( )));
   b->next = T.ht[h];
   T.ht[h] = b;
 #ifndef HASH_CONSERVE_SPACE
@@ -618,3 +630,4 @@ do {											\
 #undef HASH_WANT_REMOVE
 #undef HASH_TABLE_ALLOC
 #undef HASH_TABLE_DYNAMIC
+#undef HASH_ZERO_FILL
