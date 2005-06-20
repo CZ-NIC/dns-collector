@@ -60,7 +60,8 @@ while (<STDIN>) {
 
 foreach $id (sort keys %date) {
 	if (!exists ($names{$author{$id}})) {
-		die "Unknown commiter $author{$id}";
+		print STDERR "Unknown commiter $author{$id}\n";
+		$names{$author{$id}} = "unknown $author{$id}";
 	}
 	print "### ", $date{$id}, "  ", $names{$author{$id}}, "\n\n";
 	print $files{$id}, "\n";
