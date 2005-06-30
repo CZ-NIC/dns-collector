@@ -2,7 +2,7 @@
  *	UCW Library -- URL Functions
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
- *	(c) 2001 Robert Spalek <robert@ucw.cz>
+ *	(c) 2001--2005 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -50,7 +50,7 @@ static void CONSTRUCTOR url_init_config(void)
 
 /* Escaping and de-escaping */
 
-uns
+static uns
 enhex(uns x)
 {
   return (x<10) ? (x + '0') : (x - 10 + 'A');
@@ -146,6 +146,29 @@ url_enescape(byte *s, byte *d)
 	}
     }
   *d = 0;
+  return 0;
+}
+
+int
+url_enescape_friendly(byte *src, byte *dest)
+{
+  byte *end = dest + MAX_URL_SIZE - 10;
+  while (*src)
+    {
+      if (dest >= end)
+	return URL_ERR_TOO_LONG;
+      if (*src < NCC_MAX)
+	*dest++ = NCC_CHARS[*src++];
+      else if (*src < 0x80)
+	*dest++ = *src++;
+      else
+	{
+	  *dest++ = '%';
+	  *dest++ = enhex(*src >> 4);
+	  *dest++ = enhex(*src++ & 0x0f);
+	}
+    }
+  *dest = 0;
   return 0;
 }
 
