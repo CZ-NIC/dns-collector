@@ -51,6 +51,18 @@ stk_printf_internal(char *fmt, ...)
     }
 }
 
+void
+stk_hexdump_internal(char *dst, byte *src, uns n)
+{
+  for (uns i=0; i<n; i++)
+    {
+      if (i)
+	*dst++ = ' ';
+      dst += sprintf(dst, "%02x", *src++);
+    }
+  *dst = 0;
+}
+
 #ifdef TEST
 
 int main(void)
@@ -62,6 +74,7 @@ int main(void)
   a = stk_strarraycat(arr, 2);
   a = stk_printf("Bew%s!", a);
   puts(a);
+  puts(stk_hexdump(a, 3));
   return 0;
 }
 
