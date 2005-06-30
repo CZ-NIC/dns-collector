@@ -50,7 +50,7 @@ static void CONSTRUCTOR url_init_config(void)
 
 /* Escaping and de-escaping */
 
-static uns
+uns
 enhex(uns x)
 {
   return (x<10) ? (x + '0') : (x - 10 + 'A');

@@ -45,6 +45,7 @@ struct url {
   byte *buf, *bufend;
 };
 
+uns enhex(uns x);
 int url_split(byte *s, struct url *u, byte *d);
 int url_normalize(struct url *u, struct url *b);
 int url_canonicalize(struct url *u);
