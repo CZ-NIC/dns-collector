@@ -159,7 +159,7 @@ url_enescape_friendly(byte *src, byte *dest)
 	return URL_ERR_TOO_LONG;
       if (*src < NCC_MAX)
 	*dest++ = NCC_CHARS[*src++];
-      else if (*src < 0x80)
+      else if (*src >= 0x20 && *src < 0x7f)
 	*dest++ = *src++;
       else
 	{
