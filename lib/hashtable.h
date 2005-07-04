@@ -151,6 +151,9 @@ struct P(table) {
   uns hash_size;
   uns hash_count, hash_max, hash_min, hash_hard_max;
   P(bucket) **ht;
+#ifdef HASH_AUTO_POOL
+  struct mempool *pool;
+#endif
 };
 
 #ifdef HASH_TABLE_DYNAMIC
@@ -305,11 +308,11 @@ static inline void P(cleanup_alloc) (TAU) { }
 #elif defined(HASH_AUTO_POOL)
 /* Use our own pools */
 #include "lib/mempool.h"
-static struct mempool *P(pool);
-static inline void * P(alloc) (TAUC unsigned int size) { return mp_alloc_fast(P(pool), size); }
+static inline void * P(alloc) (TAUC unsigned int size) { return mp_alloc_fast(T.pool, size); }
 static inline void P(free) (TAUC void *x UNUSED) { }
-static inline void P(init_alloc) (TAU) { P(pool) = mp_new(HASH_AUTO_POOL); }
-static inline void P(cleanup_alloc) (TAU) { mp_delete(P(pool)); }
+static inline void P(init_alloc) (TAU) { T.pool = mp_new(HASH_AUTO_POOL); }
+static inline void P(cleanup_alloc) (TAU) { mp_delete(T.pool); }
+#define HASH_USE_POOL
 
 #else
 /* The default allocation method */
