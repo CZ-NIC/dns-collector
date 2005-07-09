@@ -224,18 +224,28 @@ url_split(byte *s, struct url *u, byte *d)
     {
       if (s[1] == '/')			/* Host spec */
 	{
-	  byte *q, *w, *e;
+	  byte *q, *e;
+	  byte *at = NULL;
 	  char *ep;
 
 	  s += 2;
 	  q = d;
 	  while (*s && *s != '/' && *s != '?')	/* Copy user:passwd@host:port */
-	    *d++ = *s++;
-	  *d++ = 0;
-	  w = strchr(q, '@');
-	  if (w)			/* user:passwd present */
 	    {
-	      *w++ = 0;
+	      if (*s != '@')
+		*d++ = *s;
+	      else if (!at)
+		{
+		  *d++ = 0;
+		  at = d;
+		}
+	      else			/* This shouldn't happen with sane URL's, but we need to be sure */
+		*d++ = NCC_AT;
+	      s++;
+	    }
+	  *d++ = 0;
+	  if (at)			/* user:passwd present */
+	    {
 	      u->user = q;
 	      if (e = strchr(q, ':'))
 		{
@@ -244,8 +254,8 @@ url_split(byte *s, struct url *u, byte *d)
 		}
 	    }
 	  else
-	    w = q;
-	  e = strchr(w, ':');
+	    at = q;
+	  e = strchr(at, ':');
 	  if (e)			/* host:port present */
 	    {
 	      uns p;
@@ -256,7 +266,7 @@ url_split(byte *s, struct url *u, byte *d)
 	      else if (p)		/* Port 0 (e.g. in :/) is treated as default port */
 		u->port = p;
 	    }
-	  u->host = w;
+	  u->host = at;
 	}
     }
 
