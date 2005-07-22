@@ -173,8 +173,11 @@ uns nextprime(uns);
 
 /* timer.c */
 
+struct timeval;
+
 void init_timer(void);
 uns get_timer(void);
+void get_last_timeval(struct timeval *tv);
 
 /* regex.c */
 

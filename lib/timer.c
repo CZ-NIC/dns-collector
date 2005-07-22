@@ -44,3 +44,9 @@ init_timer(void)
 {
   gettimeofday(&last_tv, NULL);
 }
+
+void
+get_last_timeval(struct timeval *tv)
+{
+  *tv = last_tv;
+}
