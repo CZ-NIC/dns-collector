@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Shell Interface to Configuration Files
  *
- *	(c) 2002 Martin Mares <mj@ucw.cz>
+ *	(c) 2002--2005 Martin Mares <mj@ucw.cz>
  *
  *	Once we were using this beautiful Shell version, but it turned out
  *	that it doesn't work with nested config files:
@@ -26,19 +26,74 @@
 static struct cfitem *items;
 static byte *flags;
 
+enum flag {
+  F_STRING = 0,
+  F_INT = 1,
+  F_DOUBLE = 2,
+  F_INT64 = 3,
+  F_TYPE_MASK = 7,
+  F_ARRAY = 0x80,
+};
+
 static void
 help(void)
 {
-  die("Usage: config [-C<configfile>] [-S<section>.<option>=<value>] <section> [@]<item>[=<default>] <item2> ... [*]");
+  fputs("\n\
+Usage: config [-C<configfile>] [-S<section>.<option>=<value>] <section> [@]<item><type>[=<default>] <item2> ... [*]\n\
+\n\
+Types:\n\
+<empty>\t\tString\n\
+#\t\t32-bit integer\n\
+##\t\t64-bit integer\n\
+$\t\tFloating point number\n\
+\n\
+Modifiers:\n\
+@\t\tMultiple occurences of the item are passed as an array (otherwise the last one wins)\n\
+*\t\tIgnore unknown items instead of reporting them as errors\n\
+", stderr);
+  exit(1);
 }
 
 static byte *
 report(struct cfitem *item, byte *value)
 {
-  if (flags[item-items])
+  uns f = flags[item-items];
+  byte *err;
+  byte buf[128];
+
+  if (f & F_ARRAY)
     printf("CF_%s[${#CF_%s[*]}]='", item->name, item->name);
   else
     printf("CF_%s='", item->name);
+
+  switch (f & F_TYPE_MASK)
+    {
+    case F_STRING:
+      break;
+    case F_INT: ;
+      uns val;
+      if (err = cf_parse_int(value, &val))
+	return err;
+      sprintf(buf, "%d", val);
+      value = buf;
+      break;
+    case F_INT64: ;
+      u64 val64;
+      if (err = cf_parse_u64(value, &val64))
+	return err;
+      sprintf(buf, "%Lu", val64);
+      value = buf;
+      break;
+    case F_DOUBLE: ;
+      double valf;
+      if (err = cf_parse_double(value, &valf))
+	return err;
+      sprintf(buf, "%g", valf);
+      value = buf;
+      break;
+    default:
+      ASSERT(0);
+    }
   while (*value)
     {
       if (*value == '\'')
@@ -70,22 +125,47 @@ int main(int argc, char **argv)
   c++;
   while (++i < argc)
     {
-      if (!strcmp(argv[i], "*"))
+      char *arg = xstrdup(argv[i]);
+      if (!strcmp(arg, "*"))
 	items->type = CT_INCOMPLETE_SECTION;
       else
 	{
-	  char *e = strchr(argv[i], '=');
-	  c->name = argv[i];
-	  c->type = CT_FUNCTION;
-	  c->var = report;
+	  uns id = c-items;
+	  char *e = strchr(arg, '=');
 	  if (e)
 	    *e++ = 0;
-	  if (*c->name == '@')
+
+	  char *t = arg + strlen(arg) - 1;
+	  if (t > arg)
 	    {
-	      c->name++;
-	      printf("declare -a CF_%s ; CF_%s=()\n", c->name, c->name);
-	      flags[c-items] = 1;
+	      if (*t == '#')
+		{
+		  *t-- = 0;
+		  if (t > arg && *t == '#')
+		    {
+		      *t-- = 0;
+		      flags[id] |= F_INT64;
+		    }
+		  else
+		    flags[id] |= F_INT;
+		}
+	      else if (*t == '$')
+		{
+		  *t-- = 0;
+		  flags[id] |= F_DOUBLE;
+		}
 	    }
+
+	  if (*arg == '@')
+	    {
+	      arg++;
+	      printf("declare -a CF_%s ; CF_%s=()\n", arg, arg);
+	      flags[id] |= F_ARRAY;
+	    }
+
+	  c->type = CT_FUNCTION;
+	  c->var = report;
+	  c->name = arg;
 	  if (e)
 	    report(c, e);
 	  c++;
