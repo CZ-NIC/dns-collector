@@ -31,7 +31,7 @@ sub Parse(@) {
 		my @l = `bin/config $defargs $section $optlist`;
 		$? && exit 1;
 		foreach my $o (@l) {
-			$o =~ /^CF_([^=]+)="(.*)"\n$/ or die "Cannot parse bin/config output: $_";
+			$o =~ /^CF_([^=]+)='(.*)'\n$/ or die "Cannot parse bin/config output: $_";
 			my $var = $$opts{$1};
 			my $val = $2;
 			if (ref $var eq "SCALAR") {
