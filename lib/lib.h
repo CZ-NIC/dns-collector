@@ -34,6 +34,7 @@
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
 #define STRINGIFY(x) #x
+#define STRINGIFY_EXPANDED(x) STRINGIFY(x)
 #define GLUE(x,y) x##y
 #define GLUE_(x,y) x##_##y
 
