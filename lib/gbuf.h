@@ -8,6 +8,7 @@
  *
  *	GBUF_TYPE	data type of records stored in the buffer
  *	GBUF_PREFIX(x)	add a name prefix to all global symbols
+ *	GBUF_TRACE(msg...) log growing of buffer [optional]
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -46,7 +47,7 @@ GBUF_PREFIX(realloc)(BUF_T *b, uns len)
   b->len = len;
   b->ptr = xrealloc(b->ptr, len * sizeof(GBUF_TYPE));
 #ifdef GBUF_TRACE
-  log(L_DEBUG, STRINGIFY_EXPANDED(BUF_T) " growing to %u items", len);
+  GBUF_TRACE(STRINGIFY_EXPANDED(BUF_T) " growing to %u items", len);
 #endif
 }
 
