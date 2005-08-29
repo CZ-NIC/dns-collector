@@ -2,6 +2,7 @@
  *	UCW Library -- A simple growing buffer
  *
  *	(c) 2004, Robert Spalek <robert@ucw.cz>
+ *	(c) 2005, Martin Mares <mj@ucw.cz>
  *
  *	Define the following macros:
  *
@@ -44,6 +45,9 @@ GBUF_PREFIX(realloc)(BUF_T *b, uns len)
 {
   b->len = len;
   b->ptr = xrealloc(b->ptr, len * sizeof(GBUF_TYPE));
+#ifdef GBUF_TRACE
+  log(L_DEBUG, STRINGIFY_EXPANDED(BUF_T) " growing to %u items", len);
+#endif
 }
 
 static inline void
@@ -58,4 +62,5 @@ GBUF_PREFIX(grow)(BUF_T *b, uns len)
 
 #undef	GBUF_TYPE
 #undef	GBUF_PREFIX
+#undef  GBUF_TRACE
 #undef	BUF_T
