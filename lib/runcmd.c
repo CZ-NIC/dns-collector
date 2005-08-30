@@ -18,7 +18,8 @@
 void NONRET
 exec_command_v(byte *cmd, va_list args)
 {
-  va_list cargs = args;
+  va_list cargs;
+  va_copy(cargs, args);
   int cnt = 2;
   byte *arg;
   while (arg = va_arg(cargs, byte *))
@@ -26,7 +27,7 @@ exec_command_v(byte *cmd, va_list args)
   char **argv = alloca(sizeof(byte *) * cnt);
   argv[0] = cmd;
   cnt = 1;
-  cargs = args;
+  va_copy(cargs, args);
   while (arg = va_arg(cargs, byte *))
     argv[cnt++] = arg;
   argv[cnt] = NULL;
@@ -72,7 +73,8 @@ echo_command_v(byte *buf, int size, byte *cmd, va_list args)
   byte *limit = buf + size - 4;
   byte *p = buf;
   byte *arg = cmd;
-  va_list cargs = args;
+  va_list cargs;
+  va_copy(cargs, args);
   do
     {
       int l = strlen(arg);
