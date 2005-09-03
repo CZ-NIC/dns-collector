@@ -11,7 +11,12 @@
 #define _UCW_PREFETCH_H
 
 #if defined(__pentium4)
-  /* Default prefetches are good enough */
+
+#define HAVE_PREFETCH
+static inline void prefetch(void *addr)
+{
+  asm volatile ("prefetcht0 %0" : : "m" (*(byte*)addr));
+}
 
 #elif defined(__k6)
   /* K6 doesn't have prefetches */
