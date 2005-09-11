@@ -2,7 +2,7 @@
  *	UCW Library -- Universal Hash Table
  *
  *	(c) 2002--2004 Martin Mares <mj@ucw.cz>
- *	(c) 2002 Robert Spalek <robert@ucw.cz>
+ *	(c) 2002--2005 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -39,6 +39,9 @@
  *			That is, `type1 k1, type2 k2, ... typen kn'.
  *			With complex keys, HASH_GIVE_HASHFN and HASH_GIVE_EQ
  *			are mandatory.
+ *  | HASH_KEY_MEMORY=f	use node->f as a raw data key, compared using
+ *  			memcmp
+ *    HASH_KEY_SIZE	the length of the key block
  *
  *  Then specify what operations you request (all names are automatically
  *  prefixed by calling HASH_PREFIX):
@@ -202,6 +205,30 @@ struct P(table) P(table);
 #  define HASH_GIVE_INIT_KEY
    static inline void P(init_key) (TAUC P(node) *n, HASH_ATOMIC_TYPE k)
    { HASH_KEY(n->) = k; }
+#endif
+
+#elif defined(HASH_KEY_MEMORY)
+
+#define HASH_KEY(x) x HASH_KEY_MEMORY
+
+#define HASH_KEY_DECL byte HASH_KEY( )[HASH_KEY_SIZE]
+
+#ifndef HASH_GIVE_HASHFN
+#  define HASH_GIVE_HASHFN
+   static inline int P(hash) (TAUC byte *x)
+   { return hash_block(x, HASH_KEY_SIZE); }
+#endif
+
+#ifndef HASH_GIVE_EQ
+#  define HASH_GIVE_EQ
+   static inline int P(eq) (TAUC byte *x, byte *y)
+   { return !memcmp(x, y, HASH_KEY_SIZE); }
+#endif
+
+#ifndef HASH_GIVE_INIT_KEY
+#  define HASH_GIVE_INIT_KEY
+   static inline void P(init_key) (TAUC P(node) *n, byte *k)
+   { memcpy(HASH_KEY(n->), k, HASH_KEY_SIZE); }
 #endif
 
 #elif defined(HASH_KEY_STRING) || defined(HASH_KEY_ENDSTRING)
