@@ -2,7 +2,6 @@
  * PerlXS module for managing process limits
  *
  * (c) 2003 Tomas Valla <tom@ucw.cz>
- *
  */
 
 #include "EXTERN.h"
@@ -18,10 +17,7 @@ MODULE = Sherlock::Ulimit		PACKAGE = Sherlock::Ulimit
 PROTOTYPES: ENABLED
 
 int
-setlimit(IN resource, IN soft, IN hard)
-	int resource
-	int soft
-	int hard
+setlimit(IN int resource, IN int soft, IN int hard)
 CODE:
 	struct rlimit rl;
 	int r;
@@ -56,10 +52,7 @@ OUTPUT:
 
 
 int
-getlimit(IN resource, OUT soft, OUT hard)
-	int resource
-	int soft
-	int hard
+getlimit(IN int resource, OUT int soft, OUT int hard)
 CODE:
 	struct rlimit rl;
 	int r;
@@ -92,5 +85,3 @@ CODE:
 	hard = rl.rlim_max;
 OUTPUT:
 	RETVAL
-
-
