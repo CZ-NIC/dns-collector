@@ -31,7 +31,7 @@ static int stk_printf_len;
 uns
 stk_printf_internal(char *fmt, ...)
 {
-  va_list args;
+  va_list args, args2;
   va_start(args, fmt);
   if (!stk_printf_buf)
     {
@@ -40,11 +40,16 @@ stk_printf_internal(char *fmt, ...)
     }
   for (;;)
     {
-      int l = vsnprintf(stk_printf_buf, stk_printf_len, fmt, args);
+      va_copy(args2, args);
+      int l = vsnprintf(stk_printf_buf, stk_printf_len, fmt, args2);
+      va_end(args2);
       if (l < 0)
 	stk_printf_len *= 2;
       else if (l < stk_printf_len)
-	return l+1;
+	{
+	  va_end(args);
+	  return l+1;
+	}
       else
 	stk_printf_len = MAX(stk_printf_len*2, l+1);
       stk_printf_buf = xrealloc(stk_printf_buf, stk_printf_len);

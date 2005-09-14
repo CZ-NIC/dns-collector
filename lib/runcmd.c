@@ -24,12 +24,14 @@ exec_command_v(byte *cmd, va_list args)
   byte *arg;
   while (arg = va_arg(cargs, byte *))
     cnt++;
+  va_end(cargs);
   char **argv = alloca(sizeof(byte *) * cnt);
   argv[0] = cmd;
   cnt = 1;
   va_copy(cargs, args);
   while (arg = va_arg(cargs, byte *))
     argv[cnt++] = arg;
+  va_end(cargs);
   argv[cnt] = NULL;
   execv(cmd, argv);
   byte echo[256];
@@ -73,8 +75,6 @@ echo_command_v(byte *buf, int size, byte *cmd, va_list args)
   byte *limit = buf + size - 4;
   byte *p = buf;
   byte *arg = cmd;
-  va_list cargs;
-  va_copy(cargs, args);
   do
     {
       int l = strlen(arg);
@@ -89,7 +89,7 @@ echo_command_v(byte *buf, int size, byte *cmd, va_list args)
       memcpy(p, arg, l);
       p += l;
     }
-  while (arg = va_arg(cargs, byte *));
+  while (arg = va_arg(args, byte *));
   *p = 0;
 }
 

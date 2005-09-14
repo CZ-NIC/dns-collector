@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Printf on Fastbuf Streams
  *
- *	(c) 2002 Martin Mares <mj@ucw.cz>
+ *	(c) 2002--2005 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -24,6 +24,7 @@ vbprintf(struct fastbuf *b, char *msg, va_list args)
     {
       va_copy(args2, args);
       r = vsnprintf(buf, len, msg, args2);
+      va_end(args2);
       if (r < 0)
 	len = 256;
       else if (r < len)
@@ -42,6 +43,7 @@ vbprintf(struct fastbuf *b, char *msg, va_list args)
       buf = alloca(len);
       va_copy(args2, args);
       r = vsnprintf(buf, len, msg, args2);
+      va_end(args2);
       if (r < 0)
 	len += len;
       else if (r < len)

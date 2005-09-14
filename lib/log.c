@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Logging
  *
- *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2005 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -31,6 +31,7 @@ vlog_msg(unsigned int cat, const char *msg, va_list args)
   byte *buf, *p;
   int buflen = 256;
   int l, l0, r;
+  va_list args2;
 
   if (log_switch_hook)
     log_switch_hook(tm);
@@ -53,7 +54,9 @@ vlog_msg(unsigned int cat, const char *msg, va_list args)
 	}
       l0 = p - buf + 1;
       r = buflen - l0;
-      l = vsnprintf(p, r, msg, args);
+      va_copy(args2, args);
+      l = vsnprintf(p, r, msg, args2);
+      va_end(args2);
       if (l < 0)
 	l = r;
       else if (l < r)

@@ -24,7 +24,10 @@ mp_vprintf(struct mempool *p, char *fmt, va_list args)
       ret = mp_alloc(p, 1);
       free = p->last - p->free;
     }
-  int cnt = vsnprintf(ret, free, fmt, args);
+  va_list args2;
+  va_copy(args2, args);
+  int cnt = vsnprintf(ret, free, fmt, args2);
+  va_end(args2);
   if (cnt < 0)
     {
       /* Our C library doesn't support C99 return value of vsnprintf, so we need to iterate */
@@ -34,7 +37,9 @@ mp_vprintf(struct mempool *p, char *fmt, va_list args)
 	{
 	  len *= 2;
 	  buf = alloca(len);
-	  cnt = vsnprintf(buf, len, fmt, args);
+	  va_copy(args2, args);
+	  cnt = vsnprintf(buf, len, fmt, args2);
+	  va_end(args2);
 	}
       while (cnt < 0);
       ret = mp_alloc(p, cnt+1);
@@ -45,7 +50,9 @@ mp_vprintf(struct mempool *p, char *fmt, va_list args)
   else
     {
       ret = mp_alloc(p, cnt+1);
-      int cnt2 = vsnprintf(ret, cnt+1, fmt, args);
+      va_copy(args2, args);
+      int cnt2 = vsnprintf(ret, cnt+1, fmt, args2);
+      va_end(args2);
       ASSERT(cnt2 == cnt);
     }
   return ret;
