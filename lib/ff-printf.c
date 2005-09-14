@@ -17,11 +17,13 @@ vbprintf(struct fastbuf *b, char *msg, va_list args)
 {
   byte *buf;
   int len, r;
+  va_list args2;
 
   len = bdirect_write_prepare(b, &buf);
   if (len >= 16)
     {
-      r = vsnprintf(buf, len, msg, args);
+      va_copy(args2, args);
+      r = vsnprintf(buf, len, msg, args2);
       if (r < 0)
 	len = 256;
       else if (r < len)
@@ -38,7 +40,8 @@ vbprintf(struct fastbuf *b, char *msg, va_list args)
   while (1)
     {
       buf = alloca(len);
-      r = vsnprintf(buf, len, msg, args);
+      va_copy(args2, args);
+      r = vsnprintf(buf, len, msg, args2);
       if (r < 0)
 	len += len;
       else if (r < len)
