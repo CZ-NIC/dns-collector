@@ -339,8 +339,7 @@ bconfig(struct fastbuf *f, uns item, int value)
 void
 brewind(struct fastbuf *f)
 {
-  if (f->bptr > f->bstop)
-    bflush(f);
+  bflush(f);
   bsetpos(f, 0);
 }
 
