@@ -61,7 +61,7 @@ $(o)/lib/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
 $(o)/lib/libucw.so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 
 $(o)/lib/hashfunc.o $(o)/lib/hashfunc.oo: CFLAGS += -funroll-loops
-$(o)/lib/lizard.o: CFLAGS += -O6 -funroll-loops
+$(o)/lib/lizard.o: CFLAGS += $(COPT2) -funroll-loops
 
 $(o)/lib/db-test: $(o)/lib/db-test.o $(LIBUCW)
 $(o)/lib/db-tool: $(o)/lib/db-tool.o $(LIBUCW)
