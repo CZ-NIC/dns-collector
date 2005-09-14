@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Fast Buffered I/O
  *
- *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2005 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -339,7 +339,8 @@ bconfig(struct fastbuf *f, uns item, int value)
 void
 brewind(struct fastbuf *f)
 {
-  bflush(f);
+  if (f->bptr > f->bstop)
+    bflush(f);
   bsetpos(f, 0);
 }
 
