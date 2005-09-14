@@ -35,7 +35,7 @@ hashf(byte *string)
 }
 
 static inline byte *
-locate_string(byte *string, uns record_id, uns head)
+locate_string(byte *string, int record_id, int head)
   /* The strings are recorded into the hash-table regularly, hence there is no
    * need to store the pointer there.  */
 {
