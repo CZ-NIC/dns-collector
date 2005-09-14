@@ -380,7 +380,8 @@ lizard_decompress(byte *in, byte *out)
     else
     {						/* overlapping */
       for (; len-- > 0; out++)
-	*out = out[-pos];
+	*out = *(out-pos);
+      /* It's tempting to use out[-pos] above, but unfortunately it's not the same */
     }
     /* extract the copy-bits */
     len = in[-2] & 0x3;
