@@ -63,6 +63,7 @@ mp_end_string(struct mempool *p, void *stop)
 /* mempool-str.c */
 
 char *mp_strdup(struct mempool *, char *);
+void *mp_memdup(struct mempool *, void *, uns);
 char *mp_multicat(struct mempool *, ...);
 static inline char *
 mp_strcat(struct mempool *mp, char *x, char *y)

@@ -22,6 +22,14 @@ mp_strdup(struct mempool *p, char *s)
   return t;
 }
 
+void *
+mp_memdup(struct mempool *p, void *s, uns len)
+{
+  void *t = mp_alloc_fast(p, len);
+  memcpy(t, s, len);
+  return t;
+}
+
 char *
 mp_multicat(struct mempool *p, ...)
 {
