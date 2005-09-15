@@ -32,7 +32,7 @@ GBUF_PREFIX(init)(BUF_T *b)
   b->len = 0;
 }
 
-static inline void
+static void UNUSED
 GBUF_PREFIX(done)(BUF_T *b)
 {
   if (b->ptr)
@@ -41,8 +41,8 @@ GBUF_PREFIX(done)(BUF_T *b)
   b->len = 0;
 }
 
-static inline void
-GBUF_PREFIX(realloc)(BUF_T *b, uns len)
+static void UNUSED
+GBUF_PREFIX(set_size)(BUF_T *b, uns len)
 {
   b->len = len;
   b->ptr = xrealloc(b->ptr, len * sizeof(GBUF_TYPE));
@@ -51,14 +51,20 @@ GBUF_PREFIX(realloc)(BUF_T *b, uns len)
 #endif
 }
 
-static inline void
-GBUF_PREFIX(grow)(BUF_T *b, uns len)
+static void UNUSED
+GBUF_PREFIX(do_grow)(BUF_T *b, uns len)
 {
-  if (likely(len <= b->len))
-    return;
   if (len < 2*b->len)			// to ensure logarithmic cost
     len = 2*b->len;
-  GBUF_PREFIX(realloc)(b, len);
+  GBUF_PREFIX(set_size)(b, len);
+}
+
+static inline GBUF_TYPE *
+GBUF_PREFIX(grow)(BUF_T *b, uns len)
+{
+  if (unlikely(len > b->len))
+    GBUF_PREFIX(do_grow)(b, len);
+  return b->ptr;
 }
 
 #undef	GBUF_TYPE
