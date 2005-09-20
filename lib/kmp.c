@@ -1,7 +1,6 @@
 /*
- *	Knuth-Morris-Pratt's search automat for N given strings
- *		(taken from ad2 super-server and pruned :-)
- * 
+ *	Knuth-Morris-Pratt's Substring Search for N given strings
+ *
  *	(c) 1999--2005, Robert Spalek <robert@ucw.cz>
  */
 
@@ -11,7 +10,7 @@
 #include "sherlock/tagged-text.h"
 #include "lib/unicode.h"
 
-#define KMP_TRANSLATE(new_c, c, flags)	NO_TRANSLATE(new_c, c, flags)
+#define KMP_GET_CHAR KMP_GET_RAW
 #include "lib/kmp.h"
 
 #include <stdlib.h>

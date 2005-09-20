@@ -1,11 +1,17 @@
 /*
- *	Knuth-Morris-Pratt's search automat for N given strings
+ *	Knuth-Morris-Pratt's Substring Search for N given strings
  * 
  *	(c) 1999--2005, Robert Spalek <robert@ucw.cz>
  *
- *	Set KMP_TRANSLATE to one of {UNICODE,ASCII,NO}_TRANSLATE.
+ *	This is a preprocessor template: you need to set KMP_GET_CHAR
+ *	to a macro for reading a single character from the input and
+ *	translating it according to the MF_xxx flags. See below for
+ *	some pre-defined values.
  *
- *	Don't touch this file, because it is a mess.
+ *	Don't touch this file, it can bite.
+ *
+ *	(In fact, the algorithm is usually referred to as Aho-McCorasick,
+ *	but that's just an extension of KMP to multiple strings.)
  */
 
 #ifndef _UCW_KMP_H
@@ -13,38 +19,31 @@
 
 #include "lib/lists.h"
 
+/*
+ * Input conversion flags (the conversion is handled exclusively by the KMP_GET_CHAR
+ * macro, so you can define your own conversion modes, soo).
+ */
 #define	MF_TOLOWER	1
 #define	MF_UNACCENT	2
-#define	MF_ONLYALPHA	4
-	/* how to modify characters in the string */
-#define	CONTROL_CHAR	':'
-	/* all non-alphabetic characters are treated as CONTROL_CHAR */
+#define	MF_ONLYALPHA	4	/* Convert non-alphas to KMP_CONTROL_CHAR */
 
-#define UNICODE_TRANSLATE(new_c, c, flags)	do { \
-	if (!c) \
-		new_c = 0; \
-	else { \
-		if (flags & MF_TOLOWER) \
-			c = Utolower(c); \
-		if (flags & MF_UNACCENT) \
-			c = Uunaccent(c); \
-		if (flags & MF_ONLYALPHA && !Ualpha(c)) \
-			c = CONTROL_CHAR; \
-		new_c = c; \
-	} \
-} while (0)
-#define ASCII_TRANSLATE(new_c, c, flags)	do { \
-	if (!c) \
-		new_c = 0; \
-	else { \
+#define	KMP_CONTROL_CHAR ':'
+
+/* Pre-defined input functions */
+
+#define KMP_GET_RAW(pos, c, flags) c=*pos++
+
+#define KMP_GET_ASCII(pos, c, flags) do { \
+	c = *pos++; \
+	if (c) { \
 		if (flags & MF_TOLOWER) \
 			c = Clocase(c); \
 		if (flags & MF_ONLYALPHA && !Calpha(c)) \
-			c = CONTROL_CHAR; \
-		new_c = c; \
+			c = KMP_CONTROL_CHAR; \
 	} \
 } while (0)
-#define NO_TRANSLATE(new_c, c, flags)	do { new_c = c; } while (0)
+
+/* Types and structures */
 
 typedef uns kmp_state_t;
 typedef word kmp_char_t;
@@ -78,6 +77,11 @@ struct kmp {
 	struct kmp_output **out;	/* found words for every state */
 };
 
+struct kmp_result {
+	struct node n;			/* strings with non-zero frequency are put into a link-list */
+	uns occur;
+};
+
 /* kmp.c */
 struct kmp *kmp_new(struct mempool *mp, int words_len, uns modify_flags);
 void kmp_enter_raw_string(struct kmp *kmp, const byte *str, uns id);
@@ -88,13 +92,9 @@ kmp_get_char(const byte **str, kmp_char_t *c, uns modify_flags UNUSED)
 {
 	while (1)
 	{
-		uns w;
 		kmp_char_t new_c;
-		GET_TAGGED_CHAR((*str), w);
-		if (w >= 0x80000000)
-			w = CONTROL_CHAR;
-		KMP_TRANSLATE(new_c, w, modify_flags);
-		if (new_c != CONTROL_CHAR || *c != CONTROL_CHAR)
+		KMP_GET_CHAR((*str), new_c, modify_flags);
+		if (new_c != KMP_CONTROL_CHAR || *c != KMP_CONTROL_CHAR)
 		{
 			*c = new_c;
 			return;
@@ -105,10 +105,11 @@ kmp_get_char(const byte **str, kmp_char_t *c, uns modify_flags UNUSED)
 static inline void
 kmp_enter_string(struct kmp *kmp, const byte *str, uns id)
 {
-	/* Ugly hack to avoid linking libucw with libcharset:
-	 * Convert the entered string here in the header and then call the
-	 * library function.  This function calls kmp_get_char() without any
-	 * conversion.  */
+	/* To avoid dependencies between libucw and other libraries (which might
+	 * be referenced by the KMP_GET_CHAR macro), we have to split kmp_enter_string()
+	 * to a conversion wrapper (this function) and the rest, which resides in kmp.c
+	 * and uses KMP_GET_RAW to read its input.
+	 */
 	byte buf[3*strlen(str)+1], *str2 = buf;
 	kmp_char_t c;
 	do
@@ -119,11 +120,6 @@ kmp_enter_string(struct kmp *kmp, const byte *str, uns id)
 	while (c);
 	kmp_enter_raw_string(kmp, buf, id);
 }
-
-struct kmp_result {
-	struct node n;			/* strings with non-zero frequency are put into a link-list */
-	uns occur;
-};
 
 static inline uns
 transition_hashf(struct kmp_transitions *l UNUSED, struct kmp_transition *tr)
@@ -166,7 +162,7 @@ kmp_search_internal(struct kmp *kmp, byte *str, uns len, struct list *nonzeroes,
 {
 	byte *str_end = str + len;
 	kmp_state_t s = 0;
-	kmp_char_t c = CONTROL_CHAR;
+	kmp_char_t c = KMP_CONTROL_CHAR;
 	struct kmp_transition tr, **prev;
 	byte eof = 0;
 	if (kmp->words_len <= 1)
@@ -204,8 +200,8 @@ kmp_search_internal(struct kmp *kmp, byte *str, uns len, struct list *nonzeroes,
 			kmp_get_char((const byte **)&str, &c, kmp->modify_flags);
 		if (!c)
 		{
-			/* Insert CONTROL_CHAR at the beginning and at the end too.  */
-			c = CONTROL_CHAR;
+			/* Insert KMP_CONTROL_CHAR at the beginning and at the end too.  */
+			c = KMP_CONTROL_CHAR;
 			eof = 1;
 		}
 	}
