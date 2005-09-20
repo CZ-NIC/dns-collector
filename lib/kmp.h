@@ -109,7 +109,7 @@ kmp_enter_string(struct kmp *kmp, const byte *str, uns id)
 	 * Convert the entered string here in the header and then call the
 	 * library function.  This function calls kmp_get_char() without any
 	 * conversion.  */
-	byte buf[strlen(str)+1], *str2 = buf;
+	byte buf[3*strlen(str)+1], *str2 = buf;
 	kmp_char_t c;
 	do
 	{
