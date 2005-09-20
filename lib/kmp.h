@@ -117,7 +117,7 @@ kmp_enter_string(struct kmp *kmp, const byte *str, uns id)
 		str2 = utf8_put(str2, c);
 	}
 	while (c);
-	kmp_enter_raw_string(kmp, str2, id);
+	kmp_enter_raw_string(kmp, buf, id);
 }
 
 struct kmp_result {
