@@ -17,7 +17,8 @@ LIBUCW_MODS= \
 	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer \
 	str_ctype str_upper str_lower unicode-utf8 stkstring \
 	wildmatch wordsplit ctmatch patimatch patmatch regex \
-	prime random timer log2 randomkey \
+	prime random timer randomkey \
+	bit-ffs bit-fls \
 	db \
 	url \
 	mainloop exitstatus runcmd sighandler \
@@ -81,6 +82,7 @@ $(o)/lib/unicode-utf8.test: $(o)/lib/unicode-utf8-t
 $(o)/lib/hash-test.test: $(o)/lib/hash-test
 $(o)/lib/mempool.test: $(o)/lib/mempool-fmt-t $(o)/lib/mempool-str-t
 $(o)/lib/stkstring.test: $(o)/lib/stkstring-t
+$(o)/lib/bitops.test: $(o)/lib/bit-ffs-t $(o)/lib/bit-fls-t
 
 INCLUDES+=$(o)/lib/.include-stamp
 $(o)/lib/.include-stamp: $(addprefix $(s)/lib/,$(LIBUCW_INCLUDES))

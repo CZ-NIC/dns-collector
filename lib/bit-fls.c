@@ -1,21 +1,22 @@
 /*
- *	UCW Library -- Binary Logarithm
+ *	UCW Library -- Find Highest Set Bit
  *
- *	(c) 1997 Martin Mares <mj@ucw.cz>
+ *	(c) 1997-2005 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  */
 
 #include "lib/lib.h"
+#include "lib/bitops.h"
 
 int
-fls(u32 x)
+bit_fls(u32 x)
 {
   uns l;
 
   if (!x)
-	return 0;
+	return -1;
 
   l = 0;
   if (x & 0xffff0000) { l += 16; x &= 0xffff0000; }
@@ -25,3 +26,17 @@ fls(u32 x)
   if (x & 0xaaaaaaaa) l++;
   return l;
 }
+
+#ifdef TEST
+
+#include <stdio.h>
+
+int main(void)
+{
+  uns i;
+  while (scanf("%x", &i) == 1)
+    printf("%d\n", bit_fls(i));
+  return 0;
+}
+
+#endif
