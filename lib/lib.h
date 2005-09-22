@@ -145,10 +145,6 @@ byte *xstrdup(byte *);
 
 int match_ct_patt(byte *, byte *);
 
-/* log2.c */
-
-int fls(u32);
-
 /* wordsplit.c */
 
 int sepsplit(byte *str, byte sep, byte **rec, uns max);
