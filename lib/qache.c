@@ -7,6 +7,7 @@
 #undef LOCAL_DEBUG
 
 #include "lib/lib.h"
+#include "lib/bitops.h"
 #include "lib/fastbuf.h"
 #include "lib/qache.h"
 
@@ -313,7 +314,7 @@ qache_create(struct qache *q, struct qache_params *par)
   bzero(&h, sizeof(h));
   h.magic = QACHE_MAGIC;
   h.block_size = par->block_size;
-  h.block_shift = fls(h.block_size);
+  h.block_shift = bit_fls(h.block_size);
   h.num_blocks = par->cache_size >> h.block_shift;
   h.format_id = par->format_id;
   h.entry_table_start = sizeof(h);

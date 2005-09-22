@@ -5,6 +5,7 @@
  */
 
 #include "lib/lib.h"
+#include "lib/bitops.h"
 #include "lib/mempool.h"
 #include "lib/lists.h"
 #include "sherlock/tagged-text.h"
@@ -33,7 +34,7 @@ kmp_new(struct mempool *mp, int words_len, uns modify_flags)
 	kmp->g.sons = mp_alloc_zero(mp, size * sizeof(struct list));
 	init_list(kmp->g.sons + 0);
 	if (words_len > 1)
-		size = words_len * fls(words_len);
+		size = words_len * bit_fls(words_len);
 	else
 		size = 1;
 	kmp->g.hash_size = size;
