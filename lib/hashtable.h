@@ -381,7 +381,7 @@ static inline void * P(new_bucket)(TAUC uns size) { return P(alloc)(TTC size); }
 
 static void P(alloc_table) (TAU)
 {
-  T.hash_size = nextprime(T.hash_size);
+  T.hash_size = next_table_prime(T.hash_size);
   T.ht = P(table_alloc)(TTC sizeof(void *) * T.hash_size);
   bzero(T.ht, sizeof(void *) * T.hash_size);
   if (2*T.hash_size < T.hash_hard_max)
