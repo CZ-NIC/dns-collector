@@ -9,7 +9,7 @@ endif
 LIBUCW_MODS= \
 	alloc alloc_str realloc mempool mempool-str mempool-fmt \
 	mmap pagecache partmap hashfunc \
-	lists sorter bitsig kmp \
+	lists slists sorter bitsig kmp \
 	log log-file proctitle \
 	conf ipaccess \
 	profile \
@@ -76,13 +76,14 @@ $(o)/lib/redblack-test: $(o)/lib/redblack-test.o $(LIBUCW)
 $(o)/lib/binheap-test: $(o)/lib/binheap-test.o $(LIBUCW)
 $(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
 
-TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test)
+TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test slists.test)
 $(o)/lib/regex.test: $(o)/lib/regex-t
 $(o)/lib/unicode-utf8.test: $(o)/lib/unicode-utf8-t
 $(o)/lib/hash-test.test: $(o)/lib/hash-test
 $(o)/lib/mempool.test: $(o)/lib/mempool-fmt-t $(o)/lib/mempool-str-t
 $(o)/lib/stkstring.test: $(o)/lib/stkstring-t
 $(o)/lib/bitops.test: $(o)/lib/bit-ffs-t $(o)/lib/bit-fls-t
+$(o)/lib/slists.test: $(o)/lib/slists-t
 
 INCLUDES+=$(o)/lib/.include-stamp
 $(o)/lib/.include-stamp: $(addprefix $(s)/lib/,$(LIBUCW_INCLUDES))
