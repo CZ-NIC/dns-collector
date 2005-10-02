@@ -13,9 +13,6 @@
 
 #include "lib/lib.h"
 
-/* An equivalent of the Intel's rol instruction.  */
-#define	ROL(x, bits)	(((x) << (bits)) | ((x) >> (sizeof(uns)*8 - (bits))))
-
 /* The following functions need str to be aligned to uns.  */
 uns str_len_aligned(const byte *str) CONST;
 uns hash_string_aligned(const byte *str) CONST;

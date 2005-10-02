@@ -43,6 +43,8 @@
 #define COMPARE_LT(x,y) do { if ((x)<(y)) return 1; if ((x)>(y)) return 0; } while(0)
 #define COMPARE_GT(x,y) COMPARE_LT(y,x)
 
+#define	ROL(x, bits) (((x) << (bits)) | ((x) >> (sizeof(uns)*8 - (bits))))	/* Bitwise rotation of an uns to the left */
+
 /* GCC Extensions */
 
 #ifdef __GNUC__
