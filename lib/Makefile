@@ -1,4 +1,4 @@
-# Makefile for the UCW Library (c) 1997--2004 Martin Mares <mj@ucw.cz>
+# Makefile for the UCW Library (c) 1997--2005 Martin Mares <mj@ucw.cz>
 
 DIRS+=lib
 
@@ -17,7 +17,7 @@ LIBUCW_MODS= \
 	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer \
 	str_ctype str_upper str_lower unicode-utf8 stkstring \
 	wildmatch wordsplit ctmatch patimatch patmatch regex \
-	prime random timer randomkey \
+	prime primetable random timer randomkey \
 	bit-ffs bit-fls \
 	db \
 	url \

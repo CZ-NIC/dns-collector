@@ -168,6 +168,11 @@ void hex_to_md5(byte *, byte *);
 int isprime(uns);
 uns nextprime(uns);
 
+/* primetable.c */
+
+uns next_table_prime(uns x);
+uns prev_table_prime(uns x);
+
 /* timer.c */
 
 struct timeval;
