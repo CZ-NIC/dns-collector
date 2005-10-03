@@ -40,7 +40,7 @@ careful_write(int fd, void *buf, int len)
   while (len)
     {
       int l = write(fd, pos, len);
-      if (l <= 0)
+      if (l < 0)
 	return -1;
       if (!l)
 	return 0;
