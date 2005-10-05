@@ -9,9 +9,13 @@ $type=$ARGV[1];
 
 while (<STDIN>) {
 	chomp;
+	/^#/ && next;
+	/^\s*$/ && next;
+	s/^0x//;
 	($i,$j) = split/\s+/;
 	($i =~ /^(..)(..)$/) || die "Syntax error at $i";
 	$table{$1} = "$name" . "_$1";
+	die if defined $val{$i};
 	$val{$i} = $j;
 }
 

@@ -110,17 +110,30 @@ while (<U>) {
 }
 close U;
 
+print STDERR "Accent rules\n";
+if (open(ACC, "misc/user_unacc")) {
+	while (<ACC>) {
+		chomp;
+		(/^\s*$/ || /^#/) && next;
+		s/0x([0-9a-zA-Z]+)/hex($1)/ge;
+		(/^(\d+)\s+(\d+)$/) || die "Syntax error in user accent rules";
+		$expand{$1} = $2;
+	}
+	close ACC;
+}
+
 print STDERR "Character expansions\n";
 if (open(EXTRA, "misc/user_expand")) {
 	while (<EXTRA>) {
 		chomp;
 		(/^\s*$/ || /^#/) && next;
 		s/0x([0-9a-zA-Z]+)/hex($1)/ge;
-		(/^(\S+)\s+(.*)$/) || die "Syntax error in user expansions";
+		(/^(\d+)\s+(.*)$/) || die "Syntax error in user expansions";
 		$expand{$1} = $2;
 	}
 	close EXTRA;
 }
+
 print "static unsigned short int x_to_output[$ncs][$unique] = {\n";
 $pstr = 256;
 for($c=0; $c<$ncs; $c++) {
