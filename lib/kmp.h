@@ -111,7 +111,7 @@ kmp_enter_string(struct kmp *kmp, const byte *str, uns id)
 	 * and uses KMP_GET_RAW to read its input.
 	 */
 	byte buf[3*strlen(str)+1], *str2 = buf;
-	kmp_char_t c;
+	kmp_char_t c = 0;
 	do
 	{
 		kmp_get_char(&str, &c, kmp->modify_flags);
