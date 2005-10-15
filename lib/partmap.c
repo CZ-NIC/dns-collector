@@ -2,7 +2,7 @@
  *	UCW Library -- Mapping of File Parts
  *
  *	(c) 2003 Martin Mares <mj@ucw.cz>
- *	(c) 2003 Robert Spalek <robert@ucw.cz>
+ *	(c) 2003--2005 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -18,14 +18,6 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/user.h>
-
-struct partmap {
-  int fd;
-  sh_off_t file_size;
-  sh_off_t start_off, end_off;
-  byte *start_map;
-  int writeable;
-};
 
 #ifdef TEST
 #define PARTMAP_WINDOW 4096
@@ -62,27 +54,23 @@ partmap_close(struct partmap *p)
   xfree(p);
 }
 
-void *
-partmap_map(struct partmap *p, sh_off_t start, uns size)
+void
+partmap_load(struct partmap *p, sh_off_t start, uns size)
 {
-  if (unlikely(!p->start_map || start < p->start_off || (sh_off_t) (start+size) > p->end_off))
-    {
-      if (p->start_map)
-	munmap(p->start_map, p->end_off - p->start_off);
-      sh_off_t end = start + size;
-      sh_off_t win_start = start/PAGE_SIZE * PAGE_SIZE;
-      uns win_len = PARTMAP_WINDOW;
-      if ((sh_off_t) (win_start+win_len) > p->file_size)
-	win_len = ALIGN(p->file_size - win_start, PAGE_SIZE);
-      if ((sh_off_t) (win_start+win_len) < end)
-	die("partmap_map: Window is too small for mapping %d bytes", size);
-      p->start_map = sh_mmap(NULL, win_len, p->writeable ? (PROT_READ | PROT_WRITE) : PROT_READ, MAP_SHARED, p->fd, win_start);
-      if (p->start_map == MAP_FAILED)
-	die("mmap failed at position %Ld: %m", (long long)win_start);
-      p->start_off = win_start;
-      p->end_off = win_start+win_len;
-    }
-  return p->start_map + (start - p->start_off);
+  if (p->start_map)
+    munmap(p->start_map, p->end_off - p->start_off);
+  sh_off_t end = start + size;
+  sh_off_t win_start = start/PAGE_SIZE * PAGE_SIZE;
+  uns win_len = PARTMAP_WINDOW;
+  if ((sh_off_t) (win_start+win_len) > p->file_size)
+    win_len = ALIGN(p->file_size - win_start, PAGE_SIZE);
+  if ((sh_off_t) (win_start+win_len) < end)
+    die("partmap_map: Window is too small for mapping %d bytes", size);
+  p->start_map = sh_mmap(NULL, win_len, p->writeable ? (PROT_READ | PROT_WRITE) : PROT_READ, MAP_SHARED, p->fd, win_start);
+  if (p->start_map == MAP_FAILED)
+    die("mmap failed at position %Ld: %m", (long long)win_start);
+  p->start_off = win_start;
+  p->end_off = win_start+win_len;
 }
 
 #ifdef TEST
