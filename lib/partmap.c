@@ -10,6 +10,7 @@
 
 #include "lib/lib.h"
 #include "lib/lfs.h"
+#include "lib/partmap.h"
 
 #include <stdio.h>
 #include <stdlib.h>

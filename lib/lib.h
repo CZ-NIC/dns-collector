@@ -201,38 +201,6 @@ uns random_max(uns);
 void *mmap_file(byte *name, unsigned *len, int writeable);
 void munmap_file(void *start, unsigned len);
 
-/* partmap.c */
-
-struct partmap {
-  int fd;
-  sh_off_t file_size;
-  sh_off_t start_off, end_off;
-  byte *start_map;
-  int writeable;
-};
-
-struct partmap;
-struct partmap *partmap_open(byte *name, int writeable);
-void partmap_close(struct partmap *p);
-sh_off_t partmap_size(struct partmap *p);
-void partmap_load(struct partmap *p, sh_off_t start, uns size);
-
-static inline void *
-partmap_map(struct partmap *p, sh_off_t start, uns size)
-{
-  if (unlikely(!p->start_map || start < p->start_off || (sh_off_t) (start+size) > p->end_off))
-    partmap_load(p, start, size);
-  return p->start_map + (start - p->start_off);
-}
-
-static inline void *
-partmap_map_forward(struct partmap *p, sh_off_t start, uns size)
-{
-  if (unlikely((sh_off_t) (start+size) > p->end_off))
-    partmap_load(p, start, size);
-  return p->start_map + (start - p->start_off);
-}
-
 /* proctitle.c */
 
 void setproctitle_init(int argc, char **argv);
