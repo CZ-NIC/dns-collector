@@ -395,6 +395,8 @@ main_loop(void)
 	      wake = 0;
 	    }
 	}
+      if (main_shutdown)
+	break;
       /* FIXME: Here is a small race window where SIGCHLD can come unnoticed. */
       if ((tm = clist_head(&main_timer_list)) && tm->expires < wake)
 	wake = tm->expires;
