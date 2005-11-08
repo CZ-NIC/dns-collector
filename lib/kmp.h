@@ -19,6 +19,8 @@
 
 #include "lib/lists.h"
 
+#include <string.h>
+
 /*
  * Input conversion flags (the conversion is handled exclusively by the KMP_GET_CHAR
  * macro, so you can define your own conversion modes, soo).

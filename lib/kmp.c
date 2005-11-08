@@ -8,7 +8,6 @@
 #include "lib/bitops.h"
 #include "lib/mempool.h"
 #include "lib/lists.h"
-#include "sherlock/tagged-text.h"
 #include "lib/unicode.h"
 
 #define KMP_GET_CHAR KMP_GET_RAW
@@ -16,7 +15,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <alloca.h>
 
 #define	TRACE(level, mask...)	if (0) fprintf(stderr, mask)
