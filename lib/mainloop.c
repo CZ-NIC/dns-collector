@@ -34,7 +34,7 @@ static uns main_poll_table_obsolete, main_poll_table_size;
 static struct pollfd *main_poll_table;
 static uns main_sigchld_set_up;
 
-static void
+void
 main_get_time(void)
 {
   struct timeval tv;

@@ -29,6 +29,8 @@ struct main_timer {
 void timer_add(struct main_timer *tm, timestamp_t expires);	/* Can modify a running timer, too */
 void timer_del(struct main_timer *tm);
 
+void main_get_time(void);			/* Refresh main_now */
+
 /* Files to poll */
 
 struct main_file {
