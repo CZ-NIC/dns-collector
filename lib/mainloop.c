@@ -345,7 +345,7 @@ main_rebuild_poll_table(void)
   main_poll_table_obsolete = 0;
 }
 
-void
+int
 main_loop(void)
 {
   DBG("MAIN: Entering main_loop");
@@ -357,7 +357,7 @@ main_loop(void)
   struct main_process *pr;
   cnode *tmp;
 
-  while (!main_shutdown)
+  for (;;)
     {
       main_get_time();
       timestamp_t wake = main_now + 1000000000;
@@ -395,8 +395,19 @@ main_loop(void)
 	      wake = 0;
 	    }
 	}
+      if (clist_empty(&main_file_list) &&
+	  clist_empty(&main_timer_list) &&
+	  clist_empty(&main_hook_list) &&
+	  clist_empty(&main_process_list))
+	{
+	  DBG("MAIN: Nothing to do, exiting");
+	  return 0;
+	}
       if (main_shutdown)
-	break;
+	{
+	  DBG("MAIN: Shutdown");
+	  return 1;
+	}
       /* FIXME: Here is a small race window where SIGCHLD can come unnoticed. */
       if ((tm = clist_head(&main_timer_list)) && tm->expires < wake)
 	wake = tm->expires;

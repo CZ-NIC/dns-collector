@@ -7,6 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
+#ifndef _UCW_MAINLOOP_H
+#define _UCW_MAINLOOP_H
+
 #include "lib/clists.h"
 
 typedef s64 timestamp_t;			/* We measure time in milliseconds */
@@ -93,5 +96,7 @@ int process_fork(struct main_process *mp);
 /* The main loop */
 
 void main_init(void);
-void main_loop(void);
+int main_loop(void);
 void main_debug(void);
+
+#endif
