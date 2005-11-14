@@ -71,8 +71,15 @@ void file_close_all(void);			/* Close all known main_file's; frequently used bef
 
 struct main_hook {
   cnode n;
-  int (*handler)(struct main_hook *ho);		/* [*] Hook function; returns 1 if should be called again */
+  int (*handler)(struct main_hook *ho);		/* [*] Hook function; returns HOOK_xxx */
   void *data;					/* [*] For use by the handler */
+};
+
+enum main_hook_return {
+  HOOK_IDLE,					/* Call again when the main loop becomes idle again */
+  HOOK_RETRY,					/* Call again as soon as possible */
+  HOOK_DONE = -1,				/* Shut down the main loop if all hooks return this value */
+  HOOK_SHUTDOWN = -2				/* Shut down the main loop immediately */
 };
 
 void hook_add(struct main_hook *ho);
@@ -96,7 +103,7 @@ int process_fork(struct main_process *mp);
 /* The main loop */
 
 void main_init(void);
-int main_loop(void);
+void main_loop(void);
 void main_debug(void);
 
 #endif

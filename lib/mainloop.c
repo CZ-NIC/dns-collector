@@ -345,7 +345,7 @@ main_rebuild_poll_table(void)
   main_poll_table_obsolete = 0;
 }
 
-int
+void
 main_loop(void)
 {
   DBG("MAIN: Entering main_loop");
@@ -366,12 +366,24 @@ main_loop(void)
 	  DBG("MAIN: Timer %p expired at %Ld", tm, (long long) tm->expires);
 	  tm->handler(tm);
 	}
+      int hook_min = HOOK_RETRY;
+      int hook_max = HOOK_SHUTDOWN;
       CLIST_WALK_DELSAFE(ho, main_hook_list, tmp)
 	{
 	  DBG("MAIN: Hook %p", ho);
-	  if (ho->handler(ho))
-	    wake = 0;
+	  int ret = ho->handler(ho);
+	  hook_min = MIN(hook_min, ret);
+	  hook_max = MAX(hook_max, ret);
 	}
+      if (hook_min == HOOK_SHUTDOWN ||
+	  hook_min == HOOK_DONE && hook_max == HOOK_DONE ||
+	  main_shutdown)
+	{
+	  DBG("MAIN: Shut down by %s", main_shutdown ? "main_shutdown" : "a hook");
+	  return;
+	}
+      if (hook_max == HOOK_RETRY)
+	wake = 0;
       if (main_poll_table_obsolete)
 	main_rebuild_poll_table();
       if (!clist_empty(&main_process_list))
@@ -394,19 +406,6 @@ main_loop(void)
 		  }
 	      wake = 0;
 	    }
-	}
-      if (clist_empty(&main_file_list) &&
-	  clist_empty(&main_timer_list) &&
-	  clist_empty(&main_hook_list) &&
-	  clist_empty(&main_process_list))
-	{
-	  DBG("MAIN: Nothing to do, exiting");
-	  return 0;
-	}
-      if (main_shutdown)
-	{
-	  DBG("MAIN: Shutdown");
-	  return 1;
 	}
       /* FIXME: Here is a small race window where SIGCHLD can come unnoticed. */
       if ((tm = clist_head(&main_timer_list)) && tm->expires < wake)
