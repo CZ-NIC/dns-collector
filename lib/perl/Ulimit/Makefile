@@ -14,5 +14,8 @@ $(o)/lib/perl/Ulimit/arch/auto/Sherlock/Ulimit/Ulimit.so: $(o)/$(ULIMIT_DIR)/Uli
 $(o)/$(ULIMIT_DIR)/Makefile: $(o)/$(ULIMIT_DIR)/Makefile.PL
 	cd $(o)/$(ULIMIT_DIR) && perl Makefile.PL
 
-$(o)/$(ULIMIT_DIR)/%: $(s)/$(ULIMIT_DIR)/%
+$(o)/$(ULIMIT_DIR)/Ulimit.xs: $(s)/$(ULIMIT_DIR)/Ulimit.xs
+	cp $^ $@
+
+$(o)/$(ULIMIT_DIR)/Makefile.PL: $(s)/$(ULIMIT_DIR)/Makefile.PL
 	cp $^ $@
