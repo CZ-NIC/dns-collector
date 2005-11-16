@@ -58,6 +58,16 @@ cfg_strdup(byte *s)
 	return mp_strdup(cfpool, s);
 }
 
+byte *
+cfg_printf(char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	byte *res = mp_vprintf(cfpool, fmt, args);
+	va_end(args);
+	return res;
+}
+
 void cf_register(struct cfitem *items)
 {
 	if(items[0].type!=CT_SECTION && items[0].type!=CT_INCOMPLETE_SECTION)

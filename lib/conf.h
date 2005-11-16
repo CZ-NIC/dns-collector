@@ -21,6 +21,7 @@ extern struct mempool *cfpool;
 void *cfg_malloc(uns size);
 void *cfg_malloc_zero(uns size);
 byte *cfg_strdup(byte *s);
+byte *cfg_printf(char *fmt, ...) FORMAT_CHECK(printf,1,2);
 
 /*
  * Every module places its configuration setting into some section.  Section is
