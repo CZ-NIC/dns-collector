@@ -90,4 +90,17 @@ static inline void clist_init(clist *l)
   head->next = head->prev = head;
 }
 
+static inline void clist_insert_list_after(clist *what, cnode *after)
+{
+  if (!clist_empty(what))
+    {
+      cnode *w = &what->head;
+      w->prev->next = after->next;
+      after->next->prev = w->prev;
+      w->next->prev = after;
+      after->next = w->next;
+      clist_init(what);
+    }
+}
+
 #endif
