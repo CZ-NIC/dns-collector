@@ -13,6 +13,7 @@ typedef u32 *bitarray_t;
 #define BIT_ARRAY_WORDS(n) (((n)+31)/32)
 #define BIT_ARRAY_BYTES(n) (4*BIT_ARRAY_WORDS(n))
 #define BIT_ARRAY(name,size) u32 name[BIT_ARRAY_WORDS(size)]
+#define BIT_ARRAY_ALLOC(size) ((bitarray_t) xmalloc(BIT_ARRAY_BYTES(size)))
 
 static inline void
 bit_array_zero(bitarray_t a, uns n)
