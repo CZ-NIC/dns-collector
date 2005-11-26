@@ -2,6 +2,7 @@
  *	UCW Library -- Universal Heap Macros
  *
  *	(c) 2001 Martin Mares <mj@ucw.cz>
+ *	(c) 2005 Tomas Valla <tom@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -10,74 +11,74 @@
 #define HEAP_BUBBLE_DOWN_J(heap,num,less,swap)						\
   for (;;)										\
     {											\
-      l = 2*j;										\
-      if (l > num)									\
+      _l = 2*_j;									\
+      if (_l > num)									\
 	break;										\
-      if (less(heap[j],heap[l]) && (l == num || less(heap[j],heap[l+1])))		\
+      if (less(heap[_j],heap[_l]) && (_l == num || less(heap[_j],heap[_l+1])))		\
 	break;										\
-      if (l != num && less(heap[l+1],heap[l]))						\
-	l++;										\
-      swap(heap,j,l,x);									\
-      j = l;										\
+      if (_l != num && less(heap[_l+1],heap[_l]))					\
+	_l++;										\
+      swap(heap,_j,_l,x);								\
+      _j = _l;										\
     }
 
 #define HEAP_BUBBLE_UP_J(heap,num,less,swap)						\
-  while (j > 1)										\
+  while (_j > 1)									\
     {											\
-      u = j/2;										\
-      if (less(heap[u], heap[j]))							\
+      _u = _j/2;									\
+      if (less(heap[_u], heap[_j]))							\
 	break;										\
-      swap(heap,u,j,x);									\
-      j = u;										\
+      swap(heap,_u,_j,x);								\
+      _j = _u;										\
     }
 
 #define HEAP_INIT(type,heap,num,less,swap)						\
   do {											\
-    uns i = num;									\
-    uns j, l;										\
+    uns _i = num;									\
+    uns _j, _l;										\
     type x;										\
-    while (i >= 1)									\
+    while (_i >= 1)									\
       {											\
-	j = i;										\
+	_j = _i;									\
         HEAP_BUBBLE_DOWN_J(heap,num,less,swap)						\
-	i--;										\
+	_i--;										\
       }											\
   } while(0)
 
 #define HEAP_DELMIN(type,heap,num,less,swap)						\
   do {											\
-    uns j, l;										\
+    uns _j, _l;										\
     type x;										\
     swap(heap,1,num,x);									\
     num--; 										\
-    j = 1;										\
+    _j = 1;										\
     HEAP_BUBBLE_DOWN_J(heap,num,less,swap);						\
   } while(0)
 
 #define HEAP_INSERT(type,heap,num,less,swap)						\
   do {											\
-    uns j, u;										\
+    uns _j, _u;										\
     type x;										\
-    j = num;										\
+    _j = num;										\
     HEAP_BUBBLE_UP_J(heap,num,less,swap);						\
   } while(0)
 
 #define HEAP_INCREASE(type,heap,num,less,swap)						\
   do {											\
-    uns j, l;										\
+    uns _j, _l;										\
     type x;										\
-    j = 1;										\
+    _j = 1;										\
     HEAP_BUBBLE_DOWN_J(heap,num,less,swap);						\
   } while(0)
 
 #define HEAP_DELETE(type,heap,num,less,swap,pos)					\
   do {											\
-    uns j, l, u;									\
+    uns _j, _l, _u;									\
     type x;										\
-    j = pos;										\
-    swap(heap,j,num,x);									\
+    _j = pos;										\
+    swap(heap,_j,num,x);								\
     num--;										\
-    if (less(heap[j], heap[num+1]))							\
+    if (less(heap[_j], heap[num+1]))							\
       HEAP_BUBBLE_UP_J(heap,num,less,swap)						\
     else										\
       HEAP_BUBBLE_DOWN_J(heap,num,less,swap);						\
