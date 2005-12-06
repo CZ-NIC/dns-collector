@@ -16,7 +16,9 @@
 
 /* Tell libc we're going to use all extensions available */
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 /* Ugly structure handling macros */
 
