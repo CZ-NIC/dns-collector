@@ -23,6 +23,7 @@
 #define sh_mmap(a,l,p,f,d,o) mmap64(a,l,p,f,d,o)
 #define sh_pread pread64
 #define sh_pwrite pwrite64
+#define sh_stat stat64
 
 #else	/* !CONFIG_LFS */
 
@@ -32,6 +33,7 @@
 #define sh_mmap(a,l,p,f,d,o) mmap(a,l,p,f,d,o)
 #define sh_pread pread
 #define sh_pwrite pwrite
+#define sh_stat stat
 
 #endif	/* !CONFIG_LFS */
 
