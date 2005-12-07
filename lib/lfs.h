@@ -24,6 +24,7 @@
 #define sh_pread pread64
 #define sh_pwrite pwrite64
 #define sh_stat stat64
+#define sh_stat_t stat64
 
 #else	/* !CONFIG_LFS */
 
@@ -34,6 +35,7 @@
 #define sh_pread pread
 #define sh_pwrite pwrite
 #define sh_stat stat
+#define sh_stat_t stat
 
 #endif	/* !CONFIG_LFS */
 
