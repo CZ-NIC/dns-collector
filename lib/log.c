@@ -27,19 +27,22 @@ void
 vlog_msg(unsigned int cat, const char *msg, va_list args)
 {
   time_t tim = time(NULL);
-  struct tm *tm = localtime(&tim);
+  struct tm tm;
   byte *buf, *p;
   int buflen = 256;
   int l, l0, r;
   va_list args2;
 
+  if (!localtime_r(&tim, &tm))
+    bzero(&tm, sizeof(tm));
+
   if (log_switch_hook)
-    log_switch_hook(tm);
+    log_switch_hook(&tm);
   while (1)
     {
       p = buf = alloca(buflen);
       *p++ = cat;
-      p += strftime(p, buflen, " %Y-%m-%d %H:%M:%S ", tm);
+      p += strftime(p, buflen, " %Y-%m-%d %H:%M:%S ", &tm);
       if (log_title)
 	{
 	  if (log_pid)

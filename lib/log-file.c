@@ -19,7 +19,7 @@
 static char *log_name_patt;
 static int log_params;
 static int log_filename_size;
-int log_switch_nest;
+volatile int log_switch_nest;
 
 static int
 do_log_switch(struct tm *tm)

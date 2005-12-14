@@ -79,7 +79,7 @@
 
 extern char *log_title;			/* NULL - print no title, default is log_progname */
 extern char *log_filename;		/* Expanded name of the current log file */
-extern int log_switch_nest;		/* log_switch() nesting counter, increment to disable automatic switches */
+extern volatile int log_switch_nest;	/* log_switch() nesting counter, increment to disable automatic switches */
 extern int log_pid;			/* 0 if shouldn't be logged */
 extern void (*log_die_hook)(void);
 struct tm;
