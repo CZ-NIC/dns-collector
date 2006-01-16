@@ -63,11 +63,11 @@
     HEAP_BUBBLE_UP_J(heap,num,less,swap);						\
   } while(0)
 
-#define HEAP_INCREASE(type,heap,num,less,swap)						\
+#define HEAP_INCREASE(type,heap,num,less,swap,pos)					\
   do {											\
     uns _j, _l;										\
     type x;										\
-    _j = 1;										\
+    _j = pos;										\
     HEAP_BUBBLE_DOWN_J(heap,num,less,swap);						\
   } while(0)
 
