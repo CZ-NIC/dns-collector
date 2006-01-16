@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Mapping of File Parts
  *
- *	(c) 2003 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
  *	(c) 2003--2005 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -20,10 +20,14 @@
 #include <sys/mman.h>
 #include <sys/user.h>
 
+#ifdef CONFIG_PARTMAP_IS_MMAP
+#define PARTMAP_WINDOW ~(size_t)0
+#else
 #ifdef TEST
 #define PARTMAP_WINDOW 4096
 #else
 #define PARTMAP_WINDOW 16777216
+#endif
 #endif
 
 struct partmap *
@@ -37,6 +41,9 @@ partmap_open(byte *name, int writeable)
   if ((p->file_size = sh_seek(p->fd, 0, SEEK_END)) < 0)
     die("lseek(%s): %m", name);
   p->writeable = writeable;
+#ifdef CONFIG_PARTMAP_IS_MMAP
+  partmap_load(p, 0, p->file_size);
+#endif
   return p;
 }
 
@@ -62,7 +69,7 @@ partmap_load(struct partmap *p, sh_off_t start, uns size)
     munmap(p->start_map, p->end_off - p->start_off);
   sh_off_t end = start + size;
   sh_off_t win_start = start/PAGE_SIZE * PAGE_SIZE;
-  uns win_len = PARTMAP_WINDOW;
+  size_t win_len = PARTMAP_WINDOW;
   if ((sh_off_t) (win_start+win_len) > p->file_size)
     win_len = ALIGN(p->file_size - win_start, PAGE_SIZE);
   if ((sh_off_t) (win_start+win_len) < end)
@@ -72,6 +79,7 @@ partmap_load(struct partmap *p, sh_off_t start, uns size)
     die("mmap failed at position %Ld: %m", (long long)win_start);
   p->start_off = win_start;
   p->end_off = win_start+win_len;
+  madvise(p->start_map, win_len, MADV_SEQUENTIAL);
 }
 
 #ifdef TEST
