@@ -72,9 +72,9 @@ stk_hexdump_internal(char *dst, byte *src, uns n)
 
 int main(void)
 {
-  char *a = stk_strdup("are");
+  char *a = stk_strndup("are!",3);
   a = stk_strcat(a, " the ");
-  a = stk_strmulticat(a, "Jabberwock, ", "my", NULL);
+  a = stk_strmulticat(a, stk_strdup("Jabberwock, "), "my", NULL);
   char *arr[] = { a, " son" };
   a = stk_strarraycat(arr, 2);
   a = stk_printf("Bew%s!", a);
