@@ -32,3 +32,14 @@ xmalloc_zero(uns size)
   bzero(x, size);
   return x;
 }
+
+void
+xfree(void *ptr)
+{
+  /*
+   * Maybe it is a little waste of resources to make this a function instead
+   * of a macro, but xmalloc() is not used for anything critical anyway,
+   * so let's prefer simplicity.
+   */
+  free(ptr);
+}

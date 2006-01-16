@@ -1,7 +1,7 @@
 /*
  *	The UCW Library -- Miscellaneous Functions
  *
- *	(c) 1997--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2006 Martin Mares <mj@ucw.cz>
  *	(c) 2005 Tomas Valla <tom@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -139,7 +139,7 @@ static inline void log_switch_enable(void) { ASSERT(log_switch_nest); log_switch
  */
 void *xmalloc(unsigned);
 void *xrealloc(void *, unsigned);
-#define sh_xfree(x) free(x)
+void xfree(void *);
 #endif
 
 void *xmalloc_zero(unsigned);
