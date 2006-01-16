@@ -10,7 +10,6 @@
 #include "lib/lib.h"
 #include "lib/lizard.h"
 
-#include <stdlib.h>
 #include <sys/mman.h>
 #include <sys/user.h>
 #include <fcntl.h>

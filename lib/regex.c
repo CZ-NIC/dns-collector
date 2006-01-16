@@ -14,7 +14,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
 #if defined(CONFIG_OWN_REGEX) || defined(CONFIG_POSIX_REGEX)
 

@@ -10,8 +10,6 @@
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 
-#include <stdlib.h>
-
 struct memstream {
   unsigned blocksize;
   unsigned uc;

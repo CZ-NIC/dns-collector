@@ -14,8 +14,6 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include <stdlib.h>
-
 #define	BUF_T	GBUF_PREFIX(t)
 
 typedef struct

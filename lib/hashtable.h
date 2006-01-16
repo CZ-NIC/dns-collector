@@ -317,8 +317,6 @@ static inline void P(init_data) (TAUC P(node) *n UNUSED)
 }
 #endif
 
-#include <stdlib.h>
-
 #ifdef HASH_GIVE_ALLOC
 /* If the caller has requested to use his own allocation functions, do so */
 static inline void P(init_alloc) (TAU) { }

@@ -12,7 +12,6 @@
 #include "lib/lfs.h"
 #include "lib/conf.h"
 
-#include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>

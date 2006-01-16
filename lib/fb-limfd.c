@@ -10,7 +10,6 @@
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 
-#include <stdlib.h>
 #include <unistd.h>
 
 struct fb_limfd {

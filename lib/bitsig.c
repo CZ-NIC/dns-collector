@@ -46,7 +46,6 @@
 #include "lib/md5.h"
 
 #include <string.h>
-#include <stdlib.h>
 
 struct bitsig {
   uns l, m, n, maxn, max_m_mult;
