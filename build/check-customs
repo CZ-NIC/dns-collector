@@ -1,6 +1,6 @@
 #!/bin/bash
 # A script for testing compilability of different configurations
-# (c) 2004--2005 Martin Mares <mj@ucw.cz>
+# (c) 2004--2006 Martin Mares <mj@ucw.cz>
 
 set -e
 
@@ -40,7 +40,7 @@ else
 	try centrum/cz ROLE=indexer
 	try centrum/cz ROLE=gather
 	try centrum/cz ROLE=reap+watson
-	try centrum/cz ROLE=all
+	try centrum/cz ROLE=all CONFIG_PARTMAP_IS_MMAP
 	try centrum/pl
 	try debug CONFIG_SHARED								# debugging configuration with shared libs
 	try debug									# debugging configuration
