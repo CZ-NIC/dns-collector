@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Main Loop
  *
- *	(c) 2004--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 2004--2006 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -40,7 +40,7 @@ main_get_time(void)
   gettimeofday(&tv, NULL);
   main_now_seconds = tv.tv_sec;
   main_now = (timestamp_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
-  DBG("It's %Ld o'clock", (long long) main_now);
+  // DBG("It's %Ld o'clock", (long long) main_now);
 }
 
 void
@@ -51,12 +51,18 @@ main_init(void)
   clist_init(&main_file_list);
   clist_init(&main_hook_list);
   clist_init(&main_process_list);
+  main_file_cnt = 0;
+  main_poll_table_obsolete = 1;
   main_get_time();
 }
 
 void
 timer_add(struct main_timer *tm, timestamp_t expires)
 {
+  if (expires)
+    DBG("MAIN: Setting timer %p (expire at now+%Ld)", tm, (long long)(expires-main_now));
+  else
+    DBG("MAIN: Clearing timer %p", tm);
   if (tm->expires)
     clist_remove(&tm->n);
   tm->expires = expires;
@@ -87,6 +93,7 @@ file_timer_expired(struct main_timer *tm)
 void
 file_add(struct main_file *fi)
 {
+  DBG("MAIN: Adding file %p (fd=%d)", fi, fi->fd);
   ASSERT(!fi->n.next);
   clist_add_tail(&main_file_list, &fi->n);
   fi->timer.handler = file_timer_expired;
@@ -114,6 +121,7 @@ file_chg(struct main_file *fi)
 void
 file_del(struct main_file *fi)
 {
+  DBG("MAIN: Deleting file %p (fd=%d)", fi, fi->fd);
   ASSERT(fi->n.next);
   timer_del(&fi->timer);
   clist_remove(&fi->n);
@@ -225,6 +233,7 @@ file_close_all(void)
 void
 hook_add(struct main_hook *ho)
 {
+  DBG("MAIN: Adding hook %p", ho);
   ASSERT(!ho->n.next);
   clist_add_tail(&main_hook_list, &ho->n);
 }
@@ -232,6 +241,7 @@ hook_add(struct main_hook *ho)
 void
 hook_del(struct main_hook *ho)
 {
+  DBG("MAIN: Deleting hook %p", ho);
   ASSERT(ho->n.next);
   clist_remove(&ho->n);
   ho->n.next = ho->n.prev = NULL;
@@ -246,6 +256,7 @@ main_sigchld_handler(int x UNUSED)
 void
 process_add(struct main_process *mp)
 {
+  DBG("MAIN: Adding process %p (pid=%d)", mp, mp->pid);
   ASSERT(!mp->n.next);
   ASSERT(mp->handler);
   clist_add_tail(&main_process_list, &mp->n);
@@ -263,6 +274,7 @@ process_add(struct main_process *mp)
 void
 process_del(struct main_process *mp)
 {
+  DBG("MAIN: Deleting process %p (pid=%d)", mp, mp->pid);
   ASSERT(mp->n.next);
   clist_remove(&mp->n);
   mp->pid = 0;
@@ -334,7 +346,7 @@ main_rebuild_poll_table(void)
       main_poll_table = xmalloc(sizeof(struct pollfd) * main_poll_table_size);
     }
   struct pollfd *p = main_poll_table;
-  DBG("MAIN: Rebuliding poll table: %d of %d entries set", main_file_cnt, main_poll_table_size);
+  DBG("MAIN: Rebuilding poll table: %d of %d entries set", main_file_cnt, main_poll_table_size);
   CLIST_WALK(fi, main_file_list)
     {
       p->fd = fi->fd;
@@ -362,7 +374,7 @@ main_loop(void)
       timestamp_t wake = main_now + 1000000000;
       while ((tm = clist_head(&main_timer_list)) && tm->expires <= main_now)
 	{
-	  DBG("MAIN: Timer %p expired at %Ld", tm, (long long) tm->expires);
+	  DBG("MAIN: Timer %p expired at now-%Ld", tm, (long long)(main_now - tm->expires));
 	  tm->handler(tm);
 	}
       int hook_min = HOOK_RETRY;
