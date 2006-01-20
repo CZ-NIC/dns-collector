@@ -45,7 +45,9 @@ vlog_msg(unsigned int cat, const char *msg, va_list args)
     {
       p = buf = alloca(buflen);
       *p++ = cat;
-      p += strftime(p, buflen, " %Y-%m-%d %H:%M:%S", &tm);
+      /* We cannot use strftime() here, because it's not re-entrant */
+      p += sprintf(p, " %4d-%02d-%02d %02d:%02d:%02d", tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday,
+		   tm.tm_hour, tm.tm_min, tm.tm_sec);
       if (log_precise_timings)
         p += sprintf(p, ".%06d", (int)tv.tv_usec);
       *p++ = ' ';
