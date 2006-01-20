@@ -81,6 +81,7 @@ extern char *log_title;			/* NULL - print no title, default is log_progname */
 extern char *log_filename;		/* Expanded name of the current log file */
 extern volatile int log_switch_nest;	/* log_switch() nesting counter, increment to disable automatic switches */
 extern int log_pid;			/* 0 if shouldn't be logged */
+extern int log_precise_timings;		/* Include microsecond timestamps in log messages */
 extern void (*log_die_hook)(void);
 struct tm;
 extern void (*log_switch_hook)(struct tm *tm);

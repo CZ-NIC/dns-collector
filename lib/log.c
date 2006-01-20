@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Logging
  *
- *	(c) 1997--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2006 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include <time.h>
 #include <alloca.h>
 
@@ -20,20 +21,22 @@ static char log_progname[32];
 char *log_filename;
 char *log_title;
 int log_pid;
+int log_precise_timings;
 void (*log_die_hook)(void);
 void (*log_switch_hook)(struct tm *tm);
 
 void
 vlog_msg(unsigned int cat, const char *msg, va_list args)
 {
-  time_t tim = time(NULL);
+  struct timeval tv;
   struct tm tm;
   byte *buf, *p;
   int buflen = 256;
   int l, l0, r;
   va_list args2;
 
-  if (!localtime_r(&tim, &tm))
+  gettimeofday(&tv, NULL);
+  if (!localtime_r(&tv.tv_sec, &tm))
     bzero(&tm, sizeof(tm));
 
   if (log_switch_hook)
@@ -42,7 +45,10 @@ vlog_msg(unsigned int cat, const char *msg, va_list args)
     {
       p = buf = alloca(buflen);
       *p++ = cat;
-      p += strftime(p, buflen, " %Y-%m-%d %H:%M:%S ", &tm);
+      p += strftime(p, buflen, " %Y-%m-%d %H:%M:%S", &tm);
+      if (log_precise_timings)
+        p += sprintf(p, ".%06d", (int)tv.tv_usec);
+      *p++ = ' ';
       if (log_title)
 	{
 	  if (log_pid)
