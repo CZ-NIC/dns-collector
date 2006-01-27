@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Bit Array Operations
  *
- *	(c) 2003--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -13,7 +13,18 @@ typedef u32 *bitarray_t;
 #define BIT_ARRAY_WORDS(n) (((n)+31)/32)
 #define BIT_ARRAY_BYTES(n) (4*BIT_ARRAY_WORDS(n))
 #define BIT_ARRAY(name,size) u32 name[BIT_ARRAY_WORDS(size)]
-#define BIT_ARRAY_ALLOC(size) ((bitarray_t) xmalloc(BIT_ARRAY_BYTES(size)))
+
+static inline bitarray_t
+bit_array_xmalloc(uns n)
+{
+  return xmalloc(BIT_ARRAY_BYTES(n));
+}
+
+static inline bitarray_t
+bit_array_xmalloc_zero(uns n)
+{
+  return xmalloc_zero(BIT_ARRAY_BYTES(n));
+}
 
 static inline void
 bit_array_zero(bitarray_t a, uns n)
@@ -37,6 +48,15 @@ static inline void
 bit_array_clear(bitarray_t a, uns i)
 {
   a[i/32] &= ~(1 << (i%32));
+}
+
+static inline void
+bit_array_assign(bitarray_t a, uns i, uns x)
+{
+  if (x)
+    bit_array_set(a, i);
+  else
+    bit_array_clear(a, i);
 }
 
 static inline uns
