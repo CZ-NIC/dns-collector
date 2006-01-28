@@ -84,8 +84,6 @@ log_file(byte *name)
       log_filename[0] = 0;
       log_switch();
       log_switch_hook = internal_log_switch;
-      close(0);
-      open("/dev/null", O_RDWR, 0);
     }
 }
 
