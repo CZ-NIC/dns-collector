@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Setting of Process Title
  *
- *	(c) 2001 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2006 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -73,4 +73,10 @@ setproctitle(char *msg, ...)
       spt_argv[1] = NULL;
     }
   va_end(args);
+}
+
+char *
+getproctitle(void)
+{
+  return (spt_start < spt_end) ? spt_start : NULL;
 }

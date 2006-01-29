@@ -208,6 +208,7 @@ void munmap_file(void *start, unsigned len);
 
 void setproctitle_init(int argc, char **argv);
 void setproctitle(char *msg, ...) FORMAT_CHECK(printf,1,2);
+char *getproctitle(void);
 
 /* randomkey.c */
 
