@@ -41,7 +41,7 @@ else
 	try centrum/cz ROLE=gather
 	try centrum/cz ROLE=reap+watson
 	try centrum/cz ROLE=all CONFIG_PARTMAP_IS_MMAP
-	try centrum/pl
+	try centrum/pl ROLE=all
 	try debug CONFIG_SHARED								# debugging configuration with shared libs
 	try debug									# debugging configuration
 fi
