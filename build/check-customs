@@ -15,7 +15,7 @@ function try
 
 	(
 		cd $TDIR
-		if ! ../../configure $@ CC=gcc-3.0 >>log 2>&1 ; then
+		if ! ../../configure $@ CC=gcc-3.4 >>log 2>&1 ; then
 			echo "	CANNOT CONFIGURE"
 			exit 1
 		fi
