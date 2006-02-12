@@ -36,7 +36,7 @@ else
 	try bare -CONFIG_INDEXER -CONFIG_SEARCH						# absolutely stripped version
 	try bare									# the bare version
 	try debug/matcher-test								# bare + custom stats and matchers
-	try centrum/cz ROLE=search							# various Centrum.cz configurations
+	try centrum/cz ROLE=search1-x							# various Centrum.cz configurations
 	try centrum/cz ROLE=indexer
 	try centrum/cz ROLE=gather
 	try centrum/cz ROLE=reap+watson
