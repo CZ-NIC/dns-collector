@@ -277,14 +277,12 @@ process_del(struct main_process *mp)
   DBG("MAIN: Deleting process %p (pid=%d)", mp, mp->pid);
   ASSERT(mp->n.next);
   clist_remove(&mp->n);
-  mp->pid = 0;
   mp->n.next = NULL;
 }
 
 int
 process_fork(struct main_process *mp)
 {
-  ASSERT(!mp->pid);
   pid_t pid = fork();
   if (pid < 0)
     {
