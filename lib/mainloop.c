@@ -277,7 +277,6 @@ process_del(struct main_process *mp)
   DBG("MAIN: Deleting process %p (pid=%d)", mp, mp->pid);
   ASSERT(mp->n.next);
   clist_remove(&mp->n);
-  mp->pid = 0;
   mp->n.next = NULL;
 }
 
