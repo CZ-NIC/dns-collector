@@ -283,7 +283,6 @@ process_del(struct main_process *mp)
 int
 process_fork(struct main_process *mp)
 {
-  ASSERT(!mp->pid);
   pid_t pid = fork();
   if (pid < 0)
     {
