@@ -1,0 +1,7 @@
+# .git/info/exclude
+# Lines that start with '#' are comments.
+custom
+run
+obj
+*~
+_*
