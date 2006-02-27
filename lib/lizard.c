@@ -177,7 +177,7 @@ lizard_compress(byte *in, uns in_len, byte *out)
   while (in < in_end)
   {
     uns hash = hashf(in);
-    byte *best;
+    byte *best = NULL;
     uns len = find_match(hash_tab[hash], hash_rec, in, in_end, &best, head);
     if (len < 3)
 #if 0			// TODO: now, our routine does not detect matches of length 2
