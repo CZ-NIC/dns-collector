@@ -21,6 +21,7 @@ slist_raw_prev(slist *l, snode *n)
       m = m->next;
     }
   ASSERT(0);
+  return NULL;
 }
 
 void *
