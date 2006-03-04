@@ -4,14 +4,13 @@
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
  */
 
-#ifndef _MP_CHARCONV_H
-#define _MP_CHARCONV_H
+#ifndef _CHARSET_MP_CHARCONV_H
+#define _CHARSET_MP_CHARCONV_H
 
 #include "lib/mempool.h"
 #include "charset/charconv.h"
 
-byte *
-mp_conv(struct mempool *mp, byte *s, uns cs_in, uns cs_out);
+byte *mp_conv(struct mempool *mp, byte *s, uns cs_in, uns cs_out);
 
 static inline byte *
 mp_conv_to_utf8(struct mempool *mp, byte *s, uns cs_in) 

@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _CHARCONV_H
-#define _CHARCONV_H
+#ifndef _CHARSET_CHARCONV_H
+#define _CHARSET_CHARCONV_H
 
 struct conv_context {
 

@@ -26,7 +26,7 @@ stk_conv_internal(struct conv_context *c, byte *s, uns in_cs, uns out_cs)
   c->source_end = s + l + 1;
 
   /* Resulting string can be longer after the conversion.
-   * The following constatnt must be at least 4 for conversion to UTF-8
+   * The following constant must be at least 3 for conversion to UTF-8
    * and at least the maximum length of the strings in string_table for other charsets. */
-  return 4 * l + 1;
+  return 3 * l + 1;
 }

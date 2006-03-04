@@ -4,11 +4,15 @@
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
  */
 
-#ifndef _STK_CHARCONV_H
-#define _STK_CHARCONV_H
+#ifndef _CHARSET_STK_CHARCONV_H
+#define _CHARSET_STK_CHARCONV_H
 
 #include "charset/charconv.h"
 #include <alloca.h>
+
+/* The following macros convert strings between given charsets (CONV_CHARSET_x).
+ * The resulting string is allocated on the stack with the exception of cs_in == cs_out, 
+ * when the pointer to the input string is returned. */
 
 #define stk_conv(s, cs_in, cs_out) \
     ({ struct conv_context _c; uns _l=stk_conv_internal(&_c, (s), (cs_in), (cs_out)); \
@@ -18,6 +22,6 @@
 #define stk_conv_to_utf8(s, cs_in) stk_conv(s, cs_in, CONV_CHARSET_UTF8)
 #define stk_conv_from_utf8(s, cs_out) stk_conv(s, CONV_CHARSET_UTF8, cs_out)
     
-uns stk_conv_internal(struct conv_context *, byte *, uns, uns);
+uns stk_conv_internal(struct conv_context *c, byte *s, uns cs_in, uns cs_out);
 
 #endif

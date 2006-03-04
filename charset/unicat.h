@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _UNICAT_H
-#define _UNICAT_H
+#ifndef _CHARSET_UNICAT_H
+#define _CHARSET_UNICAT_H
 
 extern const byte *_U_cat[];
 extern const word *_U_upper[], *_U_lower[], *_U_unaccent[];

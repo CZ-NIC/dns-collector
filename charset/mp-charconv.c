@@ -8,7 +8,6 @@
 #include "lib/mempool.h"
 #include "charset/mp-charconv.h"
 #include "charset/stk-charconv.h"
-#include <string.h>
 
 byte *
 mp_conv(struct mempool *mp, byte *s, uns in_cs, uns out_cs)
