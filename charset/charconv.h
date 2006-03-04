@@ -7,6 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
+#ifndef _CHARCONV_H
+#define _CHARCONV_H
+
 struct conv_context {
 
   /* Parameters supplied by the caller */
@@ -77,3 +80,5 @@ unsigned int conv_x_count(void);
 
 int find_charset_by_name(char *);
 char *charset_name(int);
+
+#endif
