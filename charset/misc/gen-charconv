@@ -182,9 +182,6 @@ print "static unsigned char string_table[] = {\n";
 $i = 256;
 while ($i < $pstr) {
 	$w = $strval{$i};
-	if (length($w) > 3) {
-		print STDERR "Warning: Entries should have at most 3 characters, see charset/stk-charconv.c\n";
-	}
 	print length $w, ",";
 	foreach $x (unpack("C256", $w)) {
 		print " $x,";

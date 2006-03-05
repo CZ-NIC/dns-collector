@@ -10,18 +10,27 @@
 #include "charset/charconv.h"
 #include <alloca.h>
 
-/* The following macros convert strings between given charsets (CONV_CHARSET_x).
- * The resulting string is allocated on the stack with the exception of cs_in == cs_out, 
- * when the pointer to the input string is returned. */
+/* The following macros convert strings between given charsets (CONV_CHARSET_x). */
 
 #define stk_conv(s, cs_in, cs_out) \
-    ({ struct conv_context _c; uns _l=stk_conv_internal(&_c, (s), (cs_in), (cs_out)); \
-    if (_l) { _c.dest=_c.dest_start=alloca(_l); _c.dest_end=_c.dest+_l; conv_run(&_c); } \
-    _c.dest_start; })
+    ({ struct stk_conv_context _c; stk_conv_init(&_c, (s), (cs_in), (cs_out)); \
+       while (stk_conv_step(&_c, alloca(_c.request))); _c.c.dest_start; })
 
 #define stk_conv_to_utf8(s, cs_in) stk_conv(s, cs_in, CONV_CHARSET_UTF8)
 #define stk_conv_from_utf8(s, cs_out) stk_conv(s, CONV_CHARSET_UTF8, cs_out)
-    
-uns stk_conv_internal(struct conv_context *c, byte *s, uns cs_in, uns cs_out);
+   
+/* Internal structure and routines. */
+
+struct stk_conv_context {
+  struct conv_context c;
+  uns count;
+  uns sum;
+  uns request;
+  byte *buf[16]; 
+  uns size[16];
+};
+
+void stk_conv_init(struct stk_conv_context *c, byte *s, uns cs_in, uns cs_out);
+int stk_conv_step(struct stk_conv_context *c, byte *buf);
 
 #endif
