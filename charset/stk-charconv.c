@@ -2,6 +2,9 @@
  *	Sherlock Library -- Character Conversion with Allocation on the Stack 
  *
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #include "lib/lib.h"
@@ -11,50 +14,47 @@
 #define INITIAL_MIN_SIZE	16
 #define INITIAL_SCALE		2
 
-void
-stk_conv_init(struct stk_conv_context *c, byte *s, uns in_cs, uns out_cs)
+uns
+stk_conv_init(struct conv_context *c, byte *s, uns in_cs, uns out_cs)
 {
   uns l = strlen(s);
   if (in_cs == out_cs)
   {
-    c->c.source = s;
-    c->c.source_end = NULL;
-    c->len = l + 1;
-    return;
+    c->source = s;
+    c->source_end = NULL;
+    return l + 1;
   }
-  conv_init(&c->c);
-  conv_set_charset(&c->c, in_cs, out_cs);
-  c->c.source = s;
-  c->c.source_end = s + l + 1;
+  conv_init(c);
+  conv_set_charset(c, in_cs, out_cs);
+  c->source = s;
+  c->source_end = s + l + 1;
   if (l < (INITIAL_MIN_SIZE - 1) / INITIAL_SCALE)
-    c->len = INITIAL_MIN_SIZE;
+    return INITIAL_MIN_SIZE;
   else
-    c->len = l * INITIAL_SCALE + 1;
-  c->len = 1;
+    return l * INITIAL_SCALE + 1;
 }
 
-int
-stk_conv_step(struct stk_conv_context *c, byte *buf)
+uns
+stk_conv_step(struct conv_context *c, byte *buf, uns len)
 {
-  if (!c->c.source_end)
+  if (!c->source_end)
   {
-    memcpy(buf, c->c.source, c->len);
-    c->c.dest_start = buf;
+    memcpy(buf, c->source, len);
+    c->dest_start = buf;
     return 0;
   }
-  if (c->c.dest_start)
+  if (c->dest_start)
   {
-    uns l = c->c.dest_end - c->c.dest_start;
-    memcpy(buf, c->c.dest_start, l);
-    c->c.dest = buf + l;
+    uns l = c->dest_end - c->dest_start;
+    memcpy(buf, c->dest_start, l);
+    c->dest = buf + l;
   }
   else
-    c->c.dest = buf;
-  c->c.dest_start = buf;
-  c->c.dest_end = buf + c->len;
-  if ((conv_run(&c->c) & CONV_SOURCE_END))
+    c->dest = buf;
+  c->dest_start = buf;
+  c->dest_end = buf + len;
+  if (conv_run(c) & CONV_SOURCE_END)
     return 0;
-  c->len <<= 1;
-  return 1;
+  return len << 1;
 }
 

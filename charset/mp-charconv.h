@@ -2,6 +2,9 @@
  *	Sherlock Library -- Character Conversion with Allocation on a Memory Pool 
  *
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
  */
 
 #ifndef _CHARSET_MP_CHARCONV_H
