@@ -8,13 +8,12 @@
  */
 
 #include "lib/lib.h"
-#include "lib/mempool.h"
 #include "charset/mp-charconv.h"
 #include <string.h>
 #include <alloca.h>
 
 byte *
-mp_conv(struct mempool *mp, byte *s, uns in_cs, uns out_cs)
+mp_strconv(struct mempool *mp, byte *s, uns in_cs, uns out_cs)
 {
   if (in_cs == out_cs)
     return mp_strdup(mp, s);

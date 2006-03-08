@@ -13,14 +13,14 @@
 #include "lib/mempool.h"
 #include "charset/charconv.h"
 
-byte *mp_conv(struct mempool *mp, byte *s, uns cs_in, uns cs_out);
+byte *mp_strconv(struct mempool *mp, byte *s, uns cs_in, uns cs_out);
 
 static inline byte *
-mp_conv_to_utf8(struct mempool *mp, byte *s, uns cs_in) 
-{ return mp_conv(mp, s, cs_in, CONV_CHARSET_UTF8); }
+mp_strconv_to_utf8(struct mempool *mp, byte *s, uns cs_in) 
+{ return mp_strconv(mp, s, cs_in, CONV_CHARSET_UTF8); }
 
 static inline byte *
-mp_conv_from_utf8(struct mempool *mp, byte *s, uns cs_out)
-{ return mp_conv(mp, s, CONV_CHARSET_UTF8, cs_out); }
+mp_strconv_from_utf8(struct mempool *mp, byte *s, uns cs_out)
+{ return mp_strconv(mp, s, CONV_CHARSET_UTF8, cs_out); }
 
 #endif
