@@ -19,7 +19,7 @@ struct fb_gbuf {
 #define FB_GBUF(f) ((struct fb_gbuf *)(f)->is_fastbuf)
 
 static int
-fbgbuf_refill(struct fastbuf *b)
+fbgrow_refill(struct fastbuf *b)
 {
   if (b->bstop != FB_GBUF(b)->last_written)
     {
@@ -33,7 +33,7 @@ fbgbuf_refill(struct fastbuf *b)
 }
 
 static void
-fbgbuf_spout(struct fastbuf *b)
+fbgrow_spout(struct fastbuf *b)
 {
   if (b->bptr >= b->bufend)
     {
@@ -46,7 +46,7 @@ fbgbuf_spout(struct fastbuf *b)
 }
 
 static void
-fbgbuf_seek(struct fastbuf *b, sh_off_t pos, int whence)
+fbgrow_seek(struct fastbuf *b, sh_off_t pos, int whence)
 {
   ASSERT(FB_GBUF(b)->last_written);	/* Seeks allowed only in read mode */
   sh_off_t len = FB_GBUF(b)->last_written - b->buffer;
@@ -59,30 +59,30 @@ fbgbuf_seek(struct fastbuf *b, sh_off_t pos, int whence)
 }
 
 static void
-fbgbuf_close(struct fastbuf *b)
+fbgrow_close(struct fastbuf *b)
 {
   xfree(b->buffer);
   xfree(b);
 }
 
 struct fastbuf *
-fbgbuf_create(unsigned basic_size)
+fbgrow_create(unsigned basic_size)
 {
   struct fastbuf *b = xmalloc_zero(sizeof(struct fb_gbuf));
   b->buffer = xmalloc(basic_size);
   b->bufend = b->buffer + basic_size;
   b->bptr = b->bstop = b->buffer;
   b->name = "<fbgbuf>";
-  b->refill = fbgbuf_refill;
-  b->spout = fbgbuf_spout;
-  b->seek = fbgbuf_seek;
-  b->close = fbgbuf_close;
+  b->refill = fbgrow_refill;
+  b->spout = fbgrow_spout;
+  b->seek = fbgrow_seek;
+  b->close = fbgrow_close;
   b->can_overwrite_buffer = 1;
   return b;
 }
 
 void
-fbgbuf_write(struct fastbuf *b)
+fbgrow_reset(struct fastbuf *b)
 {
   b->bptr = b->bstop = b->buffer;
   b->pos = 0;
@@ -90,7 +90,7 @@ fbgbuf_write(struct fastbuf *b)
 }
 
 void
-fbgbuf_rewind(struct fastbuf *b)
+fbgrow_rewind(struct fastbuf *b)
 {
   if (!FB_GBUF(b)->last_written)
     {
@@ -109,21 +109,21 @@ int main(void)
   struct fastbuf *f;
   int t;
 
-  f = fbgbuf_create(3);
+  f = fbgrow_create(3);
   for (uns i=0; i<5; i++)
     {
-      fbgbuf_write(f);
+      fbgrow_write(f);
       bwrite(f, "12345", 5);
       bwrite(f, "12345", 5);
       printf("<%d>", (int)btell(f));
       bflush(f);
       printf("<%d>", (int)btell(f));
-      fbgbuf_rewind(f);
+      fbgrow_rewind(f);
       printf("<%d>", (int)btell(f));
       while ((t = bgetc(f)) >= 0)
 	putchar(t);
       printf("<%d>", (int)btell(f));
-      fbgbuf_rewind(f);
+      fbgrow_rewind(f);
       bseek(f, -1, SEEK_END);
       printf("<%d>", (int)btell(f));
       while ((t = bgetc(f)) >= 0)

@@ -111,9 +111,9 @@ fbbuf_count_written(struct fastbuf *f)
 
 /* FastIO on recyclable growing buffers */
 
-struct fastbuf *fbgbuf_create(unsigned basic_size);
-void fbgbuf_write(struct fastbuf *b);			/* Reset stream and prepare for writing */
-void fbgbuf_rewind(struct fastbuf *b);			/* Close reading if needed and prepare for reading */
+struct fastbuf *fbgrow_create(unsigned basic_size);
+void fbgrow_reset(struct fastbuf *b);			/* Reset stream and prepare for writing */
+void fbgrow_rewind(struct fastbuf *b);			/* Prepare for reading */
 
 /* Configuring stream parameters */
 
