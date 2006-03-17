@@ -14,7 +14,7 @@ LIBUCW_MODS= \
 	conf ipaccess \
 	profile \
 	fastbuf ff-printf ff-utf8 \
-	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer \
+	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-gbuf \
 	str_ctype str_upper str_lower unicode-utf8 stkstring \
 	wildmatch wordsplit ctmatch patimatch patmatch regex \
 	prime primetable random timer randomkey \
