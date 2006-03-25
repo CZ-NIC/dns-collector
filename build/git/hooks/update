@@ -53,6 +53,6 @@ else
 fi 
 
 exec >&2
-mutt -x -e 'set charset="utf-8"; set allow_8bit=no; set send_charset="utf-8"' -s "$subj" "$recipient" <$out
+mutt -x -e 'set charset="utf-8"; set send_charset="us-ascii:iso-8859-2:utf-8"' -s "$subj" "$recipient" <$out
 rm $out
 exit 0
