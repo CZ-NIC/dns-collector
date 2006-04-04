@@ -33,7 +33,7 @@
 
 /* Pre-defined input functions */
 
-#define KMP_GET_RAW(pos, c, flags) c=*pos++
+#define KMP_GET_RAW(pos, c, flags) do { uns cc; pos = utf8_get(pos, &cc); c=cc; } while(0)
 
 #define KMP_GET_ASCII(pos, c, flags) do { \
 	c = *pos++; \
