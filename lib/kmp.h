@@ -33,7 +33,7 @@
 
 /* Pre-defined input functions */
 
-#define KMP_GET_RAW(pos, c, flags) do { uns cc; pos = utf8_get(pos, &cc); c=cc; } while(0)
+#define KMP_GET_UTF8(pos, c, flags) do { uns cc; pos = utf8_get(pos, &cc); c = cc; } while(0)
 
 #define KMP_GET_ASCII(pos, c, flags) do { \
 	c = *pos++; \
@@ -86,11 +86,11 @@ struct kmp_result {
 
 /* kmp.c */
 struct kmp *kmp_new(struct mempool *mp, int words_len, uns modify_flags);
-void kmp_enter_raw_string(struct kmp *kmp, const byte *str, uns id);
+void kmp_enter_raw_string(struct kmp *kmp, kmp_char_t *str, uns id);
 void kmp_build(struct kmp *kmp);
 
 static inline void
-kmp_get_char(const byte **str, kmp_char_t *c, uns modify_flags UNUSED)
+kmp_get_char(const byte **str UNUSED, kmp_char_t *c, uns modify_flags UNUSED)
 {
 	while (1)
 	{
@@ -112,12 +112,11 @@ kmp_enter_string(struct kmp *kmp, const byte *str, uns id)
 	 * to a conversion wrapper (this function) and the rest, which resides in kmp.c
 	 * and uses KMP_GET_RAW to read its input.
 	 */
-	byte buf[3*strlen(str)+1], *str2 = buf;
-	kmp_char_t c = 0;
+	kmp_char_t buf[strlen(str)+1], *str2 = buf, c = 0;
 	do
 	{
 		kmp_get_char(&str, &c, kmp->modify_flags);
-		str2 = utf8_put(str2, c);
+		*str2++ = c;
 	}
 	while (c);
 	kmp_enter_raw_string(kmp, buf, id);
