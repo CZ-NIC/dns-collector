@@ -110,7 +110,7 @@ kmp_enter_string(struct kmp *kmp, const byte *str, uns id)
 	/* To avoid dependencies between libucw and other libraries (which might
 	 * be referenced by the KMP_GET_CHAR macro), we have to split kmp_enter_string()
 	 * to a conversion wrapper (this function) and the rest, which resides in kmp.c
-	 * and uses KMP_GET_RAW to read its input.
+	 * and uses zero-terminated array of kmp_char_t characters as its input.
 	 */
 	kmp_char_t buf[strlen(str)+1], *str2 = buf, c = 0;
 	do
