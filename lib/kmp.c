@@ -10,7 +10,7 @@
 #include "lib/lists.h"
 #include "lib/unicode.h"
 
-#define KMP_GET_CHAR(pos, c, flags) do{}while(0)
+#define KMP_GET_CHAR(pos, c, flags) ASSERT(0)
 #include "lib/kmp.h"
 
 #include <stdlib.h>
