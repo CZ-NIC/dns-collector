@@ -5,6 +5,8 @@
 #include "lib/fastbuf.h"
 #include "images/images.h"
 
+#include <magick/api.h>
+
 /*
  * Color spaces
  * 

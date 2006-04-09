@@ -28,7 +28,7 @@
 #include <string.h>
 
 /* This should happen in gatherer or scanner */
-static void
+UNUSED static void
 generate_signatures(uns limit)
 {
   struct fastbuf *fb_cards = index_bopen("cards", O_RDONLY);
@@ -101,6 +101,25 @@ generate_signatures(uns limit)
   bclose(fb_signatures);
 }
 
+UNUSED static void
+generate_random_signatures(uns count)
+{
+  log(L_INFO, "Generating %d random signatures", count);
+  struct fastbuf *fb_signatures = index_bopen("image-sig", O_CREAT | O_WRONLY | O_TRUNC);
+  bputl(fb_signatures, count);
+  for (uns i = 0; i < count; i++)
+    {
+      oid_t oid = i;
+      struct image_vector vec;
+      for (uns j = 0; j < IMAGE_VEC_K; j++)
+	vec.f[j] = random_max(256); 
+      bwrite(fb_signatures, &oid, sizeof(oid));
+      bwrite(fb_signatures, &vec, sizeof(vec));
+      bputc(fb_signatures, 0);
+    }
+  bclose(fb_signatures); 
+}
+
 struct signature_record {
   oid_t oid;
   struct image_vector vec;
@@ -161,8 +180,8 @@ build_search_tree(void)
       DBG("depth=%d nodes=%d bbox=[(%s), (%s)]", tree.depth, 1 << tree.depth, 
 	  stk_print_image_vector(tree.bbox.vec + 0), stk_print_image_vector(tree.bbox.vec + 1));
       uns leaves_index = 1 << (tree.depth - 1);
-      tree.nodes = xmalloc((1 << tree.depth) * sizeof(struct image_node));
-      tree.leaves = xmalloc(tree.count * sizeof(struct image_leaf));
+      tree.nodes = xmalloc_zero((1 << tree.depth) * sizeof(struct image_node));
+      tree.leaves = xmalloc_zero(tree.count * sizeof(struct image_leaf));
      
       /* Initialize recursion */
       struct stk {
@@ -205,7 +224,7 @@ build_search_tree(void)
 		          uns value =
 			    (record->vec.f[i] - stk->bbox.vec[0].f[i]) * 
 			    ((1 << bits) - 1) / stk->bbox.vec[1].f[i];
-			  ASSERT(value < (1 << bits));
+			  ASSERT(value < (uns)(1 << bits));
 			  leaf->flags |= value;
 			}
 		    }
@@ -266,6 +285,7 @@ build_search_tree(void)
       struct fastbuf *fb_tree = index_bopen("image-tree", O_CREAT | O_WRONLY | O_TRUNC);
       bputl(fb_tree, tree.count);
       bputl(fb_tree, tree.depth);
+      bwrite(fb_tree, &tree.bbox, sizeof(struct image_bbox));
       bwrite(fb_tree, tree.nodes + 1, ((1 << tree.depth) - 1) * sizeof(struct image_node));
       bwrite(fb_tree, tree.leaves, tree.count * sizeof(struct image_leaf));
       bclose(fb_tree);
@@ -319,6 +339,7 @@ main(int argc UNUSED, char **argv)
     usage("Invalid usage");
 
   generate_signatures(~0U);
+  //generate_random_signatures(1000000);
   build_search_tree();
   
   return 0;

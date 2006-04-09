@@ -3,7 +3,6 @@
 
 #include <alloca.h>
 #include <stdio.h>
-#include <magick/api.h>
 
 #define IMAGE_VEC_K	6
 #define IMAGE_REG_K	9
@@ -60,6 +59,11 @@ struct image_leaf {
 #define stk_print_image_vector(v) ({ struct image_vector *_v = v; \
     byte *_s = (byte *) alloca(IMAGE_VEC_K * 6), *_p = _s + sprintf(_s, "%d", _v->f[0]); \
     for (uns _i = 1; _i < IMAGE_VEC_K; _i++) _p += sprintf(_p, " %d", _v->f[_i]); _s; })
+
+extern struct image_tree image_tree;
+
+void image_tree_init(void);
+void image_tree_done(void);
 
 void compute_image_signature_prepare(void);
 void compute_image_signature_finish(void);
