@@ -71,7 +71,7 @@ compute_image_area_signature(PixelPacket *pixels, uns width, uns height, struct 
   /* Every 4x4 block (FIXME: deal with smaller blocks near the edges) */
   PixelPacket *p = pixels;
   for (uns block_y = 0; block_y < h; block_y++, p += width & 3 + width * 3)
-    for (uns block_x = 0; block_x < w; block_x++, p += 4 - 4 * width, block++)
+    for (uns block_x = 0; block_x < w; block_x++, p -= 4 * width - 4, block++)
       {
         int t[16], s[16], *tp = t;
 	
@@ -159,54 +159,59 @@ compute_image_area_signature(PixelPacket *pixels, uns width, uns height, struct 
       hh_sum += blocks[i].hh;
     }
 
-  sig->vec[0] = l_sum / blocks_count;
-  sig->vec[1] = u_sum / blocks_count;
-  sig->vec[2] = v_sum / blocks_count;
-  sig->vec[3] = lh_sum / blocks_count;
-  sig->vec[4] = hl_sum / blocks_count;
-  sig->vec[5] = hh_sum / blocks_count;
+  sig->vec.f[0] = l_sum / blocks_count;
+  sig->vec.f[1] = u_sum / blocks_count;
+  sig->vec.f[2] = v_sum / blocks_count;
+  sig->vec.f[3] = lh_sum / blocks_count;
+  sig->vec.f[4] = hl_sum / blocks_count;
+  sig->vec.f[5] = hh_sum / blocks_count;
+
+  sig->len = 0;
 
   xfree(blocks);
 
-  DBG("Resulting signature is (%d, %d, %d, %d, %d, %d)", sig->vec[0], sig->vec[1], sig->vec[2], sig->vec[3], sig->vec[4], sig->vec[5]);
+  DBG("Resulting signature is (%s)", stk_print_image_vector(&sig->vec));
+}
+
+static ExceptionInfo exception;
+static QuantizeInfo quantize_info;
+static ImageInfo *image_info;
+
+void
+compute_image_signature_prepare(void)
+{
+  InitializeMagick(NULL); 
+  GetExceptionInfo(&exception);
+  image_info = CloneImageInfo(NULL);
+  image_info->subrange = 1;
+  GetQuantizeInfo(&quantize_info);
+  quantize_info.colorspace = RGBColorspace;
+}
+
+void
+compute_image_signature_finish(void)
+{
+  DestroyImageInfo(image_info);
+  DestroyExceptionInfo(&exception);
+  DestroyMagick();
 }
 
 int
 compute_image_signature(void *data, uns len, struct image_signature *sig)
 {
-  int retval = 0;
-  
-  InitializeMagick(NULL); /* FIXME: call only once */
-  ExceptionInfo exception;
-  GetExceptionInfo(&exception);
-  ImageInfo *image_info = CloneImageInfo(NULL);
-  image_info->subrange = 1;
-
-  DBG("Decoding");
-  Image *image = BlobToImage(image_info, data, len, &exception); /* Damn slow... most of the time :-/ */
+  Image *image = BlobToImage(image_info, data, len, &exception); /* Damn slow... takes most of CPU time :-/ */
   if (!image)
     die("Invalid image format");
   if (image->columns < 4 || image->rows < 4)
     {
       DBG("Image too small (%dx%d)", (int)image->columns, (int)image->rows);
-      retval = -1;
-      goto exit;
+      DestroyImage(image);
+      return -1;
     }
-  
-  QuantizeInfo quantize_info;
-  GetQuantizeInfo(&quantize_info);
-  quantize_info.colorspace = RGBColorspace;
-  QuantizeImage(&quantize_info, image);
-
+  QuantizeImage(&quantize_info, image); /* Also slow... and propably not necessary... */
   PixelPacket *pixels = (PixelPacket *) AcquireImagePixels(image, 0, 0, image->columns, image->rows, &exception);
-
   compute_image_area_signature(pixels, image->columns, image->rows, sig);
-  
-exit:  
   DestroyImage(image);
-  DestroyImageInfo(image_info);
-  DestroyExceptionInfo(&exception);
-  DestroyMagick();
-  return retval;
+  return 0;
 }
 
