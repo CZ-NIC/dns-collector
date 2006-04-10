@@ -218,6 +218,45 @@ byte *cf_parse_double(byte *value, double *varp)
 	return msg;
 }
 
+byte *
+cf_parse_ip(byte **p, u32 *varp)
+{
+  while (Cspace(**p))
+    (*p)++;
+  if (!**p)
+    return "Missing IP address";
+  uns x = 0;
+  if (**p == '0' && *(*p + 1) | 32 == 'X')
+    {
+      errno = 0;
+      x = strtoul(*p + 2, (char **)p, 16);
+      if (errno == ERANGE || x > 0xffffffff)
+        goto error;
+    }
+  else
+    for (uns i = 0; i < 4; i++)
+      {
+        if (i)
+          {
+            while (Cspace(**p))
+              (*p)++;
+            if (*(*p)++ != '.')
+              goto error;
+          }
+        while (Cspace(**p))
+          (*p)++;
+        errno = 0;
+        uns y = strtoul(*p, (char **)p, 10);
+        if (errno == ERANGE || y > 255)
+          goto error;
+        x = (x << 8) + y;
+      }
+  *varp = x;
+  return NULL;
+error:
+  return "Invalid IP address";
+}
+
 byte *cf_set_item(byte *sect, byte *name, byte *value)
 {
 	struct cfitem *item;

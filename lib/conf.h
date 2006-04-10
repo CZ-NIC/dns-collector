@@ -65,6 +65,12 @@ byte *cf_parse_int(byte *value, uns *varp);
 byte *cf_parse_u64(byte *value, u64 *varp);
 byte *cf_parse_double(byte *value, double *varp);
 
+/* 
+ * Some useful parsing functions.
+ */
+
+byte *cf_parse_ip(byte **value, u32 *varp);
+
 /*
  * When using cf_getopt, you must prefix your own short/long options by the
  * CF_(SHORT|LONG)_OPTS.
