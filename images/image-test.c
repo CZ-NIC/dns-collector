@@ -8,7 +8,6 @@
 #include "lib/mempool.h"
 #include "sherlock/object.h"
 #include "sherlock/lizard-fb.h"
-#include "sherlock/lizard-fb.h"
 #include <fcntl.h>
 #include <stdio.h>
 

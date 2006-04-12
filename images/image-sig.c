@@ -72,11 +72,11 @@ compute_image_area_signature(PixelPacket *pixels, uns width, uns height, struct 
   
   /* Every 4x4 block (FIXME: deal with smaller blocks near the edges) */
   PixelPacket *p = pixels;
-  for (uns block_y = 0; block_y < h; block_y++, p += width & 3 + width * 3)
+  for (uns block_y = 0; block_y < h; block_y++, p += (width & 3) + width * 3)
     for (uns block_x = 0; block_x < w; block_x++, p -= 4 * width - 4, block++)
       {
         int t[16], s[16], *tp = t;
-	
+
 	/* Convert pixels to Luv color space and compute average coefficients 
 	 * FIXME:
 	 * - could be MUCH faster with precomputed tables and integer arithmetic... 
@@ -101,7 +101,7 @@ compute_image_area_signature(PixelPacket *pixels, uns width, uns height, struct 
 	block->l = l_sum;
 	block->u = u_sum;
 	block->v = v_sum;
-	
+
 	/* Apply Daubechies wavelet transformation 
 	 * FIXME:
 	 * - MMX/SSE instructions or tables could be faster 
