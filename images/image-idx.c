@@ -22,6 +22,7 @@
 #include "lib/bbuf.h"
 
 #include "images/images.h"
+#include "images/image-thumb.h"
 
 #include <stdlib.h>
 #include <fcntl.h>
@@ -58,7 +59,7 @@ generate_signatures(uns limit)
         if (attr = obj_find_attr(obj, 'N'))
           {
 	    DBG("Reading oid=%d url=%s", oid, obj_find_aval(obj_find_attr(obj, 'U' + OBJ_ATTR_SON)->son, 'U'));
-	    bb_t buf;
+	    /*bb_t buf;
 	    uns buf_len = 0;
 	    bb_init(&buf);
 	    for (; attr; attr = attr->same)
@@ -69,24 +70,27 @@ generate_signatures(uns limit)
 	        buf_len += len;
 	      }
 	    byte thumb[buf_len];
-	    uns thumb_len = base224_decode(thumb, buf.ptr, buf_len);
-	   
-	    int err = compute_image_signature(thumb, thumb_len, &sig);
-	    if (!err)
+	    uns thumb_len = base224_decode(thumb, buf.ptr, buf_len);*/
+	    struct image thumb;
+	    int err;
+	    if (!(err = decompress_thumbnail(obj, pool, &thumb)))
 	      {
-		bwrite(fb_signatures, &oid, sizeof(oid));
-		bwrite(fb_signatures, &sig.vec, sizeof(struct image_vector));
-		bputc(fb_signatures, sig.len);
-		if (sig.len)
-		  bwrite(fb_signatures, sig.reg, sig.len * sizeof(struct image_region));
-		count++;
-		if (count >= limit)
-	          break;
+	        if (!(err = compute_image_signature(&thumb, &sig)))
+	          {
+		    bwrite(fb_signatures, &oid, sizeof(oid));
+		    bwrite(fb_signatures, &sig.vec, sizeof(struct image_vector));
+		    bputc(fb_signatures, sig.len);
+		    if (sig.len)
+		      bwrite(fb_signatures, sig.reg, sig.len * sizeof(struct image_region));
+		    count++;
+		    if (count >= limit)
+	              break;
+	          }
+	        else
+	          DBG("Cannot create signature, error=%d", err);
 	      }
 	    else
-	      DBG("Cannot create signature, error=%d", err);
-
-	    bb_done(&buf);
+	      DBG("Cannot decompress thumbnail, error=%d", err);
 	  }
       }
   brewind(fb_signatures);

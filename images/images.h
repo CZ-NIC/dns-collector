@@ -4,6 +4,17 @@
 #include <alloca.h>
 #include <stdio.h>
 
+enum image_flag {
+  IMAGE_GRAYSCALE = 0x1,	/* RGB otherwise */
+};
+
+struct image {
+  uns flags;			/* enum thumbnail_flags */
+  uns width;			/* number of columns */
+  uns height;			/* number of rows */
+  byte *pixels;			/* 3 bytes per pixel for RGB, 1 byte for grayscale */
+};
+
 #define IMAGE_VEC_K	6
 #define IMAGE_REG_K	9
 #define IMAGE_REG_MAX	4
@@ -67,7 +78,7 @@ void image_tree_done(void);
 
 void compute_image_signature_prepare(void);
 void compute_image_signature_finish(void);
-int compute_image_signature(void *data, uns len, struct image_signature *sig);
+int compute_image_signature(struct image *image, struct image_signature *sig);
 
 #endif
 
