@@ -75,6 +75,7 @@ $(o)/lib/asort-test: $(o)/lib/asort-test.o $(LIBUCW)
 $(o)/lib/redblack-test: $(o)/lib/redblack-test.o $(LIBUCW)
 $(o)/lib/binheap-test: $(o)/lib/binheap-test.o $(LIBUCW)
 $(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
+$(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 
 TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test slists.test)
 $(o)/lib/regex.test: $(o)/lib/regex-t
