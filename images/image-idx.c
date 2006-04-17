@@ -22,7 +22,8 @@
 #include "lib/bbuf.h"
 
 #include "images/images.h"
-#include "images/image-thumb.h"
+#include "images/image-obj.h"
+#include "images/image-sig.h"
 
 #include <stdlib.h>
 #include <fcntl.h>
@@ -43,7 +44,7 @@ generate_signatures(uns limit)
 
   log(L_INFO, "Generating image signatures");
   bputl(fb_signatures, 0);
-  compute_image_signature_prepare();
+  imo_decompress_thumbnails_init();
 
   for (oid_t oid = 0; bread(fb_card_attrs, &ca, sizeof(ca)); oid++)
     if ((uns)((ca.type_flags >> 4) - 8) < 4)
@@ -59,23 +60,12 @@ generate_signatures(uns limit)
         if (attr = obj_find_attr(obj, 'N'))
           {
 	    DBG("Reading oid=%d url=%s", oid, obj_find_aval(obj_find_attr(obj, 'U' + OBJ_ATTR_SON)->son, 'U'));
-	    /*bb_t buf;
-	    uns buf_len = 0;
-	    bb_init(&buf);
-	    for (; attr; attr = attr->same)
+	    struct image_obj imo;
+	    imo_init(&imo, pool, obj);
+	    if (imo_decompress_thumbnail(&imo))
 	      {
-	        uns len = strlen(attr->val);
-  	        bb_grow(&buf, buf_len + len);
-                memcpy(buf.ptr + buf_len, attr->val, len);
-	        buf_len += len;
-	      }
-	    byte thumb[buf_len];
-	    uns thumb_len = base224_decode(thumb, buf.ptr, buf_len);*/
-	    struct image thumb;
-	    int err;
-	    if (!(err = decompress_thumbnail(obj, pool, &thumb)))
-	      {
-	        if (!(err = compute_image_signature(&thumb, &sig)))
+		int err;
+	        if (!(err = compute_image_signature(&imo.thumb, &sig)))
 	          {
 		    bwrite(fb_signatures, &oid, sizeof(oid));
 		    bwrite(fb_signatures, &sig.vec, sizeof(struct image_vector));
@@ -90,14 +80,14 @@ generate_signatures(uns limit)
 	          DBG("Cannot create signature, error=%d", err);
 	      }
 	    else
-	      DBG("Cannot decompress thumbnail, error=%d", err);
+	      DBG("Cannot decompress thumbnail");
 	  }
       }
   brewind(fb_signatures);
   bputl(fb_signatures, count);
   DBG("%d signatures written", count);
 
-  compute_image_signature_finish();
+  imo_decompress_thumbnails_done();
   buck2obj_free(bob);
   mp_delete(pool);
   bclose(fb_cards);

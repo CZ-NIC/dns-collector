@@ -4,7 +4,10 @@
 #include "lib/math.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
+#include "images/image-obj.h"
+#include "images/image-sig.h"
 
+#include <alloca.h>
 #include <magick/api.h>
 
 /*
@@ -59,14 +62,18 @@ struct block {
   uns lh, hl, hh;	/* energies in Daubechies wavelet bands */
 };
 
-static void
-compute_image_area_signature(struct image *image, struct image_signature *sig)
+int
+compute_image_signature(struct image *image, struct image_signature *sig)
 {
   uns width = image->width;
   uns height = image->height;
-  
-  ASSERT(width >= 4 && height >= 4);
 
+  if (width < 4 || height < 4)
+    {
+      DBG("Image too small... %dx%d", width, height);
+      return 0;
+    }
+  
   uns w = width >> 2;
   uns h = height >> 2;
   DBG("Computing signature for image %dx%d... %dx%d blocks", width, height, w, h);
@@ -74,9 +81,9 @@ compute_image_area_signature(struct image *image, struct image_signature *sig)
   struct block *blocks = xmalloc(blocks_count * sizeof(struct block)), *block = blocks; /* FIXME: use mempool */
   
   /* Every 4x4 block (FIXME: deal with smaller blocks near the edges) */
-  byte *p = image->pixels;
-  for (uns block_y = 0; block_y < h; block_y++, p += 3 * ((width & 3) + width * 3))
-    for (uns block_x = 0; block_x < w; block_x++, p -= 3 * (4 * width - 4), block++)
+  struct pixel *p = image->pixels;
+  for (uns block_y = 0; block_y < h; block_y++, p +=  (width & 3) + width * 3)
+    for (uns block_x = 0; block_x < w; block_x++, p -= 4 * width - 4, block++)
       {
         int t[16], s[16], *tp = t;
 
@@ -87,13 +94,13 @@ compute_image_area_signature(struct image *image, struct image_signature *sig)
 	uns l_sum = 0;
 	uns u_sum = 0;
 	uns v_sum = 0;
-	for (uns y = 0; y < 4; y++, p += 3 * (width - 4))
-	  for (uns x = 0; x < 4; x++, p += 3)
+	for (uns y = 0; y < 4; y++, p += width - 4)
+	  for (uns x = 0; x < 4; x++, p += 1)
 	    {
 	      double rgb[3], luv[3], xyz[3];
-	      rgb[0] = p[0] / 255.;
-	      rgb[1] = p[1] / 255.;
-	      rgb[2] = p[2] / 255.;
+	      rgb[0] = p->r / 255.;
+	      rgb[1] = p->g / 255.;
+	      rgb[2] = p->b / 255.;
 	      srgb_to_xyz_slow(rgb, xyz);
 	      xyz_to_luv_slow(xyz, luv);
 	      l_sum += *tp++ = luv[0];
@@ -176,53 +183,6 @@ compute_image_area_signature(struct image *image, struct image_signature *sig)
   xfree(blocks);
 
   DBG("Resulting signature is (%s)", stk_print_image_vector(&sig->vec));
-}
-
-static ExceptionInfo exception;
-static QuantizeInfo quantize_info;
-static ImageInfo *image_info;
-
-void
-compute_image_signature_prepare(void)
-{
-  InitializeMagick(NULL); 
-  GetExceptionInfo(&exception);
-  image_info = CloneImageInfo(NULL);
-  image_info->subrange = 1;
-  GetQuantizeInfo(&quantize_info);
-  quantize_info.colorspace = RGBColorspace;
-}
-
-void
-compute_image_signature_finish(void)
-{
-  DestroyImageInfo(image_info);
-  DestroyExceptionInfo(&exception);
-  DestroyMagick();
-}
-
-int
-compute_image_signature(struct image *image, struct image_signature *sig)
-{
-  if ((image->flags & IMAGE_GRAYSCALE) || (image->width < 4) || (image->height < 4))
-    return -1;
-  compute_image_area_signature(image, sig);
-  return 0;
-#if 0
-  Image *image = BlobToImage(image_info, data, len, &exception); /* Damn slow... takes most of CPU time :-/ */
-  if (!image)
-    die("Invalid image format");
-  if (image->columns < 4 || image->rows < 4)
-    {
-      DBG("Image too small (%dx%d)", (int)image->columns, (int)image->rows);
-      DestroyImage(image);
-      return -1;
-    }
-  QuantizeImage(&quantize_info, image); /* Also slow... and propably not necessary... */
-  PixelPacket *pixels = (PixelPacket *) AcquireImagePixels(image, 0, 0, image->columns, image->rows, &exception);
-  compute_image_area_signature(pixels, image->columns, image->rows, sig);
-  DestroyImage(image);
-  return 0;
-#endif  
+  return 1;
 }
 

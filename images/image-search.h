@@ -1,4 +1,5 @@
 #include "lib/heap.h"
+#include <alloca.h>
 
 #define IMAGE_SEARCH_DIST_UNLIMITED	(~0U)
 
