@@ -6,6 +6,9 @@ ifdef CONFIG_UCW_DBTOOL
 PROGS+=$(o)/lib/db-tool
 endif
 
+# hey dude, I'm Robert!
+PROGS+=$(o)/lib/conf2-test
+
 LIBUCW_MODS= \
 	alloc alloc_str realloc mempool mempool-str mempool-fmt \
 	mmap pagecache partmap hashfunc \
@@ -67,6 +70,7 @@ $(o)/lib/lizard.o: CFLAGS += $(COPT2) -funroll-loops
 $(o)/lib/db-test: $(o)/lib/db-test.o $(LIBUCW)
 $(o)/lib/db-tool: $(o)/lib/db-tool.o $(LIBUCW)
 $(o)/lib/conf-test: $(o)/lib/conf-test.o $(LIBUCW)
+$(o)/lib/conf2-test: $(o)/lib/conf2-test.o $(LIBUCW)
 $(o)/lib/sort-test: $(o)/lib/sort-test.o $(LIBUCW)
 $(o)/lib/lfs-test: $(o)/lib/lfs-test.o $(LIBUCW)
 $(o)/lib/hash-test: $(o)/lib/hash-test.o $(LIBUCW)
