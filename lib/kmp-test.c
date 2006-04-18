@@ -8,13 +8,26 @@
 #define TRACE(x...) do{}while(0)
 #endif
 
+/* TEST1 - multiple searches */
+
 #define KMP_PREFIX(x) GLUE_(kmp1,x)
 #define KMP_WANT_CLEANUP
-#define KMP_WANT_SEARCH
+#include "lib/kmp-new.h"
+#define KMPS_PREFIX(x) GLUE_(kmp1s1,x)
+#define KMPS_KMP_PREFIX(x) GLUE_(kmp1,x)
 #define KMPS_WANT_BEST
 #define KMPS_T uns
 #define KMPS_EXIT(ctx,src,s) do{ return s.best->len; }while(0)
-#include "lib/kmp-new.h"
+#include "lib/kmp-search.h"
+#define KMPS_PREFIX(x) GLUE_(kmp1s2,x)
+#define KMPS_KMP_PREFIX(x) GLUE_(kmp1,x)
+#define KMPS_EXTRA_VAR uns
+#define KMPS_INIT(ctx,src,s) do{ s.v = 0; }while(0)
+#define KMPS_T uns
+#define KMPS_FOUND(ctx,src,s) do{ s.v++; }while(0)
+#define KMPS_EXIT(ctx,src,s) do{ return s.v; }while(0)
+#define KMPS_WANT_BEST
+#include "lib/kmp-search.h"
 
 static void
 test1(void)
@@ -26,11 +39,15 @@ test1(void)
   kmp1_add(&ctx, "hoj");
   kmp1_add(&ctx, "aho");
   kmp1_build(&ctx);
-  UNUSED uns best = kmp1_search(&ctx, "asjlahslhalahosjkjhojsas");
+  UNUSED uns best = kmp1s1_search(&ctx, "asjlahslhalahosjkjhojsas");
   TRACE("Best match has %d characters", best);
   ASSERT(best == 3);
+  UNUSED uns count = kmp1s2_search(&ctx, "asjlahslhalahojsjkjhojsas");
+  ASSERT(count == 4);
   kmp1_cleanup(&ctx);
 }
+
+/* TEST2 - various tracing */
 
 #define KMP_PREFIX(x) GLUE_(kmp2,x)
 #define KMP_USE_UTF8
@@ -70,6 +87,8 @@ test2(void)
   kmp2_search(&ctx, "Šíleně žluťoučký kůň úpěl ďábelské ódy labababaks sdahojdhsaladsjhla");
   kmp2_cleanup(&ctx);
 }
+
+/* TEST3 - random tests */
 
 #define KMP_PREFIX(x) GLUE_(kmp3,x)
 #define KMP_NODE uns
@@ -130,11 +149,38 @@ test3(void)
   mp_delete(pool);
 }
 
+/* TEST4 - user-defined character type
+ * FIXME: it would need custom compare and hash functions to be really valid */
+
+#define KMP_PREFIX(x) GLUE_(kmp4,x)
+#define KMP_CHAR byte *
+#define KMP_CONTROL_CHAR NULL
+#define KMP_GET_CHAR(ctx,src,c) ({ c = src++; !!*c; })
+#define KMP_WANT_CLEANUP
+#define KMP_WANT_SEARCH
+#define KMPS_FOUND(ctx,src,s) do{ ASSERT(0); }while(0)
+#define KMPS_ADD_CONTROLS
+#define KMPS_MERGE_CONTROLS
+#include "lib/kmp-new.h"
+
+static void
+test4(void)
+{
+  log(L_INFO, "Running test4");
+  struct kmp4_context ctx;
+  kmp4_init(&ctx);
+  kmp4_add(&ctx, "ahoj");
+  kmp4_build(&ctx);
+  kmp4_search(&ctx, "djdhaskjdahoahaahojojshdaksjahdahojskj");
+  kmp4_cleanup(&ctx);
+}
+
 int
 main(void)
 {
   test1();
   test2();
   test3();
+  test4();
   return 0;
 }

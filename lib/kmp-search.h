@@ -123,7 +123,7 @@ P(search) (struct KP(context) *ctx, P(search_source_t) src
 #     endif
 
 #   ifdef KMPS_ADD_CONTROLS    
-    if (unlikely(s.eof))
+    if (s.eof)
       break;
 #   endif    
 
@@ -136,7 +136,7 @@ start_read: ;
 
     do
       {
-	if (unlikely(!KMPS_GET_CHAR(ctx, src, s)))
+	if (!KMPS_GET_CHAR(ctx, src, s))
 	  {
 #           ifdef KMPS_ADD_CONTROLS
 	    if (s.c != KP(control_char)())

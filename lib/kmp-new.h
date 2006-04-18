@@ -114,7 +114,7 @@ P(hash_eq) (struct P(hash_table) *t UNUSED, struct P(state) *f1, P(char_t) c1, s
 static inline void
 P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(state) *f, P(char_t) c)
 {
-  memset(s, 0, sizeof(*s));
+  bzero(s, sizeof(*s));
   s->from = f;
   s->c = c;
   s->next = f->back; /* the pointers hold the link-list of sons... change in build() */
@@ -157,9 +157,9 @@ typedef byte *P(source_t);
 
 #ifdef KMP_GET_CHAR
 static inline int
-P(get_char) (struct P(context) *ctx, P(source_t) *src, P(char_t) *c)
+P(get_char) (struct P(context) *ctx UNUSED, P(source_t) *src UNUSED, P(char_t) *c UNUSED)
 {
-  return KMP_GET_CHAR(ctx, *src, *c);
+  return KMP_GET_CHAR(ctx, (*src), (*c));
 }
 #else
 #  if defined(KMP_USE_UTF8)
@@ -179,7 +179,7 @@ P(get_char) (struct P(context) *ctx UNUSED, P(source_t) *src, P(char_t) *c)
   uns cc;
   *src = (byte *)utf8_get(*src, &cc);
 # ifdef KMP_ONLYALPHA
-  if (unlikely(!cc)) {}
+  if (!cc) {}
   else if (!Ualpha(cc))
     cc = P(control_char)();
   else
@@ -195,7 +195,7 @@ P(get_char) (struct P(context) *ctx UNUSED, P(source_t) *src, P(char_t) *c)
 # else
   uns cc = *(*src)++;
 # ifdef KMP_ONLYALPHA
-  if (unlikely(!cc)) {}
+  if (!cc) {}
   else if (!Calpha(cc))
     cc = P(control_char)();
   else
@@ -224,7 +224,7 @@ P(add) (struct P(context) *ctx, P(source_t) src
 # endif
 
   P(char_t) c;
-  if (unlikely(!P(get_char)(ctx, &src, &c)))
+  if (!P(get_char)(ctx, &src, &c))
     return NULL;
   struct P(state) *p = &ctx->null, *s;
   uns len = 0;
@@ -236,7 +236,7 @@ P(add) (struct P(context) *ctx, P(source_t) src
 	  {
 	    s = P(hash_new)(&ctx->hash, p, c);
 	    len++;
-	    if (unlikely(!(P(get_char)(ctx, &src, &c))))
+	    if (!(P(get_char)(ctx, &src, &c)))
 	      goto enter_new;
 	    p = s;
 	  }
@@ -266,7 +266,7 @@ enter_new:
 static void
 P(init) (struct P(context) *ctx)
 {
-  memset(ctx, 0, sizeof(*ctx));
+  bzero(ctx, sizeof(*ctx));
   P(hash_init)(&ctx->hash);
 }
 
