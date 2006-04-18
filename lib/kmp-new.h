@@ -44,7 +44,7 @@
  * 	KMP_NO_DUPS		no support for duplicates
  *
  *    Parameters to build():
- *      KMP_BUILD_STATE(ctx,s)	called for all states (except null) in order of non-decreasing tree depth
+ *      KMP_BUILD_STATE(ctx,s)	called for all states (including null) in order of non-decreasing tree depth
  *
  *	KMP_WANT_CLEANUP	cleanup()
  *	KMP_WANT_SEARCH		includes lib/kmp-search.h with the same prefix;
@@ -291,10 +291,13 @@ P(build) (struct P(context) *ctx)
   if (P(empty)(ctx))
     return;
   uns read = 0, write = 0;
-  struct P(state) *fifo[ctx->hash.hash_count];
-  for (struct P(state) *s = ctx->null.back; s; s = s->next)
+  struct P(state) *fifo[ctx->hash.hash_count], *null = &ctx->null;
+  for (struct P(state) *s = null->back; s; s = s->next)
     fifo[write++] = s;
-  ctx->null.back = NULL;
+  null->back = NULL;
+# ifdef KMP_BUILD_STATE
+  { KMP_BUILD_STATE(ctx, null); }
+# endif  
   while (read != write)
     {
       struct P(state) *s = fifo[read++], *t;
@@ -304,7 +307,7 @@ P(build) (struct P(context) *ctx)
         {
 	  if (!t)
 	    {
-	      s->back = &ctx->null;
+	      s->back = null;
 	      s->next = NULL;
 	      break;
 	    }
@@ -315,9 +318,9 @@ P(build) (struct P(context) *ctx)
 	      break;
 	    }
 	}
-#ifdef KMP_BUILD_STATE
+#     ifdef KMP_BUILD_STATE
       { KMP_BUILD_STATE(ctx, s); }
-#endif      
+#     endif      
     }
 }
 
