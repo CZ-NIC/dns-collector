@@ -18,9 +18,8 @@ struct sub_sect_1 {
 };
 
 static byte *
-init_sec_1(void *ptr)
+init_sec_1(struct sub_sect_1 *s)
 {
-  struct sub_sect_1 *s = ptr;
   s->name = "unknown";
   s->level = "default";
   s->confidence = 5;
@@ -28,26 +27,24 @@ init_sec_1(void *ptr)
 }
 
 static byte *
-commit_sec_1(void *ptr)
+commit_sec_1(struct sub_sect_1 *s)
 {
-  struct sub_sect_1 *s = ptr;
   if (s->confidence < 0 || s->confidence > 10)
     return "Well, this can't be";
   return NULL;
 }
 
 static struct cf_section cf_sec_1 = {
-  .size = sizeof(struct sub_sect_1),
-  .init = init_sec_1,
-  .commit = commit_sec_1,
-  .cfg = (struct cf_item[]) {
-#define F(x)	CF_FIELD(struct sub_sect_1, x)
-    CF_STRING("name", F(name)),
-    CF_STRING("level", F(level)),
-    CF_INT("confidence", F(confidence)),
-    CF_END
+  CF_TYPE(struct sub_sect_1)
+  CF_INIT(init_sec_1)
+  CF_COMMIT(commit_sec_1)
+#define F(x)	PTR_TO(struct sub_sect_1, x)
+  CF_ITEMS(
+    CF_STRING("name", F(name))
+    CF_STRING("level", F(level))
+    CF_INT("confidence", F(confidence))
+  )
 #undef F
-  }
 };
 
 static int nr1 = 15;
@@ -70,28 +67,27 @@ commit_top(void *ptr UNUSED)
 }
 
 static byte *
-time_parser(byte *name UNUSED, uns number, byte **pars, void *ptr)
+time_parser(uns number, byte **pars, time_t *ptr)
 {
-  * (time_t*) ptr = number ? atoi(pars[0]) : time(NULL);
+  *ptr = number ? atoi(pars[0]) : time(NULL);
   return NULL;
 }
 
 static struct cf_section cf_top = {
-  .commit = commit_top,
-  .cfg = (struct cf_item []) {
-    CF_INT("nr1", &nr1),
-    CF_INT_AR("nrs1", &nrs1, 5),
-    CF_INT_AR("nrs2", &nrs2, -1000),
-    CF_STRING("str1", &str1),
-    CF_STRING_AR("str2", &str2, 2),
-    CF_U64("u1", &u1),
-    CF_DOUBLE("d1", &d1),
-    CF_PARSER("FirstTime", &t1, time_parser, -1),
-    CF_PARSER("SecondTime", &t2, time_parser, 1),
-    CF_SUB_SECTION("master", &sec1, &cf_sec_1),
-    CF_LINK_LIST("slaves", &secs, &cf_sec_1),
-    CF_END
-  }
+  CF_COMMIT(commit_top)
+  CF_ITEMS(
+    CF_INT("nr1", &nr1)
+    CF_INT_ARY("nrs1", &nrs1, 5)
+    CF_INT_ARY("nrs2", &nrs2, -1000)
+    CF_STRING("str1", &str1)
+    CF_STRING_ARY("str2", &str2, 2)
+    CF_U64("u1", &u1)
+    CF_DOUBLE("d1", &d1)
+    CF_PARSER("FirstTime", &t1, time_parser, -1)
+    CF_PARSER("SecondTime", &t2, time_parser, 1)
+    CF_SECTION("master", &sec1, &cf_sec_1)
+    CF_LIST("slaves", &secs, &cf_sec_1)
+  )
 };
 
 int
