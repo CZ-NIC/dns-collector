@@ -24,7 +24,7 @@
  *  KMPS_GET_CHAR(ctx,src,s)
  *
  *  KMPS_ADD_CONTROLS		adds control characters to start and the end
- *  KMPS_MERGE_CONTROLS 	merges adjacent control characterss to a single one
+ *  KMPS_MERGE_CONTROLS 	merges adjacent control characters to a single one
  *
  *  KMPS_EXTRA_ARGS		extra arguments to the search routine
  *  KMPS_EXTRA_VAR		extra user-defined structure in search structures

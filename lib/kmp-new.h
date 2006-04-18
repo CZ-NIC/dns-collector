@@ -114,10 +114,9 @@ P(hash_eq) (struct P(hash_table) *t UNUSED, struct P(state) *f1, P(char_t) c1, s
 static inline void
 P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(state) *f, P(char_t) c)
 {
+  memset(s, 0, sizeof(*s));
   s->from = f;
   s->c = c;
-  s->len = 0;
-  s->back = NULL;
   s->next = f->back; /* the pointers hold the link-list of sons... change in build() */
   f->back = s;
 }
@@ -160,7 +159,7 @@ typedef byte *P(source_t);
 static inline int
 P(get_char) (struct P(context) *ctx, P(source_t) *src, P(char_t) *c)
 {
-  return KMP_GET_CHAR(*ctx, *src, *c);
+  return KMP_GET_CHAR(ctx, *src, *c);
 }
 #else
 #  if defined(KMP_USE_UTF8)
