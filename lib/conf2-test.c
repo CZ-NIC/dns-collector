@@ -18,7 +18,7 @@ struct sub_sect_1 {
 };
 
 static byte *
-init_sec_1(void *ptr, struct cf_section *sec UNUSED)
+init_sec_1(void *ptr)
 {
   struct sub_sect_1 *s = ptr;
   s->name = "unknown";
@@ -28,7 +28,7 @@ init_sec_1(void *ptr, struct cf_section *sec UNUSED)
 }
 
 static byte *
-commit_sec_1(void *ptr, struct cf_section *sec UNUSED)
+commit_sec_1(void *ptr)
 {
   struct sub_sect_1 *s = ptr;
   if (s->confidence < 0 || s->confidence > 10)
@@ -51,33 +51,28 @@ static struct cf_section cf_sec_1 = {
 };
 
 static int nr1 = 15;
-static int *nrs1 = DEFAULT_ARRAY(int, 5, 5, 4, 3, 2, 1);
+static int *nrs1 = ARRAY_ALLOC(int, 5, 5, 4, 3, 2, 1);
 static int *nrs2;
 static byte *str1 = "no worries";
-static byte **str2 = DEFAULT_ARRAY(byte *, 2, "Alice", "Bob");
+static byte **str2 = ARRAY_ALLOC(byte *, 2, "Alice", "Bob");
 static u64 u1 = 0xCafeBeefDeadC00ll;
 static double d1 = -1.1;
-static struct sub_sect_1 sec_1 = { "Charlie", "WBAFC", 0 };
-static struct cnode secs;
+static struct sub_sect_1 sec1 = { "Charlie", "WBAFC", 0 };
+static struct clist secs;
 static time_t t1, t2;
 
 static byte *
-commit_top(void *ptr UNUSED, struct cf_section *sec UNUSED)
+commit_top(void *ptr UNUSED)
 {
+  if (nr1 != 15)
+    return "Don't touch my variable!";
   return NULL;
 }
 
 static byte *
-time_parser(uns nr_pars, byte **pars, void *sec_ptr, struct cf_section *sec, uns index)
+time_parser(byte *name UNUSED, uns number, byte **pars, void *ptr)
 {
-  if (nr_pars != 0 && nr_pars != 1)
-    return "Either now or 1 parameter!";
-  ASSERT(!sec_ptr);
-  time_t t = nr_pars ? atoi(pars[0]) : time(NULL);
-  if (sec->cfg[index].name[0] == 'F')
-    t1 = t;
-  else
-    t2 = t;
+  * (time_t*) ptr = number ? atoi(pars[0]) : time(NULL);
   return NULL;
 }
 
@@ -91,9 +86,9 @@ static struct cf_section cf_top = {
     CF_STRING_AR("str2", &str2, 2),
     CF_U64("u1", &u1),
     CF_DOUBLE("d1", &d1),
-    CF_FUNCTION("FirstTime", time_parser),
-    CF_FUNCTION("SecondTime", time_parser),
-    CF_SUB_SECTION("master", &sec_1, &cf_sec_1),
+    CF_PARSER("FirstTime", &t1, time_parser, -1),
+    CF_PARSER("SecondTime", &t2, time_parser, 1),
+    CF_SUB_SECTION("master", &sec1, &cf_sec_1),
     CF_LINK_LIST("slaves", &secs, &cf_sec_1),
     CF_END
   }
