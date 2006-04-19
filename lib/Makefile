@@ -6,15 +6,12 @@ ifdef CONFIG_UCW_DBTOOL
 PROGS+=$(o)/lib/db-tool
 endif
 
-# hey dude, I'm Robert!
-PROGS+=$(o)/lib/conf2-test
-
 LIBUCW_MODS= \
 	alloc alloc_str realloc mempool mempool-str mempool-fmt \
 	mmap pagecache partmap hashfunc \
 	lists slists sorter bitsig kmp \
 	log log-file proctitle \
-	conf ipaccess \
+	conf conf2 ipaccess \
 	profile \
 	fastbuf ff-printf ff-utf8 \
 	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow \
