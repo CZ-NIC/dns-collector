@@ -138,8 +138,10 @@ P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(s
 #define HASH_GIVE_HASHFN
 #define HASH_GIVE_EQ
 #define HASH_GIVE_INIT_KEY
-#ifdef KMP_USE_POOL
+#if defined(KMP_USE_POOL)
 #define HASH_USE_POOL KMP_USE_POOL
+#elif defined(KMP_PARAM_POOL)
+#define HASH_PARAM_POOL
 #else
 #define HASH_AUTO_POOL 4096
 #endif
@@ -208,7 +210,7 @@ P(get_char) (struct P(context) *ctx UNUSED, P(source_t) *src, P(char_t) *c)
   else
 # endif
 #   ifdef KMP_TOLOWER
-    cc = Clocase(c);
+    cc = Clocase(cc);
 #   endif
 #   ifdef KMP_UNACCENT
 #   error Do not know how to unaccent ASCII characters
@@ -274,10 +276,18 @@ enter_new:
 }
 
 static void
-P(init) (struct P(context) *ctx)
+P(init) (struct P(context) *ctx
+#   ifdef KMP_PARAM_POOL
+    , struct mempool *pool
+#   endif    
+    )
 {
   bzero(ctx, sizeof(*ctx));
-  P(hash_init)(&ctx->hash);
+  P(hash_init)(&ctx->hash
+#     ifdef KMP_PARAM_POOL
+      , pool
+#     endif      
+      );
 }
 
 #ifdef KMP_WANT_CLEANUP
@@ -359,6 +369,7 @@ P(build) (struct P(context) *ctx)
 #undef KMP_NO_DUPS
 #undef KMP_BUILD_STATE
 #undef KMP_USE_POOL
+#undef KMP_PARAM_POOL
 
 #ifdef KMP_WANT_SEARCH
 #  undef KMP_WANT_SEARCH
