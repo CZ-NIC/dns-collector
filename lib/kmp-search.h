@@ -12,10 +12,10 @@
  *  This is not a normal header file, it's a generator of KMP algorithm.
  *  Each time you include it with parameters set in the corresponding
  *  preprocessor macros, it generates KMP structures and functions
- *  with the parameters given.
+ *  with the parameters given. Macros marked with [*] are mandatory.
  *
  *  [*]	KMPS_PREFIX(x)		macro to add a name prefix (used on all global names
- *				defined by the KMP search generator).
+ *				defined by the KMP search generator)
  *  [*]	KMPS_KMP_PREFIX(x)	prefix used for lib/kmp.h;
  *				more variants of kmp-search can be used for single lib/kmp.h
  *
@@ -23,8 +23,8 @@
  *  				if unset, the one from lib/kmp.h is used
  *  KMPS_GET_CHAR(ctx,src,s)
  *
- *  KMPS_ADD_CONTROLS		adds control characters to start and the end
- *  KMPS_MERGE_CONTROLS 	merges adjacent control characters to a single one
+ *  KMPS_ADD_CONTROLS		add control characters at both ends of the input string
+ *  KMPS_MERGE_CONTROLS 	merge adjacent control characters to a single one
  *
  *  KMPS_EXTRA_ARGS		extra arguments to the search routine
  *  KMPS_EXTRA_VAR		extra user-defined structure in search structures
@@ -55,7 +55,7 @@ struct P(search) {
   struct KP(state) *s;		/* current state */
   struct KP(state) *out;	/* output state */
 # ifdef KMPS_WANT_BEST
-  struct KP(state) *best;	/* largest match */
+  struct KP(state) *best;	/* longest match */
 # endif
   KP(char_t) c;			/* last character */
 # ifdef KMPS_EXTRA_VAR

@@ -15,30 +15,31 @@
  *  with the parameters given.
  *
  *
- *  [*]	KMP_PREFIX(x)		macro to add a name prefix (used on all global names
- *				defined by the KMP generator).
+ *    Basic parameters:
+ *     	KMP_PREFIX(x)		macro to add a name prefix (used on all global names
+ *				defined by the KMP generator); mandatory
  *
  *	KMP_CHAR		alphabet type, the default is u16
  *	
- *	KMP_SOURCE		user-defined source; KMP_GET_CHAR must 
- *				return next character from the input or zero at the end;
+ *	KMP_SOURCE		user-defined text source; KMP_GET_CHAR must 
+ *	KMP_GET_CHAR(ctx,src,c)	return next character from the input or zero at the end;
  *				if not defined, zero-terminated array of bytes is used as the input
- *	KMP_GET_CHAR(ctx,src,c)
  *	
- *	KMP_NODE		user-defined data in each state
- *	KMP_CONTEXT		user-defined data in context
+ *	KMP_NODE		user-defined data in each state of the automaton
+ *	KMP_CONTEXT		user-defined data in struct context (a structure describing
+ *				the whole automaton)
  *
- *    Parameters to default get_char():
+ *    Parameters which select how the input is interpreted (if KMP_SOURCE is unset):
  *	KMP_USE_ASCII		reads single bytes from the input (default)
  *	KMP_USE_UTF8		reads UTF-8 characters from the input (valid UTF-8 needed)
  *	KMP_TOLOWER		converts all to lowercase
  *	KMP_UNACCENT		removes accents
- *	KMP_ONLYALPHA		converts nonalphas to KMP_CONTROL_CHAR
+ *	KMP_ONLYALPHA		converts non-alphas to KMP_CONTROL_CHAR
  *	KMP_CONTROL_CHAR	special control character (default is ':')
  *
- *    Parameters to add():
+ *    Parameters controlling add():
  * 	KMP_ADD_EXTRA_ARGS	extra arguments
- * 	KMP_ADD_EXTRA_VAR	structure with extra local varriables
+ * 	KMP_ADD_EXTRA_VAR	structure with extra local variables
  * 	KMP_ADD_INIT(ctx,src,v)
  * 	KMP_ADD_NEW(ctx,src,v,s)
  * 	KMP_ADD_DUP(ctx,src,v,s)
@@ -47,11 +48,12 @@
  *    Parameters to build():
  *      KMP_BUILD_STATE(ctx,s)	called for all states (including null) in order of non-decreasing tree depth
  *
- *	KMP_WANT_CLEANUP	cleanup()
+ *    Other parameters:
+ *	KMP_WANT_CLEANUP	define cleanup()
  *	KMP_WANT_SEARCH		includes lib/kmp-search.h with the same prefix;
  *				there can be multiple search variants for a single KMP structure
  *
- *	KMP_USE_POOL		allocates on a given pool
+ *	KMP_USE_POOL		allocates in a given pool
  */
 
 #ifndef KMP_PREFIX
@@ -119,7 +121,7 @@ P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(s
   bzero(s, sizeof(*s));
   s->from = f;
   s->c = c;
-  s->next = f->back; /* the pointers hold the link-list of sons... change in build() */
+  s->next = f->back; /* the pointers hold the link-list of sons... changed in build() */
   f->back = s;
 }
 
@@ -147,7 +149,7 @@ P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(s
 #define P(x) KMP_PREFIX(x)
 
 struct P(context) {
-  struct P(hash_table) hash;		/* hash table*/
+  struct P(hash_table) hash;		/* hash table of state transitions */
   struct P(state) null;			/* null state */
 # ifdef KMP_CONTEXT
   KMP_CONTEXT v;			/* user defined data */
@@ -207,6 +209,9 @@ P(get_char) (struct P(context) *ctx UNUSED, P(source_t) *src, P(char_t) *c)
 # endif
 #   ifdef KMP_TOLOWER
     cc = Clocase(c);
+#   endif
+#   ifdef KMP_UNACCENT
+#   error Do not know how to unaccent ASCII characters
 #   endif
 # endif
   *c = cc;
