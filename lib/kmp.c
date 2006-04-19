@@ -10,7 +10,7 @@
 #include "lib/lists.h"
 #include "lib/unicode.h"
 
-#define KMP_GET_CHAR KMP_GET_RAW
+#define KMP_GET_CHAR(pos, c, flags) ASSERT(0)
 #include "lib/kmp.h"
 
 #include <stdlib.h>
@@ -65,16 +65,15 @@ new_output(struct kmp *kmp, uns id, uns len)
 }
  
 void
-kmp_enter_raw_string(struct kmp *kmp, const byte *str, uns id)
+kmp_enter_raw_string(struct kmp *kmp, kmp_char_t *str, uns id)
 {
 	struct kmp_transition tr = { .next=NULL, .from=0 }, **prev;
 	struct kmp_output *new_out;
-	const byte *orig_str = str;
 	uns len = 0;
 	kmp_char_t c = 'a';
 
-	TRACE(20, "kmp.c: Entering string %s", str);
-	kmp_get_char(&str, &c, 0);
+	TRACE(20, "kmp.c: Entering string");
+	c = *str++;
 	len++;
 	if (!c)
 		return;
@@ -85,7 +84,7 @@ kmp_enter_raw_string(struct kmp *kmp, const byte *str, uns id)
 		if (!*prev)
 			break;
 		tr.from = (*prev)->to;
-		kmp_get_char(&str, &c, 0);
+		c = *str++;
 		len++;
 	}
 	while (c)
@@ -95,7 +94,7 @@ kmp_enter_raw_string(struct kmp *kmp, const byte *str, uns id)
 		**prev = tr;
 		add_tail(kmp->g.sons + tr.from, &(*prev)->n);
 		init_list(kmp->g.sons + tr.to);
-		kmp_get_char(&str, &c, 0);
+		c = *str++;
 		len++;
 		tr.from = tr.to;
 		tr.c = c;
@@ -103,7 +102,7 @@ kmp_enter_raw_string(struct kmp *kmp, const byte *str, uns id)
 		ASSERT(!*prev);
 	}
 	if (kmp->out[tr.from])
-		TRACE(5, "kmp.c: string %s is inserted more than once", orig_str);
+		TRACE(5, "kmp.c: string is inserted more than once");
 	new_out = new_output(kmp, id, len-1);
 	merge_output(kmp->out + tr.from, new_out);
 }

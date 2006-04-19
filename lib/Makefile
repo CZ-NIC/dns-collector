@@ -1,4 +1,4 @@
-# Makefile for the UCW Library (c) 1997--2005 Martin Mares <mj@ucw.cz>
+# Makefile for the UCW Library (c) 1997--2006 Martin Mares <mj@ucw.cz>
 
 DIRS+=lib
 
@@ -14,7 +14,7 @@ LIBUCW_MODS= \
 	conf ipaccess \
 	profile \
 	fastbuf ff-printf ff-utf8 \
-	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer \
+	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow \
 	str_ctype str_upper str_lower unicode-utf8 stkstring \
 	wildmatch wordsplit ctmatch patimatch patmatch regex \
 	prime primetable random timer randomkey \
@@ -75,8 +75,9 @@ $(o)/lib/asort-test: $(o)/lib/asort-test.o $(LIBUCW)
 $(o)/lib/redblack-test: $(o)/lib/redblack-test.o $(LIBUCW)
 $(o)/lib/binheap-test: $(o)/lib/binheap-test.o $(LIBUCW)
 $(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
+$(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 
-TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test slists.test)
+TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test slists.test kmp-test.test)
 $(o)/lib/regex.test: $(o)/lib/regex-t
 $(o)/lib/unicode-utf8.test: $(o)/lib/unicode-utf8-t
 $(o)/lib/hash-test.test: $(o)/lib/hash-test
@@ -84,6 +85,7 @@ $(o)/lib/mempool.test: $(o)/lib/mempool-fmt-t $(o)/lib/mempool-str-t
 $(o)/lib/stkstring.test: $(o)/lib/stkstring-t
 $(o)/lib/bitops.test: $(o)/lib/bit-ffs-t $(o)/lib/bit-fls-t
 $(o)/lib/slists.test: $(o)/lib/slists-t
+$(o)/lib/kmp-test.test: $(o)/lib/kmp-test
 
 INCLUDES+=$(o)/lib/.include-stamp
 $(o)/lib/.include-stamp: $(addprefix $(s)/lib/,$(LIBUCW_INCLUDES))

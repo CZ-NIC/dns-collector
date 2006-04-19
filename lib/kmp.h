@@ -33,7 +33,7 @@
 
 /* Pre-defined input functions */
 
-#define KMP_GET_RAW(pos, c, flags) c=*pos++
+#define KMP_GET_UTF8(pos, c, flags) do { uns cc; pos = utf8_get(pos, &cc); c = cc; } while(0)
 
 #define KMP_GET_ASCII(pos, c, flags) do { \
 	c = *pos++; \
@@ -86,11 +86,11 @@ struct kmp_result {
 
 /* kmp.c */
 struct kmp *kmp_new(struct mempool *mp, int words_len, uns modify_flags);
-void kmp_enter_raw_string(struct kmp *kmp, const byte *str, uns id);
+void kmp_enter_raw_string(struct kmp *kmp, kmp_char_t *str, uns id);
 void kmp_build(struct kmp *kmp);
 
 static inline void
-kmp_get_char(const byte **str, kmp_char_t *c, uns modify_flags UNUSED)
+kmp_get_char(const byte **str UNUSED, kmp_char_t *c, uns modify_flags UNUSED)
 {
 	while (1)
 	{
@@ -110,14 +110,13 @@ kmp_enter_string(struct kmp *kmp, const byte *str, uns id)
 	/* To avoid dependencies between libucw and other libraries (which might
 	 * be referenced by the KMP_GET_CHAR macro), we have to split kmp_enter_string()
 	 * to a conversion wrapper (this function) and the rest, which resides in kmp.c
-	 * and uses KMP_GET_RAW to read its input.
+	 * and uses zero-terminated array of kmp_char_t characters as its input.
 	 */
-	byte buf[3*strlen(str)+1], *str2 = buf;
-	kmp_char_t c = 0;
+	kmp_char_t buf[strlen(str)+1], *str2 = buf, c = 0;
 	do
 	{
 		kmp_get_char(&str, &c, kmp->modify_flags);
-		str2 = utf8_put(str2, c);
+		*str2++ = c;
 	}
 	while (c);
 	kmp_enter_raw_string(kmp, buf, id);
@@ -162,7 +161,8 @@ kmp_search_internal(struct kmp *kmp, byte *str, uns len, struct list *nonzeroes,
   /* For every found string with id ID, it increments freq[ID].
    * Also, it finds the longest among the leftmost matches.  */
 {
-	byte *str_end = str + len;
+  	if (!len)
+	  return NULL;
 	kmp_state_t s = 0;
 	kmp_char_t c = KMP_CONTROL_CHAR;
 	struct kmp_transition tr, **prev;
@@ -196,7 +196,7 @@ kmp_search_internal(struct kmp *kmp, byte *str, uns len, struct list *nonzeroes,
 		}
 		if (eof)
 			break;
-		if (str >= str_end)
+		if (!--len)
 			c = 0;
 		else
 			kmp_get_char((const byte **)&str, &c, kmp->modify_flags);
@@ -211,9 +211,9 @@ kmp_search_internal(struct kmp *kmp, byte *str, uns len, struct list *nonzeroes,
 }
 
 static inline void
-kmp_search(struct kmp *kmp, const byte *str, struct list *nonzeroes, struct kmp_result *freq)
+kmp_search(struct kmp *kmp, const byte *str, uns len, struct list *nonzeroes, struct kmp_result *freq)
 {
-	kmp_search_internal(kmp, (byte*) str, strlen(str), nonzeroes, freq, NULL);
+	kmp_search_internal(kmp, (byte*) str, len, nonzeroes, freq, NULL);
 }
 
 static inline byte *

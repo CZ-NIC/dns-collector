@@ -36,33 +36,10 @@ ipaccess_init(void)
   return l;
 }
 
-static byte *
-parse_ip(byte *x, u32 *a)
-{
-  uns i, q;
-  u32 z = 0;
-
-  for(i=0; i<4; i++)
-    {
-      q = 0;
-      while (Cdigit(*x))
-	{
-	  q = q*10 + *x++ - '0';
-	  if (q > 255)
-	    return "Invalid IP address";
-	}
-      if (*x++ != ((i == 3) ? 0 : '.'))
-	return "Invalid IP address";
-      z = (z << 8) | q;
-    }
-  *a = z;
-  return NULL;
-}
-
 byte *
 ipaccess_parse(struct ipaccess_list *l, byte *c, int is_allow)
 {
-  char *p = strchr(c, '/');
+  byte *p = strchr(c, '/');
   char *q;
   struct ipaccess_entry *a = cfg_malloc(sizeof(struct ipaccess_entry));
   unsigned long pxlen;
@@ -78,11 +55,11 @@ ipaccess_parse(struct ipaccess_list *l, byte *c, int is_allow)
 	  if (pxlen != 32)
 	    a->mask = ~(~0U >> (uns) pxlen);
 	}
-      else if (q = parse_ip(p, &a->mask))
+      else if (q = cf_parse_ip(&p, &a->mask))
 	return q;
     }
   add_tail(&l->l, &a->n);
-  return parse_ip(c, &a->addr);
+  return cf_parse_ip(&c, &a->addr);
 }
 
 int

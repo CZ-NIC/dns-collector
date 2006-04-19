@@ -7,6 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
+#ifndef _UCW_BITARRAY_H
+#define _UCW_BITARRAY_H
+
 #include <string.h>
 
 typedef u32 *bitarray_t;
@@ -100,3 +103,5 @@ bit_array_test_and_clear(bitarray_t a, uns i)
 #define BIT_ARRAY_FISH_BITS_END							\
 	  while (0);								\
 	}
+
+#endif

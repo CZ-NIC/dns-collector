@@ -93,6 +93,7 @@
  *			deallocation is not supported by mempools, so delete/remove
  *			will leak pool memory.
  *  HASH_AUTO_POOL=size	Create a pool of the given block size automatically.
+ *  HASH_PARAM_POOL	Allocate all nodes from mempool given as a parameter to init().
  *  HASH_ZERO_FILL	New entries should be initialized to all zeroes.
  *  HASH_TABLE_ALLOC	The hash table itself will be allocated and freed using
  *			the same allocation functions as the nodes instead of
@@ -154,7 +155,7 @@ struct P(table) {
   uns hash_size;
   uns hash_count, hash_max, hash_min, hash_hard_max;
   P(bucket) **ht;
-#ifdef HASH_AUTO_POOL
+#if defined(HASH_AUTO_POOL) || defined(HASH_PARAM_POOL)
   struct mempool *pool;
 #endif
 };
@@ -330,6 +331,15 @@ static inline void P(free) (TAUC void *x UNUSED) { }
 static inline void P(init_alloc) (TAU) { }
 static inline void P(cleanup_alloc) (TAU) { }
 
+#elif defined(HASH_PARAM_POOL)
+/* Use mempools given as a parameter to init() */
+#include "lib/mempool.h"
+static inline void * P(alloc) (TAUC unsigned int size) { return mp_alloc_fast(T.pool, size); }
+static inline void P(free) (TAUC void *x UNUSED) { }
+static inline void P(init_alloc) (TAU) { }
+static inline void P(cleanup_alloc) (TAU) { }
+#define HASH_USE_POOL
+
 #elif defined(HASH_AUTO_POOL)
 /* Use our own pools */
 #include "lib/mempool.h"
@@ -392,7 +402,11 @@ static void P(alloc_table) (TAU)
     T.hash_min = 0;
 }
 
+#ifndef HASH_PARAM_POOL
 static void P(init) (TA)
+#else
+static void P(init) (TAC struct mempool *pool)
+#endif
 {
   T.hash_count = 0;
   T.hash_size = HASH_DEFAULT_SIZE;
@@ -402,6 +416,9 @@ static void P(init) (TA)
   T.hash_hard_max = 1 << 28;
 #endif
   P(alloc_table)(TT);
+#ifdef HASH_PARAM_POOL
+  T.pool = pool;
+#endif
   P(init_alloc)(TT);
 }
 
@@ -649,6 +666,7 @@ do {											\
 #undef HASH_PREFIX
 #undef HASH_USE_POOL
 #undef HASH_AUTO_POOL
+#undef HASH_PARAM_POOL
 #undef HASH_WANT_CLEANUP
 #undef HASH_WANT_DELETE
 #undef HASH_WANT_FIND

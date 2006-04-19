@@ -109,6 +109,12 @@ fbbuf_count_written(struct fastbuf *f)
   return f->bptr - f->bstop;
 }
 
+/* FastIO on recyclable growing buffers */
+
+struct fastbuf *fbgrow_create(unsigned basic_size);
+void fbgrow_reset(struct fastbuf *b);			/* Reset stream and prepare for writing */
+void fbgrow_rewind(struct fastbuf *b);			/* Prepare for reading */
+
 /* Configuring stream parameters */
 
 int bconfig(struct fastbuf *f, uns type, int data);
