@@ -25,7 +25,8 @@
  *				if not defined, zero-terminated array of bytes is used as the input
  *	KMP_GET_CHAR(ctx,src,c)
  *	
- *	KMP_NODE		user-defined data stored in each added string
+ *	KMP_NODE		user-defined data in each state
+ *	KMP_CONTEXT		user-defined data in context
  *
  *    Parameters to default get_char():
  *	KMP_USE_ASCII		reads single bytes from the input (default)
@@ -59,6 +60,7 @@
 
 #include "lib/mempool.h"
 #include <alloca.h>
+#include <string.h>
 
 #define P(x) KMP_PREFIX(x)
 
@@ -147,6 +149,9 @@ P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(s
 struct P(context) {
   struct P(hash_table) hash;		/* hash table*/
   struct P(state) null;			/* null state */
+# ifdef KMP_CONTEXT
+  KMP_CONTEXT v;			/* user defined data */
+# endif  
 };
 
 #ifdef KMP_SOURCE
@@ -284,6 +289,12 @@ P(empty) (struct P(context) *ctx)
   return !ctx->hash.hash_count;
 }
 
+static inline struct P(state) *
+P(chain_start) (struct P(state) *s)
+{
+  return s->len ? s : s->next;
+}
+
 static void
 P(build) (struct P(context) *ctx)
 {
@@ -328,6 +339,7 @@ P(build) (struct P(context) *ctx)
 #undef KMP_SOURCE
 #undef KMP_GET_CHAR
 #undef KMP_NODE
+#undef KMP_CONTEXT
 #undef KMP_USE_ASCII
 #undef KMP_USE_UTF8
 #undef KMP_TOLOWER
