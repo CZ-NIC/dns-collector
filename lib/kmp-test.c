@@ -1,3 +1,9 @@
+/*
+ *      Test of KMP search
+ *
+ *      (c) 2006, Pavel Charvat <pchar@ucw.cz>
+ */
+
 #include "lib/lib.h"
 #include "lib/mempool.h"
 #include <string.h>
@@ -32,7 +38,7 @@
 static void
 test1(void)
 {
-  log(L_INFO, "Running test1");
+  TRACE("Running test1");
   struct kmp1_context ctx;
   kmp1_init(&ctx);
   kmp1_add(&ctx, "ahoj");
@@ -73,7 +79,7 @@ test1(void)
 static void
 test2(void)
 {
-  log(L_INFO, "Running test2");
+  TRACE("Running test2");
   struct kmp2_context ctx;
   kmp2_init(&ctx);
   kmp2_add(&ctx, "ahoj", 1);
@@ -106,7 +112,7 @@ test2(void)
 static void
 test3(void)
 {
-  log(L_INFO, "Running test3");
+  TRACE("Running test3");
   struct mempool *pool = mp_new(1024);
   for (uns testn = 0; testn < 100; testn++)
   {
@@ -166,7 +172,7 @@ test3(void)
 static void
 test4(void)
 {
-  log(L_INFO, "Running test4");
+  TRACE("Running test4");
   struct kmp4_context ctx;
   kmp4_init(&ctx);
   kmp4_add(&ctx, "ahoj");
