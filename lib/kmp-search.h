@@ -120,7 +120,7 @@ P(search) (struct KP(context) *ctx, P(search_source_t) src
 	while (s.out = s.out->next);
 #       endif	
       }
-#     endif
+#   endif
 
 #   ifdef KMPS_ADD_CONTROLS    
     if (s.eof)
