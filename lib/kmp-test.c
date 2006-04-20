@@ -18,7 +18,7 @@
 
 #define KMP_PREFIX(x) GLUE_(kmp1,x)
 #define KMP_WANT_CLEANUP
-#include "lib/kmp-new.h"
+#include "lib/kmp.h"
 #define KMPS_PREFIX(x) GLUE_(kmp1s1,x)
 #define KMPS_KMP_PREFIX(x) GLUE_(kmp1,x)
 #define KMPS_WANT_BEST
@@ -74,7 +74,7 @@ test1(void)
 #define KMPS_FOUND(ctx,src,s) do{ TRACE("String %s with id %d found", s.out->n.str, s.out->n.id); }while(0)
 #define KMPS_STEP(ctx,src,s) do{ TRACE("Got to state %p after reading %d", s.s, s.c); }while(0)
 #define KMPS_EXIT(ctx,src,s) do{ if (s.best->len) TRACE("Best match is %s", s.best->n.str); } while(0)
-#include "lib/kmp-new.h"
+#include "lib/kmp.h"
 
 static void
 test2(void)
@@ -107,7 +107,7 @@ test2(void)
 #define KMP_WANT_SEARCH
 #define KMPS_EXTRA_ARGS uns *cnt, uns *sum
 #define KMPS_FOUND(ctx,src,s) do{ ASSERT(cnt[s.out->n]); cnt[s.out->n]--; sum[0]--; }while(0)
-#include "lib/kmp-new.h"
+#include "lib/kmp.h"
 
 static void
 test3(void)
@@ -183,7 +183,7 @@ kmp4_hash(struct kmp4_context *ctx UNUSED, struct kmp4_state *s, byte *c)
 #define KMPS_FOUND(ctx,src,s) do{ TRACE("found"); }while(0)
 #define KMPS_ADD_CONTROLS
 #define KMPS_MERGE_CONTROLS
-#include "lib/kmp-new.h"
+#include "lib/kmp.h"
 
 static void
 test4(void)

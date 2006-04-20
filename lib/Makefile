@@ -9,7 +9,7 @@ endif
 LIBUCW_MODS= \
 	alloc alloc_str realloc mempool mempool-str mempool-fmt \
 	mmap pagecache partmap hashfunc \
-	lists slists sorter bitsig kmp \
+	lists slists sorter bitsig \
 	log log-file proctitle \
 	conf ipaccess \
 	profile \
