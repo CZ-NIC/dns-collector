@@ -24,7 +24,7 @@
  *  	void run(kmp,src)	the same, but automatically allocates search structre from the stack
  *
  *
- *  Macros marked with [*] are mandatory.
+ *  Parameters to the generator (these marked with [*] are mandatory):
  *
  *  [*]	KMPS_PREFIX(x)		macro to add a name prefix (used on all global names
  *				defined by the KMP search generator)
@@ -44,8 +44,8 @@
  *  KMPS_STEP(kmp,src,search)	... after each step (read of next character + current state update) 
  *  				of the algorithm, but before KMPS_FOUND[_CHAIN]
  *  KMPS_FOUND_CHAIN(kmp,src,search) ... for each state representing locally longest match 
- *				(stored in search->out - NOT necessary search.s!);
- *  				all matches forms a NULL-terminated link list (search->out, search->out->next, ...) 
+ *				(stored in search->out - NOT necessary search->s!);
+ *  				all matches form a NULL-terminated link list (search->out, search->out->next, ...) 
  *  				in order of decreasing length
  *  KMPS_FOUND(kmp,src,search)  ... called for every match (in search->out)
  *  KMPS_WANT_BEST		algorithm computes globally longest match, which is available

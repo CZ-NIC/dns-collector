@@ -16,16 +16,16 @@
 
 /* TEST1 - multiple searches */
 
-#define KMP_PREFIX(x) GLUE_(kmp1,x)
+#define KMP_PREFIX(x) kmp1_##x
 #define KMP_WANT_CLEANUP
 #include "lib/kmp.h"
-#define KMPS_PREFIX(x) GLUE_(kmp1s1,x)
-#define KMPS_KMP_PREFIX(x) GLUE_(kmp1,x)
+#define KMPS_PREFIX(x) kmp1s1_##x
+#define KMPS_KMP_PREFIX(x) kmp1_##x
 #define KMPS_WANT_BEST
 #define KMPS_EXIT(kmp,src,s) TRACE("Best match has %d characters", s->best->len)
 #include "lib/kmp-search.h"
-#define KMPS_PREFIX(x) GLUE_(kmp1s2,x)
-#define KMPS_KMP_PREFIX(x) GLUE_(kmp1,x)
+#define KMPS_PREFIX(x) kmp1s2_##x
+#define KMPS_KMP_PREFIX(x) kmp1_##x
 #define KMPS_VARS uns count;
 #define KMPS_INIT(kmp,src,s) s->u.count = 0
 #define KMPS_FOUND(kmp,src,s) s->u.count++
@@ -52,7 +52,7 @@ test1(void)
 
 /* TEST2 - various tracing */
 
-#define KMP_PREFIX(x) GLUE_(kmp2,x)
+#define KMP_PREFIX(x) kmp2_##x
 #define KMP_USE_UTF8
 #define KMP_TOLOWER
 #define KMP_ONLYALPHA
@@ -91,7 +91,7 @@ test2(void)
 
 /* TEST3 - random tests */
 
-#define KMP_PREFIX(x) GLUE_(kmp3,x)
+#define KMP_PREFIX(x) kmp3_##x
 #define KMP_STATE_VARS uns index;
 #define KMP_ADD_EXTRA_ARGS uns index
 #define KMP_VARS byte *start;
@@ -170,7 +170,7 @@ kmp4_hash(struct kmp4_struct *kmp UNUSED, struct kmp4_state *s, byte *c)
   return (c ? (*c << 16) : 0) + (uns)(addr_int_t)s;
 }
 
-#define KMP_PREFIX(x) GLUE_(kmp4,x)
+#define KMP_PREFIX(x) kmp4_##x
 #define KMP_CHAR byte *
 #define KMP_CONTROL_CHAR NULL
 #define KMP_GET_CHAR(kmp,src,c) ({ c = src++; !!*c; })
