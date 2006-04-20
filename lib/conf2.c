@@ -453,9 +453,9 @@ enum operation {
 
 #define MAX_STACK_SIZE	100
 static struct item_stack {
-  void *base_ptr;
-  struct cf_section *sec;
-  enum operation op;
+  struct cf_section *sec;	// nested section
+  void *base_ptr;		// because original pointers are often relative
+  enum operation op;		// it is performed when a closing brace is encountered
 } stack[MAX_STACK_SIZE];
 static uns level;
 
@@ -510,7 +510,7 @@ parse_subsection(struct cf_section *sec, int number, byte **pars, void *ptr)
       return "Only sections consisting entirely of basic attributes can be written on 1 line";
     if (number)
     {
-      if (number <= ci->number)
+      if (number < ci->number)
 	return "The number of parameters does not fit the section attributes";
       void *p = ptr + (addr_int_t) ci->ptr;
       cf_journal_block(p, ci->number * parsers[ci->u.type].size);
@@ -591,7 +591,7 @@ interpret_item(byte *name, enum operation op, int number, byte **pars)
     {
       case CC_STATIC:
 	if (number != item->number)
-	  return item->number==1 ? "Expecting one scalar value, not array" : "Expecting array of different length";
+	  return item->number==1 ? "Expecting one scalar value, not an array" : "Expecting array of different length";
 	cf_journal_block(ptr, number * parsers[item->u.type].size);
 	return cf_parse_ary(number, pars, ptr, item->u.type);
       case CC_DYNAMIC:
@@ -605,6 +605,8 @@ interpret_item(byte *name, enum operation op, int number, byte **pars)
 	  if (number > -item->number)
 	    return "Expecting less parameters";
 	}
+	for (int i=0; i<number; i++)
+	  pars[i] = cf_strdup(pars[i]);
 	return item->u.par(number, pars, ptr);
       case CC_SECTION:		// setting a subsection at once
 	return parse_subsection(item->u.sec, number, pars, ptr);
