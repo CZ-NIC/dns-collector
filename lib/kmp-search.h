@@ -83,7 +83,7 @@ P(search) (struct KP(context) *ctx, P(search_source_t) src
   s.best = &ctx->null;
 # endif
 # ifdef KMPS_ADD_CONTROLS 
-  s.c = KP(control_char)();
+  s.c = KP(control)();
   s.eof = 0;
 # else
   s.c = 0;
@@ -139,9 +139,9 @@ start_read: ;
 	if (!KMPS_GET_CHAR(ctx, src, s))
 	  {
 #           ifdef KMPS_ADD_CONTROLS
-	    if (s.c != KP(control_char)())
+	    if (!KP(is_control)(ctx, s.c))
 	      {
-                s.c = KP(control_char)();
+                s.c = KP(control)();
                 s.eof = 1;
 		break;
 	      }
@@ -151,7 +151,7 @@ start_read: ;
       }
     while (0
 #     ifdef KMPS_MERGE_CONTROLS
-      || (last_c == KP(control_char)() && s.c == KP(control_char)())
+      || (KP(is_control)(ctx, last_c) && KP(is_control)(ctx, s.c))
 #     endif
       );
   }

@@ -155,16 +155,32 @@ test3(void)
   mp_delete(pool);
 }
 
-/* TEST4 - user-defined character type
- * FIXME: it would need custom compare and hash functions to be really valid */
+/* TEST4 - user-defined character type */
+
+struct kmp4_context;
+struct kmp4_state;
+
+static inline int
+kmp4_eq(struct kmp4_context *ctx UNUSED, byte *a, byte *b)
+{
+  return (a == b) || (a && b && *a == *b);
+}
+
+static inline uns
+kmp4_hash(struct kmp4_context *ctx UNUSED, struct kmp4_state *s, byte *c)
+{
+  return (c ? (*c << 16) : 0) + (uns)(addr_int_t)s;
+}
 
 #define KMP_PREFIX(x) GLUE_(kmp4,x)
 #define KMP_CHAR byte *
 #define KMP_CONTROL_CHAR NULL
 #define KMP_GET_CHAR(ctx,src,c) ({ c = src++; !!*c; })
+#define KMP_GIVE_HASHFN
+#define KMP_GIVE_EQ
 #define KMP_WANT_CLEANUP
 #define KMP_WANT_SEARCH
-#define KMPS_FOUND(ctx,src,s) do{ ASSERT(0); }while(0)
+#define KMPS_FOUND(ctx,src,s) do{ TRACE("found"); }while(0)
 #define KMPS_ADD_CONTROLS
 #define KMPS_MERGE_CONTROLS
 #include "lib/kmp-new.h"

@@ -54,6 +54,10 @@
  *				there can be multiple search variants for a single KMP structure
  *
  *	KMP_USE_POOL		allocates in a given pool
+ *
+ *	KMP_GIVE_ALLOC
+ *	KMP_GIVE_HASHFN
+ *	KMP_GIVE_EQ
  */
 
 #ifndef KMP_PREFIX
@@ -80,6 +84,8 @@ typedef KMP_NODE P(node_t);
 typedef struct {} P(node_t);
 #endif
 
+struct P(context);
+
 struct P(state) {
   struct P(state) *from;	/* state with previous character */
   struct P(state) *back;	/* backwards edge to the largest shorter state */
@@ -91,7 +97,7 @@ struct P(state) {
 
 /* Control char */
 static inline P(char_t)
-P(control_char) (void)
+P(control) (void)
 {
 #ifdef KMP_CONTROL_CHAR
   return KMP_CONTROL_CHAR;
@@ -103,18 +109,58 @@ P(control_char) (void)
 /* User-defined source */
 struct P(hash_table);
 
+#define HASH_GIVE_HASHFN
+#ifdef KMP_GIVE_HASHFN
+static inline uns
+P(hash_hash) (struct P(hash_table) *t, struct P(state) *f, P(char_t) c)
+{
+  return P(hash) ((struct P(context) *) t, f, c);
+}
+#else
 static inline uns
 P(hash_hash) (struct P(hash_table) *t UNUSED, struct P(state) *f, P(char_t) c)
 {
   return (((uns)c) << 16) + (uns)(addr_int_t)f;
 }
+#endif
+
+#ifndef KMP_GIVE_EQ
+static inline int
+P(eq) (struct P(context) *ctx UNUSED, P(char_t) c1, P(char_t) c2)
+{
+  return c1 == c2;
+}
+#endif
 
 static inline int
-P(hash_eq) (struct P(hash_table) *t UNUSED, struct P(state) *f1, P(char_t) c1, struct P(state) *f2, P(char_t) c2)
+P(is_control) (struct P(context) *ctx, P(char_t) c)
 {
-  return f1 == f2 && c1 == c2;
+  return P(eq) (ctx, c, P(control)());
 }
 
+#define HASH_GIVE_EQ
+static inline int
+P(hash_eq) (struct P(hash_table) *t, struct P(state) *f1, P(char_t) c1, struct P(state) *f2, P(char_t) c2)
+{
+  return f1 == f2 && P(eq)((struct P(context) *) t, c1, c2);
+}
+
+#ifdef KMP_GIVE_ALLOC
+#define HASH_GIVE_ALLOC
+static inline void *
+P(hash_alloc) (struct P(hash_table) *t, uns size)
+{
+  return P(alloc) ((struct P(context) *) t, size);
+}
+
+static inline void
+P(hash_free) (struct P(hash_table) *t, void *ptr)
+{
+  P(free) ((struct P(context) *) t, ptr);
+}
+#endif
+
+#define HASH_GIVE_INIT_KEY
 static inline void
 P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(state) *f, P(char_t) c)
 {
@@ -135,13 +181,8 @@ P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(s
 #ifdef KMP_WANT_CLEANUP
 #define HASH_WANT_CLEANUP
 #endif
-#define HASH_GIVE_HASHFN
-#define HASH_GIVE_EQ
-#define HASH_GIVE_INIT_KEY
 #if defined(KMP_USE_POOL)
 #define HASH_USE_POOL KMP_USE_POOL
-#elif defined(KMP_PARAM_POOL)
-#define HASH_PARAM_POOL
 #else
 #define HASH_AUTO_POOL 4096
 #endif
@@ -190,7 +231,7 @@ P(get_char) (struct P(context) *ctx UNUSED, P(source_t) *src, P(char_t) *c)
 # ifdef KMP_ONLYALPHA
   if (!cc) {}
   else if (!Ualpha(cc))
-    cc = P(control_char)();
+    cc = P(control)();
   else
 # endif  
     {
@@ -206,7 +247,7 @@ P(get_char) (struct P(context) *ctx UNUSED, P(source_t) *src, P(char_t) *c)
 # ifdef KMP_ONLYALPHA
   if (!cc) {}
   else if (!Calpha(cc))
-    cc = P(control_char)();
+    cc = P(control)();
   else
 # endif
 #   ifdef KMP_TOLOWER
@@ -276,18 +317,10 @@ enter_new:
 }
 
 static void
-P(init) (struct P(context) *ctx
-#   ifdef KMP_PARAM_POOL
-    , struct mempool *pool
-#   endif    
-    )
+P(init) (struct P(context) *ctx)
 {
-  bzero(ctx, sizeof(*ctx));
-  P(hash_init)(&ctx->hash
-#     ifdef KMP_PARAM_POOL
-      , pool
-#     endif      
-      );
+  bzero(&ctx->null, sizeof(struct P(state)));
+  P(hash_init)(&ctx->hash);
 }
 
 #ifdef KMP_WANT_CLEANUP
@@ -369,7 +402,9 @@ P(build) (struct P(context) *ctx)
 #undef KMP_NO_DUPS
 #undef KMP_BUILD_STATE
 #undef KMP_USE_POOL
-#undef KMP_PARAM_POOL
+#undef KMP_GIVE_ALLOC
+#undef KMP_GIVE_HASHFN
+#undef KMP_GIVE_EQ
 
 #ifdef KMP_WANT_SEARCH
 #  undef KMP_WANT_SEARCH
