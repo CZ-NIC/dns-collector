@@ -24,16 +24,15 @@
  *  KMPS_GET_CHAR(kmp,src,s)
  *
  *  KMPS_ADD_CONTROLS		add control characters at both ends of the input string
- *  KMPS_MERGE_CONTROLS 	merge adjacent control characters to a single one
+ *  KMPS_MERGE_CONTROLS 	merge adjacent control characters to a single onei
  *
- *  KMPS_EXTRA_ARGS		extra arguments to the search routine
- *  KMPS_EXTRA_VAR		extra user-defined structure in search structures
+ *  KMPS_VARS
+ *
  *  KMPS_INIT(kmp,src,s)
  *  KMPS_EXIT(kmp,src,s)
+ *  KMPS_STEP(kmp,src,s)
  *  KMPS_FOUND(kmp,src,s)
  *  KMPS_FOUND_CHAIN(kmp,src,s)
- *  KMPS_STEP(kmp,src,s)
- *  KMPS_T
  *
  *  KMPS_WANT_BEST
  */
@@ -48,7 +47,7 @@ typedef KP(source_t) P(search_source_t);
 #endif
 
 #ifndef KMPS_GET_CHAR
-#define KMPS_GET_CHAR(kmp,src,s) ({ KP(get_char)(kmp, &src, &s.c); })
+#define KMPS_GET_CHAR(kmp,src,s) ({ KP(get_char)(kmp, &src, &s->c); })
 #endif
 
 struct P(search) {
@@ -58,35 +57,28 @@ struct P(search) {
   struct KP(state) *best;	/* longest match */
 # endif
   KP(char_t) c;			/* last character */
-# ifdef KMPS_EXTRA_VAR
-  KMPS_EXTRA_VAR v;		/* user-defined */
-# endif
 # ifdef KMPS_ADD_CONTROLS
   uns eof;
 # endif
+# ifdef KMPS_VARS
+  struct {
+    KMPS_VARS
+  } u;				/* user-defined */
+# endif
 };
 
-#ifdef KMPS_T
-static KMPS_T
-#else
 static void
-#endif
-P(search) (struct KP(struct) *kmp, P(search_source_t) src
-#   ifdef KMPS_EXTRA_ARGS
-    , KMPS_EXTRA_ARGS
-#   endif
-)
+P(search) (struct KP(struct) *kmp, struct P(search) *s, P(search_source_t) src)
 {
-  struct P(search) s;
-  s.s = &kmp->null;
+  s->s = &kmp->null;
 # ifdef KMPS_WANT_BEST
-  s.best = &kmp->null;
+  s->best = &kmp->null;
 # endif
 # ifdef KMPS_ADD_CONTROLS 
-  s.c = KP(control)();
-  s.eof = 0;
+  s->c = KP(control)();
+  s->eof = 0;
 # else
-  s.c = 0;
+  s->c = 0;
 # endif  
 # ifdef KMPS_INIT
   { KMPS_INIT(kmp, src, s); }
@@ -96,20 +88,20 @@ P(search) (struct KP(struct) *kmp, P(search_source_t) src
 #endif  
   for (;;)
   {
-    for (struct KP(state) *t = s.s; t && !(s.s = KP(hash_find)(&kmp->hash, t, s.c)); t = t->back);
-    s.s = s.s ? : &kmp->null;
+    for (struct KP(state) *t = s->s; t && !(s->s = KP(hash_find)(&kmp->hash, t, s->c)); t = t->back);
+    s->s = s->s ? : &kmp->null;
 
 #   ifdef KMPS_STEP
     { KMPS_STEP(kmp, src, s); }
 #   endif
 
 #   if defined(KMPS_FOUND) || defined(KMPS_FOUND_CHAIN) || defined(KMPS_WANT_BEST)
-    s.out = s.s->len ? s.s : s.s->next;
-    if (s.out)
+    s->out = s->s->len ? s->s : s->s->next;
+    if (s->out)
       {
 #       ifdef KMPS_WANT_BEST
-	if (s.out->len > s.best->len)
-	  s.best = s.out;
+	if (s->out->len > s->best->len)
+	  s->best = s->out;
 #       endif	
         #ifdef KMPS_FOUND_CHAIN
 	{ KMPS_FOUND_CHAIN(kmp, src, s); }
@@ -117,13 +109,13 @@ P(search) (struct KP(struct) *kmp, P(search_source_t) src
 #       ifdef KMPS_FOUND
 	do
           { KMPS_FOUND(kmp, src, s); }
-	while (s.out = s.out->next);
+	while (s->out = s->out->next);
 #       endif	
       }
 #   endif
 
 #   ifdef KMPS_ADD_CONTROLS    
-    if (s.eof)
+    if (s->eof)
       break;
 #   endif    
 
@@ -131,7 +123,7 @@ P(search) (struct KP(struct) *kmp, P(search_source_t) src
 start_read: ;
 #   endif    
 #   ifdef KMPS_MERGE_CONTROLS
-    KP(char_t) last_c = s.c;
+    KP(char_t) last_c = s->c;
 #   endif
 
     do
@@ -139,10 +131,10 @@ start_read: ;
 	if (!KMPS_GET_CHAR(kmp, src, s))
 	  {
 #           ifdef KMPS_ADD_CONTROLS
-	    if (!KP(is_control)(kmp, s.c))
+	    if (!KP(is_control)(kmp, s->c))
 	      {
-                s.c = KP(control)();
-                s.eof = 1;
+                s->c = KP(control)();
+                s->eof = 1;
 		break;
 	      }
 #           endif
@@ -151,7 +143,7 @@ start_read: ;
       }
     while (0
 #     ifdef KMPS_MERGE_CONTROLS
-      || (KP(is_control)(kmp, last_c) && KP(is_control)(kmp, s.c))
+      || (KP(is_control)(kmp, last_c) && KP(is_control)(kmp, s->c))
 #     endif
       );
   }
@@ -161,6 +153,13 @@ exit: ;
 # endif
 }
 
+static inline void
+P(run) (struct KP(struct) *kmp, P(search_source_t) src)
+{
+  struct P(search) search;
+  P(search)(kmp, &search, src);
+}
+
 #undef P
 #undef KMPS_PREFIX
 #undef KMPS_KMP_PREFIX
@@ -168,12 +167,10 @@ exit: ;
 #undef KMPS_GET_CHAR
 #undef KMPS_ADD_CONTROLS
 #undef KMPS_MERGE_CONTROLS
-#undef KMPS_EXTRA_ARGS
-#undef KMPS_EXTRA_VAR
+#undef KMPS_VARS
 #undef KMPS_INIT
 #undef KMPS_EXIT
 #undef KMPS_FOUND
 #undef KMPS_FOUND_CHAIN
 #undef KMPS_STEP
-#undef KMPS_T
 #undef KMPS_WANT_BEST

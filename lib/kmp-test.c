@@ -22,17 +22,12 @@
 #define KMPS_PREFIX(x) GLUE_(kmp1s1,x)
 #define KMPS_KMP_PREFIX(x) GLUE_(kmp1,x)
 #define KMPS_WANT_BEST
-#define KMPS_T uns
-#define KMPS_EXIT(kmp,src,s) do{ return s.best->len; }while(0)
 #include "lib/kmp-search.h"
 #define KMPS_PREFIX(x) GLUE_(kmp1s2,x)
 #define KMPS_KMP_PREFIX(x) GLUE_(kmp1,x)
-#define KMPS_EXTRA_VAR uns
-#define KMPS_INIT(kmp,src,s) do{ s.v = 0; }while(0)
-#define KMPS_T uns
-#define KMPS_FOUND(kmp,src,s) do{ s.v++; }while(0)
-#define KMPS_EXIT(kmp,src,s) do{ return s.v; }while(0)
-#define KMPS_WANT_BEST
+#define KMPS_VARS uns count;
+#define KMPS_INIT(kmp,src,s) do{ s->u.count = 0; }while(0)
+#define KMPS_FOUND(kmp,src,s) do{ s->u.count++; }while(0)
 #include "lib/kmp-search.h"
 
 static void
@@ -45,11 +40,13 @@ test1(void)
   kmp1_add(&kmp, "hoj");
   kmp1_add(&kmp, "aho");
   kmp1_build(&kmp);
-  UNUSED uns best = kmp1s1_search(&kmp, "asjlahslhalahosjkjhojsas");
-  TRACE("Best match has %d characters", best);
-  ASSERT(best == 3);
-  UNUSED uns count = kmp1s2_search(&kmp, "asjlahslhalahojsjkjhojsas");
-  ASSERT(count == 4);
+  struct kmp1s1_search s1;
+  kmp1s1_search(&kmp, &s1, "asjlahslhalahosjkjhojsas");
+  TRACE("Best match has %d characters", s1.best->len);
+  ASSERT(s1.best->len == 3);
+  struct kmp1s2_search s2;
+  kmp1s2_search(&kmp, &s2, "asjlahslhalahojsjkjhojsas");
+  ASSERT(s2.u.count == 4);
   kmp1_cleanup(&kmp);
 }
 
@@ -71,9 +68,9 @@ test1(void)
 #define KMPS_ADD_CONTROLS
 #define KMPS_MERGE_CONTROLS
 #define KMPS_WANT_BEST
-#define KMPS_FOUND(kmp,src,s) do{ TRACE("String %s with id %d found", s.out->u.str, s.out->u.id); }while(0)
-#define KMPS_STEP(kmp,src,s) do{ TRACE("Got to state %p after reading %d", s.s, s.c); }while(0)
-#define KMPS_EXIT(kmp,src,s) do{ if (s.best->len) TRACE("Best match is %s", s.best->u.str); } while(0)
+#define KMPS_FOUND(kmp,src,s) do{ TRACE("String %s with id %d found", s->out->u.str, s->out->u.id); }while(0)
+#define KMPS_STEP(kmp,src,s) do{ TRACE("Got to state %p after reading %d", s->s, s->c); }while(0)
+#define KMPS_EXIT(kmp,src,s) do{ if (s->best->len) TRACE("Best match is %s", s->best->u.str); } while(0)
 #include "lib/kmp.h"
 
 static void
@@ -90,7 +87,7 @@ test2(void)
   kmp2_add(&kmp, "aba", 5);
   kmp2_add(&kmp, "pěl", 5);
   kmp2_build(&kmp);
-  kmp2_search(&kmp, "Šíleně žluťoučký kůň úpěl ďábelské ódy labababaks sdahojdhsaladsjhla");
+  kmp2_run(&kmp, "Šíleně žluťoučký kůň úpěl ďábelské ódy labababaks sdahojdhsaladsjhla");
   kmp2_cleanup(&kmp);
 }
 
@@ -105,8 +102,8 @@ test2(void)
 #define KMP_ADD_DUP(kmp,src,v,s) do{ *v = 0; }while(0)
 #define KMP_WANT_CLEANUP
 #define KMP_WANT_SEARCH
-#define KMPS_EXTRA_ARGS uns *cnt, uns *sum
-#define KMPS_FOUND(kmp,src,s) do{ ASSERT(cnt[s.out->u.index]); cnt[s.out->u.index]--; sum[0]--; }while(0)
+#define KMPS_VARS uns sum, *cnt;
+#define KMPS_FOUND(kmp,src,s) do{ ASSERT(s->u.cnt[s->out->u.index]); s->u.cnt[s->out->u.index]--; s->u.sum--; }while(0)
 #include "lib/kmp.h"
 
 static void
@@ -138,17 +135,20 @@ test3(void)
         for (uns j = 0; j < m; j++)
 	  b[j] = 'a' + random_max(4);
         b[m] = 0;
-        uns cnt[n], sum = 0;
+        uns cnt[n];
+	struct kmp3_search search;
+	search.u.sum = 0;
+	search.u.cnt = cnt;
         for (uns j = 0; j < n; j++)
           {
 	    cnt[j] = 0;
 	    if (*s[j])
 	      for (uns k = 0; k < m; k++)
 	        if (!strncmp(b + k, s[j], strlen(s[j])))
-	          cnt[j]++, sum++;
+	          cnt[j]++, search.u.sum++;
 	  }
-        kmp3_search(&kmp, b, cnt, &sum);
-        ASSERT(sum == 0);
+        kmp3_search(&kmp, &search, b);
+        ASSERT(search.u.sum == 0);
       }
     kmp3_cleanup(&kmp);
   }
@@ -193,7 +193,7 @@ test4(void)
   kmp4_init(&kmp);
   kmp4_add(&kmp, "ahoj");
   kmp4_build(&kmp);
-  kmp4_search(&kmp, "djdhaskjdahoahaahojojshdaksjahdahojskj");
+  kmp4_run(&kmp, "djdhaskjdahoahaahojojshdaksjahdahojskj");
   kmp4_cleanup(&kmp);
 }
 
