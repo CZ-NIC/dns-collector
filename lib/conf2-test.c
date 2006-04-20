@@ -52,7 +52,7 @@ static struct cf_section cf_sec_1 = {
 #undef F
 };
 
-static int nr1 = 15;
+static uns nr1 = 15;
 static int *nrs1 = DYN_ALLOC(int, 5, 5, 4, 3, 2, 1);
 static int nrs2[5];
 static byte *str1 = "no worries";
@@ -95,7 +95,7 @@ static struct cf_section cf_top UNUSED = {
   CF_COMMIT(init_top),
   CF_COMMIT(commit_top),
   CF_ITEMS {
-    CF_INT("nr1", &nr1),
+    CF_UNS("nr1", &nr1),
     CF_INT_DYN("nrs1", &nrs1, 1000),
     CF_INT_ARY("nrs2", nrs2, 5),
     CF_STRING("str1", &str1),
