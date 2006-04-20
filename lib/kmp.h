@@ -42,6 +42,7 @@
  * 	KMP_ADD_INIT(kmp,src)
  * 	KMP_ADD_NEW(kmp,src,s)
  * 	KMP_ADD_DUP(kmp,src,s)
+ *      KMP_INIT_STATE(kmp,s)   initialize new state (called before KMP_ADD_{NEW,DUP})
  *
  *    Parameters to build():
  *      KMP_BUILD_STATE(kmp,s)	called for all states (including null) in order of non-decreasing tree depth
@@ -167,6 +168,10 @@ static inline void
 P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(state) *f, P(char_t) c)
 {
   bzero(s, sizeof(*s));
+# ifdef KMP_INIT_STATE  
+  struct P(struct) *kmp = (struct P(struct) *)t;
+  { KMP_INIT_STATE(kmp, s); }
+# endif  
   s->from = f;
   s->c = c;
   s->next = f->back; /* the pointers hold the link-list of sons... changed in build() */
@@ -396,6 +401,7 @@ P(build) (struct P(struct) *kmp)
 #undef KMP_ADD_INIT
 #undef KMP_ADD_NEW
 #undef KMP_ADD_DUP
+#undef KMP_INIT_STATE
 #undef KMP_BUILD_STATE
 #undef KMP_USE_POOL
 #undef KMP_GIVE_ALLOC

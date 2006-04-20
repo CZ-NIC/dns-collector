@@ -22,12 +22,13 @@
 #define KMPS_PREFIX(x) GLUE_(kmp1s1,x)
 #define KMPS_KMP_PREFIX(x) GLUE_(kmp1,x)
 #define KMPS_WANT_BEST
+#define KMPS_EXIT(kmp,src,s) TRACE("Best match has %d characters", s->best->len)
 #include "lib/kmp-search.h"
 #define KMPS_PREFIX(x) GLUE_(kmp1s2,x)
 #define KMPS_KMP_PREFIX(x) GLUE_(kmp1,x)
 #define KMPS_VARS uns count;
-#define KMPS_INIT(kmp,src,s) s->u.count = 0;
-#define KMPS_FOUND(kmp,src,s) s->u.count++;
+#define KMPS_INIT(kmp,src,s) s->u.count = 0
+#define KMPS_FOUND(kmp,src,s) s->u.count++
 #include "lib/kmp-search.h"
 
 static void
@@ -42,7 +43,6 @@ test1(void)
   kmp1_build(&kmp);
   struct kmp1s1_search s1;
   kmp1s1_search(&kmp, &s1, "asjlahslhalahosjkjhojsas");
-  TRACE("Best match has %d characters", s1.best->len);
   ASSERT(s1.best->len == 3);
   struct kmp1s2_search s2;
   kmp1s2_search(&kmp, &s2, "asjlahslhalahojsjkjhojsas");
@@ -59,18 +59,16 @@ test1(void)
 #define KMP_STATE_VARS byte *str; uns id;
 #define KMP_ADD_EXTRA_ARGS uns id
 #define KMP_VARS byte *start;
-#define KMP_ADD_INIT(kmp,src) kmp->u.start = src;
+#define KMP_ADD_INIT(kmp,src) kmp->u.start = src
 #define KMP_ADD_NEW(kmp,src,s) do{ TRACE("Inserting string %s with id %d", kmp->u.start, id); \
   s->u.str = kmp->u.start; s->u.id = id; }while(0)
-#define KMP_ADD_DUP(kmp,src,s) TRACE("String %s already inserted", kmp->u.start);
+#define KMP_ADD_DUP(kmp,src,s) TRACE("String %s already inserted", kmp->u.start)
 #define KMP_WANT_CLEANUP
 #define KMP_WANT_SEARCH
 #define KMPS_ADD_CONTROLS
 #define KMPS_MERGE_CONTROLS
-#define KMPS_WANT_BEST
-#define KMPS_FOUND(kmp,src,s) TRACE("String %s with id %d found", s->out->u.str, s->out->u.id);
-#define KMPS_STEP(kmp,src,s) TRACE("Got to state %p after reading %d", s->s, s->c);
-#define KMPS_EXIT(kmp,src,s) do{ if (s->best->len) TRACE("Best match is %s", s->best->u.str); } while(0)
+#define KMPS_FOUND(kmp,src,s) TRACE("String %s with id %d found", s->out->u.str, s->out->u.id)
+#define KMPS_STEP(kmp,src,s) TRACE("Got to state %p after reading %d", s->s, s->c)
 #include "lib/kmp.h"
 
 static void
@@ -97,9 +95,9 @@ test2(void)
 #define KMP_STATE_VARS uns index;
 #define KMP_ADD_EXTRA_ARGS uns index
 #define KMP_VARS byte *start;
-#define KMP_ADD_INIT(kmp,src) kmp->u.start = src;
-#define KMP_ADD_NEW(kmp,src,s) s->u.index = index;
-#define KMP_ADD_DUP(kmp,src,s) *(kmp->u.start) = 0;
+#define KMP_ADD_INIT(kmp,src) kmp->u.start = src
+#define KMP_ADD_NEW(kmp,src,s) s->u.index = index
+#define KMP_ADD_DUP(kmp,src,s) *(kmp->u.start) = 0
 #define KMP_WANT_CLEANUP
 #define KMP_WANT_SEARCH
 #define KMPS_VARS uns sum, *cnt;
@@ -180,7 +178,7 @@ kmp4_hash(struct kmp4_struct *kmp UNUSED, struct kmp4_state *s, byte *c)
 #define KMP_GIVE_EQ
 #define KMP_WANT_CLEANUP
 #define KMP_WANT_SEARCH
-#define KMPS_FOUND(kmp,src,s) do{ TRACE("found"); }while(0)
+#define KMPS_FOUND(kmp,src,s) TRACE("found")
 #define KMPS_ADD_CONTROLS
 #define KMPS_MERGE_CONTROLS
 #include "lib/kmp.h"
