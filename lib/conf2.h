@@ -93,12 +93,15 @@ struct clist;
   // creates a static instance of a dynamic array
 
 /* Memory allocation */
+struct mempool;
+extern struct mempool *cf_pool;
 void *cf_malloc(uns size);
 void *cf_malloc_zero(uns size);
 byte *cf_strdup(byte *s);
 byte *cf_printf(char *fmt, ...);
 
 /* Undo journal for error recovery */
+extern uns cf_need_journal;
 void cf_journal_block(void *ptr, uns len);
 
 /* Safe reloading and loading of configuration files */

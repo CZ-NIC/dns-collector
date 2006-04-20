@@ -18,27 +18,28 @@
 
 /* Memory allocation */
 
+struct mempool *cf_pool;	// current pool for loading new configuration
 static struct old_pools {
   struct old_pools *prev;
   struct mempool *pool;
-} *pools;
+} *pools;			// link-list of older cf_pool's
 
 void *
 cf_malloc(uns size)
 {
-  return mp_alloc(pools->pool, size);
+  return mp_alloc(cf_pool, size);
 }
 
 void *
 cf_malloc_zero(uns size)
 {
-  return mp_alloc_zero(pools->pool, size);
+  return mp_alloc_zero(cf_pool, size);
 }
 
 byte *
 cf_strdup(byte *s)
 {
-  return mp_strdup(pools->pool, s);
+  return mp_strdup(cf_pool, s);
 }
 
 byte *
@@ -46,16 +47,17 @@ cf_printf(char *fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
-  byte *res = mp_vprintf(pools->pool, fmt, args);
+  byte *res = mp_vprintf(cf_pool, fmt, args);
   va_end(args);
   return res;
 }
 
 /* Undo journal */
 
+uns cf_need_journal;		// some programs do not need journal
 static struct journal_item {
   struct journal_item *prev;
-  void *ptr;
+  byte *ptr;
   uns len;
   byte copy[0];
 } *journal;
@@ -63,6 +65,8 @@ static struct journal_item {
 void
 cf_journal_block(void *ptr, uns len)
 {
+  if (!cf_need_journal)
+    return;
   struct journal_item *ji = cf_malloc(sizeof(struct journal_item) + len);
   ji->prev = journal;
   ji->ptr = ptr;
@@ -76,57 +80,60 @@ journal_swap(void)
   // swaps the contents of the memory and the journal, and reverses the list
 {
   struct journal_item *curr, *prev, *next;
-  uns max_len = 0;
-  for (curr=journal; curr; curr=curr->prev)
-    max_len = MAX(max_len, curr->len);
-  byte *buf = xmalloc(max_len);
   for (next=NULL, curr=journal; curr; next=curr, curr=prev)
   {
     prev = curr->prev;
     curr->prev = next;
-    memcpy(buf, curr->copy, curr->len);
-    memcpy(curr->copy, curr->ptr, curr->len);
-    memcpy(curr->ptr, buf, curr->len);
+    for (uns i=0; i<curr->len; i++)
+    {
+      byte x = curr->copy[i];
+      curr->copy[i] = curr->ptr[i];
+      curr->ptr[i] = x;
+    }
   }
   journal = next;
-  xfree(buf);
 }
 
 static struct journal_item *
 journal_new_section(uns new_pool)
 {
   if (new_pool)
-  {
-    struct old_pools *oldp = pools;
-    struct mempool *mp = mp_new(1<<14);
-    pools = mp_alloc(mp, sizeof(struct old_pools));
-    pools->prev = oldp;
-    pools->pool = mp;
-  }
+    cf_pool = mp_new(1<<14);
   struct journal_item *oldj = journal;
   journal = NULL;
   return oldj;
 }
 
 static void
-journal_commit_section(struct journal_item *oldj)
+journal_commit_section(uns new_pool, struct journal_item *oldj)
 {
-  struct journal_item **j = &journal;
-  while (*j)
-    j = &(*j)->prev;
-  *j = oldj;
+  if (new_pool)
+  {
+    struct old_pools *p = cf_malloc(sizeof(struct old_pools));
+    p->prev = pools;
+    p->pool = cf_pool;
+    pools = p;
+  }
+  if (oldj)
+  {
+    struct journal_item **j = &journal;
+    while (*j)
+      j = &(*j)->prev;
+    *j = oldj;
+  }
 }
 
 static void
-journal_rollback_section(uns new_pool, struct journal_item *oldj)
+journal_rollback_section(uns new_pool, struct journal_item *oldj, byte *msg)
 {
+  if (!cf_need_journal)
+    die("Cannot rollback the configuration, because the journal is disabled.  Error: %s", msg);
   journal_swap();
   journal = oldj;
   if (new_pool)
   {
-    struct old_pools *oldp = pools;
-    pools = pools->prev;
-    mp_delete(oldp->pool);
+    mp_delete(cf_pool);
+    cf_pool = pools ? pools->pool : NULL;
   }
 }
 
@@ -139,23 +146,22 @@ byte *
 cf_reload(byte *file)
 {
   journal_swap();
-  struct old_pools *oldp = pools;
-  pools = NULL;
-
   struct journal_item *oldj = journal_new_section(1);
   byte *msg = load_file(file);
-  if (msg)
+  if (!msg)
   {
-    journal_rollback_section(1, oldj);
-    pools = oldp;
-    journal_swap();
-  }
-  else
-    for (struct old_pools *p=oldp; p; p=oldp)
+    for (struct old_pools *p=pools; p; p=pools)
     {
-      oldp = p->prev;
+      pools = p->prev;
       mp_delete(p->pool);
     }
+    journal_commit_section(1, NULL);
+  }
+  else
+  {
+    journal_rollback_section(1, oldj, msg);
+    journal_swap();
+  }
   return msg;
 }
 
@@ -165,9 +171,9 @@ cf_load(byte *file)
   struct journal_item *oldj = journal_new_section(1);
   byte *msg = load_file(file);
   if (!msg)
-    journal_commit_section(oldj);
+    journal_commit_section(1, oldj);
   else
-    journal_rollback_section(1, oldj);
+    journal_rollback_section(1, oldj, msg);
   return msg;
 }
 
@@ -177,9 +183,9 @@ cf_set(byte *string)
   struct journal_item *oldj = journal_new_section(0);
   byte *msg = load_string(string);
   if (!msg)
-    journal_commit_section(oldj);
+    journal_commit_section(0, oldj);
   else
-    journal_rollback_section(0, oldj);
+    journal_rollback_section(0, oldj, msg);
   return msg;
 }
 
