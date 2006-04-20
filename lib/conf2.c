@@ -49,13 +49,9 @@ cf_printf(char *fmt, ...)
 
 /* Undo journal */
 
-static uns journal_active;	// controls whether a call to cf_journal_block() is taken into account
-
 void
 cf_journal_block(void *ptr UNUSED, uns len UNUSED)
 {
-  if (!journal_active)
-    return;
 }
 
 /* Parsers for standard types */
@@ -96,10 +92,9 @@ lookup_unit(byte *value, byte *end, byte **msg)
 
 static char cf_rngerr[] = "Number out of range";
 
-static byte *
-parse_int(uns number, byte **pars, int *ptr)
+byte *
+cf_parse_int(uns number, byte **pars, int *ptr)
 {
-  cf_journal_block(ptr, number * sizeof(int));
   for (uns i=0; i<number; i++)
   {
     byte *msg = NULL;
@@ -131,10 +126,9 @@ parse_int(uns number, byte **pars, int *ptr)
   return NULL;
 }
 
-static byte *
-parse_u64(uns number, byte **pars, u64 *ptr)
+byte *
+cf_parse_u64(uns number, byte **pars, u64 *ptr)
 {
-  cf_journal_block(ptr, number * sizeof(u64));
   for (uns i=0; i<number; i++)
   {
     byte *msg = NULL;
@@ -166,10 +160,9 @@ parse_u64(uns number, byte **pars, u64 *ptr)
   return NULL;
 }
 
-static byte *
-parse_double(uns number, byte **pars, double *ptr)
+byte *
+cf_parse_double(uns number, byte **pars, double *ptr)
 {
-  cf_journal_block(ptr, number * sizeof(double));
   for (uns i=0; i<number; i++)
   {
     byte *msg = NULL;
@@ -194,9 +187,8 @@ parse_double(uns number, byte **pars, double *ptr)
 }
 
 static byte *
-parse_string(uns number, byte **pars, byte **ptr)
+cf_parse_string(uns number, byte **pars, byte **ptr)
 {
-  cf_journal_block(ptr, number * sizeof(byte*));
   for (uns i=0; i<number; i++)
     ptr[i] = cf_strdup(pars[i]);
   return NULL;
@@ -207,10 +199,10 @@ static struct {
   uns size;
   void *parser;
 } parsers[] = {
-  { sizeof(int), parse_int },
-  { sizeof(u64), parse_u64 },
-  { sizeof(double), parse_double },
-  { sizeof(byte*), parse_string }
+  { sizeof(int), cf_parse_int },
+  { sizeof(u64), cf_parse_u64 },
+  { sizeof(double), cf_parse_double },
+  { sizeof(byte*), cf_parse_string }
 };
 
 static byte *
@@ -219,9 +211,5 @@ cf_parse_dyn(uns number, byte **pars, void **ptr, enum cf_type type)
   cf_journal_block(ptr, sizeof(void*));
   *ptr = cf_malloc((number+1) * parsers[type].size) + parsers[type].size;
   * (uns*) (ptr - parsers[type].size) = number;
-  uns old_flag = journal_active;
-  journal_active = 0;
-  byte *msg = ((cf_parser*) parsers[type].parser) (number, pars, *ptr);
-  journal_active = old_flag;
-  return msg;
+  return ((cf_parser*) parsers[type].parser) (number, pars, *ptr);
 }

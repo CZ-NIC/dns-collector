@@ -101,4 +101,9 @@ byte *cf_printf(char *fmt, ...);
 /* Undo journal for error recovery */
 void cf_journal_block(void *ptr, uns len);
 
+/* Parsers for basic types */
+byte *cf_parse_int(uns number, byte **pars, int *ptr);
+byte *cf_parse_u64(uns number, byte **pars, u64 *ptr);
+byte *cf_parse_double(uns number, byte **pars, double *ptr);
+
 #endif
