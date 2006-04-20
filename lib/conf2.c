@@ -49,19 +49,13 @@ cf_printf(char *fmt, ...)
 
 /* Undo journal */
 
-static uns journal_active;
-
-uns
-cf_journal_active(uns flag)
-{
-  uns f = journal_active;
-  journal_active = flag;
-  return f;
-}
+static uns journal_active;	// controls whether a call to cf_journal_block() is taken into account
 
 void
 cf_journal_block(void *ptr UNUSED, uns len UNUSED)
 {
+  if (!journal_active)
+    return;
 }
 
 /* Parsers for standard types */
@@ -103,7 +97,7 @@ lookup_unit(byte *value, byte *end, byte **msg)
 static char cf_rngerr[] = "Number out of range";
 
 static byte *
-cf_parse_int(uns number, byte **pars, int *ptr)
+parse_int(uns number, byte **pars, int *ptr)
 {
   cf_journal_block(ptr, number * sizeof(int));
   for (uns i=0; i<number; i++)
@@ -138,7 +132,7 @@ cf_parse_int(uns number, byte **pars, int *ptr)
 }
 
 static byte *
-cf_parse_u64(uns number, byte **pars, u64 *ptr)
+parse_u64(uns number, byte **pars, u64 *ptr)
 {
   cf_journal_block(ptr, number * sizeof(u64));
   for (uns i=0; i<number; i++)
@@ -173,7 +167,7 @@ cf_parse_u64(uns number, byte **pars, u64 *ptr)
 }
 
 static byte *
-cf_parse_double(uns number, byte **pars, double *ptr)
+parse_double(uns number, byte **pars, double *ptr)
 {
   cf_journal_block(ptr, number * sizeof(double));
   for (uns i=0; i<number; i++)
@@ -200,7 +194,7 @@ cf_parse_double(uns number, byte **pars, double *ptr)
 }
 
 static byte *
-cf_parse_string(uns number, byte **pars, byte **ptr)
+parse_string(uns number, byte **pars, byte **ptr)
 {
   cf_journal_block(ptr, number * sizeof(byte*));
   for (uns i=0; i<number; i++)
@@ -208,50 +202,26 @@ cf_parse_string(uns number, byte **pars, byte **ptr)
   return NULL;
 }
 
-static byte *
-cf_parse_int_ary(uns number, byte **pars, int **ptr)
-{
-  cf_journal_block(ptr, sizeof(int**));
-  *ptr = (int*) cf_malloc((number+1) * sizeof(int*)) + 1;
-  ARRAY_LEN(*ptr) = number;
-  uns old_flag = cf_journal_active(0);
-  byte *msg = cf_parse_int(number, pars, *ptr);
-  cf_journal_active(old_flag);
-  return msg;
-}
+/* Register size of and parser for each basic type */
+static struct {
+  uns size;
+  void *parser;
+} parsers[] = {
+  { sizeof(int), parse_int },
+  { sizeof(u64), parse_u64 },
+  { sizeof(double), parse_double },
+  { sizeof(byte*), parse_string }
+};
 
 static byte *
-cf_parse_u64_ary(uns number, byte **pars, u64 **ptr)
+cf_parse_dyn(uns number, byte **pars, void **ptr, enum cf_type type)
 {
-  cf_journal_block(ptr, sizeof(u64**));
-  *ptr = (u64*) cf_malloc((number+1) * sizeof(u64*)) + 1;
-  ARRAY_LEN(*ptr) = number;
-  uns old_flag = cf_journal_active(0);
-  byte *msg = cf_parse_u64(number, pars, *ptr);
-  cf_journal_active(old_flag);
-  return msg;
-}
-
-static byte *
-cf_parse_double_ary(uns number, byte **pars, double **ptr)
-{
-  cf_journal_block(ptr, sizeof(double**));
-  *ptr = (double*) cf_malloc((number+1) * sizeof(double*)) + 1;
-  ARRAY_LEN(*ptr) = number;
-  uns old_flag = cf_journal_active(0);
-  byte *msg = cf_parse_double(number, pars, *ptr);
-  cf_journal_active(old_flag);
-  return msg;
-}
-
-static byte *
-cf_parse_string_ary(uns number, byte **pars, byte ***ptr)
-{
-  cf_journal_block(ptr, sizeof(byte***));
-  *ptr = (byte**) cf_malloc((number+1) * sizeof(byte**)) + 1;
-  ARRAY_LEN(*ptr) = number;
-  uns old_flag = cf_journal_active(0);
-  byte *msg = cf_parse_string(number, pars, *ptr);
-  cf_journal_active(old_flag);
+  cf_journal_block(ptr, sizeof(void*));
+  *ptr = cf_malloc((number+1) * parsers[type].size) + parsers[type].size;
+  * (uns*) (ptr - parsers[type].size) = number;
+  uns old_flag = journal_active;
+  journal_active = 0;
+  byte *msg = ((cf_parser*) parsers[type].parser) (number, pars, *ptr);
+  journal_active = old_flag;
   return msg;
 }
