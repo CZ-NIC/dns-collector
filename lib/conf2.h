@@ -57,22 +57,22 @@ struct cf_section {
   uns size;				// 0 for a global block, sizeof(struct) for a section
   cf_hook *init;			// fills in default values (otherwise 0's are used)
   cf_hook *commit;			// verifies parsed data (optional)
-  struct cf_item *cfg;			// CT_END-terminated array of items
+  struct cf_item *cfg;			// CC_END-terminated array of items
 };
 
 /* Declaration of cf_section */
-#define CF_TYPE(s)	.size = sizeof(s),
-#define CF_INIT(f)	.init = (cf_hook*) f,
-#define CF_COMMIT(f)	.commit = (cf_hook*) f,
-#define CF_START_ITEMS	.cfg = ( struct cf_item[] ) {
-#define CF_END_ITEMS	{ .cls = CC_END } },
+#define CF_TYPE(s)	.size = sizeof(s)
+#define CF_INIT(f)	.init = (cf_hook*) f
+#define CF_COMMIT(f)	.commit = (cf_hook*) f
+#define CF_ITEMS	.cfg = ( struct cf_item[] )
+#define CF_END		{ .cls = CC_END }
 /* Configuration items */
 struct clist;
-#define CF_STATIC(n,p,T,t,c)	{ .cls = CC_STATIC, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t*), .u.type = CT_##T },
-#define CF_DYNAMIC(n,p,T,t,c)	{ .cls = CC_DYNAMIC, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t**), .u.type = CT_##T },
-#define CF_PARSER(n,p,f,c)	{ .cls = CC_PARSER, .name = n, .number = c, .ptr = p, .u.par = (cf_parser*) f },
-#define CF_SECTION(n,p,s)	{ .cls = CC_SECTION, .name = n, .number = 1, .ptr = p, .u.sub = s },
-#define CF_LIST(n,p,s)		{ .cls = CC_LIST, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,struct clist*), .u.sub = s },
+#define CF_STATIC(n,p,T,t,c)	{ .cls = CC_STATIC, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t*), .u.type = CT_##T }
+#define CF_DYNAMIC(n,p,T,t,c)	{ .cls = CC_DYNAMIC, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t**), .u.type = CT_##T }
+#define CF_PARSER(n,p,f,c)	{ .cls = CC_PARSER, .name = n, .number = c, .ptr = p, .u.par = (cf_parser*) f }
+#define CF_SECTION(n,p,s)	{ .cls = CC_SECTION, .name = n, .number = 1, .ptr = p, .u.sub = s }
+#define CF_LIST(n,p,s)		{ .cls = CC_LIST, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,struct clist*), .u.sub = s }
 /* Configuration items for basic types */
 #define CF_INT(n,p)		CF_STATIC(n,p,INT,int,1)
 #define CF_INT_ARY(n,p,c)	CF_STATIC(n,p,INT,int,c)

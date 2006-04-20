@@ -37,16 +37,17 @@ commit_sec_1(struct sub_sect_1 *s)
 }
 
 static struct cf_section cf_sec_1 = {
-  CF_TYPE(struct sub_sect_1)
-  CF_INIT(init_sec_1)
-  CF_COMMIT(commit_sec_1)
+  CF_TYPE(struct sub_sect_1),
+  CF_INIT(init_sec_1),
+  CF_COMMIT(commit_sec_1),
 #define F(x)	PTR_TO(struct sub_sect_1, x)
-  CF_START_ITEMS
-    CF_STRING("name", F(name))
-    CF_STRING("level", F(level))
-    CF_INT_ARY("confidence", F(confidence[0]), 2)		// XXX: the [0] is needed for the sake of macros :-(
-    CF_DOUBLE_DYN("list", F(list), 100)
-  CF_END_ITEMS
+  CF_ITEMS {
+    CF_STRING("name", F(name)),
+    CF_STRING("level", F(level)),
+    CF_INT_ARY("confidence", F(confidence[0]), 2),		// XXX: the [0] is needed for the sake of type checking
+    CF_DOUBLE_DYN("list", F(list), 100),
+    CF_END
+  }
 #undef F
 };
 
@@ -77,20 +78,21 @@ time_parser(uns number, byte **pars, time_t *ptr)
 }
 
 static struct cf_section cf_top UNUSED = {
-  CF_COMMIT(commit_top)
-  CF_START_ITEMS
-    CF_INT("nr1", &nr1)
-    CF_INT_DYN("nrs1", &nrs1, 1000)
-    CF_INT_ARY("nrs2", nrs2, 5)
-    CF_STRING("str1", &str1)
-    CF_STRING_DYN("str2", &str2, 2)
-    CF_U64("u1", &u1)
-    CF_DOUBLE("d1", &d1)
-    CF_PARSER("FirstTime", &t1, time_parser, -1)
-    CF_PARSER("SecondTime", &t2, time_parser, 1)
-    CF_SECTION("master", &sec1, &cf_sec_1)
-    CF_LIST("slaves", &secs, &cf_sec_1)
-  CF_END_ITEMS
+  CF_COMMIT(commit_top),
+  CF_ITEMS {
+    CF_INT("nr1", &nr1),
+    CF_INT_DYN("nrs1", &nrs1, 1000),
+    CF_INT_ARY("nrs2", nrs2, 5),
+    CF_STRING("str1", &str1),
+    CF_STRING_DYN("str2", &str2, 2),
+    CF_U64("u1", &u1),
+    CF_DOUBLE("d1", &d1),
+    CF_PARSER("FirstTime", &t1, time_parser, -1),
+    CF_PARSER("SecondTime", &t2, time_parser, 1),
+    CF_SECTION("master", &sec1, &cf_sec_1),
+    CF_LIST("slaves", &secs, &cf_sec_1),
+    CF_END
+  }
 };
 
 int
