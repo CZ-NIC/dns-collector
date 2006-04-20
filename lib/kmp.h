@@ -39,10 +39,9 @@
  *
  *    Parameters controlling add():
  * 	KMP_ADD_EXTRA_ARGS	extra arguments
- * 	KMP_ADD_EXTRA_VAR	structure with extra local variables
- * 	KMP_ADD_INIT(kmp,src,v)
- * 	KMP_ADD_NEW(kmp,src,v,s)
- * 	KMP_ADD_DUP(kmp,src,v,s)
+ * 	KMP_ADD_INIT(kmp,src)
+ * 	KMP_ADD_NEW(kmp,src,s)
+ * 	KMP_ADD_DUP(kmp,src,s)
  *
  *    Parameters to build():
  *      KMP_BUILD_STATE(kmp,s)	called for all states (including null) in order of non-decreasing tree depth
@@ -274,11 +273,8 @@ P(add) (struct P(struct) *kmp, P(source_t) src
 #   endif
 )
 {
-# ifdef KMP_ADD_EXTRA_VAR
-  KMP_ADD_EXTRA_VAR v;
-# endif
 # ifdef KMP_ADD_INIT
-  { KMP_ADD_INIT(kmp, src, v); }
+  { KMP_ADD_INIT(kmp, src); }
 # endif
 
   P(char_t) c;
@@ -302,21 +298,17 @@ P(add) (struct P(struct) *kmp, P(source_t) src
       len++;
     }
   while (P(get_char)(kmp, &src, &c));
-# ifdef KMP_NO_DUPS
-  ASSERT(!s->len);
-# else  
   if (s->len)
     {
 #     ifdef KMP_ADD_DUP
-      { KMP_ADD_DUP(kmp, src, v, s); }
+      { KMP_ADD_DUP(kmp, src, s); }
 #     endif
       return s;
     }
-# endif  
 enter_new:
   s->len = len;
 # ifdef KMP_ADD_NEW
-  { KMP_ADD_NEW(kmp, src, v, s); }
+  { KMP_ADD_NEW(kmp, src, s); }
 # endif
   return s;
 }
@@ -401,7 +393,6 @@ P(build) (struct P(struct) *kmp)
 #undef KMP_ONLYALPHA
 #undef KMP_CONTROL_CHAR
 #undef KMP_ADD_EXTRA_ARGS
-#undef KMP_ADD_EXTRA_VAR
 #undef KMP_ADD_INIT
 #undef KMP_ADD_NEW
 #undef KMP_ADD_DUP

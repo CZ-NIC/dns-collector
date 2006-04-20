@@ -24,7 +24,7 @@
  *  KMPS_GET_CHAR(kmp,src,s)
  *
  *  KMPS_ADD_CONTROLS		add control characters at both ends of the input string
- *  KMPS_MERGE_CONTROLS 	merge adjacent control characters to a single onei
+ *  KMPS_MERGE_CONTROLS 	merge adjacent control characters to a single one
  *
  *  KMPS_VARS
  *
@@ -47,7 +47,7 @@ typedef KP(source_t) P(search_source_t);
 #endif
 
 #ifndef KMPS_GET_CHAR
-#define KMPS_GET_CHAR(kmp,src,s) ({ KP(get_char)(kmp, &src, &s->c); })
+#define KMPS_GET_CHAR(kmp,src,s) (KP(get_char)(kmp, &src, &s->c))
 #endif
 
 struct P(search) {
