@@ -48,7 +48,7 @@ struct cf_item {
   void *ptr;				// pointer to a global variable or an offset in a section
   union {
     enum cf_type type;			// type of a static or dynamic attribute
-    struct cf_section *sub;		// declaration of a section or a list
+    struct cf_section *sec;		// declaration of a section or a list
     cf_parser *par;			// parser function
   } u;
 };
@@ -71,8 +71,8 @@ struct clist;
 #define CF_STATIC(n,p,T,t,c)	{ .cls = CC_STATIC, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t*), .u.type = CT_##T }
 #define CF_DYNAMIC(n,p,T,t,c)	{ .cls = CC_DYNAMIC, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t**), .u.type = CT_##T }
 #define CF_PARSER(n,p,f,c)	{ .cls = CC_PARSER, .name = n, .number = c, .ptr = p, .u.par = (cf_parser*) f }
-#define CF_SECTION(n,p,s)	{ .cls = CC_SECTION, .name = n, .number = 1, .ptr = p, .u.sub = s }
-#define CF_LIST(n,p,s)		{ .cls = CC_LIST, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,struct clist*), .u.sub = s }
+#define CF_SECTION(n,p,s)	{ .cls = CC_SECTION, .name = n, .number = 1, .ptr = p, .u.sec = s }
+#define CF_LIST(n,p,s)		{ .cls = CC_LIST, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,struct clist*), .u.sec = s }
 /* Configuration items for basic types */
 #define CF_INT(n,p)		CF_STATIC(n,p,INT,int,1)
 #define CF_INT_ARY(n,p,c)	CF_STATIC(n,p,INT,int,c)
@@ -104,7 +104,12 @@ byte *cf_printf(char *fmt, ...);
 extern uns cf_need_journal;
 void cf_journal_block(void *ptr, uns len);
 
+/* Declaration */
+void cf_declare_section(byte *name, struct cf_section *sec);
+void cf_init_section(byte *name, struct cf_section *sec, void *ptr);
+
 /* Safe reloading and loading of configuration files */
+extern byte *cf_def_file;
 byte *cf_reload(byte *file);
 byte *cf_load(byte *file);
 byte *cf_set(byte *string);

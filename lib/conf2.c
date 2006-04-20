@@ -11,6 +11,7 @@
 #include "lib/lib.h"
 #include "lib/conf2.h"
 #include "lib/mempool.h"
+#include "lib/clists.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -137,7 +138,53 @@ journal_rollback_section(uns new_pool, struct journal_item *oldj, byte *msg)
   }
 }
 
+/* Initialization */
+
+static struct section {
+  struct section *prev;
+  byte *name;
+  struct cf_section *sec;
+} *sections;
+
+void
+cf_declare_section(byte *name, struct cf_section *sec)
+{
+  struct section *s = sections;
+  for (; s; s=s->prev)
+    if (!strcasecmp(s->name, name))
+      die("Cannot register cf_section %s twice", name);
+  s = xmalloc(sizeof(struct section));
+  s->prev = sections;
+  s->name = name;
+  s->sec = sec;
+  sections = s;
+}
+
+void
+cf_init_section(byte *name, struct cf_section *sec, void *ptr)
+{
+  if (sec->size)
+    bzero(ptr, sec->size);
+  for (uns i=0; sec->cfg[i].cls; i++)
+    if (sec->cfg[i].cls == CC_SECTION)
+      cf_init_section(sec->cfg[i].name, sec->cfg[i].u.sec, ptr + (addr_int_t) sec->cfg[i].ptr);
+    else if (sec->cfg[i].cls == CC_LIST)
+      clist_init(sec->cfg[i].ptr);
+  byte *msg = sec->init(ptr);
+  if (msg)
+    die("Cannot initialize section %s: %s", name, msg);
+}
+
+static void
+global_init(void)
+{
+  for (struct section *s=sections; s; s=s->prev)
+    cf_init_section(s->name, s->sec, NULL);
+}
+
 /* Safe loading and reloading */
+
+byte *cf_def_file = DEFAULT_CONFIG;
 
 static byte *load_file(byte *file);
 static byte *load_string(byte *string);
@@ -348,3 +395,4 @@ cf_parse_dyn(uns number, byte **pars, void **ptr, enum cf_type type)
   * (uns*) (*ptr - parsers[type].size) = number;
   return ((cf_parser*) parsers[type].parser) (number, pars, *ptr);
 }
+
