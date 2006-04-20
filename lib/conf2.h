@@ -115,8 +115,8 @@ byte *cf_load(byte *file);
 byte *cf_set(byte *string);
 
 /* Parsers for basic types */
-byte *cf_parse_int(uns number, byte **pars, int *ptr);
-byte *cf_parse_u64(uns number, byte **pars, u64 *ptr);
-byte *cf_parse_double(uns number, byte **pars, double *ptr);
+byte *cf_parse_int(byte *str, int *ptr);
+byte *cf_parse_u64(byte *str, u64 *ptr);
+byte *cf_parse_double(byte *str, double *ptr);
 
 #endif
