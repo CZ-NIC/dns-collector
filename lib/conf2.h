@@ -44,7 +44,7 @@ struct cf_section;
 struct cf_item {
   enum cf_class cls;
   byte *name;
-  int number;				// length of an array or #parameters of a parser
+  int number;				// length of an array or #parameters of a parser (negative means at most)
   void *ptr;				// pointer to a global variable or an offset in a section
   union {
     enum cf_type type;			// type of a static or dynamic attribute
@@ -100,6 +100,11 @@ byte *cf_printf(char *fmt, ...);
 
 /* Undo journal for error recovery */
 void cf_journal_block(void *ptr, uns len);
+
+/* Safe reloading and loading of configuration files */
+byte *cf_reload(byte *file);
+byte *cf_load(byte *file);
+byte *cf_set(byte *string);
 
 /* Parsers for basic types */
 byte *cf_parse_int(uns number, byte **pars, int *ptr);
