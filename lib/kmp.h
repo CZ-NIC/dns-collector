@@ -22,12 +22,12 @@
  *	KMP_CHAR		alphabet type, the default is u16
  *	
  *	KMP_SOURCE		user-defined text source; KMP_GET_CHAR must 
- *	KMP_GET_CHAR(ctx,src,c)	return next character from the input or zero at the end;
+ *	KMP_GET_CHAR(kmp,src,c)	return next character from the input or zero at the end;
  *				if not defined, zero-terminated array of bytes is used as the input
  *	
- *	KMP_NODE		user-defined data in each state of the automaton
- *	KMP_CONTEXT		user-defined data in struct context (a structure describing
+ *	KMP_VARS		user-defined data in main structure (a structure describing
  *				the whole automaton)
+ *	KMP_STATE_VARS		user-defined data in each state of the automaton
  *
  *    Parameters which select how the input is interpreted (if KMP_SOURCE is unset):
  *	KMP_USE_ASCII		reads single bytes from the input (default)
@@ -40,13 +40,12 @@
  *    Parameters controlling add():
  * 	KMP_ADD_EXTRA_ARGS	extra arguments
  * 	KMP_ADD_EXTRA_VAR	structure with extra local variables
- * 	KMP_ADD_INIT(ctx,src,v)
- * 	KMP_ADD_NEW(ctx,src,v,s)
- * 	KMP_ADD_DUP(ctx,src,v,s)
- * 	KMP_NO_DUPS		no support for duplicates
+ * 	KMP_ADD_INIT(kmp,src,v)
+ * 	KMP_ADD_NEW(kmp,src,v,s)
+ * 	KMP_ADD_DUP(kmp,src,v,s)
  *
  *    Parameters to build():
- *      KMP_BUILD_STATE(ctx,s)	called for all states (including null) in order of non-decreasing tree depth
+ *      KMP_BUILD_STATE(kmp,s)	called for all states (including null) in order of non-decreasing tree depth
  *
  *    Other parameters:
  *	KMP_WANT_CLEANUP	define cleanup()
@@ -84,7 +83,7 @@ typedef KMP_NODE P(node_t);
 typedef struct {} P(node_t);
 #endif
 
-struct P(context);
+struct P(struct);
 
 struct P(state) {
   struct P(state) *from;	/* state with previous character */
@@ -92,18 +91,22 @@ struct P(state) {
   struct P(state) *next;	/* largest shorter match */
   P(len_t) len;			/* largest match, zero otherwise */
   P(char_t) c;			/* last character */
-  P(node_t) n;			/* user-defined data */
+  struct {
+#   ifdef KMP_STATE_VARS
+    KMP_STATE_VARS
+#   endif    
+  } u;				/* user-defined data*/
 };
 
 /* Control char */
 static inline P(char_t)
 P(control) (void)
 {
-#ifdef KMP_CONTROL_CHAR
+# ifdef KMP_CONTROL_CHAR
   return KMP_CONTROL_CHAR;
-#else
+# else
   return ':';
-#endif
+# endif
 }
 
 /* User-defined source */
@@ -114,7 +117,7 @@ struct P(hash_table);
 static inline uns
 P(hash_hash) (struct P(hash_table) *t, struct P(state) *f, P(char_t) c)
 {
-  return P(hash) ((struct P(context) *) t, f, c);
+  return P(hash) ((struct P(struct) *) t, f, c);
 }
 #else
 static inline uns
@@ -126,23 +129,23 @@ P(hash_hash) (struct P(hash_table) *t UNUSED, struct P(state) *f, P(char_t) c)
 
 #ifndef KMP_GIVE_EQ
 static inline int
-P(eq) (struct P(context) *ctx UNUSED, P(char_t) c1, P(char_t) c2)
+P(eq) (struct P(struct) *kmp UNUSED, P(char_t) c1, P(char_t) c2)
 {
   return c1 == c2;
 }
 #endif
 
 static inline int
-P(is_control) (struct P(context) *ctx, P(char_t) c)
+P(is_control) (struct P(struct) *kmp, P(char_t) c)
 {
-  return P(eq) (ctx, c, P(control)());
+  return P(eq) (kmp, c, P(control)());
 }
 
 #define HASH_GIVE_EQ
 static inline int
 P(hash_eq) (struct P(hash_table) *t, struct P(state) *f1, P(char_t) c1, struct P(state) *f2, P(char_t) c2)
 {
-  return f1 == f2 && P(eq)((struct P(context) *) t, c1, c2);
+  return f1 == f2 && P(eq)((struct P(struct) *) t, c1, c2);
 }
 
 #ifdef KMP_GIVE_ALLOC
@@ -150,13 +153,13 @@ P(hash_eq) (struct P(hash_table) *t, struct P(state) *f1, P(char_t) c1, struct P
 static inline void *
 P(hash_alloc) (struct P(hash_table) *t, uns size)
 {
-  return P(alloc) ((struct P(context) *) t, size);
+  return P(alloc) ((struct P(struct) *) t, size);
 }
 
 static inline void
 P(hash_free) (struct P(hash_table) *t, void *ptr)
 {
-  P(free) ((struct P(context) *) t, ptr);
+  P(free) ((struct P(struct) *) t, ptr);
 }
 #endif
 
@@ -191,12 +194,14 @@ P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(s
 #include "lib/hashtable.h"
 #define P(x) KMP_PREFIX(x)
 
-struct P(context) {
+struct P(struct) {
   struct P(hash_table) hash;		/* hash table of state transitions */
   struct P(state) null;			/* null state */
-# ifdef KMP_CONTEXT
-  KMP_CONTEXT v;			/* user defined data */
-# endif  
+  struct {
+#   ifdef KMP_VARS
+    KMP_VARS
+#   endif
+  } u;					/* user-defined data */
 };
 
 #ifdef KMP_SOURCE
@@ -207,9 +212,9 @@ typedef byte *P(source_t);
 
 #ifdef KMP_GET_CHAR
 static inline int
-P(get_char) (struct P(context) *ctx UNUSED, P(source_t) *src UNUSED, P(char_t) *c UNUSED)
+P(get_char) (struct P(struct) *kmp UNUSED, P(source_t) *src UNUSED, P(char_t) *c UNUSED)
 {
-  return KMP_GET_CHAR(ctx, (*src), (*c));
+  return KMP_GET_CHAR(kmp, (*src), (*c));
 }
 #else
 #  if defined(KMP_USE_UTF8)
@@ -223,7 +228,7 @@ P(get_char) (struct P(context) *ctx UNUSED, P(source_t) *src UNUSED, P(char_t) *
 #    endif
 #  endif
 static inline int
-P(get_char) (struct P(context) *ctx UNUSED, P(source_t) *src, P(char_t) *c)
+P(get_char) (struct P(struct) *kmp UNUSED, P(source_t) *src, P(char_t) *c)
 {
 # ifdef KMP_USE_UTF8
   uns cc;
@@ -263,7 +268,7 @@ P(get_char) (struct P(context) *ctx UNUSED, P(source_t) *src, P(char_t) *c)
 #endif
 
 static struct P(state) *
-P(add) (struct P(context) *ctx, P(source_t) src
+P(add) (struct P(struct) *kmp, P(source_t) src
 #   ifdef KMP_ADD_EXTRA_ARGS
     , KMP_ADD_EXTRA_ARGS
 #   endif
@@ -273,37 +278,37 @@ P(add) (struct P(context) *ctx, P(source_t) src
   KMP_ADD_EXTRA_VAR v;
 # endif
 # ifdef KMP_ADD_INIT
-  { KMP_ADD_INIT(ctx, src, v); }
+  { KMP_ADD_INIT(kmp, src, v); }
 # endif
 
   P(char_t) c;
-  if (!P(get_char)(ctx, &src, &c))
+  if (!P(get_char)(kmp, &src, &c))
     return NULL;
-  struct P(state) *p = &ctx->null, *s;
+  struct P(state) *p = &kmp->null, *s;
   uns len = 0;
   do
     {
-      s = P(hash_find)(&ctx->hash, p, c);
+      s = P(hash_find)(&kmp->hash, p, c);
       if (!s)
 	for (;;)
 	  {
-	    s = P(hash_new)(&ctx->hash, p, c);
+	    s = P(hash_new)(&kmp->hash, p, c);
 	    len++;
-	    if (!(P(get_char)(ctx, &src, &c)))
+	    if (!(P(get_char)(kmp, &src, &c)))
 	      goto enter_new;
 	    p = s;
 	  }
       p = s;
       len++;
     }
-  while (P(get_char)(ctx, &src, &c));
+  while (P(get_char)(kmp, &src, &c));
 # ifdef KMP_NO_DUPS
   ASSERT(!s->len);
 # else  
   if (s->len)
     {
 #     ifdef KMP_ADD_DUP
-      { KMP_ADD_DUP(ctx, src, v, s); }
+      { KMP_ADD_DUP(kmp, src, v, s); }
 #     endif
       return s;
     }
@@ -311,30 +316,30 @@ P(add) (struct P(context) *ctx, P(source_t) src
 enter_new:
   s->len = len;
 # ifdef KMP_ADD_NEW
-  { KMP_ADD_NEW(ctx, src, v, s); }
+  { KMP_ADD_NEW(kmp, src, v, s); }
 # endif
   return s;
 }
 
 static void
-P(init) (struct P(context) *ctx)
+P(init) (struct P(struct) *kmp)
 {
-  bzero(&ctx->null, sizeof(struct P(state)));
-  P(hash_init)(&ctx->hash);
+  bzero(&kmp->null, sizeof(struct P(state)));
+  P(hash_init)(&kmp->hash);
 }
 
 #ifdef KMP_WANT_CLEANUP
 static inline void
-P(cleanup) (struct P(context) *ctx)
+P(cleanup) (struct P(struct) *kmp)
 {
-  P(hash_cleanup)(&ctx->hash);
+  P(hash_cleanup)(&kmp->hash);
 }
 #endif
 
 static inline int
-P(empty) (struct P(context) *ctx)
+P(empty) (struct P(struct) *kmp)
 {
-  return !ctx->hash.hash_count;
+  return !kmp->hash.hash_count;
 }
 
 static inline struct P(state) *
@@ -344,17 +349,17 @@ P(chain_start) (struct P(state) *s)
 }
 
 static void
-P(build) (struct P(context) *ctx)
+P(build) (struct P(struct) *kmp)
 {
-  if (P(empty)(ctx))
+  if (P(empty)(kmp))
     return;
   uns read = 0, write = 0;
-  struct P(state) *fifo[ctx->hash.hash_count], *null = &ctx->null;
+  struct P(state) *fifo[kmp->hash.hash_count], *null = &kmp->null;
   for (struct P(state) *s = null->back; s; s = s->next)
     fifo[write++] = s;
   null->back = NULL;
 # ifdef KMP_BUILD_STATE
-  { KMP_BUILD_STATE(ctx, null); }
+  { KMP_BUILD_STATE(kmp, null); }
 # endif  
   while (read != write)
     {
@@ -369,7 +374,7 @@ P(build) (struct P(context) *ctx)
 	      s->next = NULL;
 	      break;
 	    }
-	  s->back = P(hash_find)(&ctx->hash, t, s->c);
+	  s->back = P(hash_find)(&kmp->hash, t, s->c);
 	  if (s->back)
 	    {
 	      s->next = s->back->len ? s->back : s->back->next;
@@ -377,7 +382,7 @@ P(build) (struct P(context) *ctx)
 	    }
 	}
 #     ifdef KMP_BUILD_STATE
-      { KMP_BUILD_STATE(ctx, s); }
+      { KMP_BUILD_STATE(kmp, s); }
 #     endif      
     }
 }
@@ -386,7 +391,8 @@ P(build) (struct P(context) *ctx)
 #undef KMP_CHAR
 #undef KMP_SOURCE
 #undef KMP_GET_CHAR
-#undef KMP_NODE
+#undef KMP_VARS
+#undef KMP_STATE_VARS
 #undef KMP_CONTEXT
 #undef KMP_USE_ASCII
 #undef KMP_USE_UTF8
@@ -399,7 +405,6 @@ P(build) (struct P(context) *ctx)
 #undef KMP_ADD_INIT
 #undef KMP_ADD_NEW
 #undef KMP_ADD_DUP
-#undef KMP_NO_DUPS
 #undef KMP_BUILD_STATE
 #undef KMP_USE_POOL
 #undef KMP_GIVE_ALLOC

@@ -21,18 +21,18 @@
  *
  *  KMPS_SOURCE			user-defined search input (together with KMPS_GET_CHAR);
  *  				if unset, the one from lib/kmp.h is used
- *  KMPS_GET_CHAR(ctx,src,s)
+ *  KMPS_GET_CHAR(kmp,src,s)
  *
  *  KMPS_ADD_CONTROLS		add control characters at both ends of the input string
  *  KMPS_MERGE_CONTROLS 	merge adjacent control characters to a single one
  *
  *  KMPS_EXTRA_ARGS		extra arguments to the search routine
  *  KMPS_EXTRA_VAR		extra user-defined structure in search structures
- *  KMPS_INIT(ctx,src,s)
- *  KMPS_EXIT(ctx,src,s)
- *  KMPS_FOUND(ctx,src,s)
- *  KMPS_FOUND_CHAIN(ctx,src,s)
- *  KMPS_STEP(ctx,src,s)
+ *  KMPS_INIT(kmp,src,s)
+ *  KMPS_EXIT(kmp,src,s)
+ *  KMPS_FOUND(kmp,src,s)
+ *  KMPS_FOUND_CHAIN(kmp,src,s)
+ *  KMPS_STEP(kmp,src,s)
  *  KMPS_T
  *
  *  KMPS_WANT_BEST
@@ -48,7 +48,7 @@ typedef KP(source_t) P(search_source_t);
 #endif
 
 #ifndef KMPS_GET_CHAR
-#define KMPS_GET_CHAR(ctx,src,s) ({ KP(get_char)(ctx, &src, &s.c); })
+#define KMPS_GET_CHAR(kmp,src,s) ({ KP(get_char)(kmp, &src, &s.c); })
 #endif
 
 struct P(search) {
@@ -71,16 +71,16 @@ static KMPS_T
 #else
 static void
 #endif
-P(search) (struct KP(context) *ctx, P(search_source_t) src
+P(search) (struct KP(struct) *kmp, P(search_source_t) src
 #   ifdef KMPS_EXTRA_ARGS
     , KMPS_EXTRA_ARGS
 #   endif
 )
 {
   struct P(search) s;
-  s.s = &ctx->null;
+  s.s = &kmp->null;
 # ifdef KMPS_WANT_BEST
-  s.best = &ctx->null;
+  s.best = &kmp->null;
 # endif
 # ifdef KMPS_ADD_CONTROLS 
   s.c = KP(control)();
@@ -89,18 +89,18 @@ P(search) (struct KP(context) *ctx, P(search_source_t) src
   s.c = 0;
 # endif  
 # ifdef KMPS_INIT
-  { KMPS_INIT(ctx, src, s); }
+  { KMPS_INIT(kmp, src, s); }
 # endif
 # ifndef KMPS_ADD_CONTROLS  
   goto start_read;
 #endif  
   for (;;)
   {
-    for (struct KP(state) *t = s.s; t && !(s.s = KP(hash_find)(&ctx->hash, t, s.c)); t = t->back);
-    s.s = s.s ? : &ctx->null;
+    for (struct KP(state) *t = s.s; t && !(s.s = KP(hash_find)(&kmp->hash, t, s.c)); t = t->back);
+    s.s = s.s ? : &kmp->null;
 
 #   ifdef KMPS_STEP
-    { KMPS_STEP(ctx, src, s); }
+    { KMPS_STEP(kmp, src, s); }
 #   endif
 
 #   if defined(KMPS_FOUND) || defined(KMPS_FOUND_CHAIN) || defined(KMPS_WANT_BEST)
@@ -112,11 +112,11 @@ P(search) (struct KP(context) *ctx, P(search_source_t) src
 	  s.best = s.out;
 #       endif	
         #ifdef KMPS_FOUND_CHAIN
-	{ KMPS_FOUND_CHAIN(ctx, src, s); }
+	{ KMPS_FOUND_CHAIN(kmp, src, s); }
 #       endif
 #       ifdef KMPS_FOUND
 	do
-          { KMPS_FOUND(ctx, src, s); }
+          { KMPS_FOUND(kmp, src, s); }
 	while (s.out = s.out->next);
 #       endif	
       }
@@ -136,10 +136,10 @@ start_read: ;
 
     do
       {
-	if (!KMPS_GET_CHAR(ctx, src, s))
+	if (!KMPS_GET_CHAR(kmp, src, s))
 	  {
 #           ifdef KMPS_ADD_CONTROLS
-	    if (!KP(is_control)(ctx, s.c))
+	    if (!KP(is_control)(kmp, s.c))
 	      {
                 s.c = KP(control)();
                 s.eof = 1;
@@ -151,13 +151,13 @@ start_read: ;
       }
     while (0
 #     ifdef KMPS_MERGE_CONTROLS
-      || (KP(is_control)(ctx, last_c) && KP(is_control)(ctx, s.c))
+      || (KP(is_control)(kmp, last_c) && KP(is_control)(kmp, s.c))
 #     endif
       );
   }
 exit: ;
 # ifdef KMPS_EXIT
-  { KMPS_EXIT(ctx, src, s); }
+  { KMPS_EXIT(kmp, src, s); }
 # endif
 }
 
