@@ -12,29 +12,44 @@
  *  This is not a normal header file, it's a generator of KMP algorithm.
  *  Each time you include it with parameters set in the corresponding
  *  preprocessor macros, it generates KMP structures and functions
- *  with the parameters given. Macros marked with [*] are mandatory.
+ *  with the parameters given. See lib/kmp.h before reading this description.
+ *  
+ *  This file defines:
+ *
+ *  	struct search		structure with both the internal and the user-defined variables
+ *  				used during the search and accessible from all macros
+ *
+ * 	void search(kmp,search,src) executes the search; search structure is allocated by the caller (possible input/output)
+ * 	
+ *  	void run(kmp,src)	the same, but automatically allocates search structre from the stack
+ *
+ *
+ *  Macros marked with [*] are mandatory.
  *
  *  [*]	KMPS_PREFIX(x)		macro to add a name prefix (used on all global names
  *				defined by the KMP search generator)
- *  [*]	KMPS_KMP_PREFIX(x)	prefix used for lib/kmp.h;
- *				more variants of kmp-search can be used for single lib/kmp.h
+ *  [*]	KMPS_KMP_PREFIX(x)	prefix used for lib/kmp.h
  *
- *  KMPS_SOURCE			user-defined search input (together with KMPS_GET_CHAR);
- *  				if unset, the one from lib/kmp.h is used
- *  KMPS_GET_CHAR(kmp,src,s)
+ *  KMPS_SOURCE			user-defined text source (together with KMPS_GET_CHAR);
+ *  				if unset, the one from lib/kmp.h is taken
+ *  KMPS_GET_CHAR(kmp,src,search) analogy to KMP_GET_CHAR, but it must store the next character to search->c
  *
- *  KMPS_ADD_CONTROLS		add control characters at both ends of the input string
+ *  KMPS_ADD_CONTROLS		add control characters (see KMP_CONTROL_CHAR in kmp.h) at both ends of the input string
  *  KMPS_MERGE_CONTROLS 	merge adjacent control characters to a single one
  *
- *  KMPS_VARS
+ *  KMPS_VARS			user-defined variables in struct search (in .u substructure to avoid collisions)
  *
- *  KMPS_INIT(kmp,src,s)
- *  KMPS_EXIT(kmp,src,s)
- *  KMPS_STEP(kmp,src,s)
- *  KMPS_FOUND(kmp,src,s)
- *  KMPS_FOUND_CHAIN(kmp,src,s)
- *
- *  KMPS_WANT_BEST
+ *  KMPS_INIT(kmp,src,search)	statement executed at the beginning of search()
+ *  KMPS_EXIT(kmp,src,search)	... at the end
+ *  KMPS_STEP(kmp,src,search)	... after each step (read of next character + current state update) 
+ *  				of the algorithm, but before KMPS_FOUND[_CHAIN]
+ *  KMPS_FOUND_CHAIN(kmp,src,search) ... for each state representing locally longest match 
+ *				(stored in search->out - NOT necessary search.s!);
+ *  				all matches forms a NULL-terminated link list (search->out, search->out->next, ...) 
+ *  				in order of decreasing length
+ *  KMPS_FOUND(kmp,src,search)  ... called for every match (in search->out)
+ *  KMPS_WANT_BEST		algorithm computes globally longest match, which is available
+ *  				in search.best in KMPS_EXIT; if there is no match, it points to the null state
  */
 
 #define P(x) KMPS_PREFIX(x)
@@ -85,7 +100,7 @@ P(search) (struct KP(struct) *kmp, struct P(search) *s, P(search_source_t) src)
 # endif
 # ifndef KMPS_ADD_CONTROLS
   goto start_read;
-#endif
+# endif
   for (;;)
   {
     for (struct KP(state) *t = s->s; t && !(s->s = KP(hash_find)(&kmp->hash, t, s->c)); t = t->back);
