@@ -460,25 +460,24 @@ static struct item_stack {
 static uns level;
 
 static byte *
-parse_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
+interpret_set_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
 {
   enum cf_type type = item->u.type;
-  if (number > item->number)
-    return "Expecting shorter array";
   cf_journal_block(ptr, sizeof(void*));
+  // boundary checks done by the caller
   *ptr = cf_malloc((number+1) * parsers[type].size) + parsers[type].size;
   * (uns*) (*ptr - parsers[type].size) = number;
   return cf_parse_ary(number, pars, *ptr, type);
 }
 
 static byte *
-add_to_dynamic(struct cf_item *item, int number, byte **pars, void **ptr, enum operation op)
+interpret_add_dynamic(struct cf_item *item, int number, byte **pars, void **ptr, enum operation op)
 {
   enum cf_type type = item->u.type;
   void *old_p = *ptr;
   int old_nr = * (int*) (old_p - parsers[type].size);
   if (old_nr + number > item->number)
-    return "Cannot enlarge dynamic array";
+    return "Too many parameters for the dynamic array";
   // stretch the dynamic array
   void *new_p = cf_malloc((old_nr + number + 1) * parsers[type].size) + parsers[type].size;
   * (uns*) (new_p - parsers[type].size) = old_nr + number;
@@ -498,33 +497,22 @@ add_to_dynamic(struct cf_item *item, int number, byte **pars, void **ptr, enum o
     ASSERT(0);
 }
 
+static byte *interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, uns allow_dynamic, void *ptr);
+
 static byte *
-parse_subsection(struct cf_section *sec, int number, byte **pars, void *ptr)
+interpret_subsection(struct cf_section *sec, int number, byte **pars, int *processed, uns allow_dynamic, void *ptr)
 {
-  struct cf_item *ci;
-  for (ci=sec->cfg; ci->cls; ci++)
+  *processed = 0;
+  for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
   {
-    if (ci->cls == CC_DYNAMIC && !ci[1].cls)
-      break;
-    if (ci->cls != CC_STATIC)
-      return "Only sections consisting entirely of basic attributes can be written on 1 line";
-    if (number)
-    {
-      if (number < ci->number)
-	return "The number of parameters does not fit the section attributes";
-      void *p = ptr + (addr_int_t) ci->ptr;
-      cf_journal_block(p, ci->number * parsers[ci->u.type].size);
-      byte *msg = cf_parse_ary(ci->number, pars, p, ci->u.type);
-      if (msg)
-	return cf_printf("Attribute %s: %s", ci->name, msg);
-      number -= ci->number;
-      pars += ci->number;
-    }
+    int taken;
+    byte *msg = interpret_set_item(ci, number, pars, &taken, allow_dynamic && !ci[1].cls, ptr + (addr_int_t) ci->ptr);
+    if (msg)
+      return cf_printf("Item %s: %s", ci->name, msg);
+    *processed += taken;
+    number -= taken;
+    pars += taken;
   }
-  if (ci->cls == CC_DYNAMIC)
-    return parse_dynamic(ci, number, pars, ptr + (addr_int_t) ci->ptr);
-  else if (number)
-    return "Too many parameters for this section";
   return NULL;
 }
 
@@ -532,12 +520,69 @@ static void
 add_to_list(struct clist *list, struct cnode *node, enum operation op)
 {
   cf_journal_block(list, sizeof(struct clist));
-  if (op == OP_APPEND || op == OP_SET)
+  if (op == OP_APPEND)
     clist_add_tail(list, node);
   else if (op == OP_PREPEND)
     clist_add_head(list, node);
   else
     ASSERT(0);
+}
+
+static byte *
+interpret_add_list(struct cf_item *item, int number, byte **pars, void *ptr, enum operation op)
+{
+  while (number > 0)
+  {
+    void *node = cf_malloc(item->u.sec->size);
+    cf_init_section(item->name, item->u.sec, node);
+    add_to_list(ptr, node, op);
+    int taken;
+    byte *msg = interpret_subsection(item->u.sec, number, pars, &taken, 0, node);
+    if (msg)
+      return msg;
+    number -= taken;
+    pars += taken;
+  }
+  return NULL;
+}
+
+static byte *
+interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, uns allow_dynamic, void *ptr)
+{
+  int taken;
+  switch (item->cls)
+  {
+    case CC_STATIC:
+      taken = MIN(number, item->number);
+      *processed = taken;
+      cf_journal_block(ptr, taken * parsers[item->u.type].size);
+      return cf_parse_ary(taken, pars, ptr, item->u.type);
+    case CC_DYNAMIC:
+      if (!allow_dynamic)
+	return "Dynamic array cannot be used here";
+      taken = MIN(number, item->number);
+      *processed = taken;
+      return interpret_set_dynamic(item, taken, pars, ptr);
+    case CC_PARSER:
+      if (item->number < 0 && !allow_dynamic)
+	return "Parsers with variable number of parameters cannot be used here";
+      if (item->number > 0 && number < item->number)
+	return "Not enough parameters available for the parser";
+      taken = MIN(number, ABS(item->number));
+      *processed = taken;
+      for (int i=0; i<taken; i++)
+	pars[i] = cf_strdup(pars[i]);
+      return item->u.par(taken, pars, ptr);
+    case CC_SECTION:
+      return interpret_subsection(item->u.sec, number, pars, processed, allow_dynamic, ptr);
+    case CC_LIST:
+      if (!allow_dynamic)
+	return "Lists cannot be used here";
+      *processed = number;
+      return interpret_add_list(item, number, pars, ptr, OP_APPEND);
+    default:
+      ASSERT(0);
+  }
 }
 
 static byte *
@@ -569,7 +614,7 @@ increase_stack(struct cf_item *item, enum operation op)
 }
 
 static byte *
-interpret_item(byte *name, enum operation op, int number, byte **pars)
+interpret_line(byte *name, enum operation op, int number, byte **pars)
 {
   byte *msg;
   struct cf_item *item = find_item(stack[level].sec, name, &msg);
@@ -579,53 +624,28 @@ interpret_item(byte *name, enum operation op, int number, byte **pars)
     return msg;
 
   void *ptr = stack[level].base_ptr + (addr_int_t) item->ptr;
-  if (op == OP_CLEAR)		// clear link-list
+  if (op == OP_CLEAR)
   {
     if (item->cls != CC_LIST)
       return "The item is not a list";
     cf_journal_block(ptr, sizeof(struct clist));
     clist_init(ptr);
   }
-  else if (op == OP_SET && item->cls != CC_LIST)
-    switch (item->cls)		// setting regular variables
-    {
-      case CC_STATIC:
-	if (number != item->number)
-	  return item->number==1 ? "Expecting one scalar value, not an array" : "Expecting array of different length";
-	cf_journal_block(ptr, number * parsers[item->u.type].size);
-	return cf_parse_ary(number, pars, ptr, item->u.type);
-      case CC_DYNAMIC:
-	return parse_dynamic(item, number, pars, ptr);
-      case CC_PARSER:
-	if (item->number >= 0)
-	{
-	  if (number != item->number)
-	    return "Expecting different number of parameters";
-	} else {
-	  if (number > -item->number)
-	    return "Expecting less parameters";
-	}
-	for (int i=0; i<number; i++)
-	  pars[i] = cf_strdup(pars[i]);
-	return item->u.par(number, pars, ptr);
-      case CC_SECTION:		// setting a subsection at once
-	return parse_subsection(item->u.sec, number, pars, ptr);
-      default:
-	ASSERT(0);
-    }
-  else if (item->cls == CC_DYNAMIC)
-    return add_to_dynamic(item, number, pars, ptr, op);
-  else if (item->cls == CC_LIST)
-  {				// adding to a list at once
-    void *node = cf_malloc(item->u.sec->size);
-    cf_init_section(item->name, item->u.sec, node);
-    msg = parse_subsection(item->u.sec, number, pars, node);
+  else if (op == OP_SET)
+  {
+    int taken;
+    msg = interpret_set_item(item, number, pars, &taken, 1, ptr);
     if (msg)
       return msg;
-    add_to_list(ptr, node, op);
+    if (taken < number)
+      return "Too many parameters";
   }
+  else if (item->cls == CC_DYNAMIC)
+    return interpret_add_dynamic(item, number, pars, ptr, op);
+  else if (item->cls == CC_LIST)
+    return interpret_add_list(item, number, pars, ptr, op);
   else
-    ASSERT(0);
+    return cf_printf("Operation %d not supported for class %d", op, item->cls);
   return NULL;
 }
 
