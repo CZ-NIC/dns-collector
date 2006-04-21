@@ -260,8 +260,6 @@ byte *cf_def_file = DEFAULT_CONFIG;
 #define DEFAULT_CONFIG NULL
 #endif
 
-byte *cfdeffile = DEFAULT_CONFIG;
-
 static byte *load_file(byte *file);
 static byte *load_string(byte *string);
 
@@ -469,7 +467,7 @@ enum operation {
   OP_SET,			// basic attribute (static, dynamic, parsed), section, list
   OP_APPEND,			// dynamic array, list
   OP_PREPEND,			// dynamic array, list
-  OP_REMOVE,			// list operations with search follow:
+  OP_REMOVE,			// list operations with search follow
   OP_EDIT,
   OP_AFTER,
   OP_BEFORE
@@ -503,17 +501,13 @@ interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *proces
   * (uns*) (new_p - parsers[type].size) = old_nr + taken;
   cf_journal_block(ptr, sizeof(void*));
   *ptr = new_p;
-  if (op == OP_APPEND)
-  {
+  if (op == OP_APPEND) {
     memcpy(new_p, old_p, old_nr * parsers[type].size);
     return cf_parse_ary(taken, pars, new_p + old_nr * parsers[type].size, type);
-  }
-  else if (op == OP_PREPEND)
-  {
+  } else if (op == OP_PREPEND) {
     memcpy(new_p + taken * parsers[type].size, old_p, old_nr * parsers[type].size);
     return cf_parse_ary(taken, pars, new_p, type);
-  }
-  else
+  } else
     return cf_printf("Dynamic arrays do not support operation %d", op);
 }
 
@@ -570,11 +564,8 @@ add_to_list(void *list, struct cnode *node, enum operation op)
 static byte *
 interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, enum operation op)
 {
+  ASSERT(op < OP_REMOVE);
   struct cf_section *sec = item->u.sec;
-  /* If the node contains any dynamic attribute at the end, we suppress
-   * auto-repetition here and pass it inside instead.  We also suppress it when
-   * the operation works on a found node.  */
-  uns only_1_node = (sec->flags & SEC_FLAG_DYNAMIC) || (op >= OP_EDIT);
   *processed = 0;
   while (number > 0)
   {
@@ -582,13 +573,15 @@ interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed
     cf_init_section(item->name, sec, node);
     add_to_list(ptr, node, op);
     int taken;
-    byte *msg = interpret_section(sec, number, pars, &taken, node, only_1_node);
+    /* If the node contains any dynamic attribute at the end, we suppress
+     * auto-repetition here and pass the flag inside instead.  */
+    byte *msg = interpret_section(sec, number, pars, &taken, node, sec->flags & SEC_FLAG_DYNAMIC);
     if (msg)
       return msg;
     *processed += taken;
     number -= taken;
     pars += taken;
-    if (only_1_node)
+    if (sec->flags & SEC_FLAG_DYNAMIC)
       break;
   }
   return NULL;
@@ -739,99 +732,89 @@ opening_brace(struct cf_item *item, void *ptr, enum operation op)
   return NULL;
 }
 
-static uns
-closing_brace(struct item_stack *st, int number, byte **msg)
+static byte *
+closing_brace(struct item_stack *st, int number, byte **pars)
 {
-  *msg = NULL;
+  if (st->op == OP_CLOSE)	// top-level
+    return "Unmatched } parenthese";
   if (!st->sec) {		// dummy run on unknown section
     level--;
-    return 1;
+    return NULL;
   }
-  if (st->op == OP_CLOSE) {	// top-level
-    *msg = "Unmatched } parenthese";
-    return 1;
-  }
-  if (st->op & OP_2ND)		// finished the 2nd phase; only for lists
+  enum operation op = st->op & OP_MASK;
+  if (st->op & OP_1ST)
   {
-list_op:
-    add_to_list(st->list, st->base_ptr, st->op & OP_MASK);
-    level--;
-    if (number)
-      *msg = "No parameters expected after the }";
-    else if (st->op & OP_OPEN)
-      *msg = "No { is expected";
-    return 1;
-  } else {			// constructed the query
-    st->op = (st->op | OP_2ND) & ~OP_1ST;
     st->list = find_list_node(st->list, st->base_ptr, st->sec, st->mask);
-    if (!st->list) {
-      *msg = "Cannot find a node matching the query";
-      return 1;
+    if (!st->list)
+      return "Cannot find a node matching the query";
+    if (op != OP_REMOVE)
+    {
+      if (op == OP_EDIT)
+	st->base_ptr = st->list;
+      else if (op == OP_AFTER || op == OP_BEFORE)
+	cf_init_section(st->item->name, st->sec, st->base_ptr);
+      else
+	ASSERT(0);
+      if (st->op & OP_OPEN) {	// stay at the same recursion level
+	st->op = (st->op | OP_2ND) & ~OP_1ST;
+	return NULL;
+      }
+      int taken;		// parse parameters on 1 line immediately
+      byte *msg = interpret_section(st->sec, number, pars, &taken, st->base_ptr, 1);
+      if (msg)
+	return msg;
+      number -= taken;
+      pars += taken;
+      // and fall-thru to the 2nd phase
     }
-    enum operation op = st->op & OP_MASK;
-    if (op == OP_REMOVE)
-      goto list_op;
-    else if (op == OP_EDIT)
-      st->base_ptr = st->list;
-    else if (op == OP_AFTER || op == OP_BEFORE)
-      cf_init_section(st->item->name, st->sec, st->base_ptr);
-    else
-      ASSERT(0);
   }
-  if (st->op & OP_OPEN)		// stay in the same recursion level
-    return 1;
-  return 0;			// continue with immediate data
+  add_to_list(st->list, st->base_ptr, op);
+  level--;
+  if (number)
+    return "No parameters expected after the }";
+  else if (st->op & OP_OPEN)
+    return "No { is expected";
+  else
+    return NULL;
 }
 
 static byte *
 interpret_line(byte *name, enum operation op, int number, byte **pars)
 {
   byte *msg;
-  struct cf_item *item;
-  void *ptr;
-  enum operation op2;
-  if (op == OP_CLOSE) {
-    if (closing_brace(stack+level, number, &msg))
-      return NULL;
-    item = stack[level].item;
-    ptr = stack[level].base_ptr;
-    op2 = stack[level].op;	// operation: edit, after, or before
-
-  } else {
-    item = find_item(stack[level].sec, name, &msg);
+  if (op == OP_CLOSE)
+    return closing_brace(stack+level, number, pars);
+  struct cf_item *item = find_item(stack[level].sec, name, &msg);
+  if (msg)
+    return msg;
+  if (stack[level].op & OP_1ST) {
+    msg = record_selector(item, stack[level].sec, &stack[level].mask);
     if (msg)
       return msg;
-    if (stack[level].op & OP_1ST) {
-      msg = record_selector(item, stack[level].sec, &stack[level].mask);
-      if (msg)
-	return msg;
-    }
-    ptr = stack[level].base_ptr + (addr_int_t) item->ptr;
-    if (op & OP_OPEN)		// the operation will be performed after the closing brace
-      return opening_brace(item, ptr, op);
-    if (!item)			// ignored item in an unknown section
-      return NULL;
-    op2 = op & OP_MASK;
   }
+  void *ptr = stack[level].base_ptr + (addr_int_t) item->ptr;
+  if (op & OP_OPEN)		// the operation will be performed after the closing brace
+    return opening_brace(item, ptr, op);
+  if (!item)			// ignored item in an unknown section
+    return NULL;
+  op &= OP_MASK;
 
   int taken;			// process as many parameters as possible
-  if (op2 == OP_CLEAR)
+  if (op == OP_CLEAR)
     taken = 0, msg = interpret_clear(item, ptr);
-  else if (op2 == OP_SET)
+  else if (op == OP_SET)
     msg = interpret_set_item(item, number, pars, &taken, ptr, 1);
   else if (item->cls == CC_DYNAMIC)
-    msg = interpret_add_dynamic(item, number, pars, &taken, ptr, op2);
+    msg = interpret_add_dynamic(item, number, pars, &taken, ptr, op);
   else if (item->cls == CC_LIST)
-    msg = interpret_add_list(item, number, pars, &taken, ptr, op2);
+    msg = interpret_add_list(item, number, pars, &taken, ptr, op);
   else
-    return cf_printf("Operation %d not supported on attribute class %d", op2, item->cls);
+    return cf_printf("Operation %d not supported on attribute class %d", op, item->cls);
   if (msg)
     return msg;
   if (taken < number)
     return cf_printf("Too many parameters: %d>%d", number, taken);
 
-  if (op == OP_CLOSE)		// operation: edit, after, or before
-    level--;
   return NULL;
 }
 
