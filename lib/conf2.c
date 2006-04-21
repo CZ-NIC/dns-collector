@@ -471,33 +471,33 @@ interpret_set_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
 }
 
 static byte *
-interpret_add_dynamic(struct cf_item *item, int number, byte **pars, void **ptr, enum operation op)
+interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *processed, void **ptr, enum operation op)
 {
   enum cf_type type = item->u.type;
   void *old_p = *ptr;
   int old_nr = * (int*) (old_p - parsers[type].size);
-  if (old_nr + number > item->number)
-    return "Too many parameters for the dynamic array";
+  int taken = MIN(number, item->number-old_nr);
+  *processed = taken;
   // stretch the dynamic array
-  void *new_p = cf_malloc((old_nr + number + 1) * parsers[type].size) + parsers[type].size;
-  * (uns*) (new_p - parsers[type].size) = old_nr + number;
+  void *new_p = cf_malloc((old_nr + taken + 1) * parsers[type].size) + parsers[type].size;
+  * (uns*) (new_p - parsers[type].size) = old_nr + taken;
   cf_journal_block(ptr, sizeof(void*));
   *ptr = new_p;
   if (op == OP_APPEND)
   {
     memcpy(new_p, old_p, old_nr * parsers[type].size);
-    return cf_parse_ary(number, pars, new_p + old_nr * parsers[type].size, type);
+    return cf_parse_ary(taken, pars, new_p + old_nr * parsers[type].size, type);
   }
   else if (op == OP_PREPEND)
   {
-    memcpy(new_p + number * parsers[type].size, old_p, old_nr * parsers[type].size);
-    return cf_parse_ary(number, pars, new_p, type);
+    memcpy(new_p + taken * parsers[type].size, old_p, old_nr * parsers[type].size);
+    return cf_parse_ary(taken, pars, new_p, type);
   }
   else
     ASSERT(0);
 }
 
-static byte *interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, uns allow_dynamic, void *ptr);
+static byte *interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic);
 
 static byte *
 interpret_subsection(struct cf_section *sec, int number, byte **pars, int *processed, uns allow_dynamic, void *ptr)
@@ -506,7 +506,7 @@ interpret_subsection(struct cf_section *sec, int number, byte **pars, int *proce
   for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
   {
     int taken;
-    byte *msg = interpret_set_item(ci, number, pars, &taken, allow_dynamic && !ci[1].cls, ptr + (addr_int_t) ci->ptr);
+    byte *msg = interpret_set_item(ci, number, pars, &taken, ptr + (addr_int_t) ci->ptr, allow_dynamic && !ci[1].cls);
     if (msg)
       return cf_printf("Item %s: %s", ci->name, msg);
     *processed += taken;
@@ -529,25 +529,40 @@ add_to_list(struct clist *list, struct cnode *node, enum operation op)
 }
 
 static byte *
-interpret_add_list(struct cf_item *item, int number, byte **pars, void *ptr, enum operation op)
+interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, enum operation op)
 {
+  struct cf_item *ci = item;
+  uns only_1_item = 0;
+  do
+    for (ci=ci->u.sec->cfg; ci->cls; ci++);
+  while ((--ci)->cls == CC_SECTION);
+  if (ci->cls == CC_DYNAMIC || ci->cls == CC_LIST
+      || ci->cls == CC_PARSER && ci->number < 0)
+    only_1_item = 1;
+  /* If the node contains any dynamic attribute at the end, we suppress
+   * repetition here and pass it instead inside.  */
+  struct cf_section *sec = item->u.sec;
+  *processed = 0;
   while (number > 0)
   {
-    void *node = cf_malloc(item->u.sec->size);
-    cf_init_section(item->name, item->u.sec, node);
+    void *node = cf_malloc(sec->size);
+    cf_init_section(item->name, sec, node);
     add_to_list(ptr, node, op);
     int taken;
-    byte *msg = interpret_subsection(item->u.sec, number, pars, &taken, 0, node);
+    byte *msg = interpret_subsection(sec, number, pars, &taken, only_1_item, node);
     if (msg)
       return msg;
+    *processed += taken;
     number -= taken;
     pars += taken;
+    if (only_1_item)
+      break;
   }
   return NULL;
 }
 
 static byte *
-interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, uns allow_dynamic, void *ptr)
+interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic)
 {
   int taken;
   switch (item->cls)
@@ -578,8 +593,7 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
     case CC_LIST:
       if (!allow_dynamic)
 	return "Lists cannot be used here";
-      *processed = number;
-      return interpret_add_list(item, number, pars, ptr, OP_APPEND);
+      return interpret_add_list(item, number, pars, ptr, processed, OP_APPEND);
     default:
       ASSERT(0);
   }
@@ -630,22 +644,21 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
       return "The item is not a list";
     cf_journal_block(ptr, sizeof(struct clist));
     clist_init(ptr);
+    return NULL;
   }
-  else if (op == OP_SET)
-  {
-    int taken;
-    msg = interpret_set_item(item, number, pars, &taken, 1, ptr);
-    if (msg)
-      return msg;
-    if (taken < number)
-      return "Too many parameters";
-  }
+  int taken;			// process as many parameters as possible
+  if (op == OP_SET)
+    msg = interpret_set_item(item, number, pars, &taken, ptr, 1);
   else if (item->cls == CC_DYNAMIC)
-    return interpret_add_dynamic(item, number, pars, ptr, op);
+    msg = interpret_add_dynamic(item, number, pars, &taken, ptr, op);
   else if (item->cls == CC_LIST)
-    return interpret_add_list(item, number, pars, ptr, op);
+    msg = interpret_add_list(item, number, pars, &taken, ptr, op);
   else
     return cf_printf("Operation %d not supported for class %d", op, item->cls);
+  if (msg)
+    return msg;
+  if (taken < number)
+    return cf_printf("Too many parameters: %d>%d", number, taken);
   return NULL;
 }
 
