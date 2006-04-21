@@ -169,7 +169,7 @@ inspect_section(struct cf_section *sec)
       sec->flags |= SEC_FLAG_DYNAMIC;
     } else if (ci->cls == CC_DYNAMIC || ci->cls == CC_PARSER && ci->number < 0)
       sec->flags |= SEC_FLAG_DYNAMIC;
-  sec->flags |= ci - sec->cfg;
+  sec->flags |= ci - sec->cfg;		// record the number of entries
 }
 
 void
@@ -464,24 +464,20 @@ cf_parse_ary(uns number, byte **pars, void *ptr, enum cf_type type)
 /* Interpreter */
 
 enum operation {
+  OP_CLOSE,			// closing brace finishes previous block
   OP_CLEAR,			// list
   OP_SET,			// basic attribute (static, dynamic, parsed), section, list
   OP_APPEND,			// dynamic array, list
   OP_PREPEND,			// dynamic array, list
-  OP_REMOVE,			// list
+  OP_REMOVE,			// list operations with search follow:
+  OP_EDIT,
+  OP_AFTER,
+  OP_BEFORE
 };
-#define OP_MASK 0x3f		// only get the operation
-#define OP_OPEN 0x40		// here we only get an opening brace
-#define OP_RECORD 0x80		// record selectors into the mask
-
-#define MAX_STACK_SIZE	100
-static struct item_stack {
-  struct cf_section *sec;	// nested section
-  void *base_ptr;		// because original pointers are often relative
-  enum operation op;		// it is performed when a closing brace is encountered
-  u32 mask;			// bit array of selectors searching in a list
-} stack[MAX_STACK_SIZE];
-static uns level;
+#define OP_MASK 0xff		// only get the operation
+#define OP_OPEN 0x100		// here we only get an opening brace instead of parameters
+#define OP_1ST 0x200		// in the 1st phase selectors are recorded into the mask
+#define OP_2ND 0x400		// in the 2nd phase real data are entered
 
 static byte *
 interpret_set_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
@@ -518,7 +514,7 @@ interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *proces
     return cf_parse_ary(taken, pars, new_p, type);
   }
   else
-    ASSERT(0);
+    return cf_printf("Dynamic arrays do not support operation %d", op);
 }
 
 static byte *interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic);
@@ -536,30 +532,49 @@ interpret_section(struct cf_section *sec, int number, byte **pars, int *processe
     *processed += taken;
     number -= taken;
     pars += taken;
-    if (!number)		// stop parsing, because many parsers would complain that number==0
+    if (!number)		// stop parsing, because many parsers would otherwise complain that number==0
       break;
   }
   return NULL;
 }
 
 static void
-add_to_list(struct clist *list, struct cnode *node, enum operation op)
+add_to_list(void *list, struct cnode *node, enum operation op)
 {
-  cf_journal_block(list, sizeof(struct clist));
-  if (op == OP_APPEND)
-    clist_add_tail(list, node);
-  else if (op == OP_PREPEND)
-    clist_add_head(list, node);
-  else
-    ASSERT(0);
+  cf_journal_block(list, sizeof(struct clist));		//FIXME: we should journal the nodes of the list instead
+  switch (op)
+  {
+    case OP_SET:
+    case OP_APPEND:
+      clist_add_tail(list, node);
+      break;
+    case OP_PREPEND:
+      clist_add_head(list, node);
+      break;
+    case OP_REMOVE:
+      clist_remove(list);
+      break;
+    case OP_EDIT:		// edition has been done in-place
+      break;
+    case OP_AFTER:		// here the pointer list is actually a pointer to another node
+      clist_insert_after(node, list);
+      break;
+    case OP_BEFORE:
+      clist_insert_before(node, list);
+      break;
+    default:
+      ASSERT(0);
+  }
 }
 
 static byte *
 interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, enum operation op)
 {
-  /* If the node contains any dynamic attribute at the end, we suppress
-   * repetition here and pass it inside instead.  */
   struct cf_section *sec = item->u.sec;
+  /* If the node contains any dynamic attribute at the end, we suppress
+   * auto-repetition here and pass it inside instead.  We also suppress it when
+   * the operation works on a found node.  */
+  uns only_1_node = (sec->flags & SEC_FLAG_DYNAMIC) || (op >= OP_EDIT);
   *processed = 0;
   while (number > 0)
   {
@@ -567,13 +582,13 @@ interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed
     cf_init_section(item->name, sec, node);
     add_to_list(ptr, node, op);
     int taken;
-    byte *msg = interpret_section(sec, number, pars, &taken, node, sec->flags & SEC_FLAG_DYNAMIC);
+    byte *msg = interpret_section(sec, number, pars, &taken, node, only_1_node);
     if (msg)
       return msg;
     *processed += taken;
     number -= taken;
     pars += taken;
-    if (sec->flags & SEC_FLAG_DYNAMIC)
+    if (only_1_node)
       break;
   }
   return NULL;
@@ -611,7 +626,7 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
     case CC_LIST:
       if (!allow_dynamic)
 	return "Lists cannot be used here";
-      return interpret_add_list(item, number, pars, ptr, processed, OP_APPEND);
+      return interpret_add_list(item, number, pars, ptr, processed, OP_SET);
     default:
       ASSERT(0);
   }
@@ -631,68 +646,172 @@ interpret_clear(struct cf_item *item, void *ptr)
   return NULL;
 }
 
-static byte *
-record_selector(struct cf_item *item)
+static int
+cmp_items(void *i1, void *i2, struct cf_item *item)
 {
-  struct cf_section *sec = stack[level].sec;
+  ASSERT(item->cls == CC_STATIC);
+  i1 += (addr_int_t) item->ptr;
+  i2 += (addr_int_t) item->ptr;
+  if (item->u.type == CT_STRING)
+    return strcmp(* (byte**) i1, * (byte**) i2);
+  else				// all numeric types
+    return memcmp(i1, i2, parsers[item->u.type].size);
+}
+
+static void *
+find_list_node(struct clist *list, void *query, struct cf_section *sec, u32 mask)
+{
+  struct cnode *n;
+  CLIST_WALK(n, *list)
+  {
+    uns found = 1;
+    for (uns i=0; i<32; i++)
+      if (mask & (1<<i))
+	if (cmp_items(n, query, sec->cfg+i))
+	{
+	  found = 0;
+	  break;
+	}
+    if (found)
+      return n;
+  }
+  return NULL;
+}
+
+static byte *
+record_selector(struct cf_item *item, struct cf_section *sec, u32 *mask)
+{
   uns nr = sec->flags & SEC_FLAG_NUMBER;
   if (item >= sec->cfg && item < sec->cfg + nr)	// setting an attribute relative to this section
   {
     uns i = item - sec->cfg;
     if (i >= 32)
       return "Cannot select list nodes by this attribute";
-    stack[level].mask |= 1 << i;
+    if (sec->cfg[i].cls != CC_STATIC)
+      return "Selection can only be done based on basic attributes";
+    *mask |= 1 << i;
   }
   return NULL;
 }
 
+#define MAX_STACK_SIZE	100
+static struct item_stack {
+  struct cf_section *sec;	// nested section
+  void *base_ptr;		// because original pointers are often relative
+  enum operation op;		// it is performed when a closing brace is encountered
+  void *list;			// list the operations should be done on
+  u32 mask;			// bit array of selectors searching in a list
+  struct cf_item *item;		// cf_item of the list
+} stack[MAX_STACK_SIZE];
+static uns level;
+
 static byte *
-increase_stack(struct cf_item *item, enum operation op)
+opening_brace(struct cf_item *item, void *ptr, enum operation op)
 {
   if (level >= MAX_STACK_SIZE-1)
     return "Too many nested sections";
-  ++level;
-  if (item)			// fill in the base pointer
+  stack[++level] = (struct item_stack) {
+    .sec = NULL,
+    .base_ptr = NULL,
+    .op = op,
+    .list = NULL,
+    .mask = 0,
+    .item = NULL,
+  };
+  if (!item)			// unknown is ignored; we just need to trace recursion
+    return NULL;
+  stack[level].sec = item->u.sec;
+  if (item->cls == CC_SECTION)
   {
-    if (item->cls == CC_SECTION)
-      stack[level].base_ptr = stack[level].base_ptr + (addr_int_t) item->ptr;
-    else if (item->cls != CC_LIST)
-    {
-      stack[level].base_ptr = cf_malloc(item->u.sec->size);
-      cf_init_section(item->name, item->u.sec, stack[level].base_ptr);
-    }
-    else
-      return "Opening brace can only be used on sections and lists";
-    stack[level].sec = item->u.sec;
+    stack[level].base_ptr = ptr;
+    stack[level].op = OP_EDIT | OP_2ND;	// this list operation does nothing
   }
-  else				// unknown is also handled here, since we need to trace recursion
+  else if (item->cls == CC_LIST)
   {
-    stack[level].base_ptr = NULL;
-    stack[level].sec = NULL;
+    stack[level].base_ptr = cf_malloc(item->u.sec->size);
+    cf_init_section(item->name, item->u.sec, stack[level].base_ptr);
+    stack[level].list = ptr;
+    stack[level].item = item;
+    stack[level].op |= op < OP_REMOVE ? OP_2ND : OP_1ST;
   }
-  stack[level].op = op;
-  stack[level].mask = 0;
+  else
+    return "Opening brace can only be used on sections and lists";
   return NULL;
+}
+
+static uns
+closing_brace(struct item_stack *st, int number, byte **msg)
+{
+  *msg = NULL;
+  if (!st->sec) {		// dummy run on unknown section
+    level--;
+    return 1;
+  }
+  if (st->op == OP_CLOSE) {	// top-level
+    *msg = "Unmatched } parenthese";
+    return 1;
+  }
+  if (st->op & OP_2ND)		// finished the 2nd phase; only for lists
+  {
+list_op:
+    add_to_list(st->list, st->base_ptr, st->op & OP_MASK);
+    level--;
+    if (number)
+      *msg = "No parameters expected after the }";
+    else if (st->op & OP_OPEN)
+      *msg = "No { is expected";
+    return 1;
+  } else {			// constructed the query
+    st->op = (st->op | OP_2ND) & ~OP_1ST;
+    st->list = find_list_node(st->list, st->base_ptr, st->sec, st->mask);
+    if (!st->list) {
+      *msg = "Cannot find a node matching the query";
+      return 1;
+    }
+    enum operation op = st->op & OP_MASK;
+    if (op == OP_REMOVE)
+      goto list_op;
+    else if (op == OP_EDIT)
+      st->base_ptr = st->list;
+    else if (op == OP_AFTER || op == OP_BEFORE)
+      cf_init_section(st->item->name, st->sec, st->base_ptr);
+    else
+      ASSERT(0);
+  }
+  if (st->op & OP_OPEN)		// stay in the same recursion level
+    return 1;
+  return 0;			// continue with immediate data
 }
 
 static byte *
 interpret_line(byte *name, enum operation op, int number, byte **pars)
 {
   byte *msg;
-  struct cf_item *item = find_item(stack[level].sec, name, &msg);
-  if (msg)
-    return msg;
-  if (stack[level].op & OP_RECORD) {
-    msg = record_selector(item);
+  struct cf_item *item;
+  void *ptr;
+  if (op == OP_CLOSE) {
+    if (closing_brace(stack+level, number, &msg))
+      return NULL;
+    op = stack[level].op;	// operation: edit, after, or before
+    item = stack[level].item;
+    ptr = stack[level].base_ptr;
+
+  } else {
+    item = find_item(stack[level].sec, name, &msg);
     if (msg)
       return msg;
+    if (stack[level].op & OP_1ST) {
+      msg = record_selector(item, stack[level].sec, &stack[level].mask);
+      if (msg)
+	return msg;
+    }
+    ptr = stack[level].base_ptr + (addr_int_t) item->ptr;
+    if (op & OP_OPEN)		// the operation will be performed after the closing brace
+      return opening_brace(item, ptr, op);
+    if (!item)			// ignored item in an unknown section
+      return NULL;
   }
-  if (op & OP_OPEN)		// the operation will be performed after the closing brace
-    return increase_stack(item, op);
-  if (!item)			// ignored item in an unknown section
-    return NULL;
 
-  void *ptr = stack[level].base_ptr + (addr_int_t) item->ptr;
   int taken;			// process as many parameters as possible
   op &= OP_MASK;
   if (op == OP_CLEAR)
@@ -704,7 +823,7 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
   else if (item->cls == CC_LIST)
     msg = interpret_add_list(item, number, pars, &taken, ptr, op);
   else
-    return cf_printf("Operation %d not supported for class %d", op, item->cls);
+    return cf_printf("Operation %d not supported on attribute class %d", op, item->cls);
   if (msg)
     return msg;
   if (taken < number)
