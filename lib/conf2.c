@@ -140,7 +140,8 @@ journal_rollback_section(uns new_pool, struct journal_item *oldj, byte *msg)
 
 /* Initialization */
 
-#define SEC_FLAG_DYNAMIC	1	// contains a dynamic attribute
+#define SEC_FLAG_DYNAMIC 0x80000000	// contains a dynamic attribute
+#define SEC_FLAG_NUMBER 0x7fffffff	// number of entries
 
 static struct cf_section sections;	// root section
 
@@ -158,7 +159,8 @@ static void
 inspect_section(struct cf_section *sec)
 {
   sec->flags = 0;
-  for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
+  struct cf_item *ci;
+  for (ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
       inspect_section(ci->u.sec);
       sec->flags |= ci->u.sec->flags & SEC_FLAG_DYNAMIC;
@@ -167,6 +169,7 @@ inspect_section(struct cf_section *sec)
       sec->flags |= SEC_FLAG_DYNAMIC;
     } else if (ci->cls == CC_DYNAMIC || ci->cls == CC_PARSER && ci->number < 0)
       sec->flags |= SEC_FLAG_DYNAMIC;
+  sec->flags |= ci - sec->cfg;
 }
 
 void
@@ -221,32 +224,32 @@ static struct cf_item *
 find_item(struct cf_section *curr_sec, byte *name, byte **msg)
 {
   *msg = NULL;
-  if (name[0] == '.')
-    name++;
-  else if (strchr(name, '.'))
-    curr_sec = &sections;
-  if (!curr_sec)
+  if (name[0] == '^')				// absolute name instead of relative
+    name++, curr_sec = &sections;
+  if (!curr_sec)				// don't even search in an unknown section
     return NULL;
-  byte *c;
-  while ((c = strchr(name, '.')))
+  while (1)
   {
-    *c++ = 0;
+    byte *c = strchr(name, '.');
+    if (c)
+      *c++ = 0;
     struct cf_item *ci = find_subitem(curr_sec, name);
+    if (!ci->cls)
+    {
+      if (curr_sec != &sections)		// ignore silently unknown top-level sections
+	*msg = cf_printf("Unknown item %s", name);
+      return NULL;
+    }
+    if (!c)
+      return ci;
     if (ci->cls != CC_SECTION)
     {
-      *msg = cf_printf("Item %s %s", name, !ci->cls ? "does not exist" : "is not a section");
+      *msg = cf_printf("Item %s is not a section", name);
       return NULL;
     }
     curr_sec = ci->u.sec;
     name = c;
   }
-  struct cf_item *ci = find_subitem(curr_sec, name);
-  if (!ci->cls)
-  {
-    *msg = "Unknown item";
-    return NULL;
-  }
-  return ci;
 }
 
 /* Safe loading and reloading */
@@ -466,14 +469,17 @@ enum operation {
   OP_APPEND,			// dynamic array, list
   OP_PREPEND,			// dynamic array, list
   OP_REMOVE,			// list
-  OP_OPEN = 0x80		// here we only have an opening brace
 };
+#define OP_MASK 0x3f		// only get the operation
+#define OP_OPEN 0x40		// here we only get an opening brace
+#define OP_RECORD 0x80		// record selectors into the mask
 
 #define MAX_STACK_SIZE	100
 static struct item_stack {
   struct cf_section *sec;	// nested section
   void *base_ptr;		// because original pointers are often relative
   enum operation op;		// it is performed when a closing brace is encountered
+  u32 mask;			// bit array of selectors searching in a list
 } stack[MAX_STACK_SIZE];
 static uns level;
 
@@ -626,6 +632,21 @@ interpret_clear(struct cf_item *item, void *ptr)
 }
 
 static byte *
+record_selector(struct cf_item *item)
+{
+  struct cf_section *sec = stack[level].sec;
+  uns nr = sec->flags & SEC_FLAG_NUMBER;
+  if (item >= sec->cfg && item < sec->cfg + nr)	// setting an attribute relative to this section
+  {
+    uns i = item - sec->cfg;
+    if (i >= 32)
+      return "Cannot select list nodes by this attribute";
+    stack[level].mask |= 1 << i;
+  }
+  return NULL;
+}
+
+static byte *
 increase_stack(struct cf_item *item, enum operation op)
 {
   if (level >= MAX_STACK_SIZE-1)
@@ -650,6 +671,7 @@ increase_stack(struct cf_item *item, enum operation op)
     stack[level].sec = NULL;
   }
   stack[level].op = op;
+  stack[level].mask = 0;
   return NULL;
 }
 
@@ -658,13 +680,21 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
 {
   byte *msg;
   struct cf_item *item = find_item(stack[level].sec, name, &msg);
-  if (op & OP_OPEN)		// the operation will be performed after the closing brace
-    return increase_stack(item, op) ? : msg;
-  if (!item)
+  if (msg)
     return msg;
+  if (stack[level].op & OP_RECORD) {
+    msg = record_selector(item);
+    if (msg)
+      return msg;
+  }
+  if (op & OP_OPEN)		// the operation will be performed after the closing brace
+    return increase_stack(item, op);
+  if (!item)			// ignored item in an unknown section
+    return NULL;
 
   void *ptr = stack[level].base_ptr + (addr_int_t) item->ptr;
   int taken;			// process as many parameters as possible
+  op &= OP_MASK;
   if (op == OP_CLEAR)
     taken = 0, msg = interpret_clear(item, ptr);
   else if (op == OP_SET)
