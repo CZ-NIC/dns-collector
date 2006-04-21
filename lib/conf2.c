@@ -348,6 +348,7 @@ lookup_unit(byte *value, byte *end, byte **msg)
 
 static char cf_rngerr[] = "Number out of range";
 
+//FIXME: parsers should handle well empty strings, unwanted suffixes etc.
 byte *
 cf_parse_int(byte *str, int *ptr)
 {
@@ -427,6 +428,38 @@ cf_parse_double(byte *str, double *ptr)
   return msg;
 }
 
+byte *
+cf_parse_ip(byte *p, u32 *varp)
+{
+  if (!*p)
+    return "Missing IP address";
+  uns x = 0;
+  if (*p == '0' && p[1] | 32 == 'X') {
+    errno = 0;
+    x = strtoul(p + 2, NULL, 16);
+    if (errno == ERANGE || x > 0xffffffff)
+      goto error;
+  }
+  else
+    for (uns i = 0; i < 4; i++) {
+      if (i) {
+	if (*p++ != '.')
+	  goto error;
+      }
+      errno = 0;
+      char *p2;
+      uns y = strtoul(p, &p2, 10);
+      p = p2;
+      if (errno == ERANGE || y > 255)
+	goto error;
+      x = (x << 8) + y;
+    }
+  *varp = x;
+  return NULL;
+error:
+  return "Invalid IP address";
+}
+
 static byte *
 cf_parse_string(byte *str, byte **ptr)
 {
@@ -444,6 +477,7 @@ static struct {
   { sizeof(int), cf_parse_int },
   { sizeof(u64), cf_parse_u64 },
   { sizeof(double), cf_parse_double },
+  { sizeof(u32), cf_parse_ip },
   { sizeof(byte*), cf_parse_string }
 };
 
@@ -564,6 +598,8 @@ add_to_list(void *list, struct cnode *node, enum operation op)
 static byte *
 interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, enum operation op)
 {
+  if (!number)
+    return "Missing value";
   ASSERT(op < OP_REMOVE);
   struct cf_section *sec = item->u.sec;
   *processed = 0;
@@ -594,6 +630,8 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
   switch (item->cls)
   {
     case CC_STATIC:
+      if (!number)
+	return "Missing value";
       taken = MIN(number, item->number);
       *processed = taken;
       cf_journal_block(ptr, taken * parsers[item->u.type].size);

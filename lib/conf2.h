@@ -22,6 +22,7 @@ enum cf_class {
 
 enum cf_type {
   CT_INT, CT_U64, CT_DOUBLE,		// number types
+  CT_IP,				// IP address
   CT_STRING				// string type
 };
 
@@ -87,6 +88,9 @@ struct clist;
 #define CF_DOUBLE(n,p)		CF_STATIC(n,p,DOUBLE,double,1)
 #define CF_DOUBLE_ARY(n,p,c)	CF_STATIC(n,p,DOUBLE,double,c)
 #define CF_DOUBLE_DYN(n,p,c)	CF_DYNAMIC(n,p,DOUBLE,double,c)
+#define CF_IP(n,p)		CF_STATIC(n,p,IP,u32,1)
+#define CF_IP_ARY(n,p,c)	CF_STATIC(n,p,IP,u32,c)
+#define CF_IP_DYN(n,p,c)	CF_DYNAMIC(n,p,IP,u32,c)
 #define CF_STRING(n,p)		CF_STATIC(n,p,STRING,byte*,1)
 #define CF_STRING_ARY(n,p,c)	CF_STATIC(n,p,STRING,byte*,c)
 #define CF_STRING_DYN(n,p,c)	CF_DYNAMIC(n,p,STRING,byte*,c)
@@ -122,5 +126,6 @@ byte *cf_set(byte *string);
 byte *cf_parse_int(byte *str, int *ptr);
 byte *cf_parse_u64(byte *str, u64 *ptr);
 byte *cf_parse_double(byte *str, double *ptr);
+byte *cf_parse_ip(byte *p, u32 *varp);
 
 #endif
