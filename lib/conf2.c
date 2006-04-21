@@ -789,12 +789,13 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
   byte *msg;
   struct cf_item *item;
   void *ptr;
+  enum operation op2;
   if (op == OP_CLOSE) {
     if (closing_brace(stack+level, number, &msg))
       return NULL;
-    op = stack[level].op;	// operation: edit, after, or before
     item = stack[level].item;
     ptr = stack[level].base_ptr;
+    op2 = stack[level].op;	// operation: edit, after, or before
 
   } else {
     item = find_item(stack[level].sec, name, &msg);
@@ -810,24 +811,27 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
       return opening_brace(item, ptr, op);
     if (!item)			// ignored item in an unknown section
       return NULL;
+    op2 = op & OP_MASK;
   }
 
   int taken;			// process as many parameters as possible
-  op &= OP_MASK;
-  if (op == OP_CLEAR)
+  if (op2 == OP_CLEAR)
     taken = 0, msg = interpret_clear(item, ptr);
-  else if (op == OP_SET)
+  else if (op2 == OP_SET)
     msg = interpret_set_item(item, number, pars, &taken, ptr, 1);
   else if (item->cls == CC_DYNAMIC)
-    msg = interpret_add_dynamic(item, number, pars, &taken, ptr, op);
+    msg = interpret_add_dynamic(item, number, pars, &taken, ptr, op2);
   else if (item->cls == CC_LIST)
-    msg = interpret_add_list(item, number, pars, &taken, ptr, op);
+    msg = interpret_add_list(item, number, pars, &taken, ptr, op2);
   else
-    return cf_printf("Operation %d not supported on attribute class %d", op, item->cls);
+    return cf_printf("Operation %d not supported on attribute class %d", op2, item->cls);
   if (msg)
     return msg;
   if (taken < number)
     return cf_printf("Too many parameters: %d>%d", number, taken);
+
+  if (op == OP_CLOSE)		// operation: edit, after, or before
+    level--;
   return NULL;
 }
 
