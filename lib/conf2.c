@@ -234,7 +234,7 @@ find_item(struct cf_section *curr_sec, byte *name, byte **msg)
     struct cf_item *ci = find_subitem(curr_sec, name);
     if (ci->cls != CC_SECTION)
     {
-      *msg = cf_printf("Item %s %s", name, !ci->cls ? "does not exist" : "is not a subsection");
+      *msg = cf_printf("Item %s %s", name, !ci->cls ? "does not exist" : "is not a section");
       return NULL;
     }
     curr_sec = ci->u.sec;
@@ -518,7 +518,7 @@ interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *proces
 static byte *interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic);
 
 static byte *
-interpret_subsection(struct cf_section *sec, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic)
+interpret_section(struct cf_section *sec, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic)
 {
   *processed = 0;
   for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
@@ -530,7 +530,7 @@ interpret_subsection(struct cf_section *sec, int number, byte **pars, int *proce
     *processed += taken;
     number -= taken;
     pars += taken;
-    if (!number)
+    if (!number)		// stop parsing, because many parsers would complain that number==0
       break;
   }
   return NULL;
@@ -561,7 +561,7 @@ interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed
     cf_init_section(item->name, sec, node);
     add_to_list(ptr, node, op);
     int taken;
-    byte *msg = interpret_subsection(sec, number, pars, &taken, node, sec->flags & SEC_FLAG_DYNAMIC);
+    byte *msg = interpret_section(sec, number, pars, &taken, node, sec->flags & SEC_FLAG_DYNAMIC);
     if (msg)
       return msg;
     *processed += taken;
@@ -601,7 +601,7 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
 	pars[i] = cf_strdup(pars[i]);
       return item->u.par(taken, pars, ptr);
     case CC_SECTION:
-      return interpret_subsection(item->u.sec, number, pars, processed, ptr, allow_dynamic);
+      return interpret_section(item->u.sec, number, pars, processed, ptr, allow_dynamic);
     case CC_LIST:
       if (!allow_dynamic)
 	return "Lists cannot be used here";
@@ -609,6 +609,20 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
     default:
       ASSERT(0);
   }
+}
+
+static byte *
+interpret_clear(struct cf_item *item, void *ptr)
+{
+  if (item->cls == CC_LIST) {
+    cf_journal_block(ptr, sizeof(struct clist));
+    clist_init(ptr);
+  } else if (item->cls == CC_DYNAMIC) {
+    cf_journal_block(ptr, sizeof(void *));
+    * (void**) ptr = NULL;
+  } else
+    return "The item is not a list or a dynamic array";
+  return NULL;
 }
 
 static byte *
@@ -652,14 +666,7 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
   void *ptr = stack[level].base_ptr + (addr_int_t) item->ptr;
   int taken;			// process as many parameters as possible
   if (op == OP_CLEAR)
-  {
-    if (item->cls != CC_LIST)
-      return "The item is not a list";
-    cf_journal_block(ptr, sizeof(struct clist));
-    clist_init(ptr);
-    taken = 0;
-    msg = NULL;
-  }
+    taken = 0, msg = interpret_clear(item, ptr);
   else if (op == OP_SET)
     msg = interpret_set_item(item, number, pars, &taken, ptr, 1);
   else if (item->cls == CC_DYNAMIC)

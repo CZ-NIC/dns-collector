@@ -26,6 +26,7 @@ init_sec_1(struct sub_sect_1 *s)
   s->level = "default";
   s->confidence[0] = 5;
   s->confidence[1] = 6;
+  // leave s->list==NULL
   return NULL;
 }
 
