@@ -140,6 +140,8 @@ journal_rollback_section(uns new_pool, struct journal_item *oldj, byte *msg)
 
 /* Initialization */
 
+#define SEC_FLAG_DYNAMIC	1	// contains a dynamic attribute
+
 static struct cf_section sections;	// root section
 
 static struct cf_item *
@@ -150,6 +152,21 @@ find_subitem(struct cf_section *sec, byte *name)
     if (!strcasecmp(ci->name, name))
       return ci;
   return ci;
+}
+
+static void
+inspect_section(struct cf_section *sec)
+{
+  sec->flags = 0;
+  for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
+    if (ci->cls == CC_SECTION) {
+      inspect_section(ci->u.sec);
+      sec->flags |= ci->u.sec->flags & SEC_FLAG_DYNAMIC;
+    } else if (ci->cls == CC_LIST) {
+      inspect_section(ci->u.sec);
+      sec->flags |= SEC_FLAG_DYNAMIC;
+    } else if (ci->cls == CC_DYNAMIC || ci->cls == CC_PARSER && ci->number < 0)
+      sec->flags |= SEC_FLAG_DYNAMIC;
 }
 
 void
@@ -168,6 +185,7 @@ cf_declare_section(byte *name, struct cf_section *sec)
   ci->number = 1;
   ci->ptr = NULL;
   ci->u.sec = sec;
+  inspect_section(sec);
   ci++;
   if (ci - sections.cfg >= (int) sections.size)
   {
@@ -500,7 +518,7 @@ interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *proces
 static byte *interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic);
 
 static byte *
-interpret_subsection(struct cf_section *sec, int number, byte **pars, int *processed, uns allow_dynamic, void *ptr)
+interpret_subsection(struct cf_section *sec, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic)
 {
   *processed = 0;
   for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
@@ -512,6 +530,8 @@ interpret_subsection(struct cf_section *sec, int number, byte **pars, int *proce
     *processed += taken;
     number -= taken;
     pars += taken;
+    if (!number)
+      break;
   }
   return NULL;
 }
@@ -531,16 +551,8 @@ add_to_list(struct clist *list, struct cnode *node, enum operation op)
 static byte *
 interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, enum operation op)
 {
-  struct cf_item *ci = item;
-  uns only_1_item = 0;
-  do
-    for (ci=ci->u.sec->cfg; ci->cls; ci++);
-  while ((--ci)->cls == CC_SECTION);
-  if (ci->cls == CC_DYNAMIC || ci->cls == CC_LIST
-      || ci->cls == CC_PARSER && ci->number < 0)
-    only_1_item = 1;
   /* If the node contains any dynamic attribute at the end, we suppress
-   * repetition here and pass it instead inside.  */
+   * repetition here and pass it inside instead.  */
   struct cf_section *sec = item->u.sec;
   *processed = 0;
   while (number > 0)
@@ -549,13 +561,13 @@ interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed
     cf_init_section(item->name, sec, node);
     add_to_list(ptr, node, op);
     int taken;
-    byte *msg = interpret_subsection(sec, number, pars, &taken, only_1_item, node);
+    byte *msg = interpret_subsection(sec, number, pars, &taken, node, sec->flags & SEC_FLAG_DYNAMIC);
     if (msg)
       return msg;
     *processed += taken;
     number -= taken;
     pars += taken;
-    if (only_1_item)
+    if (sec->flags & SEC_FLAG_DYNAMIC)
       break;
   }
   return NULL;
@@ -589,7 +601,7 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
 	pars[i] = cf_strdup(pars[i]);
       return item->u.par(taken, pars, ptr);
     case CC_SECTION:
-      return interpret_subsection(item->u.sec, number, pars, processed, allow_dynamic, ptr);
+      return interpret_subsection(item->u.sec, number, pars, processed, ptr, allow_dynamic);
     case CC_LIST:
       if (!allow_dynamic)
 	return "Lists cannot be used here";
@@ -638,16 +650,17 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
     return msg;
 
   void *ptr = stack[level].base_ptr + (addr_int_t) item->ptr;
+  int taken;			// process as many parameters as possible
   if (op == OP_CLEAR)
   {
     if (item->cls != CC_LIST)
       return "The item is not a list";
     cf_journal_block(ptr, sizeof(struct clist));
     clist_init(ptr);
-    return NULL;
+    taken = 0;
+    msg = NULL;
   }
-  int taken;			// process as many parameters as possible
-  if (op == OP_SET)
+  else if (op == OP_SET)
     msg = interpret_set_item(item, number, pars, &taken, ptr, 1);
   else if (item->cls == CC_DYNAMIC)
     msg = interpret_add_dynamic(item, number, pars, &taken, ptr, op);

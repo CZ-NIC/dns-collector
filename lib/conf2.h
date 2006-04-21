@@ -58,6 +58,7 @@ struct cf_section {
   cf_hook *init;			// fills in default values (otherwise 0's are used)
   cf_hook *commit;			// verifies parsed data (optional)
   struct cf_item *cfg;			// CC_END-terminated array of items
+  uns flags;				// for internal use only
 };
 
 /* Declaration of cf_section */
