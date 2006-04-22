@@ -15,6 +15,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 struct ipaccess_list {
   list l;
@@ -36,6 +37,45 @@ ipaccess_init(void)
   return l;
 }
 
+static byte *
+parse_ip(byte **p, u32 *varp)
+{
+  while (Cspace(**p))
+    (*p)++;
+  if (!**p)
+    return "Missing IP address";
+  uns x = 0;
+  if (**p == '0' && *(*p + 1) | 32 == 'X')
+    {
+      errno = 0;
+      x = strtoul(*p + 2, (char **)p, 16);
+      if (errno == ERANGE || x > 0xffffffff)
+        goto error;
+    }
+  else
+    for (uns i = 0; i < 4; i++)
+      {
+        if (i)
+          {
+            while (Cspace(**p))
+              (*p)++;
+            if (*(*p)++ != '.')
+              goto error;
+          }
+        while (Cspace(**p))
+          (*p)++;
+        errno = 0;
+        uns y = strtoul(*p, (char **)p, 10);
+        if (errno == ERANGE || y > 255)
+          goto error;
+        x = (x << 8) + y;
+      }
+  *varp = x;
+  return NULL;
+error:
+  return "Invalid IP address";
+}
+
 byte *
 ipaccess_parse(struct ipaccess_list *l, byte *c, int is_allow)
 {
@@ -55,11 +95,11 @@ ipaccess_parse(struct ipaccess_list *l, byte *c, int is_allow)
 	  if (pxlen != 32)
 	    a->mask = ~(~0U >> (uns) pxlen);
 	}
-      else if (q = cf_parse_ip(&p, &a->mask))
+      else if (q = parse_ip(&p, &a->mask))
 	return q;
     }
   add_tail(&l->l, &a->n);
-  return cf_parse_ip(&c, &a->addr);
+  return parse_ip(&c, &a->addr);
 }
 
 int
