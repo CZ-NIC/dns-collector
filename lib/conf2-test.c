@@ -9,7 +9,11 @@
 #include "lib/clists.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <time.h>
+#include <getopt.h>
+
+static int verbose;
 
 struct sub_sect_1 {
   struct cnode n;
@@ -92,7 +96,7 @@ time_parser(uns number, byte **pars, time_t *ptr)
   return NULL;
 }
 
-static struct cf_section cf_top UNUSED = {
+static struct cf_section cf_top = {
   CF_COMMIT(init_top),
   CF_COMMIT(commit_top),
   CF_ITEMS {
@@ -111,8 +115,42 @@ static struct cf_section cf_top UNUSED = {
   }
 };
 
-int
-main(void)
+static byte short_opts[] = CF_SHORT_OPTS "v";
+static struct option long_opts[] = {
+	CF_LONG_OPTS
+	{"verbose",	0, 0, 'v'},
+	{NULL,		0, 0, 0}
+};
+
+static char *help = "\
+Usage: conf2-test <options>\n\
+\n\
+Options:\n"
+CF_USAGE
+"-v\t\tBe verbose\n\
+";
+
+static void NONRET
+usage(void)
 {
+	fputs(help, stderr);
+	exit(1);
+}
+
+int
+main(int argc, char *argv[])
+{
+  log_init(argv[0]);
+  cf_declare_section("top", &cf_top, 0);
+
+  int opt;
+  while ((opt = cf_get_opt(argc, argv, short_opts, long_opts, NULL)) >= 0)
+    switch (opt) {
+      case 'v': verbose++; break;
+      default: usage();
+    }
+  if (optind < argc)
+    usage();
+
   return 0;
 }
