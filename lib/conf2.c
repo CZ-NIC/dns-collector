@@ -235,11 +235,11 @@ global_init(void)
 }
 
 static struct cf_item *
-find_item(struct cf_section *curr_sec, byte *name, byte **msg)
+find_item(struct cf_section *curr_sec, byte *name, byte **msg, void **ptr)
 {
   *msg = NULL;
   if (name[0] == '^')				// absolute name instead of relative
-    name++, curr_sec = &sections;
+    name++, curr_sec = &sections, *ptr = NULL;
   if (!curr_sec)				// don't even search in an unknown section
     return NULL;
   while (1)
@@ -254,6 +254,7 @@ find_item(struct cf_section *curr_sec, byte *name, byte **msg)
 	*msg = cf_printf("Unknown item %s", name);
       return NULL;
     }
+    *ptr += (addr_int_t) ci->ptr;
     if (!c)
       return ci;
     if (ci->cls != CC_SECTION)
@@ -264,6 +265,19 @@ find_item(struct cf_section *curr_sec, byte *name, byte **msg)
     curr_sec = ci->u.sec;
     name = c;
   }
+}
+
+byte *
+cf_find_item(byte *name, struct cf_item *item)
+{
+  byte *msg;
+  void *ptr;
+  struct cf_item *ci = find_item(&sections, name, &msg, &ptr);
+  if (msg)
+    return msg;
+  *item = *ci;
+  item->ptr = ptr;
+  return NULL;
 }
 
 /* Safe loading and reloading */
@@ -503,22 +517,8 @@ cf_parse_ary(uns number, byte **pars, void *ptr, enum cf_type type)
 
 /* Interpreter */
 
-#define OPERATIONS T(CLOSE) T(SET) T(CLEAR) T(APPEND) T(PREPEND) \
-  T(REMOVE) T(EDIT) T(AFTER) T(BEFORE)
-  /* Closing brace finishes previous block.
-   * Basic attributes (static, dynamic, parsed) can be used with SET.
-   * Dynamic arrays can be used with SET, APPEND, PREPEND.
-   * Sections can be used with SET.
-   * Lists can be used with everything. */
-#define T(x) OP_##x,
-enum operation {
-  OPERATIONS
-};
-#undef T
 #define T(x) #x,
-static byte *op_names[] = {
-  OPERATIONS
-};
+static byte *op_names[] = { CF_OPERATIONS };
 #undef T
 
 #define OP_MASK 0xff		// only get the operation
@@ -833,12 +833,12 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
   byte *msg;
   if (op == OP_CLOSE)
     return closing_brace(stack+level, number, pars);
-  struct cf_item *item = find_item(stack[level].sec, name, &msg);
+  void *ptr = stack[level].base_ptr;
+  struct cf_item *item = find_item(stack[level].sec, name, &msg, &ptr);
   if (msg)
     return msg;
   if (stack[level].op & OP_1ST)
     TRY( record_selector(item, stack[level].sec, &stack[level].mask) );
-  void *ptr = stack[level].base_ptr + (addr_int_t) item->ptr;
   if (op & OP_OPEN)		// the operation will be performed after the closing brace
     return opening_brace(item, ptr, op);
   if (!item)			// ignored item in an unknown section
@@ -861,6 +861,38 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
   if (taken < number)
     return cf_printf("Too many parameters: %d>%d", number, taken);
 
+  return NULL;
+}
+
+byte *
+cf_write_item(struct cf_item *item, enum operation op, int number, byte **pars)
+{
+  byte *msg;
+  int taken;
+  switch (op) {
+    case OP_SET:
+      msg = interpret_set_item(item, number, pars, &taken, item->ptr, 1);
+      break;
+    case OP_CLEAR:
+      taken = 0;
+      msg = interpret_clear(item, item->ptr);
+      break;
+    case OP_APPEND:
+    case OP_PREPEND:
+      if (item->cls == CC_DYNAMIC)
+	msg = interpret_add_dynamic(item, number, pars, &taken, item->ptr, op);
+      else if (item->cls == CC_LIST)
+	msg = interpret_add_list(item, number, pars, &taken, item->ptr, op);
+      else
+	return "The attribute class does not support append/prepend";
+      break;
+    default:
+      return "Unsupported operation";
+  }
+  if (msg)
+    return msg;
+  if (taken < number)
+    return "Too many parameters";
   return NULL;
 }
 

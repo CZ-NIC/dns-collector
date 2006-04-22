@@ -128,6 +128,22 @@ byte *cf_parse_u64(byte *str, u64 *ptr);
 byte *cf_parse_double(byte *str, double *ptr);
 byte *cf_parse_ip(byte *p, u32 *varp);
 
+/* Direct access to configuration items */
+
+#define CF_OPERATIONS T(CLOSE) T(SET) T(CLEAR) T(APPEND) T(PREPEND) \
+  T(REMOVE) T(EDIT) T(AFTER) T(BEFORE)
+  /* Closing brace finishes previous block.
+   * Basic attributes (static, dynamic, parsed) can be used with SET.
+   * Dynamic arrays can be used with SET, APPEND, PREPEND.
+   * Sections can be used with SET.
+   * Lists can be used with everything. */
+#define T(x) OP_##x,
+enum operation { CF_OPERATIONS };
+#undef T
+
+byte *cf_find_item(byte *name, struct cf_item *item);
+byte *cf_write_item(struct cf_item *item, enum operation op, int number, byte **pars);
+
 /*
  * When using cf_get_opt(), you must prefix your own short/long options by the
  * CF_(SHORT|LONG)_OPTS.
