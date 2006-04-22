@@ -113,7 +113,7 @@ extern uns cf_need_journal;
 void cf_journal_block(void *ptr, uns len);
 
 /* Declaration */
-void cf_declare_section(byte *name, struct cf_section *sec);
+void cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown);
 void cf_init_section(byte *name, struct cf_section *sec, void *ptr);
 
 /* Safe reloading and loading of configuration files */
@@ -127,5 +127,31 @@ byte *cf_parse_int(byte *str, int *ptr);
 byte *cf_parse_u64(byte *str, u64 *ptr);
 byte *cf_parse_double(byte *str, double *ptr);
 byte *cf_parse_ip(byte *p, u32 *varp);
+
+/*
+ * When using cf_get_opt(), you must prefix your own short/long options by the
+ * CF_(SHORT|LONG)_OPTS.
+ *
+ * cf_def_file contains the name of a configuration file that will be
+ * automatically loaded before the first --set option is executed.  If no --set
+ * option occurs, it will be loaded after getopt() returns -1 (i.e. at the end
+ * of the configuration options).  cf_def_file will be ignored if another
+ * configuration file has already been loaded using the --config option.  The
+ * initial value of cf_def_file is DEFAULT_CONFIG from config.h, but you can
+ * override it manually before calling cf_get_opt().
+ */
+
+#define	CF_SHORT_OPTS	"S:C:"
+#define	CF_LONG_OPTS	{"set",		1, 0, 'S'}, {"config",	1, 0, 'C'},
+#define CF_NO_LONG_OPTS (const struct option []) { CF_LONG_OPTS { NULL, 0, 0, 0 } }
+#ifndef CF_USAGE_TAB
+#define CF_USAGE_TAB ""
+#endif
+#define	CF_USAGE	\
+"-S, --set sec.item=val\t" CF_USAGE_TAB "Manual setting of a configuration item\n\
+-C, --config filename\t" CF_USAGE_TAB "Overwrite default configuration file\n"
+
+struct option;
+int cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index);
 
 #endif

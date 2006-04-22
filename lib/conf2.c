@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#include <getopt.h>
 
 #define TRY(f)	do { byte *_msg = f; if (_msg) return _msg; } while (0)
 
@@ -147,7 +148,8 @@ journal_rollback_section(uns new_pool, struct journal_item *oldj)
 /* Initialization */
 
 #define SEC_FLAG_DYNAMIC 0x80000000	// contains a dynamic attribute
-#define SEC_FLAG_NUMBER 0x7fffffff	// number of entries
+#define SEC_FLAG_UNKNOWN 0x40000000	// ignore unknown entriies
+#define SEC_FLAG_NUMBER 0x3fffffff	// number of entries
 
 static struct cf_section sections;	// root section
 
@@ -179,7 +181,7 @@ inspect_section(struct cf_section *sec)
 }
 
 void
-cf_declare_section(byte *name, struct cf_section *sec)
+cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown)
 {
   if (!sections.cfg)
   {
@@ -195,6 +197,8 @@ cf_declare_section(byte *name, struct cf_section *sec)
   ci->ptr = NULL;
   ci->u.sec = sec;
   inspect_section(sec);
+  if (allow_unknown)
+    sec->flags |= SEC_FLAG_UNKNOWN;
   ci++;
   if (ci - sections.cfg >= (int) sections.size)
   {
@@ -225,6 +229,7 @@ global_init(void)
   static uns initialized = 0;
   if (initialized++)
     return;
+  sections.flags |= SEC_FLAG_UNKNOWN;
   for (struct cf_item *ci=sections.cfg; ci->cls; ci++)
     cf_init_section(ci->name, ci->u.sec, NULL);
 }
@@ -245,7 +250,7 @@ find_item(struct cf_section *curr_sec, byte *name, byte **msg)
     struct cf_item *ci = find_subitem(curr_sec, name);
     if (!ci->cls)
     {
-      if (curr_sec != &sections)		// ignore silently unknown top-level sections
+      if (!(curr_sec->flags & SEC_FLAG_UNKNOWN))	// ignore silently unknown top-level sections and unknown attributes in flagged sections
 	*msg = cf_printf("Unknown item %s", name);
       return NULL;
     }
@@ -1128,14 +1133,46 @@ load_file(byte *file)
 static int
 load_string(byte *string)
 {
-  if (cf_def_file) {
-    int err = load_file(cf_def_file);
-    if (err)
-      return err;
-  }
   init_stack();
   struct fastbuf fb;
   fbbuf_init_read(&fb, string, strlen(string), 0);
   byte *msg = parse_fastbuf("memory string", &fb, 0);
   return !!msg || done_stack();
+}
+
+/* Command-line parser */
+
+static void
+load_default(void)
+{
+  if (cf_def_file)
+    if (cf_load(cf_def_file))
+      die("Cannot load default config %s", optarg);
+}
+
+int
+cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index)
+{
+  static int other_options = 0;
+  while (1) {
+    int res = getopt_long (argc, argv, short_opts, long_opts, long_index);
+    if (res == 'S' || res == 'C')
+    {
+      if (other_options)
+	die("The -S and -C options must precede all other arguments");
+      if (res == 'S') {
+	load_default();
+	if (cf_set(optarg))
+	  die("Cannot set %s", optarg);
+      } else {
+	if (cf_load(optarg))
+	  die("Cannot load %s", optarg);
+      }
+    } else {
+      /* unhandled option or end of options */
+      load_default();
+      other_options++;
+      return res;
+    }
+  }
 }
