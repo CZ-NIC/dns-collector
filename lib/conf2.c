@@ -62,7 +62,7 @@ cf_printf(char *fmt, ...)
 
 /* Undo journal */
 
-uns cf_need_journal;		// some programs do not need journal
+uns cf_need_journal = 1;	// some programs do not need journal
 static struct journal_item {
   struct journal_item *prev;
   byte *ptr;
