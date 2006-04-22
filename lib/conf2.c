@@ -233,6 +233,7 @@ global_init(void)
   if (initialized++)
     return;
   sections.flags |= SEC_FLAG_UNKNOWN;
+  sections.size = 0;			// size of allocated array used to be stored here
   cf_init_section("top-level", &sections, NULL);
 }
 
@@ -258,9 +259,10 @@ commit_section(byte *name, struct cf_section *sec, void *ptr)
     sec->flags &= ~SEC_FLAG_DIRTY;
     if (sec->commit) {
       byte *msg = sec->commit(ptr);
-      if (msg)
+      if (msg) {
 	log(L_ERROR, "Cannot commit section %s: %s", name, msg);
-      return 1;
+	return 1;
+      }
     }
   }
   return 0;
@@ -1021,6 +1023,7 @@ get_word(uns stop_at_equal)
     line++;
   } else if (*line == '"') {
     line++;
+    uns start_copy = copied;
     while (1) {
       byte *start = line;
       uns escape = 0;
@@ -1044,6 +1047,20 @@ get_word(uns stop_at_equal)
 	return "Unterminated quoted word at the end";
     }
     line++;
+
+    for (byte *c=copy_buf.ptr+start_copy; *c; c++)
+      if (*c == '%') {
+	if (c[1] != '%')
+	  return "Formating sequences are not allowed";
+	else
+	  c++;
+      }
+    byte *tmp = cf_printf(copy_buf.ptr + start_copy);
+    uns l = strlen(tmp);
+    bb_grow(&copy_buf, start_copy + l + 1);
+    strcpy(copy_buf.ptr + start_copy, tmp);
+    copied = start_copy + l + 1;
+
   } else {
     byte *start = line;
     while (*line && !Cblank(*line) && !CONTROL_CHAR(*line)
@@ -1085,8 +1102,8 @@ split_line(void)
   while (1)
   {
     split_grow(&word_buf, words+1);
-    word_buf.ptr[words++] = copied;
-    TRY( get_word(!words) );
+    word_buf.ptr[words] = copied;
+    TRY( get_word(!words++) );
     if (!*line)
       break;
     else if (*line == '}' || *line == ';')	// end of line now and preserve the char
@@ -1096,12 +1113,13 @@ discard_brace:
       ends_by_brace = 1;
       TRY( get_word(0) );
       break;
-    } else if (*line == '\\' && !line[1]) {	// merge two lines
+    } else
+    while (*line == '\\' && !line[1]) {		// merge two lines
       if (!get_line())
 	return "Last line ends by a backslash";
       if (!*line || *line == '#') {
 	log(L_WARN, "The line following the backslash is empty");
-	break;
+	return NULL;
       } else if (*line == '{')
 	goto discard_brace;
     }
@@ -1189,12 +1207,14 @@ byte *cf_def_file = DEFAULT_CONFIG;
 static int
 load_file(byte *file)
 {
-  cf_def_file = NULL;
   init_stack();
   struct fastbuf *fb = bopen(file, O_RDONLY, 1<<14);
   byte *msg = parse_fastbuf(file, fb, 0);
   bclose(fb);
-  return !!msg || done_stack();
+  int err = !!msg || done_stack();
+  if (!err)
+    cf_def_file = NULL;
+  return err;
 }
 
 static int
@@ -1214,7 +1234,7 @@ load_default(void)
 {
   if (cf_def_file)
     if (cf_load(cf_def_file))
-      die("Cannot load default config %s", optarg);
+      die("Cannot load default config %s", cf_def_file);
 }
 
 int
