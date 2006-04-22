@@ -147,9 +147,10 @@ journal_rollback_section(uns new_pool, struct journal_item *oldj)
 
 /* Initialization */
 
-#define SEC_FLAG_DYNAMIC 0x80000000	// contains a dynamic attribute
-#define SEC_FLAG_UNKNOWN 0x40000000	// ignore unknown entriies
-#define SEC_FLAG_NUMBER 0x3fffffff	// number of entries
+#define SEC_FLAG_DYNAMIC	0x80000000	// contains a dynamic attribute
+#define SEC_FLAG_UNKNOWN	0x40000000	// ignore unknown entriies
+#define SEC_FLAG_DIRTY		0x20000000	// its item has been written to
+#define SEC_FLAG_NUMBER		0x1fffffff	// number of entries
 
 static struct cf_section sections;	// root section
 
@@ -166,7 +167,7 @@ find_subitem(struct cf_section *sec, byte *name)
 static void
 inspect_section(struct cf_section *sec)
 {
-  sec->flags = 0;
+  sec->flags = SEC_FLAG_DIRTY;
   struct cf_item *ci;
   for (ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
@@ -218,9 +219,11 @@ cf_init_section(byte *name, struct cf_section *sec, void *ptr)
       cf_init_section(sec->cfg[i].name, sec->cfg[i].u.sec, ptr + (addr_int_t) sec->cfg[i].ptr);
     else if (sec->cfg[i].cls == CC_LIST)
       clist_init(sec->cfg[i].ptr);
-  byte *msg = sec->init(ptr);
-  if (msg)
-    die("Cannot initialize section %s: %s", name, msg);
+  if (sec->init) {
+    byte *msg = sec->init(ptr);
+    if (msg)
+      die("Cannot initialize section %s: %s", name, msg);
+  }
 }
 
 static void
@@ -230,8 +233,37 @@ global_init(void)
   if (initialized++)
     return;
   sections.flags |= SEC_FLAG_UNKNOWN;
-  for (struct cf_item *ci=sections.cfg; ci->cls; ci++)
-    cf_init_section(ci->name, ci->u.sec, NULL);
+  cf_init_section("top-level", &sections, NULL);
+}
+
+static int
+commit_section(byte *name, struct cf_section *sec, void *ptr)
+{
+  struct cf_item *ci;
+  for (ci=sec->cfg; ci->cls; ci++)
+    if (ci->cls == CC_SECTION)
+      if (commit_section(ci->name, ci->u.sec, ptr + (addr_int_t) ci->ptr))
+	return 1;
+    else if (ci->cls == CC_LIST) {
+      struct cnode *n;
+      CLIST_WALK(n, * (clist*) (ptr + (addr_int_t) ci->ptr))
+	if (commit_section(ci->name, ci->u.sec, n))
+	  return 1;
+    }
+  if (sec->flags & SEC_FLAG_DIRTY) {
+    /* XXX: The flag is associated to a class whereas instances are those who
+     * get dirty.  This means that all other instances of the same class will
+     * be committed as well.  I don't see a way to easily allocate the flag
+     * somewhere else.  */
+    sec->flags &= ~SEC_FLAG_DIRTY;
+    if (sec->commit) {
+      byte *msg = sec->commit(ptr);
+      if (msg)
+	log(L_ERROR, "Cannot commit section %s: %s", name, msg);
+      return 1;
+    }
+  }
+  return 0;
 }
 
 static struct cf_item *
@@ -262,6 +294,7 @@ find_item(struct cf_section *curr_sec, byte *name, byte **msg, void **ptr)
       *msg = cf_printf("Item %s is not a section", name);
       return NULL;
     }
+    curr_sec->flags |= SEC_FLAG_DIRTY;		// XXX: it is set even when just reading via cf_find_item()
     curr_sec = ci->u.sec;
     name = c;
   }
@@ -918,6 +951,8 @@ done_stack(void)
     log(L_ERROR, "Unterminated block");
     return 1;
   }
+  if (commit_section("top-level", &sections, NULL))
+    return 1;
   return 0;
 }
 
