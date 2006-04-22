@@ -122,6 +122,7 @@ static const struct unit units[] = {
 	{ 0, 0, 0 }
 };
 
+#if 0
 static const struct unit *cf_lookup_unit(byte *value, byte *end, char **msg)
 {
 	if (end && *end) {
@@ -256,6 +257,7 @@ cf_parse_ip(byte **p, u32 *varp)
 error:
   return "Invalid IP address";
 }
+#endif
 
 byte *cf_set_item(byte *sect, byte *name, byte *value)
 {

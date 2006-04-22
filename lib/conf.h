@@ -61,6 +61,7 @@ void cf_read(byte *filename);
  * Number parsing functions which could be useful in CT_FUNCTION callbacks.
  */
 
+#if 0
 byte *cf_parse_int(byte *value, uns *varp);
 byte *cf_parse_u64(byte *value, u64 *varp);
 byte *cf_parse_double(byte *value, double *varp);
@@ -70,6 +71,7 @@ byte *cf_parse_double(byte *value, double *varp);
  */
 
 byte *cf_parse_ip(byte **value, u32 *varp);
+#endif
 
 /*
  * When using cf_getopt, you must prefix your own short/long options by the
