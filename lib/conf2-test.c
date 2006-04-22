@@ -104,7 +104,7 @@ static struct cf_section cf_top = {
     CF_INT_DYN("nrs1", &nrs1, 1000),
     CF_INT_ARY("nrs2", nrs2, 5),
     CF_STRING("str1", &str1),
-    CF_STRING_DYN("str2", &str2, 2),
+    CF_STRING_DYN("str2", &str2, 20),
     CF_U64("u1", &u1),
     CF_DOUBLE("d1", &d1),
     CF_PARSER("FirstTime", &t1, time_parser, -1),
@@ -142,6 +142,7 @@ main(int argc, char *argv[])
 {
   log_init(argv[0]);
   cf_declare_section("top", &cf_top, 0);
+  cf_def_file = "lib/conf2.t";
 
   int opt;
   while ((opt = cf_get_opt(argc, argv, short_opts, long_opts, NULL)) >= 0)
