@@ -106,7 +106,7 @@ extern struct mempool *cf_pool;
 void *cf_malloc(uns size);
 void *cf_malloc_zero(uns size);
 byte *cf_strdup(byte *s);
-byte *cf_printf(char *fmt, ...);
+byte *cf_printf(char *fmt, ...) FORMAT_CHECK(printf,1,2);
 
 /* Undo journal for error recovery */
 extern uns cf_need_journal;
@@ -118,9 +118,9 @@ void cf_init_section(byte *name, struct cf_section *sec, void *ptr);
 
 /* Safe reloading and loading of configuration files */
 extern byte *cf_def_file;
-byte *cf_reload(byte *file);
-byte *cf_load(byte *file);
-byte *cf_set(byte *string);
+int cf_reload(byte *file);
+int cf_load(byte *file);
+int cf_set(byte *string);
 
 /* Parsers for basic types */
 byte *cf_parse_int(byte *str, int *ptr);

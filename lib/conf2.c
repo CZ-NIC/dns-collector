@@ -12,10 +12,16 @@
 #include "lib/conf2.h"
 #include "lib/mempool.h"
 #include "lib/clists.h"
+#include "lib/fastbuf.h"
+#include "lib/chartype.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <stdarg.h>
+#include <fcntl.h>
+
+#define TRY(f)	do { byte *_msg = f; if (_msg) return _msg; } while (0)
 
 /* Memory allocation */
 
@@ -125,10 +131,10 @@ journal_commit_section(uns new_pool, struct journal_item *oldj)
 }
 
 static void
-journal_rollback_section(uns new_pool, struct journal_item *oldj, byte *msg)
+journal_rollback_section(uns new_pool, struct journal_item *oldj)
 {
   if (!cf_need_journal)
-    die("Cannot rollback the configuration, because the journal is disabled.  Error: %s", msg);
+    die("Cannot rollback the configuration, because the journal is disabled.");
   journal_swap();
   journal = oldj;
   if (new_pool)
@@ -216,6 +222,9 @@ cf_init_section(byte *name, struct cf_section *sec, void *ptr)
 static void
 global_init(void)
 {
+  static uns initialized = 0;
+  if (initialized++)
+    return;
   for (struct cf_item *ci=sections.cfg; ci->cls; ci++)
     cf_init_section(ci->name, ci->u.sec, NULL);
 }
@@ -254,22 +263,16 @@ find_item(struct cf_section *curr_sec, byte *name, byte **msg)
 
 /* Safe loading and reloading */
 
-byte *cf_def_file = DEFAULT_CONFIG;
+static int load_file(byte *file);
+static int load_string(byte *string);
 
-#ifndef DEFAULT_CONFIG
-#define DEFAULT_CONFIG NULL
-#endif
-
-static byte *load_file(byte *file);
-static byte *load_string(byte *string);
-
-byte *
+int
 cf_reload(byte *file)
 {
   journal_swap();
   struct journal_item *oldj = journal_new_section(1);
-  byte *msg = load_file(file);
-  if (!msg)
+  int err = load_file(file);
+  if (!err)
   {
     for (struct old_pools *p=pools; p; p=pools)
     {
@@ -280,34 +283,34 @@ cf_reload(byte *file)
   }
   else
   {
-    journal_rollback_section(1, oldj, msg);
+    journal_rollback_section(1, oldj);
     journal_swap();
   }
-  return msg;
+  return err;
 }
 
-byte *
+int
 cf_load(byte *file)
 {
   struct journal_item *oldj = journal_new_section(1);
-  byte *msg = load_file(file);
-  if (!msg)
+  int err = load_file(file);
+  if (!err)
     journal_commit_section(1, oldj);
   else
-    journal_rollback_section(1, oldj, msg);
-  return msg;
+    journal_rollback_section(1, oldj);
+  return err;
 }
 
-byte *
+int
 cf_set(byte *string)
 {
   struct journal_item *oldj = journal_new_section(0);
-  byte *msg = load_string(string);
-  if (!msg)
+  int err = load_string(string);
+  if (!err)
     journal_commit_section(0, oldj);
   else
-    journal_rollback_section(0, oldj, msg);
-  return msg;
+    journal_rollback_section(0, oldj);
+  return err;
 }
 
 /* Parsers for standard types */
@@ -495,17 +498,24 @@ cf_parse_ary(uns number, byte **pars, void *ptr, enum cf_type type)
 
 /* Interpreter */
 
+#define OPERATIONS T(CLOSE) T(SET) T(CLEAR) T(APPEND) T(PREPEND) \
+  T(REMOVE) T(EDIT) T(AFTER) T(BEFORE)
+  /* Closing brace finishes previous block.
+   * Basic attributes (static, dynamic, parsed) can be used with SET.
+   * Dynamic arrays can be used with SET, APPEND, PREPEND.
+   * Sections can be used with SET.
+   * Lists can be used with everything. */
+#define T(x) OP_##x,
 enum operation {
-  OP_CLOSE,			// closing brace finishes previous block
-  OP_CLEAR,			// list
-  OP_SET,			// basic attribute (static, dynamic, parsed), section, list
-  OP_APPEND,			// dynamic array, list
-  OP_PREPEND,			// dynamic array, list
-  OP_REMOVE,			// list operations with search follow
-  OP_EDIT,
-  OP_AFTER,
-  OP_BEFORE
+  OPERATIONS
 };
+#undef T
+#define T(x) #x,
+static byte *op_names[] = {
+  OPERATIONS
+};
+#undef T
+
 #define OP_MASK 0xff		// only get the operation
 #define OP_OPEN 0x100		// here we only get an opening brace instead of parameters
 #define OP_1ST 0x200		// in the 1st phase selectors are recorded into the mask
@@ -542,7 +552,7 @@ interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *proces
     memcpy(new_p + taken * parsers[type].size, old_p, old_nr * parsers[type].size);
     return cf_parse_ary(taken, pars, new_p, type);
   } else
-    return cf_printf("Dynamic arrays do not support operation %d", op);
+    return cf_printf("Dynamic arrays do not support operation %s", op_names[op]);
 }
 
 static byte *interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic);
@@ -611,9 +621,7 @@ interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed
     int taken;
     /* If the node contains any dynamic attribute at the end, we suppress
      * auto-repetition here and pass the flag inside instead.  */
-    byte *msg = interpret_section(sec, number, pars, &taken, node, sec->flags & SEC_FLAG_DYNAMIC);
-    if (msg)
-      return msg;
+    TRY( interpret_section(sec, number, pars, &taken, node, sec->flags & SEC_FLAG_DYNAMIC) );
     *processed += taken;
     number -= taken;
     pars += taken;
@@ -798,9 +806,7 @@ closing_brace(struct item_stack *st, int number, byte **pars)
 	return NULL;
       }
       int taken;		// parse parameters on 1 line immediately
-      byte *msg = interpret_section(st->sec, number, pars, &taken, st->base_ptr, 1);
-      if (msg)
-	return msg;
+      TRY( interpret_section(st->sec, number, pars, &taken, st->base_ptr, 1) );
       number -= taken;
       pars += taken;
       // and fall-thru to the 2nd phase
@@ -825,11 +831,8 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
   struct cf_item *item = find_item(stack[level].sec, name, &msg);
   if (msg)
     return msg;
-  if (stack[level].op & OP_1ST) {
-    msg = record_selector(item, stack[level].sec, &stack[level].mask);
-    if (msg)
-      return msg;
-  }
+  if (stack[level].op & OP_1ST)
+    TRY( record_selector(item, stack[level].sec, &stack[level].mask) );
   void *ptr = stack[level].base_ptr + (addr_int_t) item->ptr;
   if (op & OP_OPEN)		// the operation will be performed after the closing brace
     return opening_brace(item, ptr, op);
@@ -847,7 +850,7 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
   else if (item->cls == CC_LIST)
     msg = interpret_add_list(item, number, pars, &taken, ptr, op);
   else
-    return cf_printf("Operation %d not supported on attribute class %d", op, item->cls);
+    return cf_printf("Operation %s not supported on attribute class %d", op_names[op], item->cls);
   if (msg)
     return msg;
   if (taken < number)
@@ -856,3 +859,283 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
   return NULL;
 }
 
+static void
+init_stack(void)
+{
+  global_init();
+  level = 0;
+  stack[0] = (struct item_stack) {
+    .sec = &sections,
+    .base_ptr = NULL,
+    .op = OP_CLOSE,
+    .list = NULL,
+    .mask = 0,
+    .item = NULL
+  };
+}
+
+static int
+done_stack(void)
+{
+  if (level > 0) {
+    log(L_ERROR, "Unterminated block");
+    return 1;
+  }
+  return 0;
+}
+
+/* Text file parser */
+
+static struct fastbuf *parse_fb;
+static uns line_num;
+
+#define MAX_LINE	4096
+static byte line_buf[MAX_LINE];
+static byte *line = line_buf;
+
+#include "lib/bbuf.h"
+static bb_t copy_buf;
+static uns copied;
+
+#define GBUF_TYPE	uns
+#define GBUF_PREFIX(x)	split_##x
+#include "lib/gbuf.h"
+static split_t word_buf;
+static uns words;
+static uns ends_by_brace;		// the line is ended by "{"
+
+static int
+get_line(void)
+{
+  if (!bgets(parse_fb, line_buf, MAX_LINE))
+    return 0;
+  line_num++;
+  line = line_buf;
+  while (Cblank(*line))
+    line++;
+  return 1;
+}
+
+static void
+append(byte *start, byte *end)
+{
+  uns len = end - start;
+  bb_grow(&copy_buf, copied + len + 1);
+  memcpy(copy_buf.ptr + copied, start, len);
+  copied += len + 1;
+  copy_buf.ptr[copied-1] = 0;
+}
+
+#define	CONTROL_CHAR(x) (x == '{' || x == '}' || x == ';')
+  // these characters separate words like blanks
+
+static byte *
+get_word(uns stop_at_equal)
+{
+  // promised that *line is non-null and non-blank
+  if (*line == '\'') {
+    line++;
+    while (1) {
+      byte *start = line;
+      while (*line && *line != '\'')
+	line++;
+      append(start, line);
+      if (*line)
+	break;
+      copy_buf.ptr[copied-1] = '\n';
+      if (!get_line())
+	return "Unterminated apostrophe word at the end";
+    }
+    line++;
+  } else if (*line == '"') {
+    line++;
+    while (1) {
+      byte *start = line;
+      uns escape = 0;
+      while (*line) {
+	if (*line == '"' && !escape)
+	  break;
+	else if (*line == '\\')
+	  escape ^= 1;
+	else
+	  escape = 0;
+	line++;
+      }
+      append(start, line);
+      if (*line)
+	break;
+      if (!escape)
+	copy_buf.ptr[copied-1] = '\n';
+      else // merge two lines
+	copied -= 2;
+      if (!get_line())
+	return "Unterminated quoted word at the end";
+    }
+    line++;
+  } else {
+    byte *start = line;
+    while (*line && !Cblank(*line) && !CONTROL_CHAR(*line)
+	&& (*line != '=' || !stop_at_equal))
+      line++;
+    if (*line == '=') {				// nice for setting from a command-line
+      if (line == start)
+	return "Assignment without a variable";
+      *line = ' ';
+    }
+    if (CONTROL_CHAR(*line))			// already the first char is control
+      line++;
+    append(start, line);
+  }
+  while (Cblank(*line))
+    line++;
+  return NULL;
+}
+
+static byte *
+split_line(void)
+{
+  words = 0;
+  copied = 0;
+  ends_by_brace = 0;
+  while (!*line || *line == '#')
+  {
+    if (!get_line())
+      return NULL;
+    while (*line == ';'				// empty trash at the beginning
+	|| (*line == '\\' && !line[1])) {
+      TRY( get_word(0) );
+      copied = 0;
+    }
+    if (*line == '{')				// only one opening brace
+      return "Unexpected opening brace";
+  }
+  /* We have got a non-null, non-blank, non-;, non-merge, and non-{ character.  */
+  while (1)
+  {
+    split_grow(&word_buf, words+1);
+    word_buf.ptr[words++] = copied;
+    TRY( get_word(!words) );
+    if (!*line)
+      break;
+    else if (*line == '}' || *line == ';')	// end of line now and preserve the char
+      break;
+    else if (*line == '{') {			// discard the char and end the line
+discard_brace:
+      ends_by_brace = 1;
+      TRY( get_word(0) );
+      break;
+    } else if (*line == '\\' && !line[1]) {	// merge two lines
+      if (!get_line())
+	return "Last line ends by a backslash";
+      if (!*line || *line == '#') {
+	log(L_WARN, "The line following the backslash is empty");
+	break;
+      } else if (*line == '{')
+	goto discard_brace;
+    }
+  }
+  return NULL;
+}
+
+/* Parsing multiple files */
+
+static byte *
+parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
+{
+  byte *msg;
+  parse_fb = fb;
+  line_num = 0;
+  line = line_buf;
+  *line = 0;
+  while (1)
+  {
+    msg = split_line();
+    if (msg)
+      goto error;
+    if (!words)
+      return NULL;
+    byte *name = copy_buf.ptr + word_buf.ptr[0];
+    byte *pars[words-1];
+    for (uns i=1; i<words; i++)
+      pars[i-1] = copy_buf.ptr + word_buf.ptr[i];
+    if (!strcasecmp(name, "#include"))
+    {
+      if (words != 2) {
+	msg = "Expecting one filename";
+	goto error;
+      }
+      if (depth > 8) {
+	msg = "Too many nested files";
+	goto error;
+      }
+      parse_fb = bopen(pars[0], O_RDONLY, 1<<14);
+      uns ll = line_num;
+      msg = parse_fastbuf(pars[0], parse_fb, depth+1);
+      bclose(parse_fb);
+      if (msg)
+	goto error;
+      line_num = ll;
+      parse_fb = fb;
+    }
+    enum operation op;
+    byte *c = strchr(name, ':');
+    if (!c)
+      op = strcmp(name, "}") ? OP_SET : OP_CLOSE;
+    else {
+      *c++ = 0;
+      switch (Clocase(*c)) {
+	case 's': op = OP_SET; break;
+	case 'c': op = OP_CLEAR; break;
+	case 'a': op = Clocase(c[1]) == 'p' ? OP_APPEND : OP_AFTER; break;
+	case 'p': op = OP_PREPEND; break;
+	case 'r': op = OP_REMOVE; break;
+	case 'e': op = OP_EDIT; break;
+	case 'b': op = OP_BEFORE; break;
+	default: op = OP_SET; break;
+      }
+      if (strcasecmp(c, op_names[op])) {
+	msg = cf_printf("Unknown operation %s", c);
+	goto error;
+      }
+    }
+    if (ends_by_brace)
+      op |= OP_OPEN;
+    msg = interpret_line(name, op, words-1, pars);
+    if (msg)
+      goto error;
+  }
+error:
+  log(L_ERROR, "File %s, line %d: %s", name_fb, line_num, msg);
+  return "included from here";
+}
+
+#ifndef DEFAULT_CONFIG
+#define DEFAULT_CONFIG NULL
+#endif
+byte *cf_def_file = DEFAULT_CONFIG;
+
+static int
+load_file(byte *file)
+{
+  cf_def_file = NULL;
+  init_stack();
+  struct fastbuf *fb = bopen(file, O_RDONLY, 1<<14);
+  byte *msg = parse_fastbuf(file, fb, 0);
+  bclose(fb);
+  return !!msg || done_stack();
+}
+
+static int
+load_string(byte *string)
+{
+  if (cf_def_file) {
+    int err = load_file(cf_def_file);
+    if (err)
+      return err;
+  }
+  init_stack();
+  struct fastbuf fb;
+  fbbuf_init_read(&fb, string, strlen(string), 0);
+  byte *msg = parse_fastbuf("memory string", &fb, 0);
+  return !!msg || done_stack();
+}
