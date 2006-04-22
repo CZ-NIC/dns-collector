@@ -619,7 +619,7 @@ interpret_section(struct cf_section *sec, int number, byte **pars, int *processe
 static void
 add_to_list(void *list, struct cnode *node, enum operation op)
 {
-  cf_journal_block(list, sizeof(struct clist));		//FIXME: we should journal the nodes of the list instead
+  //cf_journal_block(list, sizeof(struct clist));		//FIXME: we should journal the nodes of the list instead
   switch (op)
   {
     case OP_SET:

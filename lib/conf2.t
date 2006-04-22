@@ -21,5 +21,8 @@ Top {
 
 unknown.ignored :-)
 
-top.slaves	cairns gpua 7 7 -0.1 +0.1
-top.slaves	daintree rafc 4 5 -17.1e1
+top.slaves	cairns gpua 7 7 -10% +10%
+top.slaves	daintree rafc 4 5 -171%
+
+topp.a=15
+top.nr1=   15
