@@ -39,7 +39,8 @@ typedef byte *cf_hook(void *ptr);
    * dynamically allocated nodes of link lists or for filling global variables
    * that are run-time dependent).  The commit-hook should perform sanity
    * checks and postprocess the parsed values.  Commit-hooks must call
-   * cf_journal_block() too.  */
+   * cf_journal_block() too.  Caveat! init-hooks for static sections must not
+   * use cf_malloc() but normal xmalloc().  */
 
 struct cf_section;
 struct cf_item {
@@ -99,6 +100,7 @@ struct clist;
   // length of a dynamic array
 #define DYN_ALLOC(type,len,val...) (type[]) { (type)len, ##val } + 1
   // creates a static instance of a dynamic array
+  // FIXME: overcast doesn't work for the double type
 
 /* Memory allocation */
 struct mempool;
@@ -114,7 +116,7 @@ void cf_journal_block(void *ptr, uns len);
 
 /* Declaration */
 void cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown);
-void cf_init_section(byte *name, struct cf_section *sec, void *ptr);
+void cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero);
 
 /* Safe reloading and loading of configuration files */
 extern byte *cf_def_file;

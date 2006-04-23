@@ -14,6 +14,7 @@
 #include "lib/clists.h"
 #include "lib/fastbuf.h"
 #include "lib/chartype.h"
+#include "lib/lfs.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -209,13 +210,15 @@ cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown)
 }
 
 void
-cf_init_section(byte *name, struct cf_section *sec, void *ptr)
+cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero)
 {
-  if (sec->size)
+  if (do_bzero) {
+    ASSERT(sec->size);
     bzero(ptr, sec->size);
+  }
   for (uns i=0; sec->cfg[i].cls; i++)
     if (sec->cfg[i].cls == CC_SECTION)
-      cf_init_section(sec->cfg[i].name, sec->cfg[i].u.sec, ptr + (addr_int_t) sec->cfg[i].ptr);
+      cf_init_section(sec->cfg[i].name, sec->cfg[i].u.sec, ptr + (addr_int_t) sec->cfg[i].ptr, 0);
     else if (sec->cfg[i].cls == CC_LIST)
       clist_init(sec->cfg[i].ptr);
   if (sec->init) {
@@ -233,7 +236,7 @@ global_init(void)
     return;
   sections.flags |= SEC_FLAG_UNKNOWN;
   sections.size = 0;			// size of allocated array used to be stored here
-  cf_init_section("top-level", &sections, NULL);
+  cf_init_section("top-level", &sections, NULL, 0);
 }
 
 static int
@@ -648,7 +651,7 @@ interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed
   while (number > 0)
   {
     void *node = cf_malloc(sec->size);
-    cf_init_section(item->name, sec, node);
+    cf_init_section(item->name, sec, node, 1);
     add_to_list(ptr, node, op);
     int taken;
     /* If the node contains any dynamic attribute at the end, we suppress
@@ -800,7 +803,7 @@ opening_brace(struct cf_item *item, void *ptr, enum operation op)
   else if (item->cls == CC_LIST)
   {
     stack[level].base_ptr = cf_malloc(item->u.sec->size);
-    cf_init_section(item->name, item->u.sec, stack[level].base_ptr);
+    cf_init_section(item->name, item->u.sec, stack[level].base_ptr, 1);
     stack[level].list = ptr;
     stack[level].item = item;
     stack[level].op |= (op & OP_MASK) < OP_REMOVE ? OP_2ND : OP_1ST;
@@ -831,7 +834,7 @@ closing_brace(struct item_stack *st, enum operation op, int number, byte **pars)
       if (pure_op == OP_EDIT)
 	st->base_ptr = st->list;
       else if (pure_op == OP_AFTER || pure_op == OP_BEFORE)
-	cf_init_section(st->item->name, st->sec, st->base_ptr);
+	cf_init_section(st->item->name, st->sec, st->base_ptr, 1);
       else
 	ASSERT(0);
       if (op & OP_OPEN) {	// stay at the same recursion level
@@ -1127,6 +1130,17 @@ split_command(void)
 
 /* Parsing multiple files */
 
+static struct fastbuf *
+bopen_safe(byte *name)
+{
+  int fd = sh_open(name, O_RDONLY);
+  if (fd < 0) {
+    log(L_ERROR, "Cannot open %s", name);
+    return NULL;
+  }
+  return bopen(name, O_RDONLY, 1<<14);
+}
+
 static byte *
 parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
 {
@@ -1156,7 +1170,11 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
 	msg = "Too many nested files";
 	goto error;
       }
-      struct fastbuf *new_fb = bopen(pars[0], O_RDONLY, 1<<14);
+      struct fastbuf *new_fb = bopen_safe(pars[0]);
+      if (!new_fb) {
+	msg = "Cannot open file";
+	goto error;
+      }
       uns ll = line_num;
       msg = parse_fastbuf(pars[0], new_fb, depth+1);
       bclose(new_fb);
@@ -1206,7 +1224,9 @@ static int
 load_file(byte *file)
 {
   init_stack();
-  struct fastbuf *fb = bopen(file, O_RDONLY, 1<<14);
+  struct fastbuf *fb = bopen_safe(file);
+  if (!fb)
+    return 1;
   byte *msg = parse_fastbuf(file, fb, 0);
   bclose(fb);
   int err = !!msg || done_stack();
@@ -1263,8 +1283,6 @@ cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct o
 }
 
 /* Debug dumping */
-
-#include "fastbuf.h"
 
 static void
 spaces(struct fastbuf *fb, uns nr)

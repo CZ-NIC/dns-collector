@@ -24,9 +24,15 @@ struct sub_sect_1 {
   double *list;
 };
 
+static struct sub_sect_1 sec1 = { {}, "Charlie", "WBAFC", { 0, -1}, DYN_ALLOC(double, 3, 1e4, -1e-4, 8) };
+
 static byte *
 init_sec_1(struct sub_sect_1 *s)
 {
+  if (s == &sec1) {			// this is a static variable; skip clearing
+    DYN_LEN(sec1.list) = 3;		// XXX: fix for the bug in DYN_ALLOC()
+    return NULL;
+  }
   s->name = "unknown";
   s->level = "default";
   s->confidence[0] = 5;
@@ -65,7 +71,6 @@ static byte *str1 = "no worries";
 static byte **str2 = DYN_ALLOC(byte *, 2, "Alice", "Bob");
 static u64 u1 = 0xCafeBeefDeadC00ll;
 static double d1 = -1.1;
-static struct sub_sect_1 sec1 = { {}, "Charlie", "WBAFC", { 0, -1} };
 static struct clist secs;
 static time_t t1, t2;
 static u32 ip;
@@ -75,8 +80,8 @@ init_top(void *ptr UNUSED)
 {
   for (uns i=0; i<5; i++)
   {
-    struct sub_sect_1 *s = cf_malloc(sizeof(struct sub_sect_1));
-    cf_init_section("slaves", &cf_sec_1, s);
+    struct sub_sect_1 *s = xmalloc(sizeof(struct sub_sect_1));	// XXX: cannot by cf_malloc(), because it's deleted when cf_reload()'ed
+    cf_init_section("slaves", &cf_sec_1, s, 1);
     s->confidence[1] = i;
     clist_add_tail(&secs, &s->n);
   }
@@ -99,7 +104,7 @@ time_parser(uns number, byte **pars, time_t *ptr)
 }
 
 static struct cf_section cf_top = {
-  CF_COMMIT(init_top),
+  CF_INIT(init_top),
   CF_COMMIT(commit_top),
   CF_ITEMS {
     CF_UNS("nr1", &nr1),
@@ -155,6 +160,8 @@ main(int argc, char *argv[])
     }
   if (optind < argc)
     usage();
+
+  //cf_reload("non-existent file");
 
   struct fastbuf *out = bfdopen(1, 1<<14);
   cf_dump_sections(out);
