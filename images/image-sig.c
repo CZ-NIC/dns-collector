@@ -81,9 +81,9 @@ compute_image_signature(struct image *image, struct image_signature *sig)
   struct block *blocks = xmalloc(blocks_count * sizeof(struct block)), *block = blocks; /* FIXME: use mempool */
   
   /* Every 4x4 block (FIXME: deal with smaller blocks near the edges) */
-  struct pixel *p = image->pixels;
-  for (uns block_y = 0; block_y < h; block_y++, p +=  (width & 3) + width * 3)
-    for (uns block_x = 0; block_x < w; block_x++, p -= 4 * width - 4, block++)
+  byte *p = image->pixels;
+  for (uns block_y = 0; block_y < h; block_y++, p += 3 * ((width & 3) + width * 3))
+    for (uns block_x = 0; block_x < w; block_x++, p -= 3 * (4 * width - 4), block++)
       {
         int t[16], s[16], *tp = t;
 
@@ -94,13 +94,13 @@ compute_image_signature(struct image *image, struct image_signature *sig)
 	uns l_sum = 0;
 	uns u_sum = 0;
 	uns v_sum = 0;
-	for (uns y = 0; y < 4; y++, p += width - 4)
-	  for (uns x = 0; x < 4; x++, p += 1)
+	for (uns y = 0; y < 4; y++, p += 3 * (width - 4))
+	  for (uns x = 0; x < 4; x++, p += 3)
 	    {
 	      double rgb[3], luv[3], xyz[3];
-	      rgb[0] = p->r / 255.;
-	      rgb[1] = p->g / 255.;
-	      rgb[2] = p->b / 255.;
+	      rgb[0] = p[0] / 255.;
+	      rgb[1] = p[1] / 255.;
+	      rgb[2] = p[2] / 255.;
 	      srgb_to_xyz_slow(rgb, xyz);
 	      xyz_to_luv_slow(xyz, luv);
 	      l_sum += *tp++ = luv[0];

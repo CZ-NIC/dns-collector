@@ -10,7 +10,7 @@
  *	- improve thumbnail creation in gatherer... faster compression,
  *	  only grayscale/RGB colorspaces and maybe fixed headers (abbreviated datastreams in libjpeg)
  *	- hook memory allocation managers, get rid of multiple initializations
- *	- alpha channel is propably useless (we could assume white background)
+ *	- supply background color to transparent PNG images
  *	- optimize decompression parameters
  *	- create interface for thumbnail compression (for gatherer) and reading (MUX)
  *	- benchmatk libraries
@@ -145,41 +145,33 @@ libpng_decompress_thumbnail(struct image_obj *imo)
     {
       case PNG_COLOR_TYPE_PALETTE:
 	png_set_palette_to_rgb(png_ptr);
-        if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
-	  {
-            png_set_tRNS_to_alpha(png_ptr);
-	    imo->thumb.flags |= IMAGE_ALPHA;
-	  }
-	else
-          png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
+        png_set_strip_alpha(png_ptr);
 	break;
       case PNG_COLOR_TYPE_GRAY:
 	imo->thumb.flags |= IMAGE_GRAYSCALE;
         png_set_gray_to_rgb(png_ptr);
-	png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
+        png_set_strip_alpha(png_ptr);
 	break;
       case PNG_COLOR_TYPE_GRAY_ALPHA:
-	imo->thumb.flags |= IMAGE_GRAYSCALE | IMAGE_ALPHA;
+	imo->thumb.flags |= IMAGE_GRAYSCALE;
         png_set_gray_to_rgb(png_ptr);
 	break;
       case PNG_COLOR_TYPE_RGB:
-	png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
 	break;
       case PNG_COLOR_TYPE_RGB_ALPHA:
-	imo->thumb.flags |= IMAGE_ALPHA;
+        png_set_strip_alpha(png_ptr);
 	break;
       default:
 	ASSERT(0);
     }
   png_read_update_info(png_ptr, info_ptr);
-  ASSERT(png_get_channels(png_ptr, info_ptr) == sizeof(struct pixel));
-  ASSERT(png_get_rowbytes(png_ptr, info_ptr) == sizeof(struct pixel) * width);
+  ASSERT(png_get_channels(png_ptr, info_ptr) == 3);
 
   /* Read image data */
   DBG("Reading image data");
-  struct pixel *pixels = imo->thumb.pixels = mp_alloc(imo->pool, width * height * sizeof(struct pixel));
+  byte *pixels = imo->thumb.pixels = mp_alloc(imo->pool, width * height * 3);
   png_bytep rows[height];
-  for (uns i = 0; i < height; i++, pixels += width)
+  for (uns i = 0; i < height; i++, pixels += width * 3)
     rows[i] = (png_bytep)pixels;
   png_read_image(png_ptr, rows);
   png_read_end(png_ptr, end_ptr);
@@ -296,23 +288,15 @@ libjpeg_decompress_thumbnail(struct image_obj *imo)
   DBG("Reading image data");
   jpeg_start_decompress(&cinfo);
   ASSERT(imo->thumb.width == cinfo.output_width && imo->thumb.height == cinfo.output_height);
-  struct pixel *pixels = imo->thumb.pixels = mp_alloc(imo->pool, cinfo.output_width * cinfo.output_height * sizeof(struct pixel));
+  ASSERT(sizeof(JSAMPLE) == 1);
+  byte *pixels = imo->thumb.pixels = mp_alloc(imo->pool, cinfo.output_width * cinfo.output_height * 3);
   if (cinfo.out_color_space == JCS_RGB)
     { /* Read RGB pixels */
       uns size = cinfo.output_width * 3;
-      JSAMPLE buf[size], *buf_end = buf + size;
       while (cinfo.output_scanline < cinfo.output_height)
         {
-          JSAMPLE *p = buf;
-          jpeg_read_scanlines(&cinfo, &p, 1);
-          for (; p != buf_end; p += 3)
-	    {
-	      pixels->r = p[0] >> (sizeof(JSAMPLE) * 8 - 8);
-	      pixels->g = p[1] >> (sizeof(JSAMPLE) * 8 - 8);
-	      pixels->b = p[2] >> (sizeof(JSAMPLE) * 8 - 8);
-	      pixels->a = 255;
-	      pixels++;
-	    }
+          jpeg_read_scanlines(&cinfo, (JSAMPLE **)&pixels, 1);
+	  pixels += size;
         }
     }
   else
@@ -324,9 +308,8 @@ libjpeg_decompress_thumbnail(struct image_obj *imo)
           jpeg_read_scanlines(&cinfo, &p, 1);
           for (; p != buf_end; p++)
             {
-              pixels->r = pixels->g = pixels->b = p[0] >> (sizeof(JSAMPLE) * 8 - 8);
-	      pixels->a = 255;
-	      pixels++;
+              pixels[0] = pixels[1] = pixels[2] = p[0];
+	      pixels += 3;
 	    }
         }
     }
@@ -386,13 +369,14 @@ magick_decompress_thumbnail(struct image_obj *imo)
   PixelPacket *pixels = (PixelPacket *)AcquireImagePixels(image, 0, 0, image->columns, image->rows, &magick_exception);
   ASSERT(pixels);
   uns size = image->columns * image->rows;
-  struct pixel *p = imo->thumb.pixels = mp_alloc(imo->pool, size * sizeof(struct pixel));
-  for (uns i = 0; i < size; i++, p++, pixels++)
+  byte *p = imo->thumb.pixels = mp_alloc(imo->pool, size * 3);
+  for (uns i = 0; i < size; i++)
     {
-      p->r = pixels->red >> (QuantumDepth - 8);
-      p->g = pixels->green >> (QuantumDepth - 8);
-      p->b = pixels->blue >> (QuantumDepth - 8);
-      p->a = 255;
+      p[0] = pixels->red >> (QuantumDepth - 8);
+      p[1] = pixels->green >> (QuantumDepth - 8);
+      p[2] = pixels->blue >> (QuantumDepth - 8);
+      p += 3;
+      pixels++;
     }
   DestroyImage(image);
   return 1;
@@ -408,7 +392,8 @@ static int
 extract_image_info(struct image_obj *imo)
 {
   DBG("Parsing image info attribute");
-  imo->flags |= IMAGE_OBJ_INFO;
+  ASSERT(!(imo->flags & IMAGE_OBJ_VALID_INFO));
+  imo->flags |= IMAGE_OBJ_VALID_INFO;
   byte *info = obj_find_aval(imo->obj, 'G');
   if (!info)
     {
@@ -419,8 +404,17 @@ extract_image_info(struct image_obj *imo)
   byte color_space[MAX_ATTR_SIZE], thumb_format[MAX_ATTR_SIZE];
   UNUSED uns cnt = sscanf(info, "%d%d%s%d%d%d%s", &imo->width, &imo->height, color_space, &colors, &imo->thumb.width, &imo->thumb.height, thumb_format);
   ASSERT(cnt == 7);
-  if (*thumb_format == 'j')
-    imo->flags |= IMAGE_OBJ_THUMB_JPEG;
+  switch (*thumb_format)
+    {
+      case 'j':
+	imo->thumb_format = IMAGE_OBJ_FORMAT_JPEG;
+	break;
+      case 'p':
+	imo->thumb_format = IMAGE_OBJ_FORMAT_PNG;
+	break;
+      default:
+	ASSERT(0);
+    }
   return 1;
 }
 
@@ -428,7 +422,9 @@ static int
 extract_thumb_data(struct image_obj *imo)
 {
   DBG("Extracting thumbnail data");
-  imo->flags |= IMAGE_OBJ_THUMB_DATA;
+  ASSERT(!(imo->flags & IMAGE_OBJ_VALID_DATA) && 
+      (imo->flags & IMAGE_OBJ_VALID_INFO));
+  imo->flags |= IMAGE_OBJ_VALID_DATA;
   struct oattr *attr = obj_find_attr(imo->obj, 'N');
   if (!attr)
     {
@@ -454,31 +450,32 @@ static int
 extract_thumb_image(struct image_obj *imo)
 {
   DBG("Decompressing thumbnail image");
-  imo->flags |= IMAGE_OBJ_THUMB_IMAGE;
-
-  /* JPEG format */
-  if (imo->flags & IMAGE_OBJ_THUMB_JPEG)
+  ASSERT(!(imo->flags & IMAGE_OBJ_VALID_IMAGE) &&
+      (imo->flags & IMAGE_OBJ_VALID_INFO) &&
+      (imo->flags & IMAGE_OBJ_VALID_DATA));
+  imo->flags |= IMAGE_OBJ_VALID_IMAGE;
+  switch (imo->thumb_format)
     {
+      case IMAGE_OBJ_FORMAT_JPEG:
 #if defined(USE_LIBJPEG)
-      return libjpeg_decompress_thumbnail(imo);
+        return libjpeg_decompress_thumbnail(imo);
 #elif defined(USE_MAGICK)
-      return magick_decompress_thumbnail(imo);
+        return magick_decompress_thumbnail(imo);
 #else
-      DBG("JPEG not supported");
-      return 0;
-#endif      
-    }
-  /* PNG format */
-  else
-    {
+        DBG("JPEG not supported");
+        return 0;
+#endif
+      case IMAGE_OBJ_FORMAT_PNG:
 #if defined(USE_LIBPNG)
-      return libpng_decompress_thumbnail(imo);
+        return libpng_decompress_thumbnail(imo);
 #elif defined(USE_MAGICK)
-      return magick_decompress_thumbnail(imo);
+        return magick_decompress_thumbnail(imo);
 #else
-      DBG("PNG not supported");
-      return 0;
+        DBG("PNG not supported");
+        return 0;
 #endif      
+      default:
+	ASSERT(0);
     }
 }
 

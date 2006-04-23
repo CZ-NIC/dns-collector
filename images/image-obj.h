@@ -15,11 +15,15 @@
 struct mempool;
 struct odes;
 
+enum image_obj_format {
+  IMAGE_OBJ_FORMAT_JPEG,
+  IMAGE_OBJ_FORMAT_PNG
+};
+
 enum image_obj_flag {
-  IMAGE_OBJ_INFO = 0x1,
-  IMAGE_OBJ_THUMB_JPEG = 0x2,
-  IMAGE_OBJ_THUMB_DATA = 0x4,
-  IMAGE_OBJ_THUMB_IMAGE = 0x8
+  IMAGE_OBJ_VALID_INFO = 0x1,
+  IMAGE_OBJ_VALID_DATA = 0x2,
+  IMAGE_OBJ_VALID_IMAGE = 0x4
 };
 
 struct image_obj {
@@ -28,6 +32,7 @@ struct image_obj {
   uns flags;
   uns width;
   uns height;
+  uns thumb_format;
   byte *thumb_data;
   uns thumb_size;
   struct image thumb;

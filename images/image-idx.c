@@ -24,13 +24,14 @@
 #include "images/images.h"
 #include "images/image-obj.h"
 #include "images/image-sig.h"
+#include "images/image-dup.h"
 
 #include <stdlib.h>
 #include <fcntl.h>
 #include <string.h>
 
 /* This should happen in gatherer or scanner */
-UNUSED static void
+static void
 generate_signatures(uns limit)
 {
   struct fastbuf *fb_cards = index_bopen("cards", O_RDONLY);
@@ -59,13 +60,13 @@ generate_signatures(uns limit)
           die("Failed to read card");
         if (attr = obj_find_attr(obj, 'N'))
           {
-	    DBG("Reading oid=%d url=%s", oid, obj_find_aval(obj_find_attr(obj, 'U' + OBJ_ATTR_SON)->son, 'U'));
+	    byte *url = obj_find_aval(obj_find_attr(obj, 'U' + OBJ_ATTR_SON)->son, 'U');
+	    DBG("Reading oid=%d url=%s", oid, url);
 	    struct image_obj imo;
 	    imo_init(&imo, pool, obj);
 	    if (imo_decompress_thumbnail(&imo))
 	      {
-		int err;
-	        if (!(err = compute_image_signature(&imo.thumb, &sig)))
+	        if (compute_image_signature(&imo.thumb, &sig))
 	          {
 		    bwrite(fb_signatures, &oid, sizeof(oid));
 		    bwrite(fb_signatures, &sig.vec, sizeof(struct image_vector));
@@ -77,7 +78,7 @@ generate_signatures(uns limit)
 	              break;
 	          }
 	        else
-	          DBG("Cannot create signature, error=%d", err);
+	          DBG("Cannot create signature");
 	      }
 	    else
 	      DBG("Cannot decompress thumbnail");
@@ -93,25 +94,6 @@ generate_signatures(uns limit)
   bclose(fb_cards);
   bclose(fb_card_attrs);
   bclose(fb_signatures);
-}
-
-UNUSED static void
-generate_random_signatures(uns count)
-{
-  log(L_INFO, "Generating %d random signatures", count);
-  struct fastbuf *fb_signatures = index_bopen("image-sig", O_CREAT | O_WRONLY | O_TRUNC);
-  bputl(fb_signatures, count);
-  for (uns i = 0; i < count; i++)
-    {
-      oid_t oid = i;
-      struct image_vector vec;
-      for (uns j = 0; j < IMAGE_VEC_K; j++)
-	vec.f[j] = random_max(256); 
-      bwrite(fb_signatures, &oid, sizeof(oid));
-      bwrite(fb_signatures, &vec, sizeof(vec));
-      bputc(fb_signatures, 0);
-    }
-  bclose(fb_signatures); 
 }
 
 struct signature_record {
@@ -333,7 +315,6 @@ main(int argc UNUSED, char **argv)
     usage("Invalid usage");
 
   generate_signatures(~0U);
-  //generate_random_signatures(1000000);
   build_search_tree();
   
   return 0;
