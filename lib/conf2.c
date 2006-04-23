@@ -220,7 +220,7 @@ cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero)
     if (sec->cfg[i].cls == CC_SECTION)
       cf_init_section(sec->cfg[i].name, sec->cfg[i].u.sec, ptr + (addr_int_t) sec->cfg[i].ptr, 0);
     else if (sec->cfg[i].cls == CC_LIST)
-      clist_init(sec->cfg[i].ptr);
+      clist_init(ptr + (addr_int_t) sec->cfg[i].ptr);
   if (sec->init) {
     byte *msg = sec->init(ptr);
     if (msg)
