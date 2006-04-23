@@ -256,7 +256,7 @@ commit_section(byte *name, struct cf_section *sec, void *ptr)
      * get dirty.  This means that all other instances of the same class will
      * be committed as well.  I don't see a way to easily allocate the flag
      * somewhere else.  */
-    sec->flags &= ~SEC_FLAG_DIRTY;
+    sec->flags &= ~SEC_FLAG_DIRTY;	//FIXME: but this flag gets cleared after the 1st instance
     if (sec->commit) {
       byte *msg = sec->commit(ptr);
       if (msg) {
@@ -792,7 +792,7 @@ opening_brace(struct cf_item *item, void *ptr, enum operation op)
   stack[++level] = (struct item_stack) {
     .sec = NULL,
     .base_ptr = NULL,
-    .op = op,
+    .op = op & OP_MASK,
     .list = NULL,
     .mask = 0,
     .item = NULL,
@@ -819,29 +819,30 @@ opening_brace(struct cf_item *item, void *ptr, enum operation op)
 }
 
 static byte *
-closing_brace(struct item_stack *st, int number, byte **pars)
+closing_brace(struct item_stack *st, enum operation op, int number, byte **pars)
 {
   if (st->op == OP_CLOSE)	// top-level
     return "Unmatched } parenthese";
   if (!st->sec) {		// dummy run on unknown section
-    level--;
+    if (!(op & OP_OPEN))
+      level--;
     return NULL;
   }
-  enum operation op = st->op & OP_MASK;
+  enum operation pure_op = st->op & OP_MASK;
   if (st->op & OP_1ST)
   {
     st->list = find_list_node(st->list, st->base_ptr, st->sec, st->mask);
     if (!st->list)
       return "Cannot find a node matching the query";
-    if (op != OP_REMOVE)
+    if (pure_op != OP_REMOVE)
     {
-      if (op == OP_EDIT)
+      if (pure_op == OP_EDIT)
 	st->base_ptr = st->list;
-      else if (op == OP_AFTER || op == OP_BEFORE)
+      else if (pure_op == OP_AFTER || pure_op == OP_BEFORE)
 	cf_init_section(st->item->name, st->sec, st->base_ptr);
       else
 	ASSERT(0);
-      if (st->op & OP_OPEN) {	// stay at the same recursion level
+      if (op & OP_OPEN) {	// stay at the same recursion level
 	st->op = (st->op | OP_2ND) & ~OP_1ST;
 	return NULL;
       }
@@ -852,11 +853,11 @@ closing_brace(struct item_stack *st, int number, byte **pars)
       // and fall-thru to the 2nd phase
     }
   }
-  add_to_list(st->list, st->base_ptr, op);
+  add_to_list(st->list, st->base_ptr, pure_op);
   level--;
   if (number)
     return "No parameters expected after the }";
-  else if (st->op & OP_OPEN)
+  else if (op & OP_OPEN)
     return "No { is expected";
   else
     return NULL;
@@ -866,8 +867,8 @@ static byte *
 interpret_line(byte *name, enum operation op, int number, byte **pars)
 {
   byte *msg;
-  if (op == OP_CLOSE)
-    return closing_brace(stack+level, number, pars);
+  if ((op & OP_MASK) == OP_CLOSE)
+    return closing_brace(stack+level, op, number, pars);
   void *ptr = stack[level].base_ptr;
   struct cf_item *item = find_item(stack[level].sec, name, &msg, &ptr);
   if (msg)
@@ -1004,9 +1005,8 @@ append(byte *start, byte *end)
   // these characters separate words like blanks
 
 static byte *
-get_word(uns stop_at_equal)
+get_word(uns is_command_name)
 {
-  // promised that *line is non-null and non-blank
   if (*line == '\'') {
     line++;
     while (1) {
@@ -1021,6 +1021,7 @@ get_word(uns stop_at_equal)
 	return "Unterminated apostrophe word at the end";
     }
     line++;
+
   } else if (*line == '"') {
     line++;
     uns start_copy = copied;
@@ -1062,16 +1063,17 @@ get_word(uns stop_at_equal)
     copied = start_copy + l + 1;
 
   } else {
+    // promised that *line is non-null and non-blank
     byte *start = line;
     while (*line && !Cblank(*line) && !CONTROL_CHAR(*line)
-	&& (*line != '=' || !stop_at_equal))
+	&& (*line != '=' || !is_command_name))
       line++;
     if (*line == '=') {				// nice for setting from a command-line
       if (line == start)
 	return "Assignment without a variable";
       *line = ' ';
     }
-    if (CONTROL_CHAR(*line))			// already the first char is control
+    if (line == start)				// already the first char is control
       line++;
     append(start, line);
   }
@@ -1081,47 +1083,51 @@ get_word(uns stop_at_equal)
 }
 
 static byte *
-split_line(void)
+get_token(uns is_command_name, byte **msg)
 {
-  words = 0;
-  copied = 0;
-  ends_by_brace = 0;
-  while (!*line || *line == '#')
-  {
-    if (!get_line())
-      return NULL;
-    while (*line == ';'				// empty trash at the beginning
-	|| (*line == '\\' && !line[1])) {
-      TRY( get_word(0) );
-      copied = 0;
-    }
-    if (*line == '{')				// only one opening brace
-      return "Unexpected opening brace";
-  }
-  /* We have got a non-null, non-blank, non-;, non-merge, and non-{ character.  */
-  while (1)
-  {
-    split_grow(&word_buf, words+1);
-    word_buf.ptr[words] = copied;
-    TRY( get_word(!words++) );
-    if (!*line)
-      break;
-    else if (*line == '}' || *line == ';')	// end of line now and preserve the char
-      break;
-    else if (*line == '{') {			// discard the char and end the line
-discard_brace:
-      ends_by_brace = 1;
-      TRY( get_word(0) );
-      break;
-    } else
-    while (*line == '\\' && !line[1]) {		// merge two lines
-      if (!get_line())
-	return "Last line ends by a backslash";
-      if (!*line || *line == '#') {
-	log(L_WARN, "The line following the backslash is empty");
+  *msg = NULL;
+  while (1) {
+    if (!*line || *line == '#') {
+      if (!is_command_name || !get_line())
 	return NULL;
-      } else if (*line == '{')
-	goto discard_brace;
+    } else if (*line == ';') {
+      *msg = get_word(0);
+      if (!is_command_name || *msg)
+	return NULL;
+    } else if (*line == '\\' && !line[1]) {
+      if (!get_line()) {
+	*msg = "Last line ends by a backslash";
+	return NULL;
+      }
+      if (!*line || *line == '#')
+	log(L_WARN, "The line following the backslash is empty");
+    } else {
+      split_grow(&word_buf, words+1);
+      uns start = copied;
+      word_buf.ptr[words++] = copied;
+      *msg = get_word(is_command_name);
+      return *msg ? NULL : copy_buf.ptr + start;
+    }
+  }
+}
+
+static byte *
+split_command(void)
+{
+  words = copied = ends_by_brace = 0;
+  byte *msg, *start_word;
+  if (!(start_word = get_token(1, &msg)))
+    return msg;
+  if (*start_word == '{')			// only one opening brace
+    return "Unexpected opening brace";
+  while (*line != '}')				// stays for the next time
+  {
+    if (!(start_word = get_token(0, &msg)))
+      return msg;
+    if (*start_word == '{') {
+      words--;					// discard the brace
+      ends_by_brace = 1;
+      break;
     }
   }
   return NULL;
@@ -1139,7 +1145,7 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
   *line = 0;
   while (1)
   {
-    msg = split_line();
+    msg = split_command();
     if (msg)
       goto error;
     if (!words)
@@ -1148,7 +1154,7 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
     byte *pars[words-1];
     for (uns i=1; i<words; i++)
       pars[i-1] = copy_buf.ptr + word_buf.ptr[i];
-    if (!strcasecmp(name, "#include"))
+    if (!strcasecmp(name, "include"))
     {
       if (words != 2) {
 	msg = "Expecting one filename";
@@ -1158,10 +1164,10 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
 	msg = "Too many nested files";
 	goto error;
       }
-      parse_fb = bopen(pars[0], O_RDONLY, 1<<14);
+      struct fastbuf *new_fb = bopen(pars[0], O_RDONLY, 1<<14);
       uns ll = line_num;
-      msg = parse_fastbuf(pars[0], parse_fb, depth+1);
-      bclose(parse_fb);
+      msg = parse_fastbuf(pars[0], new_fb, depth+1);
+      bclose(new_fb);
       if (msg)
 	goto error;
       line_num = ll;
