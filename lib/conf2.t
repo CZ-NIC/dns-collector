@@ -13,6 +13,8 @@ Top { \
       the best' "\
       " qu'est-ce que c'est?
   u1	0xbadcafebadbeefc0
+  str2:prepend prepended
+  str2:append appended
   d1 7%
   d1	-1.14e-25
   firsttime ; secondtime 56

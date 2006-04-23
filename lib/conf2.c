@@ -107,7 +107,7 @@ static struct journal_item *
 journal_new_section(uns new_pool)
 {
   if (new_pool)
-    cf_pool = mp_new(1<<14);
+    cf_pool = mp_new(1<<10);
   struct journal_item *oldj = journal;
   journal = NULL;
   return oldj;
@@ -566,7 +566,7 @@ interpret_set_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
 }
 
 static byte *
-interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *processed, void **ptr, enum operation op)
+interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *processed, void **ptr, enum cf_operation op)
 {
   enum cf_type type = item->u.type;
   void *old_p = *ptr;
@@ -610,7 +610,7 @@ interpret_section(struct cf_section *sec, int number, byte **pars, int *processe
 }
 
 static void
-add_to_list(struct cnode *where, struct cnode *new_node, enum operation op)
+add_to_list(struct cnode *where, struct cnode *new_node, enum cf_operation op)
 {
   switch (op)
   {
@@ -640,7 +640,7 @@ add_to_list(struct cnode *where, struct cnode *new_node, enum operation op)
 }
 
 static byte *
-interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, enum operation op)
+interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, enum cf_operation op)
 {
   if (op >= OP_REMOVE)
     return cf_printf("You have to open a block for operation %s", op_names[op]);
@@ -772,7 +772,7 @@ record_selector(struct cf_item *item, struct cf_section *sec, u32 *mask)
 static struct item_stack {
   struct cf_section *sec;	// nested section
   void *base_ptr;		// because original pointers are often relative
-  enum operation op;		// it is performed when a closing brace is encountered
+  enum cf_operation op;		// it is performed when a closing brace is encountered
   void *list;			// list the operations should be done on
   u32 mask;			// bit array of selectors searching in a list
   struct cf_item *item;		// cf_item of the list
@@ -780,7 +780,7 @@ static struct item_stack {
 static uns level;
 
 static byte *
-opening_brace(struct cf_item *item, void *ptr, enum operation op)
+opening_brace(struct cf_item *item, void *ptr, enum cf_operation op)
 {
   if (level >= MAX_STACK_SIZE-1)
     return "Too many nested sections";
@@ -814,16 +814,16 @@ opening_brace(struct cf_item *item, void *ptr, enum operation op)
 }
 
 static byte *
-closing_brace(struct item_stack *st, enum operation op, int number, byte **pars)
+closing_brace(struct item_stack *st, enum cf_operation op, int number, byte **pars)
 {
   if (st->op == OP_CLOSE)	// top-level
-    return "Unmatched } parenthese";
+    return "Unmatched } parenthesis";
   if (!st->sec) {		// dummy run on unknown section
     if (!(op & OP_OPEN))
       level--;
     return NULL;
   }
-  enum operation pure_op = st->op & OP_MASK;
+  enum cf_operation pure_op = st->op & OP_MASK;
   if (st->op & OP_1ST)
   {
     st->list = find_list_node(st->list, st->base_ptr, st->sec, st->mask);
@@ -859,7 +859,7 @@ closing_brace(struct item_stack *st, enum operation op, int number, byte **pars)
 }
 
 static byte *
-interpret_line(byte *name, enum operation op, int number, byte **pars)
+interpret_line(byte *name, enum cf_operation op, int number, byte **pars)
 {
   byte *msg;
   if ((op & OP_MASK) == OP_CLOSE)
@@ -886,7 +886,7 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
   else if (item->cls == CC_LIST)
     msg = interpret_add_list(item, number, pars, &taken, ptr, op);
   else
-    return cf_printf("Operation %s not supported on attribute class %d", op_names[op], item->cls);
+    return cf_printf("Operation %s not supported on attribute %s", op_names[op], name);
   if (msg)
     return msg;
   if (taken < number)
@@ -896,7 +896,7 @@ interpret_line(byte *name, enum operation op, int number, byte **pars)
 }
 
 byte *
-cf_write_item(struct cf_item *item, enum operation op, int number, byte **pars)
+cf_write_item(struct cf_item *item, enum cf_operation op, int number, byte **pars)
 {
   byte *msg;
   int taken;
@@ -956,6 +956,7 @@ done_stack(void)
 
 /* Text file parser */
 
+static byte *name_parse_fb;
 static struct fastbuf *parse_fb;
 static uns line_num;
 
@@ -1095,7 +1096,7 @@ get_token(uns is_command_name, byte **msg)
 	return NULL;
       }
       if (!*line || *line == '#')
-	log(L_WARN, "The line following the backslash is empty");
+	log(L_WARN, "The line %s:%d following a backslash is empty", name_parse_fb, line_num);
     } else {
       split_grow(&word_buf, words+1);
       uns start = copied;
@@ -1145,6 +1146,7 @@ static byte *
 parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
 {
   byte *msg;
+  name_parse_fb = name_fb;
   parse_fb = fb;
   line_num = 0;
   line = line_buf;
@@ -1183,7 +1185,7 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
       line_num = ll;
       parse_fb = fb;
     }
-    enum operation op;
+    enum cf_operation op;
     byte *c = strchr(name, ':');
     if (!c)
       op = strcmp(name, "}") ? OP_SET : OP_CLOSE;

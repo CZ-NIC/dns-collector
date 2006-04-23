@@ -57,7 +57,7 @@ struct cf_item {
 
 struct cf_section {
   uns size;				// 0 for a global block, sizeof(struct) for a section
-  cf_hook *init;			// fills in default values (otherwise 0's are used)
+  cf_hook *init;			// fills in default values (no need to bzero)
   cf_hook *commit;			// verifies parsed data (optional)
   struct cf_item *cfg;			// CC_END-terminated array of items
   uns flags;				// for internal use only
@@ -96,9 +96,9 @@ struct clist;
 #define CF_STRING_ARY(n,p,c)	CF_STATIC(n,p,STRING,byte*,c)
 #define CF_STRING_DYN(n,p,c)	CF_DYNAMIC(n,p,STRING,byte*,c)
 
-#define DYN_LEN(a) *(uns*)(a-1)
+#define DARY_LEN(a) *(uns*)(a-1)
   // length of a dynamic array
-#define DYN_ALLOC(type,len,val...) (type[]) { (type)len, ##val } + 1
+#define DARY_ALLOC(type,len,val...) (type[]) { (type)len, ##val } + 1
   // creates a static instance of a dynamic array
   // FIXME: overcast doesn't work for the double type
 
@@ -140,12 +140,12 @@ byte *cf_parse_ip(byte *p, u32 *varp);
    * Sections can be used with SET.
    * Lists can be used with everything. */
 #define T(x) OP_##x,
-enum operation { CF_OPERATIONS };
+enum cf_operation { CF_OPERATIONS };
 #undef T
 
 struct fastbuf;
 byte *cf_find_item(byte *name, struct cf_item *item);
-byte *cf_write_item(struct cf_item *item, enum operation op, int number, byte **pars);
+byte *cf_write_item(struct cf_item *item, enum cf_operation op, int number, byte **pars);
 void cf_dump_sections(struct fastbuf *fb);
 
 /*
@@ -161,15 +161,15 @@ void cf_dump_sections(struct fastbuf *fb);
  * override it manually before calling cf_get_opt().
  */
 
-#define	CF_SHORT_OPTS	"S:C:"
-#define	CF_LONG_OPTS	{"set",		1, 0, 'S'}, {"config",	1, 0, 'C'},
+#define	CF_SHORT_OPTS	"C:S:"
+#define	CF_LONG_OPTS	{"config",	1, 0, 'C'}, {"set",		1, 0, 'S'},
 #define CF_NO_LONG_OPTS (const struct option []) { CF_LONG_OPTS { NULL, 0, 0, 0 } }
 #ifndef CF_USAGE_TAB
 #define CF_USAGE_TAB ""
 #endif
 #define	CF_USAGE	\
-"-S, --set sec.item=val\t" CF_USAGE_TAB "Manual setting of a configuration item\n\
--C, --config filename\t" CF_USAGE_TAB "Overwrite default configuration file\n"
+"-C, --config filename\t" CF_USAGE_TAB "Override the default configuration file\n\
+-S, --set sec.item=val\t" CF_USAGE_TAB "Manual setting of a configuration item\n"
 
 struct option;
 int cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index);

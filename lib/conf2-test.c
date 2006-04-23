@@ -24,13 +24,13 @@ struct sub_sect_1 {
   double *list;
 };
 
-static struct sub_sect_1 sec1 = { {}, "Charlie", "WBAFC", { 0, -1}, DYN_ALLOC(double, 3, 1e4, -1e-4, 8) };
+static struct sub_sect_1 sec1 = { {}, "Charlie", "WBAFC", { 0, -1}, DARY_ALLOC(double, 3, 1e4, -1e-4, 8) };
 
 static byte *
 init_sec_1(struct sub_sect_1 *s)
 {
   if (s == &sec1) {			// this is a static variable; skip clearing
-    DYN_LEN(sec1.list) = 3;		// XXX: fix for the bug in DYN_ALLOC()
+    DARY_LEN(sec1.list) = 3;		// XXX: fix for the bug in DARY_ALLOC()
     return NULL;
   }
   s->name = "unknown";
@@ -65,10 +65,10 @@ static struct cf_section cf_sec_1 = {
 };
 
 static uns nr1 = 15;
-static int *nrs1 = DYN_ALLOC(int, 5, 5, 4, 3, 2, 1);
+static int *nrs1 = DARY_ALLOC(int, 5, 5, 4, 3, 2, 1);
 static int nrs2[5];
 static byte *str1 = "no worries";
-static byte **str2 = DYN_ALLOC(byte *, 2, "Alice", "Bob");
+static byte **str2 = DARY_ALLOC(byte *, 2, "Alice", "Bob");
 static u64 u1 = 0xCafeBeefDeadC00ll;
 static double d1 = -1.1;
 static struct clist secs;
@@ -135,7 +135,7 @@ Usage: conf2-test <options>\n\
 \n\
 Options:\n"
 CF_USAGE
-"-v\t\tBe verbose\n\
+"-v\t\t\tBe verbose\n\
 ";
 
 static void NONRET
