@@ -802,7 +802,7 @@ opening_brace(struct cf_item *item, void *ptr, enum operation op)
     cf_init_section(item->name, item->u.sec, stack[level].base_ptr);
     stack[level].list = ptr;
     stack[level].item = item;
-    stack[level].op |= op < OP_REMOVE ? OP_2ND : OP_1ST;
+    stack[level].op |= (op & OP_MASK) < OP_REMOVE ? OP_2ND : OP_1ST;
   }
   else
     return "Opening brace can only be used on sections and lists";
