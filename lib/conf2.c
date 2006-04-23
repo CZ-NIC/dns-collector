@@ -246,8 +246,7 @@ commit_section(byte *name, struct cf_section *sec, void *ptr)
   for (ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
       if (commit_section(ci->name, ci->u.sec, ptr + (addr_int_t) ci->ptr)) {
-	if (sec != &sections)
-	  log(L_ERROR, "It was in section %s", name);
+	log(L_ERROR, "It happened in section %s", ci->name);
 	return 1;
       }
     } else if (ci->cls == CC_LIST) {
@@ -255,7 +254,7 @@ commit_section(byte *name, struct cf_section *sec, void *ptr)
       uns idx = 0;
       CLIST_WALK(n, * (clist*) (ptr + (addr_int_t) ci->ptr))
 	if (idx++, commit_section(ci->name, ci->u.sec, n)) {
-	  log(L_ERROR, "It was in the node #%d of list %s", idx, name);
+	  log(L_ERROR, "It happened in node #%d of list %s", idx, ci->name);
 	  return 1;
 	}
     }
