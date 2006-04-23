@@ -1260,3 +1260,77 @@ cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct o
     }
   }
 }
+
+/* Debug dumping */
+
+#include "fastbuf.h"
+
+static void
+spaces(struct fastbuf *fb, uns nr)
+{
+  for (uns i=0; i<nr; i++)
+    bputs(fb, "  ");
+}
+
+static void
+dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type)
+{
+  switch (type) {
+    case CT_INT:	bprintf(fb, "%d ", *(uns*)ptr); break;
+    case CT_U64:	bprintf(fb, "%lld ", *(u64*)ptr); break;
+    case CT_DOUBLE:	bprintf(fb, "%lf ", *(double*)ptr); break;
+    case CT_IP:		bprintf(fb, "%08x ", *(uns*)ptr); break;
+    case CT_STRING:	bprintf(fb, "'%s' ", *(byte**)ptr); break;
+  }
+}
+
+static void dump_section(struct fastbuf *fb, struct cf_section *sec, int level, void *ptr);
+
+static void
+dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
+{
+  ptr += (addr_int_t) item->ptr;
+  enum cf_type type = item->u.type;
+  int i;
+  spaces(fb, level);
+  bprintf(fb, "%s: c%d #%d ", item->name, item->cls, item->number);
+  if (item->cls == CC_STATIC || item->cls == CC_DYNAMIC)
+    bprintf(fb, "t%d ", type);
+  if (item->cls == CC_STATIC) {
+    for (i=0; i<item->number; i++)
+      dump_basic(fb, ptr + i * parsers[type].size, type);
+  } else if (0 && item->cls == CC_DYNAMIC) {
+    ptr = * (void**) ptr;
+    int real_nr = * (int*) (ptr - parsers[type].size);
+    bprintf(fb, "##%d ", real_nr);
+    for (i=0; i<real_nr; i++)
+      dump_basic(fb, ptr + i * parsers[type].size, type);
+  }
+  bputc(fb, '\n');
+  if (item->cls == CC_SECTION)
+    dump_section(fb, item->u.sec, level+1, ptr);
+  else if (item->cls == CC_LIST) {
+    uns idx = 0;
+    struct cnode *n;
+    CLIST_WALK(n, * (clist*) ptr) {
+      spaces(fb, level+1);
+      bprintf(fb, "item %d\n", ++idx);
+      dump_section(fb, item->u.sec, level+2, n);
+    }
+  }
+}
+
+static void
+dump_section(struct fastbuf *fb, struct cf_section *sec, int level, void *ptr)
+{
+  spaces(fb, level);
+  bprintf(fb, "S%d F%x:\n", sec->size, sec->flags);
+  for (struct cf_item *item=sec->cfg; item->cls; item++)
+    dump_item(fb, item, level, ptr);
+}
+
+void
+cf_dump_sections(struct fastbuf *fb)
+{
+  dump_section(fb, &sections, 0, NULL);
+}

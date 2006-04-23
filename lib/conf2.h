@@ -141,8 +141,10 @@ byte *cf_parse_ip(byte *p, u32 *varp);
 enum operation { CF_OPERATIONS };
 #undef T
 
+struct fastbuf;
 byte *cf_find_item(byte *name, struct cf_item *item);
 byte *cf_write_item(struct cf_item *item, enum operation op, int number, byte **pars);
+void cf_dump_sections(struct fastbuf *fb);
 
 /*
  * When using cf_get_opt(), you must prefix your own short/long options by the

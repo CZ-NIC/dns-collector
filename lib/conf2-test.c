@@ -7,6 +7,7 @@
 #include "lib/lib.h"
 #include "lib/conf2.h"
 #include "lib/clists.h"
+#include "lib/fastbuf.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -152,6 +153,10 @@ main(int argc, char *argv[])
     }
   if (optind < argc)
     usage();
+
+  struct fastbuf *out = bfdopen(1, 1<<14);
+  cf_dump_sections(out);
+  bclose(out);
 
   return 0;
 }
