@@ -1,5 +1,6 @@
 # test config file
-  #include lib/conf2.t
+#include lib/conf2.t ; top.xa=1
+#include 'non-existent file'; #top.xa=1
 Top { \
 
   nr1=16	#!!!
@@ -8,7 +9,7 @@ Top { \
 	    \
 	    17M
   nrs2	3 3k 3 3 3 ; \
-  str1	"hello, world\n"
+  str1	"hello, world%%\n"
   str2	'Hagenuk,
       the best' "\
       " qu'est-ce que c'est?

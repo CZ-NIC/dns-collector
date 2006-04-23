@@ -139,10 +139,14 @@ CF_USAGE
 ";
 
 static void NONRET
-usage(void)
+usage(byte *msg, ...)
 {
-	fputs(help, stderr);
-	exit(1);
+  va_list va;
+  va_start(va, msg);
+  if (msg)
+    vfprintf(stderr, msg, va);
+  fputs(help, stderr);
+  exit(1);
 }
 
 int
@@ -156,10 +160,10 @@ main(int argc, char *argv[])
   while ((opt = cf_get_opt(argc, argv, short_opts, long_opts, NULL)) >= 0)
     switch (opt) {
       case 'v': verbose++; break;
-      default: usage();
+      default: usage("unknown option %c\n", opt);
     }
   if (optind < argc)
-    usage();
+    usage("too many parameters (%d more)\n", argc-optind);
 
   //cf_reload("non-existent file");
 

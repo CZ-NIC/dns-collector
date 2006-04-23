@@ -104,7 +104,7 @@ journal_swap(void)
 }
 
 static struct journal_item *
-journal_new_section(uns new_pool)
+journal_new_transaction(uns new_pool)
 {
   if (new_pool)
     cf_pool = mp_new(1<<10);
@@ -114,7 +114,7 @@ journal_new_section(uns new_pool)
 }
 
 static void
-journal_commit_section(uns new_pool, struct journal_item *oldj)
+journal_commit_transaction(uns new_pool, struct journal_item *oldj)
 {
   if (new_pool)
   {
@@ -133,7 +133,7 @@ journal_commit_section(uns new_pool, struct journal_item *oldj)
 }
 
 static void
-journal_rollback_section(uns new_pool, struct journal_item *oldj)
+journal_rollback_transaction(uns new_pool, struct journal_item *oldj)
 {
   if (!cf_need_journal)
     die("Cannot rollback the configuration, because the journal is disabled.");
@@ -323,7 +323,7 @@ int
 cf_reload(byte *file)
 {
   journal_swap();
-  struct journal_item *oldj = journal_new_section(1);
+  struct journal_item *oldj = journal_new_transaction(1);
   int err = load_file(file);
   if (!err)
   {
@@ -332,11 +332,11 @@ cf_reload(byte *file)
       pools = p->prev;
       mp_delete(p->pool);
     }
-    journal_commit_section(1, NULL);
+    journal_commit_transaction(1, NULL);
   }
   else
   {
-    journal_rollback_section(1, oldj);
+    journal_rollback_transaction(1, oldj);
     journal_swap();
   }
   return err;
@@ -345,24 +345,24 @@ cf_reload(byte *file)
 int
 cf_load(byte *file)
 {
-  struct journal_item *oldj = journal_new_section(1);
+  struct journal_item *oldj = journal_new_transaction(1);
   int err = load_file(file);
   if (!err)
-    journal_commit_section(1, oldj);
+    journal_commit_transaction(1, oldj);
   else
-    journal_rollback_section(1, oldj);
+    journal_rollback_transaction(1, oldj);
   return err;
 }
 
 int
 cf_set(byte *string)
 {
-  struct journal_item *oldj = journal_new_section(0);
+  struct journal_item *oldj = journal_new_transaction(0);
   int err = load_string(string);
   if (!err)
-    journal_commit_section(0, oldj);
+    journal_commit_transaction(0, oldj);
   else
-    journal_rollback_section(0, oldj);
+    journal_rollback_transaction(0, oldj);
   return err;
 }
 
@@ -1050,6 +1050,8 @@ get_word(uns is_command_name)
     }
     line++;
 
+    // FIXME: this is utterly bogus, since printf() only expands these
+    // percents, and the \n, \x1b codes are actually expanded by the compiler
     for (byte *c=copy_buf.ptr+start_copy; *c; c++)
       if (*c == '%') {
 	if (c[1] != '%')
@@ -1169,14 +1171,14 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
       pars[i-1] = copy_buf.ptr + word_buf.ptr[i];
     if (!strcasecmp(name, "include"))
     {
-      if (words != 2) {
+      if (words != 2)
 	msg = "Expecting one filename";
-	goto error;
-      }
-      if (depth > 8) {
+      else if (depth > 8)
 	msg = "Too many nested files";
+      else if (*line && *line != '#')		// because the contents of line_buf is not re-entrant and will be cleared
+	msg = "The input command must be the last one on a line";
+      if (msg)
 	goto error;
-      }
       struct fastbuf *new_fb = bopen_safe(pars[0]);
       if (!new_fb) {
 	msg = "Cannot open file";
@@ -1363,3 +1365,8 @@ cf_dump_sections(struct fastbuf *fb)
 {
   dump_section(fb, &sections, 0, NULL);
 }
+
+/* TODO
+ * - more space efficient journal
+ * - don't commit all, but recognize from the journal which sections have been changed
+ */
