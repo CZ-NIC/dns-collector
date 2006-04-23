@@ -149,8 +149,7 @@ journal_rollback_section(uns new_pool, struct journal_item *oldj)
 
 #define SEC_FLAG_DYNAMIC	0x80000000	// contains a dynamic attribute
 #define SEC_FLAG_UNKNOWN	0x40000000	// ignore unknown entriies
-#define SEC_FLAG_DIRTY		0x20000000	// its item has been written to
-#define SEC_FLAG_NUMBER		0x1fffffff	// number of entries
+#define SEC_FLAG_NUMBER		0x0fffffff	// number of entries
 
 static struct cf_section sections;	// root section
 
@@ -167,7 +166,7 @@ find_subitem(struct cf_section *sec, byte *name)
 static void
 inspect_section(struct cf_section *sec)
 {
-  sec->flags = SEC_FLAG_DIRTY;
+  sec->flags = 0;
   struct cf_item *ci;
   for (ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
@@ -251,18 +250,11 @@ commit_section(byte *name, struct cf_section *sec, void *ptr)
 	if (commit_section(ci->name, ci->u.sec, n))
 	  return 1;
     }
-  if (sec->flags & SEC_FLAG_DIRTY) {
-    /* XXX: The flag is associated to a class whereas instances are those who
-     * get dirty.  This means that all other instances of the same class will
-     * be committed as well.  I don't see a way to easily allocate the flag
-     * somewhere else.  */
-    sec->flags &= ~SEC_FLAG_DIRTY;	//FIXME: but this flag gets cleared after the 1st instance
-    if (sec->commit) {
-      byte *msg = sec->commit(ptr);
-      if (msg) {
-	log(L_ERROR, "Cannot commit section %s: %s", name, msg);
-	return 1;
-      }
+  if (sec->commit) {
+    byte *msg = sec->commit(ptr);
+    if (msg) {
+      log(L_ERROR, "Cannot commit section %s: %s", name, msg);
+      return 1;
     }
   }
   return 0;
@@ -296,7 +288,6 @@ find_item(struct cf_section *curr_sec, byte *name, byte **msg, void **ptr)
       *msg = cf_printf("Item %s is not a section", name);
       return NULL;
     }
-    curr_sec->flags |= SEC_FLAG_DIRTY;		// XXX: it is set even when just reading via cf_find_item()
     curr_sec = ci->u.sec;
     name = c;
   }
