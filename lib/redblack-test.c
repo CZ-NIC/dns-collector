@@ -5,10 +5,11 @@
  */
 
 #include "lib/lib.h"
-#include "lib/conf.h"
+#include "lib/conf2.h"
 #include "lib/fastbuf.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
 
 struct my1_node
 {
@@ -127,9 +128,9 @@ main(int argc, char **argv)
 	struct my_tree t;
 	struct my2_tree t2;
 	int i;
-	cfdeffile = NULL;
+	cf_def_file = NULL;
 	log_init(argv[0]);
-	while ((opt = cf_getopt(argc, argv, options, CF_NO_LONG_OPTS, NULL)) >= 0)
+	while ((opt = cf_get_opt(argc, argv, options, CF_NO_LONG_OPTS, NULL)) >= 0)
 		switch (opt)
 		{
 			case 'v':

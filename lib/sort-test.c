@@ -1,11 +1,13 @@
 /* Test for sorting routines */
 
 #include "lib/lib.h"
-#include "lib/conf.h"
+#include "lib/conf2.h"
 #include "lib/fastbuf.h"
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <getopt.h>
 
 struct key {
   char line[4096];
@@ -77,7 +79,7 @@ int
 main(int argc, char **argv)
 {
   log_init(NULL);
-  if (cf_getopt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) >= 0 ||
+  if (cf_get_opt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) >= 0 ||
       optind != argc - 2)
   {
     fputs("This program supports only the following command-line arguments:\n" CF_USAGE, stderr);

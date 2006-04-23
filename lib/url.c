@@ -18,7 +18,7 @@
 #include "lib/lib.h"
 #include "lib/url.h"
 #include "lib/chartype.h"
-#include "lib/conf.h"
+#include "lib/conf2.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -33,19 +33,20 @@ static byte *url_component_separators = "";
 static uns url_min_repeat_count = 0x7fffffff;
 static uns url_max_repeat_length = 0;
 
-static struct cfitem url_config[] = {
-  { "URL",				CT_SECTION,	NULL },
-  { "IgnoreSpaces",			CT_INT,		&url_ignore_spaces },
-  { "IgnoreUnderflow",			CT_INT,		&url_ignore_underflow },
-  { "ComponentSeparators",		CT_STRING,	&url_component_separators },
-  { "MinRepeatCount",			CT_INT,		&url_min_repeat_count },
-  { "MaxRepeatLength",			CT_INT,		&url_max_repeat_length },
-  { NULL,				CT_STOP,	NULL }
+static struct cf_section url_config = {
+  CF_ITEMS {
+    CF_UNS("IgnoreSpaces", &url_ignore_spaces),
+    CF_UNS("IgnoreUnderflow", &url_ignore_underflow),
+    CF_STRING("ComponentSeparators", &url_component_separators),
+    CF_UNS("MinRepeatCount", &url_min_repeat_count),
+    CF_UNS("MaxRepeatLength", &url_max_repeat_length),
+    CF_END
+  }
 };
 
 static void CONSTRUCTOR url_init_config(void)
 {
-  cf_register(url_config);
+  cf_declare_section("URL", &url_config, 0);
 }
 
 /* Escaping and de-escaping */

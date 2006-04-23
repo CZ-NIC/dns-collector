@@ -8,7 +8,7 @@
  */
 
 #include "lib/lib.h"
-#include "lib/conf.h"
+#include "lib/conf2.h"
 #include "lib/fastbuf.h"
 
 #include <unistd.h>
@@ -21,17 +21,18 @@ uns sorter_trace;
 uns sorter_presort_bufsize = 65536;
 uns sorter_stream_bufsize = 65536;
 
-static struct cfitem sorter_config[] = {
-  { "Sorter",		CT_SECTION,	NULL },
-  { "Trace",		CT_INT,		&sorter_trace },
-  { "PresortBuffer",	CT_INT,		&sorter_presort_bufsize },
-  { "StreamBuffer",	CT_INT,		&sorter_stream_bufsize },
-  { NULL,		CT_STOP,	NULL }
+static struct cf_section sorter_config = {
+  CF_ITEMS {
+    CF_UNS("Trace", &sorter_trace),
+    CF_UNS("PresortBuffer", &sorter_presort_bufsize),
+    CF_UNS("StreamBuffer", &sorter_stream_bufsize),
+    CF_END
+  }
 };
 
 static void CONSTRUCTOR sorter_init_config(void)
 {
-  cf_register(sorter_config);
+  cf_declare_section("Sorter", &sorter_config, 0);
 }
 
 uns sorter_pass_counter;

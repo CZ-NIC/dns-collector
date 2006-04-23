@@ -8,7 +8,7 @@
  */
 
 #include "lib/lib.h"
-#include "lib/conf.h"
+#include "lib/conf2.h"
 #include "lib/fastbuf.h"
 
 #include <unistd.h>
@@ -16,15 +16,16 @@
 
 static byte *temp_template = "/tmp/temp%d.%d";
 
-static struct cfitem temp_config[] = {
-  { "Tempfiles",	CT_SECTION,	NULL },
-  { "Template",		CT_STRING,	&temp_template },
-  { NULL,		CT_STOP,	NULL }
+static struct cf_section temp_config = {
+  CF_ITEMS {
+    CF_STRING("Template", &temp_template),
+    CF_END
+  }
 };
 
 static void CONSTRUCTOR temp_init_config(void)
 {
-  cf_register(temp_config);
+  cf_declare_section("Tempfiles", &temp_config, 0);
 }
 
 struct fastbuf *

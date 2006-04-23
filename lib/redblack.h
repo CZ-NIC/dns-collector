@@ -262,7 +262,7 @@ typedef struct P(stack_entry) {
 	static inline uns P(red_flag) (P(bucket) *node)
 	{ return ((addr_int_t) node->son[0]) & 1L; }
 	static inline void P(set_red_flag) (P(bucket) *node, uns flag)
-	{ (addr_int_t) node->son[0] = (((addr_int_t) node->son[0]) & ~1L) | (flag & 1L); }
+	{ node->son[0] = (void*) ( (((addr_int_t) node->son[0]) & ~1L) | (flag & 1L) ); }
 	static inline P(bucket) * P(tree_son) (P(bucket) *node, uns id)
 	{ return (void *) (((addr_int_t) node->son[id]) & ~1L); }
 	static inline void P(set_tree_son) (P(bucket) *node, uns id, P(bucket) *son)

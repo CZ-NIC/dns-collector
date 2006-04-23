@@ -9,7 +9,7 @@
 
 #include "lib/lib.h"
 #include "lib/lists.h"
-#include "lib/conf.h"
+#include "lib/conf2.h"
 #include "lib/chartype.h"
 #include "lib/ipaccess.h"
 
@@ -37,6 +37,7 @@ ipaccess_init(void)
   return l;
 }
 
+// FIXME: replace by cf_parse_ip()
 static byte *
 parse_ip(byte **p, u32 *varp)
 {
@@ -81,7 +82,7 @@ ipaccess_parse(struct ipaccess_list *l, byte *c, int is_allow)
 {
   byte *p = strchr(c, '/');
   char *q;
-  struct ipaccess_entry *a = cfg_malloc(sizeof(struct ipaccess_entry));
+  struct ipaccess_entry *a = cf_malloc(sizeof(struct ipaccess_entry));
   unsigned long pxlen;
 
   a->allow = is_allow;
