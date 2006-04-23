@@ -696,7 +696,7 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
     case CC_LIST:
       if (!allow_dynamic)
 	return "Lists cannot be used here";
-      return interpret_add_list(item, number, pars, ptr, processed, OP_SET);
+      return interpret_add_list(item, number, pars, processed, ptr, OP_SET);
     default:
       ASSERT(0);
   }
@@ -1299,12 +1299,15 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
   if (item->cls == CC_STATIC) {
     for (i=0; i<item->number; i++)
       dump_basic(fb, ptr + i * parsers[type].size, type);
-  } else if (0 && item->cls == CC_DYNAMIC) {
+  } else if (item->cls == CC_DYNAMIC) {
     ptr = * (void**) ptr;
-    int real_nr = * (int*) (ptr - parsers[type].size);
-    bprintf(fb, "##%d ", real_nr);
-    for (i=0; i<real_nr; i++)
-      dump_basic(fb, ptr + i * parsers[type].size, type);
+    if (ptr) {
+      int real_nr = * (int*) (ptr - parsers[type].size);
+      bprintf(fb, "##%d ", real_nr);
+      for (i=0; i<real_nr; i++)
+	dump_basic(fb, ptr + i * parsers[type].size, type);
+    } else
+      bprintf(fb, "NULL ");
   }
   bputc(fb, '\n');
   if (item->cls == CC_SECTION)
