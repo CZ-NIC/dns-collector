@@ -608,28 +608,29 @@ interpret_section(struct cf_section *sec, int number, byte **pars, int *processe
 }
 
 static void
-add_to_list(void *list, struct cnode *node, enum operation op)
+add_to_list(struct cnode *where, struct cnode *new_node, enum operation op)
 {
-  //cf_journal_block(list, sizeof(struct clist));		//FIXME: we should journal the nodes of the list instead
   switch (op)
   {
-    case OP_SET:
-    case OP_APPEND:
-      clist_add_tail(list, node);
-      break;
-    case OP_PREPEND:
-      clist_add_head(list, node);
-      break;
-    case OP_REMOVE:
-      clist_remove(list);
-      break;
     case OP_EDIT:		// edition has been done in-place
       break;
-    case OP_AFTER:		// here the pointer list is actually a pointer to another node
-      clist_insert_after(node, list);
+    case OP_REMOVE:
+      cf_journal_block(&where->prev->next, sizeof(void*));
+      cf_journal_block(&where->next->prev, sizeof(void*));
+      clist_remove(where);
       break;
-    case OP_BEFORE:
-      clist_insert_before(node, list);
+    case OP_AFTER:		// implementation dependend (prepend_head = after(list)), and where==list, see clists.h:74
+    case OP_PREPEND:
+      cf_journal_block(&where->next->prev, sizeof(void*));
+      cf_journal_block(&where->next, sizeof(void*));
+      clist_insert_after(new_node, where);
+      break;
+    case OP_BEFORE:		// implementation dependend (append_tail = before(list))
+    case OP_APPEND:
+    case OP_SET:
+      cf_journal_block(&where->prev->next, sizeof(void*));
+      cf_journal_block(&where->prev, sizeof(void*));
+      clist_insert_before(new_node, where);
       break;
     default:
       ASSERT(0);
