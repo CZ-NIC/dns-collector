@@ -25,9 +25,14 @@ unknown.ignored :-)
 top.slaves	cairns gpua 7 7 -10% +10%
 top.slaves	daintree rafc 4 5 -171%
 top.slaves	coogee pum 9 8
-top.slaves	{name=bondi; level=\
+top.slaves:prepend	{name=bondi; level=\
   "PUG"; confidence	10 10}
-#top.slaves:remove
+top.slaves:remove {name daintree}
+top.slaveS:edit {level PUG} Bondi PUG!
+top.slaveS:before {level pum}{
+  confidence 2
+  list 123 456 789
+}
 
 topp.a=15
 top.nr1=   15

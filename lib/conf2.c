@@ -639,9 +639,10 @@ add_to_list(void *list, struct cnode *node, enum operation op)
 static byte *
 interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, enum operation op)
 {
+  if (op >= OP_REMOVE)
+    return cf_printf("You have to open a block for operation %s", op_names[op]);
   if (!number)
-    return "Missing value";
-  ASSERT(op < OP_REMOVE);
+    return "Nothing to add to the list";
   struct cf_section *sec = item->u.sec;
   *processed = 0;
   while (number > 0)
