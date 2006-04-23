@@ -68,6 +68,7 @@ static double d1 = -1.1;
 static struct sub_sect_1 sec1 = { {}, "Charlie", "WBAFC", { 0, -1} };
 static struct clist secs;
 static time_t t1, t2;
+static u32 ip;
 
 static byte *
 init_top(void *ptr UNUSED)
@@ -112,6 +113,7 @@ static struct cf_section cf_top = {
     CF_PARSER("SecondTime", &t2, time_parser, 1),
     CF_SECTION("master", &sec1, &cf_sec_1),
     CF_LIST("slaves", &secs, &cf_sec_1),
+    CF_IP("ip", &ip),
     CF_END
   }
 };

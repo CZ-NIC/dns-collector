@@ -13,11 +13,13 @@ Top { \
       the best' "\
       " qu'est-ce que c'est?
   u1	0xbadcafebadbeefc0
-  #d1	-1.14e-25
   d1 7%
+  d1	-1.14e-25
   firsttime ; secondtime 56
   ^top.master:set	alice HB8+
   slaves:clear
+  ip 0xa
+  ip 195.113.31.123
 };;;;;;
 
 unknown.ignored :-)
@@ -35,5 +37,5 @@ top.slaveS:before {level pum}{
 }
 
 topp.a=15
-top.nr1=   15
+top.nr1=   ' 15'
 a { ;-D }

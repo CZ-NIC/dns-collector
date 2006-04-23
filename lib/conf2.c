@@ -396,7 +396,6 @@ lookup_unit(byte *value, byte *end, byte **msg)
 
 static char cf_rngerr[] = "Number out of range";
 
-//FIXME: parsers should handle well empty strings, unwanted suffixes etc.
 byte *
 cf_parse_int(byte *str, int *ptr)
 {
@@ -463,12 +462,11 @@ cf_parse_double(byte *str, double *ptr)
     msg = "Missing number";
   else {
     const struct unit *u;
-    char *end;
-    errno = 0;
-    double x = strtoul(str, &end, 0);
-    if (errno == ERANGE)
-      msg = cf_rngerr;
-    else if (u = lookup_unit(str, end, &msg))
+    double x;
+    uns read_chars;
+    if (sscanf(str, "%lf%n", &x, &read_chars) != 1)
+      msg = "Invalid number";
+    else if (u = lookup_unit(str, str + read_chars, &msg))
       *ptr = x * u->num / u->den;
     else
       *ptr = x;
@@ -482,11 +480,13 @@ cf_parse_ip(byte *p, u32 *varp)
   if (!*p)
     return "Missing IP address";
   uns x = 0;
+  char *p2;
   if (*p == '0' && p[1] | 32 == 'X') {
     errno = 0;
-    x = strtoul(p + 2, NULL, 16);
-    if (errno == ERANGE || x > 0xffffffff)
+    x = strtoul(p + 2, &p2, 16);
+    if (errno == ERANGE || p2 == (char*) (p+2) || x > 0xffffffff)
       goto error;
+    p = p2;
   }
   else
     for (uns i = 0; i < 4; i++) {
@@ -495,15 +495,14 @@ cf_parse_ip(byte *p, u32 *varp)
 	  goto error;
       }
       errno = 0;
-      char *p2;
       uns y = strtoul(p, &p2, 10);
-      p = p2;
-      if (errno == ERANGE || y > 255)
+      if (errno == ERANGE || p2 == (char*) p || y > 255)
 	goto error;
+      p = p2;
       x = (x << 8) + y;
     }
   *varp = x;
-  return NULL;
+  return *p ? "Trailing characters" : NULL;
 error:
   return "Invalid IP address";
 }
@@ -1279,8 +1278,8 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type)
 {
   switch (type) {
     case CT_INT:	bprintf(fb, "%d ", *(uns*)ptr); break;
-    case CT_U64:	bprintf(fb, "%lld ", *(u64*)ptr); break;
-    case CT_DOUBLE:	bprintf(fb, "%lf ", *(double*)ptr); break;
+    case CT_U64:	bprintf(fb, "%llu ", *(u64*)ptr); break;
+    case CT_DOUBLE:	bprintf(fb, "%lg ", *(double*)ptr); break;
     case CT_IP:		bprintf(fb, "%08x ", *(uns*)ptr); break;
     case CT_STRING:	bprintf(fb, "'%s' ", *(byte**)ptr); break;
   }
