@@ -1207,17 +1207,6 @@ split_command(void)
 
 /* Parsing multiple files */
 
-static struct fastbuf *
-bopen_safe(byte *name)
-{
-  int fd = sh_open(name, O_RDONLY);
-  if (fd < 0) {
-    log(L_ERROR, "Cannot open %s", name);
-    return NULL;
-  }
-  return bopen(name, O_RDONLY, 1<<14);
-}
-
 static byte *
 parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
 {
@@ -1248,9 +1237,9 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
 	msg = "The input command must be the last one on a line";
       if (msg)
 	goto error;
-      struct fastbuf *new_fb = bopen_safe(pars[0]);
+      struct fastbuf *new_fb = bopen_try(pars[0], O_RDONLY, 1<<14);
       if (!new_fb) {
-	msg = "Cannot open file";
+	msg = cf_printf("Cannot open file %s: %m", pars[0]);
 	goto error;
       }
       uns ll = line_num;
@@ -1305,9 +1294,11 @@ static int
 load_file(byte *file)
 {
   init_stack();
-  struct fastbuf *fb = bopen_safe(file);
-  if (!fb)
+  struct fastbuf *fb = bopen_try(file, O_RDONLY, 1<<14);
+  if (!fb) {
+    log(L_ERROR, "Cannot open %s: %m", file);
     return 1;
+  }
   byte *msg = parse_fastbuf(file, fb, 0);
   bclose(fb);
   int err = !!msg || done_stack();
@@ -1352,7 +1343,7 @@ cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct o
 	  die("Cannot set %s", optarg);
       } else {
 	if (cf_load(optarg))
-	  die("Cannot load %s", optarg);
+	  die("Cannot load config file %s", optarg);
       }
     } else {
       /* unhandled option or end of options */

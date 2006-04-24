@@ -118,20 +118,26 @@ bfdopen_internal(int fd, uns buflen, byte *name)
 }
 
 struct fastbuf *
-bopen(byte *name, uns mode, uns buflen)
+bopen_try(byte *name, uns mode, uns buflen)
 {
-  struct fastbuf *b;
-  int fd;
-
-  if (!buflen)
-    return bopen_mm(name, mode);
-  fd = sh_open(name, mode, 0666);
+  int fd = sh_open(name, mode, 0666);
   if (fd < 0)
-    die("Unable to %s file %s: %m",
-	(mode & O_CREAT) ? "create" : "open", name);
-  b = bfdopen_internal(fd, buflen, name);
+    return NULL;
+  struct fastbuf *b = bfdopen_internal(fd, buflen, name);
   if (mode & O_APPEND)
     bfd_seek(b, 0, SEEK_END);
+  return b;
+}
+
+struct fastbuf *
+bopen(byte *name, uns mode, uns buflen)
+{
+  if (!buflen)
+    return bopen_mm(name, mode);
+  struct fastbuf *b = bopen_try(name, mode, buflen);
+  if (!b)
+    die("Unable to %s file %s: %m",
+	(mode & O_CREAT) ? "create" : "open", name);
   return b;
 }
 
