@@ -165,7 +165,12 @@ main(int argc, char *argv[])
   if (optind < argc)
     usage("too many parameters (%d more)\n", argc-optind);
 
+  /*
+  cf_load("non-existent file");
   //cf_reload("non-existent file");
+  cf_load("non-existent file");
+  cf_set("top.d1 -1.1; top.master b");
+  */
 
   struct fastbuf *out = bfdopen(1, 1<<14);
   cf_dump_sections(out);

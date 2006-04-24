@@ -16,6 +16,7 @@
 #include "lib/chartype.h"
 #include "lib/lfs.h"
 #include "lib/stkstring.h"
+#include "lib/binsearch.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -147,6 +148,55 @@ journal_rollback_transaction(uns new_pool, struct journal_item *oldj)
   }
 }
 
+/* Dirty sections */
+
+struct dirty_section {
+  struct cf_section *sec;
+  void *ptr;
+};
+#define GBUF_TYPE	struct dirty_section
+#define GBUF_PREFIX(x)	dirtsec_##x
+#include "lib/gbuf.h"
+static dirtsec_t dirty;
+static uns dirties;
+static uns everything_committed;		// after the 1st load, this flag is set on
+
+static void
+add_dirty(struct cf_section *sec, void *ptr)
+{
+  dirtsec_grow(&dirty, dirties+1);
+  struct dirty_section *dest = dirty.ptr + dirties;
+  if (dirties && dest[-1].sec == sec && dest[-1].ptr == ptr)
+    return;
+  dest->sec = sec;
+  dest->ptr = ptr;
+  dirties++;
+}
+
+#define ASORT_PREFIX(x)	dirtsec_##x
+#define ASORT_KEY_TYPE	struct dirty_section
+#define ASORT_ELT(i)	dirty.ptr[i]
+#define ASORT_LT(x,y)	x.sec < y.sec || x.sec == y.sec && x.ptr < y.ptr
+#include "lib/arraysort.h"
+
+static void
+sort_dirty(void)
+{
+  if (dirties <= 1)
+    return;
+  dirtsec_sort(dirties);
+  struct dirty_section *read = dirty.ptr + 1, *write = dirty.ptr + 1, *limit = dirty.ptr + dirties;
+  while (read < limit) {
+    if (read->sec != read[-1].sec || read->ptr != read[-1].ptr) {
+      if (read != write)
+	*write = *read;
+      write++;
+    }
+    read++;
+  }
+  dirties = write - dirty.ptr;
+}
+
 /* Initialization */
 
 #define SEC_FLAG_DYNAMIC	0x80000000	// contains a dynamic attribute
@@ -241,12 +291,12 @@ global_init(void)
 }
 
 static int
-commit_section(byte *name, struct cf_section *sec, void *ptr)
+commit_section(byte *name, struct cf_section *sec, void *ptr, uns commit_all)
 {
   struct cf_item *ci;
   for (ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
-      if (commit_section(ci->name, ci->u.sec, ptr + (addr_int_t) ci->ptr)) {
+      if (commit_section(ci->name, ci->u.sec, ptr + (addr_int_t) ci->ptr, commit_all)) {
 	log(L_ERROR, "It happened in section %s", ci->name);
 	return 1;
       }
@@ -254,16 +304,27 @@ commit_section(byte *name, struct cf_section *sec, void *ptr)
       struct cnode *n;
       uns idx = 0;
       CLIST_WALK(n, * (clist*) (ptr + (addr_int_t) ci->ptr))
-	if (idx++, commit_section(ci->name, ci->u.sec, n)) {
+	if (idx++, commit_section(ci->name, ci->u.sec, n, commit_all)) {
 	  log(L_ERROR, "It happened in node #%d of list %s", idx, ci->name);
 	  return 1;
 	}
     }
   if (sec->commit) {
-    byte *msg = sec->commit(ptr);
-    if (msg) {
-      log(L_ERROR, "Cannot commit section %s: %s", name, msg);
-      return 1;
+    /* We have to process the whole tree of sections even if just a few changes
+     * have been made, because there are dependencies between commit-hooks and
+     * hence we need to call them in a fixed order.  */
+#define ARY_LT_X(ary,i,x) ary[i].sec < x.sec || ary[i].sec == x.sec && ary[i].ptr < x.ptr
+    struct dirty_section comp = { sec, ptr };
+    uns pos = BIN_SEARCH_FIRST_GE_CMP(dirty.ptr, dirties, comp, ARY_LT_X);
+
+    if (commit_all
+	|| (pos < dirties && dirty.ptr[pos].sec == sec && dirty.ptr[pos].ptr == ptr)) {
+      log(L_DEBUG, "%s %p", name, ptr);
+      byte *msg = sec->commit(ptr);
+      if (msg) {
+	log(L_ERROR, "Cannot commit section %s: %s", name, msg);
+	return 1;
+      }
     }
   }
   return 0;
@@ -279,6 +340,8 @@ find_item(struct cf_section *curr_sec, byte *name, byte **msg, void **ptr)
     return NULL;
   while (1)
   {
+    if (curr_sec != &sections)
+      add_dirty(curr_sec, *ptr);
     byte *c = strchr(name, '.');
     if (c)
       *c++ = 0;
@@ -325,6 +388,8 @@ cf_reload(byte *file)
 {
   journal_swap();
   struct journal_item *oldj = journal_new_transaction(1);
+  uns ec = everything_committed;
+  everything_committed = 0;
   int err = load_file(file);
   if (!err)
   {
@@ -337,6 +402,7 @@ cf_reload(byte *file)
   }
   else
   {
+    everything_committed = ec;
     journal_rollback_transaction(1, oldj);
     journal_swap();
   }
@@ -599,6 +665,7 @@ static byte *interpret_set_item(struct cf_item *item, int number, byte **pars, i
 static byte *
 interpret_section(struct cf_section *sec, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic)
 {
+  add_dirty(sec, ptr);
   *processed = 0;
   for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
   {
@@ -963,8 +1030,11 @@ done_stack(void)
     log(L_ERROR, "Unterminated block");
     return 1;
   }
-  if (commit_section("top-level", &sections, NULL))
+  sort_dirty();
+  if (commit_section("top-level", &sections, NULL, !everything_committed))
     return 1;
+  everything_committed = 1;
+  dirties = 0;
   return 0;
 }
 
@@ -1368,5 +1438,4 @@ cf_dump_sections(struct fastbuf *fb)
 
 /* TODO
  * - more space efficient journal
- * - don't commit all, but recognize from the journal which sections have been changed
  */
