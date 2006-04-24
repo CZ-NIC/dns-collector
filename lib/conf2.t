@@ -9,7 +9,7 @@ Top { \
 	    \
 	    17M
   nrs2	3 3k 3 3 3 ; \
-  str1	"hello, world%%\n"
+  str1	"hello,\t\x2bworld%%\n"
   str2	'Hagenuk,
       the best' "\
       " qu'est-ce que c'est?

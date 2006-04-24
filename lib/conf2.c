@@ -15,6 +15,7 @@
 #include "lib/fastbuf.h"
 #include "lib/chartype.h"
 #include "lib/lfs.h"
+#include "lib/stkstring.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -1058,16 +1059,7 @@ get_word(uns is_command_name)
     }
     line++;
 
-    // FIXME: this is utterly bogus, since printf() only expands these
-    // percents, and the \n, \x1b codes are actually expanded by the compiler
-    for (byte *c=copy_buf.ptr+start_copy; *c; c++)
-      if (*c == '%') {
-	if (c[1] != '%')
-	  return "Formating sequences are not allowed";
-	else
-	  c++;
-      }
-    byte *tmp = cf_printf(copy_buf.ptr + start_copy);
+    byte *tmp = stk_str_unesc(copy_buf.ptr + start_copy);
     uns l = strlen(tmp);
     bb_grow(&copy_buf, start_copy + l + 1);
     strcpy(copy_buf.ptr + start_copy, tmp);
