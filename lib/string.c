@@ -7,8 +7,11 @@
  *	of the GNU Lesser General Public License.
  */
 
+#undef LOCAL_DEBUG
+
 #include "lib/lib.h"
 #include "lib/chartype.h"
+#include <stdlib.h>
 
 /* Expands C99-like escape sequences.
  * It is safe to use the same buffer for both input and output. */
@@ -31,29 +34,35 @@ str_unesc(byte *d, byte *s)
 	    case '\'': *d++ = '\''; s += 2; break;
 	    case '\"': *d++ = '\"'; s += 2; break;
 	    case '\\': *d++ = '\\'; s += 2; break;
-	    case '0':
-	      if (s[2] < '0' || s[2] > '7')
-		*d++ = *s++;
-	      else
-	        {
-		  uns v = 0;
-		  for (s += 2; *s >= '0' && *s <= '7' && v < 32; s++)
-		    v = (v << 3) + *s - '0';
-		  *d++ = v;
-		}
-	      break;
 	    case 'x':
 	      if (!Cxdigit(s[2]))
-		*d++ = *s++;
+	        {
+		  s++;
+		  DBG("\\x used with no following hex digits");
+		}
 	      else
 	        {
-		  uns v = 0;
-		  for (s += 2; Cxdigit(*s) && v < 16; s++)
-		    v = (v << 4) + (Cdigit(*s) ? (*s - '0') : ((*s | 32) - 'A' + 10));
-		  *d++ = v;
+		  char *p;
+		  uns v = strtoul(s + 2, &p, 16);
+		  if (v <= 255)
+		    *d++ = v;
+		  else
+		    DBG("hex escape sequence out of range");
+                  s = (byte *)p;
 		}
 	      break;
             default:
+	      if (s[1] >= '0' && s[1] <= '7')
+	        {
+		  uns v = s[1] - '0';
+		  s += 2;
+		  for (uns i = 0; i < 2 && *s >= '0' && *s <= '7'; s++, i++)
+		    v = (v << 3) + *s - '0';
+		  if (v <= 255)
+		    *d++ = v;
+		  else
+		    DBG("octal escape sequence out of range");
+	        }
 	      *d++ = *s++;
 	      break;
 	  }
