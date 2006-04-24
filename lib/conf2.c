@@ -1293,6 +1293,9 @@ error:
   return "included from here";
 }
 
+#undef DEFAULT_CONFIG			/* FIXME */
+#define DEFAULT_CONFIG "cf/sherlock2"
+
 #ifndef DEFAULT_CONFIG
 #define DEFAULT_CONFIG NULL
 #endif
