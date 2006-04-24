@@ -319,7 +319,6 @@ commit_section(byte *name, struct cf_section *sec, void *ptr, uns commit_all)
 
     if (commit_all
 	|| (pos < dirties && dirty.ptr[pos].sec == sec && dirty.ptr[pos].ptr == ptr)) {
-      log(L_DEBUG, "%s %p", name, ptr);
       byte *msg = sec->commit(ptr);
       if (msg) {
 	log(L_ERROR, "Cannot commit section %s: %s", name, msg);
