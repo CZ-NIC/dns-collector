@@ -811,7 +811,11 @@ opening_brace(struct cf_item *item, void *ptr, enum cf_operation op)
     cf_init_section(item->name, item->u.sec, stack[level].base_ptr, 1);
     stack[level].list = ptr;
     stack[level].item = item;
-    stack[level].op |= (op & OP_MASK) < OP_REMOVE ? OP_2ND : OP_1ST;
+    if ((op & OP_MASK) < OP_REMOVE) {
+      add_to_list(ptr, stack[level].base_ptr, op & OP_MASK);
+      stack[level].op |= OP_2ND;
+    } else
+      stack[level].op |= OP_1ST;
   }
   else
     return "Opening brace can only be used on sections and lists";
@@ -844,6 +848,7 @@ closing_brace(struct item_stack *st, enum cf_operation op, int number, byte **pa
 	ASSERT(0);
       if (op & OP_OPEN) {	// stay at the same recursion level
 	st->op = (st->op | OP_2ND) & ~OP_1ST;
+	add_to_list(st->list, st->base_ptr, pure_op);
 	return NULL;
       }
       int taken;		// parse parameters on 1 line immediately
@@ -852,8 +857,8 @@ closing_brace(struct item_stack *st, enum cf_operation op, int number, byte **pa
       pars += taken;
       // and fall-thru to the 2nd phase
     }
+    add_to_list(st->list, st->base_ptr, pure_op);
   }
-  add_to_list(st->list, st->base_ptr, pure_op);
   level--;
   if (number)
     return "No parameters expected after the }";
