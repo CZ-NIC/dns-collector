@@ -250,4 +250,8 @@ struct sigaction;
 void handle_signal(int signum, struct sigaction *oldact);
 void unhandle_signal(int signum, struct sigaction *oldact);
 
+/* string.c */
+
+byte *str_unesc(byte *dest, byte *src);
+
 #endif

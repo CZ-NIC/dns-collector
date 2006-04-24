@@ -26,7 +26,8 @@ LIBUCW_MODS= \
 	md5 md5hex \
 	base64 base224 \
 	sync \
-	qache
+	qache \
+	string
 
 LIBUCW_INCLUDES= \
 	lib.h config.h math.h \
