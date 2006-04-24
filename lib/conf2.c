@@ -1353,7 +1353,8 @@ cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct o
       }
     } else {
       /* unhandled option or end of options */
-      load_default();
+      if (res == -1)
+	load_default();
       other_options++;
       return res;
     }
