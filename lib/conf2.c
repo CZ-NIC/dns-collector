@@ -880,8 +880,11 @@ interpret_line(byte *name, enum cf_operation op, int number, byte **pars)
     return msg;
   if (stack[level].op & OP_1ST)
     TRY( record_selector(item, stack[level].sec, &stack[level].mask) );
-  if (op & OP_OPEN)		// the operation will be performed after the closing brace
+  if (op & OP_OPEN) {		// the operation will be performed after the closing brace
+    if (number)
+      return "Cannot open a block after a parameter has been passed on a line";
     return opening_brace(item, ptr, op);
+  }
   if (!item)			// ignored item in an unknown section
     return NULL;
   op &= OP_MASK;
