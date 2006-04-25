@@ -36,10 +36,9 @@ typedef byte *cf_parser(uns number, byte **pars, void *ptr);
    * cf_journal_block() on the overwritten memory block.  It returns an error
    * message or NULL if everything is all right.  */
 typedef byte *cf_parser1(byte *string, void *ptr);
-  /* A parser function for user-defined types get one string and pointer to the
-   * destination variable.  It can only store the value inside [ptr,ptr+size),
-   * where size is fixed for each type.  It does not have to call
-   * cf_journal_block().  */
+  /* A parser function for user-defined types gets a string and a pointer to
+   * the destination variable.  It must store the value within [ptr,ptr+size),
+   * where size is fixed for each type.  It should not call cf_journal_block().  */
 typedef byte *cf_hook(void *ptr);
   /* An init- or commit-hook gets a pointer to the section or NULL if this
    * is the global section.  It returns an error message or NULL if everything
@@ -199,6 +198,7 @@ void cf_dump_sections(struct fastbuf *fb);
 "-C, --config filename\t" CF_USAGE_TAB "Override the default configuration file\n\
 -S, --set sec.item=val\t" CF_USAGE_TAB "Manual setting of a configuration item\n"
 
+#include <getopt.h>
 struct option;
 int cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index);
 
