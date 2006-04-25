@@ -96,6 +96,9 @@ struct clist;
 #define CF_STRING_ARY(n,p,c)	CF_STATIC(n,p,STRING,byte*,c)
 #define CF_STRING_DYN(n,p,c)	CF_DYNAMIC(n,p,STRING,byte*,c)
 
+/* If you aren't picky about the number of parameters */
+#define CF_ANY_NUM		-0x7fffffff
+
 #define DARY_LEN(a) *(uns*)(a-1)
   // length of a dynamic array
 #define DARY_ALLOC(type,len,val...) (type[]) { (type)len, ##val } + 1
@@ -113,6 +116,7 @@ byte *cf_printf(char *fmt, ...) FORMAT_CHECK(printf,1,2);
 /* Undo journal for error recovery */
 extern uns cf_need_journal;
 void cf_journal_block(void *ptr, uns len);
+#define CF_JOURNAL_VAR(var) cf_journal_block(&(var), sizeof(var))
 
 /* Declaration */
 void cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown);
