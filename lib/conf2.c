@@ -607,6 +607,8 @@ cf_parse_lookup(byte *str, int *ptr, char **t)
   c += sprintf(err, "Invalid value %s, possible values are: ", str);
   for (n=t; *n; n++)
     c+= sprintf(c, "%s, ", *n);
+  if (*t)
+    c[-2] = 0;
   *ptr = -1;
   return err;
 }
