@@ -555,10 +555,10 @@ cf_parse_ip(byte *p, u32 *varp)
     return "Missing IP address";
   uns x = 0;
   char *p2;
-  if (*p == '0' && p[1] | 32 == 'X') {
+  if (*p == '0' && p[1] | 32 == 'X' && Cxdigit(p[2])) {
     errno = 0;
-    x = strtoul(p + 2, &p2, 16);
-    if (errno == ERANGE || p2 == (char*) (p+2) || x > 0xffffffff)
+    x = strtoul(p, &p2, 16);
+    if (errno == ERANGE || x > 0xffffffff)
       goto error;
     p = p2;
   }
@@ -568,6 +568,8 @@ cf_parse_ip(byte *p, u32 *varp)
 	if (*p++ != '.')
 	  goto error;
       }
+      if (!Cdigit(*p))
+	goto error;
       errno = 0;
       uns y = strtoul(p, &p2, 10);
       if (errno == ERANGE || p2 == (char*) p || y > 255)
