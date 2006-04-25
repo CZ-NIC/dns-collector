@@ -12,13 +12,11 @@
 #include "lib/conf2.h"
 #include "lib/ipaccess.h"
 
-#undef ipaccess_check			/* FIXME */
-
 #include <string.h>
 
 struct ipaccess_entry {
   cnode n;
-  uns allow;
+  int allow;
   u32 addr, mask;
 };
 
@@ -48,23 +46,10 @@ ipaccess_cf_ip(uns n UNUSED, byte **pars, struct ipaccess_entry *a)
   return NULL;
 }
 
-static byte *
-ipaccess_cf_mode(uns n UNUSED, byte **pars, struct ipaccess_entry *a)
-{
-  CF_JOURNAL_VAR(a->allow);
-  if (!strcasecmp(pars[0], "allow"))
-    a->allow = 1;
-  else if (!strcasecmp(pars[0], "deny"))
-    a->allow = 0;
-  else
-    return "Either `allow' or `deny' expected";
-  return NULL;
-}
-
 struct cf_section ipaccess_cf = {
   CF_TYPE(struct ipaccess_entry),
   CF_ITEMS {
-    CF_PARSER("Mode", NULL, ipaccess_cf_mode, 1),
+    CF_LOOKUP("Mode", PTR_TO(struct ipaccess_entry, allow), ((char*[]) { "deny", "allow" })),
     CF_PARSER("IP", NULL, ipaccess_cf_ip, 1),
     CF_END
   }
