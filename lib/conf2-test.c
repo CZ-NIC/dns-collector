@@ -74,7 +74,33 @@ static double d1 = -1.1;
 static struct clist secs;
 static time_t t1, t2;
 static u32 ip;
-static int look[2] = {2, 1};
+static int *look = DARY_ALLOC(int, 2, 2, 1);
+static u16 numbers[10] = { 2, 100, 1, 5 };
+
+static byte *
+parse_u16(byte *string, u16 *ptr)
+{
+  uns a;
+  byte *msg = cf_parse_int(string, &a);
+  if (msg)
+    return msg;
+  if (a >= (1<<16))
+    return "Come on, man, this doesn't fit to 16 bits";
+  *ptr = a;
+  return NULL;
+}
+
+static void
+dump_u16(struct fastbuf *fb, u16 *ptr)
+{
+  bprintf(fb, "%d ", *ptr);
+}
+
+static struct cf_user_type u16_type = {
+  .size = sizeof(u16),
+  .parser = (cf_parser1*) parse_u16,
+  .dumper = (cf_dumper1*) dump_u16
+};
 
 static byte *
 init_top(void *ptr UNUSED)
@@ -121,7 +147,8 @@ static struct cf_section cf_top = {
     CF_SECTION("master", &sec1, &cf_sec_1),
     CF_LIST("slaves", &secs, &cf_sec_1),
     CF_IP("ip", &ip),
-    CF_LOOKUP_ARY("look", look, alphabet, 2),
+    CF_LOOKUP_DYN("look", &look, alphabet, 1000),
+    CF_USER_ARY("numbers", numbers, &u16_type, 10),
     CF_END
   }
 };

@@ -555,7 +555,7 @@ cf_parse_ip(byte *p, u32 *varp)
     return "Missing IP address";
   uns x = 0;
   char *p2;
-  if (*p == '0' && (p[1] | 32) == 'X' && Cxdigit(p[2])) {
+  if (*p == '0' && (p[1] | 32) == 'x' && Cxdigit(p[2])) {
     errno = 0;
     x = strtoul(p, &p2, 16);
     if (errno == ERANGE || x > 0xffffffff)
@@ -623,8 +623,18 @@ static struct {
   { sizeof(double), cf_parse_double },
   { sizeof(u32), cf_parse_ip },
   { sizeof(byte*), cf_parse_string },
-  { sizeof(int), NULL }				// lookups are parsed extra
+  { sizeof(int), NULL },			// lookups are parsed extra
+  { 0, NULL },					// user-defined types are parsed extra
 };
+
+static inline uns
+type_size(enum cf_type type, struct cf_user_type *utype)
+{
+  if (type < CT_USER)
+    return parsers[type].size;
+  else
+    return utype->size;
+}
 
 static byte *
 cf_parse_ary(uns number, byte **pars, void *ptr, enum cf_type type, union cf_union *u)
@@ -632,10 +642,13 @@ cf_parse_ary(uns number, byte **pars, void *ptr, enum cf_type type, union cf_uni
   for (uns i=0; i<number; i++)
   {
     byte *msg;
+    uns size = type_size(type, u->utype);
     if (type < CT_LOOKUP)
-      msg = ((cf_basic_parser*) parsers[type].parser) (pars[i], ptr + i * parsers[type].size);
+      msg = ((cf_basic_parser*) parsers[type].parser) (pars[i], ptr + i * size);
     else if (type == CT_LOOKUP)
-      msg = cf_parse_lookup(pars[i], ptr + i * sizeof(int), u->lookup);
+      msg = cf_parse_lookup(pars[i], ptr + i * size, u->lookup);
+    else if (type == CT_USER)
+      msg = u->utype->parser(pars[i], ptr + i * size);
     else
       ASSERT(0);
     if (msg)
@@ -661,8 +674,10 @@ interpret_set_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
   enum cf_type type = item->type;
   cf_journal_block(ptr, sizeof(void*));
   // boundary checks done by the caller
-  *ptr = cf_malloc((number+1) * parsers[type].size) + parsers[type].size;
-  * (uns*) (*ptr - parsers[type].size) = number;
+  uns size = type_size(item->type, item->u.utype);
+  ASSERT(size >= sizeof(uns));
+  *ptr = cf_malloc((number+1) * size) + size;
+  * (uns*) (*ptr - size) = number;
   return cf_parse_ary(number, pars, *ptr, type, &item->u);
 }
 
@@ -671,19 +686,21 @@ interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *proces
 {
   enum cf_type type = item->type;
   void *old_p = *ptr;
-  int old_nr = * (int*) (old_p - parsers[type].size);
+  uns size = type_size(item->type, item->u.utype);
+  ASSERT(size >= sizeof(uns));
+  int old_nr = * (int*) (old_p - size);
   int taken = MIN(number, item->number-old_nr);
   *processed = taken;
   // stretch the dynamic array
-  void *new_p = cf_malloc((old_nr + taken + 1) * parsers[type].size) + parsers[type].size;
-  * (uns*) (new_p - parsers[type].size) = old_nr + taken;
+  void *new_p = cf_malloc((old_nr + taken + 1) * size) + size;
+  * (uns*) (new_p - size) = old_nr + taken;
   cf_journal_block(ptr, sizeof(void*));
   *ptr = new_p;
   if (op == OP_APPEND) {
-    memcpy(new_p, old_p, old_nr * parsers[type].size);
-    return cf_parse_ary(taken, pars, new_p + old_nr * parsers[type].size, type, &item->u);
+    memcpy(new_p, old_p, old_nr * size);
+    return cf_parse_ary(taken, pars, new_p + old_nr * size, type, &item->u);
   } else if (op == OP_PREPEND) {
-    memcpy(new_p + taken * parsers[type].size, old_p, old_nr * parsers[type].size);
+    memcpy(new_p + taken * size, old_p, old_nr * size);
     return cf_parse_ary(taken, pars, new_p, type, &item->u);
   } else
     return cf_printf("Dynamic arrays do not support operation %s", op_names[op]);
@@ -779,7 +796,8 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
 	return "Missing value";
       taken = MIN(number, item->number);
       *processed = taken;
-      cf_journal_block(ptr, taken * parsers[item->type].size);
+      uns size = type_size(item->type, item->u.utype);
+      cf_journal_block(ptr, taken * size);
       return cf_parse_ary(taken, pars, ptr, item->type, &item->u);
     case CC_DYNAMIC:
       if (!allow_dynamic)
@@ -831,7 +849,7 @@ cmp_items(void *i1, void *i2, struct cf_item *item)
   if (item->type == CT_STRING)
     return strcmp(* (byte**) i1, * (byte**) i2);
   else				// all numeric types
-    return memcmp(i1, i2, parsers[item->type].size);
+    return memcmp(i1, i2, type_size(item->type, item->u.utype));
 }
 
 static void *
@@ -1404,6 +1422,12 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
     case CT_IP:		bprintf(fb, "%08x ", *(uns*)ptr); break;
     case CT_STRING:	bprintf(fb, "'%s' ", *(byte**)ptr); break;
     case CT_LOOKUP:	bprintf(fb, "%s ", *(int*)ptr >= 0 ? u->lookup[ *(int*)ptr ] : "???"); break;
+    case CT_USER:
+      if (u->utype->dumper)
+	u->utype->dumper(fb, ptr);
+      else
+	bprintf(fb, "??? ");
+      break;
   }
 }
 
@@ -1414,21 +1438,26 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
 {
   ptr += (addr_int_t) item->ptr;
   enum cf_type type = item->type;
+  uns size = type_size(item->type, item->u.utype);
   int i;
   spaces(fb, level);
   bprintf(fb, "%s: c%d #%d ", item->name, item->cls, item->number);
   if (item->cls == CC_STATIC || item->cls == CC_DYNAMIC)
     bprintf(fb, "t%d ", type);
   if (item->cls == CC_STATIC) {
+    if (item->type == CT_USER)
+      bprintf(fb, "S%d ", size);
     for (i=0; i<item->number; i++)
-      dump_basic(fb, ptr + i * parsers[type].size, type, &item->u);
+      dump_basic(fb, ptr + i * size, type, &item->u);
   } else if (item->cls == CC_DYNAMIC) {
+    if (item->type == CT_USER)
+      bprintf(fb, "S%d ", size);
     ptr = * (void**) ptr;
     if (ptr) {
-      int real_nr = * (int*) (ptr - parsers[type].size);
+      int real_nr = * (int*) (ptr - size);
       bprintf(fb, "##%d ", real_nr);
       for (i=0; i<real_nr; i++)
-	dump_basic(fb, ptr + i * parsers[type].size, type, &item->u);
+	dump_basic(fb, ptr + i * size, type, &item->u);
     } else
       bprintf(fb, "NULL ");
   }
