@@ -14,43 +14,55 @@
 
 #include <string.h>
 
+struct addrmask {
+  u32 addr;
+  u32 mask;
+};
+
 struct ipaccess_entry {
   cnode n;
   int allow;
-  u32 addr, mask;
+  struct addrmask addr;
 };
 
-static byte *
-ipaccess_cf_ip(uns n UNUSED, byte **pars, struct ipaccess_entry *a)
+static byte *addrmask_parser(byte *c, void *ptr)
 {
-  byte *c = pars[0];
-  CF_JOURNAL_VAR(a->addr);
-  CF_JOURNAL_VAR(a->mask);
+  /*
+   * This is tricky: addrmasks will be compared by memcmp(), so we must ensure
+   * that even the padding between structure members is zeroed out.
+   */
+  struct addrmask *am = ptr;
+  bzero(am, sizeof(*am));
 
   byte *p = strchr(c, '/');
   if (p)
     *p++ = 0;
-  byte *err = cf_parse_ip(c, &a->addr);
+  byte *err = cf_parse_ip(c, &am->addr);
   if (err)
     return err;
   if (p)
     {
       uns len;
       if (!cf_parse_int(p, &len) && len <= 32)
-	a->mask = ~(len == 32 ? 0 : ~0U >> len);
-      else if (cf_parse_ip(p, &a->mask))
+	am->mask = ~(len == 32 ? 0 : ~0U >> len);
+      else if (cf_parse_ip(p, &am->mask))
 	return "Invalid prefix length or netmask";
     }
   else
-    a->mask = ~0U;
+    am->mask = ~0U;
   return NULL;
 }
+
+static struct cf_user_type addrmask_type = {
+  .size = sizeof(struct addrmask),
+  .parser = addrmask_parser
+};
 
 struct cf_section ipaccess_cf = {
   CF_TYPE(struct ipaccess_entry),
   CF_ITEMS {
     CF_LOOKUP("Mode", PTR_TO(struct ipaccess_entry, allow), ((char*[]) { "deny", "allow" })),
-    CF_PARSER("IP", NULL, ipaccess_cf_ip, 1),
+    CF_USER("IP", PTR_TO(struct ipaccess_entry, addr), &addrmask_type),
     CF_END
   }
 };
@@ -59,7 +71,7 @@ int
 ipaccess_check(clist *l, u32 ip)
 {
   CLIST_FOR_EACH(struct ipaccess_entry *, a, *l)
-    if (! ((ip ^ a->addr) & a->mask))
+    if (! ((ip ^ a->addr.addr) & a->addr.mask))
       return a->allow;
   return 0;
 }
