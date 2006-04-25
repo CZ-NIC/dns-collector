@@ -23,7 +23,8 @@ enum cf_class {
 enum cf_type {
   CT_INT, CT_U64, CT_DOUBLE,		// number types
   CT_IP,				// IP address
-  CT_STRING				// string type
+  CT_STRING,				// string type
+  CT_LOOKUP				// in a string table
 };
 
 typedef byte *cf_parser(uns number, byte **pars, void *ptr);
@@ -44,15 +45,16 @@ typedef byte *cf_hook(void *ptr);
 
 struct cf_section;
 struct cf_item {
-  enum cf_class cls;
-  byte *name;
+  byte *name;				// case insensitive
   int number;				// length of an array or #parameters of a parser (negative means at most)
   void *ptr;				// pointer to a global variable or an offset in a section
-  union {
-    enum cf_type type;			// type of a static or dynamic attribute
+  union cf_union {
     struct cf_section *sec;		// declaration of a section or a list
     cf_parser *par;			// parser function
+    char **lookup;			// NULL-terminated sequence of allowed strings for lookups
   } u;
+  enum cf_class cls:16;			// attribute class
+  enum cf_type type:16;			// type of a static or dynamic attribute
 };
 
 struct cf_section {
@@ -71,8 +73,8 @@ struct cf_section {
 #define CF_END		{ .cls = CC_END }
 /* Configuration items */
 struct clist;
-#define CF_STATIC(n,p,T,t,c)	{ .cls = CC_STATIC, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t*), .u.type = CT_##T }
-#define CF_DYNAMIC(n,p,T,t,c)	{ .cls = CC_DYNAMIC, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t**), .u.type = CT_##T }
+#define CF_STATIC(n,p,T,t,c)	{ .cls = CC_STATIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t*) }
+#define CF_DYNAMIC(n,p,T,t,c)	{ .cls = CC_DYNAMIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t**) }
 #define CF_PARSER(n,p,f,c)	{ .cls = CC_PARSER, .name = n, .number = c, .ptr = p, .u.par = (cf_parser*) f }
 #define CF_SECTION(n,p,s)	{ .cls = CC_SECTION, .name = n, .number = 1, .ptr = p, .u.sec = s }
 #define CF_LIST(n,p,s)		{ .cls = CC_LIST, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,struct clist*), .u.sec = s }
@@ -95,6 +97,9 @@ struct clist;
 #define CF_STRING(n,p)		CF_STATIC(n,p,STRING,byte*,1)
 #define CF_STRING_ARY(n,p,c)	CF_STATIC(n,p,STRING,byte*,c)
 #define CF_STRING_DYN(n,p,c)	CF_DYNAMIC(n,p,STRING,byte*,c)
+#define CF_LOOKUP(n,p,t)	{ .cls = CC_STATIC, .type = CT_LOOKUP, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,int*), .u.lookup = t }
+#define CF_LOOKUP_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int*), .u.lookup = t }
+#define CF_LOOKUP_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int**), .u.lookup = t }
 
 /* If you aren't picky about the number of parameters */
 #define CF_ANY_NUM		-0x7fffffff

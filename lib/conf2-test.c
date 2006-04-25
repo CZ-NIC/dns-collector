@@ -74,6 +74,7 @@ static double d1 = -1.1;
 static struct clist secs;
 static time_t t1, t2;
 static u32 ip;
+static int look[2] = {2, 1};
 
 static byte *
 init_top(void *ptr UNUSED)
@@ -103,6 +104,7 @@ time_parser(uns number, byte **pars, time_t *ptr)
   return NULL;
 }
 
+static char *alphabet[] = { "alpha", "beta", "gamma", "delta", NULL };
 static struct cf_section cf_top = {
   CF_INIT(init_top),
   CF_COMMIT(commit_top),
@@ -119,6 +121,7 @@ static struct cf_section cf_top = {
     CF_SECTION("master", &sec1, &cf_sec_1),
     CF_LIST("slaves", &secs, &cf_sec_1),
     CF_IP("ip", &ip),
+    CF_LOOKUP_ARY("look", look, alphabet, 2),
     CF_END
   }
 };

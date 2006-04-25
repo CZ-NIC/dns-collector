@@ -590,6 +590,27 @@ cf_parse_string(byte *str, byte **ptr)
   return NULL;
 }
 
+static byte *
+cf_parse_lookup(byte *str, int *ptr, char **t)
+{
+  char **n = t;
+  uns total_len = 0;
+  while (*n && strcasecmp(*n, str)) {
+    total_len += strlen(*n) + 2;
+    n++;
+  }
+  if (*n) {
+    *ptr = n - t;
+    return NULL;
+  }
+  byte *err = cf_malloc(total_len + strlen(str) + 60), *c = err;
+  c += sprintf(err, "Invalid value %s, possible values are: ", str);
+  for (n=t; *n; n++)
+    c+= sprintf(c, "%s, ", *n);
+  *ptr = -1;
+  return err;
+}
+
 /* Register size of and parser for each basic type */
 
 typedef byte *cf_basic_parser(byte *str, void *ptr);
@@ -601,15 +622,22 @@ static struct {
   { sizeof(u64), cf_parse_u64 },
   { sizeof(double), cf_parse_double },
   { sizeof(u32), cf_parse_ip },
-  { sizeof(byte*), cf_parse_string }
+  { sizeof(byte*), cf_parse_string },
+  { sizeof(int), NULL }				// lookups are parsed extra
 };
 
 static byte *
-cf_parse_ary(uns number, byte **pars, void *ptr, enum cf_type type)
+cf_parse_ary(uns number, byte **pars, void *ptr, enum cf_type type, union cf_union *u)
 {
   for (uns i=0; i<number; i++)
   {
-    byte *msg = ((cf_basic_parser*) parsers[type].parser) (pars[i], ptr + i * parsers[type].size);
+    byte *msg;
+    if (type < CT_LOOKUP)
+      msg = ((cf_basic_parser*) parsers[type].parser) (pars[i], ptr + i * parsers[type].size);
+    else if (type == CT_LOOKUP)
+      msg = cf_parse_lookup(pars[i], ptr + i * sizeof(int), u->lookup);
+    else
+      ASSERT(0);
     if (msg)
       return cf_printf("Cannot parse item %d: %s", i+1, msg);
   }
@@ -630,18 +658,18 @@ static byte *op_names[] = { CF_OPERATIONS };
 static byte *
 interpret_set_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
 {
-  enum cf_type type = item->u.type;
+  enum cf_type type = item->type;
   cf_journal_block(ptr, sizeof(void*));
   // boundary checks done by the caller
   *ptr = cf_malloc((number+1) * parsers[type].size) + parsers[type].size;
   * (uns*) (*ptr - parsers[type].size) = number;
-  return cf_parse_ary(number, pars, *ptr, type);
+  return cf_parse_ary(number, pars, *ptr, type, &item->u);
 }
 
 static byte *
 interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *processed, void **ptr, enum cf_operation op)
 {
-  enum cf_type type = item->u.type;
+  enum cf_type type = item->type;
   void *old_p = *ptr;
   int old_nr = * (int*) (old_p - parsers[type].size);
   int taken = MIN(number, item->number-old_nr);
@@ -653,10 +681,10 @@ interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *proces
   *ptr = new_p;
   if (op == OP_APPEND) {
     memcpy(new_p, old_p, old_nr * parsers[type].size);
-    return cf_parse_ary(taken, pars, new_p + old_nr * parsers[type].size, type);
+    return cf_parse_ary(taken, pars, new_p + old_nr * parsers[type].size, type, &item->u);
   } else if (op == OP_PREPEND) {
     memcpy(new_p + taken * parsers[type].size, old_p, old_nr * parsers[type].size);
-    return cf_parse_ary(taken, pars, new_p, type);
+    return cf_parse_ary(taken, pars, new_p, type, &item->u);
   } else
     return cf_printf("Dynamic arrays do not support operation %s", op_names[op]);
 }
@@ -751,8 +779,8 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
 	return "Missing value";
       taken = MIN(number, item->number);
       *processed = taken;
-      cf_journal_block(ptr, taken * parsers[item->u.type].size);
-      return cf_parse_ary(taken, pars, ptr, item->u.type);
+      cf_journal_block(ptr, taken * parsers[item->type].size);
+      return cf_parse_ary(taken, pars, ptr, item->type, &item->u);
     case CC_DYNAMIC:
       if (!allow_dynamic)
 	return "Dynamic array cannot be used here";
@@ -800,10 +828,10 @@ cmp_items(void *i1, void *i2, struct cf_item *item)
   ASSERT(item->cls == CC_STATIC);
   i1 += (addr_int_t) item->ptr;
   i2 += (addr_int_t) item->ptr;
-  if (item->u.type == CT_STRING)
+  if (item->type == CT_STRING)
     return strcmp(* (byte**) i1, * (byte**) i2);
   else				// all numeric types
-    return memcmp(i1, i2, parsers[item->u.type].size);
+    return memcmp(i1, i2, parsers[item->type].size);
 }
 
 static void *
@@ -1367,7 +1395,7 @@ spaces(struct fastbuf *fb, uns nr)
 }
 
 static void
-dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type)
+dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
 {
   switch (type) {
     case CT_INT:	bprintf(fb, "%d ", *(uns*)ptr); break;
@@ -1375,6 +1403,7 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type)
     case CT_DOUBLE:	bprintf(fb, "%lg ", *(double*)ptr); break;
     case CT_IP:		bprintf(fb, "%08x ", *(uns*)ptr); break;
     case CT_STRING:	bprintf(fb, "'%s' ", *(byte**)ptr); break;
+    case CT_LOOKUP:	bprintf(fb, "%s ", *(int*)ptr >= 0 ? u->lookup[ *(int*)ptr ] : "???"); break;
   }
 }
 
@@ -1384,7 +1413,7 @@ static void
 dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
 {
   ptr += (addr_int_t) item->ptr;
-  enum cf_type type = item->u.type;
+  enum cf_type type = item->type;
   int i;
   spaces(fb, level);
   bprintf(fb, "%s: c%d #%d ", item->name, item->cls, item->number);
@@ -1392,14 +1421,14 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
     bprintf(fb, "t%d ", type);
   if (item->cls == CC_STATIC) {
     for (i=0; i<item->number; i++)
-      dump_basic(fb, ptr + i * parsers[type].size, type);
+      dump_basic(fb, ptr + i * parsers[type].size, type, &item->u);
   } else if (item->cls == CC_DYNAMIC) {
     ptr = * (void**) ptr;
     if (ptr) {
       int real_nr = * (int*) (ptr - parsers[type].size);
       bprintf(fb, "##%d ", real_nr);
       for (i=0; i<real_nr; i++)
-	dump_basic(fb, ptr + i * parsers[type].size, type);
+	dump_basic(fb, ptr + i * parsers[type].size, type, &item->u);
     } else
       bprintf(fb, "NULL ");
   }

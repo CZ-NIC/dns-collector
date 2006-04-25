@@ -23,6 +23,7 @@ Top { \
   slaves:clear
   ip 0xa
   ip 195.113.31.123
+  look Alpha Gamma
 };;;;;;
 
 unknown.ignored :-)
