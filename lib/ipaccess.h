@@ -19,6 +19,6 @@ int ipaccess_check(clist *l, u32 ip);
 struct ipaccess_list { };
 #define ipaccess_init() NULL
 #define ipaccess_parse(x,y,z) NULL
-#define ipaccess_check(x,y) 0
+#define ipaccess_check_xxx(x,y) 0
 
 #endif
