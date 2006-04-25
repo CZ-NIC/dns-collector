@@ -675,6 +675,7 @@ interpret_set_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
   cf_journal_block(ptr, sizeof(void*));
   // boundary checks done by the caller
   uns size = type_size(item->type, item->u.utype);
+  ASSERT(size >= sizeof(uns));
   *ptr = cf_malloc((number+1) * size) + size;
   * (uns*) (*ptr - size) = number;
   return cf_parse_ary(number, pars, *ptr, type, &item->u);
@@ -686,6 +687,7 @@ interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *proces
   enum cf_type type = item->type;
   void *old_p = *ptr;
   uns size = type_size(item->type, item->u.utype);
+  ASSERT(size >= sizeof(uns));
   int old_nr = * (int*) (old_p - size);
   int taken = MIN(number, item->number-old_nr);
   *processed = taken;
