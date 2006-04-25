@@ -1,115 +1,118 @@
 /*
  *	UCW Library -- IP address access lists
  *
- *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2006 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  */
 
 #include "lib/lib.h"
-#include "lib/lists.h"
+#include "lib/clists.h"
 #include "lib/conf2.h"
-#include "lib/chartype.h"
 #include "lib/ipaccess.h"
 
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
+#undef ipaccess_check			/* FIXME */
 
-struct ipaccess_list {
-  list l;
-};
+#include <string.h>
 
 struct ipaccess_entry {
-  node n;
+  cnode n;
   uns allow;
   u32 addr, mask;
 };
 
-struct ipaccess_list *
-ipaccess_init(void)
-{
-  /* Cannot use cfg_malloc() here as the pool can be uninitialized now */
-  struct ipaccess_list *l = xmalloc(sizeof(*l));
-
-  init_list(&l->l);
-  return l;
-}
-
-// FIXME: replace by cf_parse_ip()
 static byte *
-parse_ip(byte **p, u32 *varp)
+ipaccess_cf_ip(uns n UNUSED, byte **pars, struct ipaccess_entry *a)
 {
-  while (Cspace(**p))
-    (*p)++;
-  if (!**p)
-    return "Missing IP address";
-  uns x = 0;
-  if (**p == '0' && *(*p + 1) | 32 == 'X')
-    {
-      errno = 0;
-      x = strtoul(*p + 2, (char **)p, 16);
-      if (errno == ERANGE || x > 0xffffffff)
-        goto error;
-    }
-  else
-    for (uns i = 0; i < 4; i++)
-      {
-        if (i)
-          {
-            while (Cspace(**p))
-              (*p)++;
-            if (*(*p)++ != '.')
-              goto error;
-          }
-        while (Cspace(**p))
-          (*p)++;
-        errno = 0;
-        uns y = strtoul(*p, (char **)p, 10);
-        if (errno == ERANGE || y > 255)
-          goto error;
-        x = (x << 8) + y;
-      }
-  *varp = x;
-  return NULL;
-error:
-  return "Invalid IP address";
-}
+  byte *c = pars[0];
+  CF_JOURNAL_VAR(a->addr);
+  CF_JOURNAL_VAR(a->mask);
 
-byte *
-ipaccess_parse(struct ipaccess_list *l, byte *c, int is_allow)
-{
   byte *p = strchr(c, '/');
-  char *q;
-  struct ipaccess_entry *a = cf_malloc(sizeof(struct ipaccess_entry));
-  unsigned long pxlen;
-
-  a->allow = is_allow;
-  a->mask = ~0U;
+  if (p)
+    *p++ = 0;
+  byte *err = cf_parse_ip(c, &a->addr);
+  if (err)
+    return err;
   if (p)
     {
-      *p++ = 0;
-      pxlen = strtoul(p, &q, 10);
-      if ((!q || !*q) && pxlen <= 32)
-	{
-	  if (pxlen != 32)
-	    a->mask = ~(~0U >> (uns) pxlen);
-	}
-      else if (q = parse_ip(&p, &a->mask))
-	return q;
+      uns len;
+      if (!cf_parse_int(p, &len) && len <= 32)
+	a->mask = ~(len == 32 ? 0 : ~0U >> len);
+      else if (cf_parse_ip(p, &a->mask))
+	return "Invalid prefix length or netmask";
     }
-  add_tail(&l->l, &a->n);
-  return parse_ip(&c, &a->addr);
+  else
+    a->mask = ~0U;
+  return NULL;
 }
 
-int
-ipaccess_check(struct ipaccess_list *l, u32 ip)
+static byte *
+ipaccess_cf_mode(uns n UNUSED, byte **pars, struct ipaccess_entry *a)
 {
-  struct ipaccess_entry *a;
+  CF_JOURNAL_VAR(a->allow);
+  if (!strcasecmp(pars[0], "allow"))
+    a->allow = 1;
+  else if (!strcasecmp(pars[0], "deny"))
+    a->allow = 0;
+  else
+    return "Either `allow' or `deny' expected";
+  return NULL;
+}
 
-  DO_FOR_ALL(a, l->l)
+struct cf_section ipaccess_cf = {
+  CF_TYPE(struct ipaccess_entry),
+  CF_ITEMS {
+    CF_PARSER("Mode", NULL, ipaccess_cf_mode, 1),
+    CF_PARSER("IP", NULL, ipaccess_cf_ip, 1),
+    CF_END
+  }
+};
+
+int
+ipaccess_check(clist *l, u32 ip)
+{
+  CLIST_FOR_EACH(struct ipaccess_entry *, a, *l)
     if (! ((ip ^ a->addr) & a->mask))
       return a->allow;
   return 0;
 }
+
+#ifdef TEST
+
+#include <stdio.h>
+
+static clist t;
+
+static struct cf_section test_cf = {
+  CF_ITEMS {
+    CF_LIST("A", &t, &ipaccess_cf),
+    CF_END
+  }
+};
+
+int main(int argc, char **argv)
+{
+  cf_declare_section("T", &test_cf, 0);
+  if (cf_get_opt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) != -1)
+    die("Invalid arguments");
+
+  byte buf[256];
+  while (fgets(buf, sizeof(buf), stdin))
+    {
+      byte *c = strchr(buf, '\n');
+      if (c)
+	*c = 0;
+      u32 ip;
+      if (cf_parse_ip(buf, &ip))
+	puts("Invalid IP address");
+      else if (ipaccess_check(&t, ip))
+	puts("Allowed");
+      else
+	puts("Denied");
+    }
+  return 0;
+}
+
+#endif
