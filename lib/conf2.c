@@ -555,7 +555,7 @@ cf_parse_ip(byte *p, u32 *varp)
     return "Missing IP address";
   uns x = 0;
   char *p2;
-  if (*p == '0' && (p[1] | 32) == 'X' && Cxdigit(p[2])) {
+  if (*p == '0' && (p[1] | 32) == 'x' && Cxdigit(p[2])) {
     errno = 0;
     x = strtoul(p, &p2, 16);
     if (errno == ERANGE || x > 0xffffffff)
