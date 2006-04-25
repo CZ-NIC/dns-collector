@@ -24,15 +24,22 @@ enum cf_type {
   CT_INT, CT_U64, CT_DOUBLE,		// number types
   CT_IP,				// IP address
   CT_STRING,				// string type
-  CT_LOOKUP				// in a string table
+  CT_LOOKUP,				// in a string table
+  CT_USER				// user-defined type
 };
 
+struct fastbuf;
 typedef byte *cf_parser(uns number, byte **pars, void *ptr);
   /* A parser function gets an array of (strdup'ed) strings and a pointer with
    * the customized information (most likely the target address).  It can store
    * the parsed value anywhere in any way it likes, however it must first call
    * cf_journal_block() on the overwritten memory block.  It returns an error
    * message or NULL if everything is all right.  */
+typedef byte *cf_parser1(byte *string, void *ptr);
+  /* A parser function for user-defined types get one string and pointer to the
+   * destination variable.  It can only store the value inside [ptr,ptr+size),
+   * where size is fixed for each type.  It does not have to call
+   * cf_journal_block().  */
 typedef byte *cf_hook(void *ptr);
   /* An init- or commit-hook gets a pointer to the section or NULL if this
    * is the global section.  It returns an error message or NULL if everything
@@ -42,6 +49,14 @@ typedef byte *cf_hook(void *ptr);
    * checks and postprocess the parsed values.  Commit-hooks must call
    * cf_journal_block() too.  Caveat! init-hooks for static sections must not
    * use cf_malloc() but normal xmalloc().  */
+typedef void *cf_dumper1(struct fastbuf *fb, void *ptr);
+  /* Dumps the contents of a variable of a user-defined type.  */
+
+struct cf_user_type {
+  uns size;				// of the parsed attribute
+  cf_parser1 *parser;			// how to parse it
+  cf_dumper1 *dumper;			// optional and for debugging purposes only
+};
 
 struct cf_section;
 struct cf_item {
@@ -52,6 +67,7 @@ struct cf_item {
     struct cf_section *sec;		// declaration of a section or a list
     cf_parser *par;			// parser function
     char **lookup;			// NULL-terminated sequence of allowed strings for lookups
+    struct cf_user_type *utype;		// specification of the user-defined type
   } u;
   enum cf_class cls:16;			// attribute class
   enum cf_type type:16;			// type of a static or dynamic attribute
@@ -100,6 +116,10 @@ struct clist;
 #define CF_LOOKUP(n,p,t)	{ .cls = CC_STATIC, .type = CT_LOOKUP, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,int*), .u.lookup = t }
 #define CF_LOOKUP_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int*), .u.lookup = t }
 #define CF_LOOKUP_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int**), .u.lookup = t }
+#define CF_USER(n,p,t)		{ .cls = CC_STATIC, .type = CT_USER, .name = n, .number = 1, .ptr = p, .u.utype = t }
+#define CF_USER_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_USER, .name = n, .number = c, .ptr = p, .u.utype = t }
+#define CF_USER_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_USER, .name = n, .number = c, .ptr = p, .u.utype = t }
+  // Beware that CF_USER_DYN can only be used on user-defined types of size at least 4
 
 /* If you aren't picky about the number of parameters */
 #define CF_ANY_NUM		-0x7fffffff
@@ -152,7 +172,6 @@ byte *cf_parse_ip(byte *p, u32 *varp);
 enum cf_operation { CF_OPERATIONS };
 #undef T
 
-struct fastbuf;
 byte *cf_find_item(byte *name, struct cf_item *item);
 byte *cf_write_item(struct cf_item *item, enum cf_operation op, int number, byte **pars);
 void cf_dump_sections(struct fastbuf *fb);

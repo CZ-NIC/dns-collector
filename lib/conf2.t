@@ -23,7 +23,9 @@ Top { \
   slaves:clear
   ip 0xa
   ip 195.113.31.123
-  look Alpha Gamma
+  look Alpha
+  look:prepend Beta GAMMA
+  numbers 11000 65535
 };;;;;;
 
 unknown.ignored :-)
