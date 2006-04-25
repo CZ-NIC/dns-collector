@@ -691,7 +691,7 @@ interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *proces
   uns size = type_size(item->type, item->u.utype);
   ASSERT(size >= sizeof(uns));
   int old_nr = * (int*) (old_p - size);
-  int taken = MIN(number, item->number-old_nr);
+  int taken = MIN(number, ABS(item->number)-old_nr);
   *processed = taken;
   // stretch the dynamic array
   void *new_p = cf_malloc((old_nr + taken + 1) * size) + size;
@@ -804,7 +804,7 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
     case CC_DYNAMIC:
       if (!allow_dynamic)
 	return "Dynamic array cannot be used here";
-      taken = MIN(number, item->number);
+      taken = MIN(number, ABS(item->number));
       *processed = taken;
       return interpret_set_dynamic(item, taken, pars, ptr);
     case CC_PARSER:
