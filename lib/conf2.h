@@ -54,7 +54,7 @@ typedef void *cf_dumper1(struct fastbuf *fb, void *ptr);
 struct cf_user_type {
   uns size;				// of the parsed attribute
   cf_parser1 *parser;			// how to parse it
-  cf_dumper1 *dumper;			// optional and for debugging purposes only
+  cf_dumper1 *dumper;			// how to dump the type
 };
 
 struct cf_section;
@@ -189,14 +189,22 @@ void cf_dump_sections(struct fastbuf *fb);
  */
 
 #define	CF_SHORT_OPTS	"C:S:"
-#define	CF_LONG_OPTS	{"config",	1, 0, 'C'}, {"set",		1, 0, 'S'},
+#define	CF_LONG_OPTS	{"config",	1, 0, 'C'}, {"set",		1, 0, 'S'}, CF_LONG_OPTS_DEBUG
 #define CF_NO_LONG_OPTS (const struct option []) { CF_LONG_OPTS { NULL, 0, 0, 0 } }
 #ifndef CF_USAGE_TAB
 #define CF_USAGE_TAB ""
 #endif
 #define	CF_USAGE	\
 "-C, --config filename\t" CF_USAGE_TAB "Override the default configuration file\n\
--S, --set sec.item=val\t" CF_USAGE_TAB "Manual setting of a configuration item\n"
+-S, --set sec.item=val\t" CF_USAGE_TAB "Manual setting of a configuration item\n" CF_USAGE_DEBUG
+
+#ifdef CONFIG_DEBUG
+#define CF_LONG_OPTS_DEBUG { "dumpconfig", 0, 0, 0x64436667 } ,
+#define CF_USAGE_DEBUG "    --dumpconfig\t" CF_USAGE_TAB "Dump program configuration\n"
+#else
+#define CF_LONG_OPTS_DEBUG
+#define CF_USAGE_DEBUG
+#endif
 
 #include <getopt.h>
 struct option;

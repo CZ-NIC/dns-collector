@@ -1383,7 +1383,7 @@ cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct o
   static int other_options = 0;
   while (1) {
     int res = getopt_long (argc, argv, short_opts, long_opts, long_index);
-    if (res == 'S' || res == 'C')
+    if (res == 'S' || res == 'C' || res == 0x64436667)
     {
       if (other_options)
 	die("The -S and -C options must precede all other arguments");
@@ -1391,10 +1391,18 @@ cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct o
 	load_default();
 	if (cf_set(optarg))
 	  die("Cannot set %s", optarg);
-      } else {
+      } else if (res == 'C') {
 	if (cf_load(optarg))
 	  die("Cannot load config file %s", optarg);
       }
+#ifdef CONFIG_DEBUG
+      else {   /* --dumpconfig */
+	load_default();
+	struct fastbuf *b = bfdopen(1, 4096);
+	cf_dump_sections(b);
+	bclose(b);
+      }
+#endif
     } else {
       /* unhandled option or end of options */
       if (res != ':' && res != '?')
