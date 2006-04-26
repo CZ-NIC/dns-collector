@@ -142,6 +142,11 @@ extern uns cf_need_journal;
 void cf_journal_block(void *ptr, uns len);
 #define CF_JOURNAL_VAR(var) cf_journal_block(&(var), sizeof(var))
 
+struct cf_journal_item;
+struct cf_journal_item *cf_journal_new_transaction(uns new_pool);
+void cf_journal_commit_transaction(uns new_pool, struct cf_journal_item *oldj);
+void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj);
+
 /* Declaration */
 void cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown);
 void cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero);

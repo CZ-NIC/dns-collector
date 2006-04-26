@@ -66,8 +66,8 @@ cf_printf(char *fmt, ...)
 /* Undo journal */
 
 uns cf_need_journal = 1;	// some programs do not need journal
-static struct journal_item {
-  struct journal_item *prev;
+static struct cf_journal_item {
+  struct cf_journal_item *prev;
   byte *ptr;
   uns len;
   byte copy[0];
@@ -78,7 +78,7 @@ cf_journal_block(void *ptr, uns len)
 {
   if (!cf_need_journal)
     return;
-  struct journal_item *ji = cf_malloc(sizeof(struct journal_item) + len);
+  struct cf_journal_item *ji = cf_malloc(sizeof(struct cf_journal_item) + len);
   ji->prev = journal;
   ji->ptr = ptr;
   ji->len = len;
@@ -90,7 +90,7 @@ static void
 journal_swap(void)
   // swaps the contents of the memory and the journal, and reverses the list
 {
-  struct journal_item *curr, *prev, *next;
+  struct cf_journal_item *curr, *prev, *next;
   for (next=NULL, curr=journal; curr; next=curr, curr=prev)
   {
     prev = curr->prev;
@@ -105,18 +105,18 @@ journal_swap(void)
   journal = next;
 }
 
-static struct journal_item *
-journal_new_transaction(uns new_pool)
+struct cf_journal_item *
+cf_journal_new_transaction(uns new_pool)
 {
   if (new_pool)
     cf_pool = mp_new(1<<10);
-  struct journal_item *oldj = journal;
+  struct cf_journal_item *oldj = journal;
   journal = NULL;
   return oldj;
 }
 
-static void
-journal_commit_transaction(uns new_pool, struct journal_item *oldj)
+void
+cf_journal_commit_transaction(uns new_pool, struct cf_journal_item *oldj)
 {
   if (new_pool)
   {
@@ -127,15 +127,15 @@ journal_commit_transaction(uns new_pool, struct journal_item *oldj)
   }
   if (oldj)
   {
-    struct journal_item **j = &journal;
+    struct cf_journal_item **j = &journal;
     while (*j)
       j = &(*j)->prev;
     *j = oldj;
   }
 }
 
-static void
-journal_rollback_transaction(uns new_pool, struct journal_item *oldj)
+void
+cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj)
 {
   if (!cf_need_journal)
     die("Cannot rollback the configuration, because the journal is disabled.");
@@ -372,8 +372,11 @@ cf_find_item(byte *name, struct cf_item *item)
   struct cf_item *ci = find_item(&sections, name, &msg, &ptr);
   if (msg)
     return msg;
-  *item = *ci;
-  item->ptr = ptr;
+  if (ci) {
+    *item = *ci;
+    item->ptr = ptr;
+  } else
+    bzero(item, sizeof(struct cf_item));
   return NULL;
 }
 
@@ -386,7 +389,7 @@ int
 cf_reload(byte *file)
 {
   journal_swap();
-  struct journal_item *oldj = journal_new_transaction(1);
+  struct cf_journal_item *oldj = cf_journal_new_transaction(1);
   uns ec = everything_committed;
   everything_committed = 0;
   int err = load_file(file);
@@ -397,12 +400,12 @@ cf_reload(byte *file)
       pools = p->prev;
       mp_delete(p->pool);
     }
-    journal_commit_transaction(1, NULL);
+    cf_journal_commit_transaction(1, NULL);
   }
   else
   {
     everything_committed = ec;
-    journal_rollback_transaction(1, oldj);
+    cf_journal_rollback_transaction(1, oldj);
     journal_swap();
   }
   return err;
@@ -411,24 +414,24 @@ cf_reload(byte *file)
 int
 cf_load(byte *file)
 {
-  struct journal_item *oldj = journal_new_transaction(1);
+  struct cf_journal_item *oldj = cf_journal_new_transaction(1);
   int err = load_file(file);
   if (!err)
-    journal_commit_transaction(1, oldj);
+    cf_journal_commit_transaction(1, oldj);
   else
-    journal_rollback_transaction(1, oldj);
+    cf_journal_rollback_transaction(1, oldj);
   return err;
 }
 
 int
 cf_set(byte *string)
 {
-  struct journal_item *oldj = journal_new_transaction(0);
+  struct cf_journal_item *oldj = cf_journal_new_transaction(0);
   int err = load_string(string);
   if (!err)
-    journal_commit_transaction(0, oldj);
+    cf_journal_commit_transaction(0, oldj);
   else
-    journal_rollback_transaction(0, oldj);
+    cf_journal_rollback_transaction(0, oldj);
   return err;
 }
 
