@@ -591,9 +591,9 @@ cf_parse_string(byte *str, byte **ptr)
 }
 
 static byte *
-cf_parse_lookup(byte *str, int *ptr, char **t)
+cf_parse_lookup(byte *str, int *ptr, byte **t)
 {
-  char **n = t;
+  byte **n = t;
   uns total_len = 0;
   while (*n && strcasecmp(*n, str)) {
     total_len += strlen(*n) + 2;
@@ -1423,7 +1423,7 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
     case CT_DOUBLE:	bprintf(fb, "%lg ", *(double*)ptr); break;
     case CT_IP:		bprintf(fb, "%08x ", *(uns*)ptr); break;
     case CT_STRING:	bprintf(fb, "'%s' ", *(byte**)ptr); break;
-    case CT_LOOKUP:	bprintf(fb, "%s ", *(int*)ptr >= 0 ? u->lookup[ *(int*)ptr ] : "???"); break;
+    case CT_LOOKUP:	bprintf(fb, "%s ", *(int*)ptr >= 0 ? u->lookup[ *(int*)ptr ] : (byte*) "???"); break;
     case CT_USER:
       if (u->utype->dumper)
 	u->utype->dumper(fb, ptr);

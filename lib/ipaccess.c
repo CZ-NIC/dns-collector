@@ -61,7 +61,7 @@ static struct cf_user_type addrmask_type = {
 struct cf_section ipaccess_cf = {
   CF_TYPE(struct ipaccess_entry),
   CF_ITEMS {
-    CF_LOOKUP("Mode", PTR_TO(struct ipaccess_entry, allow), ((char*[]) { "deny", "allow", NULL })),
+    CF_LOOKUP("Mode", PTR_TO(struct ipaccess_entry, allow), ((byte*[]) { "deny", "allow", NULL })),
     CF_USER("IP", PTR_TO(struct ipaccess_entry, addr), &addrmask_type),
     CF_END
   }

@@ -65,7 +65,7 @@ struct cf_item {
   union cf_union {
     struct cf_section *sec;		// declaration of a section or a list
     cf_parser *par;			// parser function
-    char **lookup;			// NULL-terminated sequence of allowed strings for lookups
+    byte **lookup;			// NULL-terminated sequence of allowed strings for lookups
     struct cf_user_type *utype;		// specification of the user-defined type
   } u;
   enum cf_class cls:16;			// attribute class
