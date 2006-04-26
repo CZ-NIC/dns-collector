@@ -10,6 +10,7 @@
 #include "lib/lib.h"
 #include "lib/clists.h"
 #include "lib/conf2.h"
+#include "lib/fastbuf.h"
 #include "lib/ipaccess.h"
 
 #include <string.h>
@@ -25,7 +26,8 @@ struct ipaccess_entry {
   struct addrmask addr;
 };
 
-static byte *addrmask_parser(byte *c, void *ptr)
+static byte *
+addrmask_parser(byte *c, void *ptr)
 {
   /*
    * This is tricky: addrmasks will be compared by memcmp(), so we must ensure
@@ -53,9 +55,17 @@ static byte *addrmask_parser(byte *c, void *ptr)
   return NULL;
 }
 
+static void
+addrmask_dumper(struct fastbuf *fb, void *ptr)
+{
+  struct addrmask *am = ptr;
+  bprintf(fb, "%08x/%08x ", am->addr, am->mask);
+}
+
 static struct cf_user_type addrmask_type = {
   .size = sizeof(struct addrmask),
-  .parser = addrmask_parser
+  .parser = addrmask_parser,
+  .dumper = addrmask_dumper
 };
 
 struct cf_section ipaccess_cf = {
