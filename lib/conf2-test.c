@@ -130,7 +130,7 @@ time_parser(uns number, byte **pars, time_t *ptr)
   return NULL;
 }
 
-static char *alphabet[] = { "alpha", "beta", "gamma", "delta", NULL };
+static byte *alphabet[] = { "alpha", "beta", "gamma", "delta", NULL };
 static struct cf_section cf_top = {
   CF_INIT(init_top),
   CF_COMMIT(commit_top),
