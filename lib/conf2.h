@@ -48,7 +48,7 @@ typedef byte *cf_hook(void *ptr);
    * checks and postprocess the parsed values.  Commit-hooks must call
    * cf_journal_block() too.  Caveat! init-hooks for static sections must not
    * use cf_malloc() but normal xmalloc().  */
-typedef void *cf_dumper1(struct fastbuf *fb, void *ptr);
+typedef void cf_dumper1(struct fastbuf *fb, void *ptr);
   /* Dumps the contents of a variable of a user-defined type.  */
 
 struct cf_user_type {
