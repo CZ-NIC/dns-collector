@@ -64,6 +64,7 @@ addrmask_dumper(struct fastbuf *fb, void *ptr)
 
 static struct cf_user_type addrmask_type = {
   .size = sizeof(struct addrmask),
+  .name = "addrmask",
   .parser = addrmask_parser,
   .dumper = addrmask_dumper
 };
