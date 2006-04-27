@@ -309,9 +309,8 @@ commit_section(byte *name, struct cf_section *sec, void *ptr, uns commit_all)
 	return 1;
       }
     } else if (ci->cls == CC_LIST) {
-      struct cnode *n;
       uns idx = 0;
-      CLIST_WALK(n, * (clist*) (ptr + (addr_int_t) ci->ptr))
+      CLIST_FOR_EACH(cnode *, n, * (clist*) (ptr + (addr_int_t) ci->ptr))
 	if (idx++, commit_section(ci->name, ci->u.sec, n, commit_all)) {
 	  log(L_ERROR, "It happened in node #%d of list %s", idx, ci->name);
 	  return 1;
@@ -742,29 +741,29 @@ interpret_section(struct cf_section *sec, int number, byte **pars, int *processe
 }
 
 static void
-add_to_list(struct cnode *where, struct cnode *new_node, enum cf_operation op)
+add_to_list(cnode *where, cnode *new_node, enum cf_operation op)
 {
   switch (op)
   {
     case OP_EDIT:		// edition has been done in-place
       break;
     case OP_REMOVE:
-      cf_journal_block(&where->prev->next, sizeof(void*));
-      cf_journal_block(&where->next->prev, sizeof(void*));
+      CF_JOURNAL_VAR(where->prev->next);
+      CF_JOURNAL_VAR(where->next->prev);
       clist_remove(where);
       break;
     case OP_AFTER:		// implementation dependend (prepend_head = after(list)), and where==list, see clists.h:74
     case OP_PREPEND:
     case OP_COPY:
-      cf_journal_block(&where->next->prev, sizeof(void*));
-      cf_journal_block(&where->next, sizeof(void*));
+      CF_JOURNAL_VAR(where->next->prev);
+      CF_JOURNAL_VAR(where->next);
       clist_insert_after(new_node, where);
       break;
     case OP_BEFORE:		// implementation dependend (append_tail = before(list))
     case OP_APPEND:
     case OP_SET:
-      cf_journal_block(&where->prev->next, sizeof(void*));
-      cf_journal_block(&where->prev, sizeof(void*));
+      CF_JOURNAL_VAR(where->prev->next);
+      CF_JOURNAL_VAR(where->prev);
       clist_insert_before(new_node, where);
       break;
     default:
@@ -844,7 +843,7 @@ static byte *
 interpret_clear(struct cf_item *item, void *ptr)
 {
   if (item->cls == CC_LIST) {
-    cf_journal_block(ptr, sizeof(struct clist));
+    cf_journal_block(ptr, sizeof(clist));
     clist_init(ptr);
   } else if (item->cls == CC_DYNAMIC) {
     cf_journal_block(ptr, sizeof(void *));
@@ -867,10 +866,9 @@ cmp_items(void *i1, void *i2, struct cf_item *item)
 }
 
 static void *
-find_list_node(struct clist *list, void *query, struct cf_section *sec, u32 mask)
+find_list_node(clist *list, void *query, struct cf_section *sec, u32 mask)
 {
-  struct cnode *n;
-  CLIST_WALK(n, *list)
+  CLIST_FOR_EACH(cnode *, n, *list)
   {
     uns found = 1;
     for (uns i=0; i<32; i++)
@@ -1505,8 +1503,7 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
     dump_section(fb, item->u.sec, level+1, ptr);
   else if (item->cls == CC_LIST) {
     uns idx = 0;
-    struct cnode *n;
-    CLIST_WALK(n, * (clist*) ptr) {
+    CLIST_FOR_EACH(cnode *, n, * (clist*) ptr) {
       spaces(fb, level+1);
       bprintf(fb, "item %d\n", ++idx);
       dump_section(fb, item->u.sec, level+2, n);

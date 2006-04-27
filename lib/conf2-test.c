@@ -17,7 +17,7 @@
 static int verbose;
 
 struct sub_sect_1 {
-  struct cnode n;
+  cnode n;
   byte *name;
   time_t t;
   byte *level;
@@ -80,7 +80,7 @@ static byte *str1 = "no worries";
 static byte **str2 = DARY_ALLOC(byte *, 2, "Alice", "Bob");
 static u64 u1 = 0xCafeBeefDeadC00ll;
 static double d1 = -1.1;
-static struct clist secs;
+static clist secs;
 static time_t t1, t2;
 static u32 ip;
 static int *look = DARY_ALLOC(int, 2, 2, 1);

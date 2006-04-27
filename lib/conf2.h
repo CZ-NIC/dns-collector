@@ -94,12 +94,11 @@ struct cf_section {
 #define CF_ITEMS	.cfg = ( struct cf_item[] )
 #define CF_END		{ .cls = CC_END }
 /* Configuration items */
-struct clist;
 #define CF_STATIC(n,p,T,t,c)	{ .cls = CC_STATIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t*) }
 #define CF_DYNAMIC(n,p,T,t,c)	{ .cls = CC_DYNAMIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t**) }
 #define CF_PARSER(n,p,f,c)	{ .cls = CC_PARSER, .name = n, .number = c, .ptr = p, .u.par = (cf_parser*) f }
 #define CF_SECTION(n,p,s)	{ .cls = CC_SECTION, .name = n, .number = 1, .ptr = p, .u.sec = s }
-#define CF_LIST(n,p,s)		{ .cls = CC_LIST, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,struct clist*), .u.sec = s }
+#define CF_LIST(n,p,s)		{ .cls = CC_LIST, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,clist*), .u.sec = s }
 /* Configuration items for basic types */
 #define CF_INT(n,p)		CF_STATIC(n,p,INT,int,1)
 #define CF_INT_ARY(n,p,c)	CF_STATIC(n,p,INT,int,c)
