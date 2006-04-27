@@ -50,6 +50,10 @@ typedef byte *cf_hook(void *ptr);
    * use cf_malloc() but normal xmalloc().  */
 typedef void cf_dumper1(struct fastbuf *fb, void *ptr);
   /* Dumps the contents of a variable of a user-defined type.  */
+typedef byte *cf_copier(void *dest, void *src);
+  /* Similar to init-hook, but it copies attributes from another list node
+   * instead of setting the attributes to default values.  You have to provide
+   * it if your node contains parsed values and/or sub-lists.  */
 
 struct cf_user_type {
   uns size;				// of the parsed attribute
@@ -77,6 +81,7 @@ struct cf_section {
   uns size;				// 0 for a global block, sizeof(struct) for a section
   cf_hook *init;			// fills in default values (no need to bzero)
   cf_hook *commit;			// verifies parsed data (optional)
+  cf_copier *copy;			// copies values from another instance (optional, no need to copy basic attributes)
   struct cf_item *cfg;			// CC_END-terminated array of items
   uns flags;				// for internal use only
 };
@@ -85,6 +90,7 @@ struct cf_section {
 #define CF_TYPE(s)	.size = sizeof(s)
 #define CF_INIT(f)	.init = (cf_hook*) f
 #define CF_COMMIT(f)	.commit = (cf_hook*) f
+#define CF_COPY(f)	.copy = (cf_copier*) f
 #define CF_ITEMS	.cfg = ( struct cf_item[] )
 #define CF_END		{ .cls = CC_END }
 /* Configuration items */
@@ -167,7 +173,7 @@ byte *cf_parse_ip(byte *p, u32 *varp);
 /* Direct access to configuration items */
 
 #define CF_OPERATIONS T(CLOSE) T(SET) T(CLEAR) T(APPEND) T(PREPEND) \
-  T(REMOVE) T(EDIT) T(AFTER) T(BEFORE) T(DUPLICATE)
+  T(REMOVE) T(EDIT) T(AFTER) T(BEFORE) T(COPY)
   /* Closing brace finishes previous block.
    * Basic attributes (static, dynamic, parsed) can be used with SET.
    * Dynamic arrays can be used with SET, APPEND, PREPEND.

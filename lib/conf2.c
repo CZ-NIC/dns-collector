@@ -201,7 +201,7 @@ sort_dirty(void)
 
 #define SEC_FLAG_DYNAMIC	0x80000000	// contains a dynamic attribute
 #define SEC_FLAG_UNKNOWN	0x40000000	// ignore unknown entriies
-#define SEC_FLAG_CANT_DUPLICATE	0x20000000	// contains lists or parsers
+#define SEC_FLAG_CANT_COPY	0x20000000	// contains lists or parsers
 #define SEC_FLAG_NUMBER		0x0fffffff	// number of entries
 
 static struct cf_section sections;	// root section
@@ -224,17 +224,19 @@ inspect_section(struct cf_section *sec)
   for (ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
       inspect_section(ci->u.sec);
-      sec->flags |= ci->u.sec->flags & (SEC_FLAG_DYNAMIC | SEC_FLAG_CANT_DUPLICATE);
+      sec->flags |= ci->u.sec->flags & (SEC_FLAG_DYNAMIC | SEC_FLAG_CANT_COPY);
     } else if (ci->cls == CC_LIST) {
       inspect_section(ci->u.sec);
-      sec->flags |= SEC_FLAG_DYNAMIC | SEC_FLAG_CANT_DUPLICATE;
+      sec->flags |= SEC_FLAG_DYNAMIC | SEC_FLAG_CANT_COPY;
     } else if (ci->cls == CC_DYNAMIC)
       sec->flags |= SEC_FLAG_DYNAMIC;
     else if (ci->cls == CC_PARSER) {
-      sec->flags |= SEC_FLAG_CANT_DUPLICATE;
+      sec->flags |= SEC_FLAG_CANT_COPY;
       if (ci->number < 0)
 	sec->flags |= SEC_FLAG_DYNAMIC;
     }
+  if (sec->copy)
+    sec->flags &= ~SEC_FLAG_CANT_COPY;
   sec->flags |= ci - sec->cfg;		// record the number of entries
 }
 
@@ -753,7 +755,7 @@ add_to_list(struct cnode *where, struct cnode *new_node, enum cf_operation op)
       break;
     case OP_AFTER:		// implementation dependend (prepend_head = after(list)), and where==list, see clists.h:74
     case OP_PREPEND:
-    case OP_DUPLICATE:
+    case OP_COPY:
       cf_journal_block(&where->next->prev, sizeof(void*));
       cf_journal_block(&where->next, sizeof(void*));
       clist_insert_after(new_node, where);
@@ -971,10 +973,12 @@ closing_brace(struct item_stack *st, enum cf_operation op, int number, byte **pa
 	st->base_ptr = st->list;
       else if (pure_op == OP_AFTER || pure_op == OP_BEFORE)
 	cf_init_section(st->item->name, st->sec, st->base_ptr, 1);
-      else if (pure_op == OP_DUPLICATE) {
-	if (st->sec->flags & SEC_FLAG_CANT_DUPLICATE)
-	  return cf_printf("Item %s cannot be duplicated", st->item->name);
+      else if (pure_op == OP_COPY) {
+	if (st->sec->flags & SEC_FLAG_CANT_COPY)
+	  return cf_printf("Item %s cannot be copied", st->item->name);
 	memcpy(st->base_ptr, st->list, st->sec->size);	// strings and dynamic arrays are shared
+	if (st->sec->copy)
+	  TRY( st->sec->copy(st->base_ptr, st->list) );
       } else
 	ASSERT(0);
       if (op & OP_OPEN) {	// stay at the same recursion level
@@ -1322,13 +1326,12 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
       *c++ = 0;
       switch (Clocase(*c)) {
 	case 's': op = OP_SET; break;
-	case 'c': op = OP_CLEAR; break;
+	case 'c': op = Clocase(c[1]) == 'l' ? OP_CLEAR: OP_COPY; break;
 	case 'a': op = Clocase(c[1]) == 'p' ? OP_APPEND : OP_AFTER; break;
 	case 'p': op = OP_PREPEND; break;
 	case 'r': op = OP_REMOVE; break;
 	case 'e': op = OP_EDIT; break;
 	case 'b': op = OP_BEFORE; break;
-	case 'd': op = OP_DUPLICATE; break;
 	default: op = OP_SET; break;
       }
       if (strcasecmp(c, op_names[op])) {
