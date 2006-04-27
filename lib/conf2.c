@@ -1085,6 +1085,8 @@ init_stack(void)
   };
 }
 
+static uns postpone_commit;			// only for cf_get_opt()
+
 static int
 done_stack(void)
 {
@@ -1093,11 +1095,23 @@ done_stack(void)
     return 1;
   }
   sort_dirty();
+  if (postpone_commit)
+    return 0;
   if (commit_section(&sections, NULL, !everything_committed))
     return 1;
   everything_committed = 1;
   dirties = 0;
   return 0;
+}
+
+static void
+final_commit(void)
+{
+  if (postpone_commit) {
+    postpone_commit = 0;
+    if (done_stack())
+      die("Cannot commit after the initialization");
+  }
 }
 
 /* Text file parser */
@@ -1398,6 +1412,7 @@ cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct o
     int res = getopt_long (argc, argv, short_opts, long_opts, long_index);
     if (res == 'S' || res == 'C' || res == 0x64436667)
     {
+      postpone_commit = 1;
       if (other_options)
 	die("The -S and -C options must precede all other arguments");
       if (res == 'S') {
@@ -1411,6 +1426,7 @@ cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct o
 #ifdef CONFIG_DEBUG
       else {   /* --dumpconfig */
 	load_default();
+	final_commit();
 	struct fastbuf *b = bfdopen(1, 4096);
 	cf_dump_sections(b);
 	bclose(b);
@@ -1420,6 +1436,7 @@ cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct o
       /* unhandled option or end of options */
       if (res != ':' && res != '?')
 	load_default();
+      final_commit();
       other_options++;
       return res;
     }
