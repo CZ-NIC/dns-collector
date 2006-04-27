@@ -697,7 +697,7 @@ interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *proces
   void *old_p = *ptr;
   uns size = type_size(item->type, item->u.utype);
   ASSERT(size >= sizeof(uns));
-  int old_nr = * (int*) (old_p - size);
+  int old_nr = old_p ? * (int*) (old_p - size) : 0;
   int taken = MIN(number, ABS(item->number)-old_nr);
   *processed = taken;
   // stretch the dynamic array
