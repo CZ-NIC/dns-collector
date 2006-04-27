@@ -295,25 +295,26 @@ global_init(void)
     return;
   sections.flags |= SEC_FLAG_UNKNOWN;
   sections.size = 0;			// size of allocated array used to be stored here
-  cf_init_section("top-level", &sections, NULL, 0);
+  cf_init_section(NULL, &sections, NULL, 0);
 }
 
-static int
-commit_section(byte *name, struct cf_section *sec, void *ptr, uns commit_all)
+static byte *
+commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 {
   struct cf_item *ci;
+  byte *err;
   for (ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
-      if (commit_section(ci->name, ci->u.sec, ptr + (addr_int_t) ci->ptr, commit_all)) {
-	log(L_ERROR, "It happened in section %s", ci->name);
-	return 1;
+      if ((err = commit_section(ci->u.sec, ptr + (addr_int_t) ci->ptr, commit_all))) {
+	log(L_ERROR, "Cannot commit section %s: %s", ci->name, err);
+	return "commit of a subsection failed";
       }
     } else if (ci->cls == CC_LIST) {
       uns idx = 0;
       CLIST_FOR_EACH(cnode *, n, * (clist*) (ptr + (addr_int_t) ci->ptr))
-	if (idx++, commit_section(ci->name, ci->u.sec, n, commit_all)) {
-	  log(L_ERROR, "It happened in node #%d of list %s", idx, ci->name);
-	  return 1;
+	if (idx++, err = commit_section(ci->u.sec, n, commit_all)) {
+	  log(L_ERROR, "Cannot commit node #%d of list %s: %s", idx, ci->name, err);
+	  return "commit of a list failed";
 	}
     }
   if (sec->commit) {
@@ -326,11 +327,7 @@ commit_section(byte *name, struct cf_section *sec, void *ptr, uns commit_all)
 
     if (commit_all
 	|| (pos < dirties && dirty.ptr[pos].sec == sec && dirty.ptr[pos].ptr == ptr)) {
-      byte *msg = sec->commit(ptr);
-      if (msg) {
-	log(L_ERROR, "Cannot commit section %s: %s", name, msg);
-	return 1;
-      }
+      return sec->commit(ptr);
     }
   }
   return 0;
@@ -1096,7 +1093,7 @@ done_stack(void)
     return 1;
   }
   sort_dirty();
-  if (commit_section("top-level", &sections, NULL, !everything_committed))
+  if (commit_section(&sections, NULL, !everything_committed))
     return 1;
   everything_committed = 1;
   dirties = 0;
