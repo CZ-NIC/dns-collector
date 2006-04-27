@@ -1326,6 +1326,7 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
 	goto error;
       line_num = ll;
       parse_fb = fb;
+      continue;
     }
     enum cf_operation op;
     byte *c = strchr(name, ':');
@@ -1358,9 +1359,6 @@ error:
   log(L_ERROR, "File %s, line %d: %s", name_fb, line_num, msg);
   return "included from here";
 }
-
-#undef DEFAULT_CONFIG			/* FIXME */
-#define DEFAULT_CONFIG "cf/sherlock2"
 
 #ifndef DEFAULT_CONFIG
 #define DEFAULT_CONFIG NULL
