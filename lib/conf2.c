@@ -1412,14 +1412,15 @@ cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct o
     int res = getopt_long (argc, argv, short_opts, long_opts, long_index);
     if (res == 'S' || res == 'C' || res == 0x64436667)
     {
-      postpone_commit = 1;
       if (other_options)
 	die("The -S and -C options must precede all other arguments");
       if (res == 'S') {
+	postpone_commit = 1;
 	load_default();
 	if (cf_set(optarg))
 	  die("Cannot set %s", optarg);
       } else if (res == 'C') {
+	postpone_commit = 1;
 	if (cf_load(optarg))
 	  die("Cannot load config file %s", optarg);
       }
