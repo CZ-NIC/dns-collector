@@ -98,6 +98,7 @@ dump_u16(struct fastbuf *fb, u16 *ptr)
 
 static struct cf_user_type u16_type = {
   .size = sizeof(u16),
+  .name = "u16",
   .parser = (cf_parser1*) parse_u16,
   .dumper = (cf_dumper1*) dump_u16
 };

@@ -1451,6 +1451,9 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
 
 static void dump_section(struct fastbuf *fb, struct cf_section *sec, int level, void *ptr);
 
+static byte *class_names[] = { "end", "static", "dynamic", "parser", "section", "list" };
+static byte *type_names[] = { "int", "u64", "double", "ip", "string", "lookup", "user" };
+
 static void
 dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
 {
@@ -1459,21 +1462,24 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
   uns size = type_size(item->type, item->u.utype);
   int i;
   spaces(fb, level);
-  bprintf(fb, "%s: c%d #%d ", item->name, item->cls, item->number);
-  if (item->cls == CC_STATIC || item->cls == CC_DYNAMIC)
-    bprintf(fb, "t%d ", type);
-  if (item->cls == CC_STATIC) {
+  bprintf(fb, "%s: C%s #", item->name, class_names[item->cls]);
+  if (item->number == CF_ANY_NUM)
+    bputs(fb, "any ");
+  else
+    bprintf(fb, "%d ", item->number);
+  if (item->cls == CC_STATIC || item->cls == CC_DYNAMIC) {
+    bprintf(fb, "T%s ", type_names[type]);
     if (item->type == CT_USER)
-      bprintf(fb, "S%d ", size);
+      bprintf(fb, "U%s S%d ", item->u.utype->name, size);
+  }
+  if (item->cls == CC_STATIC) {
     for (i=0; i<item->number; i++)
       dump_basic(fb, ptr + i * size, type, &item->u);
   } else if (item->cls == CC_DYNAMIC) {
-    if (item->type == CT_USER)
-      bprintf(fb, "S%d ", size);
     ptr = * (void**) ptr;
     if (ptr) {
       int real_nr = * (int*) (ptr - size);
-      bprintf(fb, "##%d ", real_nr);
+      bprintf(fb, "N%d ", real_nr);
       for (i=0; i<real_nr; i++)
 	dump_basic(fb, ptr + i * size, type, &item->u);
     } else

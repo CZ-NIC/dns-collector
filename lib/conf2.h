@@ -53,6 +53,7 @@ typedef void cf_dumper1(struct fastbuf *fb, void *ptr);
 
 struct cf_user_type {
   uns size;				// of the parsed attribute
+  byte *name;				// name of the type (for dumping)
   cf_parser1 *parser;			// how to parse it
   cf_dumper1 *dumper;			// how to dump the type
 };
