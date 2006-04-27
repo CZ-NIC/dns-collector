@@ -5,11 +5,10 @@
  */
 
 #include "lib/lib.h"
-#include "lib/conf2.h"
+#include "lib/getopt.h"
 #include "lib/fastbuf.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 
 struct my1_node
 {
@@ -130,7 +129,7 @@ main(int argc, char **argv)
 	int i;
 	cf_def_file = NULL;
 	log_init(argv[0]);
-	while ((opt = cf_get_opt(argc, argv, options, CF_NO_LONG_OPTS, NULL)) >= 0)
+	while ((opt = cf_getopt(argc, argv, options, CF_NO_LONG_OPTS, NULL)) >= 0)
 		switch (opt)
 		{
 			case 'v':

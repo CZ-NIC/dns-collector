@@ -9,7 +9,8 @@
 
 #include "lib/lib.h"
 #include "lib/clists.h"
-#include "lib/conf2.h"
+#include "lib/conf.h"
+#include "lib/getopt.h"
 #include "lib/fastbuf.h"
 #include "lib/ipaccess.h"
 
@@ -103,7 +104,7 @@ static struct cf_section test_cf = {
 int main(int argc, char **argv)
 {
   cf_declare_section("T", &test_cf, 0);
-  if (cf_get_opt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) != -1)
+  if (cf_getopt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) != -1)
     die("Invalid arguments");
 
   byte buf[256];

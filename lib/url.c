@@ -18,7 +18,7 @@
 #include "lib/lib.h"
 #include "lib/url.h"
 #include "lib/chartype.h"
-#include "lib/conf2.h"
+#include "lib/conf.h"
 
 #include <string.h>
 #include <stdlib.h>

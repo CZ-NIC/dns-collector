@@ -17,7 +17,8 @@
  */
 
 #include "lib/lib.h"
-#include "lib/conf2.h"
+#include "lib/conf.h"
+#include "lib/getopt.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -171,7 +172,7 @@ int main(int argc, char **argv)
     }
   c->cls = CC_END;
   cf_declare_section(sec_name, sec, allow_unknown);
-  if (cf_get_opt(start, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) != -1)
+  if (cf_getopt(start, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) != -1)
     help();
   return 0;
 }

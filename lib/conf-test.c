@@ -5,14 +5,14 @@
  */
 
 #include "lib/lib.h"
-#include "lib/conf2.h"
+#include "lib/conf.h"
+#include "lib/getopt.h"
 #include "lib/clists.h"
 #include "lib/fastbuf.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <getopt.h>
 
 static int verbose;
 
@@ -190,7 +190,7 @@ main(int argc, char *argv[])
   cf_def_file = "lib/conf2.t";
 
   int opt;
-  while ((opt = cf_get_opt(argc, argv, short_opts, long_opts, NULL)) >= 0)
+  while ((opt = cf_getopt(argc, argv, short_opts, long_opts, NULL)) >= 0)
     switch (opt) {
       case 'v': verbose++; break;
       default: usage("unknown option %c\n", opt);

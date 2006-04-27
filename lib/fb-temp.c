@@ -8,7 +8,7 @@
  */
 
 #include "lib/lib.h"
-#include "lib/conf2.h"
+#include "lib/conf.h"
 #include "lib/fastbuf.h"
 
 #include <unistd.h>

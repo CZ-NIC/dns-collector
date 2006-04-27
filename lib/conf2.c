@@ -9,7 +9,8 @@
  */
 
 #include "lib/lib.h"
-#include "lib/conf2.h"
+#include "lib/conf.h"
+#include "lib/getopt.h"
 #include "lib/mempool.h"
 #include "lib/clists.h"
 #include "lib/fastbuf.h"
@@ -23,7 +24,6 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <fcntl.h>
-#include <getopt.h>
 
 #define TRY(f)	do { byte *_msg = f; if (_msg) return _msg; } while (0)
 
@@ -1085,7 +1085,7 @@ init_stack(void)
   };
 }
 
-static uns postpone_commit;			// only for cf_get_opt()
+static uns postpone_commit;			// only for cf_getopt()
 
 static int
 done_stack(void)
@@ -1403,7 +1403,7 @@ load_default(void)
 }
 
 int
-cf_get_opt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index)
+cf_getopt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index)
 {
   static int other_options = 0;
   while (1) {

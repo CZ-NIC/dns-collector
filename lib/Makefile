@@ -39,7 +39,7 @@ LIBUCW_INCLUDES= \
 	hashfunc.h hashtable.h \
 	heap.h binheap.h binheap-node.h \
 	redblack.h \
-	conf2.h ipaccess.h \
+	conf.h getopt.h ipaccess.h \
 	profile.h \
 	fastbuf.h lfs.h ff-utf8.h \
 	chartype.h unicode.h stkstring.h \
@@ -67,7 +67,7 @@ $(o)/lib/lizard.o: CFLAGS += $(COPT2) -funroll-loops
 
 $(o)/lib/db-test: $(o)/lib/db-test.o $(LIBUCW)
 $(o)/lib/db-tool: $(o)/lib/db-tool.o $(LIBUCW)
-$(o)/lib/conf2-test: $(o)/lib/conf2-test.o $(LIBUCW)
+$(o)/lib/conf-test: $(o)/lib/conf-test.o $(LIBUCW)
 $(o)/lib/sort-test: $(o)/lib/sort-test.o $(LIBUCW)
 $(o)/lib/lfs-test: $(o)/lib/lfs-test.o $(LIBUCW)
 $(o)/lib/hash-test: $(o)/lib/hash-test.o $(LIBUCW)

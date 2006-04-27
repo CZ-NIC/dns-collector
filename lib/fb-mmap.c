@@ -10,7 +10,7 @@
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 #include "lib/lfs.h"
-#include "lib/conf2.h"
+#include "lib/conf.h"
 
 #include <string.h>
 #include <fcntl.h>

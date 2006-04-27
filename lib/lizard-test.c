@@ -1,12 +1,11 @@
 #include "lib/lib.h"
-#include "lib/conf2.h"
+#include "lib/getopt.h"
 #include "lib/fastbuf.h"
 #include "lib/lizard.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <getopt.h>
 #include <sys/user.h>
 
 static char *options = CF_SHORT_OPTS "cdtx";
@@ -35,7 +34,7 @@ main(int argc, char **argv)
   uns action = 't';
   uns crash = 0;
   log_init(argv[0]);
-  while ((opt = cf_get_opt(argc, argv, options, CF_NO_LONG_OPTS, NULL)) >= 0)
+  while ((opt = cf_getopt(argc, argv, options, CF_NO_LONG_OPTS, NULL)) >= 0)
     switch (opt)
     {
       case 'c':

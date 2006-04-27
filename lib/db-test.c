@@ -15,7 +15,7 @@
 #define NAME "GDBM"
 #endif
 
-#include <getopt.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <sys/stat.h>
