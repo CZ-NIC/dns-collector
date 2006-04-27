@@ -167,7 +167,7 @@ byte *cf_parse_ip(byte *p, u32 *varp);
 /* Direct access to configuration items */
 
 #define CF_OPERATIONS T(CLOSE) T(SET) T(CLEAR) T(APPEND) T(PREPEND) \
-  T(REMOVE) T(EDIT) T(AFTER) T(BEFORE)
+  T(REMOVE) T(EDIT) T(AFTER) T(BEFORE) T(DUPLICATE)
   /* Closing brace finishes previous block.
    * Basic attributes (static, dynamic, parsed) can be used with SET.
    * Dynamic arrays can be used with SET, APPEND, PREPEND.

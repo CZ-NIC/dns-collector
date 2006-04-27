@@ -41,6 +41,7 @@ top.slaveS:before {level pum}{
   confidence 2
   list 123 456 789
 }
+top.slaves:duplicate {name coogee} Coogee2 PUM
 
 topp.a=15
 top.nr1=   ' 15'

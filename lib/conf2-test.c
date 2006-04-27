@@ -19,12 +19,13 @@ static int verbose;
 struct sub_sect_1 {
   struct cnode n;
   byte *name;
+  time_t t;
   byte *level;
   int confidence[2];
   double *list;
 };
 
-static struct sub_sect_1 sec1 = { {}, "Charlie", "WBAFC", { 0, -1}, DARY_ALLOC(double, 3, 1e4, -1e-4, 8) };
+static struct sub_sect_1 sec1 = { {}, "Charlie", 0, "WBAFC", { 0, -1}, DARY_ALLOC(double, 3, 1e4, -1e-4, 8) };
 
 static byte *
 init_sec_1(struct sub_sect_1 *s)
@@ -49,6 +50,13 @@ commit_sec_1(struct sub_sect_1 *s)
   return NULL;
 }
 
+static byte *
+time_parser(uns number, byte **pars, time_t *ptr)
+{
+  *ptr = number ? atoi(pars[0]) : time(NULL);
+  return NULL;
+}
+
 static struct cf_section cf_sec_1 = {
   CF_TYPE(struct sub_sect_1),
   CF_INIT(init_sec_1),
@@ -56,6 +64,7 @@ static struct cf_section cf_sec_1 = {
 #define F(x)	PTR_TO(struct sub_sect_1, x)
   CF_ITEMS {
     CF_STRING("name", F(name)),
+    //CF_PARSER("t", F(t), time_parser, 0),
     CF_STRING("level", F(level)),
     CF_INT_ARY("confidence", F(confidence[0]), 2),		// XXX: the [0] is needed for the sake of type checking
     CF_DOUBLE_DYN("list", F(list), 100),
@@ -121,13 +130,6 @@ commit_top(void *ptr UNUSED)
 {
   if (nr1 != 15)
     return "Don't touch my variable!";
-  return NULL;
-}
-
-static byte *
-time_parser(uns number, byte **pars, time_t *ptr)
-{
-  *ptr = number ? atoi(pars[0]) : time(NULL);
   return NULL;
 }
 
