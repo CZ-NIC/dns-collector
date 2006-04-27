@@ -11,7 +11,7 @@ LIBUCW_MODS= \
 	mmap pagecache partmap hashfunc \
 	lists slists sorter bitsig \
 	log log-file proctitle \
-	conf conf2 ipaccess \
+	conf2 ipaccess \
 	profile \
 	fastbuf ff-printf ff-utf8 \
 	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow \
@@ -39,7 +39,7 @@ LIBUCW_INCLUDES= \
 	hashfunc.h hashtable.h \
 	heap.h binheap.h binheap-node.h \
 	redblack.h \
-	conf.h ipaccess.h \
+	conf2.h ipaccess.h \
 	profile.h \
 	fastbuf.h lfs.h ff-utf8.h \
 	chartype.h unicode.h stkstring.h \
@@ -67,7 +67,6 @@ $(o)/lib/lizard.o: CFLAGS += $(COPT2) -funroll-loops
 
 $(o)/lib/db-test: $(o)/lib/db-test.o $(LIBUCW)
 $(o)/lib/db-tool: $(o)/lib/db-tool.o $(LIBUCW)
-$(o)/lib/conf-test: $(o)/lib/conf-test.o $(LIBUCW)
 $(o)/lib/conf2-test: $(o)/lib/conf2-test.o $(LIBUCW)
 $(o)/lib/sort-test: $(o)/lib/sort-test.o $(LIBUCW)
 $(o)/lib/lfs-test: $(o)/lib/lfs-test.o $(LIBUCW)
