@@ -15,10 +15,4 @@
 extern struct cf_section ipaccess_cf;
 int ipaccess_check(clist *l, u32 ip);
 
-/* FIXME: Hacks to make older modules compile */
-struct ipaccess_list { };
-#define ipaccess_init() NULL
-#define ipaccess_parse(x,y,z) NULL
-#define ipaccess_check_xxx(x,y) 0
-
 #endif
