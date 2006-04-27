@@ -161,8 +161,11 @@ int main(int argc, char **argv)
 	  c->number = (c->type & F_ARRAY) ? CF_ANY_NUM : 1;
 	  c->ptr = c;
 	  c->u.par = (cf_parser*) report;
-	  if (e)
-	    report(1, &e, c);
+	  if (e) {
+	    byte *err = report(1, &e, c);
+	    if (err)
+	      die("Cannot parse the default value #%d: %s", c-sec->cfg, err);
+	  }
 	  c++;
 	}
     }
