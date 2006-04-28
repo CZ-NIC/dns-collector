@@ -11,7 +11,8 @@ LIBUCW_MODS= \
 	mmap pagecache partmap hashfunc \
 	lists slists sorter bitsig \
 	log log-file proctitle \
-	conf2 ipaccess \
+	conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section \
+	ipaccess \
 	profile \
 	fastbuf ff-printf ff-utf8 \
 	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow \

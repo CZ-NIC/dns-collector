@@ -164,7 +164,7 @@ static struct option long_opts[] = {
 };
 
 static char *help = "\
-Usage: conf2-test <options>\n\
+Usage: conf-test <options>\n\
 \n\
 Options:\n"
 CF_USAGE
@@ -187,7 +187,7 @@ main(int argc, char *argv[])
 {
   log_init(argv[0]);
   cf_declare_section("top", &cf_top, 0);
-  cf_def_file = "lib/conf2.t";
+  cf_def_file = "lib/conf-test.t";
 
   int opt;
   while ((opt = cf_getopt(argc, argv, short_opts, long_opts, NULL)) >= 0)

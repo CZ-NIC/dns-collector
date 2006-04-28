@@ -1,5 +1,5 @@
 # test config file
-#include lib/conf2.t ; top.xa=1
+#include lib/conf-test.t ; top.xa=1
 #include 'non-existent file'; #top.xa=1
 Top { \
 
