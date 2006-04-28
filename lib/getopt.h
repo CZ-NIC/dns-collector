@@ -1,5 +1,5 @@
 /*
- *	UCW Library -- Reading of configuration files
+ *	UCW Library -- Parsing of configuration and command-line options
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
  *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
@@ -11,8 +11,11 @@
 #ifndef	_UCW_GETOPT_H
 #define	_UCW_GETOPT_H
 
-/* Safe reloading and loading of configuration files */
-extern byte *cf_def_file;
+#include <getopt.h>
+
+/* Safe loading and reloading of configuration files */
+
+extern byte *cf_def_file;		/* DEFAULT_CONFIG; NULL if already loaded */
 int cf_reload(byte *file);
 int cf_load(byte *file);
 int cf_set(byte *string);
@@ -37,16 +40,15 @@ byte *cf_write_item(struct cf_item *item, enum cf_operation op, int number, byte
 void cf_dump_sections(struct fastbuf *fb);
 
 /*
- * When using cf_get_opt(), you must prefix your own short/long options by the
- * CF_(SHORT|LONG)_OPTS.
+ * cf_getopt() takes care of parsing the command-line arguments, loading the
+ * default configuration file (cf_def_file) and processing configuration options.
+ * The calling convention is the same as with GNU getopt_long(), but you must prefix
+ * your own short/long options by the CF_(SHORT|LONG)_OPTS or pass CF_NO_LONG_OPTS
+ * of there are no long options.
  *
- * cf_def_file contains the name of a configuration file that will be
- * automatically loaded before the first --set option is executed.  If no --set
- * option occurs, it will be loaded after getopt() returns -1 (i.e. at the end
- * of the configuration options).  cf_def_file will be ignored if another
- * configuration file has already been loaded using the --config option.  The
- * initial value of cf_def_file is DEFAULT_CONFIG from config.h, but you can
- * override it manually before calling cf_get_opt().
+ * The default configuration file can be overriden by the --config options,
+ * which must come first. During parsing of all other options, the configuration
+ * is already available.
  */
 
 #define	CF_SHORT_OPTS	"C:S:"
@@ -67,7 +69,6 @@ void cf_dump_sections(struct fastbuf *fb);
 #define CF_USAGE_DEBUG
 #endif
 
-#include <getopt.h>
 int cf_getopt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index);
 
 #endif

@@ -1,5 +1,5 @@
 /*
- *	UCW Library -- Reading of configuration files
+ *	UCW Library -- Configuration files
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
  *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
