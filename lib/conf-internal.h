@@ -1,3 +1,16 @@
+/*
+ *	UCW Library -- Configuration files: only for internal use of conf-*.c
+ *
+ *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
+ *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
+ */
+
+#ifndef	_UCW_CONF_INTERNAL_H
+#define	_UCW_CONF_INTERNAL_H
+
 /* conf-intr.c */
 #define OP_MASK 0xff		// only get the operation
 #define OP_OPEN 0x100		// here we only get an opening brace instead of parameters
@@ -26,3 +39,5 @@ extern struct cf_section cf_sections;
 struct cf_item *cf_find_subitem(struct cf_section *sec, byte *name);
 int cf_commit_all(enum cf_commit_mode cm);
 void cf_add_dirty(struct cf_section *sec, void *ptr);
+
+#endif
