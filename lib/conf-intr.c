@@ -269,8 +269,11 @@ interpret_clear(struct cf_item *item, void *ptr)
   } else if (item->cls == CC_DYNAMIC) {
     cf_journal_block(ptr, sizeof(void *));
     * (void**) ptr = NULL;
+  } else if (item->cls == CC_STATIC && item->type == CT_STRING) {
+    cf_journal_block(ptr, item->number * sizeof(byte*));
+    bzero(ptr, item->number * sizeof(byte*));
   } else
-    return "The item is not a list or a dynamic array";
+    return "The item is not a list, dynamic array, or string";
   return NULL;
 }
 
