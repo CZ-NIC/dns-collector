@@ -49,7 +49,7 @@
  *  				in order of decreasing length
  *  KMPS_FOUND(kmp,src,search)  ... called for every match (in search->out)
  *  KMPS_WANT_BEST		algorithm computes globally longest match, which is available
- *  				in search.best in KMPS_EXIT; if there is no match, it points to the null state
+ *  				in search->best in KMPS_EXIT; if there is no match, it points to the null state
  */
 
 #define P(x) KMPS_PREFIX(x)
