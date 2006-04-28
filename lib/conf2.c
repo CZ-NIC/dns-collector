@@ -1429,6 +1429,7 @@ cf_getopt(int argc, char * const argv[], const char *short_opts, const struct op
 	struct fastbuf *b = bfdopen(1, 4096);
 	cf_dump_sections(b);
 	bclose(b);
+	exit(0);
       }
 #endif
     } else {
