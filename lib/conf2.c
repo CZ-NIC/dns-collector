@@ -1320,11 +1320,11 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
 	goto error;
       }
       uns ll = line_num;
-      msg = parse_fastbuf(pars[0], new_fb, depth+1);
+      msg = parse_fastbuf(stk_strdup(pars[0]), new_fb, depth+1);
+      line_num = ll;
       bclose(new_fb);
       if (msg)
 	goto error;
-      line_num = ll;
       parse_fb = fb;
       continue;
     }
