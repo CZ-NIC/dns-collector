@@ -135,7 +135,7 @@ struct cf_section {
   // creates a static instance of a dynamic array
   // FIXME: overcast doesn't work for the double type
 
-/* Memory allocation */
+/* Memory allocation: conf-alloc.c */
 struct mempool;
 extern struct mempool *cf_pool;
 void *cf_malloc(uns size);
@@ -143,21 +143,16 @@ void *cf_malloc_zero(uns size);
 byte *cf_strdup(byte *s);
 byte *cf_printf(char *fmt, ...) FORMAT_CHECK(printf,1,2);
 
-/* Undo journal for error recovery */
+/* Undo journal for error recovery: conf-journal.c */
 extern uns cf_need_journal;
 void cf_journal_block(void *ptr, uns len);
 #define CF_JOURNAL_VAR(var) cf_journal_block(&(var), sizeof(var))
 
-struct cf_journal_item;
-struct cf_journal_item *cf_journal_new_transaction(uns new_pool);
-void cf_journal_commit_transaction(uns new_pool, struct cf_journal_item *oldj);
-void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj);
-
-/* Declaration */
+/* Declaration: conf-section.c */
 void cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown);
 void cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero);
 
-/* Parsers for basic types */
+/* Parsers for basic types: conf-parse.c */
 byte *cf_parse_int(byte *str, int *ptr);
 byte *cf_parse_u64(byte *str, u64 *ptr);
 byte *cf_parse_double(byte *str, double *ptr);

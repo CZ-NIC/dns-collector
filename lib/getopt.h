@@ -13,14 +13,14 @@
 
 #include <getopt.h>
 
-/* Safe loading and reloading of configuration files */
+/* Safe loading and reloading of configuration files: conf-input.c */
 
 extern byte *cf_def_file;		/* DEFAULT_CONFIG; NULL if already loaded */
 int cf_reload(byte *file);
 int cf_load(byte *file);
 int cf_set(byte *string);
 
-/* Direct access to configuration items */
+/* Direct access to configuration items: conf-intr.c */
 
 #define CF_OPERATIONS T(CLOSE) T(SET) T(CLEAR) T(APPEND) T(PREPEND) \
   T(REMOVE) T(EDIT) T(AFTER) T(BEFORE) T(COPY)
@@ -37,7 +37,17 @@ struct cf_item;
 struct fastbuf;
 byte *cf_find_item(byte *name, struct cf_item *item);
 byte *cf_write_item(struct cf_item *item, enum cf_operation op, int number, byte **pars);
+
+/* Debug dumping: conf-dump.c */
+
 void cf_dump_sections(struct fastbuf *fb);
+
+/* Journaling control: conf-journal.c */
+
+struct cf_journal_item;
+struct cf_journal_item *cf_journal_new_transaction(uns new_pool);
+void cf_journal_commit_transaction(uns new_pool, struct cf_journal_item *oldj);
+void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj);
 
 /*
  * cf_getopt() takes care of parsing the command-line arguments, loading the
@@ -69,6 +79,7 @@ void cf_dump_sections(struct fastbuf *fb);
 #define CF_USAGE_DEBUG
 #endif
 
+// conf-input.c
 int cf_getopt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index);
 
 #endif

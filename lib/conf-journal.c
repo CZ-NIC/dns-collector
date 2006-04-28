@@ -10,6 +10,7 @@
 
 #include "lib/lib.h"
 #include "lib/conf.h"
+#include "lib/getopt.h"
 #include "lib/conf-internal.h"
 #include "lib/mempool.h"
 
