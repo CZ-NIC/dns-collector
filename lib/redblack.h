@@ -15,7 +15,7 @@
  * A red-black tree is a binary search tree, where records are stored
  * in nodes (may be also leaves).  Every node has a colour.  The
  * following restrictions hold:
- * 
+ *
  * - a parent of a red node is black
  * - every path from the root to a node with less than 2 children
  *   contains the same number of black nodes

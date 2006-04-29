@@ -22,7 +22,7 @@
  *     null    head_node.prev  tail_node.next
  *     tail                    tail_node.prev
  */
-      
+
 typedef struct node {
   struct node *next, *prev;
 } node;

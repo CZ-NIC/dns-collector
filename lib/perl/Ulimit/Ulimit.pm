@@ -10,7 +10,7 @@
 # Interface:
 #   Sherlock::Ulimit::setlimit( $resource, $softlimit, $hardlimit)
 #   Sherlock::Ulimit::getlimit( $resource, $softlimit, $hardlimit)
-# 
+#
 # setlimit sets limit to values supplied in softlimit and hardlimit
 # getlimit reads limits into softlimit and hardlimit
 # $resource constants are defined below
@@ -44,7 +44,7 @@ our $AS = 9;
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 our %EXPORT_TAGS = ( 'all' => [ qw(
-	
+
 ) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );

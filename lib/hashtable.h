@@ -611,7 +611,7 @@ do {											\
 	GLUE_(h_px,node) *h_var = &h_buck->n;
 #define HASH_FOR_ALL(h_px, h_var) HASH_FOR_ALL_DYNAMIC(h_px, &GLUE_(h_px,table), h_var)
 #define HASH_END_FOR } } while(0)
-#define HASH_BREAK 
+#define HASH_BREAK
 #define HASH_CONTINUE continue
 
 #endif

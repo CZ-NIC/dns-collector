@@ -54,11 +54,11 @@
  *				we abbreviate this to P(x) below
  *
  *	KMP_CHAR		alphabet type, the default is u16
- *	
- *	KMP_SOURCE		user-defined text source; KMP_GET_CHAR must 
+ *
+ *	KMP_SOURCE		user-defined text source; KMP_GET_CHAR must
  *	KMP_GET_CHAR(kmp,src,c)	return zero at the end or nonzero together with the next character in c otherwise;
  *				if not defined, zero-terminated array of bytes is used as the input
- *	
+ *
  *	KMP_VARS		user-defined variables in 'struct P(struct)'
  *				-- a structure describing the whole automaton;
  *				these variables are stored in .u substructure to avoid collisions
@@ -139,7 +139,7 @@ struct P(state) {
   struct {
 #   ifdef KMP_STATE_VARS
     KMP_STATE_VARS
-#   endif    
+#   endif
   } u;				/* user-defined data*/
 };
 
@@ -213,10 +213,10 @@ static inline void
 P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(state) *f, P(char_t) c)
 {
   bzero(s, sizeof(*s));
-# ifdef KMP_INIT_STATE  
+# ifdef KMP_INIT_STATE
   struct P(struct) *kmp = (struct P(struct) *)t;
   { KMP_INIT_STATE(kmp, s); }
-# endif  
+# endif
   s->from = f;
   s->c = c;
   s->next = f->back; /* the pointers hold the link-list of sons... changed in build() */
@@ -287,7 +287,7 @@ P(get_char) (struct P(struct) *kmp UNUSED, P(source_t) *src, P(char_t) *c)
   else if (!Ualpha(cc))
     cc = P(control)();
   else
-# endif  
+# endif
     {
 #     ifdef KMP_TOLOWER
       cc = Utolower(cc);
@@ -402,7 +402,7 @@ P(build) (struct P(struct) *kmp)
   null->back = NULL;
 # ifdef KMP_BUILD_STATE
   { KMP_BUILD_STATE(kmp, null); }
-# endif  
+# endif
   while (read != write)
     {
       struct P(state) *s = fifo[read++], *t;
@@ -425,7 +425,7 @@ P(build) (struct P(struct) *kmp)
 	}
 #     ifdef KMP_BUILD_STATE
       { KMP_BUILD_STATE(kmp, s); }
-#     endif      
+#     endif
     }
 }
 

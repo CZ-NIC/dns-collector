@@ -93,7 +93,7 @@ base64_decode(byte *dest, byte *src, uns len)
 		   headache.  - Turadg Aleahmad <turadg@wise.berkeley.edu>
 		 */
 
-		if (ch == ' ') ch = '+'; 
+		if (ch == ' ') ch = '+';
 
 		ch = reverse_table[ch];
 		if (ch == 0xff) continue;

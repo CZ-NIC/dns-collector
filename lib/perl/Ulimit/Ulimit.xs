@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 
-MODULE = Sherlock::Ulimit		PACKAGE = Sherlock::Ulimit		
+MODULE = Sherlock::Ulimit		PACKAGE = Sherlock::Ulimit
 
 PROTOTYPES: ENABLED
 
