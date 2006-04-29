@@ -152,6 +152,20 @@ cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero)
   }
 }
 
+static void
+replace_null_dary(struct cf_item *item, void **ptr)
+{
+  static u64 zero = 0;
+  if (*ptr)
+    return;
+  uns size = cf_type_size(item->type, item->u.utype);
+  cf_journal_block(ptr, size);
+  if (size <= sizeof(zero))
+    *ptr = (&zero) + 1;
+  else
+    *ptr = cf_malloc_zero(size) + size;
+}
+
 static byte *
 commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 {
@@ -180,10 +194,12 @@ commit_section(struct cf_section *sec, void *ptr, uns commit_all)
     uns pos = BIN_SEARCH_FIRST_GE_CMP(dirty.ptr, dirties, comp, ARY_LT_X);
 
     if (commit_all
-	|| (pos < dirties && dirty.ptr[pos].sec == sec && dirty.ptr[pos].ptr == ptr)) {
-      return sec->commit(ptr);
-    }
+	|| (pos < dirties && dirty.ptr[pos].sec == sec && dirty.ptr[pos].ptr == ptr))
+      TRY( sec->commit(ptr) );
   }
+  for (ci=sec->cfg; ci->cls; ci++)
+    if (ci->cls == CC_DYNAMIC)
+      replace_null_dary(ci, ptr + (addr_int_t) ci->ptr);
   return 0;
 }
 
