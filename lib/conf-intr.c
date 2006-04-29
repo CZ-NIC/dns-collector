@@ -90,7 +90,7 @@ cf_parse_ary(uns number, byte **pars, void *ptr, enum cf_type type, union cf_uni
     else
       ASSERT(0);
     if (msg)
-      return cf_printf("Cannot parse item %d: %s", i+1, msg);
+      return number > 1 ? cf_printf("Item %d: %s", i+1, msg) : msg;
   }
   return NULL;
 }
@@ -201,6 +201,7 @@ interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed
     return "Nothing to add to the list";
   struct cf_section *sec = item->u.sec;
   *processed = 0;
+  uns index = 0;
   while (number > 0)
   {
     void *node = cf_malloc(sec->size);
@@ -209,7 +210,10 @@ interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed
     int taken;
     /* If the node contains any dynamic attribute at the end, we suppress
      * auto-repetition here and pass the flag inside instead.  */
-    TRY( interpret_section(sec, number, pars, &taken, node, sec->flags & SEC_FLAG_DYNAMIC) );
+    index++;
+    byte *msg = interpret_section(sec, number, pars, &taken, node, sec->flags & SEC_FLAG_DYNAMIC);
+    if (msg)
+      return sec->flags & SEC_FLAG_DYNAMIC ? msg : cf_printf("Node %d of list %s: %s", index, item->name, msg);
     *processed += taken;
     number -= taken;
     pars += taken;
