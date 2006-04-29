@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Character Conversion with Allocation on a Memory Pool 
+ *	Sherlock Library -- Character Conversion with Allocation on a Memory Pool
  *
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
  *
@@ -17,12 +17,12 @@ mp_strconv(struct mempool *mp, byte *s, uns in_cs, uns out_cs)
 {
   if (in_cs == out_cs)
     return mp_strdup(mp, s);
- 
+
   struct conv_context c;
   char *b[32];
   uns bs[32], n = 0, sum = 0;
   uns l = strlen(s) + 1;
-  
+
   conv_init(&c);
   conv_set_charset(&c, in_cs, out_cs);
   c.source = s;

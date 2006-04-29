@@ -81,6 +81,7 @@ struct fastbuf {
 /* FastIO on standard files (specify buffer size 0 to enable mmaping) */
 
 struct fastbuf *bopen(byte *name, uns mode, uns buflen);
+struct fastbuf *bopen_try(byte *name, uns mode, uns buflen);
 struct fastbuf *bopen_tmp(uns buflen);
 struct fastbuf *bfdopen(int fd, uns buflen);
 struct fastbuf *bfdopen_shared(int fd, uns buflen);

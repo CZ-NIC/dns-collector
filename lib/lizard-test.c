@@ -1,5 +1,5 @@
 #include "lib/lib.h"
-#include "lib/conf.h"
+#include "lib/getopt.h"
 #include "lib/fastbuf.h"
 #include "lib/lizard.h"
 #include <stdio.h>

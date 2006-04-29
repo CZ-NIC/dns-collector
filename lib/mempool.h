@@ -70,6 +70,7 @@ mp_strcat(struct mempool *mp, char *x, char *y)
 {
   return mp_multicat(mp, x, y, NULL);
 }
+char *mp_strjoin(struct mempool *p, char **a, uns n, uns sep);
 
 /* mempool-fmt.c */
 

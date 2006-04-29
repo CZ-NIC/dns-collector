@@ -2,6 +2,7 @@
  *	UCW Library -- Shell Interface to Configuration Files
  *
  *	(c) 2002--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 2006 Robert Spalek <robert@ucw.cz>
  *
  *	Once we were using this beautiful Shell version, but it turned out
  *	that it doesn't work with nested config files:
@@ -17,14 +18,12 @@
 
 #include "lib/lib.h"
 #include "lib/conf.h"
+#include "lib/getopt.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <alloca.h>
-
-static struct cfitem *items;
-static byte *flags;
 
 enum flag {
   F_STRING = 0,
@@ -55,52 +54,50 @@ Modifiers:\n\
 }
 
 static byte *
-report(struct cfitem *item, byte *value)
+report(uns num, byte **pars, struct cf_item *item)
 {
-  uns f = flags[item-items];
-  byte *err;
-  byte buf[128];
-
-  if (f & F_ARRAY)
-    printf("CF_%s[${#CF_%s[*]}]='", item->name, item->name);
-  else
-    printf("CF_%s='", item->name);
-
-  switch (f & F_TYPE_MASK)
-    {
-    case F_STRING:
-      break;
-    case F_INT: ;
-      uns val;
-      if (err = cf_parse_int(value, &val))
-	return err;
-      sprintf(buf, "%d", val);
-      value = buf;
-      break;
-    case F_INT64: ;
-      u64 val64;
-      if (err = cf_parse_u64(value, &val64))
-	return err;
-      sprintf(buf, "%Lu", val64);
-      value = buf;
-      break;
-    case F_DOUBLE: ;
-      double valf;
-      if (err = cf_parse_double(value, &valf))
-	return err;
-      sprintf(buf, "%g", valf);
-      value = buf;
-      break;
-    default:
-      ASSERT(0);
+  uns f = item->type;
+  for (uns i=0; i<num; i++)
+  {
+    byte buf[128];
+    byte *err, *value = buf;
+    switch (f & F_TYPE_MASK) {
+      case F_STRING:
+	value = pars[i];
+	break;
+      case F_INT:
+	; uns val;
+	if (err = cf_parse_int(pars[i], &val))
+	  return err;
+	sprintf(buf, "%d", val);
+	break;
+      case F_INT64:
+	; u64 val64;
+	if (err = cf_parse_u64(pars[i], &val64))
+	  return err;
+	sprintf(buf, "%Lu", val64);
+	break;
+      case F_DOUBLE:
+	; double valf;
+	if (err = cf_parse_double(pars[i], &valf))
+	  return err;
+	sprintf(buf, "%g", valf);
+	break;
+      default:
+	ASSERT(0);
     }
-  while (*value)
-    {
+
+    if (f & F_ARRAY)
+      printf("CF_%s[${#CF_%s[*]}]='", item->name, item->name);
+    else
+      printf("CF_%s='", item->name);
+    while (*value) {
       if (*value == '\'')
 	die("Apostrophes are not supported in config of scripts");
       putchar(*value++);
     }
-  puts("'");
+    puts("'");
+  }
   return NULL;
 }
 
@@ -108,7 +105,6 @@ int main(int argc, char **argv)
 {
   int i = 1;
   int start;
-  struct cfitem *c;
 
   log_init("config");
   while (i < argc && argv[i][0] == '-')
@@ -116,26 +112,24 @@ int main(int argc, char **argv)
   if (i + 1 >= argc)
     help();
   start = i;
-  c = items = alloca(sizeof(struct cfitem) * (argc-i+1));
-  flags = alloca(argc);
-  bzero(flags, argc);
-  c->name = argv[i];
-  c->type = CT_SECTION;
-  c->var = NULL;
-  c++;
-  while (++i < argc)
+
+  byte *sec_name = argv[i++];
+  uns allow_unknown = 0;
+  struct cf_section *sec = xmalloc_zero(sizeof(struct cf_section));
+  struct cf_item *c = sec->cfg = xmalloc_zero(sizeof(struct cf_item) * (argc-i+1));
+
+  for (; i<argc; i++)
     {
-      char *arg = xstrdup(argv[i]);
+      byte *arg = xstrdup(argv[i]);
       if (!strcmp(arg, "*"))
-	items->type = CT_INCOMPLETE_SECTION;
+	allow_unknown = 1;
       else
 	{
-	  uns id = c-items;
-	  char *e = strchr(arg, '=');
+	  byte *e = strchr(arg, '=');
 	  if (e)
 	    *e++ = 0;
 
-	  char *t = arg + strlen(arg) - 1;
+	  byte *t = arg + strlen(arg) - 1;
 	  if (t > arg)
 	    {
 	      if (*t == '#')
@@ -144,15 +138,15 @@ int main(int argc, char **argv)
 		  if (t > arg && *t == '#')
 		    {
 		      *t-- = 0;
-		      flags[id] |= F_INT64;
+		      c->type |= F_INT64;
 		    }
 		  else
-		    flags[id] |= F_INT;
+		    c->type |= F_INT;
 		}
 	      else if (*t == '$')
 		{
 		  *t-- = 0;
-		  flags[id] |= F_DOUBLE;
+		  c->type |= F_DOUBLE;
 		}
 	    }
 
@@ -160,19 +154,24 @@ int main(int argc, char **argv)
 	    {
 	      arg++;
 	      printf("declare -a CF_%s ; CF_%s=()\n", arg, arg);
-	      flags[id] |= F_ARRAY;
+	      c->type |= F_ARRAY;
 	    }
 
-	  c->type = CT_FUNCTION;
-	  c->var = report;
+	  c->cls = CC_PARSER;
 	  c->name = arg;
-	  if (e)
-	    report(c, e);
+	  c->number = (c->type & F_ARRAY) ? CF_ANY_NUM : 1;
+	  c->ptr = c;
+	  c->u.par = (cf_parser*) report;
+	  if (e) {
+	    byte *err = report(1, &e, c);
+	    if (err)
+	      die("Cannot parse the default value #%d: %s", c-sec->cfg, err);
+	  }
 	  c++;
 	}
     }
-  c->type = CT_STOP;
-  cf_register(items);
+  c->cls = CC_END;
+  cf_declare_section(sec_name, sec, allow_unknown);
   if (cf_getopt(start, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) != -1)
     help();
   return 0;

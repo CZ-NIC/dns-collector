@@ -13,14 +13,14 @@
  *  Each time you include it with parameters set in the corresponding
  *  preprocessor macros, it generates KMP structures and functions
  *  with the parameters given. See lib/kmp.h before reading this description.
- *  
+ *
  *  This file defines:
  *
  *  	struct search		structure with both the internal and the user-defined variables
  *  				used during the search and accessible from all macros
  *
  * 	void search(kmp,search,src) executes the search; search structure is allocated by the caller (possible input/output)
- * 	
+ *
  *  	void run(kmp,src)	the same, but automatically allocates search structre from the stack
  *
  *
@@ -41,11 +41,11 @@
  *
  *  KMPS_INIT(kmp,src,search)	statement executed at the beginning of search()
  *  KMPS_EXIT(kmp,src,search)	... at the end
- *  KMPS_STEP(kmp,src,search)	... after each step (read of next character + current state update) 
+ *  KMPS_STEP(kmp,src,search)	... after each step (read of next character + current state update)
  *  				of the algorithm, but before KMPS_FOUND[_CHAIN]
- *  KMPS_FOUND_CHAIN(kmp,src,search) ... for each state representing locally longest match 
+ *  KMPS_FOUND_CHAIN(kmp,src,search) ... for each state representing locally longest match
  *				(stored in search->out - NOT necessary search->s!);
- *  				all matches form a NULL-terminated link list (search->out, search->out->next, ...) 
+ *  				all matches form a NULL-terminated link list (search->out, search->out->next, ...)
  *  				in order of decreasing length
  *  KMPS_FOUND(kmp,src,search)  ... called for every match (in search->out)
  *  KMPS_WANT_BEST		algorithm computes globally longest match, which is available

@@ -11,7 +11,8 @@ LIBUCW_MODS= \
 	mmap pagecache partmap hashfunc \
 	lists slists sorter bitsig \
 	log log-file proctitle \
-	conf ipaccess \
+	conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section \
+	ipaccess \
 	profile \
 	fastbuf ff-printf ff-utf8 \
 	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow \
@@ -26,7 +27,8 @@ LIBUCW_MODS= \
 	md5 md5hex \
 	base64 base224 \
 	sync \
-	qache
+	qache \
+	string
 
 LIBUCW_INCLUDES= \
 	lib.h config.h math.h \
@@ -38,7 +40,7 @@ LIBUCW_INCLUDES= \
 	hashfunc.h hashtable.h \
 	heap.h binheap.h binheap-node.h \
 	redblack.h \
-	conf.h ipaccess.h \
+	conf.h getopt.h ipaccess.h \
 	profile.h \
 	fastbuf.h lfs.h ff-utf8.h \
 	chartype.h unicode.h stkstring.h \
@@ -76,6 +78,7 @@ $(o)/lib/redblack-test: $(o)/lib/redblack-test.o $(LIBUCW)
 $(o)/lib/binheap-test: $(o)/lib/binheap-test.o $(LIBUCW)
 $(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
 $(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
+$(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test slists.test kmp-test.test)
 $(o)/lib/regex.test: $(o)/lib/regex-t

@@ -5,3 +5,5 @@ Out:	<Hello, World!><Hello,                                              World!>
 
 Run:	obj/lib/mempool-str-t
 Out:	<<12345>>
+	bugs.gnats.insects
+	bugsgnatsinsects

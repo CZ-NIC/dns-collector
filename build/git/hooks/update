@@ -50,7 +50,7 @@ else
 		fi
 	done <$t
 	rm $t
-fi 
+fi
 
 exec >&2
 mutt -x -e 'set charset="utf-8"; set send_charset="us-ascii:iso-8859-2:utf-8"' -s "$subj" "$recipient" <$out

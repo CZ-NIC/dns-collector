@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Character Conversion with Allocation on the Stack 
+ *	Sherlock Library -- Character Conversion with Allocation on the Stack
  *
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
  *
