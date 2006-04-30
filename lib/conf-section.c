@@ -16,8 +16,6 @@
 
 #include <string.h>
 
-#define TRY(f)	do { byte *_msg = f; if (_msg) return _msg; } while (0)
-
 /* Dirty sections */
 
 struct dirty_section {
@@ -184,7 +182,8 @@ commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 	  log(L_ERROR, "Cannot commit node #%d of list %s: %s", idx, ci->name, err);
 	  return "commit of a list failed";
 	}
-    }
+    } else if (ci->cls == CC_DYNAMIC)
+      replace_null_dary(ci, ptr + (addr_int_t) ci->ptr);
   if (sec->commit) {
     /* We have to process the whole tree of sections even if just a few changes
      * have been made, because there are dependencies between commit-hooks and
@@ -195,11 +194,8 @@ commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 
     if (commit_all
 	|| (pos < dirties && dirty.ptr[pos].sec == sec && dirty.ptr[pos].ptr == ptr))
-      TRY( sec->commit(ptr) );
+      return sec->commit(ptr);
   }
-  for (ci=sec->cfg; ci->cls; ci++)
-    if (ci->cls == CC_DYNAMIC)
-      replace_null_dary(ci, ptr + (addr_int_t) ci->ptr);
   return 0;
 }
 
