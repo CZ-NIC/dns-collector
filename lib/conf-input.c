@@ -64,9 +64,6 @@ append(byte *start, byte *end)
   copy_buf.ptr[copied-1] = 0;
 }
 
-#define	CONTROL_CHAR(x) (x == '{' || x == '}' || x == ';')
-  // these characters separate words like blanks
-
 static byte *
 get_word(uns is_command_name)
 {
@@ -121,7 +118,8 @@ get_word(uns is_command_name)
   } else {
     // promised that *line is non-null and non-blank
     byte *start = line;
-    while (*line && !Cblank(*line) && !CONTROL_CHAR(*line)
+    while (*line && !Cblank(*line)
+	&& *line != '{' && *line != '}' && *line != ';'
 	&& (*line != '=' || !is_command_name))
       line++;
     if (*line == '=') {				// nice for setting from a command-line
