@@ -138,11 +138,18 @@ cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero)
     ASSERT(sec->size);
     bzero(ptr, sec->size);
   }
-  for (uns i=0; sec->cfg[i].cls; i++)
-    if (sec->cfg[i].cls == CC_SECTION)
-      cf_init_section(sec->cfg[i].name, sec->cfg[i].u.sec, ptr + (addr_int_t) sec->cfg[i].ptr, 0);
-    else if (sec->cfg[i].cls == CC_LIST)
-      clist_init(ptr + (addr_int_t) sec->cfg[i].ptr);
+  for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
+    if (ci->cls == CC_SECTION)
+      cf_init_section(ci->name, ci->u.sec, ptr + (addr_int_t) ci->ptr, 0);
+    else if (ci->cls == CC_LIST)
+      clist_init(ptr + (addr_int_t) ci->ptr);
+    else if (ci->cls == CC_DYNAMIC) {
+      void **dyn = ptr + (addr_int_t) ci->ptr;
+      if (!*dyn) {			// replace NULL by an empty array
+	static uns zero = 0;
+	*dyn = (&zero) + 1;
+      }
+    }
   if (sec->init) {
     byte *msg = sec->init(ptr);
     if (msg)
@@ -153,9 +160,8 @@ cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero)
 static byte *
 commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 {
-  struct cf_item *ci;
   byte *err;
-  for (ci=sec->cfg; ci->cls; ci++)
+  for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
       if ((err = commit_section(ci->u.sec, ptr + (addr_int_t) ci->ptr, commit_all))) {
 	log(L_ERROR, "Cannot commit section %s: %s", ci->name, err);
@@ -168,12 +174,6 @@ commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 	  log(L_ERROR, "Cannot commit node #%d of list %s: %s", idx, ci->name, err);
 	  return "commit of a list failed";
 	}
-    } else if (ci->cls == CC_DYNAMIC) {
-      void **dyn = ptr + (addr_int_t) ci->ptr;
-      if (!*dyn) {			// replace NULL by an empty array
-	static uns zero = 0;
-	*dyn = (&zero) + 1;
-      }
     }
   if (sec->commit) {
     /* We have to process the whole tree of sections even if just a few changes
