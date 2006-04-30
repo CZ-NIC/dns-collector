@@ -264,15 +264,20 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
   }
 }
 
-static byte *
-interpret_clear(struct cf_item *item, void *ptr)
+byte *
+cf_interpret_clear(struct cf_item *item, void *ptr)
 {
   if (item->cls == CC_LIST) {
     cf_journal_block(ptr, sizeof(clist));
     clist_init(ptr);
   } else if (item->cls == CC_DYNAMIC) {
     cf_journal_block(ptr, sizeof(void *));
-    * (void**) ptr = NULL;
+    uns size = cf_type_size(item->type, item->u.utype);
+    static u64 zero = 0;
+    if (size <= sizeof(zero))
+      *(void**)ptr = (&zero) + 1;
+    else
+      *(void**)ptr = cf_malloc_zero(size) + size;
   } else if (item->cls == CC_STATIC && item->type == CT_STRING) {
     cf_journal_block(ptr, item->number * sizeof(byte*));
     bzero(ptr, item->number * sizeof(byte*));
@@ -487,7 +492,7 @@ cf_interpret_line(byte *name, enum cf_operation op, int number, byte **pars)
 
   int taken;			// process as many parameters as possible
   if (op == OP_CLEAR)
-    taken = 0, msg = interpret_clear(item, ptr);
+    taken = 0, msg = cf_interpret_clear(item, ptr);
   else if (op == OP_SET)
     msg = interpret_set_item(item, number, pars, &taken, ptr, 1);
   else if (item->cls == CC_DYNAMIC)
@@ -531,7 +536,7 @@ cf_write_item(struct cf_item *item, enum cf_operation op, int number, byte **par
       break;
     case OP_CLEAR:
       taken = 0;
-      msg = interpret_clear(item, item->ptr);
+      msg = cf_interpret_clear(item, item->ptr);
       break;
     case OP_APPEND:
     case OP_PREPEND:

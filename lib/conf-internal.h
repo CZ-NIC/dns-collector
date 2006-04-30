@@ -20,6 +20,7 @@ enum cf_operation;
 extern byte *cf_op_names[];
 
 uns cf_type_size(enum cf_type type, struct cf_user_type *utype);
+byte *cf_interpret_clear(struct cf_item *item, void *ptr);
 byte *cf_interpret_line(byte *name, enum cf_operation op, int number, byte **pars);
 void cf_init_stack(void);
 int cf_check_stack(void);

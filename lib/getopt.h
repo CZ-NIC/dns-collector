@@ -34,12 +34,12 @@ enum cf_operation { CF_OPERATIONS };
 #undef T
 
 struct cf_item;
-struct fastbuf;
 byte *cf_find_item(byte *name, struct cf_item *item);
 byte *cf_write_item(struct cf_item *item, enum cf_operation op, int number, byte **pars);
 
 /* Debug dumping: conf-dump.c */
 
+struct fastbuf;
 void cf_dump_sections(struct fastbuf *fb);
 
 /* Journaling control: conf-journal.c */

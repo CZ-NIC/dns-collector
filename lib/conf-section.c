@@ -150,20 +150,6 @@ cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero)
   }
 }
 
-static void
-replace_null_dary(struct cf_item *item, void **ptr)
-{
-  static u64 zero = 0;
-  if (*ptr)
-    return;
-  uns size = cf_type_size(item->type, item->u.utype);
-  cf_journal_block(ptr, sizeof(void*));
-  if (size <= sizeof(zero))
-    *ptr = (&zero) + 1;
-  else
-    *ptr = cf_malloc_zero(size) + size;
-}
-
 static byte *
 commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 {
@@ -182,8 +168,11 @@ commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 	  log(L_ERROR, "Cannot commit node #%d of list %s: %s", idx, ci->name, err);
 	  return "commit of a list failed";
 	}
-    } else if (ci->cls == CC_DYNAMIC)
-      replace_null_dary(ci, ptr + (addr_int_t) ci->ptr);
+    } else if (ci->cls == CC_DYNAMIC) {
+      void **dyn = ptr + (addr_int_t) ci->ptr;
+      if (!*dyn)			// replace NULL by an empty array
+	cf_interpret_clear(ci, dyn);
+    }
   if (sec->commit) {
     /* We have to process the whole tree of sections even if just a few changes
      * have been made, because there are dependencies between commit-hooks and
