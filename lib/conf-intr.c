@@ -101,6 +101,8 @@ cf_parse_ary(uns number, byte **pars, void *ptr, enum cf_type type, union cf_uni
 byte *cf_op_names[] = { CF_OPERATIONS };
 #undef T
 
+#define DARY_HDR_SIZE ALIGN(sizeof(uns), CPU_STRUCT_ALIGN)
+
 static byte *
 interpret_set_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
 {
@@ -108,8 +110,7 @@ interpret_set_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
   cf_journal_block(ptr, sizeof(void*));
   // boundary checks done by the caller
   uns size = cf_type_size(item->type, item->u.utype);
-  ASSERT(size >= sizeof(uns));
-  *ptr = cf_malloc(sizeof(uns) + number * size) + sizeof(uns);
+  *ptr = cf_malloc(DARY_HDR_SIZE + number * size) + DARY_HDR_SIZE;
   DARY_LEN(*ptr) = number;
   return cf_parse_ary(number, pars, *ptr, type, &item->u);
 }
@@ -125,7 +126,7 @@ interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *proces
   int taken = MIN(number, ABS(item->number)-old_nr);
   *processed = taken;
   // stretch the dynamic array
-  void *new_p = cf_malloc(sizeof(uns) + (old_nr + taken) * size) + sizeof(uns);
+  void *new_p = cf_malloc(DARY_HDR_SIZE + (old_nr + taken) * size) + DARY_HDR_SIZE;
   DARY_LEN(new_p) = old_nr + taken;
   cf_journal_block(ptr, sizeof(void*));
   *ptr = new_p;

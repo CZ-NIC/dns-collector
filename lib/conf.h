@@ -124,7 +124,6 @@ struct cf_section {
 #define CF_USER(n,p,t)		{ .cls = CC_STATIC, .type = CT_USER, .name = n, .number = 1, .ptr = p, .u.utype = t }
 #define CF_USER_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_USER, .name = n, .number = c, .ptr = p, .u.utype = t }
 #define CF_USER_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_USER, .name = n, .number = c, .ptr = p, .u.utype = t }
-  // Beware that CF_USER_DYN can only be used on user-defined types of size at least 4
 
 /* If you aren't picky about the number of parameters */
 #define CF_ANY_NUM		-0x7fffffff
