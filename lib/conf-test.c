@@ -30,10 +30,8 @@ static struct sub_sect_1 sec1 = { {}, "Charlie", 0, "WBAFC", { 0, -1}, DARY_ALLO
 static byte *
 init_sec_1(struct sub_sect_1 *s)
 {
-  if (s == &sec1) {			// this is a static variable; skip clearing
-    DARY_LEN(sec1.list) = 3;		// XXX: fix for the bug in DARY_ALLOC()
+  if (s == &sec1)			// this is a static variable; skip clearing
     return NULL;
-  }
   s->name = "unknown";
   s->level = "default";
   s->confidence[0] = 5;

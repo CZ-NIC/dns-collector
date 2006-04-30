@@ -75,7 +75,7 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
   } else if (item->cls == CC_DYNAMIC) {
     ptr = * (void**) ptr;
     if (ptr) {
-      int real_nr = * (int*) (ptr - size);
+      int real_nr = DARY_LEN(ptr);
       bprintf(fb, "N%d ", real_nr);
       for (i=0; i<real_nr; i++)
 	dump_basic(fb, ptr + i * size, type, &item->u);

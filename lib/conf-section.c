@@ -170,8 +170,10 @@ commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 	}
     } else if (ci->cls == CC_DYNAMIC) {
       void **dyn = ptr + (addr_int_t) ci->ptr;
-      if (!*dyn)			// replace NULL by an empty array
-	cf_interpret_clear(ci, dyn);
+      if (!*dyn) {			// replace NULL by an empty array
+	static uns zero = 0;
+	*dyn = (&zero) + 1;
+      }
     }
   if (sec->commit) {
     /* We have to process the whole tree of sections even if just a few changes

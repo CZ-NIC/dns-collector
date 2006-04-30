@@ -129,10 +129,10 @@ struct cf_section {
 /* If you aren't picky about the number of parameters */
 #define CF_ANY_NUM		-0x7fffffff
 
-#define DARY_LEN(a) *(uns*)(a-1)
+#define DARY_LEN(a) ((uns*)a)[-1]
   // length of a dynamic array
-#define DARY_ALLOC(type,len,val...) (type[]) { (type)len, ##val } + 1
-  // creates a static instance of a dynamic array, works only for integer and pointer types
+#define DARY_ALLOC(type,len,val...) ((struct { uns l; type a[len]; }) { .l = len, .a = { val } }).a
+  // creates a static instance of a dynamic array
 
 /* Memory allocation: conf-alloc.c */
 struct mempool;
