@@ -3,7 +3,6 @@
 # Called by git-receive-pack with arguments: refname sha1-old sha1-new
 #
 
-#recipient="mj@ucw.cz"
 recipient="sherlock-commits@host2.netcentrum.cz"
 
 branch=${1#refs/heads/}
@@ -41,7 +40,7 @@ else
 	esac
 	echo
 	git-rev-list --pretty "$3" "^$base"
-	git-diff "$base" "$3"
+	git-diff -C "$base" "$3"
 	t=`mktemp -t gitlog.XXXXXXX`
 	git-diff --name-only -r "$base" "$3" >$t
 	while read X ; do
