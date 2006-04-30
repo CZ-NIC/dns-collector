@@ -157,7 +157,7 @@ replace_null_dary(struct cf_item *item, void **ptr)
   if (*ptr)
     return;
   uns size = cf_type_size(item->type, item->u.utype);
-  cf_journal_block(ptr, size);
+  cf_journal_block(ptr, sizeof(void*));
   if (size <= sizeof(zero))
     *ptr = (&zero) + 1;
   else
