@@ -43,11 +43,14 @@ static uns words;
 static uns ends_by_brace;		// the line is ended by "{"
 
 static int
-get_line(void)
+get_line(byte **msg)
 {
-  if (!bgets(parse_fb, line_buf, MAX_LINE))
-    return 0;
+  int err = bgets_nodie(parse_fb, line_buf, MAX_LINE);
   line_num++;
+  if (err <= 0) {
+    *msg = err < 0 ? "Line too long" : NULL;
+    return 0;
+  }
   line = line_buf;
   while (Cblank(*line))
     line++;
@@ -67,6 +70,7 @@ append(byte *start, byte *end)
 static byte *
 get_word(uns is_command_name)
 {
+  byte *msg;
   if (*line == '\'') {
     line++;
     while (1) {
@@ -77,8 +81,8 @@ get_word(uns is_command_name)
       if (*line)
 	break;
       copy_buf.ptr[copied-1] = '\n';
-      if (!get_line())
-	return "Unterminated apostrophe word at the end";
+      if (!get_line(&msg))
+	return msg ? : (byte*) "Unterminated apostrophe word at the end";
     }
     line++;
 
@@ -104,8 +108,8 @@ get_word(uns is_command_name)
 	copy_buf.ptr[copied-1] = '\n';
       else // merge two lines
 	copied -= 2;
-      if (!get_line())
-	return "Unterminated quoted word at the end";
+      if (!get_line(&msg))
+	return msg ? : (byte*) "Unterminated quoted word at the end";
     }
     line++;
 
@@ -142,15 +146,16 @@ get_token(uns is_command_name, byte **msg)
   *msg = NULL;
   while (1) {
     if (!*line || *line == '#') {
-      if (!is_command_name || !get_line())
+      if (!is_command_name || !get_line(msg))
 	return NULL;
     } else if (*line == ';') {
       *msg = get_word(0);
       if (!is_command_name || *msg)
 	return NULL;
     } else if (*line == '\\' && !line[1]) {
-      if (!get_line()) {
-	*msg = "Last line ends by a backslash";
+      if (!get_line(msg)) {
+	if (!*msg)
+	  *msg = "Last line ends by a backslash";
 	return NULL;
       }
       if (!*line || *line == '#')
