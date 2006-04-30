@@ -132,8 +132,7 @@ struct cf_section {
 #define DARY_LEN(a) *(uns*)(a-1)
   // length of a dynamic array
 #define DARY_ALLOC(type,len,val...) (type[]) { (type)len, ##val } + 1
-  // creates a static instance of a dynamic array
-  // FIXME: overcast doesn't work for the double type
+  // creates a static instance of a dynamic array, works only for integer and pointer types
 
 /* Memory allocation: conf-alloc.c */
 struct mempool;
