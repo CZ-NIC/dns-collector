@@ -6,6 +6,10 @@
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  *
+ *
+ *	References:
+ *	- http://www.tecgraf.puc-rio.br/~mgattass/color/ColorIndex.html
+ *
  *	FIXME:
  *	- fix theoretical problems with rounding errors in srgb_to_luv_pixel()
  *	- SIMD should help to speed up conversion of large arrays
@@ -124,11 +128,11 @@ color_conv_pixel(byte *dest, byte *src, struct color_grid_node *grid)
   g1 = g + n->ofs[1];
   g2 = g + n->ofs[2];
   g3 = g + n->ofs[3];
-  dest[0] = (g0->val[0] * n->mul[0] + g1->val[0] * n->mul[1] + 
+  dest[0] = (g0->val[0] * n->mul[0] + g1->val[0] * n->mul[1] +
              g2->val[0] * n->mul[2] + g3->val[0] * n->mul[3] + 128) >> 8;
-  dest[1] = (g0->val[1] * n->mul[0] + g1->val[1] * n->mul[1] + 
+  dest[1] = (g0->val[1] * n->mul[0] + g1->val[1] * n->mul[1] +
              g2->val[1] * n->mul[2] + g3->val[1] * n->mul[3] + 128) >> 8;
-  dest[2] = (g0->val[2] * n->mul[0] + g1->val[2] * n->mul[1] + 
+  dest[2] = (g0->val[2] * n->mul[0] + g1->val[2] * n->mul[1] +
              g2->val[2] * n->mul[2] + g3->val[2] * n->mul[3] + 128) >> 8;
 }
 

@@ -5,9 +5,6 @@
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
- *
- *	Reference:
- *	- http://www.tecgraf.puc-rio.br/~mgattass/color/ColorIndex.html
  */
 
 #undef LOCAL_DEBUG
@@ -16,12 +13,8 @@
 #include "lib/math.h"
 #include "images/color.h"
 
-u16 srgb_to_luv_tab1[256];
-u16 srgb_to_luv_tab2[9 << SRGB_TO_LUV_TAB2_SIZE];
-u32 srgb_to_luv_tab3[20 << SRGB_TO_LUV_TAB3_SIZE];
 
-struct color_grid_node *srgb_to_luv_grid;
-struct color_interpolation_node *color_interpolation_table;
+/********************* EXACT CONVERSION ROUTINES **********************/
 
 /* sRGB to XYZ */
 void
@@ -58,6 +51,13 @@ xyz_to_luv_slow(double luv[3], double xyz[3])
      /* intervals [0..100], [-134..220], [-140..122] */
    }
 }
+
+
+/***************** OPTIMIZED SRGB -> LUV CONVERSION *********************/
+
+u16 srgb_to_luv_tab1[256];
+u16 srgb_to_luv_tab2[9 << SRGB_TO_LUV_TAB2_SIZE];
+u32 srgb_to_luv_tab3[20 << SRGB_TO_LUV_TAB3_SIZE];
 
 void
 srgb_to_luv_init(void)
@@ -99,6 +99,12 @@ srgb_to_luv_pixels(byte *dest, byte *src, uns count)
       src += 3;
     }
 }
+
+
+/************************ GRID INTERPOLATION ALGORITHM ************************/
+
+struct color_grid_node *srgb_to_luv_grid;
+struct color_interpolation_node *color_interpolation_table;
 
 /* Returns volume of a given tetrahedron multiplied by 6 */
 static inline uns
@@ -239,6 +245,9 @@ color_conv_pixels(byte *dest, byte *src, uns count, struct color_grid_node *grid
     }
 }
 
+
+/**************************** TESTS *******************************/
+
 #ifdef TEST
 #include <string.h>
 
@@ -321,19 +330,20 @@ main(void)
   test_grid("grid sRGB -> Luv", srgb_to_luv_grid, srgb_to_luv_func);
 #ifdef LOCAL_DEBUG
 #define CNT 1000000
-  byte *a = xmalloc(3 * CNT), *b = xmalloc(3 * CNT);
-  init_timer();
-  for (uns i = 0; i < 20; i++)
-    memcpy(b, a, CNT * 3);
-  DBG("memcpy time=%d", (uns)get_timer());
+#define TESTS 10
+  byte *a = xmalloc(3 * CNT), *b = xmalloc_zero(3 * CNT);
   for (uns i = 0; i < 3 * CNT; i++)
     a[i] = random_max(256);
   init_timer();
-  for (uns i = 0; i < 20; i++)
+  for (uns i = 0; i < TESTS; i++)
+    memcpy(b, a, CNT * 3);
+  DBG("memcpy time=%d", (uns)get_timer());
+  init_timer();
+  for (uns i = 0; i < TESTS; i++)
     srgb_to_luv_pixels(b, a, CNT);
   DBG("direct time=%d", (uns)get_timer());
   init_timer();
-  for (uns i = 0; i < 20; i++)
+  for (uns i = 0; i < TESTS; i++)
     color_conv_pixels(b, a, CNT, srgb_to_luv_grid);
   DBG("grid time=%d", (uns)get_timer());
 #endif
