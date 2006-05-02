@@ -4,7 +4,7 @@
 #include "lib/fastbuf.h"
 #include "images/images.h"
 #include "images/image-sig.h"
-#include "images/image-search.h"
+#include "images/kd-tree.h"
 #include "sherlock/index.h"
 #include "lib/mempool.h"
 #include "sherlock/object.h"
@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <fcntl.h>
+#include <alloca.h>
 
 #define BEST_CNT 30
 

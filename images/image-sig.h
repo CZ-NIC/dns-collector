@@ -7,7 +7,7 @@
 #define IMAGE_REG_K	9
 #define IMAGE_REG_MAX	4
 
-typedef u16 image_feature_t;	/* 8 or 16 bits precision */
+typedef byte image_feature_t;	/* 8 or 16 bits precision */
 
 /* K-dimensional feature vector */
 struct image_vector {

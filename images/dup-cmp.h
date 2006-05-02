@@ -1,11 +1,12 @@
-#ifndef _IMAGES_IMAGE_DUP_H
-#define _IMAGES_IMAGE_DUP_H
+#ifndef _IMAGES_DUP_CMP_H
+#define _IMAGES_DUP_CMP_H
 
 struct image;
 
 struct image_dup {
   struct image *image;
   byte *buf;
+  uns buf_size;
   uns flags;
   uns cols;
   uns rows;

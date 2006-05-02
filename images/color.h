@@ -15,6 +15,9 @@
  *	- SIMD should help to speed up conversion of large arrays
  *	- maybe try to generate a long switch in color_conv_pixel()
  *	  with optimized entries instead of access to interpolation table
+ *	- most of multiplications in srgb_to_luv_pixels can be replaced
+ *	  with tables lookup... tests shows almost the speed for random
+ *	  input and cca 40% gain when input colors fit in CPU chache
  */
 
 #ifndef _IMAGES_COLOR_H

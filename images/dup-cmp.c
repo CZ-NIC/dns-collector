@@ -6,6 +6,7 @@
  *      This software may be freely distributed and used according to the terms
  *      of the GNU Lesser General Public License.
  *
+ *
  *      FIXME:
  *      - many possible optimization
  *      - compare normalized pictures (brightness, ...)
@@ -21,11 +22,11 @@
 #include "sherlock/sherlock.h"
 #include "lib/mempool.h"
 #include "images/images.h"
-#include "images/image-dup.h"
+#include "images/dup-cmp.h"
 
-static uns image_dup_scale_min_size = 8;
+static uns image_dup_scale_min_size = 16;
 static uns image_dup_ratio_threshold = 140;
-static uns image_dup_error_threshold = 2000;
+static uns image_dup_error_threshold = 50;
 
 static inline byte *
 image_dup_block(struct image_dup *dup, uns col, uns row)
@@ -50,9 +51,9 @@ image_dup_init(struct image_dup *dup, struct image *image, struct mempool *pool)
   dup->image = image;
   dup->width = image->width;
   dup->height = image->height;
-  for (dup->cols = 0; (uns)(1 << dup->cols) < image->width; dup->cols++);
-  for (dup->rows = 0; (uns)(1 << dup->rows) < image->height; dup->rows++);
-  dup->buf = mp_alloc(pool, 12 << (dup->cols + dup->rows));
+  for (dup->cols = 0; (uns)(2 << dup->cols) < image->width; dup->cols++);
+  for (dup->rows = 0; (uns)(2 << dup->rows) < image->height; dup->rows++);
+  dup->buf = mp_alloc(pool, dup->buf_size = (12 << (dup->cols + dup->rows)));
   dup->line = 6 << dup->cols;
   dup->flags = 0;
   if (image->width >= image_dup_scale_min_size && image->height >= image_dup_scale_min_size)

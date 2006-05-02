@@ -150,11 +150,11 @@ libpng_decompress_thumbnail(struct image_obj *imo)
       case PNG_COLOR_TYPE_GRAY:
 	imo->thumb.flags |= IMAGE_GRAYSCALE;
         png_set_gray_to_rgb(png_ptr);
-        png_set_strip_alpha(png_ptr);
 	break;
       case PNG_COLOR_TYPE_GRAY_ALPHA:
 	imo->thumb.flags |= IMAGE_GRAYSCALE;
         png_set_gray_to_rgb(png_ptr);
+        png_set_strip_alpha(png_ptr);
 	break;
       case PNG_COLOR_TYPE_RGB:
 	break;
@@ -169,7 +169,7 @@ libpng_decompress_thumbnail(struct image_obj *imo)
 
   /* Read image data */
   DBG("Reading image data");
-  byte *pixels = imo->thumb.pixels = mp_alloc(imo->pool, width * height * 3);
+  byte *pixels = imo->thumb.pixels = mp_alloc(imo->pool, imo->thumb.size = width * height * 3);
   png_bytep rows[height];
   for (uns i = 0; i < height; i++, pixels += width * 3)
     rows[i] = (png_bytep)pixels;
@@ -289,7 +289,7 @@ libjpeg_decompress_thumbnail(struct image_obj *imo)
   jpeg_start_decompress(&cinfo);
   ASSERT(imo->thumb.width == cinfo.output_width && imo->thumb.height == cinfo.output_height);
   ASSERT(sizeof(JSAMPLE) == 1);
-  byte *pixels = imo->thumb.pixels = mp_alloc(imo->pool, cinfo.output_width * cinfo.output_height * 3);
+  byte *pixels = imo->thumb.pixels = mp_alloc(imo->pool, imo->thumb.size = cinfo.output_width * cinfo.output_height * 3);
   if (cinfo.out_color_space == JCS_RGB)
     { /* Read RGB pixels */
       uns size = cinfo.output_width * 3;
@@ -369,7 +369,7 @@ magick_decompress_thumbnail(struct image_obj *imo)
   PixelPacket *pixels = (PixelPacket *)AcquireImagePixels(image, 0, 0, image->columns, image->rows, &magick_exception);
   ASSERT(pixels);
   uns size = image->columns * image->rows;
-  byte *p = imo->thumb.pixels = mp_alloc(imo->pool, size * 3);
+  byte *p = imo->thumb.pixels = mp_alloc(imo->pool, imo->thumb.size = size * 3);
   for (uns i = 0; i < size; i++)
     {
       p[0] = pixels->red >> (QuantumDepth - 8);

@@ -1,4 +1,4 @@
-#define LOCAL_DEBUG
+#undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
 #include "lib/math.h"
@@ -6,56 +6,9 @@
 #include "images/images.h"
 #include "images/image-obj.h"
 #include "images/image-sig.h"
+#include "images/color.h"
 
 #include <alloca.h>
-#include <magick/api.h>
-
-/*
- * Color spaces
- * 
- * http://www.tecgraf.puc-rio.br/~mgattass/color/ColorIndex.html
- * 
- */
-
-#define REF_WHITE_X 0.96422
-#define REF_WHITE_Y 1.
-#define REF_WHITE_Z 0.82521
-
-/* sRGB to XYZ */
-static void
-srgb_to_xyz_slow(double srgb[3], double xyz[3])
-{
-  double a[3];
-  for (uns i = 0; i < 3; i++)
-    if (srgb[i] > 0.04045)
-      a[i] = pow((srgb[i] + 0.055) * (1 / 1.055), 2.4);
-    else
-      a[i] = srgb[i] * (1 / 12.92);
-  xyz[0] = 0.412424 * a[0] + 0.357579 * a[1] + 0.180464 * a[2];
-  xyz[1] = 0.212656 * a[0] + 0.715158 * a[1] + 0.072186 * a[2];
-  xyz[2] = 0.019332 * a[0] + 0.119193 * a[1] + 0.950444 * a[2];
-}
-
-/* XYZ to CIE-Luv */
-static void
-xyz_to_luv_slow(double xyz[3], double luv[3])
-{
-  double sum = xyz[0] + 15 * xyz[1] + 3 * xyz[2];
-  if (sum < 0.000001)
-    luv[0] = luv[1] = luv[2] = 0;
-  else
-    {
-      double var_u = 4 * xyz[0] / sum;
-      double var_v = 9 * xyz[1] / sum;
-      if (xyz[1] > 0.008856)
-        luv[0] = 116 * pow(xyz[1], 1 / 3.) - 16;
-      else
-        luv[0] = (116 * 7.787) * xyz[1];
-      luv[1] = luv[0] * (13 * (var_u - 4 * REF_WHITE_X / (REF_WHITE_X + 15 * REF_WHITE_Y + 3 * REF_WHITE_Z)));
-      luv[2] = luv[0] * (13 * (var_v - 9 * REF_WHITE_Y / (REF_WHITE_X + 15 * REF_WHITE_Y + 3 * REF_WHITE_Z)));
-      /* intervals [0..100], [-134..220], [-140..122] */
-    }
-}
 
 struct block {
   uns l, u, v;		/* average Luv coefficients */
@@ -97,20 +50,16 @@ compute_image_signature(struct image *image, struct image_signature *sig)
 	for (uns y = 0; y < 4; y++, p += 3 * (width - 4))
 	  for (uns x = 0; x < 4; x++, p += 3)
 	    {
-	      double rgb[3], luv[3], xyz[3];
-	      rgb[0] = p[0] / 255.;
-	      rgb[1] = p[1] / 255.;
-	      rgb[2] = p[2] / 255.;
-	      srgb_to_xyz_slow(rgb, xyz);
-	      xyz_to_luv_slow(xyz, luv);
+	      byte luv[3];
+	      srgb_to_luv_pixel(luv, p);
 	      l_sum += *tp++ = luv[0];
-	      u_sum += luv[1] + 150;
-	      v_sum += luv[2] + 150;
+	      u_sum += luv[1];
+	      v_sum += luv[2];
 	    }
 
-	block->l = l_sum;
-	block->u = u_sum;
-	block->v = v_sum;
+	block->l = (l_sum >> 4);
+	block->u = (u_sum >> 4);
+	block->v = (v_sum >> 4);
 
 	/* Apply Daubechies wavelet transformation 
 	 * FIXME:
@@ -149,9 +98,9 @@ compute_image_signature(struct image *image, struct image_signature *sig)
 	  }
 
 	/* Extract energies in LH, HL and HH bands */
-	block->lh = sqrt(t[8] * t[8] + t[9] * t[9] + t[12] * t[12] + t[13] * t[13]);
-	block->hl = sqrt(t[2] * t[2] + t[3] * t[3] + t[6] * t[6] + t[7] * t[7]);
-	block->hh = sqrt(t[10] * t[10] + t[11] * t[11] + t[14] * t[14] + t[15] * t[15]);
+	block->lh = CLAMP((int)(sqrt(t[8] * t[8] + t[9] * t[9] + t[12] * t[12] + t[13] * t[13]) / 16), 0, 255);
+	block->hl = CLAMP((int)(sqrt(t[2] * t[2] + t[3] * t[3] + t[6] * t[6] + t[7] * t[7]) / 16), 0, 255);
+	block->hh = CLAMP((int)(sqrt(t[10] * t[10] + t[11] * t[11] + t[14] * t[14] + t[15] * t[15]) / 16), 0, 255);
       }
 
   /* FIXME: simple average is for testing pusposes only */
