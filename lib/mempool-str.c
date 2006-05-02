@@ -61,6 +61,28 @@ mp_multicat(struct mempool *p, ...)
   return buf;
 }
 
+char *
+mp_strjoin(struct mempool *p, char **a, uns n, uns sep)
+{
+  uns sizes[n];
+  uns len = 1;
+  for (uns i=0; i<n; i++)
+    len += sizes[i] = strlen(a[i]);
+  if (sep && n)
+    len += n-1;
+  char *dest = mp_alloc_fast_noalign(p, len);
+  char *d = dest;
+  for (uns i=0; i<n; i++)
+    {
+      if (sep && i)
+	*d++ = sep;
+      memcpy(d, a[i], sizes[i]);
+      d += sizes[i];
+    }
+  *d = 0;
+  return dest;
+}
+
 #ifdef TEST
 
 #include <stdio.h>
@@ -71,6 +93,9 @@ int main(void)
   char *s = mp_strdup(p, "12345");
   char *c = mp_multicat(p, "<<", s, ">>", NULL);
   puts(c);
+  char *a[] = { "bugs", "gnats", "insects" };
+  puts(mp_strjoin(p, a, 3, '.'));
+  puts(mp_strjoin(p, a, 3, 0));
   return 0;
 }
 

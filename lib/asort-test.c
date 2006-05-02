@@ -68,7 +68,7 @@ int main(void)
   check();
   generate();
   init_timer();
-  as_sort(N);  
+  as_sort(N);
   printf("asort: %d ms\n", get_timer());
   check();
   return 0;

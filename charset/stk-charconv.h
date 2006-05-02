@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Character Conversion with Allocation on the Stack 
+ *	Sherlock Library -- Character Conversion with Allocation on the Stack
  *
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
  *
@@ -21,7 +21,7 @@
 
 #define stk_strconv_to_utf8(s, cs_in) stk_strconv(s, cs_in, CONV_CHARSET_UTF8)
 #define stk_strconv_from_utf8(s, cs_out) stk_strconv(s, CONV_CHARSET_UTF8, cs_out)
-   
+
 /* Internals */
 
 uns stk_strconv_init(struct conv_context *c, byte *s, uns cs_in, uns cs_out);

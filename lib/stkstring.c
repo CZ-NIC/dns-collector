@@ -13,7 +13,7 @@ stk_array_len(char **s, uns cnt)
 }
 
 void
-stk_array_copy(char *x, char **s, uns cnt)
+stk_array_join(char *x, char **s, uns cnt, uns sep)
 {
   while (cnt--)
     {
@@ -21,6 +21,8 @@ stk_array_copy(char *x, char **s, uns cnt)
       memcpy(x, *s, l);
       x += l;
       s++;
+      if (sep && cnt)
+	*x++ = sep;
     }
   *x = 0;
 }
@@ -80,6 +82,8 @@ int main(void)
   a = stk_printf("Bew%s!", a);
   puts(a);
   puts(stk_hexdump(a, 3));
+  char *ary[] = { "The", "jaws", "that", "bite" };
+  puts(stk_strjoin(ary, 4, ' '));
   return 0;
 }
 

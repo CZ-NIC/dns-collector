@@ -3,7 +3,6 @@
 # Called by git-receive-pack with arguments: refname sha1-old sha1-new
 #
 
-#recipient="mj@ucw.cz"
 recipient="sherlock-commits@host2.netcentrum.cz"
 
 branch=${1#refs/heads/}
@@ -41,7 +40,7 @@ else
 	esac
 	echo
 	git-rev-list --pretty "$3" "^$base"
-	git-diff "$base" "$3"
+	git-diff -C "$base" "$3"
 	t=`mktemp -t gitlog.XXXXXXX`
 	git-diff --name-only -r "$base" "$3" >$t
 	while read X ; do
@@ -50,7 +49,7 @@ else
 		fi
 	done <$t
 	rm $t
-fi 
+fi
 
 exec >&2
 mutt -x -e 'set charset="utf-8"; set send_charset="us-ascii:iso-8859-2:utf-8"' -s "$subj" "$recipient" <$out

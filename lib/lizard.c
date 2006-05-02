@@ -6,7 +6,7 @@
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  *
- *	The file format is based on LZO1X and 
+ *	The file format is based on LZO1X and
  *	the compression method is based on zlib.
  */
 
@@ -450,7 +450,7 @@ long.  Decode sequences of these types until the EOF or END marker is read.
     C following characters will be copied from the compressed text to the
     output.  The number CC is always stored in the 2 least significant bits of
     the second last byte of the sequence.
-    
+
     If END is read, the algorithm switches to the copy mode.
 
 pattern					length		position

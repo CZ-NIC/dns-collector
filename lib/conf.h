@@ -1,102 +1,160 @@
 /*
- *	UCW Library -- Reading of configuration files
+ *	UCW Library -- Configuration files
  *
- *	(c) 2001 Robert Spalek <robert@ucw.cz>
- *	(c) 2003--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
+ *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef	_LIB_CONF_H
-#define	_LIB_CONF_H
+#ifndef	_UCW_CONF_H
+#define	_UCW_CONF_H
 
-#include <getopt.h>
-
-/*
- * Allocation in configuration memory pool.
- */
-
-extern struct mempool *cfpool;
-void *cfg_malloc(uns size);
-void *cfg_malloc_zero(uns size);
-byte *cfg_strdup(byte *s);
-byte *cfg_printf(char *fmt, ...) FORMAT_CHECK(printf,1,2);
-
-/*
- * Every module places its configuration setting into some section.  Section is
- * an array of cfitem, whose first record is of type CT_SECTION and contains
- * the name of the section.  The configuration sections are registered by
- * calling cf_register().
- *
- * CT_INCOMPLETE_SECTION is identical to CT_SECTION, but when an unknown variable
- * is spotted, we ignore it instead of bailing out with an error message.
- *
- * item->var is a pointer to the destination variable or to the special parsing
- * function.
- */
-
-enum cftype { CT_STOP, CT_SECTION, CT_INCOMPLETE_SECTION, CT_INT, CT_STRING, CT_FUNCTION, CT_DOUBLE, CT_U64 };
-
-struct cfitem {
-	byte *name;
-	enum cftype type;
-	void *var;
+enum cf_class {
+  CC_END,				// end of list
+  CC_STATIC,				// single variable or static array
+  CC_DYNAMIC,				// dynamically allocated array
+  CC_PARSER,				// arbitrary parser function
+  CC_SECTION,				// section appears exactly once
+  CC_LIST				// list with 0..many nodes
 };
 
-typedef byte *(*ci_func)(struct cfitem *, byte *);
+enum cf_type {
+  CT_INT, CT_U64, CT_DOUBLE,		// number types
+  CT_IP,				// IP address
+  CT_STRING,				// string type
+  CT_LOOKUP,				// in a string table
+  CT_USER				// user-defined type
+};
 
-void cf_register(struct cfitem *items);
+struct fastbuf;
+typedef byte *cf_parser(uns number, byte **pars, void *ptr);
+  /* A parser function gets an array of (strdup'ed) strings and a pointer with
+   * the customized information (most likely the target address).  It can store
+   * the parsed value anywhere in any way it likes, however it must first call
+   * cf_journal_block() on the overwritten memory block.  It returns an error
+   * message or NULL if everything is all right.  */
+typedef byte *cf_parser1(byte *string, void *ptr);
+  /* A parser function for user-defined types gets a string and a pointer to
+   * the destination variable.  It must store the value within [ptr,ptr+size),
+   * where size is fixed for each type.  It should not call cf_journal_block().  */
+typedef byte *cf_hook(void *ptr);
+  /* An init- or commit-hook gets a pointer to the section or NULL if this
+   * is the global section.  It returns an error message or NULL if everything
+   * is all right.  The init-hook should fill in default values (needed for
+   * dynamically allocated nodes of link lists or for filling global variables
+   * that are run-time dependent).  The commit-hook should perform sanity
+   * checks and postprocess the parsed values.  Commit-hooks must call
+   * cf_journal_block() too.  Caveat! init-hooks for static sections must not
+   * use cf_malloc() but normal xmalloc().  */
+typedef void cf_dumper1(struct fastbuf *fb, void *ptr);
+  /* Dumps the contents of a variable of a user-defined type.  */
+typedef byte *cf_copier(void *dest, void *src);
+  /* Similar to init-hook, but it copies attributes from another list node
+   * instead of setting the attributes to default values.  You have to provide
+   * it if your node contains parsed values and/or sub-lists.  */
 
-/*
- * Direct setting of configuration items and parsing the configuration file.
- */
+struct cf_user_type {
+  uns size;				// of the parsed attribute
+  byte *name;				// name of the type (for dumping)
+  cf_parser1 *parser;			// how to parse it
+  cf_dumper1 *dumper;			// how to dump the type
+};
 
-int cf_item_count(void);
-struct cfitem *cf_get_item(byte *sect, byte *name);
-byte *cf_set_item(byte *sect, byte *name, byte *value);
-void cf_read(byte *filename);
+struct cf_section;
+struct cf_item {
+  byte *name;				// case insensitive
+  int number;				// length of an array or #parameters of a parser (negative means at most)
+  void *ptr;				// pointer to a global variable or an offset in a section
+  union cf_union {
+    struct cf_section *sec;		// declaration of a section or a list
+    cf_parser *par;			// parser function
+    byte **lookup;			// NULL-terminated sequence of allowed strings for lookups
+    struct cf_user_type *utype;		// specification of the user-defined type
+  } u;
+  enum cf_class cls:16;			// attribute class
+  enum cf_type type:16;			// type of a static or dynamic attribute
+};
 
-/*
- * Number parsing functions which could be useful in CT_FUNCTION callbacks.
- */
+struct cf_section {
+  uns size;				// 0 for a global block, sizeof(struct) for a section
+  cf_hook *init;			// fills in default values (no need to bzero)
+  cf_hook *commit;			// verifies parsed data (optional)
+  cf_copier *copy;			// copies values from another instance (optional, no need to copy basic attributes)
+  struct cf_item *cfg;			// CC_END-terminated array of items
+  uns flags;				// for internal use only
+};
 
-byte *cf_parse_int(byte *value, uns *varp);
-byte *cf_parse_u64(byte *value, u64 *varp);
-byte *cf_parse_double(byte *value, double *varp);
+/* Declaration of cf_section */
+#define CF_TYPE(s)	.size = sizeof(s)
+#define CF_INIT(f)	.init = (cf_hook*) f
+#define CF_COMMIT(f)	.commit = (cf_hook*) f
+#define CF_COPY(f)	.copy = (cf_copier*) f
+#define CF_ITEMS	.cfg = ( struct cf_item[] )
+#define CF_END		{ .cls = CC_END }
+/* Configuration items */
+#define CF_STATIC(n,p,T,t,c)	{ .cls = CC_STATIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t*) }
+#define CF_DYNAMIC(n,p,T,t,c)	{ .cls = CC_DYNAMIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t**) }
+#define CF_PARSER(n,p,f,c)	{ .cls = CC_PARSER, .name = n, .number = c, .ptr = p, .u.par = (cf_parser*) f }
+#define CF_SECTION(n,p,s)	{ .cls = CC_SECTION, .name = n, .number = 1, .ptr = p, .u.sec = s }
+#define CF_LIST(n,p,s)		{ .cls = CC_LIST, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,clist*), .u.sec = s }
+/* Configuration items for basic types */
+#define CF_INT(n,p)		CF_STATIC(n,p,INT,int,1)
+#define CF_INT_ARY(n,p,c)	CF_STATIC(n,p,INT,int,c)
+#define CF_INT_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,int,c)
+#define CF_UNS(n,p)		CF_STATIC(n,p,INT,uns,1)
+#define CF_UNS_ARY(n,p,c)	CF_STATIC(n,p,INT,uns,c)
+#define CF_UNS_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,uns,c)
+#define CF_U64(n,p)		CF_STATIC(n,p,U64,u64,1)
+#define CF_U64_ARY(n,p,c)	CF_STATIC(n,p,U64,u64,c)
+#define CF_U64_DYN(n,p,c)	CF_DYNAMIC(n,p,U64,u64,c)
+#define CF_DOUBLE(n,p)		CF_STATIC(n,p,DOUBLE,double,1)
+#define CF_DOUBLE_ARY(n,p,c)	CF_STATIC(n,p,DOUBLE,double,c)
+#define CF_DOUBLE_DYN(n,p,c)	CF_DYNAMIC(n,p,DOUBLE,double,c)
+#define CF_IP(n,p)		CF_STATIC(n,p,IP,u32,1)
+#define CF_IP_ARY(n,p,c)	CF_STATIC(n,p,IP,u32,c)
+#define CF_IP_DYN(n,p,c)	CF_DYNAMIC(n,p,IP,u32,c)
+#define CF_STRING(n,p)		CF_STATIC(n,p,STRING,byte*,1)
+#define CF_STRING_ARY(n,p,c)	CF_STATIC(n,p,STRING,byte*,c)
+#define CF_STRING_DYN(n,p,c)	CF_DYNAMIC(n,p,STRING,byte*,c)
+#define CF_LOOKUP(n,p,t)	{ .cls = CC_STATIC, .type = CT_LOOKUP, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,int*), .u.lookup = t }
+#define CF_LOOKUP_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int*), .u.lookup = t }
+#define CF_LOOKUP_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int**), .u.lookup = t }
+#define CF_USER(n,p,t)		{ .cls = CC_STATIC, .type = CT_USER, .name = n, .number = 1, .ptr = p, .u.utype = t }
+#define CF_USER_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_USER, .name = n, .number = c, .ptr = p, .u.utype = t }
+#define CF_USER_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_USER, .name = n, .number = c, .ptr = p, .u.utype = t }
 
-/* 
- * Some useful parsing functions.
- */
+/* If you aren't picky about the number of parameters */
+#define CF_ANY_NUM		-0x7fffffff
 
-byte *cf_parse_ip(byte **value, u32 *varp);
+#define DARY_LEN(a) ((uns*)a)[-1]
+  // length of a dynamic array
+#define DARY_ALLOC(type,len,val...) ((struct { uns l; type a[len]; }) { .l = len, .a = { val } }).a
+  // creates a static instance of a dynamic array
 
-/*
- * When using cf_getopt, you must prefix your own short/long options by the
- * CF_(SHORT|LONG)_OPTS.
- *
- * cfdeffile contains filename of config file automatically loaded before a
- * first --set option is executed.  If none --set option occures, it will be
- * loaded after getopt returns -1 (at the end of configuration options).  It
- * will be ignored, if another config file is set by --config option at first.
- * Its initial value is DEFAULT_CONFIG from config.h, but you can override it
- * manually.
- */
+/* Memory allocation: conf-alloc.c */
+struct mempool;
+extern struct mempool *cf_pool;
+void *cf_malloc(uns size);
+void *cf_malloc_zero(uns size);
+byte *cf_strdup(byte *s);
+byte *cf_printf(char *fmt, ...) FORMAT_CHECK(printf,1,2);
 
-#define	CF_SHORT_OPTS	"S:C:"
-#define	CF_LONG_OPTS	\
-	{"set",		1, 0, 'S'},\
-	{"config",	1, 0, 'C'},
-#define CF_NO_LONG_OPTS (const struct option []){ CF_LONG_OPTS { NULL, 0, 0, 0 } }
-#define CF_USAGE_TAB ""
-#define	CF_USAGE	\
-"-S, --set sec.item=val\t" CF_USAGE_TAB "Manual setting of a configuration item\n\
--C, --config filename\t" CF_USAGE_TAB "Overwrite default config filename\n"
+/* Undo journal for error recovery: conf-journal.c */
+extern uns cf_need_journal;
+void cf_journal_block(void *ptr, uns len);
+#define CF_JOURNAL_VAR(var) cf_journal_block(&(var), sizeof(var))
 
-extern byte *cfdeffile;
+/* Declaration: conf-section.c */
+void cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown);
+void cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero);
 
-int cf_getopt(int argc,char * const argv[],
-		const char *shortopts,const struct option *longopts,
-		int *longindex);
+/* Parsers for basic types: conf-parse.c */
+byte *cf_parse_int(byte *str, int *ptr);
+byte *cf_parse_u64(byte *str, u64 *ptr);
+byte *cf_parse_double(byte *str, double *ptr);
+byte *cf_parse_ip(byte *p, u32 *varp);
 
 #endif
+

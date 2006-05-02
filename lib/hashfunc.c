@@ -45,7 +45,7 @@ str_len_uns(uns x)
 	uns a, i;
 	byte *bytes;
 	a = ~x & (x - sub) & and;
-	/* 
+	/*
 	 * x_2 = x - 0x01010101;
 	 * x_3 = ~x & x_2;
 	 * a = x_3 & 0x80808080;

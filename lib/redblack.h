@@ -15,7 +15,7 @@
  * A red-black tree is a binary search tree, where records are stored
  * in nodes (may be also leaves).  Every node has a colour.  The
  * following restrictions hold:
- * 
+ *
  * - a parent of a red node is black
  * - every path from the root to a node with less than 2 children
  *   contains the same number of black nodes
@@ -262,7 +262,7 @@ typedef struct P(stack_entry) {
 	static inline uns P(red_flag) (P(bucket) *node)
 	{ return ((addr_int_t) node->son[0]) & 1L; }
 	static inline void P(set_red_flag) (P(bucket) *node, uns flag)
-	{ (addr_int_t) node->son[0] = (((addr_int_t) node->son[0]) & ~1L) | (flag & 1L); }
+	{ node->son[0] = (void*) ( (((addr_int_t) node->son[0]) & ~1L) | (flag & 1L) ); }
 	static inline P(bucket) * P(tree_son) (P(bucket) *node, uns id)
 	{ return (void *) (((addr_int_t) node->son[id]) & ~1L); }
 	static inline void P(set_tree_son) (P(bucket) *node, uns id, P(bucket) *son)

@@ -1,9 +1,10 @@
 /* Test for sorting routines */
 
 #include "lib/lib.h"
-#include "lib/conf.h"
+#include "lib/getopt.h"
 #include "lib/fastbuf.h"
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 

@@ -18,7 +18,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include <getopt.h>
 
 static int verbose=0;
 static int cache=1024;

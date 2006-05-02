@@ -21,16 +21,17 @@
 static uns mmap_window_size = 16*PAGE_SIZE;
 static uns mmap_extend_size = 4*PAGE_SIZE;
 
-static struct cfitem fbmm_config[] = {
-  { "FBMMap",		CT_SECTION,	NULL },
-  { "WindowSize",	CT_INT,		&mmap_window_size },
-  { "ExtendSize",	CT_INT,		&mmap_extend_size },
-  { NULL,		CT_STOP,	NULL }
+static struct cf_section fbmm_config = {
+  CF_ITEMS {
+    CF_UNS("WindowSize", &mmap_window_size),
+    CF_UNS("ExtendSize", &mmap_extend_size),
+    CF_END
+  }
 };
 
 static void CONSTRUCTOR fbmm_init_config(void)
 {
-  cf_register(fbmm_config);
+  cf_declare_section("FBMMap", &fbmm_config, 0);
 }
 
 struct fb_mmap {
