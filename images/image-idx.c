@@ -3,6 +3,7 @@
 #include "sherlock/sherlock.h"
 #include "lib/mempool.h"
 #include "lib/conf.h"
+#include "lib/getopt.h"
 #include "lib/fastbuf.h"
 #include "lib/chartype.h"
 #include "sherlock/object.h"
