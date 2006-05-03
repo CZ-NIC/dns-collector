@@ -12,10 +12,12 @@ $(o)/images/image-idx: LIBS+=-lGraphicsMagick -ljpeg -lpng
 $(o)/images/image-test: $(o)/images/image-test.o $(o)/images/kd-tree.o $(LIBSH)
 
 $(o)/images/color-t: LIBS+=-lm
+$(o)/images/hilbert-test: LIBS+= $(LIBSH)
 
-TESTS+=$(addprefix $(o)/images/,color.test)
+TESTS+=$(addprefix $(o)/images/,color.test hilbert-test.test)
 
 $(o)/images/color.test: $(o)/images/color-t
+$(o)/images/hilbert-test.test: $(o)/images/hilbert-test
 
 # By :;DF
 $(o)/images/block_info.o $(o)/images/block_info.oo: CFLAGS+=-I/usr/include/GraphicsMagick
