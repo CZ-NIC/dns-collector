@@ -510,7 +510,7 @@ byte *
 cf_find_item(byte *name, struct cf_item *item)
 {
   byte *msg;
-  void *ptr;
+  void *ptr = NULL;
   struct cf_item *ci = find_item(&cf_sections, name, &msg, &ptr);
   if (msg)
     return msg;
