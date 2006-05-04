@@ -14,21 +14,21 @@
 #include "lib/lib.h"
 
 /* The following functions need str to be aligned to uns.  */
-uns str_len_aligned(const byte *str) CONST;
-uns hash_string_aligned(const byte *str) CONST;
-uns hash_block_aligned(const byte *str, uns len) CONST;
+uns str_len_aligned(const byte *str) PURE;
+uns hash_string_aligned(const byte *str) PURE;
+uns hash_block_aligned(const byte *str, uns len) PURE;
 
 #ifdef	CPU_ALLOW_UNALIGNED
 #define	str_len(str)		str_len_aligned(str)
 #define	hash_string(str)	hash_string_aligned(str)
 #define	hash_block(str, len)	hash_block_aligned(str, len)
 #else
-uns str_len(const byte *str) CONST;
-uns hash_string(const byte *str) CONST;
-uns hash_block(const byte *str, uns len) CONST;
+uns str_len(const byte *str) PURE;
+uns hash_string(const byte *str) PURE;
+uns hash_block(const byte *str, uns len) PURE;
 #endif
 
-uns hash_string_nocase(const byte *str) CONST;
+uns hash_string_nocase(const byte *str) PURE;
 
 /*
  *  We hash integers by multiplying by a reasonably large prime with
