@@ -21,7 +21,7 @@
 #define _GNU_SOURCE
 #endif
 
-/* Ugly structure handling macros */
+/* Macros for handling structurues, offsets and alignment */
 
 #define CHECK_PTR_TYPE(x, type) ((x)-(type)(x) + (type)(x))
 #define PTR_TO(s, i) &((s*)0)->i
@@ -60,10 +60,18 @@
 #define CONSTRUCTOR __attribute__((constructor))
 #define PACKED __attribute__((packed))
 #define CONST __attribute__((const))
-#define PURE __attribute__((const))
+#define PURE __attribute__((pure))
 #define FORMAT_CHECK(x,y,z) __attribute__((format(x,y,z)))
 #define likely(x) __builtin_expect((x),1)
 #define unlikely(x) __builtin_expect((x),0)
+
+#if __GNUC__ >= 4
+#define LIKE_MALLOC __attribute__((malloc))
+#define SENTINEL_CHECK __attribute__((sentinel))
+#else
+#define LIKE_MALLOC
+#define SENTINEL_CHECK
+#endif
 
 #else
 #error This program requires the GNU C compiler.
@@ -141,13 +149,13 @@ static inline void log_switch_enable(void) { ASSERT(log_switch_nest); log_switch
  * their own xmalloc and we don't want to interfere with them, hence
  * the renaming.
  */
-void *xmalloc(unsigned);
+void *xmalloc(unsigned) LIKE_MALLOC;
 void *xrealloc(void *, unsigned);
 void xfree(void *);
 #endif
 
-void *xmalloc_zero(unsigned);
-byte *xstrdup(byte *);
+void *xmalloc_zero(unsigned) LIKE_MALLOC;
+byte *xstrdup(byte *) LIKE_MALLOC;
 
 /* Content-Type pattern matching and filters */
 
