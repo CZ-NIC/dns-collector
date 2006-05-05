@@ -17,7 +17,8 @@ enum cf_class {
   CC_DYNAMIC,				// dynamically allocated array
   CC_PARSER,				// arbitrary parser function
   CC_SECTION,				// section appears exactly once
-  CC_LIST				// list with 0..many nodes
+  CC_LIST,				// list with 0..many nodes
+  CC_BITMAP				// of up to 32 items
 };
 
 enum cf_type {
@@ -99,6 +100,8 @@ struct cf_section {
 #define CF_PARSER(n,p,f,c)	{ .cls = CC_PARSER, .name = n, .number = c, .ptr = p, .u.par = (cf_parser*) f }
 #define CF_SECTION(n,p,s)	{ .cls = CC_SECTION, .name = n, .number = 1, .ptr = p, .u.sec = s }
 #define CF_LIST(n,p,s)		{ .cls = CC_LIST, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,clist*), .u.sec = s }
+#define CF_BITMAP_INT(n,p)	{ .cls = CC_BITMAP, .type = CT_INT, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,u32*) }
+#define CF_BITMAP_LOOKUP(n,p,t)	{ .cls = CC_BITMAP, .type = CT_LOOKUP, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,u32*), .u.lookup = t }
 /* Configuration items for basic types */
 #define CF_INT(n,p)		CF_STATIC(n,p,INT,int,1)
 #define CF_INT_ARY(n,p,c)	CF_STATIC(n,p,INT,int,c)

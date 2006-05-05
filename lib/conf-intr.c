@@ -100,6 +100,7 @@ cf_parse_ary(uns number, byte **pars, void *ptr, enum cf_type type, union cf_uni
 #define T(x) #x,
 byte *cf_op_names[] = { CF_OPERATIONS };
 #undef T
+byte *cf_type_names[] = { "int", "u64", "double", "ip", "string", "lookup", "user" };
 
 #define DARY_HDR_SIZE ALIGN(sizeof(uns), CPU_STRUCT_ALIGN)
 
@@ -225,6 +226,31 @@ interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed
 }
 
 static byte *
+interpret_bitmap(struct cf_item *item, int number, byte **pars, int *processed, u32 *ptr, enum cf_operation op)
+{
+  if (item->cls != CC_BITMAP)
+    return cf_printf("Expecting a bitmap");
+  else if (item->type != CT_INT && item->type != CT_LOOKUP)
+    return cf_printf("Type %s cannot be used with bitmaps", cf_type_names[item->type]);
+  cf_journal_block(ptr, sizeof(u32));
+  for (int i=0; i<number; i++) {
+    uns idx;
+    if (item->type == CT_INT)
+      TRY( cf_parse_int(pars[i], &idx) );
+    else
+      TRY( cf_parse_lookup(pars[i], &idx, item->u.lookup) );
+    if (idx >= 32)
+      return "Bitmaps only have 32 bits";
+    if (op == OP_SET)
+      *ptr |= 1<<idx;
+    else
+      *ptr &= ~(1<<idx);
+  }
+  *processed = number;
+  return NULL;
+}
+
+static byte *
 interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic)
 {
   int taken;
@@ -260,6 +286,10 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
       if (!allow_dynamic)
 	return "Lists cannot be used here";
       return interpret_add_list(item, number, pars, processed, ptr, OP_SET);
+    case CC_BITMAP:
+      if (!allow_dynamic)
+	return "Bitmaps cannot be used here";
+      return interpret_bitmap(item, number, pars, processed, ptr, OP_SET);
     default:
       ASSERT(0);
   }
@@ -278,9 +308,29 @@ interpret_clear(struct cf_item *item, void *ptr)
   } else if (item->cls == CC_STATIC && item->type == CT_STRING) {
     cf_journal_block(ptr, item->number * sizeof(byte*));
     bzero(ptr, item->number * sizeof(byte*));
+  } else if (item->cls == CC_BITMAP) {
+    cf_journal_block(ptr, sizeof(u32));
+    * (u32*) ptr = 0;
   } else
-    return "The item is not a list, dynamic array, or string";
+    return "The item is not a list, dynamic array, bitmap, or string";
   return NULL;
+}
+
+static byte *
+interpret_set_all(struct cf_item *item, void *ptr)
+{
+  if (item->cls == CC_BITMAP) {
+    cf_journal_block(ptr, sizeof(u32));
+    if (item->type == CT_INT)
+      * (u32*) ptr = ~0u;
+    else {
+      uns nr = -1;
+      while (item->u.lookup[++nr]);
+      * (u32*) ptr = ~0u >> (32-nr);
+    }
+    return NULL;
+  } else
+    return "The item is not a bitmap";
 }
 
 static int
@@ -346,10 +396,11 @@ opening_brace(struct cf_item *item, void *ptr, enum cf_operation op)
 {
   if (level >= MAX_STACK_SIZE-1)
     return "Too many nested sections";
+  enum cf_operation pure_op = op & OP_MASK;
   stack[++level] = (struct item_stack) {
     .sec = NULL,
     .base_ptr = NULL,
-    .op = op & OP_MASK,
+    .op = pure_op,
     .list = NULL,
     .mask = 0,
     .item = NULL,
@@ -359,6 +410,8 @@ opening_brace(struct cf_item *item, void *ptr, enum cf_operation op)
   stack[level].sec = item->u.sec;
   if (item->cls == CC_SECTION)
   {
+    if (pure_op != OP_SET)
+      return "Only SET operation can be used with a section";
     stack[level].base_ptr = ptr;
     stack[level].op = OP_EDIT | OP_2ND;	// this list operation does nothing
   }
@@ -368,8 +421,10 @@ opening_brace(struct cf_item *item, void *ptr, enum cf_operation op)
     cf_init_section(item->name, item->u.sec, stack[level].base_ptr, 1);
     stack[level].list = ptr;
     stack[level].item = item;
-    if ((op & OP_MASK) < OP_REMOVE) {
-      add_to_list(ptr, stack[level].base_ptr, op & OP_MASK);
+    if (pure_op == OP_UNSET || pure_op == OP_ALL)
+      return "Bitmap operations are not supported for lists";
+    else if (pure_op < OP_REMOVE) {
+      add_to_list(ptr, stack[level].base_ptr, pure_op);
       stack[level].op |= OP_2ND;
     } else
       stack[level].op |= OP_1ST;
@@ -487,11 +542,15 @@ cf_interpret_line(byte *name, enum cf_operation op, int number, byte **pars)
     return NULL;
   op &= OP_MASK;
 
-  int taken;			// process as many parameters as possible
+  int taken = 0;		// process as many parameters as possible
   if (op == OP_CLEAR)
-    taken = 0, msg = interpret_clear(item, ptr);
+    msg = interpret_clear(item, ptr);
+  else if (op == OP_ALL)
+    msg = interpret_set_all(item, ptr);
   else if (op == OP_SET)
     msg = interpret_set_item(item, number, pars, &taken, ptr, 1);
+  else if (op == OP_UNSET)
+    msg = interpret_bitmap(item, number, pars, &taken, ptr, OP_UNSET);
   else if (item->cls == CC_DYNAMIC)
     msg = interpret_add_dynamic(item, number, pars, &taken, ptr, op);
   else if (item->cls == CC_LIST)
@@ -526,14 +585,19 @@ byte *
 cf_write_item(struct cf_item *item, enum cf_operation op, int number, byte **pars)
 {
   byte *msg;
-  int taken;
+  int taken = 0;
   switch (op) {
     case OP_SET:
       msg = interpret_set_item(item, number, pars, &taken, item->ptr, 1);
       break;
     case OP_CLEAR:
-      taken = 0;
       msg = interpret_clear(item, item->ptr);
+      break;
+    case OP_UNSET:
+      msg = interpret_bitmap(item, number, pars, &taken, item->ptr, OP_UNSET);
+      break;
+    case OP_ALL:
+      msg = interpret_set_all(item, item->ptr);
       break;
     case OP_APPEND:
     case OP_PREPEND:

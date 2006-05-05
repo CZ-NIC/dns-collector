@@ -83,6 +83,8 @@ static time_t t1, t2;
 static u32 ip;
 static int *look = DARY_ALLOC(int, 2, 2, 1);
 static u16 numbers[10] = { 2, 100, 1, 5 };
+static u32 bitmap1 = 0xff;
+static u32 bitmap2 = 3;
 
 static byte *
 parse_u16(byte *string, u16 *ptr)
@@ -150,6 +152,12 @@ static struct cf_section cf_top = {
     CF_IP("ip", &ip),
     CF_LOOKUP_DYN("look", &look, alphabet, 1000),
     CF_USER_ARY("numbers", numbers, &u16_type, 10),
+    CF_BITMAP_INT("bitmap1", &bitmap1),
+    CF_BITMAP_LOOKUP("bitmap2", &bitmap2, ((byte*[]) {
+	  "one", "two", "three", "four", "five", "six", "seven", "eight", 
+	  "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "seventeen", 
+	  "eighteen", "nineteen", "twenty", NULL	// hidden joke here
+	  })),
     CF_END
   }
 };
