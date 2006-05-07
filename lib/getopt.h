@@ -22,7 +22,7 @@ int cf_set(byte *string);
 
 /* Direct access to configuration items: conf-intr.c */
 
-#define CF_OPERATIONS T(CLOSE) T(SET) T(CLEAR) T(UNSET) T(ALL) \
+#define CF_OPERATIONS T(CLOSE) T(SET) T(CLEAR) T(ALL) \
   T(APPEND) T(PREPEND) T(REMOVE) T(EDIT) T(AFTER) T(BEFORE) T(COPY)
   /* Closing brace finishes previous block.
    * Basic attributes (static, dynamic, parsed) can be used with SET.

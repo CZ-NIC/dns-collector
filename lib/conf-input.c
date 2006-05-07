@@ -246,7 +246,6 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
       *c++ = 0;
       switch (Clocase(*c)) {
 	case 's': op = OP_SET; break;
-	case 'u': op = OP_UNSET; break;
 	case 'c': op = Clocase(c[1]) == 'l' ? OP_CLEAR: OP_COPY; break;
 	case 'a': switch (Clocase(c[1])) {
 		    case 'p': op = OP_APPEND; break;

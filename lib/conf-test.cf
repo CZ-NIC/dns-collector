@@ -27,9 +27,9 @@ Top { \
   look:prepend Beta GAMMA
   numbers 11000 65535
   bitmap1 31
-  bitmap1:unset 3 3
+  bitmap1:remove 3 3
   bitmap2:all
-  bitmap2:unset eleven twelve one
+  bitmap2:remove eleven twelve one
 };;;;;;
 
 unknown.ignored :-)
