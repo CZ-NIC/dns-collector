@@ -50,7 +50,7 @@ Types:\n\
 $\t\tFloating point number\n\
 \n\
 Modifiers:\n\
-*\t\tReport unknown items as errors\n\
+!\t\tReport unknown items as errors\n\
 -\t\tDo not dump item's value\n\
 ", stderr);
   exit(1);
@@ -200,7 +200,7 @@ parse_outer(void)
 	parse_char(',');
       parse_white();
       struct section *sec = mp_alloc_zero(pool, sizeof(*sec));
-      if (*pos == '*')
+      if (*pos == '!')
         {
 	  pos++;
 	  sec->item.flags |= FLAG_NO_UNKNOWN;
