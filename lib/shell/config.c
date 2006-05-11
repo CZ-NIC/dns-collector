@@ -36,9 +36,9 @@ help(void)
   fputs("\n\
 Usage: config [-C<configfile>] [-S<section>.<option>=<value>] <sections>\n\
 \n\
-<sections>\t<section>[,<sections>]\n\
+<sections>\t<section>[;<sections>]\n\
 <section>\t[*]<name>{[<items>]}\n\
-<items>\t\t<item>[,<items>]\n\
+<items>\t\t<item>[;<items>]\n\
 <item>\t\t<static> | @<list>\n\
 <static>\t[-]<type><name>\n\
 <list>\t\t<name>{[<items>]}\n\
@@ -123,7 +123,7 @@ parse_section(struct section *section)
       if (!*pos || *pos == '}')
 	break;
       if (sep)
-	parse_char(',');
+	parse_char(';');
       parse_white();
 
       struct item *item;
@@ -175,6 +175,69 @@ parse_section(struct section *section)
 		break;
 	    }
 	  item->cf.name = parse_name();
+	  parse_white();
+	  if (*pos == '=')
+	    {
+	      pos++;
+	      parse_white();
+	      if (section->item.cf.cls == CC_LIST)
+		die("List items can not have default values");
+	      byte *def = pos, *d = def;
+	      while (*pos != ';' && *pos != '}' && !Cspace(*pos))
+	        {
+		  if (*pos == '\'')
+		    {
+		      pos++;
+		      while (*pos != '\'')
+		        {
+			  if (!*pos)
+			    die("Unterminated string");
+			  *d++ = *pos++;
+			}
+		      pos++;
+		    }
+		  else if (*pos == '"')
+		    {
+		      pos++;
+		      uns esc = 0;
+		      while (*pos != '"' || esc)
+		        {
+			  if (!*pos)
+			    die("Unterminated string");
+			  if (*pos == '\\')
+			    esc ^= 1;
+			  *d++ = *pos++;
+			}
+		      pos++;
+		    }
+		  else
+		    *d++ = *pos++;
+		}
+	      uns len = d - def;
+	      byte *buf = mp_alloc(pool, len + 1);
+	      memcpy(buf, def, len);
+	      buf[len] = 0;
+	      str_unesc(buf, buf);
+	      switch (item->cf.type)
+#define TRY(x) do{byte *_err=(x); if (_err) die(_err); }while(0)
+	        {
+		  case CT_STRING:
+		    item->value.v_ptr = buf;
+		    break;
+		  case CT_INT:
+		    TRY(cf_parse_int(buf, &item->value.v_int));
+		    break;
+		  case CT_U64:
+		    TRY(cf_parse_u64(buf, &item->value.v_u64));
+		    break;
+		  case CT_DOUBLE:
+		    TRY(cf_parse_double(buf, &item->value.v_double));
+		    break;
+		  default:
+		    ASSERT(0);
+#undef TRY		    
+		}
+	    }
 	}
       if (section->item.cf.cls == CC_LIST)
         {
@@ -197,7 +260,7 @@ parse_outer(void)
       if (!*pos)
 	break;
       if (sep)
-	parse_char(',');
+	parse_char(';');
       parse_white();
       struct section *sec = mp_alloc_zero(pool, sizeof(*sec));
       if (*pos == '!')
