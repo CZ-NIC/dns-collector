@@ -72,6 +72,7 @@ struct item {
   uns flags;
   struct cf_item cf;
   union value value;
+  uns index;
 };
 
 struct section {
@@ -185,7 +186,7 @@ parse_section(struct section *section)
 	      byte *def = pos, *d = def;
 	      while (*pos != ';' && *pos != '}' && !Cspace(*pos))
 	        {
-		  if (*pos == '\'')
+		  if (*pos == '\'' )
 		    {
 		      pos++;
 		      while (*pos != '\'')
@@ -199,6 +200,7 @@ parse_section(struct section *section)
 		  else if (*pos == '"')
 		    {
 		      pos++;
+		      byte *start = d;
 		      uns esc = 0;
 		      while (*pos != '"' || esc)
 		        {
@@ -206,9 +208,13 @@ parse_section(struct section *section)
 			    die("Unterminated string");
 			  if (*pos == '\\')
 			    esc ^= 1;
+			  else
+			    esc = 0;
 			  *d++ = *pos++;
 			}
 		      pos++;
+		      *d = 0;
+		      d = str_unesc(start, start);
 		    }
 		  else
 		    *d++ = *pos++;
@@ -217,7 +223,6 @@ parse_section(struct section *section)
 	      byte *buf = mp_alloc(pool, len + 1);
 	      memcpy(buf, def, len);
 	      buf[len] = 0;
-	      str_unesc(buf, buf);
 	      switch (item->cf.type)
 #define TRY(x) do{byte *_err=(x); if (_err) die(_err); }while(0)
 	        {
@@ -235,7 +240,7 @@ parse_section(struct section *section)
 		    break;
 		  default:
 		    ASSERT(0);
-#undef TRY		    
+#undef TRY
 		}
 	    }
 	}
@@ -322,7 +327,7 @@ dump_item(struct item *item, void *ptr, uns path_len)
       if (!ptr)
         printf("CF_%s_%s='", path.ptr, name);
       else
-        printf("CF_%s_%s[${#CF_%s_%s[*]}]='", path.ptr, name, path.ptr, name);
+        printf("CF_%s_%s[%u]='", path.ptr, name, item->index++);
       switch (item->cf.type)
         {
           case CT_INT:
