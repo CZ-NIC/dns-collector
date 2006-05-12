@@ -8,3 +8,5 @@ $(o)/lib/shell/config: $(o)/lib/shell/config.o $(LIBSH)
 $(o)/lib/shell/logger: $(o)/lib/shell/logger.o $(LIBSH)
 
 TESTS+=$(addprefix $(o)/lib/shell/,config.test)
+
+$(o)/lib/shell/config.test: $(o)/lib/shell/config
