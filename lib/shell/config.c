@@ -186,7 +186,7 @@ parse_section(struct section *section)
 	      byte *def = pos, *d = def;
 	      while (*pos != ';' && *pos != '}' && !Cspace(*pos))
 	        {
-		  if (*pos == '\'' )
+		  if (*pos == '\'')
 		    {
 		      pos++;
 		      while (*pos != '\'')
