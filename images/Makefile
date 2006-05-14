@@ -12,7 +12,7 @@ $(o)/images/image-idx: LIBS+=-lGraphicsMagick -ljpeg -lpng
 $(o)/images/image-test: $(o)/images/image-test.o $(o)/images/kd-tree.o $(LIBSH)
 
 $(o)/images/color-t: LIBS+=-lm
-$(o)/images/hilbert-test: LIBS+= $(LIBSH)
+$(o)/images/hilbert-test: LIBS+=-lm $(LIBSH)
 
 TESTS+=$(addprefix $(o)/images/,color.test hilbert-test.test)
 

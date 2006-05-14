@@ -16,7 +16,7 @@
  *	- maybe try to generate a long switch in color_conv_pixel()
  *	  with optimized entries instead of access to interpolation table
  *	- most of multiplications in srgb_to_luv_pixels can be replaced
- *	  with tables lookup... tests shows almost the speed for random
+ *	  with tables lookup... tests shows almost the same speed for random
  *	  input and cca 40% gain when input colors fit in CPU chache
  */
 
@@ -59,6 +59,7 @@ extern u32 srgb_to_luv_tab3[20 << SRGB_TO_LUV_TAB3_SIZE];
 void srgb_to_luv_init(void);
 void srgb_to_luv_pixels(byte *dest, byte *src, uns count);
 
+/* L covers the interval [0..255]; u and v are centered to 128 and scaled by 1/4 in respect of L */
 static inline void
 srgb_to_luv_pixel(byte *dest, byte *src)
 {

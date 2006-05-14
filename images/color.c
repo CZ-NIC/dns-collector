@@ -331,7 +331,7 @@ main(void)
 #ifdef LOCAL_DEBUG
 #define CNT 1000000
 #define TESTS 10
-  byte *a = xmalloc(3 * CNT), *b = xmalloc_zero(3 * CNT);
+  byte *a = xmalloc(3 * CNT), *b = xmalloc(3 * CNT);
   for (uns i = 0; i < 3 * CNT; i++)
     a[i] = random_max(256);
   init_timer();

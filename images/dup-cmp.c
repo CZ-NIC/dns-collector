@@ -14,6 +14,8 @@
  *      - maybe better/slower last step
  *      - different thresholds for various transformations
  *      - do not test all transformations for symetric pictures
+ *      - allocated memory could be easily decreased to about 1/3 
+ *        for aspect ratio threshold near one
  *      - ... secret ideas :-)
  */
 
@@ -43,8 +45,17 @@ pixels_average(byte *dest, byte *src1, byte *src2)
   dest[2] = ((uns)src1[2] + (uns)src2[2]) >> 1;
 }
 
+uns
+image_dup_estimate_size(uns width, uns height)
+{
+  uns cols, rows;
+  for (cols = 0; (uns)(2 << cols) < width; cols++);
+  for (rows = 0; (uns)(2 << rows) < height; rows++);
+  return sizeof(struct image_dup) + (12 << (cols + rows));
+}
+
 void
-image_dup_init(struct image_dup *dup, struct image *image, struct mempool *pool)
+image_dup_init(struct image_dup *dup, struct image_data *image, struct mempool *pool)
 {
   ASSERT(image->width && image->height);
   

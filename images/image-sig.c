@@ -16,7 +16,7 @@ struct block {
 };
 
 int
-compute_image_signature(struct image *image, struct image_signature *sig)
+compute_image_signature(struct image_data *image, struct image_signature *sig)
 {
   uns width = image->width;
   uns height = image->height;

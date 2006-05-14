@@ -35,7 +35,7 @@ struct image_obj {
   uns thumb_format;
   byte *thumb_data;
   uns thumb_size;
-  struct image thumb;
+  struct image_data thumb;
 };
 
 static inline void

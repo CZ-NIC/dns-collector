@@ -1,3 +1,5 @@
+// FIXME: this file is full of experiments... will be completely different in final version
+
 #undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
@@ -71,10 +73,10 @@ generate_signatures(uns limit)
           die("Failed to read card");
         if (attr = obj_find_attr(obj, 'N'))
           {
-#ifdef LOCAL_DEBUG	    
+#ifdef LOCAL_DEBUG
 	    byte *url = obj_find_aval(obj_find_attr(obj, 'U' + OBJ_ATTR_SON)->son, 'U');
 	    DBG("Reading oid=%d url=%s", oid, url);
-#endif	    
+#endif
 	    struct image_obj imo;
 	    imo_init(&imo, pool, obj);
 	    if (imo_decompress_thumbnail(&imo))
@@ -110,6 +112,162 @@ generate_signatures(uns limit)
   bclose(fb_card_attrs);
   bclose(fb_signatures);
 }
+
+/*********************************************************************************/
+
+struct vectors_node {
+  oid_t oid;
+  u32 temp;
+  struct image_vector vec;
+};
+
+static uns vectors_count;
+static struct vectors_node *vectors;
+
+static void
+vectors_read(void)
+{
+  log(L_DEBUG, "Reading signature vectors");
+  struct fastbuf *fb = index_bopen("image-sig", O_RDONLY);
+  vectors_count = bgetl(fb);
+  if (vectors_count)
+    {
+      vectors = xmalloc(vectors_count * sizeof(struct vectors_node));
+      for (uns i = 0; i < vectors_count; i++)
+        {
+	  bread(fb, &vectors[i].oid, sizeof(oid_t));
+	  bread(fb, &vectors[i].vec, sizeof(struct image_vector));
+	  bskip(fb, bgetc(fb) * sizeof(struct image_region));
+	}
+    }
+  bclose(fb);
+}
+
+static void
+vectors_cleanup(void)
+{
+  log(L_DEBUG, "Freeing signature vectors");
+  if (vectors_count)
+    xfree(vectors);
+}
+
+/*********************************************************************************/
+
+static u64 random_clusters_max_size = 500000;
+static uns random_clusters_max_count = 1000;
+
+#define RANDOM_CLUSTERS_SIZE	0x7fffffff
+#define RANDOM_CLUSTERS_LAST	0x80000000
+
+static struct random_clusters_node {
+  struct vectors_node *node;
+  s32 dot_prod;
+} *random_clusters_temp;
+static uns random_clusters_count;
+
+#define ASORT_PREFIX(x) random_clusters_##x
+#define ASORT_KEY_TYPE s32
+#define ASORT_ELT(i) start[i].dot_prod
+#define ASORT_SWAP(i,j) do { struct random_clusters_node _s = start[i]; start[i] = start[j]; start[j] = _s; } while(0)
+#define ASORT_EXTRA_ARGS , struct random_clusters_node *start
+#include "lib/arraysort.h"
+
+static void
+random_clusters_init(void)
+{
+  if (!vectors_count)
+    return;
+  log(L_INFO, "Initializing random clusters generator");
+  random_clusters_temp = xmalloc(vectors_count * sizeof(struct random_clusters_node));
+  for (uns i = 0; i < vectors_count; i++)
+    random_clusters_temp[i].node = vectors + i;
+}
+
+static void
+random_clusters_build(void)
+{
+  random_clusters_count = 0;
+  if (!vectors_count)
+    return;
+
+  log(L_INFO, "Generating random clusters for duplicates comparision");
+
+  for (uns i = 0; i < vectors_count; i++)
+    vectors[i].temp &= RANDOM_CLUSTERS_SIZE;
+
+  /* Initialize recursion */
+  struct stk {
+    uns count;
+    struct random_clusters_node *start;
+  } stk_top[64], *stk = stk_top + 1;
+  stk->start = random_clusters_temp;
+  stk->count = vectors_count;
+
+  /* Main loop */
+  while (stk != stk_top)
+    {
+      /* Split conditions */
+      uns split;
+      if (stk->count < 2)
+	split = 0;
+      else if (stk->count > random_clusters_max_count)
+	split = 1;
+      else
+        {
+          s64 size = random_clusters_max_size;
+          for (uns i = 0; i < stk->count && size >= 0; i++)
+	    size -= stk->start[i].node->temp;
+	  split = size < 0;
+	}
+
+      /* BSP leaf node */
+      if (!split)
+        {
+	  stk->start[stk->count - 1].node->temp |= RANDOM_CLUSTERS_LAST;
+	  random_clusters_count++;
+	  stk--;
+	}
+
+      /* BSP internal node */
+      else
+        {
+	  /* Generate random normal vector of the splitting plane */
+	  int normal[IMAGE_VEC_K];
+	  for (uns i = 0; i < IMAGE_VEC_K; i++)
+	    normal[i] = random_max(0x20001) - 0x10000;
+
+	  /* Compute dot produts */
+	  for (uns i = 0; i < stk->count; i++)
+	    {
+	      stk->start[i].dot_prod = 0;
+	      for (uns j = 0; j < IMAGE_VEC_K; j++)
+		stk->start[i].dot_prod += normal[j] * stk->start[i].node->vec.f[j];
+	    }
+
+	  /* Sort... could be faster, because we only need the median */
+	  random_clusters_sort(stk->count, stk->start);
+
+	  /* Split in the middle */
+	  stk[1].count = stk[0].count >> 1;
+	  stk[0].count -= stk[1].count;
+	  stk[1].start = stk[0].start;
+	  stk[0].start += stk[1].count;
+	  stk++;
+	}
+    }
+  log(L_INFO, "Generated %u clusters", random_clusters_count);
+}
+
+static void
+random_clusters_cleanup(void)
+{
+  if (vectors_count)
+    xfree(random_clusters_temp);
+}
+
+/*********************************************************************************/
+
+// FIXME: use vectors_read()... duplicate code
 
 struct signature_record {
   oid_t oid;
@@ -293,12 +451,29 @@ build_kd_tree(void)
 
 /*********************************************************************************/
 
+struct pass1_hilbert {
+  u32 index;
+  struct image_vector vec;
+};
+
+struct pass1_node {
+  cnode lru_node;
+  cnode buf_node;
+  uns buf_size;
+  byte *buf;
+  oid_t oid;
+  byte *url;
+  struct image_data image;
+  struct image_dup dup;
+};
+
 static uns pass1_buf_size = 400 << 20;
 static uns pass1_max_count = 100000;
 static uns pass1_search_dist = 40;
 static uns pass1_search_count = 500;
 
 static struct mempool *pass1_pool;
+static struct pass1_hilbert *pass1_hilbert_list;
 static byte *pass1_buf_start;
 static byte *pass1_buf_pos;
 static uns pass1_buf_free;
@@ -310,17 +485,64 @@ static u64 pass1_reads;
 static u64 pass1_pairs;
 static u64 pass1_dups;
 static u64 pass1_shrinks;
+static u64 pass1_alloc_sum;
 
-struct pass1_node {
-  cnode lru_node;
-  cnode buf_node;
-  uns buf_size;
-  byte *buf;
-  oid_t oid;
-  byte *url;
-  struct image image;
-  struct image_dup dup;
-};
+#define HILBERT_PREFIX(x) pass1_hilbert_##x
+#define HILBERT_TYPE byte
+#define HILBERT_ORDER 8
+#define HILBERT_DIM IMAGE_VEC_K
+#define HILBERT_WANT_ENCODE
+#include "images/hilbert.h"
+
+#define ASORT_PREFIX(x) pass1_hilbert_sort_##x
+#define ASORT_KEY_TYPE struct image_vector *
+#define ASORT_ELT(i) (&pass1_hilbert_list[i].vec)
+#define ASORT_LT(x,y) (memcmp(x, y, sizeof(*x)) < 0)
+#define ASORT_SWAP(i,j) do { struct pass1_hilbert _s;		\
+		_s = pass1_hilbert_list[i];			\
+		pass1_hilbert_list[i] = pass1_hilbert_list[j];	\
+		pass1_hilbert_list[j] = _s; } while(0)
+#include "lib/arraysort.h"
+
+static void
+pass1_hilbert_sort(void)
+{
+  DBG("Computing positions on the Hilbert curve");
+  pass1_hilbert_list = xmalloc(tree.count * sizeof(struct pass1_hilbert));
+  for (uns i = 0; i < tree.count; i++)
+    {
+      struct pass1_hilbert *h = pass1_hilbert_list + i;
+      h->index = i;
+      byte vec[IMAGE_VEC_K];
+      pass1_hilbert_encode(vec, precords[i]->vec.f);
+      for (uns j = 0; j < IMAGE_VEC_K; j++)
+	h->vec.f[j] = vec[IMAGE_VEC_K - 1 - j];
+    }
+  DBG("Sorting signatures in order of incresing parameters on the Hilbert curve");
+  pass1_hilbert_sort_sort(tree.count);
+#if 0
+  for (uns i = 0; i < tree.count; i++)
+    {
+      if (i)
+        {
+	  byte *v1 = precords[pass1_hilbert_list[i - 1].index]->vec.f;
+	  byte *v2 = precords[pass1_hilbert_list[i].index]->vec.f;
+#define SQR(x) ((x)*(x))
+	   uns dist = 0;
+	  for (uns j = 0; j < 6; j++)
+	    dist += SQR(v1[j] - v2[j]);
+	  DBG("dist %d", dist);
+	}
+      DBG("index %d", pass1_hilbert_list[i].index);
+    }
+#endif
+}
+
+static void
+pass1_hilbert_cleanup(void)
+{
+  xfree(pass1_hilbert_list);
+}
 
 #define HASH_PREFIX(x) pass1_hash_##x
 #define HASH_NODE struct pass1_node
@@ -410,7 +632,7 @@ pass1_buf_alloc(uns size)
     {
       /* free some lru nodes */
       //DBG("freeing lru nodes");
-      while (size > pass1_buf_size - pass1_buf_used || pass1_buf_used * 2 > pass1_buf_size)
+      while (size > pass1_buf_size - pass1_buf_used || pass1_buf_used > pass1_buf_size / 2)
         {
 	  if (unlikely(clist_empty(&pass1_lru_list))) // FIXME
 	    die("Buffer too small");
@@ -425,6 +647,7 @@ pass1_buf_alloc(uns size)
   pass1_buf_pos += size;
   pass1_buf_free -= size;
   pass1_buf_used += size;
+  pass1_alloc_sum += size;
   return result;
 }
 
@@ -503,13 +726,21 @@ pass1_node_unlock(struct pass1_node *node)
 }
 
 static void
+pass1_show_stats(void)
+{
+  log(L_INFO, "%d count, %Ld lookups, %Ld reads, %Ld pairs, %Ld dups, %Ld shrinks", tree.count,
+    (long long int)pass1_lookups, (long long int)pass1_reads,
+    (long long int)pass1_pairs, (long long int)pass1_dups, (long long int)pass1_shrinks);
+}
+
+static void
 pass1(void)
 {
   log(L_INFO, "Looking for duplicates");
   ASSERT(tree.nodes);
 
   /* initialization */
-  pass1_lookups = pass1_reads = pass1_pairs = pass1_dups = pass1_shrinks = 0;
+  pass1_lookups = pass1_reads = pass1_pairs = pass1_dups = pass1_shrinks = pass1_alloc_sum = 0;
   fb_cards = bopen("index/cards", O_RDONLY, 10000); // FIXME
   fb_card_attrs = bopen("index/card-attrs", O_RDONLY, sizeof(struct card_attr)); // FIXME
   buck2obj = buck2obj_alloc();
@@ -519,6 +750,10 @@ pass1(void)
   pass1_hash_init();
   pass1_buf_init();
   pass1_pool = mp_new(1 << 20);
+
+  /* Hilbert sort */
+  pass1_hilbert_sort();
+  pass1_hilbert_cleanup();
 
   /* main loop */
   for (uns i = 0; i < tree.count; )
@@ -539,7 +774,7 @@ pass1(void)
             {
 	      struct pass1_node *node2 = pass1_node_lock(oid2);
 	      DBG("comparing %d and %d", oid, oid2);
-	      if (image_dup_compare(&node->dup, &node2->dup, IMAGE_DUP_TRANS_ALL))
+	      if (image_dup_compare(&node->dup, &node2->dup, IMAGE_DUP_TRANS_ID))
 	        {
 		  pass1_dups++;
 		  log(L_DEBUG, "*** Found duplicates oid1=0x%x oid=0x%x", (uns)node->oid, (uns)node2->oid);
@@ -567,9 +802,67 @@ pass1(void)
   imo_decompress_thumbnails_done();
 
   /* print statistics */
-  log(L_INFO, "%d count, %Ld lookups, %Ld reads, %Ld pairs, %Ld dups, %Ld shrinks", tree.count,
-    (long long int)pass1_lookups, (long long int)pass1_reads,
-    (long long int)pass1_pairs, (long long int)pass1_dups, (long long int)pass1_shrinks);
+  pass1_show_stats();
+}
+
+/*********************************************************************************/
+
+static uns pass2_clusterings_count = 1;
+
+static void
+pass2_estimate_sizes(void)
+{
+  if (!vectors_count)
+    return;
+  log(L_DEBUG, "Reading image sizes");
+
+  /* FIXME: hack, these reads are not necessary, can be done in previous phases */
+  struct fastbuf *fb_cards = index_bopen("cards", O_RDONLY);
+  struct fastbuf *fb_card_attrs = index_bopen("card-attrs", O_RDONLY);
+  struct mempool *pool = mp_new(1 << 16);
+  struct buck2obj_buf *bob = buck2obj_alloc();
+
+  for (uns i = 0; i < vectors_count; i++)
+    {
+      oid_t oid = vectors[i].oid;
+      struct card_attr ca;
+      bsetpos(fb_card_attrs, (sh_off_t)oid * sizeof(ca));
+      bread(fb_card_attrs, &ca, sizeof(ca));
+      bsetpos(fb_cards, (sh_off_t)ca.card << CARD_POS_SHIFT);
+      uns buck_len = bgetl(fb_cards) - (LIZARD_COMPRESS_HEADER - 1);
+      uns buck_type = bgetc(fb_cards) + BUCKET_TYPE_PLAIN;
+      mp_flush(pool);
+      struct odes *obj = obj_read_bucket(bob, pool, buck_type, buck_len, fb_cards, NULL);
+      byte *attr = obj_find_aval(obj, 'G');
+      ASSERT(attr);
+      uns image_width, image_height, image_colors, thumb_width, thumb_height;
+      byte color_space[MAX_ATTR_SIZE];
+      sscanf(attr, "%d%d%s%d%d%d", &image_width, &image_height, color_space, &image_colors, &thumb_width, &thumb_height);
+      vectors[i].temp = image_dup_estimate_size(thumb_width, thumb_height) +
+	sizeof(struct image_data) + thumb_width * thumb_height * 3;
+    }
+  buck2obj_free(bob);
+  mp_delete(pool);
+  bclose(fb_cards);
+  bclose(fb_card_attrs);
+}
+
+static void
+pass2(void)
+{
+  // FIXME: presorts, much allocated memory when not needed
+  vectors_read();
+  pass2_estimate_sizes();
+  random_clusters_init();
+  for (uns clustering = 0; clustering < pass2_clusterings_count; clustering++)
+    {
+      random_clusters_build();
+      // FIXME
+      // - external sort
+      // - generate and compare pairs in clusters
+    }
+  random_clusters_cleanup();
+  vectors_cleanup();
 }
 
 /*********************************************************************************/
@@ -618,7 +911,8 @@ main(int argc UNUSED, char **argv)
 
   generate_signatures(20000);
   build_kd_tree();
-  pass1();
+  //pass1();
+  pass2();
 
   return 0;
 }

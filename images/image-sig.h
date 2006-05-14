@@ -59,7 +59,7 @@ struct image_leaf {
     byte *_s = (byte *) alloca(IMAGE_VEC_K * 6), *_p = _s + sprintf(_s, "%d", _v->f[0]); \
     for (uns _i = 1; _i < IMAGE_VEC_K; _i++) _p += sprintf(_p, " %d", _v->f[_i]); _s; })
 
-int compute_image_signature(struct image *image, struct image_signature *sig);
+int compute_image_signature(struct image_data *image, struct image_signature *sig);
 
 #endif
 
