@@ -38,13 +38,15 @@ Usage: config [-C<configfile>] [-S<section>.<option>=<value>] <sections>\n\
 \n\
 <sections>\t<section>[;<sections>]\n\
 <section>\t[*]<name>{[<items>]}\n\
-<items>\t\t<item>[;<items>]\n\
-<item>\t\t<static> | @<list>\n\
-<static>\t[-]<type><name>\n\
-<list>\t\t<name>{[<items>]}\n\
+<items>\t\t[-]<item>[;<items>]\n\
+<item>\t\t<static> | <array> | <list>\n\
+<static>\t<type><name>[=<value>]\n\
+<list>\t\t@<name>{[<items>]}\n\
+<array>\t\t<type><name><left-bracket>[<number>]<right-bracket>\n\
+<value>\t\t[a-zA-Z0-9.-/]* | 'string without single quotes'<value> | \"c-like string\"<value>\n\
 \n\
 Types:\n\
-<empty>\t\tString\n\
+:\t\tString\n\
 #\t\t32-bit integer\n\
 ##\t\t64-bit integer\n\
 $\t\tFloating point number\n\
@@ -118,6 +120,7 @@ parse_name(void)
 static void
 parse_section(struct section *section)
 {
+#define TRY(x) do{byte *_err=(x); if (_err) die(_err); }while(0)
   for (uns sep = 0; ; sep = 1)
     {
       parse_white();
@@ -154,10 +157,10 @@ parse_section(struct section *section)
 	    }
 	  item->cf.cls = CC_STATIC;
 	  item->cf.number = 1;
-	  switch (*pos)
+	  switch (*pos++)
 	    {
 	      case '#':
-		if (*++pos == '#')
+		if (*pos == '#')
 		  {
 		    pos++;
 		    item->cf.type = CT_U64;
@@ -166,23 +169,48 @@ parse_section(struct section *section)
 		  item->cf.type = CT_INT;
 		break;
 	      case '$':
-		pos++;
 		item->cf.type = CT_DOUBLE;
 		break;
-	      default:
-		if (!Cword(*pos))
-		  die("Invalid type syntax");
+	      case ':':
 		item->cf.type = CT_STRING;
 		break;
+	      default:
+		die("Invalid type syntax");
 	    }
+	  parse_white();
 	  item->cf.name = parse_name();
 	  parse_white();
+	  if (*pos == '[')
+	    {
+	      pos++;
+	      parse_white();
+	      item->cf.cls = CC_DYNAMIC;
+	      byte *num = pos;
+	      while (*pos && *pos != ']')
+		pos++;
+	      if (!*pos)
+		die("Missing ']'");
+	      *pos++ = 0;
+	      if (!*num)
+		item->cf.number = CF_ANY_NUM;
+	      else
+	        {
+		  int inum;
+		  TRY(cf_parse_int(num, &inum));
+		  if (!inum)
+		    die("Invalid array length");
+		  item->cf.number = inum;
+		}
+	      parse_white();
+	    }
 	  if (*pos == '=')
 	    {
 	      pos++;
 	      parse_white();
 	      if (section->item.cf.cls == CC_LIST)
 		die("List items can not have default values");
+	      if (item->cf.cls == CC_DYNAMIC)
+		die("Arrays can not have default values");
 	      byte *def = pos, *d = def;
 	      while (*pos != ';' && *pos != '}' && !Cspace(*pos))
 	        {
@@ -224,7 +252,6 @@ parse_section(struct section *section)
 	      memcpy(buf, def, len);
 	      buf[len] = 0;
 	      switch (item->cf.type)
-#define TRY(x) do{byte *_err=(x); if (_err) die(_err); }while(0)
 	        {
 		  case CT_STRING:
 		    item->value.v_ptr = buf;
@@ -240,7 +267,6 @@ parse_section(struct section *section)
 		    break;
 		  default:
 		    ASSERT(0);
-#undef TRY
 		}
 	    }
 	}
@@ -254,6 +280,7 @@ parse_section(struct section *section)
       clist_add_tail(&section->list, &item->node);
       section->count++;
     }
+#undef TRY
 }
 
 static void
@@ -303,63 +330,86 @@ generate_section(struct section *section)
 
 static bb_t path;
 
+static uns
+type_size(enum cf_type type)
+{
+  switch (type)
+    {
+      case CT_INT: return sizeof(int);
+      case CT_U64: return sizeof(u64);
+      case CT_DOUBLE: return sizeof(double);
+      case CT_STRING: return sizeof(byte *);
+      default: ASSERT(0);
+    }
+}
+
+static void
+dump_value(uns array, struct item *item, void *v)
+{
+  byte buf[128], *value = buf;
+  if (!array)
+    printf("CF_%s_%s='", path.ptr, item->cf.name);
+  else
+    printf("CF_%s_%s[%u]='", path.ptr, item->cf.name, ++item->index);
+  switch (item->cf.type)
+    {
+      case CT_INT:
+        sprintf(buf, "%d", *(int *)v);
+        break;
+      case CT_U64:
+        sprintf(buf, "%Lu", *(u64 *)v);
+	break;
+      case CT_DOUBLE:
+	sprintf(buf, "%g", *(double *)v);
+	break;
+      case CT_STRING:
+        if (*(byte **)v)
+          value = *(byte **)v;
+        else
+          *value = 0;
+        break;
+      default:
+        ASSERT(0);
+    }
+  while (*value) {
+    if (*value == '\'')
+      printf("'\\''");
+    else
+      putchar(*value);
+    value++;
+  }
+  printf("'\n");
+}
+
 static void
 dump_item(struct item *item, void *ptr, uns path_len)
 {
   if (item->flags & FLAG_HIDE)
     return;
-  union value *val = (union value *)((addr_int_t)ptr + (addr_int_t)item->cf.ptr);
+  byte *val = (byte *)((addr_int_t)ptr + (addr_int_t)item->cf.ptr);
   if (item->cf.cls == CC_LIST)
     {
       uns len = strlen(item->cf.name);
       bb_grow(&path, path_len + len + 1);
       path.ptr[path_len] = '_';
       memcpy(path.ptr + path_len + 1, item->cf.name, len);
-      CLIST_FOR_EACH(cnode *, ptr2, val->list)
+      CLIST_FOR_EACH(cnode *, ptr2, *(clist *)val)
         CLIST_FOR_EACH(struct item *, item2, ((struct section *)item)->list)
           dump_item(item2, ptr2, path_len + len + 1);
     }
   else
     {
-      byte *name = item->cf.name;
-      byte buf[128], *value = buf;
       bb_grow(&path, path_len + 1)[path_len] = 0;
-      if (!ptr)
-        printf("CF_%s_%s='", path.ptr, name);
+      if (item->cf.cls == CC_STATIC)
+	dump_value(!!ptr, item, val);
       else
-        printf("CF_%s_%s[%u]='", path.ptr, name, item->index++);
-      switch (item->cf.type)
         {
-          case CT_INT:
-	    sprintf(buf, "%d", val->v_int);
-            break;
-          case CT_U64:
-	    sprintf(buf, "%Lu", val->v_u64);
-	    break;
-	  case CT_DOUBLE:
-	    sprintf(buf, "%g", val->v_double);
-	    break;
-	  case CT_STRING:
-	    if (val->v_ptr)
-	      value = val->v_ptr;
-	    else
-	      *value = 0;
-	    break;
-	  default:
-	    ASSERT(0);
+	  val = *(void **)val;
+	  uns len = DARY_LEN(val);
+	  uns size = type_size(item->cf.type);
+	  for (uns i = 0; i < len; i++, val += size)
+	    dump_value(1, item, val);
 	}
-          while (*value) {
-#if 0
-            if (*value == '\'')
-	      die("Apostrophes are not supported in config of scripts");
-#endif
-            if (*value == '\'')
-	      printf("'\\''");
-	    else
-              putchar(*value);
-	    value++;
-          }
-	  printf("'\n");
     }
 }
 
