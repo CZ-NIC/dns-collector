@@ -20,6 +20,7 @@
 #include "lib/lib.h"
 #include "lib/conf.h"
 #include "lib/getopt.h"
+#include "lib/conf-internal.h"
 #include "lib/clists.h"
 #include "lib/mempool.h"
 #include "lib/chartype.h"
@@ -330,19 +331,6 @@ generate_section(struct section *section)
 
 static bb_t path;
 
-static uns
-type_size(enum cf_type type)
-{
-  switch (type)
-    {
-      case CT_INT: return sizeof(int);
-      case CT_U64: return sizeof(u64);
-      case CT_DOUBLE: return sizeof(double);
-      case CT_STRING: return sizeof(byte *);
-      default: ASSERT(0);
-    }
-}
-
 static void
 dump_value(uns array, struct item *item, void *v)
 {
@@ -406,7 +394,7 @@ dump_item(struct item *item, void *ptr, uns path_len)
         {
 	  val = *(void **)val;
 	  uns len = DARY_LEN(val);
-	  uns size = type_size(item->cf.type);
+	  uns size = cf_type_size(item->cf.type, NULL);
 	  for (uns i = 0; i < len; i++, val += size)
 	    dump_value(1, item, val);
 	}
