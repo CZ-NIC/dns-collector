@@ -14,7 +14,7 @@ LIBUCW_MODS= \
 	conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section \
 	ipaccess \
 	profile \
-	fastbuf ff-printf ff-utf8 \
+	fastbuf ff-binary ff-string ff-printf ff-utf8 \
 	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow \
 	str_ctype str_upper str_lower unicode-utf8 stkstring \
 	wildmatch wordsplit ctmatch patimatch patmatch regex \
