@@ -15,68 +15,97 @@
 byte *					/* Non-standard */
 bgets(struct fastbuf *f, byte *b, uns l)
 {
-  byte *e = b + l - 1;
-  int k;
-
-  k = bgetc(f);
-  if (k < 0)
+  ASSERT(l);
+  byte *src;
+  uns src_len = bdirect_read_prepare(f, &src);
+  if (!src_len)
     return NULL;
-  while (b < e)
+  do
     {
-      if (k == '\n' || k < 0)
-	{
-	  *b = 0;
-	  return b;
+      uns cnt = MIN(l, src_len);
+      for (uns i = cnt; i--;)
+        {
+	  byte v = *src++;
+	  if (v == '\n')
+	    {
+              bdirect_read_commit(f, src);
+	      goto exit;
+	    }
+	  *b++ = v;
 	}
-      *b++ = k;
-      k = bgetc(f);
+      if (unlikely(cnt == l))
+        die("%s: Line too long", f->name);
+      l -= cnt;
+      bdirect_read_commit(f, src);
+      src_len = bdirect_read_prepare(f, &src);
     }
-  die("%s: Line too long", f->name);
+  while (src_len);
+exit:
+  *b = 0;
+  return b;
 }
 
 int
 bgets_nodie(struct fastbuf *f, byte *b, uns l)
 {
-  byte *start = b;
-  byte *e = b + l - 1;
-  int k;
-
-  k = bgetc(f);
-  if (k < 0)
+  ASSERT(l);
+  byte *src, *start = b;
+  uns src_len = bdirect_read_prepare(f, &src);
+  if (!src_len)
     return 0;
-  while (b < e)
+  do
     {
-      if (k == '\n' || k < 0)
-	{
-	  *b++ = 0;
-	  return b - start;
+      uns cnt = MIN(l, src_len);
+      for (uns i = cnt; i--;)
+        {
+	  byte v = *src++;
+	  if (v == '\n')
+	    {
+	      bdirect_read_commit(f, src);
+	      goto exit;
+	    }
+	  *b++ = v;
 	}
-      *b++ = k;
-      k = bgetc(f);
+      bdirect_read_commit(f, src);
+      if (cnt == l)
+        return -1;
+      l -= cnt;
+      src_len = bdirect_read_prepare(f, &src);
     }
-  return -1;
+  while (src_len);
+exit:
+  *b++ = 0;
+  return b - start;
 }
 
 uns
 bgets_bb(struct fastbuf *f, bb_t *bb)
 {
-  byte *buf = bb->ptr, *src;
-  uns len = 0, buf_len = bb->len, src_len = bdirect_read_prepare(f, &src);
-  while (src_len)
+  byte *src;
+  uns src_len = bdirect_read_prepare(f, &src);
+  if (!src_len)
+    return 0;
+  bb_grow(bb, 1);
+  byte *buf = bb->ptr;
+  uns len = 0, buf_len = bb->len;
+  do
     {
       uns cnt = MIN(src_len, buf_len);
       for (uns i = cnt; i--;)
         {
 	  if (*src == '\n')
 	    {
-	      *buf = 0;
-	      return buf - bb->ptr;
+              bdirect_read_commit(f, src);
+	      goto exit;
 	    }
 	  *buf++ = *src++;
 	}
       len += cnt;
       if (cnt == src_len)
-	src_len = bdirect_read_prepare(f, &src);
+        {
+	  bdirect_read_commit(f, src);
+	  src_len = bdirect_read_prepare(f, &src);
+	}
       else
 	src_len -= cnt;
       if (cnt == buf_len)
@@ -88,46 +117,69 @@ bgets_bb(struct fastbuf *f, bb_t *bb)
       else
 	buf_len -= cnt;
     }
-  *buf = 0;
-  return len;
+  while (src_len);
+exit:
+  *buf++ = 0;
+  return buf - bb->ptr;
 }
 
 byte *
 bgets_mp(struct mempool *mp, struct fastbuf *f)
 {
+  byte *src;
+  uns src_len = bdirect_read_prepare(f, &src);
+  if (!src_len)
+    return NULL;
 #define BLOCK_SIZE 4096
   struct block {
     struct block *prev;
     byte data[BLOCK_SIZE];
   } *blocks = NULL;
-  uns sum = 0;
-  for (;;)
+  uns sum = 0, buf_len = BLOCK_SIZE;
+  struct block *new_block = alloca(sizeof(struct block));
+  byte *buf = new_block->data;
+  do
     {
-      struct block *new_block = alloca(sizeof(struct block));
-      byte *b = new_block->data, *e = b + BLOCK_SIZE;
-      while (b < e)
+      uns cnt = MIN(src_len, buf_len);
+      for (uns i = cnt; i--;)
         {
-	  int k = bgetc(f);
-	  if (k == '\n' || k < 0)
+	  if (*src == '\n')
 	    {
-	      uns len = b - new_block->data;
-	      byte *result = mp_alloc(mp, sum + len + 1) + sum;
-	      result[len] = 0;
-	      memcpy(result, new_block->data, len);
-	      while (blocks)
-	        {
-		  result -= BLOCK_SIZE;
-		  memcpy(result, blocks->data, BLOCK_SIZE);
-		  blocks = blocks->prev;
-		}
-	      return result;
+              bdirect_read_commit(f, src);
+	      goto exit;
 	    }
-	  *b++ = k;
+	  *buf++ = *src++;
 	}
-      new_block->prev = blocks;
-      blocks = new_block;
-      sum += BLOCK_SIZE;
+      if (cnt == src_len)
+        {
+	  bdirect_read_commit(f, src);
+	  src_len = bdirect_read_prepare(f, &src);
+	}
+      else
+	src_len -= cnt;
+      if (cnt == buf_len)
+        {
+          new_block->prev = blocks;
+          blocks = new_block;
+          sum += buf_len = BLOCK_SIZE;
+	  buf = new_block->data;
+	}
+      else
+	buf_len -= cnt;
     }
+  while (src_len);
+exit: ; 
+  uns len = buf - new_block->data;
+  byte *result = mp_alloc(mp, sum + len + 1) + sum;
+  result[len] = 0;
+  memcpy(result, new_block->data, len);
+  while (blocks)
+    {
+      result -= BLOCK_SIZE;
+      memcpy(result, blocks->data, BLOCK_SIZE);
+      blocks = blocks->prev;
+    }
+  return result;
 #undef BLOCK_SIZE
 }
 
@@ -153,21 +205,31 @@ bgets_stk_step(struct fastbuf *f, byte *old_buf, byte *buf, uns len)
 byte *
 bgets0(struct fastbuf *f, byte *b, uns l)
 {
-  byte *e = b + l - 1;
-  int k;
-
-  k = bgetc(f);
-  if (k < 0)
+  ASSERT(l);
+  byte *src;
+  uns src_len = bdirect_read_prepare(f, &src);
+  if (!src_len)
     return NULL;
-  while (b < e)
+  do
     {
-      if (k <= 0)
-	{
-	  *b = 0;
-	  return b;
+      uns cnt = MIN(l, src_len);
+      for (uns i = cnt; i--;)
+        {
+	  *b = *src++;
+	  if (!*b)
+	    {
+              bdirect_read_commit(f, src);
+	      return b;
+	    }
+	  b++;
 	}
-      *b++ = k;
-      k = bgetc(f);
+      if (unlikely(cnt == l))
+        die("%s: Line too long", f->name);
+      l -= cnt;
+      bdirect_read_commit(f, src);
+      src_len = bdirect_read_prepare(f, &src);
     }
-  die("%s: Line too long", f->name);
+  while (src_len);
+  *b = 0;
+  return b;
 }
