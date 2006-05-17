@@ -284,46 +284,77 @@ bgets_nodie(struct fastbuf *f, byte *b, uns l)
 }
 
 uns
-bgets_bb(struct fastbuf *f, bb_t *b)
+bgets_bb(struct fastbuf *f, bb_t *bb)
 {
-  for (uns l = 0;; l++)
+  byte *buf = bb->ptr, *src;
+  uns len = 0, buf_len = bb->len, src_len = bdirect_read_prepare(f, &src);
+  while (src_len)
     {
-      int k = bgetc(f);
-      byte *p = bb_grow(b, l + 1) + l;
-      if (k == '\n' || k < 0)
-	{
-	  *p = 0;
-	  return l;
+      uns cnt = MIN(src_len, buf_len);
+      for (uns i = cnt; i--;)
+        {
+	  if (*src == '\n')
+	    {
+	      *buf = 0;
+	      return buf - bb->ptr;
+	    }
+	  *buf++ = *src++;
 	}
-      *p = k;
+      len += cnt;
+      if (cnt == src_len)
+	src_len = bdirect_read_prepare(f, &src);
+      else
+	src_len -= cnt;
+      if (cnt == buf_len)
+        {
+	  bb_do_grow(bb, len + 1);
+	  buf = bb->ptr + len;
+	  buf_len = bb->len - len;
+	}
+      else
+	buf_len -= cnt;
     }
+  *buf = 0;
+  return len;
 }
 
 byte *
 bgets_mp(struct mempool *mp, struct fastbuf *f)
 {
-  uns len = 256, l = 0;
-  byte *buf = alloca(len);
+#define BLOCK_SIZE 4096
+  struct block {
+    struct block *prev;
+    byte data[BLOCK_SIZE];
+  } *blocks = NULL;
+  uns sum = 0;
   for (;;)
     {
-      while (l < len)
+      struct block *new_block = alloca(sizeof(struct block));
+      byte *b = new_block->data, *e = b + BLOCK_SIZE;
+      while (b < e)
         {
-          int k = bgetc(f);
-          if (k == '\n' || k < 0)
+	  int k = bgetc(f);
+	  if (k == '\n' || k < 0)
 	    {
-	      byte *result = mp_alloc(mp, l + 1);
-	      memcpy(result, buf, l);
-	      result[l] = 0;
+	      uns len = b - new_block->data;
+	      byte *result = mp_alloc(mp, sum + len + 1) + sum;
+	      result[len] = 0;
+	      memcpy(result, new_block->data, len);
+	      while (blocks)
+	        {
+		  result -= BLOCK_SIZE;
+		  memcpy(result, blocks->data, BLOCK_SIZE);
+		  blocks = blocks->prev;
+		}
 	      return result;
 	    }
-	  buf[l++] = k;
-        }
-      byte *old_buf = buf;
-      uns old_len = len;
-      len *= 2;
-      buf = alloca(len);
-      memcpy(buf, old_buf, old_len);
+	  *b++ = k;
+	}
+      new_block->prev = blocks;
+      blocks = new_block;
+      sum += BLOCK_SIZE;
     }
+#undef BLOCK_SIZE
 }
 
 int
