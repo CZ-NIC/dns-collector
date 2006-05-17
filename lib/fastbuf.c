@@ -9,6 +9,7 @@
 
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
+#include "lib/mempool.h"
 
 #include <stdlib.h>
 
@@ -280,6 +281,68 @@ bgets_nodie(struct fastbuf *f, byte *b, uns l)
       k = bgetc(f);
     }
   return -1;
+}
+
+uns
+bgets_bb(struct fastbuf *f, bb_t *b)
+{
+  for (uns l = 0;; l++)
+    {
+      int k = bgetc(f);
+      byte *p = bb_grow(b, l + 1) + l;
+      if (k == '\n' || k < 0)
+	{
+	  *p = 0;
+	  return l;
+	}
+      *p = k;
+    }
+}
+
+byte *
+bgets_mp(struct mempool *mp, struct fastbuf *f)
+{
+  uns len = 256, l = 0;
+  byte *buf = alloca(len);
+  for (;;)
+    {
+      while (l < len)
+        {
+          int k = bgetc(f);
+          if (k == '\n' || k < 0)
+	    {
+	      byte *result = mp_alloc(mp, l + 1);
+	      memcpy(result, buf, l);
+	      result[l] = 0;
+	      return result;
+	    }
+	  buf[l++] = k;
+        }
+      byte *old_buf = buf;
+      uns old_len = len;
+      len *= 2;
+      buf = alloca(len);
+      memcpy(buf, old_buf, old_len);
+    }
+}
+
+int
+bgets_stk_step(struct fastbuf *f, byte *old_buf, byte *buf, uns len)
+{
+  if (old_buf)
+    {
+      len = len >> 1;
+      memcpy(buf, old_buf, len);
+      buf += len;
+    }
+  while (len--)
+    {
+      int k = bgetc(f);
+      if (k == '\n' || k < 0)
+	return *buf = 0;
+      *buf++ = k;
+    }
+  return 1;
 }
 
 byte *
