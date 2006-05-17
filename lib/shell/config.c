@@ -47,7 +47,7 @@ Usage: config [-C<configfile>] [-S<section>.<option>=<value>] <sections>\n\
 <value>\t\t[a-zA-Z0-9.-/]* | 'string without single quotes'<value> | \"c-like string\"<value>\n\
 \n\
 Types:\n\
-:\t\tString\n\
+<empty>\t\tString\n\
 #\t\t32-bit integer\n\
 ##\t\t64-bit integer\n\
 $\t\tFloating point number\n\
@@ -158,10 +158,10 @@ parse_section(struct section *section)
 	    }
 	  item->cf.cls = CC_STATIC;
 	  item->cf.number = 1;
-	  switch (*pos++)
+	  switch (*pos)
 	    {
 	      case '#':
-		if (*pos == '#')
+		if (*++pos == '#')
 		  {
 		    pos++;
 		    item->cf.type = CT_U64;
@@ -170,13 +170,14 @@ parse_section(struct section *section)
 		  item->cf.type = CT_INT;
 		break;
 	      case '$':
+		pos++;
 		item->cf.type = CT_DOUBLE;
 		break;
-	      case ':':
+	      default:
+		if (!Cword(*pos))
+		  die("Invalid type syntax");
 		item->cf.type = CT_STRING;
 		break;
-	      default:
-		die("Invalid type syntax");
 	    }
 	  parse_white();
 	  item->cf.name = parse_name();
