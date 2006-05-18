@@ -323,10 +323,16 @@ byte *bgets0(struct fastbuf *f, byte *b, uns l);
 
 struct mempool;
 uns bgets_bb(struct fastbuf *f, bb_t *b);
-byte *bgets_mp(struct mempool *mp, struct fastbuf *f);
-int bgets_stk_step(struct fastbuf *f, byte *old_buf, byte *buf, uns len);
-#define bgets_stk(f) ({ struct fastbuf *_fb = (f); uns _l = 256; byte *_b, *_p = NULL; \
-	while (bgets_stk_step(_fb, _p, _b = alloca(_l), _l)) _p = _b, _l *= 2; _b; })
+byte *bgets_mp(struct fastbuf *f, struct mempool *mp);
+
+struct bgets_stk_struct {
+  struct fastbuf *f;
+  byte *old_buf, *cur_buf, *src;
+  uns old_len, cur_len, src_len;
+};
+void bgets_stk_init(struct bgets_stk_struct *s);
+void bgets_stk_step(struct bgets_stk_struct *s);
+#define bgets_stk(fb) ({ struct bgets_stk_struct _s; _s.f = (fb); for (bgets_stk_init(&_s); _s.cur_len; _s.cur_buf = alloca(_s.cur_len), bgets_stk_step(&_s)); _s.cur_buf; })
 
 static inline void
 bputs(struct fastbuf *f, byte *b)
