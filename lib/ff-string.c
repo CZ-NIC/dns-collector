@@ -79,15 +79,16 @@ exit:
 }
 
 uns
-bgets_bb(struct fastbuf *f, bb_t *bb)
+bgets_bb(struct fastbuf *f, bb_t *bb, uns limit)
 {
+  ASSERT(limit);
   byte *src;
   uns src_len = bdirect_read_prepare(f, &src);
   if (!src_len)
     return 0;
   bb_grow(bb, 1);
   byte *buf = bb->ptr;
-  uns len = 0, buf_len = bb->len;
+  uns len = 0, buf_len = MIN(bb->len, limit);
   do
     {
       uns cnt = MIN(src_len, buf_len);
@@ -111,9 +112,11 @@ bgets_bb(struct fastbuf *f, bb_t *bb)
 	src_len -= cnt;
       if (cnt == buf_len)
         {
+	  if (unlikely(len == limit))
+            die("%s: Line too long", f->name);
 	  bb_do_grow(bb, len + 1);
 	  buf = bb->ptr + len;
-	  buf_len = bb->len - len;
+	  buf_len = MIN(bb->len, limit) - len;
 	}
       else
 	buf_len -= cnt;

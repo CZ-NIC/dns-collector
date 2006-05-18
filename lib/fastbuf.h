@@ -322,7 +322,7 @@ int bgets_nodie(struct fastbuf *f, byte *b, uns l);
 byte *bgets0(struct fastbuf *f, byte *b, uns l);
 
 struct mempool;
-uns bgets_bb(struct fastbuf *f, bb_t *b);
+uns bgets_bb(struct fastbuf *f, bb_t *b, uns limit);
 byte *bgets_mp(struct fastbuf *f, struct mempool *mp);
 
 struct bgets_stk_struct {
