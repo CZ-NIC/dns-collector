@@ -5,6 +5,7 @@
 set -e
 
 TEST=0
+ERR=
 
 function try
 {
@@ -17,13 +18,13 @@ function try
 		cd $TDIR
 		if ! ../../configure $@ CC=gcc-3.4 >>log 2>&1 ; then
 			echo "	CANNOT CONFIGURE"
-			exit 1
-		fi
-		if ! make >>log 2>&1 ; then
+			ERR=1
+		elif ! make >>log 2>&1 ; then
 			echo "	FAILED"
-			exit 1
+			ERR=1
+		else
+			echo "	PASSED"
 		fi
-		echo "	PASSED"
 	)
 }
 
@@ -45,3 +46,5 @@ else
 	try debug CONFIG_SHARED								# debugging configuration with shared libs
 	try debug									# debugging configuration
 fi
+
+[ -z "$ERR" ]
