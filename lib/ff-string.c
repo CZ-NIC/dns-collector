@@ -171,7 +171,7 @@ bgets_mp(struct fastbuf *f, struct mempool *mp)
 	buf_len -= cnt;
     }
   while (src_len);
-exit: ; 
+exit: ;
   uns len = buf - new_block->data;
   byte *result = mp_alloc(mp, sum + len + 1) + sum;
   result[len] = 0;
@@ -244,7 +244,7 @@ bgets_stk_step(struct bgets_stk_struct *s)
 	buf_len -= cnt;
     }
   while (s->src_len);
-exit:  
+exit:
   *buf = 0;
   s->cur_len = 0;
 }
