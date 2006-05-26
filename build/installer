@@ -8,7 +8,7 @@ for d in "" cf $SH_EXTRA_RUNDIRS ; do
 		mkdir -p $DEST/$d
 	fi
 done
-for d in `echo $SH_INSTALL_RUNDIRS | sed 's/  */\n/g' | sort -u` ; do
+for d in $SH_INSTALL_RUNDIRS ; do
 	echo "Installing to $DEST/$d"
 	rm -rf $DEST/$d
 	mkdir -p $DEST/$d
