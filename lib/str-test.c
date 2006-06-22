@@ -105,7 +105,7 @@ main(int argc, char **argv)
 			random_string(str + alignment, lengths[i]);
 			elapsed_time();
 			/* Avoid "optimizing" by gcc, since the functions are
-			 * attributed CONST.  */
+			 * attributed PURE.  */
 			tot1 += strlen(str + alignment);
 			el1 += elapsed_time();
 			tot2 += str_len(str + alignment);

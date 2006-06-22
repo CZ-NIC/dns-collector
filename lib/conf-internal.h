@@ -18,6 +18,7 @@
 #define OP_2ND 0x400		// in the 2nd phase real data are entered
 enum cf_operation;
 extern byte *cf_op_names[];
+extern byte *cf_type_names[];
 
 uns cf_type_size(enum cf_type type, struct cf_user_type *utype);
 byte *cf_interpret_line(byte *name, enum cf_operation op, int number, byte **pars);

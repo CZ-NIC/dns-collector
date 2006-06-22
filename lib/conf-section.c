@@ -91,7 +91,7 @@ inspect_section(struct cf_section *sec)
     } else if (ci->cls == CC_LIST) {
       inspect_section(ci->u.sec);
       sec->flags |= SEC_FLAG_DYNAMIC | SEC_FLAG_CANT_COPY;
-    } else if (ci->cls == CC_DYNAMIC)
+    } else if (ci->cls == CC_DYNAMIC || ci->cls == CC_BITMAP)
       sec->flags |= SEC_FLAG_DYNAMIC;
     else if (ci->cls == CC_PARSER) {
       sec->flags |= SEC_FLAG_CANT_COPY;

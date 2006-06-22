@@ -16,8 +16,10 @@
 #endif
 
 #include <string.h>
+#include <alloca.h>
 
 #include "lib/unaligned.h"
+#include "lib/bbuf.h"
 
 /*
  *  Generic buffered I/O. You supply hooks to be called for low-level operations
@@ -318,6 +320,19 @@ static inline void bwrite(struct fastbuf *f, void *b, uns l)
 byte *bgets(struct fastbuf *f, byte *b, uns l);	/* Non-std */
 int bgets_nodie(struct fastbuf *f, byte *b, uns l);
 byte *bgets0(struct fastbuf *f, byte *b, uns l);
+
+struct mempool;
+uns bgets_bb(struct fastbuf *f, bb_t *b, uns limit);
+byte *bgets_mp(struct fastbuf *f, struct mempool *mp);
+
+struct bgets_stk_struct {
+  struct fastbuf *f;
+  byte *old_buf, *cur_buf, *src;
+  uns old_len, cur_len, src_len;
+};
+void bgets_stk_init(struct bgets_stk_struct *s);
+void bgets_stk_step(struct bgets_stk_struct *s);
+#define bgets_stk(fb) ({ struct bgets_stk_struct _s; _s.f = (fb); for (bgets_stk_init(&_s); _s.cur_len; _s.cur_buf = alloca(_s.cur_len), bgets_stk_step(&_s)); _s.cur_buf; })
 
 static inline void
 bputs(struct fastbuf *f, byte *b)

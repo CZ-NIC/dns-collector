@@ -48,8 +48,7 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
 
 static void dump_section(struct fastbuf *fb, struct cf_section *sec, int level, void *ptr);
 
-static byte *class_names[] = { "end", "static", "dynamic", "parser", "section", "list" };
-static byte *type_names[] = { "int", "u64", "double", "ip", "string", "lookup", "user" };
+static byte *class_names[] = { "end", "static", "dynamic", "parser", "section", "list", "bitmap" };
 
 static void
 dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
@@ -64,8 +63,8 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
     bputs(fb, "any ");
   else
     bprintf(fb, "%d ", item->number);
-  if (item->cls == CC_STATIC || item->cls == CC_DYNAMIC) {
-    bprintf(fb, "T%s ", type_names[type]);
+  if (item->cls == CC_STATIC || item->cls == CC_DYNAMIC || item->cls == CC_BITMAP) {
+    bprintf(fb, "T%s ", cf_type_names[type]);
     if (item->type == CT_USER)
       bprintf(fb, "U%s S%d ", item->u.utype->name, size);
   }
@@ -81,6 +80,18 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
 	dump_basic(fb, ptr + i * size, type, &item->u);
     } else
       bprintf(fb, "NULL ");
+  } else if (item->cls == CC_BITMAP) {
+    u32 mask = * (u32*) ptr;
+    for (i=0; i<32; i++) {
+      if (item->type == CT_LOOKUP && !item->u.lookup[i])
+	break;
+      if (mask & (1<<i)) {
+	if (item->type == CT_INT)
+	  bprintf(fb, "%d ", i);
+	else if (item->type == CT_LOOKUP)
+	  bprintf(fb, "%s ", item->u.lookup[i]);
+      }
+    }
   }
   bputc(fb, '\n');
   if (item->cls == CC_SECTION)

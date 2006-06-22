@@ -26,6 +26,10 @@ Top { \
   look Alpha
   look:prepend Beta GAMMA
   numbers 11000 65535
+  bitmap1 31
+  bitmap1:remove 3 3
+  bitmap2:all
+  bitmap2:remove eleven twelve one
 };;;;;;
 
 unknown.ignored :-)
