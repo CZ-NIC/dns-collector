@@ -8,6 +8,7 @@
  */
 
 #include "lib/lib.h"
+#include "lib/lfs.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -37,7 +38,7 @@ do_log_switch(struct tm *tm)
   if (strcmp(name, log_filename))
     {
       strcpy(log_filename, name);
-      fd = open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
+      fd = sh_open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
       if (fd < 0)
 	die("Unable to open log file %s: %m", name);
       close(2);
