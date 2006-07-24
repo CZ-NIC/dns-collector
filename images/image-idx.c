@@ -451,6 +451,8 @@ build_kd_tree(void)
 
 /*********************************************************************************/
 
+#if 0
+
 struct pass1_hilbert {
   u32 index;
   struct image_vector vec;
@@ -463,7 +465,7 @@ struct pass1_node {
   byte *buf;
   oid_t oid;
   byte *url;
-  struct image_data image;
+  struct image image;
   struct image_dup dup;
 };
 
@@ -839,7 +841,7 @@ pass2_estimate_sizes(void)
       byte color_space[MAX_ATTR_SIZE];
       sscanf(attr, "%d%d%s%d%d%d", &image_width, &image_height, color_space, &image_colors, &thumb_width, &thumb_height);
       vectors[i].temp = image_dup_estimate_size(thumb_width, thumb_height) +
-	sizeof(struct image_data) + thumb_width * thumb_height * 3;
+	sizeof(struct image) + thumb_width * thumb_height * 3;
     }
   buck2obj_free(bob);
   mp_delete(pool);
@@ -864,6 +866,7 @@ pass2(void)
   random_clusters_cleanup();
   vectors_cleanup();
 }
+#endif
 
 /*********************************************************************************/
 
@@ -909,10 +912,33 @@ main(int argc UNUSED, char **argv)
 
   srgb_to_luv_init();
 
+#if 0
+  while (1)
+  {
+  struct mempool *pool = mp_new(1024);
+  struct fastbuf *fb = bopen("a.jpg", O_RDONLY, 1024);
+  struct image_io io;
+  log(L_DEBUG, "opening");
+  image_open(&io, fb, pool);
+  io.format = IMAGE_FORMAT_JPEG;
+  log(L_DEBUG, "reading");
+  int i;
+  i = image_read(&io);
+  log(L_DEBUG, "done %d %d %d", i, io.image.width, io.image.height);
+  for (i = 0; i < 1000000000; i++)
+    ;
+  image_close(&io);
+  mp_delete(pool);
+  bclose(fb);
+  }
+#endif  
+
+#if 0  
   generate_signatures(20000);
   build_kd_tree();
   //pass1();
   pass2();
+#endif  
 
   return 0;
 }

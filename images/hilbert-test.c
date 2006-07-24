@@ -5,7 +5,6 @@
 #include "lib/lib.h"
 #include "lib/mempool.h"
 #include "lib/math.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 

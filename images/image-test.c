@@ -3,8 +3,8 @@
 #include "sherlock/sherlock.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
-#include "images/image-sig.h"
-#include "images/kd-tree.h"
+//#include "images/image-sig.h"
+//#include "images/kd-tree.h"
 #include "sherlock/index.h"
 #include "lib/mempool.h"
 #include "sherlock/object.h"
@@ -14,7 +14,7 @@
 
 #include "sherlock/sherlock.h"
 #include "lib/fastbuf.h"
-#include "images/images.h"
+//#include "images/images.h"
 #include "sherlock/index.h"
 
 #include <stdio.h>
