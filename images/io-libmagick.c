@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#define LOCAL_DEBUG
+#undef LOCAL_DEBUG
 
 #include "lib/lib.h"
 #include "lib/mempool.h"
@@ -258,7 +258,8 @@ libmagick_write(struct image_io *io)
   info = CloneImageInfo(NULL);
 
   /* Setup image parameters and allocate the image*/
-  switch (io->flags & IMAGE_COLOR_SPACE)
+  struct image *img = io->image;
+  switch (img->flags & IMAGE_COLOR_SPACE)
     {
       case COLOR_SPACE_GRAYSCALE:
 	info->colorspace = GRAYColorspace;
@@ -289,11 +290,11 @@ libmagick_write(struct image_io *io)
       image_thread_err(io->thread, IMAGE_ERR_WRITE_FAILED, "GraphicsMagick failed to allocate the image.");
       goto err;
     }
-  image->columns = io->cols;
-  image->rows = io->rows;
+  image->columns = img->cols;
+  image->rows = img->rows;
 
   /* Get pixels */
-  PixelPacket *pixels = SetImagePixels(image, 0, 0, io->cols, io->rows), *dest = pixels;
+  PixelPacket *pixels = SetImagePixels(image, 0, 0, img->cols, img->rows), *dest = pixels;
   if (unlikely(!pixels))
     {
       image_thread_err(io->thread, IMAGE_ERR_WRITE_FAILED, "Cannot get GraphicsMagick pixels.");
@@ -301,7 +302,6 @@ libmagick_write(struct image_io *io)
     }
 
   /* Convert pixels */
-  struct image *img = io->image;
   switch (img->pixel_size)
     {
       case 1:
@@ -316,6 +316,7 @@ libmagick_write(struct image_io *io)
 	  dest++; }while(0)
 #       include "images/image-walk.h"
 	break;
+
       case 2:
 #       define IMAGE_WALK_INLINE
 #       define IMAGE_WALK_UNROLL 4
@@ -328,6 +329,7 @@ libmagick_write(struct image_io *io)
 	  dest++; }while(0)
 #       include "images/image-walk.h"
 	break;
+
       case 3:
 #       define IMAGE_WALK_INLINE
 #       define IMAGE_WALK_UNROLL 4
@@ -340,6 +342,7 @@ libmagick_write(struct image_io *io)
 	  dest++; }while(0)
 #       include "images/image-walk.h"
 	break;
+
       case 4:
 #       define IMAGE_WALK_INLINE
 #       define IMAGE_WALK_UNROLL 4
@@ -352,6 +355,9 @@ libmagick_write(struct image_io *io)
 	  dest++; }while(0)
 #       include "images/image-walk.h"
 	break;
+
+      default:
+	ASSERT(0);
     }
 
   /* Store pixels */

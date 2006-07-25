@@ -178,7 +178,9 @@ image_io_write(struct image_io *io)
       break;
 
     case IMAGE_FORMAT_PNG:
-#if defined(CONFIG_LIBMAGICK)
+#if defined(CONFIG_LIBPNG)
+      return libpng_write(io);
+#elif defined(CONFIG_LIBMAGICK)
       return libmagick_write(io);
 #endif
       break;

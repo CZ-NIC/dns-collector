@@ -387,7 +387,7 @@ libjpeg_write(struct image_io *io)
   struct image *img = io->image;
   i.cinfo.image_width = img->cols;
   i.cinfo.image_height = img->rows;
-  switch (io->flags & IMAGE_COLOR_SPACE)
+  switch (img->flags & IMAGE_COLOR_SPACE)
     {
       case COLOR_SPACE_GRAYSCALE:
 	i.cinfo.input_components = 1;

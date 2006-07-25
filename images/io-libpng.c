@@ -16,7 +16,7 @@
 #include <png.h>
 #include <setjmp.h>
 
-struct libpng_internals {
+struct libpng_read_data {
   png_structp png_ptr;
   png_infop info_ptr;
   png_infop end_ptr;
@@ -40,10 +40,18 @@ libpng_free(png_structp png_ptr UNUSED, png_voidp ptr UNUSED)
 }
 
 static void NONRET
-libpng_error(png_structp png_ptr, png_const_charp msg)
+libpng_read_error(png_structp png_ptr, png_const_charp msg)
 {
-  DBG("libpng_error()");
+  DBG("libpng_read_error()");
   image_thread_err(png_get_error_ptr(png_ptr), IMAGE_ERR_READ_FAILED, (byte *)msg);
+  longjmp(png_jmpbuf(png_ptr), 1);
+}
+
+static void NONRET
+libpng_write_error(png_structp png_ptr, png_const_charp msg)
+{
+  DBG("libpng_write_error()");
+  image_thread_err(png_get_error_ptr(png_ptr), IMAGE_ERR_WRITE_FAILED, (byte *)msg);
   longjmp(png_jmpbuf(png_ptr), 1);
 }
 
@@ -54,62 +62,88 @@ libpng_warning(png_structp png_ptr UNUSED, png_const_charp msg UNUSED)
 }
 
 static void
-libpng_read(png_structp png_ptr, png_bytep data, png_size_t length)
+libpng_read_fn(png_structp png_ptr, png_bytep data, png_size_t length)
 {
-  DBG("libpng_read(): len=%d", (uns)length);
-  if (unlikely(bread(png_get_io_ptr(png_ptr), data, length) < length))
+  DBG("libpng_read_fn(len=%u)", (uns)length);
+  if (unlikely(bread((struct fastbuf *)png_get_io_ptr(png_ptr), (byte *)data, length) < length))
     png_error(png_ptr, "Incomplete data");
+}
+
+static void
+libpng_write_fn(png_structp png_ptr, png_bytep data, png_size_t length)
+{
+  DBG("libpng_write_fn(len=%u)", (uns)length);
+  bwrite((struct fastbuf *)png_get_io_ptr(png_ptr), (byte *)data, length);
+}
+
+static void
+libpng_flush_fn(png_structp png_ptr UNUSED)
+{
+  DBG("libpng_flush_fn()");
 }
 
 static void
 libpng_read_cancel(struct image_io *io)
 {
   DBG("libpng_read_cancel()");
-  struct libpng_internals *i = io->read_data;
-  png_destroy_read_struct(&i->png_ptr, &i->info_ptr, &i->end_ptr);
+
+  struct libpng_read_data *rd = io->read_data;
+  png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
 }
 
 int
 libpng_read_header(struct image_io *io)
 {
   DBG("libpng_read_header()");
-  struct libpng_internals *i = io->read_data = mp_alloc(io->internal_pool, sizeof(*i));
-  i->png_ptr = png_create_read_struct_2(PNG_LIBPNG_VER_STRING,
-      io->thread, libpng_error, libpng_warning,
+  
+  /* Create libpng structures */
+  struct libpng_read_data *rd = io->read_data = mp_alloc(io->internal_pool, sizeof(*rd));
+  rd->png_ptr = png_create_read_struct_2(PNG_LIBPNG_VER_STRING,
+      io->thread, libpng_read_error, libpng_warning,
       io->internal_pool, libpng_malloc, libpng_free);
-  if (unlikely(!i->png_ptr))
-    goto err_create;
-  i->info_ptr = png_create_info_struct(i->png_ptr);
-  if (unlikely(!i->info_ptr))
+  if (unlikely(!rd->png_ptr))
     {
-      png_destroy_read_struct(&i->png_ptr, NULL, NULL);
-      goto err_create;
-    }
-  i->end_ptr = png_create_info_struct(i->png_ptr);
-  if (unlikely(!i->end_ptr))
-    {
-      png_destroy_read_struct(&i->png_ptr, &i->info_ptr, NULL);
-      goto err_create;
-    }
-  if (setjmp(png_jmpbuf(i->png_ptr)))
-    {
-      DBG("Libpng failed to read the image, longjump saved us");
-      png_destroy_read_struct(&i->png_ptr, &i->info_ptr, &i->end_ptr);
+      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Cannot create libpng read structure.");
       return 0;
     }
-  png_set_read_fn(i->png_ptr, io->fastbuf, libpng_read);
-  png_set_user_limits(i->png_ptr, 0xffff, 0xffff);
+  rd->info_ptr = png_create_info_struct(rd->png_ptr);
+  if (unlikely(!rd->info_ptr))
+    {
+      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Cannot create libpng info structure.");
+      png_destroy_read_struct(&rd->png_ptr, NULL, NULL);
+      return 0;
+    }
+  rd->end_ptr = png_create_info_struct(rd->png_ptr);
+  if (unlikely(!rd->end_ptr))
+    {
+      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Cannot create libpng info structure.");
+      png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, NULL);
+      return 0;
+    }
+  
+  /* Setup libpng longjump */
+  if (unlikely(setjmp(png_jmpbuf(rd->png_ptr))))
+    {
+      DBG("Libpng failed to read the image, longjump saved us");
+      png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
+      return 0;
+    }
+  
+  /* Setup libpng IO */
+  png_set_read_fn(rd->png_ptr, io->fastbuf, libpng_read_fn);
+  png_set_user_limits(rd->png_ptr, IMAGE_MAX_SIZE, IMAGE_MAX_SIZE);
 
-  DBG("Reading image info");
-  png_read_info(i->png_ptr, i->info_ptr);
-  png_get_IHDR(i->png_ptr, i->info_ptr, &i->cols, &i->rows, &i->bit_depth, &i->color_type, NULL, NULL, NULL);
+  /* Read header */
+  png_read_info(rd->png_ptr, rd->info_ptr);
+  png_get_IHDR(rd->png_ptr, rd->info_ptr, &rd->cols, &rd->rows, &rd->bit_depth, &rd->color_type, NULL, NULL, NULL);
 
+  /* Fill image_io values */
   if (!io->cols)
-    io->cols = i->cols;
+    io->cols = rd->cols;
   if (!io->rows)
-    io->rows = i->rows;
+    io->rows = rd->rows;
   if (!(io->flags & IMAGE_CHANNELS_FORMAT))
-    switch (i->color_type)
+    switch (rd->color_type)
       {
 	case PNG_COLOR_TYPE_GRAY:
 	  io->flags |= COLOR_SPACE_GRAYSCALE;
@@ -125,17 +159,14 @@ libpng_read_header(struct image_io *io)
 	  io->flags |= COLOR_SPACE_RGB | IMAGE_ALPHA;
 	  break;
 	default:
-	  png_destroy_read_struct(&i->png_ptr, &i->info_ptr, &i->end_ptr);
+	  png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
 	  image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Unknown color type");
 	  break;
       }
 
+  /* Success */
   io->read_cancel = libpng_read_cancel;
   return 1;
-
-err_create:
-  image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Cannot create libpng read structure.");
-  return 0;
 }
 
 int
@@ -143,7 +174,7 @@ libpng_read_data(struct image_io *io)
 {
   DBG("libpng_read_data()");
 
-  struct libpng_internals *i = io->read_data;
+  struct libpng_read_data *rd = io->read_data;
 
   /* Test supported pixel formats */
   switch (io->flags & IMAGE_COLOR_SPACE)
@@ -152,76 +183,76 @@ libpng_read_data(struct image_io *io)
       case COLOR_SPACE_RGB:
 	break;
       default:
-        png_destroy_read_struct(&i->png_ptr, &i->info_ptr, &i->end_ptr);
+        png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
 	image_thread_err(io->thread, IMAGE_ERR_INVALID_PIXEL_FORMAT, "Unsupported color space.");
         return 0;
     }
 
-  volatile int need_scale = io->cols != i->cols || io->rows != i->rows;
+  volatile int need_scale = io->cols != rd->cols || io->rows != rd->rows;
   struct image * volatile img = need_scale ? 
-    image_new(io->thread, i->cols, i->rows, io->flags & IMAGE_PIXEL_FORMAT, NULL) :
-    image_new(io->thread, i->cols, i->rows, io->flags, io->pool);
+    image_new(io->thread, rd->cols, rd->rows, io->flags & IMAGE_PIXEL_FORMAT, NULL) :
+    image_new(io->thread, rd->cols, rd->rows, io->flags, io->pool);
   if (!img)
     {
-      png_destroy_read_struct(&i->png_ptr, &i->info_ptr, &i->end_ptr);
+      png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
       return 0;
     }
 
-  if (setjmp(png_jmpbuf(i->png_ptr)))
+  if (setjmp(png_jmpbuf(rd->png_ptr)))
     {
       DBG("Libpng failed to read the image, longjump saved us");
-      png_destroy_read_struct(&i->png_ptr, &i->info_ptr, &i->end_ptr);
+      png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
       if (need_scale || !io->pool)
 	image_destroy(io->thread, img);
       return 0;
     }
 
   /* Apply transformations */
-  if (i->bit_depth == 16)
-    png_set_strip_16(i->png_ptr);
-  switch (i->color_type)
+  if (rd->bit_depth == 16)
+    png_set_strip_16(rd->png_ptr);
+  switch (rd->color_type)
     {
       case PNG_COLOR_TYPE_PALETTE:
 	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)
 	  {
-	    png_set_palette_to_rgb(i->png_ptr);
-	    png_set_rgb_to_gray_fixed(i->png_ptr, 1, 21267, 71514);
+	    png_set_palette_to_rgb(rd->png_ptr);
+	    png_set_rgb_to_gray_fixed(rd->png_ptr, 1, 21267, 71514);
 	  }
 	else
-	  png_set_palette_to_rgb(i->png_ptr);
+	  png_set_palette_to_rgb(rd->png_ptr);
 	if ((io->flags & IMAGE_ALPHA) || (io->flags & IMAGE_PIXEL_FORMAT) == (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
-          png_set_add_alpha(i->png_ptr, 255, PNG_FILLER_AFTER);
+          png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
 	else
-	  png_set_strip_alpha(i->png_ptr);
+	  png_set_strip_alpha(rd->png_ptr);
 	break;
       case PNG_COLOR_TYPE_GRAY:
 	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_RGB)
-          png_set_gray_to_rgb(i->png_ptr);
+          png_set_gray_to_rgb(rd->png_ptr);
 	if (io->flags & IMAGE_ALPHA)
-	  png_set_add_alpha(i->png_ptr, 255, PNG_FILLER_AFTER);
+	  png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
 	break;
       case PNG_COLOR_TYPE_GRAY_ALPHA:
 	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_RGB)
-          png_set_gray_to_rgb(i->png_ptr);
+          png_set_gray_to_rgb(rd->png_ptr);
 	if (!(io->flags & IMAGE_ALPHA))
-          png_set_strip_alpha(i->png_ptr);
+          png_set_strip_alpha(rd->png_ptr);
 	break;
       case PNG_COLOR_TYPE_RGB:
 	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)
-	  png_set_rgb_to_gray_fixed(i->png_ptr, 1, 21267, 71514);
+	  png_set_rgb_to_gray_fixed(rd->png_ptr, 1, 21267, 71514);
 	if ((io->flags & IMAGE_ALPHA) || (io->flags & IMAGE_PIXEL_FORMAT) == (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
-	  png_set_add_alpha(i->png_ptr, 255, PNG_FILLER_AFTER);
+	  png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
 	break;
       case PNG_COLOR_TYPE_RGB_ALPHA:
 	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)
-	  png_set_rgb_to_gray_fixed(i->png_ptr, 1, 21267, 71514);
+	  png_set_rgb_to_gray_fixed(rd->png_ptr, 1, 21267, 71514);
 	if (!(io->flags & IMAGE_ALPHA) && (io->flags & IMAGE_PIXEL_FORMAT) != (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
-          png_set_strip_alpha(i->png_ptr);
+          png_set_strip_alpha(rd->png_ptr);
 	break;
       default:
 	ASSERT(0);
     }
-  png_read_update_info(i->png_ptr, i->info_ptr);
+  png_read_update_info(rd->png_ptr, rd->info_ptr);
 
   /* Read image data */
   DBG("Reading image data");
@@ -229,11 +260,11 @@ libpng_read_data(struct image_io *io)
   png_bytep rows[img->rows];
   for (uns r = 0; r < img->rows; r++, pixels += img->row_size)
     rows[r] = (png_bytep)pixels;
-  png_read_image(i->png_ptr, rows);
-  png_read_end(i->png_ptr, i->end_ptr);
+  png_read_image(rd->png_ptr, rows);
+  png_read_end(rd->png_ptr, rd->end_ptr);
 
   /* Destroy libpng read structure */
-  png_destroy_read_struct(&i->png_ptr, &i->info_ptr, &i->end_ptr);
+  png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
 
   /* Scale and store the resulting image */
   if (need_scale)
@@ -263,6 +294,75 @@ libpng_read_data(struct image_io *io)
 int
 libpng_write(struct image_io *io)
 {
-  image_thread_err(io->thread, IMAGE_ERR_NOT_IMPLEMENTED, "Libpng writing not implemented.");
-  return 0;
+  DBG("libpng_write()");
+
+  /* Create libpng structures */
+  png_structp png_ptr = png_create_write_struct_2(PNG_LIBPNG_VER_STRING,
+      io->thread, libpng_write_error, libpng_warning,
+      io->internal_pool, libpng_malloc, libpng_free);
+  if (unlikely(!png_ptr))
+    {
+      image_thread_err(io->thread, IMAGE_ERR_WRITE_FAILED, "Cannot create libpng write structure.");
+      return 0;
+    }
+  png_infop info_ptr = png_create_info_struct(png_ptr);
+  if (unlikely(!info_ptr))
+    {
+      image_thread_err(io->thread, IMAGE_ERR_WRITE_FAILED, "Cannot create libpng info structure.");
+      png_destroy_write_struct(&png_ptr, NULL);
+      return 0;
+    }
+ 
+  /* Setup libpng longjump */
+  if (unlikely(setjmp(png_jmpbuf(png_ptr))))
+    {
+      DBG("Libpng failed to write the image, longjump saved us.");
+      png_destroy_write_struct(&png_ptr, &info_ptr);
+      return 0;
+    }
+
+  /* Setup libpng IO */
+  png_set_write_fn(png_ptr, io->fastbuf, libpng_write_fn, libpng_flush_fn);
+  
+  /* Setup PNG parameters */
+  struct image *img = io->image;
+  switch (img->flags & IMAGE_PIXEL_FORMAT)
+    {
+      case COLOR_SPACE_GRAYSCALE | IMAGE_PIXELS_ALIGNED:
+        png_set_IHDR(png_ptr, info_ptr, img->cols, img->rows, 8, PNG_COLOR_TYPE_GRAY,
+	  PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	break;
+      case COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA | IMAGE_PIXELS_ALIGNED:
+        png_set_IHDR(png_ptr, info_ptr, img->cols, img->rows, 8, PNG_COLOR_TYPE_GRAY_ALPHA,
+	  PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	break;
+      case COLOR_SPACE_RGB:
+        png_set_IHDR(png_ptr, info_ptr, img->cols, img->rows, 8, PNG_COLOR_TYPE_RGB,
+	  PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	break;
+      case COLOR_SPACE_RGB | IMAGE_ALPHA | IMAGE_PIXELS_ALIGNED:
+        png_set_IHDR(png_ptr, info_ptr, img->cols, img->rows, 8, PNG_COLOR_TYPE_RGB_ALPHA,
+	  PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	break;
+      case COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED:
+        png_set_IHDR(png_ptr, info_ptr, img->cols, img->rows, 8, PNG_COLOR_TYPE_RGB,
+	  PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	png_set_filler(png_ptr, 0, PNG_FILLER_AFTER);
+	break;
+      default:
+        ASSERT(0);	
+    }
+  png_write_info(png_ptr, info_ptr);
+
+  /* Write pixels */
+  byte *pixels = img->pixels;
+  png_bytep rows[img->rows];
+  for (uns r = 0; r < img->rows; r++, pixels += img->row_size)
+    rows[r] = (png_bytep)pixels;
+  png_write_image(png_ptr, rows);
+  png_write_end(png_ptr, info_ptr);
+
+  /* Free libpng structure */
+  png_destroy_write_struct(&png_ptr, &info_ptr);
+  return 1;
 }
