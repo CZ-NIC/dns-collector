@@ -135,9 +135,7 @@ image_io_read_data(struct image_io *io, int ref)
       break;
 
     case IMAGE_FORMAT_GIF:
-#if defined(CONFIG_LIBUNGIF)
-      result = libungif_read_data(io);
-#elif defined(CONFIG_LIBMAGICK)
+#if defined(CONFIG_LIBMAGICK)
       result = libmagick_read_data(io);
 #else
       ASSERT(0);
