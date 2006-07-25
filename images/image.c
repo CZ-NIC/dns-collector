@@ -14,7 +14,7 @@
 #include "images/images.h"
 #include <string.h>
 
-#define MAX_IMAGE_SIZE (1 << 30)
+#define MAX_IMAGE_BYTES (1 << 30)
 
 void
 image_thread_init(struct image_thread *it)
@@ -45,7 +45,7 @@ struct image *
 image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool *pool)
 {
   DBG("image_new(cols=%u rows=%u flags=0x%x pool=%p)", cols, rows, flags, pool);
-  if (cols >= 0x10000 || rows >= 0x10000)
+  if (cols > IMAGE_MAX_SIZE || rows > IMAGE_MAX_SIZE)
     {
       image_thread_err(it, IMAGE_ERR_INVALID_DIMENSIONS, "Image dimension(s) too large");
       return NULL;
@@ -80,15 +80,16 @@ image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool
 	ASSERT(0);
     }
   if (flags & IMAGE_SSE_ALIGNED)
-    align = MAX(16, sizeof(uns));
+    align = IMAGE_SSE_ALIGN_SIZE;
   else if (flags & IMAGE_PIXELS_ALIGNED)
     align = pixel_size;
   else
     align = 1;
   row_size = cols * pixel_size;
   row_size = ALIGN(row_size, align);
-  u64 image_size_64 = row_size * rows;
-  if (image_size_64 > MAX_IMAGE_SIZE)
+  u64 image_size_64 = (u64)row_size * rows;
+  u64 bytes_64 = image_size_64 + (sizeof(struct image) + IMAGE_SSE_ALIGN_SIZE - 1 + sizeof(uns));
+  if (bytes_64 > MAX_IMAGE_BYTES)
     {
       image_thread_err(it, IMAGE_ERR_INVALID_DIMENSIONS, "Image does not fit in memory");
       return NULL;
@@ -98,11 +99,10 @@ image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool
       image_thread_err(it, IMAGE_ERR_INVALID_DIMENSIONS, "Zero dimension(s)");
       return NULL;
     }
-  uns size = sizeof(struct image) + image_size + MAX(16, sizeof(uns)) - 1 + sizeof(uns);
-  img = pool ? mp_alloc(pool, size) : xmalloc(size);
+  img = pool ? mp_alloc(pool, (uns)bytes_64) : xmalloc((uns)bytes_64);
   bzero(img, sizeof(struct image));
   byte *p = (byte *)img + sizeof(struct image);
-  img->pixels = ALIGN_PTR(p, MAX(16, sizeof(uns)));
+  img->pixels = ALIGN_PTR(p, IMAGE_SSE_ALIGN_SIZE);
   img->flags = flags;
   img->pixel_size = pixel_size;
   img->cols = cols;

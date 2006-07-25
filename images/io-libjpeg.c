@@ -435,12 +435,12 @@ libjpeg_write(struct image_io *io)
       /* RGBA (ignore alpha) or aligned RGB */
       case 4:
 	{
-	  byte buf[img->cols * 3 + 1], *dest = buf;
+	  byte buf[img->cols * 3], *dest = buf;
 #         define IMAGE_WALK_INLINE
 #         define IMAGE_WALK_UNROLL 4
 #         define IMAGE_WALK_COL_STEP 4
 #         define IMAGE_WALK_DO_ROW_END do{ dest = buf; jpeg_write_scanlines(&i.cinfo, (JSAMPLE **)&dest, 1); }while(0)
-#         define IMAGE_WALK_DO_STEP do{ *(u32 *)dest = *(u32 *)pos; dest += 3; }while(0)
+#         define IMAGE_WALK_DO_STEP do{ *dest++ = pos[0]; *dest++ = pos[1]; *dest++ = pos[2]; }while(0)
 #         include "images/image-walk.h"
 	}
 	break;

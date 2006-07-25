@@ -47,6 +47,9 @@ void image_thread_err_format(struct image_thread *thread, uns code, char *msg, .
 
 /* basic image manupulation */
 
+#define IMAGE_MAX_SIZE		0xffffU	/* maximum number of cols/rows, must be <(1<<16) */
+#define IMAGE_SSE_ALIGN_SIZE	(MAX(16, sizeof(uns)))
+
 enum color_space {
   COLOR_SPACE_UNKNOWN,
   COLOR_SPACE_GRAYSCALE,
@@ -92,7 +95,7 @@ void image_dimensions_fit_to_box(u32 *cols, u32 *rows, u32 max_cols, u32 max_row
 /* image-io.c */
 
 enum image_format {
-  IMAGE_FORMAT_UNKNOWN,
+  IMAGE_FORMAT_UNDEFINED,
   IMAGE_FORMAT_JPEG,
   IMAGE_FORMAT_PNG,
   IMAGE_FORMAT_GIF,

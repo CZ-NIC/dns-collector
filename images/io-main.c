@@ -95,7 +95,7 @@ image_io_read_header(struct image_io *io)
 #endif
       break;
 
-    case IMAGE_FORMAT_UNKNOWN:
+    case IMAGE_FORMAT_UNDEFINED:
       // FIXME: auto-detect
       break;
 
@@ -217,12 +217,12 @@ image_extension_to_format(byte *extension)
     return IMAGE_FORMAT_PNG;
   if (!strcasecmp(extension, "gif"))
     return IMAGE_FORMAT_GIF;
-  return IMAGE_FORMAT_UNKNOWN;
+  return IMAGE_FORMAT_UNDEFINED;
 }
 
 enum image_format
 image_file_name_to_format(byte *file_name)
 {
   byte *extension = strrchr(file_name, '.');
-  return extension ? image_extension_to_format(extension + 1) : IMAGE_FORMAT_UNKNOWN;
+  return extension ? image_extension_to_format(extension + 1) : IMAGE_FORMAT_UNDEFINED;
 }

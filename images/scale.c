@@ -68,8 +68,8 @@ image_scale(struct image_thread *it, struct image *dest, struct image *src)
 void
 image_dimensions_fit_to_box(u32 *cols, u32 *rows, u32 max_cols, u32 max_rows, uns upsample)
 {
-  ASSERT(*cols && *rows && *cols <= 0xffff && *rows <= 0xffff);
-  ASSERT(max_cols && max_rows && max_cols <= 0xffff && max_rows <= 0xffff);
+  ASSERT(*cols && *rows && *cols <= IMAGE_MAX_SIZE && *rows <= IMAGE_MAX_SIZE);
+  ASSERT(max_cols && max_rows && max_cols <= IMAGE_MAX_SIZE && max_rows <= IMAGE_MAX_SIZE);
   if (*cols <= max_cols && *rows <= max_rows)
     {
       if (!upsample)
