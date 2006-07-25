@@ -91,22 +91,20 @@ libmagick_read_header(struct image_io *io)
     }
 
   /* Fill image parameters */
-  if (!io->cols)
-    io->cols = rd->image->columns;
-  if (!io->rows)
-    io->rows = rd->image->rows;
-  if (!(io->flags & IMAGE_CHANNELS_FORMAT))
+  io->cols = rd->image->columns;
+  io->rows = rd->image->rows;
+  switch (rd->image->colorspace)
     {
-      switch (rd->image->colorspace)
-        {
-	  case GRAYColorspace:
-	    io->flags |= COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA;
-	    break;
-	  default:
-	    io->flags |= COLOR_SPACE_RGB | IMAGE_ALPHA;
-	    break;
-	}
+      case GRAYColorspace:
+        io->flags |= COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA;
+        break;
+      default:
+        io->flags |= COLOR_SPACE_RGB | IMAGE_ALPHA;
+        break;
     }
+  io->number_of_colors = rd->image->colors;
+  if (rd->image->storage_class == PseudoClass && rd->image->compression != JPEGCompression)
+    io->has_palette = 1;
 
   io->read_cancel = libmagick_read_cancel;
   return 1;
@@ -223,7 +221,7 @@ libmagick_read_data(struct image_io *io)
       if (unlikely(!img2))
         goto err2;
       int result = image_scale(io->thread, img2, img);
-      image_destroy(io->thread, img);
+      image_destroy(img);
       img = img2;
       need_destroy = !io->pool;
       if (unlikely(!result))
@@ -240,7 +238,7 @@ err:
   libmagick_destroy_read_data(rd);
 err2:
   if (need_destroy)
-    image_destroy(io->thread, img);
+    image_destroy(img);
   return 0;
 }
 
@@ -274,6 +272,8 @@ libmagick_write(struct image_io *io)
     {
       case IMAGE_FORMAT_JPEG:
 	strcpy(info->magick, "JPEG");
+	if (io->jpeg_quality)
+	  info->quality = MIN(io->jpeg_quality, 100);
 	break;
       case IMAGE_FORMAT_PNG:
 	strcpy(info->magick, "PNG");

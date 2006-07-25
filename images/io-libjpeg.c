@@ -48,7 +48,7 @@ libjpeg_read_error_exit(j_common_ptr cinfo)
   struct libjpeg_err *e = (struct libjpeg_err *)cinfo->err;
   byte buf[JMSG_LENGTH_MAX];
   e->pub.format_message(cinfo, buf);
-  image_thread_err(e->io->thread, IMAGE_ERR_READ_FAILED, buf);
+  image_thread_err_dup(e->io->thread, IMAGE_ERR_READ_FAILED, buf);
   longjmp(e->setjmp_buf, 1);
 }
 
@@ -59,7 +59,7 @@ libjpeg_write_error_exit(j_common_ptr cinfo)
   struct libjpeg_err *e = (struct libjpeg_err *)cinfo->err;
   byte buf[JMSG_LENGTH_MAX];
   e->pub.format_message(cinfo, buf);
-  image_thread_err(e->io->thread, IMAGE_ERR_WRITE_FAILED,  buf);
+  image_thread_err_dup(e->io->thread, IMAGE_ERR_WRITE_FAILED,  buf);
   longjmp(e->setjmp_buf, 1);
 }
 
@@ -217,20 +217,19 @@ libjpeg_read_header(struct image_io *io)
   /* Read JPEG header and setup decompression options */
   DBG("Reading image header");
   jpeg_read_header(&i->cinfo, TRUE);
-  if (!(io->flags & IMAGE_COLOR_SPACE))
-    switch (i->cinfo.jpeg_color_space)
-      {
-        case JCS_GRAYSCALE:
-	  io->flags |= COLOR_SPACE_GRAYSCALE;
-	  break;
-        default:
-	  io->flags |= COLOR_SPACE_RGB;
-	  break;
-      }
-  if (!io->cols)
-    io->cols = i->cinfo.image_width;
-  if (!io->rows)
-    io->rows = i->cinfo.image_height;
+  switch (i->cinfo.jpeg_color_space)
+    {
+      case JCS_GRAYSCALE:
+        io->flags = COLOR_SPACE_GRAYSCALE;
+	io->number_of_colors = 1 << 8;
+        break;
+      default:
+        io->flags = COLOR_SPACE_RGB;
+	io->number_of_colors = 1 << 24;
+        break;
+    }
+  io->cols = i->cinfo.image_width;
+  io->rows = i->cinfo.image_height;
 
   io->read_cancel = libjpeg_read_cancel;
   return 1;
@@ -275,7 +274,7 @@ libjpeg_read_data(struct image_io *io)
       DBG("Libjpeg failed to read the image, longjump saved us");
       jpeg_destroy_decompress(&i->cinfo);
       if (need_scale || !io->pool)
-	image_destroy(io->thread, img);
+	image_destroy(img);
       return 0;
     }
 
@@ -335,17 +334,17 @@ libjpeg_read_data(struct image_io *io)
       struct image *dest = image_new(io->thread, io->cols, io->rows, io->flags, io->pool);
       if (!dest)
         {
-	  image_destroy(io->thread, img);
+	  image_destroy(img);
 	  return 0;
 	}
       if (!(image_scale(io->thread, dest, img)))
         {
-	  image_destroy(io->thread, img);
+	  image_destroy(img);
 	  if (!io->pool)
-	    image_destroy(io->thread, dest);
+	    image_destroy(dest);
 	  return 0;
 	}
-      image_destroy(io->thread, img);
+      image_destroy(img);
       io->image = dest;
     }
   else
@@ -403,6 +402,8 @@ libjpeg_write(struct image_io *io)
 	return 0;
     }
   jpeg_set_defaults(&i.cinfo);
+  if (io->jpeg_quality)
+    jpeg_set_quality(&i.cinfo, MIN(io->jpeg_quality, 100), 1);
 
   /* Compress the image */
   jpeg_start_compress(&i.cinfo, TRUE);

@@ -43,7 +43,7 @@ static void NONRET
 libpng_read_error(png_structp png_ptr, png_const_charp msg)
 {
   DBG("libpng_read_error()");
-  image_thread_err(png_get_error_ptr(png_ptr), IMAGE_ERR_READ_FAILED, (byte *)msg);
+  image_thread_err_dup(png_get_error_ptr(png_ptr), IMAGE_ERR_READ_FAILED, (byte *)msg);
   longjmp(png_jmpbuf(png_ptr), 1);
 }
 
@@ -51,7 +51,7 @@ static void NONRET
 libpng_write_error(png_structp png_ptr, png_const_charp msg)
 {
   DBG("libpng_write_error()");
-  image_thread_err(png_get_error_ptr(png_ptr), IMAGE_ERR_WRITE_FAILED, (byte *)msg);
+  image_thread_err_dup(png_get_error_ptr(png_ptr), IMAGE_ERR_WRITE_FAILED, (byte *)msg);
   longjmp(png_jmpbuf(png_ptr), 1);
 }
 
@@ -138,31 +138,40 @@ libpng_read_header(struct image_io *io)
   png_get_IHDR(rd->png_ptr, rd->info_ptr, &rd->cols, &rd->rows, &rd->bit_depth, &rd->color_type, NULL, NULL, NULL);
 
   /* Fill image_io values */
-  if (!io->cols)
-    io->cols = rd->cols;
-  if (!io->rows)
-    io->rows = rd->rows;
-  if (!(io->flags & IMAGE_CHANNELS_FORMAT))
-    switch (rd->color_type)
-      {
-	case PNG_COLOR_TYPE_GRAY:
-	  io->flags |= COLOR_SPACE_GRAYSCALE;
-	  break;
-	case PNG_COLOR_TYPE_GRAY_ALPHA:
-	  io->flags |= COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA;
-	  break;
-	case PNG_COLOR_TYPE_RGB:
-	  io->flags |= COLOR_SPACE_RGB;
-	  break;
-	case PNG_COLOR_TYPE_RGB_ALPHA:
-	case PNG_COLOR_TYPE_PALETTE:
-	  io->flags |= COLOR_SPACE_RGB | IMAGE_ALPHA;
-	  break;
-	default:
-	  png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
-	  image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Unknown color type");
-	  break;
-      }
+  io->cols = rd->cols;
+  io->rows = rd->rows;
+  switch (rd->color_type)
+    {
+      case PNG_COLOR_TYPE_GRAY:
+        io->flags |= COLOR_SPACE_GRAYSCALE;
+	io->number_of_colors = 1 << 8;
+        break;
+      case PNG_COLOR_TYPE_GRAY_ALPHA:
+        io->flags |= COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA;
+	io->number_of_colors = 1 << 8;
+        break;
+      case PNG_COLOR_TYPE_RGB:
+        io->flags |= COLOR_SPACE_RGB;
+	io->number_of_colors = 1 << 24;
+        break;
+      case PNG_COLOR_TYPE_RGB_ALPHA:
+	io->number_of_colors = 1 << 24;
+        io->flags |= COLOR_SPACE_RGB | IMAGE_ALPHA;
+        break;
+      case PNG_COLOR_TYPE_PALETTE:
+        io->flags |= COLOR_SPACE_RGB | IMAGE_ALPHA;
+	int num_palette;
+	if (png_get_PLTE(rd->png_ptr, rd->info_ptr, NULL, &num_palette))
+	  io->number_of_colors = num_palette;
+	else
+	  io->number_of_colors = 1 << rd->bit_depth;
+	io->has_palette = 1;
+        break;
+      default:
+        png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
+        image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Unknown color type");
+        break;
+    }  
 
   /* Success */
   io->read_cancel = libpng_read_cancel;
@@ -203,7 +212,7 @@ libpng_read_data(struct image_io *io)
       DBG("Libpng failed to read the image, longjump saved us");
       png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
       if (need_scale || !io->pool)
-	image_destroy(io->thread, img);
+	image_destroy(img);
       return 0;
     }
 
@@ -272,14 +281,14 @@ libpng_read_data(struct image_io *io)
       struct image *dest = image_new(io->thread, io->cols, io->rows, io->flags, io->pool);
       if (!dest)
         {
-	  image_destroy(io->thread, img);
+	  image_destroy(img);
 	  return 0;
 	}
       if (!image_scale(io->thread, dest, img))
         {
-	  image_destroy(io->thread, img);
+	  image_destroy(img);
 	  if (!io->pool)
-	    image_destroy(io->thread, dest);
+	    image_destroy(dest);
 	  return 0;
 	}
       io->image = dest;

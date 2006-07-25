@@ -43,6 +43,13 @@ image_thread_err(struct image_thread *thread, uns code, char *msg)
   thread->err_msg = (byte *)msg;
 }
 
+static inline void
+image_thread_err_dup(struct image_thread *thread, uns code, char *msg)
+{
+  thread->err_code = code;
+  thread->err_msg = mp_strdup(thread->pool, msg);
+}
+
 void image_thread_err_format(struct image_thread *thread, uns code, char *msg, ...);
 
 /* basic image manupulation */
@@ -80,7 +87,7 @@ struct image {
 
 struct image *image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool *pool);
 struct image *image_clone(struct image_thread *it, struct image *src, uns flags, struct mempool *pool);
-void image_destroy(struct image_thread *it, struct image *img); /* only with NULL mempool */
+void image_destroy(struct image *img); /* only with NULL mempool */
 void image_clear(struct image_thread *it, struct image *img);
 
 byte *color_space_to_name(enum color_space cs);
@@ -103,27 +110,29 @@ enum image_format {
 };
 
 struct image_io {
-  struct image *image;
-  struct fastbuf *fastbuf;
-  enum image_format format;
-  struct mempool *pool;
-  u32 cols;
-  u32 rows;
-  u32 flags;
+  				/*  R - read_header input */
+  				/*   H - read_header output */
+  				/*    I - read_data input */
+  				/*     O - read_data output */
+  				/*      W - write input */
+
+  struct image *image;		/* [   OW] - image data */
+  enum image_format format;	/* [R   W] - file format (IMAGE_FORMAT_x) */
+  struct fastbuf *fastbuf;      /* [R   W] - source/destination stream */
+  struct mempool *pool;		/* [  I  ] - parameter to image_new */
+  u32 cols;			/* [ HI  ] - number of columns, parameter to image_new */
+  u32 rows;			/* [ HI  ] - number of rows, parameter to image_new */
+  u32 flags;			/* [ HI  ] - parameter to image new, read_header fills IMAGE_CHANNELS_FORMAT */
+  u32 jpeg_quality;		/* [    W] - JPEG compression quality (1..100) */
+  u32 number_of_colors;		/* [ H   ] - number of image colors */
+  u32 has_palette;		/* [ H   ] - true for image with indexed colors */
+
   /* internals */
   struct image_thread *thread;
   struct mempool *internal_pool;
   int image_destroy;
   void *read_data;
   void (*read_cancel)(struct image_io *io);
-  union {
-    struct {
-    } jpeg;
-    struct {
-    } png;
-    struct {
-    } gif;
-  };
 };
 
 void image_io_init(struct image_thread *it, struct image_io *io);

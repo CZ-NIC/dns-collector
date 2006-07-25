@@ -37,7 +37,7 @@ image_io_image_destroy(struct image_io *io)
 {
   if (io->image_destroy)
     {
-      image_destroy(io->thread, io->image);
+      image_destroy(io->image);
       io->image_destroy = 0;
       io->image = NULL;
     }

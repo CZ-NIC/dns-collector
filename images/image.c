@@ -152,7 +152,7 @@ image_clone(struct image_thread *it, struct image *src, uns flags, struct mempoo
 }
 
 void
-image_destroy(struct image_thread *it UNUSED, struct image *img)
+image_destroy(struct image *img)
 {
   DBG("image_destroy(img=%p)", img);
   xfree((byte *)img);

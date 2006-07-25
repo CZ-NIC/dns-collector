@@ -24,13 +24,14 @@ Usage: image-tool [options] infile [outfile]\n\
 -f --input-format   input image format (jpeg, gif, png)\n\
 -F --output-format  output image format\n\
 -s --size           force output dimensions (100x200)\n\
--b --fit-box        scale to fit the box (100x200)\n\
--c --colorspace     force output colorspace (gray, grayalpha, rgb, rgbalpha)\n\
+-b --fit-to-box     scale to fit the box (100x200)\n\
+-c --colorspace     force output colorspace (Gray, GrayAlpha, RGB, RGBAlpha)\n\
+-Q --jpeg-quality   JPEG quality (1..100)\n\
 ", stderr);
   exit(1);
 }
 
-static char *shortopts = "qf:F:s:b:c:" CF_SHORT_OPTS;
+static char *shortopts = "qf:F:s:b:c:Q:" CF_SHORT_OPTS;
 static struct option longopts[] =
 {
   CF_LONG_OPTS
@@ -38,8 +39,9 @@ static struct option longopts[] =
   { "input-format",	0, 0, 'f' },
   { "output-format",	0, 0, 'F' },
   { "size",		0, 0, 's' },
-  { "fit-box",		0, 0, 'b' },
+  { "fit-to-box",	0, 0, 'b' },
   { "colorspace",	0, 0, 'c' },
+  { "jpeg-quality",	0, 0, 'Q' },
   { NULL,		0, 0, 0 }
 };
 							  
@@ -50,8 +52,9 @@ static byte *output_file_name;
 static enum image_format output_format;
 static uns cols;
 static uns rows;
-static uns fit_box;
+static uns fit_to_box;
 static uns channels_format;
+static uns jpeg_quality;
 
 #define MSG(x...) do{ if (verbose) log(L_INFO, ##x); }while(0)
 
@@ -82,7 +85,7 @@ main(int argc, char **argv)
 	    *r++ = 0;
 	    if (!(cols = atoi(optarg)) || !(rows = atoi(r)))
 	      usage();
-	    fit_box = 0;
+	    fit_to_box = 0;
 	    break;
 	  }
 	case 'b':
@@ -93,11 +96,15 @@ main(int argc, char **argv)
 	    *r++ = 0;
 	    if (!(cols = atoi(optarg)) || !(rows = atoi(r)))
 	      usage();
-	    fit_box = 1;
+	    fit_to_box = 1;
 	    break;
 	  }
 	case 'c':
 	  if (!(channels_format = image_name_to_channels_format(optarg)))
+	    usage();
+	  break;
+	case 'Q':
+	  if (!(jpeg_quality = atoi(optarg)))
 	    usage();
 	  break;
 	default:
@@ -126,14 +133,15 @@ main(int argc, char **argv)
       bclose(io.fastbuf);
       printf("Format:      %s\n", image_format_to_extension(io.format) ? : (byte *)"?");
       printf("Dimensions:  %dx%d\n", io.cols, io.rows);
-      printf("Colorspace:  %s\n", image_channels_format_to_name(io.flags & IMAGE_CHANNELS_FORMAT));
+      printf("Colorspace:  %s\n", io.has_palette ? (byte *)"Palette" : image_channels_format_to_name(io.flags & IMAGE_CHANNELS_FORMAT));
+      printf("NumColors:   %d\n", io.number_of_colors);
     }
   else
     {
       MSG("%s %dx%d %s", image_format_to_extension(io.format) ? : (byte *)"?", io.cols, io.rows,
-	  image_channels_format_to_name(io.flags & IMAGE_CHANNELS_FORMAT));
+	  io.has_palette ? (byte *)"Palette" : image_channels_format_to_name(io.flags & IMAGE_CHANNELS_FORMAT));
       if (cols)
-        if (fit_box)
+        if (fit_to_box)
 	  {
             image_dimensions_fit_to_box(&io.cols, &io.rows, MIN(cols, 0xffff), MIN(rows, 0xffff), 0);
 	  }
@@ -144,6 +152,8 @@ main(int argc, char **argv)
           }
       if (channels_format)
         io.flags = io.flags & ~IMAGE_PIXEL_FORMAT | channels_format;
+      if (jpeg_quality)
+	io.jpeg_quality = jpeg_quality;
       TRY(image_io_read_data(&io, 0));
       bclose(io.fastbuf);
       MSG("Writing %s", output_file_name);
