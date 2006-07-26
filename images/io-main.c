@@ -72,25 +72,25 @@ image_io_read_header(struct image_io *io)
   image_io_image_destroy(io);
   switch (io->format) {
     case IMAGE_FORMAT_JPEG:
-#if defined(CONFIG_LIBJPEG)
+#if defined(CONFIG_IMAGES_LIBJPEG)
       return libjpeg_read_header(io);
-#elif defined(CONFIG_LIBMAGICK)
+#elif defined(CONFIG_IMAGES_LIBMAGICK)
       return libmagick_read_header(io);
 #endif
       break;
 
     case IMAGE_FORMAT_PNG:
-#if defined(CONFIG_LIBPNG)
+#if defined(CONFIG_IMAGES_LIBPNG)
       return libpng_read_header(io);
-#elif defined(CONFIG_LIBMAGICK)
+#elif defined(CONFIG_IMAGES_LIBMAGICK)
       return libmagick_read_header(io);
 #endif
       break;
 
     case IMAGE_FORMAT_GIF:
-#if defined(CONFIG_LIBUNGIF)
+#if defined(CONFIG_IMAGES_LIBUNGIF)
       return libungif_read_header(io);
-#elif defined(CONFIG_LIBMAGICK)
+#elif defined(CONFIG_IMAGES_LIBMAGICK)
       return libmagick_read_header(io);
 #endif
       break;
@@ -115,9 +115,9 @@ image_io_read_data(struct image_io *io, int ref)
   int result;
   switch (io->format) {
     case IMAGE_FORMAT_JPEG:
-#if defined(CONFIG_LIBJPEG)
+#if defined(CONFIG_IMAGES_LIBJPEG)
       result = libjpeg_read_data(io);
-#elif defined(CONFIG_LIBMAGICK)
+#elif defined(CONFIG_IMAGES_LIBMAGICK)
       result = libmagick_read_data(io);
 #else
       ASSERT(0);
@@ -125,9 +125,9 @@ image_io_read_data(struct image_io *io, int ref)
       break;
 
     case IMAGE_FORMAT_PNG:
-#if defined(CONFIG_LIBPNG)
+#if defined(CONFIG_IMAGES_LIBPNG)
       result = libpng_read_data(io);
-#elif defined(CONFIG_LIBMAGICK)
+#elif defined(CONFIG_IMAGES_LIBMAGICK)
       result = libmagick_read_data(io);
 #else
       ASSERT(0);
@@ -135,9 +135,9 @@ image_io_read_data(struct image_io *io, int ref)
       break;
 
     case IMAGE_FORMAT_GIF:
-#if defined(CONFIG_LIBMAGICK)
+#if defined(CONFIG_IMAGES_LIBUNGIF)
       result = libungif_read_data(io);
-#elif defined(CONFIG_LIBMAGICK)
+#elif defined(CONFIG_IMAGES_LIBMAGICK)
       result = libmagick_read_data(io);
 #else
       ASSERT(0);
@@ -172,23 +172,23 @@ image_io_write(struct image_io *io)
   image_io_read_cancel(io);
   switch (io->format) {
     case IMAGE_FORMAT_JPEG:
-#if defined(CONFIG_LIBJPEG)
+#if defined(CONFIG_IMAGES_LIBJPEG)
       return libjpeg_write(io);
-#elif defined(CONFIG_LIBMAGICK)
+#elif defined(CONFIG_IMAGES_LIBMAGICK)
       return libmagick_write(io);
 #endif
       break;
 
     case IMAGE_FORMAT_PNG:
-#if defined(CONFIG_LIBPNG)
+#if defined(CONFIG_IMAGES_LIBPNG)
       return libpng_write(io);
-#elif defined(CONFIG_LIBMAGICK)
+#elif defined(CONFIG_IMAGES_LIBMAGICK)
       return libmagick_write(io);
 #endif
       break;
 
     case IMAGE_FORMAT_GIF:
-#if defined(CONFIG_LIBMAGICK)
+#if defined(CONFIG_IMAGES_LIBMAGICK)
       return libmagick_write(io);
 #endif
       break;

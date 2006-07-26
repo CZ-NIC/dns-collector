@@ -8,22 +8,22 @@ LIBIMAGES_MODS=image scale io-main
 LIBIMAGES=$(o)/images/libimages.$(LS)
 LIBIMAGES_LIBS=
 
-ifdef CONFIG_LIBJPEG
+ifdef CONFIG_IMAGES_LIBJPEG
 LIBIMAGES_MODS+=io-libjpeg
 LIBIMAGES_LIBS+=-ljpeg
 endif
 
-ifdef CONFIG_LIBPNG
+ifdef CONFIG_IMAGES_LIBPNG
 LIBIMAGES_MODS+=io-libpng
 LIBIMAGES_LIBS+=-lpng
 endif
 
-ifdef CONFIG_LIBUNGIF
+ifdef CONFIG_IMAGES_LIBUNGIF
 LIBIMAGES_MODS+=io-libungif
 LIBIMAGES_LIBS+=-lungif
 endif
 
-ifdef CONFIG_LIBMAGICK
+ifdef CONFIG_IMAGES_LIBMAGICK
 LIBIMAGES_MODS+=io-libmagick
 MAGICK_LIBS:=$(shell GraphicsMagick-config --libs)
 LIBIMAGES_LIBS+=$(MAGICK_LIBS)

@@ -151,24 +151,24 @@ enum image_format image_file_name_to_format(byte *file_name);
 
 /* internals */
 
-#ifdef CONFIG_LIBJPEG
+#ifdef CONFIG_IMAGES_LIBJPEG
 int libjpeg_read_header(struct image_io *io);
 int libjpeg_read_data(struct image_io *io);
 int libjpeg_write(struct image_io *io);
 #endif
 
-#ifdef CONFIG_LIBPNG
+#ifdef CONFIG_IMAGES_LIBPNG
 int libpng_read_header(struct image_io *io);
 int libpng_read_data(struct image_io *io);
 int libpng_write(struct image_io *io);
 #endif
 
-#ifdef CONFIG_LIBUNGIF
+#ifdef CONFIG_IMAGES_LIBUNGIF
 int libungif_read_header(struct image_io *io);
 int libungif_read_data(struct image_io *io);
 #endif
 
-#ifdef CONFIG_LIBMAGICK
+#ifdef CONFIG_IMAGES_LIBMAGICK
 int libmagick_read_header(struct image_io *io);
 int libmagick_read_data(struct image_io *io);
 int libmagick_write(struct image_io *io);
