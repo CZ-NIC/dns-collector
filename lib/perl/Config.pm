@@ -28,12 +28,12 @@ sub Parse(@) {
 	}
 	foreach my $section (keys %Sections) {
 		my $opts = $Sections{$section};
-		my $optlist = join(" ", keys %$opts);
+		my $optlist = join(";", keys %$opts);
 		my %filtered_opts = map { my $t=$_; $t=~s/[#\$]+$//; $t => $$opts{$_} } keys %$opts;
-		my @l = `bin/config $defargs $section $optlist`;
+		my @l = `bin/config $defargs "$section\{$optlist\}"`;
 		$? && exit 1;
 		foreach my $o (@l) {
-			$o =~ /^CF_([^=]+)='(.*)'\n$/ or die "Cannot parse bin/config output: $_";
+			$o =~ /^CF_.*_([^=]+)='(.*)'\n$/ or die "Cannot parse bin/config output: $_";
 			my $var = $filtered_opts{$1};
 			my $val = $2;
 			if (ref $var eq "SCALAR") {
