@@ -65,7 +65,7 @@ libmagick_read_header(struct image_io *io)
     }
   uns buf_size = file_size;
   byte *buf = xmalloc(buf_size);
-  bread(io->fastbuf, buf, buf_size);
+  breadb(io->fastbuf, buf, buf_size);
 
   /* Allocate read structure */
   struct magick_read_data *rd = io->read_data = mp_alloc(io->internal_pool, sizeof(*rd));
