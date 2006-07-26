@@ -125,12 +125,14 @@ image_clone(struct image_thread *it, struct image *src, uns flags, struct mempoo
     return NULL;
   if (img->image_size)
     {
-      if (src->pixel_size != img->pixel_size)
+      if (src->pixel_size != img->pixel_size) /* conversion between aligned and unaligned RGB */
         {
-	  struct image *sec_img = src;
+#	  define IMAGE_WALK_PREFIX(x) walk_##x
 #         define IMAGE_WALK_INLINE
+#	  define IMAGE_WALK_IMAGE img
+#	  define IMAGE_WALK_SEC_IMAGE src
 #         define IMAGE_WALK_DOUBLE
-#         define IMAGE_WALK_DO_STEP do{ *(u32 *)pos = *(u32 *)sec_pos; }while(0)
+#         define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; walk_pos[1] = walk_sec_pos[1]; walk_pos[2] = walk_sec_pos[2]; }while(0)
 #         include "images/image-walk.h"
 	}
       else if (src->row_size != img->row_size)

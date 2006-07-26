@@ -114,6 +114,7 @@ libungif_read_data(struct image_io *io)
   ColorMapObject *color_map = image->ImageDesc.ColorMap ? : gif->SColorMap;
   GifColorType *palette = color_map->Colors;
   uns background = gif->SBackGroundColor;
+  byte *img_end = img->pixels + img->image_size;
 
   /* Handle deinterlacing */
   uns dein_step, dein_next;
@@ -127,30 +128,31 @@ libungif_read_data(struct image_io *io)
     {
       case 1:
 	{
-	  uns i;
 	  byte pal[256], *pal_pos = pal, *pal_end = pal + 256;
-	  for (i = 0; i < (uns)color_map->ColorCount; i++, pal_pos++, palette++)
+	  for (uns i = 0; i < (uns)color_map->ColorCount; i++, pal_pos++, palette++)
 	    *pal_pos = libungif_pixel_to_gray(palette);
 	  if (pal_pos != pal_end)
 	    bzero(pal_pos, pal_end - pal_pos);
+#	  define DO_ROW_END do{ \
+  	      walk_row_start += dein_step; \
+  	      if (walk_row_start > img_end) \
+		{ uns n = dein_next >> 1; walk_row_start = img->pixels + n, dein_step = dein_next; dein_next = n; } \
+	    }while(0)
+#	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
+#	  define IMAGE_WALK_IMAGE img
 #	  define IMAGE_WALK_UNROLL 4
 #	  define IMAGE_WALK_COL_STEP 1
 #	  define IMAGE_WALK_ROW_STEP 0
-#	  define IMAGE_WALK_DO_STEP do{ *pos = pal[*pixels++]; }while(0)
-#	  define IMAGE_WALK_DO_ROW_END do{ \
-  	      row_start += dein_step; \
-  	      if (row_start > img->pixels + img->image_size) \
-  		row_start = img->pixels + (dein_next >>= 1), dein_step = dein_next << 1; \
-	    }while(0)
+#	  define IMAGE_WALK_DO_STEP do{ *walk_pos = pal[*pixels++]; }while(0)
+#	  define IMAGE_WALK_DO_ROW_END DO_ROW_END
 #	  include "images/image-walk.h"
 	  break;
 	}
       case 2:
 	{
-	  uns i;
 	  byte pal[256 * 2], *pal_pos = pal, *pal_end = pal + 256 * 2;
-	  for (i = 0; i < (uns)color_map->ColorCount; i++, pal_pos += 2, palette++)
+	  for (uns i = 0; i < (uns)color_map->ColorCount; i++, pal_pos += 2, palette++)
 	    {
 	      pal_pos[0] = libungif_pixel_to_gray(palette);
 	      pal_pos[1] = 255;
@@ -159,24 +161,21 @@ libungif_read_data(struct image_io *io)
 	    bzero(pal_pos, pal_end - pal_pos);
 	  if (background < 256)
 	    pal[background * 2 + 1] = 0;
+#	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
+#	  define IMAGE_WALK_IMAGE img
 #	  define IMAGE_WALK_UNROLL 4
 #	  define IMAGE_WALK_COL_STEP 2
 #	  define IMAGE_WALK_ROW_STEP 0
-#	  define IMAGE_WALK_DO_STEP do{ *(u16 *)pos = ((u16 *)pal)[*pixels++]; }while(0)
-#	  define IMAGE_WALK_DO_ROW_END do{ \
-  	      row_start += dein_step; \
-  	      if (row_start > img->pixels + img->image_size) \
-  		row_start = img->pixels + (dein_next >>= 1), dein_step = dein_next << 1; \
-	    }while(0)
+#	  define IMAGE_WALK_DO_STEP do{ *(u16 *)walk_pos = ((u16 *)pal)[*pixels++]; }while(0)
+#	  define IMAGE_WALK_DO_ROW_END DO_ROW_END
 #	  include "images/image-walk.h"
 	  break;
 	}
       case 3:
 	{
-	  uns i;
 	  byte pal[256 * 4], *pal_pos = pal, *pal_end = pal + 256 * 4;
-	  for (i = 0; i < (uns)color_map->ColorCount; i++, pal_pos += 4, palette++)
+	  for (uns i = 0; i < (uns)color_map->ColorCount; i++, pal_pos += 4, palette++)
 	    {
 	      pal_pos[0] = palette->Red;
 	      pal_pos[1] = palette->Green;
@@ -184,24 +183,21 @@ libungif_read_data(struct image_io *io)
 	    }
 	  if (pal_pos != pal_end)
 	    bzero(pal_pos, pal_end - pal_pos);
+#	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
+#	  define IMAGE_WALK_IMAGE img
 #	  define IMAGE_WALK_UNROLL 4
 #	  define IMAGE_WALK_COL_STEP 3
 #	  define IMAGE_WALK_ROW_STEP 0
-#	  define IMAGE_WALK_DO_STEP do{ byte *p = pal + 4 * (*pixels++); pos[0] = p[0]; pos[1] = p[1]; pos[2] = p[2]; }while(0)
-#	  define IMAGE_WALK_DO_ROW_END do{ \
-  	      row_start += dein_step; \
-  	      if (row_start > img->pixels + img->image_size) \
-  		row_start = img->pixels + (dein_next >>= 1), dein_step = dein_next << 1; \
-	    }while(0)
+#	  define IMAGE_WALK_DO_STEP do{ byte *p = pal + 4 * (*pixels++); walk_pos[0] = p[0]; walk_pos[1] = p[1]; walk_pos[2] = p[2]; }while(0)
+#	  define IMAGE_WALK_DO_ROW_END DO_ROW_END
 #	  include "images/image-walk.h"
 	  break;
 	}
       case 4:
 	{
-	  uns i;
 	  byte pal[256 * 4], *pal_pos = pal, *pal_end = pal + 256 * 4;
-	  for (i = 0; i < (uns)color_map->ColorCount; i++, pal_pos += 4, palette++)
+	  for (uns i = 0; i < (uns)color_map->ColorCount; i++, pal_pos += 4, palette++)
 	    {
 	      pal_pos[0] = palette->Red;
 	      pal_pos[1] = palette->Green;
@@ -212,16 +208,14 @@ libungif_read_data(struct image_io *io)
 	    bzero(pal_pos, pal_end - pal_pos);
 	  if (background < 256)
 	    pal[background * 4 + 3] = 0;
+#	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
+#	  define IMAGE_WALK_IMAGE img
 #	  define IMAGE_WALK_UNROLL 4
 #	  define IMAGE_WALK_COL_STEP 4
 #	  define IMAGE_WALK_ROW_STEP 0
-#	  define IMAGE_WALK_DO_STEP do{ *(u32 *)pos = ((u32 *)pal)[*pixels++]; }while(0)
-#	  define IMAGE_WALK_DO_ROW_END do{ \
-  	      row_start += dein_step; \
-  	      if (row_start > img->pixels + img->image_size) \
-  		row_start = img->pixels + (dein_next >>= 1), dein_step = dein_next << 1; \
-	    }while(0)
+#	  define IMAGE_WALK_DO_STEP do{ *(u32 *)walk_pos = ((u32 *)pal)[*pixels++]; }while(0)
+#	  define IMAGE_WALK_DO_ROW_END DO_ROW_END
 #	  include "images/image-walk.h"
 	  break;
 	}

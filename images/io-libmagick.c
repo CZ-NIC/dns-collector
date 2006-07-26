@@ -162,47 +162,55 @@ libmagick_read_data(struct image_io *io)
   switch (img->pixel_size)
     {
       case 1:
+#	define IMAGE_WALK_PREFIX(x) walk_##x
 #       define IMAGE_WALK_INLINE
+#	define IMAGE_WALK_IMAGE img
 #       define IMAGE_WALK_UNROLL 4
 #       define IMAGE_WALK_COL_STEP 1
 #       define IMAGE_WALK_DO_STEP do{ \
-	  pos[0] = libmagick_pixel_to_gray(src); \
+	  walk_pos[0] = libmagick_pixel_to_gray(src); \
 	  src++; }while(0)
 #       include "images/image-walk.h"
 	break;
 
       case 2:
+#	define IMAGE_WALK_PREFIX(x) walk_##x
 #       define IMAGE_WALK_INLINE
+#	define IMAGE_WALK_IMAGE img
 #       define IMAGE_WALK_UNROLL 4
 #       define IMAGE_WALK_COL_STEP 2
 #       define IMAGE_WALK_DO_STEP do{ \
-	  pos[0] = libmagick_pixel_to_gray(src); \
-	  pos[1] = QUANTUM_TO_BYTE(src->opacity); \
+	  walk_pos[0] = libmagick_pixel_to_gray(src); \
+	  walk_pos[1] = QUANTUM_TO_BYTE(src->opacity); \
 	  src++; }while(0)
 #       include "images/image-walk.h"
 	break;
 
       case 3:
+#	define IMAGE_WALK_PREFIX(x) walk_##x
 #       define IMAGE_WALK_INLINE
+#	define IMAGE_WALK_IMAGE img
 #       define IMAGE_WALK_UNROLL 4
 #       define IMAGE_WALK_COL_STEP 3
 #       define IMAGE_WALK_DO_STEP do{ \
-	  pos[0] = QUANTUM_TO_BYTE(src->red); \
-	  pos[1] = QUANTUM_TO_BYTE(src->green); \
-	  pos[2] = QUANTUM_TO_BYTE(src->blue); \
+	  walk_pos[0] = QUANTUM_TO_BYTE(src->red); \
+	  walk_pos[1] = QUANTUM_TO_BYTE(src->green); \
+	  walk_pos[2] = QUANTUM_TO_BYTE(src->blue); \
 	  src++; }while(0)
 #       include "images/image-walk.h"
 	break;
 
       case 4:
+#	define IMAGE_WALK_PREFIX(x) walk_##x
 #       define IMAGE_WALK_INLINE
+#	define IMAGE_WALK_IMAGE img
 #       define IMAGE_WALK_UNROLL 4
 #       define IMAGE_WALK_COL_STEP 4
 #       define IMAGE_WALK_DO_STEP do{ \
-	  pos[0] = QUANTUM_TO_BYTE(src->red); \
-	  pos[1] = QUANTUM_TO_BYTE(src->green); \
-	  pos[2] = QUANTUM_TO_BYTE(src->blue); \
-	  pos[3] = QUANTUM_TO_BYTE(src->opacity); \
+	  walk_pos[0] = QUANTUM_TO_BYTE(src->red); \
+	  walk_pos[1] = QUANTUM_TO_BYTE(src->green); \
+	  walk_pos[2] = QUANTUM_TO_BYTE(src->blue); \
+	  walk_pos[3] = QUANTUM_TO_BYTE(src->opacity); \
 	  src++; }while(0)
 #       include "images/image-walk.h"
 	break;
@@ -305,53 +313,61 @@ libmagick_write(struct image_io *io)
   switch (img->pixel_size)
     {
       case 1:
+#	define IMAGE_WALK_PREFIX(x) walk_##x
 #       define IMAGE_WALK_INLINE
+#	define IMAGE_WALK_IMAGE img
 #       define IMAGE_WALK_UNROLL 4
 #       define IMAGE_WALK_COL_STEP 1
 #       define IMAGE_WALK_DO_STEP do{ \
-	  dest->red = BYTE_TO_QUANTUM(pos[0]); \
-	  dest->green = BYTE_TO_QUANTUM(pos[0]); \
-	  dest->blue = BYTE_TO_QUANTUM(pos[0]); \
+	  dest->red = BYTE_TO_QUANTUM(walk_pos[0]); \
+	  dest->green = BYTE_TO_QUANTUM(walk_pos[0]); \
+	  dest->blue = BYTE_TO_QUANTUM(walk_pos[0]); \
 	  dest->opacity = OPACITY_MAX; \
 	  dest++; }while(0)
 #       include "images/image-walk.h"
 	break;
 
       case 2:
+#	define IMAGE_WALK_PREFIX(x) walk_##x
 #       define IMAGE_WALK_INLINE
+#	define IMAGE_WALK_IMAGE img
 #       define IMAGE_WALK_UNROLL 4
 #       define IMAGE_WALK_COL_STEP 2
 #       define IMAGE_WALK_DO_STEP do{ \
-	  dest->red = BYTE_TO_QUANTUM(pos[0]); \
-	  dest->green = BYTE_TO_QUANTUM(pos[0]); \
-	  dest->blue = BYTE_TO_QUANTUM(pos[0]); \
-	  dest->opacity = BYTE_TO_QUANTUM(pos[1]); \
+	  dest->red = BYTE_TO_QUANTUM(walk_pos[0]); \
+	  dest->green = BYTE_TO_QUANTUM(walk_pos[0]); \
+	  dest->blue = BYTE_TO_QUANTUM(walk_pos[0]); \
+	  dest->opacity = BYTE_TO_QUANTUM(walk_pos[1]); \
 	  dest++; }while(0)
 #       include "images/image-walk.h"
 	break;
 
       case 3:
+#	define IMAGE_WALK_PREFIX(x) walk_##x
 #       define IMAGE_WALK_INLINE
+#	define IMAGE_WALK_IMAGE img
 #       define IMAGE_WALK_UNROLL 4
 #       define IMAGE_WALK_COL_STEP 3
 #       define IMAGE_WALK_DO_STEP do{ \
-	  dest->red = BYTE_TO_QUANTUM(pos[0]); \
-	  dest->green = BYTE_TO_QUANTUM(pos[1]); \
-	  dest->blue = BYTE_TO_QUANTUM(pos[2]); \
+	  dest->red = BYTE_TO_QUANTUM(walk_pos[0]); \
+	  dest->green = BYTE_TO_QUANTUM(walk_pos[1]); \
+	  dest->blue = BYTE_TO_QUANTUM(walk_pos[2]); \
 	  dest->opacity = OPACITY_MAX; \
 	  dest++; }while(0)
 #       include "images/image-walk.h"
 	break;
 
       case 4:
+#	define IMAGE_WALK_PREFIX(x) walk_##x
 #       define IMAGE_WALK_INLINE
+#	define IMAGE_WALK_IMAGE img
 #       define IMAGE_WALK_UNROLL 4
 #       define IMAGE_WALK_COL_STEP 4
 #       define IMAGE_WALK_DO_STEP do{ \
-	  dest->red = BYTE_TO_QUANTUM(pos[0]); \
-	  dest->green = BYTE_TO_QUANTUM(pos[1]); \
-	  dest->blue = BYTE_TO_QUANTUM(pos[2]); \
-	  dest->opacity = BYTE_TO_QUANTUM(pos[3]); \
+	  dest->red = BYTE_TO_QUANTUM(walk_pos[0]); \
+	  dest->green = BYTE_TO_QUANTUM(walk_pos[1]); \
+	  dest->blue = BYTE_TO_QUANTUM(walk_pos[2]); \
+	  dest->opacity = BYTE_TO_QUANTUM(walk_pos[3]); \
 	  dest++; }while(0)
 #       include "images/image-walk.h"
 	break;

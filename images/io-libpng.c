@@ -95,7 +95,7 @@ int
 libpng_read_header(struct image_io *io)
 {
   DBG("libpng_read_header()");
-  
+
   /* Create libpng structures */
   struct libpng_read_data *rd = io->read_data = mp_alloc(io->internal_pool, sizeof(*rd));
   rd->png_ptr = png_create_read_struct_2(PNG_LIBPNG_VER_STRING,
@@ -120,7 +120,7 @@ libpng_read_header(struct image_io *io)
       png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, NULL);
       return 0;
     }
-  
+
   /* Setup libpng longjump */
   if (unlikely(setjmp(png_jmpbuf(rd->png_ptr))))
     {
@@ -128,7 +128,7 @@ libpng_read_header(struct image_io *io)
       png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
       return 0;
     }
-  
+
   /* Setup libpng IO */
   png_set_read_fn(rd->png_ptr, io->fastbuf, libpng_read_fn);
   png_set_user_limits(rd->png_ptr, IMAGE_MAX_SIZE, IMAGE_MAX_SIZE);
@@ -171,7 +171,7 @@ libpng_read_header(struct image_io *io)
         png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
         image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Unknown color type");
         break;
-    }  
+    }
 
   /* Success */
   io->read_cancel = libpng_read_cancel;
@@ -198,7 +198,7 @@ libpng_read_data(struct image_io *io)
     }
 
   volatile int need_scale = io->cols != rd->cols || io->rows != rd->rows;
-  struct image * volatile img = need_scale ? 
+  struct image * volatile img = need_scale ?
     image_new(io->thread, rd->cols, rd->rows, io->flags & IMAGE_PIXEL_FORMAT, NULL) :
     image_new(io->thread, rd->cols, rd->rows, io->flags, io->pool);
   if (!img)
@@ -296,7 +296,7 @@ libpng_read_data(struct image_io *io)
   else
     io->image = img;
   io->image_destroy = !io->pool;
-  
+
   return 1;
 }
 
@@ -321,7 +321,7 @@ libpng_write(struct image_io *io)
       png_destroy_write_struct(&png_ptr, NULL);
       return 0;
     }
- 
+
   /* Setup libpng longjump */
   if (unlikely(setjmp(png_jmpbuf(png_ptr))))
     {
@@ -332,7 +332,7 @@ libpng_write(struct image_io *io)
 
   /* Setup libpng IO */
   png_set_write_fn(png_ptr, io->fastbuf, libpng_write_fn, libpng_flush_fn);
-  
+
   /* Setup PNG parameters */
   struct image *img = io->image;
   switch (img->flags & IMAGE_PIXEL_FORMAT)
@@ -359,7 +359,7 @@ libpng_write(struct image_io *io)
 	png_set_filler(png_ptr, 0, PNG_FILLER_AFTER);
 	break;
       default:
-        ASSERT(0);	
+        ASSERT(0);
     }
   png_write_info(png_ptr, info_ptr);
 

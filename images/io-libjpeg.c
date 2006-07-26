@@ -66,11 +66,11 @@ libjpeg_write_error_exit(j_common_ptr cinfo)
 static void
 libjpeg_emit_message(j_common_ptr cinfo UNUSED, int msg_level UNUSED)
 {
-#ifdef LOCAL_DEBUG  
+#ifdef LOCAL_DEBUG
   byte buf[JMSG_LENGTH_MAX];
   cinfo->err->format_message(cinfo, buf);
   DBG("libjpeg_emit_message(): [%d] %s", msg_level, buf);
-#endif  
+#endif
   if (unlikely(msg_level == -1))
     longjmp(((struct libjpeg_err *)(cinfo)->err)->setjmp_buf, 1);
 }
@@ -241,8 +241,8 @@ libjpeg_read_data(struct image_io *io)
   DBG("libjpeg_read_data()");
 
   struct libjpeg_read_internals *i = io->read_data;
- 
-  /* Select color space */ 
+
+  /* Select color space */
   switch (io->flags & IMAGE_COLOR_SPACE)
     {
       case COLOR_SPACE_GRAYSCALE:
@@ -267,7 +267,7 @@ libjpeg_read_data(struct image_io *io)
       image_thread_err(io->thread, IMAGE_ERR_INVALID_PIXEL_FORMAT, "Unsupported color space.");
       return 0;
     }
-  
+
   /* Setup fallback */
   if (setjmp(i->err.setjmp_buf))
     {
@@ -298,11 +298,13 @@ libjpeg_read_data(struct image_io *io)
       case 2:
 	{
 	  byte buf[img->cols], *src;
+#	  define IMAGE_WALK_PREFIX(x) walk_##x
 #         define IMAGE_WALK_INLINE
+#	  define IMAGE_WALK_IMAGE img
 #         define IMAGE_WALK_UNROLL 4
 #         define IMAGE_WALK_COL_STEP 2
 #         define IMAGE_WALK_DO_ROW_START do{ src = buf; jpeg_read_scanlines(&i->cinfo, (JSAMPLE **)&src, 1); }while(0)
-#         define IMAGE_WALK_DO_STEP do{ pos[0] = *src++; pos[1] = 255; }while(0)
+#         define IMAGE_WALK_DO_STEP do{ walk_pos[0] = *src++; walk_pos[1] = 255; }while(0)
 #         include "images/image-walk.h"
 	}
 	break;
@@ -310,11 +312,13 @@ libjpeg_read_data(struct image_io *io)
       case 4:
 	{
 	  byte buf[img->cols * 3], *src;
+#	  define IMAGE_WALK_PREFIX(x) walk_##x
 #         define IMAGE_WALK_INLINE
+#	  define IMAGE_WALK_IMAGE img
 #         define IMAGE_WALK_UNROLL 4
 #         define IMAGE_WALK_COL_STEP 4
 #         define IMAGE_WALK_DO_ROW_START do{ src = buf; jpeg_read_scanlines(&i->cinfo, (JSAMPLE **)&src, 1); }while(0)
-#         define IMAGE_WALK_DO_STEP do{ *(u32 *)pos = *(u32 *)src; pos[3] = 255; src += 3; }while(0)
+#         define IMAGE_WALK_DO_STEP do{ *(u32 *)walk_pos = *(u32 *)src; walk_pos[3] = 255; src += 3; }while(0)
 #         include "images/image-walk.h"
 	}
 	break;
@@ -322,7 +326,7 @@ libjpeg_read_data(struct image_io *io)
 	ASSERT(0);
     }
   ASSERT(i->cinfo.output_scanline == i->cinfo.output_height);
-  
+
   /* Destroy libjpeg object */
   jpeg_finish_decompress(&i->cinfo);
   jpeg_destroy_decompress(&i->cinfo);
@@ -375,7 +379,7 @@ libjpeg_write(struct image_io *io)
       return 0;
     }
   jpeg_create_compress(&i.cinfo);
-  
+
   /* Initialize destination manager */
   i.cinfo.dest = &i.dest;
   i.dest.init_destination = libjpeg_init_destination;
@@ -425,11 +429,13 @@ libjpeg_write(struct image_io *io)
       case 2:
 	{
 	  byte buf[img->cols], *dest = buf;
+#	  define IMAGE_WALK_PREFIX(x) walk_##x
 #         define IMAGE_WALK_INLINE
+#	  define IMAGE_WALK_IMAGE img
 #         define IMAGE_WALK_UNROLL 4
 #         define IMAGE_WALK_COL_STEP 2
 #         define IMAGE_WALK_DO_ROW_END do{ dest = buf; jpeg_write_scanlines(&i.cinfo, (JSAMPLE **)&dest, 1); }while(0)
-#         define IMAGE_WALK_DO_STEP do{ *dest++ = pos[0]; }while(0)
+#         define IMAGE_WALK_DO_STEP do{ *dest++ = walk_pos[0]; }while(0)
 #         include "images/image-walk.h"
 	}
 	break;
@@ -437,11 +443,13 @@ libjpeg_write(struct image_io *io)
       case 4:
 	{
 	  byte buf[img->cols * 3], *dest = buf;
+#	  define IMAGE_WALK_PREFIX(x) walk_##x
 #         define IMAGE_WALK_INLINE
+#	  define IMAGE_WALK_IMAGE img
 #         define IMAGE_WALK_UNROLL 4
 #         define IMAGE_WALK_COL_STEP 4
 #         define IMAGE_WALK_DO_ROW_END do{ dest = buf; jpeg_write_scanlines(&i.cinfo, (JSAMPLE **)&dest, 1); }while(0)
-#         define IMAGE_WALK_DO_STEP do{ *dest++ = pos[0]; *dest++ = pos[1]; *dest++ = pos[2]; }while(0)
+#         define IMAGE_WALK_DO_STEP do{ *dest++ = walk_pos[0]; *dest++ = walk_pos[1]; *dest++ = walk_pos[2]; }while(0)
 #         include "images/image-walk.h"
 	}
 	break;
