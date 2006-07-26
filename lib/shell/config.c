@@ -274,7 +274,7 @@ parse_section(struct section *section)
 	}
       if (section->item.cf.cls == CC_LIST)
         {
-          item->cf.ptr = (void *)section->size;
+          item->cf.ptr = (void *)(addr_int_t)section->size;
           section->size += sizeof(union value);
         }
       else
