@@ -13,6 +13,7 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
+#include "images/io-main.h"
 #include <gif_lib.h>
 
 static int
@@ -75,9 +76,8 @@ libungif_read_header(struct image_io *io)
     }
   io->cols = image->ImageDesc.Width;
   io->rows = image->ImageDesc.Height;
-  io->has_palette = 1;
   io->number_of_colors = color_map->ColorCount;
-  io->flags = COLOR_SPACE_RGB;
+  io->flags = COLOR_SPACE_RGB | IMAGE_IO_HAS_PALETTE;
   if ((uns)gif->SBackGroundColor < (uns)color_map->ColorCount)
     io->flags |= IMAGE_ALPHA;
 
@@ -100,31 +100,30 @@ libungif_read_data(struct image_io *io)
   GifFileType *gif = io->read_data;
   SavedImage *image = gif->SavedImages;
 
-  /* Allocate image */
-  int need_scale = io->cols != (uns)image->ImageDesc.Width || io->rows != (uns)image->ImageDesc.Height;
-  int need_destroy = need_scale || !io->pool;
-  struct image *img = need_scale ?
-    image_new(io->thread, image->ImageDesc.Width, image->ImageDesc.Height, io->flags & IMAGE_CHANNELS_FORMAT, NULL) :
-    image_new(io->thread, io->cols, io->rows, io->flags, io->pool);
-  if (unlikely(!img))
-    goto err;
+  /* Prepare image */
+  struct image_io_read_data_internals rdi;
+  if (unlikely(!image_io_read_data_prepare(&rdi, io, image->ImageDesc.Width, image->ImageDesc.Height)))
+    {
+      DGifCloseFile(gif);
+      return 0;
+    }
 
   /* Get pixels and palette */
   byte *pixels = (byte *)image->RasterBits;
   ColorMapObject *color_map = image->ImageDesc.ColorMap ? : gif->SColorMap;
   GifColorType *palette = color_map->Colors;
   uns background = gif->SBackGroundColor;
-  byte *img_end = img->pixels + img->image_size;
+  byte *img_end = rdi.image->pixels + rdi.image->image_size;
 
   /* Handle deinterlacing */
   uns dein_step, dein_next;
   if (image->ImageDesc.Interlace)
-    dein_step = dein_next = img->row_size << 3;
+    dein_step = dein_next = rdi.image->row_size << 3;
   else
-    dein_step = dein_next = img->row_size;
+    dein_step = dein_next = rdi.image->row_size;
 
   /* Convert pixels */
-  switch (img->pixel_size)
+  switch (rdi.image->pixel_size)
     {
       case 1:
 	{
@@ -136,11 +135,11 @@ libungif_read_data(struct image_io *io)
 #	  define DO_ROW_END do{ \
   	      walk_row_start += dein_step; \
   	      if (walk_row_start > img_end) \
-		{ uns n = dein_next >> 1; walk_row_start = img->pixels + n, dein_step = dein_next; dein_next = n; } \
+		{ uns n = dein_next >> 1; walk_row_start = rdi.image->pixels + n, dein_step = dein_next; dein_next = n; } \
 	    }while(0)
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
-#	  define IMAGE_WALK_IMAGE img
+#	  define IMAGE_WALK_IMAGE (rdi.image)
 #	  define IMAGE_WALK_UNROLL 4
 #	  define IMAGE_WALK_COL_STEP 1
 #	  define IMAGE_WALK_ROW_STEP 0
@@ -163,7 +162,7 @@ libungif_read_data(struct image_io *io)
 	    pal[background * 2 + 1] = 0;
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
-#	  define IMAGE_WALK_IMAGE img
+#	  define IMAGE_WALK_IMAGE (rdi.image)
 #	  define IMAGE_WALK_UNROLL 4
 #	  define IMAGE_WALK_COL_STEP 2
 #	  define IMAGE_WALK_ROW_STEP 0
@@ -185,7 +184,7 @@ libungif_read_data(struct image_io *io)
 	    bzero(pal_pos, pal_end - pal_pos);
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
-#	  define IMAGE_WALK_IMAGE img
+#	  define IMAGE_WALK_IMAGE (rdi.image)
 #	  define IMAGE_WALK_UNROLL 4
 #	  define IMAGE_WALK_COL_STEP 3
 #	  define IMAGE_WALK_ROW_STEP 0
@@ -210,7 +209,7 @@ libungif_read_data(struct image_io *io)
 	    pal[background * 4 + 3] = 0;
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
-#	  define IMAGE_WALK_IMAGE img
+#	  define IMAGE_WALK_IMAGE (rdi.image)
 #	  define IMAGE_WALK_UNROLL 4
 #	  define IMAGE_WALK_COL_STEP 4
 #	  define IMAGE_WALK_ROW_STEP 0
@@ -226,30 +225,6 @@ libungif_read_data(struct image_io *io)
   /* Destroy libungif structure */
   DGifCloseFile(gif);
 
-  /* Scale image */
-  if (need_scale)
-    {
-      struct image *img2 = image_new(io->thread, io->cols, io->rows, io->flags, io->pool);
-      if (unlikely(!img2))
-        goto err2;
-      int result = image_scale(io->thread, img2, img);
-      image_destroy(img);
-      img = img2;
-      need_destroy = !io->pool;
-      if (unlikely(!result))
-        goto err2;
-    }
-
-  /* Success */
-  io->image = img;
-  io->image_destroy = need_destroy;
-  return 1;
-
-  /* Free structures */
-err:
-  DGifCloseFile(gif);
-err2:
-  if (need_destroy)
-    image_destroy(img);
-  return 0;
+  /* Finish image */
+  return image_io_read_data_finish(&rdi, io);
 }

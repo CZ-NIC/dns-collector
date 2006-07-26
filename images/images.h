@@ -110,22 +110,21 @@ enum image_format {
 };
 
 struct image_io {
-  				/*  R - read_header input */
-  				/*   H - read_header output */
-  				/*    I - read_data input */
-  				/*     O - read_data output */
-  				/*      W - write input */
+  					/*  R - read_header input */
+  					/*   H - read_header output */
+  					/*    I - read_data input */
+  					/*     O - read_data output */
+  					/*      W - write input */
 
-  struct image *image;		/* [   OW] - image data */
-  enum image_format format;	/* [R   W] - file format (IMAGE_FORMAT_x) */
-  struct fastbuf *fastbuf;      /* [R   W] - source/destination stream */
-  struct mempool *pool;		/* [  I  ] - parameter to image_new */
-  u32 cols;			/* [ HI  ] - number of columns, parameter to image_new */
-  u32 rows;			/* [ HI  ] - number of rows, parameter to image_new */
-  u32 flags;			/* [ HI  ] - parameter to image new, read_header fills IMAGE_CHANNELS_FORMAT */
-  u32 jpeg_quality;		/* [    W] - JPEG compression quality (1..100) */
-  u32 number_of_colors;		/* [ H   ] - number of image colors */
-  u32 has_palette;		/* [ H   ] - true for image with indexed colors */
+  struct image *image;			/* [   OW] - image data */
+  enum image_format format;		/* [R   W] - file format (IMAGE_FORMAT_x) */
+  struct fastbuf *fastbuf;      	/* [R   W] - source/destination stream */
+  struct mempool *pool;			/* [  I  ] - parameter to image_new */
+  u32 cols;				/* [ HI  ] - number of columns, parameter to image_new */
+  u32 rows;				/* [ HI  ] - number of rows, parameter to image_new */
+  u32 flags;				/* [ HI  ] - see enum image_io_flags */
+  u32 jpeg_quality;			/* [    W] - JPEG compression quality (1..100) */
+  u32 number_of_colors;			/* [ H   ] - number of image colors */
 
   /* internals */
   struct image_thread *thread;
@@ -133,6 +132,11 @@ struct image_io {
   int image_destroy;
   void *read_data;
   void (*read_cancel)(struct image_io *io);
+};
+
+enum image_io_flags {
+  IMAGE_IO_IMAGE_FLAGS = 0xffff,	/* [ HI  ] - parameter to image new, read_header fills IMAGE_CHANNELS_FORMAT */
+  IMAGE_IO_HAS_PALETTE = 0x10000,	/* [ H   ] - true for image with indexed colors */
 };
 
 void image_io_init(struct image_thread *it, struct image_io *io);
@@ -148,30 +152,5 @@ int image_io_write(struct image_io *io);
 byte *image_format_to_extension(enum image_format format);
 enum image_format image_extension_to_format(byte *extension);
 enum image_format image_file_name_to_format(byte *file_name);
-
-/* internals */
-
-#ifdef CONFIG_IMAGES_LIBJPEG
-int libjpeg_read_header(struct image_io *io);
-int libjpeg_read_data(struct image_io *io);
-int libjpeg_write(struct image_io *io);
-#endif
-
-#ifdef CONFIG_IMAGES_LIBPNG
-int libpng_read_header(struct image_io *io);
-int libpng_read_data(struct image_io *io);
-int libpng_write(struct image_io *io);
-#endif
-
-#ifdef CONFIG_IMAGES_LIBUNGIF
-int libungif_read_header(struct image_io *io);
-int libungif_read_data(struct image_io *io);
-#endif
-
-#ifdef CONFIG_IMAGES_LIBMAGICK
-int libmagick_read_header(struct image_io *io);
-int libmagick_read_data(struct image_io *io);
-int libmagick_write(struct image_io *io);
-#endif
 
 #endif

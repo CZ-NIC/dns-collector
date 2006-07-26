@@ -13,6 +13,7 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
+#include "images/io-main.h"
 #include <png.h>
 #include <setjmp.h>
 
@@ -143,29 +144,28 @@ libpng_read_header(struct image_io *io)
   switch (rd->color_type)
     {
       case PNG_COLOR_TYPE_GRAY:
-        io->flags |= COLOR_SPACE_GRAYSCALE;
+        io->flags = COLOR_SPACE_GRAYSCALE;
 	io->number_of_colors = 1 << 8;
         break;
       case PNG_COLOR_TYPE_GRAY_ALPHA:
-        io->flags |= COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA;
+        io->flags = COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA;
 	io->number_of_colors = 1 << 8;
         break;
       case PNG_COLOR_TYPE_RGB:
-        io->flags |= COLOR_SPACE_RGB;
+        io->flags = COLOR_SPACE_RGB;
 	io->number_of_colors = 1 << 24;
         break;
       case PNG_COLOR_TYPE_RGB_ALPHA:
 	io->number_of_colors = 1 << 24;
-        io->flags |= COLOR_SPACE_RGB | IMAGE_ALPHA;
+        io->flags = COLOR_SPACE_RGB | IMAGE_ALPHA;
         break;
       case PNG_COLOR_TYPE_PALETTE:
-        io->flags |= COLOR_SPACE_RGB | IMAGE_ALPHA;
+        io->flags = COLOR_SPACE_RGB | IMAGE_ALPHA | IMAGE_IO_HAS_PALETTE;
 	int num_palette;
 	if (png_get_PLTE(rd->png_ptr, rd->info_ptr, NULL, &num_palette))
 	  io->number_of_colors = num_palette;
 	else
 	  io->number_of_colors = 1 << rd->bit_depth;
-	io->has_palette = 1;
         break;
       default:
         png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
@@ -197,11 +197,9 @@ libpng_read_data(struct image_io *io)
         return 0;
     }
 
-  volatile int need_scale = io->cols != rd->cols || io->rows != rd->rows;
-  struct image * volatile img = need_scale ?
-    image_new(io->thread, rd->cols, rd->rows, io->flags & IMAGE_PIXEL_FORMAT, NULL) :
-    image_new(io->thread, rd->cols, rd->rows, io->flags, io->pool);
-  if (!img)
+  /* Prepare the image */
+  struct image_io_read_data_internals rdi;
+  if (unlikely(!image_io_read_data_prepare(&rdi, io, rd->cols, rd->rows)))
     {
       png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
       return 0;
@@ -211,8 +209,7 @@ libpng_read_data(struct image_io *io)
     {
       DBG("Libpng failed to read the image, longjump saved us");
       png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
-      if (need_scale || !io->pool)
-	image_destroy(img);
+      image_io_read_data_break(&rdi, io);
       return 0;
     }
 
@@ -265,6 +262,7 @@ libpng_read_data(struct image_io *io)
 
   /* Read image data */
   DBG("Reading image data");
+  struct image *img = rdi.image;
   byte *pixels = img->pixels;
   png_bytep rows[img->rows];
   for (uns r = 0; r < img->rows; r++, pixels += img->row_size)
@@ -275,29 +273,8 @@ libpng_read_data(struct image_io *io)
   /* Destroy libpng read structure */
   png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
 
-  /* Scale and store the resulting image */
-  if (need_scale)
-    {
-      struct image *dest = image_new(io->thread, io->cols, io->rows, io->flags, io->pool);
-      if (!dest)
-        {
-	  image_destroy(img);
-	  return 0;
-	}
-      if (!image_scale(io->thread, dest, img))
-        {
-	  image_destroy(img);
-	  if (!io->pool)
-	    image_destroy(dest);
-	  return 0;
-	}
-      io->image = dest;
-    }
-  else
-    io->image = img;
-  io->image_destroy = !io->pool;
-
-  return 1;
+  /* Finish the image  */
+  return image_io_read_data_finish(&rdi, io);
 }
 
 int

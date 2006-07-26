@@ -133,13 +133,13 @@ main(int argc, char **argv)
       bclose(io.fastbuf);
       printf("Format:      %s\n", image_format_to_extension(io.format) ? : (byte *)"?");
       printf("Dimensions:  %dx%d\n", io.cols, io.rows);
-      printf("Colorspace:  %s\n", io.has_palette ? (byte *)"Palette" : image_channels_format_to_name(io.flags & IMAGE_CHANNELS_FORMAT));
+      printf("Colorspace:  %s\n", (io.flags & IMAGE_IO_HAS_PALETTE) ? (byte *)"Palette" : image_channels_format_to_name(io.flags & IMAGE_CHANNELS_FORMAT));
       printf("NumColors:   %d\n", io.number_of_colors);
     }
   else
     {
       MSG("%s %dx%d %s", image_format_to_extension(io.format) ? : (byte *)"?", io.cols, io.rows,
-	  io.has_palette ? (byte *)"Palette" : image_channels_format_to_name(io.flags & IMAGE_CHANNELS_FORMAT));
+	  (io.flags & IMAGE_IO_HAS_PALETTE) ? (byte *)"Palette" : image_channels_format_to_name(io.flags & IMAGE_CHANNELS_FORMAT));
       if (cols)
         if (fit_to_box)
 	  {

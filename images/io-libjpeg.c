@@ -13,7 +13,7 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
-
+#include "images/io-main.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <jpeglib.h>
@@ -257,14 +257,11 @@ libjpeg_read_data(struct image_io *io)
 	return 0;
     }
 
-  /* Allocate the image... FIXME: use libjpeg feature to speed up downscale */
-  volatile int need_scale = io->cols != i->cinfo.image_width || io->rows != i->cinfo.image_height;
-  struct image * volatile img = need_scale ?
-    image_new(io->thread, i->cinfo.image_width, i->cinfo.image_height, io->flags & IMAGE_PIXEL_FORMAT, NULL) :
-    image_new(io->thread, i->cinfo.image_width, i->cinfo.image_height, io->flags, io->pool);
-  if (!img)
+  /* Prepare the image ... FIXME: use libjpeg feature to speed up downscale */
+  struct image_io_read_data_internals rdi;
+  if (unlikely(!image_io_read_data_prepare(&rdi, io, i->cinfo.image_width, i->cinfo.image_height)))
     {
-      image_thread_err(io->thread, IMAGE_ERR_INVALID_PIXEL_FORMAT, "Unsupported color space.");
+      jpeg_destroy_decompress(&i->cinfo);
       return 0;
     }
 
@@ -273,12 +270,12 @@ libjpeg_read_data(struct image_io *io)
     {
       DBG("Libjpeg failed to read the image, longjump saved us");
       jpeg_destroy_decompress(&i->cinfo);
-      if (need_scale || !io->pool)
-	image_destroy(img);
+      image_io_read_data_break(&rdi, io);
       return 0;
     }
 
   /* Decompress the image */
+  struct image *img = rdi.image;
   jpeg_start_decompress(&i->cinfo);
   switch (img->pixel_size)
     {
@@ -331,32 +328,8 @@ libjpeg_read_data(struct image_io *io)
   jpeg_finish_decompress(&i->cinfo);
   jpeg_destroy_decompress(&i->cinfo);
 
-  /* Scale result if necessary */
-  if (need_scale)
-    {
-      DBG("Scaling image");
-      struct image *dest = image_new(io->thread, io->cols, io->rows, io->flags, io->pool);
-      if (!dest)
-        {
-	  image_destroy(img);
-	  return 0;
-	}
-      if (!(image_scale(io->thread, dest, img)))
-        {
-	  image_destroy(img);
-	  if (!io->pool)
-	    image_destroy(dest);
-	  return 0;
-	}
-      image_destroy(img);
-      io->image = dest;
-    }
-  else
-    io->image = img;
-  io->image_destroy = !io->pool;
-
-  DBG("Image readed");
-  return 1;
+  /* Finish the image */
+  return image_io_read_data_finish(&rdi, io);
 }
 
 int

@@ -11,6 +11,7 @@
 
 #include "lib/lib.h"
 #include "images/images.h"
+#include "images/io-main.h"
 #include <string.h>
 
 void

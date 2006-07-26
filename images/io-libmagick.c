@@ -13,6 +13,7 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
+#include "images/io-main.h"
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -96,15 +97,15 @@ libmagick_read_header(struct image_io *io)
   switch (rd->image->colorspace)
     {
       case GRAYColorspace:
-        io->flags |= COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA;
+        io->flags = COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA;
         break;
       default:
-        io->flags |= COLOR_SPACE_RGB | IMAGE_ALPHA;
+        io->flags = COLOR_SPACE_RGB | IMAGE_ALPHA;
         break;
     }
   io->number_of_colors = rd->image->colors;
   if (rd->image->storage_class == PseudoClass && rd->image->compression != JPEGCompression)
-    io->has_palette = 1;
+    io->flags |= IMAGE_IO_HAS_PALETTE;
 
   io->read_cancel = libmagick_read_cancel;
   return 1;
@@ -141,30 +142,31 @@ libmagick_read_data(struct image_io *io)
 	break;
     }
 
-  /* Allocate image for conversion */
-  int need_scale = io->cols != rd->image->columns || io->rows != rd->image->rows;
-  int need_destroy = need_scale || !io->pool;
-  struct image *img = need_scale ?
-    image_new(io->thread, rd->image->columns, rd->image->rows, io->flags & IMAGE_CHANNELS_FORMAT, NULL) :
-    image_new(io->thread, io->cols, io->rows, io->flags, io->pool);
-  if (unlikely(!img))
-    goto err;
+  /* Prepare the image */
+  struct image_io_read_data_internals rdi;
+  if (unlikely(!image_io_read_data_prepare(&rdi, io, rd->image->columns, rd->image->rows)))
+    {
+      libmagick_destroy_read_data(rd);
+      return 0;
+    }
 
   /* Acquire pixels */
   PixelPacket *src = (PixelPacket *)AcquireImagePixels(rd->image, 0, 0, rd->image->columns, rd->image->rows, &rd->exception);
   if (unlikely(!src))
     {
       image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Cannot acquire image pixels.");
-      goto err;
+      libmagick_destroy_read_data(rd);
+      image_io_read_data_break(&rdi, io);
+      return 0;
     }
 
   /* Convert pixels */
-  switch (img->pixel_size)
+  switch (rdi.image->pixel_size)
     {
       case 1:
 #	define IMAGE_WALK_PREFIX(x) walk_##x
 #       define IMAGE_WALK_INLINE
-#	define IMAGE_WALK_IMAGE img
+#	define IMAGE_WALK_IMAGE (rdi.image)
 #       define IMAGE_WALK_UNROLL 4
 #       define IMAGE_WALK_COL_STEP 1
 #       define IMAGE_WALK_DO_STEP do{ \
@@ -176,7 +178,7 @@ libmagick_read_data(struct image_io *io)
       case 2:
 #	define IMAGE_WALK_PREFIX(x) walk_##x
 #       define IMAGE_WALK_INLINE
-#	define IMAGE_WALK_IMAGE img
+#	define IMAGE_WALK_IMAGE (rdi.image)
 #       define IMAGE_WALK_UNROLL 4
 #       define IMAGE_WALK_COL_STEP 2
 #       define IMAGE_WALK_DO_STEP do{ \
@@ -189,7 +191,7 @@ libmagick_read_data(struct image_io *io)
       case 3:
 #	define IMAGE_WALK_PREFIX(x) walk_##x
 #       define IMAGE_WALK_INLINE
-#	define IMAGE_WALK_IMAGE img
+#	define IMAGE_WALK_IMAGE (rdi.image)
 #       define IMAGE_WALK_UNROLL 4
 #       define IMAGE_WALK_COL_STEP 3
 #       define IMAGE_WALK_DO_STEP do{ \
@@ -203,7 +205,7 @@ libmagick_read_data(struct image_io *io)
       case 4:
 #	define IMAGE_WALK_PREFIX(x) walk_##x
 #       define IMAGE_WALK_INLINE
-#	define IMAGE_WALK_IMAGE img
+#	define IMAGE_WALK_IMAGE (rdi.image)
 #       define IMAGE_WALK_UNROLL 4
 #       define IMAGE_WALK_COL_STEP 4
 #       define IMAGE_WALK_DO_STEP do{ \
@@ -222,32 +224,8 @@ libmagick_read_data(struct image_io *io)
   /* Free GraphicsMagick structures */
   libmagick_destroy_read_data(rd);
 
-  /* Scale image */
-  if (need_scale)
-    {
-      struct image *img2 = image_new(io->thread, io->cols, io->rows, io->flags, io->pool);
-      if (unlikely(!img2))
-        goto err2;
-      int result = image_scale(io->thread, img2, img);
-      image_destroy(img);
-      img = img2;
-      need_destroy = !io->pool;
-      if (unlikely(!result))
-	goto err2;
-    }
-
-  /* Success */
-  io->image = img;
-  io->image_destroy = need_destroy;
-  return 1;
-
-  /* Free structures */
-err:
-  libmagick_destroy_read_data(rd);
-err2:
-  if (need_destroy)
-    image_destroy(img);
-  return 0;
+  /* Finish the image */
+  return image_io_read_data_finish(&rdi, io);
 }
 
 int
