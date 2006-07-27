@@ -26,8 +26,9 @@ endif
 ifdef CONFIG_IMAGES_LIBMAGICK
 LIBIMAGES_MODS+=io-libmagick
 MAGICK_LIBS:=$(shell GraphicsMagick-config --libs)
+MAGICK_CPPFLAGS:=$(shell GraphicsMagick-config --cppflags)
 LIBIMAGES_LIBS+=$(MAGICK_LIBS)
-$(o)/images/io-libmagick.o: CFLAGS+=-I/usr/include/GraphicsMagick
+$(o)/images/io-libmagick.o: CFLAGS+=$(MAGICK_CPPFLAGS)
 endif
 
 $(o)/images/libimages.a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
@@ -43,9 +44,6 @@ $(o)/images/hilbert-test.test: $(o)/images/hilbert-test
 #$(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBUCW)
 #$(o)/images/image-test: LIBS+=$(LIBIMAGES_LIBS)
 
-#$(o)/images/image-sig.o $(o)/images/image-sig.oo: CFLAGS+=-I/usr/include/GraphicsMagick
-#$(o)/images/image-idx.o $(o)/images/image-idx.oo: CFLAGS+=-I/usr/include/GraphicsMagick
-#$(o)/images/image-obj.o $(o)/images/image-obj.oo: CFLAGS+=-I/usr/include/GraphicsMagick
 #$(o)/images/image-idx: $(o)/images/image-idx.o $(o)/images/image-obj.o $(o)/images/dup-cmp.o $(o)/indexer/iconfig.o $(o)/images/image-sig.o $(o)/images/kd-tree.o $(o)/images/color.o $(o)/images/image-io.o $(LIBSH) $(LIBLANG) $(LIBCHARSET)
 #$(o)/images/image-idx: LIBS+=-lGraphicsMagick -ljpeg -lpng
 
