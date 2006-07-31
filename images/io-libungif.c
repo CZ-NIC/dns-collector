@@ -90,7 +90,7 @@ libungif_read_header(struct image_io *io)
 #if 0
   if (gif->SColorMap && !image->ImageDesc.ColorMap && (uns)gif->SBackGroundColor < (uns)color_map->ColorCount)
     {
-      io->flags |= IMAGE_ALPHA | IMAGE_IO_HAS_BACKGROUND;
+      io->flags |= IMAGE_ALPHA;
       GifColorType *background = color_map->Colors + gif->SBackGroundColor;
       color_make_rgb(&io->background_color, background->Red, background->Green, background->Blue);
     }

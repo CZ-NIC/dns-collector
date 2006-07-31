@@ -29,7 +29,10 @@ image_apply_background(struct image_thread *thread UNUSED, struct image *dest, s
     {
       ASSERT(dest->pixel_size == 1);
       byte bg;
-      color_put_grayscale(&bg, background);
+      if (background->color_space)
+        color_put_grayscale(&bg, background);
+      else
+	bg = 0;
       uns a = 255 * bg, b = bg;
 #     define IMAGE_WALK_PREFIX(x) walk_##x
 #     define IMAGE_WALK_INLINE
@@ -48,7 +51,10 @@ image_apply_background(struct image_thread *thread UNUSED, struct image *dest, s
     {
       ASSERT((src->flags & IMAGE_ALPHA) && dest->pixel_size >= 3 && !(dest->flags & IMAGE_ALPHA));
       byte bg[3];
-      color_put_rgb(bg, background);
+      if (background->color_space)
+        color_put_rgb(bg, background);
+      else
+	bg[0] = bg[1] = bg[2] = 0;
       uns a0 = 255 * bg[0], b0 = bg[0];
       uns a1 = 255 * bg[1], b1 = bg[1];
       uns a2 = 255 * bg[2], b2 = bg[2];

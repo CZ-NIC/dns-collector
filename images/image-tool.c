@@ -11,8 +11,11 @@
 #include "lib/getopt.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
+#include "images/color.h"
 #include <stdlib.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <stdio.h>
 
 static void NONRET
 usage(void)
@@ -27,11 +30,12 @@ Usage: image-tool [options] infile [outfile]\n\
 -b --fit-to-box     scale to fit the box (100x200)\n\
 -c --colorspace     force output colorspace (Gray, GrayAlpha, RGB, RGBAlpha)\n\
 -Q --jpeg-quality   JPEG quality (1..100)\n\
+-g --background     background color (hexadecimal RRGGBB)\n\
 ", stderr);
   exit(1);
 }
 
-static char *shortopts = "qf:F:s:b:c:Q:" CF_SHORT_OPTS;
+static char *shortopts = "qf:F:s:b:c:Q:g:" CF_SHORT_OPTS;
 static struct option longopts[] =
 {
   CF_LONG_OPTS
@@ -42,6 +46,7 @@ static struct option longopts[] =
   { "fit-to-box",	0, 0, 'b' },
   { "colorspace",	0, 0, 'c' },
   { "jpeg-quality",	0, 0, 'Q' },
+  { "background",	0, 0, 'g'  },
   { NULL,		0, 0, 0 }
 };
 							  
@@ -55,6 +60,7 @@ static uns rows;
 static uns fit_to_box;
 static uns channels_format;
 static uns jpeg_quality;
+static struct color background_color;
 
 #define MSG(x...) do{ if (verbose) log(L_INFO, ##x); }while(0)
 
@@ -107,6 +113,18 @@ main(int argc, char **argv)
 	  if (!(jpeg_quality = atoi(optarg)))
 	    usage();
 	  break;
+	case 'g':
+	  {
+	    if (strlen(optarg) != 6)
+	      usage();
+	    errno = 0;
+	    char *end;
+	    long int v = strtol(optarg, &end, 16);
+	    if (errno || *end || v < 0)
+	      usage();
+	    color_make_rgb(&background_color, (v >> 16) & 255, (v >> 8) & 255, v & 255);
+	  }
+	  break;
 	default:
 	  usage();
       }
@@ -150,8 +168,12 @@ main(int argc, char **argv)
             io.cols = cols;
             io.rows = rows;
           }
+      if (background_color.color_space)
+	io.background_color = background_color;
       if (channels_format)
         io.flags = io.flags & ~IMAGE_PIXEL_FORMAT | channels_format;
+      if (!(io.flags & IMAGE_ALPHA))
+        io.flags |= IMAGE_IO_USE_BACKGROUND;
       if (jpeg_quality)
 	io.jpeg_quality = jpeg_quality;
       TRY(image_io_read_data(&io, 0));
