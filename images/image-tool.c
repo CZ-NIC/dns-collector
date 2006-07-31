@@ -153,6 +153,12 @@ main(int argc, char **argv)
       printf("Dimensions:  %dx%d\n", io.cols, io.rows);
       printf("Colorspace:  %s\n", (io.flags & IMAGE_IO_HAS_PALETTE) ? (byte *)"Palette" : image_channels_format_to_name(io.flags & IMAGE_CHANNELS_FORMAT));
       printf("NumColors:   %d\n", io.number_of_colors);
+      if (io.background_color.color_space)
+        {
+	  byte rgb[3];
+	  color_put_rgb(rgb, &io.background_color);
+          printf("Background:  %02x%02x%02x\n", rgb[0], rgb[1], rgb[2]);
+	}
     }
   else
     {

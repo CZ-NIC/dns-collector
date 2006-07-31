@@ -17,11 +17,23 @@
 #include "images/io-main.h"
 #include <gif_lib.h>
 
+struct libungif_read_data {
+  GifFileType *gif;
+  int transparent_index;
+};
+
 static int
 libungif_read_func(GifFileType *gif, GifByteType *ptr, int len)
 {
   DBG("libungif_read_func(len=%d)", len);
-  return bread((struct fastbuf *)gif->UserData, (byte *)ptr, len);
+  uns readed, total = 0;
+  while (len && (readed = bread((struct fastbuf *)gif->UserData, (byte *)ptr, len)))
+    {
+      len -= readed;
+      ptr += readed;
+      total += readed;
+    }
+  return total;
 }
 
 static void
@@ -39,11 +51,14 @@ libungif_read_header(struct image_io *io)
 
   /* Create libungif structure */
   GifFileType *gif;
-  if (unlikely(!(gif = io->read_data = DGifOpen(io->fastbuf, libungif_read_func))))
+  if (unlikely(!(gif = DGifOpen(io->fastbuf, libungif_read_func))))
     {
       image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Cannot create libungif structure.");
       return 0;
     }
+
+  struct libungif_read_data *rd = io->read_data = mp_alloc(io->internal_pool, sizeof(*rd));
+  rd->gif = gif;
 
   DBG("executing DGifSlurp()");
   if (unlikely(DGifSlurp(gif) != GIF_OK))
@@ -86,15 +101,39 @@ libungif_read_header(struct image_io *io)
       return 0;
     }
   io->flags = COLOR_SPACE_RGB | IMAGE_IO_HAS_PALETTE;
-  /* FIXME transparent GIFs disabled */
-#if 0
-  if (gif->SColorMap && !image->ImageDesc.ColorMap && (uns)gif->SBackGroundColor < (uns)color_map->ColorCount)
+
+  /* Search extension blocks */
+  rd->transparent_index = -1;
+  for (int i = 0; i < image->ExtensionBlockCount; i++)
     {
-      io->flags |= IMAGE_ALPHA;
-      GifColorType *background = color_map->Colors + gif->SBackGroundColor;
-      color_make_rgb(&io->background_color, background->Red, background->Green, background->Blue);
+      ExtensionBlock *e = image->ExtensionBlocks + i;
+      if (e->Function == 0xF9)
+        {
+	  DBG("Found graphics control extension");
+	  if (unlikely(e->ByteCount != 4))
+	    {
+              image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Invalid graphics control extension.");
+              DGifCloseFile(gif);
+              return 0;
+	    }
+	  byte *b = e->Bytes;
+	  /* transparent color present */
+	  if (b[0] & 1)
+	    {
+	      rd->transparent_index = b[3];
+	      io->flags |= IMAGE_ALPHA;
+	      if (gif->SColorMap)
+	        {
+                  GifColorType *background = color_map->Colors + gif->SBackGroundColor;
+                  color_make_rgb(&io->background_color, background->Red, background->Green, background->Blue);
+		}
+	    }
+	  /* We've got everything we need :-) */
+	  break;
+	}
+      else
+	DBG("Found unknown extension: type=%d size=%d", e->Function, e->ByteCount);
     }
-#endif
 
   /* Success */
   io->read_cancel = libungif_read_cancel;
@@ -106,7 +145,8 @@ libungif_read_data(struct image_io *io)
 {
   DBG("libungif_read_data()");
 
-  GifFileType *gif = io->read_data;
+  struct libungif_read_data *rd = io->read_data;
+  GifFileType *gif = rd->gif;
   SavedImage *image = gif->SavedImages;
 
   /* Prepare image */
@@ -121,18 +161,15 @@ libungif_read_data(struct image_io *io)
   byte *pixels = (byte *)image->RasterBits;
   ColorMapObject *color_map = image->ImageDesc.ColorMap ? : gif->SColorMap;
   GifColorType *palette = color_map->Colors;
-  uns background = (
-  /* FIXME: transparent GIFs disabled */
-#if 1
-    0 &&
-#endif
-    gif->SColorMap && !image->ImageDesc.ColorMap) ? gif->SBackGroundColor : 256;
   byte *img_end = rdi.image->pixels + rdi.image->image_size;
 
   /* Handle deinterlacing */
   uns dein_step, dein_next;
   if (image->ImageDesc.Interlace)
-    dein_step = dein_next = rdi.image->row_size << 3;
+    {
+      DBG("Deinterlaced image");
+      dein_step = dein_next = rdi.image->row_size << 3;
+    }
   else
     dein_step = dein_next = rdi.image->row_size;
 
@@ -146,11 +183,11 @@ libungif_read_data(struct image_io *io)
 	    *pal_pos = rgb_to_gray_func(palette->Red, palette->Green, palette->Blue);
 	  if (pal_pos != pal_end)
 	    bzero(pal_pos, pal_end - pal_pos);
-	  if (io->flags & IMAGE_IO_USE_BACKGROUND)
-	    color_put_grayscale(pal + background, &io->background_color);
+	  if (rd->transparent_index >= 0 && (io->flags & IMAGE_IO_USE_BACKGROUND))
+	    color_put_grayscale(pal + rd->transparent_index, &io->background_color);
 #	  define DO_ROW_END do{ \
   	      walk_row_start += dein_step; \
-  	      if (walk_row_start > img_end) \
+  	      if (walk_row_start >= img_end) \
 		{ uns n = dein_next >> 1; walk_row_start = rdi.image->pixels + n, dein_step = dein_next; dein_next = n; } \
 	    }while(0)
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
@@ -174,8 +211,8 @@ libungif_read_data(struct image_io *io)
 	    }
 	  if (pal_pos != pal_end)
 	    bzero(pal_pos, pal_end - pal_pos);
-	  if (background < 256)
-	    pal[background * 2 + 1] = 0;
+	  if (rd->transparent_index >= 0)
+	    pal[rd->transparent_index * 2 + 1] = 0;
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
 #	  define IMAGE_WALK_IMAGE (rdi.image)
@@ -198,8 +235,8 @@ libungif_read_data(struct image_io *io)
 	    }
 	  if (pal_pos != pal_end)
 	    bzero(pal_pos, pal_end - pal_pos);
-	  if (io->flags & IMAGE_IO_USE_BACKGROUND)
-	    color_put_rgb(pal + background, &io->background_color);
+	  if (rd->transparent_index >= 0 && (io->flags & IMAGE_IO_USE_BACKGROUND))
+	    color_put_rgb(pal + 4 * rd->transparent_index, &io->background_color);
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
 #	  define IMAGE_WALK_IMAGE (rdi.image)
@@ -223,8 +260,8 @@ libungif_read_data(struct image_io *io)
 	    }
 	  if (pal_pos != pal_end)
 	    bzero(pal_pos, pal_end - pal_pos);
-	  if (background < 256)
-	    pal[background * 4 + 3] = 0;
+	  if (rd->transparent_index >= 0)
+	    pal[rd->transparent_index * 4 + 3] = 0;
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
 #	  define IMAGE_WALK_IMAGE (rdi.image)
