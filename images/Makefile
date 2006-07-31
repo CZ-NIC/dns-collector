@@ -4,7 +4,7 @@ DIRS+=images
 
 PROGS+=$(addprefix $(o)/images/,image-tool)
 
-LIBIMAGES_MODS=image scale io-main
+LIBIMAGES_MODS=image scale color alpha io-main
 LIBIMAGES=$(o)/images/libimages.$(LS)
 LIBIMAGES_LIBS=
 
@@ -21,6 +21,11 @@ endif
 ifdef CONFIG_IMAGES_LIBUNGIF
 LIBIMAGES_MODS+=io-libungif
 LIBIMAGES_LIBS+=-lungif
+else
+ifdef CONFIG_IMAGES_LIBGIF
+LIBIMAGES_MODS+=io-libungif
+LIBIMAGES_LIBS+=-lgif
+endif
 endif
 
 ifdef CONFIG_IMAGES_LIBMAGICK
@@ -41,14 +46,15 @@ TESTS+=$(o)/images/hilbert-test.test
 $(o)/images/hilbert-test: LIBS+=-lm $(LIBSH)
 $(o)/images/hilbert-test.test: $(o)/images/hilbert-test
 
+TESTS+=$(o)/images/color.test
+$(o)/images/color-t: LIBS+=-lm
+$(o)/images/color.test: $(o)/images/color-t
+
 #$(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBUCW)
 #$(o)/images/image-test: LIBS+=$(LIBIMAGES_LIBS)
 
 #$(o)/images/image-idx: $(o)/images/image-idx.o $(o)/images/image-obj.o $(o)/images/dup-cmp.o $(o)/indexer/iconfig.o $(o)/images/image-sig.o $(o)/images/kd-tree.o $(o)/images/color.o $(o)/images/image-io.o $(LIBSH) $(LIBLANG) $(LIBCHARSET)
 #$(o)/images/image-idx: LIBS+=-lGraphicsMagick -ljpeg -lpng
-
-#$(o)/images/color-t: LIBS+=-lm
-#$(o)/images/color.test: $(o)/images/color-t
 
 # By :;DF
 #PROGS+=$(addprefix $(o)/images/,decomp)

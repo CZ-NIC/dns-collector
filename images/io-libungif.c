@@ -13,6 +13,7 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
+#include "images/color.h"
 #include "images/io-main.h"
 #include <gif_lib.h>
 
@@ -76,20 +77,23 @@ libungif_read_header(struct image_io *io)
     }
   io->cols = image->ImageDesc.Width;
   io->rows = image->ImageDesc.Height;
-  io->number_of_colors = color_map->ColorCount;
+  if (unlikely((io->number_of_colors = color_map->ColorCount) > 256))
+    {
+      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Too many gif colors.");
+      DGifCloseFile(gif);
+      return 0;
+    }
   io->flags = COLOR_SPACE_RGB | IMAGE_IO_HAS_PALETTE;
   if ((uns)gif->SBackGroundColor < (uns)color_map->ColorCount)
-    io->flags |= IMAGE_ALPHA;
+    {
+      io->flags |= IMAGE_ALPHA | IMAGE_IO_HAS_BACKGROUND;
+      GifColorType *background = color_map->Colors + gif->SBackGroundColor;
+      color_make_rgb(&io->background_color, background->Red, background->Green, background->Blue);
+    }
 
   /* Success */
   io->read_cancel = libungif_read_cancel;
   return 1;
-}
-
-static inline byte
-libungif_pixel_to_gray(GifColorType *pixel)
-{
-  return ((uns)pixel->Red * 19660 + (uns)pixel->Green * 38666 + (uns)pixel->Blue * 7210) >> 16;
 }
 
 int
@@ -102,7 +106,7 @@ libungif_read_data(struct image_io *io)
 
   /* Prepare image */
   struct image_io_read_data_internals rdi;
-  if (unlikely(!image_io_read_data_prepare(&rdi, io, image->ImageDesc.Width, image->ImageDesc.Height)))
+  if (unlikely(!image_io_read_data_prepare(&rdi, io, image->ImageDesc.Width, image->ImageDesc.Height, io->flags)))
     {
       DGifCloseFile(gif);
       return 0;
@@ -129,9 +133,11 @@ libungif_read_data(struct image_io *io)
 	{
 	  byte pal[256], *pal_pos = pal, *pal_end = pal + 256;
 	  for (uns i = 0; i < (uns)color_map->ColorCount; i++, pal_pos++, palette++)
-	    *pal_pos = libungif_pixel_to_gray(palette);
+	    *pal_pos = rgb_to_gray_func(palette->Red, palette->Green, palette->Blue);
 	  if (pal_pos != pal_end)
 	    bzero(pal_pos, pal_end - pal_pos);
+	  if (io->flags & IMAGE_IO_USE_BACKGROUND)
+	    color_put_grayscale(pal + background, &io->background_color);
 #	  define DO_ROW_END do{ \
   	      walk_row_start += dein_step; \
   	      if (walk_row_start > img_end) \
@@ -153,7 +159,7 @@ libungif_read_data(struct image_io *io)
 	  byte pal[256 * 2], *pal_pos = pal, *pal_end = pal + 256 * 2;
 	  for (uns i = 0; i < (uns)color_map->ColorCount; i++, pal_pos += 2, palette++)
 	    {
-	      pal_pos[0] = libungif_pixel_to_gray(palette);
+	      pal_pos[0] = rgb_to_gray_func(palette->Red, palette->Green, palette->Blue);
 	      pal_pos[1] = 255;
 	    }
 	  if (pal_pos != pal_end)
@@ -182,6 +188,8 @@ libungif_read_data(struct image_io *io)
 	    }
 	  if (pal_pos != pal_end)
 	    bzero(pal_pos, pal_end - pal_pos);
+	  if (io->flags & IMAGE_IO_USE_BACKGROUND)
+	    color_put_rgb(pal + background, &io->background_color);
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
 #	  define IMAGE_WALK_IMAGE (rdi.image)

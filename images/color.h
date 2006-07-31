@@ -23,6 +23,36 @@
 #ifndef _IMAGES_COLOR_H
 #define _IMAGES_COLOR_H
 
+#include "images/images.h"
+
+static inline uns
+rgb_to_gray_func(uns r, uns g, uns b)
+{
+  return (r * 19660 + g * 38666 + b * 7210) >> 16;
+}
+
+extern struct color color_black, color_white;
+
+static inline void
+color_make_gray(struct color *color, uns gray)
+{
+  color->c[0] = gray;
+  color->color_space = COLOR_SPACE_GRAYSCALE;
+}
+
+static inline void
+color_make_rgb(struct color *color, uns r, uns g, uns b)
+{
+  color->c[0] = r;
+  color->c[1] = g;
+  color->c[2] = b;
+  color->color_space = COLOR_SPACE_RGB;
+}
+
+void color_put_color_space(byte *dest, struct color *color, enum color_space color_space);
+void color_put_grayscale(byte *dest, struct color *color);
+void color_put_rgb(byte *dest, struct color *color);
+
 /* Exact slow conversion routines */
 void srgb_to_xyz_slow(double dest[3], double src[3]);
 void xyz_to_luv_slow(double dest[3], double src[3]);

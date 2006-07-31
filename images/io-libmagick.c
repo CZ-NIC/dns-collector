@@ -13,6 +13,7 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
+#include "images/color.h"
 #include "images/io-main.h"
 #include <sys/types.h>
 #include <stdlib.h>
@@ -118,7 +119,7 @@ err:
 static inline byte
 libmagick_pixel_to_gray(PixelPacket *pixel)
 {
-  return ((uns)pixel->red * 19660 + (uns)pixel->green * 38666 + (uns)pixel->blue * 7210) >> (16 + QUANTUM_SCALE);
+  return rgb_to_gray_func(pixel->red, pixel->green, pixel->blue) >> QUANTUM_SCALE;
 }
 
 int
@@ -144,7 +145,10 @@ libmagick_read_data(struct image_io *io)
 
   /* Prepare the image */
   struct image_io_read_data_internals rdi;
-  if (unlikely(!image_io_read_data_prepare(&rdi, io, rd->image->columns, rd->image->rows)))
+  uns read_flags = io->flags;
+  if ((read_flags & IMAGE_IO_USE_BACKGROUND) && !(read_flags & IMAGE_ALPHA))
+    read_flags |= IMAGE_ALPHA;	    
+  if (unlikely(!image_io_read_data_prepare(&rdi, io, rd->image->columns, rd->image->rows, read_flags)))
     {
       libmagick_destroy_read_data(rd);
       return 0;

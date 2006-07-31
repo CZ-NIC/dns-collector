@@ -94,10 +94,19 @@ byte *color_space_to_name(enum color_space cs);
 byte *image_channels_format_to_name(uns format);
 uns image_name_to_channels_format(byte *name);
 
+struct color {
+  byte c[3];
+  byte color_space;
+} PACKED;
+
 /* scale.c */
 
 int image_scale(struct image_thread *thread, struct image *dest, struct image *src);
 void image_dimensions_fit_to_box(u32 *cols, u32 *rows, u32 max_cols, u32 max_rows, uns upsample);
+
+/* alpha.c */
+
+int image_apply_background(struct image_thread *thread, struct image *dest, struct image *src, struct color *background);
 
 /* image-io.c */
 
@@ -125,6 +134,7 @@ struct image_io {
   u32 flags;				/* [ HI  ] - see enum image_io_flags */
   u32 jpeg_quality;			/* [    W] - JPEG compression quality (1..100) */
   u32 number_of_colors;			/* [ H   ] - number of image colors */
+  struct color background_color;	/* [ HI  ] - background color, zero if undefined */
 
   /* internals */
   struct image_thread *thread;
@@ -135,8 +145,10 @@ struct image_io {
 };
 
 enum image_io_flags {
-  IMAGE_IO_IMAGE_FLAGS = 0xffff,	/* [ HI  ] - parameter to image new, read_header fills IMAGE_CHANNELS_FORMAT */
+  IMAGE_IO_IMAGE_FLAGS = 0xffff,	/* [ HI  ] - mask of parameters to image new, read_header fills IMAGE_CHANNELS_FORMAT */
   IMAGE_IO_HAS_PALETTE = 0x10000,	/* [ H   ] - true for image with indexed colors */
+  IMAGE_IO_HAS_BACKGROUND = 0x20000,	/* [ H   ] - picture contains background info */
+  IMAGE_IO_USE_BACKGROUND = 0x40000,	/* [  I  ] - merge transparent pixels with background_color */
 };
 
 void image_io_init(struct image_thread *it, struct image_io *io);

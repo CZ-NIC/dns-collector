@@ -259,7 +259,7 @@ libjpeg_read_data(struct image_io *io)
 
   /* Prepare the image ... FIXME: use libjpeg feature to speed up downscale */
   struct image_io_read_data_internals rdi;
-  if (unlikely(!image_io_read_data_prepare(&rdi, io, i->cinfo.image_width, i->cinfo.image_height)))
+  if (unlikely(!image_io_read_data_prepare(&rdi, io, i->cinfo.image_width, i->cinfo.image_height, io->flags)))
     {
       jpeg_destroy_decompress(&i->cinfo);
       return 0;
@@ -291,7 +291,7 @@ libjpeg_read_data(struct image_io *io)
             }
 	}
 	break;
-      /* garscale with alpha */
+      /* grayscale with alpha */
       case 2:
 	{
 	  byte buf[img->cols], *src;

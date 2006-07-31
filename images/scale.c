@@ -74,7 +74,7 @@ image_dimensions_fit_to_box(u32 *cols, u32 *rows, u32 max_cols, u32 max_rows, un
     {
       if (!upsample)
 	return;
-      if (max_cols / *cols > max_rows / *rows)
+      if (max_cols * *rows > max_rows * *cols)
         {
 	  *cols = *cols * max_rows / *rows;
 	  *cols = MIN(*cols, max_cols);
@@ -100,5 +100,4 @@ down_rows:
   *rows = *rows * max_cols / *cols;
   *rows = MAX(*rows, 1);
   *cols = max_cols;
-  return;
 }

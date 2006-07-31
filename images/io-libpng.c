@@ -197,22 +197,20 @@ libpng_read_data(struct image_io *io)
         return 0;
     }
 
-  /* Prepare the image */
   struct image_io_read_data_internals rdi;
-  if (unlikely(!image_io_read_data_prepare(&rdi, io, rd->cols, rd->rows)))
-    {
-      png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
-      return 0;
-    }
+  rdi.image = NULL;
 
   if (setjmp(png_jmpbuf(rd->png_ptr)))
     {
       DBG("Libpng failed to read the image, longjump saved us");
       png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
-      image_io_read_data_break(&rdi, io);
+      if (rdi.image)
+        image_io_read_data_break(&rdi, io);
       return 0;
     }
 
+  uns read_flags = io->flags;
+  
   /* Apply transformations */
   if (rd->bit_depth == 16)
     png_set_strip_16(rd->png_ptr);
@@ -241,7 +239,12 @@ libpng_read_data(struct image_io *io)
 	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_RGB)
           png_set_gray_to_rgb(rd->png_ptr);
 	if (!(io->flags & IMAGE_ALPHA))
-          png_set_strip_alpha(rd->png_ptr);
+	  {
+	    if (io->flags & IMAGE_IO_USE_BACKGROUND)
+	      read_flags |= IMAGE_ALPHA;
+	    else
+              png_set_strip_alpha(rd->png_ptr);
+	  }  
 	break;
       case PNG_COLOR_TYPE_RGB:
 	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)
@@ -253,13 +256,24 @@ libpng_read_data(struct image_io *io)
 	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)
 	  png_set_rgb_to_gray_fixed(rd->png_ptr, 1, 21267, 71514);
 	if (!(io->flags & IMAGE_ALPHA) && (io->flags & IMAGE_PIXEL_FORMAT) != (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
-          png_set_strip_alpha(rd->png_ptr);
+	  {
+	    if (io->flags & IMAGE_IO_USE_BACKGROUND)
+	      read_flags |= IMAGE_ALPHA;
+	    else
+              png_set_strip_alpha(rd->png_ptr);
+	  }
 	break;
       default:
 	ASSERT(0);
     }
   png_read_update_info(rd->png_ptr, rd->info_ptr);
 
+  /* Prepare the image */
+  if (unlikely(!image_io_read_data_prepare(&rdi, io, rd->cols, rd->rows, read_flags)))
+    {
+      png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
+      return 0;
+    }
   /* Read image data */
   DBG("Reading image data");
   struct image *img = rdi.image;

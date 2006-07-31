@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#undef LOCAL_DEBUG
+#define LOCAL_DEBUG
 
 #include "lib/lib.h"
 #include "images/images.h"
@@ -89,7 +89,7 @@ image_io_read_header(struct image_io *io)
       break;
 
     case IMAGE_FORMAT_GIF:
-#if defined(CONFIG_IMAGES_LIBUNGIF)
+#if defined(CONFIG_IMAGES_LIBUNGIF) || defined(CONFIG_IMAGES_LIBGIF)
       return libungif_read_header(io);
 #elif defined(CONFIG_IMAGES_LIBMAGICK)
       return libmagick_read_header(io);
@@ -136,7 +136,7 @@ image_io_read_data(struct image_io *io, int ref)
       break;
 
     case IMAGE_FORMAT_GIF:
-#if defined(CONFIG_IMAGES_LIBUNGIF)
+#if defined(CONFIG_IMAGES_LIBUNGIF) || defined(CONFIG_IMAGES_LIBGIF)
       result = libungif_read_data(io);
 #elif defined(CONFIG_IMAGES_LIBMAGICK)
       result = libmagick_read_data(io);
@@ -236,4 +236,87 @@ image_file_name_to_format(byte *file_name)
 {
   byte *extension = strrchr(file_name, '.');
   return extension ? image_extension_to_format(extension + 1) : IMAGE_FORMAT_UNDEFINED;
+}
+
+struct image *
+image_io_read_data_prepare(struct image_io_read_data_internals *rdi, struct image_io *io, uns cols, uns rows, uns flags)
+{
+  DBG("image_io_read_data_prepare()");
+  if (rdi->need_transformations = io->cols != cols || io->rows != rows || io->flags != flags)
+    {
+      rdi->need_destroy = 1;
+      return rdi->image = image_new(io->thread, cols, rows, flags & IMAGE_IO_IMAGE_FLAGS, NULL);
+    }
+  else
+    {
+      rdi->need_destroy = !io->pool;
+      return rdi->image = image_new(io->thread, io->cols, io->rows, io->flags & IMAGE_IO_IMAGE_FLAGS, io->pool);
+    }
+}
+
+int
+image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image_io *io)
+{
+  DBG("image_io_read_data_finish()");
+  if (rdi->need_transformations)
+    {
+      /* Scale the image */
+      if (io->cols != rdi->image->cols || io->rows != rdi->image->rows)
+        {
+	  DBG("Scaling image");
+	  rdi->need_transformations = io->flags != rdi->image->flags;
+	  rdi->need_destroy = rdi->need_transformations || !io->pool;
+	  struct image *img = image_new(io->thread, io->cols, io->rows, rdi->image->flags, rdi->need_transformations ? NULL : io->pool);
+	  if (unlikely(!img))
+	    {
+	      image_destroy(rdi->image);
+	      return 0;
+	    }
+          if (unlikely(!image_scale(io->thread, img, rdi->image)))
+            {
+              image_destroy(rdi->image);
+	      if (rdi->need_destroy)
+	        image_destroy(img);
+	      return 0;
+	    }
+	  rdi->image = img;
+	}
+
+      /* Merge with background */
+      if ((io->flags ^ rdi->image->flags) & IMAGE_ALPHA)
+        {
+	  DBG("Aplying background");
+	  rdi->need_transformations = 0;
+	  rdi->need_destroy = rdi->need_transformations || !io->pool;
+	  struct image *img = image_new(io->thread, io->cols, io->rows, io->flags, rdi->need_transformations ? NULL : io->pool);
+	  if (unlikely(!img))
+	    {
+	      image_destroy(rdi->image);
+	      return 0;
+	    }
+          if (unlikely(!image_apply_background(io->thread, img, rdi->image, &io->background_color)))
+            {
+              image_destroy(rdi->image);
+	      if (rdi->need_destroy)
+	        image_destroy(img);
+	      return 0;
+	    }
+	  rdi->image = img;
+	}
+
+      ASSERT(!rdi->need_transformations);
+    }
+
+  /* Success */
+  io->image = rdi->image;
+  io->image_destroy = rdi->need_destroy;
+  return 1;
+}
+
+void
+image_io_read_data_break(struct image_io_read_data_internals *rdi, struct image_io *io UNUSED)
+{
+  DBG("image_io_read_data_break()");
+  if (rdi->need_destroy)
+    image_destroy(rdi->image);
 }

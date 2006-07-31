@@ -157,7 +157,7 @@ void
 image_destroy(struct image *img)
 {
   DBG("image_destroy(img=%p)", img);
-  xfree((byte *)img);
+  xfree(img);
 }
 
 void

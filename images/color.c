@@ -11,8 +11,61 @@
 
 #include "sherlock/sherlock.h"
 #include "lib/math.h"
+#include "images/images.h"
 #include "images/color.h"
 
+struct color color_black = { .color_space = COLOR_SPACE_GRAYSCALE };
+struct color color_white = { .c = { 255 }, .color_space = COLOR_SPACE_GRAYSCALE };
+
+inline void
+color_put_grayscale(byte *dest, struct color *color)
+{
+  switch (color->color_space)
+    {
+      case COLOR_SPACE_GRAYSCALE:
+	dest[0] = color->c[0];
+	break;
+      case COLOR_SPACE_RGB:
+	dest[0] = rgb_to_gray_func(color->c[0], color->c[1], color->c[2]);
+	break;
+      default:
+	ASSERT(0);	
+    }
+}
+
+inline void
+color_put_rgb(byte *dest, struct color *color)
+{
+  switch (color->color_space)
+    {
+      case COLOR_SPACE_GRAYSCALE:
+	dest[0] = dest[1] = dest[2] = color->c[0];
+	break;
+      case COLOR_SPACE_RGB:
+	dest[0] = color->c[0];
+	dest[1] = color->c[1];
+	dest[2] = color->c[2];
+	break;
+      default:
+	ASSERT(0);	
+    }
+}
+
+void
+color_put_color_space(byte *dest, struct color *color, enum color_space color_space)
+{
+  switch (color_space)
+    {
+      case COLOR_SPACE_GRAYSCALE:
+	color_put_grayscale(dest, color);
+	break;  
+      case COLOR_SPACE_RGB:
+	color_put_rgb(dest, color);	
+	break;
+      default:
+	ASSERT(0);	
+    }
+}
 
 /********************* EXACT CONVERSION ROUTINES **********************/
 
