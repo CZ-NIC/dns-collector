@@ -46,7 +46,7 @@ static struct option longopts[] =
   { "fit-to-box",	0, 0, 'b' },
   { "colorspace",	0, 0, 'c' },
   { "jpeg-quality",	0, 0, 'Q' },
-  { "background",	0, 0, 'g'  },
+  { "background",	0, 0, 'g' },
   { NULL,		0, 0, 0 }
 };
 							  
