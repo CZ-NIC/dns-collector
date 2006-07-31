@@ -217,7 +217,6 @@ libpng_read_data(struct image_io *io)
   switch (rd->color_type)
     {
       case PNG_COLOR_TYPE_PALETTE:
-	/* FIXME: add support for palette with colors */
 	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)
 	  {
 	    png_set_palette_to_rgb(rd->png_ptr);
@@ -225,10 +224,20 @@ libpng_read_data(struct image_io *io)
 	  }
 	else
 	  png_set_palette_to_rgb(rd->png_ptr);
-	if ((io->flags & IMAGE_ALPHA) || (io->flags & IMAGE_PIXEL_FORMAT) == (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
-          png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
+	if (!(io->flags & IMAGE_ALPHA))
+	  {
+	    if (io->flags & IMAGE_IO_USE_BACKGROUND)
+	      {
+                png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
+	        read_flags |= IMAGE_ALPHA;
+	      }
+	    else if ((io->flags & IMAGE_PIXEL_FORMAT) == (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
+              png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
+            else
+	      png_set_strip_alpha(rd->png_ptr);
+	  }
 	else
-	  png_set_strip_alpha(rd->png_ptr);
+          png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
 	break;
       case PNG_COLOR_TYPE_GRAY:
 	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_RGB)
