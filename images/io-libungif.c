@@ -45,6 +45,7 @@ libungif_read_header(struct image_io *io)
       return 0;
     }
 
+  DBG("executing DGifSlurp()");
   if (unlikely(DGifSlurp(gif) != GIF_OK))
     {
       image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Gif read failed.");
@@ -52,6 +53,7 @@ libungif_read_header(struct image_io *io)
       return 0;
     }
 
+  DBG("ImageCount=%d ColorResolution=%d SBackGroundColor=%d SColorMap=%p", gif->ImageCount, gif->SColorResolution, gif->SBackGroundColor, gif->SColorMap);
   if (unlikely(!gif->ImageCount))
     {
       image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "There are no images in gif file.");
@@ -84,12 +86,15 @@ libungif_read_header(struct image_io *io)
       return 0;
     }
   io->flags = COLOR_SPACE_RGB | IMAGE_IO_HAS_PALETTE;
-  if ((uns)gif->SBackGroundColor < (uns)color_map->ColorCount)
+  /* FIXME transparent GIFs disabled */
+#if 0
+  if (gif->SColorMap && !image->ImageDesc.ColorMap && (uns)gif->SBackGroundColor < (uns)color_map->ColorCount)
     {
       io->flags |= IMAGE_ALPHA | IMAGE_IO_HAS_BACKGROUND;
       GifColorType *background = color_map->Colors + gif->SBackGroundColor;
       color_make_rgb(&io->background_color, background->Red, background->Green, background->Blue);
     }
+#endif
 
   /* Success */
   io->read_cancel = libungif_read_cancel;
@@ -116,7 +121,12 @@ libungif_read_data(struct image_io *io)
   byte *pixels = (byte *)image->RasterBits;
   ColorMapObject *color_map = image->ImageDesc.ColorMap ? : gif->SColorMap;
   GifColorType *palette = color_map->Colors;
-  uns background = gif->SBackGroundColor;
+  uns background = (
+  /* FIXME: transparent GIFs disabled */
+#if 1
+    0 &&
+#endif
+    gif->SColorMap && !image->ImageDesc.ColorMap) ? gif->SBackGroundColor : 256;
   byte *img_end = rdi.image->pixels + rdi.image->image_size;
 
   /* Handle deinterlacing */
