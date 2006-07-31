@@ -264,7 +264,6 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
       if (io->cols != rdi->image->cols || io->rows != rdi->image->rows)
         {
 	  DBG("Scaling image");
-	  rdi->need_transformations = io->flags != rdi->image->flags;
 	  rdi->need_destroy = rdi->need_transformations || !io->pool;
 	  struct image *img = image_new(io->thread, io->cols, io->rows, rdi->image->flags, rdi->need_transformations ? NULL : io->pool);
 	  if (unlikely(!img))
@@ -286,7 +285,6 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
       if ((io->flags ^ rdi->image->flags) & IMAGE_ALPHA)
         {
 	  DBG("Aplying background");
-	  rdi->need_transformations = 0;
 	  rdi->need_destroy = rdi->need_transformations || !io->pool;
 	  struct image *img = image_new(io->thread, io->cols, io->rows, io->flags, rdi->need_transformations ? NULL : io->pool);
 	  if (unlikely(!img))
@@ -303,8 +301,6 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
 	    }
 	  rdi->image = img;
 	}
-
-      ASSERT(!rdi->need_transformations);
     }
 
   /* Success */

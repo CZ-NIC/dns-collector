@@ -257,9 +257,29 @@ libjpeg_read_data(struct image_io *io)
 	return 0;
     }
 
-  /* Prepare the image ... FIXME: use libjpeg feature to speed up downscale */
+  /* Prepare the image  */
   struct image_io_read_data_internals rdi;
-  if (unlikely(!image_io_read_data_prepare(&rdi, io, i->cinfo.image_width, i->cinfo.image_height, io->flags)))
+  if (io->cols <= (i->cinfo.image_width >> 3) && io->rows <= (i->cinfo.image_height >> 3))
+    {
+      DBG("Scaling to 1/8");
+      i->cinfo.scale_num = 1;
+      i->cinfo.scale_denom = 8;
+    }
+  else if (io->cols <= (i->cinfo.image_width >> 2) && io->rows <= (i->cinfo.image_height >> 2))
+    {
+      DBG("Scaling to 1/4");
+      i->cinfo.scale_num = 1;
+      i->cinfo.scale_denom = 4;
+    }
+  else if (io->cols <= (i->cinfo.image_width >> 1) && io->rows <= (i->cinfo.image_height >> 1))
+    {
+      DBG("Scaling to 1/2");
+      i->cinfo.scale_num = 1;
+      i->cinfo.scale_denom = 2;
+    }
+  jpeg_calc_output_dimensions(&i->cinfo);
+  DBG("Output dimensions %ux%u", (uns)i->cinfo.output_width, (uns)i->cinfo.output_height);
+  if (unlikely(!image_io_read_data_prepare(&rdi, io, i->cinfo.output_width, i->cinfo.output_height, io->flags)))
     {
       jpeg_destroy_decompress(&i->cinfo);
       return 0;
