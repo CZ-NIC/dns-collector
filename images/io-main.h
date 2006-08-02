@@ -19,7 +19,6 @@ int libmagick_write(struct image_io *io);
 struct image_io_read_data_internals {
   struct image *image;
   int need_transformations;
-  int need_destroy;
 };
 
 struct image *image_io_read_data_prepare(struct image_io_read_data_internals *rdi, struct image_io *io, uns cols, uns rows, uns flags);
