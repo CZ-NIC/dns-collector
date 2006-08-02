@@ -69,6 +69,7 @@ enum image_flag {
   IMAGE_ALPHA = 0x8,		/* alpha channel */
   IMAGE_PIXELS_ALIGNED = 0x10,	/* align pixel size to the nearest power of two  */
   IMAGE_SSE_ALIGNED = 0x20,	/* align scanlines to multiples of 16 bytes (both start and size) */
+  IMAGE_NEED_DESTROY = 0x40,	/* image is allocated with xmalloc */
   IMAGE_CHANNELS_FORMAT = IMAGE_COLOR_SPACE | IMAGE_ALPHA,
   IMAGE_PIXEL_FORMAT = IMAGE_CHANNELS_FORMAT | IMAGE_PIXELS_ALIGNED,
   IMAGE_ALIGNED = IMAGE_PIXELS_ALIGNED | IMAGE_SSE_ALIGNED,
@@ -81,7 +82,7 @@ struct image {
   u32 rows;			/* number of rows */
   u32 pixel_size;		/* size of pixel (1, 2, 3 or 4) */
   u32 row_size;			/* scanline size in bytes */
-  u32 image_size;		/* size of pixels buffer (rows * rows_size) */
+  u32 image_size;		/* rows * rows_size */
   u32 flags;			/* enum image_flag */
 };
 
@@ -89,6 +90,14 @@ struct image *image_new(struct image_thread *it, uns cols, uns rows, uns flags, 
 struct image *image_clone(struct image_thread *it, struct image *src, uns flags, struct mempool *pool);
 void image_destroy(struct image *img); /* only with NULL mempool */
 void image_clear(struct image_thread *it, struct image *img);
+int image_init_matrix(struct image_thread *it, struct image *img, byte *pixels, uns cols, uns rows, uns row_size, uns flags);
+int image_init_subimage(struct image_thread *it, struct image *img, struct image *src, uns left, uns top, uns cols, uns rows);
+
+static inline int
+image_dimensions_valid(uns cols, uns rows)
+{
+  return cols && rows && cols <= IMAGE_MAX_SIZE && rows <= IMAGE_MAX_SIZE;
+}
 
 byte *color_space_to_name(enum color_space cs);
 byte *image_channels_format_to_name(uns format);

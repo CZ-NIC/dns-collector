@@ -45,13 +45,14 @@ struct image *
 image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool *pool)
 {
   DBG("image_new(cols=%u rows=%u flags=0x%x pool=%p)", cols, rows, flags, pool);
-  if (cols > IMAGE_MAX_SIZE || rows > IMAGE_MAX_SIZE)
+  flags &= IMAGE_PIXEL_FORMAT | IMAGE_SSE_ALIGNED;
+  if (unlikely(!image_dimensions_valid(cols, rows)))
     {
-      image_thread_err(it, IMAGE_ERR_INVALID_DIMENSIONS, "Image dimension(s) too large");
+      image_thread_err_format(it, IMAGE_ERR_INVALID_DIMENSIONS, "Invalid image dimensions (%ux%u)", cols, rows);
       return NULL;
     }
   struct image *img;
-  uns pixel_size, row_size, image_size, align;
+  uns pixel_size, row_size, align;
   switch (flags & IMAGE_COLOR_SPACE)
     {
       case COLOR_SPACE_GRAYSCALE:
@@ -89,17 +90,18 @@ image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool
   row_size = ALIGN(row_size, align);
   u64 image_size_64 = (u64)row_size * rows;
   u64 bytes_64 = image_size_64 + (sizeof(struct image) + IMAGE_SSE_ALIGN_SIZE - 1 + sizeof(uns));
-  if (bytes_64 > MAX_IMAGE_BYTES)
+  if (unlikely(bytes_64 > MAX_IMAGE_BYTES))
     {
       image_thread_err(it, IMAGE_ERR_INVALID_DIMENSIONS, "Image does not fit in memory");
       return NULL;
     }
-  if (!(image_size = image_size_64))
+  if (pool)
+    img = mp_alloc(pool, bytes_64);
+  else
     {
-      image_thread_err(it, IMAGE_ERR_INVALID_DIMENSIONS, "Zero dimension(s)");
-      return NULL;
+      img = xmalloc(bytes_64);
+      flags |= IMAGE_NEED_DESTROY;
     }
-  img = pool ? mp_alloc(pool, (uns)bytes_64) : xmalloc((uns)bytes_64);
   bzero(img, sizeof(struct image));
   byte *p = (byte *)img + sizeof(struct image);
   img->pixels = ALIGN_PTR(p, IMAGE_SSE_ALIGN_SIZE);
@@ -108,7 +110,7 @@ image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool
   img->cols = cols;
   img->rows = rows;
   img->row_size = row_size;
-  img->image_size = image_size;
+  img->image_size = bytes_64;
   DBG("img=%p flags=0x%x pixel_size=%u row_size=%u image_size=%u pixels=%p",
     img, img->flags, img->pixel_size, img->row_size, img->image_size, img->pixels);
   return img;
@@ -157,7 +159,8 @@ void
 image_destroy(struct image *img)
 {
   DBG("image_destroy(img=%p)", img);
-  xfree(img);
+  if (img->flags & IMAGE_NEED_DESTROY)
+    xfree(img);
 }
 
 void
@@ -166,6 +169,38 @@ image_clear(struct image_thread *it UNUSED, struct image *img)
   DBG("image_clear(img=%p)", img);
   if (img->image_size)
     bzero(img->pixels, img->image_size);
+}
+
+int
+image_init_matrix(struct image_thread *it, struct image *img, byte *pixels, uns cols, uns rows, uns row_size, uns flags)
+{
+  DBG("image_init_matrix(img=%p cols=%u rows=%u row_size=%u flags=0x%x)", img, cols, rows, row_size, uns flags);
+  if (unlikely(!image_dimensions_valid(cols, rows)))
+    {
+      image_thread_err_format(it, IMAGE_ERR_INVALID_DIMENSIONS, "Invalid image dimensions (%ux%u)", cols, rows);
+      return 0;
+    }
+  img->pixels = pixels;
+  img->cols = cols;
+  img->rows = rows;
+  img->row_size = row_size;
+  img->image_size = rows * row_size;
+  img->flags = flags & (IMAGE_PIXEL_FORMAT | IMAGE_SSE_ALIGNED);
+  return 1;
+}
+
+int
+image_init_subimage(struct image_thread *it UNUSED, struct image *img, struct image *src, uns left, uns top, uns cols, uns rows)
+{
+  DBG("image_init_subimage(img=%p src=%p left=%u top=%u cols=%u rows=%u)");
+  ASSERT(left + cols <= src->cols && top + rows <= src->rows);
+  img->pixels = src->pixels + left * src->pixel_size + top * src->row_size;
+  img->cols = cols;
+  img->rows = rows;
+  img->row_size = src->row_size;
+  img->image_size = src->row_size * rows;
+  img->flags = src->flags & ~IMAGE_NEED_DESTROY; 
+  return 1;
 }
 
 byte *

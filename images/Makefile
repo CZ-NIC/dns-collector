@@ -42,6 +42,11 @@ $(o)/images/libimages.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_M
 $(o)/images/image-tool: $(o)/images/image-tool.o $(LIBIMAGES) $(LIBUCW)
 $(o)/images/image-tool: LIBS+=$(LIBIMAGES_LIBS)
 
+TESTS+=$(o)/images/image-test.test
+$(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/image-test: LIBS+=$(LIBIMAGES_LIBS)
+$(o)/images/image-test.test: $(o)/images/image-test
+
 TESTS+=$(o)/images/hilbert-test.test
 $(o)/images/hilbert-test: LIBS+=-lm $(LIBSH)
 $(o)/images/hilbert-test.test: $(o)/images/hilbert-test

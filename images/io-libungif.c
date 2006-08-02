@@ -26,14 +26,7 @@ static int
 libungif_read_func(GifFileType *gif, GifByteType *ptr, int len)
 {
   DBG("libungif_read_func(len=%d)", len);
-  uns readed, total = 0;
-  while (len && (readed = bread((struct fastbuf *)gif->UserData, (byte *)ptr, len)))
-    {
-      len -= readed;
-      ptr += readed;
-      total += readed;
-    }
-  return total;
+  return bread((struct fastbuf *)gif->UserData, (byte *)ptr, len);
 }
 
 static void
