@@ -155,7 +155,7 @@ struct image_io {
 enum image_io_flags {
   IMAGE_IO_IMAGE_FLAGS = 0xffff,	/* [ HI  ] - mask of parameters to image new, read_header fills IMAGE_CHANNELS_FORMAT */
   IMAGE_IO_NEED_DESTROY = 0x10000,	/* [   O ] - enables automatic call of image_destroy */
-  IMAGE_IO_HAS_PALETTE = 0x10000,	/* [ H   ] - true for image with indexed colors */
+  IMAGE_IO_HAS_PALETTE = 0x20000,	/* [ H   ] - true for image with indexed colors */
   IMAGE_IO_USE_BACKGROUND = 0x40000,	/* [  I  ] - merge transparent pixels with background_color */
 };
 
