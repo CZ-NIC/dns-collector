@@ -2,9 +2,9 @@
 
 DIRS+=images
 
-PROGS+=$(addprefix $(o)/images/,image-tool)
+PROGS+=$(addprefix $(o)/images/,image-tool image-dup-test)
 
-LIBIMAGES_MODS=image scale color alpha io-main
+LIBIMAGES_MODS=image scale color alpha io-main dup-cmp
 LIBIMAGES=$(o)/images/libimages.$(LS)
 LIBIMAGES_LIBS=
 
@@ -41,6 +41,9 @@ $(o)/images/libimages.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_M
 
 $(o)/images/image-tool: $(o)/images/image-tool.o $(LIBIMAGES) $(LIBUCW)
 $(o)/images/image-tool: LIBS+=$(LIBIMAGES_LIBS)
+
+$(o)/images/image-dup-test: $(o)/images/image-dup-test.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/image-dup-test: LIBS+=$(LIBIMAGES_LIBS)
 
 TESTS+=$(o)/images/image-test.test
 $(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBUCW)

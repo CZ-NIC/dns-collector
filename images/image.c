@@ -41,18 +41,10 @@ image_thread_err_format(struct image_thread *it, uns code, char *msg, ...)
   va_end(args);
 }
 
-struct image *
-image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool *pool)
+static inline uns
+flags_to_pixel_size(uns flags)
 {
-  DBG("image_new(cols=%u rows=%u flags=0x%x pool=%p)", cols, rows, flags, pool);
-  flags &= IMAGE_NEW_FLAGS;
-  if (unlikely(!image_dimensions_valid(cols, rows)))
-    {
-      image_thread_err_format(it, IMAGE_ERR_INVALID_DIMENSIONS, "Invalid image dimensions (%ux%u)", cols, rows);
-      return NULL;
-    }
-  struct image *img;
-  uns pixel_size, row_size, align;
+  uns pixel_size;
   switch (flags & IMAGE_COLOR_SPACE)
     {
       case COLOR_SPACE_GRAYSCALE:
@@ -66,6 +58,22 @@ image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool
     }
   if (flags & IMAGE_ALPHA)
     pixel_size++;
+  return pixel_size;
+}
+
+struct image *
+image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool *pool)
+{
+  DBG("image_new(cols=%u rows=%u flags=0x%x pool=%p)", cols, rows, flags, pool);
+  flags &= IMAGE_NEW_FLAGS;
+  if (unlikely(!image_dimensions_valid(cols, rows)))
+    {
+      image_thread_err_format(it, IMAGE_ERR_INVALID_DIMENSIONS, "Invalid image dimensions (%ux%u)", cols, rows);
+      return NULL;
+    }
+  struct image *img;
+  uns pixel_size, row_size, align;
+  pixel_size = flags_to_pixel_size(flags);
   switch (pixel_size)
     {
       case 1:
@@ -171,37 +179,39 @@ image_clear(struct image_thread *it UNUSED, struct image *img)
     bzero(img->pixels, img->image_size);
 }
 
-int
+struct image *
 image_init_matrix(struct image_thread *it, struct image *img, byte *pixels, uns cols, uns rows, uns row_size, uns flags)
 {
-  DBG("image_init_matrix(img=%p cols=%u rows=%u row_size=%u flags=0x%x)", img, cols, rows, row_size, uns flags);
+  DBG("image_init_matrix(img=%p pixels=%p cols=%u rows=%u row_size=%u flags=0x%x)", img, pixels, cols, rows, row_size, flags);
   if (unlikely(!image_dimensions_valid(cols, rows)))
     {
       image_thread_err_format(it, IMAGE_ERR_INVALID_DIMENSIONS, "Invalid image dimensions (%ux%u)", cols, rows);
-      return 0;
+      return NULL;
     }
   img->pixels = pixels;
   img->cols = cols;
   img->rows = rows;
+  img->pixel_size = flags_to_pixel_size(flags);
   img->row_size = row_size;
   img->image_size = rows * row_size;
   img->flags = flags & (IMAGE_NEW_FLAGS | IMAGE_GAPS_PROTECTED);
-  return 1;
+  return img;
 }
 
-int
+struct image *
 image_init_subimage(struct image_thread *it UNUSED, struct image *img, struct image *src, uns left, uns top, uns cols, uns rows)
 {
-  DBG("image_init_subimage(img=%p src=%p left=%u top=%u cols=%u rows=%u)");
+  DBG("image_init_subimage(img=%p src=%p left=%u top=%u cols=%u rows=%u)", img, src, left, top, cols, rows);
   ASSERT(left + cols <= src->cols && top + rows <= src->rows);
   img->pixels = src->pixels + left * src->pixel_size + top * src->row_size;
   img->cols = cols;
   img->rows = rows;
+  img->pixel_size = src->pixel_size;
   img->row_size = src->row_size;
   img->image_size = src->row_size * rows;
   img->flags = src->flags & IMAGE_NEW_FLAGS;
   img->flags |= IMAGE_GAPS_PROTECTED;
-  return 1;
+  return img;
 }
 
 byte *
