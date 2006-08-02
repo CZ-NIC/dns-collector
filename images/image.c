@@ -45,7 +45,7 @@ struct image *
 image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool *pool)
 {
   DBG("image_new(cols=%u rows=%u flags=0x%x pool=%p)", cols, rows, flags, pool);
-  flags &= IMAGE_PIXEL_FORMAT | IMAGE_SSE_ALIGNED;
+  flags &= IMAGE_NEW_FLAGS;
   if (unlikely(!image_dimensions_valid(cols, rows)))
     {
       image_thread_err_format(it, IMAGE_ERR_INVALID_DIMENSIONS, "Invalid image dimensions (%ux%u)", cols, rows);
@@ -121,7 +121,7 @@ image_clone(struct image_thread *it, struct image *src, uns flags, struct mempoo
 {
   DBG("image_clone(src=%p flags=0x%x pool=%p)", src, src->flags, pool);
   struct image *img;
-  flags &= ~IMAGE_CHANNELS_FORMAT;
+  flags &= IMAGE_NEW_FLAGS & ~IMAGE_CHANNELS_FORMAT;
   flags |= src->flags & IMAGE_CHANNELS_FORMAT;
   if (!(img = image_new(it, src->cols, src->rows, flags, pool)))
     return NULL;
@@ -185,7 +185,7 @@ image_init_matrix(struct image_thread *it, struct image *img, byte *pixels, uns 
   img->rows = rows;
   img->row_size = row_size;
   img->image_size = rows * row_size;
-  img->flags = flags & (IMAGE_PIXEL_FORMAT | IMAGE_SSE_ALIGNED);
+  img->flags = flags & (IMAGE_NEW_FLAGS | IMAGE_GAPS_PROTECTED);
   return 1;
 }
 
@@ -199,7 +199,8 @@ image_init_subimage(struct image_thread *it UNUSED, struct image *img, struct im
   img->rows = rows;
   img->row_size = src->row_size;
   img->image_size = src->row_size * rows;
-  img->flags = src->flags & ~IMAGE_NEED_DESTROY; 
+  img->flags = src->flags & IMAGE_NEW_FLAGS;
+  img->flags |= IMAGE_GAPS_PROTECTED;
   return 1;
 }
 

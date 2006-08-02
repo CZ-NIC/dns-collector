@@ -147,7 +147,7 @@ libmagick_read_data(struct image_io *io)
   struct image_io_read_data_internals rdi;
   uns read_flags = io->flags;
   if ((read_flags & IMAGE_IO_USE_BACKGROUND) && !(read_flags & IMAGE_ALPHA))
-    read_flags |= IMAGE_ALPHA;	    
+    read_flags = (read_flags | IMAGE_ALPHA) & IMAGE_CHANNELS_FORMAT;
   if (unlikely(!image_io_read_data_prepare(&rdi, io, rd->image->columns, rd->image->rows, read_flags)))
     {
       libmagick_destroy_read_data(rd);

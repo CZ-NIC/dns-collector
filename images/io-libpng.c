@@ -229,7 +229,7 @@ libpng_read_data(struct image_io *io)
 	    if (io->flags & IMAGE_IO_USE_BACKGROUND)
 	      {
                 png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
-	        read_flags |= IMAGE_ALPHA;
+	        read_flags = (read_flags | IMAGE_ALPHA) & IMAGE_CHANNELS_FORMAT;
 	      }
 	    else if ((io->flags & IMAGE_PIXEL_FORMAT) == (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
               png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
@@ -251,7 +251,7 @@ libpng_read_data(struct image_io *io)
 	if (!(io->flags & IMAGE_ALPHA))
 	  {
 	    if (io->flags & IMAGE_IO_USE_BACKGROUND)
-	      read_flags |= IMAGE_ALPHA;
+	      read_flags = (read_flags | IMAGE_ALPHA) & IMAGE_CHANNELS_FORMAT;
 	    else
               png_set_strip_alpha(rd->png_ptr);
 	  }  
@@ -267,7 +267,7 @@ libpng_read_data(struct image_io *io)
 	  png_set_rgb_to_gray_fixed(rd->png_ptr, 1, 21267, 71514);
 	if (!(io->flags & IMAGE_ALPHA))
 	  if (io->flags & IMAGE_IO_USE_BACKGROUND)
-	    read_flags |= IMAGE_ALPHA;
+	    read_flags = (read_flags | IMAGE_ALPHA) & IMAGE_CHANNELS_FORMAT;
 	  else if ((io->flags & IMAGE_PIXEL_FORMAT) != (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
             png_set_strip_alpha(rd->png_ptr);
 	break;

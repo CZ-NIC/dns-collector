@@ -152,6 +152,8 @@ image_io_read_data(struct image_io *io, int ref)
     {
       if (!ref)
 	io->flags |= IMAGE_IO_NEED_DESTROY;
+      else
+	io->flags &= ~IMAGE_IO_NEED_DESTROY;
       return io->image;
     }
   else
@@ -243,7 +245,7 @@ image_io_read_data_prepare(struct image_io_read_data_internals *rdi, struct imag
 {
   DBG("image_io_read_data_prepare()");
   if (rdi->need_transformations = io->cols != cols || io->rows != rows ||
-      ((io->flags ^ flags) & (IMAGE_IO_IMAGE_FLAGS & ~IMAGE_NEED_DESTROY)))
+      ((io->flags ^ flags) & IMAGE_NEW_FLAGS))
     return rdi->image = image_new(io->thread, cols, rows, flags & IMAGE_IO_IMAGE_FLAGS, NULL);
   else
     return rdi->image = image_new(io->thread, io->cols, io->rows, io->flags & IMAGE_IO_IMAGE_FLAGS, io->pool);
@@ -259,7 +261,7 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
       if (io->cols != rdi->image->cols || io->rows != rdi->image->rows)
         {
 	  DBG("Scaling image");
-	  rdi->need_transformations = ((io->flags ^ rdi->image->flags) & (IMAGE_IO_IMAGE_FLAGS & ~IMAGE_NEED_DESTROY));
+	  rdi->need_transformations = ((io->flags ^ rdi->image->flags) & IMAGE_NEW_FLAGS);
 	  struct image *img = image_new(io->thread, io->cols, io->rows, rdi->image->flags, rdi->need_transformations ? NULL : io->pool);
 	  if (unlikely(!img))
 	    {
@@ -279,8 +281,9 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
       if ((io->flags ^ rdi->image->flags) & IMAGE_ALPHA)
         {
 	  DBG("Aplying background");
-	  rdi->need_transformations = 0;
-	  struct image *img = image_new(io->thread, io->cols, io->rows, io->flags, rdi->need_transformations ? NULL : io->pool);
+	  uns flags = rdi->image->flags & ~IMAGE_ALPHA; 
+	  rdi->need_transformations = (flags & io->flags) & IMAGE_NEW_FLAGS;
+	  struct image *img = image_new(io->thread, io->cols, io->rows, flags, rdi->need_transformations ? NULL : io->pool);
 	  if (unlikely(!img))
 	    {
 	      image_destroy(rdi->image);
