@@ -6,27 +6,33 @@
 #define IMAGE_REG_H	3
 #define IMAGE_REG_MAX	8
 
-/* K-dimensional feature vector */
+/* K-dimensional feature vector (6 bytes) */
 struct image_vector {
   byte f[IMAGE_VEC_F];		/* texture features */
 } PACKED;
 
-/* Fetures for image regions */
+/* Fetures for image regions (16 bytes) */
 struct image_region {
   byte f[IMAGE_VEC_F];		/* texture features */
   u16 h[IMAGE_REG_H];		/* shape features */
-  byte wa;			/* normalized area percentage */
-  byte wb;			/* normalized weight */
+  u16 wa;			/* normalized area percentage */
+  u16 wb;			/* normalized weight */
 } PACKED;
 
-/* Image signature */
+/* Image signature (10 + len * 16 bytes) */
 struct image_signature {
-  struct image_vector vec;	/* Combination of all regions... simple signature */
   byte len;			/* Number of regions */
   byte df;			/* average f dist */
   u16 dh;			/* average h dist */
+  struct image_vector vec;	/* Combination of all regions... simple signature */
   struct image_region reg[IMAGE_REG_MAX];/* Feature vector for every region */
-};
+} PACKED;
+
+static inline uns
+image_signature_size(uns len)
+{
+  return 4 + sizeof(struct image_vector) + len * sizeof(struct image_region);
+}
 
 /* sig-dump.c */
 
@@ -38,8 +44,6 @@ byte *image_region_dump(byte *buf, struct image_region *reg);
 
 /* sig-init.c */
 
-void bget_image_signature(struct fastbuf *fb, struct image_signature *sig);
-void bput_image_signature(struct fastbuf *fb, struct image_signature *sig);
 int compute_image_signature(struct image_thread *thread, struct image_signature *sig, struct image *image);
 
 /* sig-cmp.c */

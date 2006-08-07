@@ -52,7 +52,7 @@ get_image_obj_thumb(struct image_obj_info *ioi, struct odes *o, struct mempool *
     count++;
   byte buf[count * MAX_ATTR_SIZE], *b = buf;
   for (; a; a = a->same)
-    b += base224_decode(buf, a->val, strlen(a->val));
+    b += base224_decode(b, a->val, strlen(a->val));
   ASSERT(b != buf);
   ioi->thumb_data = mp_alloc(pool, ioi->thumb_size = b - buf);
   memcpy(ioi->thumb_data, buf, ioi->thumb_size);
@@ -89,20 +89,20 @@ void
 put_image_obj_signature(struct odes *o, struct image_signature *sig)
 {
   /* signatures should be short enough to fit one attribute */
-  ASSERT(MAX_ATTR_SIZE > BASE224_ENC_LENGTH(sizeof(struct image_vector) + 4 + sig->len * sizeof(struct image_region)));
-  byte buf[MAX_ATTR_SIZE], *b = buf;
-  memcpy(b, &sig->vec, sizeof(struct image_vector));
-  b += sizeof(struct image_vector);
-  *b++ = sig->len;
-  *b++ = sig->df;
-  *(u16 *)b++ = sig->dh;
-  for (uns i = 0; i < sig->len; i++)
-    {
-      memcpy(b, sig->reg + i, sizeof(struct image_region));
-      b += sizeof(struct image_region);
-    }
-  uns len = b - buf;
-  byte b224[MAX_ATTR_SIZE];
-  b224[base224_encode(b224, buf, len)] = 0;
-  obj_set_attr(o, 'H', b224);
+  byte buf[MAX_ATTR_SIZE];
+  uns size = image_signature_size(sig->len);
+  ASSERT(MAX_ATTR_SIZE > BASE224_ENC_LENGTH(size));
+  buf[base224_encode(buf, (byte *)sig, size)] = 0;
+  obj_set_attr(o, 'H', buf);
+}
+
+uns
+get_image_obj_signature(struct image_signature *sig, struct odes *o)
+{
+  byte *a = obj_find_aval(o, 'H');
+  if (!a)
+    return 0;
+  UNUSED uns size = base224_decode((byte *)sig, a, strlen(a));
+  ASSERT(size == image_signature_size(sig->len));
+  return 1;
 }

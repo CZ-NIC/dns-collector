@@ -19,22 +19,6 @@
 
 static double image_sig_inertia_scale[3] = { 3, 1, 0.3 };
 
-void
-bget_image_signature(struct fastbuf *fb, struct image_signature *sig)
-{
-  breadb(fb, &sig->vec, sizeof(sig->vec));
-  sig->len = bgetc(fb);
-  breadb(fb, sig->reg, sig->len * sizeof(*sig->reg));
-}
-
-void
-bput_image_signature(struct fastbuf *fb, struct image_signature *sig)
-{
-  bwrite(fb, &sig->vec, sizeof(sig->vec));
-  bputc(fb, sig->len);
-  bwrite(fb, sig->reg, sig->len * sizeof(*sig->reg));
-}
-
 struct block {
   u32 l, u, v;		/* average Luv coefficients */
   u32 lh, hl, hh;	/* energies in Daubechies wavelet bands */
