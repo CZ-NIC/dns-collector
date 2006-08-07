@@ -6,7 +6,7 @@
  *	This software may be freely distributed and used according to the terms
  */
 
-#define LOCAL_DEBUG
+#undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
 #include "lib/base224.h"
@@ -75,9 +75,8 @@ read_image_obj_thumb(struct image_obj_info *ioi, struct fastbuf *fb, struct imag
   if (!io->background_color.color_space)
     io->background_color = color_white;
   struct image *img;
-  if (!(img = image_io_read_data(io, 0)))
+  if (!(img = image_io_read_data(io, 1)))
     goto error;
-  ASSERT(img->cols == ioi->thumb_cols && img->rows == ioi->thumb_rows);
   DBG("Decompressed thumbnail: size=%ux%u", img->cols, img->rows);
   return img;
 error:

@@ -18,7 +18,7 @@
  *        for aspect ratio threshold near one
  */
 
-#define LOCAL_DEBUG
+#undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
 #include "lib/mempool.h"
@@ -30,7 +30,7 @@
 #include <fcntl.h>
 
 static uns image_dup_ratio_threshold = 140;
-static uns image_dup_error_threshold = 600;
+static uns image_dup_error_threshold = 800;
 static uns image_dup_tab_limit = 8;
 
 static inline byte *
@@ -54,7 +54,16 @@ pixels_average(byte *dest, byte *src1, byte *src2)
   dest[2] = ((uns)src1[2] + (uns)src2[2]) >> 1;
 }
 
-int
+uns
+image_dup_estimate_size(uns cols, uns rows)
+{
+  uns tab_cols, tab_rows;
+  for (tab_cols = 0; (uns)(2 << tab_cols) < cols && tab_cols < image_dup_tab_limit; tab_cols++);
+  for (tab_rows = 0; (uns)(2 << tab_rows) < rows && tab_rows < image_dup_tab_limit; tab_rows++);
+  return sizeof(struct image) + cols * rows * 3 + sizeof(struct image_dup) + (12 << (tab_cols + tab_rows)) + 64;
+}
+
+uns
 image_dup_init(struct image_thread *thread, struct image_dup *dup, struct image *img, struct mempool *pool)
 {
   DBG("image_dup_init()");
@@ -300,7 +309,7 @@ same_size_compare(struct image_dup *dup1, struct image_dup *dup2, uns trans)
   return err <= image_dup_error_threshold;
 }
 
-int
+uns
 image_dup_compare(struct image_dup *dup1, struct image_dup *dup2, uns flags)
 {
   DBG("image_dup_compare()");
@@ -348,6 +357,8 @@ image_dup_compare(struct image_dup *dup1, struct image_dup *dup2, uns flags)
 		    result |= 1 << t;
 		    if (!(flags & IMAGE_DUP_WANT_ALL))
 		      return result;
+		    else
+		      break;
 		  }
 	      }
 	  }
@@ -373,6 +384,8 @@ image_dup_compare(struct image_dup *dup1, struct image_dup *dup2, uns flags)
 		    result |= 1 << t;
 		    if (!(flags & IMAGE_DUP_WANT_ALL))
 		      return result;
+		    else
+		      break;
 		  }
 	      }
 	  }
