@@ -276,6 +276,7 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
 	      image_destroy(img);
 	      return 0;
 	    }
+	  image_destroy(rdi->image);
 	  rdi->image = img;
 	}
 
@@ -298,6 +299,7 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
 	      image_destroy(img);
 	      return 0;
 	    }
+	  image_destroy(rdi->image);
 	  rdi->image = img;
 	}
 
