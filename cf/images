@@ -1,0 +1,21 @@
+# Configuration of the image library (included by cf/sherlock)
+
+######## General parameters #####################################################
+
+Images {
+}
+
+######## Image signatures #######################################################
+
+ImageSig {
+
+MinWidth	16
+MinHeight	16
+
+}
+
+######## Duplicates finder ######################################################
+
+ImageDup {
+}
+

@@ -150,6 +150,7 @@ compute_k_means(struct block *blocks, uns blocks_count, struct region *regions, 
 int
 compute_image_signature(struct image_thread *thread, struct image_signature *sig, struct image *image)
 {
+  bzero(sig, sizeof(*sig));
   uns cols = image->cols;
   uns rows = image->rows;
 
@@ -262,6 +263,9 @@ compute_image_signature(struct image_thread *thread, struct image_signature *sig
   sig->vec.f[3] = lh_sum / blocks_count;
   sig->vec.f[4] = hl_sum / blocks_count;
   sig->vec.f[5] = hh_sum / blocks_count;
+
+  if (cols < image_sig_min_width || rows < image_sig_min_height)
+    return 1;
 
   /* Quantize blocks to image regions */
   struct region regions[IMAGE_REG_MAX];

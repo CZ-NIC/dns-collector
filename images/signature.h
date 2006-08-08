@@ -1,6 +1,9 @@
 #ifndef _IMAGES_SIGNATURE_H
 #define _IMAGES_SIGNATURE_H
 
+/* Configuration */
+extern uns image_sig_min_width, image_sig_min_height;
+
 #define IMAGE_VEC_F	6
 #define IMAGE_REG_F	IMAGE_VEC_F
 #define IMAGE_REG_H	3
