@@ -60,9 +60,11 @@ image_io_reset(struct image_io *io)
   image_io_read_cancel(io);
   image_io_image_destroy(io);
   struct mempool *pool = io->internal_pool;
+  struct image_thread *thread = io->thread;
   mp_flush(pool);
   bzero(io, sizeof(*io));
   io->internal_pool = pool;
+  io->thread = thread;
 }
 
 int
