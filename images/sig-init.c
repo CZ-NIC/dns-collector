@@ -154,7 +154,7 @@ compute_image_signature(struct image_thread *thread, struct image_signature *sig
   uns rows = image->rows;
 
   /* FIXME: deal with smaller images */
-  if (cols < 4 || cols < 4)
+  if (cols < 4 || rows < 4)
     {
       image_thread_err_format(thread, IMAGE_ERR_INVALID_DIMENSIONS, "Image too small... %ux%u", cols, rows);
       return 0;
@@ -324,22 +324,31 @@ compute_image_signature(struct image_thread *thread, struct image_signature *sig
 
   /* Compute average differences */
   u64 df = 0, dh = 0;
-  uns cnt = 0;
-  for (uns i = 0; i < sig->len; i++)
-    for (uns j = i + 1; j < sig->len; j++)
-      {
-	uns d = 0;
-	for (uns k = 0; k < IMAGE_REG_F; k++)
-	  d += dist(sig->reg[i].f[k], sig->reg[j].f[k]);
-	df += sqrt(d);
-	d = 0;
-	for (uns k = 0; k < IMAGE_REG_H; k++)
-	  d += dist(sig->reg[i].h[k], sig->reg[j].h[k]);
-	dh += sqrt(d);
-	cnt++;
-      }
-  sig->df = df / cnt;
-  sig->dh = dh / cnt;
+  
+  if (sig->len < 2)
+    {
+      sig->df = 1;
+      sig->dh = 1;
+    }
+  else
+    {
+      uns cnt = 0;
+      for (uns i = 0; i < sig->len; i++)
+        for (uns j = i + 1; j < sig->len; j++)
+          {
+	    uns d = 0;
+	    for (uns k = 0; k < IMAGE_REG_F; k++)
+	      d += dist(sig->reg[i].f[k], sig->reg[j].f[k]);
+	    df += sqrt(d);
+	    d = 0;
+	    for (uns k = 0; k < IMAGE_REG_H; k++)
+	      d += dist(sig->reg[i].h[k], sig->reg[j].h[k]);
+	    dh += sqrt(d);
+	    cnt++;
+          }
+      sig->df = CLAMP(df / cnt, 1, 255);
+      sig->dh = CLAMP(dh / cnt, 1, 65535);
+    }
   DBG("Average regions difs: df=%u dh=%u", sig->df, sig->dh);
 
   /* Compute normalized weights */

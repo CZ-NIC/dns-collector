@@ -284,7 +284,7 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
         {
 	  DBG("Aplying background");
 	  uns flags = rdi->image->flags & ~IMAGE_ALPHA;
-	  if (!(rdi->need_transformations = (flags & io->flags) & (IMAGE_NEW_FLAGS & ~IMAGE_PIXELS_ALIGNED)))
+	  if (!(rdi->need_transformations = (flags ^ io->flags) & (IMAGE_NEW_FLAGS & ~IMAGE_PIXELS_ALIGNED)))
 	    flags = io->flags;
 	  struct image *img = image_new(io->thread, io->cols, io->rows, flags, rdi->need_transformations ? NULL : io->pool);
 	  if (unlikely(!img))
