@@ -22,8 +22,22 @@ struct image_dup {
 #define IMAGE_DUP_SCALE		0x100
 #define IMAGE_DUP_WANT_ALL	0x200
 
+/* dup-init.c */
+
 uns image_dup_init(struct image_thread *thread, struct image_dup *dup, struct image *image, struct mempool *pool);
-uns image_dup_compare(struct image_dup *dup1, struct image_dup *dup2, uns flags);
 uns image_dup_estimate_size(uns cols, uns rows);
+
+/* dup-cmp.c */
+
+uns image_dup_compare(struct image_dup *dup1, struct image_dup *dup2, uns flags);
+
+/* internals */
+
+static inline byte *
+image_dup_block(struct image_dup *dup, uns tab_col, uns tab_row)
+{
+  return dup->tab_pixels + (dup->tab_row_size << tab_row) + (3 << (tab_row + tab_col));
+}
+
 
 #endif

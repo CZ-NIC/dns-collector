@@ -4,7 +4,7 @@ DIRS+=images
 
 PROGS+=$(addprefix $(o)/images/,image-tool image-dup-test image-sim-test)
 
-LIBIMAGES_MODS=image scale color alpha io-main dup-cmp sig-dump sig-init sig-cmp object
+LIBIMAGES_MODS=image scale color alpha io-main dup-init dup-cmp sig-dump sig-init sig-cmp object
 
 LIBIMAGES_LIBS=-lm
 

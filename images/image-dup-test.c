@@ -12,7 +12,8 @@
 #include "lib/fastbuf.h"
 #include "images/images.h"
 #include "images/color.h"
-#include "images/dup-cmp.h"
+#include "images/duplicates.h"
+
 #include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
