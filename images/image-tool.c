@@ -8,10 +8,11 @@
  */
 
 #include "lib/lib.h"
-#include "lib/getopt.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
 #include "images/color.h"
+
+#include <getopt.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -35,10 +36,9 @@ Usage: image-tool [options] infile [outfile]\n\
   exit(1);
 }
 
-static char *shortopts = "qf:F:s:b:c:Q:g:" CF_SHORT_OPTS;
+static char *shortopts = "qf:F:s:b:c:Q:g:";
 static struct option longopts[] =
 {
-  CF_LONG_OPTS
   { "quiet",		0, 0, 'q' },
   { "input-format",	0, 0, 'f' },
   { "output-format",	0, 0, 'F' },
@@ -69,7 +69,7 @@ main(int argc, char **argv)
 {
   log_init(argv[0]);
   int opt;
-  while ((opt = cf_getopt(argc, argv, shortopts, longopts, NULL)) >= 0)
+  while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) >= 0)
     switch (opt)
       {
 	case 'q':
@@ -176,6 +176,8 @@ main(int argc, char **argv)
           }
       if (background_color.color_space)
 	io.background_color = background_color;
+      else if (!io.background_color.color_space)
+	io.background_color = color_white;
       if (channels_format)
         io.flags = io.flags & ~IMAGE_PIXEL_FORMAT | channels_format;
       if (!(io.flags & IMAGE_ALPHA))

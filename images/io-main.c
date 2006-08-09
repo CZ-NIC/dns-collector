@@ -99,7 +99,9 @@ image_io_read_header(struct image_io *io)
       break;
 
     case IMAGE_FORMAT_UNDEFINED:
-      // FIXME: auto-detect
+#if defined (CONFIG_IMAGES_LIBMAGICK)
+      return libmagick_read_header(io);
+#endif
       break;
 
     default:
@@ -141,6 +143,14 @@ image_io_read_data(struct image_io *io, int ref)
 #if defined(CONFIG_IMAGES_LIBUNGIF) || defined(CONFIG_IMAGES_LIBGIF)
       result = libungif_read_data(io);
 #elif defined(CONFIG_IMAGES_LIBMAGICK)
+      result = libmagick_read_data(io);
+#else
+      ASSERT(0);
+#endif
+      break;
+
+    case IMAGE_FORMAT_UNDEFINED:
+#if defined(CONFIG_IMAGES_LIBMAGICK)
       result = libmagick_read_data(io);
 #else
       ASSERT(0);
@@ -201,7 +211,7 @@ image_io_write(struct image_io *io)
     default:
       break;
   }
-  image_thread_err(io->thread, IMAGE_ERR_INVALID_FILE_FORMAT, "Image format not supported.");
+  image_thread_err(io->thread, IMAGE_ERR_INVALID_FILE_FORMAT, "Output format not supported.");
   return 0;
 }
 
@@ -263,8 +273,10 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
       if (io->cols != rdi->image->cols || io->rows != rdi->image->rows)
         {
 	  DBG("Scaling image");
-	  rdi->need_transformations = ((io->flags ^ rdi->image->flags) & IMAGE_NEW_FLAGS);
-	  struct image *img = image_new(io->thread, io->cols, io->rows, rdi->image->flags, rdi->need_transformations ? NULL : io->pool);
+	  uns flags = rdi->image->flags;
+	  if (!(rdi->need_transformations = ((io->flags ^ rdi->image->flags) & (IMAGE_NEW_FLAGS & ~IMAGE_PIXELS_ALIGNED))))
+	    flags = io->flags;
+	  struct image *img = image_new(io->thread, io->cols, io->rows, flags, rdi->need_transformations ? NULL : io->pool);
 	  if (unlikely(!img))
 	    {
 	      image_destroy(rdi->image);
@@ -302,6 +314,8 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
 	  image_destroy(rdi->image);
 	  rdi->image = img;
 	}
+
+      // FIXME: support for various color spaces
 
       ASSERT(!rdi->need_transformations);
     }
