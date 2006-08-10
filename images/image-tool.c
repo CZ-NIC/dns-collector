@@ -73,7 +73,7 @@ parse_color(struct color *color, byte *s)
 {
   if (strlen(s) != 6)
     usage();
-  s = 0;
+  errno = 0;
   char *end;
   long int v = strtol(s, &end, 16);
   if (errno || *end || v < 0)
