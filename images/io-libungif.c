@@ -34,7 +34,8 @@ libungif_read_cancel(struct image_io *io)
 {
   DBG("libungif_read_cancel()");
 
-  DGifCloseFile(io->read_data);
+  struct libungif_read_data *rd = io->read_data;
+  DGifCloseFile(rd->gif);
 }
 
 int

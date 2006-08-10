@@ -162,7 +162,7 @@ enum image_io_flags {
   IMAGE_IO_USE_BACKGROUND = 0x40000,	/* [  I  ] - merge transparent pixels with background_color */
 };
 
-void image_io_init(struct image_thread *it, struct image_io *io);
+int image_io_init(struct image_thread *it, struct image_io *io);
 void image_io_cleanup(struct image_io *io);
 void image_io_reset(struct image_io *io);
 

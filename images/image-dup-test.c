@@ -114,7 +114,8 @@ main(int argc, char **argv)
 
   struct image *img1, *img2;
 
-  image_io_init(&it, &io);
+  if (!image_io_init(&it, &io))
+    die("Cannot initialize image I/O (%s)", it.err_msg);
   MSG("Reading %s", file_name_1);
   io.fastbuf = bopen(file_name_1, O_RDONLY, 1 << 18);
   io.format = format_1 ? : image_file_name_to_format(file_name_1);

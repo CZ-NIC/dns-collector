@@ -26,20 +26,38 @@
 #define BYTE_TO_QUANTUM(x) ((uns)(x) << QUANTUM_SCALE)
 #define OPACITY_MAX ((1 << QuantumDepth) - 1)
 
+static uns libmagick_counter;
+
 struct magick_read_data {
   ExceptionInfo exception;
   ImageInfo *info;
   Image *image;
 };
 
-static inline void
+int
+libmagick_init(struct image_io *io UNUSED)
+{
+  // FIXME: lock
+  if (!libmagick_counter++)
+    InitializeMagick(NULL);
+  return 1;
+}
+
+void
+libmagick_cleanup(struct image_io *io UNUSED)
+{
+  // FIXME: lock
+  if (!--libmagick_counter)
+    DestroyMagick();
+}
+
+static void
 libmagick_destroy_read_data(struct magick_read_data *rd)
 {
   if (rd->image)
     DestroyImage(rd->image);
   DestroyImageInfo(rd->info);
   DestroyExceptionInfo(&rd->exception);
-  DestroyMagick();
 }
 
 static void
@@ -48,8 +66,6 @@ libmagick_read_cancel(struct image_io *io)
   DBG("libmagick_read_cancel()");
 
   struct magick_read_data *rd = io->read_data;
-
-  DestroyImage(rd->image);
   libmagick_destroy_read_data(rd);
 }
 
@@ -70,10 +86,9 @@ libmagick_read_header(struct image_io *io)
   breadb(io->fastbuf, buf, buf_size);
 
   /* Allocate read structure */
-  struct magick_read_data *rd = io->read_data = mp_alloc(io->internal_pool, sizeof(*rd));
+  struct magick_read_data *rd = io->read_data = mp_alloc_zero(io->internal_pool, sizeof(*rd));
 
   /* Initialize GraphicsMagick */
-  InitializeMagick(NULL);
   GetExceptionInfo(&rd->exception);
   rd->info = CloneImageInfo(NULL);
   rd->info->subrange = 1;
@@ -98,12 +113,14 @@ libmagick_read_header(struct image_io *io)
   switch (rd->image->colorspace)
     {
       case GRAYColorspace:
-        io->flags = COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA;
+        io->flags = COLOR_SPACE_GRAYSCALE;
         break;
       default:
-        io->flags = COLOR_SPACE_RGB | IMAGE_ALPHA;
+        io->flags = COLOR_SPACE_RGB;
         break;
     }
+  if (rd->image->matte)
+    io->flags |= IMAGE_ALPHA;
   io->number_of_colors = rd->image->colors;
   if (rd->image->storage_class == PseudoClass && rd->image->compression != JPEGCompression)
     io->flags |= IMAGE_IO_HAS_PALETTE;
@@ -241,7 +258,6 @@ libmagick_write(struct image_io *io)
   int result = 0;
   ExceptionInfo exception;
   ImageInfo *info;
-  InitializeMagick(NULL);
   GetExceptionInfo(&exception);
   info = CloneImageInfo(NULL);
 
@@ -390,6 +406,5 @@ err2:
 err:
   DestroyImageInfo(info);
   DestroyExceptionInfo(&exception);
-  DestroyMagick();
   return result;
 }

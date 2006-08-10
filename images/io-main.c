@@ -14,13 +14,47 @@
 #include "images/io-main.h"
 #include <string.h>
 
-void
+int
 image_io_init(struct image_thread *it, struct image_io *io)
 {
   DBG("image_io_init()");
   bzero(io, sizeof(*io));
   io->thread = it;
+#ifdef CONFIG_IMAGES_LIBJPEG
+  if (!libjpeg_init(io))
+    goto libjpeg_failed;
+#endif
+#ifdef CONFIG_IMAGES_LIBPNG
+  if (!libpng_init(io))
+    goto libpng_failed;
+#endif
+#ifdef CONFIG_IMAGES_LIBUNGIF
+  if (!libungif_init(io))
+    goto libungif_failed;
+#endif
+#ifdef CONFIG_IMAGES_LIBMAGICK
+  if (!libmagick_init(io))
+    goto libmagick_failed;
+#endif
   io->internal_pool = mp_new(1024);
+  return 1;
+#ifdef CONFIG_IMAGES_LIBMAGICK
+  libmagick_cleanup(io);
+libmagick_failed:
+#endif
+#ifdef CONFIG_IMAGES_LIBUNGIF
+  libungif_cleanup(io);
+libungif_failed:
+#endif
+#ifdef CONFIG_IMAGES_LIBPNG
+  libpng_cleanup(io);
+libpng_failed:  
+#endif
+#ifdef CONFIG_IMAGES_LIBJPEG
+  libjpeg_cleanup(io);
+libjpeg_failed:
+#endif
+  return 0;
 }
 
 static inline void
@@ -50,6 +84,18 @@ image_io_cleanup(struct image_io *io)
   DBG("image_io_cleanup()");
   image_io_read_cancel(io);
   image_io_image_destroy(io);
+#ifdef CONFIG_IMAGES_LIBMAGICK
+  libmagick_cleanup(io);
+#endif
+#ifdef CONFIG_IMAGES_LIBUNGIF
+  libungif_cleanup(io);
+#endif
+#ifdef CONFIG_IMAGES_LIBPNG
+  libpng_cleanup(io);
+#endif
+#ifdef CONFIG_IMAGES_LIBJPEG
+  libjpeg_cleanup(io);
+#endif
   mp_delete(io->internal_pool);
 }
 

@@ -24,30 +24,34 @@ usage(void)
   fputs("\
 Usage: image-tool [options] infile [outfile]\n\
 \n\
--q --quiet          no progress messages\n\
--f --input-format   input image format (jpeg, gif, png)\n\
--F --output-format  output image format\n\
--s --size           force output dimensions (100x200)\n\
--b --fit-to-box     scale to fit the box (100x200)\n\
--c --colorspace     force output colorspace (Gray, GrayAlpha, RGB, RGBAlpha)\n\
--Q --jpeg-quality   JPEG quality (1..100)\n\
--g --background     background color (hexadecimal RRGGBB)\n\
+-q --quiet               no progress messages\n\
+-f --input-format        input image format (jpeg, gif, png)\n\
+-F --output-format       output image format\n\
+-s --size                force output dimensions (100x200)\n\
+-b --fit-to-box          scale to fit the box (100x200)\n\
+-c --colorspace          force output colorspace (Gray, GrayAlpha, RGB, RGBAlpha)\n\
+-Q --jpeg-quality        JPEG quality (1..100)\n\
+-g --background          background color (hexadecimal RRGGBB)\n\
+-G --default-background  background applied only if the image contains no background info (RRGGBB, default=FFFFFF)\n\
+-a --remove-alpha        remove alpha channel\n\
 ", stderr);
   exit(1);
 }
 
-static char *shortopts = "qf:F:s:b:c:Q:g:";
+static char *shortopts = "qf:F:s:b:c:Q:g:G:a";
 static struct option longopts[] =
 {
-  { "quiet",		0, 0, 'q' },
-  { "input-format",	0, 0, 'f' },
-  { "output-format",	0, 0, 'F' },
-  { "size",		0, 0, 's' },
-  { "fit-to-box",	0, 0, 'b' },
-  { "colorspace",	0, 0, 'c' },
-  { "jpeg-quality",	0, 0, 'Q' },
-  { "background",	0, 0, 'g' },
-  { NULL,		0, 0, 0 }
+  { "quiet",			0, 0, 'q' },
+  { "input-format",		0, 0, 'f' },
+  { "output-format",		0, 0, 'F' },
+  { "size",			0, 0, 's' },
+  { "fit-to-box",		0, 0, 'b' },
+  { "colorspace",		0, 0, 'c' },
+  { "jpeg-quality",		0, 0, 'Q' },
+  { "background",		0, 0, 'g' },
+  { "default-background",	0, 0, 'G' },
+  { "remove-alpha",		0, 0, 'a' },
+  { NULL,			0, 0, 0 }
 };
 							  
 static uns verbose = 1;
@@ -61,6 +65,21 @@ static uns fit_to_box;
 static uns channels_format;
 static uns jpeg_quality;
 static struct color background_color;
+static struct color default_background_color;
+static uns remove_alpha;
+
+static void
+parse_color(struct color *color, byte *s)
+{
+  if (strlen(s) != 6)
+    usage();
+  s = 0;
+  char *end;
+  long int v = strtol(s, &end, 16);
+  if (errno || *end || v < 0)
+    usage();
+  color_make_rgb(color, (v >> 16) & 255, (v >> 8) & 255, v & 255);
+}
 
 #define MSG(x...) do{ if (verbose) log(L_INFO, ##x); }while(0)
 
@@ -69,6 +88,7 @@ main(int argc, char **argv)
 {
   log_init(argv[0]);
   int opt;
+  default_background_color = color_white;
   while ((opt = getopt_long(argc, argv, shortopts, longopts, NULL)) >= 0)
     switch (opt)
       {
@@ -114,16 +134,13 @@ main(int argc, char **argv)
 	    usage();
 	  break;
 	case 'g':
-	  {
-	    if (strlen(optarg) != 6)
-	      usage();
-	    errno = 0;
-	    char *end;
-	    long int v = strtol(optarg, &end, 16);
-	    if (errno || *end || v < 0)
-	      usage();
-	    color_make_rgb(&background_color, (v >> 16) & 255, (v >> 8) & 255, v & 255);
-	  }
+	  parse_color(&background_color, optarg);
+	  break;
+	case 'G':
+	  parse_color(&default_background_color, optarg);
+	  break;
+	case 'a':
+	  remove_alpha++;
 	  break;
 	default:
 	  usage();
@@ -140,7 +157,8 @@ main(int argc, char **argv)
   struct image_thread it;
   struct image_io io;
   image_thread_init(&it);
-  image_io_init(&it, &io);
+  if (!image_io_init(&it, &io))
+    die("Cannot initialize image I/O (%s)", it.err_msg);
 
   MSG("Reading %s", input_file_name);
   io.fastbuf = bopen(input_file_name, O_RDONLY, 1 << 18);
@@ -177,7 +195,9 @@ main(int argc, char **argv)
       if (background_color.color_space)
 	io.background_color = background_color;
       else if (!io.background_color.color_space)
-	io.background_color = color_white;
+	io.background_color = default_background_color;
+      if (remove_alpha)
+	io.flags &= ~IMAGE_ALPHA;
       if (channels_format)
         io.flags = io.flags & ~IMAGE_PIXEL_FORMAT | channels_format;
       if (!(io.flags & IMAGE_ALPHA))
