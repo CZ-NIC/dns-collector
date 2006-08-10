@@ -24,7 +24,8 @@
 #define QUANTUM_SCALE (QuantumDepth - 8)
 #define QUANTUM_TO_BYTE(x) ((uns)(x) >> QUANTUM_SCALE)
 #define BYTE_TO_QUANTUM(x) ((uns)(x) << QUANTUM_SCALE)
-#define OPACITY_MAX ((1 << QuantumDepth) - 1)
+#define ALPHA_TO_BYTE(x) (255 - QUANTUM_TO_BYTE(x))
+#define BYTE_TO_ALPHA(x) (BYTE_TO_QUANTUM(255 - (x)))
 
 static uns libmagick_counter;
 
@@ -204,7 +205,7 @@ libmagick_read_data(struct image_io *io)
 #       define IMAGE_WALK_COL_STEP 2
 #       define IMAGE_WALK_DO_STEP do{ \
 	  walk_pos[0] = libmagick_pixel_to_gray(src); \
-	  walk_pos[1] = QUANTUM_TO_BYTE(src->opacity); \
+	  walk_pos[1] = ALPHA_TO_BYTE(src->opacity); \
 	  src++; }while(0)
 #       include "images/image-walk.h"
 	break;
@@ -233,7 +234,7 @@ libmagick_read_data(struct image_io *io)
 	  walk_pos[0] = QUANTUM_TO_BYTE(src->red); \
 	  walk_pos[1] = QUANTUM_TO_BYTE(src->green); \
 	  walk_pos[2] = QUANTUM_TO_BYTE(src->blue); \
-	  walk_pos[3] = QUANTUM_TO_BYTE(src->opacity); \
+	  walk_pos[3] = ALPHA_TO_BYTE(src->opacity); \
 	  src++; }while(0)
 #       include "images/image-walk.h"
 	break;
@@ -320,7 +321,7 @@ libmagick_write(struct image_io *io)
 	  dest->red = BYTE_TO_QUANTUM(walk_pos[0]); \
 	  dest->green = BYTE_TO_QUANTUM(walk_pos[0]); \
 	  dest->blue = BYTE_TO_QUANTUM(walk_pos[0]); \
-	  dest->opacity = OPACITY_MAX; \
+	  dest->opacity = 0; \
 	  dest++; }while(0)
 #       include "images/image-walk.h"
 	break;
@@ -335,7 +336,7 @@ libmagick_write(struct image_io *io)
 	  dest->red = BYTE_TO_QUANTUM(walk_pos[0]); \
 	  dest->green = BYTE_TO_QUANTUM(walk_pos[0]); \
 	  dest->blue = BYTE_TO_QUANTUM(walk_pos[0]); \
-	  dest->opacity = BYTE_TO_QUANTUM(walk_pos[1]); \
+	  dest->opacity = BYTE_TO_ALPHA(walk_pos[1]); \
 	  dest++; }while(0)
 #       include "images/image-walk.h"
 	break;
@@ -350,7 +351,7 @@ libmagick_write(struct image_io *io)
 	  dest->red = BYTE_TO_QUANTUM(walk_pos[0]); \
 	  dest->green = BYTE_TO_QUANTUM(walk_pos[1]); \
 	  dest->blue = BYTE_TO_QUANTUM(walk_pos[2]); \
-	  dest->opacity = OPACITY_MAX; \
+	  dest->opacity = 0; \
 	  dest++; }while(0)
 #       include "images/image-walk.h"
 	break;
@@ -365,7 +366,7 @@ libmagick_write(struct image_io *io)
 	  dest->red = BYTE_TO_QUANTUM(walk_pos[0]); \
 	  dest->green = BYTE_TO_QUANTUM(walk_pos[1]); \
 	  dest->blue = BYTE_TO_QUANTUM(walk_pos[2]); \
-	  dest->opacity = BYTE_TO_QUANTUM(walk_pos[3]); \
+	  dest->opacity = BYTE_TO_ALPHA(walk_pos[3]); \
 	  dest++; }while(0)
 #       include "images/image-walk.h"
 	break;
