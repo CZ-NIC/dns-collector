@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#define LOCAL_DEBUG
+#undef LOCAL_DEBUG
 
 #include "lib/lib.h"
 #include "lib/math.h"
