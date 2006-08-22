@@ -157,7 +157,7 @@ main(int argc, char **argv)
   dump_signature(&sig1);
   dump_signature(&sig2);
 
-  uns dist = image_signatures_dist(&sig1, &sig1);
+  uns dist = image_signatures_dist(&sig1, &sig2);
   MSG("dist=%.6f", dist / (double)(1 << IMAGE_SIG_DIST_SCALE));
   
   image_destroy(img1);

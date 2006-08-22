@@ -30,7 +30,7 @@ image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2
 
   /* Compute distance matrix */
   for (uns i = 0; i < cnt1; i++)
-    for (uns j = i + 1; j < cnt2; j++)
+    for (uns j = 0; j < cnt2; j++)
       {
 	uns d = 0;
 	for (uns k = 0; k < IMAGE_REG_F; k++)
