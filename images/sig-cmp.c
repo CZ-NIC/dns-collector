@@ -107,5 +107,5 @@ image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2
   DBG("measure=%.4f", measure / (double)(1 << (3 + 3 + 8 + 16)));
 #endif
 
-  return measure;
+  return (1 << (3 + 3 + 8 + 16)) - measure;
 }
