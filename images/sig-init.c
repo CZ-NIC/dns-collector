@@ -12,6 +12,7 @@
 #include "sherlock/sherlock.h"
 #include "lib/math.h"
 #include "lib/fastbuf.h"
+#include "images/math.h"
 #include "images/images.h"
 #include "images/color.h"
 #include "images/signature.h"
@@ -283,9 +284,9 @@ compute_image_signature(struct image_thread *thread UNUSED, struct image_signatu
 	    }
 
 	  /* Extract energies in LH, HL and HH bands */
-	  block->lh = CLAMP((int)(sqrt(t[8] * t[8] + t[9] * t[9] + t[12] * t[12] + t[13] * t[13]) / 16), 0, 255);
-	  block->hl = CLAMP((int)(sqrt(t[2] * t[2] + t[3] * t[3] + t[6] * t[6] + t[7] * t[7]) / 16), 0, 255);
-	  block->hh = CLAMP((int)(sqrt(t[10] * t[10] + t[11] * t[11] + t[14] * t[14] + t[15] * t[15]) / 16), 0, 255);
+	  block->lh = fast_sqrt_u16(isqr(t[8]) + isqr(t[9]) + isqr(t[12]) + isqr(t[13]));
+	  block->hl = fast_sqrt_u16(isqr(t[2]) + isqr(t[3]) + isqr(t[6]) + isqr(t[7]));
+	  block->hh = fast_sqrt_u16(isqr(t[10]) + isqr(t[11]) + isqr(t[14]) + isqr(t[15]));
         }
     }
 

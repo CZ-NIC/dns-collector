@@ -11,6 +11,7 @@
 
 #include "lib/lib.h"
 #include "lib/math.h"
+#include "images/math.h"
 #include "images/images.h"
 #include "images/signature.h"
 #include <stdio.h>
@@ -57,8 +58,8 @@ image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2
 	  f = MIN(f, mf[i][j]);
 	  h = MIN(h, mh[i][j]);
 	}
-      lf[i] = (df * 0x10000) / (df + (int)sqrt(f));
-      lh[i] = (dh * 0x10000) / (dh + (int)sqrt(h));
+      lf[i] = (df * 0x10000) / (df + fast_sqrt_u32(f));
+      lh[i] = (dh * 0x10000) / (dh + fast_sqrt_u32(h));
       lfs += lf[i] * (6 * reg1[i].wa + 2 * reg1[i].wb);
       lhs += lh[i] * reg1[i].wa;
     }
@@ -70,8 +71,8 @@ image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2
 	  f = MIN(f, mf[j][i]);
 	  h = MIN(h, mh[j][i]);
 	}
-      lf[i + cnt1] = (df * 0x10000) / (df + (int)sqrt(f));
-      lh[i + cnt1] = (dh * 0x10000) / (dh + (int)sqrt(h));
+      lf[i + cnt1] = (df * 0x10000) / (df + fast_sqrt_u32(f));
+      lh[i + cnt1] = (dh * 0x10000) / (dh + fast_sqrt_u32(h));
       lfs += lf[i] * (6 * reg2[i].wa + 2 * reg2[i].wb);
       lhs += lh[i] * reg2[i].wa;
     }
