@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#undef LOCAL_DEBUG
+#define LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
 #include "lib/math.h"
@@ -20,6 +20,7 @@
 static double image_sig_inertia_scale[3] = { 3, 1, 0.3 };
 
 struct block {
+  u32 area;		/* block area in pixels (usually 16) */
   u32 l, u, v;		/* average Luv coefficients */
   u32 lh, hl, hh;	/* energies in Daubechies wavelet bands */
   u32 x, y;		/* block position */
@@ -42,6 +43,24 @@ dist(uns a, uns b)
   int d = a - b;
   return d * d;
 }
+
+#ifdef LOCAL_DEBUG
+static void
+dump_segmentation(struct region *regions, uns regions_count, uns cols, uns rows)
+{
+  uns size = (cols + 1) * rows;
+  byte buf[size];
+  bzero(buf, size);
+  for (uns i = 0; i < regions_count; i++)
+    {
+      byte c = (i < 10) ? '0' + i : 'A' - 10 + i;
+      for (struct block *b = regions[i].blocks; b; b = b->next)
+        buf[b->x + b->y * (cols + 1)] = c;
+    }
+  for (uns i = 0; i < rows; i++)
+    log(L_DEBUG, "%s", &buf[i * (cols + 1)]);
+}
+#endif
 
 /* FIXME: SLOW! */
 static uns
@@ -84,14 +103,14 @@ compute_k_means(struct block *blocks, uns blocks_count, struct region *regions, 
     }
 
   /* Convergation cycle */
-  for (uns conv_i = 4; ; conv_i--)
+  for (uns conv_i = 8; ; conv_i--)
     {
       for (r = regions; r != regions_end; r++)
         {
           r->sum_l = r->sum_u = r->sum_v = r->sum_lh = r->sum_hl = r->sum_hh = r->count = 0;
 	  r->blocks = NULL;
 	}
-      
+
       /* Find nearest regions and accumulate averages */
       for (b = blocks; b != blocks_end; b++)
         {
@@ -134,7 +153,7 @@ compute_k_means(struct block *blocks, uns blocks_count, struct region *regions, 
 	    r->hl = r->sum_hl / r->count;
 	    r->hh = r->sum_hh / r->count;
 	  }
-      
+
       if (!conv_i)
 	break; // FIXME: convergation criteria
     }
@@ -148,97 +167,127 @@ compute_k_means(struct block *blocks, uns blocks_count, struct region *regions, 
 }
 
 int
-compute_image_signature(struct image_thread *thread, struct image_signature *sig, struct image *image)
+compute_image_signature(struct image_thread *thread UNUSED, struct image_signature *sig, struct image *image)
 {
   bzero(sig, sizeof(*sig));
+  ASSERT((image->flags & IMAGE_PIXEL_FORMAT) == COLOR_SPACE_RGB);
   uns cols = image->cols;
   uns rows = image->rows;
+  uns row_size = image->row_size;
 
-  /* FIXME: deal with smaller images */
-  if (cols < 4 || rows < 4)
-    {
-      image_thread_err_format(thread, IMAGE_ERR_INVALID_DIMENSIONS, "Image too small... %ux%u", cols, rows);
-      return 0;
-    }
+  uns w = (cols + 3) >> 2;
+  uns h = (rows + 3) >> 2;
 
-  uns w = cols >> 2;
-  uns h = rows >> 2;
-  DBG("Computing signature for image %dx%d... %dx%d blocks", cols, rows, w, h);
+  DBG("Computing signature for image of %ux%u pixels (%ux%u blocks)", cols, rows, w, h);
+
   uns blocks_count = w * h;
-  struct block *blocks = xmalloc(blocks_count * sizeof(struct block)), *block = blocks; /* FIXME: use mempool */
+  struct block *blocks = xmalloc(blocks_count * sizeof(struct block)), *block = blocks;
 
-  /* Every block of 4x4 pixels (FIXME: deal with smaller blocks near the edges) */
-  byte *p = image->pixels;
-  for (uns block_y = 0; block_y < h; block_y++, p += 3 * ((cols & 3) + cols * 3))
-    for (uns block_x = 0; block_x < w; block_x++, p -= 3 * (4 * cols - 4), block++)
-      {
-	block->x = block_x;
-	block->y = block_y;
+  /* Every block of 4x4 pixels */
+  byte *row_start = image->pixels;
+  for (uns block_y = 0; block_y < h; block_y++, row_start += row_size * 4)
+    {
+      byte *p = row_start;
+      for (uns block_x = 0; block_x < w; block_x++, p += 12, block++)
+        {
+          int t[16], s[16], *tp = t;
+	  block->x = block_x;
+	  block->y = block_y;
 
-        int t[16], s[16], *tp = t;
-
-	/* Convert pixels to Luv color space and compute average coefficients
-	 * FIXME:
-	 * - could be MUCH faster with precomputed tables and integer arithmetic...
-	 *   I will propably use interpolation in 3-dim array */
-	uns l_sum = 0;
-	uns u_sum = 0;
-	uns v_sum = 0;
-	for (uns y = 0; y < 4; y++, p += 3 * (cols - 4))
-	  for (uns x = 0; x < 4; x++, p += 3)
+	  /* Convert pixels to Luv color space and compute average coefficients */
+	  uns l_sum = 0;
+	  uns u_sum = 0;
+	  uns v_sum = 0;
+	  byte *p2 = p;
+	  if ((!(cols & 3) || block_x < w - 1) && (!(rows & 3) || block_y < h - 1))
 	    {
-	      byte luv[3];
-	      srgb_to_luv_pixel(luv, p);
-	      l_sum += *tp++ = luv[0];
-	      u_sum += luv[1];
-	      v_sum += luv[2];
+	      for (uns y = 0; y < 4; y++, p2 += row_size - 12)
+	        for (uns x = 0; x < 4; x++, p2 += 3)
+	          {
+	            byte luv[3];
+	            srgb_to_luv_pixel(luv, p2);
+	            l_sum += *tp++ = luv[0];
+	            u_sum += luv[1];
+	            v_sum += luv[2];
+	          }
+	      block->area = 16;
+	      block->l = (l_sum >> 4);
+	      block->u = (u_sum >> 4);
+	      block->v = (v_sum >> 4);
+	    }
+	  /* Incomplete square near the edge */
+	  else
+	    {
+	      uns x, y;
+	      uns square_cols = (block_x < w - 1) ? 4 : cols & 3;
+	      uns square_rows = (block_y < h - 1) ? 4 : rows & 3;
+	      for (y = 0; y < square_rows; y++, p2 += row_size)
+	        {
+		  byte *p3 = p2;
+	          for (x = 0; x < square_cols; x++, p3 += 3)
+	            {
+	              byte luv[3];
+	              srgb_to_luv_pixel(luv, p3);
+	              l_sum += *tp++ = luv[0];
+	              u_sum += luv[1];
+	              v_sum += luv[2];
+		    }
+		  for (; x < 4; x++)
+		    {
+		      *tp = tp[-square_cols];
+		      tp++;
+		    }
+	        }
+	      for (; y < 4; y++)
+	        for (x = 0; x < 4; x++)
+	          {
+	            *tp = tp[-square_rows * 4];
+		    tp++;
+		  }
+	      block->area = square_cols * square_rows;
+	      uns div = 0x10000 / block->area;
+	      block->l = (l_sum * div) >> 16;
+	      block->u = (u_sum * div) >> 16;
+	      block->v = (v_sum * div) >> 16;
 	    }
 
-	block->l = (l_sum >> 4);
-	block->u = (u_sum >> 4);
-	block->v = (v_sum >> 4);
+	  /* Apply Daubechies wavelet transformation */
 
-	/* Apply Daubechies wavelet transformation
-	 * FIXME:
-	 * - MMX/SSE instructions or tables could be faster
-	 * - maybe it would be better to compute Luv and wavelet separately because of processor cache or MMX/SSE
-	 * - eliminate slow square roots
-	 * - what about Haar transformation? */
+#         define DAUB_0	31651	/* (1 + sqrt 3) / (4 * sqrt 2) * 0x10000 */
+#         define DAUB_1	54822	/* (3 + sqrt 3) / (4 * sqrt 2) * 0x10000 */
+#         define DAUB_2	14689	/* (3 - sqrt 3) / (4 * sqrt 2) * 0x10000 */
+#         define DAUB_3	-8481	/* (1 - sqrt 3) / (4 * sqrt 2) * 0x10000 */
 
-#define DAUB_0	31651 /* (1 + sqrt 3) / (4 * sqrt 2) */
-#define DAUB_1	54822 /* (3 + sqrt 3) / (4 * sqrt 2) */
-#define DAUB_2	14689 /* (3 - sqrt 3) / (4 * sqrt 2) */
-#define DAUB_3	-8481 /* (1 - sqrt 3) / (4 * sqrt 2) */
+	  /* ... to the rows */
+	  uns i;
+          for (i = 0; i < 16; i += 4)
+            {
+	      s[i + 0] = (DAUB_0 * t[i + 2] + DAUB_1 * t[i + 3] + DAUB_2 * t[i + 0] + DAUB_3 * t[i + 1]) / 0x10000;
+	      s[i + 1] = (DAUB_0 * t[i + 0] + DAUB_1 * t[i + 1] + DAUB_2 * t[i + 2] + DAUB_3 * t[i + 3]) / 0x10000;
+	      s[i + 2] = (DAUB_3 * t[i + 2] - DAUB_2 * t[i + 3] + DAUB_1 * t[i + 0] - DAUB_0 * t[i + 1]) / 0x10000;
+	      s[i + 3] = (DAUB_3 * t[i + 0] - DAUB_2 * t[i + 1] + DAUB_1 * t[i + 2] - DAUB_0 * t[i + 3]) / 0x10000;
+	    }
 
-	/* ... to the rows */
-	uns i;
-        for (i = 0; i < 16; i += 4)
-          {
-	    s[i + 0] = (DAUB_0 * t[i + 2] + DAUB_1 * t[i + 3] + DAUB_2 * t[i + 0] + DAUB_3 * t[i + 1]) / 0x10000;
-	    s[i + 1] = (DAUB_0 * t[i + 0] + DAUB_1 * t[i + 1] + DAUB_2 * t[i + 2] + DAUB_3 * t[i + 3]) / 0x10000;
-	    s[i + 2] = (DAUB_3 * t[i + 2] - DAUB_2 * t[i + 3] + DAUB_1 * t[i + 0] - DAUB_0 * t[i + 1]) / 0x10000;
-	    s[i + 3] = (DAUB_3 * t[i + 0] - DAUB_2 * t[i + 1] + DAUB_1 * t[i + 2] - DAUB_0 * t[i + 3]) / 0x10000;
-	  }
+	  /* ... and to the columns... skip LL band */
+	  for (i = 0; i < 2; i++)
+	    {
+	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x1000;
+	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x1000;
+	    }
+	  for (; i < 4; i++)
+	    {
+	      t[i + 0] = (DAUB_0 * s[i + 8] + DAUB_1 * s[i +12] + DAUB_2 * s[i + 0] + DAUB_3 * s[i + 4]) / 0x1000;
+	      t[i + 4] = (DAUB_0 * s[i + 0] + DAUB_1 * s[i + 4] + DAUB_2 * s[i + 8] + DAUB_3 * s[i +12]) / 0x1000;
+	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x1000;
+	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x1000;
+	    }
 
-	/* ... and to the columns... skip LL band */
-	for (i = 0; i < 2; i++)
-	  {
-	    t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x1000;
-	    t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x1000;
-	  }
-	for (; i < 4; i++)
-	  {
-	    t[i + 0] = (DAUB_0 * s[i + 8] + DAUB_1 * s[i +12] + DAUB_2 * s[i + 0] + DAUB_3 * s[i + 4]) / 0x1000;
-	    t[i + 4] = (DAUB_0 * s[i + 0] + DAUB_1 * s[i + 4] + DAUB_2 * s[i + 8] + DAUB_3 * s[i +12]) / 0x1000;
-	    t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x1000;
-	    t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x1000;
-	  }
-
-	/* Extract energies in LH, HL and HH bands */
-	block->lh = CLAMP((int)(sqrt(t[8] * t[8] + t[9] * t[9] + t[12] * t[12] + t[13] * t[13]) / 16), 0, 255);
-	block->hl = CLAMP((int)(sqrt(t[2] * t[2] + t[3] * t[3] + t[6] * t[6] + t[7] * t[7]) / 16), 0, 255);
-	block->hh = CLAMP((int)(sqrt(t[10] * t[10] + t[11] * t[11] + t[14] * t[14] + t[15] * t[15]) / 16), 0, 255);
-      }
+	  /* Extract energies in LH, HL and HH bands */
+	  block->lh = CLAMP((int)(sqrt(t[8] * t[8] + t[9] * t[9] + t[12] * t[12] + t[13] * t[13]) / 16), 0, 255);
+	  block->hl = CLAMP((int)(sqrt(t[2] * t[2] + t[3] * t[3] + t[6] * t[6] + t[7] * t[7]) / 16), 0, 255);
+	  block->hh = CLAMP((int)(sqrt(t[10] * t[10] + t[11] * t[11] + t[14] * t[14] + t[15] * t[15]) / 16), 0, 255);
+        }
+    }
 
   /* FIXME: simple average is for testing pusposes only */
   uns l_sum = 0;
@@ -280,7 +329,7 @@ compute_image_signature(struct image_thread *thread, struct image_signature *sig
       struct region *r = regions + i;
       DBG("Processing region %u: count=%u", i, r->count);
       ASSERT(r->count);
-      
+
       /* Copy texture properties */
       sig->reg[i].f[0] = r->l;
       sig->reg[i].f[1] = r->u;
@@ -328,7 +377,7 @@ compute_image_signature(struct image_thread *thread, struct image_signature *sig
 
   /* Compute average differences */
   u64 df = 0, dh = 0;
-  
+
   if (sig->len < 2)
     {
       sig->df = 1;
@@ -365,7 +414,7 @@ compute_image_signature(struct image_thread *thread, struct image_signature *sig
     }
   sig->reg[0].wa = wa;
   sig->reg[0].wb = wb;
-  
+
   /* Dump regions features */
 #ifdef LOCAL_DEBUG
   for (uns i = 0; i < sig->len; i++)
@@ -374,7 +423,8 @@ compute_image_signature(struct image_thread *thread, struct image_signature *sig
       image_region_dump(buf, sig->reg + i);
       DBG("region %u: features=%s", i, buf);
     }
-#endif      
+  dump_segmentation(regions, sig->len, w, h);
+#endif
 
   xfree(blocks);
 
