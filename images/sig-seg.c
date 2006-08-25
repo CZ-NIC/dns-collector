@@ -301,18 +301,16 @@ postquant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_reg
   return regions_end - regions;
 }
 
-uns
-image_sig_segmentation(struct image_sig_block *blocks, uns blocks_count, struct image_sig_region *regions)
+void
+image_sig_segmentation(struct image_sig_data *data)
 {
-  uns regions_count;
-  regions_count = prequant(blocks, blocks_count, regions);
+  data->regions_count = prequant(data->blocks, data->blocks_count, data->regions);
 #ifdef LOCAL_DEBUG
-  dump_segmentation(regions, regions_count);
+  dump_segmentation(data->regions, data->regions_count);
 #endif
-  regions_count = postquant(blocks, blocks_count, regions, regions_count);
+  data->regions_count = postquant(data->blocks, data->blocks_count, data->regions, data->regions_count);
 #ifdef LOCAL_DEBUG
-  dump_segmentation(regions, regions_count);
+  dump_segmentation(data->regions, data->regions_count);
 #endif
-  return regions_count;
 }
 

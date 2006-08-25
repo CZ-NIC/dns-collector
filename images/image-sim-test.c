@@ -25,17 +25,19 @@ static void NONRET
 usage(void)
 {
   fputs("\
-Usage: image-sim-test [options] image1 image2 \n\
+Usage: image-sim-test [options] image1 [image2] \n\
 \n\
 -q --quiet           no progress messages\n\
 -f --format-1        image1 format (jpeg, gif, png)\n\
 -F --format-2        image2 format\n\
 -g --background      background color (hexadecimal RRGGBB)\n\
+-s --segmentation-1  writes image1 segmentation to given file\n\
+-S --segmentation-2  writes image2 segmentation to given file\n\
 ", stderr);
   exit(1);
 }
 
-static char *shortopts = "qf:F:g:t:" CF_SHORT_OPTS;
+static char *shortopts = "qf:F:g:t:s:S:" CF_SHORT_OPTS;
 static struct option longopts[] =
 {
   CF_LONG_OPTS
@@ -43,17 +45,22 @@ static struct option longopts[] =
   { "format-1",		0, 0, 'f' },
   { "format-2",		0, 0, 'F' },
   { "background",	0, 0, 'g' },
+  { "segmentation-1",	0, 0, 's' },
+  { "segmentation-2",	0, 0, 'S' },
   { NULL,		0, 0, 0 }
 };
-							  
+
 static uns verbose = 1;
 static byte *file_name_1;
 static byte *file_name_2;
 static enum image_format format_1;
 static enum image_format format_2;
 static struct color background_color;
+static byte *segmentation_name_1;
+static byte *segmentation_name_2;
 
 #define MSG(x...) do{ if (verbose) log(L_INFO, ##x); }while(0)
+#define TRY(x) do{ if (!(x)) die("Error: %s", it.err_msg); }while(0)
 
 static void
 dump_signature(struct image_signature *sig)
@@ -66,6 +73,56 @@ dump_signature(struct image_signature *sig)
       image_region_dump(buf, sig->reg + i);
       MSG("region %u: %s", i, buf);
     }
+}
+
+static struct image_thread it;
+static struct image_io io;
+
+static void
+write_segmentation(struct image_sig_data *data, byte *fn)
+{
+  MSG("Writing segmentation to %s", fn);
+  
+  struct fastbuf *fb = bopen(fn, O_WRONLY | O_CREAT | O_TRUNC, 4096);
+  struct image *img;
+  TRY(img = image_new(&it, data->image->cols, data->image->rows, COLOR_SPACE_RGB, NULL));
+  image_clear(&it, img);
+
+  for (uns i = 0; i < data->regions_count; i++)
+    {
+      byte c[3];
+      // FIXME: convert from Luv to RGB
+      c[0] = data->regions[i].a[0];
+      c[1] = data->regions[i].a[1];
+      c[2] = data->regions[i].a[2];
+      for (struct image_sig_block *block = data->regions[i].blocks; block; block = block->next)
+        {
+	  uns x1 = block->x * 4;
+	  uns y1 = block->y * 4;
+	  uns x2 = MIN(x1 + 4, img->cols);
+	  uns y2 = MIN(y1 + 4, img->rows);
+	  byte *p = img->pixels + x1 * 3 + y1 * img->row_size;
+	  for (uns y = y1; y < y2; y++, p += img->row_size)
+	    {
+	      byte *p2 = p;
+	      for (uns x = x1; x < x2; x++, p2 += 3)
+	        {
+	          p2[0] = c[0];
+	          p2[1] = c[1];
+	          p2[2] = c[2];
+	        }
+	    }
+        }
+    }
+
+  io.fastbuf = fb;
+  io.image = img;
+  io.format = image_file_name_to_format(fn); 
+  TRY(image_io_write(&io));
+  image_io_reset(&io);
+
+  image_destroy(img);
+  bclose(fb);
 }
 
 int
@@ -99,69 +156,113 @@ main(int argc, char **argv)
 	    color_make_rgb(&background_color, (v >> 16) & 255, (v >> 8) & 255, v & 255);
 	  }
 	  break;
+	case 's':
+	  segmentation_name_1 = optarg;
+	  break;
+	case 'S':
+	  segmentation_name_2 = optarg;
+	  break;
 	default:
 	  usage();
       }
 
-  if (argc != optind + 2)
+  if (argc != optind + 2 && argc != optind + 1)
     usage();
   file_name_1 = argv[optind++];
-  file_name_2 = argv[optind];
-  
-#define TRY(x) do{ if (!(x)) die("Error: %s", it.err_msg); }while(0)
+  if (argc > optind)
+    file_name_2 = argv[optind++];
+
   MSG("Initializing image library");
   srandom(time(NULL) ^ getpid());
   srgb_to_luv_init();
-  struct image_thread it;
-  struct image_io io;
   image_thread_init(&it);
 
   struct image *img1, *img2;
 
   if (!image_io_init(&it, &io))
     die("Cannot initialize image I/O (%s)", it.err_msg);
-  MSG("Reading %s", file_name_1);
-  io.fastbuf = bopen(file_name_1, O_RDONLY, 1 << 18);
-  io.format = format_1 ? : image_file_name_to_format(file_name_1);
-  TRY(image_io_read_header(&io));
-  io.flags = COLOR_SPACE_RGB | IMAGE_IO_USE_BACKGROUND;
-  if (background_color.color_space)
-    io.background_color = background_color;
-  else if (!io.background_color.color_space)
-    io.background_color = color_black;
-  TRY(image_io_read_data(&io, 1));
-  bclose(io.fastbuf);
-  img1 = io.image;
-  MSG("Image size=%ux%u", img1->cols, img1->rows);
-  
-  image_io_reset(&io);
-  MSG("Reading %s", file_name_2);
-  io.fastbuf = bopen(file_name_2, O_RDONLY, 1 << 18);
-  io.format = format_2 ? : image_file_name_to_format(file_name_2);
-  TRY(image_io_read_header(&io));
-  io.flags = COLOR_SPACE_RGB | IMAGE_IO_USE_BACKGROUND;
-  if (background_color.color_space)
-    io.background_color = background_color;
-  else if (!io.background_color.color_space)
-    io.background_color = color_black;
-  TRY(image_io_read_data(&io, 1));
-  bclose(io.fastbuf);
-  img2 = io.image;
-  image_io_cleanup(&io);
-  MSG("Image size=%ux%u", img2->cols, img2->rows);
 
-  MSG("Computing signatures");
+  if (file_name_1)
+    {
+      MSG("Reading %s", file_name_1);
+      io.fastbuf = bopen(file_name_1, O_RDONLY, 1 << 18);
+      io.format = format_1 ? : image_file_name_to_format(file_name_1);
+      TRY(image_io_read_header(&io));
+      io.flags = COLOR_SPACE_RGB | IMAGE_IO_USE_BACKGROUND;
+      if (background_color.color_space)
+        io.background_color = background_color;
+      else if (!io.background_color.color_space)
+        io.background_color = color_black;
+      TRY(image_io_read_data(&io, 1));
+      bclose(io.fastbuf);
+      img1 = io.image;
+      MSG("Image size=%ux%u", img1->cols, img1->rows);
+      image_io_reset(&io);
+    }
+  else
+    img1 = NULL;
+
+  if (file_name_2)
+    {
+      MSG("Reading %s", file_name_2);
+      io.fastbuf = bopen(file_name_2, O_RDONLY, 1 << 18);
+      io.format = format_2 ? : image_file_name_to_format(file_name_2);
+      TRY(image_io_read_header(&io));
+      io.flags = COLOR_SPACE_RGB | IMAGE_IO_USE_BACKGROUND;
+      if (background_color.color_space)
+        io.background_color = background_color;
+      else if (!io.background_color.color_space)
+        io.background_color = color_black;
+      TRY(image_io_read_data(&io, 1));
+      bclose(io.fastbuf);
+      img2 = io.image;
+      MSG("Image size=%ux%u", img2->cols, img2->rows);
+      image_io_reset(&io);
+    }
+  else
+    img2 = NULL;
+
   struct image_signature sig1, sig2;
-  TRY(compute_image_signature(&it, &sig1, img1));
-  TRY(compute_image_signature(&it, &sig2, img2));
-  dump_signature(&sig1);
-  dump_signature(&sig2);
+  MSG("Computing signatures");
+  if (img1)
+    {
+      struct image_sig_data data;
+      TRY(image_sig_init(&it, &data, img1));
+      image_sig_preprocess(&data);
+      if (data.valid)
+	image_sig_segmentation(&data);
+      if (segmentation_name_1)
+	write_segmentation(&data, segmentation_name_1);
+      image_sig_finish(&data, &sig1);
+      image_sig_cleanup(&data);
+      dump_signature(&sig1);
+    }
+  if (img2)
+    {
+      struct image_sig_data data;
+      TRY(image_sig_init(&it, &data, img2));
+      image_sig_preprocess(&data);
+      if (data.valid)
+	image_sig_segmentation(&data);
+      if (segmentation_name_2)
+	write_segmentation(&data, segmentation_name_2);
+      image_sig_finish(&data, &sig2);
+      image_sig_cleanup(&data);
+      dump_signature(&sig2);
+    }
 
-  uns dist = image_signatures_dist(&sig1, &sig2);
-  MSG("dist=%.6f", dist / (double)(1 << IMAGE_SIG_DIST_SCALE));
-  
-  image_destroy(img1);
-  image_destroy(img2);
+  if (img1 && img2)
+    {
+      uns dist = image_signatures_dist(&sig1, &sig2);
+      MSG("dist=%.6f", dist / (double)(1 << IMAGE_SIG_DIST_SCALE));
+    }
+
+  if (img1)
+    image_destroy(img1);
+  if (img2)
+    image_destroy(img2);
+
+  image_io_cleanup(&io);
   image_thread_cleanup(&it);
   MSG("Done.");
   return 0;
