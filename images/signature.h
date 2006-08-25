@@ -47,6 +47,27 @@ image_signature_size(uns len)
 byte *image_vector_dump(byte *buf, struct image_vector *vec);
 byte *image_region_dump(byte *buf, struct image_region *reg);
 
+struct image_sig_block {
+  struct image_sig_block *next;
+  u32 area;             /* block area in pixels (usually 16) */
+  u32 v[IMAGE_VEC_F];
+  u32 x, y;             /* block position */
+};
+
+struct image_sig_region {
+  struct image_sig_block *blocks;
+  u32 count;
+  u32 a[IMAGE_VEC_F];
+  u32 b[IMAGE_VEC_F];
+  u32 c[IMAGE_VEC_F];
+  u64 e;
+  u64 w_sum;
+};
+
+/* sig-seg.c */
+
+uns image_sig_segmentation(struct image_sig_block *blocks, uns blocks_count, struct image_sig_region *regions);
+
 /* sig-init.c */
 
 int compute_image_signature(struct image_thread *thread, struct image_signature *sig, struct image *image);
