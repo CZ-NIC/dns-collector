@@ -10,16 +10,13 @@
 #undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
-#include "lib/math.h"
-#include "lib/fastbuf.h"
 #include "lib/conf.h"
 #include "lib/heap.h"
-#include "images/math.h"
 #include "images/images.h"
-#include "images/color.h"
 #include "images/signature.h"
+#include "images/math.h"
 
-#include <alloca.h>
+#include <string.h>
 
 #ifdef LOCAL_DEBUG
 static void
@@ -101,7 +98,7 @@ static uns
 prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_region *regions)
 {
   DBG("Starting pre-quantization");
-  
+
   uns regions_count, heap_count, axis, cov;
   struct image_sig_block *blocks_end = blocks + blocks_count, *block, *block2;
   struct image_sig_region *heap[IMAGE_REG_MAX + 1], *region, *region2;
@@ -119,7 +116,7 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
       regions_count <= DARY_LEN(image_sig_prequant_thresholds) && heap_count)
     {
       region = heap[1];
-      DBG("Step... regions_count=%u heap_count=%u region->count=%u, region->e=%u", 
+      DBG("Step... regions_count=%u heap_count=%u region->count=%u, region->e=%u",
 	  regions_count, heap_count, region->count, (uns)region->e);
       if (region->count < 2 ||
 	  region->e < image_sig_prequant_thresholds[regions_count - 1] * region->count)
@@ -204,7 +201,7 @@ static uns
 postquant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_region *regions, uns regions_count)
 {
   DBG("Starting post-quantization");
-  
+
   struct image_sig_block *blocks_end = blocks + blocks_count, *block;
   struct image_sig_region *regions_end = regions + regions_count, *region;
   uns error = 0, last_error;
@@ -225,7 +222,7 @@ postquant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_reg
   for (uns step = 0; step < image_sig_postquant_max_steps; step++)
     {
       DBG("Step...");
-      
+
       /* Clear regions */
       for (region = regions; region != regions_end; region++)
         {
@@ -300,7 +297,7 @@ postquant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_reg
     }
 
   DBG("Post-quantized to %u regions with average square error %u", regions_end - regions, error / blocks_count);
-  
+
   return regions_end - regions;
 }
 
@@ -309,13 +306,13 @@ image_sig_segmentation(struct image_sig_block *blocks, uns blocks_count, struct 
 {
   uns regions_count;
   regions_count = prequant(blocks, blocks_count, regions);
-#ifdef LOCAL_DEBUG  
+#ifdef LOCAL_DEBUG
   dump_segmentation(regions, regions_count);
-#endif  
+#endif
   regions_count = postquant(blocks, blocks_count, regions, regions_count);
-#ifdef LOCAL_DEBUG  
+#ifdef LOCAL_DEBUG
   dump_segmentation(regions, regions_count);
-#endif  
+#endif
   return regions_count;
 }
 
