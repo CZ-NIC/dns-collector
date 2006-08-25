@@ -118,7 +118,7 @@ image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool
   img->cols = cols;
   img->rows = rows;
   img->row_size = row_size;
-  img->image_size = bytes_64;
+  img->image_size = image_size_64;
   DBG("img=%p flags=0x%x pixel_size=%u row_size=%u image_size=%u pixels=%p",
     img, img->flags, img->pixel_size, img->row_size, img->image_size, img->pixels);
   return img;
