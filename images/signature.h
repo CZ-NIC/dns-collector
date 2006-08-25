@@ -3,11 +3,13 @@
 
 /* Configuration */
 extern uns image_sig_min_width, image_sig_min_height;
+extern uns *image_sig_prequant_thresholds;
+extern uns image_sig_postquant_min_steps, image_sig_postquant_max_steps, image_sig_postquant_threshold;
 
 #define IMAGE_VEC_F	6
 #define IMAGE_REG_F	IMAGE_VEC_F
 #define IMAGE_REG_H	3
-#define IMAGE_REG_MAX	8
+#define IMAGE_REG_MAX	16
 
 /* K-dimensional feature vector (6 bytes) */
 struct image_vector {

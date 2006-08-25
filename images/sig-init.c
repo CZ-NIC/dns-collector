@@ -7,35 +7,37 @@
  *	of the GNU Lesser General Public License.
  */
 
-#define LOCAL_DEBUG
+#undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
 #include "lib/math.h"
 #include "lib/fastbuf.h"
+#include "lib/conf.h"
+#include "lib/heap.h"
 #include "images/math.h"
 #include "images/images.h"
 #include "images/color.h"
 #include "images/signature.h"
+
 #include <alloca.h>
 
 static double image_sig_inertia_scale[3] = { 3, 1, 0.3 };
 
 struct block {
   u32 area;		/* block area in pixels (usually 16) */
-  u32 l, u, v;		/* average Luv coefficients */
-  u32 lh, hl, hh;	/* energies in Daubechies wavelet bands */
+  u32 v[IMAGE_VEC_F];
   u32 x, y;		/* block position */
   struct block *next;
 };
 
 struct region {
-  u32 l, u, v;
-  u32 lh, hl, hh;
-  u32 sum_l, sum_u, sum_v;
-  u32 sum_lh, sum_hl, sum_hh;
-  u32 count;
-  u64 w_sum;
   struct block *blocks;
+  u32 count;
+  u32 a[IMAGE_VEC_F];
+  u32 b[IMAGE_VEC_F];
+  u32 c[IMAGE_VEC_F];
+  u64 e;
+  u64 w_sum;
 };
 
 static inline uns
@@ -63,108 +65,277 @@ dump_segmentation(struct region *regions, uns regions_count, uns cols, uns rows)
 }
 #endif
 
-/* FIXME: SLOW! */
-static uns
-compute_k_means(struct block *blocks, uns blocks_count, struct region *regions, uns regions_count)
-{
-  ASSERT(regions_count <= blocks_count);
-  struct block *mean[IMAGE_REG_MAX], *b, *blocks_end = blocks + blocks_count;
-  struct region *r, *regions_end = regions + regions_count;
+/* Pre-quantization - recursively split groups of blocks with large error */
 
-  /* Select means_count random blocks as initial regions pivots */
-  if (regions_count <= blocks_count - regions_count)
+static inline void
+prequant_init_region(struct region *region)
+{
+  bzero(region, sizeof(*region));
+}
+
+static inline void
+prequant_add_block(struct region *region, struct block *block)
+{
+  block->next = region->blocks;
+  region->blocks = block;
+  region->count++;
+  for (uns i = 0; i < IMAGE_VEC_F; i++)
     {
-      for (b = blocks; b != blocks_end; b++)
-	b->next = NULL;
-      for (uns i = 0; i < regions_count; )
-        {
-          uns j = random_max(blocks_count);
-	  b = blocks + j;
-	  if (!b->next)
-	    b->next = mean[i++] = b;
-        }
+      region->b[i] += block->v[i];
+      region->c[i] += isqr(block->v[i]);
     }
+}
+
+static void
+prequant_finish_region(struct region *region)
+{
+  if (region->count < 2)
+    memcpy(region->c, region->a, sizeof(region->c));
   else
     {
-      uns j = blocks_count;
-      for (uns i = regions_count; i; j--)
-	if (random_max(j) <= i)
-	  mean[--i] = blocks + j - 1;
+      u64 a = 0;
+      region->e = 0;
+      for (uns i = 0; i < IMAGE_VEC_F; i++)
+        {
+	  region->e += region->c[i];
+	  a += (u64)region->b[i] * region->b[i];
+	}
+      region->e -= a / region->count;
     }
-  r = regions;
-  for (uns i = 0; i < regions_count; i++, r++)
+}
+
+static inline uns
+prequant_heap_cmp(struct region *a, struct region *b)
+{
+  return a->e > b->e;
+}
+
+#define ASORT_PREFIX(x) prequant_##x
+#define ASORT_KEY_TYPE u32
+#define ASORT_ELT(i) val[i]
+#define ASORT_EXTRA_ARGS , u32 *val
+#include "lib/arraysort.h"
+
+static uns
+prequant(struct block *blocks, uns blocks_count, struct region *regions)
+{
+  DBG("Starting pre-quantization");
+  
+  uns regions_count, heap_count, axis, cov;
+  struct block *blocks_end = blocks + blocks_count, *block, *block2;
+  struct region *heap[IMAGE_REG_MAX + 1], *region, *region2;
+
+  /* Initialize single region with all blocks */
+  regions_count = heap_count = 1;
+  heap[1] = regions;
+  prequant_init_region(regions);
+  for (block = blocks; block != blocks_end; block++)
+    prequant_add_block(regions, block);
+  prequant_finish_region(regions);
+
+  /* Main cycle */
+  while (regions_count < IMAGE_REG_MAX &&
+      regions_count <= DARY_LEN(image_sig_prequant_thresholds) && heap_count)
     {
-      b = mean[i];
-      r->l = b->l;
-      r->u = b->u;
-      r->v = b->v;
-      r->lh = b->lh;
-      r->hl = b->hl;
-      r->hh = b->hh;
+      region = heap[1];
+      DBG("Step... regions_count=%u heap_count=%u region->count=%u, region->e=%u", 
+	  regions_count, heap_count, region->count, (uns)region->e);
+      if (region->count < 2 ||
+	  region->e < image_sig_prequant_thresholds[regions_count - 1] * region->count)
+        {
+	  HEAP_DELMIN(struct region *, heap, heap_count, prequant_heap_cmp, HEAP_SWAP);
+	  continue;
+	}
+
+      /* Select axis to split - the one with maximum covariance */
+      axis = 0;
+      cov = region->count * region->c[0] - region->b[0];
+      for (uns i = 1; i < 6; i++)
+        {
+	  uns j = region->count * region->c[i] - region->b[i];
+	  if (j > cov)
+	    {
+	      axis = i;
+	      cov = j;
+	    }
+	}
+      DBG("Splitting axis %u with covariance %u", axis, cov / region->count);
+
+      /* Sort values on the split axis */
+      u32 val[region->count];
+      block = region->blocks;
+      for (uns i = 0; i < region->count; i++, block = block->next)
+	val[i] = block->v[axis];
+      prequant_sort(region->count, val);
+
+      /* Select split value - to minimize error */
+      uns b1 = 0, c1 = 0, b2 = region->b[axis], c2 = region->c[axis];
+      uns i = 0, j = region->count, best_v = 0;
+      u64 best_err = 0xffffffffffffffff;
+      while (i < region->count)
+        {
+	  u64 err = (u64)i * c1 - (u64)b1 * b1 + (u64)j * c2 - (u64)b2 * b2;
+	  if (err < best_err)
+	    {
+	      best_err = err;
+	      best_v = val[i];
+	    }
+	  uns sqr = isqr(val[i]);
+	  b1 += val[i];
+	  b2 -= val[i];
+	  c1 += sqr;
+	  c2 -= sqr;
+	  i++;
+	  j--;
+	}
+      uns split_val = best_v;
+      DBG("split_val=%u best_err=%Lu b[axis]=%u c[axis]=%u", split_val, (long long)best_err, region->b[axis], region->c[axis]);
+
+      /* Split region */
+      block = region->blocks;
+      region2 = regions + regions_count++;
+      prequant_init_region(region);
+      prequant_init_region(region2);
+      while (block)
+        {
+	  block2 = block->next;
+	  if (block->v[axis] < split_val)
+	    prequant_add_block(region, block);
+	  else
+	    prequant_add_block(region2, block);
+	  block = block2;
+	}
+      prequant_finish_region(region);
+      prequant_finish_region(region2);
+      HEAP_INCREASE(struct region *, heap, heap_count, prequant_heap_cmp, HEAP_SWAP, 1);
+      heap[++heap_count] = region2;
+      HEAP_INSERT(struct region *, heap, heap_count, prequant_heap_cmp, HEAP_SWAP);
+    }
+
+  DBG("Pre-quantized to %u regions", regions_count);
+
+  return regions_count;
+}
+
+/* Post-quantization - run a few K-mean iterations to improve pre-quantized regions */
+
+static uns
+postquant(struct block *blocks, uns blocks_count, struct region *regions, uns regions_count)
+{
+  DBG("Starting post-quantization");
+  
+  struct block *blocks_end = blocks + blocks_count, *block;
+  struct region *regions_end = regions + regions_count, *region;
+  uns error = 0, last_error;
+
+  /* Initialize regions and initial segmentation error */
+  for (region = regions; region != regions_end; )
+    {
+      uns inv = 0xffffffffU / region->count;
+      for (uns i = 0; i < IMAGE_VEC_F; i++)
+        {
+          region->a[i] = ((u64)region->b[i] * inv) >> 32;
+          error += region->c[i] - region->a[i] * region->b[i];
+        }
+      region++;
     }
 
   /* Convergation cycle */
-  for (uns conv_i = 8; ; conv_i--)
+  for (uns step = 0; step < image_sig_postquant_max_steps; step++)
     {
-      for (r = regions; r != regions_end; r++)
+      DBG("Step...");
+      
+      /* Clear regions */
+      for (region = regions; region != regions_end; region++)
         {
-          r->sum_l = r->sum_u = r->sum_v = r->sum_lh = r->sum_hl = r->sum_hh = r->count = 0;
-	  r->blocks = NULL;
+	  region->blocks = NULL;
+	  region->count = 0;
+	  bzero(region->b, sizeof(region->b));
+	  bzero(region->c, sizeof(region->c));
 	}
 
-      /* Find nearest regions and accumulate averages */
-      for (b = blocks; b != blocks_end; b++)
+      /* Assign each block to its nearest pivot and accumulate region variables */
+      for (block = blocks; block != blocks_end; block++)
         {
-	  uns best_d = ~0U;
-	  struct region *best_r = NULL;
-	  for (r = regions; r != regions_end; r++)
+	  struct region *best_region = NULL;
+	  uns best_dist = ~0U;
+	  for (region = regions; region != regions_end; region++)
 	    {
-	      uns d =
-		dist(r->l, b->l) +
-		dist(r->u, b->u) +
-		dist(r->v, b->v) +
-		dist(r->lh, b->lh) +
-		dist(r->hl, b->hl) +
-		dist(r->hh, b->hh);
-	      if (d < best_d)
+	      uns dist =
+		isqr(block->v[0] - region->a[0]) +
+		isqr(block->v[1] - region->a[1]) +
+		isqr(block->v[2] - region->a[2]) +
+		isqr(block->v[3] - region->a[3]) +
+		isqr(block->v[4] - region->a[4]) +
+		isqr(block->v[5] - region->a[5]);
+	      if (dist <= best_dist)
 	        {
-		  best_d = d;
-		  best_r = r;
+		  best_dist = dist;
+		  best_region = region;
 		}
 	    }
-	  best_r->sum_l += b->l;
-	  best_r->sum_u += b->u;
-	  best_r->sum_v += b->v;
-	  best_r->sum_lh += b->lh;
-	  best_r->sum_hl += b->hl;
-	  best_r->sum_hh += b->hh;
-	  best_r->count++;
-	  b->next = best_r->blocks;
-	  best_r->blocks = b;
+	  region = best_region;
+	  region->count++;
+	  block->next = region->blocks;
+	  region->blocks = block;
+	  for (uns i = 0; i < IMAGE_VEC_F; i++)
+	    {
+	      region->b[i] += block->v[i];
+	      region->c[i] += isqr(block->v[i]);
+	    }
 	}
 
-      /* Compute new averages */
-      for (r = regions; r != regions_end; r++)
-	if (r->count)
+      /* Finish regions, delete empty ones (should appear rarely), compute segmentation error */
+      last_error = error;
+      error = 0;
+      for (region = regions; region != regions_end; )
+	if (region->count)
           {
-	    r->l = r->sum_l / r->count;
-	    r->u = r->sum_u / r->count;
-	    r->v = r->sum_v / r->count;
-	    r->lh = r->sum_lh / r->count;
-	    r->hl = r->sum_hl / r->count;
-	    r->hh = r->sum_hh / r->count;
+	    uns inv = 0xffffffffU / region->count;
+	    for (uns i = 0; i < IMAGE_VEC_F; i++)
+	      {
+	        region->a[i] = ((u64)region->b[i] * inv) >> 32;
+	        error += region->c[i] - region->a[i] * region->b[i];
+	      }
+	    region++;
+	  }
+        else
+	  {
+	    regions_end--;
+	    *region = *regions_end;
 	  }
 
-      if (!conv_i)
-	break; // FIXME: convergation criteria
+      DBG("last_error=%u error=%u", last_error, error);
+
+      /* Convergation criteria */
+      if (step >= image_sig_postquant_min_steps)
+        {
+	  if (error > last_error)
+	    break;
+	  u64 dif = last_error - error;
+	  if (dif * image_sig_postquant_threshold < last_error * 100)
+	    break;
+	}
     }
 
-  /* Remove empty regions */
-  struct region *r2 = regions;
-  for (r = regions; r != regions_end; r++)
-    if (r->count)
-      *r2++ = *r;
-  return r2 - regions;
+  DBG("Post-quantized to %u regions with average square error %u", regions_end - regions, error / blocks_count);
+  
+  return regions_end - regions;
+}
+
+static inline uns
+segmentation(struct block *blocks, uns blocks_count, struct region *regions, uns width UNUSED, uns height UNUSED)
+{
+  uns regions_count;
+  regions_count = prequant(blocks, blocks_count, regions);
+#ifdef LOCAL_DEBUG  
+  dump_segmentation(regions, regions_count, width, height);
+#endif  
+  regions_count = postquant(blocks, blocks_count, regions, regions_count);
+#ifdef LOCAL_DEBUG  
+  dump_segmentation(regions, regions_count, width, height);
+#endif  
+  return regions_count;
 }
 
 int
@@ -212,16 +383,16 @@ compute_image_signature(struct image_thread *thread UNUSED, struct image_signatu
 	            v_sum += luv[2];
 	          }
 	      block->area = 16;
-	      block->l = (l_sum >> 4);
-	      block->u = (u_sum >> 4);
-	      block->v = (v_sum >> 4);
+	      block->v[0] = (l_sum >> 4);
+	      block->v[1] = (u_sum >> 4);
+	      block->v[2] = (v_sum >> 4);
 	    }
 	  /* Incomplete square near the edge */
 	  else
 	    {
 	      uns x, y;
-	      uns square_cols = (block_x < w - 1) ? 4 : cols & 3;
-	      uns square_rows = (block_y < h - 1) ? 4 : rows & 3;
+	      uns square_cols = (block_x < w - 1 || !(cols & 3)) ? 4 : cols & 3;
+	      uns square_rows = (block_y < h - 1 || !(rows & 3)) ? 4 : rows & 3;
 	      for (y = 0; y < square_rows; y++, p2 += row_size)
 	        {
 		  byte *p3 = p2;
@@ -247,9 +418,9 @@ compute_image_signature(struct image_thread *thread UNUSED, struct image_signatu
 		  }
 	      block->area = square_cols * square_rows;
 	      uns div = 0x10000 / block->area;
-	      block->l = (l_sum * div) >> 16;
-	      block->u = (u_sum * div) >> 16;
-	      block->v = (v_sum * div) >> 16;
+	      block->v[0] = (l_sum * div) >> 16;
+	      block->v[1] = (u_sum * div) >> 16;
+	      block->v[2] = (v_sum * div) >> 16;
 	    }
 
 	  /* Apply Daubechies wavelet transformation */
@@ -272,21 +443,21 @@ compute_image_signature(struct image_thread *thread UNUSED, struct image_signatu
 	  /* ... and to the columns... skip LL band */
 	  for (i = 0; i < 2; i++)
 	    {
-	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x1000;
-	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x1000;
+	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x2000;
+	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x2000;
 	    }
 	  for (; i < 4; i++)
 	    {
-	      t[i + 0] = (DAUB_0 * s[i + 8] + DAUB_1 * s[i +12] + DAUB_2 * s[i + 0] + DAUB_3 * s[i + 4]) / 0x1000;
-	      t[i + 4] = (DAUB_0 * s[i + 0] + DAUB_1 * s[i + 4] + DAUB_2 * s[i + 8] + DAUB_3 * s[i +12]) / 0x1000;
-	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x1000;
-	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x1000;
+	      t[i + 0] = (DAUB_0 * s[i + 8] + DAUB_1 * s[i +12] + DAUB_2 * s[i + 0] + DAUB_3 * s[i + 4]) / 0x2000;
+	      t[i + 4] = (DAUB_0 * s[i + 0] + DAUB_1 * s[i + 4] + DAUB_2 * s[i + 8] + DAUB_3 * s[i +12]) / 0x2000;
+	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x2000;
+	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x2000;
 	    }
 
 	  /* Extract energies in LH, HL and HH bands */
-	  block->lh = fast_sqrt_u16(isqr(t[8]) + isqr(t[9]) + isqr(t[12]) + isqr(t[13]));
-	  block->hl = fast_sqrt_u16(isqr(t[2]) + isqr(t[3]) + isqr(t[6]) + isqr(t[7]));
-	  block->hh = fast_sqrt_u16(isqr(t[10]) + isqr(t[11]) + isqr(t[14]) + isqr(t[15]));
+	  block->v[3] = fast_sqrt_u16(isqr(t[8]) + isqr(t[9]) + isqr(t[12]) + isqr(t[13]));
+	  block->v[4] = fast_sqrt_u16(isqr(t[2]) + isqr(t[3]) + isqr(t[6]) + isqr(t[7]));
+	  block->v[5] = fast_sqrt_u16(isqr(t[10]) + isqr(t[11]) + isqr(t[14]) + isqr(t[15]));
         }
     }
 
@@ -299,12 +470,12 @@ compute_image_signature(struct image_thread *thread UNUSED, struct image_signatu
   uns hh_sum = 0;
   for (uns i = 0; i < blocks_count; i++)
     {
-      l_sum += blocks[i].l;
-      u_sum += blocks[i].u;
-      v_sum += blocks[i].v;
-      lh_sum += blocks[i].lh;
-      hl_sum += blocks[i].hl;
-      hh_sum += blocks[i].hh;
+      l_sum += blocks[i].v[0];
+      u_sum += blocks[i].v[1];
+      v_sum += blocks[i].v[2];
+      lh_sum += blocks[i].v[3];
+      hl_sum += blocks[i].v[4];
+      hh_sum += blocks[i].v[5];
     }
 
   sig->vec.f[0] = l_sum / blocks_count;
@@ -315,11 +486,14 @@ compute_image_signature(struct image_thread *thread UNUSED, struct image_signatu
   sig->vec.f[5] = hh_sum / blocks_count;
 
   if (cols < image_sig_min_width || rows < image_sig_min_height)
-    return 1;
+    {
+      xfree(blocks);
+      return 1;
+    }
 
   /* Quantize blocks to image regions */
   struct region regions[IMAGE_REG_MAX];
-  sig->len = compute_k_means(blocks, blocks_count, regions, MIN(blocks_count, IMAGE_REG_MAX));
+  sig->len = segmentation(blocks, blocks_count, regions, w, h);
 
   /* For each region */
   u64 w_total = 0;
@@ -332,12 +506,12 @@ compute_image_signature(struct image_thread *thread UNUSED, struct image_signatu
       ASSERT(r->count);
 
       /* Copy texture properties */
-      sig->reg[i].f[0] = r->l;
-      sig->reg[i].f[1] = r->u;
-      sig->reg[i].f[2] = r->v;
-      sig->reg[i].f[3] = r->lh;
-      sig->reg[i].f[4] = r->hl;
-      sig->reg[i].f[5] = r->hh;
+      sig->reg[i].f[0] = r->a[0];
+      sig->reg[i].f[1] = r->a[1];
+      sig->reg[i].f[2] = r->a[2];
+      sig->reg[i].f[3] = r->a[3];
+      sig->reg[i].f[4] = r->a[4];
+      sig->reg[i].f[5] = r->a[5];
 
       /* Compute coordinates centroid and region weight */
       u64 x_avg = 0, y_avg = 0, w_sum = 0;
@@ -424,7 +598,6 @@ compute_image_signature(struct image_thread *thread UNUSED, struct image_signatu
       image_region_dump(buf, sig->reg + i);
       DBG("region %u: features=%s", i, buf);
     }
-  dump_segmentation(regions, sig->len, w, h);
 #endif
 
   xfree(blocks);

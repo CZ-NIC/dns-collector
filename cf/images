@@ -12,6 +12,11 @@ ImageSig {
 MinWidth	16
 MinHeight	16
 
+PreQuantThresholds	9 9 25 25 100 100 400 400 1000 1000 1000 1000 4000 10000 10000 10000
+PostQuantMinSteps	2
+PostQuantMaxSteps	10
+PostQuantThreshold	2
+
 }
 
 ######## Duplicates finder ######################################################
