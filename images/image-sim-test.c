@@ -91,10 +91,15 @@ write_segmentation(struct image_sig_data *data, byte *fn)
   for (uns i = 0; i < data->regions_count; i++)
     {
       byte c[3];
-      // FIXME: convert from Luv to RGB
-      c[0] = data->regions[i].a[0];
-      c[1] = data->regions[i].a[1];
-      c[2] = data->regions[i].a[2];
+      double luv[3], xyz[3], srgb[3];
+      luv[0] = data->regions[i].a[0] * (2 / 2.55);
+      luv[1] = ((int)data->regions[i].a[1] - 128) * (4 / 2.55);
+      luv[2] = ((int)data->regions[i].a[2] - 128) * (4 / 2.55);
+      luv_to_xyz_slow(xyz, luv);
+      xyz_to_srgb_slow(srgb, xyz);
+      c[0] = CLAMP(srgb[0] * 255, 0, 255); 
+      c[1] = CLAMP(srgb[1] * 255, 0, 255); 
+      c[2] = CLAMP(srgb[2] * 255, 0, 255); 
       for (struct image_sig_block *block = data->regions[i].blocks; block; block = block->next)
         {
 	  uns x1 = block->x * 4;

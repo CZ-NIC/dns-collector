@@ -55,7 +55,9 @@ void color_put_rgb(byte *dest, struct color *color);
 
 /* Exact slow conversion routines */
 void srgb_to_xyz_slow(double dest[3], double src[3]);
+void xyz_to_srgb_slow(double dest[3], double src[3]);
 void xyz_to_luv_slow(double dest[3], double src[3]);
+void luv_to_xyz_slow(double dest[3], double src[3]);
 
 /* Reference white */
 #define REF_WHITE_X 0.96422

@@ -66,7 +66,7 @@ image_sig_preprocess(struct image_sig_data *data)
 	          {
 	            byte luv[3];
 	            srgb_to_luv_pixel(luv, p2);
-	            l_sum += *tp++ = luv[0];
+	            l_sum += *tp++ = luv[0] / 2;
 	            u_sum += luv[1];
 	            v_sum += luv[2];
 	          }
@@ -91,7 +91,7 @@ image_sig_preprocess(struct image_sig_data *data)
 	            {
 	              byte luv[3];
 	              srgb_to_luv_pixel(luv, p3);
-	              l_sum += *tp++ = luv[0];
+	              l_sum += *tp++ = luv[0] / 2;
 	              u_sum += luv[1];
 	              v_sum += luv[2];
 		    }
@@ -137,15 +137,15 @@ image_sig_preprocess(struct image_sig_data *data)
 	  /* ... and to the columns... skip LL band */
 	  for (i = 0; i < 2; i++)
 	    {
-	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x2000;
-	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x2000;
+	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x4000;
+	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x4000;
 	    }
 	  for (; i < 4; i++)
 	    {
-	      t[i + 0] = (DAUB_0 * s[i + 8] + DAUB_1 * s[i +12] + DAUB_2 * s[i + 0] + DAUB_3 * s[i + 4]) / 0x2000;
-	      t[i + 4] = (DAUB_0 * s[i + 0] + DAUB_1 * s[i + 4] + DAUB_2 * s[i + 8] + DAUB_3 * s[i +12]) / 0x2000;
-	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x2000;
-	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x2000;
+	      t[i + 0] = (DAUB_0 * s[i + 8] + DAUB_1 * s[i +12] + DAUB_2 * s[i + 0] + DAUB_3 * s[i + 4]) / 0x4000;
+	      t[i + 4] = (DAUB_0 * s[i + 0] + DAUB_1 * s[i + 4] + DAUB_2 * s[i + 8] + DAUB_3 * s[i +12]) / 0x4000;
+	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x4000;
+	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x4000;
 	    }
 
 	  /* Extract energies in LH, HL and HH bands */
@@ -306,4 +306,5 @@ compute_image_signature(struct image_thread *thread, struct image_signature *sig
     image_sig_segmentation(&data);
   image_sig_finish(&data, sig);
   image_sig_cleanup(&data);
+  return 1;
 }

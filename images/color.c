@@ -84,6 +84,21 @@ srgb_to_xyz_slow(double xyz[3], double srgb[3])
   xyz[2] = SRGB_XYZ_ZR * a[0] + SRGB_XYZ_ZG * a[1] + SRGB_XYZ_ZB * a[2];
 }
 
+/* XYZ to sRGB */
+void
+xyz_to_srgb_slow(double srgb[3], double xyz[3])
+{
+  double a[3];
+  a[0] =  3.2406 * xyz[0] + -1.5372 * xyz[1] + -0.4986 * xyz[2];
+  a[1] = -0.9689 * xyz[0] +  1.8758 * xyz[1] +  0.0415 * xyz[2];
+  a[2] =  0.0557 * xyz[0] + -0.2040 * xyz[1] +  1.0570 * xyz[2];
+  for (uns i = 0; i < 3; i++)
+    if (a[i] > 0.0031308)
+      srgb[i] = 1.055 * pow(a[i], 1 / 2.4) - 0.055;
+    else
+      srgb[i] = 12.92 * a[i];
+}
+
 /* XYZ to CIE-Luv */
 void
 xyz_to_luv_slow(double luv[3], double xyz[3])
@@ -103,6 +118,23 @@ xyz_to_luv_slow(double luv[3], double xyz[3])
      luv[2] = luv[0] * (13 * (var_v - 9 * REF_WHITE_Y / (REF_WHITE_X + 15 * REF_WHITE_Y + 3 * REF_WHITE_Z)));
      /* intervals [0..100], [-134..220], [-140..122] */
    }
+}
+
+/* CIE-Luv to XYZ */
+void
+luv_to_xyz_slow(double xyz[3], double luv[3])
+{
+  double var_u = luv[1] / (13 * luv[0]) + (4 * REF_WHITE_X / (REF_WHITE_X + 15 * REF_WHITE_Y + 3 * REF_WHITE_Z));
+  double var_v = luv[2] / (13 * luv[0]) + (9 * REF_WHITE_Y / (REF_WHITE_X + 15 * REF_WHITE_Y + 3 * REF_WHITE_Z));
+  double var_y = (luv[0] + 16) / 116;
+  double pow_y = var_y * var_y * var_y;
+  if (pow_y > 0.008856)
+    var_y = pow_y;
+  else
+    var_y = (var_y - 16 / 116) / 7.787;
+  xyz[1] = var_y;
+  xyz[0] = -(9 * xyz[1] * var_u) / ((var_u - 4) * var_v - var_u * var_v);
+  xyz[2] = (9 * xyz[1] - 15 * var_v * xyz[1] - var_v * xyz[0]) / (3 * var_v);
 }
 
 
