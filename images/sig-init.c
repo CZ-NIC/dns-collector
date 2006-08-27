@@ -21,7 +21,7 @@
 #include <alloca.h>
 
 int
-image_sig_init(struct image_thread *thread UNUSED, struct image_sig_data *data, struct image *image)
+image_sig_init(struct image_thread *thread, struct image_sig_data *data, struct image *image)
 {
   ASSERT((image->flags & IMAGE_PIXEL_FORMAT) == COLOR_SPACE_RGB);
   data->image = image;
@@ -30,6 +30,11 @@ image_sig_init(struct image_thread *thread UNUSED, struct image_sig_data *data, 
   data->full_cols = image->cols >> 2;
   data->full_rows = image->rows >> 2;
   data->blocks_count = data->cols * data->rows;
+  if (data->blocks_count >= 0x10000)
+    {
+      image_thread_err(thread, IMAGE_ERR_INVALID_DIMENSIONS, "Image too large for implemented signature algorithm.");
+      return 0;
+    }
   data->blocks = xmalloc(data->blocks_count * sizeof(struct image_sig_block));
   data->area = image->cols * image->rows;
   DBG("Computing signature for image of %ux%u pixels (%ux%u blocks)",
@@ -66,7 +71,7 @@ image_sig_preprocess(struct image_sig_data *data)
 	          {
 	            byte luv[3];
 	            srgb_to_luv_pixel(luv, p2);
-	            l_sum += *tp++ = luv[0] / 2;
+	            l_sum += *tp++ = luv[0] / 4;
 	            u_sum += luv[1];
 	            v_sum += luv[2];
 	          }
@@ -91,7 +96,7 @@ image_sig_preprocess(struct image_sig_data *data)
 	            {
 	              byte luv[3];
 	              srgb_to_luv_pixel(luv, p3);
-	              l_sum += *tp++ = luv[0] / 2;
+	              l_sum += *tp++ = luv[0] / 4;
 	              u_sum += luv[1];
 	              v_sum += luv[2];
 		    }
@@ -137,15 +142,15 @@ image_sig_preprocess(struct image_sig_data *data)
 	  /* ... and to the columns... skip LL band */
 	  for (i = 0; i < 2; i++)
 	    {
-	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x4000;
-	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x4000;
+	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x10000;
+	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x10000;
 	    }
 	  for (; i < 4; i++)
 	    {
-	      t[i + 0] = (DAUB_0 * s[i + 8] + DAUB_1 * s[i +12] + DAUB_2 * s[i + 0] + DAUB_3 * s[i + 4]) / 0x4000;
-	      t[i + 4] = (DAUB_0 * s[i + 0] + DAUB_1 * s[i + 4] + DAUB_2 * s[i + 8] + DAUB_3 * s[i +12]) / 0x4000;
-	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x4000;
-	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x4000;
+	      t[i + 0] = (DAUB_0 * s[i + 8] + DAUB_1 * s[i +12] + DAUB_2 * s[i + 0] + DAUB_3 * s[i + 4]) / 0x10000;
+	      t[i + 4] = (DAUB_0 * s[i + 0] + DAUB_1 * s[i + 4] + DAUB_2 * s[i + 8] + DAUB_3 * s[i +12]) / 0x10000;
+	      t[i + 8] = (DAUB_3 * s[i + 8] - DAUB_2 * s[i +12] + DAUB_1 * s[i + 0] - DAUB_0 * s[i + 4]) / 0x10000;
+	      t[i +12] = (DAUB_3 * s[i + 0] - DAUB_2 * s[i + 4] + DAUB_1 * s[i + 8] - DAUB_0 * s[i +12]) / 0x10000;
 	    }
 
 	  /* Extract energies in LH, HL and HH bands */

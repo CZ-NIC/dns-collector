@@ -48,10 +48,10 @@ byte *image_vector_dump(byte *buf, struct image_vector *vec);
 byte *image_region_dump(byte *buf, struct image_region *reg);
 
 struct image_sig_block {
-  struct image_sig_block *next;
-  u32 area;             /* block area in pixels (usually 16) */
-  u32 v[IMAGE_VEC_F];
-  u32 x, y;             /* block position */
+  struct image_sig_block *next;		/* linked list */
+  u32 x, y;				/* block position */
+  byte area;				/* block area in pixels (usually 16) */
+  byte v[IMAGE_VEC_F];			/* feature vector */
 };
 
 struct image_sig_region {
@@ -97,41 +97,6 @@ void image_sig_segmentation(struct image_sig_data *data);
 #define IMAGE_SIG_DIST_SCALE (3 + 3 + 8 + 16)
 
 uns image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2);
-
-#if 0
-/* K-dimensional interval */
-struct image_bbox {
-  struct image_vector vec[2];
-};
-
-/* Similarity search tree... will be changed */
-struct image_tree {
-  uns count;			/* Number of images in the tree */
-  uns depth;			/* Tree depth */
-  struct image_bbox bbox;	/* Bounding box containing all the */
-  struct image_node *nodes;	/* Internal nodes */
-  struct image_leaf *leaves;	/* Leaves */
-};
-
-/* Internal node in the search tree */
-#define IMAGE_NODE_LEAF		0x80000000		/* Node contains pointer to leaves array */
-#define IMAGE_NODE_DIM		0xff			/* Split dimension */
-struct image_node {
-  u32 val;
-};
-
-/* Leaves in the search tree */
-#define IMAGE_LEAF_LAST		0x80000000		/* Last entry in the list */
-#define IMAGE_LEAF_BITS(i)	(31 / IMAGE_VEC_K)	/* Number of bits for relative position in i-th dimension */
-struct image_leaf {
-  u32 flags;		/* Relative position in bbox and last node flag */ 
-  oid_t oid;
-};
-
-#define stk_print_image_vector(v) ({ struct image_vector *_v = v; \
-    byte *_s = (byte *) alloca(IMAGE_VEC_K * 6), *_p = _s + sprintf(_s, "%d", _v->f[0]); \
-    for (uns _i = 1; _i < IMAGE_VEC_K; _i++) _p += sprintf(_p, " %d", _v->f[_i]); _s; })
-#endif
 
 #endif
 

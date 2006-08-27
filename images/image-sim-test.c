@@ -31,13 +31,13 @@ Usage: image-sim-test [options] image1 [image2] \n\
 -f --format-1        image1 format (jpeg, gif, png)\n\
 -F --format-2        image2 format\n\
 -g --background      background color (hexadecimal RRGGBB)\n\
--s --segmentation-1  writes image1 segmentation to given file\n\
--S --segmentation-2  writes image2 segmentation to given file\n\
+-r --segmentation-1  writes image1 segmentation to given file\n\
+-R --segmentation-2  writes image2 segmentation to given file\n\
 ", stderr);
   exit(1);
 }
 
-static char *shortopts = "qf:F:g:t:s:S:" CF_SHORT_OPTS;
+static char *shortopts = "qf:F:g:t:r:R:" CF_SHORT_OPTS;
 static struct option longopts[] =
 {
   CF_LONG_OPTS
@@ -45,8 +45,8 @@ static struct option longopts[] =
   { "format-1",		0, 0, 'f' },
   { "format-2",		0, 0, 'F' },
   { "background",	0, 0, 'g' },
-  { "segmentation-1",	0, 0, 's' },
-  { "segmentation-2",	0, 0, 'S' },
+  { "segmentation-1",	0, 0, 'r' },
+  { "segmentation-2",	0, 0, 'R' },
   { NULL,		0, 0, 0 }
 };
 
@@ -92,7 +92,7 @@ write_segmentation(struct image_sig_data *data, byte *fn)
     {
       byte c[3];
       double luv[3], xyz[3], srgb[3];
-      luv[0] = data->regions[i].a[0] * (2 / 2.55);
+      luv[0] = data->regions[i].a[0] * (4 / 2.55);
       luv[1] = ((int)data->regions[i].a[1] - 128) * (4 / 2.55);
       luv[2] = ((int)data->regions[i].a[2] - 128) * (4 / 2.55);
       luv_to_xyz_slow(xyz, luv);
@@ -161,10 +161,10 @@ main(int argc, char **argv)
 	    color_make_rgb(&background_color, (v >> 16) & 255, (v >> 8) & 255, v & 255);
 	  }
 	  break;
-	case 's':
+	case 'r':
 	  segmentation_name_1 = optarg;
 	  break;
-	case 'S':
+	case 'R':
 	  segmentation_name_2 = optarg;
 	  break;
 	default:
