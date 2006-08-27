@@ -24,8 +24,8 @@ image_sig_detect_textured(struct image_sig_data *data)
 {
   uns cols = data->cols;
   uns rows = data->rows;
-  uns cell_cols = MIN(cols, MAX_CELLS_COLS);
-  uns cell_rows = MIN(rows, MAX_CELLS_ROWS);
+  uns cell_cols = MIN((cols + 1) / 2, MAX_CELLS_COLS);
+  uns cell_rows = MIN((rows + 1) / 2, MAX_CELLS_ROWS);
   uns cell_x[MAX_CELLS_COLS + 1];
   uns cell_y[MAX_CELLS_ROWS + 1];
   uns i, j;

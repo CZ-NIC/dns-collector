@@ -12,7 +12,7 @@ ImageSig {
 MinWidth	16
 MinHeight	16
 
-PreQuantThresholds	9 100 400 1000 2000 2000 4000 4000 4000 8000 8000 8000 10000 10000 10000
+PreQuantThresholds	9 100 400 1000 2000 2000 2000 4000 4000 4000 4000 8000 8000 8000 8000
 PostQuantMinSteps	2
 PostQuantMaxSteps	10
 PostQuantThreshold	2
