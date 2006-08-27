@@ -235,7 +235,10 @@ main(int argc, char **argv)
       TRY(image_sig_init(&it, &data, img1));
       image_sig_preprocess(&data);
       if (data.valid)
-	image_sig_segmentation(&data);
+        {
+	  image_sig_segmentation(&data);
+	  image_sig_detect_textured(&data);
+	}
       if (segmentation_name_1)
 	write_segmentation(&data, segmentation_name_1);
       image_sig_finish(&data, &sig1);
@@ -248,7 +251,10 @@ main(int argc, char **argv)
       TRY(image_sig_init(&it, &data, img2));
       image_sig_preprocess(&data);
       if (data.valid)
-	image_sig_segmentation(&data);
+        {
+	  image_sig_segmentation(&data);
+	  image_sig_detect_textured(&data);
+	}
       if (segmentation_name_2)
 	write_segmentation(&data, segmentation_name_2);
       image_sig_finish(&data, &sig2);

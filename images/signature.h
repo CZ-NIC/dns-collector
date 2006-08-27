@@ -5,6 +5,7 @@
 extern uns image_sig_min_width, image_sig_min_height;
 extern uns *image_sig_prequant_thresholds;
 extern uns image_sig_postquant_min_steps, image_sig_postquant_max_steps, image_sig_postquant_threshold;
+extern double image_sig_textured_threshold;
 
 #define IMAGE_VEC_F	6
 #define IMAGE_REG_F	IMAGE_VEC_F
@@ -24,11 +25,14 @@ struct image_region {
   u16 wb;			/* normalized weight */
 } PACKED;
 
+#define IMAGE_SIG_TEXTURED	0x1
+
 /* Image signature (10 + len * 16 bytes) */
 struct image_signature {
   byte len;			/* Number of regions */
-  byte df;			/* average f dist */
-  u16 dh;			/* average h dist */
+  byte flags;			/* IMAGE_SIG_xxx */
+  byte df;			/* Average f dist */
+  u16 dh;			/* Average h dist */
   struct image_vector vec;	/* Combination of all regions... simple signature */
   struct image_region reg[IMAGE_REG_MAX];/* Feature vector for every region */
 } PACKED;
@@ -51,6 +55,7 @@ struct image_sig_block {
   struct image_sig_block *next;		/* linked list */
   u32 x, y;				/* block position */
   byte area;				/* block area in pixels (usually 16) */
+  byte region;				/* region index */
   byte v[IMAGE_VEC_F];			/* feature vector */
 };
 
@@ -72,6 +77,7 @@ struct image_sig_data {
   u32 rows;
   u32 full_cols;
   u32 full_rows;
+  u32 flags;
   u32 area;
   u32 valid;
   u32 blocks_count;
@@ -91,6 +97,10 @@ void image_sig_cleanup(struct image_sig_data *data);
 /* sig-seg.c */
 
 void image_sig_segmentation(struct image_sig_data *data);
+
+/* sig-txt.c */
+
+void image_sig_detect_textured(struct image_sig_data *data);
 
 /* sig-cmp.c */
 

@@ -25,6 +25,7 @@ image_sig_init(struct image_thread *thread, struct image_sig_data *data, struct 
 {
   ASSERT((image->flags & IMAGE_PIXEL_FORMAT) == COLOR_SPACE_RGB);
   data->image = image;
+  data->flags = 0;
   data->cols = (image->cols + 3) >> 2;
   data->rows = (image->rows + 3) >> 2;
   data->full_cols = image->cols >> 2;
@@ -157,9 +158,9 @@ image_sig_preprocess(struct image_sig_data *data)
 	  block->v[3] = fast_sqrt_u16(isqr(t[8]) + isqr(t[9]) + isqr(t[12]) + isqr(t[13]));
 	  block->v[4] = fast_sqrt_u16(isqr(t[2]) + isqr(t[3]) + isqr(t[6]) + isqr(t[7]));
 	  block->v[5] = fast_sqrt_u16(isqr(t[10]) + isqr(t[11]) + isqr(t[14]) + isqr(t[15]));
-	  sum[3] += block->v[3] * block->area;
-	  sum[4] += block->v[4] * block->area;
-	  sum[5] += block->v[5] * block->area;
+	  sum[3] += block->v[3] * block->area / 2;
+	  sum[4] += block->v[4] * block->area / 2;
+	  sum[5] += block->v[5] * block->area / 2;
         }
     }
 
@@ -185,6 +186,7 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
   for (uns i = 0; i < IMAGE_VEC_F; i++)
     sig->vec.f[i] = data->f[i];
   sig->len = data->regions_count;
+  sig->flags = data->flags;
   if (!sig->len)
     return;
   
@@ -308,7 +310,10 @@ compute_image_signature(struct image_thread *thread, struct image_signature *sig
     return 0;
   image_sig_preprocess(&data);
   if (data.valid)
-    image_sig_segmentation(&data);
+    {
+      image_sig_segmentation(&data);
+      image_sig_detect_textured(&data);
+    }
   image_sig_finish(&data, sig);
   image_sig_cleanup(&data);
   return 1;

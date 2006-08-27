@@ -19,6 +19,7 @@ uns *image_sig_prequant_thresholds;
 uns image_sig_postquant_min_steps;
 uns image_sig_postquant_max_steps;
 uns image_sig_postquant_threshold;
+double image_sig_textured_threshold;
 
 static struct cf_section sig_config = {
   CF_ITEMS{
@@ -28,6 +29,7 @@ static struct cf_section sig_config = {
     CF_UNS("PostQuantMinSteps", &image_sig_postquant_min_steps),
     CF_UNS("PostQuantMaxSteps", &image_sig_postquant_max_steps),
     CF_UNS("PostQuantThreshold", &image_sig_postquant_threshold),
+    CF_DOUBLE("TexturedThreshold", &image_sig_textured_threshold),
     CF_END
   }
 };
