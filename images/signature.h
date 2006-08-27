@@ -27,7 +27,7 @@ struct image_region {
 
 #define IMAGE_SIG_TEXTURED	0x1
 
-/* Image signature (10 + len * 16 bytes) */
+/* Image signature (11 + len * 16 bytes) */
 struct image_signature {
   byte len;			/* Number of regions */
   byte flags;			/* IMAGE_SIG_xxx */
@@ -40,7 +40,7 @@ struct image_signature {
 static inline uns
 image_signature_size(uns len)
 {
-  return 4 + sizeof(struct image_vector) + len * sizeof(struct image_region);
+  return 5 + sizeof(struct image_vector) + len * sizeof(struct image_region);
 }
 
 /* sig-dump.c */

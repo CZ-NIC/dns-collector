@@ -55,7 +55,7 @@ image_sig_detect_textured(struct image_sig_data *data)
       {
 	uns cell_area = 0;
         bzero(cnt, data->regions_count * sizeof(u32));
-	struct image_sig_block *b1 = data->blocks + cell_x[i] + cell_y[i] * cols, *b2;
+	struct image_sig_block *b1 = data->blocks + cell_x[i] + cell_y[j] * cols, *b2;
         for (uns y = cell_y[j]; y < cell_y[j + 1]; y++, b1 += cols)
 	  {
 	    b2 = b1;

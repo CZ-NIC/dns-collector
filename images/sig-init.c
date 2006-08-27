@@ -155,9 +155,9 @@ image_sig_preprocess(struct image_sig_data *data)
 	    }
 
 	  /* Extract energies in LH, HL and HH bands */
-	  block->v[3] = fast_sqrt_u16(isqr(t[8]) + isqr(t[9]) + isqr(t[12]) + isqr(t[13]));
-	  block->v[4] = fast_sqrt_u16(isqr(t[2]) + isqr(t[3]) + isqr(t[6]) + isqr(t[7]));
-	  block->v[5] = fast_sqrt_u16(isqr(t[10]) + isqr(t[11]) + isqr(t[14]) + isqr(t[15]));
+	  block->v[3] = fast_sqrt_u32(isqr(t[8]) + isqr(t[9]) + isqr(t[12]) + isqr(t[13]));
+	  block->v[4] = fast_sqrt_u32(isqr(t[2]) + isqr(t[3]) + isqr(t[6]) + isqr(t[7]));
+	  block->v[5] = fast_sqrt_u32(isqr(t[10]) + isqr(t[11]) + isqr(t[14]) + isqr(t[15]));
 	  sum[3] += block->v[3] * block->area;
 	  sum[4] += block->v[4] * block->area;
 	  sum[5] += block->v[5] * block->area;
