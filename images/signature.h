@@ -6,6 +6,7 @@ extern uns image_sig_min_width, image_sig_min_height;
 extern uns *image_sig_prequant_thresholds;
 extern uns image_sig_postquant_min_steps, image_sig_postquant_max_steps, image_sig_postquant_threshold;
 extern double image_sig_textured_threshold;
+extern uns image_sig_compare_method;
 
 #define IMAGE_VEC_F	6
 #define IMAGE_REG_F	IMAGE_VEC_F
@@ -104,7 +105,7 @@ void image_sig_detect_textured(struct image_sig_data *data);
 
 /* sig-cmp.c */
 
-#define IMAGE_SIG_DIST_SCALE (3 + 3 + 8 + 16)
+#define IMAGE_SIG_DIST_SCALE 30
 
 uns image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2);
 

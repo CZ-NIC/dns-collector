@@ -19,6 +19,8 @@ PostQuantThreshold	2
 
 TexturedThreshold	0.32
 
+CompareMethod		2
+
 }
 
 ######## Duplicates finder ######################################################
