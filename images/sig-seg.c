@@ -68,7 +68,9 @@ static void
 prequant_finish_region(struct image_sig_region *region)
 {
   if (region->count < 2)
-    memcpy(region->c, region->a, sizeof(region->c));
+    {
+      region->e = 0;
+    }
   else
     {
       u64 a = 0;
@@ -120,13 +122,13 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
       DBG("Step... regions_count=%u heap_count=%u region->count=%u, region->e=%u",
 	  regions_count, heap_count, region->count, (uns)region->e);
       if (region->count < 2 ||
-	  region->e < image_sig_prequant_thresholds[regions_count - 1] * region->count)
+	  region->e < image_sig_prequant_thresholds[regions_count - 1] * blocks_count)
         {
 	  HEAP_DELMIN(struct image_sig_region *, heap, heap_count, prequant_heap_cmp, HEAP_SWAP);
 	  continue;
 	}
 
-      /* Select axis to split - the one with maximum covariance */
+      /* Select axis to split - the one with maximum average quadratic error */
       axis = 0;
       u64 cov = (u64)region->count * region->c[0] - (u64)region->b[0] * region->b[0];
       for (uns i = 1; i < 6; i++)
@@ -324,7 +326,7 @@ postquant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_reg
 	  if (error > last_error)
 	    break;
 	  u64 dif = last_error - error;
-	  if (dif * image_sig_postquant_threshold < last_error * 100)
+	  if (dif * image_sig_postquant_threshold < (u64)last_error * 100)
 	    break;
 	}
     }

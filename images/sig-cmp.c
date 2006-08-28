@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#define LOCAL_DEBUG
+#undef LOCAL_DEBUG
 
 #include "lib/lib.h"
 #include "lib/math.h"
@@ -175,9 +175,9 @@ image_signatures_dist_2(struct image_signature *sig1, struct image_signature *si
 
   /* Get percentages */
   for (i = 0, reg1 = sig1->reg; i < sig1->len; i++, reg1++)
-    p[i] = reg1->wa;
+    p[i] = reg1->wb;
   for (i = 0, reg2 = sig2->reg; i < sig2->len; i++, reg2++)
-    q[i] = reg2->wa;
+    q[i] = reg2->wb;
 
   /* Sort entries in distance matrix */
   image_signatures_dist_2_sort(n, dist);
