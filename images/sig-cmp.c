@@ -130,23 +130,29 @@ image_signatures_dist_2(struct image_signature *sig1, struct image_signature *si
   /* Compute distance matrix */
   n = 0;
   /* ... for non-textured images */
-  if ((sig1->flags | sig2->flags) & IMAGE_SIG_TEXTURED)
+  if (!((sig1->flags | sig2->flags) & IMAGE_SIG_TEXTURED))
     for (j = 0, reg2 = sig2->reg; j < sig2->len; j++, reg2++)
       for (i = 0, reg1 = sig1->reg; i < sig1->len; i++, reg1++)
         {
-	  // FIXME
-	  /*uns ds =
-	    isqr(reg1->h[0], reg2->h[0]) +
-	    isqr(reg1->h[1], reg2->h[1]) +
-	    isqr(reg1->h[2], reg2->h[2]);*/
+	  uns ds =
+	    isqr((int)reg1->h[0] - (int)reg2->h[0]) +
+	    isqr((int)reg1->h[1] - (int)reg2->h[1]) +
+	    isqr((int)reg1->h[2] - (int)reg2->h[2]);
 	  uns dt =
-	    isqr(reg1->f[0] - reg2->f[0]) +
-	    isqr(reg1->f[1] - reg2->f[1]) +
-	    isqr(reg1->f[2] - reg2->f[2]) +
-	    isqr(reg1->f[3] - reg2->f[3]) +
-	    isqr(reg1->f[4] - reg2->f[4]) +
-	    isqr(reg1->f[5] - reg2->f[5]);
-	  dist[n++] = (CLAMP(dt * 0xffff / (64 * 64 * 6), 0, 0xffff) << 8) + i + (j << 4) ;
+	    isqr((int)reg1->f[0] - (int)reg2->f[0]) +
+	    isqr((int)reg1->f[1] - (int)reg2->f[1]) +
+	    isqr((int)reg1->f[2] - (int)reg2->f[2]) +
+	    isqr((int)reg1->f[3] - (int)reg2->f[3]) +
+	    isqr((int)reg1->f[4] - (int)reg2->f[4]) +
+	    isqr((int)reg1->f[5] - (int)reg2->f[5]);
+	  if (ds < 1000)
+	    dt *= 8;
+	  else if (ds < 10000)
+	    dt *= 12;
+	  else
+	    dt *= 16;
+	  DBG("[%u][%u] ... ds=%u dt=%u", i, j, ds, dt);
+	  dist[n++] = (dt << 8) + i + (j << 4) ;
         }
   /* ... for textured images (ignore shape properties) */
   else
@@ -154,13 +160,13 @@ image_signatures_dist_2(struct image_signature *sig1, struct image_signature *si
       for (i = 0, reg1 = sig1->reg; i < sig1->len; i++, reg1++)
         {
 	  uns dt =
-	    isqr(reg1->f[0] - reg2->f[0]) +
-	    isqr(reg1->f[1] - reg2->f[1]) +
-	    isqr(reg1->f[2] - reg2->f[2]) +
-	    isqr(reg1->f[3] - reg2->f[3]) +
-	    isqr(reg1->f[4] - reg2->f[4]) +
-	    isqr(reg1->f[5] - reg2->f[5]);
-	  dist[n++] = (CLAMP(dt * 0xffff / (64 * 64 * 6), 0, 0xffff) << 8) + i + (j << 4) ;
+	    isqr((int)reg1->f[0] - (int)reg2->f[0]) +
+	    isqr((int)reg1->f[1] - (int)reg2->f[1]) +
+	    isqr((int)reg1->f[2] - (int)reg2->f[2]) +
+	    isqr((int)reg1->f[3] - (int)reg2->f[3]) +
+	    isqr((int)reg1->f[4] - (int)reg2->f[4]) +
+	    isqr((int)reg1->f[5] - (int)reg2->f[5]);
+	  dist[n++] = (dt << 12) + i + (j << 4) ;
         }
 
   /* One or both signatures have no regions */
@@ -200,7 +206,7 @@ image_signatures_dist_2(struct image_signature *sig1, struct image_signature *si
       DBG("s[%u][%u]=%u d=%u", i, j, s, d);
     }
 
-  return sum << (IMAGE_SIG_DIST_SCALE - 7 - 16);
+  return sum;
 }
 
 uns

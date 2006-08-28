@@ -265,7 +265,7 @@ main(int argc, char **argv)
   if (img1 && img2)
     {
       uns dist = image_signatures_dist(&sig1, &sig2);
-      MSG("dist=%.6f", dist / (double)(1 << IMAGE_SIG_DIST_SCALE));
+      MSG("dist=%u", dist);
     }
 
   if (img1)
