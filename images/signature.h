@@ -38,6 +38,18 @@ struct image_signature {
   struct image_region reg[IMAGE_REG_MAX];/* Feature vector for every region */
 } PACKED;
 
+struct image_cluster {
+  union {
+    struct {
+      s32 dot;			/* Dot product of the splitting plane */
+      s8 vec[IMAGE_VEC_F];	/* Normal vector of the splitting plane */
+    };
+    struct {
+      u64 pos;			/* Cluster size in bytes */
+    };
+  };
+} PACKED;
+
 static inline uns
 image_signature_size(uns len)
 {
