@@ -15,10 +15,12 @@
 #include "images/images.h"
 #include "images/color.h"
 #include "images/io-main.h"
+
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <magick/api.h>
+#include <pthread.h>
 
 #define MAX_FILE_SIZE (1 << 30)
 #define QUANTUM_SCALE (QuantumDepth - 8)
@@ -27,6 +29,7 @@
 #define ALPHA_TO_BYTE(x) (255 - QUANTUM_TO_BYTE(x))
 #define BYTE_TO_ALPHA(x) (BYTE_TO_QUANTUM(255 - (x)))
 
+static pthread_mutex_t libmagick_mutex = PTHREAD_MUTEX_INITIALIZER;
 static uns libmagick_counter;
 
 struct magick_read_data {
@@ -38,18 +41,20 @@ struct magick_read_data {
 int
 libmagick_init(struct image_io *io UNUSED)
 {
-  // FIXME: lock
+  pthread_mutex_lock(&libmagick_mutex);
   if (!libmagick_counter++)
     InitializeMagick(NULL);
+  pthread_mutex_unlock(&libmagick_mutex);
   return 1;
 }
 
 void
 libmagick_cleanup(struct image_io *io UNUSED)
 {
-  // FIXME: lock
+  pthread_mutex_lock(&libmagick_mutex);
   if (!--libmagick_counter)
     DestroyMagick();
+  pthread_mutex_unlock(&libmagick_mutex);
 }
 
 static void
