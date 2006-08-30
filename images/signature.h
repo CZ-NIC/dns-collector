@@ -43,11 +43,11 @@ struct image_cluster {
     struct {
       s32 dot;			/* Dot product of the splitting plane */
       s8 vec[IMAGE_VEC_F];	/* Normal vector of the splitting plane */
-    };
+    } PACKED;
     struct {
       u64 pos;			/* Cluster size in bytes */
-    };
-  };
+    } PACKED;
+  } PACKED;
 } PACKED;
 
 static inline uns

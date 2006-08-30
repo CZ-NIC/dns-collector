@@ -31,6 +31,12 @@ image_sig_detect_textured(struct image_sig_data *data)
   uns i, j;
   u32 cnt[IMAGE_REG_MAX];
 
+  if (cell_cols * cell_rows < 4)
+    {
+      DBG("Image is not textured.");
+      return;
+    }
+
   DBG("Detecting textured image... cols=%u rows=%u cell_cols=%u cell_rows=%u", cols, rows, cell_cols, cell_rows);
   
   /* Compute cells boundaries */

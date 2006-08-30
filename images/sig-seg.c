@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#define LOCAL_DEBUG
+#undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
 #include "lib/conf.h"
