@@ -18,7 +18,7 @@
 #include <fcntl.h>
 
 static uns image_dup_ratio_threshold = 140;
-static uns image_dup_error_threshold = 800;
+static uns image_dup_error_threshold = 100;
 
 static inline uns
 err (int a, int b)
