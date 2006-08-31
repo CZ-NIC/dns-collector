@@ -8,7 +8,7 @@ CONFIGS+=images
 
 LIBIMAGES_MODS=math config image scale color alpha io-main dup-init dup-cmp sig-dump sig-init sig-seg sig-txt sig-cmp object
 
-LIBIMAGES_LIBS=-lm
+LIBIMAGES_LIBS=-lm -lpthread
 
 ifdef CONFIG_IMAGES_LIBJPEG
 LIBIMAGES_MODS+=io-libjpeg
