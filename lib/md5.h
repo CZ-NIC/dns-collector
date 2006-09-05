@@ -4,8 +4,8 @@
  *	This file is in public domain (see lib/md5.c).
  */
 
-#ifndef MD5_H
-#define MD5_H
+#ifndef _UCW_MD5_H
+#define _UCW_MD5_H
 
 typedef u32 uint32;
 
@@ -21,4 +21,4 @@ void MD5Update(struct MD5Context *context, unsigned char const *buf,
 void MD5Final(unsigned char digest[16], struct MD5Context *context);
 void MD5Transform(uint32 buf[4], uint32 const in[16]);
 
-#endif /* !MD5_H */
+#endif /* !_UCW_MD5_H */
