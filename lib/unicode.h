@@ -8,8 +8,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _UNICODE_H
-#define _UNICODE_H
+#ifndef _UCW_UNICODE_H
+#define _UCW_UNICODE_H
 
 /* Macros for handling UTF-8 */
 

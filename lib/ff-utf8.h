@@ -8,8 +8,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _FF_UTF8_H
-#define _FF_UTF8_H
+#ifndef _UCW_FF_UTF8_H
+#define _UCW_FF_UTF8_H
 
 #include "lib/fastbuf.h"
 #include "lib/unicode.h"
