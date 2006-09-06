@@ -117,9 +117,8 @@ void image_sig_detect_textured(struct image_sig_data *data);
 
 /* sig-cmp.c */
 
-#define IMAGE_SIG_DIST_SCALE 30
-
 uns image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2);
+uns image_signatures_dist_explain(struct image_signature *sig1, struct image_signature *sig2, struct fastbuf *fb);
 
 #endif
 

@@ -264,7 +264,15 @@ main(int argc, char **argv)
 
   if (img1 && img2)
     {
-      uns dist = image_signatures_dist(&sig1, &sig2);
+      uns dist;
+      if (verbose)
+        {
+          struct fastbuf *fb = bfdopen(0, 4096);
+          dist = image_signatures_dist_explain(&sig1, &sig2, fb);
+          bclose(fb);
+	}
+      else
+	dist = image_signatures_dist(&sig1, &sig2);
       MSG("dist=%u", dist);
     }
 
