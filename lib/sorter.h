@@ -50,7 +50,7 @@
  *  int PREFIX_compare(SORT_KEY *a, *b)
  *			compare two keys, result like strcmp
  *  int PREFIX_fetch_key(struct fastbuf *f, SORT_KEY *k)
- *			fetch next key, returns 1=ok, 0=eof
+ *			fetch next key, returns nonzero=ok, 0=eof
  *  void PREFIX_copy_data(struct fastbuf *src, *dest, SORT_KEY *k)
  *			write just fetched key k to dest and copy all data
  *			belonging to this key from src to dest.
