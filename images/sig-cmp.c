@@ -11,7 +11,6 @@
 
 #include "lib/lib.h"
 #include "lib/math.h"
-#include "lib/fastbuf.h"
 #include "images/math.h"
 #include "images/images.h"
 #include "images/signature.h"
@@ -119,7 +118,7 @@ image_signatures_dist_1(struct image_signature *sig1, struct image_signature *si
 #define ASORT_EXTRA_ARGS , uns *items
 #include "lib/arraysort.h"
 
-#define SIG_EXPLAIN
+#define EXPLAIN
 #include "images/sig-cmp-gen.h"
 #include "images/sig-cmp-gen.h"
 
@@ -138,10 +137,10 @@ image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2
 }
 
 uns
-image_signatures_dist_explain(struct image_signature *sig1, struct image_signature *sig2, struct fastbuf *fb)
+image_signatures_dist_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 {
   if (image_sig_compare_method == 2)
-    return image_signatures_dist_2_explain(sig1, sig2, fb);
+    return image_signatures_dist_2_explain(sig1, sig2, msg, param);
   return image_signatures_dist(sig1, sig2);
 }
 

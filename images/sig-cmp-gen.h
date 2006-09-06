@@ -1,21 +1,25 @@
-#ifndef SIG_EXPLAIN
+#ifndef EXPLAIN
 
 #define MSG(x...) do{}while(0)
+#define LINE do{}while(0)
 
 static uns
 image_signatures_dist_2(struct image_signature *sig1, struct image_signature *sig2)
 
 #else
 
-#define MSG(x...) bprintf(fb, x)
+#define MSG(x...) do{ line += sprintf(line, x); }while(0)
+#define LINE do{ line = buf; msg(line, param); }while(0)
 
 static void
-dump_signature(struct image_signature *sig, struct fastbuf *fb)
+explain_signature(struct image_signature *sig, void (*msg)(byte *text, void *param), void *param)
 {
+  byte buf[1024], *line = buf;
   MSG("signature: flags=0x%x df=%u dh=%u f=(%u", sig->flags, sig->df, sig->dh, sig->vec.f[0]);
   for (uns i = 1; i < IMAGE_VEC_F; i++)
     MSG(" %u", sig->vec.f[i]);
-  MSG(")\n");
+  MSG(")");
+  LINE;
   for (uns j = 0; j < sig->len; j++)
     {
       struct image_region *reg = sig->reg + j;
@@ -25,12 +29,13 @@ dump_signature(struct image_signature *sig, struct fastbuf *fb)
       MSG(") h=(%u", reg->h[0]);
       for (uns i = 1; i < IMAGE_REG_H; i++)
 	MSG(" %u", reg->h[i]);
-      MSG(")\n");
+      MSG(")");
+      LINE;
     }
 }
 
 static uns
-image_signatures_dist_2_explain(struct image_signature *sig1, struct image_signature *sig2, struct fastbuf *fb)
+image_signatures_dist_2_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 
 #endif
 {
@@ -39,15 +44,16 @@ image_signatures_dist_2_explain(struct image_signature *sig1, struct image_signa
   uns dist[IMAGE_REG_MAX * IMAGE_REG_MAX], p[IMAGE_REG_MAX], q[IMAGE_REG_MAX];
   uns n, i, j, k, l, s, d;
   struct image_region *reg1, *reg2;
-
-#ifdef SIG_EXPLAIN
-  dump_signature(sig1, fb);
-  dump_signature(sig2, fb);
+#ifdef EXPLAIN
+  byte buf[1024], *line = buf;
+  explain_signature(sig1, msg, param);
+  explain_signature(sig2, msg, param);
 #endif
 
   /* Compute distance matrix */
   n = 0;
-  MSG("Distance matrix:\n");
+  MSG("Distance matrix:");
+  LINE;
   /* ... for non-textured images */
   if (!((sig1->flags | sig2->flags) & IMAGE_SIG_TEXTURED))
     for (j = 0, reg2 = sig2->reg; j < sig2->len; j++, reg2++)
@@ -70,9 +76,10 @@ image_signatures_dist_2_explain(struct image_signature *sig1, struct image_signa
 	    dt *= 12;
 	  else
 	    dt *= 16;
-	  DBG("[%u][%u] ... dt=%u ds=%u", i, j, dt, ds);
 	  dist[n++] = (dt << 8) + i + (j << 4);
-	  MSG("[%u, %u] ... dt=%u ds=%u\n", i, j, dt, ds);
+	  DBG("[%u, %u] dt=%u ds=%u", i, j, dt, ds);
+	  MSG("[%u, %u] dt=%u ds=%u", i, j, dt, ds);
+	  LINE;
         }
   /* ... for textured images (ignore shape properties) */
   else
@@ -87,7 +94,9 @@ image_signatures_dist_2_explain(struct image_signature *sig1, struct image_signa
 	    isqr((int)reg1->f[4] - (int)reg2->f[4]) +
 	    isqr((int)reg1->f[5] - (int)reg2->f[5]);
 	  dist[n++] = (dt << 12) + i + (j << 4);
-	  MSG("[%u, %u] ... dt=%u\n", i, j, dt);
+	  DBG("[%u, %u] dt=%u", i, j, dt);
+	  MSG("[%u, %u] dt=%u", i, j, dt);
+	  LINE;
         }
 
   /* One or both signatures have no regions */
@@ -105,7 +114,8 @@ image_signatures_dist_2_explain(struct image_signature *sig1, struct image_signa
 
   /* Compute significance matrix and resulting distance */
   uns sum = 0;
-  MSG("Significance matrix:\n");
+  MSG("Significance matrix:");
+  LINE;
   for (k = 0, l = 128; l; k++)
     {
       i = dist[k] & 15;
@@ -125,12 +135,14 @@ image_signatures_dist_2_explain(struct image_signature *sig1, struct image_signa
 	}
       l -= s;
       sum += s * d;
-      DBG("s[%u][%u]=%u d=%u", i, j, s, d);
-      MSG("[%u, %u]=%u d=%u\n", i, j, s, d);
+      DBG("[%u, %u] s=%u d=%u", i, j, s, d);
+      MSG("[%u, %u] s=%u d=%u", i, j, s, d);
+      LINE;
     }
 
   return sum;
 }
 
-#undef SIG_EXPLAIN
+#undef EXPLAIN
 #undef MSG
+#undef LINE

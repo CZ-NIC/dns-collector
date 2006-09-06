@@ -63,6 +63,12 @@ static byte *segmentation_name_2;
 #define TRY(x) do{ if (!(x)) die("Error: %s", it.err_msg); }while(0)
 
 static void
+msg_str(byte *s, void *param UNUSED)
+{
+  MSG("%s", s);
+}
+
+static void
 dump_signature(struct image_signature *sig)
 {
   byte buf[MAX(IMAGE_VECTOR_DUMP_MAX, IMAGE_REGION_DUMP_MAX)];
@@ -268,7 +274,7 @@ main(int argc, char **argv)
       if (verbose)
         {
           struct fastbuf *fb = bfdopen(0, 4096);
-          dist = image_signatures_dist_explain(&sig1, &sig2, fb);
+          dist = image_signatures_dist_explain(&sig1, &sig2, msg_str, NULL);
           bclose(fb);
 	}
       else
