@@ -50,6 +50,14 @@ image_signatures_dist_2_explain(struct image_signature *sig1, struct image_signa
   explain_signature(sig2, msg, param);
 #endif
 
+  /* FIXME: do not mux textured and non-textured images (should be split in clusters tree) */
+  if ((sig1->flags ^ sig2->flags) & IMAGE_SIG_TEXTURED)
+    {
+      MSG("Textured vs non-textured");
+      LINE;
+      return ~0U;
+    }
+  
   /* Compute distance matrix */
   n = 0;
   MSG("Distance matrix:");
