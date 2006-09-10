@@ -147,6 +147,10 @@ struct image_io {
   u32 jpeg_quality;			/* [    W] - JPEG compression quality (1..100) */
   u32 number_of_colors;			/* [ H   ] - number of image colors */
   struct color background_color;	/* [ HI  ] - background color, zero if undefined */
+#ifdef CONFIG_IMAGES_EXIF
+  u32 exif_size;			/* [ H  W] - EXIF size in bytes (zero if not present) */
+  byte *exif_data;			/* [ H  W] - EXIF data */
+#endif
 
   /* internals */
   struct image_thread *thread;
@@ -160,6 +164,9 @@ enum image_io_flags {
   IMAGE_IO_NEED_DESTROY = 0x10000,	/* [   O ] - enables automatic call of image_destroy */
   IMAGE_IO_HAS_PALETTE = 0x20000,	/* [ H   ] - true for image with indexed colors */
   IMAGE_IO_USE_BACKGROUND = 0x40000,	/* [  I  ] - merge transparent pixels with background_color */
+#ifdef CONFIG_IMAGES_EXIF
+  IMAGE_IO_WANT_EXIF = 0x80000,		/* [R    ] - read EXIF data if present */
+#endif
 };
 
 int image_io_init(struct image_thread *it, struct image_io *io);

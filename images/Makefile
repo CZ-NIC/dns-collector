@@ -2,11 +2,18 @@
 
 DIRS+=images
 
-PROGS+=$(addprefix $(o)/images/,image-tool image-dup-test image-sim-test)
-
+PROGS+=$(o)/images/image-tool
 CONFIGS+=images
+LIBIMAGES_MODS=math config image scale color alpha io-main object
 
-LIBIMAGES_MODS=math config image scale color alpha io-main dup-init dup-cmp sig-dump sig-init sig-seg sig-txt sig-cmp object
+ifdef CONFIG_IMAGES_DUP
+PROGS+=$(o)/images/image-dup-test
+LIBIMAGES_MODS+=dup-init dup-cmp
+endif
+ifdef CONFIG_IMAGES_SIM
+PROGS+=$(o)/images/image-sim-test
+LIBIMAGES_MODS+=sig-dump sig-init sig-seg sig-txt sig-cmp
+endif
 
 LIBIMAGES_LIBS=-lm -lpthread
 
@@ -44,11 +51,15 @@ $(o)/images/libimages.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_M
 $(o)/images/image-tool: $(o)/images/image-tool.o $(LIBIMAGES) $(LIBUCW)
 $(o)/images/image-tool: LIBS+=$(LIBIMAGES_LIBS)
 
+ifdef CONFIG_IMAGES_DUP
 $(o)/images/image-dup-test: $(o)/images/image-dup-test.o $(LIBIMAGES) $(LIBUCW)
 $(o)/images/image-dup-test: LIBS+=$(LIBIMAGES_LIBS)
+endif
 
+ifdef CONFIG_IMAGES_SIM
 $(o)/images/image-sim-test: $(o)/images/image-sim-test.o $(LIBIMAGES) $(LIBUCW)
 $(o)/images/image-sim-test: LIBS+=$(LIBIMAGES_LIBS)
+endif
 
 TESTS+=$(o)/images/image-test.test
 $(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBUCW)

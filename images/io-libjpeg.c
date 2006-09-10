@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <jpeglib.h>
+#include <jerror.h>
 #include <setjmp.h>
 
 struct libjpeg_err {
@@ -177,6 +178,76 @@ libjpeg_empty_output_buffer(j_compress_ptr cinfo)
   return TRUE;
 }
 
+#ifdef CONFIG_IMAGES_EXIF
+
+static inline uns
+libjpeg_read_byte(struct libjpeg_read_internals *i)
+{
+  DBG("libjpeg_read_byte()");
+  if (!i->src.bytes_in_buffer)
+    if (!libjpeg_fill_input_buffer(&i->cinfo))
+      ERREXIT(&i->cinfo, JERR_CANT_SUSPEND);
+  i->src.bytes_in_buffer--;
+  return *i->src.next_input_byte++;
+}
+
+static inline void
+libjpeg_read_buf(struct libjpeg_read_internals *i, byte *buf, uns len)
+{
+  DBG("libjpeg_read_buf(len=%u)", len);
+  while (len)
+    {
+      if (!i->src.bytes_in_buffer)
+	if (!libjpeg_fill_input_buffer(&i->cinfo))
+	  ERREXIT(&i->cinfo, JERR_CANT_SUSPEND);
+      uns buf_size = i->src.bytes_in_buffer;
+      uns read_size = MIN(buf_size, len);
+      memcpy(buf, i->src.next_input_byte, read_size);
+      i->src.bytes_in_buffer -= read_size;
+      i->src.next_input_byte += read_size;
+      len -= read_size;
+    }
+}
+
+static byte libjpeg_exif_header[6] = { 'E', 'x', 'i', 'f', 0, 0 };
+
+static boolean
+libjpeg_app1_preprocessor(j_decompress_ptr cinfo)
+{
+  struct libjpeg_read_internals *i = (struct libjpeg_read_internals *)cinfo;
+  struct image_io *io = i->err.io;
+  uns len = (libjpeg_read_byte(i) << 8) + libjpeg_read_byte(i);
+  DBG("Found APP1 marker, len=%u", len);
+  if (len < 2)
+    return TRUE;
+  len -= 2;
+  if (len < 7 /*|| io->exif_size*/)
+    {
+      libjpeg_skip_input_data(cinfo, len);
+      return TRUE;
+    }
+  byte header[6];
+  for (uns j = 0; j < 6; j++)
+  {
+    header[j] = libjpeg_read_byte(i);
+    DBG("0x%02x", header[j]);
+  }
+  //libjpeg_read_buf(i, header, 6);
+  if (memcmp(header, libjpeg_exif_header, 6))
+    {
+      libjpeg_skip_input_data(cinfo, len - 6);
+      return TRUE;
+    }
+  io->exif_size = len;
+  io->exif_data = mp_alloc(io->internal_pool, len);
+  memcpy(io->exif_data, header, 6);
+  libjpeg_read_buf(i, io->exif_data + 6, len - 6);
+  DBG("Parsed EXIF of length %u", len);
+  return TRUE;
+}
+
+#endif
+
 static void
 libjpeg_read_cancel(struct image_io *io)
 {
@@ -213,6 +284,11 @@ libjpeg_read_header(struct image_io *io)
   i->src.skip_input_data = libjpeg_skip_input_data;
   i->src.resync_to_restart = jpeg_resync_to_restart;
   i->src.term_source = libjpeg_term_source;
+
+#ifdef CONFIG_IMAGES_EXIF
+  if (io->flags & IMAGE_IO_WANT_EXIF)
+    jpeg_set_marker_processor(&i->cinfo, JPEG_APP0 + 1, libjpeg_app1_preprocessor);
+#endif
 
   /* Read JPEG header and setup decompression options */
   DBG("Reading image header");
@@ -401,9 +477,26 @@ libjpeg_write(struct image_io *io)
   jpeg_set_defaults(&i.cinfo);
   if (io->jpeg_quality)
     jpeg_set_quality(&i.cinfo, MIN(io->jpeg_quality, 100), 1);
+#ifdef CONFIG_IMAGES_EXIF
+  if (io->exif_size)
+    {
+      /* According to the Exif specification, the Exif APP1 marker has to follow immediately after the SOI,
+       * just as the JFIF specification requires the same for the JFIF APP0 marker!
+       * Therefore a JPEG file cannot legally be both Exif and JFIF.  */
+      i.cinfo.write_JFIF_header = FALSE;
+      i.cinfo.write_Adobe_marker = FALSE;
+    }
+#endif
 
   /* Compress the image */
   jpeg_start_compress(&i.cinfo, TRUE);
+#ifdef CONFIG_IMAGES_EXIF
+  if (io->exif_size)
+    {
+      DBG("Writing EXIF");
+      jpeg_write_marker(&i.cinfo, JPEG_APP0 + 1, io->exif_data, io->exif_size);
+    }
+#endif
   switch (img->pixel_size)
     {
       /* grayscale or RGB */

@@ -33,12 +33,15 @@ Usage: image-tool [options] infile [outfile]\n\
 -Q --jpeg-quality        JPEG quality (1..100)\n\
 -g --background          background color (hexadecimal RRGGBB)\n\
 -G --default-background  background applied only if the image contains no background info (RRGGBB, default=FFFFFF)\n\
--a --remove-alpha        remove alpha channel\n\
-", stderr);
+-a --remove-alpha        remove alpha channel\n"
+#ifdef CONFIG_IMAGES_EXIF
+"-e --exif                reads Exif data\n"
+#endif
+, stderr);
   exit(1);
 }
 
-static char *shortopts = "qf:F:s:b:c:Q:g:G:a";
+static char *shortopts = "qf:F:s:b:c:Q:g:G:ae";
 static struct option longopts[] =
 {
   { "quiet",			0, 0, 'q' },
@@ -51,9 +54,12 @@ static struct option longopts[] =
   { "background",		0, 0, 'g' },
   { "default-background",	0, 0, 'G' },
   { "remove-alpha",		0, 0, 'a' },
+#ifdef CONFIG_IMAGES_EXIF
+  { "exif",			0, 0, 'e' },
+#endif
   { NULL,			0, 0, 0 }
 };
-							  
+
 static uns verbose = 1;
 static byte *input_file_name;
 static enum image_format input_format;
@@ -67,6 +73,9 @@ static uns jpeg_quality;
 static struct color background_color;
 static struct color default_background_color;
 static uns remove_alpha;
+#ifdef CONFIG_IMAGES_EXIF
+static uns exif;
+#endif
 
 static void
 parse_color(struct color *color, byte *s)
@@ -142,6 +151,11 @@ main(int argc, char **argv)
 	case 'a':
 	  remove_alpha++;
 	  break;
+#ifdef CONFIG_IMAGES_EXIF
+	case 'e':
+	  exif++;
+	  break;
+#endif
 	default:
 	  usage();
       }
@@ -151,7 +165,7 @@ main(int argc, char **argv)
   input_file_name = argv[optind++];
   if (argc > optind)
     output_file_name = argv[optind];
-  
+
 #define TRY(x) do{ if (!(x)) die("Error: %s", it.err_msg); }while(0)
   MSG("Initializing image library");
   struct image_thread it;
@@ -163,6 +177,9 @@ main(int argc, char **argv)
   MSG("Reading %s", input_file_name);
   io.fastbuf = bopen(input_file_name, O_RDONLY, 1 << 18);
   io.format = input_format ? : image_file_name_to_format(input_file_name);
+#ifdef CONFIG_IMAGES_EXIF
+  io.flags |= IMAGE_IO_WANT_EXIF;
+#endif
   TRY(image_io_read_header(&io));
   if (!output_file_name)
     {
@@ -177,6 +194,10 @@ main(int argc, char **argv)
 	  color_put_rgb(rgb, &io.background_color);
           printf("Background:  %02x%02x%02x\n", rgb[0], rgb[1], rgb[2]);
 	}
+#ifdef CONFIG_IMAGES_EXIF
+      if (io.exif_size)
+	printf("ExifSize:    %u\n", io.exif_size);
+#endif
     }
   else
     {
@@ -214,7 +235,7 @@ main(int argc, char **argv)
       TRY(image_io_write(&io));
       bclose(io.fastbuf);
     }
-  
+
   image_io_cleanup(&io);
   image_thread_cleanup(&it);
   MSG("Done.");
