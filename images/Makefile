@@ -51,15 +51,11 @@ $(o)/images/libimages.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_M
 $(o)/images/image-tool: $(o)/images/image-tool.o $(LIBIMAGES) $(LIBUCW)
 $(o)/images/image-tool: LIBS+=$(LIBIMAGES_LIBS)
 
-ifdef CONFIG_IMAGES_DUP
 $(o)/images/image-dup-test: $(o)/images/image-dup-test.o $(LIBIMAGES) $(LIBUCW)
 $(o)/images/image-dup-test: LIBS+=$(LIBIMAGES_LIBS)
-endif
 
-ifdef CONFIG_IMAGES_SIM
 $(o)/images/image-sim-test: $(o)/images/image-sim-test.o $(LIBIMAGES) $(LIBUCW)
 $(o)/images/image-sim-test: LIBS+=$(LIBIMAGES_LIBS)
-endif
 
 TESTS+=$(o)/images/image-test.test
 $(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBUCW)
