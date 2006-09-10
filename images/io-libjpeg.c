@@ -227,12 +227,7 @@ libjpeg_app1_preprocessor(j_decompress_ptr cinfo)
       return TRUE;
     }
   byte header[6];
-  for (uns j = 0; j < 6; j++)
-  {
-    header[j] = libjpeg_read_byte(i);
-    DBG("0x%02x", header[j]);
-  }
-  //libjpeg_read_buf(i, header, 6);
+  libjpeg_read_buf(i, header, 6);
   if (memcmp(header, libjpeg_exif_header, 6))
     {
       libjpeg_skip_input_data(cinfo, len - 6);
