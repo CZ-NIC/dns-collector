@@ -24,6 +24,7 @@
 #define sh_pread pread64
 #define sh_pwrite pwrite64
 #define sh_stat stat64
+#define sh_fstat fstat64
 typedef struct stat64 sh_stat_t;
 
 #else	/* !CONFIG_LFS */
@@ -35,6 +36,7 @@ typedef struct stat64 sh_stat_t;
 #define sh_pread pread
 #define sh_pwrite pwrite
 #define sh_stat stat
+#define sh_fstat fstat
 typedef struct stat sh_stat_t;
 
 #endif	/* !CONFIG_LFS */
