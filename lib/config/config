@@ -1,0 +1,22 @@
+# Libraries configuration (libucw, libcharset, libsh)
+
+Set("CUSTOM_DIR" => "lib/config");
+
+UnSet("CONFIG_SHERLOCK");
+UnSet("CONFIG_GATHERD");
+UnSet("CONFIG_INDEXER");
+UnSet("CONFIG_SEARCH");
+UnSet("CONFIG_LARGE_DB");
+UnSet("CONFIG_LASTMOD");
+UnSet("CONFIG_FILETYPE");
+UnSet("CONFIG_LANG");
+UnSet("CONFIG_SPELL");
+UnSet("CONFIG_MAX_CONTEXTS");
+UnSet("CONFIG_32BIT_REFERENCES");
+Set("DEFAULT_CONFIG" => "cf/library");
+
+# Keep turned on if debugging
+Set("CONFIG_DEBUG");
+
+# Return success
+1;
