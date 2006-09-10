@@ -178,7 +178,8 @@ main(int argc, char **argv)
   io.fastbuf = bopen(input_file_name, O_RDONLY, 1 << 18);
   io.format = input_format ? : image_file_name_to_format(input_file_name);
 #ifdef CONFIG_IMAGES_EXIF
-  io.flags |= IMAGE_IO_WANT_EXIF;
+  if (exif)
+    io.flags |= IMAGE_IO_WANT_EXIF;
 #endif
   TRY(image_io_read_header(&io));
   if (!output_file_name)
