@@ -12,7 +12,10 @@ LIBIMAGES_MODS+=dup-init dup-cmp
 endif
 ifdef CONFIG_IMAGES_SIM
 PROGS+=$(o)/images/image-sim-test
-LIBIMAGES_MODS+=sig-dump sig-init sig-seg sig-txt sig-cmp
+LIBIMAGES_MODS+=sig-cmp
+endif
+ifneq ($(CONFIG_IMAGES_DUP)$(CONFIG_IMAGES_SIM),)
+LIBIMAGES_MODS+=sig-dump sig-init sig-seg sig-txt
 endif
 
 LIBIMAGES_LIBS=-lm -lpthread
@@ -69,17 +72,3 @@ $(o)/images/hilbert-test.test: $(o)/images/hilbert-test
 TESTS+=$(o)/images/color.test
 $(o)/images/color-t: LIBS+=-lm
 $(o)/images/color.test: $(o)/images/color-t
-
-#$(o)/images/image-idx: $(o)/images/image-idx.o $(o)/images/image-obj.o $(o)/images/dup-cmp.o $(o)/indexer/iconfig.o $(o)/images/image-sig.o $(o)/images/kd-tree.o $(o)/images/color.o $(o)/images/image-io.o $(LIBSH) $(LIBLANG) $(LIBCHARSET)
-#$(o)/images/image-idx: LIBS+=-lGraphicsMagick -ljpeg -lpng
-
-# By :;DF
-#PROGS+=$(addprefix $(o)/images/,decomp)
-#
-#$(o)/images/block_info.o $(o)/images/block_info.oo: CFLAGS+=-I/usr/include/GraphicsMagick
-#$(o)/images/k_means.o $(o)/images/k_means.oo: CFLAGS+=-I/usr/include/GraphicsMagick
-#$(o)/images/decomp.o $(o)/images/decomp.oo: CFLAGS+=-I/usr/include/GraphicsMagick
-
-#$(o)/images/decomp: $(o)/images/decomp.o $(o)/images/block_info.o $(o)/images/k_means.o $(LIBSH) $(LIBLANG) $(LIBCHARSET)
-#$(o)/images/decomp: LIBS+=-lGraphicsMagick -ljpeg -lm
-
