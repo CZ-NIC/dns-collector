@@ -14,7 +14,7 @@
   /* K6 doesn't have prefetches */
 
 #elif defined(__athlon) || defined(__k8) || \
-      defined(__i686) || \\
+      defined(__i686) || \
       defined(__pentium4) || defined(__prescott) || defined(__nocona)
 
 #define HAVE_PREFETCH
