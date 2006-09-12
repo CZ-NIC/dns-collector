@@ -81,43 +81,27 @@ read_image_obj_thumb(struct image_obj_info *ioi, struct fastbuf *fb, struct imag
   return img;
 error:
   DBG("Failed to decompress thumbnail: %s", io->thread->err_msg);
-  return NULL;
-}
-
-uns
-encode_image_obj_signature(byte *buf, struct image_signature *sig)
-{
-  /* signatures should be short enough to fit one attribute */
-  byte tmp[sizeof(struct image_signature)];
-  uns size = put_image_signature(tmp, sig);
-  ASSERT(MAX_ATTR_SIZE > BASE224_ENC_LENGTH(size));
-  uns len = base224_encode(buf, tmp, size);
-  buf[len] = 0;
-  return len;
-}
-
-uns
-decode_image_obj_signature(byte *buf, struct image_signature *sig)
-{
-  if (!buf)
-    return 0;
-  byte tmp[sizeof(struct image_signature)];
-  UNUSED uns size = base224_decode(tmp, buf, strlen(buf));
-  ASSERT(size == image_signature_size(*tmp));
-  get_image_signature(tmp, sig);
-  return 1;
+  return NULL;  
 }
 
 void
 put_image_obj_signature(struct odes *o, struct image_signature *sig)
 {
+  /* signatures should be short enough to fit one attribute */
   byte buf[MAX_ATTR_SIZE];
-  encode_image_obj_signature(buf, sig);
+  uns size = image_signature_size(sig->len);
+  ASSERT(MAX_ATTR_SIZE > BASE224_ENC_LENGTH(size));
+  buf[base224_encode(buf, (byte *)sig, size)] = 0;
   obj_set_attr(o, 'H', buf);
 }
 
 uns
-get_image_obj_signature(struct odes *o, struct image_signature *sig)
+get_image_obj_signature(struct image_signature *sig, struct odes *o)
 {
-  return decode_image_obj_signature(obj_find_aval(o, 'H'), sig);
+  byte *a = obj_find_aval(o, 'H');
+  if (!a)
+    return 0;
+  UNUSED uns size = base224_decode((byte *)sig, a, strlen(a));
+  ASSERT(size == image_signature_size(sig->len));
+  return 1;
 }

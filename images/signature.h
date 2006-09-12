@@ -1,8 +1,6 @@
 #ifndef _IMAGES_SIGNATURE_H
 #define _IMAGES_SIGNATURE_H
 
-#include "lib/fastbuf.h"
-
 /* Configuration */
 extern uns image_sig_min_width, image_sig_min_height;
 extern uns *image_sig_prequant_thresholds;
@@ -44,13 +42,13 @@ struct image_cluster {
   union {
     struct {
       s32 dot;			/* Dot product of the splitting plane */
-      byte vec[IMAGE_VEC_F];	/* Normal vector of the splitting plane */
-    };
+      s8 vec[IMAGE_VEC_F];	/* Normal vector of the splitting plane */
+    } PACKED;
     struct {
       u64 pos;			/* Cluster size in bytes */
-    };
-  };
-};
+    } PACKED;
+  } PACKED;
+} PACKED;
 
 static inline uns
 image_signature_size(uns len)
@@ -99,34 +97,6 @@ struct image_sig_data {
   u32 regions_count;
   u32 f[IMAGE_VEC_F];
 };
-
-#define IMAGE_VECTOR_SIZE (sizeof(struct image_vector))
-
-static inline uns
-bget_image_vector(struct fastbuf *fb, struct image_vector *vec)
-{
-  breadb(fb, vec, sizeof(*vec));
-  return IMAGE_VECTOR_SIZE;
-}
-
-static inline uns
-bput_image_vector(struct fastbuf *fb, struct image_vector *vec)
-{
-  bwrite(fb, vec, sizeof(*vec));
-  return IMAGE_VECTOR_SIZE;
-}
-
-static inline uns
-bpeek_image_signature(struct fastbuf *fb)
-{
-  return image_signature_size(bpeekc(fb));
-}
-
-uns get_image_signature(byte *buf, struct image_signature *sig);
-uns put_image_signature(byte *buf, struct image_signature *sig);
-
-uns bget_image_signature(struct fastbuf *fb, struct image_signature *sig);
-uns bput_image_signature(struct fastbuf *fb, struct image_signature *sig);
 
 /* sig-init.c */
 
