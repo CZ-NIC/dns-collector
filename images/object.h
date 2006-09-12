@@ -21,7 +21,9 @@ struct image_signature;
 uns get_image_obj_info(struct image_obj_info *ioi, struct odes *o);
 uns get_image_obj_thumb(struct image_obj_info *ioi, struct odes *o, struct mempool *pool);
 struct image *read_image_obj_thumb(struct image_obj_info *ioi, struct fastbuf *fb, struct image_io *io, struct mempool *pool);
+uns encode_image_obj_signature(byte *buf, struct image_signature *sig);
+uns decode_image_obj_signature(byte *buf, struct image_signature *sig);
 void put_image_obj_signature(struct odes *o, struct image_signature *sig);
-uns get_image_obj_signature(struct image_signature *sig, struct odes *o);
+uns get_image_obj_signature(struct odes *o, struct image_signature *sig);
 
 #endif
