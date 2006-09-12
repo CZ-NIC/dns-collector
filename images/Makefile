@@ -15,7 +15,7 @@ PROGS+=$(o)/images/image-sim-test
 LIBIMAGES_MODS+=sig-cmp
 endif
 ifneq ($(CONFIG_IMAGES_DUP)$(CONFIG_IMAGES_SIM),)
-LIBIMAGES_MODS+=sig-dump sig-init sig-seg sig-txt
+LIBIMAGES_MODS+=sig-dump sig-fb sig-init sig-seg sig-txt
 endif
 
 LIBIMAGES_LIBS=-lm -lpthread

@@ -98,6 +98,33 @@ struct image_sig_data {
   u32 f[IMAGE_VEC_F];
 };
 
+/* sig-fb.c */
+
+#define IMAGE_VECTOR_SIZE (sizeof(struct image_vector))
+
+static inline uns
+image_vector_read(struct fastbuf *fb, struct image_vector *vec)
+{
+  breadb(fb, vec, sizeof(*vec));
+  return IMAGE_VECTOR_SIZE;
+}
+
+static inline uns
+image_vector_write(struct fastbuf *fb, struct image_vector *vec)
+{
+  bwrite(fb, vec, sizeof(*vec));
+  return IMAGE_VECTOR_SIZE;
+}
+
+static inline uns
+image_signature_peek_size(struct fastbuf *fb)
+{
+  return image_signature_size(bpeekc(fb));
+}
+
+uns image_signature_read(struct fastbuf *fb, struct image_signature *sig);
+uns image_signature_write(struct fastbuf *fb, struct image_signature *sig);
+
 /* sig-init.c */
 
 int compute_image_signature(struct image_thread *thread, struct image_signature *sig, struct image *image);
