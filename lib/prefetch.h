@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Prefetch
  *
- *	(c) 1997--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2006 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -10,18 +10,12 @@
 #ifndef _UCW_PREFETCH_H
 #define _UCW_PREFETCH_H
 
-#if defined(__pentium4)
-
-#define HAVE_PREFETCH
-static inline void prefetch(void *addr)
-{
-  asm volatile ("prefetcht0 %0" : : "m" (*(byte*)addr));
-}
-
-#elif defined(__k6)
+#if defined(__k6)
   /* K6 doesn't have prefetches */
 
-#elif defined(__athlon) || defined(__i686)
+#elif defined(__athlon) || defined(__k8) || \
+      defined(__i686) || \
+      defined(__pentium4) || defined(__prescott) || defined(__nocona)
 
 #define HAVE_PREFETCH
 static inline void prefetch(void *addr)
