@@ -1,6 +1,8 @@
 #ifndef _IMAGES_SIGNATURE_H
 #define _IMAGES_SIGNATURE_H
 
+#include "lib/fastbuf.h"
+
 /* Configuration */
 extern uns image_sig_min_width, image_sig_min_height;
 extern uns *image_sig_prequant_thresholds;
@@ -42,13 +44,13 @@ struct image_cluster {
   union {
     struct {
       s32 dot;			/* Dot product of the splitting plane */
-      s8 vec[IMAGE_VEC_F];	/* Normal vector of the splitting plane */
-    } PACKED;
+      byte vec[IMAGE_VEC_F];	/* Normal vector of the splitting plane */
+    };
     struct {
       u64 pos;			/* Cluster size in bytes */
-    } PACKED;
-  } PACKED;
-} PACKED;
+    };
+  };
+};
 
 static inline uns
 image_signature_size(uns len)
