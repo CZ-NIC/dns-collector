@@ -118,6 +118,11 @@ struct fastbuf *fbgrow_create(unsigned basic_size);
 void fbgrow_reset(struct fastbuf *b);			/* Reset stream and prepare for writing */
 void fbgrow_rewind(struct fastbuf *b);			/* Prepare for reading */
 
+/* FastO with atomic writes for multi-threaded programs */
+
+struct fastbuf *fbatomic_create(byte *name, struct fastbuf *master, uns bufsize, int record_len);
+void fbatomic_checkpoint(struct fastbuf *b);
+
 /* Configuring stream parameters */
 
 int bconfig(struct fastbuf *f, uns type, int data);
