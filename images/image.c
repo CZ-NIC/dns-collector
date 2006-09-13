@@ -145,7 +145,7 @@ image_clone(struct image_thread *it, struct image *src, uns flags, struct mempoo
 #         define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; walk_pos[1] = walk_sec_pos[1]; walk_pos[2] = walk_sec_pos[2]; }while(0)
 #         include "images/image-walk.h"
 	}
-      else if (src->row_size != img->row_size)
+      else if (src->row_size != img->row_size || ((img->flags | src->flags) & IMAGE_GAPS_PROTECTED))
         {
           byte *s = src->pixels;
           byte *d = img->pixels;
@@ -176,7 +176,15 @@ image_clear(struct image_thread *it UNUSED, struct image *img)
 {
   DBG("image_clear(img=%p)", img);
   if (img->image_size)
-    bzero(img->pixels, img->image_size);
+    if (img->flags & IMAGE_GAPS_PROTECTED)
+      {
+        byte *p = img->pixels;
+        uns bytes = img->cols * img->pixel_size;
+	for (uns row = img->rows; row--; p += img->row_size)
+	  bzero(p, bytes);
+      }
+    else
+      bzero(img->pixels, img->image_size);
 }
 
 struct image *
