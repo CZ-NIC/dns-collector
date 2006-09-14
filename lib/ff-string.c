@@ -11,6 +11,7 @@
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 #include "lib/mempool.h"
+#include "lib/bbuf.h"
 
 byte *					/* Non-standard */
 bgets(struct fastbuf *f, byte *b, uns l)
@@ -79,7 +80,7 @@ exit:
 }
 
 uns
-bgets_bb(struct fastbuf *f, bb_t *bb, uns limit)
+bgets_bb(struct fastbuf *f, struct bb_t *bb, uns limit)
 {
   ASSERT(limit);
   byte *src;

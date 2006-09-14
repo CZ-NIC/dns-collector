@@ -19,7 +19,6 @@
 #include <alloca.h>
 
 #include "lib/unaligned.h"
-#include "lib/bbuf.h"
 
 /*
  *  Generic buffered I/O. You supply hooks to be called for low-level operations
@@ -342,7 +341,8 @@ int bgets_nodie(struct fastbuf *f, byte *b, uns l);
 byte *bgets0(struct fastbuf *f, byte *b, uns l);
 
 struct mempool;
-uns bgets_bb(struct fastbuf *f, bb_t *b, uns limit);
+struct bb_t;
+uns bgets_bb(struct fastbuf *f, struct bb_t *b, uns limit);
 byte *bgets_mp(struct fastbuf *f, struct mempool *mp);
 
 struct bgets_stk_struct {
