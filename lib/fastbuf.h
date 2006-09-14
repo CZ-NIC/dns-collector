@@ -120,8 +120,23 @@ void fbgrow_rewind(struct fastbuf *b);			/* Prepare for reading */
 
 /* FastO with atomic writes for multi-threaded programs */
 
-struct fastbuf *fbatomic_create(byte *name, struct fastbuf *master, uns bufsize, int record_len);
-void fbatomic_checkpoint(struct fastbuf *b);
+struct fb_atomic {
+  struct fastbuf fb;
+  struct fb_atomic_file *af;
+  byte *expected_max_bptr;
+  uns slack_size;
+};
+#define FB_ATOMIC(f) ((struct fb_atomic *)(f)->is_fastbuf)
+
+struct fastbuf *fbatomic_open(byte *name, struct fastbuf *master, uns bufsize, int record_len);
+void fbatomic_internal_write(struct fastbuf *b);
+
+static inline void
+fbatomic_commit(struct fastbuf *b)
+{
+  if (b->bptr >= ((struct fb_atomic *)b)->expected_max_bptr)
+    fbatomic_internal_write(b);
+}
 
 /* Configuring stream parameters */
 
