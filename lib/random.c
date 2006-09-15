@@ -19,6 +19,7 @@ random_max(uns max)
 {
   uns r, l;
 
+  ASSERT(max <= (1 << 30));
   l = (RAND_MAX + 1U) - ((RAND_MAX + 1U) % max);
   do
     r = random();
