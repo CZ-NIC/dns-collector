@@ -7,13 +7,14 @@ extern uns *image_sig_prequant_thresholds;
 extern uns image_sig_postquant_min_steps, image_sig_postquant_max_steps, image_sig_postquant_threshold;
 extern double image_sig_border_size;
 extern int image_sig_border_bonus;
+extern double image_sig_inertia_scale[];
 extern double image_sig_textured_threshold;
 extern int image_sig_compare_method;
 extern uns image_sig_cmp_features_weights[];
 
 #define IMAGE_VEC_F	6
 #define IMAGE_REG_F	IMAGE_VEC_F
-#define IMAGE_REG_H	3
+#define IMAGE_REG_H	5
 #define IMAGE_REG_MAX	16
 
 /* K-dimensional feature vector (6 bytes) */
@@ -23,10 +24,11 @@ struct image_vector {
 
 /* Fetures for image regions (16 bytes) */
 struct image_region {
-  byte f[IMAGE_VEC_F];		/* texture features */
-  u16 h[IMAGE_REG_H];		/* shape features */
-  u16 wa;			/* normalized area percentage */
-  u16 wb;			/* normalized weight */
+  byte f[IMAGE_VEC_F];		/* texture features - L, u, v, LH, HL, HH */
+  byte h[IMAGE_REG_H];		/* shape/pos features - I1, I2, I3, X, Y */
+  byte wa;			/* normalized area percentage */
+  byte wb;			/* normalized weight */
+  u16 reserved;
 } PACKED;
 
 #define IMAGE_SIG_TEXTURED	0x1
@@ -35,9 +37,9 @@ struct image_region {
 struct image_signature {
   byte len;			/* Number of regions */
   byte flags;			/* IMAGE_SIG_xxx */
-  byte df;			/* Average f dist */
-  u16 dh;			/* Average h dist */
-  struct image_vector vec;	/* Combination of all regions... simple signature */
+  u16 df;			/* Average weighted f dist */
+  u16 dh;			/* Average weighted h dist */
+  struct image_vector vec;	/* Average features of all regions... simple signature */
   struct image_region reg[IMAGE_REG_MAX];/* Feature vector for every region */
 } PACKED;
 
@@ -56,7 +58,7 @@ struct image_cluster {
 static inline uns
 image_signature_size(uns len)
 {
-  return 5 + sizeof(struct image_vector) + len * sizeof(struct image_region);
+  return OFFSETOF(struct image_signature, reg) + len * sizeof(struct image_region);
 }
 
 /* sig-dump.c */

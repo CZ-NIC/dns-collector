@@ -17,8 +17,10 @@ PostQuantMinSteps	2
 PostQuantMaxSteps	10
 PostQuantThreshold	1
 
-BorderSize		0.2
-BorderBonus		50
+BorderSize		0.4
+BorderBonus		-50
+
+InertiaScale		2 0.5 0.05
 
 TexturedThreshold	0.32
 
@@ -40,8 +42,8 @@ TexturedThreshold	0.32
 CompareMethod		integrated
 
 # Array of multiplicative constants in feature vectors distance computation
-# (L, u, v, LH, HL, HH, H0, H1, H2). Each one must be in range 0..15.
-CompareFeaturesWeights	1 2 2 1 1 1 1 1 1
+# (L, u, v, LH, HL, HH, I1, I2, I3, X, Y). Each one must be in range 0..15, default is 4.
+CompareFeaturesWeights	4 8 8 4 4 4 4 4 4 4 4
 
 }
 

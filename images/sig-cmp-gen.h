@@ -203,17 +203,17 @@ image_signatures_dist_fuzzy_explain(struct image_signature *sig1, struct image_s
     for (uns j = 0; j < cnt2; j++)
       {
 	uns d = 0;
-	for (uns k = 0; k < IMAGE_REG_F; k++)
+	for (uns k = 0; k < IMAGE_VEC_F; k++)
 	  {
 	    int dif = reg1[i].f[k] - reg2[j].f[k];
-	    d += dif * dif;
+	    d += image_sig_cmp_features_weights[k] * dif * dif;
 	  }
 	mf[i][j] = d;
 	d = 0;
 	for (uns k = 0; k < IMAGE_REG_H; k++)
 	  {
 	    int dif = reg1[i].h[k] - reg2[j].h[k];
-	    d += dif * dif;
+	    d += image_sig_cmp_features_weights[k + IMAGE_VEC_F] * dif * dif;
 	  }
 	mh[i][j] = d;
       }

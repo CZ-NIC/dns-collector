@@ -10,9 +10,9 @@
 #undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
-#include "lib/math.h"
 #include "lib/fastbuf.h"
 #include "lib/conf.h"
+#include "lib/math.h"
 #include "images/math.h"
 #include "images/images.h"
 #include "images/color.h"
@@ -178,8 +178,6 @@ image_sig_preprocess(struct image_sig_data *data)
     data->valid = 1;
 }
 
-static double image_sig_inertia_scale[3] = { 3, 1, 0.3 };
-
 void
 image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
 {
@@ -209,11 +207,11 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
       sig->reg[i].f[5] = r->a[5];
 
       /* Compute coordinates centroid and region weight */
-      u64 x_avg = 0, y_avg = 0, w_sum = 0;
+      u64 x_sum = 0, y_sum = 0, w_sum = 0;
       for (struct image_sig_block *b = r->blocks; b; b = b->next)
         {
-	  x_avg += b->x;
-	  y_avg += b->y;
+	  x_sum += b->x;
+	  y_sum += b->y;
 	  uns d = b->x;
 	  d = MIN(d, b->y);
 	  d = MIN(d, data->cols - b->x - 1);
@@ -225,24 +223,25 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
 	}
       w_total += w_sum;
       r->w_sum = w_sum;
-      x_avg /= r->count;
-      y_avg /= r->count;
-      DBG("  centroid=(%u %u)", (uns)x_avg, (uns)y_avg);
+      uns x_avg = x_sum / r->count;
+      uns y_avg = y_sum / r->count;
+      DBG("  centroid=(%u %u)", x_avg, y_avg);
 
       /* Compute normalized inertia */
       u64 sum1 = 0, sum2 = 0, sum3 = 0;
       for (struct image_sig_block *b = r->blocks; b; b = b->next)
         {
 	  uns inc2 = isqr(x_avg - b->x) + isqr(y_avg - b->y);
-	  uns inc1 = sqrt(inc2);
+	  uns inc1 = fast_sqrt_u32(inc2);
 	  sum1 += inc1;
 	  sum2 += inc2;
 	  sum3 += inc1 * inc2;
 	}
-      sig->reg[i].h[0] = CLAMP(image_sig_inertia_scale[0] * sum1 * ((3 * M_PI * M_PI) / 2) * pow(r->count, -1.5), 0, 65535);
-      sig->reg[i].h[1] = CLAMP(image_sig_inertia_scale[1] * sum2 * ((4 * M_PI * M_PI * M_PI) / 2) / ((u64)r->count * r->count), 0, 65535);
-      sig->reg[i].h[2] = CLAMP(image_sig_inertia_scale[2] * sum3 * ((5 * M_PI * M_PI * M_PI * M_PI) / 2) * pow(r->count, -2.5), 0, 65535);
-
+      sig->reg[i].h[0] = CLAMP(image_sig_inertia_scale[0] * sum1 * ((3 * M_PI * M_PI) / 2) * pow(r->count, -1.5), 0, 255);
+      sig->reg[i].h[1] = CLAMP(image_sig_inertia_scale[1] * sum2 * ((4 * M_PI * M_PI * M_PI) / 2) / ((u64)r->count * r->count), 0, 255);
+      sig->reg[i].h[2] = CLAMP(image_sig_inertia_scale[2] * sum3 * ((5 * M_PI * M_PI * M_PI * M_PI) / 2) * pow(r->count, -2.5), 0, 255);
+      sig->reg[i].h[3] = (uns)x_avg * 127 / data->cols;
+      sig->reg[i].h[4] = (uns)y_avg * 127 / data->rows;
     }
 
   /* Compute average differences */
@@ -261,16 +260,16 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
           {
 	    uns d = 0;
 	    for (uns k = 0; k < IMAGE_REG_F; k++)
-	      d += isqr(sig->reg[i].f[k] - sig->reg[j].f[k]);
-	    df += sqrt(d);
+	      d += image_sig_cmp_features_weights[k] * isqr(sig->reg[i].f[k] - sig->reg[j].f[k]);
+	    df += fast_sqrt_u32(d);
 	    d = 0;
 	    for (uns k = 0; k < IMAGE_REG_H; k++)
-	      d += isqr(sig->reg[i].h[k] - sig->reg[j].h[k]);
-	    dh += sqrt(d);
+	      d += image_sig_cmp_features_weights[k + IMAGE_REG_F] * isqr(sig->reg[i].h[k] - sig->reg[j].h[k]);
+	    dh += fast_sqrt_u32(d);
 	    cnt++;
           }
-      sig->df = CLAMP(df / cnt, 1, 255);
-      sig->dh = CLAMP(dh / cnt, 1, 65535);
+      sig->df = CLAMP(df / cnt, 1, 0xffff);
+      sig->dh = CLAMP(dh / cnt, 1, 0xffff);
     }
   DBG("Average regions difs: df=%u dh=%u", sig->df, sig->dh);
 
