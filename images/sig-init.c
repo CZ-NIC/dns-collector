@@ -284,6 +284,10 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
   sig->reg[0].wa = wa;
   sig->reg[0].wb = wb;
 
+  /* Store image dimensions */
+  sig->cols = data->image->cols;
+  sig->rows = data->image->rows;
+
   /* Dump regions features */
 #ifdef LOCAL_DEBUG
   for (uns i = 0; i < sig->len; i++)

@@ -37,6 +37,8 @@ struct image_region {
 struct image_signature {
   byte len;			/* Number of regions */
   byte flags;			/* IMAGE_SIG_xxx */
+  u32 cols;			/* Image width */
+  u32 rows;			/* Image height */
   u16 df;			/* Average weighted f dist */
   u16 dh;			/* Average weighted h dist */
   struct image_vector vec;	/* Average features of all regions... simple signature */
