@@ -36,6 +36,8 @@ image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2
 	return image_signatures_dist_integrated(sig1, sig2);
       case 1:
 	return image_signatures_dist_fuzzy(sig1, sig2);
+      case 2:
+	return image_signatures_dist_average(sig1, sig2);
       default:
 	ASSERT(0);
     }
@@ -50,6 +52,8 @@ image_signatures_dist_explain(struct image_signature *sig1, struct image_signatu
 	return image_signatures_dist_integrated_explain(sig1, sig2, msg, param);
       case 1:
 	return image_signatures_dist_fuzzy_explain(sig1, sig2, msg, param);
+      case 2:
+	return image_signatures_dist_average_explain(sig1, sig2, msg, param);
       default:
 	ASSERT(0);
     }

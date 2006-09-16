@@ -152,7 +152,7 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
 #ifdef EXPLAIN
       reg1 = sig1->reg + i;
       reg2 = sig2->reg + j;
-      MSG("[%u, %u] d=%u d=%u df=(%d", i, j, s, d, (int)reg1->f[0] - (int)reg2->f[0]);
+      MSG("[%u, %u] s=%u d=%u df=(%d", i, j, s, d, (int)reg1->f[0] - (int)reg2->f[0]);
       for (uns i = 1; i < IMAGE_VEC_F; i++)
         MSG(" %d", (int)reg1->f[i] - (int)reg2->f[i]);
       if (!((sig1->flags | sig2->flags) & IMAGE_SIG_TEXTURED))
@@ -276,6 +276,31 @@ image_signatures_dist_fuzzy_explain(struct image_signature *sig1, struct image_s
 #endif
 
   return (1 << (3 + 3 + 8 + 16)) - measure;
+}
+
+#ifndef EXPLAIN
+static uns
+image_signatures_dist_average(struct image_signature *sig1, struct image_signature *sig2)
+#else
+static uns
+image_signatures_dist_average_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
+#endif
+{
+#ifdef EXPLAIN
+  byte buf[1024], *line = buf;
+  MSGL("Average matching");
+#endif
+
+  uns dist = 0;
+  for (uns i = 0; i < IMAGE_VEC_F; i++)
+    {
+      uns d = image_sig_cmp_features_weights[0] * isqr((int)sig1->vec.f[i] - (int)sig2->vec.f[i]); 
+      MSGL("feature %u: d=%u (%u %u)", i, d, sig1->vec.f[i], sig2->vec.f[i]);
+      dist += d;
+    }
+
+  MSGL("dist=%u", dist);
+  return dist;
 }
 
 #undef EXPLAIN

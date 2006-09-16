@@ -36,7 +36,7 @@ static struct cf_section sig_config = {
     CF_DOUBLE("BorderSize", &image_sig_border_size),
     CF_INT("BorderBonus", &image_sig_border_bonus),
     CF_DOUBLE("TexturedThreshold", &image_sig_textured_threshold),
-    CF_LOOKUP("CompareMethod", &image_sig_compare_method, ((byte *[]){"integrated", "fuzzy", NULL})),
+    CF_LOOKUP("CompareMethod", &image_sig_compare_method, ((byte *[]){"integrated", "fuzzy", "average", NULL})),
     CF_UNS_ARY("CompareFeaturesWeights", image_sig_cmp_features_weights, IMAGE_VEC_F + IMAGE_REG_H),
     CF_END
   }
