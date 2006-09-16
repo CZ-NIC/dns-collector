@@ -35,7 +35,7 @@ TexturedThreshold	0.32
 #	IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 24, no. 9, pp. 1252-1267, 2002.
 #
 #   average
-#	Simple distance of image fetures average (ignores segmentation).
+#	Simple distance of image features averages (ignores segmentation).
 #
 CompareMethod		integrated
 
