@@ -280,7 +280,7 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
     {
       struct image_sig_region *r = data->regions + i;
       wa -= sig->reg[i].wa = CLAMP(r->count * 128 / data->blocks_count, 1, (int)(wa - i));
-      wb -= sig->reg[i].wb = CLAMP(r->w_sum * 128 / w_total, 1, (int)(wa - i));
+      wb -= sig->reg[i].wb = CLAMP(r->w_sum * 128 / w_total, 1, (int)(wb - i));
     }
   sig->reg[0].wa = wa;
   sig->reg[0].wb = wb;
