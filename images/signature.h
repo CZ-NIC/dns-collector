@@ -28,17 +28,17 @@ struct image_region {
   byte h[IMAGE_REG_H];		/* shape/pos features - I1, I2, I3, X, Y */
   byte wa;			/* normalized area percentage */
   byte wb;			/* normalized weight */
-  u16 reserved;
+  byte reserved[3];
 } PACKED;
 
 #define IMAGE_SIG_TEXTURED	0x1
 
-/* Image signature (11 + len * 16 bytes) */
+/* Image signature (16 + len * 16 bytes) */
 struct image_signature {
   byte len;			/* Number of regions */
   byte flags;			/* IMAGE_SIG_xxx */
-  u32 cols;			/* Image width */
-  u32 rows;			/* Image height */
+  u16 cols;			/* Image width */
+  u16 rows;			/* Image height */
   u16 df;			/* Average weighted f dist */
   u16 dh;			/* Average weighted h dist */
   struct image_vector vec;	/* Average features of all regions... simple signature */
