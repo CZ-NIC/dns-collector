@@ -30,6 +30,8 @@ explain_signature(struct image_signature *sig, void (*msg)(byte *text, void *par
 #  define LINE do{}while(0)
 #endif
 
+#define MSGL(x...) do{ MSG(x); LINE; }while(0)
+
 #ifndef EXPLAIN
 static uns
 image_signatures_dist_integrated(struct image_signature *sig1, struct image_signature *sig2)
@@ -38,13 +40,12 @@ static uns
 image_signatures_dist_integrated_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 #endif
 {
-  DBG("image_signatures_dist_integrated()");
-
   uns dist[IMAGE_REG_MAX * IMAGE_REG_MAX], p[IMAGE_REG_MAX], q[IMAGE_REG_MAX];
   uns n, i, j, k, l, s, d;
   struct image_region *reg1, *reg2;
 #ifdef EXPLAIN
   byte buf[1024], *line = buf;
+  MSGL("Integrated matching");
   explain_signature(sig1, msg, param);
   explain_signature(sig2, msg, param);
 #endif
@@ -52,15 +53,13 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
   /* FIXME: do not mux textured and non-textured images (should be split in clusters tree) */
   if ((sig1->flags ^ sig2->flags) & IMAGE_SIG_TEXTURED)
     {
-      MSG("Textured vs non-textured");
-      LINE;
+      MSGL("Textured vs non-textured");
       return ~0U;
     }
 
   /* Compute distance matrix */
   n = 0;
-  MSG("Distance matrix:");
-  LINE;
+  MSGL("Distance matrix:");
   /* ... for non-textured images */
   if (!((sig1->flags | sig2->flags) & IMAGE_SIG_TEXTURED))
     for (j = 0, reg2 = sig2->reg; j < sig2->len; j++, reg2++)
@@ -84,9 +83,15 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
 	  else
 	    dt *= 16;
 	  dist[n++] = (dt << 8) + i + (j << 4);
-	  DBG("[%u, %u] dt=%u ds=%u", i, j, dt, ds);
-	  MSG("[%u, %u] dt=%u ds=%u", i, j, dt, ds);
-	  LINE;
+#ifdef CONFIG_EXPLAIN	  
+	  MSG("[%u, %u] dt=%u ds=%u df=(%d", i, j, dt, ds, (int)reg1->f[0] - (int)reg2->f[0]);
+	  for (uns i = 1; i < IMAGE_VEC_F; i++)
+	    MSG(" %d", (int)reg1->f[i] - (int)reg2->f[i]);
+	  MSG(") dh=(%d", (int)reg1->h[0] - (int)reg2->h[0]);
+	  for (uns i = 1; i < IMAGE_REG_H; i++)
+	    MSG(" %d", (int)reg1->h[i] - (int)reg2->h[i]);
+	  MSGL(")");
+#endif
         }
   /* ... for textured images (ignore shape properties) */
   else
@@ -101,14 +106,17 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
 	    image_sig_cmp_features_weights[4] * isqr((int)reg1->f[4] - (int)reg2->f[4]) +
 	    image_sig_cmp_features_weights[5] * isqr((int)reg1->f[5] - (int)reg2->f[5]);
 	  dist[n++] = (dt << 12) + i + (j << 4);
-	  DBG("[%u, %u] dt=%u", i, j, dt);
-	  MSG("[%u, %u] dt=%u", i, j, dt);
-	  LINE;
+#ifdef CONFIG_EXPLAIN	  
+	  MSG("[%u, %u] dt=%u df=(%d", i, j, dt, (int)reg1->f[0] - (int)reg2->f[0]);
+	  for (uns i = 1; i < IMAGE_VEC_F; i++)
+	    MSG(" %d", (int)reg1->f[i] - (int)reg2->f[i]);
+	  MSGL(")");
+#endif
         }
 
   /* One or both signatures have no regions */
   if (!n)
-    return 0xffffffff;
+    return ~0U;
 
   /* Get percentages */
   for (i = 0, reg1 = sig1->reg; i < sig1->len; i++, reg1++)
@@ -121,8 +129,7 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
 
   /* Compute significance matrix and resulting distance */
   uns sum = 0;
-  MSG("Significance matrix:");
-  LINE;
+  MSGL("Significance matrix:");
   for (k = 0, l = 128; l; k++)
     {
       i = dist[k] & 15;
@@ -142,9 +149,7 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
 	}
       l -= s;
       sum += s * d;
-      DBG("[%u, %u] s=%u d=%u", i, j, s, d);
-      MSG("[%u, %u] s=%u d=%u", i, j, s, d);
-      LINE;
+      MSGL("[%u, %u] s=%u d=%u", i, j, s, d);
     }
 
   return sum;
@@ -158,10 +163,9 @@ static uns
 image_signatures_dist_fuzzy_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 #endif
 {
-  DBG("image_signatures_dist_fuzzy()");
-
 #ifdef EXPLAIN
   byte buf[1024], *line = buf;
+  MSGL("Fuzzy matching");
   explain_signature(sig1, msg, param);
   explain_signature(sig2, msg, param);
 #endif
@@ -169,8 +173,7 @@ image_signatures_dist_fuzzy_explain(struct image_signature *sig1, struct image_s
   /* FIXME: do not mux textured and non-textured images (should be split in clusters tree) */
   if ((sig1->flags ^ sig2->flags) & IMAGE_SIG_TEXTURED)
     {
-      MSG("Textured vs non-textured");
-      LINE;
+      MSGL("Textured vs non-textured");
       return ~0U;
     }
 
@@ -232,33 +235,30 @@ image_signatures_dist_fuzzy_explain(struct image_signature *sig1, struct image_s
 
   uns measure = lfs * 6 + lhs * 2 * 8;
 
-#ifdef LOCAL_DEBUG
+#ifdef CONFIG_EXPLAIN
   /* Display similarity vectors */
-  byte buf2[2 * IMAGE_REG_MAX * 16 + 3], *b = buf2;
+  MSG("Lf=(");
   for (uns i = 0; i < cnt1 + cnt2; i++)
     {
       if (i)
-	*b++ = ' ';
+	MSG(" ");
       if (i == cnt1)
-	*b++ = '~', *b++ = ' ';
-      b += sprintf(b, "%.4f", (double)lf[i] / 0x10000);
+	MSG("~ ");
+      MSG("%.4f", (double)lf[i] / 0x10000);
     }
-  *b = 0;
-  DBG("Lf=(%s)", buf2);
-  b = buf2;
+  MSGL(")");
   for (uns i = 0; i < cnt1 + cnt2; i++)
     {
       if (i)
-	*b++ = ' ';
+	MSG(" ");
       if (i == cnt1)
-	*b++ = '~', *b++ = ' ';
-      b += sprintf(b, "%.4f", (double)lh[i] / 0x10000);
+	MSG("~ ");
+      MSG("%.4f", (double)lh[i] / 0x10000);
     }
-  *b = 0;
-  DBG("Lh=(%s)", buf2);
-  DBG("Lfm=%.4f", lfs / (double)(1 << (3 + 8 + 16)));
-  DBG("Lhm=%.4f", lhs / (double)(1 << (8 + 16)));
-  DBG("measure=%.4f", measure / (double)(1 << (3 + 3 + 8 + 16)));
+  MSGL(")");
+  MSGL("Lfm=%.4f", lfs / (double)(1 << (3 + 8 + 16)));
+  MSGL("Lhm=%.4f", lhs / (double)(1 << (8 + 16)));
+  MSGL("measure=%.4f", measure / (double)(1 << (3 + 3 + 8 + 16)));
 #endif
 
   return (1 << (3 + 3 + 8 + 16)) - measure;
@@ -267,3 +267,4 @@ image_signatures_dist_fuzzy_explain(struct image_signature *sig1, struct image_s
 #undef EXPLAIN
 #undef MSG
 #undef LINE
+#undef MSGL
