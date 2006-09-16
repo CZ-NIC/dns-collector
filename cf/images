@@ -12,27 +12,34 @@ ImageSig {
 MinWidth	16
 MinHeight	16
 
-PreQuantThresholds	9 20 20 20 25 25 30 30 40 40 50 50 60 60 60
+PreQuantThresholds	6 12 15 20 25 25 30 30 40 40 50 50 60 60 60
 PostQuantMinSteps	2
 PostQuantMaxSteps	10
 PostQuantThreshold	1
 
+# BorderBonus and BorderSize parameters can increase or decrease the weight
+# of image pixels near the borders. Weight of all pixels more than BorderSize * MIN(cols, rows)
+# pixels far from the edges is 128. Then this value continuously decrese/increse up to 128+BorderSize.
 BorderSize		0.4
 BorderBonus		-50
 
+# Scaling constants for computation of normalized i-th order inertia features (I1, I2, I3).
 InertiaScale		2 0.5 0.05
 
+# Threshold for detecting textured images (see images/sig-txt.c for details).
+# Decrease the threshold if you want less detected textures,
+# set it to zero to disable the algorithm completely.
 TexturedThreshold	0.32
 
 # Signatures comparision method (integrated|fuzzy|average):
 #
 #   integrated
-#	James Z. Wang, Jia Li and Gio Wiederhold,
+#	based on: James Z. Wang, Jia Li and Gio Wiederhold,
 #	"SIMPLIcity: Semantics-Sensitive Integrated Matching for Picture Libraries",
 #	IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 23, no. 9, pp. 947-963, 2001.
 #
 #   fuzzy
-#	Yixin Chen and James Z. Wang,
+#	based on: Yixin Chen and James Z. Wang,
 #	"A Region-Based Fuzzy Feature Matching Approach to Content-Based Image Retrieval",
 #	IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 24, no. 9, pp. 1252-1267, 2002.
 #
@@ -42,8 +49,8 @@ TexturedThreshold	0.32
 CompareMethod		integrated
 
 # Array of multiplicative constants in feature vectors distance computation
-# (L, u, v, LH, HL, HH, I1, I2, I3, X, Y). Each one must be in range 0..15, default is 4.
-CompareFeaturesWeights	4 8 8 4 4 4 4 4 4 4 4
+# (L, u, v, LH, HL, HH, I1, I2, I3, X, Y). Each one must be an integer in range 0..15, default is 4.
+CompareFeaturesWeights	4 6 6 4 4 4 4 4 4 4 4
 
 }
 
