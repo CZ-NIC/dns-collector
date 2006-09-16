@@ -83,7 +83,7 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
 	  else
 	    dt *= 16;
 	  dist[n++] = (dt << 8) + i + (j << 4);
-#ifdef CONFIG_EXPLAIN
+#ifdef EXPLAIN
 	  MSG("[%u, %u] dt=%u ds=%u df=(%d", i, j, dt, ds, (int)reg1->f[0] - (int)reg2->f[0]);
 	  for (uns i = 1; i < IMAGE_VEC_F; i++)
 	    MSG(" %d", (int)reg1->f[i] - (int)reg2->f[i]);
@@ -106,7 +106,7 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
 	    image_sig_cmp_features_weights[4] * isqr((int)reg1->f[4] - (int)reg2->f[4]) +
 	    image_sig_cmp_features_weights[5] * isqr((int)reg1->f[5] - (int)reg2->f[5]);
 	  dist[n++] = (dt << 12) + i + (j << 4);
-#ifdef CONFIG_EXPLAIN
+#ifdef EXPLAIN
 	  MSG("[%u, %u] dt=%u df=(%d", i, j, dt, (int)reg1->f[0] - (int)reg2->f[0]);
 	  for (uns i = 1; i < IMAGE_VEC_F; i++)
 	    MSG(" %d", (int)reg1->f[i] - (int)reg2->f[i]);
@@ -149,7 +149,9 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
 	}
       l -= s;
       sum += s * d;
-#ifdef CONFIG_EXPLAIN
+#ifdef EXPLAIN
+      reg1 = sig1->reg + i;
+      reg2 = sig2->reg + j;
       MSG("[%u, %u] d=%u d=%u df=(%d", i, j, s, d, (int)reg1->f[0] - (int)reg2->f[0]);
       for (uns i = 1; i < IMAGE_VEC_F; i++)
         MSG(" %d", (int)reg1->f[i] - (int)reg2->f[i]);
@@ -246,7 +248,7 @@ image_signatures_dist_fuzzy_explain(struct image_signature *sig1, struct image_s
 
   uns measure = lfs * 6 + lhs * 2 * 8;
 
-#ifdef CONFIG_EXPLAIN
+#ifdef EXPLAIN
   /* Display similarity vectors */
   MSG("Lf=(");
   for (uns i = 0; i < cnt1 + cnt2; i++)
