@@ -68,16 +68,16 @@ image_signatures_dist_2_explain(struct image_signature *sig1, struct image_signa
       for (i = 0, reg1 = sig1->reg; i < sig1->len; i++, reg1++)
         {
 	  uns ds =
-	    isqr((int)reg1->h[0] - (int)reg2->h[0]) +
-	    isqr((int)reg1->h[1] - (int)reg2->h[1]) +
-	    isqr((int)reg1->h[2] - (int)reg2->h[2]);
+	    image_sig_cmp_features_weights[6] * isqr((int)reg1->h[0] - (int)reg2->h[0]) +
+	    image_sig_cmp_features_weights[7] * isqr((int)reg1->h[1] - (int)reg2->h[1]) +
+	    image_sig_cmp_features_weights[8] * isqr((int)reg1->h[2] - (int)reg2->h[2]);
 	  uns dt =
-	    isqr((int)reg1->f[0] - (int)reg2->f[0]) +
-	    isqr((int)reg1->f[1] - (int)reg2->f[1]) +
-	    isqr((int)reg1->f[2] - (int)reg2->f[2]) +
-	    isqr((int)reg1->f[3] - (int)reg2->f[3]) +
-	    isqr((int)reg1->f[4] - (int)reg2->f[4]) +
-	    isqr((int)reg1->f[5] - (int)reg2->f[5]);
+	    image_sig_cmp_features_weights[0] * isqr((int)reg1->f[0] - (int)reg2->f[0]) +
+	    image_sig_cmp_features_weights[1] * isqr((int)reg1->f[1] - (int)reg2->f[1]) +
+	    image_sig_cmp_features_weights[2] * isqr((int)reg1->f[2] - (int)reg2->f[2]) +
+	    image_sig_cmp_features_weights[3] * isqr((int)reg1->f[3] - (int)reg2->f[3]) +
+	    image_sig_cmp_features_weights[4] * isqr((int)reg1->f[4] - (int)reg2->f[4]) +
+	    image_sig_cmp_features_weights[5] * isqr((int)reg1->f[5] - (int)reg2->f[5]);
 	  if (ds < 1000)
 	    dt *= 8;
 	  else if (ds < 10000)
@@ -95,12 +95,12 @@ image_signatures_dist_2_explain(struct image_signature *sig1, struct image_signa
       for (i = 0, reg1 = sig1->reg; i < sig1->len; i++, reg1++)
         {
 	  uns dt =
-	    isqr((int)reg1->f[0] - (int)reg2->f[0]) +
-	    isqr((int)reg1->f[1] - (int)reg2->f[1]) +
-	    isqr((int)reg1->f[2] - (int)reg2->f[2]) +
-	    isqr((int)reg1->f[3] - (int)reg2->f[3]) +
-	    isqr((int)reg1->f[4] - (int)reg2->f[4]) +
-	    isqr((int)reg1->f[5] - (int)reg2->f[5]);
+	    image_sig_cmp_features_weights[0] * isqr((int)reg1->f[0] - (int)reg2->f[0]) +
+	    image_sig_cmp_features_weights[1] * isqr((int)reg1->f[1] - (int)reg2->f[1]) +
+	    image_sig_cmp_features_weights[2] * isqr((int)reg1->f[2] - (int)reg2->f[2]) +
+	    image_sig_cmp_features_weights[3] * isqr((int)reg1->f[3] - (int)reg2->f[3]) +
+	    image_sig_cmp_features_weights[4] * isqr((int)reg1->f[4] - (int)reg2->f[4]) +
+	    image_sig_cmp_features_weights[5] * isqr((int)reg1->f[5] - (int)reg2->f[5]);
 	  dist[n++] = (dt << 12) + i + (j << 4);
 	  DBG("[%u, %u] dt=%u", i, j, dt);
 	  MSG("[%u, %u] dt=%u", i, j, dt);
