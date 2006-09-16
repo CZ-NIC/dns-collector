@@ -22,7 +22,7 @@ BorderBonus		50
 
 TexturedThreshold	0.32
 
-# Signatures comparision method (integrated|fuzzy) - based on:
+# Signatures comparision method (integrated|fuzzy|average):
 #
 #   integrated
 #	James Z. Wang, Jia Li and Gio Wiederhold,
@@ -33,6 +33,9 @@ TexturedThreshold	0.32
 #	Yixin Chen and James Z. Wang,
 #	"A Region-Based Fuzzy Feature Matching Approach to Content-Based Image Retrieval",
 #	IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 24, no. 9, pp. 1252-1267, 2002.
+#
+#   average
+#	Simple distance of image fetures average (ignores segmentation).
 #
 CompareMethod		integrated
 
