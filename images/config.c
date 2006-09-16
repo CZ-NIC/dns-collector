@@ -22,7 +22,7 @@ uns image_sig_postquant_threshold;
 double image_sig_border_size;
 int image_sig_border_bonus;
 double image_sig_textured_threshold;
-uns image_sig_compare_method;
+int image_sig_compare_method;
 uns image_sig_cmp_features_weights[IMAGE_VEC_F + IMAGE_REG_H];
 
 static struct cf_section sig_config = {
@@ -36,7 +36,7 @@ static struct cf_section sig_config = {
     CF_DOUBLE("BorderSize", &image_sig_border_size),
     CF_INT("BorderBonus", &image_sig_border_bonus),
     CF_DOUBLE("TexturedThreshold", &image_sig_textured_threshold),
-    CF_UNS("CompareMethod", &image_sig_compare_method),
+    CF_LOOKUP("CompareMethod", &image_sig_compare_method, ((byte *[]){"intergrated", "fuzzy", NULL})),
     CF_UNS_ARY("CompareFeaturesWeights", image_sig_cmp_features_weights, IMAGE_VEC_F + IMAGE_REG_H),
     CF_END
   }

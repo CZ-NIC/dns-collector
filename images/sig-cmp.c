@@ -18,7 +18,7 @@
 #include <stdio.h>
 
 static uns
-image_signatures_dist_1(struct image_signature *sig1, struct image_signature *sig2)
+image_signatures_dist_fuzzy(struct image_signature *sig1, struct image_signature *sig2)
 {
   DBG("image_signatures_dist_1()");
 
@@ -112,7 +112,7 @@ image_signatures_dist_1(struct image_signature *sig1, struct image_signature *si
   return (1 << (3 + 3 + 8 + 16)) - measure;
 }
 
-#define ASORT_PREFIX(x) image_signatures_dist_2_##x
+#define ASORT_PREFIX(x) image_signatures_dist_integrated_##x
 #define ASORT_KEY_TYPE uns
 #define ASORT_ELT(i) items[i]
 #define ASORT_EXTRA_ARGS , uns *items
@@ -127,20 +127,26 @@ image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2
 {
   switch (image_sig_compare_method)
     {
+      case 0:
+	return image_signatures_dist_integrated(sig1, sig2);
       case 1:
-	return image_signatures_dist_1(sig1, sig2);
-      case 2:
-	return image_signatures_dist_2(sig1, sig2);
+	return image_signatures_dist_fuzzy(sig1, sig2);
       default:
-	die("Invalid image signatures compare method.");
+	ASSERT(0);
     }
 }
 
 uns
 image_signatures_dist_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 {
-  if (image_sig_compare_method == 2)
-    return image_signatures_dist_2_explain(sig1, sig2, msg, param);
-  return image_signatures_dist(sig1, sig2);
+  switch (image_sig_compare_method)
+    {
+      case 0:
+	return image_signatures_dist_integrated_explain(sig1, sig2, msg, param);
+      case 1:
+	return image_signatures_dist_fuzzy(sig1, sig2);
+      default:
+	ASSERT(0);
+    }
 }
 

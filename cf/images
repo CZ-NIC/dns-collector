@@ -22,9 +22,21 @@ BorderBonus		50
 
 TexturedThreshold	0.32
 
-CompareMethod		2
+# Signatures comparision method (integrated|fuzzy) - based on:
+#
+#   integrated
+#	James Z. Wang, Jia Li and Gio Wiederhold,
+#	"SIMPLIcity: Semantics-Sensitive Integrated Matching for Picture Libraries",
+#	IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 23, no. 9, pp. 947-963, 2001.
+#
+#   fuzzy
+#	Yixin Chen and James Z. Wang,
+#	"A Region-Based Fuzzy Feature Matching Approach to Content-Based Image Retrieval",
+#	IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 24, no. 9, pp. 1252-1267, 2002.
+#
+CompareMethod		integrated
 
-# Array of multiplicative constants in feature vectors distance computation 
+# Array of multiplicative constants in feature vectors distance computation
 # (L, u, v, LH, HL, HH, H0, H1, H2). Each one must be in range 0..15.
 CompareFeaturesWeights	1 2 2 1 1 1 1 1 1
 

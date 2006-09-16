@@ -8,7 +8,8 @@ extern uns image_sig_postquant_min_steps, image_sig_postquant_max_steps, image_s
 extern double image_sig_border_size;
 extern int image_sig_border_bonus;
 extern double image_sig_textured_threshold;
-extern uns image_sig_compare_method, image_sig_cmp_features_weights[];
+extern int image_sig_compare_method;
+extern uns image_sig_cmp_features_weights[];
 
 #define IMAGE_VEC_F	6
 #define IMAGE_REG_F	IMAGE_VEC_F

@@ -4,7 +4,7 @@
 #define LINE do{}while(0)
 
 static uns
-image_signatures_dist_2(struct image_signature *sig1, struct image_signature *sig2)
+image_signatures_dist_integrated(struct image_signature *sig1, struct image_signature *sig2)
 
 #else
 
@@ -35,7 +35,7 @@ explain_signature(struct image_signature *sig, void (*msg)(byte *text, void *par
 }
 
 static uns
-image_signatures_dist_2_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
+image_signatures_dist_integrated_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 
 #endif
 {
@@ -118,7 +118,7 @@ image_signatures_dist_2_explain(struct image_signature *sig1, struct image_signa
     q[i] = reg2->wb;
 
   /* Sort entries in distance matrix */
-  image_signatures_dist_2_sort(n, dist);
+  image_signatures_dist_integrated_sort(n, dist);
 
   /* Compute significance matrix and resulting distance */
   uns sum = 0;
