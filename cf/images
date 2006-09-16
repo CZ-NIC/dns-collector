@@ -17,6 +17,9 @@ PostQuantMinSteps	2
 PostQuantMaxSteps	10
 PostQuantThreshold	1
 
+BorderSize		0.2
+BorderBonus		50
+
 TexturedThreshold	0.32
 
 CompareMethod		2

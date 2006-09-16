@@ -192,8 +192,8 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
   
   /* For each region */
   u64 w_total = 0;
-  uns w_border = (MIN(data->cols, data->rows) + 3) / 4;
-  uns w_mul = 127 * 256 / w_border;
+  uns w_border = MIN(data->cols, data->rows) * image_sig_border_size;
+  int w_mul = image_sig_border_bonus * 256 / w_border;
   for (uns i = 0; i < sig->len; i++)
     {
       struct image_sig_region *r = data->regions + i;
@@ -221,7 +221,7 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
 	  if (d >= w_border)
 	    w_sum += 128;
 	  else
-	    w_sum += 128 + (d - w_border) * w_mul / 256;
+	    w_sum += 128 + (int)(w_border - d) * w_mul / 256;
 	}
       w_total += w_sum;
       r->w_sum = w_sum;
