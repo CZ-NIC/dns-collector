@@ -193,7 +193,7 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
   /* For each region */
   u64 w_total = 0;
   uns w_border = MIN(data->cols, data->rows) * image_sig_border_size;
-  int w_mul = w_border ? image_sig_border_bonus * 256 / w_border : 0;
+  int w_mul = w_border ? image_sig_border_bonus * 256 / (int)w_border : 0;
   for (uns i = 0; i < sig->len; i++)
     {
       struct image_sig_region *r = data->regions + i;
