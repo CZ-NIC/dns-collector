@@ -65,26 +65,68 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
     for (j = 0, reg2 = sig2->reg; j < sig2->len; j++, reg2++)
       for (i = 0, reg1 = sig1->reg; i < sig1->len; i++, reg1++)
         {
-	  uns ds =
-	    image_sig_cmp_features_weights[6] * isqr((int)reg1->h[0] - (int)reg2->h[0]) +
-	    image_sig_cmp_features_weights[7] * isqr((int)reg1->h[1] - (int)reg2->h[1]) +
-	    image_sig_cmp_features_weights[8] * isqr((int)reg1->h[2] - (int)reg2->h[2]);
-	  uns dt =
-	    image_sig_cmp_features_weights[0] * isqr((int)reg1->f[0] - (int)reg2->f[0]) +
-	    image_sig_cmp_features_weights[1] * isqr((int)reg1->f[1] - (int)reg2->f[1]) +
-	    image_sig_cmp_features_weights[2] * isqr((int)reg1->f[2] - (int)reg2->f[2]) +
-	    image_sig_cmp_features_weights[3] * isqr((int)reg1->f[3] - (int)reg2->f[3]) +
-	    image_sig_cmp_features_weights[4] * isqr((int)reg1->f[4] - (int)reg2->f[4]) +
-	    image_sig_cmp_features_weights[5] * isqr((int)reg1->f[5] - (int)reg2->f[5]);
-	  if (ds < 1000)
-	    dt *= 8;
-	  else if (ds < 10000)
-	    dt *= 12;
+	  uns dt = 0, ds = 0, dp = 0, d;
+	  for (uns i = 0; i < IMAGE_VEC_F; i++)
+	    dt += image_sig_cmp_features_weights[i] * isqr((int)reg1->f[i] - (int)reg2->f[i]);
+	  for (uns i = 0; i < 3; i++)
+	    ds += image_sig_cmp_features_weights[IMAGE_VEC_F + i] * isqr((int)reg1->h[i] - (int)reg2->h[i]);
+	  for (uns i = 3; i < 4; i++)
+	    dp += image_sig_cmp_features_weights[IMAGE_VEC_F + i] * isqr((int)reg1->h[i] - (int)reg2->h[i]);
+#if 0
+	  int x1, y1, x2, y2;
+	  if (sig1->cols > sig1->rows)
+	    {
+	      x1 = reg1->h[3];
+	      y1 = ((int)reg1->h[4] - 64) * (int)sig1->rows / (int)sig1->cols + 64;
+	    }
 	  else
-	    dt *= 16;
-	  dist[n++] = (dt << 8) + i + (j << 4);
+	    {
+	      y1 = reg1->h[4];
+	      x1 = ((int)reg1->h[3] - 64) * (int)sig1->cols / (int)sig1->rows + 64;
+	    }
+	  if (sig2->cols > sig2->rows)
+	    {
+	      x2 = reg2->h[3];
+	      y2 = ((int)reg2->h[4] - 64) * (int)sig2->rows / (int)sig2->cols + 64;
+	    }
+	  else
+	    {
+	      y2 = reg2->h[4];
+	      x2 = ((int)reg2->h[3] - 64) * (int)sig2->cols / (int)sig2->rows + 64;
+	    }
+	  MSGL("%d %d %d %d", x1, y1, x2, y2);
+	  dp = image_sig_cmp_features_weights[IMAGE_VEC_F + 3] * isqr(x1 - x2) +
+    	       image_sig_cmp_features_weights[IMAGE_VEC_F + 4] * isqr(y1 - y2);
+#endif
+#if 0
+	  d = dt * (4 + MIN(8, (ds >> 12))) * (4 + MIN(8, (dp >> 10))) + (ds >> 11) + (dp >> 10);
+	  MSG("[%u, %u] d=%u=(%u * %u * %u + %u + %u) dt=%u ds=%u dp=%u df=(%d", i, j, d,
+	      dt, 4 + MIN(8, (ds >> 12)), 4 + MIN(8, dp >> 10), ds >> 11, dp >> 10, dt, ds, dp, (int)reg1->f[0] - (int)reg2->f[0]);
+#endif
+#if 1
+	  d = dt;
+	  if (ds < 1000)
+	    d = d * 4;
+	  else if (ds < 3000)
+	    d = d * 6 + 8;
+	  else if (ds < 10000)
+	    d = d * 8 + 20;
+	  else if (ds < 50000)
+	    d = d * 10 + 50;
+	  else
+	    d = d * 12 + 100;
+	  if (dp < 1000)
+	    d = d * 2;
+	  else if (dp < 4000)
+	    d = d * 3 + 100;
+	  else if (dp < 10000)
+	    d = d * 4 + 800;
+	  else
+	    d = d * 5 + 3000;
+#endif
+	  dist[n++] = (d << 8) + i + (j << 4);
+	  MSG("[%u, %u] d=%u dt=%u ds=%u dp=%u df=(%d", i, j, d, dt, ds, dp, (int)reg1->f[0] - (int)reg2->f[0]);
 #ifdef EXPLAIN
-	  MSG("[%u, %u] dt=%u ds=%u df=(%d", i, j, dt, ds, (int)reg1->f[0] - (int)reg2->f[0]);
 	  for (uns i = 1; i < IMAGE_VEC_F; i++)
 	    MSG(" %d", (int)reg1->f[i] - (int)reg2->f[i]);
 	  MSG(") dh=(%d", (int)reg1->h[0] - (int)reg2->h[0]);
@@ -98,13 +140,9 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
     for (j = 0, reg2 = sig2->reg; j < sig2->len; j++, reg2++)
       for (i = 0, reg1 = sig1->reg; i < sig1->len; i++, reg1++)
         {
-	  uns dt =
-	    image_sig_cmp_features_weights[0] * isqr((int)reg1->f[0] - (int)reg2->f[0]) +
-	    image_sig_cmp_features_weights[1] * isqr((int)reg1->f[1] - (int)reg2->f[1]) +
-	    image_sig_cmp_features_weights[2] * isqr((int)reg1->f[2] - (int)reg2->f[2]) +
-	    image_sig_cmp_features_weights[3] * isqr((int)reg1->f[3] - (int)reg2->f[3]) +
-	    image_sig_cmp_features_weights[4] * isqr((int)reg1->f[4] - (int)reg2->f[4]) +
-	    image_sig_cmp_features_weights[5] * isqr((int)reg1->f[5] - (int)reg2->f[5]);
+	  uns dt = 0;
+	  for (uns i = 0; i < IMAGE_VEC_F; i++)
+	    dt += image_sig_cmp_features_weights[i] * isqr((int)reg1->f[i] - (int)reg2->f[i]);
 	  dist[n++] = (dt << 12) + i + (j << 4);
 #ifdef EXPLAIN
 	  MSG("[%u, %u] dt=%u df=(%d", i, j, dt, (int)reg1->f[0] - (int)reg2->f[0]);
@@ -165,7 +203,26 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
 #endif
     }
 
-  return sum;
+  d = sum / 32;
+
+  uns a = sig1->cols * sig2->rows;
+  uns b = sig1->rows * sig2->cols;
+  if (a < 2 * b && b < 2 * a)
+    d = d * 2;
+  else if (a < 4 * b && b < 4 * a)
+    d = d * 3;
+  else
+    d = d * 5;
+
+  a = sig1->cols * sig1->rows;
+  b = sig2->cols * sig2->rows;
+
+  if ((a < 1000 && b > 5000) || (b < 1000 && a > 5000))
+    d = d * 2;
+  else if ((a < 5000 && b > 20000) || (b < 5000 && a > 20000))
+    d = d * 3 / 2;
+
+  return d;
 }
 
 #ifndef EXPLAIN
@@ -302,6 +359,33 @@ image_signatures_dist_average_explain(struct image_signature *sig1, struct image
   MSGL("dist=%u", dist);
   return dist;
 }
+
+#ifndef EXPLAIN
+#define CALL(x) image_signatures_dist_##x(sig1, sig2)
+uns
+image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2)
+#else
+#define CALL(x) image_signatures_dist_##x##_explain(sig1, sig2, msg, param)
+uns
+image_signatures_dist_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
+#endif
+{
+  if (!sig1->len)
+    return CALL(average);
+  else
+    switch (image_sig_compare_method)
+      {
+        case 0:
+	  return CALL(integrated);
+	case 1:
+	  return CALL(fuzzy);
+	case 2:
+	  return CALL(average);
+	default:
+	  ASSERT(0);
+      }
+}
+#undef CALL
 
 #undef EXPLAIN
 #undef MSG
