@@ -22,6 +22,12 @@
 void
 image_sig_detect_textured(struct image_sig_data *data)
 {
+  if (image_sig_textured_threshold <= 0)
+    {
+      DBG("Zero textured threshold.");
+      return;
+    }
+	
   uns cols = data->cols;
   uns rows = data->rows;
   uns cell_cols = MIN((cols + 1) / 2, MAX_CELLS_COLS);
@@ -81,7 +87,7 @@ image_sig_detect_textured(struct image_sig_data *data)
   DBG("Coefficient=%g", (double)e / (data->regions_count * data->blocks_count));
 
   /* Threshold */
-  if (e <= image_sig_textured_threshold * data->regions_count * data->blocks_count)
+  if (e < image_sig_textured_threshold * data->regions_count * data->blocks_count)
     {
       data->flags |= IMAGE_SIG_TEXTURED;
       DBG("Image is textured.");

@@ -38,7 +38,7 @@ TexturedThreshold	0.32
 #	"SIMPLIcity: Semantics-Sensitive Integrated Matching for Picture Libraries",
 #	IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 23, no. 9, pp. 947-963, 2001.
 #
-#   fuzzy
+#   fuzzy (unstable and unbalanced parameters)
 #	based on: Yixin Chen and James Z. Wang,
 #	"A Region-Based Fuzzy Feature Matching Approach to Content-Based Image Retrieval",
 #	IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 24, no. 9, pp. 1252-1267, 2002.
