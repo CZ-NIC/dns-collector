@@ -14,4 +14,7 @@
 #define	GBUF_PREFIX(x)	bb_##x
 #include "lib/gbuf.h"
 
+char *bb_ofs_vprintf(bb_t *bb, uns ofs, char *fmt, va_list args);
+char *bb_ofs_printf(bb_t *bb, uns ofs, char *fmt, ...);
+
 #endif
