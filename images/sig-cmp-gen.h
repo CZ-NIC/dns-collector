@@ -70,7 +70,7 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
 	    dt += image_sig_cmp_features_weights[i] * isqr((int)reg1->f[i] - (int)reg2->f[i]);
 	  for (uns i = 0; i < 3; i++)
 	    ds += image_sig_cmp_features_weights[IMAGE_VEC_F + i] * isqr((int)reg1->h[i] - (int)reg2->h[i]);
-	  for (uns i = 3; i < 4; i++)
+	  for (uns i = 3; i < 5; i++)
 	    dp += image_sig_cmp_features_weights[IMAGE_VEC_F + i] * isqr((int)reg1->h[i] - (int)reg2->h[i]);
 #if 0
 	  int x1, y1, x2, y2;
@@ -107,7 +107,7 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
 	  d = dt;
 	  if (ds < 1000)
 	    d = d * 4;
-	  else if (ds < 3000)
+	  else if (ds < 4000)
 	    d = d * 6 + 8;
 	  else if (ds < 10000)
 	    d = d * 8 + 20;
