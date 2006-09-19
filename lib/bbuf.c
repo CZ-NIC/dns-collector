@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 char *
-bb_ofs_vprintf(bb_t *bb, uns ofs, char *fmt, va_list args)
+bb_vprintf_at(bb_t *bb, uns ofs, char *fmt, va_list args)
 {
   bb_grow(bb, ofs + 1);
   va_list args2;
@@ -32,7 +32,7 @@ bb_ofs_vprintf(bb_t *bb, uns ofs, char *fmt, va_list args)
 	}
       while (cnt < 0);
     }
-  else if (cnt >= bb->len - ofs)
+  else if ((uns)cnt >= bb->len - ofs)
     {
       bb_do_grow(bb, ofs + cnt + 1);
       va_copy(args2, args);
@@ -44,11 +44,27 @@ bb_ofs_vprintf(bb_t *bb, uns ofs, char *fmt, va_list args)
 }
 
 char *
-bb_ofs_printf(bb_t *bb, uns ofs, char *fmt, ...)
+bb_printf_at(bb_t *bb, uns ofs, char *fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
-  char *res = bb_ofs_vprintf(bb, ofs, fmt, args);
+  char *res = bb_vprintf_at(bb, ofs, fmt, args);
+  va_end(args);
+  return res;
+}
+
+char *
+bb_vprintf(bb_t *bb, char *fmt, va_list args)
+{
+  return bb_vprintf_at(bb, 0, fmt, args);
+}
+
+char *
+bb_printf(bb_t *bb, char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  char *res = bb_vprintf_at(bb, 0, fmt, args);
   va_end(args);
   return res;
 }
@@ -59,9 +75,9 @@ int main(void)
 {
   bb_t bb;
   bb_init(&bb);
-  char *x = bb_ofs_printf(&bb, 0, "<Hello, %s!>", "World");
+  char *x = bb_printf(&bb, "<Hello, %s!>", "World");
   fputs(x, stdout);
-  x = bb_ofs_printf(&bb, 5, "<Hello, %50s!>\n", "World");
+  x = bb_printf_at(&bb, 5, "<Hello, %50s!>\n", "World");
   fputs(x, stdout);
   bb_done(&bb);
   return 0;
