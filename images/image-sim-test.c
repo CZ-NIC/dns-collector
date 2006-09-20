@@ -13,6 +13,7 @@
 #include "images/images.h"
 #include "images/color.h"
 #include "images/signature.h"
+
 #include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -60,7 +61,7 @@ static byte *segmentation_name_1;
 static byte *segmentation_name_2;
 
 #define MSG(x...) do{ if (verbose) log(L_INFO, ##x); }while(0)
-#define TRY(x) do{ if (!(x)) die("Error: %s", it.err_msg); }while(0)
+#define TRY(x) do{ if (!(x)) exit(1); }while(0)
 
 static void
 msg_str(byte *s, void *param UNUSED)
@@ -81,7 +82,7 @@ dump_signature(struct image_signature *sig)
     }
 }
 
-static struct image_thread it;
+static struct image_context ctx;
 static struct image_io io;
 
 static void
@@ -91,8 +92,8 @@ write_segmentation(struct image_sig_data *data, byte *fn)
   
   struct fastbuf *fb = bopen(fn, O_WRONLY | O_CREAT | O_TRUNC, 4096);
   struct image *img;
-  TRY(img = image_new(&it, data->image->cols, data->image->rows, COLOR_SPACE_RGB, NULL));
-  image_clear(&it, img);
+  TRY(img = image_new(&ctx, data->image->cols, data->image->rows, COLOR_SPACE_RGB, NULL));
+  image_clear(&ctx, img);
 
   for (uns i = 0; i < data->regions_count; i++)
     {
@@ -101,8 +102,8 @@ write_segmentation(struct image_sig_data *data, byte *fn)
       luv[0] = data->regions[i].a[0] * (4 / 2.55);
       luv[1] = ((int)data->regions[i].a[1] - 128) * (4 / 2.55);
       luv[2] = ((int)data->regions[i].a[2] - 128) * (4 / 2.55);
-      luv_to_xyz_slow(xyz, luv);
-      xyz_to_srgb_slow(srgb, xyz);
+      luv_to_xyz_exact(xyz, luv);
+      xyz_to_srgb_exact(srgb, xyz);
       c[0] = CLAMP(srgb[0] * 255, 0, 255); 
       c[1] = CLAMP(srgb[1] * 255, 0, 255); 
       c[2] = CLAMP(srgb[2] * 255, 0, 255); 
@@ -186,12 +187,11 @@ main(int argc, char **argv)
   MSG("Initializing image library");
   srandom(time(NULL) ^ getpid());
   srgb_to_luv_init();
-  image_thread_init(&it);
+  image_context_init(&ctx);
 
   struct image *img1, *img2;
 
-  if (!image_io_init(&it, &io))
-    die("Cannot initialize image I/O (%s)", it.err_msg);
+  TRY(image_io_init(&ctx, &io));
 
   if (file_name_1)
     {
@@ -238,7 +238,7 @@ main(int argc, char **argv)
   if (img1)
     {
       struct image_sig_data data;
-      TRY(image_sig_init(&it, &data, img1));
+      TRY(image_sig_init(&ctx, &data, img1));
       image_sig_preprocess(&data);
       if (data.valid)
         {
@@ -254,7 +254,7 @@ main(int argc, char **argv)
   if (img2)
     {
       struct image_sig_data data;
-      TRY(image_sig_init(&it, &data, img2));
+      TRY(image_sig_init(&ctx, &data, img2));
       image_sig_preprocess(&data);
       if (data.valid)
         {
@@ -288,7 +288,7 @@ main(int argc, char **argv)
     image_destroy(img2);
 
   image_io_cleanup(&io);
-  image_thread_cleanup(&it);
+  image_context_cleanup(&ctx);
   MSG("Done.");
   return 0;
 }

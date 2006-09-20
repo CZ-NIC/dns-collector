@@ -2,7 +2,15 @@
 
 ######## General parameters #####################################################
 
-Images {
+ImageLib {
+
+# Default tracing level (0 to disable)
+Trace		0
+
+# Limits for image allocation. ImageMaxDim must be less than 1<<16.
+ImageMaxDim	0xffff
+ImageMaxBytes	256M
+
 }
 
 ######## Image signatures #######################################################

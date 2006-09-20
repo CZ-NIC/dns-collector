@@ -10,16 +10,19 @@
 #undef LOCAL_DEBUG
 
 #include "lib/lib.h"
+#include "lib/mempool.h"
 #include "images/images.h"
+#include "images/error.h"
 #include "images/io-main.h"
+
 #include <string.h>
 
 int
-image_io_init(struct image_thread *it, struct image_io *io)
+image_io_init(struct image_context *ctx, struct image_io *io)
 {
   DBG("image_io_init()");
   bzero(io, sizeof(*io));
-  io->thread = it;
+  io->context = ctx;
 #ifdef CONFIG_IMAGES_LIBJPEG
   if (!libjpeg_init(io))
     goto libjpeg_failed;
@@ -106,11 +109,11 @@ image_io_reset(struct image_io *io)
   image_io_read_cancel(io);
   image_io_image_destroy(io);
   struct mempool *pool = io->internal_pool;
-  struct image_thread *thread = io->thread;
+  struct image_context *ctx = io->context;
   mp_flush(pool);
   bzero(io, sizeof(*io));
   io->internal_pool = pool;
-  io->thread = thread;
+  io->context = ctx;
 }
 
 int
@@ -153,7 +156,7 @@ image_io_read_header(struct image_io *io)
     default:
       ASSERT(0);
   }
-  image_thread_err(io->thread, IMAGE_ERR_INVALID_FILE_FORMAT, "Image format not supported.");
+  IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_FILE_FORMAT, "Image format not supported.");
   return 0;
 }
 
@@ -257,7 +260,7 @@ image_io_write(struct image_io *io)
     default:
       break;
   }
-  image_thread_err(io->thread, IMAGE_ERR_INVALID_FILE_FORMAT, "Output format not supported.");
+  IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_FILE_FORMAT, "Output format not supported.");
   return 0;
 }
 
@@ -304,9 +307,9 @@ image_io_read_data_prepare(struct image_io_read_data_internals *rdi, struct imag
   DBG("image_io_read_data_prepare()");
   if (rdi->need_transformations = io->cols != cols || io->rows != rows ||
       ((io->flags ^ flags) & IMAGE_NEW_FLAGS))
-    return rdi->image = image_new(io->thread, cols, rows, flags & IMAGE_IO_IMAGE_FLAGS, NULL);
+    return rdi->image = image_new(io->context, cols, rows, flags & IMAGE_IO_IMAGE_FLAGS, NULL);
   else
-    return rdi->image = image_new(io->thread, io->cols, io->rows, io->flags & IMAGE_IO_IMAGE_FLAGS, io->pool);
+    return rdi->image = image_new(io->context, io->cols, io->rows, io->flags & IMAGE_IO_IMAGE_FLAGS, io->pool);
 }
 
 int
@@ -322,13 +325,13 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
 	  uns flags = rdi->image->flags;
 	  if (!(rdi->need_transformations = ((io->flags ^ rdi->image->flags) & (IMAGE_NEW_FLAGS & ~IMAGE_PIXELS_ALIGNED))))
 	    flags = io->flags;
-	  struct image *img = image_new(io->thread, io->cols, io->rows, flags, rdi->need_transformations ? NULL : io->pool);
+	  struct image *img = image_new(io->context, io->cols, io->rows, flags, rdi->need_transformations ? NULL : io->pool);
 	  if (unlikely(!img))
 	    {
 	      image_destroy(rdi->image);
 	      return 0;
 	    }
-          if (unlikely(!image_scale(io->thread, img, rdi->image)))
+          if (unlikely(!image_scale(io->context, img, rdi->image)))
             {
               image_destroy(rdi->image);
 	      image_destroy(img);
@@ -345,13 +348,13 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
 	  uns flags = rdi->image->flags & ~IMAGE_ALPHA;
 	  if (!(rdi->need_transformations = (flags ^ io->flags) & (IMAGE_NEW_FLAGS & ~IMAGE_PIXELS_ALIGNED)))
 	    flags = io->flags;
-	  struct image *img = image_new(io->thread, io->cols, io->rows, flags, rdi->need_transformations ? NULL : io->pool);
+	  struct image *img = image_new(io->context, io->cols, io->rows, flags, rdi->need_transformations ? NULL : io->pool);
 	  if (unlikely(!img))
 	    {
 	      image_destroy(rdi->image);
 	      return 0;
 	    }
-          if (unlikely(!image_apply_background(io->thread, img, rdi->image, &io->background_color)))
+          if (unlikely(!image_apply_background(io->context, img, rdi->image, &io->background_color)))
             {
               image_destroy(rdi->image);
 	      image_destroy(img);

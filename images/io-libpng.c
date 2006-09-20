@@ -13,7 +13,10 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
+#include "images/error.h"
+#include "images/color.h"
 #include "images/io-main.h"
+
 #include <png.h>
 #include <setjmp.h>
 
@@ -44,7 +47,7 @@ static void NONRET
 libpng_read_error(png_structp png_ptr, png_const_charp msg)
 {
   DBG("libpng_read_error()");
-  image_thread_err_dup(png_get_error_ptr(png_ptr), IMAGE_ERR_READ_FAILED, (byte *)msg);
+  IMAGE_ERROR(png_get_error_ptr(png_ptr), IMAGE_ERROR_READ_FAILED, "%s", msg);
   longjmp(png_jmpbuf(png_ptr), 1);
 }
 
@@ -52,7 +55,7 @@ static void NONRET
 libpng_write_error(png_structp png_ptr, png_const_charp msg)
 {
   DBG("libpng_write_error()");
-  image_thread_err_dup(png_get_error_ptr(png_ptr), IMAGE_ERR_WRITE_FAILED, (byte *)msg);
+  IMAGE_ERROR(png_get_error_ptr(png_ptr), IMAGE_ERROR_WRITE_FAILED, "%s", msg);
   longjmp(png_jmpbuf(png_ptr), 1);
 }
 
@@ -100,24 +103,24 @@ libpng_read_header(struct image_io *io)
   /* Create libpng structures */
   struct libpng_read_data *rd = io->read_data = mp_alloc(io->internal_pool, sizeof(*rd));
   rd->png_ptr = png_create_read_struct_2(PNG_LIBPNG_VER_STRING,
-      io->thread, libpng_read_error, libpng_warning,
+      io->context, libpng_read_error, libpng_warning,
       io->internal_pool, libpng_malloc, libpng_free);
   if (unlikely(!rd->png_ptr))
     {
-      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Cannot create libpng read structure.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Cannot create libpng read structure.");
       return 0;
     }
   rd->info_ptr = png_create_info_struct(rd->png_ptr);
   if (unlikely(!rd->info_ptr))
     {
-      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Cannot create libpng info structure.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Cannot create libpng info structure.");
       png_destroy_read_struct(&rd->png_ptr, NULL, NULL);
       return 0;
     }
   rd->end_ptr = png_create_info_struct(rd->png_ptr);
   if (unlikely(!rd->end_ptr))
     {
-      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Cannot create libpng info structure.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Cannot create libpng info structure.");
       png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, NULL);
       return 0;
     }
@@ -132,7 +135,7 @@ libpng_read_header(struct image_io *io)
 
   /* Setup libpng IO */
   png_set_read_fn(rd->png_ptr, io->fastbuf, libpng_read_fn);
-  png_set_user_limits(rd->png_ptr, IMAGE_MAX_SIZE, IMAGE_MAX_SIZE);
+  png_set_user_limits(rd->png_ptr, image_max_dim, image_max_dim);
 
   /* Read header */
   png_read_info(rd->png_ptr, rd->info_ptr);
@@ -169,7 +172,7 @@ libpng_read_header(struct image_io *io)
         break;
       default:
         png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
-        image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Unknown color type");
+        IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Unknown color type");
         break;
     }
 
@@ -193,7 +196,7 @@ libpng_read_data(struct image_io *io)
 	break;
       default:
         png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
-	image_thread_err(io->thread, IMAGE_ERR_INVALID_PIXEL_FORMAT, "Unsupported color space.");
+	IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Unsupported color space.");
         return 0;
     }
 
@@ -306,17 +309,17 @@ libpng_write(struct image_io *io)
 
   /* Create libpng structures */
   png_structp png_ptr = png_create_write_struct_2(PNG_LIBPNG_VER_STRING,
-      io->thread, libpng_write_error, libpng_warning,
+      io->context, libpng_write_error, libpng_warning,
       io->internal_pool, libpng_malloc, libpng_free);
   if (unlikely(!png_ptr))
     {
-      image_thread_err(io->thread, IMAGE_ERR_WRITE_FAILED, "Cannot create libpng write structure.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_WRITE_FAILED, "Cannot create libpng write structure.");
       return 0;
     }
   png_infop info_ptr = png_create_info_struct(png_ptr);
   if (unlikely(!info_ptr))
     {
-      image_thread_err(io->thread, IMAGE_ERR_WRITE_FAILED, "Cannot create libpng info structure.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_WRITE_FAILED, "Cannot create libpng info structure.");
       png_destroy_write_struct(&png_ptr, NULL);
       return 0;
     }

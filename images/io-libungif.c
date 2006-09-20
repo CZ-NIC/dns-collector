@@ -13,8 +13,10 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
+#include "images/error.h"
 #include "images/color.h"
 #include "images/io-main.h"
+
 #include <gif_lib.h>
 
 struct libungif_read_data {
@@ -47,7 +49,7 @@ libungif_read_header(struct image_io *io)
   GifFileType *gif;
   if (unlikely(!(gif = DGifOpen(io->fastbuf, libungif_read_func))))
     {
-      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Cannot create libungif structure.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Cannot create libungif structure.");
       return 0;
     }
 
@@ -57,7 +59,7 @@ libungif_read_header(struct image_io *io)
   DBG("executing DGifSlurp()");
   if (unlikely(DGifSlurp(gif) != GIF_OK))
     {
-      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Gif read failed.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Gif read failed.");
       DGifCloseFile(gif);
       return 0;
     }
@@ -65,7 +67,7 @@ libungif_read_header(struct image_io *io)
   DBG("ImageCount=%d ColorResolution=%d SBackGroundColor=%d SColorMap=%p", gif->ImageCount, gif->SColorResolution, gif->SBackGroundColor, gif->SColorMap);
   if (unlikely(!gif->ImageCount))
     {
-      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "There are no images in gif file.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "There are no images in gif file.");
       DGifCloseFile(gif);
       return 0;
     }
@@ -73,16 +75,16 @@ libungif_read_header(struct image_io *io)
   /* Read image parameters */
   SavedImage *image = gif->SavedImages;
   if (unlikely(image->ImageDesc.Width <= 0 || image->ImageDesc.Height <= 0 ||
-      image->ImageDesc.Width > (int)IMAGE_MAX_SIZE || image->ImageDesc.Height > (int)IMAGE_MAX_SIZE))
+      image->ImageDesc.Width > (int)image_max_dim || image->ImageDesc.Height > (int)image_max_dim))
     {
-      image_thread_err(io->thread, IMAGE_ERR_INVALID_DIMENSIONS, "Invalid gif dimensions.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_DIMENSIONS, "Invalid gif dimensions.");
       DGifCloseFile(gif);
       return 0;
     }
   ColorMapObject *color_map = image->ImageDesc.ColorMap ? : gif->SColorMap;
   if (unlikely(!color_map))
     {
-      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Missing palette.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Missing palette.");
       DGifCloseFile(gif);
       return 0;
     }
@@ -90,7 +92,7 @@ libungif_read_header(struct image_io *io)
   io->rows = image->ImageDesc.Height;
   if (unlikely((io->number_of_colors = color_map->ColorCount) > 256))
     {
-      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Too many gif colors.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Too many gif colors.");
       DGifCloseFile(gif);
       return 0;
     }
@@ -106,7 +108,7 @@ libungif_read_header(struct image_io *io)
 	  DBG("Found graphics control extension");
 	  if (unlikely(e->ByteCount != 4))
 	    {
-              image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Invalid graphics control extension.");
+              IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Invalid graphics control extension.");
               DGifCloseFile(gif);
               return 0;
 	    }

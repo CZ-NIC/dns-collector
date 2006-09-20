@@ -107,9 +107,9 @@ struct image_sig_data {
 
 /* sig-init.c */
 
-int compute_image_signature(struct image_thread *thread, struct image_signature *sig, struct image *image);
+int compute_image_signature(struct image_context *ctx, struct image_signature *sig, struct image *image);
 
-int image_sig_init(struct image_thread *thread, struct image_sig_data *data, struct image *image);
+int image_sig_init(struct image_context *ctx, struct image_sig_data *data, struct image *image);
 void image_sig_preprocess(struct image_sig_data *data);
 void image_sig_finish(struct image_sig_data *data, struct image_signature *sig);
 void image_sig_cleanup(struct image_sig_data *data);

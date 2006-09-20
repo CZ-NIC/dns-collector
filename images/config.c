@@ -13,6 +13,12 @@
 
 #include <string.h>
 
+/* ImageLib section */
+uns image_trace;
+uns image_max_dim = 0xffff;
+uns image_max_bytes = ~0U;
+
+/* ImageSig section */
 uns image_sig_min_width;
 uns image_sig_min_height;
 uns *image_sig_prequant_thresholds;
@@ -26,7 +32,16 @@ double image_sig_textured_threshold;
 int image_sig_compare_method;
 uns image_sig_cmp_features_weights[IMAGE_REG_F + IMAGE_REG_H];
 
-static struct cf_section sig_config = {
+static struct cf_section image_lib_config = {
+  CF_ITEMS{
+    CF_UNS("Trace", &image_trace),
+    CF_UNS("ImageMaxDim", &image_max_dim),
+    CF_UNS("ImageMaxBytes", &image_max_bytes),
+    CF_END
+  }
+};
+
+static struct cf_section image_sig_config = {
   CF_ITEMS{
     CF_UNS("MinWidth", &image_sig_min_width),
     CF_UNS("MinHeight", &image_sig_min_height),
@@ -47,5 +62,6 @@ static struct cf_section sig_config = {
 static void CONSTRUCTOR
 images_init_config(void)
 {
-  cf_declare_section("ImageSig", &sig_config, 0);
+  cf_declare_section("ImageLib", &image_lib_config, 0);
+  cf_declare_section("ImageSig", &image_sig_config, 0);
 }

@@ -24,7 +24,7 @@ struct image_dup {
 
 /* dup-init.c */
 
-uns image_dup_init(struct image_thread *thread, struct image_dup *dup, struct image *image, struct mempool *pool);
+uns image_dup_init(struct image_context *ctx, struct image_dup *dup, struct image *image, struct mempool *pool);
 uns image_dup_estimate_size(uns cols, uns rows);
 
 /* dup-cmp.c */

@@ -2,9 +2,9 @@
 
 DIRS+=images
 
-PROGS+=$(o)/images/image-tool
+PROGS+=$(o)/images/image-tool $(o)/images/color-tool
 CONFIGS+=images
-LIBIMAGES_MODS=math config image scale color alpha io-main object
+LIBIMAGES_MODS=math config context image scale color alpha io-main object
 
 ifdef CONFIG_IMAGES_DUP
 PROGS+=$(o)/images/image-dup-test
@@ -54,6 +54,9 @@ $(o)/images/libimages.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_M
 $(o)/images/image-tool: $(o)/images/image-tool.o $(LIBIMAGES) $(LIBUCW)
 $(o)/images/image-tool: LIBS+=$(LIBIMAGES_LIBS)
 
+$(o)/images/color-tool: $(o)/images/color-tool.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/color-tool: LIBS+=$(LIBIMAGES_LIBS)
+
 $(o)/images/image-dup-test: $(o)/images/image-dup-test.o $(LIBIMAGES) $(LIBUCW)
 $(o)/images/image-dup-test: LIBS+=$(LIBIMAGES_LIBS)
 
@@ -62,7 +65,7 @@ $(o)/images/image-sim-test: LIBS+=$(LIBIMAGES_LIBS)
 
 TESTS+=$(o)/images/image-test.test
 $(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBUCW)
-$(o)/images/image-test: LIBS+=$(LIBIMAGES_LIBS)
+$(o)/images/image-test: LIBS+=$(LIBIMAGES_LIBS) -lpthread
 $(o)/images/image-test.test: $(o)/images/image-test
 
 TESTS+=$(o)/images/hilbert-test.test

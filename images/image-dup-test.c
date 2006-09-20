@@ -10,6 +10,7 @@
 #include "lib/lib.h"
 #include "lib/getopt.h"
 #include "lib/fastbuf.h"
+#include "lib/mempool.h"
 #include "images/images.h"
 #include "images/color.h"
 #include "images/duplicates.h"
@@ -106,16 +107,15 @@ main(int argc, char **argv)
   file_name_1 = argv[optind++];
   file_name_2 = argv[optind];
   
-#define TRY(x) do{ if (!(x)) die("Error: %s", it.err_msg); }while(0)
+#define TRY(x) do{ if (!(x)) exit(1); }while(0)
   MSG("Initializing image library");
-  struct image_thread it;
+  struct image_context ctx;
   struct image_io io;
-  image_thread_init(&it);
+  image_context_init(&ctx);
 
   struct image *img1, *img2;
 
-  if (!image_io_init(&it, &io))
-    die("Cannot initialize image I/O (%s)", it.err_msg);
+  TRY(image_io_init(&ctx, &io));
   MSG("Reading %s", file_name_1);
   io.fastbuf = bopen(file_name_1, O_RDONLY, 1 << 18);
   io.format = format_1 ? : image_file_name_to_format(file_name_1);
@@ -149,8 +149,8 @@ main(int argc, char **argv)
   struct image_dup dup1, dup2;
   struct mempool *pool = mp_new(1 << 18);
   MSG("Creating internal structures");
-  TRY(image_dup_init(&it, &dup1, img1, pool));
-  TRY(image_dup_init(&it, &dup2, img2, pool));
+  TRY(image_dup_init(&ctx, &dup1, img1, pool));
+  TRY(image_dup_init(&ctx, &dup2, img2, pool));
 
   MSG("Similarity bitmap %02x", image_dup_compare(&dup1, &dup2, transformations | IMAGE_DUP_SCALE | IMAGE_DUP_WANT_ALL));
 
@@ -158,7 +158,7 @@ main(int argc, char **argv)
   
   image_destroy(img1);
   image_destroy(img2);
-  image_thread_cleanup(&it);
+  image_context_cleanup(&ctx);
   MSG("Done.");
   return 0;
 }

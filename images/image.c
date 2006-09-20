@@ -12,34 +12,10 @@
 #include "lib/lib.h"
 #include "lib/mempool.h"
 #include "images/images.h"
+#include "images/error.h"
+#include "images/color.h"
+
 #include <string.h>
-
-#define MAX_IMAGE_BYTES (1 << 30)
-
-void
-image_thread_init(struct image_thread *it)
-{
-  DBG("image_thread_init()");
-  bzero(it, sizeof(*it));
-  it->pool = mp_new(1024);
-}
-
-void
-image_thread_cleanup(struct image_thread *it)
-{
-  DBG("image_thread_cleanup()");
-  mp_delete(it->pool);
-}
-
-void
-image_thread_err_format(struct image_thread *it, uns code, char *msg, ...)
-{
-  va_list args;
-  va_start(args, msg);
-  it->err_code = code;
-  it->err_msg = mp_vprintf(it->pool, msg, args);
-  va_end(args);
-}
 
 static inline uns
 flags_to_pixel_size(uns flags)
@@ -62,13 +38,13 @@ flags_to_pixel_size(uns flags)
 }
 
 struct image *
-image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool *pool)
+image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempool *pool)
 {
   DBG("image_new(cols=%u rows=%u flags=0x%x pool=%p)", cols, rows, flags, pool);
   flags &= IMAGE_NEW_FLAGS;
   if (unlikely(!image_dimensions_valid(cols, rows)))
     {
-      image_thread_err_format(it, IMAGE_ERR_INVALID_DIMENSIONS, "Invalid image dimensions (%ux%u)", cols, rows);
+      IMAGE_ERROR(ctx, IMAGE_ERROR_INVALID_DIMENSIONS, "Invalid image dimensions (%ux%u)", cols, rows);
       return NULL;
     }
   struct image *img;
@@ -98,9 +74,9 @@ image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool
   row_size = ALIGN(row_size, align);
   u64 image_size_64 = (u64)row_size * rows;
   u64 bytes_64 = image_size_64 + (sizeof(struct image) + IMAGE_SSE_ALIGN_SIZE - 1 + sizeof(uns));
-  if (unlikely(bytes_64 > MAX_IMAGE_BYTES))
+  if (unlikely(bytes_64 > image_max_bytes))
     {
-      image_thread_err(it, IMAGE_ERR_INVALID_DIMENSIONS, "Image does not fit in memory");
+      IMAGE_ERROR(ctx, IMAGE_ERROR_INVALID_DIMENSIONS, "Image does not fit in memory");
       return NULL;
     }
   if (pool)
@@ -125,13 +101,13 @@ image_new(struct image_thread *it, uns cols, uns rows, uns flags, struct mempool
 }
 
 struct image *
-image_clone(struct image_thread *it, struct image *src, uns flags, struct mempool *pool)
+image_clone(struct image_context *ctx, struct image *src, uns flags, struct mempool *pool)
 {
   DBG("image_clone(src=%p flags=0x%x pool=%p)", src, src->flags, pool);
   struct image *img;
   flags &= IMAGE_NEW_FLAGS & ~IMAGE_CHANNELS_FORMAT;
   flags |= src->flags & IMAGE_CHANNELS_FORMAT;
-  if (!(img = image_new(it, src->cols, src->rows, flags, pool)))
+  if (!(img = image_new(ctx, src->cols, src->rows, flags, pool)))
     return NULL;
   if (img->image_size)
     {
@@ -172,7 +148,7 @@ image_destroy(struct image *img)
 }
 
 void
-image_clear(struct image_thread *it UNUSED, struct image *img)
+image_clear(struct image_context *ctx UNUSED, struct image *img)
 {
   DBG("image_clear(img=%p)", img);
   if (img->image_size)
@@ -188,12 +164,12 @@ image_clear(struct image_thread *it UNUSED, struct image *img)
 }
 
 struct image *
-image_init_matrix(struct image_thread *it, struct image *img, byte *pixels, uns cols, uns rows, uns row_size, uns flags)
+image_init_matrix(struct image_context *ctx, struct image *img, byte *pixels, uns cols, uns rows, uns row_size, uns flags)
 {
   DBG("image_init_matrix(img=%p pixels=%p cols=%u rows=%u row_size=%u flags=0x%x)", img, pixels, cols, rows, row_size, flags);
   if (unlikely(!image_dimensions_valid(cols, rows)))
     {
-      image_thread_err_format(it, IMAGE_ERR_INVALID_DIMENSIONS, "Invalid image dimensions (%ux%u)", cols, rows);
+      IMAGE_ERROR(ctx, IMAGE_ERROR_INVALID_DIMENSIONS, "Invalid image dimensions (%ux%u)", cols, rows);
       return NULL;
     }
   img->pixels = pixels;
@@ -207,7 +183,7 @@ image_init_matrix(struct image_thread *it, struct image *img, byte *pixels, uns 
 }
 
 struct image *
-image_init_subimage(struct image_thread *it UNUSED, struct image *img, struct image *src, uns left, uns top, uns cols, uns rows)
+image_init_subimage(struct image_context *ctx UNUSED, struct image *img, struct image *src, uns left, uns top, uns cols, uns rows)
 {
   DBG("image_init_subimage(img=%p src=%p left=%u top=%u cols=%u rows=%u)", img, src, left, top, cols, rows);
   ASSERT(left + cols <= src->cols && top + rows <= src->rows);
@@ -223,7 +199,7 @@ image_init_subimage(struct image_thread *it UNUSED, struct image *img, struct im
 }
 
 byte *
-color_space_to_name(enum color_space cs)
+color_space_to_name(uns cs)
 {
   return image_channels_format_to_name(cs);
 }

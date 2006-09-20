@@ -166,13 +166,14 @@ main(int argc, char **argv)
   if (argc > optind)
     output_file_name = argv[optind];
 
-#define TRY(x) do{ if (!(x)) die("Error: %s", it.err_msg); }while(0)
+#define TRY(x) do{ if (!(x)) exit(1); }while(0)
   MSG("Initializing image library");
-  struct image_thread it;
+  struct image_context ctx;
   struct image_io io;
-  image_thread_init(&it);
-  if (!image_io_init(&it, &io))
-    die("Cannot initialize image I/O (%s)", it.err_msg);
+  image_context_init(&ctx);
+  ctx.tracing_level = ~0U;
+  if (!image_io_init(&ctx, &io))
+    die("Cannot initialize image I/O");
 
   MSG("Reading %s", input_file_name);
   io.fastbuf = bopen(input_file_name, O_RDONLY, 1 << 18);
@@ -238,7 +239,7 @@ main(int argc, char **argv)
     }
 
   image_io_cleanup(&io);
-  image_thread_cleanup(&it);
+  image_context_cleanup(&ctx);
   MSG("Done.");
   return 0;
 }

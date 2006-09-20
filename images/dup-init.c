@@ -13,6 +13,7 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
+#include "images/color.h"
 #include "images/duplicates.h"
 
 #include <fcntl.h>
@@ -20,9 +21,9 @@
 static uns image_dup_tab_limit = 8;
 
 static inline struct image *
-image_dup_subimage(struct image_thread *thread, struct image_dup *dup, struct image *block, uns tab_col, uns tab_row)
+image_dup_subimage(struct image_context *ctx, struct image_dup *dup, struct image *block, uns tab_col, uns tab_row)
 {
-  return image_init_matrix(thread, block, image_dup_block(dup, tab_col, tab_row),
+  return image_init_matrix(ctx, block, image_dup_block(dup, tab_col, tab_row),
       1 << tab_col, 1 << tab_row, 3 << tab_col, COLOR_SPACE_RGB);
 }
 
@@ -44,7 +45,7 @@ image_dup_estimate_size(uns cols, uns rows)
 }
 
 uns
-image_dup_init(struct image_thread *thread, struct image_dup *dup, struct image *img, struct mempool *pool)
+image_dup_init(struct image_context *ctx, struct image_dup *dup, struct image *img, struct mempool *pool)
 {
   DBG("image_dup_init()");
 
@@ -59,9 +60,9 @@ image_dup_init(struct image_thread *thread, struct image_dup *dup, struct image 
   /* Scale original image to right bottom block */
   {
     struct image block;
-    if (!image_dup_subimage(thread, dup, &block, dup->tab_cols, dup->tab_rows))
+    if (!image_dup_subimage(ctx, dup, &block, dup->tab_cols, dup->tab_rows))
       return 0;
-    if (!image_scale(thread, &block, img))
+    if (!image_scale(ctx, &block, img))
       return 0;
   }
 

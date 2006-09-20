@@ -8,6 +8,8 @@
  *
  *
  *	References:
+ *	- A Review of RGB Color Spaces, Danny Pascale (2003)
+ *	- http://www.adobe.com/digitalimag/pdfs/AdobeRGB1998.pdf
  *	- http://www.tecgraf.puc-rio.br/~mgattass/color/ColorIndex.html
  *
  *	FIXME:
@@ -24,6 +26,60 @@
 #define _IMAGES_COLOR_H
 
 #include "images/images.h"
+
+// A comparison of four multimedia RGB spaces, Danny Pascale
+
+enum {
+  COLOR_SPACE_UNKNOWN = 0,
+  COLOR_SPACE_GRAYSCALE,
+  COLOR_SPACE_RGB,
+  COLOR_SPACE_XYZ,
+  COLOR_SPACE_LAB,
+  COLOR_SPACE_LUV,
+  COLOR_SPACE_YCBCR,
+  COLOR_SPACE_MAX
+};
+
+/* Color spaces in the CIE 1931 chromacity diagram */
+
+struct color_space_chromacity_info {
+  double prim1[2];
+  double prim2[2];
+  double prim3[2];
+  double white[2];
+};
+
+struct color_space_gamma_info {
+  double simple_gamma;
+  double detailed_gamma;
+  double offset;
+  double transition;
+  double slope;
+};
+
+struct color_space_info {
+  byte *name;
+  struct color_space_chromacity_info chromacity;
+  struct color_space_gamma_info gamma;
+};
+
+extern const double
+  color_illuminant_d50[2],
+  color_illuminant_d65[2],
+  color_illuminant_e[2];
+
+extern const struct color_space_info
+  color_adobe_rgb_info,		/* Adobe RGB (1998) */
+  color_apple_rgb_info,		/* Apple RGB */
+  color_cie_rgb_info,		/* CIE RGB */
+  color_color_match_rgb_info,	/* ColorMatch RGB */
+  color_srgb_info;		/* sRGB */
+
+/* These routines do not check numeric errors! */
+void color_compute_color_space_to_xyz_matrix(double matrix[9], const struct color_space_chromacity_info *space);
+void color_compute_bradford_matrix(double matrix[9], const double src[2], const double dest[2]);
+void color_compute_color_spaces_conversion_matrix(double matrix[9], const struct color_space_chromacity_info *src, const struct color_space_chromacity_info *dest);
+void color_invert_matrix(double dest[9], double matrix[9]);
 
 static inline uns
 rgb_to_gray_func(uns r, uns g, uns b)
@@ -49,15 +105,15 @@ color_make_rgb(struct color *color, uns r, uns g, uns b)
   color->color_space = COLOR_SPACE_RGB;
 }
 
-void color_put_color_space(byte *dest, struct color *color, enum color_space color_space);
+void color_put_color_space(byte *dest, struct color *color, uns color_space);
 void color_put_grayscale(byte *dest, struct color *color);
 void color_put_rgb(byte *dest, struct color *color);
 
 /* Exact slow conversion routines */
-void srgb_to_xyz_slow(double dest[3], double src[3]);
-void xyz_to_srgb_slow(double dest[3], double src[3]);
-void xyz_to_luv_slow(double dest[3], double src[3]);
-void luv_to_xyz_slow(double dest[3], double src[3]);
+void srgb_to_xyz_exact(double dest[3], double src[3]);
+void xyz_to_srgb_exact(double dest[3], double src[3]);
+void xyz_to_luv_exact(double dest[3], double src[3]);
+void luv_to_xyz_exact(double dest[3], double src[3]);
 
 /* Reference white */
 #define REF_WHITE_X 0.96422

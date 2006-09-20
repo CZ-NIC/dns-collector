@@ -13,15 +13,16 @@
 #include "lib/fastbuf.h"
 #include "lib/conf.h"
 #include "lib/math.h"
-#include "images/math.h"
 #include "images/images.h"
+#include "images/math.h"
+#include "images/error.h"
 #include "images/color.h"
 #include "images/signature.h"
 
 #include <alloca.h>
 
 int
-image_sig_init(struct image_thread *thread, struct image_sig_data *data, struct image *image)
+image_sig_init(struct image_context *ctx, struct image_sig_data *data, struct image *image)
 {
   ASSERT((image->flags & IMAGE_PIXEL_FORMAT) == COLOR_SPACE_RGB);
   data->image = image;
@@ -33,7 +34,7 @@ image_sig_init(struct image_thread *thread, struct image_sig_data *data, struct 
   data->blocks_count = data->cols * data->rows;
   if (data->blocks_count >= 0x10000)
     {
-      image_thread_err(thread, IMAGE_ERR_INVALID_DIMENSIONS, "Image too large for implemented signature algorithm.");
+      IMAGE_ERROR(ctx, IMAGE_ERROR_INVALID_DIMENSIONS, "Image too large for implemented signature algorithm.");
       return 0;
     }
   data->blocks = xmalloc(data->blocks_count * sizeof(struct image_sig_block));
@@ -306,10 +307,10 @@ image_sig_cleanup(struct image_sig_data *data)
 }
 
 int
-compute_image_signature(struct image_thread *thread, struct image_signature *sig, struct image *image)
+compute_image_signature(struct image_context *ctx, struct image_signature *sig, struct image *image)
 {
   struct image_sig_data data;
-  if (!image_sig_init(thread, &data, image))
+  if (!image_sig_init(ctx, &data, image))
     return 0;
   image_sig_preprocess(&data);
   if (data.valid)

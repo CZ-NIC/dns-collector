@@ -20,7 +20,7 @@ merge_func(uns value, uns alpha, uns acoef, uns bcoef)
 }
 
 int
-image_apply_background(struct image_thread *thread UNUSED, struct image *dest, struct image *src, struct color *background)
+image_apply_background(struct image_context *ctx UNUSED, struct image *dest, struct image *src, struct color *background)
 {
   DBG("image_apply_background()");
 

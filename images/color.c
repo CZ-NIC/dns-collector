@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#undef LOCAL_DEBUG
+#define LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
 #include "lib/math.h"
@@ -29,7 +29,7 @@ color_put_grayscale(byte *dest, struct color *color)
 	dest[0] = rgb_to_gray_func(color->c[0], color->c[1], color->c[2]);
 	break;
       default:
-	ASSERT(0);	
+	ASSERT(0);
     }
 }
 
@@ -47,61 +47,241 @@ color_put_rgb(byte *dest, struct color *color)
 	dest[2] = color->c[2];
 	break;
       default:
-	ASSERT(0);	
+	ASSERT(0);
     }
 }
 
 void
-color_put_color_space(byte *dest, struct color *color, enum color_space color_space)
+color_put_color_space(byte *dest, struct color *color, uns color_space)
 {
   switch (color_space)
     {
       case COLOR_SPACE_GRAYSCALE:
 	color_put_grayscale(dest, color);
-	break;  
+	break;
       case COLOR_SPACE_RGB:
-	color_put_rgb(dest, color);	
+	color_put_rgb(dest, color);
 	break;
       default:
-	ASSERT(0);	
+	ASSERT(0);
     }
 }
 
 /********************* EXACT CONVERSION ROUTINES **********************/
 
+/* Reference whites */
+#define COLOR_ILLUMINANT_A	0.44757, 0.40744
+#define COLOR_ILLUMINANT_B	0.34840, 0.35160
+#define COLOR_ILLUMINANT_C	0.31006, 0.31615
+#define COLOR_ILLUMINANT_D50    0.34567, 0.35850
+#define COLOR_ILLUMINANT_D55	0.33242, 0.34743
+#define COLOR_ILLUMINANT_D65    0.31273, 0.32902
+#define COLOR_ILLUMINANT_D75	0.29902, 0.31485
+#define COLOR_ILLUMINANT_9300K	0.28480, 0.29320
+#define COLOR_ILLUMINANT_E      (1./3.), (1./3.)
+#define COLOR_ILLUMINANT_F2	0.37207, 0.37512
+#define COLOR_ILLUMINANT_F7	0.31285, 0.32918
+#define COLOR_ILLUMINANT_F11	0.38054, 0.37691
+
+const double
+  color_illuminant_d50[2] = {COLOR_ILLUMINANT_D50},
+  color_illuminant_d65[2] = {COLOR_ILLUMINANT_D65},
+  color_illuminant_e[2] = {COLOR_ILLUMINANT_E};
+
+/* RGB profiles (many missing) */
+const struct color_space_info
+  color_adobe_rgb_info = {"Adobe RGB", {{0.6400, 0.3300}, {0.2100, 0.7100}, {0.1500, 0.0600}, {COLOR_ILLUMINANT_D65}}, {0.45, 0.45, 0, 0, 0}},
+  color_apple_rgb_info = {"Apple RGB", {{0.6250, 0.3400}, {0.2800, 0.5950}, {0.1550, 0.0700}, {COLOR_ILLUMINANT_D65}}, {0.56, 0.56, 0, 0, 0}},
+  color_cie_rgb_info = {"CIE RGB", {{0.7350, 0.2650}, {0.2740, 0.7170}, {0.1670, 0.0090}, {COLOR_ILLUMINANT_E}}, {0.45, 0.45, 0, 0, 0}},
+  color_color_match_rgb_info = {"ColorMatch RGB", {{0.6300, 0.3400}, {0.2950, 0.6050}, {0.1500, 0.0750}, {COLOR_ILLUMINANT_D50}}, {0.56, 0.56, 0, 0, 0}},
+  color_srgb_info = {"sRGB", {{0.6400, 0.3300}, {0.3000, 0.6000}, {0.1500, 0.0600}, {COLOR_ILLUMINANT_D65}}, {0.45, 0.42, 0.055, 0.003, 12.92}};
+
+#define CLIP(x, min, max) (((x) < (min)) ? (min) : ((x) > (max)) ? (max) : (x))
+
+static inline void
+clip(double a[3])
+{
+  a[0] = CLIP(a[0], 0, 1);
+  a[1] = CLIP(a[1], 0, 1);
+  a[2] = CLIP(a[2], 0, 1);
+}
+
+static inline void
+correct_gamma_simple(double dest[3], double src[3], const struct color_space_gamma_info *info)
+{
+  dest[0] = pow(src[0], info->simple_gamma);
+  dest[1] = pow(src[1], info->simple_gamma);
+  dest[2] = pow(src[2], info->simple_gamma);
+}
+
+static inline void
+invert_gamma_simple(double dest[3], double src[3], const struct color_space_gamma_info *info)
+{
+  dest[0] = pow(src[0], 1 / info->simple_gamma);
+  dest[1] = pow(src[1], 1 / info->simple_gamma);
+  dest[2] = pow(src[2], 1 / info->simple_gamma);
+}
+
+static inline void
+correct_gamma_detailed(double dest[3], double src[3], const struct color_space_gamma_info *info)
+{
+  for (uns i = 0; i < 3; i++)
+    if (src[i] > info->transition)
+      dest[i] = (1 + info->offset) * pow(src[i], info->detailed_gamma) - info->offset;
+    else
+      dest[i] = info->slope * src[i];
+}
+
+static inline void
+invert_gamma_detailed(double dest[3], double src[3], const struct color_space_gamma_info *info)
+{
+  for (uns i = 0; i < 3; i++)
+    if (src[i] > info->transition * info->slope)
+      dest[i] = pow((src[i] + info->offset) / (1 + info->offset), 1 / info->detailed_gamma);
+    else
+      dest[i] = src[i] / info->slope;
+}
+
+static inline void
+apply_matrix(double dest[3], double src[3], double matrix[9])
+{
+  dest[0] = src[0] * matrix[0] + src[1] * matrix[1] + src[2] * matrix[2];
+  dest[1] = src[0] * matrix[3] + src[1] * matrix[4] + src[2] * matrix[5];
+  dest[2] = src[0] * matrix[6] + src[1] * matrix[7] + src[2] * matrix[8];
+}
+
+void
+color_invert_matrix(double dest[9], double matrix[9])
+{
+  double *i = dest, *m = matrix;
+  double a0 = m[4] * m[8] - m[5] * m[7];
+  double a1 = m[3] * m[8] - m[5] * m[6];
+  double a2 = m[3] * m[7] - m[4] * m[6];
+  double d = 1 / (m[0] * a0 - m[1] * a1 + m[2] * a2);
+  i[0] = d * a0;
+  i[3] = -d * a1;
+  i[6] = d * a2;
+  i[1] = -d * (m[1] * m[8] - m[2] * m[7]);
+  i[4] = d * (m[0] * m[8] - m[2] * m[6]);
+  i[7] = -d * (m[0] * m[7] - m[1] * m[6]);
+  i[2] = d * (m[1] * m[5] - m[2] * m[4]);
+  i[5] = -d * (m[0] * m[5] - m[2] * m[3]);
+  i[8] = d * (m[0] * m[4] - m[1] * m[3]);
+}
+
+static void
+mul_matrices(double r[9], double a[9], double b[9])
+{
+  r[0] = a[0] * b[0] + a[1] * b[3] + a[2] * b[6];
+  r[1] = a[0] * b[1] + a[1] * b[4] + a[2] * b[7];
+  r[2] = a[0] * b[2] + a[1] * b[5] + a[2] * b[8];
+  r[3] = a[3] * b[0] + a[4] * b[3] + a[5] * b[6];
+  r[4] = a[3] * b[1] + a[4] * b[4] + a[5] * b[7];
+  r[5] = a[3] * b[2] + a[4] * b[5] + a[5] * b[8];
+  r[6] = a[6] * b[0] + a[7] * b[3] + a[8] * b[6];
+  r[7] = a[6] * b[1] + a[7] * b[4] + a[8] * b[7];
+  r[8] = a[6] * b[2] + a[7] * b[5] + a[8] * b[8];
+}
+
+/* computes conversion matrix from a given color space to CIE XYZ */
+void
+color_compute_color_space_to_xyz_matrix(double matrix[9], const struct color_space_chromacity_info *space)
+{
+  double wX = space->white[0] / space->white[1];
+  double wZ = (1 - space->white[0] - space->white[1]) / space->white[1];
+  double a[9], b[9];
+  a[0] = space->prim1[0]; a[3] = space->prim1[1]; a[6] = 1 - a[0] - a[3];
+  a[1] = space->prim2[0]; a[4] = space->prim2[1]; a[7] = 1 - a[1] - a[4];
+  a[2] = space->prim3[0]; a[5] = space->prim3[1]; a[8] = 1 - a[2] - a[5];
+  color_invert_matrix(b, a);
+  double ra = wX * b[0] + b[1] + wZ * b[2];
+  double rb = wX * b[3] + b[4] + wZ * b[5];
+  double rc = wX * b[6] + b[7] + wZ * b[8];
+  matrix[0] = a[0] * ra;
+  matrix[1] = a[1] * rb;
+  matrix[2] = a[2] * rc;
+  matrix[3] = a[3] * ra;
+  matrix[4] = a[4] * rb;
+  matrix[5] = a[5] * rc;
+  matrix[6] = a[6] * ra;
+  matrix[7] = a[7] * rb;
+  matrix[8] = a[8] * rc;
+}
+
+/* computes matrix to join transofmations with different reference whites */
+void
+color_compute_bradford_matrix(double matrix[9], const double source[2], const double dest[2])
+{
+  /* cone response matrix and its inversion */
+  static double r[9] = {
+    0.8951, 0.2664, -0.1614,
+    -0.7502, 1.7135, 0.0367,
+    0.0389, -0.0685, 1.0296};
+  //static double i[9] = {0.9870, -0.1471, 0.1600, 0.4323, 0.5184, 0.0493, -0.0085, 0.0400, 0.9685};
+  double i[9];
+  color_invert_matrix(i, r);
+  double aX = source[0] / source[1];
+  double aZ = (1 - source[0] - source[1]) / source[1];
+  double bX = dest[0] / dest[1];
+  double bZ = (1 - dest[0] - dest[1]) / dest[1];
+  double x = (r[0] * bX + r[1] + r[2] * bZ) / (r[0] * aX + r[1] + r[2] * aZ);
+  double y = (r[3] * bX + r[4] + r[5] * bZ) / (r[3] * aX + r[4] + r[5] * aZ);
+  double z = (r[6] * bX + r[7] + r[8] * bZ) / (r[6] * aX + r[7] + r[8] * aZ);
+  double m[9];
+  m[0] = i[0] * x; m[1] = i[1] * y; m[2] = i[2] * z;
+  m[3] = i[3] * x; m[4] = i[4] * y; m[5] = i[5] * z;
+  m[6] = i[6] * x; m[7] = i[7] * y; m[8] = i[8] * z;
+  mul_matrices(matrix, m, r);
+}
+
+void
+color_compute_color_spaces_conversion_matrix(double matrix[9], const struct color_space_chromacity_info *src, const struct color_space_chromacity_info *dest)
+{
+  double a_to_xyz[9], b_to_xyz[9], xyz_to_b[9], bradford[9], m[9];
+  color_compute_color_space_to_xyz_matrix(a_to_xyz, src);
+  color_compute_color_space_to_xyz_matrix(b_to_xyz, dest);
+  color_invert_matrix(xyz_to_b, b_to_xyz);
+  if (src->white[0] == dest->white[0] && src->white[1] == dest->white[1])
+    mul_matrices(matrix, a_to_xyz, xyz_to_b);
+  else
+    {
+      color_compute_bradford_matrix(bradford, src->white, dest->white);
+      mul_matrices(m, a_to_xyz, bradford);
+      mul_matrices(matrix, m, xyz_to_b);
+    }
+}
+
 /* sRGB to XYZ */
 void
-srgb_to_xyz_slow(double xyz[3], double srgb[3])
+srgb_to_xyz_exact(double xyz[3], double srgb[3])
 {
-  double a[3];
-  for (uns i = 0; i < 3; i++)
-    if (srgb[i] > 0.04045)
-      a[i] = pow((srgb[i] + 0.055) * (1 / 1.055), 2.4);
-    else
-      a[i] = srgb[i] * (1 / 12.92);
-  xyz[0] = SRGB_XYZ_XR * a[0] + SRGB_XYZ_XG * a[1] + SRGB_XYZ_XB * a[2];
-  xyz[1] = SRGB_XYZ_YR * a[0] + SRGB_XYZ_YG * a[1] + SRGB_XYZ_YB * a[2];
-  xyz[2] = SRGB_XYZ_ZR * a[0] + SRGB_XYZ_ZG * a[1] + SRGB_XYZ_ZB * a[2];
+  static double matrix[9] = {
+    0.41248031, 0.35756952, 0.18043951,
+    0.21268516, 0.71513904, 0.07217580,
+    0.01933501, 0.11918984, 0.95031473};
+  double srgb_lin[3];
+  invert_gamma_detailed(srgb_lin, srgb, &color_srgb_info.gamma);
+  apply_matrix(xyz, srgb_lin, matrix);
+  xyz_to_srgb_exact(srgb_lin, xyz);
 }
 
 /* XYZ to sRGB */
 void
-xyz_to_srgb_slow(double srgb[3], double xyz[3])
+xyz_to_srgb_exact(double srgb[3], double xyz[3])
 {
-  double a[3];
-  a[0] =  3.2406 * xyz[0] + -1.5372 * xyz[1] + -0.4986 * xyz[2];
-  a[1] = -0.9689 * xyz[0] +  1.8758 * xyz[1] +  0.0415 * xyz[2];
-  a[2] =  0.0557 * xyz[0] + -0.2040 * xyz[1] +  1.0570 * xyz[2];
-  for (uns i = 0; i < 3; i++)
-    if (a[i] > 0.0031308)
-      srgb[i] = 1.055 * pow(a[i], 1 / 2.4) - 0.055;
-    else
-      srgb[i] = 12.92 * a[i];
+  static double matrix[9] = {
+     3.24026666, -1.53704957, -0.49850256,
+    -0.96928381,  1.87604525,  0.04155678,
+     0.05564281, -0.20402363,  1.05721334};
+  double srgb_lin[3];
+  apply_matrix(srgb_lin, xyz, matrix);
+  clip(srgb_lin);
+  correct_gamma_detailed(srgb, srgb_lin, &color_srgb_info.gamma);
 }
 
 /* XYZ to CIE-Luv */
 void
-xyz_to_luv_slow(double luv[3], double xyz[3])
+xyz_to_luv_exact(double luv[3], double xyz[3])
 {
   double sum = xyz[0] + 15 * xyz[1] + 3 * xyz[2];
   if (sum < 0.000001)
@@ -122,7 +302,7 @@ xyz_to_luv_slow(double luv[3], double xyz[3])
 
 /* CIE-Luv to XYZ */
 void
-luv_to_xyz_slow(double xyz[3], double luv[3])
+luv_to_xyz_exact(double xyz[3], double luv[3])
 {
   double var_u = luv[1] / (13 * luv[0]) + (4 * REF_WHITE_X / (REF_WHITE_X + 15 * REF_WHITE_Y + 3 * REF_WHITE_Z));
   double var_v = luv[2] / (13 * luv[0]) + (9 * REF_WHITE_Y / (REF_WHITE_X + 15 * REF_WHITE_Y + 3 * REF_WHITE_Z));
@@ -305,8 +485,8 @@ srgb_to_luv_func(double dest[3], double src[3])
   srgb[0] = src[0] / 255.;
   srgb[1] = src[1] / 255.;
   srgb[2] = src[2] / 255.;
-  srgb_to_xyz_slow(xyz, srgb);
-  xyz_to_luv_slow(luv, xyz);
+  srgb_to_xyz_exact(xyz, srgb);
+  xyz_to_luv_exact(luv, xyz);
   dest[0] = luv[0] * 2.55;
   dest[1] = luv[1] * (2.55 / 4) + 128;
   dest[2] = luv[2] * (2.55 / 4) + 128;

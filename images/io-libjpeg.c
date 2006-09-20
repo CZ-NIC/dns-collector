@@ -13,7 +13,10 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
+#include "images/error.h"
+#include "images/color.h"
 #include "images/io-main.h"
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <jpeglib.h>
@@ -49,7 +52,7 @@ libjpeg_read_error_exit(j_common_ptr cinfo)
   struct libjpeg_err *e = (struct libjpeg_err *)cinfo->err;
   byte buf[JMSG_LENGTH_MAX];
   e->pub.format_message(cinfo, buf);
-  image_thread_err_dup(e->io->thread, IMAGE_ERR_READ_FAILED, buf);
+  IMAGE_ERROR(e->io->context, IMAGE_ERROR_READ_FAILED, "%s", buf);
   longjmp(e->setjmp_buf, 1);
 }
 
@@ -60,7 +63,7 @@ libjpeg_write_error_exit(j_common_ptr cinfo)
   struct libjpeg_err *e = (struct libjpeg_err *)cinfo->err;
   byte buf[JMSG_LENGTH_MAX];
   e->pub.format_message(cinfo, buf);
-  image_thread_err_dup(e->io->thread, IMAGE_ERR_WRITE_FAILED,  buf);
+  IMAGE_ERROR(e->io->context, IMAGE_ERROR_WRITE_FAILED, "%s", buf);
   longjmp(e->setjmp_buf, 1);
 }
 
@@ -148,7 +151,7 @@ libjpeg_fastbuf_write_prepare(struct libjpeg_write_internals *i)
   i->dest.free_in_buffer = len;
   if (!len)
     {
-      image_thread_err(i->err.io->thread, IMAGE_ERR_WRITE_FAILED, "Unexpected end of stream");
+      IMAGE_ERROR(i->err.io->context, IMAGE_ERROR_WRITE_FAILED, "Unexpected end of stream");
       longjmp(i->err.setjmp_buf, 1);
     }
 }
@@ -324,7 +327,7 @@ libjpeg_read_data(struct image_io *io)
 	break;
       default:
 	jpeg_destroy_decompress(&i->cinfo);
-	image_thread_err(io->thread, IMAGE_ERR_INVALID_PIXEL_FORMAT, "Unsupported color space.");
+	IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Unsupported color space.");
 	return 0;
     }
 
@@ -466,7 +469,7 @@ libjpeg_write(struct image_io *io)
 	break;
       default:
 	jpeg_destroy_compress(&i.cinfo);
-	image_thread_err(io->thread, IMAGE_ERR_INVALID_PIXEL_FORMAT, "Unsupported pixel format.");
+	IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Unsupported pixel format.");
 	return 0;
     }
   jpeg_set_defaults(&i.cinfo);
