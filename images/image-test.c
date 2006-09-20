@@ -129,7 +129,7 @@ test_threads_thread(void *param UNUSED)
 	  uns format = 0;
 	  while (!format)
 	    {
-	      switch (random_max(2))
+	      switch (random_max(3))
 	        {
 		  case 0:
 #if defined(CONFIG_IMAGES_LIBJPEG) || defined(CONFIG_IMAGES_LIBMAGICK)
@@ -139,6 +139,11 @@ test_threads_thread(void *param UNUSED)
 		  case 1:
 #if defined(CONFIG_IMAGES_LIBPNG) || defined(CONFIG_IMAGES_LIBMAGICK)
 		    format = IMAGE_FORMAT_PNG;
+#endif
+		    break;
+		  case 2:
+#if defined(CONFIG_IMAGES_LIBMAGICK)
+		    format = IMAGE_FORMAT_GIF;
 #endif
 		    break;
 		  default:
@@ -203,12 +208,12 @@ main(int argc, char **argv)
       die("Invalid parameter");
 
   srandom(time(NULL) ^ getpid());
-  
+
   if (want_image_iface)
     test_image_iface();
   if (want_threads)
     test_threads();
-  
+
   return 0;
 }
 
