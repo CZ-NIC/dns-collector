@@ -13,6 +13,7 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "images/images.h"
+#include "images/error.h"
 #include "images/color.h"
 #include "images/io-main.h"
 
@@ -84,7 +85,7 @@ libmagick_read_header(struct image_io *io)
   sh_off_t file_size = bfilesize(io->fastbuf) - btell(io->fastbuf);
   if (unlikely(file_size > MAX_FILE_SIZE))
     {
-      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Too long stream.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Too long stream.");
       return 0;
     }
   uns buf_size = file_size;
@@ -104,12 +105,12 @@ libmagick_read_header(struct image_io *io)
   xfree(buf);
   if (unlikely(!rd->image))
     {
-      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "GraphicsMagick failed to read the image.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "GraphicsMagick failed to read the image.");
       goto err;
     }
-  if (unlikely(rd->image->columns > IMAGE_MAX_SIZE || rd->image->rows > IMAGE_MAX_SIZE))
+  if (unlikely(rd->image->columns > image_max_dim || rd->image->rows > image_max_dim))
     {
-      image_thread_err(io->thread, IMAGE_ERR_INVALID_DIMENSIONS, "Image too large.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_DIMENSIONS, "Image too large.");
       goto err;
     }
 
@@ -181,7 +182,7 @@ libmagick_read_data(struct image_io *io)
   PixelPacket *src = (PixelPacket *)AcquireImagePixels(rd->image, 0, 0, rd->image->columns, rd->image->rows, &rd->exception);
   if (unlikely(!src))
     {
-      image_thread_err(io->thread, IMAGE_ERR_READ_FAILED, "Cannot acquire image pixels.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Cannot acquire image pixels.");
       libmagick_destroy_read_data(rd);
       image_io_read_data_break(&rdi, io);
       return 0;
@@ -299,7 +300,7 @@ libmagick_write(struct image_io *io)
   Image *image = AllocateImage(info);
   if (unlikely(!image))
     {
-      image_thread_err(io->thread, IMAGE_ERR_WRITE_FAILED, "GraphicsMagick failed to allocate the image.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_WRITE_FAILED, "GraphicsMagick failed to allocate the image.");
       goto err;
     }
   image->columns = img->cols;
@@ -309,7 +310,7 @@ libmagick_write(struct image_io *io)
   PixelPacket *pixels = SetImagePixels(image, 0, 0, img->cols, img->rows), *dest = pixels;
   if (unlikely(!pixels))
     {
-      image_thread_err(io->thread, IMAGE_ERR_WRITE_FAILED, "Cannot get GraphicsMagick pixels.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_WRITE_FAILED, "Cannot get GraphicsMagick pixels.");
       goto err2;
     }
 
@@ -383,7 +384,7 @@ libmagick_write(struct image_io *io)
   /* Store pixels */
   if (unlikely(!SyncImagePixels(image)))
     {
-      image_thread_err(io->thread, IMAGE_ERR_WRITE_FAILED, "Cannot sync GraphicsMagick pixels.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_WRITE_FAILED, "Cannot sync GraphicsMagick pixels.");
       goto err2;
     }
 
@@ -392,12 +393,12 @@ libmagick_write(struct image_io *io)
   void *buf = ImageToBlob(info, image, &buf_len, &exception);
   if (unlikely(!buf))
     {
-      image_thread_err(io->thread, IMAGE_ERR_WRITE_FAILED, "GraphicsMagick failed to compress the image.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_WRITE_FAILED, "GraphicsMagick failed to compress the image.");
       goto err2;
     }
   if (unlikely(buf_len > MAX_FILE_SIZE))
     {
-      image_thread_err(io->thread, IMAGE_ERR_WRITE_FAILED, "Image too large.");
+      IMAGE_ERROR(io->context, IMAGE_ERROR_WRITE_FAILED, "Image too large.");
       goto err2;
     }
 
