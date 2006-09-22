@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-/* RFC-based names */
+/* Names according to RFC 1345 (see http://www.iana.org/assignments/character-sets) */
 
 static char *cs_names[] = {
 	"US-ASCII",
