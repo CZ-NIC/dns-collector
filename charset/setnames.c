@@ -12,6 +12,8 @@
 
 #include <string.h>
 
+/* RFC-based names */
+
 static char *cs_names[] = {
 	"US-ASCII",
 	"ISO-8859-1",
