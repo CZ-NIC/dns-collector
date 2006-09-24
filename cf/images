@@ -17,10 +17,29 @@ ImageMaxBytes	256M
 
 ImageSig {
 
+# Sherlock use regions based image comparision to search similar images.
+# To enable this feature, enable imagesig analyser to extract
+# various regions features needed for comparisions. Sets of these features
+# are called "image signature" and there are stored in attributes 'H'.
+
+# Signatures are later processed by chewer to build an effective
+# search structure finally used by images. See Indexer and Search
+# sections for more options.
+
+
+# Minimum image size to apply segmentation. Smaller images are always
+# compared with simple "average" method (see ImageSig.CompareMethod).
 MinWidth	16
 MinHeight	16
 
+# List of subdivision thresholds in first phase of segmentation.
+# Lower the values to increase average number of regions and vice versa.
 PreQuantThresholds	6 12 15 20 25 25 30 30 40 40 50 50 60 60 60
+
+# Settings for second phase of segmentation - usually not so important.
+# We use iterative algorithm to improve average error from the first phase.
+# We stop the process after PostQuantMaxSteps or if we get only PostQuantThreshold
+# percentual improvement in comparision with the previous step.
 PostQuantMinSteps	2
 PostQuantMaxSteps	10
 PostQuantThreshold	1
@@ -65,5 +84,6 @@ CompareFeaturesWeights	4 6 6 4 4 4 4 4 4 4 4
 ######## Duplicates finder ######################################################
 
 ImageDup {
+# Image duplicates do not work yet.
 }
 
