@@ -28,12 +28,11 @@ struct image_region {
   byte h[IMAGE_REG_H];		/* shape/pos features - I1, I2, I3, X, Y */
   byte wa;			/* normalized area percentage */
   byte wb;			/* normalized weight */
-  byte reserved[3];
-} PACKED;
+};
 
 #define IMAGE_SIG_TEXTURED	0x1
 
-/* Image signature (16 + len * 16 bytes) */
+/* Image signature (usually 16 + len * 16 bytes) */
 struct image_signature {
   byte len;			/* Number of regions */
   byte flags;			/* IMAGE_SIG_xxx */
@@ -43,19 +42,19 @@ struct image_signature {
   u16 dh;			/* Average weighted h dist */
   struct image_vector vec;	/* Average features of all regions... simple signature */
   struct image_region reg[IMAGE_REG_MAX];/* Feature vector for every region */
-} PACKED;
+};
 
 struct image_cluster {
   union {
     struct {
       s32 dot;			/* Dot product of the splitting plane */
       s8 vec[IMAGE_VEC_F];	/* Normal vector of the splitting plane */
-    } PACKED;
+    };
     struct {
       u64 pos;			/* Cluster size in bytes */
-    } PACKED;
-  } PACKED;
-} PACKED;
+    };
+  };
+};
 
 static inline uns
 image_signature_size(uns len)
