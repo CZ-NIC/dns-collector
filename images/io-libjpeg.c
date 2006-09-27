@@ -136,7 +136,11 @@ libjpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
 	  num_bytes -= i->src.bytes_in_buffer;
 	  libjpeg_fastbuf_read_commit(i);
 	  bskip(i->fastbuf, num_bytes);
-	  libjpeg_fastbuf_read_prepare(i);
+	  if (!libjpeg_fastbuf_read_prepare(i))
+	    {
+	      IMAGE_ERROR(i->err.io->context, IMAGE_ERROR_READ_FAILED, "Incomplete JPEG file");
+	      longjmp(i->err.setjmp_buf, 1);
+	    }
 	}
     }
 }
