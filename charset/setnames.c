@@ -12,6 +12,8 @@
 
 #include <string.h>
 
+/* Names according to RFC 1345 (see http://www.iana.org/assignments/character-sets) */
+
 static char *cs_names[] = {
 	"US-ASCII",
 	"ISO-8859-1",
