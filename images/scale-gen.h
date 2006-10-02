@@ -230,7 +230,7 @@ IMAGE_SCALE_PREFIX(downsample_xy)(struct image *dest, struct image *src)
       rsrc += src->row_size;
       x_pos = 0;
       y_pos += y_inc;
-      if (y_pos <= 0x10000)
+      if (y_pos <= 0x100000000)
         {
           for (uns cols_counter = src->cols; cols_counter--; )
             {
