@@ -71,13 +71,13 @@ enum image_flag {
 struct image {
   byte *pixels;			/* aligned top left pixel, there are at least sizeof(uns)
 				   unused bytes after the buffer (possible optimizations) */
-  u32 cols;			/* number of columns */
-  u32 rows;			/* number of rows */
-  u32 pixel_size;		/* size of pixel in bytes (1, 2, 3 or 4) */
-  u32 row_size;			/* scanline size in bytes */
-  u32 row_pixels_size;		/* scanline size in bytes excluding rows gaps */
-  u32 image_size;		/* rows * row_size */
-  u32 flags;			/* enum image_flag */
+  uns cols;			/* number of columns */
+  uns rows;			/* number of rows */
+  uns pixel_size;		/* size of pixel in bytes (1, 2, 3 or 4) */
+  uns row_size;			/* scanline size in bytes */
+  uns row_pixels_size;		/* scanline size in bytes excluding rows gaps */
+  uns image_size;		/* rows * row_size */
+  uns flags;			/* enum image_flag */
 };
 
 struct image *image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempool *pool);
@@ -105,7 +105,7 @@ struct color {
 /* scale.c */
 
 int image_scale(struct image_context *ctx, struct image *dest, struct image *src);
-void image_dimensions_fit_to_box(u32 *cols, u32 *rows, u32 max_cols, u32 max_rows, uns upsample);
+void image_dimensions_fit_to_box(uns *cols, uns *rows, uns max_cols, uns max_rows, uns upsample);
 
 /* alpha.c */
 
@@ -132,16 +132,14 @@ struct image_io {
   enum image_format format;		/* [R   W] - file format (IMAGE_FORMAT_x) */
   struct fastbuf *fastbuf;      	/* [R   W] - source/destination stream */
   struct mempool *pool;			/* [  I  ] - parameter to image_new */
-  u32 cols;				/* [ HI  ] - number of columns, parameter to image_new */
-  u32 rows;				/* [ HI  ] - number of rows, parameter to image_new */
-  u32 flags;				/* [ HI  ] - see enum image_io_flags */
-  u32 jpeg_quality;			/* [    W] - JPEG compression quality (1..100) */
-  u32 number_of_colors;			/* [ H   ] - number of image colors */
+  uns cols;				/* [ HI  ] - number of columns, parameter to image_new */
+  uns rows;				/* [ HI  ] - number of rows, parameter to image_new */
+  uns flags;				/* [ HI  ] - see enum image_io_flags */
+  uns jpeg_quality;			/* [    W] - JPEG compression quality (1..100) */
+  uns number_of_colors;			/* [ H   ] - number of image colors */
   struct color background_color;	/* [ HI  ] - background color, zero if undefined */
-#ifdef CONFIG_IMAGES_EXIF
-  u32 exif_size;			/* [ H  W] - EXIF size in bytes (zero if not present) */
+  uns exif_size;			/* [ H  W] - EXIF size in bytes (zero if not present) */
   byte *exif_data;			/* [ H  W] - EXIF data */
-#endif
 
   /* internals */
   struct image_context *context;
@@ -155,9 +153,7 @@ enum image_io_flags {
   IMAGE_IO_NEED_DESTROY = 0x10000,	/* [   O ] - enables automatic call of image_destroy */
   IMAGE_IO_HAS_PALETTE = 0x20000,	/* [ H   ] - true for image with indexed colors */
   IMAGE_IO_USE_BACKGROUND = 0x40000,	/* [  I  ] - merge transparent pixels with background_color */
-#ifdef CONFIG_IMAGES_EXIF
   IMAGE_IO_WANT_EXIF = 0x80000,		/* [R    ] - read EXIF data if present */
-#endif
 };
 
 int image_io_init(struct image_context *ctx, struct image_io *io);

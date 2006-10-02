@@ -241,7 +241,7 @@ image_scale(struct image_context *ctx, struct image *dest, struct image *src)
 }
 
 void
-image_dimensions_fit_to_box(u32 *cols, u32 *rows, u32 max_cols, u32 max_rows, uns upsample)
+image_dimensions_fit_to_box(uns *cols, uns *rows, uns max_cols, uns max_rows, uns upsample)
 {
   ASSERT(image_dimensions_valid(*cols, *rows));
   ASSERT(image_dimensions_valid(max_cols, max_rows));

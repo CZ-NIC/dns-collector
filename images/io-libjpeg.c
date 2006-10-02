@@ -185,8 +185,6 @@ libjpeg_empty_output_buffer(j_compress_ptr cinfo)
   return TRUE;
 }
 
-#ifdef CONFIG_IMAGES_EXIF
-
 static inline uns
 libjpeg_read_byte(struct libjpeg_read_internals *i)
 {
@@ -248,8 +246,6 @@ libjpeg_app1_preprocessor(j_decompress_ptr cinfo)
   return TRUE;
 }
 
-#endif
-
 static void
 libjpeg_read_cancel(struct image_io *io)
 {
@@ -287,10 +283,8 @@ libjpeg_read_header(struct image_io *io)
   i->src.resync_to_restart = jpeg_resync_to_restart;
   i->src.term_source = libjpeg_term_source;
 
-#ifdef CONFIG_IMAGES_EXIF
   if (io->flags & IMAGE_IO_WANT_EXIF)
     jpeg_set_marker_processor(&i->cinfo, JPEG_APP0 + 1, libjpeg_app1_preprocessor);
-#endif
 
   /* Read JPEG header and setup decompression options */
   DBG("Reading image header");
@@ -479,7 +473,6 @@ libjpeg_write(struct image_io *io)
   jpeg_set_defaults(&i.cinfo);
   if (io->jpeg_quality)
     jpeg_set_quality(&i.cinfo, MIN(io->jpeg_quality, 100), 1);
-#ifdef CONFIG_IMAGES_EXIF
   if (io->exif_size)
     {
       /* According to the Exif specification, the Exif APP1 marker has to follow immediately after the SOI,
@@ -488,17 +481,14 @@ libjpeg_write(struct image_io *io)
       i.cinfo.write_JFIF_header = FALSE;
       i.cinfo.write_Adobe_marker = FALSE;
     }
-#endif
 
   /* Compress the image */
   jpeg_start_compress(&i.cinfo, TRUE);
-#ifdef CONFIG_IMAGES_EXIF
   if (io->exif_size)
     {
       DBG("Writing EXIF");
       jpeg_write_marker(&i.cinfo, JPEG_APP0 + 1, io->exif_data, io->exif_size);
     }
-#endif
   switch (img->pixel_size)
     {
       /* grayscale or RGB */

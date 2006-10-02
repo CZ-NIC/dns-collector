@@ -33,10 +33,8 @@ Usage: image-tool [options] infile [outfile]\n\
 -Q --jpeg-quality        JPEG quality (1..100)\n\
 -g --background          background color (hexadecimal RRGGBB)\n\
 -G --default-background  background applied only if the image contains no background info (RRGGBB, default=FFFFFF)\n\
--a --remove-alpha        remove alpha channel\n"
-#ifdef CONFIG_IMAGES_EXIF
-"-e --exif                reads Exif data\n"
-#endif
+-a --remove-alpha        remove alpha channel\n\
+-e --exif                reads Exif data\n"
 , stderr);
   exit(1);
 }
@@ -54,9 +52,7 @@ static struct option longopts[] =
   { "background",		0, 0, 'g' },
   { "default-background",	0, 0, 'G' },
   { "remove-alpha",		0, 0, 'a' },
-#ifdef CONFIG_IMAGES_EXIF
   { "exif",			0, 0, 'e' },
-#endif
   { NULL,			0, 0, 0 }
 };
 
@@ -73,9 +69,7 @@ static uns jpeg_quality;
 static struct color background_color;
 static struct color default_background_color;
 static uns remove_alpha;
-#ifdef CONFIG_IMAGES_EXIF
 static uns exif;
-#endif
 
 static void
 parse_color(struct color *color, byte *s)
@@ -151,11 +145,9 @@ main(int argc, char **argv)
 	case 'a':
 	  remove_alpha++;
 	  break;
-#ifdef CONFIG_IMAGES_EXIF
 	case 'e':
 	  exif++;
 	  break;
-#endif
 	default:
 	  usage();
       }
@@ -178,10 +170,8 @@ main(int argc, char **argv)
   MSG("Reading %s", input_file_name);
   io.fastbuf = bopen(input_file_name, O_RDONLY, 1 << 18);
   io.format = input_format ? : image_file_name_to_format(input_file_name);
-#ifdef CONFIG_IMAGES_EXIF
   if (exif)
     io.flags |= IMAGE_IO_WANT_EXIF;
-#endif
   TRY(image_io_read_header(&io));
   if (!output_file_name)
     {
@@ -196,10 +186,8 @@ main(int argc, char **argv)
 	  color_put_rgb(rgb, &io.background_color);
           printf("Background:  %02x%02x%02x\n", rgb[0], rgb[1], rgb[2]);
 	}
-#ifdef CONFIG_IMAGES_EXIF
       if (io.exif_size)
 	printf("ExifSize:    %u\n", io.exif_size);
-#endif
     }
   else
     {
