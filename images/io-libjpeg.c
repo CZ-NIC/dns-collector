@@ -221,7 +221,8 @@ libjpeg_app1_preprocessor(j_decompress_ptr cinfo)
 {
   struct libjpeg_read_internals *i = (struct libjpeg_read_internals *)cinfo;
   struct image_io *io = i->err.io;
-  uns len = (libjpeg_read_byte(i) << 8) + libjpeg_read_byte(i);
+  uns len = libjpeg_read_byte(i) << 8;
+  len += libjpeg_read_byte(i);
   DBG("Found APP1 marker, len=%u", len);
   if (len < 2)
     return TRUE;

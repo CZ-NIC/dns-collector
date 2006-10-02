@@ -1,5 +1,5 @@
 /*
- *	Image Library -- Comparitions of image signatures
+ *	Image Library -- Comparisions of image signatures
  *
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
  *

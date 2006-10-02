@@ -344,7 +344,7 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
       /* Merge with background */
       if ((io->flags ^ rdi->image->flags) & IMAGE_ALPHA)
         {
-	  DBG("Aplying background");
+	  DBG("Applying background");
 	  uns flags = rdi->image->flags & ~IMAGE_ALPHA;
 	  if (!(rdi->need_transformations = (flags ^ io->flags) & (IMAGE_NEW_FLAGS & ~IMAGE_PIXELS_ALIGNED)))
 	    flags = io->flags;

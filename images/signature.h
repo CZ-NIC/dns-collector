@@ -22,7 +22,7 @@ struct image_vector {
   byte f[IMAGE_VEC_F];		/* texture features */
 } PACKED;
 
-/* Fetures for image regions (16 bytes) */
+/* Features for image regions (16 bytes) */
 struct image_region {
   byte f[IMAGE_VEC_F];		/* texture features - L, u, v, LH, HL, HH */
   byte h[IMAGE_REG_H];		/* shape/pos features - I1, I2, I3, X, Y */
@@ -34,24 +34,24 @@ struct image_region {
 
 /* Image signature (usually 16 + len * 16 bytes) */
 struct image_signature {
-  byte len;			/* Number of regions */
+  byte len;			/* number of regions */
   byte flags;			/* IMAGE_SIG_xxx */
-  u16 cols;			/* Image width */
-  u16 rows;			/* Image height */
-  u16 df;			/* Average weighted f dist */
-  u16 dh;			/* Average weighted h dist */
-  struct image_vector vec;	/* Average features of all regions... simple signature */
-  struct image_region reg[IMAGE_REG_MAX];/* Feature vector for every region */
+  u16 cols;			/* image width */
+  u16 rows;			/* image height */
+  u16 df;			/* average weighted f dist */
+  u16 dh;			/* average weighted h dist */
+  struct image_vector vec;	/* average features of all regions... simple signature */
+  struct image_region reg[IMAGE_REG_MAX];/* feature vector for every region */
 };
 
 struct image_cluster {
   union {
     struct {
-      s32 dot;			/* Dot product of the splitting plane */
-      s8 vec[IMAGE_VEC_F];	/* Normal vector of the splitting plane */
+      s32 dot;			/* dot product of the splitting plane */
+      s8 vec[IMAGE_VEC_F];	/* normal vector of the splitting plane */
     };
     struct {
-      u64 pos;			/* Cluster size in bytes */
+      u64 pos;			/* cluster size in bytes */
     };
   };
 };

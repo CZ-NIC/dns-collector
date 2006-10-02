@@ -87,7 +87,7 @@ error:
 void
 put_image_obj_signature(struct odes *o, struct image_signature *sig)
 {
-  /* signatures should be short enough to fit one attribute */
+  /* signatures should be short enough to in a single attribute */
   byte buf[MAX_ATTR_SIZE];
   uns size = image_signature_size(sig->len);
   ASSERT(MAX_ATTR_SIZE > BASE224_ENC_LENGTH(size));
