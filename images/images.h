@@ -75,6 +75,7 @@ struct image {
   u32 rows;			/* number of rows */
   u32 pixel_size;		/* size of pixel (1, 2, 3 or 4) */
   u32 row_size;			/* scanline size in bytes */
+  u32 row_pixels_size;		/* scanline size in bytes excluding rows gaps */
   u32 image_size;		/* rows * row_size */
   u32 flags;			/* enum image_flag */
 };

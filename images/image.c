@@ -48,7 +48,7 @@ image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempo
       return NULL;
     }
   struct image *img;
-  uns pixel_size, row_size, align;
+  uns pixel_size, row_pixels_size, row_size, align;
   pixel_size = flags_to_pixel_size(flags);
   switch (pixel_size)
     {
@@ -70,8 +70,8 @@ image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempo
     align = pixel_size;
   else
     align = 1;
-  row_size = cols * pixel_size;
-  row_size = ALIGN(row_size, align);
+  row_pixels_size = cols * pixel_size;
+  row_size = ALIGN(row_pixels_size, align);
   u64 image_size_64 = (u64)row_size * rows;
   u64 bytes_64 = image_size_64 + (sizeof(struct image) + IMAGE_SSE_ALIGN_SIZE - 1 + sizeof(uns));
   if (unlikely(bytes_64 > image_max_bytes))
@@ -94,6 +94,7 @@ image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempo
   img->cols = cols;
   img->rows = rows;
   img->row_size = row_size;
+  img->row_pixels_size = row_pixels_size;
   img->image_size = image_size_64;
   DBG("img=%p flags=0x%x pixel_size=%u row_size=%u image_size=%u pixels=%p",
     img, img->flags, img->pixel_size, img->row_size, img->image_size, img->pixels);
@@ -125,10 +126,9 @@ image_clone(struct image_context *ctx, struct image *src, uns flags, struct memp
         {
           byte *s = src->pixels;
           byte *d = img->pixels;
-          uns bytes = src->cols * img->pixel_size;
 	  for (uns row = src->rows; row--; )
             {
-	      memcpy(d, s, bytes);
+	      memcpy(d, s, src->row_pixels_size);
 	      d += img->row_size;
 	      s += src->row_size;
 	    }
@@ -177,6 +177,7 @@ image_init_matrix(struct image_context *ctx, struct image *img, byte *pixels, un
   img->rows = rows;
   img->pixel_size = flags_to_pixel_size(flags);
   img->row_size = row_size;
+  img->row_pixels_size = cols * img->pixel_size;
   img->image_size = rows * row_size;
   img->flags = flags & (IMAGE_NEW_FLAGS | IMAGE_GAPS_PROTECTED);
   return img;
@@ -192,6 +193,7 @@ image_init_subimage(struct image_context *ctx UNUSED, struct image *img, struct 
   img->rows = rows;
   img->pixel_size = src->pixel_size;
   img->row_size = src->row_size;
+  img->row_pixels_size = cols * src->pixel_size;
   img->image_size = src->row_size * rows;
   img->flags = src->flags & IMAGE_NEW_FLAGS;
   img->flags |= IMAGE_GAPS_PROTECTED;
