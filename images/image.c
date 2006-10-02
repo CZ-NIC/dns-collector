@@ -238,8 +238,8 @@ image_name_to_channels_format(byte *name)
   if (!strcasecmp(name, "rgb"))
     return COLOR_SPACE_RGB;
   if (!strcasecmp(name, "rgbalpha"))
-    return COLOR_SPACE_RGB + IMAGE_ALPHA;
+    return COLOR_SPACE_RGB | IMAGE_ALPHA;
   if (!strcasecmp(name, "rgba"))
-    return COLOR_SPACE_RGB + IMAGE_ALPHA;
+    return COLOR_SPACE_RGB | IMAGE_ALPHA;
   return 0;
 }

@@ -1,5 +1,5 @@
 /*
- *	Image Library -- Main hearer file
+ *	Image Library -- Main header file
  *
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
  *
@@ -18,7 +18,7 @@ struct fastbuf;
 
 /* context.c
  * - contexts with error/message handling
- * - imagelib is thread-safe until each context is bounded to a single thread */
+ * - imagelib is thread-safe as long as threads work in different contexts */
 
 struct image_context {
   byte *msg;				/* last message */
@@ -52,7 +52,7 @@ extern uns image_max_dim;		/* ImageLib.ImageMaxDim */
 extern uns image_max_bytes;		/* ImageLib.ImageMaxBytes */
 
 /* SSE aligning size, see IMAGE_SSE_ALIGNED */
-#define IMAGE_SSE_ALIGN_SIZE (MAX(16, sizeof(uns)))
+#define IMAGE_SSE_ALIGN_SIZE 16
 
 enum image_flag {
   IMAGE_COLOR_SPACE = 0x7,		/* mask for enum color_space */
@@ -70,10 +70,10 @@ enum image_flag {
 
 struct image {
   byte *pixels;			/* aligned top left pixel, there are at least sizeof(uns)
-				   unsed bytes after the buffer (possible optimizations) */
+				   unused bytes after the buffer (possible optimizations) */
   u32 cols;			/* number of columns */
   u32 rows;			/* number of rows */
-  u32 pixel_size;		/* size of pixel (1, 2, 3 or 4) */
+  u32 pixel_size;		/* size of pixel in bytes (1, 2, 3 or 4) */
   u32 row_size;			/* scanline size in bytes */
   u32 row_pixels_size;		/* scanline size in bytes excluding rows gaps */
   u32 image_size;		/* rows * row_size */

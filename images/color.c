@@ -208,7 +208,7 @@ color_compute_color_space_to_xyz_matrix(double matrix[9], const struct color_spa
   matrix[8] = a[8] * rc;
 }
 
-/* computes matrix to join transofmations with different reference whites */
+/* computes matrix to join transformations with different reference whites */
 void
 color_compute_bradford_matrix(double matrix[9], const double source[2], const double dest[2])
 {
@@ -429,7 +429,7 @@ interpolation_table_init(void)
       for (p[0] = 0; p[0] < (1 << COLOR_CONV_OFS); p[0]++)
         {
 	  uns index;
-          static const uns tetrahedrons[5][4] = {
+          static const uns tetrahedra[5][4] = {
             {0000, 0001, 0010, 0100},
             {0110, 0111, 0100, 0010},
             {0101, 0100, 0111, 0001},
@@ -445,7 +445,7 @@ interpolation_table_init(void)
 	    index = 3;
 	  else
 	    index = 4;
-	  interpolate_tetrahedron(n, p, tetrahedrons[index]);
+	  interpolate_tetrahedron(n, p, tetrahedra[index]);
 	  n++;
 	}
 }

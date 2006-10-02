@@ -46,12 +46,10 @@ image_context_msg_silent(struct image_context *ctx UNUSED)
 void
 image_context_msg(struct image_context *ctx, uns code, char *msg, ...)
 {
-  ctx->msg_code = code;
   va_list args;
   va_start(args, msg);
-  ctx->msg = bb_vprintf(&ctx->msg_buf, msg, args);
+  image_context_vmsg(ctx, code, msg, args);
   va_end(args);
-  ctx->msg_callback(ctx);
 }
 
 void

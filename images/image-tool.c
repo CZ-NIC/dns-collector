@@ -1,5 +1,5 @@
 /*
- *	Simple image manupulation utility
+ *	Image Library -- Simple image manipulation utility
  *
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
  *

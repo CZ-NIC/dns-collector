@@ -65,7 +65,7 @@ $(o)/images/image-sim-test: LIBS+=$(LIBIMAGES_LIBS)
 
 TESTS+=$(o)/images/image-test.test
 $(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBUCW)
-$(o)/images/image-test: LIBS+=$(LIBIMAGES_LIBS) -lpthread
+$(o)/images/image-test: LIBS+=$(LIBIMAGES_LIBS)
 $(o)/images/image-test.test: $(o)/images/image-test
 
 TESTS+=$(o)/images/hilbert-test.test

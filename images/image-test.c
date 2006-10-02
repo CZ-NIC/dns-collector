@@ -1,3 +1,12 @@
+/*
+ *	Image Library -- Simple automatic tests
+ *
+ *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
+ */
+
 #undef LOCAL_DEBUG
 
 #include "lib/lib.h"
