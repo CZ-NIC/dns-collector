@@ -19,7 +19,6 @@
 #include <alloca.h>
 
 #include "lib/unaligned.h"
-#include "lib/bbuf.h"
 
 /*
  *  Generic buffered I/O. You supply hooks to be called for low-level operations
@@ -117,6 +116,26 @@ fbbuf_count_written(struct fastbuf *f)
 struct fastbuf *fbgrow_create(unsigned basic_size);
 void fbgrow_reset(struct fastbuf *b);			/* Reset stream and prepare for writing */
 void fbgrow_rewind(struct fastbuf *b);			/* Prepare for reading */
+
+/* FastO with atomic writes for multi-threaded programs */
+
+struct fb_atomic {
+  struct fastbuf fb;
+  struct fb_atomic_file *af;
+  byte *expected_max_bptr;
+  uns slack_size;
+};
+#define FB_ATOMIC(f) ((struct fb_atomic *)(f)->is_fastbuf)
+
+struct fastbuf *fbatomic_open(byte *name, struct fastbuf *master, uns bufsize, int record_len);
+void fbatomic_internal_write(struct fastbuf *b);
+
+static inline void
+fbatomic_commit(struct fastbuf *b)
+{
+  if (b->bptr >= ((struct fb_atomic *)b)->expected_max_bptr)
+    fbatomic_internal_write(b);
+}
 
 /* Configuring stream parameters */
 
@@ -322,7 +341,8 @@ int bgets_nodie(struct fastbuf *f, byte *b, uns l);
 byte *bgets0(struct fastbuf *f, byte *b, uns l);
 
 struct mempool;
-uns bgets_bb(struct fastbuf *f, bb_t *b, uns limit);
+struct bb_t;
+uns bgets_bb(struct fastbuf *f, struct bb_t *b, uns limit);
 byte *bgets_mp(struct fastbuf *f, struct mempool *mp);
 
 struct bgets_stk_struct {

@@ -65,6 +65,13 @@
 #define likely(x) __builtin_expect((x),1)
 #define unlikely(x) __builtin_expect((x),0)
 
+#if __GNUC__ >= 4 || __GNUC__ == 3 && __GNUC_MINOR__ >= 3
+#define ALWAYS_INLINE inline __attribute__((always_inline))
+#define NO_INLINE __attribute__((noinline))
+#else
+#define ALWAYS_INLINE inline
+#endif
+
 #if __GNUC__ >= 4
 #define LIKE_MALLOC __attribute__((malloc))
 #define SENTINEL_CHECK __attribute__((sentinel))

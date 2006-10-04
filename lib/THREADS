@@ -1,0 +1,10 @@
+Generally, functions in the UCW library are reentrant as long as you call them
+on different data. Calling on the same object is not, unless otherwise told,
+which also includes functions acting on any kind of global state.
+
+There are some exceptions:
+
+- logging functions are safe as long as you don't switch log files
+- setproctitle() is not safe, it modifies global state
+- handle_signal() is not safe, it modifies global state
+- stk_printf() is not safe, it currently uses a global buffer (FIXME!)

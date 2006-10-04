@@ -16,7 +16,7 @@
 
 #define	BUF_T	GBUF_PREFIX(t)
 
-typedef struct
+typedef struct BUF_T
 {
   uns len;
   GBUF_TYPE *ptr;
