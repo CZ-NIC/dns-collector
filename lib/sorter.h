@@ -85,23 +85,7 @@
  *  undef'd.
  */
 
-/* Declarations of externals from sorter.c */
-
-#ifndef SORT_DECLS_READ
-#define SORT_DECLS_READ
-
-extern uns sorter_trace;
-extern uns sorter_presort_bufsize;
-extern uns sorter_stream_bufsize;
-
-extern uns sorter_pass_counter;
-
-#endif		/* !SORT_DECLS_READ */
-
-/* The sorter proper */
-
-#ifndef SORT_DECLARE_ONLY
-
+#include "lib/sorter-globals.h"
 #include "lib/fastbuf.h"
 #include <unistd.h>
 #include <fcntl.h>
@@ -579,5 +563,3 @@ struct fastbuf *fb1, struct fastbuf *fb2
 #undef SORT_OUTPUT_FB
 #undef SORT_PRESORT
 #undef SORT_UP_TO
-
-#endif		/* !SORT_DECLARE_ONLY */
