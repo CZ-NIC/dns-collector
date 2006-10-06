@@ -10,12 +10,10 @@
 #include "lib/lib.h"
 #include "lib/conf.h"
 #include "lib/fastbuf.h"
+#include "lib/sorter-globals.h"
 
 #include <unistd.h>
 #include <sys/fcntl.h>
-
-#define SORT_DECLARE_ONLY
-#include "lib/sorter.h"
 
 uns sorter_trace;
 uns sorter_presort_bufsize = 65536;
