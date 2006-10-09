@@ -27,34 +27,26 @@ stk_array_join(char *x, char **s, uns cnt, uns sep)
   *x = 0;
 }
 
-char *stk_printf_buf;
-static int stk_printf_len;
-
 uns
 stk_printf_internal(char *fmt, ...)
 {
+  uns len = 256;
+  char *buf = alloca(len);
   va_list args, args2;
   va_start(args, fmt);
-  if (!stk_printf_buf)
-    {
-      stk_printf_buf = xmalloc(256);
-      stk_printf_len = 256;
-    }
   for (;;)
     {
       va_copy(args2, args);
-      int l = vsnprintf(stk_printf_buf, stk_printf_len, fmt, args2);
+      int l = vsnprintf(buf, len, fmt, args2);
       va_end(args2);
       if (l < 0)
-	stk_printf_len *= 2;
-      else if (l < stk_printf_len)
+	len *= 2;
+      else
 	{
 	  va_end(args);
 	  return l+1;
 	}
-      else
-	stk_printf_len = MAX(stk_printf_len*2, l+1);
-      stk_printf_buf = xrealloc(stk_printf_buf, stk_printf_len);
+      buf = alloca(len);
     }
 }
 
