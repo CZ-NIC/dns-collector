@@ -36,7 +36,11 @@ while (<IN>) {
 			$empty && next;
 			$empty = 1;
 		} else { $empty = 0; }
-		print OUT;
+		if (/^#run\s+(.+)/) {
+			print OUT `$1`;
+		} else {
+			print OUT;
+		}
 	}
 }
 @ifs && die "Unterminated #ifdef";
