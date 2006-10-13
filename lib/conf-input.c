@@ -159,7 +159,7 @@ get_token(uns is_command_name, byte **msg)
 	return NULL;
       }
       if (!*line || *line == '#')
-	log(L_WARN, "The line %s:%d following a backslash is empty", name_parse_fb, line_num);
+	log(L_WARN, "The line %s:%d following a backslash is empty", name_parse_fb ? : (byte*) "", line_num);
     } else {
       split_grow(&word_buf, words+1);
       uns start = copied;
@@ -270,7 +270,12 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
       goto error;
   }
 error:
-  log(L_ERROR, "File %s, line %d: %s", name_fb, line_num, msg);
+  if (name_fb)
+    log(L_ERROR, "File %s, line %d: %s", name_fb, line_num, msg);
+  else if (line_num == 1)
+    log(L_ERROR, "Manual setting of configuration: %s", msg);
+  else
+    log(L_ERROR, "Manual setting of configuration, line %d: %s", line_num, msg);
   return "included from here";
 }
 
@@ -317,7 +322,7 @@ load_string(byte *string)
   cf_init_stack();
   struct fastbuf fb;
   fbbuf_init_read(&fb, string, strlen(string), 0);
-  byte *msg = parse_fastbuf("memory string", &fb, 0);
+  byte *msg = parse_fastbuf(NULL, &fb, 0);
   return !!msg || done_stack();
 }
 
