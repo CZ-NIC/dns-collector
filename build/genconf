@@ -36,7 +36,7 @@ while (<IN>) {
 			$empty && next;
 			$empty = 1;
 		} else { $empty = 0; }
-		if (/^#run\s+(.+)/) {
+		if (/^#pipe\s+(.+)/) {
 			print OUT `$1`;
 		} else {
 			print OUT;
