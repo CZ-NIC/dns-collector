@@ -1,0 +1,88 @@
+# Configuration of the image library (included by cf/sherlock)
+
+######## General parameters #####################################################
+
+ImageLib {
+
+# Default tracing level (0 to disable)
+Trace			0
+
+# Limits for image allocation
+ImageMaxDim		0xffff		# Maximum width/height (at most 64k-1)
+ImageMaxBytes		256M		# Maximum size in bytes
+
+}
+
+######## Image signatures #######################################################
+
+ImageSig {
+
+# To find similar images, Sherlock uses comparison based on regions.
+# First of all, the imagesim analyser extracts various region features.
+# Sets of these features are called "image signatures" and they are stored
+# in the `H' attribute of image objects.
+
+# Signatures are later processed by the indexer to build an effective
+# search structure finally used by the search server. See Indexer and Search
+# sections for more options.
+
+# Minimum image size to apply segmentation. Smaller images are always
+# compared by the simple "average" method (see ImageSig.CompareMethod).
+MinWidth		16
+MinHeight		16
+
+# List of subdivision thresholds in the first phase of segmentation.
+# Lower the values to increase the average number of regions and vice versa.
+PreQuantThresholds	6 12 15 20 25 25 30 30 40 40 50 50 60 60 60
+
+# Settings for the second phase of segmentation -- usually not so important.
+# We use an iterative algorithm to improve the average error from the first phase.
+# We stop the process after PostQuantMaxSteps or if we get only PostQuantThreshold
+# percentual improvement over the previous step.
+PostQuantMinSteps	2
+PostQuantMaxSteps	10
+PostQuantThreshold	1
+
+# BorderBonus and BorderSize parameters can increase or decrease the weight
+# of image pixels near the borders. Weight of all pixels more than BorderSize * MIN(cols, rows)
+# pixels far from the edges is 128. Then this value continuously decreses/increses up to 128+BorderSize.
+BorderSize		0.4
+BorderBonus		-50
+
+# Scaling constants for computation of normalized i-th order inertia features (I1, I2, I3).
+InertiaScale		2 0.5 0.05
+
+# Threshold for detecting textured images (see images/sig-txt.c for details).
+# Decrease the threshold if you want less detected textures,
+# set it to zero to disable the algorithm completely.
+TexturedThreshold	0.32
+
+# Signature comparison method:
+#
+#   integrated
+#	based on: James Z. Wang, Jia Li and Gio Wiederhold,
+#	"SIMPLIcity: Semantics-Sensitive Integrated Matching for Picture Libraries",
+#	IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 23, no. 9, pp. 947-963, 2001.
+#
+#   fuzzy (unstable and unbalanced parameters)
+#	based on: Yixin Chen and James Z. Wang,
+#	"A Region-Based Fuzzy Feature Matching Approach to Content-Based Image Retrieval",
+#	IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 24, no. 9, pp. 1252-1267, 2002.
+#
+#   average
+#	Simple distance of image features averages (ignores segmentation).
+#
+CompareMethod		integrated
+
+# Array of multiplicative constants in feature vector distance computation
+# (L, u, v, LH, HL, HH, I1, I2, I3, X, Y). Each one must be an integer in range 0..15, default is 4.
+CompareFeaturesWeights	4 6 6 4 4 4 4 4 4 4 4
+
+}
+
+######## Duplicate finder #######################################################
+
+ImageDup {
+# Detection of image duplicates does not work yet.
+}
+
