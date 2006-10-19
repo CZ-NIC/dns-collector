@@ -48,6 +48,8 @@ static inline int clist_empty(clist *l)
 #define CLIST_FOR_EACH(type,n,list) for(type n=(void*)(list).head.next; (cnode*)(n) != &(list).head; n=(void*)((cnode*)(n))->next)
 #define CLIST_FOR_EACH_DELSAFE(type,n,list,tmp) for(type n=(void*)(list).head.next; tmp=(void*)((cnode*)(n))->next, (cnode*)(n) != &(list).head; n=(void*)tmp)
 
+#define CLIST_FOR_EACH_BACKWARDS(type,n,list) for(type n=(void*)(list).head.prev; (cnode*)(n) != &(list).head; n=(void*)((cnode*)(n))->prev)
+
 static inline void clist_insert_after(cnode *what, cnode *after)
 {
   cnode *before = after->next;
