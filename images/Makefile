@@ -1,4 +1,4 @@
-# Testing dir... code will be moved somewhere else... maybe to trash :-)
+# Makefile for the Image Library (c) 2006 Pavel Charvat <pchar@ucw.cz>
 
 DIRS+=images
 
