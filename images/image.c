@@ -71,7 +71,7 @@ image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempo
   else
     align = 1;
   row_pixels_size = cols * pixel_size;
-  row_size = ALIGN(row_pixels_size, align);
+  row_size = ALIGN_TO(row_pixels_size, align);
   u64 image_size_64 = (u64)row_size * rows;
   u64 bytes_64 = image_size_64 + (sizeof(struct image) + IMAGE_SSE_ALIGN_SIZE - 1 + sizeof(uns));
   if (unlikely(bytes_64 > image_max_bytes))

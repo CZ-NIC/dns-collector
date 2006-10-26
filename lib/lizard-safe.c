@@ -78,7 +78,7 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
    * case of buffer-overflow.  The function is not re-entrant because of a
    * static longjmp handler.  */
 {
-  uns lock_offset = ALIGN(expected_length + 3, PAGE_SIZE);	// +3 due to the unaligned access
+  uns lock_offset = ALIGN_TO(expected_length + 3, PAGE_SIZE);	// +3 due to the unaligned access
   if (lock_offset > buf->len)
     lizard_realloc(buf, lock_offset);
   volatile sh_sighandler_t old_handler = signal_handler[SIGSEGV];

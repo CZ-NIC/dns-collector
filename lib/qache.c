@@ -82,7 +82,7 @@ qache_msync(struct qache *q UNUSED, uns start UNUSED, uns len UNUSED)
   /* We don't need msyncing on Linux, since the mappings are guaranteed to be coherent */
   len += (start % PAGE_SIZE);
   start -= start % PAGE_SIZE;
-  len = ALIGN(len, PAGE_SIZE);
+  len = ALIGN_TO(len, PAGE_SIZE);
   if (msync(q->mmap_data + start, len, MS_ASYNC | MS_INVALIDATE) < 0)
     log(L_ERROR, "Cache %s: msync failed: %m", q->file_name);
 #endif
@@ -383,7 +383,7 @@ qache_open(struct qache_params *par)
   q->file_name = xstrdup(par->file_name);
 
   ASSERT(par->block_size >= 8 && !(par->block_size & (par->block_size-1)));
-  par->cache_size = ALIGN(par->cache_size, par->block_size);
+  par->cache_size = ALIGN_TO(par->cache_size, par->block_size);
 
   if (par->force_reset <= 0 && qache_open_existing(q, par))
     ;

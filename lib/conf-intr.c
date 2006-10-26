@@ -102,7 +102,7 @@ byte *cf_op_names[] = { CF_OPERATIONS };
 #undef T
 byte *cf_type_names[] = { "int", "u64", "double", "ip", "string", "lookup", "user" };
 
-#define DARY_HDR_SIZE ALIGN(sizeof(uns), CPU_STRUCT_ALIGN)
+#define DARY_HDR_SIZE ALIGN_TO(sizeof(uns), CPU_STRUCT_ALIGN)
 
 static byte *
 interpret_set_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
