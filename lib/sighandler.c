@@ -10,7 +10,7 @@
 #include <string.h>
 #include <signal.h>
 
-sh_sighandler_t signal_handler[_NSIG];
+sh_sighandler_t signal_handler[NSIG];
 
 static void
 signal_handler_internal(int sig)
@@ -29,7 +29,7 @@ handle_signal(int signum, struct sigaction *oldact)
   struct sigaction act;
   bzero(&act, sizeof(act));
   act.sa_handler = signal_handler_internal;
-  act.sa_flags = SA_NOMASK;
+  act.sa_flags = SA_NODEFER;
   if (sigaction(signum, &act, oldact) < 0)
     die("sigaction: %m");
 }

@@ -20,7 +20,7 @@ static char *spt_start, *spt_end;
 void
 setproctitle_init(int argc, char **argv)
 {
-#ifdef linux
+#ifdef CONFIG_LINUX
   int i, len;
   char **env, **oldenv, *t;
 
