@@ -41,6 +41,12 @@ typedef struct stat sh_stat_t;
 
 #endif	/* !CONFIG_LFS */
 
+#if defined(_POSIX_SYNCHRONIZED_IO) && (_POSIX_SYNCHRONIZED_IO > 0)
+#define sh_fdatasync fdatasync
+#else
+#define sh_fdatasync fsync
+#endif
+
 #define HAVE_PREAD
 
 static inline sh_off_t
