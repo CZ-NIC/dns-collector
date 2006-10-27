@@ -4,10 +4,15 @@ DIRS+=lib/perl/Ulimit/arch/auto/Sherlock/Ulimit
 ULIMIT_DIR=lib/perl/Ulimit
 
 PROGS+=$(o)/lib/perl/Ulimit/Ulimit.pm
+ifdef CONFIG_DARWIN
+SOEXT=bundle
+else
+SOEXT=so
+endif
 
-extras:: $(o)/lib/perl/Ulimit/arch/auto/Sherlock/Ulimit/Ulimit.so
+extras:: $(o)/lib/perl/Ulimit/arch/auto/Sherlock/Ulimit/Ulimit.$(SOEXT)
 
-$(o)/lib/perl/Ulimit/arch/auto/Sherlock/Ulimit/Ulimit.so: $(o)/$(ULIMIT_DIR)/Ulimit.xs $(o)/$(ULIMIT_DIR)/Ulimit.pm $(o)/$(ULIMIT_DIR)/Makefile
+$(o)/lib/perl/Ulimit/arch/auto/Sherlock/Ulimit/Ulimit.$(SOEXT): $(o)/$(ULIMIT_DIR)/Ulimit.xs $(o)/$(ULIMIT_DIR)/Ulimit.pm $(o)/$(ULIMIT_DIR)/Makefile
 	cd $(o)/$(ULIMIT_DIR) && $(MAKE) -f Makefile
 	cp $@ run/$(DATADIR)/
 
