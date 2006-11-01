@@ -29,7 +29,7 @@ Usage: image-tool [options] infile [outfile]\n\
 -F --output-format       output image format\n\
 -s --size                force output dimensions (100x200)\n\
 -b --fit-to-box          scale to fit the box (100x200)\n\
--c --colorspace          force output colorspace (Gray, GrayAlpha, RGB, RGBAlpha)\n\
+-c --colorspace          force output colorspace (Grayscale, Grayscale+Alpha, RGB, RGB+Alpha, ...)\n\
 -Q --jpeg-quality        JPEG quality (1..100)\n\
 -g --background          background color (hexadecimal RRGGBB)\n\
 -G --default-background  background applied only if the image contains no background info (RRGGBB, default=FFFFFF)\n\
@@ -168,6 +168,7 @@ main(int argc, char **argv)
     die("Cannot initialize image I/O");
 
   MSG("Reading %s", input_file_name);
+  byte cs_buf[IMAGE_CHANNELS_FORMAT_MAX_SIZE];
   io.fastbuf = bopen(input_file_name, O_RDONLY, 1 << 18);
   io.format = input_format ? : image_file_name_to_format(input_file_name);
   if (exif)
@@ -178,8 +179,8 @@ main(int argc, char **argv)
       bclose(io.fastbuf);
       printf("Format:      %s\n", image_format_to_extension(io.format) ? : (byte *)"?");
       printf("Dimensions:  %dx%d\n", io.cols, io.rows);
-      printf("Colorspace:  %s\n", (io.flags & IMAGE_IO_HAS_PALETTE) ? (byte *)"Palette" : image_channels_format_to_name(io.flags & IMAGE_CHANNELS_FORMAT));
-      printf("NumColors:   %d\n", io.number_of_colors);
+      printf("Colorspace:  %s\n", (io.flags & IMAGE_IO_HAS_PALETTE) ? (byte *)"Palette" : image_channels_format_to_name(io.flags, cs_buf));
+      printf("NumColors:   %u\n", io.number_of_colors);
       if (io.background_color.color_space)
         {
 	  byte rgb[3];
@@ -192,7 +193,7 @@ main(int argc, char **argv)
   else
     {
       MSG("%s %dx%d %s", image_format_to_extension(io.format) ? : (byte *)"?", io.cols, io.rows,
-	  (io.flags & IMAGE_IO_HAS_PALETTE) ? (byte *)"Palette" : image_channels_format_to_name(io.flags & IMAGE_CHANNELS_FORMAT));
+	  (io.flags & IMAGE_IO_HAS_PALETTE) ? (byte *)"Palette" : image_channels_format_to_name(io.flags, cs_buf));
       if (cols)
         if (fit_to_box)
 	  {
@@ -221,7 +222,7 @@ main(int argc, char **argv)
       io.fastbuf = bopen(output_file_name, O_WRONLY | O_CREAT | O_TRUNC, 1 << 18);
       io.format = output_format ? : image_file_name_to_format(output_file_name);
       MSG("%s %dx%d %s", image_format_to_extension(io.format) ? : (byte *)"?", io.cols, io.rows,
-	  image_channels_format_to_name(io.flags & IMAGE_CHANNELS_FORMAT));
+	  image_channels_format_to_name(io.flags, cs_buf));
       TRY(image_io_write(&io));
       bclose(io.fastbuf);
     }

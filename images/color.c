@@ -14,6 +14,54 @@
 #include "images/images.h"
 #include "images/color.h"
 
+#include <string.h>
+
+uns color_space_channels[COLOR_SPACE_MAX] = {
+  [COLOR_SPACE_UNKNOWN] = 0,
+  [COLOR_SPACE_UNKNOWN_1] = 1,
+  [COLOR_SPACE_UNKNOWN_2] = 2,
+  [COLOR_SPACE_UNKNOWN_3] = 3,
+  [COLOR_SPACE_UNKNOWN_4] = 4,
+  [COLOR_SPACE_GRAYSCALE] = 1,
+  [COLOR_SPACE_RGB] = 3,
+  [COLOR_SPACE_XYZ] = 3,
+  [COLOR_SPACE_LAB] = 3,
+  [COLOR_SPACE_YCBCR] = 3,
+  [COLOR_SPACE_CMYK] = 4,
+  [COLOR_SPACE_YCCK] = 4,
+};
+
+byte *color_space_name[COLOR_SPACE_MAX] = {
+  [COLOR_SPACE_UNKNOWN] = "Unknown",
+  [COLOR_SPACE_UNKNOWN_1] = "1-channel",
+  [COLOR_SPACE_UNKNOWN_2] = "2-channels",
+  [COLOR_SPACE_UNKNOWN_3] = "3-channels",
+  [COLOR_SPACE_UNKNOWN_4] = "4-channels",
+  [COLOR_SPACE_GRAYSCALE] = "Grayscale",
+  [COLOR_SPACE_RGB] = "RGB",
+  [COLOR_SPACE_XYZ] = "XYZ",
+  [COLOR_SPACE_LAB] = "LAB",
+  [COLOR_SPACE_YCBCR] = "YCbCr",
+  [COLOR_SPACE_CMYK] = "CMYK",
+  [COLOR_SPACE_YCCK] = "YCCK",
+};
+
+byte *
+color_space_id_to_name(uns id)
+{
+  ASSERT(id < COLOR_SPACE_MAX);
+  return color_space_name[id];
+}
+
+uns
+color_space_name_to_id(byte *name)
+{
+  for (uns i = 1; i < COLOR_SPACE_MAX; i++)
+    if (!strcasecmp(name, color_space_name[i]))
+      return i;
+  return 0;
+}
+
 struct color color_black = { .color_space = COLOR_SPACE_GRAYSCALE };
 struct color color_white = { .c = { 255 }, .color_space = COLOR_SPACE_GRAYSCALE };
 

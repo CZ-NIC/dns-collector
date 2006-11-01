@@ -27,18 +27,29 @@
 
 #include "images/images.h"
 
-// A comparison of four multimedia RGB spaces, Danny Pascale
-
 enum {
   COLOR_SPACE_UNKNOWN = 0,
+  COLOR_SPACE_UNKNOWN_1 = 1,
+  COLOR_SPACE_UNKNOWN_2 = 2,
+  COLOR_SPACE_UNKNOWN_3 = 3,
+  COLOR_SPACE_UNKNOWN_4 = 4,
+  COLOR_SPACE_UNKNOWN_MAX = 4,
   COLOR_SPACE_GRAYSCALE,
   COLOR_SPACE_RGB,
   COLOR_SPACE_XYZ,
   COLOR_SPACE_LAB,
   COLOR_SPACE_LUV,
   COLOR_SPACE_YCBCR,
+  COLOR_SPACE_CMYK,
+  COLOR_SPACE_YCCK,
   COLOR_SPACE_MAX
 };
+
+extern uns color_space_channels[COLOR_SPACE_MAX];
+extern byte *color_space_name[COLOR_SPACE_MAX];
+
+byte *color_space_id_to_name(uns id);
+uns color_space_name_to_id(byte *name);
 
 /* Color spaces in the CIE 1931 chromacity diagram */
 
