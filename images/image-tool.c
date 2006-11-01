@@ -216,6 +216,15 @@ main(int argc, char **argv)
         io.flags |= IMAGE_IO_USE_BACKGROUND;
       if (jpeg_quality)
 	io.jpeg_quality = jpeg_quality;
+      uns output_fmt = output_format ? : image_file_name_to_format(output_file_name);
+      uns output_cs = io.flags & IMAGE_COLOR_SPACE;
+      if (output_fmt != IMAGE_FORMAT_JPEG &&
+	  output_cs != COLOR_SPACE_GRAYSCALE &&
+	  output_cs != COLOR_SPACE_RGB)
+        {
+	  MSG("Forcing RGB color space");
+	  io.flags = (io.flags & ~IMAGE_COLOR_SPACE) | COLOR_SPACE_RGB;
+	}
       TRY(image_io_read_data(&io, 0));
       bclose(io.fastbuf);
       MSG("Writing %s", output_file_name);
