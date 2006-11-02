@@ -184,7 +184,7 @@ main(int argc, char **argv)
       if (io.background_color.color_space)
         {
 	  byte rgb[3];
-	  color_put_rgb(rgb, &io.background_color);
+	  TRY(color_put(&ctx, &io.background_color, rgb, COLOR_SPACE_RGB));
           printf("Background:  %02x%02x%02x\n", rgb[0], rgb[1], rgb[2]);
 	}
       if (io.exif_size)

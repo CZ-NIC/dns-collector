@@ -170,8 +170,11 @@ libmagick_read_data(struct image_io *io)
   /* Prepare the image */
   struct image_io_read_data_internals rdi;
   uns read_flags = io->flags;
+  uns cs = read_flags & IMAGE_COLOR_SPACE;
+  if (cs != COLOR_SPACE_GRAYSCALE && cs != COLOR_SPACE_RGB)
+    read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_PIXEL_FORMAT) | COLOR_SPACE_RGB;
   if ((read_flags & IMAGE_IO_USE_BACKGROUND) && !(read_flags & IMAGE_ALPHA))
-    read_flags = (read_flags | IMAGE_ALPHA) & IMAGE_CHANNELS_FORMAT;
+    read_flags = (read_flags & IMAGE_CHANNELS_FORMAT) | IMAGE_ALPHA;
   if (unlikely(!image_io_read_data_prepare(&rdi, io, rd->image->columns, rd->image->rows, read_flags)))
     {
       libmagick_destroy_read_data(rd);
@@ -279,7 +282,8 @@ libmagick_write(struct image_io *io)
         info->colorspace = RGBColorspace;
         break;
       default:
-        ASSERT(0);
+        IMAGE_ERROR(io->context, IMAGE_ERROR_WRITE_FAILED, "Unsupported color space.");
+        goto err;
     }
   switch (io->format)
     {

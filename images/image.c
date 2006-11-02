@@ -41,7 +41,7 @@ image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempo
   pixel_size = channels = flags_to_pixel_size(flags);
   if (!channels || channels > 4)
     {
-      IMAGE_ERROR(ctx, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Invalid number of color channels");
+      IMAGE_ERROR(ctx, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Invalid number of color channels (%u)", channels);
       return NULL;
     }
   switch (channels)

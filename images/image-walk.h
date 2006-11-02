@@ -83,7 +83,12 @@
 #endif
 
 #ifndef IMAGE_WALK_INLINE
-static void P(walk)
+static void
+#ifdef IMAGE_WALK_FUNC_NAME
+IMAGE_WALK_FUNC_NAME
+#else
+P(walk)
+#endif
     (struct image *P(img)
 #   ifdef IMAGE_WALK_DOUBLE
     , struct image *P(sec_img)
@@ -143,6 +148,7 @@ static void P(walk)
 }
 
 #undef IMAGE_WALK_PREFIX
+#undef IMAGE_WALK_FUNC_NAME
 #undef IMAGE_WALK_INLINE
 #undef IMAGE_WALK_UNROLL
 #undef IMAGE_WALK_DOUBLE

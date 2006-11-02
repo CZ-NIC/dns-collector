@@ -4,7 +4,7 @@ DIRS+=images
 
 PROGS+=$(o)/images/image-tool $(o)/images/color-tool
 CONFIGS+=images
-LIBIMAGES_MODS=math config context image scale color alpha io-main object
+LIBIMAGES_MODS=math config context image scale color io-main object
 
 ifdef CONFIG_IMAGES_DUP
 PROGS+=$(o)/images/image-dup-test

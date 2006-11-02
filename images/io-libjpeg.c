@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#define LOCAL_DEBUG
+#undef LOCAL_DEBUG
 
 #include "lib/lib.h"
 #include "lib/mempool.h"
@@ -52,7 +52,7 @@ libjpeg_read_error_exit(j_common_ptr cinfo)
   struct libjpeg_err *e = (struct libjpeg_err *)cinfo->err;
   byte buf[JMSG_LENGTH_MAX];
   e->pub.format_message(cinfo, buf);
-  IMAGE_ERROR(e->io->context, IMAGE_ERROR_READ_FAILED, "%s", buf);
+  IMAGE_ERROR(e->io->context, IMAGE_ERROR_READ_FAILED, "libjpeg: %s", buf);
   longjmp(e->setjmp_buf, 1);
 }
 
@@ -63,7 +63,7 @@ libjpeg_write_error_exit(j_common_ptr cinfo)
   struct libjpeg_err *e = (struct libjpeg_err *)cinfo->err;
   byte buf[JMSG_LENGTH_MAX];
   e->pub.format_message(cinfo, buf);
-  IMAGE_ERROR(e->io->context, IMAGE_ERROR_WRITE_FAILED, "%s", buf);
+  IMAGE_ERROR(e->io->context, IMAGE_ERROR_WRITE_FAILED, "libjpeg: %s", buf);
   longjmp(e->setjmp_buf, 1);
 }
 
@@ -336,15 +336,13 @@ libjpeg_read_data(struct image_io *io)
   DBG("libjpeg_read_data()");
 
   struct libjpeg_read_internals *i = io->read_data;
+  uns read_flags = io->flags;
 
   /* Select color space */
-  switch (io->flags & IMAGE_COLOR_SPACE)
+  switch (read_flags & IMAGE_COLOR_SPACE)
     {
       case COLOR_SPACE_GRAYSCALE:
 	i->cinfo.out_color_space = JCS_GRAYSCALE;
-	break;
-      case COLOR_SPACE_RGB:
-	i->cinfo.out_color_space = JCS_RGB;
 	break;
       case COLOR_SPACE_YCBCR:
 	i->cinfo.out_color_space = JCS_YCbCr;
@@ -356,9 +354,18 @@ libjpeg_read_data(struct image_io *io)
 	i->cinfo.out_color_space = JCS_YCCK;
 	break;
       default:
-	jpeg_destroy_decompress(&i->cinfo);
-	IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Unsupported color space.");
-	return 0;
+	switch (i->cinfo.jpeg_color_space)
+	  {
+	    case JCS_CMYK:
+	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_CMYK; 
+	      i->cinfo.out_color_space = JCS_YCbCr;
+	      break;
+	    default:
+	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_RGB; 
+	      i->cinfo.out_color_space = JCS_RGB;
+	      break;
+	  }
+	break;
     }
 
   /* Prepare the image  */
@@ -383,7 +390,7 @@ libjpeg_read_data(struct image_io *io)
     }
   jpeg_calc_output_dimensions(&i->cinfo);
   DBG("Output dimensions %ux%u", (uns)i->cinfo.output_width, (uns)i->cinfo.output_height);
-  if (unlikely(!image_io_read_data_prepare(&rdi, io, i->cinfo.output_width, i->cinfo.output_height, io->flags)))
+  if (unlikely(!image_io_read_data_prepare(&rdi, io, i->cinfo.output_width, i->cinfo.output_height, read_flags)))
     {
       jpeg_destroy_decompress(&i->cinfo);
       return 0;
@@ -401,7 +408,7 @@ libjpeg_read_data(struct image_io *io)
   /* Decompress the image */
   struct image *img = rdi.image;
   jpeg_start_decompress(&i->cinfo);
-  if ((int)img->pixel_size == i->cinfo.num_components)
+  if ((int)img->pixel_size == i->cinfo.output_components)
     {
       byte *pixels = img->pixels;
       for (uns r = img->rows; r--; )
@@ -416,7 +423,7 @@ libjpeg_read_data(struct image_io *io)
         {
 	  case 2: /* Grayscale -> Grayscale+Alpha */
 	    {
-	      ASSERT(i->cinfo.num_components == 1);
+	      ASSERT(i->cinfo.output_components == 1);
 	      byte buf[img->cols], *src;
 #	      define IMAGE_WALK_PREFIX(x) walk_##x
 #             define IMAGE_WALK_INLINE
@@ -430,7 +437,7 @@ libjpeg_read_data(struct image_io *io)
 	    break;
 	  case 4: /* * -> *+Alpha or aligned * */
 	    {
-	      ASSERT(i->cinfo.num_components == 3);
+	      ASSERT(i->cinfo.output_components == 3);
 	      byte buf[img->cols * 3], *src;
 #	      define IMAGE_WALK_PREFIX(x) walk_##x
 #             define IMAGE_WALK_INLINE

@@ -27,12 +27,13 @@
 
 #include "images/images.h"
 
+/* Basic color spaces */
 enum {
   COLOR_SPACE_UNKNOWN = 0,
-  COLOR_SPACE_UNKNOWN_1 = 1,
-  COLOR_SPACE_UNKNOWN_2 = 2,
-  COLOR_SPACE_UNKNOWN_3 = 3,
-  COLOR_SPACE_UNKNOWN_4 = 4,
+  COLOR_SPACE_UNKNOWN_1 = 1,	/* unknown 1-channel color space */
+  COLOR_SPACE_UNKNOWN_2 = 2,	/* unknown 2-channels color space */
+  COLOR_SPACE_UNKNOWN_3 = 3,	/* unknown 3-channels color space */
+  COLOR_SPACE_UNKNOWN_4 = 4,	/* unknown 4-channels color space */
   COLOR_SPACE_UNKNOWN_MAX = 4,
   COLOR_SPACE_GRAYSCALE,
   COLOR_SPACE_RGB,
@@ -48,8 +49,48 @@ enum {
 extern uns color_space_channels[COLOR_SPACE_MAX];
 extern byte *color_space_name[COLOR_SPACE_MAX];
 
+/* Color space ID <-> name conversions */
 byte *color_space_id_to_name(uns id);
 uns color_space_name_to_id(byte *name);
+
+/* Struct color manipulation */
+int color_get(struct color *color, byte *src, uns src_space);
+int color_put(struct image_context *ctx, struct color *color, byte *dest, uns dest_space);
+
+static inline void
+color_make_gray(struct color *color, uns gray)
+{
+  color->c[0] = gray;
+  color->color_space = COLOR_SPACE_GRAYSCALE;
+}
+
+static inline void
+color_make_rgb(struct color *color, uns r, uns g, uns b)
+{
+  color->c[0] = r;
+  color->c[1] = g;
+  color->c[2] = b;
+  color->color_space = COLOR_SPACE_RGB;
+}
+
+extern struct color color_black, color_white;
+
+/* Conversion between various pixel formats */
+
+enum {
+  IMAGE_CONV_FILL_ALPHA = 1,
+  IMAGE_CONV_COPY_ALPHA = 2,
+  IMAGE_CONV_APPLY_ALPHA = 4,
+};
+
+struct image_conv_options {
+  uns flags;
+  struct color background;
+};
+
+extern struct image_conv_options image_conv_defaults;
+
+int image_conv(struct image_context *ctx, struct image *dest, struct image *src, struct image_conv_options *opt);
 
 /* Color spaces in the CIE 1931 chromacity diagram */
 
@@ -98,33 +139,13 @@ rgb_to_gray_func(uns r, uns g, uns b)
   return (r * 19660 + g * 38666 + b * 7210) >> 16;
 }
 
-extern struct color color_black, color_white;
-
-static inline void
-color_make_gray(struct color *color, uns gray)
-{
-  color->c[0] = gray;
-  color->color_space = COLOR_SPACE_GRAYSCALE;
-}
-
-static inline void
-color_make_rgb(struct color *color, uns r, uns g, uns b)
-{
-  color->c[0] = r;
-  color->c[1] = g;
-  color->c[2] = b;
-  color->color_space = COLOR_SPACE_RGB;
-}
-
-void color_put_color_space(byte *dest, struct color *color, uns color_space);
-void color_put_grayscale(byte *dest, struct color *color);
-void color_put_rgb(byte *dest, struct color *color);
-
 /* Exact slow conversion routines */
 void srgb_to_xyz_exact(double dest[3], double src[3]);
 void xyz_to_srgb_exact(double dest[3], double src[3]);
 void xyz_to_luv_exact(double dest[3], double src[3]);
 void luv_to_xyz_exact(double dest[3], double src[3]);
+void rgb_to_cmyk_exact(double dest[4], double src[3]);
+void cmyk_to_rgb_exact(double dest[3], double src[4]);
 
 /* Reference white */
 #define REF_WHITE_X 0.96422

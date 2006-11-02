@@ -13,17 +13,7 @@ isqr(int x)
 static inline uns
 fast_div_u32_u8(uns x, uns y)
 {
-#ifdef CPU_I386
-  int ret, dmy;
-  asm volatile (
-    "mull %3"
-    :"=d"(ret),"=a"(dmy)
-    :"1"(x),"g"(fast_div_tab[y])
-  );
-  return ret;
-#else
   return ((u64)(x) * fast_div_tab[y]) >> 32;
-#endif
 }
 
 static inline uns
