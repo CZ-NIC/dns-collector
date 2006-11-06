@@ -4,7 +4,14 @@ DIRS+=images
 
 PROGS+=$(o)/images/image-tool $(o)/images/color-tool
 CONFIGS+=images
-LIBIMAGES_MODS=math config context image scale color io-main object
+LIBIMAGES_MODS=math config context image scale color io-main
+
+ifdef CONFIG_SHERLOCK
+LIBIMAGES_MODS+=object
+LIBIMAGES_DEPS=$(LIBSH)
+else
+LIBIMAGES_DEPS=$(LIBUCW)
+endif
 
 ifdef CONFIG_IMAGES_DUP
 PROGS+=$(o)/images/image-dup-test
@@ -51,29 +58,29 @@ endif
 $(o)/images/libimages.a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 $(o)/images/libimages.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 
-$(o)/images/image-tool: $(o)/images/image-tool.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/image-tool: $(o)/images/image-tool.o $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/image-tool: LIBS+=$(LIBIMAGES_LIBS)
 
-$(o)/images/color-tool: $(o)/images/color-tool.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/color-tool: $(o)/images/color-tool.o $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/color-tool: LIBS+=$(LIBIMAGES_LIBS)
 
-$(o)/images/image-dup-test: $(o)/images/image-dup-test.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/image-dup-test: $(o)/images/image-dup-test.o $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/image-dup-test: LIBS+=$(LIBIMAGES_LIBS)
 
-$(o)/images/image-sim-test: $(o)/images/image-sim-test.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/image-sim-test: $(o)/images/image-sim-test.o $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/image-sim-test: LIBS+=$(LIBIMAGES_LIBS)
 
 TESTS+=$(o)/images/image-test.test
-$(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/image-test: LIBS+=$(LIBIMAGES_LIBS)
 $(o)/images/image-test.test: $(o)/images/image-test
 
 TESTS+=$(o)/images/hilbert-test.test
-$(o)/images/hilbert-test: $(LIBUCW)
+$(o)/images/hilbert-test: $(LIBIMAGES_DEPS)
 $(o)/images/hilbert-test: LIBS+=-lm
 $(o)/images/hilbert-test.test: $(o)/images/hilbert-test
 
 TESTS+=$(o)/images/color.test
-$(o)/images/color-t: $(LIBIMAGES) $(LIBUCW)
-$(o)/images/color-t: LIBS+=$(LIBIMAGES_LIBS) $(LIBUCW)
+$(o)/images/color-t: $(LIBIMAGES) $(LIBIMAGES_DEPS)
+$(o)/images/color-t: LIBS+=$(LIBIMAGES_LIBS) $(LIBIMAGES_DEPS)
 $(o)/images/color.test: $(o)/images/color-t
