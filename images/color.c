@@ -248,6 +248,47 @@ pixel_conv_rgb_to_cmyk(byte *dest, byte *src)
 #define IMAGE_WALK_DO_STEP do{ pixel_conv_rgb_to_cmyk(walk_pos, walk_sec_pos); }while(0)
 #include "images/image-walk.h"
 
+/* YCCK <-> RGB */
+
+static inline void
+pixel_conv_ycck_to_rgb(byte *dest, byte *src)
+{
+  int y = src[0], cb = src[1] - 128, cr = src[2] - 128;
+  uns d = (255 - src[3]) * (0xffffffffU / 255 /255);
+  dest[0] = (d * CLAMP(y + (91881 * cr) / 0x10000, 0, 255) >> 24);
+  dest[1] = (d * CLAMP(y - (22553 * cb + 46801 * cr) / 0x10000, 0, 255) >> 24);
+  dest[2] = (d * CLAMP(y + (116129 * cb) / 0x10000, 0, 255) >> 24);
+}
+
+#define IMAGE_WALK_PREFIX(x) walk_##x
+#define IMAGE_WALK_FUNC_NAME image_conv_ycck_4_to_rgb_n
+#define IMAGE_WALK_DOUBLE
+#define IMAGE_WALK_SEC_COL_STEP 4
+#define IMAGE_WALK_DO_STEP do{ pixel_conv_ycck_to_rgb(walk_pos, walk_sec_pos); }while(0)
+#include "images/image-walk.h"
+
+static inline void
+pixel_conv_rgb_to_ycck(byte *dest, byte *src)
+{
+  uns k = MAX(src[0], src[1]);
+  k = MAX(k, src[2]);
+  uns d = fast_div_u32_u8(0x7fffffffU, k); /* == 0 for zero K */
+  uns r = 255 - ((d * (k - src[0])) >> 23);
+  uns g = 255 - ((d * (k - src[1])) >> 23);
+  uns b = 255 - ((d * (k - src[2])) >> 23);
+  dest[0] = (19595 * r + 38470 * g + 7471 * b) / 0x10000;
+  dest[1] = (0x800000 + 0x8000 * b - 11058 * r - 21710 * g) / 0x10000;
+  dest[2] = (0x800000 + 0x8000 * r - 27439 * g - 5329 * b) / 0x10000;
+  dest[3] = 255 - k;
+}
+
+#define IMAGE_WALK_PREFIX(x) walk_##x
+#define IMAGE_WALK_FUNC_NAME image_conv_rgb_n_to_ycck_4
+#define IMAGE_WALK_DOUBLE
+#define IMAGE_WALK_COL_STEP 4
+#define IMAGE_WALK_DO_STEP do{ pixel_conv_rgb_to_ycck(walk_pos, walk_sec_pos); }while(0)
+#include "images/image-walk.h"
+
 /* Main functions */
 
 static int
@@ -287,6 +328,13 @@ image_conv_color_space(struct image_context *ctx UNUSED, struct image *dest, str
 	          return 1;
 	        }
 	      break;
+	    case COLOR_SPACE_YCCK:
+	      if (src->pixel_size == 4)
+	        {
+		  image_conv_ycck_4_to_rgb_n(dest, src);
+		  return 1;
+		}
+	      break;
 	}
 	break;
       case COLOR_SPACE_YCBCR:
@@ -309,6 +357,18 @@ image_conv_color_space(struct image_context *ctx UNUSED, struct image *dest, str
 	      break;
           }
         break;
+      case COLOR_SPACE_YCCK:
+	switch (src->flags & IMAGE_CHANNELS_FORMAT)
+	  {
+	    case COLOR_SPACE_RGB:
+	      if (dest->pixel_size == 4)
+	        {
+		  image_conv_rgb_n_to_ycck_4(dest, src);
+		  return 1;
+		}
+	      break;
+	  }
+	break;
     }
   return 0;
 }

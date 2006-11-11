@@ -358,7 +358,11 @@ libjpeg_read_data(struct image_io *io)
 	  {
 	    case JCS_CMYK:
 	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_CMYK; 
-	      i->cinfo.out_color_space = JCS_YCbCr;
+	      i->cinfo.out_color_space = JCS_CMYK;
+	      break;
+	    case JCS_YCCK:
+	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_YCCK; 
+	      i->cinfo.out_color_space = JCS_YCCK;
 	      break;
 	    default:
 	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_RGB; 
@@ -520,6 +524,7 @@ libjpeg_write(struct image_io *io)
     }
   i.cinfo.input_components = color_space_channels[img->flags & IMAGE_COLOR_SPACE];
   jpeg_set_defaults(&i.cinfo);
+  jpeg_set_colorspace(&i.cinfo, i.cinfo.in_color_space);
   if (io->jpeg_quality)
     jpeg_set_quality(&i.cinfo, MIN(io->jpeg_quality, 100), 1);
   if (io->exif_size)
