@@ -1,0 +1,65 @@
+Users of lib/sorter.h:  (WARNING: Obsolete, corresponds to v3.9 or even v3.8)
+
+centrum/indexer/patch-index.c		u32		oid
+gather/daemon/expire.c			variable	complex
+gather/daemon/gc.c			variable	complex
+gather/daemon/gc.c			variable	hash
+gather/shepherd/shep-cleanup.c		5 bytes		oid				4 min
+gather/shepherd/shep-cleanup.c		fixed		hash				35 min
+gather/shepherd/shep-export.c		fixed		oid				9 min
+gather/shepherd/shep-export.c		fixed		weight
+gather/shepherd/shep-plan.c		fixed		weight + oid			in mem
+gather/shepherd/shep-plan.c		fixed		site ptr + complex		in mem
+gather/shepherd/shep-record.c		fixed		reducible to int		in mem
+gather/shepherd/shep-record.c		fixed		oid				in mem
+gather/shepherd/shep.c			fixed		oid
+gather/shepherd/shep.c			fixed		hash
+gather/shepherd/shep-cork.c		fixed		hash + int			20 min
+gather/shepherd/shep-feedback.c		fixed		hash
+gather/shepherd/shep-merge.c		fixed		hash + int
+gather/shepherd/shep-merge.c		fixed		complex (probably can create monotone hashes for that)	38 min
+gather/shepherd/shep-recover.c		fixed		fp + more
+gather/shepherd/shep-select.c		fixed		weight (non-triv) + hash	21 min
+indexer/backlinker.c			8 bytes		int
+indexer/feedback-gath.c			fixed		hash + complex			7 min
+indexer/fpsort.c			fixed		hash + oid			9 min
+indexer/keywords.c			fixed		complex multi-pass
+indexer/labelsort.c			variable	oid + complex			2:00
+indexer/mergesigns.c			fixed		complex, but has hashes		1:33
+indexer/mergesums.c			fixed		hash
+indexer/mkgraph.c			complex		complex (with melding) (probably can be replaced by sorting edges and melding afterwards)	34 min
+indexer/psort.c				fixed		hash + oid			2 min
+indexer/reftexts.c			fixed		hash
+indexer/reftexts.c			fixed		via merges			3:30
+indexer/reftexts.c			fixed		oid + int
+indexer/resolve.c			fixed		hash				1:00 + 3:45
+indexer/resolve.c			fixed		masked int			22 min
+indexer/ssort.c				variable	hash (with melding)		1:30
+indexer/wsort.c				variable	id (with melding)		7:20
+lang/lang-tables.c			fixed		complex
+lang/stem-dict-gen.c			variable	hash (with melding)
+
+Users of lib/arraysort.h on big arrays:
+
+indexer/chewer.c			fixed		hash + others
+indexer/chewer.c			u32		id
+indexer/lexfreq.c			ptr		indirect int
+indexer/lexorder.c			ptr		complex
+indexer/lexorder.c			ptr		complex
+indexer/lexsort.c			ptr		complex
+
+Interface:
+
+Key structure		fixed aligned / fixed unaligned / variable
+Data structure		none / given by data_len(key) function
+Key I/O			default (breadb/bwriteb or attempt direct I/O) / user-defined
+Data I/O		always built-in
+Input			file / fastbuf / generator function
+			+ delete input ASAP flag
+Output			file / fastbuf / consumer function
+Key comparison		comparison function
+			monotone hash function
+			preliminary comparison function (?)
+Key merging		none / guaranteed unique / user-defined merge function:
+				multi-way merge in memory
+				2-way merge on fastbufs
