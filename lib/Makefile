@@ -7,7 +7,7 @@ PROGS+=$(o)/lib/db-tool
 endif
 
 LIBUCW_MODS= \
-	alloc alloc_str realloc mempool mempool-str mempool-fmt \
+	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt \
 	mmap pagecache partmap hashfunc \
 	lists slists simple-lists sorter bitsig \
 	log log-file proctitle \
@@ -80,6 +80,7 @@ $(o)/lib/binheap-test: $(o)/lib/binheap-test.o $(LIBUCW)
 $(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
 $(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 $(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
+$(o)/lib/bigalloc-test: $(o)/lib/bigalloc-test.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test slists.test kmp-test.test bbuf.test)
 $(o)/lib/regex.test: $(o)/lib/regex-t

@@ -271,4 +271,9 @@ void unhandle_signal(int signum, struct sigaction *oldact);
 
 byte *str_unesc(byte *dest, byte *src);
 
+/* bigalloc.c */
+
+void *big_alloc(unsigned int len);
+void big_free(void *start, unsigned int len);
+
 #endif
