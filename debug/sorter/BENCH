@@ -1,0 +1,53 @@
+# 32-bit Athlon 64, gcc-4.1
+mj@albireo:~/src/sh/dev-sorter/run$ bin/retros
+D 2006-11-23 23:17:36 [retros] memcpy: 212
+D 2006-11-23 23:17:44 [retros] qsort: 6947
+D 2006-11-23 23:17:48 [retros] arraysort: 3183
+D 2006-11-23 23:18:02 [retros] indirect qsort: 13116
+D 2006-11-23 23:18:24 [retros] indirect arraysort: 19176
+D 2006-11-23 23:18:30 [retros] radix1: 3755
+D 2006-11-23 23:18:34 [retros] radix1b: 3100
+D 2006-11-23 23:18:39 [retros] radix1c: 2777
+D 2006-11-23 23:18:43 [retros] radix1c-sse: 2602
+D 2006-11-23 23:18:47 [retros] radix1d: 2728
+D 2006-11-23 23:18:53 [retros] radix2: 4249
+D 2006-11-23 23:18:57 [retros] radix3: 2577
+D 2006-11-23 23:19:09 [retros] mergesort: 10399
+D 2006-11-23 23:19:16 [retros] samplesort: 5698
+D 2006-11-23 23:19:23 [retros] samplesort2: 5016
+
+# 32-bit P4 Xeon, gcc-3.4
+sherlock@sherlock3:~/sherlock-mj/run$ bin/retros
+D 2006-11-23 23:23:52 [retros] memcpy: 198
+D 2006-11-23 23:24:23 [retros] qsort: 30114
+D 2006-11-23 23:24:27 [retros] arraysort: 2882
+D 2006-11-23 23:24:43 [retros] indirect qsort: 15019
+D 2006-11-23 23:24:59 [retros] indirect arraysort: 13267
+D 2006-11-23 23:25:03 [retros] radix1: 1881
+D 2006-11-23 23:25:06 [retros] radix1b: 1442
+D 2006-11-23 23:25:08 [retros] radix1c: 1313
+D 2006-11-23 23:25:10 [retros] radix1c-sse: 1229
+D 2006-11-23 23:25:13 [retros] radix1d: 1324
+D 2006-11-23 23:25:17 [retros] radix2: 2598
+D 2006-11-23 23:25:19 [retros] radix3: 1419
+D 2006-11-23 23:25:25 [retros] mergesort: 4929
+D 2006-11-23 23:25:29 [retros] samplesort: 2742
+D 2006-11-23 23:25:33 [retros] samplesort2: 2350
+
+# 64-bit P4 Xeon, gcc-3.4
+sherlock@sherlock4:~/sherlock-3.10/run$ bin/retros
+D 2006-11-23 23:44:31 [retros] memcpy: 132
+D 2006-11-23 23:44:58 [retros] qsort: 26469
+D 2006-11-23 23:45:01 [retros] arraysort: 2307
+D 2006-11-23 23:45:12 [retros] indirect qsort: 10971
+D 2006-11-23 23:45:24 [retros] indirect arraysort: 10350
+D 2006-11-23 23:45:26 [retros] radix1: 1099
+D 2006-11-23 23:45:27 [retros] radix1b: 1052
+D 2006-11-23 23:45:29 [retros] radix1c: 1017
+D 2006-11-23 23:45:30 [retros] radix1c-sse: 1017
+D 2006-11-23 23:45:32 [retros] radix1d: 1016
+D 2006-11-23 23:45:34 [retros] radix2: 1661
+D 2006-11-23 23:45:36 [retros] radix3: 955
+D 2006-11-23 23:45:39 [retros] mergesort: 3302
+D 2006-11-23 23:45:42 [retros] samplesort: 2376
+D 2006-11-23 23:45:45 [retros] samplesort2: 1870
