@@ -23,25 +23,12 @@ static u32 sum;
 
 static struct elt *alloc_elts(uns n)
 {
-#if 0
-  return xmalloc(n * sizeof(struct elt));
-#else
-  uns len = ALIGN_TO(n * sizeof(struct elt), PAGE_SIZE);
-  void *p = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
-  ASSERT(p != MAP_FAILED);
-  return p;
-#endif
+  return big_alloc(n * sizeof(struct elt));
 }
 
 static void free_elts(struct elt *a, uns n)
 {
-#if 0
-  xfree(a);
-  (void) n;
-#else
-  uns len = ALIGN_TO(n * sizeof(struct elt), PAGE_SIZE);
-  munmap(a, len);
-#endif
+  big_free(a, n * sizeof(struct elt));
 }
 
 static int comp(const void *x, const void *y)
