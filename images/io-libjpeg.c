@@ -75,8 +75,17 @@ libjpeg_emit_message(j_common_ptr cinfo UNUSED, int msg_level UNUSED)
   cinfo->err->format_message(cinfo, buf);
   DBG("libjpeg_emit_message(): [%d] %s", msg_level, buf);
 #endif
+#if 1
+  // Terminate on warning?
   if (unlikely(msg_level == -1))
-    longjmp(((struct libjpeg_err *)(cinfo)->err)->setjmp_buf, 1);
+    {
+      struct libjpeg_err *e = (struct libjpeg_err *)cinfo->err;
+      byte buf[JMSG_LENGTH_MAX];
+      cinfo->err->format_message(cinfo, buf);
+      IMAGE_ERROR(e->io->context, 0, "libjpeg: %s", buf);
+      longjmp(e->setjmp_buf, 1);
+    }
+#endif
 }
 
 static inline uns
