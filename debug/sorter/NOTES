@@ -1,6 +1,7 @@
-Users of lib/sorter.h:  (WARNING: Obsolete, corresponds to v3.9 or even v3.8)
+Users of lib/sorter.h:
 
-centrum/indexer/patch-index.c		u32		oid
+centrum/indexer/oook.c			fixed		oid
+centrum/indexer/patch-index.c		fixed		oid
 gather/daemon/expire.c			variable	complex
 gather/daemon/gc.c			variable	complex
 gather/daemon/gc.c			variable	hash
@@ -18,23 +19,29 @@ gather/shepherd/shep-cork.c		fixed		hash + int			20 min
 gather/shepherd/shep-feedback.c		fixed		hash
 gather/shepherd/shep-merge.c		fixed		hash + int
 gather/shepherd/shep-merge.c		fixed		complex (probably can create monotone hashes for that)	38 min
-gather/shepherd/shep-recover.c		fixed		fp + more
+gather/shepherd/shep-mirror.c		fixed		hash + more
+gather/shepherd/shep-mirror.c		fixed		hash + more
+gather/shepherd/shep-recover.c		fixed		hash + more
 gather/shepherd/shep-select.c		fixed		weight (non-triv) + hash	21 min
+indexer/attrsort.c			fixed large	oid
 indexer/backlinker.c			8 bytes		int
+indexer/black-gen.c			fixed		oid
 indexer/feedback-gath.c			fixed		hash + complex			7 min
 indexer/fpsort.c			fixed		hash + oid			9 min
+indexer/imagesigs.c			5 bytes		xlat[oid] + oid
 indexer/keywords.c			fixed		complex multi-pass
 indexer/labelsort.c			variable	oid + complex			2:00
+indexer/mergeimages.c			variable	xlat[index]
 indexer/mergesigns.c			fixed		complex, but has hashes		1:33
 indexer/mergesums.c			fixed		hash
-indexer/mkgraph.c			complex		complex (with melding) (probably can be replaced by sorting edges and melding afterwards)	34 min
+indexer/mkgraph.c			complex		complex (with melding)		34 min
 indexer/psort.c				fixed		hash + oid			2 min
-indexer/reftexts.c			fixed		hash
-indexer/reftexts.c			fixed		via merges			3:30
-indexer/reftexts.c			fixed		oid + int
-indexer/resolve.c			fixed		hash				1:00 + 3:45
-indexer/resolve.c			fixed		masked int			22 min
+indexer/reftexts.c			5 bytes + var	oid
+indexer/reftexts.c			fixed		fpos
+indexer/reftexts.c			fixed		oid
+indexer/reftexts.c			10 bytes + var	fpos
 indexer/ssort.c				variable	hash (with melding)		1:30
+indexer/weights.c			8 bytes + var	xlat[index]
 indexer/wsort.c				variable	id (with melding)		7:20
 lang/lang-tables.c			fixed		complex
 lang/stem-dict-gen.c			variable	hash (with melding)
@@ -43,10 +50,16 @@ Users of lib/arraysort.h on big arrays:
 
 indexer/chewer.c			fixed		hash + others
 indexer/chewer.c			u32		id
+indexer/imagesigs.c			fixed		s32
 indexer/lexfreq.c			ptr		indirect int
 indexer/lexorder.c			ptr		complex
 indexer/lexorder.c			ptr		complex
 indexer/lexsort.c			ptr		complex
+indexer/mergeimages.c			fixed		s32
+indexer/mkgraph.c			u32		indirect int
+indexer/mkgraph.c			2*u32		complex, but have hash
+indexer/mkgraph.c			2*u32		complex, but have hash
+indexer/reftexts.c			fixed		indirect int
 
 Interface:
 
