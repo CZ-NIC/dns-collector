@@ -75,7 +75,7 @@ libjpeg_emit_message(j_common_ptr cinfo UNUSED, int msg_level UNUSED)
   cinfo->err->format_message(cinfo, buf);
   DBG("libjpeg_emit_message(): [%d] %s", msg_level, buf);
 #endif
-#if 1
+#if 0
   // Terminate on warning?
   if (unlikely(msg_level == -1))
     {
