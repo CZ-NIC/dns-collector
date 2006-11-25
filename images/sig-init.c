@@ -104,14 +104,14 @@ image_sig_preprocess(struct image_sig_data *data)
 		    }
 		  for (; x < 4; x++)
 		    {
-		      *tp = tp[-square_cols];
+		      *tp = tp[-(int)square_cols];
 		      tp++;
 		    }
 	        }
 	      for (; y < 4; y++)
 	        for (x = 0; x < 4; x++)
 	          {
-	            *tp = tp[-square_rows * 4];
+	            *tp = tp[-(int)square_rows * 4];
 		    tp++;
 		  }
 	      block->area = square_cols * square_rows;
