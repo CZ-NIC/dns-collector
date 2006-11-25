@@ -29,7 +29,8 @@ LIBUCW_MODS= \
 	sync \
 	qache \
 	string \
-	bbuf
+	bbuf \
+	workqueue
 
 LIBUCW_INCLUDES= \
 	lib.h config.h math.h \
@@ -80,7 +81,8 @@ $(o)/lib/binheap-test: $(o)/lib/binheap-test.o $(LIBUCW)
 $(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
 $(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 $(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
-$(o)/lib/bigalloc-test: $(o)/lib/bigalloc-test.o $(LIBUCW)
+
+$(o)/lib/workqueue-t: LIBS+=-lpthread  # FIXME
 
 TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test slists.test kmp-test.test bbuf.test)
 $(o)/lib/regex.test: $(o)/lib/regex-t
