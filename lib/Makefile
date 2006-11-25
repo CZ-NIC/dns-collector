@@ -30,7 +30,7 @@ LIBUCW_MODS= \
 	qache \
 	string \
 	bbuf \
-	workqueue
+	workqueue asio
 
 LIBUCW_INCLUDES= \
 	lib.h config.h math.h \
@@ -53,7 +53,8 @@ LIBUCW_INCLUDES= \
 	lizard.h \
 	md5.h \
 	base64.h base224.h \
-	qache.h
+	qache.h \
+	workqueue.h asio.h
 
 ifdef CONFIG_OWN_REGEX
 include $(s)/lib/regex/Makefile
@@ -83,8 +84,9 @@ $(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 $(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
 
 $(o)/lib/workqueue-t: LIBS+=-lpthread  # FIXME
+$(o)/lib/asio-t: LIBS+=-lpthread  # FIXME
 
-TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test slists.test kmp-test.test bbuf.test)
+TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test slists.test kmp-test.test bbuf.test asio.test)
 $(o)/lib/regex.test: $(o)/lib/regex-t
 $(o)/lib/unicode-utf8.test: $(o)/lib/unicode-utf8-t
 $(o)/lib/hash-test.test: $(o)/lib/hash-test
@@ -94,6 +96,7 @@ $(o)/lib/bitops.test: $(o)/lib/bit-ffs-t $(o)/lib/bit-fls-t
 $(o)/lib/slists.test: $(o)/lib/slists-t
 $(o)/lib/kmp-test.test: $(o)/lib/kmp-test
 $(o)/lib/bbuf.test: $(o)/lib/bbuf-t
+$(o)/lib/asio.test: $(o)/lib/asio-t
 
 INCLUDES+=$(o)/lib/.include-stamp
 $(o)/lib/.include-stamp: $(addprefix $(s)/lib/,$(LIBUCW_INCLUDES))
