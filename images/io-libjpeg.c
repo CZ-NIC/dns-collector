@@ -96,7 +96,7 @@ libjpeg_fastbuf_read_prepare(struct libjpeg_read_internals *i)
   uns len = bdirect_read_prepare(i->fastbuf, &start);
   if (!len)
     {
-      // XXX: maybe only generate a warning and generate EOI margers to recover from such errors (also in skip_input_data)
+      // XXX: maybe only generate a warning and return EOI markers to recover from such errors (also in skip_input_data)
       IMAGE_ERROR(i->err.io->context, IMAGE_ERROR_READ_FAILED, "Incomplete JPEG file");
       longjmp(i->err.setjmp_buf, 1);
     }
