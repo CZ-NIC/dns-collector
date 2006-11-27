@@ -94,6 +94,7 @@ libjpeg_fastbuf_read_prepare(struct libjpeg_read_internals *i)
   DBG("libjpeg_fb_read_prepare()");
   byte *start;
   uns len = bdirect_read_prepare(i->fastbuf, &start);
+  DBG("readed %u bytes at %p", len, start);
   if (!len)
     {
       // XXX: maybe only generate a warning and return EOI markers to recover from such errors (also in skip_input_data)
@@ -133,6 +134,7 @@ libjpeg_fill_input_buffer(j_decompress_ptr cinfo)
   DBG("libjpeg_fill_input_buffer()");
   struct libjpeg_read_internals *i = (struct libjpeg_read_internals *)cinfo;
   libjpeg_fastbuf_read_commit(i);
+  libjpeg_fastbuf_read_prepare(i);
   return 1;
 }
 
