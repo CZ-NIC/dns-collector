@@ -91,8 +91,15 @@ libjpeg_emit_message(j_common_ptr cinfo UNUSED, int msg_level UNUSED)
 static inline uns
 libjpeg_fastbuf_read_prepare(struct libjpeg_read_internals *i)
 {
+  DBG("libjpeg_fb_read_prepare()");
   byte *start;
   uns len = bdirect_read_prepare(i->fastbuf, &start);
+  if (!len)
+    {
+      // XXX: maybe only generate a warning and generate EOI margers to recover from such errors (also in skip_input_data)
+      IMAGE_ERROR(i->err.io->context, IMAGE_ERROR_READ_FAILED, "Incomplete JPEG file");
+      longjmp(i->err.setjmp_buf, 1);
+    }
   i->fastbuf_pos = start + len;
   i->src.next_input_byte = start;
   i->src.bytes_in_buffer = len;
@@ -102,6 +109,7 @@ libjpeg_fastbuf_read_prepare(struct libjpeg_read_internals *i)
 static inline void
 libjpeg_fastbuf_read_commit(struct libjpeg_read_internals *i)
 {
+  DBG("libjpeg_fb_read_commit()");
   bdirect_read_commit(i->fastbuf, i->fastbuf_pos);
 }
 
@@ -125,7 +133,7 @@ libjpeg_fill_input_buffer(j_decompress_ptr cinfo)
   DBG("libjpeg_fill_input_buffer()");
   struct libjpeg_read_internals *i = (struct libjpeg_read_internals *)cinfo;
   libjpeg_fastbuf_read_commit(i);
-  return !!libjpeg_fastbuf_read_prepare(i);
+  return 1;
 }
 
 static void
