@@ -19,8 +19,8 @@ struct asio_queue {
   uns buffer_size;			// How large buffers do we use [user-settable]
   uns max_writebacks;			// Maximum number of writeback requests active [user-settable]
   uns allocated_requests;
-  uns allocated_writebacks;
-  uns running_requests;
+  uns running_requests;			// Total number of running requests
+  uns running_writebacks;		// How many of them are writebacks
   clist idle_list;			// Recycled requests waiting for get
   clist done_list;			// Finished requests
   struct work_queue queue;
@@ -30,7 +30,7 @@ enum asio_op {
   ASIO_FREE,
   ASIO_READ,
   ASIO_WRITE,
-  ASIO_WRITE_BACK,			// Write with no success notification
+  ASIO_WRITE_BACK,			// Background write with no success notification
 };
 
 struct asio_request {
@@ -46,10 +46,8 @@ struct asio_request {
 
 void asio_init_queue(struct asio_queue *q);			// Initialize a new queue
 void asio_cleanup_queue(struct asio_queue *q);
-struct asio_request *asio_get(struct asio_queue *q);		// Get an empty request (not for writeback)
-struct asio_request *asio_get_writeback(struct asio_queue *q);	// Get an empty writeback request
-void asio_turn_to_writeback(struct asio_request *r);		// Convert a request allocated as non-writeback to writeback
-void asio_submit(struct asio_request *r);			// Submit the request
+struct asio_request *asio_get(struct asio_queue *q);		// Get an empty request
+void asio_submit(struct asio_request *r);			// Submit the request (can block if too many writebacks)
 struct asio_request *asio_wait(struct asio_queue *q);		// Wait for the first finished request, NULL if no more
 void asio_put(struct asio_request *r);				// Return a finished request for recycling
 void asio_sync(struct asio_queue *q);				// Wait until all requests are finished

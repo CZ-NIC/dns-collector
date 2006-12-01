@@ -49,8 +49,8 @@ asio_init_queue(struct asio_queue *q)
   DBG("ASIO: New queue %p", q);
   ASSERT(q->buffer_size);
   q->allocated_requests = 0;
-  q->allocated_writebacks = 0;
   q->running_requests = 0;
+  q->running_writebacks = 0;
   clist_init(&q->idle_list);
   clist_init(&q->done_list);
   work_queue_init(&asio_wpool, &q->queue);
@@ -61,8 +61,8 @@ asio_cleanup_queue(struct asio_queue *q)
 {
   DBG("ASIO: Removing queue %p", q);
   ASSERT(!q->running_requests);
+  ASSERT(!q->running_writebacks);
   ASSERT(!q->allocated_requests);
-  ASSERT(!q->allocated_writebacks);
   ASSERT(clist_empty(&q->done_list));
 
   struct asio_request *r;
@@ -95,6 +95,10 @@ asio_get(struct asio_queue *q)
       DBG("ASIO: Got %p", r);
     }
   r->op = ASIO_FREE;
+  r->fd = -1;
+  r->len = 0;
+  r->status = -1;
+  r->returned_errno = -1;
   return r;
 }
 
@@ -112,42 +116,12 @@ asio_raw_wait(struct asio_queue *q)
 	die("Asynchronous write to fd %d failed: %s", r->fd, strerror(r->returned_errno));
       if (r->status != (int)r->len)
 	die("Asynchronous write to fd %d wrote only %d bytes out of %d", r->fd, r->status, r->len);
-      q->allocated_writebacks--;
+      q->running_writebacks--;
       asio_put(r);
     }
   else
     clist_add_tail(&q->done_list, &r->work.n);
   return 1;
-}
-
-struct asio_request *
-asio_get_writeback(struct asio_queue *q)
-{
-  while (q->allocated_writebacks >= q->max_writebacks)
-    {
-      DBG("ASIO: Waiting for free writeback request");
-      if (!asio_raw_wait(q))
-	ASSERT(0);
-    }
-  q->allocated_writebacks++;
-  struct asio_request *r = asio_get(q);
-  r->op = ASIO_WRITE_BACK;
-  return r;
-}
-
-void
-asio_turn_to_writeback(struct asio_request *r)
-{
-  struct asio_queue *q = r->queue;
-  ASSERT(r->op != ASIO_WRITE_BACK);
-  while (q->allocated_writebacks >= q->max_writebacks)
-    {
-      DBG("ASIO: Waiting for free writeback request");
-      if (!asio_raw_wait(q))
-	ASSERT(0);
-    }
-  q->allocated_writebacks++;
-  r->op = ASIO_WRITE_BACK;
 }
 
 static void
@@ -180,6 +154,16 @@ asio_submit(struct asio_request *r)
   struct asio_queue *q = r->queue;
   DBG("ASIO: Submitting %p on queue %p", r, q);
   ASSERT(r->op != ASIO_FREE);
+  if (r->op == ASIO_WRITE_BACK)
+    {
+      while (q->running_writebacks >= q->max_writebacks)
+	{
+	  DBG("ASIO: Waiting for free writebacks");
+	  if (!asio_raw_wait(q))
+	    ASSERT(0);
+	}
+      q->running_writebacks++;
+    }
   q->running_requests++;
   r->work.go = asio_handler;
   r->work.returned = NULL;
@@ -247,7 +231,7 @@ int main(void)
 	  asio_put(r);
 	  break;
 	}
-      asio_turn_to_writeback(r);
+      r->op = ASIO_WRITE_BACK;
       r->fd = 1;
       r->len = r->status;
       asio_submit(r);
@@ -267,7 +251,8 @@ int main(void)
 
   for (uns i=0; i<10; i++)
     {
-      r = asio_get_writeback(&q);
+      r = asio_get(&q);
+      r->op = ASIO_WRITE_BACK;
       r->fd = 1;
       r->len = 1;
       r->buffer[0] = 'A' + i;
