@@ -279,3 +279,35 @@ I 2006-12-01 22:44:29 Spent 337.186 sec (48.59 MB/sec)
 I 2006-12-01 22:44:29 Reading the files sequentially
 I 2006-12-01 22:46:23 Spent 114.060 sec (143.64 MB/sec)
 I 2006-12-01 22:46:26 Done
+
+### asio-test (copy mode with memcpy)
+
+sherlock@sherlock3:~/run-3.11$ bin/file-test 16 65536 32
+I 2006-12-01 23:47:41 Creating input file
+I 2006-12-01 23:50:57 Spent 196.321 sec (166.91 MB/sec)
+I 2006-12-01 23:50:57 Initializing output files
+I 2006-12-01 23:50:57 Writing 32768 MB to 16 files in parallel with 67108864 byte buffers
+I 2006-12-01 23:55:42 Syncingsec)
+I 2006-12-01 23:55:42 Spent 284.875 sec (115.03 MB/sec)
+I 2006-12-01 23:55:42 Reading the files sequentially
+I 2006-12-01 23:57:52 Spent 130.049 sec (251.97 MB/sec)
+I 2006-12-01 23:57:58 Done
+
+sherlock@sherlock3:~/run-3.11$ bin/asio-test 256 4096 32
+I 2006-12-01 23:25:42 Creating input file
+I 2006-12-01 23:28:45 Spent 182.538 sec (179.51 MB/sec)
+I 2006-12-01 23:28:45 Initializing output files
+I 2006-12-01 23:28:45 Writing 32768 MB to 256 files in parallel with 4194304 byte buffers
+I 2006-12-01 23:36:45 Syncingec)
+I 2006-12-01 23:36:46 Spent 481.480 sec (68.06 MB/sec)
+
+sherlock@sherlock3:~/run-3.11$ bin/file-test 1024 1024 16
+I 2006-12-01 23:38:03 Creating input file
+I 2006-12-01 23:40:07 Spent 124.668 sec (131.42 MB/sec)
+I 2006-12-01 23:40:07 Initializing output files
+I 2006-12-01 23:40:07 Writing 16384 MB to 1024 files in parallel with 1048576 byte buffers
+I 2006-12-01 23:45:43 Syncingec)
+I 2006-12-01 23:45:43 Spent 335.988 sec (48.76 MB/sec)
+I 2006-12-01 23:45:43 Reading the files sequentially
+I 2006-12-01 23:47:38 Spent 114.654 sec (142.90 MB/sec)
+I 2006-12-01 23:47:41 Done
