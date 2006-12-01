@@ -42,6 +42,7 @@ struct asio_request {
   uns len;
   int status;
   int returned_errno;
+  int submitted;
 };
 
 void asio_init_queue(struct asio_queue *q);			// Initialize a new queue

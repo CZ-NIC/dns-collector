@@ -99,6 +99,7 @@ asio_get(struct asio_queue *q)
   r->len = 0;
   r->status = -1;
   r->returned_errno = -1;
+  r->submitted = 0;
   return r;
 }
 
@@ -108,6 +109,7 @@ asio_raw_wait(struct asio_queue *q)
   struct asio_request *r = (struct asio_request *) work_wait(&q->queue);
   if (!r)
     return 0;
+  r->submitted = 0;
   q->running_requests--;
   if (r->op == ASIO_WRITE_BACK)
     {
@@ -154,6 +156,7 @@ asio_submit(struct asio_request *r)
   struct asio_queue *q = r->queue;
   DBG("ASIO: Submitting %p on queue %p", r, q);
   ASSERT(r->op != ASIO_FREE);
+  ASSERT(!r->submitted);
   if (r->op == ASIO_WRITE_BACK)
     {
       while (q->running_writebacks >= q->max_writebacks)
@@ -165,6 +168,7 @@ asio_submit(struct asio_request *r)
       q->running_writebacks++;
     }
   q->running_requests++;
+  r->submitted = 1;
   r->work.go = asio_handler;
   r->work.returned = NULL;
   work_submit(&q->queue, &r->work);
@@ -190,6 +194,7 @@ asio_put(struct asio_request *r)
 {
   struct asio_queue *q = r->queue;
   DBG("ASIO: Put %p", r);
+  ASSERT(!r->submitted);
   ASSERT(q->allocated_requests);
   clist_add_tail(&q->idle_list, &r->work.n);
   q->allocated_requests--;
