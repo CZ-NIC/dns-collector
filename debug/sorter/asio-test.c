@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -37,6 +38,7 @@ int main(int argc, char **argv)
   uns cnt_ms;
   int fd[files];
   byte name[files][16];
+  struct asio_request *req[files];
 
   init_timer();
 
@@ -81,18 +83,23 @@ int main(int argc, char **argv)
 
   log(L_INFO, "Writing %d MB to %d files in parallel with %d byte buffers", (int)(total_size >> 20), files, bufsize);
   P_INIT;
+  for (uns i=0; i<files; i++)
+    req[i] = asio_get(&io_queue);
   for (uns round=0; round<total_size/bufsize/files; round++)
     {
       for (uns i=0; i<files; i++)
 	{
-	  struct asio_request *r = asio_get(&io_queue);
+	  struct asio_request *r = req[i];
 #ifdef COPY
-	  r->op = ASIO_READ;
-	  r->fd = in_fd;
-	  r->len = bufsize;
-	  asio_submit(r);
-	  struct asio_request *rr = asio_wait(&io_queue);
-	  ASSERT(rr == r && r->status == (int)r->len);
+	  struct asio_request *rr, *rd = asio_get(&io_queue);
+	  rd->op = ASIO_READ;
+	  rd->fd = in_fd;
+	  rd->len = bufsize;
+	  asio_submit(rd);
+	  rr = asio_wait(&io_queue);
+	  ASSERT(rr == rd && rd->status == (int)rd->len);
+	  memcpy(r->buffer, rd->buffer, bufsize);
+	  asio_put(rr);
 #else
 	  for (uns j=0; j<bufsize; j++)
 	    r->buffer[j] = round+i+j;
@@ -102,8 +109,11 @@ int main(int argc, char **argv)
 	  r->len = bufsize;
 	  asio_submit(r);
 	  P_UPDATE(bufsize);
+	  req[i] = asio_get(&io_queue);
 	}
     }
+  for (uns i=0; i<files; i++)
+    asio_put(req[i]);
   asio_sync(&io_queue);
 #ifdef COPY
   close(in_fd);
