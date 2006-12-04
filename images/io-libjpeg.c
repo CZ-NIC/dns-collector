@@ -75,15 +75,32 @@ libjpeg_emit_message(j_common_ptr cinfo UNUSED, int msg_level UNUSED)
   cinfo->err->format_message(cinfo, buf);
   DBG("libjpeg_emit_message(): [%d] %s", msg_level, buf);
 #endif
+#if 0
+  // Terminate on warning?
   if (unlikely(msg_level == -1))
-    longjmp(((struct libjpeg_err *)(cinfo)->err)->setjmp_buf, 1);
+    {
+      struct libjpeg_err *e = (struct libjpeg_err *)cinfo->err;
+      byte buf[JMSG_LENGTH_MAX];
+      cinfo->err->format_message(cinfo, buf);
+      IMAGE_ERROR(e->io->context, 0, "libjpeg: %s", buf);
+      longjmp(e->setjmp_buf, 1);
+    }
+#endif
 }
 
 static inline uns
 libjpeg_fastbuf_read_prepare(struct libjpeg_read_internals *i)
 {
+  DBG("libjpeg_fb_read_prepare()");
   byte *start;
   uns len = bdirect_read_prepare(i->fastbuf, &start);
+  DBG("readed %u bytes at %p", len, start);
+  if (!len)
+    {
+      // XXX: maybe only generate a warning and return EOI markers to recover from such errors (also in skip_input_data)
+      IMAGE_ERROR(i->err.io->context, IMAGE_ERROR_READ_FAILED, "Incomplete JPEG file");
+      longjmp(i->err.setjmp_buf, 1);
+    }
   i->fastbuf_pos = start + len;
   i->src.next_input_byte = start;
   i->src.bytes_in_buffer = len;
@@ -93,6 +110,7 @@ libjpeg_fastbuf_read_prepare(struct libjpeg_read_internals *i)
 static inline void
 libjpeg_fastbuf_read_commit(struct libjpeg_read_internals *i)
 {
+  DBG("libjpeg_fb_read_commit()");
   bdirect_read_commit(i->fastbuf, i->fastbuf_pos);
 }
 
@@ -116,7 +134,8 @@ libjpeg_fill_input_buffer(j_decompress_ptr cinfo)
   DBG("libjpeg_fill_input_buffer()");
   struct libjpeg_read_internals *i = (struct libjpeg_read_internals *)cinfo;
   libjpeg_fastbuf_read_commit(i);
-  return !!libjpeg_fastbuf_read_prepare(i);
+  libjpeg_fastbuf_read_prepare(i);
+  return 1;
 }
 
 static void
