@@ -5,6 +5,7 @@ DIRS+=images
 PROGS+=$(o)/images/image-tool $(o)/images/color-tool
 CONFIGS+=images
 LIBIMAGES_MODS=math config context image scale color io-main
+LIBIMAGES_INCLUDES=images.h error.h color.h math.h
 
 ifdef CONFIG_SHERLOCK
 LIBIMAGES_MODS+=object
@@ -16,6 +17,7 @@ endif
 ifdef CONFIG_IMAGES_DUP
 PROGS+=$(o)/images/image-dup-test
 LIBIMAGES_MODS+=dup-init dup-cmp
+LIBIMAGES_INCLUDES+=duplicates.h
 endif
 ifdef CONFIG_IMAGES_SIM
 PROGS+=$(o)/images/image-sim-test
@@ -23,6 +25,7 @@ LIBIMAGES_MODS+=sig-cmp
 endif
 ifneq ($(CONFIG_IMAGES_DUP)$(CONFIG_IMAGES_SIM),)
 LIBIMAGES_MODS+=sig-dump sig-init sig-seg sig-txt
+LIBIMAGES_INCLUDES+=signature.h
 endif
 
 LIBIMAGES_LIBS=-lm -lpthread
@@ -84,3 +87,8 @@ TESTS+=$(o)/images/color.test
 $(o)/images/color-t: $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/color-t: LIBS+=$(LIBIMAGES_LIBS) $(LIBIMAGES_DEPS)
 $(o)/images/color.test: $(o)/images/color-t
+
+INCLUDES+=$(o)/images/.include-stamp
+$(o)/images/.include-stamp: $(addprefix $(s)/images/,$(LIBIMAGES_INCLUDES))
+	$(s)/build/install-includes $(s)/images run/include/images $(?F)
+	touch $(o)/images/.include-stamp
