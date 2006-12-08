@@ -117,16 +117,31 @@ raw_queue_put(struct raw_queue *q, struct work *w)
   sem_post(q->queue_sem);
 }
 
-struct work *
-raw_queue_get(struct raw_queue *q)
+static inline struct work *
+raw_queue_do_get(struct raw_queue *q)
 {
-  sem_wait(q->queue_sem);
   pthread_mutex_lock(&q->queue_mutex);
   struct work *w = clist_head(&q->queue);
   ASSERT(w);
   clist_remove(&w->n);
   pthread_mutex_unlock(&q->queue_mutex);
   return w;
+}
+
+struct work *
+raw_queue_get(struct raw_queue *q)
+{
+  sem_wait(q->queue_sem);
+  return raw_queue_do_get(q);
+}
+
+struct work *
+raw_queue_try_get(struct raw_queue *q)
+{
+  if (!sem_trywait(q->queue_sem))
+    return raw_queue_do_get(q);
+  else
+    return NULL;
 }
 
 void
@@ -153,12 +168,14 @@ work_submit(struct work_queue *q, struct work *w)
   q->nr_running++;
 }
 
-struct work *
-work_wait(struct work_queue *q)
+static struct work *
+work_do_wait(struct work_queue *q, int try)
 {
   while (q->nr_running)
     {
-      struct work *w = raw_queue_get(&q->finished);
+      struct work *w = (try ? raw_queue_try_get : raw_queue_get)(&q->finished);
+      if (!w)
+	return NULL;
       q->nr_running--;
       if (w->returned)
 	w->returned(q, w);
@@ -166,6 +183,18 @@ work_wait(struct work_queue *q)
 	return w;
     }
   return NULL;
+}
+
+struct work *
+work_wait(struct work_queue *q)
+{
+  return work_do_wait(q, 0);
+}
+
+struct work *
+work_try_wait(struct work_queue *q)
+{
+  return work_do_wait(q, 1);
 }
 
 #ifdef TEST

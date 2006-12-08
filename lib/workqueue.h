@@ -76,10 +76,12 @@ void raw_queue_init(struct raw_queue *q);
 void raw_queue_cleanup(struct raw_queue *q);
 void raw_queue_put(struct raw_queue *q, struct work *w);
 struct work *raw_queue_get(struct raw_queue *q);
+struct work *raw_queue_try_get(struct raw_queue *q);
 
 void work_queue_init(struct worker_pool *p, struct work_queue *q);
 void work_queue_cleanup(struct work_queue *q);
 void work_submit(struct work_queue *q, struct work *w);
 struct work *work_wait(struct work_queue *q);
+struct work *work_try_wait(struct work_queue *q);
 
 #endif	/* !_UCW_WORKQUEUE_H */
