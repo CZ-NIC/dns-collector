@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Keeping of Log Files
  *
- *	(c) 1997--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2006 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -9,6 +9,7 @@
 
 #include "lib/lib.h"
 #include "lib/lfs.h"
+#include "lib/threads.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -31,6 +32,7 @@ do_log_switch(struct tm *tm)
   if (!log_name_patt ||
       log_filename[0] && !log_params)
     return 0;
+  ucwlib_lock();
   log_switch_nest++;
   l = strftime(name, log_filename_size, log_name_patt, tm);
   if (l < 0 || l >= log_filename_size)
@@ -49,6 +51,7 @@ do_log_switch(struct tm *tm)
       switched = 1;
     }
   log_switch_nest--;
+  ucwlib_unlock();
   return switched;
 }
 

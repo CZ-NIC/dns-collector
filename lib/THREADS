@@ -4,6 +4,5 @@ which also includes functions acting on any kind of global state.
 
 There are some exceptions:
 
-- logging functions are safe as long as you don't switch log files
 - setproctitle() is not safe, it modifies global state
 - handle_signal() is not safe, it modifies global state
