@@ -24,6 +24,7 @@ struct asio_queue {
   clist idle_list;			// Recycled requests waiting for get
   clist done_list;			// Finished requests
   struct work_queue queue;
+  uns use_count;			// For use by the caller
 };
 
 enum asio_op {
@@ -43,6 +44,7 @@ struct asio_request {
   int status;
   int returned_errno;
   int submitted;
+  void *user_data;			// For use by the caller
 };
 
 void asio_init_queue(struct asio_queue *q);			// Initialize a new queue
