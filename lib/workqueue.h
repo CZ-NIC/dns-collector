@@ -47,7 +47,7 @@ struct raw_queue {				// Generic queue with locking
 struct worker_pool {
   struct raw_queue requests;
   uns num_threads;
-  uns stack_size;
+  uns stack_size;				// 0 for default
   struct worker_thread *(*new_thread)(void);	// default: xmalloc the struct
   void (*free_thread)(struct worker_thread *t);	// default: xfree
   void (*init_thread)(struct worker_thread *t);	// default: empty

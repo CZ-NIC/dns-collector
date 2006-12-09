@@ -28,7 +28,6 @@ asio_init_unlocked(void)
 
   DBG("ASIO: INIT");
   asio_wpool.num_threads = 1;
-  asio_wpool.stack_size = 65536;
   worker_pool_init(&asio_wpool);
 }
 
