@@ -18,9 +18,16 @@
 
 static uns asio_num_users;
 static struct worker_pool asio_wpool;
+static pthread_mutex_t asio_init_lock;
+
+static void CONSTRUCTOR
+asio_global_init(void)
+{
+  pthread_mutex_init(&asio_init_lock, NULL);
+}
 
 static void
-asio_init(void)
+asio_init_unlocked(void)
 {
   if (asio_num_users++)
     return;
@@ -32,7 +39,7 @@ asio_init(void)
 }
 
 static void
-asio_cleanup(void)
+asio_cleanup_unlocked(void)
 {
   if (--asio_num_users)
     return;
@@ -44,13 +51,16 @@ asio_cleanup(void)
 void
 asio_init_queue(struct asio_queue *q)
 {
-  asio_init();
+  pthread_mutex_lock(&asio_init_lock);
+  asio_init_unlocked();
+  pthread_mutex_unlock(&asio_init_lock);
 
   DBG("ASIO: New queue %p", q);
   ASSERT(q->buffer_size);
   q->allocated_requests = 0;
   q->running_requests = 0;
   q->running_writebacks = 0;
+  q->use_count = 0;
   clist_init(&q->idle_list);
   clist_init(&q->done_list);
   work_queue_init(&asio_wpool, &q->queue);
@@ -74,7 +84,10 @@ asio_cleanup_queue(struct asio_queue *q)
     }
 
   work_queue_cleanup(&q->queue);
-  asio_cleanup();
+
+  pthread_mutex_lock(&asio_init_lock);
+  asio_cleanup_unlocked();
+  pthread_mutex_unlock(&asio_init_lock);
 }
 
 struct asio_request *
