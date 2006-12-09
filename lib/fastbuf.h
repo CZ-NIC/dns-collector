@@ -97,6 +97,14 @@ struct fastbuf *fbmem_clone_read(struct fastbuf *);	/* Create reading fastbuf */
 
 struct fastbuf *bopen_mm(byte *name, uns mode);
 
+/* FastIO on files opened with O_DIRECT (see fb-direct.c for description) */
+
+struct asio_queue;
+struct fastbuf *fbdir_open(byte *name, uns mode, struct asio_queue *io_queue);
+struct fastbuf *fbdir_open_try(byte *name, uns mode, struct asio_queue *io_queue);
+struct fastbuf *fbdir_open_fd(int fd, struct asio_queue *io_queue);
+struct fastbuf *fbdir_open_tmp(int fd, struct asio_queue *io_queue);
+
 /* FastI on file descriptors with limit */
 
 struct fastbuf *bopen_limited_fd(int fd, uns bufsize, uns limit);
