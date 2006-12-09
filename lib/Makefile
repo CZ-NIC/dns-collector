@@ -29,8 +29,7 @@ LIBUCW_MODS= \
 	sync \
 	qache \
 	string \
-	bbuf \
-	workqueue asio
+	bbuf
 
 LIBUCW_INCLUDES= \
 	lib.h config.h math.h \
@@ -53,8 +52,14 @@ LIBUCW_INCLUDES= \
 	lizard.h \
 	md5.h \
 	base64.h base224.h \
-	qache.h \
-	workqueue.h asio.h
+	qache.h
+
+ifdef CONFIG_UCW_THREADS
+# Some modules require threading
+LIBS+=-lpthread
+LIBUCW_MODS+=workqueue asio
+LIBUCW_INCLUDES+=workqueue.h asio.h
+endif
 
 ifdef CONFIG_OWN_REGEX
 include $(s)/lib/regex/Makefile
@@ -82,9 +87,6 @@ $(o)/lib/binheap-test: $(o)/lib/binheap-test.o $(LIBUCW)
 $(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
 $(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 $(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
-
-$(o)/lib/workqueue-t: LIBS+=-lpthread  # FIXME
-$(o)/lib/asio-t: LIBS+=-lpthread  # FIXME
 
 TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test slists.test kmp-test.test bbuf.test asio.test)
 $(o)/lib/regex.test: $(o)/lib/regex-t
