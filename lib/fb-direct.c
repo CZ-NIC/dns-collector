@@ -31,7 +31,6 @@
 #include "lib/lfs.h"
 #include "lib/asio.h"
 #include "lib/conf.h"
-#include "lib/getopt.h"
 
 #include <string.h>
 #include <fcntl.h>
@@ -323,7 +322,7 @@ fbdir_open_internal(byte *name, int fd, struct asio_queue *q)
 }
 
 struct fastbuf *
-fbdirect_open_try(byte *name, uns mode, struct asio_queue *q)
+fbdir_open_try(byte *name, uns mode, struct asio_queue *q)
 {
   if (!fbdir_cheat)
     mode |= O_DIRECT;
@@ -337,9 +336,9 @@ fbdirect_open_try(byte *name, uns mode, struct asio_queue *q)
 }
 
 struct fastbuf *
-fbdirect_open(byte *name, uns mode, struct asio_queue *q)
+fbdir_open(byte *name, uns mode, struct asio_queue *q)
 {
-  struct fastbuf *b = fbdirect_open_try(name, mode, q);
+  struct fastbuf *b = fbdir_open_try(name, mode, q);
   if (!b)
     die("Unable to %s file %s: %m",
 	(mode & O_CREAT) ? "create" : "open", name);
@@ -347,7 +346,7 @@ fbdirect_open(byte *name, uns mode, struct asio_queue *q)
 }
 
 struct fastbuf *
-fbdirect_open_fd(int fd, struct asio_queue *q)
+fbdir_open_fd(int fd, struct asio_queue *q)
 {
   byte x[32];
 
@@ -359,6 +358,8 @@ fbdirect_open_fd(int fd, struct asio_queue *q)
 
 #ifdef TEST
 
+#include "lib/getopt.h"
+
 int main(int argc, char **argv)
 {
   struct fastbuf *f, *t;
@@ -366,8 +367,8 @@ int main(int argc, char **argv)
   log_init(NULL);
   if (cf_getopt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) >= 0)
     die("Hey, whaddya want?");
-  f = (optind < argc) ? fbdirect_open(argv[optind++], O_RDONLY, NULL) : fbdirect_open_fd(0, NULL);
-  t = (optind < argc) ? fbdirect_open(argv[optind++], O_RDWR | O_CREAT | O_TRUNC, NULL) : fbdirect_open_fd(1, NULL);
+  f = (optind < argc) ? fbdir_open(argv[optind++], O_RDONLY, NULL) : fbdir_open_fd(0, NULL);
+  t = (optind < argc) ? fbdir_open(argv[optind++], O_RDWR | O_CREAT | O_TRUNC, NULL) : fbdir_open_fd(1, NULL);
 
   bbcopy(f, t, ~0U);
   ASSERT(btell(f) == btell(t));
