@@ -259,13 +259,11 @@ void sync_dir(byte *name);
 
 /* sighandler.c */
 
-typedef int (*sh_sighandler_t)(int);
-  /* obtains signum, returns nonzero if abort() should be called */
-extern sh_sighandler_t signal_handler[];
+typedef int (*sh_sighandler_t)(int);	// gets signum, returns nonzero if abort() should be called
 
-struct sigaction;
-void handle_signal(int signum, struct sigaction *oldact);
-void unhandle_signal(int signum, struct sigaction *oldact);
+void handle_signal(int signum);
+void unhandle_signal(int signum);
+sh_sighandler_t set_signal_handler(int signum, sh_sighandler_t new);
 
 /* string.c */
 

@@ -15,6 +15,7 @@
 struct ucwlib_context {
   int temp_counter;			// Counter for fb-temp.c
   struct asio_queue *io_queue;		// Async I/O queue for fb-direct.c
+  sh_sighandler_t *signal_handlers;	// Signal handlers for sighandler.c
 };
 
 struct ucwlib_context *ucwlib_thread_context(void);

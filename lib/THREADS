@@ -5,4 +5,3 @@ which also includes functions acting on any kind of global state.
 There are some exceptions:
 
 - setproctitle() is not safe, it modifies global state
-- handle_signal() is not safe, it modifies global state
