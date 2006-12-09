@@ -10,6 +10,7 @@
 #include "lib/lib.h"
 #include "lib/conf.h"
 #include "lib/fastbuf.h"
+#include "lib/threads.h"
 
 #include <unistd.h>
 #include <sys/fcntl.h>
@@ -28,25 +29,10 @@ static void CONSTRUCTOR temp_global_init(void)
   cf_declare_section("Tempfiles", &temp_config, 0);
 }
 
-#ifdef CONFIG_UCW_THREADS
-#include <pthread.h>
-
-static pthread_key_t temp_counter_key;
-
-static void CONSTRUCTOR
-temp_key_init(void)
-{
-  if (pthread_key_create(&temp_counter_key, NULL) < 0)
-    die("Cannot create fbdir_queue_key: %m");
-}
-
 void
 temp_file_name(byte *buf)
 {
-  int cnt = (int) pthread_getspecific(temp_counter_key);
-  cnt++;
-  pthread_setspecific(temp_counter_key, (void *) cnt);
-
+  int cnt = ++ucwlib_thread_context()->temp_counter;
   int pid = getpid();
 #if 0
   /* FIXME: This is Linux-specific and not declared anywhere :( */
@@ -59,17 +45,6 @@ temp_file_name(byte *buf)
   else
     sprintf(buf, "%s%d-%d-%d", temp_prefix, pid, tid, cnt);
 }
-
-#else
-
-void
-temp_file_name(byte *buf)
-{
-  static int cnt;
-  sprintf(buf, "%s%d-%d", temp_prefix, (int)getpid(), cnt++);
-}
-
-#endif
 
 struct fastbuf *
 bopen_tmp(uns buflen)
