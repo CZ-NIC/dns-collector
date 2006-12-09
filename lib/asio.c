@@ -11,6 +11,7 @@
 
 #include "lib/lib.h"
 #include "lib/asio.h"
+#include "lib/threads.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -18,13 +19,6 @@
 
 static uns asio_num_users;
 static struct worker_pool asio_wpool;
-static pthread_mutex_t asio_init_lock;
-
-static void CONSTRUCTOR
-asio_global_init(void)
-{
-  pthread_mutex_init(&asio_init_lock, NULL);
-}
 
 static void
 asio_init_unlocked(void)
@@ -51,9 +45,9 @@ asio_cleanup_unlocked(void)
 void
 asio_init_queue(struct asio_queue *q)
 {
-  pthread_mutex_lock(&asio_init_lock);
+  ucwlib_lock();
   asio_init_unlocked();
-  pthread_mutex_unlock(&asio_init_lock);
+  ucwlib_unlock();
 
   DBG("ASIO: New queue %p", q);
   ASSERT(q->buffer_size);
@@ -85,9 +79,9 @@ asio_cleanup_queue(struct asio_queue *q)
 
   work_queue_cleanup(&q->queue);
 
-  pthread_mutex_lock(&asio_init_lock);
+  ucwlib_lock();
   asio_cleanup_unlocked();
-  pthread_mutex_unlock(&asio_init_lock);
+  ucwlib_unlock();
 }
 
 struct asio_request *
