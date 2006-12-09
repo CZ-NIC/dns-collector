@@ -7,6 +7,7 @@ PROGS+=$(o)/lib/db-tool
 endif
 
 LIBUCW_MODS= \
+	threads \
 	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt \
 	mmap pagecache partmap hashfunc \
 	lists slists simple-lists sorter bitsig \
@@ -32,7 +33,7 @@ LIBUCW_MODS= \
 	bbuf
 
 LIBUCW_INCLUDES= \
-	lib.h config.h math.h \
+	lib.h config.h threads.h math.h \
 	mempool.h pagecache.h \
 	sorter.h arraysort.h \
 	lists.h clists.h \
