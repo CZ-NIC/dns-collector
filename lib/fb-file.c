@@ -17,7 +17,7 @@
 
 struct fb_file {
   struct fastbuf fb;
-  int fd;				/* File descriptor, -1 if not a real file */
+  int fd;				/* File descriptor */
   int is_temp_file;			/* 0=normal file, 1=temporary file, delete on close, -1=shared FD */
 };
 #define FB_FILE(f) ((struct fb_file *)(f)->is_fastbuf)
@@ -56,12 +56,10 @@ bfd_spout(struct fastbuf *f)
 static void
 bfd_seek(struct fastbuf *f, sh_off_t pos, int whence)
 {
-  sh_off_t l;
-
   if (whence == SEEK_SET && pos == f->pos)
     return;
 
-  l = sh_seek(FB_FILE(f)->fd, pos, whence);
+  sh_off_t l = sh_seek(FB_FILE(f)->fd, pos, whence);
   if (l < 0)
     die("lseek on %s: %m", f->name);
   f->pos = l;
@@ -168,7 +166,7 @@ bfilesync(struct fastbuf *b)
 
 #ifdef TEST
 
-int main(int argc, char **argv)
+int main(int argc UNUSED, char **argv UNUSED)
 {
   struct fastbuf *f, *t;
 
