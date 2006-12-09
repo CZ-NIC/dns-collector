@@ -31,11 +31,11 @@
 #include "lib/lfs.h"
 #include "lib/asio.h"
 #include "lib/conf.h"
+#include "lib/threads.h"
 
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <pthread.h>
 
 static uns fbdir_cheat;
 static uns fbdir_buffer_size = 65536;
@@ -53,8 +53,6 @@ static struct cf_section fbdir_cf = {
 };
 
 #define FBDIR_ALIGN 512
-
-static pthread_key_t fbdir_queue_key;
 
 enum fbdir_mode {				// Current operating mode
     M_NULL,
@@ -80,8 +78,6 @@ static void CONSTRUCTOR
 fbdir_global_init(void)
 {
   cf_declare_section("FBDirect", &fbdir_cf, 0);
-  if (pthread_key_create(&fbdir_queue_key, NULL) < 0)
-    die("Cannot create fbdir_queue_key: %m");
 }
 
 static void
@@ -232,14 +228,15 @@ fbdir_seek(struct fastbuf *f, sh_off_t pos, int whence)
 static struct asio_queue *
 fbdir_get_io_queue(void)
 {
-  struct asio_queue *q = pthread_getspecific(fbdir_queue_key);
+  struct ucwlib_context *ctx = ucwlib_thread_context();
+  struct asio_queue *q = ctx->io_queue;
   if (!q)
     {
       q = xmalloc_zero(sizeof(struct asio_queue));
       q->buffer_size = fbdir_buffer_size;
       q->max_writebacks = fbdir_write_back;
       asio_init_queue(q);
-      pthread_setspecific(fbdir_queue_key, q);
+      ctx->io_queue = q;
     }
   q->use_count++;
   DBG("FB-DIRECT: Got I/O queue, uc=%d", q->use_count);
@@ -249,14 +246,15 @@ fbdir_get_io_queue(void)
 static void
 fbdir_put_io_queue(void)
 {
-  struct asio_queue *q = pthread_getspecific(fbdir_queue_key);
+  struct ucwlib_context *ctx = ucwlib_thread_context();
+  struct asio_queue *q = ctx->io_queue;
   ASSERT(q);
   DBG("FB-DIRECT: Put I/O queue, uc=%d", q->use_count);
   if (!--q->use_count)
     {
       asio_cleanup_queue(q);
       xfree(q);
-      pthread_setspecific(fbdir_queue_key, NULL);
+      ctx->io_queue = NULL;
     }
 }
 
