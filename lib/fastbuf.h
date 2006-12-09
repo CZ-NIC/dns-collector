@@ -106,7 +106,7 @@ struct asio_queue;
 struct fastbuf *fbdir_open(byte *name, uns mode, struct asio_queue *io_queue);
 struct fastbuf *fbdir_open_try(byte *name, uns mode, struct asio_queue *io_queue);
 struct fastbuf *fbdir_open_fd(int fd, struct asio_queue *io_queue);
-struct fastbuf *fbdir_open_tmp(int fd, struct asio_queue *io_queue);
+struct fastbuf *fbdir_open_tmp(struct asio_queue *io_queue);
 
 /* FastI on file descriptors with limit */
 

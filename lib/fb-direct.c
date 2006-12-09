@@ -356,6 +356,18 @@ fbdir_open_fd(int fd, struct asio_queue *q)
   return fbdir_open_internal(x, fd, q);
 }
 
+struct fastbuf *
+fbdir_open_tmp(struct asio_queue *q)
+{
+  byte buf[TEMP_FILE_NAME_LEN];
+  struct fastbuf *f;
+
+  temp_file_name(buf);
+  f = fbdir_open(buf, O_RDWR | O_CREAT | O_TRUNC, q);
+  bconfig(f, BCONFIG_IS_TEMP_FILE, 1);
+  return f;
+}
+
 #ifdef TEST
 
 #include "lib/getopt.h"
