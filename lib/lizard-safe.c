@@ -8,6 +8,7 @@
  */
 
 #include "lib/lib.h"
+#include "lib/threads.h"
 #include "lib/lizard.h"
 
 #include <sys/mman.h>
@@ -20,7 +21,6 @@
 struct lizard_buffer {
   uns len;
   void *ptr;
-  struct sigaction old_sigsegv_handler;
 };
 
 struct lizard_buffer *
@@ -29,16 +29,16 @@ lizard_alloc(void)
   struct lizard_buffer *buf = xmalloc(sizeof(struct lizard_buffer));
   buf->len = 0;
   buf->ptr = NULL;
-  handle_signal(SIGSEGV, &buf->old_sigsegv_handler);
+  handle_signal(SIGSEGV);
   return buf;
 }
 
 void
 lizard_free(struct lizard_buffer *buf)
 {
+  unhandle_signal(SIGSEGV);
   if (buf->ptr)
     munmap(buf->ptr, buf->len + PAGE_SIZE);
-  unhandle_signal(SIGSEGV, &buf->old_sigsegv_handler);
   xfree(buf);
 }
 
@@ -56,7 +56,7 @@ lizard_realloc(struct lizard_buffer *buf, uns max_len)
   buf->len = max_len;
   buf->ptr = mmap(NULL, buf->len + PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   if (buf->ptr == MAP_FAILED)
-    die("mmap(anonymous): %m");
+    die("mmap(anonymous, %d bytes): %m", (uns)(buf->len + PAGE_SIZE));
   if (mprotect(buf->ptr + buf->len, PAGE_SIZE, PROT_NONE) < 0)
     die("mprotect: %m");
 }
@@ -65,7 +65,6 @@ static jmp_buf safe_decompress_jump;
 static int
 sigsegv_handler(int signal UNUSED)
 {
-  log(L_ERROR, "SIGSEGV caught in lizard_decompress()");
   longjmp(safe_decompress_jump, 1);
   return 1;
 }
@@ -81,8 +80,7 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
   uns lock_offset = ALIGN_TO(expected_length + 3, PAGE_SIZE);	// +3 due to the unaligned access
   if (lock_offset > buf->len)
     lizard_realloc(buf, lock_offset);
-  volatile sh_sighandler_t old_handler = signal_handler[SIGSEGV];
-  signal_handler[SIGSEGV] = sigsegv_handler;
+  volatile sh_sighandler_t old_handler = set_signal_handler(SIGSEGV, sigsegv_handler);
   byte *ptr;
   if (!setjmp(safe_decompress_jump))
   {
@@ -96,9 +94,10 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
   }
   else
   {
+    log(L_ERROR, "SIGSEGV caught in lizard_decompress()");
     ptr = NULL;
     errno = EFAULT;
   }
-  signal_handler[SIGSEGV] = old_handler;
+  set_signal_handler(SIGSEGV, old_handler);
   return ptr;
 }

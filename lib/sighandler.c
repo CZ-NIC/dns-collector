@@ -2,41 +2,63 @@
  *	UCW Library -- Catching of signals and calling callback functions
  *
  *	(c) 2004, Robert Spalek <robert@ucw.cz>
+ *	(c) 2006 Martin Mares <mj@ucw.cz>
  */
 
 #include "lib/lib.h"
+#include "lib/threads.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 
-sh_sighandler_t signal_handler[NSIG];
+static int sig_handler_nest[NSIG];
+static struct sigaction sig_handler_old[NSIG];
 
 static void
 signal_handler_internal(int sig)
 {
-  if (signal_handler[sig])
-  {
-    if (!signal_handler[sig](sig))
-      return;
-  }
-  abort();
+  struct ucwlib_context *ctx = ucwlib_thread_context();
+  if (!ctx->signal_handlers[sig] || ctx->signal_handlers[sig](sig))
+    abort();
 }
 
 void
-handle_signal(int signum, struct sigaction *oldact)
+handle_signal(int signum)
 {
-  struct sigaction act;
-  bzero(&act, sizeof(act));
-  act.sa_handler = signal_handler_internal;
-  act.sa_flags = SA_NODEFER;
-  if (sigaction(signum, &act, oldact) < 0)
-    die("sigaction: %m");
+  ucwlib_lock();
+  if (!sig_handler_nest[signum]++)
+    {
+      struct sigaction act;
+      bzero(&act, sizeof(act));
+      act.sa_handler = signal_handler_internal;
+      act.sa_flags = SA_NODEFER;
+      if (sigaction(signum, &act, &sig_handler_old[signum]) < 0)
+	die("sigaction: %m");
+    }
+  ucwlib_unlock();
 }
 
 void
-unhandle_signal(int signum, struct sigaction *oldact)
+unhandle_signal(int signum)
 {
-  if (sigaction(signum, oldact, NULL) < 0)
-    die("sigaction: %m");
+  ucwlib_lock();
+  ASSERT(sig_handler_nest[signum]);
+  if (!--sig_handler_nest[signum])
+    {
+      if (sigaction(signum, &sig_handler_old[signum], NULL) < 0)
+	die("sigaction: %m");
+    }
+  ucwlib_unlock();
+}
+
+sh_sighandler_t
+set_signal_handler(int signum, sh_sighandler_t new)
+{
+  struct ucwlib_context *ctx = ucwlib_thread_context();
+  if (!ctx->signal_handlers)
+    ctx->signal_handlers = xmalloc_zero(NSIG * sizeof(sh_sighandler_t));
+  sh_sighandler_t old = ctx->signal_handlers[signum];
+  ctx->signal_handlers[signum] = new;
+  return old;
 }
