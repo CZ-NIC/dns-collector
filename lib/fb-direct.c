@@ -19,7 +19,6 @@
  *	    and take care of locking.
  *
  *	FIXME: what if the OS doesn't support O_DIRECT?
- *	FIXME: doc: don't mix threads
  *	FIXME: unaligned seeks and partial writes?
  *	FIXME: merge with other file-oriented fastbufs
  */
