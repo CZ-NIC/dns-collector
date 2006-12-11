@@ -56,7 +56,7 @@ lizard_realloc(struct lizard_buffer *buf, uns max_len)
   buf->len = max_len;
   buf->ptr = mmap(NULL, buf->len + PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   if (buf->ptr == MAP_FAILED)
-    die("mmap(anonymous, %d bytes): %m", buf->len + PAGE_SIZE);
+    die("mmap(anonymous, %d bytes): %m", (uns)(buf->len + PAGE_SIZE));
   if (mprotect(buf->ptr + buf->len, PAGE_SIZE, PROT_NONE) < 0)
     die("mprotect: %m");
 }
