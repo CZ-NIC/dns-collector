@@ -176,7 +176,6 @@ asio_submit(struct asio_request *r)
   q->running_requests++;
   r->submitted = 1;
   r->work.go = asio_handler;
-  r->work.returned = NULL;
   work_submit(&q->queue, &r->work);
 }
 
