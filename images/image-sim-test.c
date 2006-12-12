@@ -10,6 +10,7 @@
 #include "lib/lib.h"
 #include "lib/getopt.h"
 #include "lib/fastbuf.h"
+#include "lib/base64.h"
 #include "images/images.h"
 #include "images/color.h"
 #include "images/signature.h"
@@ -34,11 +35,12 @@ Usage: image-sim-test [options] image1 [image2] \n\
 -g --background      background color (hexadecimal RRGGBB)\n\
 -r --segmentation-1  writes image1 segmentation to given file\n\
 -R --segmentation-2  writes image2 segmentation to given file\n\
+-6 --encoded         display base64 encoded signature\n\
 ", stderr);
   exit(1);
 }
 
-static char *shortopts = "qf:F:g:t:r:R:" CF_SHORT_OPTS;
+static char *shortopts = "qf:F:g:t:r:R:6" CF_SHORT_OPTS;
 static struct option longopts[] =
 {
   CF_LONG_OPTS
@@ -59,6 +61,7 @@ static enum image_format format_2;
 static struct color background_color;
 static byte *segmentation_name_1;
 static byte *segmentation_name_2;
+static uns display_base64;
 
 #define MSG(x...) do{ if (verbose) log(L_INFO, ##x); }while(0)
 #define TRY(x) do{ if (!(x)) exit(1); }while(0)
@@ -79,6 +82,14 @@ dump_signature(struct image_signature *sig)
     {
       image_region_dump(buf, sig->reg + i);
       MSG("region %u: %s", i, buf);
+    }
+  if (display_base64)
+    {
+      uns sig_size = image_signature_size(sig->len);
+      byte buf[BASE64_ENC_LENGTH(sig_size) + 1];
+      uns enc_size = base64_encode(buf, (byte *)sig, sig_size);
+      buf[enc_size] = 0;
+      MSG("base64 encoded: %s", buf);
     }
 }
 
@@ -173,6 +184,9 @@ main(int argc, char **argv)
 	  break;
 	case 'R':
 	  segmentation_name_2 = optarg;
+	  break;
+	case '6':
+	  display_base64++;
 	  break;
 	default:
 	  usage();
