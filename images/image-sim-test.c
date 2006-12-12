@@ -11,6 +11,7 @@
 #include "lib/getopt.h"
 #include "lib/fastbuf.h"
 #include "lib/base64.h"
+#include "lib/base224.h"
 #include "images/images.h"
 #include "images/color.h"
 #include "images/signature.h"
@@ -35,12 +36,13 @@ Usage: image-sim-test [options] image1 [image2] \n\
 -g --background      background color (hexadecimal RRGGBB)\n\
 -r --segmentation-1  writes image1 segmentation to given file\n\
 -R --segmentation-2  writes image2 segmentation to given file\n\
--6 --base64          display base64 encoded signature\n\
+-6 --base64          display base64 encoded signature(s)\n\
+-2 --base224         display base224 encoded signature(s)\n\
 ", stderr);
   exit(1);
 }
 
-static char *shortopts = "qf:F:g:t:r:R:6" CF_SHORT_OPTS;
+static char *shortopts = "qf:F:g:t:r:R:62" CF_SHORT_OPTS;
 static struct option longopts[] =
 {
   CF_LONG_OPTS
@@ -51,6 +53,7 @@ static struct option longopts[] =
   { "segmentation-1",	0, 0, 'r' },
   { "segmentation-2",	0, 0, 'R' },
   { "base64",		0, 0, '6' },
+  { "base224",		0, 0, '2' },
   { NULL,		0, 0, 0 }
 };
 
@@ -63,6 +66,7 @@ static struct color background_color;
 static byte *segmentation_name_1;
 static byte *segmentation_name_2;
 static uns display_base64;
+static uns display_base224;
 
 #define MSG(x...) do{ if (verbose) log(L_INFO, ##x); }while(0)
 #define TRY(x) do{ if (!(x)) exit(1); }while(0)
@@ -84,13 +88,20 @@ dump_signature(struct image_signature *sig)
       image_region_dump(buf, sig->reg + i);
       MSG("region %u: %s", i, buf);
     }
+  uns sig_size = image_signature_size(sig->len);
   if (display_base64)
     {
-      uns sig_size = image_signature_size(sig->len);
       byte buf[BASE64_ENC_LENGTH(sig_size) + 1];
       uns enc_size = base64_encode(buf, (byte *)sig, sig_size);
       buf[enc_size] = 0;
       MSG("base64 encoded: %s", buf);
+    }
+  if (display_base224)
+    {
+      byte buf[BASE224_ENC_LENGTH(sig_size) + 1];
+      uns enc_size = base224_encode(buf, (byte *)sig, sig_size);
+      buf[enc_size] = 0;
+      MSG("base224 encoded: %s", buf);
     }
 }
 
@@ -188,6 +199,9 @@ main(int argc, char **argv)
 	  break;
 	case '6':
 	  display_base64++;
+	  break;
+	case '2':
+	  display_base224++;
 	  break;
 	default:
 	  usage();
