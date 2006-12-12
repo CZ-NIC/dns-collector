@@ -35,7 +35,7 @@ Usage: image-sim-test [options] image1 [image2] \n\
 -g --background      background color (hexadecimal RRGGBB)\n\
 -r --segmentation-1  writes image1 segmentation to given file\n\
 -R --segmentation-2  writes image2 segmentation to given file\n\
--6 --encoded         display base64 encoded signature\n\
+-6 --base64          display base64 encoded signature\n\
 ", stderr);
   exit(1);
 }
@@ -50,6 +50,7 @@ static struct option longopts[] =
   { "background",	0, 0, 'g' },
   { "segmentation-1",	0, 0, 'r' },
   { "segmentation-2",	0, 0, 'R' },
+  { "base64",		0, 0, '6' },
   { NULL,		0, 0, 0 }
 };
 
