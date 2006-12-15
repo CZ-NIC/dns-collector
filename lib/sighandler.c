@@ -19,7 +19,7 @@ static void
 signal_handler_internal(int sig)
 {
   struct ucwlib_context *ctx = ucwlib_thread_context();
-  if (!ctx->signal_handlers[sig] || ctx->signal_handlers[sig](sig))
+  if (!ctx->signal_handlers || !ctx->signal_handlers[sig] || ctx->signal_handlers[sig](sig))
     abort();
 }
 
