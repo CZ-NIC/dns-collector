@@ -18,6 +18,10 @@
  *  thread pool, it remembers running requests and gathers replies. A single work queue
  *  should not be used by multiple threads simultaneously.
  *
+ *  Requests can have priorities. Requests with the highest priority are served first.
+ *  Requests of priority 0 are guaranteed to be served on first-come-first-served
+ *  basis, requests of higher priorities are unordered.
+ *
  *  When a thread pool is initialized, new_thread() is called for every thread first,
  *  allocating struct worker_thread (and user-defined thread context following it) for
  *  each thread. Then the threads are fired and each of them executes the init_thread()
@@ -40,7 +44,9 @@ struct worker_thread {				// One of threads serving requests
 
 struct raw_queue {				// Generic queue with locking
   pthread_mutex_t queue_mutex;
-  clist queue;
+  clist pri0_queue;				// Ordinary queue for requests with priority=0
+  struct work **pri_heap;			// A heap for request with priority>0
+  uns heap_cnt, heap_max;
   sem_t *queue_sem;				// Number of requests queued
 };
 
@@ -64,6 +70,7 @@ struct work_queue {
 
 struct work {					// A single request
   cnode n;
+  uns priority;
   struct work_queue *reply_to;			// Where to queue the request when it's finished
   void (*go)(struct worker_thread *t, struct work *w);		// Called inside the worker thread
   void (*returned)(struct work_queue *q, struct work *w);	// Called when returned back, NULL if work_wait should return
