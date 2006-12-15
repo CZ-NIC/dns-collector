@@ -202,18 +202,13 @@ work_submit(struct work_queue *q, struct work *w)
 static struct work *
 work_do_wait(struct work_queue *q, int try)
 {
-  while (q->nr_running)
-    {
-      struct work *w = (try ? raw_queue_try_get : raw_queue_get)(&q->finished);
-      if (!w)
-	return NULL;
-      q->nr_running--;
-      if (w->returned)
-	w->returned(q, w);
-      else
-	return w;
-    }
-  return NULL;
+  if (!q->nr_running)
+    return NULL;
+  struct work *w = (try ? raw_queue_try_get : raw_queue_get)(&q->finished);
+  if (!w)
+    return NULL;
+  q->nr_running--;
+  return w;
 }
 
 struct work *

@@ -73,7 +73,6 @@ struct work {					// A single request
   uns priority;
   struct work_queue *reply_to;			// Where to queue the request when it's finished
   void (*go)(struct worker_thread *t, struct work *w);		// Called inside the worker thread
-  void (*returned)(struct work_queue *q, struct work *w);	// Called when returned back, NULL if work_wait should return
 };
 
 void worker_pool_init(struct worker_pool *p);
