@@ -17,12 +17,29 @@
 static pthread_key_t ucwlib_context_key;
 static pthread_mutex_t ucwlib_master_mutex;
 
+static void
+ucwlib_free_thread_context(void *p)
+{
+  xfree(p);
+}
+
 static void CONSTRUCTOR
 ucwlib_threads_init(void)
 {
-  if (pthread_key_create(&ucwlib_context_key, NULL) < 0)
+  if (pthread_key_create(&ucwlib_context_key, ucwlib_free_thread_context) < 0)
     die("Cannot create pthread_key: %m");
   pthread_mutex_init(&ucwlib_master_mutex, NULL);
+}
+
+static int
+ucwlib_tid(void)
+{
+  static tid_counter;
+
+  ucwlib_lock();
+  int tid = ++tid_counter;
+  ucwlib_unlock();
+  return tid;
 }
 
 struct ucwlib_context *
@@ -32,6 +49,7 @@ ucwlib_thread_context(void)
   if (!c)
     {
       c = xmalloc_zero(sizeof(*c));
+      c->thread_id = ucwlib_tid();
       pthread_setspecific(ucwlib_context_key, c);
     }
   return c;
@@ -76,7 +94,7 @@ int main(void)
 {
   ucwlib_lock();
   ucwlib_unlock();
-  ucwlib_thread_context();
+  log(L_INFO, "tid=%d", ucwlib_thread_context()->thread_id);
   return 0;
 }
 
