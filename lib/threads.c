@@ -34,7 +34,7 @@ ucwlib_threads_init(void)
 static int
 ucwlib_tid(void)
 {
-  static tid_counter;
+  static int tid_counter;
 
   ucwlib_lock();
   int tid = ++tid_counter;
