@@ -31,6 +31,17 @@ ucwlib_threads_init(void)
   pthread_mutex_init(&ucwlib_master_mutex, NULL);
 }
 
+static int
+ucwlib_tid(void)
+{
+  static tid_counter;
+
+  ucwlib_lock();
+  int tid = ++tid_counter;
+  ucwlib_unlock();
+  return tid;
+}
+
 struct ucwlib_context *
 ucwlib_thread_context(void)
 {
@@ -38,6 +49,7 @@ ucwlib_thread_context(void)
   if (!c)
     {
       c = xmalloc_zero(sizeof(*c));
+      c->thread_id = ucwlib_tid();
       pthread_setspecific(ucwlib_context_key, c);
     }
   return c;
@@ -82,7 +94,7 @@ int main(void)
 {
   ucwlib_lock();
   ucwlib_unlock();
-  ucwlib_thread_context();
+  log(L_INFO, "tid=%d", ucwlib_thread_context()->thread_id);
   return 0;
 }
 

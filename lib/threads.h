@@ -13,6 +13,7 @@
 /* This structure holds per-thread data */
 
 struct ucwlib_context {
+  int thread_id;			// Thread ID (either kernel tid or a counter)
   int temp_counter;			// Counter for fb-temp.c
   struct asio_queue *io_queue;		// Async I/O queue for fb-direct.c
   sh_sighandler_t *signal_handlers;	// Signal handlers for sighandler.c
