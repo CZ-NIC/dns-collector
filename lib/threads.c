@@ -87,7 +87,7 @@ ucwlib_unlock(void)
 #else
 
 struct ucwlib_context *
-ucw_thread_context(void)
+ucwlib_thread_context(void)
 {
   static struct ucwlib_context ucwlib_context;
   return &ucwlib_context;
