@@ -17,10 +17,16 @@
 static pthread_key_t ucwlib_context_key;
 static pthread_mutex_t ucwlib_master_mutex;
 
+static void
+ucwlib_free_thread_context(void *p)
+{
+  xfree(p);
+}
+
 static void CONSTRUCTOR
 ucwlib_threads_init(void)
 {
-  if (pthread_key_create(&ucwlib_context_key, NULL) < 0)
+  if (pthread_key_create(&ucwlib_context_key, ucwlib_free_thread_context) < 0)
     die("Cannot create pthread_key: %m");
   pthread_mutex_init(&ucwlib_master_mutex, NULL);
 }
