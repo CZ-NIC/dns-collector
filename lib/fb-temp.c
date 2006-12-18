@@ -32,18 +32,13 @@ static void CONSTRUCTOR temp_global_init(void)
 void
 temp_file_name(byte *buf)
 {
-  int cnt = ++ucwlib_thread_context()->temp_counter;
+  struct ucwlib_context *ctx = ucwlib_thread_context();
+  int cnt = ++ctx->temp_counter;
   int pid = getpid();
-#if 0
-  /* FIXME: This is Linux-specific and not declared anywhere :( */
-  int tid = gettid();
-#else
-  int tid = pid;
-#endif
-  if (pid == tid)
+  if (ctx->thread_id == pid)
     sprintf(buf, "%s%d-%d", temp_prefix, pid, cnt);
   else
-    sprintf(buf, "%s%d-%d-%d", temp_prefix, pid, tid, cnt);
+    sprintf(buf, "%s%d-%d-%d", temp_prefix, pid, ctx->thread_id, cnt);
 }
 
 struct fastbuf *
