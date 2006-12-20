@@ -20,18 +20,7 @@
 static inline uns
 flags_to_pixel_size(uns flags)
 {
-  uns pixel_size;
-  switch (flags & IMAGE_COLOR_SPACE)
-    {
-      case COLOR_SPACE_GRAYSCALE:
-	pixel_size = 1;
-	break;
-      case COLOR_SPACE_RGB:
-	pixel_size = 3;
-	break;
-      default:
-	ASSERT(0);
-    }
+  uns pixel_size = color_space_channels[flags & IMAGE_COLOR_SPACE];
   if (flags & IMAGE_ALPHA)
     pixel_size++;
   return pixel_size;
@@ -48,9 +37,14 @@ image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempo
       return NULL;
     }
   struct image *img;
-  uns pixel_size, row_pixels_size, row_size, align;
-  pixel_size = flags_to_pixel_size(flags);
-  switch (pixel_size)
+  uns channels, pixel_size, row_pixels_size, row_size, align;
+  pixel_size = channels = flags_to_pixel_size(flags);
+  if (!channels || channels > 4)
+    {
+      IMAGE_ERROR(ctx, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Invalid number of color channels (%u)", channels);
+      return NULL;
+    }
+  switch (channels)
     {
       case 1:
       case 2:
@@ -71,7 +65,7 @@ image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempo
   else
     align = 1;
   row_pixels_size = cols * pixel_size;
-  row_size = ALIGN(row_pixels_size, align);
+  row_size = ALIGN_TO(row_pixels_size, align);
   u64 image_size_64 = (u64)row_size * rows;
   u64 bytes_64 = image_size_64 + (sizeof(struct image) + IMAGE_SSE_ALIGN_SIZE - 1 + sizeof(uns));
   if (unlikely(bytes_64 > image_max_bytes))
@@ -90,6 +84,7 @@ image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempo
   byte *p = (byte *)img + sizeof(struct image);
   img->pixels = ALIGN_PTR(p, IMAGE_SSE_ALIGN_SIZE);
   img->flags = flags;
+  img->channels = channels;
   img->pixel_size = pixel_size;
   img->cols = cols;
   img->rows = rows;
@@ -110,10 +105,12 @@ image_clone(struct image_context *ctx, struct image *src, uns flags, struct memp
   flags |= src->flags & IMAGE_CHANNELS_FORMAT;
   if (!(img = image_new(ctx, src->cols, src->rows, flags, pool)))
     return NULL;
+  ASSERT(src->channels == img->channels);
   if (img->image_size)
     {
       if (src->pixel_size != img->pixel_size) /* conversion between aligned and unaligned RGB */
         {
+	  ASSERT(src->channels == 3);
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
 #         define IMAGE_WALK_INLINE
 #	  define IMAGE_WALK_IMAGE img
@@ -175,7 +172,7 @@ image_init_matrix(struct image_context *ctx, struct image *img, byte *pixels, un
   img->pixels = pixels;
   img->cols = cols;
   img->rows = rows;
-  img->pixel_size = flags_to_pixel_size(flags);
+  img->pixel_size = img->channels = flags_to_pixel_size(flags);
   img->row_size = row_size;
   img->row_pixels_size = cols * img->pixel_size;
   img->image_size = rows * row_size;
@@ -191,7 +188,7 @@ image_init_subimage(struct image_context *ctx UNUSED, struct image *img, struct 
   img->pixels = src->pixels + left * src->pixel_size + top * src->row_size;
   img->cols = cols;
   img->rows = rows;
-  img->pixel_size = src->pixel_size;
+  img->pixel_size = img->channels = src->pixel_size;
   img->row_size = src->row_size;
   img->row_pixels_size = cols * src->pixel_size;
   img->image_size = src->row_size * rows;
@@ -201,45 +198,30 @@ image_init_subimage(struct image_context *ctx UNUSED, struct image *img, struct 
 }
 
 byte *
-color_space_to_name(uns cs)
+image_channels_format_to_name(uns format, byte *buf)
 {
-  return image_channels_format_to_name(cs);
-}
-
-byte *
-image_channels_format_to_name(uns format)
-{
-  switch (format)
-    {
-      case COLOR_SPACE_GRAYSCALE:
-	return "Gray";
-      case COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA:
-	return "GrayAlpha";
-      case COLOR_SPACE_RGB:
-	return "RGB";
-      case COLOR_SPACE_RGB | IMAGE_ALPHA:
-	return "RGBAlpha";
-      default:
-	return NULL;
-    }
+  byte *cs_name = color_space_id_to_name(format & IMAGE_COLOR_SPACE);
+  uns l = strlen(cs_name);
+  memcpy(buf, cs_name, l + 1);
+  if (format & IMAGE_ALPHA)
+    strcpy(buf + l, "+Alpha");
+  return buf;
 }
 
 uns
 image_name_to_channels_format(byte *name)
 {
-  if (!strcasecmp(name, "gray"))
-    return COLOR_SPACE_GRAYSCALE;
-  if (!strcasecmp(name, "grayscale"))
-    return COLOR_SPACE_GRAYSCALE;
-  if (!strcasecmp(name, "grayalpha"))
-    return COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA;
-  if (!strcasecmp(name, "grayscalealpha"))
-    return COLOR_SPACE_GRAYSCALE | IMAGE_ALPHA;
-  if (!strcasecmp(name, "rgb"))
-    return COLOR_SPACE_RGB;
-  if (!strcasecmp(name, "rgbalpha"))
-    return COLOR_SPACE_RGB | IMAGE_ALPHA;
-  if (!strcasecmp(name, "rgba"))
-    return COLOR_SPACE_RGB | IMAGE_ALPHA;
+  uns i;
+  if (i = color_space_name_to_id(name))
+    return i;
+  uns l = strlen(name);
+  if (l > 6 && !strcasecmp(name + l - 5, "+alpha"))
+    {
+      byte buf[l + 1];
+      memcpy(buf, name, l - 6);
+      buf[l - 6] = 0;
+      if (i = color_space_name_to_id(name))
+	return i;
+    }
   return 0;
 }

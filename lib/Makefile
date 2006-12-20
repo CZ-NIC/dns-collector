@@ -7,6 +7,7 @@ PROGS+=$(o)/lib/db-tool
 endif
 
 LIBUCW_MODS= \
+	threads \
 	alloc alloc_str realloc mempool mempool-str mempool-fmt \
 	mmap pagecache partmap hashfunc \
 	lists slists simple-lists sorter bitsig \
@@ -32,7 +33,7 @@ LIBUCW_MODS= \
 	bbuf
 
 LIBUCW_INCLUDES= \
-	lib.h config.h math.h \
+	lib.h config.h threads.h math.h \
 	mempool.h pagecache.h \
 	sorter.h arraysort.h \
 	lists.h clists.h \
@@ -53,6 +54,13 @@ LIBUCW_INCLUDES= \
 	md5.h \
 	base64.h base224.h \
 	qache.h
+
+ifdef CONFIG_UCW_THREADS
+# Some modules require threading
+LIBS+=-lpthread
+LIBUCW_MODS+=threads-conf workqueue
+LIBUCW_INCLUDES+=workqueue.h
+endif
 
 ifdef CONFIG_OWN_REGEX
 include $(s)/lib/regex/Makefile

@@ -55,12 +55,12 @@ extern uns image_max_bytes;		/* ImageLib.ImageMaxBytes */
 #define IMAGE_SSE_ALIGN_SIZE 16
 
 enum image_flag {
-  IMAGE_COLOR_SPACE = 0x7,		/* mask for enum color_space */
-  IMAGE_ALPHA = 0x8,			/* alpha channel */
-  IMAGE_PIXELS_ALIGNED = 0x10,		/* align pixel size to the nearest power of two  */
-  IMAGE_SSE_ALIGNED = 0x20,		/* align scanlines to multiples of 16 bytes (both start and size) */
-  IMAGE_NEED_DESTROY = 0x40,		/* image is allocated with xmalloc */
-  IMAGE_GAPS_PROTECTED = 0x80,		/* cannot access gaps between rows */
+  IMAGE_COLOR_SPACE = 0xf,		/* mask for enum color_space */
+  IMAGE_ALPHA = 0x10,			/* alpha channel */
+  IMAGE_PIXELS_ALIGNED = 0x20,		/* align pixel size to the nearest power of two  */
+  IMAGE_SSE_ALIGNED = 0x40,		/* align scanlines to multiples of 16 bytes (both start and size) */
+  IMAGE_NEED_DESTROY = 0x80,		/* image is allocated with xmalloc */
+  IMAGE_GAPS_PROTECTED = 0x100,		/* cannot access gaps between rows */
   IMAGE_CHANNELS_FORMAT = IMAGE_COLOR_SPACE | IMAGE_ALPHA,
   IMAGE_PIXEL_FORMAT = IMAGE_CHANNELS_FORMAT | IMAGE_PIXELS_ALIGNED,
   IMAGE_ALIGNED = IMAGE_PIXELS_ALIGNED | IMAGE_SSE_ALIGNED,
@@ -68,11 +68,22 @@ enum image_flag {
   IMAGE_INTERNAL_FLAGS = IMAGE_NEED_DESTROY | IMAGE_GAPS_PROTECTED,
 };
 
+#define IMAGE_MAX_CHANNELS 4
+#define IMAGE_CHANNELS_FORMAT_MAX_SIZE 128
+byte *image_channels_format_to_name(uns format, byte *buf);
+uns image_name_to_channels_format(byte *name);
+
+struct color {
+  byte c[IMAGE_MAX_CHANNELS];
+  byte color_space;
+};
+
 struct image {
   byte *pixels;			/* aligned top left pixel, there are at least sizeof(uns)
 				   unused bytes after the buffer (possible optimizations) */
   uns cols;			/* number of columns */
   uns rows;			/* number of rows */
+  uns channels;			/* number of color channels including the alpha channel */
   uns pixel_size;		/* size of pixel in bytes (1, 2, 3 or 4) */
   uns row_size;			/* scanline size in bytes */
   uns row_pixels_size;		/* scanline size in bytes excluding rows gaps */
@@ -92,24 +103,10 @@ image_dimensions_valid(uns cols, uns rows)
 {
   return cols && rows && cols <= image_max_dim && rows <= image_max_dim;
 }
-
-byte *color_space_to_name(uns cs);
-byte *image_channels_format_to_name(uns format);
-uns image_name_to_channels_format(byte *name);
-
-struct color {
-  byte c[3];
-  byte color_space;
-} PACKED;
-
 /* scale.c */
 
 int image_scale(struct image_context *ctx, struct image *dest, struct image *src);
 void image_dimensions_fit_to_box(uns *cols, uns *rows, uns max_cols, uns max_rows, uns upsample);
-
-/* alpha.c */
-
-int image_apply_background(struct image_context *ctx, struct image *dest, struct image *src, struct color *background);
 
 /* image-io.c */
 

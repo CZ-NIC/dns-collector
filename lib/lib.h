@@ -27,7 +27,7 @@
 #define PTR_TO(s, i) &((s*)0)->i
 #define OFFSETOF(s, i) ((unsigned int) PTR_TO(s, i))
 #define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))
-#define ALIGN(s, a) (((s)+a-1)&~(a-1))
+#define ALIGN_TO(s, a) (((s)+a-1)&~(a-1))
 #define ALIGN_PTR(p, s) ((addr_int_t)(p) % (s) ? (typeof(p))((addr_int_t)(p) + (s) - (addr_int_t)(p) % (s)) : (p))
 #define UNALIGNED_PART(ptr, type) (((addr_int_t) (ptr)) % sizeof(type))
 
@@ -259,13 +259,11 @@ void sync_dir(byte *name);
 
 /* sighandler.c */
 
-typedef int (*sh_sighandler_t)(int);
-  /* obtains signum, returns nonzero if abort() should be called */
-extern sh_sighandler_t signal_handler[];
+typedef int (*sh_sighandler_t)(int);	// gets signum, returns nonzero if abort() should be called
 
-struct sigaction;
-void handle_signal(int signum, struct sigaction *oldact);
-void unhandle_signal(int signum, struct sigaction *oldact);
+void handle_signal(int signum);
+void unhandle_signal(int signum);
+sh_sighandler_t set_signal_handler(int signum, sh_sighandler_t new);
 
 /* string.c */
 

@@ -188,18 +188,6 @@ libpng_read_data(struct image_io *io)
 
   struct libpng_read_data *rd = io->read_data;
 
-  /* Test supported pixel formats */
-  switch (io->flags & IMAGE_COLOR_SPACE)
-    {
-      case COLOR_SPACE_GRAYSCALE:
-      case COLOR_SPACE_RGB:
-	break;
-      default:
-        png_destroy_read_struct(&rd->png_ptr, &rd->info_ptr, &rd->end_ptr);
-	IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Unsupported color space.");
-        return 0;
-    }
-
   struct image_io_read_data_internals rdi;
   rdi.image = NULL;
 
@@ -220,21 +208,24 @@ libpng_read_data(struct image_io *io)
   switch (rd->color_type)
     {
       case PNG_COLOR_TYPE_PALETTE:
-	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)
+	if ((read_flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)
 	  {
 	    png_set_palette_to_rgb(rd->png_ptr);
 	    png_set_rgb_to_gray_fixed(rd->png_ptr, 1, 21267, 71514);
 	  }
 	else
-	  png_set_palette_to_rgb(rd->png_ptr);
-	if (!(io->flags & IMAGE_ALPHA))
+	  {
+	    png_set_palette_to_rgb(rd->png_ptr);
+	    read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_RGB;
+	  }
+	if (!(read_flags & IMAGE_ALPHA))
 	  {
 	    if (io->flags & IMAGE_IO_USE_BACKGROUND)
 	      {
                 png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
-	        read_flags = (read_flags | IMAGE_ALPHA) & IMAGE_CHANNELS_FORMAT;
+	        read_flags = (read_flags & IMAGE_CHANNELS_FORMAT) | IMAGE_ALPHA;
 	      }
-	    else if ((io->flags & IMAGE_PIXEL_FORMAT) == (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
+	    else if ((read_flags & IMAGE_PIXEL_FORMAT) == (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
               png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
             else
 	      png_set_strip_alpha(rd->png_ptr);
@@ -243,35 +234,45 @@ libpng_read_data(struct image_io *io)
           png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
 	break;
       case PNG_COLOR_TYPE_GRAY:
-	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_RGB)
-          png_set_gray_to_rgb(rd->png_ptr);
-	if (io->flags & IMAGE_ALPHA)
+	if ((read_flags & IMAGE_COLOR_SPACE) != COLOR_SPACE_GRAYSCALE)
+	  {
+            png_set_gray_to_rgb(rd->png_ptr);
+	    read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_RGB;
+	  }
+	if (read_flags & IMAGE_ALPHA)
 	  png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
 	break;
       case PNG_COLOR_TYPE_GRAY_ALPHA:
-	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_RGB)
-          png_set_gray_to_rgb(rd->png_ptr);
-	if (!(io->flags & IMAGE_ALPHA))
+	if ((read_flags & IMAGE_COLOR_SPACE) != COLOR_SPACE_GRAYSCALE)
+	  {
+            png_set_gray_to_rgb(rd->png_ptr);
+	    read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_RGB;
+	  }
+	if (!(read_flags & IMAGE_ALPHA))
 	  {
 	    if (io->flags & IMAGE_IO_USE_BACKGROUND)
-	      read_flags = (read_flags | IMAGE_ALPHA) & IMAGE_CHANNELS_FORMAT;
+	      read_flags = (read_flags & IMAGE_CHANNELS_FORMAT) | IMAGE_ALPHA;
 	    else
               png_set_strip_alpha(rd->png_ptr);
 	  }  
 	break;
       case PNG_COLOR_TYPE_RGB:
-	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)
+	if ((read_flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)
 	  png_set_rgb_to_gray_fixed(rd->png_ptr, 1, 21267, 71514);
-	if ((io->flags & IMAGE_ALPHA) || (io->flags & IMAGE_PIXEL_FORMAT) == (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
+	else
+	  read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_RGB;
+	if ((read_flags & IMAGE_ALPHA) || (read_flags & IMAGE_PIXEL_FORMAT) == (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
 	  png_set_add_alpha(rd->png_ptr, 255, PNG_FILLER_AFTER);
 	break;
       case PNG_COLOR_TYPE_RGB_ALPHA:
-	if ((io->flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)
+	if ((read_flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)
 	  png_set_rgb_to_gray_fixed(rd->png_ptr, 1, 21267, 71514);
-	if (!(io->flags & IMAGE_ALPHA))
+	else
+	  read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_RGB;
+	if (!(read_flags & IMAGE_ALPHA))
 	  if (io->flags & IMAGE_IO_USE_BACKGROUND)
-	    read_flags = (read_flags | IMAGE_ALPHA) & IMAGE_CHANNELS_FORMAT;
-	  else if ((io->flags & IMAGE_PIXEL_FORMAT) != (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
+	    read_flags = (read_flags & IMAGE_CHANNELS_FORMAT) | IMAGE_ALPHA;
+	  else if ((read_flags & IMAGE_PIXEL_FORMAT) != (COLOR_SPACE_RGB | IMAGE_PIXELS_ALIGNED))
             png_set_strip_alpha(rd->png_ptr);
 	break;
       default:
@@ -361,7 +362,9 @@ libpng_write(struct image_io *io)
 	png_set_filler(png_ptr, 0, PNG_FILLER_AFTER);
 	break;
       default:
-        ASSERT(0);
+        IMAGE_ERROR(io->context, IMAGE_ERROR_WRITE_FAILED, "Libpng does not support this pixel format (0x%x)", img->flags & IMAGE_PIXEL_FORMAT);
+        png_destroy_write_struct(&png_ptr, &info_ptr);
+	return 0;
     }
   png_write_info(png_ptr, info_ptr);
 

@@ -401,7 +401,7 @@ P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
 	}
       for(;;)
 	{
-	  current = (byte *) ALIGN((addr_int_t) current, CPU_STRUCT_ALIGN);
+	  current = (byte *) ALIGN_TO((addr_int_t) current, CPU_STRUCT_ALIGN);
 	  if (current + sizeof(*this) > bufend)
 	    break;
 	  this = (SORT_NODE *) current;

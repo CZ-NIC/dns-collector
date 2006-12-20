@@ -147,7 +147,11 @@ libungif_read_data(struct image_io *io)
 
   /* Prepare image */
   struct image_io_read_data_internals rdi;
-  if (unlikely(!image_io_read_data_prepare(&rdi, io, image->ImageDesc.Width, image->ImageDesc.Height, io->flags)))
+  uns read_flags = io->flags;
+  uns cs = read_flags & IMAGE_COLOR_SPACE;
+  if (cs != COLOR_SPACE_GRAYSCALE && cs != COLOR_SPACE_RGB)
+    read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_RGB;
+  if (unlikely(!image_io_read_data_prepare(&rdi, io, image->ImageDesc.Width, image->ImageDesc.Height, read_flags)))
     {
       DGifCloseFile(gif);
       return 0;
@@ -180,10 +184,14 @@ libungif_read_data(struct image_io *io)
 	  if (pal_pos != pal_end)
 	    bzero(pal_pos, pal_end - pal_pos);
 	  if (rd->transparent_index >= 0 && (io->flags & IMAGE_IO_USE_BACKGROUND))
-	    color_put_grayscale(pal + rd->transparent_index, &io->background_color);
+	    if (!color_put(io->context, &io->background_color, pal + rd->transparent_index, COLOR_SPACE_GRAYSCALE))
+	      {
+		DGifCloseFile(gif);
+		return 0;
+	      }
 #	  define DO_ROW_END do{ \
   	      walk_row_start += dein_step; \
-  	      if (walk_row_start >= img_end) \
+  	      while (walk_row_start >= img_end) \
 		{ uns n = dein_next >> 1; walk_row_start = rdi.image->pixels + n, dein_step = dein_next; dein_next = n; } \
 	    }while(0)
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
@@ -232,7 +240,11 @@ libungif_read_data(struct image_io *io)
 	  if (pal_pos != pal_end)
 	    bzero(pal_pos, pal_end - pal_pos);
 	  if (rd->transparent_index >= 0 && (io->flags & IMAGE_IO_USE_BACKGROUND))
-	    color_put_rgb(pal + 4 * rd->transparent_index, &io->background_color);
+	    if (!color_put(io->context, &io->background_color, pal + 4 * rd->transparent_index, COLOR_SPACE_RGB))
+	      {
+		DGifCloseFile(gif);
+		return 0;
+	      }
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
 #	  define IMAGE_WALK_IMAGE (rdi.image)

@@ -13,58 +13,685 @@
 #include "lib/math.h"
 #include "images/images.h"
 #include "images/color.h"
+#include "images/error.h"
+#include "images/math.h"
+
+#include <string.h>
+
+uns color_space_channels[COLOR_SPACE_MAX] = {
+  [COLOR_SPACE_UNKNOWN] = 0,
+  [COLOR_SPACE_UNKNOWN_1] = 1,
+  [COLOR_SPACE_UNKNOWN_2] = 2,
+  [COLOR_SPACE_UNKNOWN_3] = 3,
+  [COLOR_SPACE_UNKNOWN_4] = 4,
+  [COLOR_SPACE_GRAYSCALE] = 1,
+  [COLOR_SPACE_RGB] = 3,
+  [COLOR_SPACE_XYZ] = 3,
+  [COLOR_SPACE_LAB] = 3,
+  [COLOR_SPACE_YCBCR] = 3,
+  [COLOR_SPACE_CMYK] = 4,
+  [COLOR_SPACE_YCCK] = 4,
+};
+
+byte *color_space_name[COLOR_SPACE_MAX] = {
+  [COLOR_SPACE_UNKNOWN] = "Unknown",
+  [COLOR_SPACE_UNKNOWN_1] = "1-channel",
+  [COLOR_SPACE_UNKNOWN_2] = "2-channels",
+  [COLOR_SPACE_UNKNOWN_3] = "3-channels",
+  [COLOR_SPACE_UNKNOWN_4] = "4-channels",
+  [COLOR_SPACE_GRAYSCALE] = "Grayscale",
+  [COLOR_SPACE_RGB] = "RGB",
+  [COLOR_SPACE_XYZ] = "XYZ",
+  [COLOR_SPACE_LAB] = "LAB",
+  [COLOR_SPACE_YCBCR] = "YCbCr",
+  [COLOR_SPACE_CMYK] = "CMYK",
+  [COLOR_SPACE_YCCK] = "YCCK",
+};
+
+byte *
+color_space_id_to_name(uns id)
+{
+  ASSERT(id < COLOR_SPACE_MAX);
+  return color_space_name[id];
+}
+
+uns
+color_space_name_to_id(byte *name)
+{
+  for (uns i = 1; i < COLOR_SPACE_MAX; i++)
+    if (color_space_name[i] && !strcasecmp(name, color_space_name[i]))
+      return i;
+  return 0;
+}
 
 struct color color_black = { .color_space = COLOR_SPACE_GRAYSCALE };
 struct color color_white = { .c = { 255 }, .color_space = COLOR_SPACE_GRAYSCALE };
 
-inline void
-color_put_grayscale(byte *dest, struct color *color)
+int
+color_get(struct color *color, byte *src, uns src_space)
 {
-  switch (color->color_space)
+  color->color_space = src_space;
+  memcpy(color->c, src, color_space_channels[src_space]);
+  return 1;
+}
+
+int
+color_put(struct image_context *ctx, struct color *color, byte *dest, uns dest_space)
+{
+  switch (dest_space)
     {
       case COLOR_SPACE_GRAYSCALE:
-	dest[0] = color->c[0];
+	switch (color->color_space)
+	  {
+            case COLOR_SPACE_GRAYSCALE:
+	      dest[0] = color->c[0];
+	      return 1;
+            case COLOR_SPACE_RGB:
+	      dest[0] = rgb_to_gray_func(color->c[0], color->c[1], color->c[2]);
+	      return 1;
+	  }
 	break;
       case COLOR_SPACE_RGB:
-	dest[0] = rgb_to_gray_func(color->c[0], color->c[1], color->c[2]);
+        switch (color->color_space)
+          {
+            case COLOR_SPACE_GRAYSCALE:
+	      dest[0] = dest[1] = dest[2] = color->c[0];
+	      return 1;
+            case COLOR_SPACE_RGB:
+	      dest[0] = color->c[0];
+	      dest[1] = color->c[1];
+	      dest[2] = color->c[2];
+	      return 1;
+	    case COLOR_SPACE_CMYK:
+	      {
+	        double rgb[3], cmyk[4];
+	        for (uns i = 0; i < 4; i++)
+		  cmyk[i] = color->c[i] * (1.0 / 255);
+	        cmyk_to_rgb_exact(rgb, cmyk);
+	        for (uns i = 0; i < 3; i++)
+		  dest[i] = CLAMP(rgb[i] * 255, 0, 255);
+	      }
+	      return 1;
+          }
 	break;
-      default:
-	ASSERT(0);
+      case COLOR_SPACE_CMYK:
+	switch (color->color_space)
+	  {
+	    case COLOR_SPACE_GRAYSCALE:
+	      dest[0] = dest[1] = dest[2] = 0;
+	      dest[3] = 255 - color->c[0];
+	      return 1;
+	    case COLOR_SPACE_RGB:
+	      {
+	        double rgb[3], cmyk[4];
+		for (uns i = 0; i < 3; i++)
+		  rgb[i] = color->c[i] * (1.0 / 255);
+		rgb_to_cmyk_exact(cmyk, rgb);
+		for (uns i = 0; i < 4; i++)
+		  dest[i] = CLAMP(cmyk[i] * 255, 0, 255);
+	      }
+	      return 1;
+	  }
+	break;
+    }
+  if (dest_space != COLOR_SPACE_RGB )
+    {
+      /* Try to convert the color via RGB */
+      struct color rgb;
+      if (!color_put(ctx, color, rgb.c, COLOR_SPACE_RGB))
+	return 0;
+      rgb.color_space = COLOR_SPACE_RGB;
+      return color_put(ctx, &rgb, dest, dest_space);
+    }
+  IMAGE_ERROR(ctx, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Conversion from %s to %s is not supported",
+      color_space_id_to_name(color->color_space), color_space_id_to_name(color->color_space));
+  return 0;
+}
+
+
+/********************* IMAGE CONVERSION ROUTINES **********************/
+
+struct image_conv_options image_conv_defaults = {
+  .flags = IMAGE_CONV_COPY_ALPHA | IMAGE_CONV_FILL_ALPHA | IMAGE_CONV_APPLY_ALPHA,
+  .background = { .color_space = COLOR_SPACE_GRAYSCALE } };
+  
+/* Grayscale <-> RGB */
+
+#define IMAGE_WALK_PREFIX(x) walk_##x
+#define IMAGE_WALK_FUNC_NAME image_conv_gray_1_to_rgb_n
+#define IMAGE_WALK_DOUBLE
+#define IMAGE_WALK_SEC_COL_STEP 1
+#define IMAGE_WALK_UNROLL 4
+#define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_pos[1] = walk_pos[2] = walk_sec_pos[0]; }while(0)
+#include "images/image-walk.h"
+
+#define IMAGE_WALK_PREFIX(x) walk_##x
+#define IMAGE_WALK_FUNC_NAME image_conv_rgb_n_to_gray_1
+#define IMAGE_WALK_DOUBLE
+#define IMAGE_WALK_COL_STEP 1
+#define IMAGE_WALK_UNROLL 2
+#define IMAGE_WALK_DO_STEP do{ walk_pos[0] = rgb_to_gray_func(walk_sec_pos[0], walk_sec_pos[1], walk_sec_pos[2]); }while(0)
+#include "images/image-walk.h"
+
+/* YCbCr <-> RGB */
+
+static inline void
+pixel_conv_ycbcr_to_rgb(byte *dest, byte *src)
+{
+  /* R = Y                + 1.40200 * Cr
+   * G = Y - 0.34414 * Cb - 0.71414 * Cr
+   * B = Y + 1.77200 * Cb */
+  int y = src[0], cb = src[1] - 128, cr = src[2] - 128;
+  dest[0] = CLAMP(y + (91881 * cr) / 0x10000, 0, 255);
+  dest[1] = CLAMP(y - (22553 * cb + 46801 * cr) / 0x10000, 0, 255);
+  dest[2] = CLAMP(y + (116129 * cb) / 0x10000, 0, 255);
+}
+
+#define IMAGE_WALK_PREFIX(x) walk_##x
+#define IMAGE_WALK_FUNC_NAME image_conv_ycbcr_n_to_rgb_n
+#define IMAGE_WALK_DOUBLE
+#define IMAGE_WALK_DO_STEP do{ pixel_conv_ycbcr_to_rgb(walk_pos, walk_sec_pos); }while(0)
+#include "images/image-walk.h"
+
+static inline void
+pixel_conv_rgb_to_ycbcr(byte *dest, byte *src)
+{
+  /* Y  =  0.29900 * R + 0.58700 * G + 0.11400 * B
+   * Cb = -0.16874 * R - 0.33126 * G + 0.50000 * B + CENTER
+   * Cr =  0.50000 * R - 0.41869 * G - 0.08131 * B + CENTER */
+  uns r = src[0], g = src[1], b = src[2];
+  dest[0] = (19595 * r + 38470 * g + 7471 * b) / 0x10000;
+  dest[1] = (0x800000 + 0x8000 * b - 11058 * r - 21710 * g) / 0x10000;
+  dest[2] = (0x800000 + 0x8000 * r - 27439 * g - 5329 * b) / 0x10000;
+}
+
+#define IMAGE_WALK_PREFIX(x) walk_##x
+#define IMAGE_WALK_FUNC_NAME image_conv_rgb_n_to_ycbcr_n
+#define IMAGE_WALK_DOUBLE
+#define IMAGE_WALK_DO_STEP do{ pixel_conv_rgb_to_ycbcr(walk_pos, walk_sec_pos); }while(0)
+#include "images/image-walk.h"
+
+/* CMYK <-> RGB */
+
+static inline void
+pixel_conv_cmyk_to_rgb(byte *dest, byte *src)
+{
+  uns d = (255 - src[3]) * (0xffffffffU / 255 /255);
+  dest[0] = d * (255 - src[0]) >> 24;
+  dest[1] = d * (255 - src[1]) >> 24;
+  dest[2] = d * (255 - src[2]) >> 24;
+}
+
+#define IMAGE_WALK_PREFIX(x) walk_##x
+#define IMAGE_WALK_FUNC_NAME image_conv_cmyk_4_to_rgb_n
+#define IMAGE_WALK_DOUBLE
+#define IMAGE_WALK_SEC_COL_STEP 4
+#define IMAGE_WALK_DO_STEP do{ pixel_conv_cmyk_to_rgb(walk_pos, walk_sec_pos); }while(0)
+#include "images/image-walk.h"
+
+static inline void
+pixel_conv_rgb_to_cmyk(byte *dest, byte *src)
+{
+  uns k = MAX(src[0], src[1]);
+  k = MAX(k, src[2]);
+  uns d = fast_div_u32_u8(0x7fffffffU, k); /* == 0 for zero K */
+  dest[0] = (d * (k - src[0])) >> 23;
+  dest[1] = (d * (k - src[1])) >> 23;
+  dest[2] = (d * (k - src[2])) >> 23;
+  dest[3] = 255 - k;
+}
+
+#define IMAGE_WALK_PREFIX(x) walk_##x
+#define IMAGE_WALK_FUNC_NAME image_conv_rgb_n_to_cmyk_4
+#define IMAGE_WALK_DOUBLE
+#define IMAGE_WALK_COL_STEP 4
+#define IMAGE_WALK_DO_STEP do{ pixel_conv_rgb_to_cmyk(walk_pos, walk_sec_pos); }while(0)
+#include "images/image-walk.h"
+
+/* YCCK <-> RGB */
+
+static inline void
+pixel_conv_ycck_to_rgb(byte *dest, byte *src)
+{
+  int y = src[0], cb = src[1] - 128, cr = src[2] - 128;
+  uns d = (255 - src[3]) * (0xffffffffU / 255 /255);
+  dest[0] = (d * CLAMP(y + (91881 * cr) / 0x10000, 0, 255) >> 24);
+  dest[1] = (d * CLAMP(y - (22553 * cb + 46801 * cr) / 0x10000, 0, 255) >> 24);
+  dest[2] = (d * CLAMP(y + (116129 * cb) / 0x10000, 0, 255) >> 24);
+}
+
+#define IMAGE_WALK_PREFIX(x) walk_##x
+#define IMAGE_WALK_FUNC_NAME image_conv_ycck_4_to_rgb_n
+#define IMAGE_WALK_DOUBLE
+#define IMAGE_WALK_SEC_COL_STEP 4
+#define IMAGE_WALK_DO_STEP do{ pixel_conv_ycck_to_rgb(walk_pos, walk_sec_pos); }while(0)
+#include "images/image-walk.h"
+
+static inline void
+pixel_conv_rgb_to_ycck(byte *dest, byte *src)
+{
+  uns k = MAX(src[0], src[1]);
+  k = MAX(k, src[2]);
+  uns d = fast_div_u32_u8(0x7fffffffU, k); /* == 0 for zero K */
+  uns r = 255 - ((d * (k - src[0])) >> 23);
+  uns g = 255 - ((d * (k - src[1])) >> 23);
+  uns b = 255 - ((d * (k - src[2])) >> 23);
+  dest[0] = (19595 * r + 38470 * g + 7471 * b) / 0x10000;
+  dest[1] = (0x800000 + 0x8000 * b - 11058 * r - 21710 * g) / 0x10000;
+  dest[2] = (0x800000 + 0x8000 * r - 27439 * g - 5329 * b) / 0x10000;
+  dest[3] = 255 - k;
+}
+
+#define IMAGE_WALK_PREFIX(x) walk_##x
+#define IMAGE_WALK_FUNC_NAME image_conv_rgb_n_to_ycck_4
+#define IMAGE_WALK_DOUBLE
+#define IMAGE_WALK_COL_STEP 4
+#define IMAGE_WALK_DO_STEP do{ pixel_conv_rgb_to_ycck(walk_pos, walk_sec_pos); }while(0)
+#include "images/image-walk.h"
+
+/* Main functions */
+
+static int
+image_conv_color_space(struct image_context *ctx UNUSED, struct image *dest, struct image *src, struct image_conv_options *opt UNUSED)
+{
+  switch (dest->flags & IMAGE_COLOR_SPACE)
+    {
+      case COLOR_SPACE_GRAYSCALE:
+        switch (src->flags & IMAGE_COLOR_SPACE)
+          {
+	    case COLOR_SPACE_RGB:
+	      if (dest->pixel_size == 1)
+	        {
+	          image_conv_rgb_n_to_gray_1(dest, src);
+	          return 1;
+	        }
+	      break;
+	  }
+	break;
+      case COLOR_SPACE_RGB:
+	switch (src->flags & IMAGE_CHANNELS_FORMAT)
+	  {
+	    case COLOR_SPACE_GRAYSCALE:
+	      if (src->pixel_size == 1)
+	        {
+	          image_conv_gray_1_to_rgb_n(dest, src);
+	          return 1;
+	        }
+	      break;
+	    case COLOR_SPACE_YCBCR:
+	      image_conv_ycbcr_n_to_rgb_n(dest, src);
+	      return 1;
+	    case COLOR_SPACE_CMYK:
+	      if (src->pixel_size == 4)
+	        {
+	          image_conv_cmyk_4_to_rgb_n(dest, src);
+	          return 1;
+	        }
+	      break;
+	    case COLOR_SPACE_YCCK:
+	      if (src->pixel_size == 4)
+	        {
+		  image_conv_ycck_4_to_rgb_n(dest, src);
+		  return 1;
+		}
+	      break;
+	}
+	break;
+      case COLOR_SPACE_YCBCR:
+        switch (src->flags & IMAGE_CHANNELS_FORMAT)
+	  {
+	    case COLOR_SPACE_RGB:
+	      image_conv_rgb_n_to_ycbcr_n(dest, src);
+	      return 1;
+	  }
+	break;
+      case COLOR_SPACE_CMYK:
+        switch (src->flags & IMAGE_CHANNELS_FORMAT)
+          {
+ 	    case COLOR_SPACE_RGB:
+	      if (dest->pixel_size == 4)
+	        {
+	          image_conv_rgb_n_to_cmyk_4(dest, src);
+	          return 1;
+	        }
+	      break;
+          }
+        break;
+      case COLOR_SPACE_YCCK:
+	switch (src->flags & IMAGE_CHANNELS_FORMAT)
+	  {
+	    case COLOR_SPACE_RGB:
+	      if (dest->pixel_size == 4)
+	        {
+		  image_conv_rgb_n_to_ycck_4(dest, src);
+		  return 1;
+		}
+	      break;
+	  }
+	break;
+    }
+  return 0;
+}
+
+static void
+image_conv_copy(struct image *dest, struct image *src)
+{
+  if (dest->pixels == src->pixels)
+    return;
+  else if (dest->pixel_size != src->pixel_size)
+    {
+      uns channels = MIN(dest->channels, src->channels);
+      switch (channels)
+        {
+	  case 1:
+	    {
+#	      define IMAGE_WALK_PREFIX(x) walk_##x
+#	      define IMAGE_WALK_INLINE
+#	      define IMAGE_WALK_DOUBLE
+#             define IMAGE_WALK_IMAGE dest
+#             define IMAGE_WALK_SEC_IMAGE src
+#	      define IMAGE_WALK_UNROLL 4
+#	      define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; }while(0)
+#	      include "images/image-walk.h"
+            }
+	    return;
+	  case 2:
+#	      define IMAGE_WALK_PREFIX(x) walk_##x
+#	      define IMAGE_WALK_INLINE
+#	      define IMAGE_WALK_DOUBLE
+#             define IMAGE_WALK_IMAGE dest
+#             define IMAGE_WALK_SEC_IMAGE src
+#	      define IMAGE_WALK_UNROLL 4
+#	      define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; walk_pos[1] = walk_sec_pos[1]; }while(0)
+#	      include "images/image-walk.h"
+	    return;
+	  case 3:
+#	      define IMAGE_WALK_PREFIX(x) walk_##x
+#	      define IMAGE_WALK_INLINE
+#	      define IMAGE_WALK_DOUBLE
+#             define IMAGE_WALK_IMAGE dest
+#             define IMAGE_WALK_SEC_IMAGE src
+#	      define IMAGE_WALK_UNROLL 2
+#	      define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; walk_pos[1] = walk_sec_pos[1]; walk_pos[2] = walk_sec_pos[2]; }while(0)
+#	      include "images/image-walk.h"
+	    return;
+	  case 4:
+#	      define IMAGE_WALK_PREFIX(x) walk_##x
+#	      define IMAGE_WALK_INLINE
+#	      define IMAGE_WALK_DOUBLE
+#             define IMAGE_WALK_IMAGE dest
+#             define IMAGE_WALK_SEC_IMAGE src
+#	      define IMAGE_WALK_UNROLL 2
+#	      define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; walk_pos[1] = walk_sec_pos[1]; walk_pos[2] = walk_sec_pos[2]; walk_pos[3] = walk_sec_pos[3]; }while(0)
+#	      include "images/image-walk.h"
+	    return;
+	  default:
+#	      define IMAGE_WALK_PREFIX(x) walk_##x
+#	      define IMAGE_WALK_INLINE
+#	      define IMAGE_WALK_DOUBLE
+#             define IMAGE_WALK_IMAGE dest
+#             define IMAGE_WALK_SEC_IMAGE src
+#	      define IMAGE_WALK_DO_STEP do{ for (uns i = 0; i < channels; i++) walk_pos[i] = walk_sec_pos[i]; }while(0)
+#             include "images/image-walk.h"
+	    return;
+	}
+    }
+  else if (dest->row_size != src->row_size || ((dest->flags | src->flags) & IMAGE_GAPS_PROTECTED))
+    {
+      byte *s = src->pixels;
+      byte *d = dest->pixels;
+      for (uns row = src->rows; row--; )
+        {
+          memcpy(d, s, src->row_pixels_size);
+          d += dest->row_size;
+          s += src->row_size;
+        }
+    }
+  else if (dest->pixels != src->pixels)
+    memcpy(dest->pixels, src->pixels, src->image_size);
+}
+
+static void
+image_conv_fill_alpha(struct image *dest)
+{
+  switch (dest->channels)
+    {
+      case 2:
+	if (dest->pixel_size == 2)
+	  {
+#           define IMAGE_WALK_PREFIX(x) walk_##x
+#           define IMAGE_WALK_INLINE
+#           define IMAGE_WALK_IMAGE dest
+#           define IMAGE_WALK_COL_STEP 2
+#           define IMAGE_WALK_UNROLL 4
+#           define IMAGE_WALK_DO_STEP do{ walk_pos[1] = 255; }while(0)
+#           include "images/image-walk.h"
+	    return;
+	  }
+	break;
+      case 4:
+	if (dest->pixel_size == 4)
+	  {
+#           define IMAGE_WALK_PREFIX(x) walk_##x
+#           define IMAGE_WALK_INLINE
+#           define IMAGE_WALK_IMAGE dest
+#           define IMAGE_WALK_COL_STEP 4
+#           define IMAGE_WALK_UNROLL 4
+#           define IMAGE_WALK_DO_STEP do{ walk_pos[3] = 255; }while(0)
+#           include "images/image-walk.h"
+	    return;
+	  }
+	break;
+    }
+  {
+#   define IMAGE_WALK_PREFIX(x) walk_##x
+#   define IMAGE_WALK_INLINE
+#   define IMAGE_WALK_IMAGE dest
+#   define IMAGE_WALK_UNROLL 4
+#   define IMAGE_WALK_DO_STEP do{ walk_pos[dest->channels - 1] = 255; }while(0)
+#   include "images/image-walk.h"
+  }
+}
+
+static void
+image_conv_copy_alpha(struct image *dest, struct image *src)
+{
+  if (dest->pixels != src->pixels || dest->channels != src->channels)
+    {
+#     define IMAGE_WALK_PREFIX(x) walk_##x
+#     define IMAGE_WALK_INLINE
+#     define IMAGE_WALK_DOUBLE
+#     define IMAGE_WALK_IMAGE dest
+#     define IMAGE_WALK_SEC_IMAGE src
+#     define IMAGE_WALK_UNROLL 4
+#     define IMAGE_WALK_DO_STEP do{ walk_pos[dest->channels - 1] = walk_sec_pos[src->channels - 1]; }while(0)
+#     include "images/image-walk.h"
     }
 }
 
-inline void
-color_put_rgb(byte *dest, struct color *color)
+static inline uns
+image_conv_alpha_func(uns value, uns alpha, uns acoef, uns bcoef)
 {
-  switch (color->color_space)
-    {
-      case COLOR_SPACE_GRAYSCALE:
-	dest[0] = dest[1] = dest[2] = color->c[0];
-	break;
-      case COLOR_SPACE_RGB:
-	dest[0] = color->c[0];
-	dest[1] = color->c[1];
-	dest[2] = color->c[2];
-	break;
-      default:
-	ASSERT(0);
-    }
+  return ((uns)(acoef + (int)alpha * (int)(value - bcoef)) * (0xffffffffU / 255 / 255)) >> 24;
 }
 
-void
-color_put_color_space(byte *dest, struct color *color, uns color_space)
+static int
+image_conv_apply_alpha_from(struct image_context *ctx, struct image *dest, struct image *src, struct image_conv_options *opt)
 {
-  switch (color_space)
+  if (!opt->background.color_space)
+    return 1;
+  byte background[IMAGE_MAX_CHANNELS];
+  if (unlikely(!color_put(ctx, &opt->background, background, dest->flags & IMAGE_COLOR_SPACE)))
+    return 0;
+  uns a[IMAGE_MAX_CHANNELS], b[IMAGE_MAX_CHANNELS];
+  for (uns i = 0; i < dest->channels; i++)
+    a[i] = 255 * (b[i] = background[i]);
+  switch (dest->channels)
     {
-      case COLOR_SPACE_GRAYSCALE:
-	color_put_grayscale(dest, color);
-	break;
-      case COLOR_SPACE_RGB:
-	color_put_rgb(dest, color);
-	break;
-      default:
-	ASSERT(0);
+      case 1:
+	{
+#         define IMAGE_WALK_PREFIX(x) walk_##x
+#         define IMAGE_WALK_INLINE
+#         define IMAGE_WALK_IMAGE dest
+#         define IMAGE_WALK_SEC_IMAGE src
+#         define IMAGE_WALK_DOUBLE
+#	  define IMAGE_WALK_UNROLL 2
+#         define IMAGE_WALK_DO_STEP do{ \
+              walk_pos[0] = image_conv_alpha_func(walk_pos[0], walk_sec_pos[src->channels - 1], a[0], b[0]); }while(0)
+#         include "images/image-walk.h"
+	}
+	return 1;
+      case 3:
+	{
+#         define IMAGE_WALK_PREFIX(x) walk_##x
+#         define IMAGE_WALK_INLINE
+#         define IMAGE_WALK_IMAGE dest
+#         define IMAGE_WALK_SEC_IMAGE src
+#         define IMAGE_WALK_DOUBLE
+#         define IMAGE_WALK_DO_STEP do{ \
+              walk_pos[0] = image_conv_alpha_func(walk_pos[0], walk_sec_pos[src->channels - 1], a[0], b[0]); \
+              walk_pos[1] = image_conv_alpha_func(walk_pos[1], walk_sec_pos[src->channels - 1], a[1], b[1]); \
+              walk_pos[2] = image_conv_alpha_func(walk_pos[2], walk_sec_pos[src->channels - 1], a[2], b[2]); }while(0)
+#         include "images/image-walk.h"
+	}
+	return 1;
     }
+  {
+#   define IMAGE_WALK_PREFIX(x) walk_##x
+#   define IMAGE_WALK_INLINE
+#   define IMAGE_WALK_IMAGE dest
+#   define IMAGE_WALK_SEC_IMAGE src
+#   define IMAGE_WALK_DOUBLE
+#   define IMAGE_WALK_DO_STEP do{ for (uns i = 0; i < dest->channels; i++) \
+        walk_pos[i] = image_conv_alpha_func(walk_pos[i], walk_sec_pos[src->channels - 1], a[i], b[i]); }while(0)
+#   include "images/image-walk.h"
+  }
+  return 1;
+}
+
+static int
+image_conv_apply_alpha_to(struct image_context *ctx, struct image *dest, struct image *src, struct image_conv_options *opt)
+{
+  if (!opt->background.color_space)
+    {
+      image_conv_copy(dest, src);
+      return 1;
+    }
+  byte background[IMAGE_MAX_CHANNELS];
+  if (unlikely(!color_put(ctx, &opt->background, background, dest->flags & IMAGE_COLOR_SPACE)))
+    return 0;
+  uns a[IMAGE_MAX_CHANNELS], b[IMAGE_MAX_CHANNELS];
+  for (uns i = 0; i < dest->channels; i++)
+    a[i] = 255 * (b[i] = background[i]);
+  switch (dest->channels)
+    {
+      case 1:
+	{
+#         define IMAGE_WALK_PREFIX(x) walk_##x
+#         define IMAGE_WALK_INLINE
+#         define IMAGE_WALK_IMAGE dest
+#         define IMAGE_WALK_SEC_IMAGE src
+#         define IMAGE_WALK_DOUBLE
+#	  define IMAGE_WALK_UNROLL 2
+#         define IMAGE_WALK_DO_STEP do{ \
+              walk_pos[0] = image_conv_alpha_func(walk_sec_pos[0], walk_sec_pos[src->channels - 1], a[0], b[0]); }while(0)
+#         include "images/image-walk.h"
+	}
+	return 1;
+      case 3:
+	{
+#         define IMAGE_WALK_PREFIX(x) walk_##x
+#         define IMAGE_WALK_INLINE
+#         define IMAGE_WALK_IMAGE dest
+#         define IMAGE_WALK_SEC_IMAGE src
+#         define IMAGE_WALK_DOUBLE
+#         define IMAGE_WALK_DO_STEP do{ \
+              walk_pos[0] = image_conv_alpha_func(walk_sec_pos[0], walk_sec_pos[src->channels - 1], a[0], b[0]); \
+              walk_pos[1] = image_conv_alpha_func(walk_sec_pos[1], walk_sec_pos[src->channels - 1], a[1], b[1]); \
+              walk_pos[2] = image_conv_alpha_func(walk_sec_pos[2], walk_sec_pos[src->channels - 1], a[2], b[2]); }while(0)
+#         include "images/image-walk.h"
+	}
+	return 1;
+    }
+  {
+#   define IMAGE_WALK_PREFIX(x) walk_##x
+#   define IMAGE_WALK_INLINE
+#   define IMAGE_WALK_IMAGE dest
+#   define IMAGE_WALK_SEC_IMAGE src
+#   define IMAGE_WALK_DOUBLE
+#   define IMAGE_WALK_DO_STEP do{ for (uns i = 0; i < dest->channels; i++) \
+        walk_pos[i] = image_conv_alpha_func(walk_sec_pos[i], walk_sec_pos[src->channels - 1], a[i], b[i]); }while(0)
+#   include "images/image-walk.h"
+  }
+  return 1;
+}
+
+int
+image_conv(struct image_context *ctx, struct image *dest, struct image *src, struct image_conv_options *opt)
+{
+  ASSERT(dest->cols == src->cols && dest->rows == src->rows);
+  if (!((dest->flags ^ src->flags) & IMAGE_COLOR_SPACE))
+    {
+      if (!(src->flags & IMAGE_ALPHA) || (dest->flags & IMAGE_ALPHA))
+	image_conv_copy(dest, src);
+      else if (unlikely(!image_conv_apply_alpha_to(ctx, dest, src, opt)))
+	return 0;
+    }
+  else
+    {
+      if (!(src->flags & IMAGE_ALPHA))
+        {
+	  if (unlikely(!image_conv_color_space(ctx, dest, src, opt)))
+	    goto error;
+	  if ((dest->flags & IMAGE_ALPHA) && (opt->flags & IMAGE_CONV_FILL_ALPHA))
+	    image_conv_fill_alpha(dest);
+	}
+      else
+        {
+	  if (dest->flags & IMAGE_ALPHA)
+	    {
+	      if (dest->channels <= src->channels)
+	        {
+	          if (unlikely(!image_conv_color_space(ctx, dest, src, opt)))
+	            goto error;
+		  if (opt->flags & IMAGE_CONV_COPY_ALPHA)
+		    image_conv_copy_alpha(dest, src);
+		  else if (opt->flags & IMAGE_CONV_FILL_ALPHA)
+		    image_conv_fill_alpha(dest);
+		}
+	      else
+	        {
+		  if (opt->flags & IMAGE_CONV_COPY_ALPHA)
+		    image_conv_copy_alpha(dest, src);
+		  else
+		    image_conv_fill_alpha(dest);
+	          if (unlikely(!image_conv_color_space(ctx, dest, src, opt)))
+	            goto error;
+		}
+	    }
+	  else
+	    {
+	      if (dest->channels <= src->channels)
+	        {
+	          if (unlikely(!image_conv_color_space(ctx, dest, src, opt)))
+	            goto error;
+		  if (unlikely(!image_conv_apply_alpha_from(ctx, dest, src, opt)))
+		    return 0;
+		}
+	      else
+	        {
+		  if (unlikely(!image_conv_apply_alpha_to(ctx, dest, src, opt)))
+		    return 0;
+	          if (unlikely(!image_conv_color_space(ctx, dest, dest, opt)))
+	            goto error;
+		}
+	    }
+	}
+    }
+  return 1;
+error:
+  IMAGE_ERROR(ctx, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Image conversion not supported for such pixel formats");
+  return 0;
 }
 
 /********************* EXACT CONVERSION ROUTINES **********************/
@@ -317,6 +944,36 @@ luv_to_xyz_exact(double xyz[3], double luv[3])
   xyz[2] = (9 * xyz[1] - 15 * var_v * xyz[1] - var_v * xyz[0]) / (3 * var_v);
 }
 
+/* RGB to CMYK - a very simple version, not too accureate  */
+void
+rgb_to_cmyk_exact(double cmyk[4], double rgb[3])
+{
+  cmyk[0] = 1 - rgb[0];
+  cmyk[1] = 1 - rgb[1];
+  cmyk[2] = 1 - rgb[2];
+  cmyk[3] = MIN(cmyk[0], cmyk[1]);
+  cmyk[3] = MIN(cmyk[3], cmyk[2]);
+  if (cmyk[3] > 0.9999)
+    {
+      cmyk[3] = 1;
+      cmyk[0] = cmyk[1] = cmyk[2] = 0;
+    }
+  else
+    {
+      double d = 1 / (1 - cmyk[3]);
+      for (uns i = 0; i < 3; i++)
+        cmyk[i] = d * (cmyk[i] - cmyk[3]);
+    }
+}
+
+/* CMYK to RGB */
+void
+cmyk_to_rgb_exact(double rgb[3], double cmyk[4])
+{
+  double d = 1 - cmyk[1];
+  for (uns i = 0; i < 3; i++)
+    rgb[i] = d * (1 - cmyk[i]);
+}
 
 /***************** OPTIMIZED SRGB -> LUV CONVERSION *********************/
 

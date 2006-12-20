@@ -15,4 +15,6 @@
 #define log log_msg
 #undef exception
 
+#ifdef CONFIG_LINUX
 float logf(float);
+#endif

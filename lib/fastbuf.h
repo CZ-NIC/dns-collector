@@ -88,6 +88,9 @@ struct fastbuf *bfdopen(int fd, uns buflen);
 struct fastbuf *bfdopen_shared(int fd, uns buflen);
 void bfilesync(struct fastbuf *b);
 
+#define TEMP_FILE_NAME_LEN 256
+void temp_file_name(byte *name);
+
 /* FastIO on in-memory streams */
 
 struct fastbuf *fbmem_create(unsigned blocksize);	/* Create stream and return its writing fastbuf */

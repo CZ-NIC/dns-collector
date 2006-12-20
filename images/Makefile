@@ -1,14 +1,23 @@
-# Testing dir... code will be moved somewhere else... maybe to trash :-)
+# Makefile for the Image Library (c) 2006 Pavel Charvat <pchar@ucw.cz>
 
 DIRS+=images
 
 PROGS+=$(o)/images/image-tool $(o)/images/color-tool
 CONFIGS+=images
-LIBIMAGES_MODS=math config context image scale color alpha io-main object
+LIBIMAGES_MODS=math config context image scale color io-main
+LIBIMAGES_INCLUDES=images.h error.h color.h math.h
+
+ifdef CONFIG_SHERLOCK
+LIBIMAGES_MODS+=object
+LIBIMAGES_DEPS=$(LIBSH)
+else
+LIBIMAGES_DEPS=$(LIBUCW)
+endif
 
 ifdef CONFIG_IMAGES_DUP
 PROGS+=$(o)/images/image-dup-test
 LIBIMAGES_MODS+=dup-init dup-cmp
+LIBIMAGES_INCLUDES+=duplicates.h
 endif
 ifdef CONFIG_IMAGES_SIM
 PROGS+=$(o)/images/image-sim-test
@@ -16,6 +25,7 @@ LIBIMAGES_MODS+=sig-cmp
 endif
 ifneq ($(CONFIG_IMAGES_DUP)$(CONFIG_IMAGES_SIM),)
 LIBIMAGES_MODS+=sig-dump sig-init sig-seg sig-txt
+LIBIMAGES_INCLUDES+=signature.h
 endif
 
 LIBIMAGES_LIBS=-lm -lpthread
@@ -51,27 +61,34 @@ endif
 $(o)/images/libimages.a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 $(o)/images/libimages.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 
-$(o)/images/image-tool: $(o)/images/image-tool.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/image-tool: $(o)/images/image-tool.o $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/image-tool: LIBS+=$(LIBIMAGES_LIBS)
 
-$(o)/images/color-tool: $(o)/images/color-tool.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/color-tool: $(o)/images/color-tool.o $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/color-tool: LIBS+=$(LIBIMAGES_LIBS)
 
-$(o)/images/image-dup-test: $(o)/images/image-dup-test.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/image-dup-test: $(o)/images/image-dup-test.o $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/image-dup-test: LIBS+=$(LIBIMAGES_LIBS)
 
-$(o)/images/image-sim-test: $(o)/images/image-sim-test.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/image-sim-test: $(o)/images/image-sim-test.o $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/image-sim-test: LIBS+=$(LIBIMAGES_LIBS)
 
 TESTS+=$(o)/images/image-test.test
-$(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/image-test: LIBS+=$(LIBIMAGES_LIBS)
 $(o)/images/image-test.test: $(o)/images/image-test
 
 TESTS+=$(o)/images/hilbert-test.test
-$(o)/images/hilbert-test: LIBS+=-lm $(LIBSH)
+$(o)/images/hilbert-test: $(LIBIMAGES_DEPS)
+$(o)/images/hilbert-test: LIBS+=-lm
 $(o)/images/hilbert-test.test: $(o)/images/hilbert-test
 
 TESTS+=$(o)/images/color.test
-$(o)/images/color-t: LIBS+=-lm
+$(o)/images/color-t: $(LIBIMAGES) $(LIBIMAGES_DEPS)
+$(o)/images/color-t: LIBS+=$(LIBIMAGES_LIBS) $(LIBIMAGES_DEPS)
 $(o)/images/color.test: $(o)/images/color-t
+
+INCLUDES+=$(o)/images/.include-stamp
+$(o)/images/.include-stamp: $(addprefix $(s)/images/,$(LIBIMAGES_INCLUDES))
+	$(s)/build/install-includes $(s)/images run/include/images $(?F)
+	touch $(o)/images/.include-stamp

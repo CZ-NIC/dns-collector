@@ -51,8 +51,8 @@ bfmm_map_window(struct fastbuf *f)
   struct fb_mmap *F = FB_MMAP(f);
   sh_off_t pos0 = f->pos & ~(sh_off_t)(PAGE_SIZE-1);
   int l = MIN((sh_off_t)mmap_window_size, F->file_extend - pos0);
-  uns ll = ALIGN(l, PAGE_SIZE);
-  uns oll = ALIGN(f->bufend - f->buffer, PAGE_SIZE);
+  uns ll = ALIGN_TO(l, PAGE_SIZE);
+  uns oll = ALIGN_TO(f->bufend - f->buffer, PAGE_SIZE);
   int prot = ((F->mode & O_ACCMODE) == O_RDONLY) ? PROT_READ : (PROT_READ | PROT_WRITE);
 
   DBG(" ... Mapping %x(%x)+%x(%x) len=%x extend=%x", (int)pos0, (int)f->pos, ll, l, (int)F->file_size, (int)F->file_extend);
@@ -109,7 +109,7 @@ bfmm_spout(struct fastbuf *f)
   f->pos = end;
   if (f->pos >= F->file_extend)
     {
-      F->file_extend = ALIGN(F->file_extend + mmap_extend_size, (sh_off_t)PAGE_SIZE);
+      F->file_extend = ALIGN_TO(F->file_extend + mmap_extend_size, (sh_off_t)PAGE_SIZE);
       if (sh_ftruncate(F->fd, F->file_extend))
 	die("ftruncate(%s): %m", f->name);
     }
@@ -137,7 +137,7 @@ bfmm_close(struct fastbuf *f)
   struct fb_mmap *F = FB_MMAP(f);
 
   if (f->buffer)
-    munmap(f->buffer, ALIGN(f->bufend-f->buffer, PAGE_SIZE));
+    munmap(f->buffer, ALIGN_TO(f->bufend-f->buffer, PAGE_SIZE));
   if (F->file_extend > F->file_size &&
       sh_ftruncate(F->fd, F->file_size))
     die("ftruncate(%s): %m", f->name);

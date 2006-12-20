@@ -52,7 +52,7 @@ libjpeg_read_error_exit(j_common_ptr cinfo)
   struct libjpeg_err *e = (struct libjpeg_err *)cinfo->err;
   byte buf[JMSG_LENGTH_MAX];
   e->pub.format_message(cinfo, buf);
-  IMAGE_ERROR(e->io->context, IMAGE_ERROR_READ_FAILED, "%s", buf);
+  IMAGE_ERROR(e->io->context, IMAGE_ERROR_READ_FAILED, "libjpeg: %s", buf);
   longjmp(e->setjmp_buf, 1);
 }
 
@@ -63,7 +63,7 @@ libjpeg_write_error_exit(j_common_ptr cinfo)
   struct libjpeg_err *e = (struct libjpeg_err *)cinfo->err;
   byte buf[JMSG_LENGTH_MAX];
   e->pub.format_message(cinfo, buf);
-  IMAGE_ERROR(e->io->context, IMAGE_ERROR_WRITE_FAILED, "%s", buf);
+  IMAGE_ERROR(e->io->context, IMAGE_ERROR_WRITE_FAILED, "libjpeg: %s", buf);
   longjmp(e->setjmp_buf, 1);
 }
 
@@ -75,15 +75,32 @@ libjpeg_emit_message(j_common_ptr cinfo UNUSED, int msg_level UNUSED)
   cinfo->err->format_message(cinfo, buf);
   DBG("libjpeg_emit_message(): [%d] %s", msg_level, buf);
 #endif
+#if 0
+  // Terminate on warning?
   if (unlikely(msg_level == -1))
-    longjmp(((struct libjpeg_err *)(cinfo)->err)->setjmp_buf, 1);
+    {
+      struct libjpeg_err *e = (struct libjpeg_err *)cinfo->err;
+      byte buf[JMSG_LENGTH_MAX];
+      cinfo->err->format_message(cinfo, buf);
+      IMAGE_ERROR(e->io->context, 0, "libjpeg: %s", buf);
+      longjmp(e->setjmp_buf, 1);
+    }
+#endif
 }
 
 static inline uns
 libjpeg_fastbuf_read_prepare(struct libjpeg_read_internals *i)
 {
+  DBG("libjpeg_fb_read_prepare()");
   byte *start;
   uns len = bdirect_read_prepare(i->fastbuf, &start);
+  DBG("readed %u bytes at %p", len, start);
+  if (!len)
+    {
+      // XXX: maybe only generate a warning and return EOI markers to recover from such errors (also in skip_input_data)
+      IMAGE_ERROR(i->err.io->context, IMAGE_ERROR_READ_FAILED, "Incomplete JPEG file");
+      longjmp(i->err.setjmp_buf, 1);
+    }
   i->fastbuf_pos = start + len;
   i->src.next_input_byte = start;
   i->src.bytes_in_buffer = len;
@@ -93,6 +110,7 @@ libjpeg_fastbuf_read_prepare(struct libjpeg_read_internals *i)
 static inline void
 libjpeg_fastbuf_read_commit(struct libjpeg_read_internals *i)
 {
+  DBG("libjpeg_fb_read_commit()");
   bdirect_read_commit(i->fastbuf, i->fastbuf_pos);
 }
 
@@ -116,7 +134,8 @@ libjpeg_fill_input_buffer(j_decompress_ptr cinfo)
   DBG("libjpeg_fill_input_buffer()");
   struct libjpeg_read_internals *i = (struct libjpeg_read_internals *)cinfo;
   libjpeg_fastbuf_read_commit(i);
-  return !!libjpeg_fastbuf_read_prepare(i);
+  libjpeg_fastbuf_read_prepare(i);
+  return 1;
 }
 
 static void
@@ -294,16 +313,38 @@ libjpeg_read_header(struct image_io *io)
     {
       case JCS_GRAYSCALE:
         io->flags = COLOR_SPACE_GRAYSCALE;
-	io->number_of_colors = 1 << 8;
         break;
+      case JCS_RGB:
+	io->flags = COLOR_SPACE_RGB;
+	break;
+      case JCS_YCbCr:
+	io->flags = COLOR_SPACE_YCBCR;
+	break;
+      case JCS_CMYK:
+	io->flags = COLOR_SPACE_CMYK;
+	break;
+      case JCS_YCCK:
+	io->flags = COLOR_SPACE_YCCK;
+	break;
       default:
-        io->flags = COLOR_SPACE_RGB;
-	io->number_of_colors = 1 << 24;
-        break;
+	if (unlikely(i->cinfo.num_components < 1 || i->cinfo.num_components > 4))
+	  {
+	    jpeg_destroy_decompress(&i->cinfo);
+	    IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Invalid color space.");
+	    return 0;
+	  }
+	io->flags = COLOR_SPACE_UNKNOWN + i->cinfo.num_components;
+	break;
+    }
+  if (unlikely(i->cinfo.num_components != (int)color_space_channels[io->flags]))
+    {
+      jpeg_destroy_decompress(&i->cinfo);
+      IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Invalid number of color channels.");
+      return 0;
     }
   io->cols = i->cinfo.image_width;
   io->rows = i->cinfo.image_height;
-
+  io->number_of_colors = (i->cinfo.num_components < 4) ? (1U << (i->cinfo.num_components * 8)) : 0xffffffff;
   io->read_cancel = libjpeg_read_cancel;
   return 1;
 }
@@ -314,20 +355,40 @@ libjpeg_read_data(struct image_io *io)
   DBG("libjpeg_read_data()");
 
   struct libjpeg_read_internals *i = io->read_data;
+  uns read_flags = io->flags;
 
   /* Select color space */
-  switch (io->flags & IMAGE_COLOR_SPACE)
+  switch (read_flags & IMAGE_COLOR_SPACE)
     {
       case COLOR_SPACE_GRAYSCALE:
 	i->cinfo.out_color_space = JCS_GRAYSCALE;
 	break;
-      case COLOR_SPACE_RGB:
-	i->cinfo.out_color_space = JCS_RGB;
+      case COLOR_SPACE_YCBCR:
+	i->cinfo.out_color_space = JCS_YCbCr;
+	break;
+      case COLOR_SPACE_CMYK:
+	i->cinfo.out_color_space = JCS_CMYK;
+	break;
+      case COLOR_SPACE_YCCK:
+	i->cinfo.out_color_space = JCS_YCCK;
 	break;
       default:
-	jpeg_destroy_decompress(&i->cinfo);
-	IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Unsupported color space.");
-	return 0;
+	switch (i->cinfo.jpeg_color_space)
+	  {
+	    case JCS_CMYK:
+	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_CMYK; 
+	      i->cinfo.out_color_space = JCS_CMYK;
+	      break;
+	    case JCS_YCCK:
+	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_YCCK; 
+	      i->cinfo.out_color_space = JCS_YCCK;
+	      break;
+	    default:
+	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_RGB; 
+	      i->cinfo.out_color_space = JCS_RGB;
+	      break;
+	  }
+	break;
     }
 
   /* Prepare the image  */
@@ -352,7 +413,7 @@ libjpeg_read_data(struct image_io *io)
     }
   jpeg_calc_output_dimensions(&i->cinfo);
   DBG("Output dimensions %ux%u", (uns)i->cinfo.output_width, (uns)i->cinfo.output_height);
-  if (unlikely(!image_io_read_data_prepare(&rdi, io, i->cinfo.output_width, i->cinfo.output_height, io->flags)))
+  if (unlikely(!image_io_read_data_prepare(&rdi, io, i->cinfo.output_width, i->cinfo.output_height, read_flags)))
     {
       jpeg_destroy_decompress(&i->cinfo);
       return 0;
@@ -370,51 +431,53 @@ libjpeg_read_data(struct image_io *io)
   /* Decompress the image */
   struct image *img = rdi.image;
   jpeg_start_decompress(&i->cinfo);
-  switch (img->pixel_size)
+  if ((int)img->pixel_size == i->cinfo.output_components)
     {
-      /* grayscale or RGB */
-      case 1:
-      case 3:
-	{
-          byte *pixels = img->pixels;
-	  for (uns r = img->rows; r--; )
-            {
-              jpeg_read_scanlines(&i->cinfo, (JSAMPLE **)&pixels, 1);
-              pixels += img->row_size;
-            }
-	}
-	break;
-      /* grayscale with alpha */
-      case 2:
-	{
-	  byte buf[img->cols], *src;
-#	  define IMAGE_WALK_PREFIX(x) walk_##x
-#         define IMAGE_WALK_INLINE
-#	  define IMAGE_WALK_IMAGE img
-#         define IMAGE_WALK_UNROLL 4
-#         define IMAGE_WALK_COL_STEP 2
-#         define IMAGE_WALK_DO_ROW_START do{ src = buf; jpeg_read_scanlines(&i->cinfo, (JSAMPLE **)&src, 1); }while(0)
-#         define IMAGE_WALK_DO_STEP do{ walk_pos[0] = *src++; walk_pos[1] = 255; }while(0)
-#         include "images/image-walk.h"
-	}
-	break;
-      /* RGBA or aligned RGB */
-      case 4:
-	{
-	  byte buf[img->cols * 3], *src;
-#	  define IMAGE_WALK_PREFIX(x) walk_##x
-#         define IMAGE_WALK_INLINE
-#	  define IMAGE_WALK_IMAGE img
-#         define IMAGE_WALK_UNROLL 4
-#         define IMAGE_WALK_COL_STEP 4
-#         define IMAGE_WALK_DO_ROW_START do{ src = buf; jpeg_read_scanlines(&i->cinfo, (JSAMPLE **)&src, 1); }while(0)
-#         define IMAGE_WALK_DO_STEP do{ *(u32 *)walk_pos = *(u32 *)src; walk_pos[3] = 255; src += 3; }while(0)
-#         include "images/image-walk.h"
-	}
-	break;
-      default:
-	ASSERT(0);
+      byte *pixels = img->pixels;
+      for (uns r = img->rows; r--; )
+        {
+          jpeg_read_scanlines(&i->cinfo, (JSAMPLE **)&pixels, 1);
+          pixels += img->row_size;
+        }
     }
+  else
+    {
+      switch (img->pixel_size)
+        {
+	  case 2: /* Grayscale -> Grayscale+Alpha */
+	    {
+	      ASSERT(i->cinfo.output_components == 1);
+	      byte buf[img->cols], *src;
+#	      define IMAGE_WALK_PREFIX(x) walk_##x
+#             define IMAGE_WALK_INLINE
+#	      define IMAGE_WALK_IMAGE img
+#             define IMAGE_WALK_UNROLL 4
+#             define IMAGE_WALK_COL_STEP 2
+#             define IMAGE_WALK_DO_ROW_START do{ src = buf; jpeg_read_scanlines(&i->cinfo, (JSAMPLE **)&src, 1); }while(0)
+#             define IMAGE_WALK_DO_STEP do{ walk_pos[0] = *src++; walk_pos[1] = 255; }while(0)
+#             include "images/image-walk.h"
+	    }
+	    break;
+	  case 4: /* * -> *+Alpha or aligned * */
+	    {
+	      ASSERT(i->cinfo.output_components == 3);
+	      byte buf[img->cols * 3], *src;
+#	      define IMAGE_WALK_PREFIX(x) walk_##x
+#             define IMAGE_WALK_INLINE
+#	      define IMAGE_WALK_IMAGE img
+#             define IMAGE_WALK_UNROLL 4
+#             define IMAGE_WALK_COL_STEP 4
+#             define IMAGE_WALK_DO_ROW_START do{ src = buf; jpeg_read_scanlines(&i->cinfo, (JSAMPLE **)&src, 1); }while(0)
+#             define IMAGE_WALK_DO_STEP do{ *(u32 *)walk_pos = *(u32 *)src; walk_pos[3] = 255; src += 3; }while(0)
+#             include "images/image-walk.h"
+	    }
+	    break;
+	  default:
+	    ASSERT(0);
+	}
+
+    }
+
   ASSERT(i->cinfo.output_scanline == i->cinfo.output_height);
 
   /* Destroy libjpeg object */
@@ -459,19 +522,28 @@ libjpeg_write(struct image_io *io)
   switch (img->flags & IMAGE_COLOR_SPACE)
     {
       case COLOR_SPACE_GRAYSCALE:
-	i.cinfo.input_components = 1;
 	i.cinfo.in_color_space = JCS_GRAYSCALE;
 	break;
       case COLOR_SPACE_RGB:
-	i.cinfo.input_components = 3;
 	i.cinfo.in_color_space = JCS_RGB;
+	break;
+      case COLOR_SPACE_YCBCR:
+	i.cinfo.in_color_space = JCS_YCbCr;
+	break;
+      case COLOR_SPACE_CMYK:
+	i.cinfo.in_color_space = JCS_CMYK;
+	break;
+      case COLOR_SPACE_YCCK:
+	i.cinfo.in_color_space = JCS_YCCK;
 	break;
       default:
 	jpeg_destroy_compress(&i.cinfo);
 	IMAGE_ERROR(io->context, IMAGE_ERROR_INVALID_PIXEL_FORMAT, "Unsupported pixel format.");
 	return 0;
     }
+  i.cinfo.input_components = color_space_channels[img->flags & IMAGE_COLOR_SPACE];
   jpeg_set_defaults(&i.cinfo);
+  jpeg_set_colorspace(&i.cinfo, i.cinfo.in_color_space);
   if (io->jpeg_quality)
     jpeg_set_quality(&i.cinfo, MIN(io->jpeg_quality, 100), 1);
   if (io->exif_size)
@@ -490,50 +562,50 @@ libjpeg_write(struct image_io *io)
       DBG("Writing EXIF");
       jpeg_write_marker(&i.cinfo, JPEG_APP0 + 1, io->exif_data, io->exif_size);
     }
-  switch (img->pixel_size)
+  if ((int)img->pixel_size == i.cinfo.input_components)
     {
-      /* grayscale or RGB */
-      case 1:
-      case 3:
-	{
-          byte *pixels = img->pixels;
-	  for (uns r = img->rows; r--; )
+      byte *pixels = img->pixels;
+      for (uns r = img->rows; r--; )
+        {
+          jpeg_write_scanlines(&i.cinfo, (JSAMPLE **)&pixels, 1);
+          pixels += img->row_size;
+        }
+    }
+  else
+    {
+      switch (img->pixel_size)
+        {
+	  case 2: /* Grayscale+Alpha -> Grayscale */
 	    {
-              jpeg_write_scanlines(&i.cinfo, (JSAMPLE **)&pixels, 1);
-              pixels += img->row_size;
-            }
+	      ASSERT(i.cinfo.input_components == 1);
+	      byte buf[img->cols], *dest = buf;
+#	      define IMAGE_WALK_PREFIX(x) walk_##x
+#             define IMAGE_WALK_INLINE
+#	      define IMAGE_WALK_IMAGE img
+#             define IMAGE_WALK_UNROLL 4
+#             define IMAGE_WALK_COL_STEP 2
+#             define IMAGE_WALK_DO_ROW_END do{ dest = buf; jpeg_write_scanlines(&i.cinfo, (JSAMPLE **)&dest, 1); }while(0)
+#             define IMAGE_WALK_DO_STEP do{ *dest++ = walk_pos[0]; }while(0)
+#             include "images/image-walk.h"
+	      break;
+	    }
+	  case 4: /* *+Alpha or aligned * -> * */
+	    {
+	      ASSERT(i.cinfo.input_components == 3);
+	      byte buf[img->cols * 3], *dest = buf;
+#	      define IMAGE_WALK_PREFIX(x) walk_##x
+#             define IMAGE_WALK_INLINE
+#	      define IMAGE_WALK_IMAGE img
+#             define IMAGE_WALK_UNROLL 4
+#             define IMAGE_WALK_COL_STEP 4
+#             define IMAGE_WALK_DO_ROW_END do{ dest = buf; jpeg_write_scanlines(&i.cinfo, (JSAMPLE **)&dest, 1); }while(0)
+#             define IMAGE_WALK_DO_STEP do{ *dest++ = walk_pos[0]; *dest++ = walk_pos[1]; *dest++ = walk_pos[2]; }while(0)
+#             include "images/image-walk.h"
+	      break;
+	    }
+	  default:
+	    ASSERT(0);
 	}
-	break;
-      /* grayscale with alpha (ignore alpha) */
-      case 2:
-	{
-	  byte buf[img->cols], *dest = buf;
-#	  define IMAGE_WALK_PREFIX(x) walk_##x
-#         define IMAGE_WALK_INLINE
-#	  define IMAGE_WALK_IMAGE img
-#         define IMAGE_WALK_UNROLL 4
-#         define IMAGE_WALK_COL_STEP 2
-#         define IMAGE_WALK_DO_ROW_END do{ dest = buf; jpeg_write_scanlines(&i.cinfo, (JSAMPLE **)&dest, 1); }while(0)
-#         define IMAGE_WALK_DO_STEP do{ *dest++ = walk_pos[0]; }while(0)
-#         include "images/image-walk.h"
-	}
-	break;
-      /* RGBA (ignore alpha) or aligned RGB */
-      case 4:
-	{
-	  byte buf[img->cols * 3], *dest = buf;
-#	  define IMAGE_WALK_PREFIX(x) walk_##x
-#         define IMAGE_WALK_INLINE
-#	  define IMAGE_WALK_IMAGE img
-#         define IMAGE_WALK_UNROLL 4
-#         define IMAGE_WALK_COL_STEP 4
-#         define IMAGE_WALK_DO_ROW_END do{ dest = buf; jpeg_write_scanlines(&i.cinfo, (JSAMPLE **)&dest, 1); }while(0)
-#         define IMAGE_WALK_DO_STEP do{ *dest++ = walk_pos[0]; *dest++ = walk_pos[1]; *dest++ = walk_pos[2]; }while(0)
-#         include "images/image-walk.h"
-	}
-	break;
-      default:
-	ASSERT(0);
     }
   ASSERT(i.cinfo.next_scanline == i.cinfo.image_height);
   jpeg_finish_compress(&i.cinfo);

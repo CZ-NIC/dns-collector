@@ -14,6 +14,7 @@
 #include "images/images.h"
 #include "images/error.h"
 #include "images/io-main.h"
+#include "images/color.h"
 
 #include <string.h>
 
@@ -341,20 +342,18 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
 	  rdi->image = img;
 	}
 
-      /* Merge with background */
-      if ((io->flags ^ rdi->image->flags) & IMAGE_ALPHA)
+      /* Convert pixel format */
+      if (io->flags != rdi->image->flags)
         {
-	  DBG("Applying background");
-	  uns flags = rdi->image->flags & ~IMAGE_ALPHA;
-	  if (!(rdi->need_transformations = (flags ^ io->flags) & (IMAGE_NEW_FLAGS & ~IMAGE_PIXELS_ALIGNED)))
-	    flags = io->flags;
-	  struct image *img = image_new(io->context, io->cols, io->rows, flags, rdi->need_transformations ? NULL : io->pool);
+	  struct image *img = image_new(io->context, io->cols, io->rows, io->flags, io->pool);
 	  if (unlikely(!img))
 	    {
 	      image_destroy(rdi->image);
 	      return 0;
 	    }
-          if (unlikely(!image_apply_background(io->context, img, rdi->image, &io->background_color)))
+	  struct image_conv_options opt = image_conv_defaults;
+	  opt.background = io->background_color;
+          if (unlikely(!image_conv(io->context, img, rdi->image, &opt)))
             {
               image_destroy(rdi->image);
 	      image_destroy(img);
@@ -363,10 +362,6 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
 	  image_destroy(rdi->image);
 	  rdi->image = img;
 	}
-
-      // FIXME: support for various color spaces
-
-      ASSERT(!rdi->need_transformations);
     }
 
   /* Success */
