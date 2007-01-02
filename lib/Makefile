@@ -8,7 +8,7 @@ endif
 
 LIBUCW_MODS= \
 	threads \
-	alloc alloc_str realloc mempool mempool-str mempool-fmt \
+	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt \
 	mmap pagecache partmap hashfunc \
 	lists slists simple-lists sorter bitsig \
 	log log-file proctitle \
