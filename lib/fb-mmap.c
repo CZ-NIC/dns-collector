@@ -16,10 +16,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <sys/user.h>
 
-static uns mmap_window_size = 16*PAGE_SIZE;
-static uns mmap_extend_size = 4*PAGE_SIZE;
+static uns mmap_window_size = 16*CPU_PAGE_SIZE;
+static uns mmap_extend_size = 4*CPU_PAGE_SIZE;
 
 static struct cf_section fbmm_config = {
   CF_ITEMS {
@@ -49,10 +48,10 @@ static void
 bfmm_map_window(struct fastbuf *f)
 {
   struct fb_mmap *F = FB_MMAP(f);
-  sh_off_t pos0 = f->pos & ~(sh_off_t)(PAGE_SIZE-1);
+  sh_off_t pos0 = f->pos & ~(sh_off_t)(CPU_PAGE_SIZE-1);
   int l = MIN((sh_off_t)mmap_window_size, F->file_extend - pos0);
-  uns ll = ALIGN_TO(l, PAGE_SIZE);
-  uns oll = ALIGN_TO(f->bufend - f->buffer, PAGE_SIZE);
+  uns ll = ALIGN_TO(l, CPU_PAGE_SIZE);
+  uns oll = ALIGN_TO(f->bufend - f->buffer, CPU_PAGE_SIZE);
   int prot = ((F->mode & O_ACCMODE) == O_RDONLY) ? PROT_READ : (PROT_READ | PROT_WRITE);
 
   DBG(" ... Mapping %x(%x)+%x(%x) len=%x extend=%x", (int)pos0, (int)f->pos, ll, l, (int)F->file_size, (int)F->file_extend);
@@ -68,7 +67,7 @@ bfmm_map_window(struct fastbuf *f)
   if (f->buffer == (byte *) MAP_FAILED)
     die("mmap(%s): %m", f->name);
 #ifdef MADV_SEQUENTIAL
-  if (ll > PAGE_SIZE)
+  if (ll > CPU_PAGE_SIZE)
     madvise(f->buffer, ll, MADV_SEQUENTIAL);
 #endif
   f->bufend = f->buffer + l;
@@ -109,7 +108,7 @@ bfmm_spout(struct fastbuf *f)
   f->pos = end;
   if (f->pos >= F->file_extend)
     {
-      F->file_extend = ALIGN_TO(F->file_extend + mmap_extend_size, (sh_off_t)PAGE_SIZE);
+      F->file_extend = ALIGN_TO(F->file_extend + mmap_extend_size, (sh_off_t)CPU_PAGE_SIZE);
       if (sh_ftruncate(F->fd, F->file_extend))
 	die("ftruncate(%s): %m", f->name);
     }
@@ -137,7 +136,7 @@ bfmm_close(struct fastbuf *f)
   struct fb_mmap *F = FB_MMAP(f);
 
   if (f->buffer)
-    munmap(f->buffer, ALIGN_TO(f->bufend-f->buffer, PAGE_SIZE));
+    munmap(f->buffer, ALIGN_TO(f->bufend-f->buffer, CPU_PAGE_SIZE));
   if (F->file_extend > F->file_size &&
       sh_ftruncate(F->fd, F->file_size))
     die("ftruncate(%s): %m", f->name);

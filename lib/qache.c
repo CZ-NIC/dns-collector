@@ -15,7 +15,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <sys/user.h>
 
 /*
  *  The cache lives in a mmapped file of the following format:
@@ -81,9 +80,9 @@ qache_msync(struct qache *q UNUSED, uns start UNUSED, uns len UNUSED)
 {
 #ifndef CONFIG_LINUX
   /* We don't need msyncing on Linux, since the mappings are guaranteed to be coherent */
-  len += (start % PAGE_SIZE);
-  start -= start % PAGE_SIZE;
-  len = ALIGN_TO(len, PAGE_SIZE);
+  len += (start % CPU_PAGE_SIZE);
+  start -= start % CPU_PAGE_SIZE;
+  len = ALIGN_TO(len, CPU_PAGE_SIZE);
   if (msync(q->mmap_data + start, len, MS_ASYNC | MS_INVALIDATE) < 0)
     log(L_ERROR, "Cache %s: msync failed: %m", q->file_name);
 #endif
