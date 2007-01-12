@@ -18,7 +18,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <sys/user.h>
 
 #ifdef CONFIG_PARTMAP_IS_MMAP
 #define PARTMAP_WINDOW ~(size_t)0
@@ -68,10 +67,10 @@ partmap_load(struct partmap *p, sh_off_t start, uns size)
   if (p->start_map)
     munmap(p->start_map, p->end_off - p->start_off);
   sh_off_t end = start + size;
-  sh_off_t win_start = start/PAGE_SIZE * PAGE_SIZE;
+  sh_off_t win_start = start/CPU_PAGE_SIZE * CPU_PAGE_SIZE;
   size_t win_len = PARTMAP_WINDOW;
   if ((sh_off_t) (win_start+win_len) > p->file_size)
-    win_len = ALIGN_TO(p->file_size - win_start, PAGE_SIZE);
+    win_len = ALIGN_TO(p->file_size - win_start, CPU_PAGE_SIZE);
   if ((sh_off_t) (win_start+win_len) < end)
     die("partmap_map: Window is too small for mapping %d bytes", size);
   p->start_map = sh_mmap(NULL, win_len, p->writeable ? (PROT_READ | PROT_WRITE) : PROT_READ, MAP_SHARED, p->fd, win_start);
