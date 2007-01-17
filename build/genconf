@@ -15,6 +15,9 @@ while (<CF>) {
 }
 close CF;
 
+my $opt_regex = join("|", keys %options);
+sub eval_expr { $_ = "@_"; s/\b($opt_regex)\b/ 1 /g if $opt_regex; s/\bCONFIG_\w+\b/ 0 /g; return eval $_; }
+
 open IN, $ARGV[0] or die "Unable to open $ARGV[0]";
 open OUT, ">$ARGV[1]" or die "Unable to create $ARGV[1]";
 my @ifs = ();	# stack of conditions, 1=satisfied, -1=unsatisfied, 0=shadowed
@@ -24,12 +27,18 @@ while (<IN>) {
 		push @ifs, (@ifs && $ifs[$#ifs] <= 0) ? 0 : (defined $options{$1}) ? 1 : -1;
 	} elsif (/^#ifndef\s+(\w+)/) {
 		push @ifs, (@ifs && $ifs[$#ifs] <= 0) ? 0 : (defined $options{$1}) ? -1 : 1;
+	} elsif (/^#if\s(.*)$/) {
+		push @ifs, (@ifs && $ifs[$#ifs] <= 0) ? 0 : (eval_expr $1) ? 1 : -1;
 	} elsif (/^#endif/) {
 		defined pop @ifs || die "Improper nesting of conditionals";
 	} elsif (/^#else/) {
 		my $x = pop @ifs;
 		defined $x || die "Improper nesting of conditionals";
-		push @ifs, -$x;
+		push @ifs, $x >= 0 ? 0 : 1;
+	} elsif (/^#elsif\s(.*)$/) {
+		my $x = pop @ifs;
+		defined $x || die "Improper nesting of conditionals";
+		push @ifs, $x >= 0 ? 0 : (eval_expr $1) ? 1 : -1;
 	} else {
 		@ifs && $ifs[$#ifs] <= 0 && next;
 		if (/^$/) {
