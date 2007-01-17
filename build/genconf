@@ -46,6 +46,9 @@ while (<IN>) {
 			$empty = 1;
 		} else { $empty = 0; }
 		if (/^#pipe\s+(.+)/) {
+			my $cmd = $1;
+			my $val = `$cmd`;
+			die "Piped command '$cmd' failed" if $?;
 			print OUT `$1`;
 		} else {
 			print OUT;
