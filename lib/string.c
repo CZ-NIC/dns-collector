@@ -2,6 +2,7 @@
  *	UCW Library -- String Routines
  *
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2007 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -71,4 +72,19 @@ str_unesc(byte *d, byte *s)
     }
   *d = 0;
   return d;
+}
+
+byte *
+str_format_flags(byte *dest, const byte *fmt, uns flags)
+{
+  byte *start = dest;
+  for (uns i=0; fmt[i]; i++)
+    {
+      if (flags & (1 << i))
+	*dest++ = fmt[i];
+      else
+	*dest++ = '-';
+    }
+  *dest = 0;
+  return start;
 }

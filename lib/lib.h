@@ -268,6 +268,7 @@ sh_sighandler_t set_signal_handler(int signum, sh_sighandler_t new);
 /* string.c */
 
 byte *str_unesc(byte *dest, byte *src);
+byte *str_format_flags(byte *dest, const byte *fmt, uns flags);
 
 /* bigalloc.c */
 
