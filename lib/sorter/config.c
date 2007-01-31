@@ -1,5 +1,5 @@
 /*
- *	UCW Library -- Universal Sorter -- Configuration
+ *	UCW Library -- Universal Sorter: Configuration
  *
  *	(c) 2007 Martin Mares <mj@ucw.cz>
  *

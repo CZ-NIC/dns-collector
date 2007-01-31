@@ -49,10 +49,10 @@
  *
  *  Hashing (optional, but it can speed sorting up):
  *
- *  SORT_HASH_FN(key)	returns a monotone hash of a given key. Monotone hash is a function f
- *			such that f(x) < f(y) implies x < y and which is approximately uniformly
- *			distributed.
- *  SORT_HASH_BITS	how many bits do the hashes have.
+ *  SORT_HASH_BITS	signals that a monotone hashing function returning a given number of
+ *			bits is available. Monotone hash is a function f such that f(x) < f(y)
+ *			implies x < y and which is approximately uniformly distributed.
+ *  uns PREFIX_hash(SORT_KEY *a, SORT_KEY *b)
  *
  *  Unification:
  *
@@ -81,39 +81,171 @@
  *  SORT_OUTPUT_FB	temporary fastbuf stream
  *  SORT_OUTPUT_THIS_FB	a given fastbuf stream which can already contain a header
  *
+ *  Other switches:
+ *
+ *  SORT_UNIQUE		all items have distinct keys (checked in debug mode)
+ *
  *  FIXME: Maybe implement these:
- *  ??? SORT_UNIQUE		all items have distinct keys (checked in debug mode)
  *  ??? SORT_DELETE_INPUT	a C expression, if true, the input files are
  *			deleted as soon as possible
  *  ??? SORT_ALIGNED
  *
  *  The function generated:
  *
- *  <outfb> PREFIX_SORT(<in>, <out>, <range>), where:
- *			<in> = input file name/fastbuf
- *			<out> = output file name/fastbuf
+ *  <outfb> PREFIX_SORT(<in>, <out> [,<range>]), where:
+ *			<in> = input file name/fastbuf or NULL
+ *			<out> = output file name/fastbuf or NULL
  *			<range> = maximum integer value for the SORT_INT mode
  *			<outfb> = output fastbuf (in SORT_OUTPUT_FB mode)
- *			(any parameter can be missing if it is not applicable).
- *
- *  void PREFIX_merge_data(struct fastbuf *src1, *src2, *dest, SORT_KEY *k1, *k2)
- *			[used only in case SORT_UNIFY is defined]
- *			write just fetched key k to dest and merge data from
- *			two records with the same key (k1 and k2 are key occurences
- *			in the corresponding streams).
- *  SORT_KEY * PREFIX_merge_items(SORT_KEY *a, SORT_KEY *b)
- *			[used only with SORT_PRESORT && SORT_UNIFY]
- *			merge two items with the same key, returns pointer
- *			to at most one of the items, the rest will be removed
- *			from the list of items, but not deallocated, so
- *			the remaining item can freely reference data of the
- *			other one.
  *
  *  After including this file, all parameter macros are automatically
  *  undef'd.
  */
 
+#include "lib/sorter/common.h"
+#include "lib/fastbuf.h"
+
+#include <fcntl.h>
+
 #define P(x) SORT_PREFIX(x)
 
+#ifdef SORT_KEY_REGULAR
+typedef SORT_KEY_REGULAR P(key);
+static inline int P(read_key) (struct fastbuf *f, P(key) *k)
+{
+  return breadb(f, k, sizeof(P(key)));
+}
+static inline void P(write_key) (struct fastbuf *f, P(key) *k)
+{
+  bwrite(f, k, sizeof(P(key)));
+}
+#elif defined(SORT_KEY)
+typedef SORT_KEY P(key);
+#else
+#error Missing definition of sorting key.
+#endif
+
+#ifdef SORT_INT
+static inline int P(compare) (P(key) *x, P(key) *y)
+{
+  if (SORT_INT(*x) < SORT_INT(*y))
+    return -1;
+  if (SORT_INT(*x) > SORT_INT(*y))
+    return 1;
+  return 0;
+}
+
+#ifndef SORT_HASH_BITS
+static inline int P(hash) (P(key) *x)
+{
+  return SORT_INT((*x));
+}
+#endif
+#endif
+
+#ifdef SORT_MERGE
+#define LESS <
+#else
+#define LESS <=
+#endif
+#define SWAP(x,y,z) do { z=x; x=y; y=z; } while(0)
+
+#if defined(SORT_UNIQUE) && defined(DEBUG_ASSERTS)
+#define SORT_ASSERT_UNIQUE
+#endif
+
+static inline void P(copy_data)(P(key) *key, struct fastbuf *in, struct fastbuf *out)
+{
+  bwrite(out, key, sizeof(P(key)));
+#ifdef SORT_DATA_SIZE
+  bbcopy(in, out, SORT_DATA_SIZE(*key));
+#else
+  (void) in;
+#endif
+}
+
+#include "lib/sorter/s-internal.h"
+#include "lib/sorter/s-twoway.h"
+
+static struct fastbuf *P(sort)(
+#ifdef SORT_INPUT_FILE
+			       byte *in,
+#else
+			       struct fastbuf *in,
+#endif
+#ifdef SORT_OUTPUT_FILE
+			       byte *out
+#else
+			       struct fastbuf *out
+#endif
+#ifdef SORT_INT
+			       , uns int_range
+#endif
+			       )
+{
+  struct sort_context ctx;
+  bzero(&ctx, sizeof(ctx));
+
+#ifdef SORT_INPUT_FILE
+  ctx.in_fb = bopen(in, O_RDONLY, sorter_stream_bufsize);
+#elif defined(SORT_INPUT_FB)
+  ctx.in_fb = in;
+#elif defined(SORT_INPUT_PRESORT)
+  ASSERT(!in);
+  ctx.custom_presort = P(presorter);
+#else
+#error No input given.
+#endif
+
+#ifdef SORT_OUTPUT_FB
+  ASSERT(!out);
+#elif defined(SORT_OUTPUT_THIS_FB)
+  ctx.out_fb = out;
+#elif defined(SORT_OUTPUT_FILE)
+  /* Just assume fastbuf output and rename the fastbuf later */
+#else
+#error No output given.
+#endif
+
+#ifdef SORT_HASH_BITS
+  ctx.hash_bits = SORT_HASH_BITS;
+#elif defined(SORT_INT)
+  ctx.hash_bits = 0;
+  while (ctx.hash_bits < 32 && (int_range >> ctx.hash_bits))
+    ctx.hash_bits++;
+#endif
+
+  ctx.internal_sort = P(internal);
+  ctx.twoway_merge = P(twoway_merge);
+
+  sorter_run(&ctx);
+
+#ifdef SORT_OUTPUT_FILE
+  if (rename(ctx.out_fb->name, out) < 0)
+    die("Cannot rename %s to %s: %m", ctx.out_fb->name, out);
+  bconfig(ctx.out_fb, BCONFIG_IS_TEMP_FILE, 0);
+  bclose(ctx.out_fb);
+  ctx.out_fb = NULL;
+#endif
+  return ctx.out_fb;
+}
+
+#undef SORT_KEY
+#undef SORT_KEY_REGULAR
+#undef SORT_KEY_SIZE
+#undef SORT_DATA_SIZE
+#undef SORT_INT
+#undef SORT_HASH_BITS
+#undef SORT_MERGE
+#undef SORT_INPUT_FILE
+#undef SORT_INPUT_FB
+#undef SORT_INPUT_PRESORT
+#undef SORT_OUTPUT_FILE
+#undef SORT_OUTPUT_FB
+#undef SORT_OUTPUT_THIS_FB
+#undef SORT_UNIQUE
+#undef SORT_ASSERT_UNIQUE
+#undef SWAP
+#undef LESS
 #undef P
 /* FIXME: Check that we undef everything we should. */
