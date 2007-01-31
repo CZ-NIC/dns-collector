@@ -1,6 +1,7 @@
-# Makefile for the UCW Library (c) 1997--2006 Martin Mares <mj@ucw.cz>
+# Makefile for the UCW Library (c) 1997--2007 Martin Mares <mj@ucw.cz>
 
 DIRS+=lib
+LIBUCW=$(o)/lib/libucw.$(LS)
 
 ifdef CONFIG_UCW_DBTOOL
 PROGS+=$(o)/lib/db-tool
@@ -66,7 +67,8 @@ ifdef CONFIG_OWN_REGEX
 include $(s)/lib/regex/Makefile
 endif
 
-LIBUCW=$(o)/lib/libucw.$(LS)
+include $(s)/lib/sorter/Makefile
+
 LIBUCW_MOD_PATHS=$(addprefix $(o)/lib/,$(LIBUCW_MODS))
 
 $(o)/lib/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
