@@ -19,6 +19,15 @@ typedef struct {
 #define ASORT_EXTRA_ARGS , P(internal_item_t) *ary
 #include "lib/arraysort.h"
 
+static inline void *P(internal_get_data)(P(key) *key)
+{
+  uns ksize = SORT_KEY_SIZE(*key);
+#ifdef SORT_UNIFY
+  ksize = ALIGN_TO(ksize, CPU_STRUCT_ALIGN);
+#endif
+  return (byte *) key + ksize;
+}
+
 static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct sort_bucket *bout, struct sort_bucket *bout_only)
 {
   sorter_alloc_buf(ctx);
@@ -39,7 +48,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   if (sizeof(key) + 1024 + SORT_DATA_SIZE(key) > ctx->big_buf_half_size)
     {
       SORT_XTRACE("s-internal: Generating a giant run");
-      struct fastbuf *out = sorter_open_write(bout); /* FIXME: Using a non-direct buffer would be nice here */
+      struct fastbuf *out = sbuck_write(bout); /* FIXME: Using a non-direct buffer would be nice here */
       P(copy_data)(&key, in, out);
       bout->runs++;
       return 1;				// We don't know, but 1 is always safe
@@ -88,18 +97,41 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
     bout = bout_only;
   struct fastbuf *out = sbuck_write(bout);
   bout->runs++;
-  /* FIXME: No unification done yet */
+  uns merged = 0;
   for (item = item_array; item < last_item; item++)
     {
+#ifdef SORT_UNIFY
+      if (item < last_item - 1 && !P(compare)(item->key, item[1].key))
+	{
+	  // Rewrite the item structures with just pointers to keys and place
+	  // pointers to data in the secondary array.
+	  P(key) **key_array = (void *) item;
+	  void **data_array = (void **) ctx->big_buf_half;
+	  key_array[0] = item[0].key;
+	  data_array[0] = P(internal_get_data)(key_array[0]);
+	  uns cnt;
+	  for (cnt=1; item+cnt < last_item && !P(compare)(key_array[0], item[cnt].key); cnt++)
+	    {
+	      key_array[cnt] = item[cnt].key;
+	      data_array[cnt] = P(internal_get_data)(key_array[cnt]);
+	    }
+	  P(write_merged)(out, key_array, data_array, cnt, data_array+cnt);
+	  item += cnt - 1;
+	  merged += cnt - 1;
+	  continue;
+	}
+#endif
+#ifdef SORT_ASSERT_UNIQUE
+      ASSERT(item == last_item-1 || P(compare)(item->key, item[1].key) < 0);
+#endif
       P(write_key)(out, item->key);
 #ifdef SORT_VAR_DATA
-      uns ksize = SORT_KEY_SIZE(*item->key);
-#ifdef SORT_UNIFY
-      ksize = ALIGN_TO(ksize, CPU_STRUCT_ALIGN);
-#endif
-      bwrite(out, (byte *) item->key + ksize, SORT_DATA_SIZE(*item->key));
+      bwrite(out, P(internal_get_data)(item->key), SORT_DATA_SIZE(*item->key));
 #endif
     }
+#ifdef SORT_UNIFY
+  SORT_XTRACE("Merging reduced %d records", merged);
+#endif
 
   return ctx->more_keys;
 }

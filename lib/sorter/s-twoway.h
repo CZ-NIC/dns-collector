@@ -58,6 +58,9 @@ static void P(twoway_merge)(struct sort_context *ctx UNUSED, struct sort_bucket 
 	    }
 	  run_count++;
 	}
+#ifdef SORT_ASSERT_UNIQUE
+      ASSERT(comp != 0);
+#endif
       if (comp LESS 0)
 	{
 	  P(copy_data)(kin1, fin1, fout1);
@@ -66,7 +69,7 @@ static void P(twoway_merge)(struct sort_context *ctx UNUSED, struct sort_bucket 
 	  run1 = next1 && (P(compare)(kprev1, kin1) LESS 0);
 	  kout = kprev1;
 	}
-#ifdef SORT_MERGE
+#ifdef SORT_UNIFY
       else if (comp == 0)
 	{
 	  P(key) *mkeys[] = { kin1, kin2 };
@@ -80,10 +83,6 @@ static void P(twoway_merge)(struct sort_context *ctx UNUSED, struct sort_bucket 
 	  run2 = next2 && (P(compare)(kprev2, kin2) LESS 0);
 	  kout = kprev2;
 	}
-#endif
-#ifdef SORT_ASSERT_UNIQUE
-      else if (unlikely(comp == 0))
-	ASSERT(0);
 #endif
       else
 	{

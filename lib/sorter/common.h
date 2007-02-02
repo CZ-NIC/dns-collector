@@ -57,7 +57,7 @@ struct sort_context {
   void *big_buf, *big_buf_half;
   size_t big_buf_size, big_buf_half_size;
 
-  int (*custom_presort)(struct fastbuf *dest, byte *buf, size_t bufsize);
+  int (*custom_presort)(struct fastbuf *dest, void *buf, size_t bufsize);
   // Take as much as possible from the source bucket, sort it in memory and dump to destination bucket.
   // Return 1 if there is more data available in the source bucket.
   int (*internal_sort)(struct sort_context *ctx, struct sort_bucket *in, struct sort_bucket *out, struct sort_bucket *out_only);

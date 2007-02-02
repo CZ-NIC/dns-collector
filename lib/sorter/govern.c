@@ -151,7 +151,6 @@ sorter_free_buf(struct sort_context *ctx)
 
 static int sorter_presort(struct sort_context *ctx, struct sort_bucket *in, struct sort_bucket *out, struct sort_bucket *out_only)
 {
-  /* FIXME: Mode with no presorting (mostly for debugging) */
   sorter_alloc_buf(ctx);
   if (in->flags & SBF_CUSTOM_PRESORT)
     {

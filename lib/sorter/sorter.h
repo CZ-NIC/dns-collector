@@ -57,11 +57,10 @@
  *  Unification:
  *
  *  SORT_UNIFY		merge items with identical keys, needs the following functions:
- *  void PREFIX_write_merged(struct fastbuf *f, SORT_KEY **keys, uns n, byte *buf)
+ *  void PREFIX_write_merged(struct fastbuf *f, SORT_KEY **keys, void **data, uns n, void *buf)
  *			takes n records in memory with keys which compare equal and writes
- *			a single record to the given fastbuf. Data for each key can
- *			be accessed by the SORT_GET_DATA(*key) macro. `buf' points
- *			to a buffer which is guaranteed to hold all given records.
+ *			a single record to the given fastbuf. `buf' points to a buffer which
+ *			is guaranteed to hold all given records.
  *  void PREFIX_copy_merged(SORT_KEY **keys, struct fastbuf **data, uns n, struct fastbuf *dest)
  *			takes n records with keys in memory and data in fastbufs and writes
  *			a single record.
@@ -71,7 +70,7 @@
  *  SORT_INPUT_FILE	file of a given name
  *  SORT_INPUT_FB	fastbuf stream
  *  SORT_INPUT_PRESORT	custom presorter. Calls function
- *  int PREFIX_presort(struct fastbuf *dest, byte *buf, size_t bufsize);
+ *  int PREFIX_presort(struct fastbuf *dest, void *buf, size_t bufsize);
  *			to get successive batches of pre-sorted data.
  *			The function is passed a page-aligned presorting buffer.
  *			It returns 1 on success or 0 on EOF.
