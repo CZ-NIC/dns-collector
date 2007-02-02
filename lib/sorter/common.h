@@ -27,9 +27,10 @@ enum sort_debug {
 
 struct sort_bucket {
   cnode n;
+  struct sort_context *ctx;
   uns flags;
   struct fastbuf *fb;
-  byte *name;
+  byte *filename;
   u64 size;				// Size in bytes (not valid when writing)
   uns runs;				// Number of runs, 0 if not sorted
   uns hash_bits;			// Remaining bits of the hash function
@@ -43,6 +44,7 @@ enum sort_bucket_flags {
   SBF_OPEN_WRITE = 256,			// We are currently writing to the fastbuf
   SBF_OPEN_READ = 512,			// We are reading from the fastbuf
   SBF_DESTROYED = 1024,			// Already done with, no further references allowed
+  SBF_SWAPPED_OUT = 2048,		// Swapped out to a named file
 };
 
 struct sort_context {
@@ -81,5 +83,6 @@ int sbuck_have(struct sort_bucket *b);
 sh_off_t sbuck_size(struct sort_bucket *b);
 struct fastbuf *sbuck_read(struct sort_bucket *b);
 struct fastbuf *sbuck_write(struct sort_bucket *b);
+void sbuck_swap_out(struct sort_bucket *b);
 
 #endif

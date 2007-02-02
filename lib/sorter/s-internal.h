@@ -22,8 +22,7 @@ typedef struct {
 static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct sort_bucket *bout, struct sort_bucket *bout_only)
 {
   sorter_alloc_buf(ctx);
-  ASSERT(bin->fb);			// Expects the input bucket to be already open for reading
-  struct fastbuf *in = bin->fb;
+  struct fastbuf *in = sbuck_read(bin);
 
   P(key) key, *keybuf = ctx->key_buf;
   if (!keybuf)
