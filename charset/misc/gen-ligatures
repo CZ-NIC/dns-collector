@@ -62,11 +62,11 @@ my @ht = map { "NULL" } 1..$div;
 foreach my $l (keys %ligs) {
 	my $i = (hex $l) % $div;
 	my $w = join(", ", map { "0x$_" } split(/ /, expand($l)));
-	$ht[$i] = "/* $l */ (const word []) { $w, 0 }";
+	$ht[$i] = "/* $l */ (const u16 []) { $w, 0 }";
 }
 
 print "#define LIG_HASH_SIZE $div\n\n";
-print "static const word *_U_lig_hash[] = {\n";
+print "static const u16 *_U_lig_hash[] = {\n";
 for (my $i=0; $i<$div; $i++) {
 	print "\t", $ht[$i], ",\n";
 }

@@ -64,7 +64,7 @@ test_image_iface(void)
   ASSERT(i1->pixel_size == 4);
   ASSERT(IMAGE_SSE_ALIGN_SIZE >= 16);
   ASSERT(!(i1->row_size & (IMAGE_SSE_ALIGN_SIZE - 1)));
-  ASSERT(!((addr_int_t)i1->pixels & (IMAGE_SSE_ALIGN_SIZE - 1)));
+  ASSERT(!((uintptr_t)i1->pixels & (IMAGE_SSE_ALIGN_SIZE - 1)));
   image_destroy(i1);
 
   i1 = image_new(&ctx, 283, 329, COLOR_SPACE_RGB, NULL);

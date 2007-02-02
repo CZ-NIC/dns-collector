@@ -11,7 +11,7 @@
 #define _CHARSET_UNICAT_H
 
 extern const byte *_U_cat[];
-extern const word *_U_upper[], *_U_lower[], *_U_unaccent[];
+extern const u16 *_U_upper[], *_U_lower[], *_U_unaccent[];
 
 static inline uns Ucategory(uns x)
 {
@@ -23,23 +23,23 @@ static inline uns Ucategory(uns x)
 
 static inline uns Utoupper(uns x)
 {
-  word w = (_U_upper[x >> 8U]) ? _U_upper[x >> 8U][x & 0xff] : 0;
+  uns w = (_U_upper[x >> 8U]) ? _U_upper[x >> 8U][x & 0xff] : 0;
   return w ? w : x;
 }
 
 static inline uns Utolower(uns x)
 {
-  word w = (_U_lower[x >> 8U]) ? _U_lower[x >> 8U][x & 0xff] : 0;
+  uns w = (_U_lower[x >> 8U]) ? _U_lower[x >> 8U][x & 0xff] : 0;
   return w ? w : x;
 }
 
 static inline uns Uunaccent(uns x)
 {
-  word w = (_U_unaccent[x >> 8U]) ? _U_unaccent[x >> 8U][x & 0xff] : 0;
+  uns w = (_U_unaccent[x >> 8U]) ? _U_unaccent[x >> 8U][x & 0xff] : 0;
   return w ? w : x;
 }
 
-extern const word *Uexpand_lig(uns x);
+extern const u16 *Uexpand_lig(uns x);
 
 enum unicode_char_type {
   _U_LETTER = 1,		/* Letters */

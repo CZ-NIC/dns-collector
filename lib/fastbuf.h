@@ -410,7 +410,7 @@ static inline int bskip(struct fastbuf *f, uns len)
     return bskip_slow(f, len);
 }
 
-/* I/O on addr_int_t */
+/* I/O on uintptr_t */
 
 #ifdef CPU_64BIT_POINTERS
 #define bputa(x,p) bputq(x,p)

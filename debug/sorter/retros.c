@@ -185,8 +185,8 @@ static void r1c_sse_sort(void)
   struct elt *ptrs[256], *x, *lim;
 
   ASSERT(sizeof(struct elt) == 16);
-  ASSERT(!((addr_int_t)alt & 15));
-  ASSERT(!((addr_int_t)ary & 15));
+  ASSERT(!((uintptr_t)alt & 15));
+  ASSERT(!((uintptr_t)ary & 15));
 
   x = ary; lim = ary + n;
   bzero(cnt, sizeof(cnt));
