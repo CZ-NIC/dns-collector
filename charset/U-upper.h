@@ -1,6 +1,6 @@
 /* Generated automatically by gentab. Please don't edit. */
 
-static const word _U_upper_00[256] = {
+static const u16 _U_upper_00[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -19,7 +19,7 @@ static const word _U_upper_00[256] = {
 0x00D0,0x00D1,0x00D2,0x00D3,0x00D4,0x00D5,0x00D6,0,0x00D8,0x00D9,0x00DA,0x00DB,0x00DC,0x00DD,0x00DE,0x0178
 };
 
-static const word _U_upper_01[256] = {
+static const u16 _U_upper_01[256] = {
 0,0x0100,0,0x0102,0,0x0104,0,0x0106,0,0x0108,0,0x010A,0,0x010C,0,0x010E,
 0,0x0110,0,0x0112,0,0x0114,0,0x0116,0,0x0118,0,0x011A,0,0x011C,0,0x011E,
 0,0x0120,0,0x0122,0,0x0124,0,0x0126,0,0x0128,0,0x012A,0,0x012C,0,0x012E,
@@ -38,7 +38,7 @@ static const word _U_upper_01[256] = {
 0,0,0x01F1,0x01F1,0,0x01F4,0,0,0,0x01F8,0,0x01FA,0,0x01FC,0,0x01FE
 };
 
-static const word _U_upper_02[256] = {
+static const u16 _U_upper_02[256] = {
 0,0x0200,0,0x0202,0,0x0204,0,0x0206,0,0x0208,0,0x020A,0,0x020C,0,0x020E,
 0,0x0210,0,0x0212,0,0x0214,0,0x0216,0,0x0218,0,0x021A,0,0x021C,0,0x021E,
 0,0,0,0x0222,0,0x0224,0,0x0226,0,0x0228,0,0x022A,0,0x022C,0,0x022E,
@@ -57,7 +57,7 @@ static const word _U_upper_02[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static const word _U_upper_03[256] = {
+static const u16 _U_upper_03[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -76,7 +76,7 @@ static const word _U_upper_03[256] = {
 0x039A,0x03A1,0x03F9,0,0,0x0395,0,0,0x03F7,0,0,0x03FA,0,0,0,0
 };
 
-static const word _U_upper_04[256] = {
+static const u16 _U_upper_04[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -95,7 +95,7 @@ static const word _U_upper_04[256] = {
 0,0x04F0,0,0x04F2,0,0x04F4,0,0,0,0x04F8,0,0,0,0,0,0
 };
 
-static const word _U_upper_05[256] = {
+static const u16 _U_upper_05[256] = {
 0,0x0500,0,0x0502,0,0x0504,0,0x0506,0,0x0508,0,0x050A,0,0x050C,0,0x050E,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -114,7 +114,7 @@ static const word _U_upper_05[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static const word _U_upper_1E[256] = {
+static const u16 _U_upper_1E[256] = {
 0,0x1E00,0,0x1E02,0,0x1E04,0,0x1E06,0,0x1E08,0,0x1E0A,0,0x1E0C,0,0x1E0E,
 0,0x1E10,0,0x1E12,0,0x1E14,0,0x1E16,0,0x1E18,0,0x1E1A,0,0x1E1C,0,0x1E1E,
 0,0x1E20,0,0x1E22,0,0x1E24,0,0x1E26,0,0x1E28,0,0x1E2A,0,0x1E2C,0,0x1E2E,
@@ -133,7 +133,7 @@ static const word _U_upper_1E[256] = {
 0,0x1EF0,0,0x1EF2,0,0x1EF4,0,0x1EF6,0,0x1EF8,0,0,0,0,0,0
 };
 
-static const word _U_upper_1F[256] = {
+static const u16 _U_upper_1F[256] = {
 0x1F08,0x1F09,0x1F0A,0x1F0B,0x1F0C,0x1F0D,0x1F0E,0x1F0F,0,0,0,0,0,0,0,0,
 0x1F18,0x1F19,0x1F1A,0x1F1B,0x1F1C,0x1F1D,0,0,0,0,0,0,0,0,0,0,
 0x1F28,0x1F29,0x1F2A,0x1F2B,0x1F2C,0x1F2D,0x1F2E,0x1F2F,0,0,0,0,0,0,0,0,
@@ -152,7 +152,7 @@ static const word _U_upper_1F[256] = {
 0,0,0,0x1FFC,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static const word _U_upper_21[256] = {
+static const u16 _U_upper_21[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -171,7 +171,7 @@ static const word _U_upper_21[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static const word _U_upper_24[256] = {
+static const u16 _U_upper_24[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -190,7 +190,7 @@ static const word _U_upper_24[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static const word _U_upper_FF[256] = {
+static const u16 _U_upper_FF[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -209,7 +209,7 @@ static const word _U_upper_FF[256] = {
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-const word *_U_upper[256] = {
+const u16 *_U_upper[256] = {
 _U_upper_00,_U_upper_01,_U_upper_02,_U_upper_03,_U_upper_04,_U_upper_05,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,_U_upper_1E,_U_upper_1F,
 NULL,_U_upper_21,NULL,NULL,_U_upper_24,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
