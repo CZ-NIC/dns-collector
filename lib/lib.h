@@ -265,7 +265,7 @@ byte *str_unesc(byte *dest, byte *src);
 
 /* bigalloc.c */
 
-void *big_alloc(unsigned int len);
-void big_free(void *start, unsigned int len);
+void *big_alloc(u64 len);
+void big_free(void *start, u64 len);
 
 #endif

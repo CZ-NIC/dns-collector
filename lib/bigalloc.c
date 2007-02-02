@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Allocation of Large Aligned Buffers
  *
- *	(c) 2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2006--2007 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -11,16 +11,20 @@
 
 #include <sys/mman.h>
 
-static unsigned int
-big_round(unsigned int len)
+static u64
+big_round(u64 len)
 {
-  return ALIGN_TO(len, CPU_PAGE_SIZE);
+  return ALIGN_TO(len, (u64)CPU_PAGE_SIZE);
 }
 
 void *
-big_alloc(unsigned int len)
+big_alloc(u64 len)
 {
   len = big_round(len);
+#ifndef CPU_64BIT_POINTERS
+  if (len > 0xff000000)
+    die("big_alloc: Size %08Lx is too large for a 32-bit machine", (long long) len);
+#endif
 #ifdef CONFIG_DEBUG
   len += 2*CPU_PAGE_SIZE;
 #endif
@@ -36,7 +40,7 @@ big_alloc(unsigned int len)
 }
 
 void
-big_free(void *start, unsigned int len)
+big_free(void *start, u64 len)
 {
   byte *p = start;
   ASSERT(!((uintptr_t) p & (CPU_PAGE_SIZE-1)));
