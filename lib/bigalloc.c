@@ -23,14 +23,14 @@ big_alloc(u64 len)
   len = big_round(len);
 #ifndef CPU_64BIT_POINTERS
   if (len > 0xff000000)
-    die("big_alloc: Size %08Lx is too large for a 32-bit machine", (long long) len);
+    die("big_alloc: Size %ju is too large for a 32-bit machine", (uintmax_t) len);
 #endif
 #ifdef CONFIG_DEBUG
   len += 2*CPU_PAGE_SIZE;
 #endif
   byte *p = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
   if (p == (byte*) MAP_FAILED)
-    die("Cannot mmap %d bytes of memory: %m", len);
+    die("Cannot mmap %ju bytes of memory: %m", (uintmax_t) len);
 #ifdef CONFIG_DEBUG
   mprotect(p, CPU_PAGE_SIZE, PROT_NONE);
   mprotect(p+len-CPU_PAGE_SIZE, CPU_PAGE_SIZE, PROT_NONE);
