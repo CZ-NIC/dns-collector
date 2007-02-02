@@ -40,7 +40,7 @@ main_get_time(void)
   gettimeofday(&tv, NULL);
   main_now_seconds = tv.tv_sec;
   main_now = (timestamp_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
-  // DBG("It's %Ld o'clock", (long long) main_now);
+  // DBG("It's %lld o'clock", (long long) main_now);
 }
 
 void
@@ -60,7 +60,7 @@ void
 timer_add(struct main_timer *tm, timestamp_t expires)
 {
   if (expires)
-    DBG("MAIN: Setting timer %p (expire at now+%Ld)", tm, (long long)(expires-main_now));
+    DBG("MAIN: Setting timer %p (expire at now+%lld)", tm, (long long)(expires-main_now));
   else
     DBG("MAIN: Clearing timer %p", tm);
   if (tm->expires)
@@ -307,15 +307,15 @@ void
 main_debug(void)
 {
 #ifdef CONFIG_DEBUG
-  log(L_DEBUG, "### Main loop status on %Ld", (long long)main_now);
+  log(L_DEBUG, "### Main loop status on %lld", (long long)main_now);
   log(L_DEBUG, "\tActive timers:");
   struct main_timer *tm;
   CLIST_WALK(tm, main_timer_list)
-    log(L_DEBUG, "\t\t%p (expires %Ld, data %p)", tm, (long long)(tm->expires ? tm->expires-main_now : 999999), tm->data);
+    log(L_DEBUG, "\t\t%p (expires %lld, data %p)", tm, (long long)(tm->expires ? tm->expires-main_now : 999999), tm->data);
   struct main_file *fi;
   log(L_DEBUG, "\tActive files:");
   CLIST_WALK(fi, main_file_list)
-    log(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, eh %p, expires %Ld, data %p)",
+    log(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, eh %p, expires %lld, data %p)",
 	fi, fi->fd, fi->read_handler, fi->write_handler, fi->error_handler,
 	(long long)(fi->timer.expires ? fi->timer.expires-main_now : 999999), fi->data);
   log(L_DEBUG, "\tActive hooks:");
@@ -372,7 +372,7 @@ main_loop(void)
       timestamp_t wake = main_now + 1000000000;
       while ((tm = clist_head(&main_timer_list)) && tm->expires <= main_now)
 	{
-	  DBG("MAIN: Timer %p expired at now-%Ld", tm, (long long)(main_now - tm->expires));
+	  DBG("MAIN: Timer %p expired at now-%lld", tm, (long long)(main_now - tm->expires));
 	  tm->handler(tm);
 	}
       int hook_min = HOOK_RETRY;

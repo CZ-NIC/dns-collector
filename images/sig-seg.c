@@ -202,7 +202,7 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
 	      split_val = val[k];
 	    }
 	}
-      DBG("split_val=%u best_err=%Lu b[axis]=%u c[axis]=%u", split_val, (long long)best_err, region->b[axis], region->c[axis]);
+      DBG("split_val=%u best_err=%llu b[axis]=%u c[axis]=%u", split_val, (long long)best_err, region->b[axis], region->c[axis]);
 
       /* Split region */
       block = region->blocks;

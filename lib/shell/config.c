@@ -346,7 +346,7 @@ dump_value(uns array, struct item *item, void *v)
         sprintf(buf, "%d", *(int *)v);
         break;
       case CT_U64:
-        sprintf(buf, "%Lu", (long long) *(u64 *)v);
+        sprintf(buf, "%llu", (long long) *(u64 *)v);
 	break;
       case CT_DOUBLE:
 	sprintf(buf, "%g", *(double *)v);
