@@ -57,6 +57,12 @@ sbuck_have(struct sort_bucket *b)
   return b && sbuck_size(b);
 }
 
+static int
+sbuck_has_file(struct sort_bucket *b)
+{
+  return (b->fb || (b->flags & SBF_SWAPPED_OUT));
+}
+
 static void
 sbuck_swap_in(struct sort_bucket *b)
 {
@@ -158,6 +164,9 @@ static int sorter_presort(struct sort_context *ctx, struct sort_bucket *in, stru
 static inline struct sort_bucket *
 sbuck_join_to(struct sort_bucket *b)
 {
+  if (sorter_debug & SORT_DEBUG_NO_JOIN)
+    return NULL;
+
   struct sort_bucket *out = (struct sort_bucket *) b->n.prev;	// Such bucket is guaranteed to exist
   return (out->flags & SBF_FINAL) ? out : NULL;
 }
@@ -165,16 +174,26 @@ sbuck_join_to(struct sort_bucket *b)
 static void
 sorter_join(struct sort_bucket *b)
 {
-  struct sort_bucket *join = sbuck_join_to(b);
-  ASSERT(join);
+  struct sort_bucket *join = (struct sort_bucket *) b->n.prev;
+  ASSERT(join->flags & SBF_FINAL);
+  ASSERT(b->runs == 1);
 
-  // FIXME: What if the final bucket doesn't contain any file yet?
-
-  SORT_TRACE("Copying %jd bytes to output file", (uintmax_t) sbuck_size(b));
-  struct fastbuf *src = sbuck_read(b);
-  struct fastbuf *dest = sbuck_write(join);
-  bbcopy(src, dest, ~0U);
-  sbuck_drop(b);
+  if (!sbuck_has_file(join))
+    {
+      // The final bucket doesn't have any fb associated yet, so replace
+      // it with the new bucket.
+      SORT_XTRACE("Replaced final bucket");
+      b->flags |= SBF_FINAL;
+      sbuck_drop(join);
+    }
+  else
+    {
+      SORT_TRACE("Copying %jd bytes to output file", (uintmax_t) sbuck_size(b));
+      struct fastbuf *src = sbuck_read(b);
+      struct fastbuf *dest = sbuck_write(join);
+      bbcopy(src, dest, ~0U);
+      sbuck_drop(b);
+    }
 }
 
 static void
@@ -183,8 +202,6 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
   struct sort_bucket *ins[3] = { NULL }, *outs[3] = { NULL };
   cnode *list_pos = b->n.prev;
   struct sort_bucket *join = sbuck_join_to(b);
-  if (sorter_debug & SORT_DEBUG_NO_JOIN)
-    join = NULL;
 
   if (!(sorter_debug & SORT_DEBUG_NO_PRESORT) || (b->flags & SBF_CUSTOM_PRESORT))
     {
@@ -192,6 +209,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
       ins[0] = sbuck_new(ctx);
       if (!sorter_presort(ctx, b, ins[0], join ? : ins[0]))
 	{
+	  SORT_XTRACE("Sorted in memory");
 	  if (join)
 	    sbuck_drop(ins[0]);
 	  else
@@ -271,7 +289,7 @@ sorter_run(struct sort_context *ctx)
   clist_add_head(&ctx->bucket_list, &bout->n);
 
   struct sort_bucket *b;
-  while (b = clist_next(&ctx->bucket_list, &bout->n))
+  while (bout = clist_head(&ctx->bucket_list), b = clist_next(&ctx->bucket_list, &bout->n))
     {
       if (!sbuck_have(b))
 	sbuck_drop(b);
