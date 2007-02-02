@@ -20,11 +20,11 @@ static void P(twoway_merge)(struct sort_context *ctx UNUSED, struct sort_bucket 
   int comp;
   uns run_count = 0;
 
-  fin1 = sbuck_open_read(ins[0]);
+  fin1 = sbuck_read(ins[0]);
   next1 = P(read_key)(fin1, kin1);
-  if (sbuck_can_read(ins[1]))
+  if (sbuck_have(ins[1]))
     {
-      fin2 = sbuck_open_read(ins[1]);
+      fin2 = sbuck_read(ins[1]);
       next2 = P(read_key)(fin2, kin2);
     }
   else
@@ -50,9 +50,9 @@ static void P(twoway_merge)(struct sort_context *ctx UNUSED, struct sort_bucket 
 	  if (unlikely(!fout1))
 	    {
 	      if (!fout2)
-		fout1 = sbuck_open_write(outs[0]);
+		fout1 = sbuck_write(outs[0]);
 	      else if (outs[1])
-		fout1 = sbuck_open_write(outs[1]);
+		fout1 = sbuck_write(outs[1]);
 	      else
 		fout1 = fout2;
 	    }
@@ -100,8 +100,6 @@ static void P(twoway_merge)(struct sort_context *ctx UNUSED, struct sort_bucket 
 	}
     }
 
-  sbuck_close_read(ins[0]);
-  sbuck_close_read(ins[1]);
   if (fout2 && fout2 != fout1)
     outs[1]->runs += run_count / 2;
   if (fout1)

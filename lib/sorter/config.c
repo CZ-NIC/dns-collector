@@ -16,6 +16,7 @@ uns sorter_trace;
 uns sorter_presort_bufsize = 65536;
 uns sorter_stream_bufsize = 65536;
 u64 sorter_bufsize = 65536;
+uns sorter_debug;
 
 static struct cf_section sorter_config = {
   CF_ITEMS {
@@ -23,6 +24,7 @@ static struct cf_section sorter_config = {
     CF_UNS("PresortBuffer", &sorter_presort_bufsize),
     CF_UNS("StreamBuffer", &sorter_stream_bufsize),
     CF_U64("SortBuffer", &sorter_bufsize),
+    CF_UNS("Debug", &sorter_debug),
     CF_END
   }
 };

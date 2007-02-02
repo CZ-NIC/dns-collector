@@ -87,7 +87,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   SORT_XTRACE("s-internal: Writing");
   if (!ctx->more_keys)
     bout = bout_only;
-  struct fastbuf *out = sbuck_open_write(bout);
+  struct fastbuf *out = sbuck_write(bout);
   bout->runs++;
   /* FIXME: No unification done yet */
   for (item = item_array; item < last_item; item++)
