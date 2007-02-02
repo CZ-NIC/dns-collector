@@ -180,7 +180,7 @@ sorter_join(struct sort_bucket *b)
 
   if (!sbuck_has_file(join))
     {
-      // The final bucket doesn't have any fb associated yet, so replace
+      // The final bucket doesn't have any file associated yet, so replace
       // it with the new bucket.
       SORT_XTRACE("Replaced final bucket");
       b->flags |= SBF_FINAL;
@@ -300,6 +300,7 @@ sorter_run(struct sort_context *ctx)
     }
 
   sorter_free_buf(ctx);
+  sbuck_write(bout);		// Force empty bucket to a file
   SORT_XTRACE("Final size: %jd", (uintmax_t) sbuck_size(bout));
   ctx->out_fb = sbuck_read(bout);
 }
