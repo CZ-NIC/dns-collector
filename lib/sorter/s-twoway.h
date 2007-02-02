@@ -10,7 +10,7 @@
 /* FIXME: There is a plenty of room for further optimization */
 /* FIXME: Swap outputs if there already are some runs? */
 
-static void P(twoway_merge)(struct sort_context *ctx, struct sort_bucket **ins, struct sort_bucket **outs)
+static void P(twoway_merge)(struct sort_context *ctx UNUSED, struct sort_bucket **ins, struct sort_bucket **outs)
 {
   struct fastbuf *fin1, *fin2, *fout1, *fout2, *ftmp;
   P(key) kbuf1, kbuf2, kbuf3, kbuf4;
@@ -20,11 +20,11 @@ static void P(twoway_merge)(struct sort_context *ctx, struct sort_bucket **ins, 
   int comp;
   uns run_count = 0;
 
-  fin1 = sorter_open_read(ins[0]);
+  fin1 = sbuck_open_read(ins[0]);
   next1 = P(read_key)(fin1, kin1);
-  if (ins[1])
+  if (sbuck_can_read(ins[1]))
     {
-      fin2 = sorter_open_read(ins[1]);
+      fin2 = sbuck_open_read(ins[1]);
       next2 = P(read_key)(fin2, kin2);
     }
   else
@@ -50,9 +50,9 @@ static void P(twoway_merge)(struct sort_context *ctx, struct sort_bucket **ins, 
 	  if (unlikely(!fout1))
 	    {
 	      if (!fout2)
-		fout1 = sorter_open_write(outs[0]);
+		fout1 = sbuck_open_write(outs[0]);
 	      else if (outs[1])
-		fout1 = sorter_open_write(outs[1]);
+		fout1 = sbuck_open_write(outs[1]);
 	      else
 		fout1 = fout2;
 	    }
@@ -100,8 +100,8 @@ static void P(twoway_merge)(struct sort_context *ctx, struct sort_bucket **ins, 
 	}
     }
 
-  sorter_close_read(ins[0]);
-  sorter_close_read(ins[1]);
+  sbuck_close_read(ins[0]);
+  sbuck_close_read(ins[1]);
   if (fout2 && fout2 != fout1)
     outs[1]->runs += run_count / 2;
   if (fout1)

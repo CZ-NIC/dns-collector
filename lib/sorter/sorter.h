@@ -56,7 +56,7 @@
  *
  *  Unification:
  *
- *  SORT_MERGE		merge items with identical keys, needs the following functions:
+ *  SORT_UNIFY		merge items with identical keys, needs the following functions:
  *  void PREFIX_write_merged(struct fastbuf *f, SORT_KEY **keys, uns n, byte *buf)
  *			takes n records in memory with keys which compare equal and writes
  *			a single record to the given fastbuf. Data for each key can
@@ -70,10 +70,11 @@
  *
  *  SORT_INPUT_FILE	file of a given name
  *  SORT_INPUT_FB	fastbuf stream
- *  SORT_INPUT_PRESORT	custom presorter: call function PREFIX_presorter (see below)
- *			to get successive batches of pre-sorted data as temporary
- *			fastbuf streams or NULL if no more data is available.
+ *  SORT_INPUT_PRESORT	custom presorter. Calls function
+ *  int PREFIX_presort(struct fastbuf *dest, byte *buf, size_t bufsize);
+ *			to get successive batches of pre-sorted data.
  *			The function is passed a page-aligned presorting buffer.
+ *			It returns 1 on success or 0 on EOF.
  *
  *  Output (chose one of these):
  *
@@ -143,7 +144,7 @@ static inline int P(hash) (P(key) *x)
 #endif
 #endif
 
-#ifdef SORT_MERGE
+#ifdef SORT_UNIFY
 #define LESS <
 #else
 #define LESS <=
@@ -154,10 +155,22 @@ static inline int P(hash) (P(key) *x)
 #define SORT_ASSERT_UNIQUE
 #endif
 
+#ifdef SORT_KEY_SIZE
+#define SORT_VAR_KEY
+#else
+#define SORT_KEY_SIZE(key) sizeof(key)
+#endif
+
+#ifdef SORT_DATA_SIZE
+#define SORT_VAR_DATA
+#else
+#define SORT_DATA_SIZE(key) 0
+#endif
+
 static inline void P(copy_data)(P(key) *key, struct fastbuf *in, struct fastbuf *out)
 {
   bwrite(out, key, sizeof(P(key)));
-#ifdef SORT_DATA_SIZE
+#ifdef SORT_VAR_DATA
   bbcopy(in, out, SORT_DATA_SIZE(*key));
 #else
   (void) in;
@@ -192,7 +205,7 @@ static struct fastbuf *P(sort)(
   ctx.in_fb = in;
 #elif defined(SORT_INPUT_PRESORT)
   ASSERT(!in);
-  ctx.custom_presort = P(presorter);
+  ctx.custom_presort = P(presort);
 #else
 #error No input given.
 #endif
@@ -234,9 +247,11 @@ static struct fastbuf *P(sort)(
 #undef SORT_KEY_REGULAR
 #undef SORT_KEY_SIZE
 #undef SORT_DATA_SIZE
+#undef SORT_VAR_KEY
+#undef SORT_VAR_DATA
 #undef SORT_INT
 #undef SORT_HASH_BITS
-#undef SORT_MERGE
+#undef SORT_UNIFY
 #undef SORT_INPUT_FILE
 #undef SORT_INPUT_FB
 #undef SORT_INPUT_PRESORT
