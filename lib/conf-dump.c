@@ -27,7 +27,7 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
 {
   switch (type) {
     case CT_INT:	bprintf(fb, "%d ", *(uns*)ptr); break;
-    case CT_U64:	bprintf(fb, "%llu ", *(u64*)ptr); break;
+    case CT_U64:	bprintf(fb, "%llu ", (long long) *(u64*)ptr); break;
     case CT_DOUBLE:	bprintf(fb, "%lg ", *(double*)ptr); break;
     case CT_IP:		bprintf(fb, "%08x ", *(uns*)ptr); break;
     case CT_STRING:

@@ -97,7 +97,7 @@ prof_ktsc_init(struct prof_ktsc *c)
 void
 prof_ktsc_switch(struct prof_ktsc *o, struct prof_ktsc *n)
 {
-  u64 u, s;
+  unsigned long long u, s;
   byte buf[256];
 
   int l = pread(self_prof_fd, buf, sizeof(buf)-1, 0);
@@ -123,7 +123,7 @@ prof_ktsc_switch(struct prof_ktsc *o, struct prof_ktsc *n)
 int
 prof_ktsc_format(char *buf, struct prof_ktsc *c)
 {
-  return sprintf(buf, "%Ld+%Ld", c->ticks_user, c->ticks_sys);
+  return sprintf(buf, "%Ld+%Ld", (long long) c->ticks_user, (long long) c->ticks_sys);
 }
 
 #endif
