@@ -151,7 +151,7 @@ interpret_section(struct cf_section *sec, int number, byte **pars, int *processe
   for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
   {
     int taken;
-    byte *msg = interpret_set_item(ci, number, pars, &taken, ptr + (addr_int_t) ci->ptr, allow_dynamic && !ci[1].cls);
+    byte *msg = interpret_set_item(ci, number, pars, &taken, ptr + (uintptr_t) ci->ptr, allow_dynamic && !ci[1].cls);
     if (msg)
       return cf_printf("Item %s: %s", ci->name, msg);
     *processed += taken;
@@ -333,8 +333,8 @@ static int
 cmp_items(void *i1, void *i2, struct cf_item *item)
 {
   ASSERT(item->cls == CC_STATIC);
-  i1 += (addr_int_t) item->ptr;
-  i2 += (addr_int_t) item->ptr;
+  i1 += (uintptr_t) item->ptr;
+  i2 += (uintptr_t) item->ptr;
   if (item->type == CT_STRING)
     return strcmp(* (byte**) i1, * (byte**) i2);
   else				// all numeric types
@@ -504,7 +504,7 @@ find_item(struct cf_section *curr_sec, byte *name, byte **msg, void **ptr)
 	*msg = cf_printf("Unknown item %s", name);
       return NULL;
     }
-    *ptr += (addr_int_t) ci->ptr;
+    *ptr += (uintptr_t) ci->ptr;
     if (!c)
       return ci;
     if (ci->cls != CC_SECTION)

@@ -53,7 +53,7 @@ static byte *class_names[] = { "end", "static", "dynamic", "parser", "section", 
 static void
 dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
 {
-  ptr += (addr_int_t) item->ptr;
+  ptr += (uintptr_t) item->ptr;
   enum cf_type type = item->type;
   uns size = cf_type_size(item->type, item->u.utype);
   int i;

@@ -167,7 +167,7 @@ kmp4_eq(struct kmp4_struct *kmp UNUSED, byte *a, byte *b)
 static inline uns
 kmp4_hash(struct kmp4_struct *kmp UNUSED, struct kmp4_state *s, byte *c)
 {
-  return (c ? (*c << 16) : 0) + (uns)(addr_int_t)s;
+  return (c ? (*c << 16) : 0) + (uns)(uintptr_t)s;
 }
 
 #define KMP_PREFIX(x) kmp4_##x
