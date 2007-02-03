@@ -2,6 +2,6 @@
 
 DIRS+=lib/sorter
 
-LIBUCW_MODS+=sorter/config sorter/govern
+LIBUCW_MODS+=sorter/config sorter/govern sorter/sbuck
 
 $(o)/lib/sorter/sort-test: $(o)/lib/sorter/sort-test.o $(LIBUCW)
