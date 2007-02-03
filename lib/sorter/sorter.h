@@ -242,6 +242,7 @@ static struct fastbuf *P(sort)(
   return ctx.out_fb;
 }
 
+#undef SORT_PREFIX
 #undef SORT_KEY
 #undef SORT_KEY_REGULAR
 #undef SORT_KEY_SIZE
