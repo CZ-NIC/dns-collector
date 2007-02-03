@@ -56,7 +56,9 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 #endif
 
   size_t bufsize = ctx->big_buf_half_size;	/* FIXME: In some cases, we can use the whole buffer */
+#ifdef CPU_64BIT_POINTERS
   bufsize = MIN((u64)bufsize, (u64)~0U * sizeof(P(internal_item_t)));	// The number of records must fit in uns
+#endif
 
   SORT_XTRACE("s-internal: Reading (bufsize=%zd)", bufsize);
   P(internal_item_t) *item_array = ctx->big_buf, *item = item_array, *last_item;
@@ -97,7 +99,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
     bout = bout_only;
   struct fastbuf *out = sbuck_write(bout);
   bout->runs++;
-  uns merged = 0;
+  uns merged UNUSED = 0;
   for (item = item_array; item < last_item; item++)
     {
 #ifdef SORT_UNIFY
