@@ -20,8 +20,11 @@ while (<CF>) {
 }
 close CF;
 
-my $opt_regex = join("|", keys %options);
-sub eval_expr { $_ = "@_"; s/\b($opt_regex)\b/ 1 /g if $opt_regex; s/\bCONFIG_\w+\b/ 0 /g; return eval $_; }
+sub eval_expr {
+	$_ = shift @_;
+	s/\b(CONFIG_\w+)\b/defined($options{$1}) ? 1 : 0/ge;
+	return eval $_;
+}
 
 open IN, $ARGV[0] or die "Unable to open $ARGV[0]";
 open OUT, ">$ARGV[1]" or die "Unable to create $ARGV[1]";
