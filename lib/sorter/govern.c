@@ -14,7 +14,8 @@
 
 #include <string.h>
 
-static int sorter_presort(struct sort_context *ctx, struct sort_bucket *in, struct sort_bucket *out, struct sort_bucket *out_only)
+static int
+sorter_presort(struct sort_context *ctx, struct sort_bucket *in, struct sort_bucket *out, struct sort_bucket *out_only)
 {
   sorter_alloc_buf(ctx);
   if (in->flags & SBF_CUSTOM_PRESORT)
@@ -46,13 +47,13 @@ sorter_join(struct sort_bucket *b)
     {
       // The final bucket doesn't have any file associated yet, so replace
       // it with the new bucket.
-      SORT_XTRACE("Replaced final bucket");
+      SORT_XTRACE(2, "Replaced final bucket");
       b->flags |= SBF_FINAL;
       sbuck_drop(join);
     }
   else
     {
-      SORT_TRACE("Copying %jd bytes to output file", (uintmax_t) sbuck_size(b));
+      SORT_TRACE("Copying to output file: %s", F_BSIZE(b));
       struct fastbuf *src = sbuck_read(b);
       struct fastbuf *dest = sbuck_write(join);
       bbcopy(src, dest, ~0U);
@@ -69,11 +70,11 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 
   if (!(sorter_debug & SORT_DEBUG_NO_PRESORT) || (b->flags & SBF_CUSTOM_PRESORT))
     {
-      SORT_TRACE("Presorting");
+      SORT_XTRACE(2, "Presorting");
       ins[0] = sbuck_new(ctx);
       if (!sorter_presort(ctx, b, ins[0], join ? : ins[0]))
 	{
-	  SORT_XTRACE("Sorted in memory");
+	  SORT_TRACE("Sorted in memory");
 	  if (join)
 	    sbuck_drop(ins[0]);
 	  else
@@ -90,12 +91,14 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
     }
   else
     {
-      SORT_TRACE("Skipped presorting");
+      SORT_XTRACE(2, "Presorting disabled");
       ins[0] = b;
     }
 
-  SORT_TRACE("Main sorting");
+  SORT_XTRACE(2, "Main sorting");
+  uns pass = 0;
   do {
+    ++pass;
     if (ins[0]->runs == 1 && ins[1]->runs == 1 && join)
       {
 	// This is guaranteed to produce a single run, so join if possible
@@ -104,7 +107,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 	ctx->twoway_merge(ctx, ins, outs);
 	ASSERT(outs[0]->runs == 2);
 	outs[0]->runs--;
-	SORT_TRACE("Pass done (joined final run)");
+	SORT_TRACE("Mergesort pass %d (final run, %s)", pass, F_BSIZE(outs[0]));
 	sbuck_drop(ins[0]);
 	sbuck_drop(ins[1]);
 	return;
@@ -113,7 +116,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
     outs[1] = sbuck_new(ctx);
     outs[2] = NULL;
     ctx->twoway_merge(ctx, ins, outs);
-    SORT_TRACE("Pass done (%d+%d runs, %jd+%jd bytes)", outs[0]->runs, outs[1]->runs, (uintmax_t) sbuck_size(outs[0]), (uintmax_t) sbuck_size(outs[1]));
+    SORT_TRACE("Mergesort pass %d (%d+%d runs, %s+%s)", pass, outs[0]->runs, outs[1]->runs, F_BSIZE(outs[0]), F_BSIZE(outs[1]));
     sbuck_drop(ins[0]);
     sbuck_drop(ins[1]);
     memcpy(ins, outs, 3*sizeof(struct sort_bucket *));
@@ -165,6 +168,6 @@ sorter_run(struct sort_context *ctx)
 
   sorter_free_buf(ctx);
   sbuck_write(bout);		// Force empty bucket to a file
-  SORT_XTRACE("Final size: %jd", (uintmax_t) sbuck_size(bout));
+  SORT_XTRACE(2, "Final size: %s", F_BSIZE(bout));
   ctx->out_fb = sbuck_read(bout);
 }

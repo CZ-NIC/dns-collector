@@ -9,6 +9,7 @@
 
 #include "lib/lib.h"
 #include "lib/getopt.h"
+#include "lib/conf.h"
 #include "lib/fastbuf.h"
 #include "lib/hashfunc.h"
 #include "lib/md5.h"
@@ -17,6 +18,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+
+/*** Time measurement ***/
+
+static void
+start(void)
+{
+  init_timer();
+}
+
+static void
+stop(void)
+{
+  log(L_INFO, "Test took %.3fs", get_timer() / 1000.);
+}
 
 /*** Simple 4-byte integer keys ***/
 
@@ -34,21 +49,22 @@ struct key1 {
 #include "lib/sorter/sorter.h"
 
 static void
-test_int(int mode, uns N)
+test_int(int mode, u64 size)
 {
-  N = nextprime(N);
+  uns N = nextprime(MIN(size/4, 0xffff0000));
   uns K = N/4*3;
-  log(L_INFO, "Integers (%s, N=%d)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
+  log(L_INFO, ">>> Integers (%s, N=%d)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
 
   struct fastbuf *f = bopen_tmp(65536);
   for (uns i=0; i<N; i++)
     bputl(f, (mode==0) ? i : (mode==1) ? N-1-i : ((u64)i * K + 17) % N);
   brewind(f);
 
-  log(L_INFO, "Sorting");
+  start();
   f = s1_sort(f, NULL, N-1);
+  stop();
 
-  log(L_INFO, "Verifying");
+  SORT_XTRACE(2, "Verifying");
   for (uns i=0; i<N; i++)
     {
       uns j = bgetl(f);
@@ -89,33 +105,39 @@ static inline void s2_copy_merged(struct key2 **k, struct fastbuf **d UNUSED, un
 #include "lib/sorter/sorter.h"
 
 static void
-test_counted(int mode, uns N)
+test_counted(int mode, u64 size)
 {
-  N = nextprime(N/4);
+  u64 items = size / sizeof(struct key2);
+  uns mult = 2;
+  while (items/(2*mult) > 0xffff0000)
+    mult++;
+  uns N = nextprime(items/(2*mult));
   uns K = N/4*3;
-  log(L_INFO, "Counted integers (%s, N=%d)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
+  log(L_INFO, ">>> Counted integers (%s, N=%d, mult=%d)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N, mult);
 
   struct fastbuf *f = bopen_tmp(65536);
-  for (uns i=0; i<2*N; i++)
-    for (uns j=0; j<2; j++)
-      {
-	bputl(f, (mode==0) ? (i%N) : (mode==1) ? N-1-(i%N) : ((u64)i * K + 17) % N);
-	bputl(f, 1);
-      }
+  for (uns m=0; m<mult; m++)
+    for (uns i=0; i<N; i++)
+      for (uns j=0; j<2; j++)
+	{
+	  bputl(f, (mode==0) ? (i%N) : (mode==1) ? N-1-(i%N) : ((u64)i * K + 17) % N);
+	  bputl(f, 1);
+	}
   brewind(f);
 
-  log(L_INFO, "Sorting");
+  start();
   f = s2_sort(f, NULL, N-1);
+  stop();
 
-  log(L_INFO, "Verifying");
+  SORT_XTRACE(2, "Verifying");
   for (uns i=0; i<N; i++)
     {
       uns j = bgetl(f);
       if (i != j)
 	die("Discrepancy: %d instead of %d", j, i);
       uns k = bgetl(f);
-      if (k != 4)
-	die("Discrepancy: %d has count %d instead of 4", j, k);
+      if (k != 2*mult)
+	die("Discrepancy: %d has count %d instead of %d", j, k, mult);
     }
   bclose(f);
 }
@@ -180,9 +202,10 @@ gen_hash_key(int mode, struct key3 *k, uns i)
 }
 
 static void
-test_hashes(int mode, uns N)
+test_hashes(int mode, u64 size)
 {
-  log(L_INFO, "Hashes (%s, N=%d)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
+  uns N = MIN(size / sizeof(struct key3), 0xffffffff);
+  log(L_INFO, ">>> Hashes (%s, N=%d)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
   struct key3 k, lastk;
 
   struct fastbuf *f = bopen_tmp(65536);
@@ -195,10 +218,11 @@ test_hashes(int mode, uns N)
     }
   brewind(f);
 
-  log(L_INFO, "Sorting");
+  start();
   f = s3_sort(f, NULL);
+  stop();
 
-  log(L_INFO, "Verifying");
+  SORT_XTRACE(2, "Verifying");
   for (uns i=0; i<N; i++)
     {
       int ok = breadb(f, &k, sizeof(k));
@@ -295,9 +319,11 @@ gen_data4(byte *buf, uns len, uns h)
 }
 
 static void
-test_strings(uns mode, uns N)
+test_strings(uns mode, u64 size)
 {
-  log(L_INFO, "Strings %s(N=%d)", (mode ? "with data " : ""), N);
+  uns avg_item_size = KEY4_MAX/2 + 4 + (mode ? 128 : 0);
+  uns N = MIN(size / avg_item_size, 0xffffffff);
+  log(L_INFO, ">>> Strings %s(N=%d)", (mode ? "with data " : ""), N);
   srand(1);
 
   struct key4 k, lastk;
@@ -319,10 +345,11 @@ test_strings(uns mode, uns N)
     }
   brewind(f);
 
-  log(L_INFO, "Sorting");
+  start();
   f = (mode ? s4b_sort : s4_sort)(f, NULL);
+  stop();
 
-  log(L_INFO, "Verifying");
+  SORT_XTRACE(2, "Verifying");
   for (uns i=0; i<N; i++)
     {
       int ok = s4_read_key(f, &k);
@@ -344,31 +371,73 @@ test_strings(uns mode, uns N)
   bclose(f);
 }
 
+static void
+run_test(uns i, u64 size)
+{
+  switch (i)
+    {
+    case 0:
+      test_int(0, size); break;
+    case 1:
+      test_int(1, size); break;
+    case 2:
+      test_int(2, size); break;
+    case 3:
+      test_counted(0, size); break;
+    case 4:
+      test_counted(1, size); break;
+    case 5:
+      test_counted(2, size); break;
+    case 6:
+      test_hashes(0, size); break;
+    case 7:
+      test_hashes(1, size); break;
+    case 8:
+      test_hashes(2, size); break;
+    case 9:
+      test_strings(0, size); break;
+    case 10:
+      test_strings(1, size); break;
+#define TMAX 11
+    }
+}
+
 int
 main(int argc, char **argv)
 {
   log_init(NULL);
-  if (cf_getopt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) >= 0 ||
-      optind != argc)
-  {
-    fputs("This program supports only the following command-line arguments:\n" CF_USAGE, stderr);
-    exit(1);
-  }
+  int c;
+  u64 size = 10000000;
+  uns t = ~0;
 
-  uns N = 100000;
-#if 0
-  test_int(0, N);
-  test_int(1, N);
-  test_int(2, N);
-  test_counted(0, N);
-  test_counted(1, N);
-  test_counted(2, N);
-  test_hashes(0, N);
-  test_hashes(1, N);
-  test_hashes(2, N);
-  test_strings(0, N);
-#endif
-  test_strings(1, N);
+  while ((c = cf_getopt(argc, argv, CF_SHORT_OPTS "s:t:v", CF_NO_LONG_OPTS, NULL)) >= 0)
+    switch (c)
+      {
+      case 's':
+	if (cf_parse_u64(optarg, &size))
+	  goto usage;
+	break;
+      case 't':
+	t = atol(optarg);
+	if (t >= TMAX)
+	  goto usage;
+	break;
+      case 'v':
+	sorter_trace++;
+	break;
+      default:
+      usage:
+	fputs("Usage: sort-test [-s <size>] [-t <test>]\n", stderr);
+	exit(1);
+      }
+  if (optind != argc)
+    goto usage;
+
+  if (t != ~0U)
+    run_test(t, size);
+  else
+    for (uns i=0; i<TMAX; i++)
+      run_test(i, size);
 
   return 0;
 }

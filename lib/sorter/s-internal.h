@@ -47,7 +47,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 #ifdef SORT_VAR_DATA
   if (sizeof(key) + 1024 + SORT_DATA_SIZE(key) > ctx->big_buf_half_size)
     {
-      SORT_XTRACE("s-internal: Generating a giant run");
+      SORT_XTRACE(3, "s-internal: Generating a giant run");
       struct fastbuf *out = sbuck_write(bout); /* FIXME: Using a non-direct buffer would be nice here */
       P(copy_data)(&key, in, out);
       bout->runs++;
@@ -60,7 +60,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   bufsize = MIN((u64)bufsize, (u64)~0U * sizeof(P(internal_item_t)));	// The number of records must fit in uns
 #endif
 
-  SORT_XTRACE("s-internal: Reading (bufsize=%zd)", bufsize);
+  SORT_XTRACE(3, "s-internal: Reading (bufsize=%zd)", bufsize);
   P(internal_item_t) *item_array = ctx->big_buf, *item = item_array, *last_item;
   byte *end = (byte *) ctx->big_buf + bufsize;
   do
@@ -91,10 +91,10 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   last_item = item;
 
   uns count = last_item - item_array;
-  SORT_XTRACE("s-internal: Sorting %d items", count);
+  SORT_XTRACE(3, "s-internal: Sorting %d items", count);
   P(array_sort)(count, item_array);
 
-  SORT_XTRACE("s-internal: Writing");
+  SORT_XTRACE(3, "s-internal: Writing");
   if (!ctx->more_keys)
     bout = bout_only;
   struct fastbuf *out = sbuck_write(bout);
@@ -132,7 +132,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 #endif
     }
 #ifdef SORT_UNIFY
-  SORT_XTRACE("Merging reduced %d records", merged);
+  SORT_XTRACE(3, "Merging reduced %d records", merged);
 #endif
 
   return ctx->more_keys;

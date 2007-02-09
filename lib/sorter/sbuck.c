@@ -73,7 +73,7 @@ sbuck_swap_in(struct sort_bucket *b)
 	bseek(b->fb, 0, SEEK_END);
       bconfig(b->fb, BCONFIG_IS_TEMP_FILE, 1);	/* FIXME: Was it always so? */
       b->flags &= ~SBF_SWAPPED_OUT;
-      SORT_XTRACE("Swapped in %s", b->filename);
+      SORT_XTRACE(2, "Swapped in %s", b->filename);
     }
 }
 
@@ -123,7 +123,7 @@ sbuck_swap_out(struct sort_bucket *b)
       bclose(b->fb);
       b->fb = NULL;
       b->flags |= SBF_SWAPPED_OUT;
-      SORT_XTRACE("Swapped out %s", b->filename);
+      SORT_XTRACE(2, "Swapped out %s", b->filename);
     }
 }
 
@@ -138,7 +138,7 @@ sorter_alloc_buf(struct sort_context *ctx)
   ctx->big_buf_size = 2*bs;
   ctx->big_buf_half = ((byte*) ctx->big_buf) + bs;
   ctx->big_buf_half_size = bs;
-  SORT_XTRACE("Allocated sorting buffer (%jd bytes)", (uintmax_t) bs);
+  SORT_XTRACE(2, "Allocated sorting buffer (%jd bytes)", (uintmax_t) bs);
 }
 
 void
@@ -148,5 +148,22 @@ sorter_free_buf(struct sort_context *ctx)
     return;
   big_free(ctx->big_buf, ctx->big_buf_size);
   ctx->big_buf = NULL;
-  SORT_XTRACE("Freed sorting buffer");
+  SORT_XTRACE(2, "Freed sorting buffer");
+}
+
+void
+format_size(byte *buf, u64 x)
+{
+  if (x < 10<<10)
+    sprintf(buf, "%.1fK", (double)x/(1<<10));
+  else if (x < 1<<20)
+    sprintf(buf, "%dK", (int)(x/(1<<10)));
+  else if (x < 10<<20)
+    sprintf(buf, "%.1fM", (double)x/(1<<20));
+  else if (x < 1<<30)
+    sprintf(buf, "%dM", (int)(x/(1<<20)));
+  else if (x < (u64)10<<30)
+    sprintf(buf, "%.1fG", (double)x/(1<<30));
+  else
+    sprintf(buf, "%dG", (int)(x/(1<<30)));
 }

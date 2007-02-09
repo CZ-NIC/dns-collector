@@ -18,7 +18,7 @@ extern uns sorter_debug;
 extern u64 sorter_bufsize;
 
 #define SORT_TRACE(x...) do { if (sorter_trace) log(L_DEBUG, x); } while(0)
-#define SORT_XTRACE(x...) do { if (sorter_trace > 1) log(L_DEBUG, x); } while(0)
+#define SORT_XTRACE(level, x...) do { if (sorter_trace >= level) log(L_DEBUG, x); } while(0)
 
 enum sort_debug {
   SORT_DEBUG_NO_PRESORT = 1,
@@ -91,5 +91,9 @@ sh_off_t sbuck_size(struct sort_bucket *b);
 struct fastbuf *sbuck_read(struct sort_bucket *b);
 struct fastbuf *sbuck_write(struct sort_bucket *b);
 void sbuck_swap_out(struct sort_bucket *b);
+
+#define F_SIZE(x) ({ byte buf[16]; format_size(buf, x); buf; })
+#define F_BSIZE(b) F_SIZE(sbuck_size(b))
+void format_size(byte *buf, u64 x);
 
 #endif
