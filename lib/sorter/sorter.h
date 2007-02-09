@@ -52,7 +52,7 @@
  *  SORT_HASH_BITS	signals that a monotone hashing function returning a given number of
  *			bits is available. Monotone hash is a function f such that f(x) < f(y)
  *			implies x < y and which is approximately uniformly distributed.
- *  uns PREFIX_hash(SORT_KEY *a, SORT_KEY *b)
+ *  uns PREFIX_hash(SORT_KEY *a)
  *
  *  Unification:
  *
@@ -175,6 +175,10 @@ static inline void P(copy_data)(P(key) *key, struct fastbuf *in, struct fastbuf 
 #include "lib/sorter/s-internal.h"
 #include "lib/sorter/s-twoway.h"
 
+#if defined(SORT_HASH_BITS) || defined(SORT_INT)
+#include "lib/sorter/s-radix.h"
+#endif
+
 static struct fastbuf *P(sort)(
 #ifdef SORT_INPUT_FILE
 			       byte *in,
@@ -223,10 +227,12 @@ static struct fastbuf *P(sort)(
 
 #ifdef SORT_HASH_BITS
   ctx.hash_bits = SORT_HASH_BITS;
+  ctx.radix_split = P(radix_split);
 #elif defined(SORT_INT)
   ctx.hash_bits = 0;
   while (ctx.hash_bits < 32 && (int_range >> ctx.hash_bits))
     ctx.hash_bits++;
+  ctx.radix_split = P(radix_split);
 #endif
 
   ctx.internal_sort = P(internal);

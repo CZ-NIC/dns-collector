@@ -18,18 +18,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 /*** Time measurement ***/
 
 static void
 start(void)
 {
+  sync();
   init_timer();
 }
 
 static void
 stop(void)
 {
+  sync();
   log(L_INFO, "Test took %.3fs", get_timer() / 1000.);
 }
 

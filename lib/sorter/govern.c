@@ -103,7 +103,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
       ins[0] = sbuck_new(ctx);
       if (!sorter_presort(ctx, b, ins[0], join ? : ins[0]))
 	{
-	  SORT_TRACE("Sorted in memory");
+	  SORT_XTRACE(((b->flags & SBF_SOURCE) ? 1 : 2), "Sorted in memory");
 	  if (join)
 	    sbuck_drop(ins[0]);
 	  else
@@ -163,6 +163,46 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
   clist_insert_after(&ins[0]->n, list_pos);
 }
 
+static int
+sorter_radix_p(struct sort_context *ctx, struct sort_bucket *b)
+{
+  return b->hash_bits && ctx->radix_split &&
+    !(sorter_debug & SORT_DEBUG_NO_RADIX) &&
+    sbuck_size(b) > (sh_off_t)sorter_bufsize;
+}
+
+static void
+sorter_radix(struct sort_context *ctx, struct sort_bucket *b)
+{
+  uns bits = MIN(b->hash_bits, 4);	/* FIXME */
+  uns nbuck = 1 << bits;
+  SORT_XTRACE(2, "Running radix sort on %s with %d bits of %d", F_BSIZE(b), bits, b->hash_bits);
+  sorter_start_timer(ctx);
+
+  struct sort_bucket *outs[nbuck];
+  for (uns i=nbuck; i--; )
+    {
+      outs[i] = sbuck_new(ctx);
+      outs[i]->hash_bits = b->hash_bits - bits;
+      clist_insert_after(&outs[i]->n, &b->n);
+    }
+
+  ctx->radix_split(ctx, b, outs, b->hash_bits - bits, bits);
+
+  u64 min = ~0U, max = 0, sum = 0;
+  for (uns i=0; i<nbuck; i++)
+    {
+      u64 s = sbuck_size(outs[i]);
+      min = MIN(min, s);
+      max = MAX(max, s);
+      sum += s;
+    }
+
+  SORT_TRACE("Radix split (%d buckets, %s min, %s max, %s avg, %dMB/s)", nbuck,
+	     F_SIZE(min), F_SIZE(max), F_SIZE(sum / nbuck), sorter_speed(ctx, sum));
+  sbuck_drop(b);
+}
+
 void
 sorter_run(struct sort_context *ctx)
 {
@@ -179,7 +219,7 @@ sorter_run(struct sort_context *ctx)
   else
     bin->fb = ctx->in_fb;
   bin->ident = "in";
-  bin->size = ctx->in_size;
+  bin->size = ctx->in_size;		/* Sizes should be either sh_off_t or u64, not both; beware of ~0U */
   bin->hash_bits = ctx->hash_bits;
   clist_add_tail(&ctx->bucket_list, &bin->n);
   SORT_XTRACE(2, "Input size: %s", (ctx->in_size == ~(u64)0 ? (byte*)"unknown" : F_BSIZE(bin)));
@@ -200,6 +240,8 @@ sorter_run(struct sort_context *ctx)
 	sbuck_drop(b);
       else if (b->runs == 1)
 	sorter_join(b);
+      else if (sorter_radix_p(ctx, b))
+	sorter_radix(ctx, b);
       else
 	sorter_twoway(ctx, b);
     }

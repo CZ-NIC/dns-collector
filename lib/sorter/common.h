@@ -24,6 +24,7 @@ enum sort_debug {
   SORT_DEBUG_NO_PRESORT = 1,
   SORT_DEBUG_NO_JOIN = 2,
   SORT_DEBUG_KEEP_BUCKETS = 4,
+  SORT_DEBUG_NO_RADIX = 8,
 };
 
 struct sort_bucket;
@@ -46,6 +47,8 @@ struct sort_context {
   // Two-way split/merge: merge up to 2 source buckets to up to 2 destination buckets.
   // Bucket arrays are NULL-terminated.
   void (*twoway_merge)(struct sort_context *ctx, struct sort_bucket **ins, struct sort_bucket **outs);
+  // Radix split according to hash function
+  void (*radix_split)(struct sort_context *ctx, struct sort_bucket *in, struct sort_bucket **outs, uns bitpos, uns numbits);
 
   // State variables of internal_sort
   void *key_buf;
