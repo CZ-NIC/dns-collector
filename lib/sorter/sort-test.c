@@ -10,6 +10,7 @@
 #include "lib/lib.h"
 #include "lib/getopt.h"
 #include "lib/fastbuf.h"
+#include "lib/hashfunc.h"
 #include "lib/md5.h"
 
 #include <stdlib.h>
@@ -131,10 +132,7 @@ static inline int s3_compare(struct key3 *x, struct key3 *y)
 {
   /* FIXME: Maybe unroll manually? */
   for (uns i=0; i<4; i++)
-    if (x->hash[i] < y->hash[i])
-      return -1;
-    else if (x->hash[i] > y->hash[i])
-      return 1;
+    COMPARE(x->hash[i], y->hash[i]);
   return 0;
 }
 
@@ -216,6 +214,136 @@ test_hashes(int mode, uns N)
   bclose(f);
 }
 
+/*** Variable-length records (strings) with and without var-length data ***/
+
+#define KEY4_MAX 256
+
+struct key4 {
+  uns len;
+  byte s[KEY4_MAX];
+};
+
+static inline int s4_compare(struct key4 *x, struct key4 *y)
+{
+  uns l = MIN(x->len, y->len);
+  int c = memcmp(x->s, y->s, l);
+  if (c)
+    return c;
+  COMPARE(x->len, y->len);
+  return 0;
+}
+
+static inline int s4_read_key(struct fastbuf *f, struct key4 *x)
+{
+  x->len = bgetl(f);
+  if (x->len == 0xffffffff)
+    return 0;
+  ASSERT(x->len < KEY4_MAX);
+  breadb(f, x->s, x->len);
+  return 1;
+}
+
+static inline void s4_write_key(struct fastbuf *f, struct key4 *x)
+{
+  ASSERT(x->len < KEY4_MAX);
+  bputl(f, x->len);
+  bwrite(f, x->s, x->len);
+}
+
+#define SORT_KEY struct key4
+#define SORT_PREFIX(x) s4_##x
+#define SORT_KEY_SIZE(x) (sizeof(struct key4) - KEY4_MAX + (x).len)
+#define SORT_INPUT_FB
+#define SORT_OUTPUT_FB
+
+#include "lib/sorter/sorter.h"
+
+#define s4b_compare s4_compare
+#define s4b_read_key s4_read_key
+#define s4b_write_key s4_write_key
+
+static inline uns s4_data_size(struct key4 *x)
+{
+  return x->len ? (x->s[0] ^ 0xad) : 0;
+}
+
+#define SORT_KEY struct key4
+#define SORT_PREFIX(x) s4b_##x
+#define SORT_KEY_SIZE(x) (sizeof(struct key4) - KEY4_MAX + (x).len)
+#define SORT_DATA_SIZE(x) s4_data_size(&(x))
+#define SORT_INPUT_FB
+#define SORT_OUTPUT_FB
+
+#include "lib/sorter/sorter.h"
+
+static void
+gen_key4(struct key4 *k)
+{
+  k->len = random_max(KEY4_MAX);
+  for (uns i=0; i<k->len; i++)
+    k->s[i] = random();
+}
+
+static void
+gen_data4(byte *buf, uns len, uns h)
+{
+  while (len--)
+    {
+      *buf++ = h >> 24;
+      h = h*259309 + 17;
+    }
+}
+
+static void
+test_strings(uns mode, uns N)
+{
+  log(L_INFO, "Strings %s(N=%d)", (mode ? "with data " : ""), N);
+  srand(1);
+
+  struct key4 k, lastk;
+  byte buf[256], buf2[256];
+  uns sum = 0;
+
+  struct fastbuf *f = bopen_tmp(65536);
+  for (uns i=0; i<N; i++)
+    {
+      gen_key4(&k);
+      s4_write_key(f, &k);
+      uns h = hash_block(k.s, k.len);
+      sum += h;
+      if (mode)
+	{
+	  gen_data4(buf, s4_data_size(&k), h);
+	  bwrite(f, buf, s4_data_size(&k));
+	}
+    }
+  brewind(f);
+
+  log(L_INFO, "Sorting");
+  f = (mode ? s4b_sort : s4_sort)(f, NULL);
+
+  log(L_INFO, "Verifying");
+  for (uns i=0; i<N; i++)
+    {
+      int ok = s4_read_key(f, &k);
+      ASSERT(ok);
+      uns h = hash_block(k.s, k.len);
+      if (mode && s4_data_size(&k))
+	{
+	  ok = breadb(f, buf, s4_data_size(&k));
+	  ASSERT(ok);
+	  gen_data4(buf2, s4_data_size(&k), h);
+	  ASSERT(!memcmp(buf, buf2, s4_data_size(&k)));
+	}
+      if (i && s4_compare(&k, &lastk) < 0)
+	ASSERT(0);
+      sum -= h;
+      lastk = k;
+    }
+  ASSERT(!sum);
+  bclose(f);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -227,7 +355,8 @@ main(int argc, char **argv)
     exit(1);
   }
 
-  uns N = 1000000;
+  uns N = 100000;
+#if 0
   test_int(0, N);
   test_int(1, N);
   test_int(2, N);
@@ -237,6 +366,9 @@ main(int argc, char **argv)
   test_hashes(0, N);
   test_hashes(1, N);
   test_hashes(2, N);
+  test_strings(0, N);
+#endif
+  test_strings(1, N);
 
   return 0;
 }
