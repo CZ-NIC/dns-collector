@@ -13,6 +13,33 @@
 #include "lib/sorter/common.h"
 
 #include <string.h>
+#include <sys/time.h>
+#include <time.h>
+
+static u64
+sorter_clock(void)
+{
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (u64)tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
+static void
+sorter_start_timer(struct sort_context *ctx)
+{
+  ctx->start_time = sorter_clock();
+}
+
+static uns
+sorter_speed(struct sort_context *ctx, u64 size)
+{
+  u64 stop_time = sorter_clock();
+  if (!size)
+    return 0;
+  if (stop_time <= ctx->start_time)
+    return -1;
+  return (uns)((double)size / (1<<20) * 1000 / (stop_time-ctx->start_time));
+}
 
 static int
 sorter_presort(struct sort_context *ctx, struct sort_bucket *in, struct sort_bucket *out, struct sort_bucket *out_only)
@@ -72,6 +99,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
   if (!(sorter_debug & SORT_DEBUG_NO_PRESORT) || (b->flags & SBF_CUSTOM_PRESORT))
     {
       SORT_XTRACE(2, "%s", ((b->flags & SBF_CUSTOM_PRESORT) ? "Custom presorting" : "Presorting"));
+      sorter_start_timer(ctx);
       ins[0] = sbuck_new(ctx);
       if (!sorter_presort(ctx, b, ins[0], join ? : ins[0]))
 	{
@@ -89,7 +117,10 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
       while (sorter_presort(ctx, b, ins[i], ins[i]))
 	i = 1-i;
       sbuck_drop(b);
-      SORT_TRACE("Presorting pass (%d+%d runs, %s+%s)", ins[0]->runs, ins[1]->runs, F_BSIZE(ins[0]), F_BSIZE(ins[1]));
+      SORT_TRACE("Presorting pass (%d+%d runs, %s+%s, %dMB/s)",
+		 ins[0]->runs, ins[1]->runs,
+		 F_BSIZE(ins[0]), F_BSIZE(ins[1]),
+		 sorter_speed(ctx, sbuck_size(ins[0]) + sbuck_size(ins[1])));
     }
   else
     {
@@ -101,6 +132,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
   uns pass = 0;
   do {
     ++pass;
+    sorter_start_timer(ctx);
     if (ins[0]->runs == 1 && ins[1]->runs == 1 && join)
       {
 	// This is guaranteed to produce a single run, so join if possible
@@ -109,7 +141,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 	ctx->twoway_merge(ctx, ins, outs);
 	ASSERT(outs[0]->runs == 2);
 	outs[0]->runs--;
-	SORT_TRACE("Mergesort pass %d (final run, %s)", pass, F_BSIZE(outs[0]));
+	SORT_TRACE("Mergesort pass %d (final run, %s, %dMB/s)", pass, F_BSIZE(outs[0]), sorter_speed(ctx, sbuck_size(outs[0])));
 	sbuck_drop(ins[0]);
 	sbuck_drop(ins[1]);
 	return;
@@ -118,7 +150,10 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
     outs[1] = sbuck_new(ctx);
     outs[2] = NULL;
     ctx->twoway_merge(ctx, ins, outs);
-    SORT_TRACE("Mergesort pass %d (%d+%d runs, %s+%s)", pass, outs[0]->runs, outs[1]->runs, F_BSIZE(outs[0]), F_BSIZE(outs[1]));
+    SORT_TRACE("Mergesort pass %d (%d+%d runs, %s+%s, %dMB/s)", pass,
+	       outs[0]->runs, outs[1]->runs,
+	       F_BSIZE(outs[0]), F_BSIZE(outs[1]),
+	       sorter_speed(ctx, sbuck_size(outs[0]) + sbuck_size(outs[1])));
     sbuck_drop(ins[0]);
     sbuck_drop(ins[1]);
     memcpy(ins, outs, 3*sizeof(struct sort_bucket *));

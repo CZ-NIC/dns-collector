@@ -50,6 +50,9 @@ struct sort_context {
   // State variables of internal_sort
   void *key_buf;
   int more_keys;
+
+  // Timing
+  u64 start_time;
 };
 
 void sorter_run(struct sort_context *ctx);

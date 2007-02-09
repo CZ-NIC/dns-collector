@@ -68,7 +68,10 @@ sbuck_swap_in(struct sort_bucket *b)
 {
   if (b->flags & SBF_SWAPPED_OUT)
     {
-      b->fb = bopen(b->filename, O_RDWR, sorter_stream_bufsize);
+      if (sorter_stream_bufsize)	/* FIXME: Needs better configuration, probably semi-automatic one */
+	b->fb = bopen(b->filename, O_RDWR, sorter_stream_bufsize);
+      else
+	b->fb = fbdir_open(b->filename, O_RDWR, NULL);
       if (b->flags & SBF_OPEN_WRITE)
 	bseek(b->fb, 0, SEEK_END);
       bconfig(b->fb, BCONFIG_IS_TEMP_FILE, 1);
@@ -103,7 +106,10 @@ sbuck_write(struct sort_bucket *b)
   else
     {
       ASSERT(!(b->flags & (SBF_OPEN_READ | SBF_DESTROYED)));
-      b->fb = bopen_tmp(sorter_stream_bufsize);
+      if (sorter_stream_bufsize)
+	b->fb = bopen_tmp(sorter_stream_bufsize);
+      else
+	b->fb = fbdir_open_tmp(NULL);
       if (sorter_debug & SORT_DEBUG_KEEP_BUCKETS)
 	bconfig(b->fb, BCONFIG_IS_TEMP_FILE, 0);
       b->flags |= SBF_OPEN_WRITE;
