@@ -371,6 +371,195 @@ test_strings(uns mode, u64 size)
   bclose(f);
 }
 
+/*** Graph-like structure with custom presorting ***/
+
+struct key5 {
+  u32 x;
+  u32 cnt;
+};
+
+static uns s5_N, s5_K, s5_L, s5_i, s5_j;
+
+struct s5_pair {
+  uns x, y;
+};
+
+static int s5_gen(struct s5_pair *p)
+{
+  if (s5_j >= s5_N)
+    {
+      if (s5_i >= s5_N-1)
+	return 0;
+      s5_j = 0;
+      s5_i++;
+    }
+  p->x = ((u64)s5_j * s5_K) % s5_N;
+  p->y = ((u64)(s5_i + s5_j) * s5_L) % s5_N;
+  s5_j++;
+  return 1;
+}
+
+#define ASORT_PREFIX(x) s5m_##x
+#define ASORT_KEY_TYPE u32
+#define ASORT_ELT(i) ary[i]
+#define ASORT_EXTRA_ARGS , u32 *ary
+#include "lib/arraysort.h"
+
+static void s5_write_merged(struct fastbuf *f, struct key5 **keys, void **data, uns n, void *buf)
+{
+  /* FIXME: Allow mode where this function is not defined? */
+  u32 *a = buf;
+  uns m = 0;
+  for (uns i=0; i<n; i++)
+    {
+      memcpy(&a[m], data[i], 4*keys[i]->cnt);
+      m += keys[i]->cnt;
+    }
+  s5m_sort(m, a);
+  keys[0]->cnt = m;
+  bwrite(f, keys[0], sizeof(struct key5));
+  bwrite(f, a, 4*m);			/* FIXME: Might overflow here */
+}
+
+static void s5_copy_merged(struct key5 **keys, struct fastbuf **data, uns n, struct fastbuf *dest)
+{
+  u32 k[n];
+  uns m = 0;
+  for (uns i=0; i<n; i++)
+    {
+      k[i] = bgetl(data[i]);
+      m += keys[i]->cnt;
+    }
+  struct key5 key = { .x = keys[0]->x, .cnt = m };
+  bwrite(dest, &key, sizeof(key));
+  while (key.cnt--)
+    {
+      uns b = 0;
+      for (uns i=1; i<n; i++)
+	if (k[i] < k[b])
+	  b = i;
+      bputl(dest, k[b]);
+      if (--keys[b]->cnt)
+	k[b] = bgetl(data[b]);
+      else
+	k[b] = ~0U;
+    }
+}
+
+static inline int s5p_lt(struct s5_pair x, struct s5_pair y)
+{
+  COMPARE_LT(x.x, y.x);
+  COMPARE_LT(x.y, y.y);
+  return 0;
+}
+
+/* FIXME: Use smarter internal sorter when it's available */
+#define ASORT_PREFIX(x) s5p_##x
+#define ASORT_KEY_TYPE struct s5_pair
+#define ASORT_ELT(i) ary[i]
+#define ASORT_LT(x,y) s5p_lt(x,y)
+#define ASORT_EXTRA_ARGS , struct s5_pair *ary
+#include "lib/arraysort.h"
+
+static int s5_presort(struct fastbuf *dest, void *buf, size_t bufsize)
+{
+  uns max = MIN(bufsize/sizeof(struct s5_pair), 0xffffffff);
+  struct s5_pair *a = buf;
+  uns n = 0;
+  while (n<max && s5_gen(&a[n]))
+    n++;
+  if (!n)
+    return 0;
+  s5p_sort(n, a);
+  uns i = 0;
+  while (i < n)
+    {
+      uns j = i;
+      while (i < n && a[i].x == a[j].x)
+	i++;
+      struct key5 k = { .x = a[j].x, .cnt = i-j };
+      bwrite(dest, &k, sizeof(k));
+      while (j < i)
+	bputl(dest, a[j++].y);
+    }
+  return 1;
+}
+
+#define SORT_KEY_REGULAR struct key5
+#define SORT_PREFIX(x) s5_##x
+#define SORT_DATA_SIZE(k) (4*(k).cnt)
+#define SORT_UNIFY
+#define SORT_INPUT_PRESORT
+#define SORT_OUTPUT_THIS_FB
+#define SORT_INT(k) (k).x
+
+#include "lib/sorter/sorter.h"
+
+#define SORT_KEY_REGULAR struct key5
+#define SORT_PREFIX(x) s5b_##x
+#define SORT_DATA_SIZE(k) (4*(k).cnt)
+#define SORT_UNIFY
+#define SORT_INPUT_FB
+#define SORT_OUTPUT_THIS_FB
+#define SORT_INT(k) (k).x
+#define s5b_write_merged s5_write_merged
+#define s5b_copy_merged s5_copy_merged
+
+#include "lib/sorter/sorter.h"
+
+static void
+test_graph(uns mode, u64 size)
+{
+  uns N = 3;
+  while ((u64)N*(N+2)*4 < size)
+    N = nextprime(N);
+  log(L_INFO, ">>> Graph%s (N=%d)", (mode ? "" : " with custom presorting"), N);
+  s5_N = N;
+  s5_K = N/4*3;
+  s5_L = N/3*2;
+
+  struct fastbuf *in = NULL;
+  if (mode)
+    {
+      struct s5_pair p;
+      in = bopen_tmp(65536);
+      while (s5_gen(&p))
+	{
+	  struct key5 k = { .x = p.x, .cnt = 1 };
+	  bwrite(in, &k, sizeof(k));
+	  bputl(in, p.y);
+	}
+      brewind(in);
+    }
+
+  start();
+  struct fastbuf *f = bopen_tmp(65536);
+  bputl(f, 0xfeedcafe);
+  struct fastbuf *g = (mode ? s5b_sort(in, f, s5_N-1) : s5_sort(NULL, f, s5_N-1));
+  ASSERT(f == g);
+  stop();
+
+  SORT_XTRACE(2, "Verifying");
+  uns c = bgetl(f);
+  ASSERT(c == 0xfeedcafe);
+  for (uns i=0; i<N; i++)
+    {
+      struct key5 k;
+      int ok = breadb(f, &k, sizeof(k));
+      ASSERT(ok);
+      ASSERT(k.x == i);
+      ASSERT(k.cnt == N);
+      for (uns j=0; j<N; j++)
+	{
+	  uns y = bgetl(f);
+	  ASSERT(y == j);
+	}
+    }
+  bclose(f);
+}
+
+/*** Main ***/
+
 static void
 run_test(uns i, u64 size)
 {
@@ -398,7 +587,11 @@ run_test(uns i, u64 size)
       test_strings(0, size); break;
     case 10:
       test_strings(1, size); break;
-#define TMAX 11
+    case 11:
+      test_graph(0, size); break;
+    case 12:
+      test_graph(1, size); break;
+#define TMAX 13
     }
 }
 
@@ -410,9 +603,12 @@ main(int argc, char **argv)
   u64 size = 10000000;
   uns t = ~0;
 
-  while ((c = cf_getopt(argc, argv, CF_SHORT_OPTS "s:t:v", CF_NO_LONG_OPTS, NULL)) >= 0)
+  while ((c = cf_getopt(argc, argv, CF_SHORT_OPTS "d:s:t:v", CF_NO_LONG_OPTS, NULL)) >= 0)
     switch (c)
       {
+      case 'd':
+	sorter_debug = atol(optarg);
+	break;
       case 's':
 	if (cf_parse_u64(optarg, &size))
 	  goto usage;
@@ -427,7 +623,7 @@ main(int argc, char **argv)
 	break;
       default:
       usage:
-	fputs("Usage: sort-test [-s <size>] [-t <test>]\n", stderr);
+	fputs("Usage: sort-test [-v] [-d <debug>] [-s <size>] [-t <test>]\n", stderr);
 	exit(1);
       }
   if (optind != argc)

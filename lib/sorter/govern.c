@@ -21,6 +21,7 @@ sorter_presort(struct sort_context *ctx, struct sort_bucket *in, struct sort_buc
   if (in->flags & SBF_CUSTOM_PRESORT)
     {
       struct fastbuf *f = sbuck_write(out);
+      out->runs++;
       return ctx->custom_presort(f, ctx->big_buf, ctx->big_buf_size);	// FIXME: out_only optimization?
     }
   return ctx->internal_sort(ctx, in, out, out_only);
@@ -70,7 +71,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 
   if (!(sorter_debug & SORT_DEBUG_NO_PRESORT) || (b->flags & SBF_CUSTOM_PRESORT))
     {
-      SORT_XTRACE(2, "Presorting");
+      SORT_XTRACE(2, "%s", ((b->flags & SBF_CUSTOM_PRESORT) ? "Custom presorting" : "Presorting"));
       ins[0] = sbuck_new(ctx);
       if (!sorter_presort(ctx, b, ins[0], join ? : ins[0]))
 	{
@@ -88,6 +89,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
       while (sorter_presort(ctx, b, ins[i], ins[i]))
 	i = 1-i;
       sbuck_drop(b);
+      SORT_TRACE("Presorting pass (%d+%d runs, %s+%s)", ins[0]->runs, ins[1]->runs, F_BSIZE(ins[0]), F_BSIZE(ins[1]));
     }
   else
     {
@@ -150,7 +152,8 @@ sorter_run(struct sort_context *ctx)
   // Create bucket for the output
   struct sort_bucket *bout = sbuck_new(ctx);
   bout->flags = SBF_FINAL;
-  bout->fb = ctx->out_fb;
+  if (bout->fb = ctx->out_fb)
+    bout->flags |= SBF_OPEN_WRITE;
   bout->ident = "out";
   bout->runs = 1;
   clist_add_head(&ctx->bucket_list, &bout->n);
