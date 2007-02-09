@@ -168,7 +168,7 @@ static inline int P(hash) (P(key) *x)
 
 static inline void P(copy_data)(P(key) *key, struct fastbuf *in, struct fastbuf *out)
 {
-  bwrite(out, key, sizeof(P(key)));
+  P(write_key)(out, key);
 #ifdef SORT_VAR_DATA
   bbcopy(in, out, SORT_DATA_SIZE(*key));
 #else

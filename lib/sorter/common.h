@@ -23,6 +23,7 @@ extern u64 sorter_bufsize;
 enum sort_debug {
   SORT_DEBUG_NO_PRESORT = 1,
   SORT_DEBUG_NO_JOIN = 2,
+  SORT_DEBUG_KEEP_BUCKETS = 4,
 };
 
 struct sort_bucket;

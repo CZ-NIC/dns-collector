@@ -71,7 +71,7 @@ sbuck_swap_in(struct sort_bucket *b)
       b->fb = bopen(b->filename, O_RDWR, sorter_stream_bufsize);
       if (b->flags & SBF_OPEN_WRITE)
 	bseek(b->fb, 0, SEEK_END);
-      bconfig(b->fb, BCONFIG_IS_TEMP_FILE, 1);
+      bconfig(b->fb, BCONFIG_IS_TEMP_FILE, 1);	/* FIXME: Was it always so? */
       b->flags &= ~SBF_SWAPPED_OUT;
       SORT_XTRACE("Swapped in %s", b->filename);
     }
@@ -104,6 +104,8 @@ sbuck_write(struct sort_bucket *b)
     {
       ASSERT(!(b->flags & (SBF_OPEN_READ | SBF_DESTROYED)));
       b->fb = bopen_tmp(sorter_stream_bufsize);
+      if (sorter_debug & SORT_DEBUG_KEEP_BUCKETS)
+	bconfig(b->fb, BCONFIG_IS_TEMP_FILE, 0);
       b->flags |= SBF_OPEN_WRITE;
       b->filename = mp_strdup(b->ctx->pool, b->fb->name);
     }
