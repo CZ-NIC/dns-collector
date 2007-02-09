@@ -32,6 +32,7 @@ struct sort_context {
   struct fastbuf *in_fb;
   struct fastbuf *out_fb;
   uns hash_bits;
+  u64 in_size;
 
   struct mempool *pool;
   clist bucket_list;

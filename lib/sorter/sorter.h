@@ -68,7 +68,8 @@
  *  Input (choose one of these):
  *
  *  SORT_INPUT_FILE	file of a given name
- *  SORT_INPUT_FB	fastbuf stream
+ *  SORT_INPUT_FB	seekable fastbuf stream
+ *  SORT_INPUT_PIPE	non-seekable fastbuf stream
  *  SORT_INPUT_PRESORT	custom presorter. Calls function
  *  int PREFIX_presort(struct fastbuf *dest, void *buf, size_t bufsize);
  *			to get successive batches of pre-sorted data.
@@ -84,11 +85,6 @@
  *  Other switches:
  *
  *  SORT_UNIQUE		all items have distinct keys (checked in debug mode)
- *
- *  FIXME: Maybe implement these:
- *  ??? SORT_DELETE_INPUT	a C expression, if true, the input files are
- *			deleted as soon as possible
- *  ??? SORT_ALIGNED
  *
  *  The function generated:
  *
@@ -200,11 +196,17 @@ static struct fastbuf *P(sort)(
 
 #ifdef SORT_INPUT_FILE
   ctx.in_fb = bopen(in, O_RDONLY, sorter_stream_bufsize);
+  ctx.in_size = bfilesize(ctx.in_fb);
 #elif defined(SORT_INPUT_FB)
   ctx.in_fb = in;
+  ctx.in_size = bfilesize(in);
+#elif defined(SORT_INPUT_PIPE)
+  ctx.in_fb = in;
+  ctx.in_size = ~(u64)0;
 #elif defined(SORT_INPUT_PRESORT)
   ASSERT(!in);
   ctx.custom_presort = P(presort);
+  ctx.in_size = ~(u64)0;
 #else
 #error No input given.
 #endif

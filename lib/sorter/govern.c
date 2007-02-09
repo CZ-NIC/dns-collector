@@ -134,7 +134,6 @@ sorter_run(struct sort_context *ctx)
   ctx->pool = mp_new(4096);
   clist_init(&ctx->bucket_list);
 
-  /* FIXME: There should be a way how to detect size of the input file */
   /* FIXME: Remember to test sorting of empty files */
 
   // Create bucket containing the source
@@ -145,9 +144,10 @@ sorter_run(struct sort_context *ctx)
   else
     bin->fb = ctx->in_fb;
   bin->ident = "in";
-  bin->size = ~(u64)0;
+  bin->size = ctx->in_size;
   bin->hash_bits = ctx->hash_bits;
   clist_add_tail(&ctx->bucket_list, &bin->n);
+  SORT_XTRACE(2, "Input size: %s", (ctx->in_size == ~(u64)0 ? (byte*)"unknown" : F_BSIZE(bin)));
 
   // Create bucket for the output
   struct sort_bucket *bout = sbuck_new(ctx);
