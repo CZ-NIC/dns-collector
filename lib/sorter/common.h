@@ -98,9 +98,6 @@ sh_off_t sbuck_size(struct sort_bucket *b);
 struct fastbuf *sbuck_read(struct sort_bucket *b);
 struct fastbuf *sbuck_write(struct sort_bucket *b);
 void sbuck_swap_out(struct sort_bucket *b);
-
-#define F_SIZE(x) ({ byte buf[16]; format_size(buf, x); buf; })
-#define F_BSIZE(b) F_SIZE(sbuck_size(b))
 void format_size(byte *buf, u64 x);
 
 #endif

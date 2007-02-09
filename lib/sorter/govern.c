@@ -15,6 +15,10 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
+#include <alloca.h>
+
+#define F_SIZE(x) ({ byte *buf = alloca(16); format_size(buf, x); buf; })
+#define F_BSIZE(b) F_SIZE(sbuck_size(b))
 
 static u64
 sorter_clock(void)
@@ -179,7 +183,7 @@ sorter_radix(struct sort_context *ctx, struct sort_bucket *b)
   SORT_XTRACE(2, "Running radix sort on %s with %d bits of %d", F_BSIZE(b), bits, b->hash_bits);
   sorter_start_timer(ctx);
 
-  struct sort_bucket *outs[nbuck];
+  struct sort_bucket **outs = alloca(nbuck * sizeof(struct sort_bucket *));
   for (uns i=nbuck; i--; )
     {
       outs[i] = sbuck_new(ctx);
@@ -189,7 +193,7 @@ sorter_radix(struct sort_context *ctx, struct sort_bucket *b)
 
   ctx->radix_split(ctx, b, outs, b->hash_bits - bits, bits);
 
-  u64 min = ~0U, max = 0, sum = 0;
+  u64 min = ~(u64)0, max = 0, sum = 0;
   for (uns i=0; i<nbuck; i++)
     {
       u64 s = sbuck_size(outs[i]);
