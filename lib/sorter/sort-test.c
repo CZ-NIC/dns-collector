@@ -51,7 +51,7 @@ struct key1 {
 static void
 test_int(int mode, u64 size)
 {
-  uns N = nextprime(MIN(size/4, 0xffff0000));
+  uns N = size ? nextprime(MIN(size/4, 0xffff0000)) : 0;
   uns K = N/4*3;
   log(L_INFO, ">>> Integers (%s, N=%d)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
 
@@ -111,7 +111,7 @@ test_counted(int mode, u64 size)
   uns mult = 2;
   while (items/(2*mult) > 0xffff0000)
     mult++;
-  uns N = nextprime(items/(2*mult));
+  uns N = items ? nextprime(items/(2*mult)) : 0;
   uns K = N/4*3;
   log(L_INFO, ">>> Counted integers (%s, N=%d, mult=%d)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N, mult);
 
