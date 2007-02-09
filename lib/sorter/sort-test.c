@@ -53,7 +53,7 @@ test_int(int mode, u64 size)
 {
   uns N = size ? nextprime(MIN(size/4, 0xffff0000)) : 0;
   uns K = N/4*3;
-  log(L_INFO, ">>> Integers (%s, N=%d)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
+  log(L_INFO, ">>> Integers (%s, N=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
 
   struct fastbuf *f = bopen_tmp(65536);
   for (uns i=0; i<N; i++)
@@ -69,7 +69,7 @@ test_int(int mode, u64 size)
     {
       uns j = bgetl(f);
       if (i != j)
-	die("Discrepancy: %d instead of %d", j, i);
+	die("Discrepancy: %u instead of %u", j, i);
     }
   bclose(f);
 }
@@ -113,7 +113,7 @@ test_counted(int mode, u64 size)
     mult++;
   uns N = items ? nextprime(items/(2*mult)) : 0;
   uns K = N/4*3;
-  log(L_INFO, ">>> Counted integers (%s, N=%d, mult=%d)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N, mult);
+  log(L_INFO, ">>> Counted integers (%s, N=%u, mult=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N, mult);
 
   struct fastbuf *f = bopen_tmp(65536);
   for (uns m=0; m<mult; m++)
@@ -134,10 +134,10 @@ test_counted(int mode, u64 size)
     {
       uns j = bgetl(f);
       if (i != j)
-	die("Discrepancy: %d instead of %d", j, i);
+	die("Discrepancy: %u instead of %u", j, i);
       uns k = bgetl(f);
       if (k != 2*mult)
-	die("Discrepancy: %d has count %d instead of %d", j, k, mult);
+	die("Discrepancy: %u has count %u instead of %u", j, k, mult);
     }
   bclose(f);
 }
@@ -205,7 +205,7 @@ static void
 test_hashes(int mode, u64 size)
 {
   uns N = MIN(size / sizeof(struct key3), 0xffffffff);
-  log(L_INFO, ">>> Hashes (%s, N=%d)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
+  log(L_INFO, ">>> Hashes (%s, N=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
   struct key3 k, lastk;
 
   struct fastbuf *f = bopen_tmp(65536);
@@ -323,7 +323,7 @@ test_strings(uns mode, u64 size)
 {
   uns avg_item_size = KEY4_MAX/2 + 4 + (mode ? 128 : 0);
   uns N = MIN(size / avg_item_size, 0xffffffff);
-  log(L_INFO, ">>> Strings %s(N=%d)", (mode ? "with data " : ""), N);
+  log(L_INFO, ">>> Strings %s(N=%u)", (mode ? "with data " : ""), N);
   srand(1);
 
   struct key4 k, lastk;
@@ -513,7 +513,7 @@ test_graph(uns mode, u64 size)
   uns N = 3;
   while ((u64)N*(N+2)*4 < size)
     N = nextprime(N);
-  log(L_INFO, ">>> Graph%s (N=%d)", (mode ? "" : " with custom presorting"), N);
+  log(L_INFO, ">>> Graph%s (N=%u)", (mode ? "" : " with custom presorting"), N);
   s5_N = N;
   s5_K = N/4*3;
   s5_L = N/3*2;
