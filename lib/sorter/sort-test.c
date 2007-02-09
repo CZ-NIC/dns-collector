@@ -517,6 +517,7 @@ test_graph(uns mode, u64 size)
   s5_N = N;
   s5_K = N/4*3;
   s5_L = N/3*2;
+  s5_i = s5_j = 0;
 
   struct fastbuf *in = NULL;
   if (mode)
