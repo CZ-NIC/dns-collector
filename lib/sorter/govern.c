@@ -102,7 +102,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 
   if (!(sorter_debug & SORT_DEBUG_NO_PRESORT) || (b->flags & SBF_CUSTOM_PRESORT))
     {
-      SORT_XTRACE(2, "%s", ((b->flags & SBF_CUSTOM_PRESORT) ? "Custom presorting" : "Presorting"));
+      SORT_XTRACE(3, "%s", ((b->flags & SBF_CUSTOM_PRESORT) ? "Custom presorting" : "Presorting"));
       sorter_start_timer(ctx);
       ins[0] = sbuck_new(ctx);
       if (!sorter_presort(ctx, b, ins[0], join ? : ins[0]))
@@ -132,7 +132,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
       ins[0] = b;
     }
 
-  SORT_XTRACE(2, "Main sorting");
+  SORT_XTRACE(3, "Main sorting");
   uns pass = 0;
   do {
     ++pass;
@@ -140,12 +140,14 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
     if (ins[0]->runs == 1 && ins[1]->runs == 1 && join)
       {
 	// This is guaranteed to produce a single run, so join if possible
+	sh_off_t join_size = sbuck_size(join);
 	outs[0] = join;
 	outs[1] = NULL;
 	ctx->twoway_merge(ctx, ins, outs);
-	ASSERT(outs[0]->runs == 2);
-	outs[0]->runs--;
-	SORT_TRACE("Mergesort pass %d (final run, %s, %dMB/s)", pass, F_BSIZE(outs[0]), sorter_speed(ctx, sbuck_size(outs[0])));
+	ASSERT(join->runs == 2);
+	join->runs--;
+	join_size = sbuck_size(join) - join_size;
+	SORT_TRACE("Mergesort pass %d (final run, %s, %dMB/s)", pass, F_SIZE(join_size), sorter_speed(ctx, join_size));
 	sbuck_drop(ins[0]);
 	sbuck_drop(ins[1]);
 	return;
@@ -223,10 +225,10 @@ sorter_run(struct sort_context *ctx)
   else
     bin->fb = ctx->in_fb;
   bin->ident = "in";
-  bin->size = ctx->in_size;		/* Sizes should be either sh_off_t or u64, not both; beware of ~0U */
+  bin->size = ctx->in_size;		/* FIXME: Sizes should be either sh_off_t or u64, not both; beware of ~0U */
   bin->hash_bits = ctx->hash_bits;
   clist_add_tail(&ctx->bucket_list, &bin->n);
-  SORT_XTRACE(2, "Input size: %s", (ctx->in_size == ~(u64)0 ? (byte*)"unknown" : F_BSIZE(bin)));
+  SORT_XTRACE(2, "Input size: %s", F_BSIZE(bin));
 
   // Create bucket for the output
   struct sort_bucket *bout = sbuck_new(ctx);
@@ -240,6 +242,7 @@ sorter_run(struct sort_context *ctx)
   struct sort_bucket *b;
   while (bout = clist_head(&ctx->bucket_list), b = clist_next(&ctx->bucket_list, &bout->n))
     {
+      SORT_XTRACE(2, "Next block: %s, %d hash bits", F_BSIZE(b), b->hash_bits);
       if (!sbuck_have(b))
 	sbuck_drop(b);
       else if (b->runs == 1)

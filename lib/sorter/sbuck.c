@@ -144,7 +144,7 @@ sorter_alloc_buf(struct sort_context *ctx)
   ctx->big_buf_size = 2*bs;
   ctx->big_buf_half = ((byte*) ctx->big_buf) + bs;
   ctx->big_buf_half_size = bs;
-  SORT_XTRACE(2, "Allocated sorting buffer (%jd bytes)", (uintmax_t) bs);
+  SORT_XTRACE(2, "Allocated sorting buffer (2*%jd bytes)", (uintmax_t) bs);
 }
 
 void
@@ -170,6 +170,8 @@ format_size(byte *buf, u64 x)
     sprintf(buf, "%dM", (int)(x/(1<<20)));
   else if (x < (u64)10<<30)
     sprintf(buf, "%.1fG", (double)x/(1<<30));
-  else
+  else if (x != ~(u64)0)
     sprintf(buf, "%dG", (int)(x/(1<<30)));
+  else
+    strcpy(buf, "unknown");
 }
