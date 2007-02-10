@@ -91,7 +91,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   last_item = item;
 
   uns count = last_item - item_array;
-  SORT_XTRACE(3, "s-internal: Sorting %d items", count);
+  SORT_XTRACE(3, "s-internal: Sorting %u items", count);
   P(array_sort)(count, item_array);
 
   SORT_XTRACE(3, "s-internal: Writing");
@@ -132,7 +132,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 #endif
     }
 #ifdef SORT_UNIFY
-  SORT_XTRACE(3, "Merging reduced %d records", merged);
+  SORT_XTRACE(3, "Merging reduced %u records", merged);
 #endif
 
   return ctx->more_keys;

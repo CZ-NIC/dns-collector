@@ -172,7 +172,12 @@ static inline void P(copy_data)(P(key) *key, struct fastbuf *in, struct fastbuf 
 #endif
 }
 
+#if defined(SORT_VAR_KEY) || defined(SORT_VAR_DATA) || defined(SORT_UNIFY)
 #include "lib/sorter/s-internal.h"
+#else
+#include "lib/sorter/s-fixint.h"
+#endif
+
 #include "lib/sorter/s-twoway.h"
 
 #if defined(SORT_HASH_BITS) || defined(SORT_INT)
