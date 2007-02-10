@@ -177,7 +177,7 @@ sorter_radix_bits(struct sort_context *ctx, struct sort_bucket *b)
     return 0;
 
   u64 in = sbuck_size(b);
-  u64 mem = ctx->internal_estimate(ctx, b);
+  u64 mem = ctx->internal_estimate(ctx, b) * 0.8;	// FIXME: Magical factor for hash non-uniformity
   if (in <= mem)
     return 0;
 
