@@ -67,7 +67,7 @@ stk_fsize_internal(char *buf, u64 x)
 {
   if (x < 1<<10)
     sprintf(buf, "%dB", (int)x);
-  if (x < 10<<10)
+  else if (x < 10<<10)
     sprintf(buf, "%.1fK", (double)x/(1<<10));
   else if (x < 1<<20)
     sprintf(buf, "%dK", (int)(x/(1<<10)));
