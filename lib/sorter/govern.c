@@ -10,15 +10,14 @@
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 #include "lib/mempool.h"
+#include "lib/stkstring.h"
 #include "lib/sorter/common.h"
 
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
-#include <alloca.h>
 
-#define F_SIZE(x) ({ byte *buf = alloca(16); format_size(buf, x); buf; })
-#define F_BSIZE(b) F_SIZE(sbuck_size(b))
+#define F_BSIZE(b) stk_fsize(sbuck_size(b))
 
 static u64
 sorter_clock(void)
@@ -147,7 +146,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 	ASSERT(join->runs == 2);
 	join->runs--;
 	join_size = sbuck_size(join) - join_size;
-	SORT_TRACE("Mergesort pass %d (final run, %s, %dMB/s)", pass, F_SIZE(join_size), sorter_speed(ctx, join_size));
+	SORT_TRACE("Mergesort pass %d (final run, %s, %dMB/s)", pass, stk_fsize(join_size), sorter_speed(ctx, join_size));
 	sbuck_drop(ins[0]);
 	sbuck_drop(ins[1]);
 	return;
@@ -205,7 +204,7 @@ sorter_radix(struct sort_context *ctx, struct sort_bucket *b)
     }
 
   SORT_TRACE("Radix split (%d buckets, %s min, %s max, %s avg, %dMB/s)", nbuck,
-	     F_SIZE(min), F_SIZE(max), F_SIZE(sum / nbuck), sorter_speed(ctx, sum));
+	     stk_fsize(min), stk_fsize(max), stk_fsize(sum / nbuck), sorter_speed(ctx, sum));
   sbuck_drop(b);
 }
 

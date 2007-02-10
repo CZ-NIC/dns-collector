@@ -62,6 +62,27 @@ stk_hexdump_internal(char *dst, byte *src, uns n)
   *dst = 0;
 }
 
+void
+stk_fsize_internal(char *buf, u64 x)
+{
+  if (x < 1<<10)
+    sprintf(buf, "%dB", (int)x);
+  if (x < 10<<10)
+    sprintf(buf, "%.1fK", (double)x/(1<<10));
+  else if (x < 1<<20)
+    sprintf(buf, "%dK", (int)(x/(1<<10)));
+  else if (x < 10<<20)
+    sprintf(buf, "%.1fM", (double)x/(1<<20));
+  else if (x < 1<<30)
+    sprintf(buf, "%dM", (int)(x/(1<<20)));
+  else if (x < (u64)10<<30)
+    sprintf(buf, "%.1fG", (double)x/(1<<30));
+  else if (x != ~(u64)0)
+    sprintf(buf, "%dG", (int)(x/(1<<30)));
+  else
+    strcpy(buf, "unknown");
+}
+
 #ifdef TEST
 
 int main(void)
@@ -76,6 +97,7 @@ int main(void)
   puts(stk_hexdump(a, 3));
   char *ary[] = { "The", "jaws", "that", "bite" };
   puts(stk_strjoin(ary, 4, ' '));
+  puts(stk_fsize(1234567));
   return 0;
 }
 
