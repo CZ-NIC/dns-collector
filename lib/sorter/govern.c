@@ -168,20 +168,30 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
   clist_insert_after(&ins[0]->n, list_pos);
 }
 
-static int
-sorter_radix_p(struct sort_context *ctx, struct sort_bucket *b)
+static uns
+sorter_radix_bits(struct sort_context *ctx, struct sort_bucket *b)
 {
-  return b->hash_bits && ctx->radix_split &&
-    !(sorter_debug & SORT_DEBUG_NO_RADIX) &&
-    sbuck_size(b) > (sh_off_t)sorter_bufsize;
+  if (!b->hash_bits || !ctx->radix_split || (sorter_debug & SORT_DEBUG_NO_RADIX))
+    return 0;
+
+  u64 in = sbuck_size(b);
+  u64 mem = ctx->internal_estimate(ctx, b);
+  if (in < mem)
+    return 0;
+
+  uns n;
+  for (n = sorter_min_radix_bits; n < sorter_max_radix_bits && n < b->hash_bits; n++)
+    if ((in >> n) < mem)
+      break;
+  return n;
 }
 
 static void
-sorter_radix(struct sort_context *ctx, struct sort_bucket *b)
+    sorter_radix(struct sort_context *ctx, struct sort_bucket *b, uns bits)
 {
-  uns bits = MIN(b->hash_bits, 4);	/* FIXME */
   uns nbuck = 1 << bits;
-  SORT_XTRACE(2, "Running radix sort on %s with %d bits of %d", F_BSIZE(b), bits, b->hash_bits);
+  SORT_XTRACE(2, "Running radix sort on %s with %d bits of %d (expected size %s)",
+	      F_BSIZE(b), bits, b->hash_bits, stk_fsize(sbuck_size(b) / nbuck));
   sorter_start_timer(ctx);
 
   struct sort_bucket **outs = alloca(nbuck * sizeof(struct sort_bucket *));
@@ -201,6 +211,8 @@ sorter_radix(struct sort_context *ctx, struct sort_bucket *b)
       min = MIN(min, s);
       max = MAX(max, s);
       sum += s;
+      if (nbuck > 4)
+	sbuck_swap_out(outs[i]);
     }
 
   SORT_TRACE("Radix split (%d buckets, %s min, %s max, %s avg, %dMB/s)", nbuck,
@@ -213,6 +225,7 @@ sorter_run(struct sort_context *ctx)
 {
   ctx->pool = mp_new(4096);
   clist_init(&ctx->bucket_list);
+  sorter_prepare_buf(ctx);
 
   /* FIXME: Remember to test sorting of empty files */
 
@@ -239,6 +252,7 @@ sorter_run(struct sort_context *ctx)
   clist_add_head(&ctx->bucket_list, &bout->n);
 
   struct sort_bucket *b;
+  uns bits;
   while (bout = clist_head(&ctx->bucket_list), b = clist_next(&ctx->bucket_list, &bout->n))
     {
       SORT_XTRACE(2, "Next block: %s, %d hash bits", F_BSIZE(b), b->hash_bits);
@@ -246,8 +260,8 @@ sorter_run(struct sort_context *ctx)
 	sbuck_drop(b);
       else if (b->runs == 1)
 	sorter_join(b);
-      else if (sorter_radix_p(ctx, b))
-	sorter_radix(ctx, b);
+      else if (bits = sorter_radix_bits(ctx, b))
+	sorter_radix(ctx, b, bits);
       else
 	sorter_twoway(ctx, b);
     }

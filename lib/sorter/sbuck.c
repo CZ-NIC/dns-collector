@@ -135,17 +135,22 @@ sbuck_swap_out(struct sort_bucket *b)
 }
 
 void
+sorter_prepare_buf(struct sort_context *ctx)
+{
+  u64 bs = MAX(sorter_bufsize/2, 1);
+  bs = ALIGN_TO(bs, (u64)CPU_PAGE_SIZE);
+  ctx->big_buf_size = 2*bs;
+  ctx->big_buf_half_size = bs;
+}
+
+void
 sorter_alloc_buf(struct sort_context *ctx)
 {
   if (ctx->big_buf)
     return;
-  u64 bs = MAX(sorter_bufsize/2, 1);
-  bs = ALIGN_TO(bs, (u64)CPU_PAGE_SIZE);
-  ctx->big_buf = big_alloc(2*bs);
-  ctx->big_buf_size = 2*bs;
-  ctx->big_buf_half = ((byte*) ctx->big_buf) + bs;
-  ctx->big_buf_half_size = bs;
-  SORT_XTRACE(2, "Allocated sorting buffer (2*%s)", stk_fsize(bs));
+  ctx->big_buf = big_alloc(ctx->big_buf_size);
+  ctx->big_buf_half = ((byte*) ctx->big_buf) + ctx->big_buf_half_size;
+  SORT_XTRACE(2, "Allocated sorting buffer (2*%s)", stk_fsize(ctx->big_buf_half_size));
 }
 
 void

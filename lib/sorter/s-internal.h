@@ -137,3 +137,16 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 
   return ctx->more_keys;
 }
+
+static u64
+P(internal_estimate)(struct sort_context *ctx, struct sort_bucket *b UNUSED)
+{
+  uns avg;
+#ifdef SORT_VAR_KEY
+  avg = ALIGN_TO(sizeof(P(key))/4, CPU_STRUCT_ALIGN);	// Wild guess...
+#else
+  avg = ALIGN_TO(sizeof(P(key)), CPU_STRUCT_ALIGN);
+#endif
+  // We ignore the data part of records, it probably won't make the estimate much worse
+  return (ctx->big_buf_half_size / (avg + sizeof(P(internal_item_t))) * avg);
+}

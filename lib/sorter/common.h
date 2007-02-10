@@ -14,7 +14,7 @@
 
 /* Configuration, some of the variables are used by the old sorter, too. */
 extern uns sorter_trace, sorter_presort_bufsize, sorter_stream_bufsize;
-extern uns sorter_debug;
+extern uns sorter_debug, sorter_min_radix_bits, sorter_max_radix_bits;
 extern u64 sorter_bufsize;
 
 #define SORT_TRACE(x...) do { if (sorter_trace) log(L_DEBUG, x); } while(0)
@@ -41,12 +41,18 @@ struct sort_context {
   size_t big_buf_size, big_buf_half_size;
 
   int (*custom_presort)(struct fastbuf *dest, void *buf, size_t bufsize);
+
   // Take as much as possible from the source bucket, sort it in memory and dump to destination bucket.
   // Return 1 if there is more data available in the source bucket.
   int (*internal_sort)(struct sort_context *ctx, struct sort_bucket *in, struct sort_bucket *out, struct sort_bucket *out_only);
+
+  // Estimate how much input data from `b' will fit in the internal sorting buffer.
+  u64 (*internal_estimate)(struct sort_context *ctx, struct sort_bucket *b);
+
   // Two-way split/merge: merge up to 2 source buckets to up to 2 destination buckets.
   // Bucket arrays are NULL-terminated.
   void (*twoway_merge)(struct sort_context *ctx, struct sort_bucket **ins, struct sort_bucket **outs);
+
   // Radix split according to hash function
   void (*radix_split)(struct sort_context *ctx, struct sort_bucket *in, struct sort_bucket **outs, uns bitpos, uns numbits);
 
@@ -63,6 +69,7 @@ void sorter_run(struct sort_context *ctx);
 /* Buffers */
 
 void *sorter_alloc(struct sort_context *ctx, uns size);
+void sorter_prepare_buf(struct sort_context *ctx);
 void sorter_alloc_buf(struct sort_context *ctx);
 void sorter_free_buf(struct sort_context *ctx);
 

@@ -57,3 +57,9 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 
   return (n == maxkeys);
 }
+
+static u64
+P(internal_estimate)(struct sort_context *ctx, struct sort_bucket *b UNUSED)
+{
+  return ctx->big_buf_half_size;
+}

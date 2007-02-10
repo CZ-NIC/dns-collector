@@ -241,6 +241,7 @@ static struct fastbuf *P(sort)(
 #endif
 
   ctx.internal_sort = P(internal);
+  ctx.internal_estimate = P(internal_estimate);
   ctx.twoway_merge = P(twoway_merge);
 
   sorter_run(&ctx);
