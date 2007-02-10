@@ -178,13 +178,12 @@ sorter_radix_bits(struct sort_context *ctx, struct sort_bucket *b)
 
   u64 in = sbuck_size(b);
   u64 mem = ctx->internal_estimate(ctx, b);
-  if (in < mem)
+  if (in <= mem)
     return 0;
 
-  uns n;
-  for (n = sorter_min_radix_bits; n < sorter_max_radix_bits && n < b->hash_bits; n++)
-    if ((in >> n) < mem)
-      break;
+  uns n = sorter_min_radix_bits;
+  while (n < sorter_max_radix_bits && n < b->hash_bits && (in >> n) > mem)
+    n++;
   return n;
 }
 
@@ -192,7 +191,7 @@ static void
 sorter_radix(struct sort_context *ctx, struct sort_bucket *b, uns bits)
 {
   uns nbuck = 1 << bits;
-  SORT_XTRACE(2, "Running radix sort on %s with %d bits of %d (expected size %s)",
+  SORT_XTRACE(2, "Running radix split on %s with hash %d bits of %d (expecting %s buckets)",
 	      F_BSIZE(b), bits, b->hash_bits, stk_fsize(sbuck_size(b) / nbuck));
   sorter_start_timer(ctx);
 
