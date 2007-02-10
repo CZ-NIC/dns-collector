@@ -61,5 +61,5 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 static u64
 P(internal_estimate)(struct sort_context *ctx, struct sort_bucket *b UNUSED)
 {
-  return ctx->big_buf_half_size;
+  return ctx->big_buf_half_size - 1;	// -1 since if the buffer is full, we don't recognize EOF
 }
