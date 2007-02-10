@@ -28,6 +28,15 @@ static inline void *P(internal_get_data)(P(key) *key)
   return (byte *) key + ksize;
 }
 
+static size_t P(internal_buf_size)(struct sort_context *ctx)
+{
+  size_t bufsize = ctx->big_buf_half_size;	/* FIXME: In some cases, we can use the whole buffer */
+#ifdef CPU_64BIT_POINTERS
+  bufsize = MIN((u64)bufsize, (u64)~0U * sizeof(P(internal_item_t)));	// The number of records must fit in uns
+#endif
+  return bufsize;
+}
+
 static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct sort_bucket *bout, struct sort_bucket *bout_only)
 {
   sorter_alloc_buf(ctx);
@@ -44,20 +53,16 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   else if (!P(read_key)(in, &key))
     return 0;
 
+  size_t bufsize = P(internal_buf_size)(ctx);
 #ifdef SORT_VAR_DATA
-  if (sizeof(key) + 1024 + SORT_DATA_SIZE(key) > ctx->big_buf_half_size)
+  if (sizeof(key) + 1024 + SORT_DATA_SIZE(key) > bufsize)
     {
       SORT_XTRACE(3, "s-internal: Generating a giant run");
-      struct fastbuf *out = sbuck_write(bout); /* FIXME: Using a non-direct buffer would be nice here */
+      struct fastbuf *out = sbuck_write(bout);
       P(copy_data)(&key, in, out);
       bout->runs++;
       return 1;				// We don't know, but 1 is always safe
     }
-#endif
-
-  size_t bufsize = ctx->big_buf_half_size;	/* FIXME: In some cases, we can use the whole buffer */
-#ifdef CPU_64BIT_POINTERS
-  bufsize = MIN((u64)bufsize, (u64)~0U * sizeof(P(internal_item_t)));	// The number of records must fit in uns
 #endif
 
   SORT_XTRACE(3, "s-internal: Reading (bufsize=%zd)", bufsize);
@@ -141,12 +146,11 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 static u64
 P(internal_estimate)(struct sort_context *ctx, struct sort_bucket *b UNUSED)
 {
-  uns avg;
 #ifdef SORT_VAR_KEY
-  avg = ALIGN_TO(sizeof(P(key))/4, CPU_STRUCT_ALIGN);	// Wild guess...
+  uns avg = ALIGN_TO(sizeof(P(key))/4, CPU_STRUCT_ALIGN);	// Wild guess...
 #else
-  avg = ALIGN_TO(sizeof(P(key)), CPU_STRUCT_ALIGN);
+  uns avg = ALIGN_TO(sizeof(P(key)), CPU_STRUCT_ALIGN);
 #endif
   // We ignore the data part of records, it probably won't make the estimate much worse
-  return (ctx->big_buf_half_size / (avg + sizeof(P(internal_item_t))) * avg);
+  return (P(internal_buf_size)(ctx) / (avg + sizeof(P(internal_item_t))) * avg);
 }

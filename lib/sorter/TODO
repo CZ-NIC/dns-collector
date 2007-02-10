@@ -15,3 +15,4 @@ o  Implement multi-way merge.
 o  Mode with only 2-way unification?
 o  Speed up 2-way merge.
 o  Speed up radix splitting.
+o  A debug switch for disabling the presorter.
