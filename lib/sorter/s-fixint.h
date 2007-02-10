@@ -19,7 +19,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   sorter_alloc_buf(ctx);
   struct fastbuf *in = sbuck_read(bin);
   P(key) *buf = ctx->big_buf;
-  size_t bufsize = ctx->big_buf_half_size;	/* FIXME: In some cases, we can use the whole buffer */
+  size_t bufsize = ctx->big_buf_half_size;
 #ifdef CPU_64BIT_POINTERS
   bufsize = MIN((u64)bufsize, (u64)~0U * sizeof(P(key)));	// The number of records must fit in uns
 #endif

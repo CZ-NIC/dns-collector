@@ -7,9 +7,6 @@
  *	of the GNU Lesser General Public License.
  */
 
-/* FIXME: There is a plenty of room for further optimization */
-/* FIXME: Swap outputs if there already are some runs? */
-
 static void P(twoway_merge)(struct sort_context *ctx UNUSED, struct sort_bucket **ins, struct sort_bucket **outs)
 {
   struct fastbuf *fin1, *fin2, *fout1, *fout2, *ftmp;

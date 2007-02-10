@@ -7,8 +7,6 @@
  *	of the GNU Lesser General Public License.
  */
 
-/* FIXME: This is a very trivial implementation so far. Use fbdirect and such things to speed up. */
-
 #include <string.h>
 
 static void P(radix_split)(struct sort_context *ctx UNUSED, struct sort_bucket *bin, struct sort_bucket **bouts, uns bitpos, uns numbits)

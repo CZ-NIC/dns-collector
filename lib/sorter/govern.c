@@ -228,8 +228,6 @@ sorter_run(struct sort_context *ctx)
   clist_init(&ctx->bucket_list);
   sorter_prepare_buf(ctx);
 
-  /* FIXME: Remember to test sorting of empty files */
-
   // Create bucket containing the source
   struct sort_bucket *bin = sbuck_new(ctx);
   bin->flags = SBF_SOURCE | SBF_OPEN_READ;
@@ -238,7 +236,7 @@ sorter_run(struct sort_context *ctx)
   else
     bin->fb = ctx->in_fb;
   bin->ident = "in";
-  bin->size = ctx->in_size;		/* FIXME: Sizes should be either sh_off_t or u64, not both; beware of ~0U */
+  bin->size = ctx->in_size;
   bin->hash_bits = ctx->hash_bits;
   clist_add_tail(&ctx->bucket_list, &bin->n);
   SORT_XTRACE(2, "Input size: %s", F_BSIZE(bin));

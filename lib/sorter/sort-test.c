@@ -410,7 +410,6 @@ static int s5_gen(struct s5_pair *p)
 
 static void s5_write_merged(struct fastbuf *f, struct key5 **keys, void **data, uns n, void *buf)
 {
-  /* FIXME: Allow mode where this function is not defined? */
   u32 *a = buf;
   uns m = 0;
   for (uns i=0; i<n; i++)
