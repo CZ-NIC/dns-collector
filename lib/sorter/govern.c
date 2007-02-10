@@ -171,7 +171,9 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 static uns
 sorter_radix_bits(struct sort_context *ctx, struct sort_bucket *b)
 {
-  if (!b->hash_bits || !ctx->radix_split || (sorter_debug & SORT_DEBUG_NO_RADIX))
+  if (!b->hash_bits || !ctx->radix_split ||
+      (b->flags & SBF_CUSTOM_PRESORT) ||
+      (sorter_debug & SORT_DEBUG_NO_RADIX))
     return 0;
 
   u64 in = sbuck_size(b);
@@ -187,7 +189,7 @@ sorter_radix_bits(struct sort_context *ctx, struct sort_bucket *b)
 }
 
 static void
-    sorter_radix(struct sort_context *ctx, struct sort_bucket *b, uns bits)
+sorter_radix(struct sort_context *ctx, struct sort_bucket *b, uns bits)
 {
   uns nbuck = 1 << bits;
   SORT_XTRACE(2, "Running radix sort on %s with %d bits of %d (expected size %s)",
