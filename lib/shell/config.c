@@ -274,7 +274,7 @@ parse_section(struct section *section)
 	}
       if (section->item.cf.cls == CC_LIST)
         {
-          item->cf.ptr = (void *)(addr_int_t)section->size;
+          item->cf.ptr = (void *)(uintptr_t)section->size;
           section->size += sizeof(union value);
         }
       else
@@ -346,7 +346,7 @@ dump_value(uns array, struct item *item, void *v)
         sprintf(buf, "%d", *(int *)v);
         break;
       case CT_U64:
-        sprintf(buf, "%Lu", *(u64 *)v);
+        sprintf(buf, "%llu", (long long) *(u64 *)v);
 	break;
       case CT_DOUBLE:
 	sprintf(buf, "%g", *(double *)v);
@@ -375,7 +375,7 @@ dump_item(struct item *item, void *ptr, uns path_len)
 {
   if (item->flags & FLAG_HIDE)
     return;
-  byte *val = (byte *)((addr_int_t)ptr + (addr_int_t)item->cf.ptr);
+  byte *val = (byte *)((uintptr_t)ptr + (uintptr_t)item->cf.ptr);
   if (item->cf.cls == CC_LIST)
     {
       uns len = strlen(item->cf.name);

@@ -38,6 +38,6 @@ uns hash_string_nocase(const byte *str) PURE;
  */
 static inline uns CONST hash_u32(uns x) { return 0x01008041*x; }
 static inline uns CONST hash_u64(u64 x) { return hash_u32((uns)x ^ (uns)(x >> 32)); }
-static inline uns CONST hash_pointer(void *x) { return ((sizeof(x) <= 4) ? hash_u32((uns)(addr_int_t)x) : hash_u64((u64)(addr_int_t)x)); }
+static inline uns CONST hash_pointer(void *x) { return ((sizeof(x) <= 4) ? hash_u32((uns)(uintptr_t)x) : hash_u64((u64)(uintptr_t)x)); }
 
 #endif

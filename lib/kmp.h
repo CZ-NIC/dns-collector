@@ -168,7 +168,7 @@ P(hash_hash) (struct P(hash_table) *t, struct P(state) *f, P(char_t) c)
 static inline uns
 P(hash_hash) (struct P(hash_table) *t UNUSED, struct P(state) *f, P(char_t) c)
 {
-  return (((uns)c) << 16) + (uns)(addr_int_t)f;
+  return (((uns)c) << 16) + (uns)(uintptr_t)f;
 }
 #endif
 

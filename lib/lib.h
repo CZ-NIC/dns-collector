@@ -1,7 +1,7 @@
 /*
  *	The UCW Library -- Miscellaneous Functions
  *
- *	(c) 1997--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2007 Martin Mares <mj@ucw.cz>
  *	(c) 2005 Tomas Valla <tom@ucw.cz>
  *	(c) 2006 Robert Spalek <robert@ucw.cz>
  *
@@ -15,12 +15,6 @@
 #include "lib/config.h"
 #include <stdarg.h>
 
-/* Tell libc we're going to use all extensions available */
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 /* Macros for handling structurues, offsets and alignment */
 
 #define CHECK_PTR_TYPE(x, type) ((x)-(type)(x) + (type)(x))
@@ -28,8 +22,8 @@
 #define OFFSETOF(s, i) ((unsigned int) PTR_TO(s, i))
 #define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))
 #define ALIGN_TO(s, a) (((s)+a-1)&~(a-1))
-#define ALIGN_PTR(p, s) ((addr_int_t)(p) % (s) ? (typeof(p))((addr_int_t)(p) + (s) - (addr_int_t)(p) % (s)) : (p))
-#define UNALIGNED_PART(ptr, type) (((addr_int_t) (ptr)) % sizeof(type))
+#define ALIGN_PTR(p, s) ((uintptr_t)(p) % (s) ? (typeof(p))((uintptr_t)(p) + (s) - (uintptr_t)(p) % (s)) : (p))
+#define UNALIGNED_PART(ptr, type) (((uintptr_t) (ptr)) % sizeof(type))
 
 /* Some other macros */
 

@@ -29,7 +29,7 @@ struct nfa_state {
 };
 
 struct dfa_state {
-  addr_int_t edge[256];		/* Outgoing DFA edges. Bit 0 is set for incomplete edges which
+  uintptr_t edge[256];		/* Outgoing DFA edges. Bit 0 is set for incomplete edges which
 				 * contain just state set and clear for complete ones which point
 				 * to other states. NULL means `no match'.
 				 */
@@ -157,12 +157,12 @@ wp_match(struct wildpatt *w, byte *s)
   d = w->dfa_start;
   while (*s)
     {
-      addr_int_t next = d->edge[*s];
+      uintptr_t next = d->edge[*s];
       if (next & 1)
 	{
 	  /* Need to lookup/create the destination state */
 	  struct dfa_state *new = wp_new_state(w, next & ~1);
-	  d->edge[*s] = (addr_int_t) new;
+	  d->edge[*s] = (uintptr_t) new;
 	  d = new;
 	}
       else if (!next)

@@ -39,7 +39,7 @@ void
 big_free(void *start, unsigned int len)
 {
   byte *p = start;
-  ASSERT(!((addr_int_t) p & (CPU_PAGE_SIZE-1)));
+  ASSERT(!((uintptr_t) p & (CPU_PAGE_SIZE-1)));
   len = big_round(len);
 #ifdef CONFIG_DEBUG
   p -= CPU_PAGE_SIZE;
