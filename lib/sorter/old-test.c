@@ -22,18 +22,20 @@
 
 /*** Time measurement ***/
 
+static timestamp_t timer;
+
 static void
 start(void)
 {
   sync();
-  init_timer();
+  init_timer(&timer);
 }
 
 static void
 stop(void)
 {
   sync();
-  log(L_INFO, "Test took %.3fs", get_timer() / 1000.);
+  log(L_INFO, "Test took %.3fs", get_timer(&timer) / 1000.);
 }
 
 /*** Simple 4-byte integer keys ***/

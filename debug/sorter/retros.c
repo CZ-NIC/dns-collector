@@ -695,7 +695,8 @@ int main(int argc, char **argv)
     array0[i] = array1[i] = (struct elt) { 0 };
 
   mk_ary();
-  init_timer();
+  timestamp_t timer;
+  init_timer(&timer);
   for (uns i=0; i<5; i++)
     {
 #if 1
@@ -708,9 +709,9 @@ int main(int argc, char **argv)
 	ary[j] = alt[j];
 #endif
     }
-  log(L_DEBUG, "memcpy: %d", get_timer()/10);
+  log(L_DEBUG, "memcpy: %d", get_timer(&timer)/10);
 
-#define BENCH(type, name, func) mk_##type(); init_timer(); func; log(L_DEBUG, name ": %d", get_timer()); chk_##type()
+#define BENCH(type, name, func) mk_##type(); init_timer(&timer); func; log(L_DEBUG, name ": %d", get_timer(&timer)); chk_##type()
 
   //BENCH(ary, "qsort", qsort(ary, n, sizeof(struct elt), comp));
   //BENCH(ary, "arraysort", as_sort(n, ary));

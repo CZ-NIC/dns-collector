@@ -13,14 +13,16 @@
 #define COPY
 #define DIRECT O_DIRECT
 
+static timestamp_t timer;
+
 #define P_INIT do { cnt = 0; cnt_rep = 0; cnt_ms = 1; } while(0)
 #define P_UPDATE(cc) do { \
   cnt += cc; \
-  if (cnt >= cnt_rep) { cnt_ms += get_timer(); \
+  if (cnt >= cnt_rep) { cnt_ms += get_timer(&timer); \
     printf("%d of %d MB (%.2f MB/sec)\r", (int)(cnt >> 20), (int)(total_size >> 20), (double)cnt / 1048576 * 1000 / cnt_ms); \
     fflush(stdout); cnt_rep += 1<<26; } } while(0)
 #define P_FINAL do { \
-  cnt_ms += get_timer(); \
+  cnt_ms += get_timer(&timer); \
   log(L_INFO, "Spent %.3f sec (%.2f MB/sec)", (double)cnt_ms/1000, (double)cnt / 1048576 * 1000 / cnt_ms); \
 } while(0)
 
@@ -37,7 +39,7 @@ int main(int argc, char **argv)
   uns xbufsize = bufsize;					// Used for single-file I/O
   byte *xbuf = big_alloc(xbufsize);
 
-  init_timer();
+  init_timer(&timer);
 
 #ifdef COPY
   log(L_INFO, "Creating input file");
@@ -68,7 +70,7 @@ int main(int argc, char **argv)
       buf[i] = big_alloc(bufsize);
     }
   sync();
-  get_timer();
+  get_timer(&timer);
 
   log(L_INFO, "Writing %d MB to %d files in parallel with %d byte buffers", (int)(total_size >> 20), files, bufsize);
   P_INIT;
