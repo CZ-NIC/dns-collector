@@ -12,7 +12,6 @@
 
 #include "lib/clists.h"
 
-typedef s64 timestamp_t;			/* We measure time in milliseconds */
 extern timestamp_t main_now;			/* Current time in milliseconds since UNIX epoch */
 extern sh_time_t main_now_seconds;		/* Current time in seconds since the epoch */
 extern uns main_shutdown;

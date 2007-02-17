@@ -192,11 +192,11 @@ uns prev_table_prime(uns x);
 
 /* timer.c */
 
-struct timeval;
+timestamp_t get_timestamp(void);
 
-void init_timer(void);
-uns get_timer(void);
-void get_last_timeval(struct timeval *tv);
+void init_timer(timestamp_t *timer);
+uns get_timer(timestamp_t *timer);
+uns switch_timer(timestamp_t *old, timestamp_t *new);
 
 /* regex.c */
 
