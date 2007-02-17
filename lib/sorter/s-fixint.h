@@ -44,7 +44,10 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
     return 0;
 
   SORT_XTRACE(3, "s-fixint: Sorting %u items", n);
+  timestamp_t timer;
+  init_timer(&timer);
   P(array_sort)(n, buf);
+  ctx->total_int_time += get_timer(&timer);
 
   SORT_XTRACE(3, "s-fixint: Writing");
   struct fastbuf *out = sbuck_write((n < maxkeys) ? bout_only : bout);

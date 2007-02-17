@@ -97,7 +97,10 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 
   uns count = last_item - item_array;
   SORT_XTRACE(3, "s-internal: Sorting %u items", count);
+  timestamp_t timer;
+  init_timer(&timer);
   P(array_sort)(count, item_array);
+  ctx->total_int_time += get_timer(&timer);
 
   SORT_XTRACE(3, "s-internal: Writing");
   if (!ctx->more_keys)

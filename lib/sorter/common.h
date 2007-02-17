@@ -61,7 +61,8 @@ struct sort_context {
   int more_keys;
 
   // Timing
-  u64 start_time;
+  timestamp_t start_time;
+  uns total_int_time, total_pre_time, total_ext_time;
 };
 
 void sorter_run(struct sort_context *ctx);
