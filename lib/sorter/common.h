@@ -62,6 +62,7 @@ struct sort_context {
 
   // Timing
   timestamp_t start_time;
+  uns last_pass_time;
   uns total_int_time, total_pre_time, total_ext_time;
 };
 

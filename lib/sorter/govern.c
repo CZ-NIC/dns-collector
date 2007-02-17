@@ -22,19 +22,24 @@
 static void
 sorter_start_timer(struct sort_context *ctx)
 {
-  ctx->start_time = get_timestamp();
+  init_timer(&ctx->start_time);
+}
+
+static void
+sorter_stop_timer(struct sort_context *ctx, uns *account_to)
+{
+  ctx->last_pass_time = get_timer(&ctx->start_time);
+  *account_to += ctx->last_pass_time;
 }
 
 static uns
-sorter_speed(struct sort_context *ctx, u64 size, uns *account_to)
+sorter_speed(struct sort_context *ctx, u64 size)
 {
-  timestamp_t stop_time = get_timestamp();
   if (!size)
     return 0;
-  if (stop_time <= ctx->start_time)
+  if (!ctx->last_pass_time)
     return -1;
-  *account_to += stop_time - ctx->start_time;
-  return (uns)((double)size / (1<<20) * 1000 / (stop_time-ctx->start_time));
+  return (uns)((double)size / (1<<20) * 1000 / ctx->last_pass_time);
 }
 
 static int
@@ -99,6 +104,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
       ins[0] = sbuck_new(ctx);
       if (!sorter_presort(ctx, b, ins[0], join ? : ins[0]))
 	{
+	  sorter_stop_timer(ctx, &ctx->total_pre_time);
 	  SORT_XTRACE(((b->flags & SBF_SOURCE) ? 1 : 2), "Sorted in memory");
 	  if (join)
 	    sbuck_drop(ins[0]);
@@ -113,10 +119,11 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
       while (sorter_presort(ctx, b, ins[i], ins[i]))
 	i = 1-i;
       sbuck_drop(b);
+      sorter_stop_timer(ctx, &ctx->total_pre_time);
       SORT_TRACE("Presorting pass (%d+%d runs, %s+%s, %dMB/s)",
 		 ins[0]->runs, ins[1]->runs,
 		 F_BSIZE(ins[0]), F_BSIZE(ins[1]),
-		 sorter_speed(ctx, sbuck_size(ins[0]) + sbuck_size(ins[1]), &ctx->total_pre_time));
+		 sorter_speed(ctx, sbuck_size(ins[0]) + sbuck_size(ins[1])));
     }
   else
     {
@@ -139,7 +146,8 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 	ASSERT(join->runs == 2);
 	join->runs--;
 	join_size = sbuck_size(join) - join_size;
-	SORT_TRACE("Mergesort pass %d (final run, %s, %dMB/s)", pass, stk_fsize(join_size), sorter_speed(ctx, join_size, &ctx->total_ext_time));
+	sorter_stop_timer(ctx, &ctx->total_ext_time);
+	SORT_TRACE("Mergesort pass %d (final run, %s, %dMB/s)", pass, stk_fsize(join_size), sorter_speed(ctx, join_size));
 	sbuck_drop(ins[0]);
 	sbuck_drop(ins[1]);
 	return;
@@ -148,10 +156,11 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
     outs[1] = sbuck_new(ctx);
     outs[2] = NULL;
     ctx->twoway_merge(ctx, ins, outs);
+    sorter_stop_timer(ctx, &ctx->total_ext_time);
     SORT_TRACE("Mergesort pass %d (%d+%d runs, %s+%s, %dMB/s)", pass,
 	       outs[0]->runs, outs[1]->runs,
 	       F_BSIZE(outs[0]), F_BSIZE(outs[1]),
-	       sorter_speed(ctx, sbuck_size(outs[0]) + sbuck_size(outs[1]), &ctx->total_ext_time));
+	       sorter_speed(ctx, sbuck_size(outs[0]) + sbuck_size(outs[1])));
     sbuck_drop(ins[0]);
     sbuck_drop(ins[1]);
     memcpy(ins, outs, 3*sizeof(struct sort_bucket *));
@@ -210,8 +219,9 @@ sorter_radix(struct sort_context *ctx, struct sort_bucket *b, uns bits)
 	sbuck_swap_out(outs[i]);
     }
 
+  sorter_stop_timer(ctx, &ctx->total_ext_time);
   SORT_TRACE("Radix split (%d buckets, %s min, %s max, %s avg, %dMB/s)", nbuck,
-	     stk_fsize(min), stk_fsize(max), stk_fsize(sum / nbuck), sorter_speed(ctx, sum, &ctx->total_ext_time));
+	     stk_fsize(min), stk_fsize(max), stk_fsize(sum / nbuck), sorter_speed(ctx, sum));
   sbuck_drop(b);
 }
 
