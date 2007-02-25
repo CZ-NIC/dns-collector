@@ -8,7 +8,7 @@
 #
 #
 # Interface:
-#   Sherlock::Filelock::fcntllock($handle, $type, $whence, $start, $len)
+#   Sherlock::Filelock::fcntl_lock($fd, $cmd, $type, $whence, $start, $len)
 #
 
 package Sherlock::Filelock;
