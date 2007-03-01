@@ -10,6 +10,7 @@
 
 #include <alloca.h>
 #include <string.h>
+#include <stdio.h>
 
 #define stk_strdup(s) ({ char *_s=(s); uns _l=strlen(_s)+1; char *_x=alloca(_l); memcpy(_x, _s, _l); _x; })
 #define stk_strndup(s,n) ({ char *_s=(s); uns _l=strnlen(_s,(n)); char *_x=alloca(_l+1); memcpy(_x, _s, _l); _x[_l]=0; _x; })
