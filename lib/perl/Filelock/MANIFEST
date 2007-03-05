@@ -3,8 +3,4 @@ Makefile.PL
 MANIFEST
 Fcntllock.pm
 Fcntllock.xs
-CVS/Entries
-CVS/Repository
-CVS/Root
 lib/Sherlock/.exists
-.cvsignore

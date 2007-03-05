@@ -4,11 +4,6 @@ DIRS+=lib/perl/Filelock/arch/auto/Sherlock/Filelock
 FILELOCK_DIR=lib/perl/Filelock
 
 PROGS+=$(o)/lib/perl/Filelock/Filelock.pm
-ifdef CONFIG_DARWIN
-SOEXT=bundle
-else
-SOEXT=so
-endif
 
 extras:: $(o)/lib/perl/Filelock/arch/auto/Sherlock/Filelock/Filelock.$(SOEXT)
 
