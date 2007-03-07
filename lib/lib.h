@@ -112,8 +112,10 @@ void assert_failed_noinfo(void) NONRET;
 
 #ifdef DEBUG_ASSERTS
 #define ASSERT(x) do { if (unlikely(!(x))) assert_failed(#x, __FILE__, __LINE__); } while(0)
+#define EASSERT(x) ASSERT(x)
 #else
 #define ASSERT(x) do { if (__builtin_constant_p(x) && !(x)) assert_failed_noinfo(); } while(0)
+#define EASSERT(x) do { if (unlikely(!(x))) assert_failed_noinfo(); } while(0) 
 #endif
 
 #define COMPILE_ASSERT(name,x) typedef char _COMPILE_ASSERT_##name[!!(x)-1]
