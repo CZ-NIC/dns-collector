@@ -209,6 +209,7 @@ int rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen);
 
 /* random.c */
 
+uns random_u32(void);
 uns random_max(uns max);
 u64 random_u64(void);
 u64 random_max_u64(u64 max);
