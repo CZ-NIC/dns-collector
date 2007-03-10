@@ -14,111 +14,61 @@
 #include "lib/fastbuf.h"
 #include "lib/unaligned.h"
 
-int bgetw_slow(struct fastbuf *f);
-static inline int bgetw(struct fastbuf *f)
-{
-  int w;
-  if (bavailr(f) >= 2)
-    {
-      w = GET_U16(f->bptr);
-      f->bptr += 2;
-      return w;
-    }
-  else
-    return bgetw_slow(f);
-}
+#ifdef CPU_BIG_ENDIAN
+#define FF_ENDIAN be
+#else
+#define FF_ENDIAN le
+#endif
 
-u32 bgetl_slow(struct fastbuf *f);
-static inline u32 bgetl(struct fastbuf *f)
-{
-  u32 l;
-  if (bavailr(f) >= 4)
-    {
-      l = GET_U32(f->bptr);
-      f->bptr += 4;
-      return l;
-    }
-  else
-    return bgetl_slow(f);
-}
+#define GET_FUNC(type, name, bits, endian)			\
+  type bget##name##_##endian##_slow(struct fastbuf *f);		\
+  static inline type bget##name##_##endian(struct fastbuf *f)	\
+  {								\
+    if (bavailr(f) >= bits/8)					\
+      {								\
+	type w = get_u##bits##_##endian(f->bptr);		\
+	f->bptr += bits/8;					\
+	return w;						\
+      }								\
+    else							\
+      return bget##name##_##endian##_slow(f);			\
+  }
 
-u64 bgetq_slow(struct fastbuf *f);
-static inline u64 bgetq(struct fastbuf *f)
-{
-  u64 l;
-  if (bavailr(f) >= 8)
-    {
-      l = GET_U64(f->bptr);
-      f->bptr += 8;
-      return l;
-    }
-  else
-    return bgetq_slow(f);
-}
+#define PUT_FUNC(type, name, bits, endian)			\
+  void bput##name##_##endian##_slow(struct fastbuf *f, type x);	\
+  static inline void bput##name##_##endian(struct fastbuf *f, type x)	\
+  {								\
+    if (bavailw(f) >= bits/8)					\
+      {								\
+	put_u##bits##_##endian(f->bptr, x);			\
+	f->bptr += bits/8;					\
+      }								\
+    else							\
+      return bput##name##_##endian##_slow(f, x);		\
+  }
 
-u64 bget5_slow(struct fastbuf *f);
-static inline u64 bget5(struct fastbuf *f)
-{
-  u64 l;
-  if (bavailr(f) >= 5)
-    {
-      l = GET_U40(f->bptr);
-      f->bptr += 5;
-      return l;
-    }
-  else
-    return bget5_slow(f);
-}
+#define FF_ALL_X(type, name, bits, defendian)			\
+  GET_FUNC(type, name, bits, be)				\
+  GET_FUNC(type, name, bits, le)				\
+  PUT_FUNC(type, name, bits, be)				\
+  PUT_FUNC(type, name, bits, le)				\
+  static inline type bget##name(struct fastbuf *f) { return bget##name##_##defendian(f); }		\
+  static inline void bput##name(struct fastbuf *f, type x) { bput##name##_##defendian(f, x); }
 
-void bputw_slow(struct fastbuf *f, uns w);
-static inline void bputw(struct fastbuf *f, uns w)
-{
-  if (bavailw(f) >= 2)
-    {
-      PUT_U16(f->bptr, w);
-      f->bptr += 2;
-    }
-  else
-    bputw_slow(f, w);
-}
+#define FF_ALL(type, name, bits, defendian) FF_ALL_X(type, name, bits, defendian)
 
-void bputl_slow(struct fastbuf *f, u32 l);
-static inline void bputl(struct fastbuf *f, u32 l)
-{
-  if (bavailw(f) >= 4)
-    {
-      PUT_U32(f->bptr, l);
-      f->bptr += 4;
-    }
-  else
-    bputl_slow(f, l);
-}
+FF_ALL(int, w, 16, FF_ENDIAN)
+FF_ALL(u32, l, 32, FF_ENDIAN)
+FF_ALL(u64, q, 64, FF_ENDIAN)
+FF_ALL(u64, 5, 40, FF_ENDIAN)
 
-void bputq_slow(struct fastbuf *f, u64 l);
-static inline void bputq(struct fastbuf *f, u64 l)
-{
-  if (bavailw(f) >= 8)
-    {
-      PUT_U64(f->bptr, l);
-      f->bptr += 8;
-    }
-  else
-    bputq_slow(f, l);
-}
+#undef GET_FUNC
+#undef PUT_FUNC
+#undef FF_ENDIAN
+#undef FF_ALL_X
+#undef FF_ALL
 
-void bput5_slow(struct fastbuf *f, u64 l);
-static inline void bput5(struct fastbuf *f, u64 l)
-{
-  if (bavailw(f) >= 5)
-    {
-      PUT_U40(f->bptr, l);
-      f->bptr += 5;
-    }
-  else
-    bput5_slow(f, l);
-}
-
-/* I/O on uintptr_t */
+/* I/O on uintptr_t (only native endianity) */
 
 #ifdef CPU_64BIT_POINTERS
 #define bputa(x,p) bputq(x,p)
