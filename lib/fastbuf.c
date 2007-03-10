@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Fast Buffered I/O
  *
- *	(c) 1997--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2007 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -10,6 +10,7 @@
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 void bclose(struct fastbuf *f)
@@ -66,7 +67,7 @@ int bgetc_slow(struct fastbuf *f)
   if (f->bptr < f->bstop)
     return *f->bptr++;
   if (!f->refill(f))
-    return EOF;
+    return -1;
   return *f->bptr++;
 }
 
@@ -75,7 +76,7 @@ int bpeekc_slow(struct fastbuf *f)
   if (f->bptr < f->bstop)
     return *f->bptr;
   if (!f->refill(f))
-    return EOF;
+    return -1;
   return *f->bptr;
 }
 

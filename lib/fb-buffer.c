@@ -10,6 +10,7 @@
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 static int

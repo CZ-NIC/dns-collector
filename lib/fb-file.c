@@ -11,6 +11,7 @@
 #include "lib/fastbuf.h"
 #include "lib/lfs.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
