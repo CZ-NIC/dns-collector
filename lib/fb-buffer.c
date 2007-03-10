@@ -18,7 +18,7 @@ fbbuf_refill(struct fastbuf *f UNUSED)
   return 0;
 }
 
-static void
+static int
 fbbuf_seek(struct fastbuf *f, sh_off_t pos, int whence)
 {
   /* Somebody might want to seek to the end of buffer, try to be nice to him. */
@@ -29,6 +29,7 @@ fbbuf_seek(struct fastbuf *f, sh_off_t pos, int whence)
   f->bptr = f->buffer + pos;
   f->bstop = f->bufend;
   f->pos = len;
+  return 1;
 }
 
 void

@@ -93,7 +93,7 @@ fbmem_spout(struct fastbuf *f)
   FB_MEM(f)->block = bb;
 }
 
-static void
+static int
 fbmem_seek(struct fastbuf *f, sh_off_t pos, int whence)
 {
   struct memstream *m = FB_MEM(f)->stream;
@@ -115,7 +115,7 @@ fbmem_seek(struct fastbuf *f, sh_off_t pos, int whence)
 	  f->bufend = f->bstop = b->data + b->size;
 	  f->pos = b->pos + b->size;
 	  FB_MEM(f)->block = b;
-	  return;
+	  return 1;
 	}
     }
   if (!m->first && !pos)
@@ -124,7 +124,7 @@ fbmem_seek(struct fastbuf *f, sh_off_t pos, int whence)
       f->buffer = f->bptr = f->bufend = NULL;
       f->pos = 0;
       FB_MEM(f)->block = NULL;
-      return;
+      return 1;
     }
   die("fbmem_seek to invalid offset");
 }

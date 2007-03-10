@@ -73,7 +73,7 @@ struct fastbuf {
   sh_off_t pos;				/* Position of bstop in the file */
   int (*refill)(struct fastbuf *);	/* Get a buffer with new data */
   void (*spout)(struct fastbuf *);	/* Write buffer data to the file */
-  void (*seek)(struct fastbuf *, sh_off_t, int);  /* Slow path for bseek(), buffer already flushed */
+  int (*seek)(struct fastbuf *, sh_off_t, int);  /* Slow path for bseek(), buffer already flushed; returns success */
   void (*close)(struct fastbuf *);	/* Close the stream */
   int (*config)(struct fastbuf *, uns, int);	/* Configure the stream */
   int can_overwrite_buffer;		/* Can the buffer be altered? (see discussion above) 0=never, 1=temporarily, 2=permanently */
@@ -153,7 +153,7 @@ void bflush(struct fastbuf *f);
 void bseek(struct fastbuf *f, sh_off_t pos, int whence);
 void bsetpos(struct fastbuf *f, sh_off_t pos);
 void brewind(struct fastbuf *f);
-sh_off_t bfilesize(struct fastbuf *f);
+sh_off_t bfilesize(struct fastbuf *f);		// -1 if not seekable
 
 static inline sh_off_t btell(struct fastbuf *f)
 {

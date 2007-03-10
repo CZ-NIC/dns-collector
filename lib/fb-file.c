@@ -53,16 +53,17 @@ bfd_spout(struct fastbuf *f)
   f->bptr = f->buffer = FB_BUFFER(f);
 }
 
-static void
+static int
 bfd_seek(struct fastbuf *f, sh_off_t pos, int whence)
 {
   if (whence == SEEK_SET && pos == f->pos)
-    return;
+    return 1;
 
   sh_off_t l = sh_seek(FB_FILE(f)->fd, pos, whence);
   if (l < 0)
-    die("lseek on %s: %m", f->name);
+    return 0;
   f->pos = l;
+  return 1;
 }
 
 static void

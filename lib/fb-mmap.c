@@ -117,7 +117,7 @@ bfmm_spout(struct fastbuf *f)
   DBG(" -> %p %p %p(%x) %p", f->buffer, f->bptr, f->bstop, (int)f->pos, f->bufend);
 }
 
-static void
+static int
 bfmm_seek(struct fastbuf *f, sh_off_t pos, int whence)
 {
   if (whence == SEEK_END)
@@ -128,6 +128,7 @@ bfmm_seek(struct fastbuf *f, sh_off_t pos, int whence)
   f->pos = pos;
   f->bptr = f->bstop = f->bufend;	/* force refill/spout call */
   DBG("Seek -> %p %p %p(%x) %p", f->buffer, f->bptr, f->bstop, (int)f->pos, f->bufend);
+  return 1;
 }
 
 static void

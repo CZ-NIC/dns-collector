@@ -45,7 +45,7 @@ fbgrow_spout(struct fastbuf *b)
     }
 }
 
-static void
+static int
 fbgrow_seek(struct fastbuf *b, sh_off_t pos, int whence)
 {
   ASSERT(FB_GBUF(b)->last_written);	/* Seeks allowed only in read mode */
@@ -56,6 +56,7 @@ fbgrow_seek(struct fastbuf *b, sh_off_t pos, int whence)
   b->bptr = b->buffer + pos;
   b->bstop = FB_GBUF(b)->last_written;
   b->pos = len;
+  return 1;
 }
 
 static void

@@ -38,7 +38,8 @@ inline void bsetpos(struct fastbuf *f, sh_off_t pos)
   else
     {
       bflush(f);
-      f->seek(f, pos, SEEK_SET);
+      if (!f->seek || !f->seek(f, pos, SEEK_SET))
+	die("bsetpos: stream not seekable");
     }
 }
 
@@ -52,7 +53,8 @@ void bseek(struct fastbuf *f, sh_off_t pos, int whence)
       return bsetpos(f, btell(f) + pos);
     case SEEK_END:
       bflush(f);
-      f->seek(f, pos, SEEK_END);
+      if (!f->seek || !f->seek(f, pos, SEEK_END))
+	die("bseek: stream not seekable");
       break;
     default:
       die("bseek: invalid whence=%d", whence);
@@ -192,7 +194,9 @@ bfilesize(struct fastbuf *f)
   if (!f)
     return 0;
   sh_off_t pos = btell(f);
-  bseek(f, 0, SEEK_END);
+  bflush(f);
+  if (!f->seek(f, pos, SEEK_END))
+    return -1;
   sh_off_t len = btell(f);
   bsetpos(f, pos);
   return len;
