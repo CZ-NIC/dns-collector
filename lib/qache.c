@@ -9,6 +9,7 @@
 #include "lib/lib.h"
 #include "lib/bitops.h"
 #include "lib/fastbuf.h"
+#include "lib/ff-binary.h"
 #include "lib/qache.h"
 
 #include <stdio.h>

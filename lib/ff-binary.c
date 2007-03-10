@@ -9,6 +9,7 @@
 
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
+#include "lib/ff-binary.h"
 
 int bgetw_slow(struct fastbuf *f)
 {
