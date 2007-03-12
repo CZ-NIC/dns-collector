@@ -1,6 +1,7 @@
 #include "lib/lib.h"
 #include "lib/getopt.h"
 #include "lib/fastbuf.h"
+#include "lib/ff-binary.h"
 #include "lib/lizard.h"
 #include <stdio.h>
 #include <stdlib.h>

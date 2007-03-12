@@ -13,7 +13,7 @@ ImageMaxBytes		256M		# Maximum size in bytes
 
 }
 
-#ifndef CONFIG_FREE
+#if CONFIG_IMAGES_DUP || CONFIG_IMAGES_SIM
 ######## Image signatures #######################################################
 
 ImageSig {

@@ -136,6 +136,7 @@
  *  undef'd.
  */
 
+#include <stdio.h>
 #include <string.h>
 
 #if !defined(TREE_NODE) || !defined(TREE_PREFIX)

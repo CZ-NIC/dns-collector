@@ -11,6 +11,7 @@
 #include "lib/db.h"
 #include "lib/db_internal.h"
 #include "lib/fastbuf.h"
+#include "lib/ff-binary.h"
 
 #include <stdio.h>
 #include <stdlib.h>
