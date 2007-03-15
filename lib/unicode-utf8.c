@@ -36,6 +36,35 @@ utf8_strnlen(byte *str, uns n)
   return len;
 }
 
+uns
+utf8_check(byte *s)
+{
+#define UTF8_CHECK_NEXT if (unlikely((*s & 0xc0) != 0x80)) goto bad; s++
+  while (*s)
+    {
+      uns u = *s++;
+      if (u < 0x80)
+	;
+      else if (unlikely(u < 0xc0))
+        {
+bad:
+	  return 0;
+	}
+      else if (u < 0xe0)
+        {
+	  UTF8_CHECK_NEXT;
+	}
+      else if (likely(u < 0xf0))
+        {
+	  UTF8_CHECK_NEXT;
+	  UTF8_CHECK_NEXT;
+	}
+      else
+	goto bad;
+    }
+  return 1;
+}
+
 #ifdef TEST
 #include <string.h>
 #include <stdio.h>

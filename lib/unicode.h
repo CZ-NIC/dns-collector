@@ -204,5 +204,6 @@ utf8_encoding_len(uns c)
 
 uns utf8_strlen(byte *str);
 uns utf8_strnlen(byte *str, uns n);
+uns utf8_check(byte *str);
 
 #endif
