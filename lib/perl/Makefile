@@ -1,7 +1,7 @@
 # Perl modules
 
 DIRS+=lib/perl
-PROGS+=$(addprefix $(o)/lib/perl/,Config.pm)
+PROGS+=$(addprefix $(o)/lib/perl/,Config.pm Log.pm)
 
 ifdef CONFIG_UCW_PERL_ULIMIT
 include $(s)/lib/perl/Ulimit/Makefile
