@@ -10,6 +10,13 @@ use lib 'lib/perl5';
 use strict;
 use warnings;
 use POSIX;
+use Exporter;
+
+our $version = 1.0;
+our @ISA = qw(Exporter);
+our @EXPORT = ();
+our @EXPORT_OK = qw(Log Die);
+our %EXPORT_TAGS = ( all => [qw(&Log &Die)]);
 
 my $Prog = (reverse split(/\//, $0))[0];
 
