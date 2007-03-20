@@ -15,8 +15,8 @@ use Exporter;
 our $version = 1.0;
 our @ISA = qw(Exporter);
 our @EXPORT = ();
-our @EXPORT_OK = qw(Log Die);
 our %EXPORT_TAGS = ( all => [qw(&Log &Die)]);
+our @EXPORT_OK = (@{$EXPORT_TAGS{'all'}});
 
 my $Prog = (reverse split(/\//, $0))[0];
 
