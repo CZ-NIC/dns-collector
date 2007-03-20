@@ -22,10 +22,9 @@ use 5.006;
 use strict;
 use warnings;
 
-require Exporter;
 require DynaLoader;
 
-our @ISA = qw(Exporter DynaLoader);
+our @ISA = qw(DynaLoader);
 unshift @DynaLoader::dl_library_path, "lib";
 
 our $CPU = 0;
@@ -39,18 +38,6 @@ our $NOFILE = 7;
 our $MEMLOCK = 8;
 our $AS = 9;
 
-
-# This allows declaration	use Ulimit ':all';
-# If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
-# will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
-
-) ] );
-
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-
-our @EXPORT = qw(
-);
 our $VERSION = '0.01';
 
 bootstrap Sherlock::Ulimit $VERSION;
