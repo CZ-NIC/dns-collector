@@ -93,7 +93,7 @@ TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool
 $(o)/lib/regex.test: $(o)/lib/regex-t
 $(o)/lib/unicode-utf8.test: $(o)/lib/unicode-utf8-t
 $(o)/lib/hash-test.test: $(o)/lib/hash-test
-$(o)/lib/mempool.test: $(o)/lib/mempool-fmt-t $(o)/lib/mempool-str-t
+$(o)/lib/mempool.test: $(o)/lib/mempool-t $(o)/lib/mempool-fmt-t $(o)/lib/mempool-str-t
 $(o)/lib/stkstring.test: $(o)/lib/stkstring-t
 $(o)/lib/bitops.test: $(o)/lib/bit-ffs-t $(o)/lib/bit-fls-t
 $(o)/lib/slists.test: $(o)/lib/slists-t
