@@ -294,6 +294,14 @@ mp_realloc_zero(struct mempool *pool, void *ptr, uns size)
   return ptr;
 }
 
+void *
+mp_spread_internal(struct mempool *pool, void *p, uns size)
+{
+  void *old = mp_ptr(pool);
+  void *new = mp_grow_internal(pool, p-old+size);
+  return p-old+new;
+}
+
 void
 mp_restore(struct mempool *pool, struct mempool_state *state)
 {
