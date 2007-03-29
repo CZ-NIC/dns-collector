@@ -104,6 +104,7 @@ mp_alloc_fast_noalign(struct mempool *pool, uns size)
 /* For internal use only, do not call directly */
 void *mp_start_internal(struct mempool *pool, uns size) LIKE_MALLOC;
 void *mp_grow_internal(struct mempool *pool, uns size);
+void *mp_spread_internal(struct mempool *pool, void *p, uns size);
 
 static inline uns
 mp_idx(struct mempool *pool, void *ptr)
@@ -186,12 +187,22 @@ mp_expand(struct mempool *pool)
   return mp_grow_internal(pool, mp_avail(pool) + 1);
 }
 
+/* Ensure that there is at least <size> bytes free after <p>, if not, reallocate and adjust <p>. */
+static inline void *
+mp_spread(struct mempool *pool, void *p, uns size)
+{
+  return (((uns)(pool->state.last[pool->idx] - p) >= size) ? p : mp_spread_internal(pool, p, size));
+}
+
 /* Close the growing buffer. The <end> must point just behind the data, you want to keep
- * allocated (so it can be in the interval [mp_ptr(pool), mp_ptr(pool) + mp_avail(pool)]). */
-static inline void
+ * allocated (so it can be in the interval [mp_ptr(pool), mp_ptr(pool) + mp_avail(pool)]).
+ * Returns a pointer to the beginning of the just closed block. */
+static inline void *
 mp_end(struct mempool *pool, void *end)
 {
+  void *p = mp_ptr(pool);
   pool->state.free[pool->idx] = pool->state.last[pool->idx] - end;
+  return p;
 }
 
 /* Return size in bytes of the last allocated memory block (with mp_alloc*() or mp_end()). */
