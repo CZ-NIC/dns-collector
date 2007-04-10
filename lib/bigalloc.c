@@ -2,6 +2,7 @@
  *	UCW Library -- Allocation of Large Aligned Buffers
  *
  *	(c) 2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2007 Pavel Charvat <char@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -10,6 +11,34 @@
 #include "lib/lib.h"
 
 #include <sys/mman.h>
+#include <string.h>
+
+void *
+page_alloc(unsigned int len)
+{
+  ASSERT(!(len & (CPU_PAGE_SIZE-1)));
+  byte *p = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+  if (p == (byte*) MAP_FAILED)
+    die("Cannot mmap %d bytes of memory: %m", len);
+  return p;
+}
+
+void
+page_free(void *start, unsigned int len)
+{
+  ASSERT(!(len & (CPU_PAGE_SIZE-1)));
+  ASSERT(!((uintptr_t) start & (CPU_PAGE_SIZE-1)));
+  munmap(start, len);
+}
+
+void *
+page_realloc(void *start, unsigned int old_len, unsigned int new_len)
+{
+  void *p = page_alloc(new_len);
+  memcpy(p, start, MIN(old_len, new_len));
+  page_free(start, old_len);
+  return p;
+}
 
 static unsigned int
 big_round(unsigned int len)
@@ -24,9 +53,7 @@ big_alloc(unsigned int len)
 #ifdef CONFIG_DEBUG
   len += 2*CPU_PAGE_SIZE;
 #endif
-  byte *p = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
-  if (p == (byte*) MAP_FAILED)
-    die("Cannot mmap %d bytes of memory: %m", len);
+  byte *p = page_alloc(len);
 #ifdef CONFIG_DEBUG
   mprotect(p, CPU_PAGE_SIZE, PROT_NONE);
   mprotect(p+len-CPU_PAGE_SIZE, CPU_PAGE_SIZE, PROT_NONE);
@@ -39,13 +66,12 @@ void
 big_free(void *start, unsigned int len)
 {
   byte *p = start;
-  ASSERT(!((uintptr_t) p & (CPU_PAGE_SIZE-1)));
   len = big_round(len);
 #ifdef CONFIG_DEBUG
   p -= CPU_PAGE_SIZE;
   len += 2*CPU_PAGE_SIZE;
 #endif
-  munmap(p, len);
+  page_free(start, len);
 }
 
 #ifdef TEST
