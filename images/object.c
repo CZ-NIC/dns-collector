@@ -29,7 +29,7 @@ get_image_obj_info(struct image_obj_info *ioi, struct odes *o)
       DBG("Missing image info attribute");
       return 0;
     }
-  byte color_space[MAX_ATTR_SIZE], thumb_format[MAX_ATTR_SIZE];
+  byte color_space[16], thumb_format[16];
   UNUSED uns cnt = sscanf(v, "%d%d%s%d%d%d%s", &ioi->cols, &ioi->rows, color_space,
       &ioi->colors, &ioi->thumb_cols, &ioi->thumb_rows, thumb_format);
   ASSERT(cnt == 7);
@@ -48,9 +48,13 @@ get_image_obj_thumb(struct image_obj_info *ioi, struct odes *o, struct mempool *
       return 0;
     }
   uns count = 0;
+  uns max_len = 0;
   for (struct oattr *b = a; b; b = b->same)
-    count++;
-  byte buf[count * MAX_ATTR_SIZE], *b = buf;
+    {
+      count++;
+      max_len += strlen(b->val);
+    }
+  byte buf[max_len + 1], *b = buf;
   for (; a; a = a->same)
     b += base224_decode(b, a->val, strlen(a->val));
   ASSERT(b != buf);
@@ -88,9 +92,8 @@ void
 put_image_obj_signature(struct odes *o, struct image_signature *sig)
 {
   /* signatures should be short enough to in a single attribute */
-  byte buf[MAX_ATTR_SIZE];
   uns size = image_signature_size(sig->len);
-  ASSERT(MAX_ATTR_SIZE > BASE224_ENC_LENGTH(size));
+  byte buf[BASE224_ENC_LENGTH(size) + 1];
   buf[base224_encode(buf, (byte *)sig, size)] = 0;
   obj_set_attr(o, 'H', buf);
 }
