@@ -28,12 +28,34 @@ stk_array_join(char *x, char **s, uns cnt, uns sep)
 }
 
 uns
-stk_printf_internal(char *fmt, ...)
+stk_printf_internal(const char *fmt, ...)
 {
   uns len = 256;
   char *buf = alloca(len);
   va_list args, args2;
   va_start(args, fmt);
+  for (;;)
+    {
+      va_copy(args2, args);
+      int l = vsnprintf(buf, len, fmt, args2);
+      va_end(args2);
+      if (l < 0)
+	len *= 2;
+      else
+	{
+	  va_end(args);
+	  return l+1;
+	}
+      buf = alloca(len);
+    }
+}
+
+uns
+stk_vprintf_internal(const char *fmt, va_list args)
+{
+  uns len = 256;
+  char *buf = alloca(len);
+  va_list args2;
   for (;;)
     {
       va_copy(args2, args);

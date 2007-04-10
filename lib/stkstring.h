@@ -18,10 +18,12 @@
 #define stk_strarraycat(s,n) ({ char **_s=(s); int _n=(n); char *_x=alloca(stk_array_len(_s,_n)); stk_array_join(_x, _s, _n, 0); _x; })
 #define stk_strjoin(s,n,sep) ({ char **_s=(s); int _n=(n); char *_x=alloca(stk_array_len(_s,_n)+_n-1); stk_array_join(_x, _s, _n, (sep)); _x; })
 #define stk_printf(f...) ({ uns _l=stk_printf_internal(f); char *_x=alloca(_l); sprintf(_x, f); _x; })
+#define stk_vprintf(f, args) ({ uns _l=stk_vprintf_internal(f, args); char *_x=alloca(_l); vsprintf(_x, f, args); _x; })
 #define stk_hexdump(s,n) ({ uns _n=(n); char *_x=alloca(3*_n+1); stk_hexdump_internal(_x,(byte*)(s),_n); _x; })
 #define stk_str_unesc(s) ({ byte *_s=(s); byte *_d=alloca(strlen(_s)+1); str_unesc(_d, _s); _d; })
 
 uns stk_array_len(char **s, uns cnt);
 void stk_array_join(char *x, char **s, uns cnt, uns sep);
-uns stk_printf_internal(char *x, ...) FORMAT_CHECK(printf,1,2);
+uns stk_printf_internal(const char *x, ...) FORMAT_CHECK(printf,1,2);
+uns stk_vprintf_internal(const char *x, va_list args);
 void stk_hexdump_internal(char *dst, byte *src, uns n);
