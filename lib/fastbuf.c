@@ -196,7 +196,7 @@ bfilesize(struct fastbuf *f)
     return 0;
   sh_off_t pos = btell(f);
   bflush(f);
-  if (!f->seek(f, pos, SEEK_END))
+  if (!f->seek(f, 0, SEEK_END))
     return -1;
   sh_off_t len = btell(f);
   bsetpos(f, pos);
