@@ -9,6 +9,8 @@ reset_getopt(void)
 }
 
 #ifdef TEST
+#include <stdio.h>
+
 static void
 parse(int argc, char **argv)
 {
