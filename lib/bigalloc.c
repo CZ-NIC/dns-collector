@@ -71,7 +71,7 @@ big_free(void *start, unsigned int len)
   p -= CPU_PAGE_SIZE;
   len += 2*CPU_PAGE_SIZE;
 #endif
-  page_free(start, len);
+  page_free(p, len);
 }
 
 #ifdef TEST
