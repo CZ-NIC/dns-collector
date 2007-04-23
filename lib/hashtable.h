@@ -349,7 +349,7 @@ static inline void P(cleanup_alloc) (TAU) { }
 #endif
 
 #ifdef HASH_TABLE_ALLOC
-static inline void * P(table_alloc) (TAUC unsigned int size) { return P(alloc)(size); }
+static inline void * P(table_alloc) (TAUC unsigned int size) { return P(alloc)(TTC size); }
 static inline void P(table_free) (TAUC void *x) { P(free)(x); }
 #else
 static inline void * P(table_alloc) (TAUC unsigned int size) { return xmalloc(size); }
