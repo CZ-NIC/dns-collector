@@ -15,6 +15,7 @@
 #ifdef CONFIG_DARWIN
 
 #include <unistd.h>
+#include <stdio.h>
 
 /* In Darwin, sem_init() is unfortunately not implemented and the guide
  * recommends emulating it using sem_open().  */
