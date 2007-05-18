@@ -195,7 +195,7 @@ fbdir_spout(struct fastbuf *f)
 	  r->len = ALIGN_TO(r->len, FBDIR_ALIGN);
 	  asio_submit(r);
 	  asio_sync(F->io_queue);
-	  DBG("FB-DIRECT: Truncating at %Ld", (long long)f->pos);
+	  DBG("FB-DIRECT: Truncating at %llu", (long long)f->pos);
 	  if (sh_ftruncate(F->fd, f->pos) < 0)
 	    die("Error truncating %s: %m", f->name);
 	}
@@ -213,7 +213,7 @@ fbdir_spout(struct fastbuf *f)
 static int
 fbdir_seek(struct fastbuf *f, sh_off_t pos, int whence)
 {
-  DBG("FB-DIRECT: Seek %Ld %d", (long long)pos, whence);
+  DBG("FB-DIRECT: Seek %llu %d", (long long)pos, whence);
 
   if (whence == SEEK_SET && pos == f->pos)
     return 1;
