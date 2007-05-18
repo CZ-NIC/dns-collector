@@ -12,19 +12,22 @@
 
 #include <sys/mman.h>
 #include <string.h>
+#include <limits.h>
 
 void *
-page_alloc(unsigned int len)
+page_alloc(u64 len)
 {
+  if (len > SIZE_MAX)
+    die("page_alloc: Size %llu is too large for the current architecture", (long long) len);
   ASSERT(!(len & (CPU_PAGE_SIZE-1)));
   byte *p = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
   if (p == (byte*) MAP_FAILED)
-    die("Cannot mmap %d bytes of memory: %m", len);
+    die("Cannot mmap %llu bytes of memory: %m", (long long)len);
   return p;
 }
 
 void
-page_free(void *start, unsigned int len)
+page_free(void *start, u64 len)
 {
   ASSERT(!(len & (CPU_PAGE_SIZE-1)));
   ASSERT(!((uintptr_t) start & (CPU_PAGE_SIZE-1)));
@@ -32,7 +35,7 @@ page_free(void *start, unsigned int len)
 }
 
 void *
-page_realloc(void *start, unsigned int old_len, unsigned int new_len)
+page_realloc(void *start, u64 old_len, u64 new_len)
 {
   void *p = page_alloc(new_len);
   memcpy(p, start, MIN(old_len, new_len));
@@ -50,10 +53,8 @@ void *
 big_alloc(u64 len)
 {
   len = big_round(len);
-#ifndef CPU_64BIT_POINTERS
-  if (len > 0xff000000)
-    die("big_alloc: Size %ju is too large for a 32-bit machine", (uintmax_t) len);
-#endif
+  if (len > SIZE_MAX - 2*CPU_PAGE_SIZE)
+    die("big_alloc: Size %llu is too large for the current architecture", (long long) len);
 #ifdef CONFIG_DEBUG
   len += 2*CPU_PAGE_SIZE;
 #endif
