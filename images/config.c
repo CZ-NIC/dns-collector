@@ -9,7 +9,9 @@
 #include "lib/lib.h"
 #include "lib/conf.h"
 #include "images/images.h"
+#if defined(CONFIG_IMAGES_SIM) || defined(CONFIG_IMAGES_DUP)
 #include "images/signature.h"
+#endif
 
 #include <string.h>
 
@@ -18,6 +20,7 @@ uns image_trace;
 uns image_max_dim = 0xffff;
 uns image_max_bytes = ~0U;
 
+#if defined(CONFIG_IMAGES_SIM) || defined(CONFIG_IMAGES_DUP)
 /* ImageSig section */
 uns image_sig_min_width;
 uns image_sig_min_height;
@@ -31,6 +34,7 @@ double image_sig_inertia_scale[3];
 double image_sig_textured_threshold;
 int image_sig_compare_method;
 uns image_sig_cmp_features_weights[IMAGE_REG_F + IMAGE_REG_H];
+#endif
 
 static struct cf_section image_lib_config = {
   CF_ITEMS{
@@ -41,6 +45,7 @@ static struct cf_section image_lib_config = {
   }
 };
 
+#if defined(CONFIG_IMAGES_SIM) || defined(CONFIG_IMAGES_DUP)
 static struct cf_section image_sig_config = {
   CF_ITEMS{
     CF_UNS("MinWidth", &image_sig_min_width),
@@ -58,10 +63,13 @@ static struct cf_section image_sig_config = {
     CF_END
   }
 };
+#endif
 
 static void CONSTRUCTOR
 images_init_config(void)
 {
   cf_declare_section("ImageLib", &image_lib_config, 0);
+#if defined(CONFIG_IMAGES_SIM) || defined(CONFIG_IMAGES_DUP)
   cf_declare_section("ImageSig", &image_sig_config, 0);
+#endif
 }

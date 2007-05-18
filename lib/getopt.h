@@ -11,7 +11,13 @@
 #ifndef	_UCW_GETOPT_H
 #define	_UCW_GETOPT_H
 
+#ifdef CONFIG_OWN_GETOPT
+#include "lib/getopt/getopt-sh.h"
+#else
 #include <getopt.h>
+#endif
+
+void reset_getopt(void);
 
 /* Safe loading and reloading of configuration files: conf-input.c */
 

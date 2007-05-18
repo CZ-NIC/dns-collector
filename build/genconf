@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Configuration file and script preprocessor
-# (c) 2004 Martin Mares <mj@ucw.cz>
+# (c) 2004--2007 Martin Mares <mj@ucw.cz>
 
 use strict;
 use warnings;
@@ -9,14 +9,22 @@ use warnings;
 
 open CF, $ARGV[2] or die "Unable to open $ARGV[2]";
 my %options = ();
+my %vars = ();
 while (<CF>) {
-	/^(CONFIG_\w+)=[^0]/ || next;
-	$options{$1} = 1;
+	chomp;
+	if (my ($k,$v) = /^(\w+)=(.*)/) {
+		$v =~ s/\s+$//;
+		$vars{$k} = $v;
+		$options{$k} = 1 if ($k =~ /^CONFIG_/);
+	}
 }
 close CF;
 
-my $opt_regex = join("|", keys %options);
-sub eval_expr { $_ = "@_"; s/\b($opt_regex)\b/ 1 /g if $opt_regex; s/\bCONFIG_\w+\b/ 0 /g; return eval $_; }
+sub eval_expr {
+	$_ = shift @_;
+	s/\b(CONFIG_\w+)\b/defined($options{$1}) ? 1 : 0/ge;
+	return eval $_;
+}
 
 open IN, $ARGV[0] or die "Unable to open $ARGV[0]";
 open OUT, ">$ARGV[1]" or die "Unable to create $ARGV[1]";
@@ -51,6 +59,12 @@ while (<IN>) {
 			die "Piped command '$cmd' failed" if $?;
 			print OUT `$1`;
 		} else {
+			sub repl ($) {
+				my $v = shift @_;
+				exists $vars{$v} or die "Cannot substitute $v: variable not set";
+				return $vars{$v};
+			}
+			s/@(\w+)@/repl($1)/ge;
 			print OUT;
 		}
 	}

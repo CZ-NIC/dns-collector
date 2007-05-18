@@ -11,6 +11,7 @@
 #include "lib/getopt.h"
 #include "lib/conf.h"
 #include "lib/fastbuf.h"
+#include "lib/ff-binary.h"
 #include "lib/hashfunc.h"
 #include "lib/md5.h"
 

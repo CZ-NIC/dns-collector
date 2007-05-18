@@ -3,8 +3,4 @@ Makefile.PL
 MANIFEST
 Ulimit.pm
 Ulimit.xs
-CVS/Entries
-CVS/Repository
-CVS/Root
 lib/Sherlock/.exists
-.cvsignore

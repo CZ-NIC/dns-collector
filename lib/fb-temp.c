@@ -12,6 +12,7 @@
 #include "lib/fastbuf.h"
 #include "lib/threads.h"
 
+#include <stdio.h>
 #include <unistd.h>
 #include <sys/fcntl.h>
 

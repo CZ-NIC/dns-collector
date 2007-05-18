@@ -15,6 +15,12 @@
 COMPILE_ASSERT(RAND_MAX_RANGE_TEST, RAND_MAX >= (1 << 30)-1);
 
 uns
+random_u32(void)
+{
+  return (random() & 0xffff) | ((random() & 0xffff) << 16);
+}
+
+uns
 random_max(uns max)
 {
   uns r, l;

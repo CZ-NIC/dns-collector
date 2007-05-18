@@ -31,12 +31,13 @@ LIBUCW_MODS= \
 	sync \
 	qache \
 	string \
-	bbuf
+	bbuf \
+	getopt
 
 LIBUCW_INCLUDES= \
 	lib.h config.h threads.h math.h \
 	mempool.h pagecache.h \
-	sorter.h arraysort.h \
+	sorter.h sorter-globals.h arraysort.h \
 	lists.h clists.h \
 	unaligned.h prefetch.h \
 	bbuf.h gbuf.h bitarray.h bitsig.h \
@@ -54,7 +55,8 @@ LIBUCW_INCLUDES= \
 	lizard.h \
 	md5.h \
 	base64.h base224.h \
-	qache.h
+	qache.h \
+	kmp.h kmp-search.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
@@ -67,8 +69,13 @@ ifdef CONFIG_OWN_REGEX
 include $(s)/lib/regex/Makefile
 endif
 
+ifdef CONFIG_OWN_GETOPT
+include $(s)/lib/getopt/Makefile
+endif
+
 include $(s)/lib/sorter/Makefile
 
+LIBUCW=$(o)/lib/libucw.$(LS)
 LIBUCW_MOD_PATHS=$(addprefix $(o)/lib/,$(LIBUCW_MODS))
 
 $(o)/lib/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
@@ -91,16 +98,19 @@ $(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
 $(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 $(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
 
-TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test slists.test kmp-test.test bbuf.test)
+TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test \
+    slists.test kmp-test.test bbuf.test getopt.test)
+
 $(o)/lib/regex.test: $(o)/lib/regex-t
 $(o)/lib/unicode-utf8.test: $(o)/lib/unicode-utf8-t
 $(o)/lib/hash-test.test: $(o)/lib/hash-test
-$(o)/lib/mempool.test: $(o)/lib/mempool-fmt-t $(o)/lib/mempool-str-t
+$(o)/lib/mempool.test: $(o)/lib/mempool-t $(o)/lib/mempool-fmt-t $(o)/lib/mempool-str-t
 $(o)/lib/stkstring.test: $(o)/lib/stkstring-t
 $(o)/lib/bitops.test: $(o)/lib/bit-ffs-t $(o)/lib/bit-fls-t
 $(o)/lib/slists.test: $(o)/lib/slists-t
 $(o)/lib/kmp-test.test: $(o)/lib/kmp-test
 $(o)/lib/bbuf.test: $(o)/lib/bbuf-t
+$(o)/lib/getopt.test: $(o)/lib/getopt-t
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/lib/,asio.test)

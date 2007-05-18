@@ -75,7 +75,7 @@ partmap_load(struct partmap *p, sh_off_t start, uns size)
     die("partmap_map: Window is too small for mapping %d bytes", size);
   p->start_map = sh_mmap(NULL, win_len, p->writeable ? (PROT_READ | PROT_WRITE) : PROT_READ, MAP_SHARED, p->fd, win_start);
   if (p->start_map == MAP_FAILED)
-    die("mmap failed at position %Ld: %m", (long long)win_start);
+    die("mmap failed at position %lld: %m", (long long)win_start);
   p->start_off = win_start;
   p->end_off = win_start+win_len;
   madvise(p->start_map, win_len, MADV_SEQUENTIAL);

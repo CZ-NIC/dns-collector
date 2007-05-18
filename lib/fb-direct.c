@@ -35,6 +35,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdio.h>
 
 static uns fbdir_cheat;
 static uns fbdir_buffer_size = 65536;
@@ -209,19 +210,20 @@ fbdir_spout(struct fastbuf *f)
   F->active_buffer = r;
 }
 
-static void
+static int
 fbdir_seek(struct fastbuf *f, sh_off_t pos, int whence)
 {
   DBG("FB-DIRECT: Seek %Ld %d", (long long)pos, whence);
 
   if (whence == SEEK_SET && pos == f->pos)
-    return;
+    return 1;
 
   fbdir_change_mode(FB_DIRECT(f), M_NULL);			// Wait for all async requests to finish
   sh_off_t l = sh_seek(FB_DIRECT(f)->fd, pos, whence);
   if (l < 0)
-    die("lseek on %s: %m", f->name);
+    return 0;
   f->pos = l;
+  return 1;
 }
 
 static struct asio_queue *

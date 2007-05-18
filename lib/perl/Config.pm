@@ -14,6 +14,9 @@ use Getopt::Long;
 our %Sections = ();
 
 our $DefaultConfigFile = "";
+our $Usage = "-C, --config filename   Override the default configuration file
+-S, --set sec.item=val  Manual setting of a configuration item";
+
 
 sub Parse(@) {
 	my @options = @_;

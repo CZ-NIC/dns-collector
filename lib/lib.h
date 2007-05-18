@@ -4,6 +4,7 @@
  *	(c) 1997--2007 Martin Mares <mj@ucw.cz>
  *	(c) 2005 Tomas Valla <tom@ucw.cz>
  *	(c) 2006 Robert Spalek <robert@ucw.cz>
+ *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -111,9 +112,9 @@ void assert_failed(char *assertion, char *file, int line) NONRET;
 void assert_failed_noinfo(void) NONRET;
 
 #ifdef DEBUG_ASSERTS
-#define ASSERT(x) do { if (unlikely(!(x))) assert_failed(#x, __FILE__, __LINE__); } while(0)
+#define ASSERT(x) ({ if (unlikely(!(x))) assert_failed(#x, __FILE__, __LINE__); 1; })
 #else
-#define ASSERT(x) do { if (__builtin_constant_p(x) && !(x)) assert_failed_noinfo(); } while(0)
+#define ASSERT(x) ({ if (__builtin_constant_p(x) && !(x)) assert_failed_noinfo(); 1; })
 #endif
 
 #define COMPILE_ASSERT(name,x) typedef char _COMPILE_ASSERT_##name[!!(x)-1]
@@ -209,6 +210,7 @@ int rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen);
 
 /* random.c */
 
+uns random_u32(void);
 uns random_max(uns max);
 u64 random_u64(void);
 u64 random_max_u64(u64 max);
@@ -262,10 +264,15 @@ sh_sighandler_t set_signal_handler(int signum, sh_sighandler_t new);
 /* string.c */
 
 byte *str_unesc(byte *dest, byte *src);
+byte *str_format_flags(byte *dest, const byte *fmt, uns flags);
 
 /* bigalloc.c */
 
-void *big_alloc(u64 len);
+void *page_alloc(unsigned int len) LIKE_MALLOC; // allocates a multiple of CPU_PAGE_SIZE bytes with mmap
+void page_free(void *start, unsigned int len);
+void *page_realloc(void *start, unsigned int old_len, unsigned int new_len);
+
+void *big_alloc(u64 len) LIKE_MALLOC; // allocate a large memory block in the most efficient way available
 void big_free(void *start, u64 len);
 
 #endif
