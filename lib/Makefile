@@ -36,7 +36,7 @@ LIBUCW_MODS= \
 LIBUCW_INCLUDES= \
 	lib.h config.h threads.h math.h \
 	mempool.h pagecache.h \
-	sorter.h arraysort.h \
+	sorter.h sorter-globals.h arraysort.h \
 	lists.h clists.h \
 	unaligned.h prefetch.h \
 	bbuf.h gbuf.h bitarray.h bitsig.h \
