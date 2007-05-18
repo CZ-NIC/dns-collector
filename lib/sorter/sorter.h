@@ -88,7 +88,7 @@
  *
  *  The function generated:
  *
- *  <outfb> PREFIX_SORT(<in>, <out> [,<range>]), where:
+ *  <outfb> PREFIX_sort(<in>, <out> [,<range>]), where:
  *			<in> = input file name/fastbuf or NULL
  *			<out> = output file name/fastbuf or NULL
  *			<range> = maximum integer value for the SORT_INT mode
