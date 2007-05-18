@@ -226,7 +226,7 @@ image_scale(struct image_context *ctx, struct image *dest, struct image *src)
     }
   else
     {
-      if (dest->cols <= src->cols && src->cols <= dest->cols)
+      if (dest->cols <= src->cols && dest->rows <= src->rows)
         {
 	  /* Downscale in both dimensions */
           image_scale_downsample_xy(dest, src);
