@@ -9,6 +9,7 @@ extras:: $(o)/lib/perl/Ulimit/arch/auto/Sherlock/Ulimit/Ulimit.$(SOEXT)
 
 $(o)/lib/perl/Ulimit/arch/auto/Sherlock/Ulimit/Ulimit.$(SOEXT): $(o)/$(ULIMIT_DIR)/Ulimit.xs $(o)/$(ULIMIT_DIR)/Ulimit.pm $(o)/$(ULIMIT_DIR)/Makefile
 	cd $(o)/$(ULIMIT_DIR) && $(MAKE) -f Makefile
+	touch $@
 	cp $@ run/$(DATADIR)/
 
 $(o)/$(ULIMIT_DIR)/Makefile: $(o)/$(ULIMIT_DIR)/Makefile.PL
