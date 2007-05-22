@@ -173,7 +173,8 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 static uns
 sorter_radix_bits(struct sort_context *ctx, struct sort_bucket *b)
 {
-  if (!b->hash_bits || !ctx->radix_split ||
+  if (!b->hash_bits || b->hash_bits < sorter_min_radix_bits ||
+      !ctx->radix_split ||
       (b->flags & SBF_CUSTOM_PRESORT) ||
       (sorter_debug & SORT_DEBUG_NO_RADIX))
     return 0;
