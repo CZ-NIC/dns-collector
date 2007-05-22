@@ -51,6 +51,7 @@ struct key1 {
 #define SORT_OUTPUT_FB
 #define SORT_UNIQUE
 #define SORT_INT(k) (k).x
+#define SORT_DELETE_INPUT 0
 
 #include "lib/sorter/sorter.h"
 

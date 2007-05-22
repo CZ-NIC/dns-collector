@@ -75,6 +75,8 @@
  *			to get successive batches of pre-sorted data.
  *			The function is passed a page-aligned presorting buffer.
  *			It returns 1 on success or 0 on EOF.
+ *  SORT_DELETE_INPUT	A C expression, if true, then the input files are deleted
+ *			as soon as possible.
  *
  *  Output (chose one of these):
  *
@@ -219,6 +221,10 @@ static struct fastbuf *P(sort)(
 #else
 #error No input given.
 #endif
+#ifdef SORT_DELETE_INPUT
+  if (SORT_DELETE_INPUT)
+    bconfig(ctx.in_fb, BCONFIG_IS_TEMP_FILE, 1);
+#endif
 
 #ifdef SORT_OUTPUT_FB
   ASSERT(!out);
@@ -274,6 +280,7 @@ static struct fastbuf *P(sort)(
 #undef SORT_OUTPUT_THIS_FB
 #undef SORT_UNIQUE
 #undef SORT_ASSERT_UNIQUE
+#undef SORT_DELETE_INPUT
 #undef SWAP
 #undef LESS
 #undef P
