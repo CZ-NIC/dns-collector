@@ -50,7 +50,9 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   ctx->total_int_time += get_timer(&timer);
 
   SORT_XTRACE(3, "s-fixint: Writing");
-  struct fastbuf *out = sbuck_write((n < maxkeys) ? bout_only : bout);
+  if (n < maxkeys)
+    bout = bout_only;
+  struct fastbuf *out = sbuck_write(bout);
   bout->runs++;
   uns merged UNUSED = 0;
   for (uns i=0; i<n; i++)
