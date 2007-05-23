@@ -495,6 +495,7 @@ static int s5_presort(struct fastbuf *dest, void *buf, size_t bufsize)
 #define SORT_PREFIX(x) s5_##x
 #define SORT_DATA_SIZE(k) (4*(k).cnt)
 #define SORT_UNIFY
+#define SORT_UNIFY_WORKSPACE(k) SORT_DATA_SIZE(k)
 #define SORT_INPUT_PRESORT
 #define SORT_OUTPUT_THIS_FB
 #define SORT_INT(k) (k).x
@@ -505,6 +506,7 @@ static int s5_presort(struct fastbuf *dest, void *buf, size_t bufsize)
 #define SORT_PREFIX(x) s5b_##x
 #define SORT_DATA_SIZE(k) (4*(k).cnt)
 #define SORT_UNIFY
+#define SORT_UNIFY_WORKSPACE(k) SORT_DATA_SIZE(k)
 #define SORT_INPUT_FB
 #define SORT_OUTPUT_THIS_FB
 #define SORT_INT(k) (k).x

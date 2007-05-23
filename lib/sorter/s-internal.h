@@ -7,6 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
+#include "lib/stkstring.h"
+
 typedef struct {
   P(key) *key;
   // FIXME: Add the hash here to save cache misses
@@ -19,6 +21,33 @@ typedef struct {
 #define ASORT_EXTRA_ARGS , P(internal_item_t) *ary
 #include "lib/arraysort.h"
 
+/*
+ *  The big_buf has the following layout:
+ *
+ *	+-------------------------------------------------------------------------------+
+ *	| array of internal_item's							|
+ *	+-------------------------------------------------------------------------------+
+ *	| padding to make the following part page-aligned				|
+ *	+--------------------------------+----------------------------------------------+
+ *	| shadow copy of item array      | array of pointers to data for write_merged() |
+ *	| used if radix-sorting          +----------------------------------------------+
+ *	|                                | workspace for write_merged()			|
+ *	+--------------------------------+----------------------------------------------+
+ *	|	       +---------+							|
+ *	|              | key     |							|
+ *	|              +---------+							|
+ *	| sequence of  | padding |							|
+ *	| items        +---------+							|
+ *	|              | data    |							|
+ *	|              +---------+							|
+ *	|              | padding |							|
+ *	|              +---------+							|
+ *	+-------------------------------------------------------------------------------+
+ *
+ *  (the data which are in different columns are never accessed simultaneously,
+ *   so we use a single buffer for both)
+ */
+
 static inline void *P(internal_get_data)(P(key) *key)
 {
   uns ksize = SORT_KEY_SIZE(*key);
@@ -28,13 +57,19 @@ static inline void *P(internal_get_data)(P(key) *key)
   return (byte *) key + ksize;
 }
 
-static size_t P(internal_buf_size)(struct sort_context *ctx)
+static inline size_t P(internal_workspace)(P(key) *key UNUSED)
 {
-  size_t bufsize = ctx->big_buf_half_size;	/* FIXME: In some cases, we can use the whole buffer */
-#ifdef CPU_64BIT_POINTERS
-  bufsize = MIN((u64)bufsize, (u64)~0U * sizeof(P(internal_item_t)));	// The number of records must fit in uns
+  size_t ws = 0;
+#ifdef SORT_UNIFY
+  ws += sizeof(void *);
 #endif
-  return bufsize;
+#ifdef SORT_UNIFY_WORKSPACE
+  ws += SORT_UNIFY_WORKSPACE(*key);
+#endif
+#if 0						/* FIXME: Shadow copy if radix-sorting */
+  ws = MAX(ws, sizeof(P(key) *));
+#endif
+  return ws;
 }
 
 static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct sort_bucket *bout, struct sort_bucket *bout_only)
@@ -53,9 +88,9 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   else if (!P(read_key)(in, &key))
     return 0;
 
-  size_t bufsize = P(internal_buf_size)(ctx);
+  size_t bufsize = ctx->big_buf_size;
 #ifdef SORT_VAR_DATA
-  if (sizeof(key) + 1024 + SORT_DATA_SIZE(key) > bufsize)
+  if (sizeof(key) + 2*CPU_PAGE_SIZE + SORT_DATA_SIZE(key) + P(internal_workspace)(&key) > bufsize)
     {
       SORT_XTRACE(3, "s-internal: Generating a giant run");
       struct fastbuf *out = sbuck_write(bout);
@@ -65,9 +100,10 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
     }
 #endif
 
-  SORT_XTRACE(3, "s-internal: Reading (bufsize=%zd)", bufsize);
+  SORT_XTRACE(4, "s-internal: Reading");
   P(internal_item_t) *item_array = ctx->big_buf, *item = item_array, *last_item;
   byte *end = (byte *) ctx->big_buf + bufsize;
+  size_t remains = bufsize - CPU_PAGE_SIZE;
   do
     {
       uns ksize = SORT_KEY_SIZE(key);
@@ -78,12 +114,18 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 #endif
       uns dsize = SORT_DATA_SIZE(key);
       uns recsize = ALIGN_TO(ksize_aligned + dsize, CPU_STRUCT_ALIGN);
-      if (unlikely(sizeof(P(internal_item_t)) + recsize > (size_t)(end - (byte *) item)))
+      size_t totalsize = recsize + sizeof(P(internal_item_t) *) + P(internal_workspace)(&key);
+      if (unlikely(totalsize > remains
+#ifdef CPU_64BIT_POINTERS
+		   || item >= item_array + ~0U		// The number of items must fit in an uns
+#endif
+	 ))
 	{
 	  ctx->more_keys = 1;
 	  *keybuf = key;
 	  break;
 	}
+      remains -= totalsize;
       end -= recsize;
       memcpy(end, &key, ksize);
 #ifdef SORT_VAR_DATA
@@ -96,13 +138,18 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   last_item = item;
 
   uns count = last_item - item_array;
-  SORT_XTRACE(3, "s-internal: Sorting %u items", count);
+  void *workspace UNUSED = ALIGN_PTR(last_item, CPU_PAGE_SIZE);
+  SORT_XTRACE(3, "s-internal: Read %u items (%s items, %s workspace, %s data)",
+	count,
+	stk_fsize((byte*)last_item - (byte*)item_array),
+	stk_fsize(end - (byte*)last_item - remains),
+	stk_fsize((byte*)ctx->big_buf + bufsize - end));
   timestamp_t timer;
   init_timer(&timer);
   P(array_sort)(count, item_array);
   ctx->total_int_time += get_timer(&timer);
 
-  SORT_XTRACE(3, "s-internal: Writing");
+  SORT_XTRACE(4, "s-internal: Writing");
   if (!ctx->more_keys)
     bout = bout_only;
   struct fastbuf *out = sbuck_write(bout);
@@ -114,9 +161,9 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
       if (item < last_item - 1 && !P(compare)(item->key, item[1].key))
 	{
 	  // Rewrite the item structures with just pointers to keys and place
-	  // pointers to data in the secondary array.
+	  // pointers to data in the workspace.
 	  P(key) **key_array = (void *) item;
-	  void **data_array = (void **) ctx->big_buf_half;
+	  void **data_array = workspace;
 	  key_array[0] = item[0].key;
 	  data_array[0] = P(internal_get_data)(key_array[0]);
 	  uns cnt;
@@ -155,5 +202,9 @@ P(internal_estimate)(struct sort_context *ctx, struct sort_bucket *b UNUSED)
   uns avg = ALIGN_TO(sizeof(P(key)), CPU_STRUCT_ALIGN);
 #endif
   // We ignore the data part of records, it probably won't make the estimate much worse
-  return (P(internal_buf_size)(ctx) / (avg + sizeof(P(internal_item_t))) * avg);
+  size_t bufsize = ctx->big_buf_size;
+#ifdef SORT_UNIFY_WORKSPACE		// FIXME: Or if radix-sorting
+  bufsize /= 2;
+#endif
+  return (bufsize / (avg + sizeof(P(internal_item_t))) * avg);
 }

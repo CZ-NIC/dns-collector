@@ -37,8 +37,8 @@ struct sort_context {
 
   struct mempool *pool;
   clist bucket_list;
-  void *big_buf, *big_buf_half;
-  size_t big_buf_size, big_buf_half_size;
+  void *big_buf;
+  size_t big_buf_size;
 
   int (*custom_presort)(struct fastbuf *dest, void *buf, size_t bufsize);
 

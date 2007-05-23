@@ -7,6 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
+#include "lib/stkstring.h"
+
 #define ASORT_PREFIX(x) SORT_PREFIX(array_##x)
 #define ASORT_KEY_TYPE P(key)
 #define ASORT_ELT(i) ary[i]
@@ -14,18 +16,34 @@
 #define ASORT_EXTRA_ARGS , P(key) *ary
 #include "lib/arraysort.h"
 
-static int P(internal_num_keys)(struct sort_context *ctx)
+/*
+ *  This is a more efficient implementation of the internal sorter,
+ *  which runs under the following assumptions:
+ *
+ *     - the keys have fixed (and small) size
+ *     - no data are present after the key
+ *     - unification does not require any workspace
+ */
+
+static size_t P(internal_workspace)(void)
 {
-  size_t bufsize = ctx->big_buf_half_size;
-#ifdef SORT_UNIFY
-  // When we promise unification, we have to reduce the number of records
-  // to be sure that both pointers and merged records fit in the 2nd half
-  // of the big_buf. So we eat as much memory as s-internal.h, but still
-  // we are faster.
-  u64 maxkeys = bufsize / (sizeof(P(key)) + sizeof(void *));
-#else
-  u64 maxkeys = bufsize / sizeof(P(key));
+  size_t workspace = 0;
+#ifdef CONFIG_UNIFY
+  workspace = sizeof(P(key) *);
 #endif
+#if 0		// FIXME: Workspace for radix-sort if needed
+  workspace = MAX(workspace, sizeof(P(key)));
+#endif
+  return workspace;
+}
+
+static uns P(internal_num_keys)(struct sort_context *ctx)
+{
+  size_t bufsize = ctx->big_buf_size;
+  size_t workspace = P(internal_workspace)();
+  if (workspace)
+    bufsize -= CPU_PAGE_SIZE;
+  u64 maxkeys = bufsize / (sizeof(P(key)) + workspace);
   return MIN(maxkeys, ~0U);					// The number of records must fit in uns
 }
 
@@ -36,20 +54,24 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   P(key) *buf = ctx->big_buf;
   uns maxkeys = P(internal_num_keys)(ctx);
 
-  SORT_XTRACE(3, "s-fixint: Reading (maxkeys=%u)", maxkeys);
+  SORT_XTRACE(4, "s-fixint: Reading (maxkeys=%u)", maxkeys);
   uns n = 0;
   while (n < maxkeys && P(read_key)(in, &buf[n]))
     n++;
   if (!n)
     return 0;
+  void *workspace UNUSED = ALIGN_PTR(&buf[n], CPU_PAGE_SIZE);
 
-  SORT_XTRACE(3, "s-fixint: Sorting %u items", n);
+  SORT_XTRACE(3, "s-fixint: Sorting %u items (%s items, %s workspace)",
+	n,
+	stk_fsize(n * sizeof(P(key))),
+	stk_fsize(n * P(internal_workspace)()));
   timestamp_t timer;
   init_timer(&timer);
   P(array_sort)(n, buf);
   ctx->total_int_time += get_timer(&timer);
 
-  SORT_XTRACE(3, "s-fixint: Writing");
+  SORT_XTRACE(4, "s-fixint: Writing");
   if (n < maxkeys)
     bout = bout_only;
   struct fastbuf *out = sbuck_write(bout);
@@ -60,7 +82,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 #ifdef SORT_UNIFY
       if (i < n-1 && !P(compare)(&buf[i], &buf[i+1]))
 	{
-	  P(key) **keys = ctx->big_buf_half;
+	  P(key) **keys = workspace;
 	  uns n = 2;
 	  keys[0] = &buf[i];
 	  keys[1] = &buf[i+1];
@@ -69,7 +91,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 	      keys[n] = &buf[i+n];
 	      n++;
 	    }
-	  P(write_merged)(out, keys, NULL, n, keys+n);
+	  P(write_merged)(out, keys, NULL, n, NULL);
 	  merged += n - 1;
 	  i += n - 1;
 	  continue;

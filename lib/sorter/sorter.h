@@ -60,10 +60,13 @@
  *  void PREFIX_write_merged(struct fastbuf *f, SORT_KEY **keys, void **data, uns n, void *buf)
  *			takes n records in memory with keys which compare equal and writes
  *			a single record to the given fastbuf. `buf' points to a buffer which
- *			is guaranteed to hold all given records.
+ *			is guaranteed to hold the sum of workspace requirements (see below)
+ *			over all given records.
  *  void PREFIX_copy_merged(SORT_KEY **keys, struct fastbuf **data, uns n, struct fastbuf *dest)
  *			takes n records with keys in memory and data in fastbufs and writes
  *			a single record.
+ *  SORT_UNIFY_WORKSPACE(key)  gets a key and returns the amount of workspace required when merging
+ *			the given record. Defaults to 0.
  *
  *  Input (choose one of these):
  *
@@ -174,7 +177,7 @@ static inline void P(copy_data)(P(key) *key, struct fastbuf *in, struct fastbuf 
 #endif
 }
 
-#if defined(SORT_VAR_KEY) || defined(SORT_VAR_DATA)
+#if defined(SORT_VAR_KEY) || defined(SORT_VAR_DATA) || defined(SORT_UNIFY_WORKSPACE)
 #include "lib/sorter/s-internal.h"
 #else
 #include "lib/sorter/s-fixint.h"
@@ -272,6 +275,7 @@ static struct fastbuf *P(sort)(
 #undef SORT_INT
 #undef SORT_HASH_BITS
 #undef SORT_UNIFY
+#undef SORT_UNIFY_WORKSPACE
 #undef SORT_INPUT_FILE
 #undef SORT_INPUT_FB
 #undef SORT_INPUT_PRESORT
