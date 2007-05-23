@@ -62,7 +62,10 @@ sbuck_join_to(struct sort_bucket *b)
     return NULL;
 
   struct sort_bucket *out = (struct sort_bucket *) b->n.prev;	// Such bucket is guaranteed to exist
-  return (out->flags & SBF_FINAL) ? out : NULL;
+  if (!(out->flags & SBF_FINAL))
+    return NULL;
+  ASSERT(out->runs == 1);
+  return out;
 }
 
 static void
@@ -107,7 +110,11 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 	  sorter_stop_timer(ctx, &ctx->total_pre_time);
 	  SORT_XTRACE(((b->flags & SBF_SOURCE) ? 1 : 2), "Sorted in memory");
 	  if (join)
-	    sbuck_drop(ins[0]);
+	    {
+	      ASSERT(join->runs == 2);
+	      join->runs--;
+	      sbuck_drop(ins[0]);
+	    }
 	  else
 	    clist_insert_after(&ins[0]->n, list_pos);
 	  sbuck_drop(b);
