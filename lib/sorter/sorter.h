@@ -64,7 +64,7 @@
  *			over all given records.
  *  void PREFIX_copy_merged(SORT_KEY **keys, struct fastbuf **data, uns n, struct fastbuf *dest)
  *			takes n records with keys in memory and data in fastbufs and writes
- *			a single record.
+ *			a single record. Used only if SORT_DATA_SIZE or SORT_UNIFY_WORKSPACE is defined.
  *  SORT_UNIFY_WORKSPACE(key)  gets a key and returns the amount of workspace required when merging
  *			the given record. Defaults to 0.
  *
@@ -176,6 +176,13 @@ static inline void P(copy_data)(P(key) *key, struct fastbuf *in, struct fastbuf 
   (void) in;
 #endif
 }
+
+#if defined(SORT_UNIFY) && !defined(SORT_VAR_DATA) && !defined(SORT_UNIFY_WORKSPACE)
+static inline void P(copy_merged)(P(key) **keys, struct fastbuf **data UNUSED, uns n, struct fastbuf *dest)
+{
+  P(write_merged)(dest, keys, NULL, n, NULL);
+}
+#endif
 
 #if defined(SORT_VAR_KEY) || defined(SORT_VAR_DATA) || defined(SORT_UNIFY_WORKSPACE)
 #include "lib/sorter/s-internal.h"

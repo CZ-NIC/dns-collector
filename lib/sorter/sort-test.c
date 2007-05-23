@@ -95,13 +95,6 @@ static inline void s2_write_merged(struct fastbuf *f, struct key2 **k, void **d 
   bwrite(f, k[0], sizeof(struct key2));
 }
 
-static inline void s2_copy_merged(struct key2 **k, struct fastbuf **d UNUSED, uns n, struct fastbuf *dest)
-{
-  for (uns i=1; i<n; i++)
-    k[0]->cnt += k[i]->cnt;
-  bwrite(dest, k[0], sizeof(struct key2));
-}
-
 #define SORT_KEY_REGULAR struct key2
 #define SORT_PREFIX(x) s2_##x
 #define SORT_INPUT_FB
