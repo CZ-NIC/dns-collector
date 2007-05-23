@@ -61,11 +61,12 @@
  *			takes n records in memory with keys which compare equal and writes
  *			a single record to the given fastbuf. `buf' points to a buffer which
  *			is guaranteed to hold the sum of workspace requirements (see below)
- *			over all given records.
+ *			over all given records. The function is allowed to modify all its inputs.
  *  void PREFIX_copy_merged(SORT_KEY **keys, struct fastbuf **data, uns n, struct fastbuf *dest)
  *			takes n records with keys in memory and data in fastbufs and writes
  *			a single record. Used only if SORT_DATA_SIZE or SORT_UNIFY_WORKSPACE is defined.
- *  SORT_UNIFY_WORKSPACE(key)  gets a key and returns the amount of workspace required when merging
+ *  SORT_UNIFY_WORKSPACE(key)
+ *			gets a key and returns the amount of workspace required when merging
  *			the given record. Defaults to 0.
  *
  *  Input (choose one of these):
@@ -74,7 +75,7 @@
  *  SORT_INPUT_FB	seekable fastbuf stream
  *  SORT_INPUT_PIPE	non-seekable fastbuf stream
  *  SORT_INPUT_PRESORT	custom presorter. Calls function
- *  int PREFIX_presort(struct fastbuf *dest, void *buf, size_t bufsize);
+ *  int PREFIX_presort(struct fastbuf *dest, void *buf, size_t bufsize)
  *			to get successive batches of pre-sorted data.
  *			The function is passed a page-aligned presorting buffer.
  *			It returns 1 on success or 0 on EOF.
