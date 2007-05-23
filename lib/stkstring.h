@@ -8,6 +8,9 @@
  *	of the GNU Lesser General Public License.
  */
 
+#ifndef _UCW_STKSTRING_H
+#define _UCW_STKSTRING_H
+
 #include <alloca.h>
 #include <string.h>
 #include <stdio.h>
@@ -30,3 +33,5 @@ uns stk_printf_internal(const char *x, ...) FORMAT_CHECK(printf,1,2);
 uns stk_vprintf_internal(const char *x, va_list args);
 void stk_hexdump_internal(char *dst, byte *src, uns n);
 void stk_fsize_internal(char *dst, u64 size);
+
+#endif
