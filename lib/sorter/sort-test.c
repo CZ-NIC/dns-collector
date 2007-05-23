@@ -560,6 +560,47 @@ test_graph(uns mode, u64 size)
   bclose(f);
 }
 
+/*** Simple 8-byte integer keys ***/
+
+struct key6 {
+  u64 x;
+};
+
+#define SORT_KEY_REGULAR struct key6
+#define SORT_PREFIX(x) s6_##x
+#define SORT_INPUT_FB
+#define SORT_OUTPUT_FB
+#define SORT_UNIQUE
+#define SORT_INT64(k) (k).x
+
+#include "lib/sorter/sorter.h"
+
+static void
+test_int64(int mode, u64 size)
+{
+  u64 N = size ? nextprime(MIN(size/8, 0xffff0000)) : 0;
+  u64 K = N/4*3;
+  log(L_INFO, ">>> 64-bit integers (%s, N=%llu)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
+
+  struct fastbuf *f = bopen_tmp(65536);
+  for (u64 i=0; i<N; i++)
+    bputq(f, 777777*((mode==0) ? i : (mode==1) ? N-1-i : ((u64)i * K + 17) % N));
+  brewind(f);
+
+  start();
+  f = s6_sort(f, NULL, 777777*(N-1));
+  stop();
+
+  SORT_XTRACE(2, "Verifying");
+  for (u64 i=0; i<N; i++)
+    {
+      u64 j = bgetq(f);
+      if (777777*i != j)
+	die("Discrepancy: %llu instead of %llu", j, 777777*i);
+    }
+  bclose(f);
+}
+
 /*** Main ***/
 
 static void
@@ -593,7 +634,13 @@ run_test(uns i, u64 size)
       test_graph(0, size); break;
     case 12:
       test_graph(1, size); break;
-#define TMAX 13
+    case 13:
+      test_int64(0, size); break;
+    case 14:
+      test_int64(1, size); break;
+    case 15:
+      test_int64(2, size); break;
+#define TMAX 16
     }
 }
 

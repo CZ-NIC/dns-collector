@@ -21,7 +21,7 @@ static void P(radix_split)(struct sort_context *ctx UNUSED, struct sort_bucket *
 
   while (P(read_key)(in, &k))
     {
-      uns h = P(hash)(&k);
+      P(hash_t) h = P(hash)(&k);
       uns i = (h >> bitpos) & mask;
       if (unlikely(!outs[i]))
 	outs[i] = sbuck_write(bouts[i]);

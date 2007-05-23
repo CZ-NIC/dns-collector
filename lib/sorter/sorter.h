@@ -46,6 +46,7 @@
  *			is supplied automatically and the sorting function gets an extra
  *			parameter specifying a range of the integers. The better the range
  *			fits, the faster we sort. Sets up SORT_HASH_xxx automatically.
+ *  SORT_INT64(key)	the same for 64-bit integers.
  *
  *  Hashing (optional, but it can speed sorting up):
  *
@@ -127,6 +128,13 @@ typedef SORT_KEY P(key);
 #error Missing definition of sorting key.
 #endif
 
+#ifdef SORT_INT64
+typedef u64 P(hash_t);
+#define SORT_INT SORT_INT64
+#else
+typedef uns P(hash_t);
+#endif
+
 #ifdef SORT_INT
 static inline int P(compare) (P(key) *x, P(key) *y)
 {
@@ -138,7 +146,7 @@ static inline int P(compare) (P(key) *x, P(key) *y)
 }
 
 #ifndef SORT_HASH_BITS
-static inline int P(hash) (P(key) *x)
+static inline P(hash_t) P(hash) (P(key) *x)
 {
   return SORT_INT((*x));
 }
@@ -209,7 +217,7 @@ static struct fastbuf *P(sort)(
 			       struct fastbuf *out
 #endif
 #ifdef SORT_INT
-			       , uns int_range
+			       , u64 int_range
 #endif
 			       )
 {
@@ -252,7 +260,7 @@ static struct fastbuf *P(sort)(
   ctx.radix_split = P(radix_split);
 #elif defined(SORT_INT)
   ctx.hash_bits = 0;
-  while (ctx.hash_bits < 32 && (int_range >> ctx.hash_bits))
+  while (ctx.hash_bits < 64 && (int_range >> ctx.hash_bits))
     ctx.hash_bits++;
   ctx.radix_split = P(radix_split);
 #endif
@@ -281,6 +289,7 @@ static struct fastbuf *P(sort)(
 #undef SORT_VAR_KEY
 #undef SORT_VAR_DATA
 #undef SORT_INT
+#undef SORT_INT64
 #undef SORT_HASH_BITS
 #undef SORT_UNIFY
 #undef SORT_UNIFY_WORKSPACE

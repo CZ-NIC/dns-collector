@@ -251,7 +251,7 @@ sorter_run(struct sort_context *ctx)
   bin->size = ctx->in_size;
   bin->hash_bits = ctx->hash_bits;
   clist_add_tail(&ctx->bucket_list, &bin->n);
-  SORT_XTRACE(2, "Input size: %s", F_BSIZE(bin));
+  SORT_XTRACE(2, "Input size: %s, %d hash bits", F_BSIZE(bin), bin->hash_bits);
 
   // Create bucket for the output
   struct sort_bucket *bout = sbuck_new(ctx);
