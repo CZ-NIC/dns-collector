@@ -580,7 +580,7 @@ test_int64(int mode, u64 size)
 {
   u64 N = size ? nextprime(MIN(size/8, 0xffff0000)) : 0;
   u64 K = N/4*3;
-  log(L_INFO, ">>> 64-bit integers (%s, N=%llu)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
+  log(L_INFO, ">>> 64-bit integers (%s, N=%llu)", ((char *[]) { "increasing", "decreasing", "random" })[mode], (long long)N);
 
   struct fastbuf *f = bopen_tmp(65536);
   for (u64 i=0; i<N; i++)
@@ -596,7 +596,7 @@ test_int64(int mode, u64 size)
     {
       u64 j = bgetq(f);
       if (777777*i != j)
-	die("Discrepancy: %llu instead of %llu", j, 777777*i);
+	die("Discrepancy: %llu instead of %llu", (long long)j, 777777*(long long)i);
     }
   bclose(f);
 }
