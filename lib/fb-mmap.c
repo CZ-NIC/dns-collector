@@ -192,8 +192,6 @@ bfmmopen_internal(int fd, byte *name, uns mode)
 struct fastbuf *
 bopen_mm(byte *name, uns mode)
 {
-  if ((mode & O_ACCMODE) == O_WRONLY)
-    mode = (mode & ~O_ACCMODE) | O_RDWR;
   return bopen_file(name, mode, &(struct fb_params){ .type = FB_MMAP });
 }
 

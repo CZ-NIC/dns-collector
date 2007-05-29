@@ -80,6 +80,8 @@ bopen_file_internal(byte *name, int mode, struct fb_params *params, int try)
 {
   if (params->type == FB_DIRECT && !fbdir_cheat)
     mode |= O_DIRECT;
+  if (params->type == FB_MMAP && (mode & O_ACCMODE) == O_WRONLY)
+    mode = (mode & ~O_ACCMODE) | O_RDWR;
   int fd = sh_open(name, mode, 0666);
   if (fd < 0)
     if (try)
