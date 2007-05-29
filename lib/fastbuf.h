@@ -75,6 +75,7 @@ struct fastbuf {
 
 /* FastIO on standard files (specify buffer size 0 to enable mmaping) */
 
+struct fastbuf *bfdopen_internal(int fd, uns buflen, byte *name);
 struct fastbuf *bopen(byte *name, uns mode, uns buflen);
 struct fastbuf *bopen_try(byte *name, uns mode, uns buflen);
 struct fastbuf *bopen_tmp(uns buflen);
@@ -96,7 +97,10 @@ struct fastbuf *bopen_mm(byte *name, uns mode);
 
 /* FastIO on files opened with O_DIRECT (see fb-direct.c for description) */
 
+extern uns fbdir_cheat;
+
 struct asio_queue;
+struct fastbuf *fbdir_open_fd_internal(int fd, struct asio_queue *io_queue, byte *name);
 struct fastbuf *fbdir_open(byte *name, uns mode, struct asio_queue *io_queue);
 struct fastbuf *fbdir_open_try(byte *name, uns mode, struct asio_queue *io_queue);
 struct fastbuf *fbdir_open_fd(int fd, struct asio_queue *io_queue);
@@ -113,11 +117,12 @@ enum fb_type {
 struct fb_params {
   enum fb_type type;
   uns buffer_size;
+  struct asio_queue *asio;
 };
 
 struct cf_section;
 extern struct cf_section fbpar_cf;
-extern struct fb_params fbpar_defaults;
+extern struct fb_params fbpar_def;
 
 struct fastbuf *bopen_file(byte *name, int mode, struct fb_params *params);
 struct fastbuf *bopen_file_try(byte *name, int mode, struct fb_params *params);

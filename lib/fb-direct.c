@@ -37,7 +37,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-static uns fbdir_cheat;
+uns fbdir_cheat;
 static uns fbdir_buffer_size = 65536;
 static uns fbdir_read_ahead = 1;
 static uns fbdir_write_back = 1;
@@ -295,8 +295,8 @@ fbdir_config(struct fastbuf *f, uns item, int value)
     }
 }
 
-static struct fastbuf *
-fbdir_open_internal(byte *name, int fd, struct asio_queue *q)
+struct fastbuf *
+fbdir_open_fd_internal(int fd, struct asio_queue *q, byte *name)
 {
   int namelen = strlen(name) + 1;
   struct fb_direct *F = xmalloc(sizeof(struct fb_direct) + namelen);
@@ -323,48 +323,25 @@ fbdir_open_internal(byte *name, int fd, struct asio_queue *q)
 struct fastbuf *
 fbdir_open_try(byte *name, uns mode, struct asio_queue *q)
 {
-  if (!fbdir_cheat)
-    mode |= O_DIRECT;
-  int fd = sh_open(name, mode, 0666);
-  if (fd < 0)
-    return NULL;
-  struct fastbuf *b = fbdir_open_internal(name, fd, q);
-  if (mode & O_APPEND)
-    fbdir_seek(b, 0, SEEK_END);
-  return b;
+  return bopen_file_try(name, mode, &(struct fb_params){ .type = FB_DIRECT, .asio = q });
 }
 
 struct fastbuf *
 fbdir_open(byte *name, uns mode, struct asio_queue *q)
 {
-  struct fastbuf *b = fbdir_open_try(name, mode, q);
-  if (!b)
-    die("Unable to %s file %s: %m",
-	(mode & O_CREAT) ? "create" : "open", name);
-  return b;
+  return bopen_file(name, mode, &(struct fb_params){ .type = FB_DIRECT, .asio = q });
 }
 
 struct fastbuf *
 fbdir_open_fd(int fd, struct asio_queue *q)
 {
-  byte x[32];
-
-  sprintf(x, "fd%d", fd);
-  if (!fbdir_cheat && fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_DIRECT) < 0)
-    log(L_WARN, "Cannot set O_DIRECT on fd %d: %m", fd);
-  return fbdir_open_internal(x, fd, q);
+  return bopen_fd(fd, &(struct fb_params){ .type = FB_DIRECT, .asio = q });
 }
 
 struct fastbuf *
 fbdir_open_tmp(struct asio_queue *q)
 {
-  byte buf[TEMP_FILE_NAME_LEN];
-  struct fastbuf *f;
-
-  temp_file_name(buf);
-  f = fbdir_open(buf, O_RDWR | O_CREAT | O_TRUNC, q);
-  bconfig(f, BCONFIG_IS_TEMP_FILE, 1);
-  return f;
+  return bopen_tmp_file(&(struct fb_params){ .type = FB_DIRECT, .asio = q });
 }
 
 #ifdef TEST

@@ -91,7 +91,7 @@ bfd_config(struct fastbuf *f, uns item, int value)
     }
 }
 
-static struct fastbuf *
+struct fastbuf *
 bfdopen_internal(int fd, uns buflen, byte *name)
 {
   int namelen = strlen(name) + 1;
@@ -118,34 +118,19 @@ bfdopen_internal(int fd, uns buflen, byte *name)
 struct fastbuf *
 bopen_try(byte *name, uns mode, uns buflen)
 {
-  int fd = sh_open(name, mode, 0666);
-  if (fd < 0)
-    return NULL;
-  struct fastbuf *b = bfdopen_internal(fd, buflen, name);
-  if (mode & O_APPEND)
-    bfd_seek(b, 0, SEEK_END);
-  return b;
+  return bopen_file_try(name, mode, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
 }
 
 struct fastbuf *
 bopen(byte *name, uns mode, uns buflen)
 {
-  if (!buflen)
-    return bopen_mm(name, mode);
-  struct fastbuf *b = bopen_try(name, mode, buflen);
-  if (!b)
-    die("Unable to %s file %s: %m",
-	(mode & O_CREAT) ? "create" : "open", name);
-  return b;
+  return bopen_file(name, mode, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
 }
 
 struct fastbuf *
 bfdopen(int fd, uns buflen)
 {
-  byte x[32];
-
-  sprintf(x, "fd%d", fd);
-  return bfdopen_internal(fd, buflen, x);
+  return bopen_fd(fd, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
 }
 
 struct fastbuf *
