@@ -17,15 +17,18 @@
 
 struct fb_params fbpar_def = {
   .buffer_size = 65536,
+  .read_ahead = 1,
+  .write_back = 1,
 }; 
 
 struct cf_section fbpar_cf = {
 # define F(x) PTR_TO(struct fb_params, x)
   CF_TYPE(struct fb_params),
   CF_ITEMS {
-    // FIXME
     CF_LOOKUP("Type", (int *)F(type), ((byte *[]){"std", "direct", "mmap", NULL})),
     CF_UNS("BufSize", F(buffer_size)),
+    CF_UNS("ReadAhead", F(read_ahead)),
+    CF_UNS("WriteBack", F(write_back)),
     CF_END
   }
 # undef F
@@ -45,21 +48,29 @@ fbpar_global_init(void)
 }
 
 static struct fastbuf *
-bopen_fd_internal(int fd, struct fb_params *params, byte *name)
+bopen_fd_internal(int fd, struct fb_params *params, uns mode, byte *name)
 {
+  byte buf[32];
+  if (!name)
+    sprintf(name = buf, "fd%d", fd);
   struct fastbuf *fb;
   switch (params->type)
     {
       case FB_STD:
-	return bfdopen_internal(fd, params->buffer_size, name);
+	return bfdopen_internal(fd, name,
+	    params->buffer_size ? : fbpar_def.buffer_size);
       case FB_DIRECT:
-	fb = fbdir_open_fd_internal(fd, params->asio, name);
-	if (!fbdir_cheat && fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_DIRECT) < 0)
+	fb = fbdir_open_fd_internal(fd, name, params->asio,
+	    params->buffer_size ? : fbpar_def.buffer_size,
+	    params->read_ahead ? : fbpar_def.read_ahead,
+	    params->write_back ? : fbpar_def.write_back);
+	if (!~mode && !fbdir_cheat && ((int)(mode = fcntl(fd, F_GETFL)) < 0 || fcntl(fd, F_SETFL, mode | O_DIRECT)) < 0)
           log(L_WARN, "Cannot set O_DIRECT on fd %d: %m", fd);
 	return fb;
       case FB_MMAP:
-	// FIXME
-	ASSERT(0);
+	if (!~mode && (int)(mode = fcntl(fd, F_GETFL)) < 0)
+          die("Cannot get flags of fd %d: %m", fd);
+	return bfmmopen_internal(fd, name, mode);
     }
   ASSERT(0);
 }
@@ -75,7 +86,7 @@ bopen_file_internal(byte *name, int mode, struct fb_params *params, int try)
       return NULL;
     else
       die("Unable to %s file %s: %m", (mode & O_CREAT) ? "create" : "open", name);
-  struct fastbuf *fb = bopen_fd_internal(fd, params, name);
+  struct fastbuf *fb = bopen_fd_internal(fd, params, mode, name);
   ASSERT(fb);
   if (mode & O_APPEND)
     bseek(fb, 0, SEEK_END);
@@ -97,9 +108,7 @@ bopen_file_try(byte *name, int mode, struct fb_params *params)
 struct fastbuf *
 bopen_fd(int fd, struct fb_params *params)
 {
-  byte x[32];
-  sprintf(x, "fd%d", fd);
-  return bopen_fd_internal(fd, params ? : &fbpar_def, x);
+  return bopen_fd_internal(fd, params ? : &fbpar_def, ~0U, NULL);
 }
 
 struct fastbuf *

@@ -38,16 +38,10 @@
 #include <stdio.h>
 
 uns fbdir_cheat;
-static uns fbdir_buffer_size = 65536;
-static uns fbdir_read_ahead = 1;
-static uns fbdir_write_back = 1;
 
 static struct cf_section fbdir_cf = {
   CF_ITEMS {
     CF_UNS("Cheat", &fbdir_cheat),
-    CF_UNS("BufferSize", &fbdir_buffer_size),
-    CF_UNS("ReadAhead", &fbdir_read_ahead),
-    CF_UNS("WriteBack", &fbdir_write_back),
     CF_END
   }
 };
@@ -227,15 +221,15 @@ fbdir_seek(struct fastbuf *f, sh_off_t pos, int whence)
 }
 
 static struct asio_queue *
-fbdir_get_io_queue(void)
+fbdir_get_io_queue(uns buffer_size, uns write_back)
 {
   struct ucwlib_context *ctx = ucwlib_thread_context();
   struct asio_queue *q = ctx->io_queue;
   if (!q)
     {
       q = xmalloc_zero(sizeof(struct asio_queue));
-      q->buffer_size = fbdir_buffer_size;
-      q->max_writebacks = fbdir_write_back;
+      q->buffer_size = buffer_size;
+      q->max_writebacks = write_back;
       asio_init_queue(q);
       ctx->io_queue = q;
     }
@@ -296,7 +290,7 @@ fbdir_config(struct fastbuf *f, uns item, int value)
 }
 
 struct fastbuf *
-fbdir_open_fd_internal(int fd, struct asio_queue *q, byte *name)
+fbdir_open_fd_internal(int fd, byte *name, struct asio_queue *q, uns buffer_size, uns read_ahead UNUSED, uns write_back)
 {
   int namelen = strlen(name) + 1;
   struct fb_direct *F = xmalloc(sizeof(struct fb_direct) + namelen);
@@ -310,7 +304,7 @@ fbdir_open_fd_internal(int fd, struct asio_queue *q, byte *name)
   if (q)
     F->io_queue = F->user_queue = q;
   else
-    F->io_queue = fbdir_get_io_queue();
+    F->io_queue = fbdir_get_io_queue(buffer_size, write_back);
   f->refill = fbdir_refill;
   f->spout = fbdir_spout;
   f->seek = fbdir_seek;

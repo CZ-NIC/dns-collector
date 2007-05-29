@@ -165,7 +165,7 @@ bfmm_config(struct fastbuf *f, uns item, int value)
     }
 }
 
-static struct fastbuf *
+struct fastbuf *
 bfmmopen_internal(int fd, byte *name, uns mode)
 {
   int namelen = strlen(name) + 1;
@@ -192,15 +192,9 @@ bfmmopen_internal(int fd, byte *name, uns mode)
 struct fastbuf *
 bopen_mm(byte *name, uns mode)
 {
-  int fd;
-
   if ((mode & O_ACCMODE) == O_WRONLY)
     mode = (mode & ~O_ACCMODE) | O_RDWR;
-  fd = sh_open(name, mode, 0666);
-  if (fd < 0)
-    die("Unable to %s file %s: %m",
-	(mode & O_CREAT) ? "create" : "open", name);
-  return bfmmopen_internal(fd, name, mode);
+  return bopen_file(name, mode, &(struct fb_params){ .type = FB_MMAP });
 }
 
 #ifdef TEST

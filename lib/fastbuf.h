@@ -73,9 +73,34 @@ struct fastbuf {
   int can_overwrite_buffer;		/* Can the buffer be altered? (see discussion above) 0=never, 1=temporarily, 2=permanently */
 };
 
+/* FastIO on files with run-time parametrization */
+
+enum fb_type {
+  FB_STD,
+  FB_DIRECT,
+  FB_MMAP
+};
+
+struct fb_params {
+  enum fb_type type;
+  uns buffer_size;
+  uns read_ahead;
+  uns write_back;
+  struct asio_queue *asio;
+};
+
+struct cf_section;
+extern struct cf_section fbpar_cf;
+extern struct fb_params fbpar_def;
+
+struct fastbuf *bopen_file(byte *name, int mode, struct fb_params *params);
+struct fastbuf *bopen_file_try(byte *name, int mode, struct fb_params *params);
+struct fastbuf *bopen_tmp_file(struct fb_params *params);
+struct fastbuf *bopen_fd(int fd, struct fb_params *params);
+
 /* FastIO on standard files (specify buffer size 0 to enable mmaping) */
 
-struct fastbuf *bfdopen_internal(int fd, uns buflen, byte *name);
+struct fastbuf *bfdopen_internal(int fd, byte *name, uns buflen);
 struct fastbuf *bopen(byte *name, uns mode, uns buflen);
 struct fastbuf *bopen_try(byte *name, uns mode, uns buflen);
 struct fastbuf *bopen_tmp(uns buflen);
@@ -93,6 +118,7 @@ struct fastbuf *fbmem_clone_read(struct fastbuf *);	/* Create reading fastbuf */
 
 /* FastIO on memory mapped files */
 
+struct fastbuf *bfmmopen_internal(int fd, byte *name, uns mode);
 struct fastbuf *bopen_mm(byte *name, uns mode);
 
 /* FastIO on files opened with O_DIRECT (see fb-direct.c for description) */
@@ -100,34 +126,11 @@ struct fastbuf *bopen_mm(byte *name, uns mode);
 extern uns fbdir_cheat;
 
 struct asio_queue;
-struct fastbuf *fbdir_open_fd_internal(int fd, struct asio_queue *io_queue, byte *name);
+struct fastbuf *fbdir_open_fd_internal(int fd, byte *name, struct asio_queue *io_queue, uns buffer_size, uns read_ahead, uns write_back);
 struct fastbuf *fbdir_open(byte *name, uns mode, struct asio_queue *io_queue);
 struct fastbuf *fbdir_open_try(byte *name, uns mode, struct asio_queue *io_queue);
 struct fastbuf *fbdir_open_fd(int fd, struct asio_queue *io_queue);
 struct fastbuf *fbdir_open_tmp(struct asio_queue *io_queue);
-
-/* FastIO on files with run-time parametrization */
-
-enum fb_type {
-  FB_STD,
-  FB_DIRECT,
-  FB_MMAP
-};
-
-struct fb_params {
-  enum fb_type type;
-  uns buffer_size;
-  struct asio_queue *asio;
-};
-
-struct cf_section;
-extern struct cf_section fbpar_cf;
-extern struct fb_params fbpar_def;
-
-struct fastbuf *bopen_file(byte *name, int mode, struct fb_params *params);
-struct fastbuf *bopen_file_try(byte *name, int mode, struct fb_params *params);
-struct fastbuf *bopen_tmp_file(struct fb_params *params);
-struct fastbuf *bopen_fd(int fd, struct fb_params *params);
 
 /* FastI on file descriptors with limit */
 
