@@ -225,7 +225,7 @@ static struct fastbuf *P(sort)(
   bzero(&ctx, sizeof(ctx));
 
 #ifdef SORT_INPUT_FILE
-  ctx.in_fb = bopen(in, O_RDONLY, sorter_stream_bufsize);
+  ctx.in_fb = bopen_file(in, O_RDONLY, &sorter_fb_params);
   ctx.in_size = bfilesize(ctx.in_fb);
 #elif defined(SORT_INPUT_FB)
   ctx.in_fb = in;

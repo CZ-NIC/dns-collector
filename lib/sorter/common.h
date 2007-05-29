@@ -16,6 +16,7 @@
 extern uns sorter_trace, sorter_presort_bufsize, sorter_stream_bufsize;
 extern uns sorter_debug, sorter_min_radix_bits, sorter_max_radix_bits;
 extern u64 sorter_bufsize;
+extern struct fb_params sorter_fb_params;
 
 #define SORT_TRACE(x...) do { if (sorter_trace) log(L_DEBUG, x); } while(0)
 #define SORT_XTRACE(level, x...) do { if (sorter_trace >= level) log(L_DEBUG, x); } while(0)
