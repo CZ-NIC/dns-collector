@@ -77,7 +77,7 @@ struct fastbuf {
 
 enum fb_type {				/* Which back-end you want to use */
   FB_STD,				/* Standard buffered I/O */
-  FB_DIRECT,				/* Direct I/O bypassing system caches */
+  FB_DIRECT,				/* Direct I/O bypassing system caches (see fb-direct.c for description) */
   FB_MMAP				/* Memory mapped files */
 };
 
@@ -111,26 +111,18 @@ void bfilesync(struct fastbuf *b);
 #define TEMP_FILE_NAME_LEN 256
 void temp_file_name(byte *name);
 
+/* Internal functions of some file back-ends */
+
+struct fastbuf *bfmmopen_internal(int fd, byte *name, uns mode);
+
+extern uns fbdir_cheat;
+struct asio_queue;
+struct fastbuf *fbdir_open_fd_internal(int fd, byte *name, struct asio_queue *io_queue, uns buffer_size, uns read_ahead, uns write_back);
+
 /* FastIO on in-memory streams */
 
 struct fastbuf *fbmem_create(unsigned blocksize);	/* Create stream and return its writing fastbuf */
 struct fastbuf *fbmem_clone_read(struct fastbuf *);	/* Create reading fastbuf */
-
-/* FastIO on memory mapped files */
-
-struct fastbuf *bfmmopen_internal(int fd, byte *name, uns mode);
-struct fastbuf *bopen_mm(byte *name, uns mode);
-
-/* FastIO on files opened with O_DIRECT (see fb-direct.c for description) */
-
-extern uns fbdir_cheat;
-
-struct asio_queue;
-struct fastbuf *fbdir_open_fd_internal(int fd, byte *name, struct asio_queue *io_queue, uns buffer_size, uns read_ahead, uns write_back);
-struct fastbuf *fbdir_open(byte *name, uns mode, struct asio_queue *io_queue);
-struct fastbuf *fbdir_open_try(byte *name, uns mode, struct asio_queue *io_queue);
-struct fastbuf *fbdir_open_fd(int fd, struct asio_queue *io_queue);
-struct fastbuf *fbdir_open_tmp(struct asio_queue *io_queue);
 
 /* FastI on file descriptors with limit */
 

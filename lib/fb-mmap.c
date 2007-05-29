@@ -189,12 +189,6 @@ bfmmopen_internal(int fd, byte *name, uns mode)
   return f;
 }
 
-struct fastbuf *
-bopen_mm(byte *name, uns mode)
-{
-  return bopen_file(name, mode, &(struct fb_params){ .type = FB_MMAP });
-}
-
 #ifdef TEST
 
 int main(int argc, char **argv)

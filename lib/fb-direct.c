@@ -314,30 +314,6 @@ fbdir_open_fd_internal(int fd, byte *name, struct asio_queue *q, uns buffer_size
   return f;
 }
 
-struct fastbuf *
-fbdir_open_try(byte *name, uns mode, struct asio_queue *q)
-{
-  return bopen_file_try(name, mode, &(struct fb_params){ .type = FB_DIRECT, .asio = q });
-}
-
-struct fastbuf *
-fbdir_open(byte *name, uns mode, struct asio_queue *q)
-{
-  return bopen_file(name, mode, &(struct fb_params){ .type = FB_DIRECT, .asio = q });
-}
-
-struct fastbuf *
-fbdir_open_fd(int fd, struct asio_queue *q)
-{
-  return bopen_fd(fd, &(struct fb_params){ .type = FB_DIRECT, .asio = q });
-}
-
-struct fastbuf *
-fbdir_open_tmp(struct asio_queue *q)
-{
-  return bopen_tmp_file(&(struct fb_params){ .type = FB_DIRECT, .asio = q });
-}
-
 #ifdef TEST
 
 #include "lib/getopt.h"
