@@ -75,16 +75,16 @@ struct fastbuf {
 
 /* FastIO on files with run-time parametrization */
 
-enum fb_type {
-  FB_STD,
-  FB_DIRECT,
-  FB_MMAP
+enum fb_type {				/* Which back-end you want to use */
+  FB_STD,				/* Standard buffered I/O */
+  FB_DIRECT,				/* Direct I/O bypassing system caches */
+  FB_MMAP				/* Memory mapped files */
 };
 
 struct fb_params {
   enum fb_type type;
   uns buffer_size;
-  uns read_ahead;
+  uns read_ahead;			/* The next three fields are used for FB_DIRECT files */
   uns write_back;
   struct asio_queue *asio;
 };
@@ -93,7 +93,7 @@ struct cf_section;
 extern struct cf_section fbpar_cf;
 extern struct fb_params fbpar_def;
 
-struct fastbuf *bopen_file(byte *name, int mode, struct fb_params *params);
+struct fastbuf *bopen_file(byte *name, int mode, struct fb_params *params);		/* Use params==NULL for defaults */
 struct fastbuf *bopen_file_try(byte *name, int mode, struct fb_params *params);
 struct fastbuf *bopen_tmp_file(struct fb_params *params);
 struct fastbuf *bopen_fd(int fd, struct fb_params *params);
