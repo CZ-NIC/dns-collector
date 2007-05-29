@@ -98,6 +98,7 @@ bfdopen_internal(int fd, uns buflen, byte *name)
   struct fb_file *F = xmalloc(sizeof(struct fb_file) + buflen + namelen);
   struct fastbuf *f = &F->fb;
 
+  ASSERT(buflen);
   bzero(F, sizeof(*F));
   f->buffer = (byte *)(F+1);
   f->bptr = f->bstop = f->buffer;

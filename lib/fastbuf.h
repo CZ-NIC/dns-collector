@@ -102,6 +102,22 @@ struct fastbuf *fbdir_open_try(byte *name, uns mode, struct asio_queue *io_queue
 struct fastbuf *fbdir_open_fd(int fd, struct asio_queue *io_queue);
 struct fastbuf *fbdir_open_tmp(struct asio_queue *io_queue);
 
+/* FastIO on files with run-time parametrization */
+
+struct fb_params {
+  // FIXME
+  uns odirect;
+  uns buffer_size;
+};
+
+struct cf_section;
+extern struct cf_section fbpar_cf;
+
+struct fastbuf *fbpar_open(byte *name, int mode, struct fb_params *params);
+struct fastbuf *fbpar_open_try(byte *name, int mode, struct fb_params *params);
+struct fastbuf *fbpar_open_fd(int fd, struct fb_params *params);
+struct fastbuf *fbpar_open_tmp(struct fb_params *params);
+
 /* FastI on file descriptors with limit */
 
 struct fastbuf *bopen_limited_fd(int fd, uns bufsize, uns limit);
