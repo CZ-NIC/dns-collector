@@ -11,7 +11,7 @@
 #include "lib/conf.h"
 #include "lib/fastbuf.h"
 
-static struct fb_params fbpar_defaults = {
+struct fb_params fbpar_defaults = {
   .buffer_size = 65536,
 }; 
 
@@ -20,7 +20,7 @@ struct cf_section fbpar_cf = {
   CF_TYPE(struct fb_params),
   CF_ITEMS {
     // FIXME
-    CF_UNS("DirectIO", F(odirect)),
+    CF_LOOKUP("Type", (int *)F(type), ((byte *[]){"std", "direct", "mmap", NULL})),
     CF_UNS("BufSize", F(buffer_size)),
     CF_END
   }
@@ -41,41 +41,61 @@ fbpar_global_init(void)
 }
 
 struct fastbuf *
-fbpar_open(byte *name, int mode, struct fb_params *params)
+bopen_file(byte *name, int mode, struct fb_params *params)
 {
   params = params ? : &fbpar_defaults;
-  if (!params->odirect)
-    return bopen(name, mode, params->buffer_size);
-  else
-    return fbdir_open(name, mode, NULL);
+  switch (params->type)
+    {
+      case FB_STD:
+        return bopen(name, mode, params->buffer_size);
+      case FB_DIRECT:
+        return fbdir_open(name, mode, NULL);
+      default:
+	ASSERT(0);
+    }
 }
 
 struct fastbuf *
-fbpar_open_try(byte *name, int mode, struct fb_params *params)
+bopen_file_try(byte *name, int mode, struct fb_params *params)
 {
   params = params ? : &fbpar_defaults;
-  if (!params->odirect)
-    return bopen_try(name, mode, params->buffer_size);
-  else
-    return fbdir_open_try(name, mode, NULL);
+  switch (params->type)
+    {
+      case FB_STD:
+        return bopen_try(name, mode, params->buffer_size);
+      case FB_DIRECT:
+        return fbdir_open_try(name, mode, NULL);
+      default:
+	ASSERT(0);
+    }
 }
 
 struct fastbuf *
-fbpar_open_fd(int fd, struct fb_params *params)
+bopen_fd(int fd, struct fb_params *params)
 {
   params = params ? : &fbpar_defaults;
-  if (!params->odirect)
-    return bfdopen(fd, params->buffer_size);
-  else
-    return fbdir_open_fd(fd, NULL);
+  switch (params->type)
+    {
+      case FB_STD:
+        return bfdopen(fd, params->buffer_size);
+      case FB_DIRECT:
+        return fbdir_open_fd(fd, NULL);
+      default:
+	ASSERT(0);
+    }
 }
 
 struct fastbuf *
-fbpar_open_tmp(struct fb_params *params)
+bopen_tmp_file(struct fb_params *params)
 {
   params = params ? : &fbpar_defaults;
-  if (!params->odirect)
-    return bopen_tmp(params->buffer_size);
-  else
-    return fbdir_open_tmp(NULL);
+  switch (params->type)
+    {
+      case FB_STD:
+        return bopen_tmp(params->buffer_size);
+      case FB_DIRECT:
+        return fbdir_open_tmp(NULL);
+      default:
+	ASSERT(0);
+    }
 }
