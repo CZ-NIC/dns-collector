@@ -40,6 +40,7 @@ struct fb_mmap {
   sh_off_t file_size;
   sh_off_t file_extend;
   sh_off_t window_pos;
+  uns window_size;
   int mode;
 };
 #define FB_MMAP(f) ((struct fb_mmap *)(f)->is_fastbuf)
@@ -51,15 +52,15 @@ bfmm_map_window(struct fastbuf *f)
   sh_off_t pos0 = f->pos & ~(sh_off_t)(CPU_PAGE_SIZE-1);
   int l = MIN((sh_off_t)mmap_window_size, F->file_extend - pos0);
   uns ll = ALIGN_TO(l, CPU_PAGE_SIZE);
-  uns oll = ALIGN_TO(f->bufend - f->buffer, CPU_PAGE_SIZE);
   int prot = ((F->mode & O_ACCMODE) == O_RDONLY) ? PROT_READ : (PROT_READ | PROT_WRITE);
 
   DBG(" ... Mapping %x(%x)+%x(%x) len=%x extend=%x", (int)pos0, (int)f->pos, ll, l, (int)F->file_size, (int)F->file_extend);
-  if (ll != oll && f->buffer)
+  if (ll != F->window_size && f->buffer)
     {
-      munmap(f->buffer, oll);
+      munmap(f->buffer, F->window_size);
       f->buffer = NULL;
     }
+  F->window_size = ll;
   if (!f->buffer)
     f->buffer = sh_mmap(NULL, ll, prot, MAP_SHARED, F->fd, pos0);
   else
@@ -126,7 +127,7 @@ bfmm_seek(struct fastbuf *f, sh_off_t pos, int whence)
     ASSERT(whence == SEEK_SET);
   ASSERT(pos >= 0 && pos <= FB_MMAP(f)->file_size);
   f->pos = pos;
-  f->bptr = f->bstop = f->bufend;	/* force refill/spout call */
+  f->bptr = f->bstop = f->bufend = f->buffer;	/* force refill/spout call */
   DBG("Seek -> %p %p %p(%x) %p", f->buffer, f->bptr, f->bstop, (int)f->pos, f->bufend);
   return 1;
 }
@@ -137,7 +138,7 @@ bfmm_close(struct fastbuf *f)
   struct fb_mmap *F = FB_MMAP(f);
 
   if (f->buffer)
-    munmap(f->buffer, ALIGN_TO(f->bufend-f->buffer, CPU_PAGE_SIZE));
+    munmap(f->buffer, F->window_size);
   if (F->file_extend > F->file_size &&
       sh_ftruncate(F->fd, F->file_size))
     die("ftruncate(%s): %m", f->name);
