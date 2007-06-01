@@ -60,16 +60,17 @@ big_round(u64 len)
 void *
 big_alloc(u64 len)
 {
-  len = big_round(len);
-  if (len > SIZE_MAX - 2*CPU_PAGE_SIZE)
+  u64 l = big_round(len);
+  if (l > SIZE_MAX - 2*CPU_PAGE_SIZE)
     die("big_alloc: Size %llu is too large for the current architecture", (long long) len);
 #ifdef CONFIG_DEBUG
-  len += 2*CPU_PAGE_SIZE;
+  l += 2*CPU_PAGE_SIZE;
 #endif
-  byte *p = page_alloc(len);
+  byte *p = page_alloc(l);
 #ifdef CONFIG_DEBUG
+  *(u64*)p = len;
   mprotect(p, CPU_PAGE_SIZE, PROT_NONE);
-  mprotect(p+len-CPU_PAGE_SIZE, CPU_PAGE_SIZE, PROT_NONE);
+  mprotect(p+l-CPU_PAGE_SIZE, CPU_PAGE_SIZE, PROT_NONE);
   p += CPU_PAGE_SIZE;
 #endif
   return p;
@@ -87,12 +88,14 @@ void
 big_free(void *start, u64 len)
 {
   byte *p = start;
-  len = big_round(len);
+  u64 l = big_round(len);
 #ifdef CONFIG_DEBUG
   p -= CPU_PAGE_SIZE;
-  len += 2*CPU_PAGE_SIZE;
+  mprotect(p, CPU_PAGE_SIZE, PROT_READ);
+  ASSERT(*(u64*)p == len);
+  l += 2*CPU_PAGE_SIZE;
 #endif
-  page_free(p, len);
+  page_free(p, l);
 }
 
 #ifdef TEST
