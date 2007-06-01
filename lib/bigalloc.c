@@ -26,6 +26,14 @@ page_alloc(u64 len)
   return p;
 }
 
+void *
+page_alloc_zero(u64 len)
+{
+  void *p = page_alloc(len);
+  bzero(p, len);
+  return p;
+}
+
 void
 page_free(void *start, u64 len)
 {
@@ -64,6 +72,14 @@ big_alloc(u64 len)
   mprotect(p+len-CPU_PAGE_SIZE, CPU_PAGE_SIZE, PROT_NONE);
   p += CPU_PAGE_SIZE;
 #endif
+  return p;
+}
+
+void *
+big_alloc_zero(u64 len)
+{
+  void *p = big_alloc(len);
+  bzero(p, big_round(len));
   return p;
 }
 

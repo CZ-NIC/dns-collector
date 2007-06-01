@@ -269,10 +269,12 @@ byte *str_format_flags(byte *dest, const byte *fmt, uns flags);
 /* bigalloc.c */
 
 void *page_alloc(u64 len) LIKE_MALLOC; // allocates a multiple of CPU_PAGE_SIZE bytes with mmap
+void *page_alloc_zero(u64 len) LIKE_MALLOC;
 void page_free(void *start, u64 len);
 void *page_realloc(void *start, u64 old_len, u64 new_len);
 
 void *big_alloc(u64 len) LIKE_MALLOC; // allocate a large memory block in the most efficient way available
+void *big_alloc_zero(u64 len) LIKE_MALLOC;
 void big_free(void *start, u64 len);
 
 #endif
