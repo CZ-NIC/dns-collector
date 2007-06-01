@@ -235,17 +235,6 @@ static inline uns bread(struct fastbuf *f, void *b, uns l)
     return bread_slow(f, b, l, 0);
 }
 
-static inline void breada(struct fastbuf *f, void *b, uns l)
-{
-  if (bavailr(f) >= l)
-    {
-      memcpy(b, f->bptr, l);
-      f->bptr += l;
-    }
-  else
-    bread_slow(f, b, l, 2);
-}
-
 static inline uns breadb(struct fastbuf *f, void *b, uns l)
 {
   if (bavailr(f) >= l)
