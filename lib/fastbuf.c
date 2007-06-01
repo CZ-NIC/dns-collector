@@ -109,8 +109,11 @@ uns bread_slow(struct fastbuf *f, void *b, uns l, uns check)
       l -= k;
       total += k;
     }
-  if (check && total && l)
-    die("breadb: short read");
+  if (check && l)
+    if (check == 2)
+      die("breada: short read");
+    else if (total)
+      die("breadb: short read");
   return total;
 }
 
