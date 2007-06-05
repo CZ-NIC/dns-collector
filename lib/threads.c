@@ -16,9 +16,14 @@
 
 #ifdef CONFIG_LINUX
 #include <sys/types.h>
-#include <linux/unistd.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 #ifdef __NR_gettid
-static _syscall0(pid_t, gettid)
+static pid_t
+gettid(void)
+{
+  return syscall(__NR_gettid);
+}
 #define CONFIG_USE_GETTID
 #endif
 #endif
