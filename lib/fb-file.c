@@ -196,7 +196,8 @@ bfd_close(struct fastbuf *f)
       if (unlink(f->name) < 0)
 	log(L_ERROR, "unlink(%s): %m", f->name);
     case 0:
-      close(FB_FILE(f)->fd);
+      if (close(FB_FILE(f)->fd))
+	die("close(%s): %m", f->name);
     }
   xfree(f);
 }

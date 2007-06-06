@@ -148,7 +148,8 @@ bfmm_close(struct fastbuf *f)
       if (unlink(f->name) < 0)
 	log(L_ERROR, "unlink(%s): %m", f->name);
     case 0:
-      close(F->fd);
+      if (close(F->fd))
+	die("close(%s): %m", f->name);
     }
   xfree(f);
 }
@@ -178,6 +179,8 @@ bfmmopen_internal(int fd, byte *name, uns mode)
   memcpy(f->name, name, namelen);
   F->fd = fd;
   F->file_extend = F->file_size = sh_seek(fd, 0, SEEK_END);
+  if (F->file_size < 0)
+    die("seek(%s): %m", name);
   if (mode & O_APPEND)
     f->pos = F->file_size;
   F->mode = mode;
