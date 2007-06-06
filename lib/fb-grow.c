@@ -114,6 +114,7 @@ int main(void)
   f = fbgrow_create(3);
   for (uns i=0; i<5; i++)
     {
+      fbgrow_reset(f);
       bwrite(f, "12345", 5);
       bwrite(f, "12345", 5);
       printf("<%d>", (int)btell(f));
