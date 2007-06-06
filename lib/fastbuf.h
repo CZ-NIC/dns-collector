@@ -152,9 +152,11 @@ struct fbpool {
   struct mempool *mp;
 };
 
-void fbpool_init(struct fbpool *fb);
+void fbpool_init(struct fbpool *fb);	/* Initialize a new fastbuf */
 void fbpool_start(struct fbpool *fb, struct mempool *mp, uns init_size);
-void *fbpool_end(struct fbpool *fb);
+					/* Start a new continuous block and prepare for writing (see mp_start()) */
+void *fbpool_end(struct fbpool *fb);	/* Close the block and return its address (see mp_end()).
+					   The length can be determined with mp_size(mp, ptr). */
 
 /* FastO with atomic writes for multi-threaded programs */
 
