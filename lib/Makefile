@@ -17,7 +17,7 @@ LIBUCW_MODS= \
 	ipaccess \
 	profile \
 	fastbuf ff-binary ff-string ff-printf ff-utf8 \
-	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow fb-atomic fb-param \
+	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param \
 	str_ctype str_upper str_lower unicode-utf8 stkstring \
 	wildmatch wordsplit ctmatch patimatch patmatch regex \
 	prime primetable random timer randomkey \
@@ -99,7 +99,7 @@ $(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 $(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test \
-    slists.test kmp-test.test bbuf.test getopt.test)
+    slists.test kmp-test.test bbuf.test getopt.test fb-pool.test)
 
 $(o)/lib/regex.test: $(o)/lib/regex-t
 $(o)/lib/unicode-utf8.test: $(o)/lib/unicode-utf8-t
@@ -111,6 +111,7 @@ $(o)/lib/slists.test: $(o)/lib/slists-t
 $(o)/lib/kmp-test.test: $(o)/lib/kmp-test
 $(o)/lib/bbuf.test: $(o)/lib/bbuf-t
 $(o)/lib/getopt.test: $(o)/lib/getopt-t
+$(o)/lib/fb-pool.test: $(o)/lib/fb-pool-t
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/lib/,asio.test)

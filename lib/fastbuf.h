@@ -144,6 +144,18 @@ struct fastbuf *fbgrow_create(unsigned basic_size);
 void fbgrow_reset(struct fastbuf *b);			/* Reset stream and prepare for writing */
 void fbgrow_rewind(struct fastbuf *b);			/* Prepare for reading */
 
+/* FastO on memory pools */
+
+struct mempool;
+struct fbpool {
+  struct fastbuf fb;
+  struct mempool *mp;
+};
+
+void fbpool_init(struct fbpool *fb);
+void fbpool_start(struct fbpool *fb, struct mempool *mp, uns init_size);
+void *fbpool_end(struct fbpool *fb);
+
 /* FastO with atomic writes for multi-threaded programs */
 
 struct fb_atomic {
