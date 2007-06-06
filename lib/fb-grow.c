@@ -109,12 +109,11 @@ fbgrow_rewind(struct fastbuf *b)
 int main(void)
 {
   struct fastbuf *f;
-  int t;
+  uns t;
 
   f = fbgrow_create(3);
   for (uns i=0; i<5; i++)
     {
-      fbgrow_write(f);
       bwrite(f, "12345", 5);
       bwrite(f, "12345", 5);
       printf("<%d>", (int)btell(f));
@@ -122,13 +121,13 @@ int main(void)
       printf("<%d>", (int)btell(f));
       fbgrow_rewind(f);
       printf("<%d>", (int)btell(f));
-      while ((t = bgetc(f)) >= 0)
+      while ((t = bgetc(f)) != ~0U)
 	putchar(t);
       printf("<%d>", (int)btell(f));
       fbgrow_rewind(f);
       bseek(f, -1, SEEK_END);
       printf("<%d>", (int)btell(f));
-      while ((t = bgetc(f)) >= 0)
+      while ((t = bgetc(f)) != ~0U)
 	putchar(t);
       printf("<%d>\n", (int)btell(f));
     }
