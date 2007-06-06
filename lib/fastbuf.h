@@ -166,9 +166,12 @@ fbatomic_commit(struct fastbuf *b)
 
 /* Configuring stream parameters */
 
-int bconfig(struct fastbuf *f, uns type, int data);
+enum bconfig_type {
+  BCONFIG_IS_TEMP_FILE,
+  BCONFIG_KEEP_BACK_BUF,
+};
 
-#define BCONFIG_IS_TEMP_FILE 0
+int bconfig(struct fastbuf *f, uns type, int data);
 
 /* Universal functions working on all fastbuf's */
 
