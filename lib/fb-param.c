@@ -27,6 +27,7 @@ struct cf_section fbpar_cf = {
   CF_ITEMS {
     CF_LOOKUP("Type", (int *)F(type), ((byte *[]){"std", "direct", "mmap", NULL})),
     CF_UNS("BufSize", F(buffer_size)),
+    CF_UNS("KeepBackBuf", F(keep_back_buf)),
     CF_UNS("ReadAhead", F(read_ahead)),
     CF_UNS("WriteBack", F(write_back)),
     CF_END
@@ -57,8 +58,11 @@ bopen_fd_internal(int fd, struct fb_params *params, uns mode, byte *name)
   switch (params->type)
     {
       case FB_STD:
-	return bfdopen_internal(fd, name,
+	fb = bfdopen_internal(fd, name,
 	    params->buffer_size ? : fbpar_def.buffer_size);
+	if (params->keep_back_buf)
+	  bconfig(fb, BCONFIG_KEEP_BACK_BUF, 1);
+	return fb;
       case FB_DIRECT:
 	fb = fbdir_open_fd_internal(fd, name, params->asio,
 	    params->buffer_size ? : fbpar_def.buffer_size,
@@ -71,8 +75,9 @@ bopen_fd_internal(int fd, struct fb_params *params, uns mode, byte *name)
 	if (!~mode && (int)(mode = fcntl(fd, F_GETFL)) < 0)
           die("Cannot get flags of fd %d: %m", fd);
 	return bfmmopen_internal(fd, name, mode);
+      default:
+	ASSERT(0);
     }
-  ASSERT(0);
 }
 
 static struct fastbuf *

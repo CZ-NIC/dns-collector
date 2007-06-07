@@ -84,7 +84,10 @@ enum fb_type {				/* Which back-end you want to use */
 struct fb_params {
   enum fb_type type;
   uns buffer_size;
-  uns read_ahead;			/* The next three fields are used for FB_DIRECT files */
+  /* FB_STD only */
+  uns keep_back_buf;
+  /* FB_DIRECT only */
+  uns read_ahead;			
   uns write_back;
   struct asio_queue *asio;
 };
