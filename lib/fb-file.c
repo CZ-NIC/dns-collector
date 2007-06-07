@@ -38,24 +38,16 @@ bfd_refill(struct fastbuf *f)
   if (F->wpos <= f->pos)
     {
       sh_off_t diff = f->pos - F->wpos;
-      if (diff > ((sh_off_t)blen << 2)) /* FIXME: Formula for long forward seeks */
+      /* Formula for long forward seeks (prefer lseek()) */
+      if (diff > ((sh_off_t)blen << 2))
         {
 long_seek:
 	  f->bptr = f->buffer + back;
 	  f->bstop = f->buffer + blen;
 	  goto seek;
 	}
-      if ((uns)diff < back) /* Reuse part of previous window (also F->wpos == f->pos) */
-        {
-	  uns keep = back - (uns)diff;
-	  if (keep >= F->wlen)
-	    back = diff + (keep = F->wlen);
-	  else
-	    memmove(f->buffer, f->buffer + F->wlen - keep, keep);
-	  read_len -= keep;
-	  read_ptr += keep;
-	}
-      else /* Short forward seek */
+      /* Short forward seek (prefer read() to skip data )*/
+      else if ((uns)diff >= back)
         {
 	  uns skip = diff - back;
 	  F->wpos += skip;
@@ -73,6 +65,17 @@ long_seek:
 	      skip -= l;
 	    }
 	}
+      /* Reuse part of the previous window and append new data (also F->wpos == f->pos) */
+      else
+        {
+	  uns keep = back - (uns)diff;
+	  if (keep >= F->wlen)
+	    back = diff + (keep = F->wlen);
+	  else
+	    memmove(f->buffer, f->buffer + F->wlen - keep, keep);
+	  read_len -= keep;
+	  read_ptr += keep;
+	}
       f->bptr = f->buffer + back;
       f->bstop = f->buffer + blen;
     }
@@ -80,13 +83,15 @@ long_seek:
   else
     {
       sh_off_t diff = F->wpos - f->pos;
-      if (diff > ((sh_off_t)blen << 1)) /* FIXME: Formula for long backwards seeks */
+      /* Formula for long backwards seeks (keep smaller backbuffer than for shorter seeks ) */
+      if (diff > ((sh_off_t)blen << 1))
         {
 	  if ((sh_off_t)back > f->pos)
 	    back = f->pos;
 	  goto long_seek;
 	}
-      if ((uns)diff <= F->wlen) /* Seek into previous window (for example brewind) */
+      /* Seek into previous window (do nothing... for example brewind) */
+      else if ((uns)diff <= F->wlen) 
         {
 	  f->bstop = f->buffer + F->wlen;
 	  f->bptr = f->bstop - diff;
@@ -98,7 +103,8 @@ long_seek:
 	back = f->pos;
       f->bptr = f->buffer + back;
       read_len = back + diff - F->wlen;
-      if (F->wlen && read_len < blen) /* Reuse part of previous window */
+      /* Reuse part of previous window */
+      if (F->wlen && read_len < blen)
         {
 	  uns keep = MIN(F->wlen, blen - read_len);
 	  memmove(f->buffer + read_len, f->buffer, keep);
@@ -107,10 +113,12 @@ long_seek:
       else
 	f->bstop = f->buffer + (read_len = blen);
 seek:
+      /* Do lseek() */
       F->wpos = f->pos + (f->buffer - f->bptr);
       if (sh_seek(F->fd, F->wpos, SEEK_SET) < 0)
 	die("Error seeking %s: %m", f->name);
     }
+  /* Read (part of) buffer */
   do
     {
       int l = read(F->fd, read_ptr, read_len);
@@ -141,12 +149,14 @@ eof:
 static void
 bfd_spout(struct fastbuf *f)
 {
+  /* Do delayed lseek() if needed */
   if (FB_FILE(f)->wpos != f->pos && sh_seek(FB_FILE(f)->fd, f->pos, SEEK_SET) < 0)
     die("Error seeking %s: %m", f->name);
 
   int l = f->bptr - f->buffer;
   byte *c = f->buffer;
 
+  /* Write the buffer */
   FB_FILE(f)->wpos = (f->pos += l);
   FB_FILE(f)->wlen = 0;
   while (l)
@@ -163,6 +173,7 @@ bfd_spout(struct fastbuf *f)
 static int
 bfd_seek(struct fastbuf *f, sh_off_t pos, int whence)
 {
+  /* Delay the seek for the next refill() or spout() call (if whence != SEEK_END). */
   sh_off_t l;
   switch (whence)
     {
@@ -278,14 +289,17 @@ bfilesync(struct fastbuf *b)
 
 #ifdef TEST
 
-int main(int argc UNUSED, char **argv UNUSED)
+int main(void)
 {
   struct fastbuf *f, *t;
-
-  f = bopen("/etc/profile", O_RDONLY, 16);
+  f = bopen_tmp(16);
   t = bfdopen(1, 13);
-  bbcopy(f, t, 100);
-  printf("%d %d\n", (int)btell(f), (int)btell(t));
+  for (uns i = 0; i < 16; i++)
+    bwrite(f, "<hello>", 7);
+  bprintf(t, "%d\n", (int)btell(f));
+  brewind(f);
+  bbcopy(f, t, ~0U);
+  bprintf(t, "\n%d %d\n", (int)btell(f), (int)btell(t));
   bclose(f);
   bclose(t);
   return 0;

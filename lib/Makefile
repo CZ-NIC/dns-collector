@@ -111,7 +111,7 @@ $(o)/lib/slists.test: $(o)/lib/slists-t
 $(o)/lib/kmp-test.test: $(o)/lib/kmp-test
 $(o)/lib/bbuf.test: $(o)/lib/bbuf-t
 $(o)/lib/getopt.test: $(o)/lib/getopt-t
-$(o)/lib/fastbuf.test: $(o)/lib/fb-grow-t $(o)/lib/fb-pool-t
+$(o)/lib/fastbuf.test: $(o)/lib/fb-file-t $(o)/lib/fb-grow-t $(o)/lib/fb-pool-t
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/lib/,asio.test)
