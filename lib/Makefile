@@ -38,15 +38,17 @@ LIBUCW_INCLUDES= \
 	lib.h config.h threads.h math.h \
 	mempool.h pagecache.h \
 	sorter.h sorter-globals.h arraysort.h \
-	lists.h clists.h \
+	lists.h clists.h slists.h simple-lists.h \
 	unaligned.h prefetch.h \
 	bbuf.h gbuf.h bitarray.h bitsig.h \
 	hashfunc.h hashtable.h \
 	heap.h binheap.h binheap-node.h \
 	redblack.h \
+	binsearch.h \
+	bitops.h \
 	conf.h getopt.h ipaccess.h \
 	profile.h \
-	fastbuf.h lfs.h ff-utf8.h \
+	fastbuf.h lfs.h ff-utf8.h ff-binary.h \
 	chartype.h unicode.h stkstring.h \
 	wildmatch.h patmatch.h \
 	db.h \
@@ -56,13 +58,14 @@ LIBUCW_INCLUDES= \
 	md5.h \
 	base64.h base224.h \
 	qache.h \
-	kmp.h kmp-search.h
+	kmp.h kmp-search.h \
+	partmap.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
 LIBS+=-lpthread
 LIBUCW_MODS+=threads-conf workqueue asio fb-direct
-LIBUCW_INCLUDES+=workqueue.h asio.h
+LIBUCW_INCLUDES+=workqueue.h semaphore.h asio.h
 endif
 
 ifdef CONFIG_OWN_REGEX
