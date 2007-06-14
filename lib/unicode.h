@@ -76,7 +76,7 @@ put1: *p++ = 0x80 | (u & 0x3f);
 
 #define UTF8_GET_NEXT if (unlikely((*p & 0xc0) != 0x80)) goto bad; u = (u << 6) | (*p++ & 0x3f)
 
-static inline const byte *
+static inline byte *
 utf8_get(const byte *p, uns *uu)
 {
   uns u = *p++;
@@ -102,7 +102,7 @@ utf8_get(const byte *p, uns *uu)
   else
     goto bad;
   *uu = u;
-  return p;
+  return (byte *)p;
 }
 
 static inline byte *
