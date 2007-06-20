@@ -229,9 +229,24 @@ static inline void bwrite(struct fastbuf *f, void *b, uns l)
     bwrite_slow(f, b, l);
 }
 
-byte *bgets(struct fastbuf *f, byte *b, uns l);	/* Non-std */
-int bgets_nodie(struct fastbuf *f, byte *b, uns l);
+/*
+ *  Functions for reading of strings:
+ *
+ *     bgets()		reads a line, strip the trailing '\n' and return a pointer
+ *			to the terminating 0 or NULL on EOF. Dies if the line is too long.
+ *     bgets0()		does the same for 0-terminated strings.
+ *     bgets_nodie()	a variant of bgets() which returns either the length of the
+ *     			string (excluding the terminator) or -1 if the line does not fit
+ *     			in the buffer. In such cases, it returns after reading exactly `l'
+ *     			bytes of input.
+ *     bgets_bb()	a variant of bgets() which allocates the string in a growing buffer
+ *     bgets_mp()	the same, but in a mempool
+ *     bgets_stk()	the same, but on the stack by alloca()
+ */
+
+byte *bgets(struct fastbuf *f, byte *b, uns l);
 byte *bgets0(struct fastbuf *f, byte *b, uns l);
+int bgets_nodie(struct fastbuf *f, byte *b, uns l);
 
 struct mempool;
 struct bb_t;
