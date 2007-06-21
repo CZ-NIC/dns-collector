@@ -78,7 +78,7 @@ unsigned int conv_x_count(void);
 
 /* Charset names */
 
-int find_charset_by_name(char *);
+int find_charset_by_name(const char *);
 char *charset_name(int);
 
 #endif
