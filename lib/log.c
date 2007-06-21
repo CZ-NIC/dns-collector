@@ -114,7 +114,7 @@ die(const char *msg, ...)
 }
 
 void
-assert_failed(char *assertion, char *file, int line)
+assert_failed(const char *assertion, const char *file, int line)
 {
   log(L_FATAL, "Assertion `%s' failed at %s:%d", assertion, file, line);
   abort();
@@ -126,10 +126,10 @@ assert_failed_noinfo(void)
   die("Internal error: Assertion failed.");
 }
 
-static byte *
-log_basename(byte *n)
+static const char *
+log_basename(const char *n)
 {
-  byte *p = n;
+  const char *p = n;
 
   while (*n)
     if (*n++ == '/')
@@ -138,7 +138,7 @@ log_basename(byte *n)
 }
 
 void
-log_init(byte *argv0)
+log_init(const char *argv0)
 {
   if (argv0)
     {

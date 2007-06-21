@@ -14,7 +14,7 @@
 #include <string.h>
 
 char *
-mp_strdup(struct mempool *p, char *s)
+mp_strdup(struct mempool *p, const char *s)
 {
   uns l = strlen(s) + 1;
   char *t = mp_alloc_fast_noalign(p, l);
@@ -23,7 +23,7 @@ mp_strdup(struct mempool *p, char *s)
 }
 
 void *
-mp_memdup(struct mempool *p, void *s, uns len)
+mp_memdup(struct mempool *p, const void *s, uns len)
 {
   void *t = mp_alloc_fast(p, len);
   memcpy(t, s, len);

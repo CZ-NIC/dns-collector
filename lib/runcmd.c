@@ -16,7 +16,7 @@
 #include <sys/wait.h>
 
 void NONRET
-exec_command_v(byte *cmd, va_list args)
+exec_command_v(const byte *cmd, va_list args)
 {
   va_list cargs;
   va_copy(cargs, args);
@@ -26,7 +26,7 @@ exec_command_v(byte *cmd, va_list args)
     cnt++;
   va_end(cargs);
   char **argv = alloca(sizeof(byte *) * cnt);
-  argv[0] = cmd;
+  argv[0] = (char *)cmd;
   cnt = 1;
   va_copy(cargs, args);
   while (arg = va_arg(cargs, byte *))
@@ -41,7 +41,7 @@ exec_command_v(byte *cmd, va_list args)
 }
 
 int
-run_command_v(byte *cmd, va_list args)
+run_command_v(const byte *cmd, va_list args)
 {
   pid_t p = fork();
   if (p < 0)
@@ -70,11 +70,11 @@ run_command_v(byte *cmd, va_list args)
 }
 
 void
-echo_command_v(byte *buf, int size, byte *cmd, va_list args)
+echo_command_v(byte *buf, int size, const byte *cmd, va_list args)
 {
   byte *limit = buf + size - 4;
   byte *p = buf;
-  byte *arg = cmd;
+  const byte *arg = cmd;
   do
     {
       int l = strlen(arg);
@@ -94,7 +94,7 @@ echo_command_v(byte *buf, int size, byte *cmd, va_list args)
 }
 
 int
-run_command(byte *cmd, ...)
+run_command(const byte *cmd, ...)
 {
   va_list args;
   va_start(args, cmd);
@@ -104,7 +104,7 @@ run_command(byte *cmd, ...)
 }
 
 void NONRET
-exec_command(byte *cmd, ...)
+exec_command(const byte *cmd, ...)
 {
   va_list args;
   va_start(args, cmd);
@@ -112,7 +112,7 @@ exec_command(byte *cmd, ...)
 }
 
 void
-echo_command(byte *buf, int len, byte *cmd, ...)
+echo_command(byte *buf, int len, const byte *cmd, ...)
 {
   va_list args;
   va_start(args, cmd);

@@ -274,11 +274,11 @@ void mp_pop(struct mempool *pool);
 
 /*** mempool-str.c ***/
 
-char *mp_strdup(struct mempool *, char *) LIKE_MALLOC;
-void *mp_memdup(struct mempool *, void *, uns) LIKE_MALLOC;
+char *mp_strdup(struct mempool *, const char *) LIKE_MALLOC;
+void *mp_memdup(struct mempool *, const void *, uns) LIKE_MALLOC;
 char *mp_multicat(struct mempool *, ...) LIKE_MALLOC SENTINEL_CHECK;
 static inline char * LIKE_MALLOC
-mp_strcat(struct mempool *mp, char *x, char *y)
+mp_strcat(struct mempool *mp, const char *x, const char *y)
 {
   return mp_multicat(mp, x, y, NULL);
 }

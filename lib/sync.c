@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 void
-sync_dir(byte *name)
+sync_dir(const byte *name)
 {
   int fd = open(name, O_RDONLY
 #ifdef CONFIG_LINUX

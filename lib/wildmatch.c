@@ -99,7 +99,7 @@ wp_new_state(struct wildpatt *w, u32 set)
 }
 
 struct wildpatt *
-wp_compile(byte *p, struct mempool *pool)
+wp_compile(const byte *p, struct mempool *pool)
 {
   struct wildpatt *w;
   uns i;
@@ -148,7 +148,7 @@ wp_prune_cache(struct wildpatt *w)
 }
 
 int
-wp_match(struct wildpatt *w, byte *s)
+wp_match(struct wildpatt *w, const byte *s)
 {
   struct dfa_state *d;
 
@@ -175,7 +175,7 @@ wp_match(struct wildpatt *w, byte *s)
 }
 
 int
-wp_min_size(byte *p)
+wp_min_size(const byte *p)
 {
   int s = 0;
 

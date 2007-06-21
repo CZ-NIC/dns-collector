@@ -67,7 +67,7 @@ internal_log_switch(struct tm *tm)
 }
 
 void
-log_file(byte *name)
+log_file(const char *name)
 {
   if (name)
     {

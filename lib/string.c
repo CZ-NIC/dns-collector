@@ -17,7 +17,7 @@
 /* Expands C99-like escape sequences.
  * It is safe to use the same buffer for both input and output. */
 byte *
-str_unesc(byte *d, byte *s)
+str_unesc(byte *d, const byte *s)
 {
   while (*s)
     {

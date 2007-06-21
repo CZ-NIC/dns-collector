@@ -106,7 +106,7 @@ utf8_get(const byte *p, uns *uu)
 }
 
 static inline byte *
-utf8_32_get(byte *p, uns *uu)
+utf8_32_get(const byte *p, uns *uu)
 {
   uns u = *p++;
   if (u < 0x80)
@@ -149,7 +149,7 @@ get1: UTF8_GET_NEXT;
   else
     goto bad;
   *uu = u;
-  return p;
+  return (byte *)p;
 }
 
 #define PUT_UTF8(p,u) p = utf8_put(p, u)
@@ -202,8 +202,8 @@ utf8_encoding_len(uns c)
 
 /* unicode-utf8.c */
 
-uns utf8_strlen(byte *str);
-uns utf8_strnlen(byte *str, uns n);
-uns utf8_check(byte *str);
+uns utf8_strlen(const byte *str);
+uns utf8_strnlen(const byte *str, uns n);
+uns utf8_check(const byte *str);
 
 #endif

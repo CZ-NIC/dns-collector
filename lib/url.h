@@ -29,9 +29,9 @@
 
 /* Remove/Introduce '%' escapes */
 
-int url_deescape(byte *s, byte *d);
-int url_enescape(byte *s, byte *d);
-int url_enescape_friendly(byte *src, byte *dest);	// for cards.c only
+int url_deescape(const byte *s, byte *d);
+int url_enescape(const byte *s, byte *d);
+int url_enescape_friendly(const byte *src, byte *dest);	// for cards.c only
 
 /* URL splitting and normalization */
 
@@ -50,15 +50,15 @@ int url_split(byte *s, struct url *u, byte *d);
 int url_normalize(struct url *u, struct url *b);
 int url_canonicalize(struct url *u);
 int url_pack(struct url *u, byte *d);
-int url_canon_split_rel(byte *url, byte *buf1, byte *buf2, struct url *u, struct url *base);
-int url_auto_canonicalize_rel(byte *src, byte *dst, struct url *base);
-uns identify_protocol(byte *p);
-int url_has_repeated_component(byte *url);
+int url_canon_split_rel(const byte *url, byte *buf1, byte *buf2, struct url *u, struct url *base);
+int url_auto_canonicalize_rel(const byte *src, byte *dst, struct url *base);
+uns identify_protocol(const byte *p);
+int url_has_repeated_component(const byte *url);
 
-static inline int url_canon_split(byte *url, byte *buf1, byte *buf2, struct url *u)
+static inline int url_canon_split(const byte *url, byte *buf1, byte *buf2, struct url *u)
 { return url_canon_split_rel(url, buf1, buf2, u, NULL); }
 
-static inline int url_auto_canonicalize(byte *src, byte *dst)
+static inline int url_auto_canonicalize(const byte *src, byte *dst)
 { return url_auto_canonicalize_rel(src, dst, NULL); }
 
 /* Error codes */

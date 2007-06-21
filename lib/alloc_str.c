@@ -11,8 +11,8 @@
 
 #include <string.h>
 
-byte *
-xstrdup(byte *s)
+char *
+xstrdup(const char *s)
 {
   uns l = strlen(s) + 1;
   return memcpy(xmalloc(l), s, l);

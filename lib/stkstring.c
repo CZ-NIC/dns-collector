@@ -73,7 +73,7 @@ stk_vprintf_internal(const char *fmt, va_list args)
 }
 
 void
-stk_hexdump_internal(char *dst, byte *src, uns n)
+stk_hexdump_internal(char *dst, const byte *src, uns n)
 {
   for (uns i=0; i<n; i++)
     {

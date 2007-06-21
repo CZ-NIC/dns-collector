@@ -31,7 +31,7 @@ struct regex {
 };
 
 regex *
-rx_compile(byte *p, int icase)
+rx_compile(const byte *p, int icase)
 {
   regex *r = xmalloc_zero(sizeof(regex));
 
@@ -54,7 +54,7 @@ rx_free(regex *r)
 }
 
 int
-rx_match(regex *r, byte *s)
+rx_match(regex *r, const byte *s)
 {
   int err = regexec(&r->rx, s, 10, r->matches, 0);
   if (!err)
@@ -71,7 +71,7 @@ rx_match(regex *r, byte *s)
 }
 
 int
-rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
+rx_subst(regex *r, const byte *by, const byte *src, byte *dest, uns destlen)
 {
   byte *end = dest + destlen - 1;
 
@@ -88,7 +88,7 @@ rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
 	      uns j = *by++ - '0';
 	      if (j <= r->rx.re_nsub && r->matches[j].rm_so >= 0)
 		{
-		  byte *s = src + r->matches[j].rm_so;
+		  const byte *s = src + r->matches[j].rm_so;
 		  uns i = r->matches[j].rm_eo - r->matches[j].rm_so;
 		  if (dest + i >= end)
 		    return -1;

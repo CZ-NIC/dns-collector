@@ -99,16 +99,16 @@ extern void (*log_die_hook)(void);
 struct tm;
 extern void (*log_switch_hook)(struct tm *tm);
 
-void log_msg(unsigned int cat, const char *msg, ...) FORMAT_CHECK(printf,2,3);
+void log_msg(uns cat, const char *msg, ...) FORMAT_CHECK(printf,2,3);
 #define log log_msg
-void vlog_msg(unsigned int cat, const char *msg, va_list args);
+void vlog_msg(uns cat, const char *msg, va_list args);
 void die(const char *, ...) NONRET FORMAT_CHECK(printf,1,2);
-void log_init(byte *argv0);
-void log_file(byte *name);
+void log_init(const char *argv0);
+void log_file(const char *name);
 void log_fork(void);
 int log_switch(void);
 
-void assert_failed(char *assertion, char *file, int line) NONRET;
+void assert_failed(const char *assertion, const char *file, int line) NONRET;
 void assert_failed_noinfo(void) NONRET;
 
 #ifdef DEBUG_ASSERTS
@@ -151,17 +151,17 @@ static inline void log_switch_enable(void) { ASSERT(log_switch_nest); log_switch
  * their own xmalloc and we don't want to interfere with them, hence
  * the renaming.
  */
-void *xmalloc(unsigned) LIKE_MALLOC;
-void *xrealloc(void *, unsigned);
+void *xmalloc(uns) LIKE_MALLOC;
+void *xrealloc(void *, uns);
 void xfree(void *);
 #endif
 
-void *xmalloc_zero(unsigned) LIKE_MALLOC;
-byte *xstrdup(byte *) LIKE_MALLOC;
+void *xmalloc_zero(uns) LIKE_MALLOC;
+char *xstrdup(const char *) LIKE_MALLOC;
 
 /* Content-Type pattern matching and filters */
 
-int match_ct_patt(byte *, byte *);
+int match_ct_patt(const char *, const char *);
 
 /* wordsplit.c */
 
@@ -170,13 +170,13 @@ int wordsplit(byte *, byte **, uns);
 
 /* pat(i)match.c: Matching of shell patterns */
 
-int match_pattern(byte *, byte *);
-int match_pattern_nocase(byte *, byte *);
+int match_pattern(const char *, const char *);
+int match_pattern_nocase(const char *, const char *);
 
 /* md5hex.c */
 
-void md5_to_hex(byte *, byte *);
-void hex_to_md5(byte *, byte *);
+void md5_to_hex(const byte *, byte *);
+void hex_to_md5(const byte *, byte *);
 
 #define MD5_SIZE 16
 #define MD5_HEX_SIZE 33
@@ -203,10 +203,10 @@ void get_last_timeval(struct timeval *tv);
 
 typedef struct regex regex;
 
-regex *rx_compile(byte *r, int icase);
+regex *rx_compile(const byte *r, int icase);
 void rx_free(regex *r);
-int rx_match(regex *r, byte *s);
-int rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen);
+int rx_match(regex *r, const byte *s);
+int rx_subst(regex *r, const byte *by, const byte *src, byte *dest, uns destlen);
 
 /* random.c */
 
@@ -217,13 +217,13 @@ u64 random_max_u64(u64 max);
 
 /* mmap.c */
 
-void *mmap_file(byte *name, unsigned *len, int writeable);
+void *mmap_file(const byte *name, unsigned *len, int writeable);
 void munmap_file(void *start, unsigned len);
 
 /* proctitle.c */
 
 void setproctitle_init(int argc, char **argv);
-void setproctitle(char *msg, ...) FORMAT_CHECK(printf,1,2);
+void setproctitle(const char *msg, ...) FORMAT_CHECK(printf,1,2);
 char *getproctitle(void);
 
 /* randomkey.c */
@@ -237,21 +237,21 @@ int format_exit_status(byte *msg, int stat);
 
 /* runcmd.c */
 
-int run_command(byte *cmd, ...);
-void NONRET exec_command(byte *cmd, ...);
-void echo_command(byte *buf, int size, byte *cmd, ...);
-int run_command_v(byte *cmd, va_list args);
-void NONRET exec_command_v(byte *cmd, va_list args);
-void echo_command_v(byte *buf, int size, byte *cmd, va_list args);
+int run_command(const byte *cmd, ...);
+void NONRET exec_command(const byte *cmd, ...);
+void echo_command(byte *buf, int size, const byte *cmd, ...);
+int run_command_v(const byte *cmd, va_list args);
+void NONRET exec_command_v(const byte *cmd, va_list args);
+void echo_command_v(byte *buf, int size, const byte *cmd, va_list args);
 
 /* carefulio.c */
 
 int careful_read(int fd, void *buf, int len);
-int careful_write(int fd, void *buf, int len);
+int careful_write(int fd, const void *buf, int len);
 
 /* sync.c */
 
-void sync_dir(byte *name);
+void sync_dir(const byte *name);
 
 /* sighandler.c */
 
@@ -263,7 +263,7 @@ sh_sighandler_t set_signal_handler(int signum, sh_sighandler_t new);
 
 /* string.c */
 
-byte *str_unesc(byte *dest, byte *src);
+byte *str_unesc(byte *dest, const byte *src);
 byte *str_format_flags(byte *dest, const byte *fmt, uns flags);
 
 /* bigalloc.c */

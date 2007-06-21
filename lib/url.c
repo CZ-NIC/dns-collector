@@ -58,7 +58,7 @@ enhex(uns x)
 }
 
 int
-url_deescape(byte *s, byte *d)
+url_deescape(const byte *s, byte *d)
 {
   byte *dstart = d;
   byte *end = d + MAX_URL_SIZE - 10;
@@ -100,7 +100,7 @@ url_deescape(byte *s, byte *d)
 	*d++ = *s++;
       else if (Cspace(*s))
 	{
-	  byte *s0 = s;
+	  const byte *s0 = s;
 	  while (Cspace(*s))
 	    s++;
 	  if (!url_ignore_spaces || !(!*s || d == dstart))
@@ -121,7 +121,7 @@ url_deescape(byte *s, byte *d)
 }
 
 int
-url_enescape(byte *s, byte *d)
+url_enescape(const byte *s, byte *d)
 {
   byte *end = d + MAX_URL_SIZE - 10;
   unsigned int c;
@@ -151,7 +151,7 @@ url_enescape(byte *s, byte *d)
 }
 
 int
-url_enescape_friendly(byte *src, byte *dest)
+url_enescape_friendly(const byte *src, byte *dest)
 {
   byte *end = dest + MAX_URL_SIZE - 10;
   while (*src)
@@ -179,7 +179,7 @@ byte *url_proto_names[URL_PROTO_MAX] = URL_PNAMES;
 static int url_proto_path_flags[URL_PROTO_MAX] = URL_PATH_FLAGS;
 
 uns
-identify_protocol(byte *p)
+identify_protocol(const byte *p)
 {
   uns i;
 
@@ -492,7 +492,7 @@ url_canonicalize(struct url *u)
 /* Pack a broken-down URL */
 
 static byte *
-append(byte *d, byte *s, byte *e)
+append(byte *d, const byte *s, byte *e)
 {
   if (d)
     while (*s)
@@ -571,7 +571,7 @@ url_error(uns err)
 /* Standard cookbook recipes */
 
 int
-url_canon_split_rel(byte *u, byte *buf1, byte *buf2, struct url *url, struct url *base)
+url_canon_split_rel(const byte *u, byte *buf1, byte *buf2, struct url *url, struct url *base)
 {
   int err;
 
@@ -585,7 +585,7 @@ url_canon_split_rel(byte *u, byte *buf1, byte *buf2, struct url *url, struct url
 }
 
 int
-url_auto_canonicalize_rel(byte *src, byte *dst, struct url *base)
+url_auto_canonicalize_rel(const byte *src, byte *dst, struct url *base)
 {
   byte buf1[MAX_URL_SIZE], buf2[MAX_URL_SIZE], buf3[MAX_URL_SIZE];
   int err;
@@ -665,13 +665,13 @@ int main(int argc, char **argv)
 #endif
 
 struct component {
-	byte *start;
+	const byte *start;
 	int length;
 	u32 hash;
 };
 
 static inline u32
-hashf(byte *start, int length)
+hashf(const byte *start, int length)
 {
 	u32 hf = length;
 	while (length-- > 0)
@@ -701,11 +701,11 @@ repeat_count(struct component *comp, uns count, uns len)
 }
 
 int
-url_has_repeated_component(byte *url)
+url_has_repeated_component(const byte *url)
 {
 	struct component *comp;
 	uns comps, comp_len, rep_prefix;
-	byte *c;
+	const byte *c;
 	uns i;
 
 	for (comps=0, c=url; c; comps++)

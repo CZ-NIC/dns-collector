@@ -16,7 +16,7 @@
 #include <sys/mman.h>
 
 void *
-mmap_file(byte *name, unsigned *len, int writeable)
+mmap_file(const byte *name, unsigned *len, int writeable)
 {
   int fd = open(name, writeable ? O_RDWR : O_RDONLY);
   struct stat st;
