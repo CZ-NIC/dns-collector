@@ -1,3 +1,3 @@
 # Tests for multidimensional Hilbert curves
 
-Run:	obj/images/hilbert-test
+Run:	../obj/images/hilbert-test
