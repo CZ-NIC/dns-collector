@@ -37,7 +37,7 @@ void cf_journal_delete(void);
 enum cf_commit_mode { CF_NO_COMMIT, CF_COMMIT, CF_COMMIT_ALL };
 extern struct cf_section cf_sections;
 
-struct cf_item *cf_find_subitem(struct cf_section *sec, byte *name);
+struct cf_item *cf_find_subitem(struct cf_section *sec, const byte *name);
 int cf_commit_all(enum cf_commit_mode cm);
 void cf_add_dirty(struct cf_section *sec, void *ptr);
 

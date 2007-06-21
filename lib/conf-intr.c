@@ -483,7 +483,7 @@ closing_brace(struct item_stack *st, enum cf_operation op, int number, byte **pa
 }
 
 static struct cf_item *
-find_item(struct cf_section *curr_sec, byte *name, byte **msg, void **ptr)
+find_item(struct cf_section *curr_sec, const byte *name, byte **msg, void **ptr)
 {
   *msg = NULL;
   if (name[0] == '^')				// absolute name instead of relative
@@ -560,7 +560,7 @@ cf_interpret_line(byte *name, enum cf_operation op, int number, byte **pars)
 }
 
 byte *
-cf_find_item(byte *name, struct cf_item *item)
+cf_find_item(const byte *name, struct cf_item *item)
 {
   byte *msg;
   void *ptr = NULL;

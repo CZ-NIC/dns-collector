@@ -50,7 +50,7 @@ typedef struct stat sh_stat_t;
 #define HAVE_PREAD
 
 static inline sh_off_t
-sh_file_size(byte *name)
+sh_file_size(const byte *name)
 {
   int fd = sh_open(name, O_RDONLY);
   if (fd < 0)

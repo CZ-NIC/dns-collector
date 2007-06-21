@@ -69,7 +69,7 @@ sigsegv_handler(int signal UNUSED)
 }
 
 byte *
-lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
+lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uns expected_length)
   /* Decompresses in into buf, sets *ptr to the data, and returns the
    * uncompressed length.  If an error has occured, -1 is returned and errno is
    * set.  The buffer buf is automatically reallocated.  SIGSEGV is caught in

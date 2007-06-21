@@ -75,8 +75,8 @@ struct fastbuf {
 
 /* FastIO on standard files (specify buffer size 0 to enable mmaping) */
 
-struct fastbuf *bopen(byte *name, uns mode, uns buflen);
-struct fastbuf *bopen_try(byte *name, uns mode, uns buflen);
+struct fastbuf *bopen(const byte *name, uns mode, uns buflen);
+struct fastbuf *bopen_try(const byte *name, uns mode, uns buflen);
 struct fastbuf *bopen_tmp(uns buflen);
 struct fastbuf *bfdopen(int fd, uns buflen);
 struct fastbuf *bfdopen_shared(int fd, uns buflen);
@@ -92,7 +92,7 @@ struct fastbuf *fbmem_clone_read(struct fastbuf *);	/* Create reading fastbuf */
 
 /* FastIO on memory mapped files */
 
-struct fastbuf *bopen_mm(byte *name, uns mode);
+struct fastbuf *bopen_mm(const byte *name, uns mode);
 
 /* FastI on file descriptors with limit */
 
@@ -124,7 +124,7 @@ struct fb_atomic {
 };
 #define FB_ATOMIC(f) ((struct fb_atomic *)(f)->is_fastbuf)
 
-struct fastbuf *fbatomic_open(byte *name, struct fastbuf *master, uns bufsize, int record_len);
+struct fastbuf *fbatomic_open(const byte *name, struct fastbuf *master, uns bufsize, int record_len);
 void fbatomic_internal_write(struct fastbuf *b);
 
 static inline void
@@ -217,8 +217,8 @@ static inline uns breadb(struct fastbuf *f, void *b, uns l)
     return bread_slow(f, b, l, 1);
 }
 
-void bwrite_slow(struct fastbuf *f, void *b, uns l);
-static inline void bwrite(struct fastbuf *f, void *b, uns l)
+void bwrite_slow(struct fastbuf *f, const void *b, uns l);
+static inline void bwrite(struct fastbuf *f, const void *b, uns l)
 {
   if (bavailw(f) >= l)
     {
@@ -263,19 +263,19 @@ void bgets_stk_step(struct bgets_stk_struct *s);
 #define bgets_stk(fb) ({ struct bgets_stk_struct _s; _s.f = (fb); for (bgets_stk_init(&_s); _s.cur_len; _s.cur_buf = alloca(_s.cur_len), bgets_stk_step(&_s)); _s.cur_buf; })
 
 static inline void
-bputs(struct fastbuf *f, byte *b)
+bputs(struct fastbuf *f, const byte *b)
 {
   bwrite(f, b, strlen(b));
 }
 
 static inline void
-bputs0(struct fastbuf *f, byte *b)
+bputs0(struct fastbuf *f, const byte *b)
 {
   bwrite(f, b, strlen(b)+1);
 }
 
 static inline void
-bputsn(struct fastbuf *f, byte *b)
+bputsn(struct fastbuf *f, const byte *b)
 {
   bputs(f, b);
   bputc(f, '\n');
@@ -351,7 +351,7 @@ bdirect_write_commit(struct fastbuf *f, byte *pos)
 
 /* Formatted output */
 
-int bprintf(struct fastbuf *b, char *msg, ...) FORMAT_CHECK(printf,2,3);
-int vbprintf(struct fastbuf *b, char *msg, va_list args);
+int bprintf(struct fastbuf *b, const char *msg, ...) FORMAT_CHECK(printf,2,3);
+int vbprintf(struct fastbuf *b, const char *msg, va_list args);
 
 #endif

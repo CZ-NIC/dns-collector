@@ -27,21 +27,21 @@
    */
 
 /* lizard.c */
-int lizard_compress(byte *in, uns in_len, byte *out);
-int lizard_decompress(byte *in, byte *out);
+int lizard_compress(const byte *in, uns in_len, byte *out);
+int lizard_decompress(const byte *in, byte *out);
 
 /* lizard-safe.c */
 struct lizard_buffer;
 
 struct lizard_buffer *lizard_alloc(void);
 void lizard_free(struct lizard_buffer *buf);
-byte *lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length);
+byte *lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uns expected_length);
 
 /* adler32.c */
-uns update_adler32(uns adler, byte *ptr, uns len);
+uns update_adler32(uns adler, const byte *ptr, uns len);
 
 static inline uns
-adler32(byte *buf, uns len)
+adler32(const byte *buf, uns len)
 {
   return update_adler32(1, buf, len);
 }

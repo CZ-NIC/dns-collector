@@ -70,7 +70,7 @@ sort_dirty(void)
 struct cf_section cf_sections;	// root section
 
 struct cf_item *
-cf_find_subitem(struct cf_section *sec, byte *name)
+cf_find_subitem(struct cf_section *sec, const byte *name)
 {
   struct cf_item *ci = sec->cfg;
   for (; ci->cls; ci++)

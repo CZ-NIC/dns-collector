@@ -92,7 +92,7 @@ bfd_config(struct fastbuf *f, uns item, int value)
 }
 
 static struct fastbuf *
-bfdopen_internal(int fd, uns buflen, byte *name)
+bfdopen_internal(int fd, uns buflen, const byte *name)
 {
   int namelen = strlen(name) + 1;
   struct fb_file *F = xmalloc(sizeof(struct fb_file) + buflen + namelen);
@@ -115,7 +115,7 @@ bfdopen_internal(int fd, uns buflen, byte *name)
 }
 
 struct fastbuf *
-bopen_try(byte *name, uns mode, uns buflen)
+bopen_try(const byte *name, uns mode, uns buflen)
 {
   int fd = sh_open(name, mode, 0666);
   if (fd < 0)
@@ -127,7 +127,7 @@ bopen_try(byte *name, uns mode, uns buflen)
 }
 
 struct fastbuf *
-bopen(byte *name, uns mode, uns buflen)
+bopen(const byte *name, uns mode, uns buflen)
 {
   if (!buflen)
     return bopen_mm(name, mode);

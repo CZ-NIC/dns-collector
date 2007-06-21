@@ -23,7 +23,7 @@
 
 /* Text file parser */
 
-static byte *name_parse_fb;
+static const byte *name_parse_fb;
 static struct fastbuf *parse_fb;
 static uns line_num;
 
@@ -195,7 +195,7 @@ split_command(void)
 /* Parsing multiple files */
 
 static byte *
-parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
+parse_fastbuf(const byte *name_fb, struct fastbuf *fb, uns depth)
 {
   byte *msg;
   name_parse_fb = name_fb;
@@ -300,7 +300,7 @@ done_stack(void)
 }
 
 static int
-load_file(byte *file)
+load_file(const byte *file)
 {
   cf_init_stack();
   struct fastbuf *fb = bopen_try(file, O_RDONLY, 1<<14);
@@ -317,11 +317,11 @@ load_file(byte *file)
 }
 
 static int
-load_string(byte *string)
+load_string(const byte *string)
 {
   cf_init_stack();
   struct fastbuf fb;
-  fbbuf_init_read(&fb, string, strlen(string), 0);
+  fbbuf_init_read(&fb, (byte *)string, strlen(string), 0);
   byte *msg = parse_fastbuf(NULL, &fb, 0);
   return !!msg || done_stack();
 }
@@ -329,7 +329,7 @@ load_string(byte *string)
 /* Safe loading and reloading */
 
 int
-cf_reload(byte *file)
+cf_reload(const byte *file)
 {
   cf_journal_swap();
   struct cf_journal_item *oldj = cf_journal_new_transaction(1);
@@ -351,7 +351,7 @@ cf_reload(byte *file)
 }
 
 int
-cf_load(byte *file)
+cf_load(const byte *file)
 {
   struct cf_journal_item *oldj = cf_journal_new_transaction(1);
   int err = load_file(file);
@@ -363,7 +363,7 @@ cf_load(byte *file)
 }
 
 int
-cf_set(byte *string)
+cf_set(const byte *string)
 {
   struct cf_journal_item *oldj = cf_journal_new_transaction(0);
   int err = load_string(string);

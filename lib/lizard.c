@@ -28,25 +28,25 @@ struct hash_record {
 #define	CHAIN_GOOD_MATCH	32	// we already have a good match => end
 
 static inline uns
-hashf(byte *string)
+hashf(const byte *string)
   /* 0..HASH_SIZE-1 */
 {
     return string[0] ^ (string[1]<<3) ^ (string[2]<<6);
 }
 
 static inline byte *
-locate_string(byte *string, int record_id, int head)
+locate_string(const byte *string, int record_id, int head)
   /* The strings are recorded into the hash-table regularly, hence there is no
    * need to store the pointer there.  */
 {
   string += record_id - head;
   if (record_id >= head)
     string -= HASH_RECORDS-1;
-  return string;
+  return (byte *)string;
 }
 
 static inline uns
-find_match(uns record_id, struct hash_record *hash_rec, byte *string, byte *string_end, byte **best_ptr, uns head)
+find_match(uns record_id, struct hash_record *hash_rec, const byte *string, const byte *string_end, byte **best_ptr, uns head)
   /* hash_tab[hash] == record_id points to the head of the double-linked
    * link-list of strings with the same hash.  The records are statically
    * stored in circular array hash_rec (with the 1st entry unused), and the
@@ -68,7 +68,7 @@ find_match(uns record_id, struct hash_record *hash_rec, byte *string, byte *stri
 	if (*cmp++ == string[4] && *cmp++ == string[5]
 	    && *cmp++ == string[6] && *cmp++ == string[7])
 	{
-	  byte *str = string + 8;
+	  const byte *str = string + 8;
 	  while (str <= string_end && *cmp++ == *str++);
 	}
       }
@@ -128,7 +128,7 @@ dump_unary_value(byte *out, uns l)
 }
 
 static byte *
-flush_copy_command(uns bof, byte *out, byte *start, uns len)
+flush_copy_command(uns bof, byte *out, const byte *start, uns len)
 {
   if (bof && len <= 238)
     *out++ = len + 17;
@@ -161,16 +161,16 @@ flush_copy_command(uns bof, byte *out, byte *start, uns len)
 }
 
 int
-lizard_compress(byte *in, uns in_len, byte *out)
+lizard_compress(const byte *in, uns in_len, byte *out)
   /* Requires out being allocated for at least in_len * LIZARD_MAX_MULTIPLY +
    * LIZARD_MAX_ADD.  There must be at least LIZARD_NEEDS_CHARS characters
    * allocated after in.  Returns the actual compressed length. */
 {
   hash_ptr_t hash_tab[HASH_SIZE];
   struct hash_record hash_rec[HASH_RECORDS];
-  byte *in_end = in + in_len;
+  const byte *in_end = in + in_len;
   byte *out_start = out;
-  byte *copy_start = in;
+  const byte *copy_start = in;
   uns head = 1;					/* 0 in unused */
   uns to_delete = 0, bof = 1;
   bzero(hash_tab, sizeof(hash_tab));		/* init the hash-table */
@@ -280,18 +280,18 @@ dump_2sequence:
 }
 
 static inline byte *
-read_unary_value(byte *in, uns *val)
+read_unary_value(const byte *in, uns *val)
 {
   uns l = 0;
   while (!*in++)
     l += 255;
   l += in[-1];
   *val = l;
-  return in;
+  return (byte *)in;
 }
 
 int
-lizard_decompress(byte *in, byte *out)
+lizard_decompress(const byte *in, byte *out)
   /* Requires out being allocated for the decompressed length must be known
    * beforehand.  It is desirable to lock the following memory page for
    * read-only access to prevent buffer overflow.  Returns the actual
