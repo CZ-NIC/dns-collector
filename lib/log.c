@@ -26,7 +26,7 @@ void (*log_die_hook)(void);
 void (*log_switch_hook)(struct tm *tm);
 
 void
-vlog_msg(unsigned int cat, const char *msg, va_list args)
+vmsg(unsigned int cat, const char *fmt, va_list args)
 {
   struct timeval tv;
   struct tm tm;
@@ -66,7 +66,7 @@ vlog_msg(unsigned int cat, const char *msg, va_list args)
       l0 = p - buf + 1;
       r = buflen - l0;
       va_copy(args2, args);
-      l = vsnprintf(p, r, msg, args2);
+      l = vsnprintf(p, r, fmt, args2);
       va_end(args2);
       if (l < 0)
 	l = r;
@@ -87,22 +87,22 @@ vlog_msg(unsigned int cat, const char *msg, va_list args)
 }
 
 void
-log_msg(unsigned int cat, const char *msg, ...)
+msg(unsigned int cat, const char *fmt, ...)
 {
   va_list args;
 
-  va_start(args, msg);
-  vlog_msg(cat, msg, args);
+  va_start(args, fmt);
+  vmsg(cat, fmt, args);
   va_end(args);
 }
 
 void
-die(const char *msg, ...)
+die(const char *fmt, ...)
 {
   va_list args;
 
-  va_start(args, msg);
-  vlog_msg(L_FATAL, msg, args);
+  va_start(args, fmt);
+  vmsg(L_FATAL, fmt, args);
   va_end(args);
   if (log_die_hook)
     log_die_hook();
@@ -116,7 +116,7 @@ die(const char *msg, ...)
 void
 assert_failed(const char *assertion, const char *file, int line)
 {
-  log(L_FATAL, "Assertion `%s' failed at %s:%d", assertion, file, line);
+  msg(L_FATAL, "Assertion `%s' failed at %s:%d", assertion, file, line);
   abort();
 }
 

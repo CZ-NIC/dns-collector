@@ -291,14 +291,14 @@ qache_open_existing(struct qache *q, struct qache_params *par)
     goto unlock_and_fail;
 
   qache_unlock(q, 0);
-  log(L_INFO, "Cache %s: using existing data", q->file_name);
+  msg(L_INFO, "Cache %s: using existing data", q->file_name);
   return 1;
 
  unlock_and_fail:
   qache_unlock(q, 0);
   munmap(q->mmap_data, q->file_size);
  close_and_fail:
-  log(L_INFO, "Cache %s: ignoring old contents (%s)", q->file_name, err);
+  msg(L_INFO, "Cache %s: ignoring old contents (%s)", q->file_name, err);
   close(q->fd);
   return 0;
 }
@@ -370,7 +370,7 @@ qache_create(struct qache *q, struct qache_params *par)
 
   ASSERT(btell(fb) == (sh_off_t)par->cache_size);
   bclose(fb);
-  log(L_INFO, "Cache %s: created (%d bytes, %d slots, %d buckets)", q->file_name, par->cache_size, h.max_entries, h.hash_size);
+  msg(L_INFO, "Cache %s: created (%d bytes, %d slots, %d buckets)", q->file_name, par->cache_size, h.max_entries, h.hash_size);
 
   if ((q->mmap_data = mmap(NULL, par->cache_size, PROT_READ | PROT_WRITE, MAP_SHARED, q->fd, 0)) == MAP_FAILED)
     die("Cache %s: mmap failed (%m)", par->file_name);
@@ -402,7 +402,7 @@ qache_close(struct qache *q, uns retain_data)
   munmap(q->mmap_data, q->file_size);
   close(q->fd);
   if (!retain_data && unlink(q->file_name) < 0)
-    log(L_ERROR, "Cache %s: unlink failed (%m)", q->file_name);
+    msg(L_ERROR, "Cache %s: unlink failed (%m)", q->file_name);
   xfree(q->file_name);
   xfree(q);
 }
@@ -702,26 +702,26 @@ qache_delete(struct qache *q, qache_key_t *key, uns pos_hint)
 void
 qache_debug(struct qache *q)
 {
-  log(L_DEBUG, "Cache %s: block_size=%d (%d data), num_blocks=%d (%d first data), %d slots, %d hash buckets",
+  msg(L_DEBUG, "Cache %s: block_size=%d (%d data), num_blocks=%d (%d first data), %d slots, %d hash buckets",
       q->file_name, q->hdr->block_size, q->hdr->block_size, q->hdr->num_blocks, q->hdr->first_data_block,
       q->hdr->max_entries, q->hdr->hash_size);
 
-  log(L_DEBUG, "Table of cache entries:");
-  log(L_DEBUG, "\tEntry\tLruPrev\tLruNext\tDataLen\tDataBlk\tHashNxt\tKey");
+  msg(L_DEBUG, "Table of cache entries:");
+  msg(L_DEBUG, "\tEntry\tLruPrev\tLruNext\tDataLen\tDataBlk\tHashNxt\tKey");
   for (uns e=0; e<q->hdr->max_entries; e++)
     {
       struct qache_entry *ent = &q->entry_table[e];
-      log(L_DEBUG, "\t%d\t%d\t%d\t%d\t%d\t%d\t%s", e, ent->lru_prev, ent->lru_next, ent->data_len,
+      msg(L_DEBUG, "\t%d\t%d\t%d\t%d\t%d\t%d\t%s", e, ent->lru_prev, ent->lru_next, ent->data_len,
 	  ent->first_data_block, ent->hash_next, format_key(&ent->key));
     }
 
-  log(L_DEBUG, "Hash table:");
+  msg(L_DEBUG, "Hash table:");
   for (uns h=0; h<q->hdr->hash_size; h++)
-    log(L_DEBUG, "\t%04x\t%d", h, q->hash_table[h]);
+    msg(L_DEBUG, "\t%04x\t%d", h, q->hash_table[h]);
 
-  log(L_DEBUG, "Next pointers:");
+  msg(L_DEBUG, "Next pointers:");
   for (uns blk=q->hdr->first_data_block; blk<q->hdr->num_blocks; blk++)
-    log(L_DEBUG, "\t%d\t%d", blk, q->next_table[blk]);
+    msg(L_DEBUG, "\t%d\t%d", blk, q->next_table[blk]);
 }
 
 void

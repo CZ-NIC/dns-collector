@@ -71,7 +71,7 @@ bfd_close(struct fastbuf *f)
     {
     case 1:
       if (unlink(f->name) < 0)
-	log(L_ERROR, "unlink(%s): %m", f->name);
+	msg(L_ERROR, "unlink(%s): %m", f->name);
     case 0:
       close(FB_FILE(f)->fd);
     }
@@ -160,7 +160,7 @@ bfilesync(struct fastbuf *b)
 {
   bflush(b);
   if (fsync(FB_FILE(b)->fd) < 0)
-    log(L_ERROR, "fsync(%s) failed: %m", b->name);
+    msg(L_ERROR, "fsync(%s) failed: %m", b->name);
 }
 
 #ifdef TEST

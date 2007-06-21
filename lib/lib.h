@@ -99,9 +99,8 @@ extern void (*log_die_hook)(void);
 struct tm;
 extern void (*log_switch_hook)(struct tm *tm);
 
-void log_msg(uns cat, const char *msg, ...) FORMAT_CHECK(printf,2,3);
-#define log log_msg
-void vlog_msg(uns cat, const char *msg, va_list args);
+void msg(uns cat, const char *fmt, ...) FORMAT_CHECK(printf,2,3);
+void vmsg(uns cat, const char *fmt, va_list args);
 void die(const char *, ...) NONRET FORMAT_CHECK(printf,1,2);
 void log_init(const char *argv0);
 void log_file(const char *name);
@@ -120,7 +119,7 @@ void assert_failed_noinfo(void) NONRET;
 #define COMPILE_ASSERT(name,x) typedef char _COMPILE_ASSERT_##name[!!(x)-1]
 
 #ifdef LOCAL_DEBUG
-#define DBG(x,y...) log(L_DEBUG, x,##y)
+#define DBG(x,y...) msg(L_DEBUG, x,##y)
 #else
 #define DBG(x,y...) do { } while(0)
 #endif

@@ -24,5 +24,5 @@ sync_dir(const byte *name)
   if (err >= 0)
     return;
  err:
-  log(L_ERROR, "Unable to sync directory %s: %m", name);
+  msg(L_ERROR, "Unable to sync directory %s: %m", name);
 }

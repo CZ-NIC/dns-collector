@@ -164,14 +164,14 @@ commit_section(struct cf_section *sec, void *ptr, uns commit_all)
   for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
       if ((err = commit_section(ci->u.sec, ptr + (uintptr_t) ci->ptr, commit_all))) {
-	log(L_ERROR, "Cannot commit section %s: %s", ci->name, err);
+	msg(L_ERROR, "Cannot commit section %s: %s", ci->name, err);
 	return "commit of a subsection failed";
       }
     } else if (ci->cls == CC_LIST) {
       uns idx = 0;
       CLIST_FOR_EACH(cnode *, n, * (clist*) (ptr + (uintptr_t) ci->ptr))
 	if (idx++, err = commit_section(ci->u.sec, n, commit_all)) {
-	  log(L_ERROR, "Cannot commit node #%d of list %s: %s", idx, ci->name, err);
+	  msg(L_ERROR, "Cannot commit node #%d of list %s: %s", idx, ci->name, err);
 	  return "commit of a list failed";
 	}
     }

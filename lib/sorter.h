@@ -230,7 +230,7 @@ P(pass)(struct fastbuf **fb1, struct fastbuf **fb2
   bclose(in1);
   bclose(in2);
   if (sorter_trace)
-    log(L_INFO, "Pass %d: %d runs, %d+%d KB", sorter_pass_counter, run_count,
+    msg(L_INFO, "Pass %d: %d runs, %d+%d KB", sorter_pass_counter, run_count,
 	(out1 ? (int)((btell(out1) + 1023) / 1024) : 0),
 	(out2 ? (int)((btell(out2) + 1023) / 1024) : 0));
   *fb1 = P(flush_out)(out1);
@@ -300,7 +300,7 @@ P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
 
   bclose(in);
   if (sorter_trace)
-    log(L_INFO, "Pass 0: %d runs, %d+%d KB",
+    msg(L_INFO, "Pass 0: %d runs, %d+%d KB",
 	run_count,
 	(out1 ? (int)((btell(out1) + 1023) / 1024) : 0),
 	(out2 ? (int)((btell(out2) + 1023) / 1024) : 0));
@@ -459,7 +459,7 @@ P(presort)(struct fastbuf **fb1, struct fastbuf **fb2)
 
   bclose(in);
   if (sorter_trace)
-    log(L_INFO, "Pass 0: %d runs (%d giants, %d splits), %d+%d KB",
+    msg(L_INFO, "Pass 0: %d runs (%d giants, %d splits), %d+%d KB",
 	run_count, giant_count, split_count,
 	(out1 ? (int)((btell(out1) + 1023) / 1024) : 0),
 	(out2 ? (int)((btell(out2) + 1023) / 1024) : 0));

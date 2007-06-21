@@ -101,7 +101,7 @@ file_add(struct main_file *fi)
   main_file_cnt++;
   main_poll_table_obsolete = 1;
   if (fcntl(fi->fd, F_SETFL, O_NONBLOCK) < 0)
-    log(L_ERROR, "Error setting fd %d to non-blocking mode: %m. Keep fingers crossed.", fi->fd);
+    msg(L_ERROR, "Error setting fd %d to non-blocking mode: %m. Keep fingers crossed.", fi->fd);
 }
 
 void
@@ -307,25 +307,25 @@ void
 main_debug(void)
 {
 #ifdef CONFIG_DEBUG
-  log(L_DEBUG, "### Main loop status on %lld", (long long)main_now);
-  log(L_DEBUG, "\tActive timers:");
+  msg(L_DEBUG, "### Main loop status on %lld", (long long)main_now);
+  msg(L_DEBUG, "\tActive timers:");
   struct main_timer *tm;
   CLIST_WALK(tm, main_timer_list)
-    log(L_DEBUG, "\t\t%p (expires %lld, data %p)", tm, (long long)(tm->expires ? tm->expires-main_now : 999999), tm->data);
+    msg(L_DEBUG, "\t\t%p (expires %lld, data %p)", tm, (long long)(tm->expires ? tm->expires-main_now : 999999), tm->data);
   struct main_file *fi;
-  log(L_DEBUG, "\tActive files:");
+  msg(L_DEBUG, "\tActive files:");
   CLIST_WALK(fi, main_file_list)
-    log(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, eh %p, expires %lld, data %p)",
+    msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, eh %p, expires %lld, data %p)",
 	fi, fi->fd, fi->read_handler, fi->write_handler, fi->error_handler,
 	(long long)(fi->timer.expires ? fi->timer.expires-main_now : 999999), fi->data);
-  log(L_DEBUG, "\tActive hooks:");
+  msg(L_DEBUG, "\tActive hooks:");
   struct main_hook *ho;
   CLIST_WALK(ho, main_hook_list)
-    log(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
-  log(L_DEBUG, "\tActive processes:");
+    msg(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
+  msg(L_DEBUG, "\tActive processes:");
   struct main_process *pr;
   CLIST_WALK(pr, main_process_list)
-    log(L_DEBUG, "\t\t%p (pid %d, data %p)", pr, pr->pid, pr->data);
+    msg(L_DEBUG, "\t\t%p (pid %d, data %p)", pr, pr->pid, pr->data);
 #endif
 }
 

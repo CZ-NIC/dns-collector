@@ -35,7 +35,7 @@ image_context_cleanup(struct image_context *ctx)
 void
 image_context_msg_default(struct image_context *ctx)
 {
-  log(ctx->msg_code >> 24, "%s", ctx->msg);
+  msg(ctx->msg_code >> 24, "%s", ctx->msg);
 }
 
 void

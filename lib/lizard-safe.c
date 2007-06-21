@@ -93,7 +93,7 @@ lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uns expected_l
   }
   else
   {
-    log(L_ERROR, "SIGSEGV caught in lizard_decompress()");
+    msg(L_ERROR, "SIGSEGV caught in lizard_decompress()");
     ptr = NULL;
     errno = EFAULT;
   }

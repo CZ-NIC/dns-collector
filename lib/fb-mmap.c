@@ -145,7 +145,7 @@ bfmm_close(struct fastbuf *f)
     {
     case 1:
       if (unlink(f->name) < 0)
-	log(L_ERROR, "unlink(%s): %m", f->name);
+	msg(L_ERROR, "unlink(%s): %m", f->name);
     case 0:
       close(F->fd);
     }

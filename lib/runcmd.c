@@ -36,7 +36,7 @@ exec_command_v(const byte *cmd, va_list args)
   execv(cmd, argv);
   byte echo[256];
   echo_command_v(echo, sizeof(echo), cmd, args);
-  log(L_ERROR, "Cannot execute %s: %m", echo);
+  msg(L_ERROR, "Cannot execute %s: %m", echo);
   exit(255);
 }
 
@@ -46,7 +46,7 @@ run_command_v(const byte *cmd, va_list args)
   pid_t p = fork();
   if (p < 0)
     {
-      log(L_ERROR, "fork() failed: %m");
+      msg(L_ERROR, "fork() failed: %m");
       return 0;
     }
   else if (!p)
@@ -54,15 +54,15 @@ run_command_v(const byte *cmd, va_list args)
   else
     {
       int stat;
-      byte msg[EXIT_STATUS_MSG_SIZE];
+      byte status_msg[EXIT_STATUS_MSG_SIZE];
       p = waitpid(p, &stat, 0);
       if (p < 0)
 	die("waitpid() failed: %m");
-      if (format_exit_status(msg, stat))
+      if (format_exit_status(status_msg, stat))
 	{
 	  byte echo[256];
 	  echo_command_v(echo, sizeof(echo), cmd, args);
-	  log(L_ERROR, "`%s' failed: %s", echo, msg);
+	  msg(L_ERROR, "`%s' failed: %s", echo, status_msg);
 	  return 0;
 	}
       return 1;

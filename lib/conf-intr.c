@@ -637,7 +637,7 @@ int
 cf_check_stack(void)
 {
   if (level > 0) {
-    log(L_ERROR, "Unterminated block");
+    msg(L_ERROR, "Unterminated block");
     return 1;
   }
   return 0;
