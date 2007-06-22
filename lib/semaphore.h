@@ -24,7 +24,7 @@ static inline sem_t *
 sem_alloc(void)
 {
   static uns cnt = 0;
-  byte buf[20];
+  char buf[20];
   sprintf(buf, "tmp/sem-%d-%d", getpid(), cnt++);
   sem_t *sem = sem_open(buf, O_CREAT, 0777, 0);
   ASSERT(sem != (sem_t*) SEM_FAILED);

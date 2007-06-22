@@ -30,7 +30,7 @@
 #endif
 
 struct partmap *
-partmap_open(byte *name, int writeable)
+partmap_open(char *name, int writeable)
 {
   struct partmap *p = xmalloc_zero(sizeof(struct partmap));
 

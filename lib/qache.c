@@ -60,7 +60,7 @@ struct qache {
   int fd;
   byte *mmap_data;
   uns file_size;
-  byte *file_name;
+  char *file_name;
   uns locked;
 };
 
@@ -68,10 +68,10 @@ struct qache {
 #define first_free_block entry_table[0].first_data_block
 #define num_free_blocks entry_table[0].data_len
 
-static inline byte *
+static inline char *
 format_key(qache_key_t *key)
 {
-  static byte keybuf[2*sizeof(qache_key_t)+1];
+  static char keybuf[2*sizeof(qache_key_t)+1];
   for (uns i=0; i<sizeof(qache_key_t); i++)
     sprintf(keybuf+2*i, "%02x", (*key)[i]);
   return keybuf;
@@ -128,7 +128,7 @@ enum entry_audit_flags {
   ET_HASH = 4
 };
 
-static byte *
+static char *
 audit_entries(struct qache *q, byte *entrymap)
 {
   uns i, j;
@@ -184,7 +184,7 @@ enum block_audit_flags {
   BT_ALLOC = 2
 };
 
-static byte *
+static char *
 audit_blocks(struct qache *q, byte *entrymap, byte *blockmap)
 {
   uns i, j;
@@ -226,7 +226,7 @@ audit_blocks(struct qache *q, byte *entrymap, byte *blockmap)
   return NULL;
 }
 
-static byte *
+static char *
 do_audit(struct qache *q)
 {
   byte *entry_map = xmalloc_zero(q->hdr->max_entries);
@@ -255,7 +255,7 @@ qache_open_existing(struct qache *q, struct qache_params *par)
     return 0;
 
   struct stat st;
-  byte *err = "stat failed";
+  char *err = "stat failed";
   if (fstat(q->fd, &st) < 0)
     goto close_and_fail;
 
@@ -727,7 +727,7 @@ qache_debug(struct qache *q)
 void
 qache_audit(struct qache *q)
 {
-  byte *err;
+  char *err;
   qache_lock(q);
   if (err = do_audit(q))
     die("Cache %s: %s", q->file_name, err);

@@ -164,7 +164,7 @@ int match_ct_patt(const char *, const char *);
 
 /* wordsplit.c */
 
-int sepsplit(byte *str, byte sep, byte **rec, uns max);
+int sepsplit(byte *str, uns sep, byte **rec, uns max);
 int wordsplit(byte *str, byte **rec, uns max);
 
 /* pat(i)match.c: Matching of shell patterns */
@@ -174,8 +174,8 @@ int match_pattern_nocase(const char *patt, const char *str);
 
 /* md5hex.c */
 
-void md5_to_hex(const byte *s, byte *d);
-void hex_to_md5(const byte *s, byte *d);
+void md5_to_hex(const byte *s, char *d);
+void hex_to_md5(const char *s, byte *d);
 
 #define MD5_SIZE 16
 #define MD5_HEX_SIZE 33
@@ -202,10 +202,10 @@ void get_last_timeval(struct timeval *tv);
 
 typedef struct regex regex;
 
-regex *rx_compile(const byte *r, int icase);
+regex *rx_compile(const char *r, int icase);
 void rx_free(regex *r);
-int rx_match(regex *r, const byte *s);
-int rx_subst(regex *r, const byte *by, const byte *src, byte *dest, uns destlen);
+int rx_match(regex *r, const char *s);
+int rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen);
 
 /* random.c */
 
@@ -216,7 +216,7 @@ u64 random_max_u64(u64 max);
 
 /* mmap.c */
 
-void *mmap_file(const byte *name, unsigned *len, int writeable);
+void *mmap_file(const char *name, unsigned *len, int writeable);
 void munmap_file(void *start, unsigned len);
 
 /* proctitle.c */
@@ -232,16 +232,16 @@ void randomkey(byte *buf, uns size);
 /* exitstatus.c */
 
 #define EXIT_STATUS_MSG_SIZE 32
-int format_exit_status(byte *msg, int stat);
+int format_exit_status(char *msg, int stat);
 
 /* runcmd.c */
 
-int run_command(const byte *cmd, ...);
-void NONRET exec_command(const byte *cmd, ...);
-void echo_command(byte *buf, int size, const byte *cmd, ...);
-int run_command_v(const byte *cmd, va_list args);
-void NONRET exec_command_v(const byte *cmd, va_list args);
-void echo_command_v(byte *buf, int size, const byte *cmd, va_list args);
+int run_command(const char *cmd, ...);
+void NONRET exec_command(const char *cmd, ...);
+void echo_command(char *buf, int size, const char *cmd, ...);
+int run_command_v(const char *cmd, va_list args);
+void NONRET exec_command_v(const char *cmd, va_list args);
+void echo_command_v(char *buf, int size, const char *cmd, va_list args);
 
 /* carefulio.c */
 
@@ -250,7 +250,7 @@ int careful_write(int fd, const void *buf, int len);
 
 /* sync.c */
 
-void sync_dir(const byte *name);
+void sync_dir(const char *name);
 
 /* sighandler.c */
 
@@ -262,8 +262,8 @@ sh_sighandler_t set_signal_handler(int signum, sh_sighandler_t new);
 
 /* string.c */
 
-byte *str_unesc(byte *dest, const byte *src);
-byte *str_format_flags(byte *dest, const byte *fmt, uns flags);
+char *str_unesc(char *dest, const char *src);
+char *str_format_flags(char *dest, const char *fmt, uns flags);
 
 /* bigalloc.c */
 

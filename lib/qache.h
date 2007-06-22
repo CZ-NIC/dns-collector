@@ -8,7 +8,7 @@
 #define _UCW_QACHE_H
 
 struct qache_params {
-  byte *file_name;
+  char *file_name;
   uns block_size;			/* Cache block size (a power of two) */
   uns cache_size;			/* Size of the whole cache */
   uns max_entries;			/* Maximum number of cached entries */

@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 void
-md5_to_hex(const byte *s, byte *d)
+md5_to_hex(const byte *s, char *d)
 {
   int i;
   for(i=0; i<MD5_SIZE; i++)
@@ -21,7 +21,7 @@ md5_to_hex(const byte *s, byte *d)
 }
 
 void
-hex_to_md5(const byte *s, byte *d)
+hex_to_md5(const char *s, byte *d)
 {
   uns i, j;
   for(i=0; i<MD5_SIZE; i++)
