@@ -86,7 +86,7 @@ qache_msync(struct qache *q UNUSED, uns start UNUSED, uns len UNUSED)
   start -= start % CPU_PAGE_SIZE;
   len = ALIGN_TO(len, CPU_PAGE_SIZE);
   if (msync(q->mmap_data + start, len, MS_ASYNC | MS_INVALIDATE) < 0)
-    log(L_ERROR, "Cache %s: msync failed: %m", q->file_name);
+    msg(L_ERROR, "Cache %s: msync failed: %m", q->file_name);
 #endif
 }
 
@@ -777,7 +777,7 @@ int main(int argc UNUSED, char **argv UNUSED)
 	  found++;
 	}
     }
-  log(L_INFO, "Found %d of %d entries", found, N);
+  msg(L_INFO, "Found %d of %d entries", found, N);
 
   qache_close(q, 1);
   return 0;
