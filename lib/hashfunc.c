@@ -64,7 +64,7 @@ str_len_uns(uns x)
 }
 
 inline uns
-str_len_aligned(const byte *str)
+str_len_aligned(const char *str)
 {
 	const uns *u = (const uns *) str;
 	uns len = 0;
@@ -78,7 +78,7 @@ str_len_aligned(const byte *str)
 }
 
 inline uns
-hash_string_aligned(const byte *str)
+hash_string_aligned(const char *str)
 {
 	const uns *u = (const uns *) str;
 	uns hash = 0;
@@ -112,7 +112,7 @@ hash_block_aligned(const byte *str, uns len)
 
 #ifndef	CPU_ALLOW_UNALIGNED
 uns
-str_len(const byte *str)
+str_len(const char *str)
 {
 	uns shift = UNALIGNED_PART(str, uns);
 	if (!shift)
@@ -129,11 +129,12 @@ str_len(const byte *str)
 }
 
 uns
-hash_string(const byte *str)
+hash_string(const char *str)
 {
-	uns shift = UNALIGNED_PART(str, uns);
+	const byte *s = str;
+	uns shift = UNALIGNED_PART(s, uns);
 	if (!shift)
-		return hash_string_aligned(str);
+		return hash_string_aligned(s);
 	else
 	{
 		uns hash = 0;
@@ -149,9 +150,9 @@ hash_string(const byte *str)
 #endif
 			if (!modulo)
 				hash = ROL(hash, SHIFT_BITS);
-			if (!str[i])
+			if (!s[i])
 				break;
-			hash ^= str[i] << (shift * 8);
+			hash ^= s[i] << (shift * 8);
 		}
 		return hash;
 	}
@@ -188,8 +189,9 @@ hash_block(const byte *str, uns len)
 #endif
 
 uns
-hash_string_nocase(const byte *str)
+hash_string_nocase(const char *str)
 {
+	const byte *s = str;
 	uns hash = 0;
 	uns i;
 	for (i=0; ; i++)
@@ -203,9 +205,9 @@ hash_string_nocase(const byte *str)
 #endif
 		if (!modulo)
 			hash = ROL(hash, SHIFT_BITS);
-		if (!str[i])
+		if (!s[i])
 			break;
-		hash ^= Cupcase(str[i]) << (shift * 8);
+		hash ^= Cupcase(s[i]) << (shift * 8);
 	}
 	return hash;
 }
