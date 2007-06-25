@@ -22,8 +22,8 @@ struct ipaccess_entry {
   struct ip_addrmask addr;
 };
 
-static byte *
-addrmask_parser(byte *c, void *ptr)
+static char *
+addrmask_parser(char *c, void *ptr)
 {
   /*
    * This is tricky: addrmasks will be compared by memcmp(), so we must ensure
@@ -32,10 +32,10 @@ addrmask_parser(byte *c, void *ptr)
   struct ip_addrmask *am = ptr;
   bzero(am, sizeof(*am));
 
-  byte *p = strchr(c, '/');
+  char *p = strchr(c, '/');
   if (p)
     *p++ = 0;
-  byte *err = cf_parse_ip(c, &am->addr);
+  char *err = cf_parse_ip(c, &am->addr);
   if (err)
     return err;
   if (p)
@@ -68,7 +68,7 @@ struct cf_user_type ip_addrmask_type = {
 struct cf_section ipaccess_cf = {
   CF_TYPE(struct ipaccess_entry),
   CF_ITEMS {
-    CF_LOOKUP("Mode", PTR_TO(struct ipaccess_entry, allow), ((byte*[]) { "deny", "allow", NULL })),
+    CF_LOOKUP("Mode", PTR_TO(struct ipaccess_entry, allow), ((char*[]) { "deny", "allow", NULL })),
     CF_USER("IP", PTR_TO(struct ipaccess_entry, addr), &ip_addrmask_type),
     CF_END
   }
@@ -110,7 +110,7 @@ int main(int argc, char **argv)
   byte buf[256];
   while (fgets(buf, sizeof(buf), stdin))
     {
-      byte *c = strchr(buf, '\n');
+      char *c = strchr(buf, '\n');
       if (c)
 	*c = 0;
       u32 ip;

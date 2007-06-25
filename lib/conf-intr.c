@@ -17,18 +17,18 @@
 #include <string.h>
 #include <stdio.h>
 
-#define TRY(f)	do { byte *_msg = f; if (_msg) return _msg; } while (0)
+#define TRY(f)	do { char *_msg = f; if (_msg) return _msg; } while (0)
 
 /* Register size of and parser for each basic type */
 
-static byte *
-cf_parse_string(byte *str, byte **ptr)
+static char *
+cf_parse_string(char *str, char **ptr)
 {
   *ptr = cf_strdup(str);
   return NULL;
 }
 
-typedef byte *cf_basic_parser(byte *str, void *ptr);
+typedef char *cf_basic_parser(char *str, void *ptr);
 static struct {
   uns size;
   void *parser;
@@ -37,7 +37,7 @@ static struct {
   { sizeof(u64), cf_parse_u64 },
   { sizeof(double), cf_parse_double },
   { sizeof(u32), cf_parse_ip },
-  { sizeof(byte*), cf_parse_string },
+  { sizeof(char*), cf_parse_string },
   { sizeof(int), NULL },			// lookups are parsed extra
   { 0, NULL },					// user-defined types are parsed extra
 };
@@ -51,10 +51,10 @@ cf_type_size(enum cf_type type, struct cf_user_type *utype)
     return utype->size;
 }
 
-static byte *
-cf_parse_lookup(byte *str, int *ptr, byte **t)
+static char *
+cf_parse_lookup(char *str, int *ptr, char **t)
 {
-  byte **n = t;
+  char **n = t;
   uns total_len = 0;
   while (*n && strcasecmp(*n, str)) {
     total_len += strlen(*n) + 2;
@@ -64,7 +64,7 @@ cf_parse_lookup(byte *str, int *ptr, byte **t)
     *ptr = n - t;
     return NULL;
   }
-  byte *err = cf_malloc(total_len + strlen(str) + 60), *c = err;
+  char *err = cf_malloc(total_len + strlen(str) + 60), *c = err;
   c += sprintf(err, "Invalid value %s, possible values are: ", str);
   for (n=t; *n; n++)
     c+= sprintf(c, "%s, ", *n);
@@ -74,12 +74,12 @@ cf_parse_lookup(byte *str, int *ptr, byte **t)
   return err;
 }
 
-static byte *
-cf_parse_ary(uns number, byte **pars, void *ptr, enum cf_type type, union cf_union *u)
+static char *
+cf_parse_ary(uns number, char **pars, void *ptr, enum cf_type type, union cf_union *u)
 {
   for (uns i=0; i<number; i++)
   {
-    byte *msg;
+    char *msg;
     uns size = cf_type_size(type, u->utype);
     if (type < CT_LOOKUP)
       msg = ((cf_basic_parser*) parsers[type].parser) (pars[i], ptr + i * size);
@@ -98,14 +98,14 @@ cf_parse_ary(uns number, byte **pars, void *ptr, enum cf_type type, union cf_uni
 /* Interpreter */
 
 #define T(x) #x,
-byte *cf_op_names[] = { CF_OPERATIONS };
+char *cf_op_names[] = { CF_OPERATIONS };
 #undef T
-byte *cf_type_names[] = { "int", "u64", "double", "ip", "string", "lookup", "user" };
+char *cf_type_names[] = { "int", "u64", "double", "ip", "string", "lookup", "user" };
 
 #define DARY_HDR_SIZE ALIGN_TO(sizeof(uns), CPU_STRUCT_ALIGN)
 
-static byte *
-interpret_set_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
+static char *
+interpret_set_dynamic(struct cf_item *item, int number, char **pars, void **ptr)
 {
   enum cf_type type = item->type;
   cf_journal_block(ptr, sizeof(void*));
@@ -116,8 +116,8 @@ interpret_set_dynamic(struct cf_item *item, int number, byte **pars, void **ptr)
   return cf_parse_ary(number, pars, *ptr, type, &item->u);
 }
 
-static byte *
-interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *processed, void **ptr, enum cf_operation op)
+static char *
+interpret_add_dynamic(struct cf_item *item, int number, char **pars, int *processed, void **ptr, enum cf_operation op)
 {
   enum cf_type type = item->type;
   void *old_p = *ptr;
@@ -141,17 +141,17 @@ interpret_add_dynamic(struct cf_item *item, int number, byte **pars, int *proces
     return cf_printf("Dynamic arrays do not support operation %s", cf_op_names[op]);
 }
 
-static byte *interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic);
+static char *interpret_set_item(struct cf_item *item, int number, char **pars, int *processed, void *ptr, uns allow_dynamic);
 
-static byte *
-interpret_section(struct cf_section *sec, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic)
+static char *
+interpret_section(struct cf_section *sec, int number, char **pars, int *processed, void *ptr, uns allow_dynamic)
 {
   cf_add_dirty(sec, ptr);
   *processed = 0;
   for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
   {
     int taken;
-    byte *msg = interpret_set_item(ci, number, pars, &taken, ptr + (uintptr_t) ci->ptr, allow_dynamic && !ci[1].cls);
+    char *msg = interpret_set_item(ci, number, pars, &taken, ptr + (uintptr_t) ci->ptr, allow_dynamic && !ci[1].cls);
     if (msg)
       return cf_printf("Item %s: %s", ci->name, msg);
     *processed += taken;
@@ -194,8 +194,8 @@ add_to_list(cnode *where, cnode *new_node, enum cf_operation op)
   }
 }
 
-static byte *
-interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, enum cf_operation op)
+static char *
+interpret_add_list(struct cf_item *item, int number, char **pars, int *processed, void *ptr, enum cf_operation op)
 {
   if (op >= OP_REMOVE)
     return cf_printf("You have to open a block for operation %s", cf_op_names[op]);
@@ -213,7 +213,7 @@ interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed
     /* If the node contains any dynamic attribute at the end, we suppress
      * auto-repetition here and pass the flag inside instead.  */
     index++;
-    byte *msg = interpret_section(sec, number, pars, &taken, node, sec->flags & SEC_FLAG_DYNAMIC);
+    char *msg = interpret_section(sec, number, pars, &taken, node, sec->flags & SEC_FLAG_DYNAMIC);
     if (msg)
       return sec->flags & SEC_FLAG_DYNAMIC ? msg : cf_printf("Node %d of list %s: %s", index, item->name, msg);
     *processed += taken;
@@ -225,8 +225,8 @@ interpret_add_list(struct cf_item *item, int number, byte **pars, int *processed
   return NULL;
 }
 
-static byte *
-interpret_add_bitmap(struct cf_item *item, int number, byte **pars, int *processed, u32 *ptr, enum cf_operation op)
+static char *
+interpret_add_bitmap(struct cf_item *item, int number, char **pars, int *processed, u32 *ptr, enum cf_operation op)
 {
   if (op != OP_SET && op != OP_REMOVE)
     return cf_printf("Cannot apply operation %s on a bitmap", cf_op_names[op]);
@@ -250,8 +250,8 @@ interpret_add_bitmap(struct cf_item *item, int number, byte **pars, int *process
   return NULL;
 }
 
-static byte *
-interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed, void *ptr, uns allow_dynamic)
+static char *
+interpret_set_item(struct cf_item *item, int number, char **pars, int *processed, void *ptr, uns allow_dynamic)
 {
   int taken;
   switch (item->cls)
@@ -295,7 +295,7 @@ interpret_set_item(struct cf_item *item, int number, byte **pars, int *processed
   }
 }
 
-static byte *
+static char *
 interpret_set_all(struct cf_item *item, void *ptr, enum cf_operation op)
 {
   if (item->cls == CC_BITMAP) {
@@ -360,7 +360,7 @@ find_list_node(clist *list, void *query, struct cf_section *sec, u32 mask)
   return NULL;
 }
 
-static byte *
+static char *
 record_selector(struct cf_item *item, struct cf_section *sec, u32 *mask)
 {
   uns nr = sec->flags & SEC_FLAG_NUMBER;
@@ -387,7 +387,7 @@ static struct item_stack {
 } stack[MAX_STACK_SIZE];
 static uns level;
 
-static byte *
+static char *
 opening_brace(struct cf_item *item, void *ptr, enum cf_operation op)
 {
   if (level >= MAX_STACK_SIZE-1)
@@ -430,8 +430,8 @@ opening_brace(struct cf_item *item, void *ptr, enum cf_operation op)
   return NULL;
 }
 
-static byte *
-closing_brace(struct item_stack *st, enum cf_operation op, int number, byte **pars)
+static char *
+closing_brace(struct item_stack *st, enum cf_operation op, int number, char **pars)
 {
   if (st->op == OP_CLOSE)	// top-level
     return "Unmatched } parenthesis";
@@ -483,7 +483,7 @@ closing_brace(struct item_stack *st, enum cf_operation op, int number, byte **pa
 }
 
 static struct cf_item *
-find_item(struct cf_section *curr_sec, const byte *name, byte **msg, void **ptr)
+find_item(struct cf_section *curr_sec, const char *name, char **msg, void **ptr)
 {
   *msg = NULL;
   if (name[0] == '^')				// absolute name instead of relative
@@ -494,7 +494,7 @@ find_item(struct cf_section *curr_sec, const byte *name, byte **msg, void **ptr)
   {
     if (curr_sec != &cf_sections)
       cf_add_dirty(curr_sec, *ptr);
-    byte *c = strchr(name, '.');
+    char *c = strchr(name, '.');
     if (c)
       *c++ = 0;
     struct cf_item *ci = cf_find_subitem(curr_sec, name);
@@ -517,10 +517,10 @@ find_item(struct cf_section *curr_sec, const byte *name, byte **msg, void **ptr)
   }
 }
 
-byte *
-cf_interpret_line(byte *name, enum cf_operation op, int number, byte **pars)
+char *
+cf_interpret_line(char *name, enum cf_operation op, int number, char **pars)
 {
-  byte *msg;
+  char *msg;
   if ((op & OP_MASK) == OP_CLOSE)
     return closing_brace(stack+level, op, number, pars);
   void *ptr = stack[level].base_ptr;
@@ -559,10 +559,10 @@ cf_interpret_line(byte *name, enum cf_operation op, int number, byte **pars)
   return NULL;
 }
 
-byte *
-cf_find_item(const byte *name, struct cf_item *item)
+char *
+cf_find_item(const char *name, struct cf_item *item)
 {
-  byte *msg;
+  char *msg;
   void *ptr = NULL;
   struct cf_item *ci = find_item(&cf_sections, name, &msg, &ptr);
   if (msg)
@@ -575,10 +575,10 @@ cf_find_item(const byte *name, struct cf_item *item)
   return NULL;
 }
 
-byte *
-cf_write_item(struct cf_item *item, enum cf_operation op, int number, byte **pars)
+char *
+cf_write_item(struct cf_item *item, enum cf_operation op, int number, char **pars)
 {
-  byte *msg;
+  char *msg;
   int taken = 0;
   switch (op) {
     case OP_SET:

@@ -36,7 +36,7 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
       else
 	bprintf(fb, "NULL ");
       break;
-    case CT_LOOKUP:	bprintf(fb, "%s ", *(int*)ptr >= 0 ? u->lookup[ *(int*)ptr ] : (byte*) "???"); break;
+    case CT_LOOKUP:	bprintf(fb, "%s ", *(int*)ptr >= 0 ? u->lookup[ *(int*)ptr ] : "???"); break;
     case CT_USER:
       if (u->utype->dumper)
 	u->utype->dumper(fb, ptr);
@@ -48,7 +48,7 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
 
 static void dump_section(struct fastbuf *fb, struct cf_section *sec, int level, void *ptr);
 
-static byte *class_names[] = { "end", "static", "dynamic", "parser", "section", "list", "bitmap" };
+static char *class_names[] = { "end", "static", "dynamic", "parser", "section", "list", "bitmap" };
 
 static void
 dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)

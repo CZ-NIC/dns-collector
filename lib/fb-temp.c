@@ -16,7 +16,7 @@
 #include <unistd.h>
 #include <sys/fcntl.h>
 
-static byte *temp_prefix = "/tmp/temp";
+static char *temp_prefix = "/tmp/temp";
 
 static struct cf_section temp_config = {
   CF_ITEMS {
@@ -45,7 +45,7 @@ temp_file_name(char *buf)
 struct fastbuf *
 bopen_tmp(uns buflen)
 {
-  byte buf[TEMP_FILE_NAME_LEN];
+  char buf[TEMP_FILE_NAME_LEN];
   struct fastbuf *f;
 
   temp_file_name(buf);
