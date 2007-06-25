@@ -164,8 +164,8 @@ int match_ct_patt(const char *, const char *);
 
 /* wordsplit.c */
 
-int sepsplit(byte *str, uns sep, byte **rec, uns max);
-int wordsplit(byte *str, byte **rec, uns max);
+int sepsplit(char *str, uns sep, char **rec, uns max);
+int wordsplit(char *str, char **rec, uns max);
 
 /* pat(i)match.c: Matching of shell patterns */
 
