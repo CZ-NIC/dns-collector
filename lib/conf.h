@@ -30,17 +30,17 @@ enum cf_type {
 };
 
 struct fastbuf;
-typedef byte *cf_parser(uns number, byte **pars, void *ptr);
+typedef char *cf_parser(uns number, char **pars, void *ptr);
   /* A parser function gets an array of (strdup'ed) strings and a pointer with
    * the customized information (most likely the target address).  It can store
    * the parsed value anywhere in any way it likes, however it must first call
    * cf_journal_block() on the overwritten memory block.  It returns an error
    * message or NULL if everything is all right.  */
-typedef byte *cf_parser1(byte *string, void *ptr);
+typedef char *cf_parser1(char *string, void *ptr);
   /* A parser function for user-defined types gets a string and a pointer to
    * the destination variable.  It must store the value within [ptr,ptr+size),
    * where size is fixed for each type.  It should not call cf_journal_block().  */
-typedef byte *cf_hook(void *ptr);
+typedef char *cf_hook(void *ptr);
   /* An init- or commit-hook gets a pointer to the section or NULL if this
    * is the global section.  It returns an error message or NULL if everything
    * is all right.  The init-hook should fill in default values (needed for
@@ -51,27 +51,27 @@ typedef byte *cf_hook(void *ptr);
    * use cf_malloc() but normal xmalloc().  */
 typedef void cf_dumper1(struct fastbuf *fb, void *ptr);
   /* Dumps the contents of a variable of a user-defined type.  */
-typedef byte *cf_copier(void *dest, void *src);
+typedef char *cf_copier(void *dest, void *src);
   /* Similar to init-hook, but it copies attributes from another list node
    * instead of setting the attributes to default values.  You have to provide
    * it if your node contains parsed values and/or sub-lists.  */
 
 struct cf_user_type {
   uns size;				// of the parsed attribute
-  byte *name;				// name of the type (for dumping)
+  char *name;				// name of the type (for dumping)
   cf_parser1 *parser;			// how to parse it
   cf_dumper1 *dumper;			// how to dump the type
 };
 
 struct cf_section;
 struct cf_item {
-  byte *name;				// case insensitive
+  const char *name;			// case insensitive
   int number;				// length of an array or #parameters of a parser (negative means at most)
   void *ptr;				// pointer to a global variable or an offset in a section
   union cf_union {
     struct cf_section *sec;		// declaration of a section or a list
     cf_parser *par;			// parser function
-    byte **lookup;			// NULL-terminated sequence of allowed strings for lookups
+    char **lookup;			// NULL-terminated sequence of allowed strings for lookups
     struct cf_user_type *utype;		// specification of the user-defined type
   } u;
   enum cf_class cls:16;			// attribute class
@@ -118,9 +118,9 @@ struct cf_section {
 #define CF_IP(n,p)		CF_STATIC(n,p,IP,u32,1)
 #define CF_IP_ARY(n,p,c)	CF_STATIC(n,p,IP,u32,c)
 #define CF_IP_DYN(n,p,c)	CF_DYNAMIC(n,p,IP,u32,c)
-#define CF_STRING(n,p)		CF_STATIC(n,p,STRING,byte*,1)
-#define CF_STRING_ARY(n,p,c)	CF_STATIC(n,p,STRING,byte*,c)
-#define CF_STRING_DYN(n,p,c)	CF_DYNAMIC(n,p,STRING,byte*,c)
+#define CF_STRING(n,p)		CF_STATIC(n,p,STRING,char*,1)
+#define CF_STRING_ARY(n,p,c)	CF_STATIC(n,p,STRING,char*,c)
+#define CF_STRING_DYN(n,p,c)	CF_DYNAMIC(n,p,STRING,char*,c)
 #define CF_LOOKUP(n,p,t)	{ .cls = CC_STATIC, .type = CT_LOOKUP, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,int*), .u.lookup = t }
 #define CF_LOOKUP_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int*), .u.lookup = t }
 #define CF_LOOKUP_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int**), .u.lookup = t }
@@ -141,8 +141,8 @@ struct mempool;
 extern struct mempool *cf_pool;
 void *cf_malloc(uns size);
 void *cf_malloc_zero(uns size);
-byte *cf_strdup(byte *s);
-byte *cf_printf(char *fmt, ...) FORMAT_CHECK(printf,1,2);
+char *cf_strdup(const char *s);
+char *cf_printf(const char *fmt, ...) FORMAT_CHECK(printf,1,2);
 
 /* Undo journal for error recovery: conf-journal.c */
 extern uns cf_need_journal;
@@ -150,14 +150,14 @@ void cf_journal_block(void *ptr, uns len);
 #define CF_JOURNAL_VAR(var) cf_journal_block(&(var), sizeof(var))
 
 /* Declaration: conf-section.c */
-void cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown);
-void cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero);
+void cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown);
+void cf_init_section(const char *name, struct cf_section *sec, void *ptr, uns do_bzero);
 
 /* Parsers for basic types: conf-parse.c */
-byte *cf_parse_int(const byte *str, int *ptr);
-byte *cf_parse_u64(const byte *str, u64 *ptr);
-byte *cf_parse_double(const byte *str, double *ptr);
-byte *cf_parse_ip(const byte *p, u32 *varp);
+char *cf_parse_int(const char *str, int *ptr);
+char *cf_parse_u64(const char *str, u64 *ptr);
+char *cf_parse_double(const char *str, double *ptr);
+char *cf_parse_ip(const char *p, u32 *varp);
 
 #endif
 

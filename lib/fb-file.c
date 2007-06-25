@@ -230,7 +230,7 @@ bfd_config(struct fastbuf *f, uns item, int value)
 }
 
 struct fastbuf *
-bfdopen_internal(int fd, const byte *name, uns buflen)
+bfdopen_internal(int fd, const char *name, uns buflen)
 {
   ASSERT(buflen);
   int namelen = strlen(name) + 1;
@@ -254,13 +254,13 @@ bfdopen_internal(int fd, const byte *name, uns buflen)
 }
 
 struct fastbuf *
-bopen_try(const byte *name, uns mode, uns buflen)
+bopen_try(const char *name, uns mode, uns buflen)
 {
   return bopen_file_try(name, mode, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
 }
 
 struct fastbuf *
-bopen(const byte *name, uns mode, uns buflen)
+bopen(const char *name, uns mode, uns buflen)
 {
   return bopen_file(name, mode, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
 }

@@ -70,7 +70,7 @@ sort_dirty(void)
 struct cf_section cf_sections;	// root section
 
 struct cf_item *
-cf_find_subitem(struct cf_section *sec, const byte *name)
+cf_find_subitem(struct cf_section *sec, const char *name)
 {
   struct cf_item *ci = sec->cfg;
   for (; ci->cls; ci++)
@@ -104,7 +104,7 @@ inspect_section(struct cf_section *sec)
 }
 
 void
-cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown)
+cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown)
 {
   if (!cf_sections.cfg)
   {
@@ -132,7 +132,7 @@ cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown)
 }
 
 void
-cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero)
+cf_init_section(const char *name, struct cf_section *sec, void *ptr, uns do_bzero)
 {
   if (do_bzero) {
     ASSERT(sec->size);
@@ -151,16 +151,16 @@ cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero)
       }
     }
   if (sec->init) {
-    byte *msg = sec->init(ptr);
+    char *msg = sec->init(ptr);
     if (msg)
       die("Cannot initialize section %s: %s", name, msg);
   }
 }
 
-static byte *
+static char *
 commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 {
-  byte *err;
+  char *err;
   for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
       if ((err = commit_section(ci->u.sec, ptr + (uintptr_t) ci->ptr, commit_all))) {

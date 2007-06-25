@@ -29,7 +29,7 @@
 
 static uns url_ignore_spaces;
 static uns url_ignore_underflow;
-static byte *url_component_separators = "";
+static char *url_component_separators = "";
 static uns url_min_repeat_count = 0x7fffffff;
 static uns url_max_repeat_length = 0;
 

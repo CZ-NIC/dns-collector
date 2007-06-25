@@ -168,7 +168,7 @@ bfmm_config(struct fastbuf *f, uns item, int value)
 }
 
 struct fastbuf *
-bfmmopen_internal(int fd, const byte *name, uns mode)
+bfmmopen_internal(int fd, const char *name, uns mode)
 {
   int namelen = strlen(name) + 1;
   struct fb_mmap *F = xmalloc(sizeof(struct fb_mmap) + namelen);

@@ -290,7 +290,7 @@ fbdir_config(struct fastbuf *f, uns item, int value)
 }
 
 struct fastbuf *
-fbdir_open_fd_internal(int fd, const byte *name, struct asio_queue *q, uns buffer_size, uns read_ahead UNUSED, uns write_back)
+fbdir_open_fd_internal(int fd, const char *name, struct asio_queue *q, uns buffer_size, uns read_ahead UNUSED, uns write_back)
 {
   int namelen = strlen(name) + 1;
   struct fb_direct *F = xmalloc(sizeof(struct fb_direct) + namelen);

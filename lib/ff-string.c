@@ -13,8 +13,8 @@
 #include "lib/mempool.h"
 #include "lib/bbuf.h"
 
-byte *					/* Non-standard */
-bgets(struct fastbuf *f, byte *b, uns l)
+char *					/* Non-standard */
+bgets(struct fastbuf *f, char *b, uns l)
 {
   ASSERT(l);
   byte *src;
@@ -47,7 +47,7 @@ exit:
 }
 
 int
-bgets_nodie(struct fastbuf *f, byte *b, uns l)
+bgets_nodie(struct fastbuf *f, char *b, uns l)
 {
   ASSERT(l);
   byte *src, *start = b;
@@ -76,7 +76,7 @@ bgets_nodie(struct fastbuf *f, byte *b, uns l)
   while (src_len);
 exit:
   *b++ = 0;
-  return b - start;
+  return b - (char *)start;
 }
 
 uns
@@ -128,7 +128,7 @@ exit:
   return buf - bb->ptr;
 }
 
-byte *
+char *
 bgets_mp(struct fastbuf *f, struct mempool *mp)
 {
   byte *src;
@@ -253,8 +253,8 @@ exit:
   s->cur_len = 0;
 }
 
-byte *
-bgets0(struct fastbuf *f, byte *b, uns l)
+char *
+bgets0(struct fastbuf *f, char *b, uns l)
 {
   ASSERT(l);
   byte *src;

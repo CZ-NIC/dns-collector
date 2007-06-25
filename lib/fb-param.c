@@ -25,7 +25,7 @@ struct cf_section fbpar_cf = {
 # define F(x) PTR_TO(struct fb_params, x)
   CF_TYPE(struct fb_params),
   CF_ITEMS {
-    CF_LOOKUP("Type", (int *)F(type), ((byte *[]){"std", "direct", "mmap", NULL})),
+    CF_LOOKUP("Type", (int *)F(type), ((char *[]){"std", "direct", "mmap", NULL})),
     CF_UNS("BufSize", F(buffer_size)),
     CF_UNS("KeepBackBuf", F(keep_back_buf)),
     CF_UNS("ReadAhead", F(read_ahead)),
@@ -104,13 +104,13 @@ bopen_file_internal(const byte *name, int mode, struct fb_params *params, int tr
 }
 
 struct fastbuf *
-bopen_file(const byte *name, int mode, struct fb_params *params)
+bopen_file(const char *name, int mode, struct fb_params *params)
 {
   return bopen_file_internal(name, mode, params ? : &fbpar_def, 0);
 }
 
 struct fastbuf *
-bopen_file_try(const byte *name, int mode, struct fb_params *params)
+bopen_file_try(const char *name, int mode, struct fb_params *params)
 {
   return bopen_file_internal(name, mode, params ? : &fbpar_def, 1);
 }

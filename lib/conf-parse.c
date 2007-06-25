@@ -35,14 +35,14 @@ static const struct unit units[] = {
 };
 
 static const struct unit *
-lookup_unit(const byte *value, const byte *end, byte **msg)
+lookup_unit(const char *value, const char *end, char **msg)
 {
   if (end && *end) {
     if (end == value || end[1] || *end >= '0' && *end <= '9')
       *msg = "Invalid number";
     else {
       for (const struct unit *u=units; u->name; u++)
-	if (u->name == *end)
+	if ((char)u->name == *end)
 	  return u;
       *msg = "Invalid unit";
     }
@@ -52,10 +52,10 @@ lookup_unit(const byte *value, const byte *end, byte **msg)
 
 static char cf_rngerr[] = "Number out of range";
 
-byte *
-cf_parse_int(const byte *str, int *ptr)
+char *
+cf_parse_int(const char *str, int *ptr)
 {
-  byte *msg = NULL;
+  char *msg = NULL;
   if (!*str)
     msg = "Missing number";
   else {
@@ -81,10 +81,10 @@ cf_parse_int(const byte *str, int *ptr)
   return msg;
 }
 
-byte *
-cf_parse_u64(const byte *str, u64 *ptr)
+char *
+cf_parse_u64(const char *str, u64 *ptr)
 {
-  byte *msg = NULL;
+  char *msg = NULL;
   if (!*str)
     msg = "Missing number";
   else {
@@ -110,10 +110,10 @@ cf_parse_u64(const byte *str, u64 *ptr)
   return msg;
 }
 
-byte *
-cf_parse_double(const byte *str, double *ptr)
+char *
+cf_parse_double(const char *str, double *ptr)
 {
-  byte *msg = NULL;
+  char *msg = NULL;
   if (!*str)
     msg = "Missing number";
   else {
@@ -130,8 +130,8 @@ cf_parse_double(const byte *str, double *ptr)
   return msg;
 }
 
-byte *
-cf_parse_ip(const byte *p, u32 *varp)
+char *
+cf_parse_ip(const char *p, u32 *varp)
 {
   if (!*p)
     return "Missing IP address";
