@@ -1,7 +1,7 @@
 # test config file
 #include lib/conf-test.t ; top.xa=1
 #include 'non-existent file'; #top.xa=1
-Top {
+Top { \
 
   nr1=16	#!!!
   nrs1		2 3 5 \
