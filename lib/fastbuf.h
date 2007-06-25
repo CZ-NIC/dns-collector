@@ -75,24 +75,24 @@ struct fastbuf {
 
 /* FastIO on standard files (specify buffer size 0 to enable mmaping) */
 
-struct fastbuf *bopen(const byte *name, uns mode, uns buflen);
-struct fastbuf *bopen_try(const byte *name, uns mode, uns buflen);
+struct fastbuf *bopen(const char *name, uns mode, uns buflen);
+struct fastbuf *bopen_try(const char *name, uns mode, uns buflen);
 struct fastbuf *bopen_tmp(uns buflen);
 struct fastbuf *bfdopen(int fd, uns buflen);
 struct fastbuf *bfdopen_shared(int fd, uns buflen);
 void bfilesync(struct fastbuf *b);
 
 #define TEMP_FILE_NAME_LEN 256
-void temp_file_name(byte *name);
+void temp_file_name(char *name);
 
 /* FastIO on in-memory streams */
 
-struct fastbuf *fbmem_create(unsigned blocksize);	/* Create stream and return its writing fastbuf */
+struct fastbuf *fbmem_create(uns blocksize);		/* Create stream and return its writing fastbuf */
 struct fastbuf *fbmem_clone_read(struct fastbuf *);	/* Create reading fastbuf */
 
 /* FastIO on memory mapped files */
 
-struct fastbuf *bopen_mm(const byte *name, uns mode);
+struct fastbuf *bopen_mm(const char *name, uns mode);
 
 /* FastI on file descriptors with limit */
 
@@ -124,7 +124,7 @@ struct fb_atomic {
 };
 #define FB_ATOMIC(f) ((struct fb_atomic *)(f)->is_fastbuf)
 
-struct fastbuf *fbatomic_open(const byte *name, struct fastbuf *master, uns bufsize, int record_len);
+struct fastbuf *fbatomic_open(const char *name, struct fastbuf *master, uns bufsize, int record_len);
 void fbatomic_internal_write(struct fastbuf *b);
 
 static inline void
@@ -244,14 +244,14 @@ static inline void bwrite(struct fastbuf *f, const void *b, uns l)
  *     bgets_stk()	the same, but on the stack by alloca()
  */
 
-byte *bgets(struct fastbuf *f, byte *b, uns l);
-byte *bgets0(struct fastbuf *f, byte *b, uns l);
-int bgets_nodie(struct fastbuf *f, byte *b, uns l);
+char *bgets(struct fastbuf *f, char *b, uns l);
+char *bgets0(struct fastbuf *f, char *b, uns l);
+int bgets_nodie(struct fastbuf *f, char *b, uns l);
 
 struct mempool;
 struct bb_t;
 uns bgets_bb(struct fastbuf *f, struct bb_t *b, uns limit);
-byte *bgets_mp(struct fastbuf *f, struct mempool *mp);
+char *bgets_mp(struct fastbuf *f, struct mempool *mp);
 
 struct bgets_stk_struct {
   struct fastbuf *f;
@@ -263,19 +263,19 @@ void bgets_stk_step(struct bgets_stk_struct *s);
 #define bgets_stk(fb) ({ struct bgets_stk_struct _s; _s.f = (fb); for (bgets_stk_init(&_s); _s.cur_len; _s.cur_buf = alloca(_s.cur_len), bgets_stk_step(&_s)); _s.cur_buf; })
 
 static inline void
-bputs(struct fastbuf *f, const byte *b)
+bputs(struct fastbuf *f, const char *b)
 {
   bwrite(f, b, strlen(b));
 }
 
 static inline void
-bputs0(struct fastbuf *f, const byte *b)
+bputs0(struct fastbuf *f, const char *b)
 {
   bwrite(f, b, strlen(b)+1);
 }
 
 static inline void
-bputsn(struct fastbuf *f, const byte *b)
+bputsn(struct fastbuf *f, const char *b)
 {
   bputs(f, b);
   bputc(f, '\n');

@@ -31,7 +31,7 @@ static void CONSTRUCTOR temp_global_init(void)
 }
 
 void
-temp_file_name(byte *buf)
+temp_file_name(char *buf)
 {
   struct ucwlib_context *ctx = ucwlib_thread_context();
   int cnt = ++ctx->temp_counter;
