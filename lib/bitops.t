@@ -1,6 +1,6 @@
 # Tests for bitops modules
 
-Run:	obj/lib/bit-ffs-t
+Run:	../obj/lib/bit-ffs-t
 In:	1
 	2
 	3
@@ -26,7 +26,7 @@ Out:	0
 	30
 	31
 
-Run:	obj/lib/bit-fls-t
+Run:	../obj/lib/bit-fls-t
 In:	1
 	2
 	3

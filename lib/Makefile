@@ -35,7 +35,7 @@ LIBUCW_MODS= \
 	getopt
 
 LIBUCW_INCLUDES= \
-	lib.h config.h threads.h math.h \
+	lib.h config.h threads.h \
 	mempool.h pagecache.h \
 	sorter.h sorter-globals.h arraysort.h \
 	lists.h clists.h slists.h simple-lists.h \

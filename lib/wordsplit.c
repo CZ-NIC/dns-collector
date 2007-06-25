@@ -14,7 +14,7 @@
 #include <string.h>
 
 int
-sepsplit(byte *str, byte sep, byte **rec, uns max)
+sepsplit(byte *str, uns sep, byte **rec, uns max)
 {
   uns cnt = 0;
   while (1)

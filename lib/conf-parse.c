@@ -35,7 +35,7 @@ static const struct unit units[] = {
 };
 
 static const struct unit *
-lookup_unit(byte *value, byte *end, byte **msg)
+lookup_unit(const byte *value, const byte *end, byte **msg)
 {
   if (end && *end) {
     if (end == value || end[1] || *end >= '0' && *end <= '9')
@@ -53,7 +53,7 @@ lookup_unit(byte *value, byte *end, byte **msg)
 static char cf_rngerr[] = "Number out of range";
 
 byte *
-cf_parse_int(byte *str, int *ptr)
+cf_parse_int(const byte *str, int *ptr)
 {
   byte *msg = NULL;
   if (!*str)
@@ -82,7 +82,7 @@ cf_parse_int(byte *str, int *ptr)
 }
 
 byte *
-cf_parse_u64(byte *str, u64 *ptr)
+cf_parse_u64(const byte *str, u64 *ptr)
 {
   byte *msg = NULL;
   if (!*str)
@@ -111,7 +111,7 @@ cf_parse_u64(byte *str, u64 *ptr)
 }
 
 byte *
-cf_parse_double(byte *str, double *ptr)
+cf_parse_double(const byte *str, double *ptr)
 {
   byte *msg = NULL;
   if (!*str)
@@ -131,7 +131,7 @@ cf_parse_double(byte *str, double *ptr)
 }
 
 byte *
-cf_parse_ip(byte *p, u32 *varp)
+cf_parse_ip(const byte *p, u32 *varp)
 {
   if (!*p)
     return "Missing IP address";

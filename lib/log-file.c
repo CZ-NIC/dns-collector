@@ -43,11 +43,8 @@ do_log_switch(struct tm *tm)
       fd = sh_open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
       if (fd < 0)
 	die("Unable to open log file %s: %m", name);
-      close(2);
-      dup(fd);
+      dup2(fd, 2);
       close(fd);
-      close(1);
-      dup(2);
       switched = 1;
     }
   log_switch_nest--;
@@ -70,7 +67,7 @@ internal_log_switch(struct tm *tm)
 }
 
 void
-log_file(byte *name)
+log_file(const char *name)
 {
   if (name)
     {

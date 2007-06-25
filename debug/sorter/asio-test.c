@@ -25,7 +25,7 @@ static timestamp_t timer;
     fflush(stdout); cnt_rep += 1<<26; } } while(0)
 #define P_FINAL do { \
   cnt_ms += get_timer(&timer); \
-  log(L_INFO, "Spent %.3f sec (%.2f MB/sec)", (double)cnt_ms/1000, (double)cnt / 1048576 * 1000 / cnt_ms); \
+  msg(L_INFO, "Spent %.3f sec (%.2f MB/sec)", (double)cnt_ms/1000, (double)cnt / 1048576 * 1000 / cnt_ms); \
 } while(0)
 
 static struct asio_queue io_queue;
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
   asio_init_queue(&io_queue);
 
 #ifdef COPY
-  log(L_INFO, "Creating input file");
+  msg(L_INFO, "Creating input file");
   int in_fd = sh_open("tmp/ft-in", O_RDWR | O_CREAT | O_TRUNC | DIRECT, 0666);
   ASSERT(in_fd >= 0);
   ASSERT(!(total_size % bufsize));
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
   P_FINAL;
 #endif
 
-  log(L_INFO, "Initializing output files");
+  msg(L_INFO, "Initializing output files");
   for (uns i=0; i<files; i++)
     {
       sprintf(name[i], "tmp/ft-%d", i);
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
   sync();
   get_timer(&timer);
 
-  log(L_INFO, "Writing %d MB to %d files in parallel with %d byte buffers", (int)(total_size >> 20), files, bufsize);
+  msg(L_INFO, "Writing %d MB to %d files in parallel with %d byte buffers", (int)(total_size >> 20), files, bufsize);
   P_INIT;
   for (uns i=0; i<files; i++)
     req[i] = asio_get(&io_queue);
@@ -120,11 +120,11 @@ int main(int argc, char **argv)
 #ifdef COPY
   close(in_fd);
 #endif
-  log(L_INFO, "Syncing");
+  msg(L_INFO, "Syncing");
   sync();
   P_FINAL;
 
-  log(L_INFO, "Reading the files sequentially");
+  msg(L_INFO, "Reading the files sequentially");
   P_INIT;
   for (uns i=0; i<files; i++)
     {
@@ -152,6 +152,6 @@ int main(int argc, char **argv)
 #endif
 
   asio_cleanup_queue(&io_queue);
-  log(L_INFO, "Done");
+  msg(L_INFO, "Done");
   return 0;
 }

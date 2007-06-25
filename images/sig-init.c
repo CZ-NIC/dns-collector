@@ -10,9 +10,9 @@
 #undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
+#include "sherlock/math.h"
 #include "lib/fastbuf.h"
 #include "lib/conf.h"
-#include "lib/math.h"
 #include "images/images.h"
 #include "images/math.h"
 #include "images/error.h"

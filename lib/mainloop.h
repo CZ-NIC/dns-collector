@@ -90,7 +90,7 @@ struct main_process {
   cnode n;
   int pid;					/* Process id (0=not running) */
   int status;					/* Exit status (-1=fork failed) */
-  byte status_msg[EXIT_STATUS_MSG_SIZE];
+  char status_msg[EXIT_STATUS_MSG_SIZE];
   void (*handler)(struct main_process *mp);	/* [*] Called when the process exits; process_del done automatically */
   void *data;					/* [*] For use by the handler */
 };

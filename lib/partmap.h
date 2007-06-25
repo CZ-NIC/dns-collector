@@ -19,7 +19,7 @@ struct partmap {
   int writeable;
 };
 
-struct partmap *partmap_open(byte *name, int writeable);
+struct partmap *partmap_open(char *name, int writeable);
 void partmap_close(struct partmap *p);
 sh_off_t partmap_size(struct partmap *p);
 void partmap_load(struct partmap *p, sh_off_t start, uns size);

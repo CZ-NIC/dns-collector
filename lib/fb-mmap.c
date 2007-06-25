@@ -146,7 +146,7 @@ bfmm_close(struct fastbuf *f)
     {
     case 1:
       if (unlink(f->name) < 0)
-	log(L_ERROR, "unlink(%s): %m", f->name);
+	msg(L_ERROR, "unlink(%s): %m", f->name);
     case 0:
       if (close(F->fd))
 	die("close(%s): %m", f->name);
@@ -168,7 +168,7 @@ bfmm_config(struct fastbuf *f, uns item, int value)
 }
 
 struct fastbuf *
-bfmmopen_internal(int fd, byte *name, uns mode)
+bfmmopen_internal(int fd, const byte *name, uns mode)
 {
   int namelen = strlen(name) + 1;
   struct fb_mmap *F = xmalloc(sizeof(struct fb_mmap) + namelen);

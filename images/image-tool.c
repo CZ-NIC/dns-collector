@@ -84,7 +84,7 @@ parse_color(struct color *color, byte *s)
   color_make_rgb(color, (v >> 16) & 255, (v >> 8) & 255, v & 255);
 }
 
-#define MSG(x...) do{ if (verbose) log(L_INFO, ##x); }while(0)
+#define MSG(x...) do{ if (verbose) msg(L_INFO, ##x); }while(0)
 
 int
 main(int argc, char **argv)

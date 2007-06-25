@@ -36,7 +36,7 @@ static void
 stop(void)
 {
   sync();
-  log(L_INFO, "Test took %.3fs", get_timer(&timer) / 1000.);
+  msg(L_INFO, "Test took %.3fs", get_timer(&timer) / 1000.);
 }
 
 /*** Simple 4-byte integer keys ***/
@@ -60,7 +60,7 @@ test_int(int mode, u64 size)
 {
   uns N = size ? nextprime(MIN(size/4, 0xffff0000)) : 0;
   uns K = N/4*3;
-  log(L_INFO, ">>> Integers (%s, N=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
+  msg(L_INFO, ">>> Integers (%s, N=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
 
   struct fastbuf *f = bopen_tmp(65536);
   for (uns i=0; i<N; i++)
@@ -113,7 +113,7 @@ test_counted(int mode, u64 size)
     mult++;
   uns N = items ? nextprime(items/(2*mult)) : 0;
   uns K = N/4*3;
-  log(L_INFO, ">>> Counted integers (%s, N=%u, mult=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N, mult);
+  msg(L_INFO, ">>> Counted integers (%s, N=%u, mult=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N, mult);
 
   struct fastbuf *f = bopen_tmp(65536);
   for (uns m=0; m<mult; m++)
@@ -205,7 +205,7 @@ static void
 test_hashes(int mode, u64 size)
 {
   uns N = MIN(size / sizeof(struct key3), 0xffffffff);
-  log(L_INFO, ">>> Hashes (%s, N=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
+  msg(L_INFO, ">>> Hashes (%s, N=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
   struct key3 k, lastk;
 
   struct fastbuf *f = bopen_tmp(65536);
@@ -323,7 +323,7 @@ test_strings(uns mode, u64 size)
 {
   uns avg_item_size = KEY4_MAX/2 + 4 + (mode ? 128 : 0);
   uns N = MIN(size / avg_item_size, 0xffffffff);
-  log(L_INFO, ">>> Strings %s(N=%u)", (mode ? "with data " : ""), N);
+  msg(L_INFO, ">>> Strings %s(N=%u)", (mode ? "with data " : ""), N);
   srand(1);
 
   struct key4 k, lastk;
@@ -514,7 +514,7 @@ test_graph(uns mode, u64 size)
   uns N = 3;
   while ((u64)N*(N+2)*4 < size)
     N = nextprime(N);
-  log(L_INFO, ">>> Graph%s (N=%u)", (mode ? "" : " with custom presorting"), N);
+  msg(L_INFO, ">>> Graph%s (N=%u)", (mode ? "" : " with custom presorting"), N);
   s5_N = N;
   s5_K = N/4*3;
   s5_L = N/3*2;
@@ -580,7 +580,7 @@ test_int64(int mode, u64 size)
 {
   u64 N = size ? nextprime(MIN(size/8, 0xffff0000)) : 0;
   u64 K = N/4*3;
-  log(L_INFO, ">>> 64-bit integers (%s, N=%llu)", ((char *[]) { "increasing", "decreasing", "random" })[mode], (long long)N);
+  msg(L_INFO, ">>> 64-bit integers (%s, N=%llu)", ((char *[]) { "increasing", "decreasing", "random" })[mode], (long long)N);
 
   struct fastbuf *f = bopen_tmp(65536);
   for (u64 i=0; i<N; i++)

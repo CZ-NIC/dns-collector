@@ -70,7 +70,7 @@ sort_dirty(void)
 struct cf_section cf_sections;	// root section
 
 struct cf_item *
-cf_find_subitem(struct cf_section *sec, byte *name)
+cf_find_subitem(struct cf_section *sec, const byte *name)
 {
   struct cf_item *ci = sec->cfg;
   for (; ci->cls; ci++)
@@ -164,14 +164,14 @@ commit_section(struct cf_section *sec, void *ptr, uns commit_all)
   for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
       if ((err = commit_section(ci->u.sec, ptr + (uintptr_t) ci->ptr, commit_all))) {
-	log(L_ERROR, "Cannot commit section %s: %s", ci->name, err);
+	msg(L_ERROR, "Cannot commit section %s: %s", ci->name, err);
 	return "commit of a subsection failed";
       }
     } else if (ci->cls == CC_LIST) {
       uns idx = 0;
       CLIST_FOR_EACH(cnode *, n, * (clist*) (ptr + (uintptr_t) ci->ptr))
 	if (idx++, err = commit_section(ci->u.sec, n, commit_all)) {
-	  log(L_ERROR, "Cannot commit node #%d of list %s: %s", idx, ci->name, err);
+	  msg(L_ERROR, "Cannot commit node #%d of list %s: %s", idx, ci->name, err);
 	  return "commit of a list failed";
 	}
     }

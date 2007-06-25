@@ -11,7 +11,7 @@
 #include "lib/chartype.h"
 
 int
-match_ct_patt(byte *p, byte *t)
+match_ct_patt(const char *p, const char *t)
 {
   if (*p == '*' && !p[1])		/* "*" matches everything */
     return 1;

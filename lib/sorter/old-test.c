@@ -36,7 +36,7 @@ static void
 stop(void)
 {
   sync();
-  log(L_INFO, "Test took %.3fs", get_timer(&timer) / 1000.);
+  msg(L_INFO, "Test took %.3fs", get_timer(&timer) / 1000.);
 }
 
 /*** Simple 4-byte integer keys ***/
@@ -66,7 +66,7 @@ test_int(int mode, u64 size)
 {
   uns N = size ? nextprime(MIN(size/4, 0xffff0000)) : 0;
   uns K = N/4*3;
-  log(L_INFO, ">>> Integers (%s, N=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
+  msg(L_INFO, ">>> Integers (%s, N=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
 
   struct fastbuf *f = bopen_tmp(65536);
   for (uns i=0; i<N; i++)
@@ -146,7 +146,7 @@ static void
 test_hashes(int mode, u64 size)
 {
   uns N = MIN(size / sizeof(struct key3), 0xffffffff);
-  log(L_INFO, ">>> Hashes (%s, N=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
+  msg(L_INFO, ">>> Hashes (%s, N=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
   struct key3 k, lastk;
 
   struct fastbuf *f = bopen_tmp(65536);
@@ -293,7 +293,7 @@ test_strings(uns mode, u64 size)
 {
   uns avg_item_size = KEY4_MAX/2 + 4 + (mode ? 128 : 0);
   uns N = MIN(size / avg_item_size, 0xffffffff);
-  log(L_INFO, ">>> Strings %s(N=%u)", (mode ? "with data " : ""), N);
+  msg(L_INFO, ">>> Strings %s(N=%u)", (mode ? "with data " : ""), N);
   srand(1);
 
   struct key4 k, lastk;

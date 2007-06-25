@@ -1,6 +1,6 @@
 # Tests for getopt
 
-Run:	obj/lib/getopt-t -a -b --longc 2819 -d -a 1 2 3
+Run:	../obj/lib/getopt-t -a -b --longc 2819 -d -a 1 2 3
 Out:	option a
 	option b
 	option c with value `2819'
@@ -13,7 +13,7 @@ Out:	option a
 	option d with value `-a'
 	3 nonoption arguments
 
-Run:	obj/lib/getopt-t -a -x
+Run:	../obj/lib/getopt-t -a -x
 Out:	option a
 	unknown option
 	reset

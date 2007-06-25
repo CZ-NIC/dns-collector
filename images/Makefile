@@ -78,11 +78,6 @@ $(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/image-test: LIBS+=$(LIBIMAGES_LIBS)
 $(o)/images/image-test.test: $(o)/images/image-test
 
-TESTS+=$(o)/images/hilbert-test.test
-$(o)/images/hilbert-test: $(LIBIMAGES_DEPS)
-$(o)/images/hilbert-test: LIBS+=-lm
-$(o)/images/hilbert-test.test: $(o)/images/hilbert-test
-
 TESTS+=$(o)/images/color.test
 $(o)/images/color-t: $(LIBIMAGES) $(LIBIMAGES_DEPS)
 $(o)/images/color-t: LIBS+=$(LIBIMAGES_LIBS) $(LIBIMAGES_DEPS)

@@ -114,7 +114,7 @@ uns bread_slow(struct fastbuf *f, void *b, uns l, uns check)
   return total;
 }
 
-void bwrite_slow(struct fastbuf *f, void *b, uns l)
+void bwrite_slow(struct fastbuf *f, const void *b, uns l)
 {
   while (l)
     {

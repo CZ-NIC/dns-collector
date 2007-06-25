@@ -16,8 +16,8 @@
 
 /* Expands C99-like escape sequences.
  * It is safe to use the same buffer for both input and output. */
-byte *
-str_unesc(byte *d, byte *s)
+char *
+str_unesc(char *d, const char *s)
 {
   while (*s)
     {
@@ -49,7 +49,7 @@ str_unesc(byte *d, byte *s)
 		    *d++ = v;
 		  else
 		    DBG("hex escape sequence out of range");
-                  s = (byte *)p;
+                  s = (char *)p;
 		}
 	      break;
             default:
@@ -74,10 +74,10 @@ str_unesc(byte *d, byte *s)
   return d;
 }
 
-byte *
-str_format_flags(byte *dest, const byte *fmt, uns flags)
+char *
+str_format_flags(char *dest, const char *fmt, uns flags)
 {
-  byte *start = dest;
+  char *start = dest;
   for (uns i=0; fmt[i]; i++)
     {
       if (flags & (1 << i))

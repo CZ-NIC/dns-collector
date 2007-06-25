@@ -13,150 +13,162 @@
 /* Big endian format */
 
 #if defined(CPU_ALLOW_UNALIGNED) && defined(CPU_BIG_ENDIAN)
-static inline uns get_u16_be(byte *p) { return *(u16 *)p; }
-static inline u32 get_u32_be(byte *p) { return *(u32 *)p; }
-static inline u64 get_u64_be(byte *p) { return *(u64 *)p; }
-static inline void put_u16_be(byte *p, uns x) { *(u16 *)p = x; }
-static inline void put_u32_be(byte *p, u32 x) { *(u32 *)p = x; }
-static inline void put_u64_be(byte *p, u64 x) { *(u64 *)p = x; }
+static inline uns get_u16_be(const void *p) { return *(u16 *)p; }
+static inline u32 get_u32_be(const void *p) { return *(u32 *)p; }
+static inline u64 get_u64_be(const void *p) { return *(u64 *)p; }
+static inline void put_u16_be(void *p, uns x) { *(u16 *)p = x; }
+static inline void put_u32_be(void *p, u32 x) { *(u32 *)p = x; }
+static inline void put_u64_be(void *p, u64 x) { *(u64 *)p = x; }
 #else
-static inline uns get_u16_be(byte *p)
+static inline uns get_u16_be(const void *p)
 {
-  return (p[0] << 8) | p[1];
+  const byte *c = p;
+  return (c[0] << 8) | c[1];
 }
-static inline u32 get_u32_be(byte *p)
+static inline u32 get_u32_be(const void *p)
 {
-  return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+  const byte *c = p;
+  return (c[0] << 24) | (c[1] << 16) | (c[2] << 8) | c[3];
 }
-static inline u64 get_u64_be(byte *p)
+static inline u64 get_u64_be(const void *p)
 {
-  return ((u64) get_u32_be(p) << 32) | get_u32_be(p+4);
+  return ((u64) get_u32_be(p) << 32) | get_u32_be((const byte *)p+4);
 }
-static inline void put_u16_be(byte *p, uns x)
+static inline void put_u16_be(void *p, uns x)
 {
-  p[0] = x >> 8;
-  p[1] = x;
+  byte *c = p;
+  c[0] = x >> 8;
+  c[1] = x;
 }
-static inline void put_u32_be(byte *p, u32 x)
+static inline void put_u32_be(void *p, u32 x)
 {
-  p[0] = x >> 24;
-  p[1] = x >> 16;
-  p[2] = x >> 8;
-  p[3] = x;
+  byte *c = p;
+  c[0] = x >> 24;
+  c[1] = x >> 16;
+  c[2] = x >> 8;
+  c[3] = x;
 }
-static inline void put_u64_be(byte *p, u64 x)
+static inline void put_u64_be(void *p, u64 x)
 {
   put_u32_be(p, x >> 32);
-  put_u32_be(p+4, x);
+  put_u32_be((byte *)p+4, x);
 }
 #endif
 
 /* Little-endian format */
 
 #if defined(CPU_ALLOW_UNALIGNED) && !defined(CPU_BIG_ENDIAN)
-static inline uns get_u16_le(byte *p) { return *(u16 *)p; }
-static inline u32 get_u32_le(byte *p) { return *(u32 *)p; }
-static inline u64 get_u64_le(byte *p) { return *(u64 *)p; }
-static inline void put_u16_le(byte *p, uns x) { *(u16 *)p = x; }
-static inline void put_u32_le(byte *p, u32 x) { *(u32 *)p = x; }
-static inline void put_u64_le(byte *p, u64 x) { *(u64 *)p = x; }
+static inline uns get_u16_le(const void *p) { return *(u16 *)p; }
+static inline u32 get_u32_le(const void *p) { return *(u32 *)p; }
+static inline u64 get_u64_le(const void *p) { return *(u64 *)p; }
+static inline void put_u16_le(void *p, uns x) { *(u16 *)p = x; }
+static inline void put_u32_le(void *p, u32 x) { *(u32 *)p = x; }
+static inline void put_u64_le(void *p, u64 x) { *(u64 *)p = x; }
 #else
-static inline uns get_u16_le(byte *p)
+static inline uns get_u16_le(const void *p)
 {
-  return p[0] | (p[1] << 8);
+  const byte *c = p;
+  return c[0] | (c[1] << 8);
 }
-static inline u32 get_u32_le(byte *p)
+static inline u32 get_u32_le(const void *p)
 {
-  return p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
+  const byte *c = p;
+  return c[0] | (c[1] << 8) | (c[2] << 16) | (c[3] << 24);
 }
-static inline u64 get_u64_le(byte *p)
+static inline u64 get_u64_le(const void *p)
 {
-  return get_u32_le(p) | ((u64) get_u32_le(p+4) << 32);
+  return get_u32_le(p) | ((u64) get_u32_le((const byte *)p+4) << 32);
 }
-static inline void put_u16_le(byte *p, uns x)
+static inline void put_u16_le(void *p, uns x)
 {
-  p[0] = x;
-  p[1] = x >> 8;
+  byte *c = p;
+  c[0] = x;
+  c[1] = x >> 8;
 }
-static inline void put_u32_le(byte *p, u32 x)
+static inline void put_u32_le(void *p, u32 x)
 {
-  p[0] = x;
-  p[1] = x >> 8;
-  p[2] = x >> 16;
-  p[3] = x >> 24;
+  byte *c = p;
+  c[0] = x;
+  c[1] = x >> 8;
+  c[2] = x >> 16;
+  c[3] = x >> 24;
 }
-static inline void put_u64_le(byte *p, u64 x)
+static inline void put_u64_le(void *p, u64 x)
 {
   put_u32_le(p, x);
-  put_u32_le(p+4, x >> 32);
+  put_u32_le((byte *)p+4, x >> 32);
 }
 #endif
 
-static inline u64 get_u40_be(byte *p)
+static inline u64 get_u40_be(const void *p)
 {
-  return ((u64)p[0] << 32) | get_u32_be(p+1);
+  const byte *c = p;
+  return ((u64)c[0] << 32) | get_u32_be(c+1);
 }
 
-static inline void put_u40_be(byte *p, u64 x)
+static inline void put_u40_be(void *p, u64 x)
 {
-  p[0] = x >> 32;
-  put_u32_be(p+1, x);
+  byte *c = p;
+  c[0] = x >> 32;
+  put_u32_be(c+1, x);
 }
 
-static inline u64 get_u40_le(byte *p)
+static inline u64 get_u40_le(const void *p)
 {
-  return get_u32_le(p) | ((u64) p[4] << 32);
+  const byte *c = p;
+  return get_u32_le(c) | ((u64) c[4] << 32);
 }
 
-static inline void put_u40_le(byte *p, u64 x)
+static inline void put_u40_le(void *p, u64 x)
 {
-  put_u32_le(p, x);
-  p[4] = x >> 32;
+  byte *c = p;
+  put_u32_le(c, x);
+  c[4] = x >> 32;
 }
 
 /* The native format */
 
 #ifdef CPU_BIG_ENDIAN
 
-static inline uns get_u16(byte *p) { return get_u16_be(p); }
-static inline u32 get_u32(byte *p) { return get_u32_be(p); }
-static inline u64 get_u64(byte *p) { return get_u64_be(p); }
-static inline u64 get_u40(byte *p) { return get_u40_be(p); }
-static inline void put_u16(byte *p, uns x) { return put_u16_be(p, x); }
-static inline void put_u32(byte *p, u32 x) { return put_u32_be(p, x); }
-static inline void put_u64(byte *p, u64 x) { return put_u64_be(p, x); }
-static inline void put_u40(byte *p, u64 x) { return put_u40_be(p, x); }
+static inline uns get_u16(const void *p) { return get_u16_be(p); }
+static inline u32 get_u32(const void *p) { return get_u32_be(p); }
+static inline u64 get_u64(const void *p) { return get_u64_be(p); }
+static inline u64 get_u40(const void *p) { return get_u40_be(p); }
+static inline void put_u16(void *p, uns x) { return put_u16_be(p, x); }
+static inline void put_u32(void *p, u32 x) { return put_u32_be(p, x); }
+static inline void put_u64(void *p, u64 x) { return put_u64_be(p, x); }
+static inline void put_u40(void *p, u64 x) { return put_u40_be(p, x); }
 
 #else
 
-static inline uns get_u16(byte *p) { return get_u16_le(p); }
-static inline u32 get_u32(byte *p) { return get_u32_le(p); }
-static inline u64 get_u64(byte *p) { return get_u64_le(p); }
-static inline u64 get_u40(byte *p) { return get_u40_le(p); }
-static inline void put_u16(byte *p, uns x) { return put_u16_le(p, x); }
-static inline void put_u32(byte *p, u32 x) { return put_u32_le(p, x); }
-static inline void put_u64(byte *p, u64 x) { return put_u64_le(p, x); }
-static inline void put_u40(byte *p, u64 x) { return put_u40_le(p, x); }
+static inline uns get_u16(const void *p) { return get_u16_le(p); }
+static inline u32 get_u32(const void *p) { return get_u32_le(p); }
+static inline u64 get_u64(const void *p) { return get_u64_le(p); }
+static inline u64 get_u40(const void *p) { return get_u40_le(p); }
+static inline void put_u16(void *p, uns x) { return put_u16_le(p, x); }
+static inline void put_u32(void *p, u32 x) { return put_u32_le(p, x); }
+static inline void put_u64(void *p, u64 x) { return put_u64_le(p, x); }
+static inline void put_u40(void *p, u64 x) { return put_u40_le(p, x); }
 
 #endif
 
 /* Just for completeness */
 
-static inline uns get_u8(byte *p) { return *p; }
-static inline void put_u8(byte *p, uns x) { *p = x; }
+static inline uns get_u8(const void *p) { return *(const byte *)p; }
+static inline void put_u8(void *p, uns x) { *(byte *)p = x; }
 
 /* Backward compatibility macros */
 
-#define GET_U8(p) get_u8((byte*)(p))
-#define GET_U16(p) get_u16((byte*)(p))
-#define GET_U32(p) get_u32((byte*)(p))
-#define GET_U64(p) get_u64((byte*)(p))
-#define GET_U40(p) get_u40((byte*)(p))
+#define GET_U8(p) get_u8(p)
+#define GET_U16(p) get_u16(p)
+#define GET_U32(p) get_u32(p)
+#define GET_U64(p) get_u64(p)
+#define GET_U40(p) get_u40(p)
 
-#define PUT_U8(p,x) put_u8((byte*)(p),x);
-#define PUT_U16(p,x) put_u16((byte*)(p),x)
-#define PUT_U32(p,x) put_u32((byte*)p,x)
-#define PUT_U64(p,x) put_u64((byte*)p,x)
-#define PUT_U40(p,x) put_u40((byte*)p,x)
+#define PUT_U8(p,x) put_u8(p,x);
+#define PUT_U16(p,x) put_u16(p,x)
+#define PUT_U32(p,x) put_u32(p,x)
+#define PUT_U64(p,x) put_u64(p,x)
+#define PUT_U40(p,x) put_u40(p,x)
 
 #endif

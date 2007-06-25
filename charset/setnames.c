@@ -14,7 +14,7 @@
 
 /* Names according to RFC 1345 (see http://www.iana.org/assignments/character-sets) */
 
-static char *cs_names[] = {
+static const char *cs_names[] = {
 	"US-ASCII",
 	"ISO-8859-1",
 	"ISO-8859-2",
@@ -43,7 +43,7 @@ static char *cs_names[] = {
 };
 
 int
-find_charset_by_name(char *c)
+find_charset_by_name(const char *c)
 {
 	unsigned int i;
 
@@ -59,5 +59,5 @@ charset_name(int i)
   if (i < 0 || i > CONV_NUM_CHARSETS)
     return "x-unknown";
   else
-    return cs_names[i];
+    return (char *)cs_names[i];
 }

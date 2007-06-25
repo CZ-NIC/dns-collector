@@ -49,11 +49,14 @@ fbpar_global_init(void)
 }
 
 static struct fastbuf *
-bopen_fd_internal(int fd, struct fb_params *params, uns mode, byte *name)
+bopen_fd_internal(int fd, struct fb_params *params, uns mode, const byte *name)
 {
   byte buf[32];
   if (!name)
-    sprintf(name = buf, "fd%d", fd);
+    {
+      sprintf(buf, "fd%d", fd);
+      name = buf;
+    }
   struct fastbuf *fb;
   switch (params->type)
     {
@@ -69,7 +72,7 @@ bopen_fd_internal(int fd, struct fb_params *params, uns mode, byte *name)
 	    params->read_ahead ? : fbpar_def.read_ahead,
 	    params->write_back ? : fbpar_def.write_back);
 	if (!~mode && !fbdir_cheat && ((int)(mode = fcntl(fd, F_GETFL)) < 0 || fcntl(fd, F_SETFL, mode | O_DIRECT)) < 0)
-          log(L_WARN, "Cannot set O_DIRECT on fd %d: %m", fd);
+          msg(L_WARN, "Cannot set O_DIRECT on fd %d: %m", fd);
 	return fb;
       case FB_MMAP:
 	if (!~mode && (int)(mode = fcntl(fd, F_GETFL)) < 0)
@@ -81,7 +84,7 @@ bopen_fd_internal(int fd, struct fb_params *params, uns mode, byte *name)
 }
 
 static struct fastbuf *
-bopen_file_internal(byte *name, int mode, struct fb_params *params, int try)
+bopen_file_internal(const byte *name, int mode, struct fb_params *params, int try)
 {
   if (params->type == FB_DIRECT && !fbdir_cheat)
     mode |= O_DIRECT;
@@ -101,13 +104,13 @@ bopen_file_internal(byte *name, int mode, struct fb_params *params, int try)
 }
 
 struct fastbuf *
-bopen_file(byte *name, int mode, struct fb_params *params)
+bopen_file(const byte *name, int mode, struct fb_params *params)
 {
   return bopen_file_internal(name, mode, params ? : &fbpar_def, 0);
 }
 
 struct fastbuf *
-bopen_file_try(byte *name, int mode, struct fb_params *params)
+bopen_file_try(const byte *name, int mode, struct fb_params *params)
 {
   return bopen_file_internal(name, mode, params ? : &fbpar_def, 1);
 }

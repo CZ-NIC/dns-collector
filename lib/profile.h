@@ -123,7 +123,7 @@ typedef struct prof_ktsc prof_t;
 static inline void prof_start(prof_t *c) { prof_switch(NULL, c); }
 static inline void prof_stop(prof_t *c) { prof_switch(c, NULL); }
 #endif
-#define PROF_STR(C) ({ static byte _x[PROF_STR_SIZE]; prof_format(_x, &(C)); _x; })
+#define PROF_STR(C) ({ static char _x[PROF_STR_SIZE]; prof_format(_x, &(C)); _x; })
 
 #else
 

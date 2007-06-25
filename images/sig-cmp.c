@@ -10,7 +10,6 @@
 #undef LOCAL_DEBUG
 
 #include "lib/lib.h"
-#include "lib/math.h"
 #include "images/math.h"
 #include "images/images.h"
 #include "images/signature.h"

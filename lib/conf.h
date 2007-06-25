@@ -154,10 +154,10 @@ void cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown);
 void cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero);
 
 /* Parsers for basic types: conf-parse.c */
-byte *cf_parse_int(byte *str, int *ptr);
-byte *cf_parse_u64(byte *str, u64 *ptr);
-byte *cf_parse_double(byte *str, double *ptr);
-byte *cf_parse_ip(byte *p, u32 *varp);
+byte *cf_parse_int(const byte *str, int *ptr);
+byte *cf_parse_u64(const byte *str, u64 *ptr);
+byte *cf_parse_double(const byte *str, double *ptr);
+byte *cf_parse_ip(const byte *p, u32 *varp);
 
 #endif
 

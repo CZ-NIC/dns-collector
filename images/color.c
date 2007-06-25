@@ -10,7 +10,7 @@
 #undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
-#include "lib/math.h"
+#include "sherlock/math.h"
 #include "images/images.h"
 #include "images/color.h"
 #include "images/error.h"

@@ -68,7 +68,7 @@ static byte *segmentation_name_2;
 static uns display_base64;
 static uns display_base224;
 
-#define MSG(x...) do{ if (verbose) log(L_INFO, ##x); }while(0)
+#define MSG(x...) do{ if (verbose) msg(L_INFO, ##x); }while(0)
 #define TRY(x) do{ if (!(x)) exit(1); }while(0)
 
 static void

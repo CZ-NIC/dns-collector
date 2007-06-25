@@ -16,37 +16,37 @@
 #include <sys/wait.h>
 
 void NONRET
-exec_command_v(byte *cmd, va_list args)
+exec_command_v(const char *cmd, va_list args)
 {
   va_list cargs;
   va_copy(cargs, args);
   int cnt = 2;
-  byte *arg;
-  while (arg = va_arg(cargs, byte *))
+  char *arg;
+  while (arg = va_arg(cargs, char *))
     cnt++;
   va_end(cargs);
-  char **argv = alloca(sizeof(byte *) * cnt);
-  argv[0] = cmd;
+  char **argv = alloca(sizeof(char *) * cnt);
+  argv[0] = (char *)cmd;
   cnt = 1;
   va_copy(cargs, args);
-  while (arg = va_arg(cargs, byte *))
+  while (arg = va_arg(cargs, char *))
     argv[cnt++] = arg;
   va_end(cargs);
   argv[cnt] = NULL;
   execv(cmd, argv);
-  byte echo[256];
+  char echo[256];
   echo_command_v(echo, sizeof(echo), cmd, args);
-  log(L_ERROR, "Cannot execute %s: %m", echo);
+  msg(L_ERROR, "Cannot execute %s: %m", echo);
   exit(255);
 }
 
 int
-run_command_v(byte *cmd, va_list args)
+run_command_v(const char *cmd, va_list args)
 {
   pid_t p = fork();
   if (p < 0)
     {
-      log(L_ERROR, "fork() failed: %m");
+      msg(L_ERROR, "fork() failed: %m");
       return 0;
     }
   else if (!p)
@@ -54,15 +54,15 @@ run_command_v(byte *cmd, va_list args)
   else
     {
       int stat;
-      byte msg[EXIT_STATUS_MSG_SIZE];
+      char status_msg[EXIT_STATUS_MSG_SIZE];
       p = waitpid(p, &stat, 0);
       if (p < 0)
 	die("waitpid() failed: %m");
-      if (format_exit_status(msg, stat))
+      if (format_exit_status(status_msg, stat))
 	{
-	  byte echo[256];
+	  char echo[256];
 	  echo_command_v(echo, sizeof(echo), cmd, args);
-	  log(L_ERROR, "`%s' failed: %s", echo, msg);
+	  msg(L_ERROR, "`%s' failed: %s", echo, status_msg);
 	  return 0;
 	}
       return 1;
@@ -70,11 +70,11 @@ run_command_v(byte *cmd, va_list args)
 }
 
 void
-echo_command_v(byte *buf, int size, byte *cmd, va_list args)
+echo_command_v(char *buf, int size, const char *cmd, va_list args)
 {
-  byte *limit = buf + size - 4;
-  byte *p = buf;
-  byte *arg = cmd;
+  char *limit = buf + size - 4;
+  char *p = buf;
+  const char *arg = cmd;
   do
     {
       int l = strlen(arg);
@@ -89,12 +89,12 @@ echo_command_v(byte *buf, int size, byte *cmd, va_list args)
       memcpy(p, arg, l);
       p += l;
     }
-  while (arg = va_arg(args, byte *));
+  while (arg = va_arg(args, char *));
   *p = 0;
 }
 
 int
-run_command(byte *cmd, ...)
+run_command(const char *cmd, ...)
 {
   va_list args;
   va_start(args, cmd);
@@ -104,7 +104,7 @@ run_command(byte *cmd, ...)
 }
 
 void NONRET
-exec_command(byte *cmd, ...)
+exec_command(const char *cmd, ...)
 {
   va_list args;
   va_start(args, cmd);
@@ -112,7 +112,7 @@ exec_command(byte *cmd, ...)
 }
 
 void
-echo_command(byte *buf, int len, byte *cmd, ...)
+echo_command(char *buf, int len, const char *cmd, ...)
 {
   va_list args;
   va_start(args, cmd);
@@ -124,7 +124,7 @@ echo_command(byte *buf, int len, byte *cmd, ...)
 
 int main(void)
 {
-  byte msg[1024];
+  char msg[1024];
   echo_command(msg, sizeof(msg), "/bin/echo", "datel", "strakapoud", NULL);
   log(L_INFO, "Running <%s>", msg);
   run_command("/bin/echo", "datel", "strakapoud", NULL);

@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 # A simple unit testing script
 # (c) 2004 Martin Mares <mj@ucw.cz>
+# (c) 2007 Pavel Charvat <pchar@ucw.cz>
 
 my @tests = ();
 my $tt;
@@ -36,8 +37,8 @@ foreach $tt (@tests) {
 	$prev_run = $run;
 	my ($ifi, $ofi);
 	if (defined $tt->{'In'}) {
-		$ifi = "run/tmp/test$i.in";
-		open X, ">$ifi" or die "Unable to create $ifi";
+		$ifi = "tmp/test$i.in";
+		open X, ">run/$ifi" or die "Unable to create $ifi";
 		print X $tt->{'In'}, "\n";
 		close X;
 		$run .= " <$ifi";
@@ -45,20 +46,20 @@ foreach $tt (@tests) {
 		$run .= " </dev/null";
 	}
 	if (defined $tt->{'Out'}) {
-		$ofi = "run/tmp/test$i.out";
-		unlink $ofi;
+		$ofi = "tmp/test$i.out";
+		unlink "run/$ofi";
 		$run .= " >$ofi";
 	} else {
 		$run .= " >/dev/null";
 	}
-	`$run`;
+	system "cd run && ( $run )";
 	if ($?) {
 		print "FAILED with exit code $?\n";
 		$errors++;
 		next;
 	}
 	if (defined $tt->{'Out'}) {
-		open X, "<$ofi" or die "Unable to read $ofi";
+		open X, "<run/$ofi" or die "Unable to read $ofi";
 		my $out;
 		{
 			local $/ = undef;

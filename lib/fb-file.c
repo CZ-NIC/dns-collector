@@ -205,7 +205,7 @@ bfd_close(struct fastbuf *f)
     {
     case 1:
       if (unlink(f->name) < 0)
-	log(L_ERROR, "unlink(%s): %m", f->name);
+	msg(L_ERROR, "unlink(%s): %m", f->name);
     case 0:
       if (close(FB_FILE(f)->fd))
 	die("close(%s): %m", f->name);
@@ -230,7 +230,7 @@ bfd_config(struct fastbuf *f, uns item, int value)
 }
 
 struct fastbuf *
-bfdopen_internal(int fd, byte *name, uns buflen)
+bfdopen_internal(int fd, const byte *name, uns buflen)
 {
   ASSERT(buflen);
   int namelen = strlen(name) + 1;
@@ -254,13 +254,13 @@ bfdopen_internal(int fd, byte *name, uns buflen)
 }
 
 struct fastbuf *
-bopen_try(byte *name, uns mode, uns buflen)
+bopen_try(const byte *name, uns mode, uns buflen)
 {
   return bopen_file_try(name, mode, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
 }
 
 struct fastbuf *
-bopen(byte *name, uns mode, uns buflen)
+bopen(const byte *name, uns mode, uns buflen)
 {
   return bopen_file(name, mode, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
 }
@@ -284,7 +284,7 @@ bfilesync(struct fastbuf *b)
 {
   bflush(b);
   if (fsync(FB_FILE(b)->fd) < 0)
-    log(L_ERROR, "fsync(%s) failed: %m", b->name);
+    msg(L_ERROR, "fsync(%s) failed: %m", b->name);
 }
 
 #ifdef TEST

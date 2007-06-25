@@ -21,7 +21,7 @@
 #define MOD(a) a %= BASE
 
 uns
-update_adler32(uns adler, byte *buf, uns len)
+update_adler32(uns adler, const byte *buf, uns len)
 {
   uns s1 = adler & 0xffff;
   uns s2 = (adler >> 16) & 0xffff;

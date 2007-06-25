@@ -31,14 +31,14 @@ struct regex {
 };
 
 regex *
-rx_compile(byte *p, int icase)
+rx_compile(const char *p, int icase)
 {
   regex *r = xmalloc_zero(sizeof(regex));
 
   int err = regcomp(&r->rx, p, REG_EXTENDED | (icase ? REG_ICASE : 0));
   if (err)
     {
-      byte msg[256];
+      char msg[256];
       regerror(err, &r->rx, msg, sizeof(msg)-1);
       /* regfree(&r->rx) not needed */
       die("Error parsing regular expression `%s': %s", p, msg);
@@ -54,7 +54,7 @@ rx_free(regex *r)
 }
 
 int
-rx_match(regex *r, byte *s)
+rx_match(regex *r, const char *s)
 {
   int err = regexec(&r->rx, s, 10, r->matches, 0);
   if (!err)
@@ -71,9 +71,9 @@ rx_match(regex *r, byte *s)
 }
 
 int
-rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
+rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
 {
-  byte *end = dest + destlen - 1;
+  char *end = dest + destlen - 1;
 
   if (!rx_match(r, src))
     return 0;
@@ -88,7 +88,7 @@ rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
 	      uns j = *by++ - '0';
 	      if (j <= r->rx.re_nsub && r->matches[j].rm_so >= 0)
 		{
-		  byte *s = src + r->matches[j].rm_so;
+		  const char *s = src + r->matches[j].rm_so;
 		  uns i = r->matches[j].rm_eo - r->matches[j].rm_so;
 		  if (dest + i >= end)
 		    return -1;
@@ -122,7 +122,7 @@ struct regex {
 };
 
 regex *
-rx_compile(byte *p, int icase)
+rx_compile(char *p, int icase)
 {
   const char *err;
   int errpos, match_array_size, eno;
@@ -152,7 +152,7 @@ rx_free(regex *r)
 }
 
 int
-rx_match(regex *r, byte *s)
+rx_match(regex *r, char *s)
 {
   int len = str_len(s);
   int err = pcre_exec(r->rx, r->extra, s, len, 0, 0, r->matches, r->match_array_size);
@@ -171,9 +171,9 @@ rx_match(regex *r, byte *s)
 }
 
 int
-rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
+rx_subst(regex *r, char *by, char *src, char *dest, uns destlen)
 {
-  byte *end = dest + destlen - 1;
+  char *end = dest + destlen - 1;
 
   if (!rx_match(r, src))
     return 0;
@@ -188,7 +188,7 @@ rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
 	      uns j = *by++ - '0';
 	      if (j < r->real_matches && r->matches[2*j] >= 0)
 		{
-		  byte *s = src + r->matches[2*j];
+		  char *s = src + r->matches[2*j];
 		  uns i = r->matches[2*j+1] - r->matches[2*j];
 		  if (dest + i >= end)
 		    return -1;
@@ -227,7 +227,7 @@ struct regex {
 };
 
 regex *
-rx_compile(byte *p, int icase)
+rx_compile(char *p, int icase)
 {
   regex *r = xmalloc_zero(sizeof(regex));
   const char *msg;
@@ -261,7 +261,7 @@ rx_free(regex *r)
 }
 
 int
-rx_match(regex *r, byte *s)
+rx_match(regex *r, char *s)
 {
   int len = strlen(s);
 
@@ -274,9 +274,9 @@ rx_match(regex *r, byte *s)
 }
 
 int
-rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
+rx_subst(regex *r, char *by, char *src, char *dest, uns destlen)
 {
-  byte *end = dest + destlen - 1;
+  char *end = dest + destlen - 1;
 
   if (!rx_match(r, src))
     return 0;
@@ -291,7 +291,7 @@ rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
 	      uns j = *by++ - '0';
 	      if (j < r->regs.num_regs)
 		{
-		  byte *s = src + r->regs.start[j];
+		  char *s = src + r->regs.start[j];
 		  uns i = r->regs.end[j] - r->regs.start[j];
 		  if (r->regs.start[j] > r->len_cache || r->regs.end[j] > r->len_cache)
 		    return -1;
@@ -319,7 +319,7 @@ rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen)
 int main(int argc, char **argv)
 {
   regex *r;
-  byte buf1[4096], buf2[4096];
+  char buf1[4096], buf2[4096];
   int opt_i = 0;
 
   if (!strcmp(argv[1], "-i"))

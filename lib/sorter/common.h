@@ -18,8 +18,8 @@ extern uns sorter_debug, sorter_min_radix_bits, sorter_max_radix_bits;
 extern u64 sorter_bufsize;
 extern struct fb_params sorter_fb_params;
 
-#define SORT_TRACE(x...) do { if (sorter_trace) log(L_DEBUG, x); } while(0)
-#define SORT_XTRACE(level, x...) do { if (sorter_trace >= level) log(L_DEBUG, x); } while(0)
+#define SORT_TRACE(x...) do { if (sorter_trace) msg(L_DEBUG, x); } while(0)
+#define SORT_XTRACE(level, x...) do { if (sorter_trace >= level) msg(L_DEBUG, x); } while(0)
 
 enum sort_debug {
   SORT_DEBUG_NO_PRESORT = 1,

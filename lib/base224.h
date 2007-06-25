@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-uns base224_encode(byte *dest, byte *src, uns len);
-uns base224_decode(byte *dest, byte *src, uns len);
+uns base224_encode(byte *dest, const byte *src, uns len);
+uns base224_decode(byte *dest, const byte *src, uns len);
 
 /*
  * Warning: when encoding, at least 4 bytes of extra space are needed.

@@ -14,19 +14,19 @@
 
 #include <string.h>
 
-static byte base64_table[] =
+static const byte base64_table[] =
 	{ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
 	  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 	  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
 	  'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 	  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/', '\0'
 	};
-static byte base64_pad = '=';
+static const byte base64_pad = '=';
 
 uns
-base64_encode(byte *dest, byte *src, uns len)
+base64_encode(byte *dest, const byte *src, uns len)
 {
-	byte *current = src;
+	const byte *current = src;
 	uns i = 0;
 
 	while (len > 2) { /* keep going until we have less than 24 bits */
@@ -58,9 +58,9 @@ base64_encode(byte *dest, byte *src, uns len)
 
 /* as above, but backwards. :) */
 uns
-base64_decode(byte *dest, byte *src, uns len)
+base64_decode(byte *dest, const byte *src, uns len)
 {
-	byte *current = src;
+	const byte *current = src;
 	uns ch;
 	uns i = 0, j = 0;
 	static byte reverse_table[256];

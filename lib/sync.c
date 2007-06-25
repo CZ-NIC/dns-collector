@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 void
-sync_dir(byte *name)
+sync_dir(const char *name)
 {
   int fd = open(name, O_RDONLY
 #ifdef CONFIG_LINUX
@@ -24,5 +24,5 @@ sync_dir(byte *name)
   if (err >= 0)
     return;
  err:
-  log(L_ERROR, "Unable to sync directory %s: %m", name);
+  msg(L_ERROR, "Unable to sync directory %s: %m", name);
 }

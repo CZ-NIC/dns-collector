@@ -54,7 +54,7 @@ setproctitle_init(int argc, char **argv)
 }
 
 void
-setproctitle(char *msg, ...)
+setproctitle(const char *msg, ...)
 {
   va_list args;
   byte buf[256];
