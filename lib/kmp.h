@@ -256,7 +256,7 @@ struct P(struct) {
 #ifdef KMP_SOURCE
 typedef KMP_SOURCE P(source_t);
 #else
-typedef byte *P(source_t);
+typedef char *P(source_t);
 #endif
 
 #ifdef KMP_GET_CHAR
@@ -281,7 +281,7 @@ P(get_char) (struct P(struct) *kmp UNUSED, P(source_t) *src, P(char_t) *c)
 {
 # ifdef KMP_USE_UTF8
   uns cc;
-  *src = (byte *)utf8_get(*src, &cc);
+  *src = utf8_get(*src, &cc);
 # ifdef KMP_ONLYALPHA
   if (!cc) {}
   else if (!Ualpha(cc))

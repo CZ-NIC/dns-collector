@@ -322,8 +322,8 @@ interpret_set_all(struct cf_item *item, void *ptr, enum cf_operation op)
     static uns zero = 0;
     * (void**) ptr = (&zero) + 1;
   } else if (item->cls == CC_STATIC && item->type == CT_STRING) {
-    cf_journal_block(ptr, item->number * sizeof(byte*));
-    bzero(ptr, item->number * sizeof(byte*));
+    cf_journal_block(ptr, item->number * sizeof(char*));
+    bzero(ptr, item->number * sizeof(char*));
   } else
     return "The item is not a list, dynamic array, bitmap, or string";
   return NULL;
@@ -336,7 +336,7 @@ cmp_items(void *i1, void *i2, struct cf_item *item)
   i1 += (uintptr_t) item->ptr;
   i2 += (uintptr_t) item->ptr;
   if (item->type == CT_STRING)
-    return strcmp(* (byte**) i1, * (byte**) i2);
+    return strcmp(* (char**) i1, * (char**) i2);
   else				// all numeric types
     return memcmp(i1, i2, cf_type_size(item->type, item->u.utype));
 }

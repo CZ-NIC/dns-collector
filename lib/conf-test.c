@@ -18,16 +18,16 @@ static int verbose;
 
 struct sub_sect_1 {
   cnode n;
-  byte *name;
+  char *name;
   time_t t;
-  byte *level;
+  char *level;
   int confidence[2];
   double *list;
 };
 
 static struct sub_sect_1 sec1 = { {}, "Charlie", 0, "WBAFC", { 0, -1}, DARY_ALLOC(double, 3, 1e4, -1e-4, 8) };
 
-static byte *
+static char *
 init_sec_1(struct sub_sect_1 *s)
 {
   if (s == &sec1)			// this is a static variable; skip clearing
@@ -40,7 +40,7 @@ init_sec_1(struct sub_sect_1 *s)
   return NULL;
 }
 
-static byte *
+static char *
 commit_sec_1(struct sub_sect_1 *s)
 {
   if (s->confidence[0] < 0 || s->confidence[0] > 10)
@@ -48,8 +48,8 @@ commit_sec_1(struct sub_sect_1 *s)
   return NULL;
 }
 
-static byte *
-time_parser(uns number, byte **pars, time_t *ptr)
+static char *
+time_parser(uns number, char **pars, time_t *ptr)
 {
   *ptr = number ? atoi(pars[0]) : time(NULL);
   return NULL;
@@ -74,8 +74,8 @@ static struct cf_section cf_sec_1 = {
 static uns nr1 = 15;
 static int *nrs1 = DARY_ALLOC(int, 5, 5, 4, 3, 2, 1);
 static int nrs2[5];
-static byte *str1 = "no worries";
-static byte **str2 = DARY_ALLOC(byte *, 2, "Alice", "Bob");
+static char *str1 = "no worries";
+static char **str2 = DARY_ALLOC(char *, 2, "Alice", "Bob");
 static u64 u1 = 0xCafeBeefDeadC00ll;
 static double d1 = -1.1;
 static clist secs;
@@ -86,11 +86,11 @@ static u16 numbers[10] = { 2, 100, 1, 5 };
 static u32 bitmap1 = 0xff;
 static u32 bitmap2 = 3;
 
-static byte *
-parse_u16(byte *string, u16 *ptr)
+static char *
+parse_u16(char *string, u16 *ptr)
 {
   uns a;
-  byte *msg = cf_parse_int(string, &a);
+  char *msg = cf_parse_int(string, &a);
   if (msg)
     return msg;
   if (a >= (1<<16))
@@ -112,7 +112,7 @@ static struct cf_user_type u16_type = {
   .dumper = (cf_dumper1*) dump_u16
 };
 
-static byte *
+static char *
 init_top(void *ptr UNUSED)
 {
   for (uns i=0; i<5; i++)
@@ -125,7 +125,7 @@ init_top(void *ptr UNUSED)
   return NULL;
 }
 
-static byte *
+static char *
 commit_top(void *ptr UNUSED)
 {
   if (nr1 != 15)
@@ -133,7 +133,7 @@ commit_top(void *ptr UNUSED)
   return NULL;
 }
 
-static byte *alphabet[] = { "alpha", "beta", "gamma", "delta", NULL };
+static char *alphabet[] = { "alpha", "beta", "gamma", "delta", NULL };
 static struct cf_section cf_top = {
   CF_INIT(init_top),
   CF_COMMIT(commit_top),
@@ -153,7 +153,7 @@ static struct cf_section cf_top = {
     CF_LOOKUP_DYN("look", &look, alphabet, 1000),
     CF_USER_ARY("numbers", numbers, &u16_type, 10),
     CF_BITMAP_INT("bitmap1", &bitmap1),
-    CF_BITMAP_LOOKUP("bitmap2", &bitmap2, ((byte*[]) {
+    CF_BITMAP_LOOKUP("bitmap2", &bitmap2, ((char*[]) {
 	  "one", "two", "three", "four", "five", "six", "seven", "eight", 
 	  "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "seventeen", 
 	  "eighteen", "nineteen", "twenty", NULL	// hidden joke here
@@ -178,7 +178,7 @@ CF_USAGE
 ";
 
 static void NONRET
-usage(byte *msg, ...)
+usage(char *msg, ...)
 {
   va_list va;
   va_start(va, msg);

@@ -56,9 +56,9 @@ test1(void)
 #define KMP_USE_UTF8
 #define KMP_TOLOWER
 #define KMP_ONLYALPHA
-#define KMP_STATE_VARS byte *str; uns id;
+#define KMP_STATE_VARS char *str; uns id;
 #define KMP_ADD_EXTRA_ARGS uns id
-#define KMP_VARS byte *start;
+#define KMP_VARS char *start;
 #define KMP_ADD_INIT(kmp,src) kmp->u.start = src
 #define KMP_ADD_NEW(kmp,src,s) do{ TRACE("Inserting string %s with id %d", kmp->u.start, id); \
   s->u.str = kmp->u.start; s->u.id = id; }while(0)
@@ -94,7 +94,7 @@ test2(void)
 #define KMP_PREFIX(x) kmp3_##x
 #define KMP_STATE_VARS uns index;
 #define KMP_ADD_EXTRA_ARGS uns index
-#define KMP_VARS byte *start;
+#define KMP_VARS char *start;
 #define KMP_ADD_INIT(kmp,src) kmp->u.start = src
 #define KMP_ADD_NEW(kmp,src,s) s->u.index = index
 #define KMP_ADD_DUP(kmp,src,s) *(kmp->u.start) = 0
@@ -113,7 +113,7 @@ test3(void)
   {
     mp_flush(pool);
     uns n = random_max(100);
-    byte *s[n];
+    char *s[n];
     struct kmp3_struct kmp;
     kmp3_init(&kmp);
     for (uns i = 0; i < n; i++)

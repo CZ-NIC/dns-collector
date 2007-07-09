@@ -15,6 +15,8 @@
 
 #define UNI_REPLACEMENT 0xfffc
 
+/* Encode a character from the basic multilingual plane [0, 0xFFFF]
+ * (subset of Unicode 4.0); up to 3 bytes needed (RFC2279) */
 static inline byte *
 utf8_put(byte *p, uns u)
 {
@@ -35,6 +37,8 @@ utf8_put(byte *p, uns u)
   return p;
 }
 
+/* Encode a value from the range [0, 0x7FFFFFFF];
+ * (superset of Unicode 4.0) up to 6 bytes needed (RFC2279) */
 static inline byte *
 utf8_32_put(byte *p, uns u)
 {
@@ -76,6 +80,8 @@ put1: *p++ = 0x80 | (u & 0x3f);
 
 #define UTF8_GET_NEXT if (unlikely((*p & 0xc0) != 0x80)) goto bad; u = (u << 6) | (*p++ & 0x3f)
 
+/* Decode a character from the basic multilingual plane [0, 0xFFFF]
+ * or return UNI_REPLACEMENT if the encoding has been corrupted */
 static inline byte *
 utf8_get(const byte *p, uns *uu)
 {
@@ -105,6 +111,8 @@ utf8_get(const byte *p, uns *uu)
   return (byte *)p;
 }
 
+/* Decode a value from the range [0, 0x7FFFFFFF] 
+ * or return UNI_REPLACEMENT if the encoding has been corrupted */
 static inline byte *
 utf8_32_get(const byte *p, uns *uu)
 {

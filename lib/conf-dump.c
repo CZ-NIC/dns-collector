@@ -31,8 +31,8 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
     case CT_DOUBLE:	bprintf(fb, "%lg ", *(double*)ptr); break;
     case CT_IP:		bprintf(fb, "%08x ", *(uns*)ptr); break;
     case CT_STRING:
-      if (*(byte**)ptr)
-	bprintf(fb, "'%s' ", *(byte**)ptr);
+      if (*(char**)ptr)
+	bprintf(fb, "'%s' ", *(char**)ptr);
       else
 	bprintf(fb, "NULL ");
       break;

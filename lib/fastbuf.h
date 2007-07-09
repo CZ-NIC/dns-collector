@@ -63,7 +63,7 @@ struct fastbuf {
   byte is_fastbuf[0];			/* Dummy field for checking of type casts */
   byte *bptr, *bstop;			/* Access pointers */
   byte *buffer, *bufend;		/* Start and end of the buffer */
-  byte *name;				/* File name for error messages */
+  char *name;				/* File name for error messages */
   sh_off_t pos;				/* Position of bstop in the file */
   int (*refill)(struct fastbuf *);	/* Get a buffer with new data */
   void (*spout)(struct fastbuf *);	/* Write buffer data to the file */
