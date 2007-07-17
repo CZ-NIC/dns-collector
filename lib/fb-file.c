@@ -102,16 +102,14 @@ long_seek:
       if ((sh_off_t)back > f->pos)
 	back = f->pos;
       f->bptr = f->buffer + back;
-      read_len = back + diff - F->wlen;
+      read_len = blen;
+      f->bstop = f->buffer + read_len;
       /* Reuse part of previous window */
-      if (F->wlen && read_len < blen)
+      if (F->wlen && read_len <= back + diff && read_len > back + diff - F->wlen)
         {
-	  uns keep = MIN(F->wlen, blen - read_len);
-	  memmove(f->buffer + read_len, f->buffer, keep);
-	  f->bstop = f->buffer + read_len + keep;
+	  uns keep = read_len + F->wlen - back - diff;
+	  memmove(f->buffer + read_len - keep, f->buffer, keep);
 	}
-      else
-	f->bstop = f->buffer + (read_len = blen);
 seek:
       /* Do lseek() */
       F->wpos = f->pos + (f->buffer - f->bptr);
