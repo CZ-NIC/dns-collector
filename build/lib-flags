@@ -20,5 +20,5 @@ while [ -n "$1" ] ; do
 done
 if [ -n "$PC" ] ; then
 	echo -n " "
-	PKG_CONFIG_PATH="$PKG_CONFIG_PATH:obj/pkg-config" pkg-config --libs $PC
+	PKG_CONFIG_PATH="$PKG_CONFIG_PATH:obj/pkgconfig" pkg-config --libs $PC
 fi

@@ -1,5 +1,8 @@
 # pkg-config metadata for libucw
 
+libdir=@LIBDIR@
+incdir=.
+
 #ifdef CONFIG_UCW_THREADS
 threads=-lpthread
 #else
@@ -9,4 +12,5 @@ threads=
 Name: libucw
 Description: A library of utility functions and data structures
 Version: @SHERLOCK_VERSION@
-Libs: -Lobj/lib -lucw ${threads}
+Cflags: -I${incdir}
+Libs: -L${libdir} -lucw ${threads}
