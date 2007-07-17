@@ -59,7 +59,7 @@ endif
 
 $(o)/images/libimages.a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 $(o)/images/libimages.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
-$(o)/images/libimages.pc: $(LIBUCW)
+$(o)/images/libimages.pc: $(LIBIMAGES_DEPS)
 
 $(o)/images/image-tool: $(o)/images/image-tool.o $(LIBIMAGES)
 $(o)/images/color-tool: $(o)/images/color-tool.o $(LIBIMAGES)
