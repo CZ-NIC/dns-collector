@@ -62,7 +62,6 @@ LIBUCW_INCLUDES= \
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
-LIBS+=-lpthread
 LIBUCW_MODS+=threads-conf workqueue
 LIBUCW_INCLUDES+=workqueue.h semaphore.h
 endif
@@ -75,7 +74,7 @@ ifdef CONFIG_OWN_GETOPT
 include $(s)/lib/getopt/Makefile
 endif
 
-LIBUCW=$(o)/lib/libucw.$(LS)
+LIBUCW=$(o)/lib/libucw.pc
 LIBUCW_MOD_PATHS=$(addprefix $(o)/lib/,$(LIBUCW_MODS))
 
 $(o)/lib/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))

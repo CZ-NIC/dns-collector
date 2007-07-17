@@ -1,0 +1,7 @@
+# pkg-config metadata for libcharset
+
+Name: libcharset
+Description: Character set conversion library
+Version: @SHERLOCK_VERSION@
+Libs: -Lobj/charset -lcharset
+Requires: @DEPS@

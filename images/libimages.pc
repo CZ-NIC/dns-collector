@@ -1,0 +1,7 @@
+# pkg-config metadata for libimages
+
+Name: libimages
+Description: Sherlock image library
+Version: @SHERLOCK_VERSION@
+Libs: -Lobj/images -limages -lm -lpthread @LIBIMAGES_LIBS@
+Requires: @DEPS@

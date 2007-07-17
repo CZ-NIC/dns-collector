@@ -1,4 +1,4 @@
-# Makefile for the Sherlock Charset Library (c) 1997--2002 Martin Mares <mj@ucw.cz>
+# Makefile for the Sherlock Charset Library (c) 1997--2007 Martin Mares <mj@ucw.cz>
 
 DIRS+=charset
 
@@ -7,6 +7,7 @@ LIBCHARSET_INCLUDES=charconv.h unicat.h fb-charconv.h stk-charconv.h mp-charconv
 
 $(o)/charset/libcharset.a: $(addsuffix .o,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
 $(o)/charset/libcharset.so: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
+$(o)/charset/libcharset.pc: $(LIBUCW)
 
 INCLUDES+=$(o)/charset/.include-stamp
 $(o)/charset/.include-stamp: $(addprefix $(s)/charset/,$(LIBCHARSET_INCLUDES))
