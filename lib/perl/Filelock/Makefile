@@ -8,14 +8,16 @@ PROGS+=$(o)/lib/perl/Filelock/Filelock.pm
 extras:: $(o)/lib/perl/Filelock/arch/auto/Sherlock/Filelock/Filelock.$(SOEXT)
 
 $(o)/lib/perl/Filelock/arch/auto/Sherlock/Filelock/Filelock.$(SOEXT): $(o)/$(FILELOCK_DIR)/Filelock.xs $(o)/$(FILELOCK_DIR)/Filelock.pm $(o)/$(FILELOCK_DIR)/Makefile
-	cd $(o)/$(FILELOCK_DIR) && $(MAKE) -f Makefile
-	cp $@ run/$(DATADIR)/
+	$(M)MAKE $@
+	$(Q)cd $(o)/$(FILELOCK_DIR) && $(MAKE) -f Makefile $(MAKESILENT)
+	$(Q)cp $@ run/$(DATADIR)/
 
 $(o)/$(FILELOCK_DIR)/Makefile: $(o)/$(FILELOCK_DIR)/Makefile.PL
-	cd $(o)/$(FILELOCK_DIR) && perl Makefile.PL
+	$(M)PREPARE $@
+	$(Q)cd $(o)/$(FILELOCK_DIR) && perl Makefile.PL
 
 $(o)/$(FILELOCK_DIR)/Filelock.xs: $(s)/$(FILELOCK_DIR)/Filelock.xs
-	cp $^ $@
+	$(Q)cp $^ $@
 
 $(o)/$(FILELOCK_DIR)/Makefile.PL: $(s)/$(FILELOCK_DIR)/Makefile.PL
-	cp $^ $@
+	$(Q)cp $^ $@
