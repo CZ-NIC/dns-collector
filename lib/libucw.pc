@@ -2,6 +2,8 @@
 
 #ifdef CONFIG_UCW_THREADS
 threads=-lpthread
+#else
+threads=
 #endif
 
 Name: libucw
