@@ -114,9 +114,7 @@ $(o)/lib/getopt.test: $(o)/lib/getopt-t
 
 INCLUDES+=$(o)/lib/.include-stamp
 $(o)/lib/.include-stamp: $(addprefix $(s)/lib/,$(LIBUCW_INCLUDES))
-	$(s)/build/install-includes $(s)/lib run/include/lib $(?F)
-	$(s)/build/install-includes $(o)/lib run/include/lib autoconf.h
-	touch $(o)/lib/.include-stamp
+$(o)/lib/.include-stamp: IDST=lib
 
 ifdef CONFIG_UCW_PERL
 include $(s)/lib/perl/Makefile

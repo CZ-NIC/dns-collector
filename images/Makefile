@@ -85,5 +85,4 @@ $(o)/images/color.test: $(o)/images/color-t
 
 INCLUDES+=$(o)/images/.include-stamp
 $(o)/images/.include-stamp: $(addprefix $(s)/images/,$(LIBIMAGES_INCLUDES))
-	$(s)/build/install-includes $(s)/images run/include/images $(?F)
-	touch $(o)/images/.include-stamp
+$(o)/images/.include-stamp: IDST=images

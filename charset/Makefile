@@ -10,8 +10,7 @@ $(o)/charset/libcharset.so: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARS
 
 INCLUDES+=$(o)/charset/.include-stamp
 $(o)/charset/.include-stamp: $(addprefix $(s)/charset/,$(LIBCHARSET_INCLUDES))
-	$(s)/build/install-includes $(s)/charset run/include/charset $(?F)
-	touch $(o)/charset/.include-stamp
+$(o)/charset/.include-stamp: IDST=charset
 
 build_charsets:
 	cd $(s)/charset && sh misc/generate
