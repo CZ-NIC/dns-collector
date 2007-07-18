@@ -9,14 +9,14 @@
 
 #undef LOCAL_DEBUG
 
-#include "sherlock/sherlock.h"
-#include "sherlock/math.h"
+#include "lib/lib.h"
 #include "images/images.h"
 #include "images/color.h"
 #include "images/error.h"
 #include "images/math.h"
 
 #include <string.h>
+#include <math.h>
 
 uns color_space_channels[COLOR_SPACE_MAX] = {
   [COLOR_SPACE_UNKNOWN] = 0,

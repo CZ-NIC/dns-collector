@@ -9,8 +9,7 @@
 
 #undef LOCAL_DEBUG
 
-#include "sherlock/sherlock.h"
-#include "sherlock/math.h"
+#include "lib/lib.h"
 #include "lib/fastbuf.h"
 #include "lib/conf.h"
 #include "images/images.h"
@@ -20,6 +19,7 @@
 #include "images/signature.h"
 
 #include <alloca.h>
+#include <math.h>
 
 int
 image_sig_init(struct image_context *ctx, struct image_sig_data *data, struct image *image)
