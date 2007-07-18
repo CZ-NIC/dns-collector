@@ -74,6 +74,7 @@ TESTS+=$(o)/images/color.test
 $(o)/images/color-t: $(LIBIMAGES)
 $(o)/images/color.test: $(o)/images/color-t
 
-INCLUDES+=$(o)/images/.include-stamp
+API_LIBS+=libimages
+API_INCLUDES+=$(o)/images/.include-stamp
 $(o)/images/.include-stamp: $(addprefix $(s)/images/,$(LIBIMAGES_INCLUDES))
 $(o)/images/.include-stamp: IDST=images

@@ -111,7 +111,8 @@ $(o)/lib/kmp-test.test: $(o)/lib/kmp-test
 $(o)/lib/bbuf.test: $(o)/lib/bbuf-t
 $(o)/lib/getopt.test: $(o)/lib/getopt-t
 
-INCLUDES+=$(o)/lib/.include-stamp
+API_LIBS+=libucw
+API_INCLUDES+=$(o)/lib/.include-stamp
 $(o)/lib/.include-stamp: $(addprefix $(s)/lib/,$(LIBUCW_INCLUDES))
 $(o)/lib/.include-stamp: IDST=lib
 

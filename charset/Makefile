@@ -9,7 +9,8 @@ $(o)/charset/libcharset.a: $(addsuffix .o,$(addprefix $(o)/charset/,$(LIBCHARSET
 $(o)/charset/libcharset.so: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
 $(o)/charset/libcharset.pc: $(LIBUCW)
 
-INCLUDES+=$(o)/charset/.include-stamp
+API_LIBS+=libcharset
+API_INCLUDES+=$(o)/charset/.include-stamp
 $(o)/charset/.include-stamp: $(addprefix $(s)/charset/,$(LIBCHARSET_INCLUDES))
 $(o)/charset/.include-stamp: IDST=charset
 
