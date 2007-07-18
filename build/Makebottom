@@ -1,0 +1,193 @@
+# Bottom part of Makefile for the UCW Libraries
+# (c) 1997--2007 Martin Mares <mj@ucw.cz>
+
+# The run tree
+
+runtree: run/.tree-stamp $(addsuffix /.dir-stamp,$(addprefix $(o)/,$(DIRS)))
+
+run/.tree-stamp: $(o)/config.mk
+	$(M)Creating runtree
+	$(Q)mkdir -p run $(addprefix run/, cf $(EXTRA_RUNDIRS) $(INSTALL_RUNDIRS))
+	$(Q)touch run/.tree-stamp
+
+# Miscellaneous targets
+
+programs: $(PROGS)
+datafiles: $(DATAFILES)
+tests: $(TESTS)
+configs: $(addprefix run/cf/,$(CONFIGS))
+
+tags:
+	etags `find . -name "*.[ch]"`
+
+# Black magic with dependencies. It would be more correct to make "depend.new"
+# a prerequisite for "depend", but "depend.new" often has the same timestamp
+# as "depend" which would confuse make a lot and either force remaking anyway
+# or (as in current versions of GNU make) erroneously skipping the remaking.
+
+-include $(o)/depend
+
+$(o)/depend: force
+	$(Q)if [ -s $(o)/depend.new ] ; then $(s)/build/mergedeps $(o)/depend $(o)/depend.new ; >$(o)/depend.new ; fi
+
+force:
+
+# Rules for directories
+
+%.dir-stamp:
+	$(Q)mkdir -p $(@D) && touch $@
+
+# Rules for configuration files
+
+run/cf/%: custom/cf/% $(o)/config.mk $(s)/build/genconf
+	$(M)CF $<
+	$(Q)$(s)/build/genconf $< $@ $(o)/config.mk
+
+run/cf/%: $(s)/cf/% $(o)/config.mk $(s)/build/genconf
+	$(M)CF $<
+	$(Q)$(s)/build/genconf $< $@ $(o)/config.mk
+
+# Rules for libraries
+
+%.a:
+	$(M)AR $@
+	$(Q)rm -f $@
+	$(Q)ar rcs $@ $^
+ifdef CONFIG_INSTALL_API
+	$(Q)$(call symlink,$@,run/lib)
+endif
+
+%.so:
+	$(M)LD $@
+	$(Q)$(CC) $(LSHARED) $(LDFLAGS) -o $@ $^
+	$(Q)$(call symlink,$@,run/lib)
+
+$(o)/%.pc: $(s)/%.pc $(o)/%.$(LS)
+	$(M)PC $<
+	$(Q)DEPS="$(shell $(s)/build/lib-deps $^)" LIBDIR=$(@D) $(s)/build/genconf $< $@ $(o)/config.mk
+	$(Q)mkdir -p $(o)/pkgconfig
+	$(Q)$(call symlink,$@,$(o)/pkgconfig)
+
+# Rules for public API
+
+ifdef CONFIG_INSTALL_API
+
+API_ROOT:=$(shell cd run && pwd)
+INSTALL_RUNDIRS+=include lib/pkgconfig
+api: $(API_INCLUDES) $(addprefix run/lib/pkgconfig/,$(addsuffix .pc,$(API_LIBS)))
+
+$(o)/%/.include-stamp:
+	$(Q)$(s)/build/install-includes $(<D) run/include/$(IDST) $(?F)
+	$(Q)touch $@
+
+run/lib/pkgconfig/%.pc: $(o)/pkgconfig/%.pc
+	$(M)PC $@
+	$(Q)sed <$< >$@ "s@^libdir=.*@libdir=$(API_ROOT)/lib@;s@^incdir=.*@incdir=$(API_ROOT)/include@"
+
+else
+api:
+endif
+
+# Rules for compiling C
+
+$(o)/%.o: $(s)/%.c $(o)/lib/autoconf.h
+	$(M)CC $<
+	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) -c -o $@ $<
+
+$(o)/%.o: %.c $(o)/lib/autoconf.h
+	$(M)CC $<
+	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) -c -o $@ $<
+
+%.o: %.c $(o)/lib/autoconf.h
+	$(M)CC $<
+	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) -c -o $@ $<
+
+$(o)/%.oo: $(s)/%.c $(o)/lib/autoconf.h
+	$(M)CC-SO $<
+	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) $(CSHARED) -c -o $@ $<
+
+$(o)/%.oo: %.c $(o)/lib/autoconf.h
+	$(M)CC-SO $<
+	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) $(CSHARED) -c -o $@ $<
+
+%.oo: %.c $(o)/lib/autoconf.h
+	$(M)CC-SO $<
+	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) $(CSHARED) -c -o $@ $<
+
+$(o)/%-tt.o: $(s)/%.c $(o)/lib/autoconf.h
+	$(M)CC-TEST $<
+	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) -DTEST -c -o $@ $<
+
+# Rules for testing
+
+$(o)/%-t: $(o)/%-tt.o $(LIBSH)
+	$(M)LD-TEST $@
+	$(Q)$(CC) $(LDFLAGS) -o $@ $^ $(shell $(s)/build/lib-flags $^) $(LIBS)
+
+$(o)/%.test: $(s)/%.t $(s)/build/tester
+	$(M)TEST $@
+	$(Q)$(s)/build/tester $< && touch $@
+
+# Rules for binaries
+
+BINDIR=bin
+
+$(o)/%: $(o)/%.o
+	$(M)LD $@
+	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell $(s)/build/lib-flags $^) $(LIBS)
+	$(Q)$(call symlink,$@,run/$(BINDIR))
+
+$(o)/%: $(s)/%.sh $(o)/config.mk $(s)/build/genconf
+	$(M)PP $<
+	$(Q)$(s)/build/genconf $< $@ $(o)/config.mk
+	$(Q)chmod +x $@
+	$(Q)$(call symlink,$@,run/$(BINDIR))
+
+$(o)/%: %.sh $(o)/config.mk $(s)/build/genconf
+	$(M)PP $<
+	$(Q)$(s)/build/genconf $< $@ $(o)/config.mk
+	$(Q)chmod +x $@
+	$(Q)$(call symlink,$@,run/$(BINDIR))
+
+$(o)/%: $(s)/%.pl $(o)/config.mk $(s)/build/genconf
+	$(M)PP $<
+	$(Q)$(s)/build/genconf $< $@ $(o)/config.mk
+	$(Q)chmod +x $@
+	$(Q)$(call symlink,$@,run/$(BINDIR))
+
+$(o)/%: %.pl $(o)/config.mk $(s)/build/genconf
+	$(M)PP $<
+	$(Q)$(s)/build/genconf $< $@ $(o)/config.mk
+	$(Q)chmod +x $@
+	$(Q)$(call symlink,$@,run/$(BINDIR))
+
+$(o)/%.pm: $(s)/%.pm
+	$(M)PM $<
+	$(Q)cp $^ $@
+	$(Q)$(call symlink,$@,run/lib/perl5/Sherlock)
+
+$(o)/%.pm: %.pm
+	$(M)PM $<
+	$(Q)cp $^ $@
+	$(Q)$(call symlink,$@,run/lib/perl5/Sherlock)
+
+# Rules for data files
+
+DATADIR=lib
+
+$(DATAFILES): $(o)/%: $(s)/%
+	$(M)DATA $<
+	$(Q)cp $^ $@
+	$(Q)$(call symlink,$@,run/$(DATADIR))
+
+# Default installation target
+
+default-install:
+	SH_EXTRA_RUNDIRS="$(sort $(EXTRA_RUNDIRS))" SH_INSTALL_RUNDIRS="$(sort $(INSTALL_RUNDIRS))" SH_CONFIGS="$(sort $(CONFIGS))" $(s)/build/installer $(INSTALL_DIR)
+
+# Don't delete intermediate targets. There shouldn't be any, but due to bugs
+# in GNU Make rules with targets in not-yet-existing directories are ignored
+# when searching for implicit rules and thence targets considered intermediate.
+.SECONDARY:
+
+.PHONY: all clean distclean runtree programs api datafiles force tags configs dust install default-install
