@@ -181,6 +181,8 @@ sub Finish() {
 	foreach my $x (sort keys %vars) {
 		print X "$x=$vars{$x}\n";
 	}
+	print X "s=\${SRCDIR}\n";
+	print X "o=obj\n";
 	close X;
 	Log "done\n";
 }

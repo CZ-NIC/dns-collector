@@ -7,9 +7,6 @@ V=0
 # Disable all built-in rules and variables. Speeds up make and simplifies debugging.
 MAKEFLAGS+=-rR
 
-s=$(SRCDIR)
-o=obj
-
 CFLAGS=$(CLANG) $(COPT) $(CDEBUG) $(CWARNS) -I. -I$(o) -I$(s)
 LDFLAGS=$(LOPT)
 
