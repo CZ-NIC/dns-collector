@@ -59,10 +59,11 @@ dust::
 	rm -f allocs.tmp cscope.out TAGS
 
 clean:: dust
-	rm -rf obj tests run/{bin,lib,include,.tree-stamp}
+	rm -rf `find obj -mindepth 1 -maxdepth 1 -not \( -name config.mk -o -name autoconf.h \)`
+	rm -rf tests run/{bin,lib,include,.tree-stamp}
 
 distclean:: clean
-	rm -rf run
+	rm -rf obj run
 
 testclean::
 	rm -f `find obj -name "*.test"`
