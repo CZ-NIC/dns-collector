@@ -56,10 +56,10 @@ endif
 # to define their own cleanup actions.
 dust::
 	rm -f `find . -path "*~" -or -name "\#*\#" -or -name core`
-	rm -f allocs.tmp cscope.out
+	rm -f allocs.tmp cscope.out TAGS
 
 clean:: dust
-	rm -rf obj tests run/bin/* run/lib/* run/include/* run/.tree-stamp TAGS
+	rm -rf obj tests run/{bin,lib,include,.tree-stamp}
 
 distclean:: clean
 	rm -rf run
