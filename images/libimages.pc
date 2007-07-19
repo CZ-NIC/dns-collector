@@ -1,0 +1,11 @@
+# pkg-config metadata for libimages
+
+libdir=@LIBDIR@
+incdir=.
+
+Name: libimages
+Description: Sherlock image library
+Version: @SHERLOCK_VERSION@
+Cflags: -I${incdir}
+Libs: -L${libdir} -limages -lm -lpthread @LIBIMAGES_LIBS@
+Requires: @DEPS@

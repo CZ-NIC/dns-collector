@@ -9,7 +9,7 @@
 
 #undef LOCAL_DEBUG
 
-#include "sherlock/sherlock.h"
+#include "lib/lib.h"
 #include "lib/conf.h"
 #include "lib/heap.h"
 #include "images/images.h"

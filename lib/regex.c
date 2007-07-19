@@ -122,7 +122,7 @@ struct regex {
 };
 
 regex *
-rx_compile(char *p, int icase)
+rx_compile(const char *p, int icase)
 {
   const char *err;
   int errpos, match_array_size, eno;
@@ -152,7 +152,7 @@ rx_free(regex *r)
 }
 
 int
-rx_match(regex *r, char *s)
+rx_match(regex *r, const char *s)
 {
   int len = str_len(s);
   int err = pcre_exec(r->rx, r->extra, s, len, 0, 0, r->matches, r->match_array_size);
@@ -171,7 +171,7 @@ rx_match(regex *r, char *s)
 }
 
 int
-rx_subst(regex *r, char *by, char *src, char *dest, uns destlen)
+rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
 {
   char *end = dest + destlen - 1;
 
@@ -227,7 +227,7 @@ struct regex {
 };
 
 regex *
-rx_compile(char *p, int icase)
+rx_compile(const char *p, int icase)
 {
   regex *r = xmalloc_zero(sizeof(regex));
   const char *msg;
@@ -261,7 +261,7 @@ rx_free(regex *r)
 }
 
 int
-rx_match(regex *r, char *s)
+rx_match(regex *r, const char *s)
 {
   int len = strlen(s);
 
@@ -274,7 +274,7 @@ rx_match(regex *r, char *s)
 }
 
 int
-rx_subst(regex *r, char *by, char *src, char *dest, uns destlen)
+rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
 {
   char *end = dest + destlen - 1;
 
@@ -291,7 +291,7 @@ rx_subst(regex *r, char *by, char *src, char *dest, uns destlen)
 	      uns j = *by++ - '0';
 	      if (j < r->regs.num_regs)
 		{
-		  char *s = src + r->regs.start[j];
+		  const char *s = src + r->regs.start[j];
 		  uns i = r->regs.end[j] - r->regs.start[j];
 		  if (r->regs.start[j] > r->len_cache || r->regs.end[j] > r->len_cache)
 		    return -1;

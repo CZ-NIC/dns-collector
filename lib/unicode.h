@@ -212,6 +212,5 @@ utf8_encoding_len(uns c)
 
 uns utf8_strlen(const byte *str);
 uns utf8_strnlen(const byte *str, uns n);
-uns utf8_check(const byte *str);
 
 #endif

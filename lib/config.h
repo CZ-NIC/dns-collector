@@ -13,7 +13,7 @@
 
 /* Configuration switches */
 
-#include "lib/autoconf.h"
+#include "autoconf.h"
 
 /* Tell libc we're going to use all extensions available */
 

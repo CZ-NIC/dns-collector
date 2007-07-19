@@ -10,12 +10,19 @@ use warnings;
 open CF, $ARGV[2] or die "Unable to open $ARGV[2]";
 my %options = ();
 my %vars = ();
+sub opt {
+	my ($k,$v) = @_;
+	$vars{$k} = $v;
+	$options{$k} = 1 if ($k =~ /^CONFIG_/);
+}
+foreach my $k (keys %ENV) {
+	opt($k, $ENV{$k});
+}
 while (<CF>) {
 	chomp;
 	if (my ($k,$v) = /^(\w+)=(.*)/) {
 		$v =~ s/\s+$//;
-		$vars{$k} = $v;
-		$options{$k} = 1 if ($k =~ /^CONFIG_/);
+		opt($k, $v);
 	}
 }
 close CF;
