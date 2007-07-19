@@ -90,31 +90,31 @@ endif
 
 # Rules for compiling C
 
-$(o)/%.o: $(s)/%.c $(o)/lib/autoconf.h
+$(o)/%.o: $(s)/%.c $(o)/autoconf.h
 	$(M)CC $<
 	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) -c -o $@ $<
 
-$(o)/%.o: %.c $(o)/lib/autoconf.h
+$(o)/%.o: %.c $(o)/autoconf.h
 	$(M)CC $<
 	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) -c -o $@ $<
 
-%.o: %.c $(o)/lib/autoconf.h
+%.o: %.c $(o)/autoconf.h
 	$(M)CC $<
 	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) -c -o $@ $<
 
-$(o)/%.oo: $(s)/%.c $(o)/lib/autoconf.h
+$(o)/%.oo: $(s)/%.c $(o)/autoconf.h
 	$(M)CC-SO $<
 	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) $(CSHARED) -c -o $@ $<
 
-$(o)/%.oo: %.c $(o)/lib/autoconf.h
+$(o)/%.oo: %.c $(o)/autoconf.h
 	$(M)CC-SO $<
 	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) $(CSHARED) -c -o $@ $<
 
-%.oo: %.c $(o)/lib/autoconf.h
+%.oo: %.c $(o)/autoconf.h
 	$(M)CC-SO $<
 	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) $(CSHARED) -c -o $@ $<
 
-$(o)/%-tt.o: $(s)/%.c $(o)/lib/autoconf.h
+$(o)/%-tt.o: $(s)/%.c $(o)/autoconf.h
 	$(M)CC-TEST $<
 	$(Q)DEPENDENCIES_OUTPUT="$(o)/depend.new $@" $(CC) $(CFLAGS) -DTEST -c -o $@ $<
 

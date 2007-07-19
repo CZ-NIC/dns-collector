@@ -162,7 +162,7 @@ sub Finish() {
 	Log "done\n";
 
 	Log "Generating autoconf.h ... ";
-	open X, ">obj/lib/autoconf.h" or Fail $!;
+	open X, ">obj/autoconf.h" or Fail $!;
 	print X "/* Generated automatically by $0, please don't touch manually. */\n";
 	foreach my $x (sort keys %vars) {
 		# Don't export variables which contain no underscores
