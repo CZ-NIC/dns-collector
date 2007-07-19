@@ -72,7 +72,7 @@ $(o)/%.pc: $(s)/%.pc $(o)/%.$(LS)
 
 ifdef CONFIG_INSTALL_API
 
-API_ROOT:=$(shell cd run && pwd)
+API_ROOT:=$(shell pwd)/run
 INSTALL_RUNDIRS+=include lib/pkgconfig
 api: $(API_INCLUDES) $(addprefix run/lib/pkgconfig/,$(addsuffix .pc,$(API_LIBS)))
 
@@ -80,8 +80,8 @@ $(o)/%/.include-stamp:
 	$(Q)$(s)/build/install-includes $(<D) run/include/$(IDST) $(?F)
 	$(Q)touch $@
 
-run/lib/pkgconfig/%.pc: $(o)/pkgconfig/%.pc
-	$(M)PC $@
+run/lib/pkgconfig/%.pc:		# RHS supplied in the sub-makefile
+	$(M)PC-API $@
 	$(Q)sed <$< >$@ "s@^libdir=.*@libdir=$(API_ROOT)/lib@;s@^incdir=.*@incdir=$(API_ROOT)/include@"
 
 else

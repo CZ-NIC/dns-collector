@@ -13,6 +13,7 @@ API_LIBS+=libcharset
 API_INCLUDES+=$(o)/charset/.include-stamp
 $(o)/charset/.include-stamp: $(addprefix $(s)/charset/,$(LIBCHARSET_INCLUDES))
 $(o)/charset/.include-stamp: IDST=charset
+run/lib/pkgconfig/libcharset.pc: $(o)/charset/libcharset.pc
 
 build_charsets:
 	cd $(s)/charset && sh misc/generate

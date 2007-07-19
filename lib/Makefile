@@ -115,6 +115,7 @@ API_LIBS+=libucw
 API_INCLUDES+=$(o)/lib/.include-stamp
 $(o)/lib/.include-stamp: $(addprefix $(s)/lib/,$(LIBUCW_INCLUDES))
 $(o)/lib/.include-stamp: IDST=lib
+run/lib/pkgconfig/libucw.pc: $(o)/lib/libucw.pc
 
 ifdef CONFIG_UCW_PERL
 include $(s)/lib/perl/Makefile

@@ -78,3 +78,4 @@ API_LIBS+=libimages
 API_INCLUDES+=$(o)/images/.include-stamp
 $(o)/images/.include-stamp: $(addprefix $(s)/images/,$(LIBIMAGES_INCLUDES))
 $(o)/images/.include-stamp: IDST=images
+run/lib/pkgconfig/libimages.pc: $(o)/images/libimages.pc
