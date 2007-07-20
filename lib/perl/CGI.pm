@@ -17,14 +17,23 @@ BEGIN {
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 	$VERSION = 1.0;
 	@ISA = qw(Exporter);
-	@EXPORT = qw(&html_escape &url_escape &self_ref &self_form);
+	@EXPORT = qw(&html_escape &url_escape &url_param_escape &self_ref &self_form);
 	@EXPORT_OK = qw();
 	%EXPORT_TAGS = ();
 }
 
+### Escaping ###
+
 sub url_escape($) {
 	my $x = shift @_;
 	$x =~ s/([^-\$_.!*'(),0-9A-Za-z\x80-\xff])/"%".unpack('H2',$1)/ge;
+	return $x;
+}
+
+sub url_param_escape($) {
+	my $x = shift @_;
+	$x = url_escape($x);
+	$x =~ s/%20/+/g;
 	return $x;
 }
 
@@ -155,7 +164,7 @@ sub make_out_args($) {
 sub self_ref(@) {
 	my %h = @_;
 	my $out = make_out_args(\%h);
-	return "?" . join(':', map { "$_=" . url_escape($out->{$_}) } sort keys %$out);
+	return "?" . join(':', map { "$_=" . url_param_escape($out->{$_}) } sort keys %$out);
 }
 
 sub self_form(@) {
