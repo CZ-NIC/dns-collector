@@ -1,6 +1,6 @@
 #	Poor Man's CGI Module for Perl
 #
-#	(c) 2002 Martin Mares <mj@ucw.cz>
+#	(c) 2002--2007 Martin Mares <mj@ucw.cz>
 #	Slightly modified by Tomas Valla <tom@ucw.cz>
 #
 #	This software may be freely distributed and used according to the terms
@@ -124,6 +124,44 @@ sub self_form(@) {
 	my %h = @_;
 	my $out = make_out_args(\%h);
 	return join('', map { "<input type=hidden name=$_ value='" . html_escape($out->{$_}) . "'>\n" } sort keys %$out);
+}
+
+### Cookies
+
+sub cookie_esc($) {
+	my $x = shift @_;
+	if ($x !~ /^[a-zA-Z0-9%]+$/) {
+		$x =~ s/([\\\"])/\\$1/g;
+		$x = "\"$x\"";
+	}
+	return $x;
+}
+
+sub set_cookie($$@) {
+	my $key = shift @_;
+	my $value = shift @_;
+	my %other = @_;
+	$other{'version'} = 1 unless defined $other{'version'};
+	print "Set-Cookie: $key=", cookie_esc($value);
+	foreach my $k (keys %other) {
+		print ";$k=", cookie_esc($other{$k});
+	}
+	print "\n";
+}
+
+sub parse_cookies() {
+	my $h = http_get("Cookie") or return ();
+	my @cook = ();
+	while (my ($padding,$name,$val,$xx,$rest) = ($h =~ /\s*([,;]\s*)*([^ =]+)=([^ =,;\"]*|\"([^\"\\]|\\.)*\")(\s.*|;.*|$)/)) {
+		if ($val =~ /^\"/) {
+			$val =~ s/^\"//;
+			$val =~ s/\"$//;
+			$val =~ s/\\(.)/$1/g;
+		}
+		push @cook, $name, $val;
+		$h = $rest;
+	}
+	return @cook;
 }
 
 1;  # OK
