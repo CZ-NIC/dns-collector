@@ -161,15 +161,17 @@ $(o)/%: %.pl $(o)/config.mk $(s)/build/genconf
 	$(Q)chmod +x $@
 	$(Q)$(call symlink,$@,run/$(BINDIR))
 
+PERL_MODULE_DIR=UCW
+
 $(o)/%.pm: $(s)/%.pm
-	$(M)PM $<
+	$(M)"PM $< -> run/lib/perl5/$(PERL_MODULE_DIR)/$(@F)"
 	$(Q)cp $^ $@
-	$(Q)$(call symlink,$@,run/lib/perl5/Sherlock)
+	$(Q)$(call symlink,$@,run/lib/perl5/$(PERL_MODULE_DIR))
 
 $(o)/%.pm: %.pm
-	$(M)PM $<
+	$(M)"PM $< -> run/lib/perl/$(PERL_MODULE_DIR)/$(@F)"
 	$(Q)cp $^ $@
-	$(Q)$(call symlink,$@,run/lib/perl5/Sherlock)
+	$(Q)$(call symlink,$@,run/lib/perl5/$(PERL_MODULE_DIR))
 
 # Rules for data files
 
