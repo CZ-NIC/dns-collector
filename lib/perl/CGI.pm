@@ -37,6 +37,41 @@ sub html_escape($) {
 	return $x;
 }
 
+### Analysing RFC 822 Style Headers ###
+
+sub rfc822_prepare($) {
+	my $x = shift @_;
+	# Convert all %'s and backslash escapes to %xx escapes
+	$x =~ s/%/%25/g;
+	$x =~ s/\\(.)/"%".unpack("H2",$1)/ge;
+	# Remove all comments, beware, they can be nested (unterminated comments are closed at EOL automatically)
+	while ($x =~ s/^(("[^"]*"|[^"(])*(\([^)]*)*)(\([^()]*(\)|$))/$1 /) { }
+	# Remove quotes and escape dangerous characters inside (again closing at the end automatically)
+	$x =~ s{"([^"]*)("|$)}{my $z=$1; $z =~ s/([^0-9a-zA-Z%_-])/"%".unpack("H2",$1)/ge; $z;}ge;
+	# All control characters are properly escaped, tokens are clearly visible.
+	# Finally remove all unnecessary spaces.
+	$x =~ s/\s+/ /g;
+	$x =~ s/(^ | $)//g;
+	$x =~ s{\s*([()<>@,;:\\"/\[\]?=])\s*}{$1}g;
+	return $x;
+}
+
+sub rfc822_deescape($) {
+	my $x = shift @_;
+	$x =~ s/%(..)/pack("H2",$1)/ge;
+	return $x;
+}
+
+### Reading of HTTP headers ###
+
+sub http_get($) {
+	my $h = shift @_;
+	$h =~ tr/a-z-/A-Z_/;
+	return $ENV{"HTTP_$h"} || $ENV{"$h"};
+}
+
+### Parsing of Arguments ###
+
 our $arg_table;
 
 sub parse_arg_string($) {
