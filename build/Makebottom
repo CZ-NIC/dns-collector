@@ -122,7 +122,7 @@ $(o)/%-tt.o: $(s)/%.c $(o)/autoconf.h
 
 $(o)/%-t: $(o)/%-tt.o $(LIBSH)
 	$(M)LD-TEST $@
-	$(Q)$(CC) $(LDFLAGS) -o $@ $^ $(shell $(s)/build/lib-flags $^) $(LIBS)
+	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell $(s)/build/lib-flags $^) $(LIBS)
 
 $(o)/%.test: $(s)/%.t $(s)/build/tester
 	$(M)TEST $@
