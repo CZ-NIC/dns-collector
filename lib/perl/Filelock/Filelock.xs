@@ -12,7 +12,7 @@
 #include <fcntl.h>
 
 
-MODULE = Sherlock::Filelock		PACKAGE = Sherlock::Filelock
+MODULE = UCW::Filelock		PACKAGE = UCW::Filelock
 
 PROTOTYPES: ENABLED
 

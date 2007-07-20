@@ -4,7 +4,7 @@
 #	(c) 2007 Pavel Charvat <pchar@ucw.cz>
 #
 
-package Sherlock::Log;
+package UCW::Log;
 
 use lib 'lib/perl5';
 use strict;

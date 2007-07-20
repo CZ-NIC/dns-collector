@@ -8,10 +8,10 @@
 #
 #
 # Interface:
-#   Sherlock::Filelock::fcntl_lock($fd, $cmd, $type, $whence, $start, $len)
+#   UCW::Filelock::fcntl_lock($fd, $cmd, $type, $whence, $start, $len)
 #
 
-package Sherlock::Filelock;
+package UCW::Filelock;
 
 use 5.006;
 use strict;
@@ -24,7 +24,7 @@ unshift @DynaLoader::dl_library_path, "lib";
 
 our $VERSION = '0.01';
 
-bootstrap Sherlock::Filelock $VERSION;
+bootstrap UCW::Filelock $VERSION;
 
 # Preloaded methods go here.
 

@@ -5,7 +5,7 @@
 #	This software may be freely distributed and used according to the terms
 #	of the GNU Lesser General Public License.
 
-package Sherlock::Config;
+package UCW::Config;
 
 use strict;
 use warnings;
@@ -44,7 +44,7 @@ sub Parse(@) {
 			} elsif (ref $var eq "ARRAY") {
 				push @$var, $val;
 			} elsif (ref $var) {
-				die ("Sherlock::Config::Parse: don't know how to set $o");
+				die ("UCW::Config::Parse: don't know how to set $o");
 			}
 		}
 	}

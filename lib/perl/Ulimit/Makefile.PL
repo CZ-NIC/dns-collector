@@ -2,7 +2,7 @@
 
 use ExtUtils::MakeMaker;
 WriteMakefile(
-    'NAME'		=> 'Sherlock::Ulimit',
+    'NAME'		=> 'UCW::Ulimit',
     'VERSION_FROM'	=> 'Ulimit.pm',
     'INST_LIB'		=> 'lib',
     'INST_ARCHLIB'	=> 'arch',
