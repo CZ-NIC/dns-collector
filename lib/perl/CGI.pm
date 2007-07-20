@@ -128,12 +128,15 @@ sub parse_args($) {
 	}
 }
 
+### Generating Self-ref URL's ###
+
 sub make_out_args($) {
 	my ($overrides) = @_;
 	my $out = {};
 	foreach my $name (keys %$arg_table) {
 		my $arg = $arg_table->{$name};
-		defined $arg->{'pass'} && !$arg->{'pass'} && !exists $overrides->{$name} && next;
+		defined($arg->{'var'}) || next;
+		defined($arg->{'pass'}) && !$arg->{'pass'} && !exists $overrides->{$name} && next;
 		my $value;
 		if (!defined($value = $overrides->{$name})) {
 			if (exists $overrides->{$name}) {
