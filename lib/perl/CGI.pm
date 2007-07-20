@@ -16,7 +16,7 @@ package UCW::CGI;
 # will be reported properly.
 
 # Variables to be set by the calling module:
-#	$UCW::CGI::error_mail		mail address of the script admin
+#	$UCW::CGI::error_mail		mail address of the script admin (optional)
 #					(this one has to be set in the BEGIN block!)
 #	$UCW::CGI::error_hook		function to be called for reporting errors
 
