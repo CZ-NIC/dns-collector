@@ -91,8 +91,10 @@ sub parse_arg_string($) {
 		my $arg = $arg_table->{$1} or next;
 		$_ = $2;
 		s/\+/ /g;
-		s/%(..)/pack("c",hex $1)/eg;
-		s/(\r|\n|\t)/ /g;
+		s/%(..)/pack("H2",$1)/eg;
+		s/\r\n/\n/g;
+		s/\r/\n/g;
+		$arg->{'multiline'} || s/(\n|\t)/ /g;
 		s/^\s+//;
 		s/\s+$//;
 		if (my $rx = $arg->{'check'}) {
