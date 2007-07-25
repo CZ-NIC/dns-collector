@@ -1,0 +1,31 @@
+# Default configuration of Sherlock libraries
+
+# Version string used by all Sherlock libraries
+# FIXME!
+Set("SHERLOCK_VERSION" => "0.0");
+
+UnSet("CONFIG_LARGE_FILES");
+
+# We want to build all libraries shared
+Set("CONFIG_SHARED");
+
+# Liblang settings
+Set("CONFIG_LANG");
+Set("MAX_WORD_LEN" => 64);
+
+# Libimages settings
+Set("CONFIG_IMAGES");
+Set("CONFIG_IMAGES_LIBJPEG");
+Set("CONFIG_IMAGES_LIBPNG");
+Set("CONFIG_IMAGES_LIBUNGIF");
+UnSet("CONFIG_IMAGES_LIBGIF");
+UnSet("CONFIG_IMAGES_LIBMAGICK");
+
+# We want the public API
+Set("CONFIG_INSTALL_API");
+
+# FIXME
+Set("DEFAULT_CONFIG" => "cf/library");
+
+# Return success
+1;
