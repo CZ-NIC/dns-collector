@@ -2,7 +2,7 @@
 
 use ExtUtils::MakeMaker;
 WriteMakefile(
-    'NAME'		=> 'Sherlock::Filelock',
+    'NAME'		=> 'UCW::Filelock',
     'VERSION_FROM'	=> 'Filelock.pm',
     'INST_LIB'		=> 'lib',
     'INST_ARCHLIB'	=> 'arch',

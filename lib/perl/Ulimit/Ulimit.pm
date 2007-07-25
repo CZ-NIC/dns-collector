@@ -8,15 +8,15 @@
 #
 #
 # Interface:
-#   Sherlock::Ulimit::setlimit( $resource, $softlimit, $hardlimit)
-#   Sherlock::Ulimit::getlimit( $resource, $softlimit, $hardlimit)
+#   UCW::Ulimit::setlimit( $resource, $softlimit, $hardlimit)
+#   UCW::Ulimit::getlimit( $resource, $softlimit, $hardlimit)
 #
 # setlimit sets limit to values supplied in softlimit and hardlimit
 # getlimit reads limits into softlimit and hardlimit
 # $resource constants are defined below
 #
 
-package Sherlock::Ulimit;
+package UCW::Ulimit;
 
 use 5.006;
 use strict;
@@ -40,7 +40,7 @@ our $AS = 9;
 
 our $VERSION = '0.01';
 
-bootstrap Sherlock::Ulimit $VERSION;
+bootstrap UCW::Ulimit $VERSION;
 
 # Preloaded methods go here.
 

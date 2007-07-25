@@ -1,13 +1,13 @@
 # Makefile for the Filelock Perl module  (c) 2007 Pavel Chrvat <pchar@ucw.cz>
 
-DIRS+=lib/perl/Filelock/arch/auto/Sherlock/Filelock
+DIRS+=lib/perl/Filelock/arch/auto/UCW/Filelock
 FILELOCK_DIR=lib/perl/Filelock
 
 PROGS+=$(o)/lib/perl/Filelock/Filelock.pm
 
-extras:: $(o)/lib/perl/Filelock/arch/auto/Sherlock/Filelock/Filelock.$(SOEXT)
+extras:: $(o)/lib/perl/Filelock/arch/auto/UCW/Filelock/Filelock.$(SOEXT)
 
-$(o)/lib/perl/Filelock/arch/auto/Sherlock/Filelock/Filelock.$(SOEXT): $(o)/$(FILELOCK_DIR)/Filelock.xs $(o)/$(FILELOCK_DIR)/Filelock.pm $(o)/$(FILELOCK_DIR)/Makefile
+$(o)/lib/perl/Filelock/arch/auto/UCW/Filelock/Filelock.$(SOEXT): $(o)/$(FILELOCK_DIR)/Filelock.xs $(o)/$(FILELOCK_DIR)/Filelock.pm $(o)/$(FILELOCK_DIR)/Makefile
 	$(M)MAKE $@
 	$(Q)cd $(o)/$(FILELOCK_DIR) && $(MAKE) -f Makefile $(MAKESILENT)
 	$(Q)touch $@

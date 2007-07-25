@@ -122,7 +122,7 @@ $(o)/%-tt.o: $(s)/%.c $(o)/autoconf.h
 
 $(o)/%-t: $(o)/%-tt.o $(LIBSH)
 	$(M)LD-TEST $@
-	$(Q)$(CC) $(LDFLAGS) -o $@ $^ $(shell $(s)/build/lib-flags $^) $(LIBS)
+	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell $(s)/build/lib-flags $^) $(LIBS)
 
 $(o)/%.test: $(s)/%.t $(s)/build/tester
 	$(M)TEST $@
@@ -161,15 +161,17 @@ $(o)/%: %.pl $(o)/config.mk $(s)/build/genconf
 	$(Q)chmod +x $@
 	$(Q)$(call symlink,$@,run/$(BINDIR))
 
+PERL_MODULE_DIR=UCW
+
 $(o)/%.pm: $(s)/%.pm
-	$(M)PM $<
+	$(M)"PM $< -> run/lib/perl5/$(PERL_MODULE_DIR)/$(@F)"
 	$(Q)cp $^ $@
-	$(Q)$(call symlink,$@,run/lib/perl5/Sherlock)
+	$(Q)$(call symlink,$@,run/lib/perl5/$(PERL_MODULE_DIR))
 
 $(o)/%.pm: %.pm
-	$(M)PM $<
+	$(M)"PM $< -> run/lib/perl/$(PERL_MODULE_DIR)/$(@F)"
 	$(Q)cp $^ $@
-	$(Q)$(call symlink,$@,run/lib/perl5/Sherlock)
+	$(Q)$(call symlink,$@,run/lib/perl5/$(PERL_MODULE_DIR))
 
 # Rules for data files
 
