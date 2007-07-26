@@ -22,6 +22,7 @@ BEGIN {
 }
 
 Init($srcdir, "default.cfg");
+Include "lib/default.cfg";
 Log "### Configuring TestApp ###\n\n";
 Include Get("CONFIG");
 Include "lib/autoconf.cfg";

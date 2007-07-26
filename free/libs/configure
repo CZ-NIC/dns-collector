@@ -22,12 +22,10 @@ BEGIN {
 }
 
 Init($srcdir, "default.cfg");
-# FIXME!
-Set("SHERLOCK_VERSION" => "0.0");
+Include "lib/default.cfg";
 Log "### Configuring Sherlock Libraries " . Get("SHERLOCK_VERSION") . " with configuration " . Get("CONFIG") . "\n";
 Include Get("CONFIG");
 Include "lib/autoconf.cfg";
-Include "sherlock/autoconf.cfg";
 Finish();
 
 Log "\nConfigured, run `make' to build everything.\n";
