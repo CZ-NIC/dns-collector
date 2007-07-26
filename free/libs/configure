@@ -21,7 +21,7 @@ BEGIN {
 	UCW::Configure::import UCW::Configure;
 }
 
-Init($srcdir, "defconfig");	## FIXME: Shouldn't we use default.cfg everywhere?
+Init($srcdir, "default.cfg");
 # FIXME!
 Set("SHERLOCK_VERSION" => "0.0");
 Log "### Configuring Sherlock Libraries " . Get("SHERLOCK_VERSION") . " with configuration " . Get("CONFIG") . "\n";

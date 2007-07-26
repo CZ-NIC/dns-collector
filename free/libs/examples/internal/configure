@@ -21,7 +21,7 @@ BEGIN {
 	UCW::Configure::import UCW::Configure;
 }
 
-Init($srcdir, "defconfig");
+Init($srcdir, "default.cfg");
 Log "### Configuring TestApp ###\n\n";
 Include Get("CONFIG");
 Include "lib/autoconf.cfg";
