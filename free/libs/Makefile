@@ -2,7 +2,7 @@
 # (c) 2007 Martin Mares <mj@ucw.cz>
 
 # The default target
-all: runtree libs
+all: runtree libs api programs extras configs
 
 # Include configuration
 s=.
@@ -12,6 +12,9 @@ obj/config.mk:
 
 # We will use the libucw build system
 include $(s)/build/Maketop
+
+# Install config files
+CONFIGS+=sherlock local
 
 # Set up names of common libraries (to avoid forward references in rules)
 LIBLANG=$(o)/lang/liblang.pc

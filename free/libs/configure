@@ -22,7 +22,8 @@ BEGIN {
 }
 
 Init($srcdir, "defconfig");	## FIXME: Shouldn't we use default.cfg everywhere?
-Include "sherlock/default.cfg";
+# FIXME!
+Set("SHERLOCK_VERSION" => "0.0");
 Log "### Configuring Sherlock Libraries " . Get("SHERLOCK_VERSION") . " with configuration " . Get("CONFIG") . "\n";
 Include Get("CONFIG");
 Include "lib/autoconf.cfg";
