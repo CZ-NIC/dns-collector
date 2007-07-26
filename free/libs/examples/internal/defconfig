@@ -1,0 +1,22 @@
+# Default configuration file for our test application
+
+# Version string used by all Sherlock libraries
+Set("SHERLOCK_VERSION" => "0.0");
+
+# We want to build all libraries shared
+Set("CONFIG_SHARED");
+
+# Liblang settings
+Set("CONFIG_LANG");
+Set("MAX_WORD_LEN" => 64);
+
+# Libimages settings
+Set("CONFIG_IMAGES");
+Set("CONFIG_IMAGES_LIBJPEG");
+Set("CONFIG_IMAGES_LIBPNG");
+Set("CONFIG_IMAGES_LIBUNGIF");
+UnSet("CONFIG_IMAGES_LIBGIF");
+UnSet("CONFIG_IMAGES_LIBMAGICK");
+
+# Return success
+1;
