@@ -1,3 +1,13 @@
-README for the free release of libraries
+Sherlock Holmes Libraries 3.12
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(c) 1997--2007 Martin Mares <mj@ucw.cz>
+(c) 2000--2007 Robert Spalek <robert@ucw.cz>
 
-		FIXME: Write
+This package contains all libraries from the freely distributable version
+of the Sherlock Holmes search engine (see http://www.ucw.cz/holmes/).
+
+See doc/using-libs for description of the libraries.
+
+See doc/install for build requirements (the rest of the document does not apply).
+
+Use `./configure && make' to build the libraries.
