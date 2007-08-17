@@ -17,17 +17,23 @@ include $(s)/build/Maketop
 CONFIGS+=sherlock local
 
 # Set up names of common libraries (to avoid forward references in rules)
-LIBLANG=$(o)/lang/liblang.pc
 LIBCHARSET=$(o)/charset/libcharset.pc
-LIBIMAGES=$(o)/images/libimages.pc
 LIBSH=$(o)/sherlock/libsh.pc
 
 # Include makefiles of libraries we wish to use
 include $(s)/lib/Makefile
 include $(s)/charset/Makefile
-include $(s)/lang/Makefile
-include $(s)/images/Makefile
 include $(s)/sherlock/Makefile
+
+ifdef CONFIG_LANG
+LIBLANG=$(o)/lang/liblang.pc
+include $(s)/lang/Makefile
+endif
+
+ifdef CONFIG_IMAGES
+LIBIMAGES=$(o)/images/libimages.pc
+include $(s)/images/Makefile
+endif
 
 libs: $(LIBUCW) $(LIBSH) $(LIBIMAGES) $(LIBCHARSET) $(LIBLANG)
 
