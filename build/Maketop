@@ -68,6 +68,9 @@ distclean:: clean
 testclean::
 	rm -f `find obj -name "*.test"`
 
+# Extra default rules (appended to by submakefiles)
+extras::
+
 # Relative symlinks and other pathname manipulation macros
 empty:=
 space:=$(empty) $(empty)

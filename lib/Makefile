@@ -1,6 +1,7 @@
 # Makefile for the UCW Library (c) 1997--2006 Martin Mares <mj@ucw.cz>
 
 DIRS+=lib
+CONFIGS+=library
 
 ifdef CONFIG_UCW_DBTOOL
 PROGS+=$(o)/lib/db-tool
