@@ -7,6 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
+#undef LOCAL_DEBUG
+
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 #include "lib/lfs.h"
@@ -142,15 +144,7 @@ bfmm_close(struct fastbuf *f)
   if (F->file_extend > F->file_size &&
       sh_ftruncate(F->fd, F->file_size))
     die("ftruncate(%s): %m", f->name);
-  switch (F->is_temp_file)
-    {
-    case 1:
-      if (unlink(f->name) < 0)
-	msg(L_ERROR, "unlink(%s): %m", f->name);
-    case 0:
-      if (close(F->fd))
-	die("close(%s): %m", f->name);
-    }
+  bclose_file_helper(f, F->fd, F->is_temp_file);
   xfree(f);
 }
 
@@ -200,8 +194,9 @@ bfmmopen_internal(int fd, const char *name, uns mode)
 
 int main(int argc, char **argv)
 {
-  struct fastbuf *f = bopen_mm(argv[1], O_RDONLY);
-  struct fastbuf *g = bopen_mm(argv[2], O_RDWR | O_CREAT | O_TRUNC);
+  struct fb_params par = { .type = FB_MMAP };
+  struct fastbuf *f = bopen_file(argv[1], O_RDONLY, &par);
+  struct fastbuf *g = bopen_file(argv[2], O_RDWR | O_CREAT | O_TRUNC, &par);
   int c;
 
   DBG("Copying");

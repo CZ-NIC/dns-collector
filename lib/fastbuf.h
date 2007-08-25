@@ -73,21 +73,19 @@ struct fastbuf {
   int can_overwrite_buffer;		/* Can the buffer be altered? (see discussion above) 0=never, 1=temporarily, 2=permanently */
 };
 
-/* FastIO on files with run-time parametrization */
+/* FastIO on files with several configurable back-ends */
 
 enum fb_type {				/* Which back-end you want to use */
   FB_STD,				/* Standard buffered I/O */
-  FB_DIRECT,				/* Direct I/O bypassing system caches (see fb-direct.c for description) */
+  FB_DIRECT,				/* Direct I/O bypassing system caches (see fb-direct.c for a description) */
   FB_MMAP				/* Memory mapped files */
 };
 
 struct fb_params {
   enum fb_type type;
-  uns buffer_size;
-  /* FB_STD only */
-  uns keep_back_buf;
-  /* FB_DIRECT only */
-  uns read_ahead;			
+  uns buffer_size;			/* 0 for default size */
+  uns keep_back_buf;			/* FB_STD: optimize for bi-directional access */
+  uns read_ahead;			/* FB_DIRECT options */
   uns write_back;
   struct asio_queue *asio;
 };
@@ -101,9 +99,8 @@ struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *par
 struct fastbuf *bopen_tmp_file(struct fb_params *params);
 struct fastbuf *bopen_fd(int fd, struct fb_params *params);
 
-/* FastIO on standard files */
+/* FastIO on standard files (shortcuts for FB_STD) */
 
-struct fastbuf *bfdopen_internal(int fd, const char *name, uns buflen);
 struct fastbuf *bopen(const char *name, uns mode, uns buflen);
 struct fastbuf *bopen_try(const char *name, uns mode, uns buflen);
 struct fastbuf *bopen_tmp(uns buflen);
@@ -111,17 +108,22 @@ struct fastbuf *bfdopen(int fd, uns buflen);
 struct fastbuf *bfdopen_shared(int fd, uns buflen);
 void bfilesync(struct fastbuf *b);
 
+/* Temporary files */
+
 #define TEMP_FILE_NAME_LEN 256
 void temp_file_name(char *name);
 void bfix_tmp_file(struct fastbuf *fb, const char *name);
 
 /* Internal functions of some file back-ends */
 
+struct fastbuf *bfdopen_internal(int fd, const char *name, uns buflen);
 struct fastbuf *bfmmopen_internal(int fd, const char *name, uns mode);
 
 extern uns fbdir_cheat;
 struct asio_queue;
 struct fastbuf *fbdir_open_fd_internal(int fd, const char *name, struct asio_queue *io_queue, uns buffer_size, uns read_ahead, uns write_back);
+
+void bclose_file_helper(struct fastbuf *f, int fd, int is_temp_file);
 
 /* FastIO on in-memory streams */
 
@@ -185,8 +187,8 @@ fbatomic_commit(struct fastbuf *b)
 /* Configuring stream parameters */
 
 enum bconfig_type {
-  BCONFIG_IS_TEMP_FILE,
-  BCONFIG_KEEP_BACK_BUF,
+  BCONFIG_IS_TEMP_FILE,			/* 0=normal file, 1=temporary file, -1=shared fd */
+  BCONFIG_KEEP_BACK_BUF,		/* Optimize for bi-directional access */
 };
 
 int bconfig(struct fastbuf *f, uns type, int data);
@@ -198,7 +200,7 @@ void bflush(struct fastbuf *f);
 void bseek(struct fastbuf *f, sh_off_t pos, int whence);
 void bsetpos(struct fastbuf *f, sh_off_t pos);
 void brewind(struct fastbuf *f);
-sh_off_t bfilesize(struct fastbuf *f);		// -1 if not seekable
+sh_off_t bfilesize(struct fastbuf *f);		/* -1 if not seekable */
 
 static inline sh_off_t btell(struct fastbuf *f)
 {

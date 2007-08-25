@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Fast Buffered I/O on O_DIRECT Files
  *
- *	(c) 2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2006--2007 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -20,7 +20,6 @@
  *
  *	FIXME: what if the OS doesn't support O_DIRECT?
  *	FIXME: unaligned seeks and partial writes?
- *	FIXME: merge with other file-oriented fastbufs
  */
 
 #undef LOCAL_DEBUG
@@ -57,7 +56,7 @@ enum fbdir_mode {				// Current operating mode
 struct fb_direct {
   struct fastbuf fb;
   int fd;					// File descriptor
-  int is_temp_file;				// 0=normal file, 1=temporary file, delete on close, -1=shared FD
+  int is_temp_file;
   struct asio_queue *io_queue;			// I/O queue to use
   struct asio_queue *user_queue;		// If io_queue was supplied by the user
   struct asio_request *pending_read;
@@ -264,15 +263,7 @@ fbdir_close(struct fastbuf *f)
   if (!F->user_queue)
     fbdir_put_io_queue();
 
-  switch (F->is_temp_file)
-    {
-    case 1:
-      if (unlink(f->name) < 0)
-	msg(L_ERROR, "unlink(%s): %m", f->name);
-    case 0:
-      close(F->fd);
-    }
-
+  bclose_file_helper(f, F->fd, F->is_temp_file);
   xfree(f);
 }
 
@@ -323,13 +314,14 @@ fbdir_open_fd_internal(int fd, const char *name, struct asio_queue *q, uns buffe
 
 int main(int argc, char **argv)
 {
+  struct fb_params par = { .type = FB_DIRECT };
   struct fastbuf *f, *t;
 
   log_init(NULL);
   if (cf_getopt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) >= 0)
     die("Hey, whaddya want?");
-  f = (optind < argc) ? fbdir_open(argv[optind++], O_RDONLY, NULL) : fbdir_open_fd(0, NULL);
-  t = (optind < argc) ? fbdir_open(argv[optind++], O_RDWR | O_CREAT | O_TRUNC, NULL) : fbdir_open_fd(1, NULL);
+  f = (optind < argc) ? bopen_file(argv[optind++], O_RDONLY, &par) : bopen_fd(0, &par);
+  t = (optind < argc) ? bopen_file(argv[optind++], O_RDWR | O_CREAT | O_TRUNC, &par) : bopen_fd(1, &par);
 
   bbcopy(f, t, ~0U);
   ASSERT(btell(f) == btell(t));

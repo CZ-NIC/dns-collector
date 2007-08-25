@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Fast Buffered I/O on Files
  *
- *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2007 Martin Mares <mj@ucw.cz>
  *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -20,7 +20,7 @@
 struct fb_file {
   struct fastbuf fb;
   int fd;				/* File descriptor */
-  int is_temp_file;			/* 0=normal file, 1=temporary file, delete on close, -1=shared FD */
+  int is_temp_file;
   int keep_back_buf;			/* Optimize for backwards reading */
   sh_off_t wpos;			/* Real file position */
   uns wlen;				/* Window size */
@@ -199,15 +199,7 @@ bfd_seek(struct fastbuf *f, sh_off_t pos, int whence)
 static void
 bfd_close(struct fastbuf *f)
 {
-  switch (FB_FILE(f)->is_temp_file)
-    {
-    case 1:
-      if (unlink(f->name) < 0)
-	msg(L_ERROR, "unlink(%s): %m", f->name);
-    case 0:
-      if (close(FB_FILE(f)->fd))
-	die("close(%s): %m", f->name);
-    }
+  bclose_file_helper(f, FB_FILE(f)->fd, FB_FILE(f)->is_temp_file);
   xfree(f);
 }
 
@@ -255,32 +247,6 @@ bfdopen_internal(int fd, const char *name, uns buflen)
   return f;
 }
 
-struct fastbuf *
-bopen_try(const char *name, uns mode, uns buflen)
-{
-  return bopen_file_try(name, mode, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
-}
-
-struct fastbuf *
-bopen(const char *name, uns mode, uns buflen)
-{
-  return bopen_file(name, mode, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
-}
-
-struct fastbuf *
-bfdopen(int fd, uns buflen)
-{
-  return bopen_fd(fd, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
-}
-
-struct fastbuf *
-bfdopen_shared(int fd, uns buflen)
-{
-  struct fastbuf *f = bfdopen(fd, buflen);
-  FB_FILE(f)->is_temp_file = -1;
-  return f;
-}
-
 void
 bfilesync(struct fastbuf *b)
 {
@@ -295,7 +261,7 @@ int main(void)
 {
   struct fastbuf *f, *t;
   f = bopen_tmp(16);
-  t = bfdopen(1, 13);
+  t = bfdopen_shared(1, 13);
   for (uns i = 0; i < 16; i++)
     bwrite(f, "<hello>", 7);
   bprintf(t, "%d\n", (int)btell(f));

@@ -2,6 +2,7 @@
  *	UCW Library -- FastIO on files with run-time parametrization
  *
  *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2007 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -49,9 +50,9 @@ fbpar_global_init(void)
 }
 
 static struct fastbuf *
-bopen_fd_internal(int fd, struct fb_params *params, uns mode, const byte *name)
+bopen_fd_internal(int fd, struct fb_params *params, uns mode, const char *name)
 {
-  byte buf[32];
+  char buf[32];
   if (!name)
     {
       sprintf(buf, "fd%d", fd);
@@ -84,7 +85,7 @@ bopen_fd_internal(int fd, struct fb_params *params, uns mode, const byte *name)
 }
 
 static struct fastbuf *
-bopen_file_internal(const byte *name, int mode, struct fb_params *params, int try)
+bopen_file_internal(const char *name, int mode, struct fb_params *params, int try)
 {
   if (!params)
     params = &fbpar_def;
@@ -123,12 +124,47 @@ bopen_fd(int fd, struct fb_params *params)
   return bopen_fd_internal(fd, params ? : &fbpar_def, ~0U, NULL);
 }
 
-struct fastbuf *
-bopen_tmp_file(struct fb_params *params)
+/* Function for use by individual file back-ends */
+
+void
+bclose_file_helper(struct fastbuf *f, int fd, int is_temp_file)
 {
-  byte buf[TEMP_FILE_NAME_LEN];
-  temp_file_name(buf);
-  struct fastbuf *fb = bopen_file_internal(buf, O_RDWR | O_CREAT | O_TRUNC, params, 0);
-  bconfig(fb, BCONFIG_IS_TEMP_FILE, 1);
-  return fb;
+  switch (is_temp_file)
+    {
+    case 1:
+      if (unlink(f->name) < 0)
+	msg(L_ERROR, "unlink(%s): %m", f->name);
+    case 0:
+      if (close(fd))
+	die("close(%s): %m", f->name);
+    }
 }
+
+/* Compatibility wrappers */
+
+struct fastbuf *
+bopen_try(const char *name, uns mode, uns buflen)
+{
+  return bopen_file_try(name, mode, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
+}
+
+struct fastbuf *
+bopen(const char *name, uns mode, uns buflen)
+{
+  return bopen_file(name, mode, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
+}
+
+struct fastbuf *
+bfdopen(int fd, uns buflen)
+{
+  return bopen_fd(fd, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
+}
+
+struct fastbuf *
+bfdopen_shared(int fd, uns buflen)
+{
+  struct fastbuf *f = bfdopen(fd, buflen);
+  bconfig(f, BCONFIG_IS_TEMP_FILE, -1);
+  return f;
+}
+
