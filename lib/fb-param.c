@@ -167,4 +167,3 @@ bfdopen_shared(int fd, uns buflen)
   bconfig(f, BCONFIG_IS_TEMP_FILE, 2);
   return f;
 }
-
