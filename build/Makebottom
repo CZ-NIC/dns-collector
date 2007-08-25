@@ -120,7 +120,7 @@ $(o)/%-tt.o: $(s)/%.c $(o)/autoconf.h
 
 # Rules for testing
 
-$(o)/%-t: $(o)/%-tt.o $(LIBSH)
+$(o)/%-t: $(o)/%-tt.o $(TESTING_DEPS)
 	$(M)LD-TEST $@
 	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell $(s)/build/lib-flags $^) $(LIBS)
 
