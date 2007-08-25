@@ -2,6 +2,7 @@
 
 DIRS+=lib
 CONFIGS+=library
+LIBUCW=$(o)/lib/libucw.pc
 
 ifdef CONFIG_UCW_DBTOOL
 PROGS+=$(o)/lib/db-tool
@@ -78,7 +79,6 @@ endif
 
 include $(s)/lib/sorter/Makefile
 
-LIBUCW=$(o)/lib/libucw.pc
 LIBUCW_MOD_PATHS=$(addprefix $(o)/lib/,$(LIBUCW_MODS))
 
 $(o)/lib/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
