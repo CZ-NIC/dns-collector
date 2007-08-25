@@ -28,7 +28,7 @@
 static size_t P(internal_workspace)(void)
 {
   size_t workspace = 0;
-#ifdef CONFIG_UNIFY
+#ifdef SORT_UNIFY
   workspace = sizeof(P(key) *);
 #endif
 #if 0		// FIXME: Workspace for radix-sort if needed
