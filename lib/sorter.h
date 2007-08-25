@@ -538,10 +538,7 @@ struct fastbuf *fb1, struct fastbuf *fb2
 #ifdef SORT_OUTPUT_FB
   return fb1;
 #else
-  bconfig(fb1, BCONFIG_IS_TEMP_FILE, 0);
-  if (rename(fb1->name, outname) < 0)
-    die("rename(%s,%s): %m", fb1->name, outname);
-  bclose(fb1);
+  bfix_tmp_file(fb1, outname);
 #endif
 }
 

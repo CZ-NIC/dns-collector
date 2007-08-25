@@ -272,10 +272,7 @@ static struct fastbuf *P(sort)(
   sorter_run(&ctx);
 
 #ifdef SORT_OUTPUT_FILE
-  if (rename(ctx.out_fb->name, out) < 0)
-    die("Cannot rename %s to %s: %m", ctx.out_fb->name, out);
-  bconfig(ctx.out_fb, BCONFIG_IS_TEMP_FILE, 0);
-  bclose(ctx.out_fb);
+  bfix_tmp_file(ctx.out_fb, out);
   ctx.out_fb = NULL;
 #endif
   return ctx.out_fb;
