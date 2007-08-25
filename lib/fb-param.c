@@ -86,6 +86,8 @@ bopen_fd_internal(int fd, struct fb_params *params, uns mode, const byte *name)
 static struct fastbuf *
 bopen_file_internal(const byte *name, int mode, struct fb_params *params, int try)
 {
+  if (!params)
+    params = &fbpar_def;
   if (params->type == FB_DIRECT && !fbdir_cheat)
     mode |= O_DIRECT;
   if (params->type == FB_MMAP && (mode & O_ACCMODE) == O_WRONLY)
@@ -106,13 +108,13 @@ bopen_file_internal(const byte *name, int mode, struct fb_params *params, int tr
 struct fastbuf *
 bopen_file(const char *name, int mode, struct fb_params *params)
 {
-  return bopen_file_internal(name, mode, params ? : &fbpar_def, 0);
+  return bopen_file_internal(name, mode, params, 0);
 }
 
 struct fastbuf *
 bopen_file_try(const char *name, int mode, struct fb_params *params)
 {
-  return bopen_file_internal(name, mode, params ? : &fbpar_def, 1);
+  return bopen_file_internal(name, mode, params, 1);
 }
 
 struct fastbuf *
