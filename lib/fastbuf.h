@@ -113,6 +113,7 @@ void bfilesync(struct fastbuf *b);
 
 #define TEMP_FILE_NAME_LEN 256
 void temp_file_name(char *name);
+void bfix_tmp_file(struct fastbuf *fb, const char *name);
 
 /* Internal functions of some file back-ends */
 

@@ -48,10 +48,20 @@ bopen_tmp(uns buflen)
   char buf[TEMP_FILE_NAME_LEN];
   struct fastbuf *f;
 
+  // FIXME: This needs cleanup and merging with other bopen functions.
   temp_file_name(buf);
   f = bopen(buf, O_RDWR | O_CREAT | O_TRUNC, buflen);
   bconfig(f, BCONFIG_IS_TEMP_FILE, 1);
   return f;
+}
+
+void bfix_tmp_file(struct fastbuf *fb, const char *name)
+{
+  int was_temp = bconfig(fb, BCONFIG_IS_TEMP_FILE, 0);
+  ASSERT(was_temp == 1);
+  if (rename(fb->name, name))
+    die("Cannot rename %s to %s: %m", fb->name, name);
+  bclose(fb);
 }
 
 #ifdef TEST
