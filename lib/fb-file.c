@@ -214,14 +214,18 @@ bfd_close(struct fastbuf *f)
 static int
 bfd_config(struct fastbuf *f, uns item, int value)
 {
+  int orig;
+
   switch (item)
     {
       case BCONFIG_IS_TEMP_FILE:
+	orig = FB_FILE(f)->is_temp_file;
 	FB_FILE(f)->is_temp_file = value;
-	return 0;
+	return orig;
       case BCONFIG_KEEP_BACK_BUF:
+        orig = FB_FILE(f)->keep_back_buf;
 	FB_FILE(f)->keep_back_buf = value;
-	return 0;
+	return orig;
       default:
 	return -1;
     }

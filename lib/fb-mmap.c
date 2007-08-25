@@ -157,11 +157,14 @@ bfmm_close(struct fastbuf *f)
 static int
 bfmm_config(struct fastbuf *f, uns item, int value)
 {
+  int orig;
+
   switch (item)
     {
     case BCONFIG_IS_TEMP_FILE:
+      orig = FB_MMAP(f)->is_temp_file;
       FB_MMAP(f)->is_temp_file = value;
-      return 0;
+      return orig;
     default:
       return -1;
     }
