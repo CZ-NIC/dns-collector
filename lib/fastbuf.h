@@ -187,7 +187,7 @@ fbatomic_commit(struct fastbuf *b)
 /* Configuring stream parameters */
 
 enum bconfig_type {
-  BCONFIG_IS_TEMP_FILE,			/* 0=normal file, 1=temporary file, -1=shared fd */
+  BCONFIG_IS_TEMP_FILE,			/* 0=normal file, 1=temporary file, 2=shared fd */
   BCONFIG_KEEP_BACK_BUF,		/* Optimize for bi-directional access */
 };
 
