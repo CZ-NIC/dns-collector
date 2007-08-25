@@ -101,7 +101,7 @@ struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *par
 struct fastbuf *bopen_tmp_file(struct fb_params *params);
 struct fastbuf *bopen_fd(int fd, struct fb_params *params);
 
-/* FastIO on standard files (specify buffer size 0 to enable mmaping) */
+/* FastIO on standard files */
 
 struct fastbuf *bfdopen_internal(int fd, const char *name, uns buflen);
 struct fastbuf *bopen(const char *name, uns mode, uns buflen);
