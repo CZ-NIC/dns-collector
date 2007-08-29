@@ -201,6 +201,10 @@ static inline void P(copy_merged)(P(key) **keys, struct fastbuf **data UNUSED, u
 
 #include "lib/sorter/s-twoway.h"
 
+#ifndef SORT_UNIFY
+#include "lib/sorter/s-multiway.h"
+#endif
+
 #if defined(SORT_HASH_BITS) || defined(SORT_INT)
 #include "lib/sorter/s-radix.h"
 #endif
@@ -268,6 +272,10 @@ static struct fastbuf *P(sort)(
   ctx.internal_sort = P(internal);
   ctx.internal_estimate = P(internal_estimate);
   ctx.twoway_merge = P(twoway_merge);
+
+#ifndef SORT_UNIFY
+  ctx.multiway_merge = P(multiway_merge);
+#endif
 
   sorter_run(&ctx);
 

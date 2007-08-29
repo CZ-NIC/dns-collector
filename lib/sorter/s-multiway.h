@@ -22,8 +22,12 @@ static inline void P(update_tree)(P(key) *keys, int *tree, uns i)
     }
 }
 
-static void P(multiway_merge)(struct sort_context *ctx UNUSED, struct sort_bucket **ins, uns num_ins, struct sort_bucket *out)
+static void P(multiway_merge)(struct sort_context *ctx UNUSED, struct sort_bucket **ins, struct sort_bucket *out)
 {
+  uns num_ins = 0;
+  while (ins[num_ins])
+    num_ins++;
+
   uns n2 = 1;
   while (n2 < num_ins)
     n2 *= 2;
@@ -32,7 +36,7 @@ static void P(multiway_merge)(struct sort_context *ctx UNUSED, struct sort_bucke
   struct fastbuf *fins[num_ins];
   P(key) keys[num_ins];		// FIXME: Tune num_ins according to L1 cache size
   int tree[2*n2];		// A complete binary tree, leaves are input streams, each internal vertex contains a minimum of its sons
-  for (uns i=1; i<=n2; i++)
+  for (uns i=1; i<2*n2; i++)
     tree[i] = -1;
 
   for (uns i=0; i<num_ins; i++)
