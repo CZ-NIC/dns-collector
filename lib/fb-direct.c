@@ -20,6 +20,7 @@
  *
  *	FIXME: what if the OS doesn't support O_DIRECT?
  *	FIXME: unaligned seeks and partial writes?
+ *	FIXME: append to unaligned file
  */
 
 #undef LOCAL_DEBUG
