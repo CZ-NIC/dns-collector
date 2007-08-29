@@ -137,7 +137,7 @@ test_counted(int mode, u64 size)
 	die("Discrepancy: %u instead of %u", j, i);
       uns k = bgetl(f);
       if (k != 2*mult)
-	die("Discrepancy: %u has count %u instead of %u", j, k, mult);
+	die("Discrepancy: %u has count %u instead of %u", j, k, 2*mult);
     }
   bclose(f);
 }
