@@ -112,6 +112,5 @@ sh_off_t sbuck_size(struct sort_bucket *b);
 struct fastbuf *sbuck_read(struct sort_bucket *b);
 struct fastbuf *sbuck_write(struct sort_bucket *b);
 void sbuck_swap_out(struct sort_bucket *b);
-void format_size(byte *buf, u64 x);
 
 #endif
