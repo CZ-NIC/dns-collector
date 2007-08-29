@@ -212,7 +212,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 	{
 	  ASSERT(join->runs == 2);
 	  join->runs--;
-	  sbuck_drop(b);
+	  sbuck_drop(p);
 	}
       else
 	clist_insert_after(&p->n, list_pos);
