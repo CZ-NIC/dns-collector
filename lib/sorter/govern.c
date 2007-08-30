@@ -199,6 +199,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
       cont = sorter_presort(ctx, b, p, (!part_cnt && join) ? join : p);
       part_cnt++;
       total_size += sbuck_size(p);
+      sbuck_swap_out(p);
     }
   while (cont);
   sorter_stop_timer(ctx, &ctx->total_pre_time);
