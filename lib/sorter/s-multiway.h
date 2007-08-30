@@ -7,14 +7,21 @@
  *	of the GNU Lesser General Public License.
  */
 
-typedef struct P(mwt_node) {
-  int i;
-#ifdef SORT_UNIFY
-  int eq;
-#endif
-} P(mwt_node);
+/*
+ * We use a binary tree to keep track of the current minimum. The tree is
+ * represented by an array (in the same way as binary heaps usually are),
+ * leaves correspond to input streams and each internal vertex remembers
+ * the leaf in its subtree, which has the lowest key.
+ */
 
-static inline void P(update_tree)(P(key) *keys, P(mwt_node) *tree, uns i)
+typedef struct P(mwt) {
+  int i;		// Minimum of the subtree
+#ifdef SORT_UNIFY
+  int eq;		// Did we encounter equality anywhere in the subtree?
+#endif
+} P(mwt);
+
+static inline void P(update_tree)(P(key) *keys, P(mwt) *tree, uns i)
 {
   while (i /= 2)
     {
@@ -48,7 +55,7 @@ static inline void P(update_tree)(P(key) *keys, P(mwt_node) *tree, uns i)
 #endif
 }
 
-static inline void P(set_tree)(P(key) *keys, P(mwt_node) *tree, uns i, int val)
+static inline void P(set_tree)(P(key) *keys, P(mwt) *tree, uns i, int val)
 {
   tree[i].i = val;
   P(update_tree)(keys, tree, i);
@@ -67,9 +74,9 @@ static void P(multiway_merge)(struct sort_context *ctx UNUSED, struct sort_bucke
   struct fastbuf *fout = sbuck_write(out);
   struct fastbuf *fins[num_ins];
   P(key) keys[num_ins];
-  P(mwt_node) tree[2*n2];		// A complete binary tree, leaves are input streams, each internal vertex contains a minimum of its sons
+  P(mwt) tree[2*n2];
   for (uns i=1; i<2*n2; i++)
-    tree[i] = (P(mwt_node)) { .i = -1 };
+    tree[i] = (P(mwt)) { .i = -1 };
 
   for (uns i=0; i<num_ins; i++)
     {
