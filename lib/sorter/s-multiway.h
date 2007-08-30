@@ -18,30 +18,26 @@ static inline void P(update_tree)(P(key) *keys, P(mwt_node) *tree, uns i)
 {
   while (i /= 2)
     {
-      P(mwt_node) new;
       if (tree[2*i].i < 0)
-	new = tree[2*i+1];
+	tree[i] = tree[2*i+1];
       else if (tree[2*i+1].i < 0)
-	new = tree[2*i];
+	tree[i] = tree[2*i];
       else
 	{
 	  int cmp = P(compare)(&keys[tree[2*i].i], &keys[tree[2*i+1].i]);
-	  if (cmp <= 0)
-	    new = tree[2*i];
-	  else
-	    new = tree[2*i+1];
+	  tree[i] = (cmp <= 0) ? tree[2*i] : tree[2*i+1];
 #ifdef SORT_UNIFY
 	  if (!cmp)
-	    new.eq = 1;
+	    tree[i].eq = 1;
 #endif
 	}
-#ifdef SORT_UNIFY_XXX		// FIXME
-      /* If we are not unifying, the keys are usually distinct, so this check is pointless */
-      if (!memcmp(&tree[i], &new, sizeof(new)))
-	break;
-#endif
-      tree[i] = new;
+      /*
+       * It is very tempting to stop as soon as the current node does not
+       * change, but it is wrong, because even if the stream index stored in
+       * the tree is the same, the actual key value can differ.
+       */
     }
+  ASSERT(tree[1].i < 16);
 }
 
 static inline void P(set_tree)(P(key) *keys, P(mwt_node) *tree, uns i, int val)
@@ -65,12 +61,7 @@ static void P(multiway_merge)(struct sort_context *ctx UNUSED, struct sort_bucke
   P(key) keys[num_ins];
   P(mwt_node) tree[2*n2];		// A complete binary tree, leaves are input streams, each internal vertex contains a minimum of its sons
   for (uns i=1; i<2*n2; i++)
-    {
-      tree[i].i = -1;
-#ifdef SORT_UNIFY
-      tree[i].eq = 0;
-#endif
-    }
+    tree[i] = (P(mwt_node)) { .i = -1 };
 
   for (uns i=0; i<num_ins; i++)
     {
@@ -88,7 +79,7 @@ static void P(multiway_merge)(struct sort_context *ctx UNUSED, struct sort_bucke
   while (likely(tree[1].i >= 0))
     {
       int i = tree[1].i;
-      if (!tree[1].eq && 0)	// FIXME: This does not work for some reason
+      if (!tree[1].eq)
 	{
 	  /* The key is unique, so let's go through the fast path */
 	  P(copy_data)(&keys[i], fins[i], fout);
