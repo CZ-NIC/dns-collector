@@ -37,7 +37,15 @@ static inline void P(update_tree)(P(key) *keys, P(mwt_node) *tree, uns i)
        * the tree is the same, the actual key value can differ.
        */
     }
-  ASSERT(tree[1].i < 16);
+#if defined(__GNUC__) && (__GNUC__ * 1000 + __GNUC_MINOR__ < 4002)
+  /*
+   * This function sometimes triggers optimizer bugs in GCC 4.1.1 and
+   * possibly also earlier versions, leading to an assumption that tree[1]
+   * does not change during this function. We add an explicit memory barrier
+   * as a work-around. Ugh.
+   */
+  asm volatile ("" : : : "memory");
+#endif
 }
 
 static inline void P(set_tree)(P(key) *keys, P(mwt_node) *tree, uns i, int val)
