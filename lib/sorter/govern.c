@@ -256,6 +256,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 	}
       else
 	{
+	  sbuck_swap_out(out);
 	  clist_add_tail(&parts, &out->n);
 	  SORT_TRACE("Multi-way merge pass (%d ways, %s, %dMB/s)", n, F_BSIZE(out), sorter_speed(ctx, sbuck_size(out)));
 	}
