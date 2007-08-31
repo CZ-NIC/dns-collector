@@ -7,7 +7,10 @@ Improvements:
 o  Use radix-sort for internal sorting.
 o  Parallelization of internal sorting.
 o  Clean up data types and make sure they cannot overflow. (size_t vs. u64 vs. sh_off_t vs. uns)
-o  Buffer sizing in internal sorters.
 o  Switching between direct and normal I/O.
 o  When merging, choose the output file with less runs instead of always switching?
 o  Deal with too rough range estimates in radix splitting.
+o  How does the speed of radix splitting decrease with increasing number of hash bits?
+   Does it help to use more bits than we need, so that we sort less data in memory?
+o  Log messages should show both original and new size of the data. The speed
+   should be probably calculated from the former.
