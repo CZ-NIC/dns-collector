@@ -158,7 +158,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
   do {
     ++pass;
     sorter_start_timer(ctx);
-    if (ins[0]->runs == 1 && ins[1]->runs == 1 && join)
+    if (ins[0]->runs <= 1 && ins[1]->runs <= 1 && join)
       {
 	// This is guaranteed to produce a single run, so join if possible
 	outs[0] = join;
