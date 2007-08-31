@@ -183,6 +183,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
   clist parts;
   cnode *list_pos = b->n.prev;
   struct sort_bucket *join = sbuck_join_to(b);
+  uns trace_level = (b->flags & SBF_SOURCE) ? 1 : 2;
 
   clist_init(&parts);
   ASSERT(!(sorter_debug & SORT_DEBUG_NO_PRESORT));
@@ -195,36 +196,43 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
   do
     {
       struct sort_bucket *p = sbuck_new(ctx);
-      clist_add_tail(&parts, &p->n);
       cont = sorter_presort(ctx, b, p, (!part_cnt && join) ? join : p);
-      part_cnt++;
-      total_size += sbuck_size(p);
-      sbuck_swap_out(p);
+      if (sbuck_have(p))
+	{
+	  part_cnt++;
+	  clist_add_tail(&parts, &p->n);
+	  total_size += sbuck_size(p);
+	  sbuck_swap_out(p);
+	}
+      else
+	sbuck_drop(p);
     }
   while (cont);
   sorter_stop_timer(ctx, &ctx->total_pre_time);
+  sbuck_drop(b);
 
   // FIXME: This is way too similar to the two-way case.
+  if (!part_cnt)
+    {
+      if (join)
+	{
+          SORT_XTRACE(trace_level, "Sorted in memory and joined");
+	  ASSERT(join->runs == 2);
+	  join->runs--;
+	}
+      return;
+    }
   if (part_cnt == 1)
     {
       struct sort_bucket *p = clist_head(&parts);
-      SORT_XTRACE(((b->flags & SBF_SOURCE) ? 1 : 2), "Sorted in memory");
-      if (join)
-	{
-	  ASSERT(join->runs == 2);
-	  join->runs--;
-	  sbuck_drop(p);
-	}
-      else
-	clist_insert_after(&p->n, list_pos);
-      sbuck_drop(b);
+      SORT_XTRACE(trace_level, "Sorted in memory");
+      clist_insert_after(&p->n, list_pos);
       return;
     }
 
   SORT_TRACE("Multi-way presorting pass (%d parts, %s, %dMB/s)", part_cnt, stk_fsize(total_size), sorter_speed(ctx, total_size));
-  sbuck_drop(b);
 
-  uns max_ways = 16;
+  uns max_ways = 64;
   struct sort_bucket *ways[max_ways+1];
   SORT_XTRACE(2, "Starting up to %d-way merge", max_ways);
   for (;;)
