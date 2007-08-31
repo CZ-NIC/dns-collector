@@ -55,8 +55,8 @@ sorter_presort(struct sort_context *ctx, struct sort_bucket *in, struct sort_buc
   return ctx->internal_sort(ctx, in, out, out_only);
 }
 
-static inline struct sort_bucket *
-sbuck_join_to(struct sort_bucket *b)
+static struct sort_bucket *
+sbuck_join_to(struct sort_bucket *b, sh_off_t *sizep)
 {
   if (sorter_debug & SORT_DEBUG_NO_JOIN)
     return NULL;
@@ -65,7 +65,28 @@ sbuck_join_to(struct sort_bucket *b)
   if (!(out->flags & SBF_FINAL))
     return NULL;
   ASSERT(out->runs == 1);
+  *sizep = sbuck_size(out);
   return out;
+}
+
+static sh_off_t
+sbuck_ins_or_join(struct sort_bucket *b, cnode *list_pos, struct sort_bucket *join, sh_off_t join_size)
+{
+  if (join)
+    {
+      if (b)
+	sbuck_drop(b);
+      ASSERT(join->runs == 2);
+      join->runs--;
+      return sbuck_size(join) - join_size;
+    }
+  else if (b)
+    {
+      clist_insert_after(&b->n, list_pos);
+      return sbuck_size(b);
+    }
+  else
+    return 0;
 }
 
 static void
@@ -98,7 +119,8 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 {
   struct sort_bucket *ins[3] = { NULL }, *outs[3] = { NULL };
   cnode *list_pos = b->n.prev;
-  struct sort_bucket *join = sbuck_join_to(b);
+  sh_off_t join_size;
+  struct sort_bucket *join = sbuck_join_to(b, &join_size);
 
   if (!(sorter_debug & SORT_DEBUG_NO_PRESORT) || (b->flags & SBF_CUSTOM_PRESORT))
     {
@@ -108,15 +130,8 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
       if (!sorter_presort(ctx, b, ins[0], join ? : ins[0]))
 	{
 	  sorter_stop_timer(ctx, &ctx->total_pre_time);
-	  SORT_XTRACE(((b->flags & SBF_SOURCE) ? 1 : 2), "Sorted in memory");
-	  if (join)
-	    {
-	      ASSERT(join->runs == 2);
-	      join->runs--;
-	      sbuck_drop(ins[0]);
-	    }
-	  else
-	    clist_insert_after(&ins[0]->n, list_pos);
+	  sh_off_t size = sbuck_ins_or_join(ins[0], list_pos, join, join_size);
+	  SORT_XTRACE(((b->flags & SBF_SOURCE) ? 1 : 2), "Sorted in memory (%s, %dMB/s)", stk_fsize(size), sorter_speed(ctx, size));
 	  sbuck_drop(b);
 	  return;
 	}
@@ -146,15 +161,12 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
     if (ins[0]->runs == 1 && ins[1]->runs == 1 && join)
       {
 	// This is guaranteed to produce a single run, so join if possible
-	sh_off_t join_size = sbuck_size(join);
 	outs[0] = join;
 	outs[1] = NULL;
 	ctx->twoway_merge(ctx, ins, outs);
-	ASSERT(join->runs == 2);
-	join->runs--;
-	join_size = sbuck_size(join) - join_size;
+	sh_off_t size = sbuck_ins_or_join(NULL, NULL, join, join_size);
 	sorter_stop_timer(ctx, &ctx->total_ext_time);
-	SORT_TRACE("Mergesort pass %d (final run, %s, %dMB/s)", pass, stk_fsize(join_size), sorter_speed(ctx, join_size));
+	SORT_TRACE("Mergesort pass %d (final run, %s, %dMB/s)", pass, stk_fsize(size), sorter_speed(ctx, size));
 	sbuck_drop(ins[0]);
 	sbuck_drop(ins[1]);
 	return;
@@ -182,7 +194,8 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 {
   clist parts;
   cnode *list_pos = b->n.prev;
-  struct sort_bucket *join = sbuck_join_to(b);
+  sh_off_t join_size;
+  struct sort_bucket *join = sbuck_join_to(b, &join_size);
   uns trace_level = (b->flags & SBF_SOURCE) ? 1 : 2;
 
   clist_init(&parts);
@@ -211,22 +224,10 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
   sorter_free_buf(ctx);
   sbuck_drop(b);
 
-  // FIXME: This is way too similar to the two-way case.
-  if (!part_cnt)
+  if (part_cnt <= 1)
     {
-      if (join)
-	{
-          SORT_XTRACE(trace_level, "Sorted in memory and joined");
-	  ASSERT(join->runs == 2);
-	  join->runs--;
-	}
-      return;
-    }
-  if (part_cnt == 1)
-    {
-      struct sort_bucket *p = clist_head(&parts);
-      SORT_XTRACE(trace_level, "Sorted in memory");
-      clist_insert_after(&p->n, list_pos);
+      sh_off_t size = sbuck_ins_or_join(clist_head(&parts), list_pos, join, join_size);
+      SORT_XTRACE(trace_level, "Sorted in memory (%s, %dMB/s)", stk_fsize(size), sorter_speed(ctx, size));
       return;
     }
 
@@ -248,7 +249,10 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
       ASSERT(n > 1);
 
       struct sort_bucket *out;
-      out = sbuck_new(ctx);		// FIXME: No joining so far
+      if (clist_empty(&parts) && join)
+	out = join;
+      else
+	out = sbuck_new(ctx);
       sorter_start_timer(ctx);
       ctx->multiway_merge(ctx, ways, out);
       sorter_stop_timer(ctx, &ctx->total_ext_time);
@@ -258,8 +262,8 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 
       if (clist_empty(&parts))
 	{
-	  clist_insert_after(&out->n, list_pos);
-	  SORT_TRACE("Multi-way merge completed (%s, %dMB/s)", F_BSIZE(out), sorter_speed(ctx, sbuck_size(out)));
+	  sh_off_t size = sbuck_ins_or_join((join ? NULL : out), list_pos, join, join_size);
+	  SORT_TRACE("Multi-way merge completed (%d ways, %s, %dMB/s)", n, stk_fsize(size), sorter_speed(ctx, size));
 	  return;
 	}
       else
