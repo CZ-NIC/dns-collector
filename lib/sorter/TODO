@@ -4,16 +4,10 @@ o  Records of odd lengths.
 o  Empty files.
 
 Improvements:
-o  Alignment? Use of SSE?
 o  Use radix-sort for internal sorting.
 o  Parallelization of internal sorting.
 o  Clean up data types and make sure they cannot overflow. (size_t vs. u64 vs. sh_off_t vs. uns)
 o  Buffer sizing in internal sorters.
 o  Switching between direct and normal I/O.
 o  When merging, choose the output file with less runs instead of always switching?
-o  Implement multi-way merge.
-o  Mode with only 2-way unification?
-o  Speed up 2-way merge.
-o  Speed up radix splitting.
-o  A debug switch for disabling the presorter.
 o  Deal with too rough range estimates in radix splitting.
