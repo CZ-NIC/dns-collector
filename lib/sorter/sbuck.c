@@ -74,7 +74,7 @@ sbuck_swap_in(struct sort_bucket *b)
 	bseek(b->fb, 0, SEEK_END);
       bconfig(b->fb, BCONFIG_IS_TEMP_FILE, 1);
       b->flags &= ~SBF_SWAPPED_OUT;
-      SORT_XTRACE(2, "Swapped in %s", b->filename);
+      SORT_XTRACE(3, "Swapped in %s", b->filename);
     }
 }
 
@@ -124,7 +124,7 @@ sbuck_swap_out(struct sort_bucket *b)
       bclose(b->fb);
       b->fb = NULL;
       b->flags |= SBF_SWAPPED_OUT;
-      SORT_XTRACE(2, "Swapped out %s", b->filename);
+      SORT_XTRACE(3, "Swapped out %s", b->filename);
     }
 }
 

@@ -15,6 +15,7 @@
 /* Configuration, some of the variables are used by the old sorter, too. */
 extern uns sorter_trace, sorter_presort_bufsize, sorter_stream_bufsize;
 extern uns sorter_debug, sorter_min_radix_bits, sorter_max_radix_bits;
+extern uns sorter_min_multiway_bits, sorter_max_multiway_bits;
 extern u64 sorter_bufsize;
 extern struct fb_params sorter_fb_params;
 

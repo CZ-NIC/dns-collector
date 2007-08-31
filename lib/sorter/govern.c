@@ -187,7 +187,6 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 
   clist_init(&parts);
   ASSERT(!(sorter_debug & SORT_DEBUG_NO_PRESORT));
-  // FIXME: What if the parts will be too small?
   SORT_XTRACE(3, "%s", ((b->flags & SBF_CUSTOM_PRESORT) ? "Custom presorting" : "Presorting"));
   uns cont;
   uns part_cnt = 0;
@@ -209,6 +208,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
     }
   while (cont);
   sorter_stop_timer(ctx, &ctx->total_pre_time);
+  sorter_free_buf(ctx);
   sbuck_drop(b);
 
   // FIXME: This is way too similar to the two-way case.
@@ -232,7 +232,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 
   SORT_TRACE("Multi-way presorting pass (%d parts, %s, %dMB/s)", part_cnt, stk_fsize(total_size), sorter_speed(ctx, total_size));
 
-  uns max_ways = 64;
+  uns max_ways = 1 << sorter_max_multiway_bits;
   struct sort_bucket *ways[max_ways+1];
   SORT_XTRACE(2, "Starting up to %d-way merge", max_ways);
   for (;;)
@@ -271,26 +271,6 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
     }
 }
 
-static uns
-sorter_radix_bits(struct sort_context *ctx, struct sort_bucket *b)
-{
-  if (!b->hash_bits || b->hash_bits < sorter_min_radix_bits ||
-      !ctx->radix_split ||
-      (b->flags & SBF_CUSTOM_PRESORT) ||
-      (sorter_debug & SORT_DEBUG_NO_RADIX))
-    return 0;
-
-  u64 in = sbuck_size(b);
-  u64 mem = ctx->internal_estimate(ctx, b) * 0.8;	// FIXME: Magical factor for hash non-uniformity
-  if (in <= mem)
-    return 0;
-
-  uns n = sorter_min_radix_bits;
-  while (n < sorter_max_radix_bits && n < b->hash_bits && (in >> n) > mem)
-    n++;
-  return n;
-}
-
 static void
 sorter_radix(struct sort_context *ctx, struct sort_bucket *b, uns bits)
 {
@@ -327,6 +307,80 @@ sorter_radix(struct sort_context *ctx, struct sort_bucket *b, uns bits)
   sbuck_drop(b);
 }
 
+static void
+sorter_decide(struct sort_context *ctx, struct sort_bucket *b)
+{
+  // Drop empty buckets
+  if (!sbuck_have(b))
+    {
+      SORT_XTRACE(3, "Dropping empty bucket");
+      sbuck_drop(b);
+      return;
+    }
+
+  // How many bits of bucket size we have to reduce before it fits in the RAM?
+  // (this is insanely large if the input size is unknown, but it serves our purpose)
+  u64 insize = sbuck_size(b);
+  u64 mem = ctx->internal_estimate(ctx, b) * 0.8;	// FIXME: Magical factor for various non-uniformities
+  uns bits = 0;
+  while ((insize >> bits) > mem)
+    bits++;
+
+  // Calculate the possibilities of radix splits
+  uns radix_bits;
+  if (!ctx->radix_split ||
+      (b->flags & SBF_CUSTOM_PRESORT) ||
+      (sorter_debug & SORT_DEBUG_NO_RADIX))
+    radix_bits = 0;
+  else
+    {
+      radix_bits = MIN(bits, b->hash_bits);
+      radix_bits = MIN(radix_bits, sorter_max_radix_bits);
+      if (radix_bits < sorter_min_radix_bits)
+	radix_bits = 0;
+    }
+
+  // The same for multi-way merges
+  uns multiway_bits;
+  if (!ctx->multiway_merge ||
+      (sorter_debug & SORT_DEBUG_NO_MULTIWAY) ||
+      (sorter_debug & SORT_DEBUG_NO_PRESORT))
+    multiway_bits = 0;
+  else
+    {
+      multiway_bits = MIN(bits, sorter_max_multiway_bits);
+      if (multiway_bits < sorter_min_multiway_bits)
+	multiway_bits = 0;
+    }
+
+  SORT_XTRACE(2, "Decisions: size=%s max=%s runs=%d bits=%d hash=%d -> radix=%d multi=%d",
+	stk_fsize(insize), stk_fsize(mem), b->runs, bits, b->hash_bits,
+	radix_bits, multiway_bits);
+
+  // If the input already consists of a single run, just join it
+  if (b->runs)
+    return sorter_join(b);
+
+  // If everything fits in memory, the 2-way strategy will sort it in memory
+  if (!bits)
+    return sorter_twoway(ctx, b);
+
+  // If we can reduce everything in one pass, do so and prefer radix splits
+  if (radix_bits == bits)
+    return sorter_radix(ctx, b, radix_bits);
+  if (multiway_bits == bits)
+    return sorter_multiway(ctx, b);
+
+  // Otherwise, reduce as much as possible and again prefer radix splits
+  if (radix_bits)
+    return sorter_radix(ctx, b, radix_bits);
+  if (multiway_bits)
+    return sorter_multiway(ctx, b);
+
+  // Fall back to 2-way strategy if nothing else applies
+  return sorter_twoway(ctx, b);
+}
+
 void
 sorter_run(struct sort_context *ctx)
 {
@@ -356,22 +410,10 @@ sorter_run(struct sort_context *ctx)
   bout->runs = 1;
   clist_add_head(&ctx->bucket_list, &bout->n);
 
+  // Repeatedly sort buckets
   struct sort_bucket *b;
-  uns bits;
   while (bout = clist_head(&ctx->bucket_list), b = clist_next(&ctx->bucket_list, &bout->n))
-    {
-      SORT_XTRACE(2, "Next block: %s, %d hash bits", F_BSIZE(b), b->hash_bits);
-      if (!sbuck_have(b))
-	sbuck_drop(b);
-      else if (b->runs == 1)
-	sorter_join(b);
-      else if (ctx->multiway_merge && !(sorter_debug & (SORT_DEBUG_NO_MULTIWAY | SORT_DEBUG_NO_PRESORT)))	// FIXME: Just kidding...
-	sorter_multiway(ctx, b);
-      else if (bits = sorter_radix_bits(ctx, b))
-	sorter_radix(ctx, b, bits);
-      else
-	sorter_twoway(ctx, b);
-    }
+    sorter_decide(ctx, b);
 
   sorter_free_buf(ctx);
   sbuck_write(bout);		// Force empty bucket to a file
