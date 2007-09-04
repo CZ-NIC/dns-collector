@@ -22,6 +22,7 @@ void reset_getopt(void);
 /* Safe loading and reloading of configuration files: conf-input.c */
 
 extern char *cf_def_file;		/* DEFAULT_CONFIG; NULL if already loaded */
+extern char *cf_env_file;		/* ENV_VAR_CONFIG */
 int cf_reload(const char *file);
 int cf_load(const char *file);
 int cf_set(const char *string);

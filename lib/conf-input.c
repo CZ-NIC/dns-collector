@@ -284,6 +284,11 @@ error:
 #endif
 char *cf_def_file = DEFAULT_CONFIG;
 
+#ifndef ENV_VAR_CONFIG
+#define ENV_VAR_CONFIG NULL
+#endif
+char *cf_env_file = ENV_VAR_CONFIG;
+
 static uns postpone_commit;			// only for cf_getopt()
 static uns everything_committed;		// after the 1st load, this flag is set on
 
@@ -381,8 +386,8 @@ load_default(void)
 {
   if (cf_def_file)
     {
-      char *env = getenv("SH_CONFIG");
-      if (env)
+      char *env;
+      if (cf_env_file && (env = getenv(cf_env_file)))
         {
 	  if (cf_load(env))
 	    die("Cannot load config file %s", env);
