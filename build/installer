@@ -20,14 +20,14 @@ for a in $SH_CONFIGS ; do
 		if [ ! -f $DEST/cf/$a ] ; then
 			echo "cf/$a: new, installed"
 			cp run/cf/$a $DEST/cf/$a
-		elif [ $a == catalog-rules ] ; then
+		elif [ $a = catalog-rules ] ; then
 			echo "cf/$a: will be regenerated automatically"
 		elif diff -u $DEST/cf/$a run/cf/$a ; then
 			echo "cf/$a: no differences"
 		else
 			echo -n "cf/$a differs, replace it [Yn]? "
 			read x
-			if [ -z "$x" -o "$x" == "y" -o "$x" == "Y" ] ; then
+			if [ -z "$x" -o "$x" = "y" -o "$x" = "Y" ] ; then
 				echo "cf/$a: replacing and keeping the old version as cf/$a.old"
 				mv $DEST/cf/$a $DEST/cf/$a.old
 				cp run/cf/$a $DEST/cf/$a
