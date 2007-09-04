@@ -380,8 +380,16 @@ static void
 load_default(void)
 {
   if (cf_def_file)
-    if (cf_load(cf_def_file))
-      die("Cannot load default config %s", cf_def_file);
+    {
+      char *env = getenv("SH_CONFIG");
+      if (env)
+        {
+	  if (cf_load(env))
+	    die("Cannot load config file %s", env);
+	}
+      if (cf_load(cf_def_file))
+        die("Cannot load default config %s", cf_def_file);
+    }
 }
 
 static void
