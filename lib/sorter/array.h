@@ -8,11 +8,14 @@
  */
 
 /*
- *  This is a generator of routines for sorting arrays, very similar to the one
- *  in lib/arraysort.h.
+ *  This is a generator of routines for sorting huge arrays, similar to the one
+ *  in lib/arraysort.h. It cannot handle discontiguous arrays, but it is able
+ *  to employ radix-sorting if a monotone hash function is available and also
+ *  use several threads in parallel on SMP systems (this assumes that all
+ *  callbacks you provide are thread-safe).
  *
- *  FIXME: <comments>
- *  FIXME: Note on thread-safety
+ *  It is usually called internally by the generic shorter machinery, but
+ *  you are free to use it explicitly if you need.
  *
  *  So much for advocacy, there are the parameters (those marked with [*]
  *  are mandatory):
@@ -23,13 +26,18 @@
  *  ASORT_LT(x,y)	x < y for ASORT_TYPE (default: "x<y")
  *  ASORT_THRESHOLD	threshold for switching between quicksort and insertsort
  *  ASORT_PAGE_ALIGNED	the array is guaranteed to be aligned to a multiple of CPU_PAGE_SIZE  (FIXME: Do we need this?)
- *  ASORT_HASH(x)	FIXME
+ *  ASORT_HASH(x)	a monotone hash function (safisfying hash(x) < hash(y) => x<y)
  *  ASORT_RADIX_BITS	FIXME
  *  ASORT_SWAP		FIXME: probably keep private
  *
  *  After including this file, a function
  * 	ASORT_KEY_TYPE *ASORT_PREFIX(sort)(ASORT_KEY_TYPE *array, uns num_elts, ASORT_KEY_TYPE *buf, uns hash_bits)
- *  is declared and all parameter macros are automatically undef'd.
+ *  is declared and all parameter macros are automatically undef'd. Here `buf' is an
+ *  auxiliary buffer of the same size as the input array, required whenever radix
+ *  sorting should be used, and `hash_bits' is the number of significant bits returned
+ *  by the hash function. If the buffer is specified, the sorting function returns either
+ *  a pointer to the input array or to the buffer, depending on where the result is stored.
+ *  If you do not use hashing, these parameters should be NULL and 0, respectively.
  */
 
 #include "lib/sorter/common.h"
