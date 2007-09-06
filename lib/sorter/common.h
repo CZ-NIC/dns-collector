@@ -28,6 +28,8 @@ enum sort_debug {
   SORT_DEBUG_KEEP_BUCKETS = 4,
   SORT_DEBUG_NO_RADIX = 8,
   SORT_DEBUG_NO_MULTIWAY = 16,
+  SORT_DEBUG_ASORT_NO_RADIX = 32,
+  SORT_DEBUG_ASORT_NO_THREADS = 64
 };
 
 struct sort_bucket;
@@ -113,5 +115,21 @@ sh_off_t sbuck_size(struct sort_bucket *b);
 struct fastbuf *sbuck_read(struct sort_bucket *b);
 struct fastbuf *sbuck_write(struct sort_bucket *b);
 void sbuck_swap_out(struct sort_bucket *b);
+
+/* Contexts and helper functions for the array sorter */
+
+struct asort_context {
+  void *array;				// Array to sort
+  void *buffer;				// Auxiliary buffer (required when radix-sorting)
+  uns num_elts;				// Number of elements in the array
+  uns elt_size;				// Bytes per element
+  uns hash_bits;			// Remaining bits of hash function
+  uns radix_bits;			// How many bits to process in a single radix-sort pass
+  void (*quicksort)(void *array_ptr, uns num_elts);
+  void (*radix_count)(void *src_ptr, uns num_elts, uns *cnt, uns shift);
+  void (*radix_split)(void *src_ptr, void *dest_ptr, uns num_elts, uns *ptrs, uns shift);
+};
+
+void asort_run(struct asort_context *ctx);
 
 #endif

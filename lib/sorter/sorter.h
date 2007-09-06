@@ -193,6 +193,11 @@ static inline void P(copy_merged)(P(key) **keys, struct fastbuf **data UNUSED, u
 }
 #endif
 
+#if defined(SORT_HASH_BITS) || defined(SORT_INT)
+#define SORT_INTERNAL_RADIX
+#include "lib/sorter/s-radix.h"
+#endif
+
 #if defined(SORT_VAR_KEY) || defined(SORT_VAR_DATA) || defined(SORT_UNIFY_WORKSPACE)
 #include "lib/sorter/s-internal.h"
 #else
@@ -201,10 +206,6 @@ static inline void P(copy_merged)(P(key) **keys, struct fastbuf **data UNUSED, u
 
 #include "lib/sorter/s-twoway.h"
 #include "lib/sorter/s-multiway.h"
-
-#if defined(SORT_HASH_BITS) || defined(SORT_INT)
-#include "lib/sorter/s-radix.h"
-#endif
 
 static struct fastbuf *P(sort)(
 #ifdef SORT_INPUT_FILE
@@ -301,6 +302,7 @@ static struct fastbuf *P(sort)(
 #undef SORT_UNIQUE
 #undef SORT_ASSERT_UNIQUE
 #undef SORT_DELETE_INPUT
+#undef SORT_INTERNAL_RADIX
 #undef SWAP
 #undef LESS
 #undef P

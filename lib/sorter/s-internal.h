@@ -65,7 +65,7 @@ static inline size_t P(internal_workspace)(P(key) *key UNUSED)
 #ifdef SORT_UNIFY_WORKSPACE
   ws += SORT_UNIFY_WORKSPACE(*key);
 #endif
-#ifdef SORT_HASH_BITS
+#ifdef SORT_INTERNAL_RADIX
   ws = MAX(ws, sizeof(P(internal_item_t)));
 #endif
   return ws;
@@ -146,7 +146,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   timestamp_t timer;
   init_timer(&timer);
   item_array = P(array_sort)(item_array, count,
-#ifdef SORT_HASH_BITS
+#ifdef SORT_INTERNAL_RADIX
     workspace, bin->hash_bits
 #else
     NULL, 0

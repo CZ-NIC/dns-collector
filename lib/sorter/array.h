@@ -22,8 +22,9 @@
  *  ASORT_KEY_TYPE  [*]	data type of a single array entry key
  *  ASORT_LT(x,y)	x < y for ASORT_TYPE (default: "x<y")
  *  ASORT_THRESHOLD	threshold for switching between quicksort and insertsort
- *  ASORT_PAGE_ALIGNED	the array is guaranteed to be aligned to a multiple of CPU_PAGE_SIZE
+ *  ASORT_PAGE_ALIGNED	the array is guaranteed to be aligned to a multiple of CPU_PAGE_SIZE  (FIXME: Do we need this?)
  *  ASORT_HASH(x)	FIXME
+ *  ASORT_RADIX_BITS	FIXME
  *  ASORT_SWAP		FIXME: probably keep private
  *
  *  After including this file, a function
@@ -49,20 +50,26 @@ typedef ASORT_KEY_TYPE Q(key);
 #define ASORT_THRESHOLD 8		/* Guesswork and experimentation */
 #endif
 
-static void Q(raw_sort)(Q(key) *array, uns array_size)
+#ifndef ASORT_RADIX_BITS
+#define ASORT_RADIX_BITS 10		// FIXME: Tune automatically?
+#endif
+#define ASORT_RADIX_MASK ((1 << (ASORT_RADIX_BITS)) - 1)
+
+static void Q(quicksort)(void *array_ptr, uns num_elts)
 {
+  Q(key) *array = array_ptr;
   struct stk { int l, r; } stack[8*sizeof(uns)];
   int l, r, left, right, m;
   uns sp = 0;
   Q(key) pivot;
 
-  if (array_size <= 1)
+  if (num_elts <= 1)
     return;
 
   /* QuickSort with optimizations a'la Sedgewick, but stop at ASORT_THRESHOLD */
 
   left = 0;
-  right = array_size - 1;
+  right = num_elts - 1;
   for(;;)
     {
       l = left;
@@ -140,7 +147,7 @@ static void Q(raw_sort)(Q(key) *array, uns array_size)
    */
 
   /* Find minimal element which will serve as a barrier */
-  r = MIN(array_size, ASORT_THRESHOLD);
+  r = MIN(num_elts, ASORT_THRESHOLD);
   m = 0;
   for (l=1; l<r; l++)
     if (ASORT_LT(array[l], array[m]))
@@ -148,7 +155,7 @@ static void Q(raw_sort)(Q(key) *array, uns array_size)
   ASORT_SWAP(0,m);
 
   /* Insertion sort */
-  for (m=1; m<(int)array_size; m++)
+  for (m=1; m<(int)num_elts; m++)
     {
       l=m;
       while (ASORT_LT(array[m], array[l-1]))
@@ -161,12 +168,41 @@ static void Q(raw_sort)(Q(key) *array, uns array_size)
     }
 }
 
+#ifdef ASORT_HASH
+
+static void Q(radix_count)(void *src_ptr, uns num_elts, uns *cnt, uns shift)
+{
+  Q(key) *src = src_ptr;
+  for (uns i=0; i<num_elts; i++)
+    cnt[ (ASORT_HASH(src[i]) >> shift) & ASORT_RADIX_MASK ] ++;
+}
+
+static void Q(radix_split)(void *src_ptr, void *dest_ptr, uns num_elts, uns *ptrs, uns shift)
+{
+  Q(key) *src = src_ptr, *dest = dest_ptr;
+  for (uns i=0; i<num_elts; i++)
+    dest[ ptrs[ (ASORT_HASH(src[i]) >> shift) & ASORT_RADIX_MASK ]++ ] = src[i];
+}
+
+#endif
+
 static Q(key) *Q(sort)(Q(key) *array, uns num_elts, Q(key) *buffer, uns hash_bits)
 {
-  (void) buffer;
-  (void) hash_bits;
-  Q(raw_sort)(array, num_elts);
-  return array;
+  struct asort_context ctx = {
+    .array = array,
+    .buffer = buffer,
+    .num_elts = num_elts,
+    .hash_bits = hash_bits,
+    .elt_size = sizeof(Q(key)),
+    .quicksort = Q(quicksort),
+#ifdef ASORT_HASH
+    .radix_count = Q(radix_count),
+    .radix_split = Q(radix_split),
+    .radix_bits = ASORT_RADIX_BITS,
+#endif
+  };
+  asort_run(&ctx);
+  return ctx.array;
 }
 
 /* FIXME */
@@ -177,4 +213,6 @@ static Q(key) *Q(sort)(Q(key) *array, uns num_elts, Q(key) *buffer, uns hash_bit
 #undef ASORT_THRESHOLD
 #undef ASORT_PAGE_ALIGNED
 #undef ASORT_HASH
+#undef ASORT_RADIX_BITS
+#undef ASORT_RADIX_MASK
 #undef Q

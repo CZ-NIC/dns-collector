@@ -2,7 +2,7 @@
 
 DIRS+=lib/sorter
 
-LIBUCW_MODS+=sorter/config sorter/govern sorter/sbuck
+LIBUCW_MODS+=$(addprefix sorter/, config govern sbuck array)
 PROGS+=$(o)/lib/sorter/sort-test $(o)/lib/sorter/old-test
 
 $(o)/lib/sorter/sort-test: $(o)/lib/sorter/sort-test.o $(LIBUCW)

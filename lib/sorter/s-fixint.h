@@ -13,6 +13,9 @@
 #define ASORT_KEY_TYPE P(key)
 #define ASORT_LT(x,y) (P(compare)(&(x), &(y)) < 0)
 #define ASORT_PAGE_ALIGNED
+#ifdef SORT_INTERNAL_RADIX
+#define ASORT_HASH(x) P(hash)(&(x))
+#endif
 #include "lib/sorter/array.h"
 
 /*
@@ -30,7 +33,7 @@ static size_t P(internal_workspace)(void)
 #ifdef SORT_UNIFY
   workspace = sizeof(P(key) *);
 #endif
-#ifdef SORT_HASH_BITS	// FIXME: Another switch?
+#ifdef SORT_INTERNAL_RADIX
   workspace = MAX(workspace, sizeof(P(key)));
 #endif
   return workspace;
@@ -68,7 +71,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   timestamp_t timer;
   init_timer(&timer);
   buf = P(array_sort)(buf, n,
-#ifdef SORT_HASH_BITS
+#ifdef SORT_INTERNAL_RADIX
     workspace, bin->hash_bits
 #else
     NULL, 0
