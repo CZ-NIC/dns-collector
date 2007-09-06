@@ -10,7 +10,7 @@ endif
 
 LIBUCW_MODS= \
 	threads \
-	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt \
+	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt eltpool \
 	mmap pagecache partmap hashfunc \
 	lists slists simple-lists sorter bitsig \
 	log log-file proctitle \
@@ -101,7 +101,7 @@ $(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 $(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test \
-    slists.test kmp-test.test bbuf.test getopt.test fastbuf.test)
+    slists.test kmp-test.test bbuf.test getopt.test fastbuf.test eltpool.test)
 
 $(o)/lib/regex.test: $(o)/lib/regex-t
 $(o)/lib/unicode-utf8.test: $(o)/lib/unicode-utf8-t
@@ -114,6 +114,7 @@ $(o)/lib/kmp-test.test: $(o)/lib/kmp-test
 $(o)/lib/bbuf.test: $(o)/lib/bbuf-t
 $(o)/lib/getopt.test: $(o)/lib/getopt-t
 $(o)/lib/fastbuf.test: $(o)/lib/fb-file-t $(o)/lib/fb-grow-t $(o)/lib/fb-pool-t
+$(o)/lib/eltpool.test: $(o)/lib/eltpool-t
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/lib/,asio.test)
