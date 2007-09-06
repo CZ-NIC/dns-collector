@@ -11,10 +11,9 @@
 
 #define ASORT_PREFIX(x) SORT_PREFIX(array_##x)
 #define ASORT_KEY_TYPE P(key)
-#define ASORT_ELT(i) ary[i]
 #define ASORT_LT(x,y) (P(compare)(&(x), &(y)) < 0)
-#define ASORT_EXTRA_ARGS , P(key) *ary
-#include "lib/arraysort.h"
+#define ASORT_PAGE_ALIGNED
+#include "lib/sorter/array.h"
 
 /*
  *  This is a more efficient implementation of the internal sorter,
@@ -31,7 +30,7 @@ static size_t P(internal_workspace)(void)
 #ifdef SORT_UNIFY
   workspace = sizeof(P(key) *);
 #endif
-#if 0		// FIXME: Workspace for radix-sort if needed
+#ifdef SORT_HASH_BITS	// FIXME: Another switch?
   workspace = MAX(workspace, sizeof(P(key)));
 #endif
   return workspace;
@@ -54,7 +53,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   P(key) *buf = ctx->big_buf;
   uns maxkeys = P(internal_num_keys)(ctx);
 
-  SORT_XTRACE(4, "s-fixint: Reading (maxkeys=%u)", maxkeys);
+  SORT_XTRACE(4, "s-fixint: Reading (maxkeys=%u, hash_bits=%d)", maxkeys, bin->hash_bits);
   uns n = 0;
   while (n < maxkeys && P(read_key)(in, &buf[n]))
     n++;
@@ -68,7 +67,13 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 	stk_fsize(n * P(internal_workspace)()));
   timestamp_t timer;
   init_timer(&timer);
-  P(array_sort)(n, buf);
+  buf = P(array_sort)(buf, n,
+#ifdef SORT_HASH_BITS
+    workspace, bin->hash_bits
+#else
+    NULL, 0
+#endif
+    );
   ctx->total_int_time += get_timer(&timer);
 
   SORT_XTRACE(4, "s-fixint: Writing");

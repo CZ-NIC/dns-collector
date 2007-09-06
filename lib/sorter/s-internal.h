@@ -16,10 +16,9 @@ typedef struct {
 
 #define ASORT_PREFIX(x) SORT_PREFIX(array_##x)
 #define ASORT_KEY_TYPE P(internal_item_t)
-#define ASORT_ELT(i) ary[i]
 #define ASORT_LT(x,y) (P(compare)((x).key, (y).key) < 0)
-#define ASORT_EXTRA_ARGS , P(internal_item_t) *ary
-#include "lib/arraysort.h"
+#define ASORT_PAGE_ALIGNED
+#include "lib/sorter/array.h"
 
 /*
  *  The big_buf has the following layout:
@@ -66,8 +65,8 @@ static inline size_t P(internal_workspace)(P(key) *key UNUSED)
 #ifdef SORT_UNIFY_WORKSPACE
   ws += SORT_UNIFY_WORKSPACE(*key);
 #endif
-#if 0						/* FIXME: Shadow copy if radix-sorting */
-  ws = MAX(ws, sizeof(P(key) *));
+#ifdef SORT_HASH_BITS
+  ws = MAX(ws, sizeof(P(internal_item_t)));
 #endif
   return ws;
 }
@@ -146,7 +145,13 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 	stk_fsize((byte*)ctx->big_buf + bufsize - end));
   timestamp_t timer;
   init_timer(&timer);
-  P(array_sort)(count, item_array);
+  item_array = P(array_sort)(item_array, count,
+#ifdef SORT_HASH_BITS
+    workspace, bin->hash_bits
+#else
+    NULL, 0
+#endif
+    );
   ctx->total_int_time += get_timer(&timer);
 
   SORT_XTRACE(4, "s-internal: Writing");
