@@ -226,7 +226,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 
   if (part_cnt <= 1)
     {
-      sh_off_t size = sbuck_ins_or_join(clist_head(&parts), list_pos, join, join_size);
+      sh_off_t size = sbuck_ins_or_join(clist_head(&parts), list_pos, (part_cnt ? NULL : join), join_size);
       SORT_XTRACE(trace_level, "Sorted in memory (%s, %dMB/s)", stk_fsize(size), sorter_speed(ctx, size));
       return;
     }
