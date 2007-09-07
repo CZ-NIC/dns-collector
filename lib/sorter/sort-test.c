@@ -24,6 +24,7 @@
 /*** Time measurement ***/
 
 static timestamp_t timer;
+static uns test_id;
 
 static void
 start(void)
@@ -36,7 +37,7 @@ static void
 stop(void)
 {
   sync();
-  msg(L_INFO, "Test took %.3fs", get_timer(&timer) / 1000.);
+  msg(L_INFO, "Test %d took %.3fs", test_id, get_timer(&timer) / 1000.);
 }
 
 /*** Simple 4-byte integer keys ***/
@@ -606,6 +607,7 @@ test_int64(int mode, u64 size)
 static void
 run_test(uns i, u64 size)
 {
+  test_id = i;
   switch (i)
     {
     case 0:
