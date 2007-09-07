@@ -153,9 +153,10 @@ struct key3 {
 
 static inline int s3_compare(struct key3 *x, struct key3 *y)
 {
-  /* FIXME: Maybe unroll manually? */
-  for (uns i=0; i<4; i++)
-    COMPARE(x->hash[i], y->hash[i]);
+  COMPARE(x->hash[0], y->hash[0]);
+  COMPARE(x->hash[1], y->hash[1]);
+  COMPARE(x->hash[2], y->hash[2]);
+  COMPARE(x->hash[3], y->hash[3]);
   return 0;
 }
 
@@ -418,7 +419,7 @@ static void s5_write_merged(struct fastbuf *f, struct key5 **keys, void **data, 
   s5m_sort(m, a);
   keys[0]->cnt = m;
   bwrite(f, keys[0], sizeof(struct key5));
-  bwrite(f, a, 4*m);			/* FIXME: Might overflow here */
+  bwrite(f, a, 4*m);
 }
 
 static void s5_copy_merged(struct key5 **keys, struct fastbuf **data, uns n, struct fastbuf *dest)
@@ -453,13 +454,10 @@ static inline int s5p_lt(struct s5_pair x, struct s5_pair y)
   return 0;
 }
 
-/* FIXME: Use smarter internal sorter when it's available */
 #define ASORT_PREFIX(x) s5p_##x
 #define ASORT_KEY_TYPE struct s5_pair
-#define ASORT_ELT(i) ary[i]
 #define ASORT_LT(x,y) s5p_lt(x,y)
-#define ASORT_EXTRA_ARGS , struct s5_pair *ary
-#include "lib/arraysort.h"
+#include "lib/sorter/array.h"
 
 static int s5_presort(struct fastbuf *dest, void *buf, size_t bufsize)
 {
@@ -470,7 +468,7 @@ static int s5_presort(struct fastbuf *dest, void *buf, size_t bufsize)
     n++;
   if (!n)
     return 0;
-  s5p_sort(n, a);
+  s5p_sort(a, n, NULL, 0);
   uns i = 0;
   while (i < n)
     {
