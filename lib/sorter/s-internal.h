@@ -9,16 +9,35 @@
 
 #include "lib/stkstring.h"
 
+#ifdef SORT_INTERNAL_RADIX
+/* Keep copies of the items' hashes to save cache misses */
+#define SORT_COPY_HASH
+#endif
+
 typedef struct {
   P(key) *key;
-  // FIXME: Add the hash here to save cache misses
+#ifdef SORT_COPY_HASH
+  P(hash_t) hash;
+#endif
 } P(internal_item_t);
 
 #define ASORT_PREFIX(x) SORT_PREFIX(array_##x)
 #define ASORT_KEY_TYPE P(internal_item_t)
-#define ASORT_LT(x,y) (P(compare)((x).key, (y).key) < 0)
+#ifdef SORT_COPY_HASH
+#  ifdef SORT_INT
+#    define ASORT_LT(x,y) ((x).hash < (y).hash)		// In this mode, the hash is the value
+#  else
+#    define ASORT_LT(x,y) ((x).hash < (y).hash || (x).hash == (y).hash && P(compare)((x).key, (y).key) < 0)
+#  endif
+#else
+#  define ASORT_LT(x,y) (P(compare)((x).key, (y).key) < 0)
+#endif
 #ifdef SORT_INTERNAL_RADIX
-#  define ASORT_HASH(x) P(hash)((x).key)
+#    ifdef SORT_COPY_HASH
+#      define ASORT_HASH(x) (x).hash
+#    else
+#      define ASORT_HASH(x) P(hash)((x).key)
+#    endif
 #    ifdef SORT_LONG_HASH
 #      define ASORT_LONG_HASH
 #    endif
@@ -136,6 +155,9 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
       breadb(in, end + ksize_aligned, dsize);
 #endif
       item->key = (P(key)*) end;
+#ifdef SORT_COPY_HASH
+      item->hash = P(hash)(item->key);
+#endif
       item++;
     }
   while (P(read_key)(in, &key));
@@ -218,3 +240,5 @@ P(internal_estimate)(struct sort_context *ctx, struct sort_bucket *b UNUSED)
 #endif
   return (bufsize / (avg + sizeof(P(internal_item_t))) * avg);
 }
+
+#undef SORT_COPY_HASH
