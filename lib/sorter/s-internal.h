@@ -17,7 +17,6 @@ typedef struct {
 #define ASORT_PREFIX(x) SORT_PREFIX(array_##x)
 #define ASORT_KEY_TYPE P(internal_item_t)
 #define ASORT_LT(x,y) (P(compare)((x).key, (y).key) < 0)
-#define ASORT_PAGE_ALIGNED
 #include "lib/sorter/array.h"
 
 /*

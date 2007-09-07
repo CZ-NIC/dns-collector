@@ -126,6 +126,7 @@ struct asort_context {
   uns hash_bits;			// Remaining bits of hash function
   uns radix_bits;			// How many bits to process in a single radix-sort pass
   void (*quicksort)(void *array_ptr, uns num_elts);
+  void (*quicksplit)(void *array_ptr, uns num_elts, uns *leftp, uns *rightp);
   void (*radix_count)(void *src_ptr, uns num_elts, uns *cnt, uns shift);
   void (*radix_split)(void *src_ptr, void *dest_ptr, uns num_elts, uns *ptrs, uns shift);
 };

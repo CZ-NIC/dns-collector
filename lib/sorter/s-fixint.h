@@ -12,7 +12,6 @@
 #define ASORT_PREFIX(x) SORT_PREFIX(array_##x)
 #define ASORT_KEY_TYPE P(key)
 #define ASORT_LT(x,y) (P(compare)(&(x), &(y)) < 0)
-#define ASORT_PAGE_ALIGNED
 #ifdef SORT_INTERNAL_RADIX
 #define ASORT_HASH(x) P(hash)(&(x))
 #endif

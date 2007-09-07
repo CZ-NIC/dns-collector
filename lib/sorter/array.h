@@ -24,11 +24,13 @@
  *			defined by the sorter)
  *  ASORT_KEY_TYPE  [*]	data type of a single array entry key
  *  ASORT_LT(x,y)	x < y for ASORT_TYPE (default: "x<y")
- *  ASORT_THRESHOLD	threshold for switching between quicksort and insertsort
- *  ASORT_PAGE_ALIGNED	the array is guaranteed to be aligned to a multiple of CPU_PAGE_SIZE  (FIXME: Do we need this?)
  *  ASORT_HASH(x)	a monotone hash function (safisfying hash(x) < hash(y) => x<y)
- *  ASORT_RADIX_BITS	FIXME
- *  ASORT_SWAP		FIXME: probably keep private
+ *
+ *  Fine-tuning parameters: (if you really insist)
+ *
+ *  ASORT_THRESHOLD	threshold for switching between quicksort and insertsort
+ *  ASORT_RADIX_BITS	how many bits of the hash functions are to be used at once for
+ *			radix-sorting.
  *
  *  After including this file, a function
  * 	ASORT_KEY_TYPE *ASORT_PREFIX(sort)(ASORT_KEY_TYPE *array, uns num_elts, ASORT_KEY_TYPE *buf, uns hash_bits)
@@ -63,6 +65,8 @@ typedef ASORT_KEY_TYPE Q(key);
 #endif
 #define ASORT_RADIX_MASK ((1 << (ASORT_RADIX_BITS)) - 1)
 
+/* QuickSort with optimizations a'la Sedgewick, inspired by qsort() from GNU libc. */
+
 static void Q(quicksort)(void *array_ptr, uns num_elts)
 {
   Q(key) *array = array_ptr;
@@ -73,8 +77,6 @@ static void Q(quicksort)(void *array_ptr, uns num_elts)
 
   if (num_elts <= 1)
     return;
-
-  /* QuickSort with optimizations a'la Sedgewick, but stop at ASORT_THRESHOLD */
 
   left = 0;
   right = num_elts - 1;
@@ -176,6 +178,49 @@ static void Q(quicksort)(void *array_ptr, uns num_elts)
     }
 }
 
+/* Just the splitting part of QuickSort */
+
+static void Q(quicksplit)(void *array_ptr, uns num_elts, uns *leftp, uns *rightp)
+{
+  Q(key) *array = array_ptr;
+  int l, r, m;
+  Q(key) pivot;
+
+  l = 0;
+  r = num_elts - 1;
+  m = (l+r)/2;
+  if (ASORT_LT(array[m], array[l]))
+    ASORT_SWAP(l,m);
+  if (ASORT_LT(array[r], array[m]))
+    {
+      ASORT_SWAP(m,r);
+      if (ASORT_LT(array[m], array[l]))
+	ASORT_SWAP(l,m);
+    }
+  pivot = array[m];
+  do
+    {
+      while (ASORT_LT(array[l], pivot))
+	l++;
+      while (ASORT_LT(pivot, array[r]))
+	r--;
+      if (l < r)
+	{
+	  ASORT_SWAP(l,r);
+	  l++;
+	  r--;
+	}
+      else if (l == r)
+	{
+	  l++;
+	  r--;
+	}
+    }
+  while (l <= r);
+  *leftp = l;
+  *rightp = r;
+}
+
 #ifdef ASORT_HASH
 
 static void Q(radix_count)(void *src_ptr, uns num_elts, uns *cnt, uns shift)
@@ -203,6 +248,7 @@ static Q(key) *Q(sort)(Q(key) *array, uns num_elts, Q(key) *buffer, uns hash_bit
     .hash_bits = hash_bits,
     .elt_size = sizeof(Q(key)),
     .quicksort = Q(quicksort),
+    .quicksplit = Q(quicksplit),
 #ifdef ASORT_HASH
     .radix_count = Q(radix_count),
     .radix_split = Q(radix_split),
