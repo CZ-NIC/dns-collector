@@ -181,7 +181,7 @@ static void Q(quicksort)(void *array_ptr, uns num_elts)
 
 /* Just the splitting part of QuickSort */
 
-static void Q(quicksplit)(void *array_ptr, uns num_elts, uns *leftp, uns *rightp)
+static void Q(quicksplit)(void *array_ptr, uns num_elts, int *leftp, int *rightp)
 {
   Q(key) *array = array_ptr;
   int l, r, m;

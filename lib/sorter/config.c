@@ -37,7 +37,7 @@ static struct cf_section sorter_config = {
     CF_UNS("MaxRadixBits", &sorter_max_radix_bits),
     CF_UNS("MinMultiwayBits", &sorter_min_multiway_bits),
     CF_UNS("MaxMultiwayBits", &sorter_max_multiway_bits),
-    CF_UNS("NumThreads", &sorter_threads),
+    CF_UNS("Threads", &sorter_threads),
     CF_UNS("ThreadThreshold", &sorter_thread_threshold),
     CF_END
   }

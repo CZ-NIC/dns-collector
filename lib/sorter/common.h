@@ -16,6 +16,7 @@
 extern uns sorter_trace, sorter_presort_bufsize, sorter_stream_bufsize;
 extern uns sorter_debug, sorter_min_radix_bits, sorter_max_radix_bits;
 extern uns sorter_min_multiway_bits, sorter_max_multiway_bits;
+extern uns sorter_threads, sorter_thread_threshold;
 extern u64 sorter_bufsize;
 extern struct fb_params sorter_fb_params;
 
@@ -126,11 +127,19 @@ struct asort_context {
   uns hash_bits;			// Remaining bits of hash function
   uns radix_bits;			// How many bits to process in a single radix-sort pass
   void (*quicksort)(void *array_ptr, uns num_elts);
-  void (*quicksplit)(void *array_ptr, uns num_elts, uns *leftp, uns *rightp);
+  void (*quicksplit)(void *array_ptr, uns num_elts, int *leftp, int *rightp);
   void (*radix_count)(void *src_ptr, uns num_elts, uns *cnt, uns shift);
   void (*radix_split)(void *src_ptr, void *dest_ptr, uns num_elts, uns *ptrs, uns shift);
+
+  // Used internally by array.c
+  struct rs_work **rs_works;
+  struct work_queue *rs_work_queue;
+  clist rs_bits;
+  struct eltpool *eltpool;
 };
 
 void asort_run(struct asort_context *ctx);
+void asort_start_threads(uns run);
+void asort_stop_threads(void);
 
 #endif

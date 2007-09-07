@@ -391,6 +391,7 @@ sorter_run(struct sort_context *ctx)
   ctx->pool = mp_new(4096);
   clist_init(&ctx->bucket_list);
   sorter_prepare_buf(ctx);
+  asort_start_threads(0);
 
   // Create bucket containing the source
   struct sort_bucket *bin = sbuck_new(ctx);
@@ -419,6 +420,7 @@ sorter_run(struct sort_context *ctx)
   while (bout = clist_head(&ctx->bucket_list), b = clist_next(&ctx->bucket_list, &bout->n))
     sorter_decide(ctx, b);
 
+  asort_stop_threads();
   sorter_free_buf(ctx);
   sbuck_write(bout);		// Force empty bucket to a file
   SORT_XTRACE(2, "Final size: %s", F_BSIZE(bout));
