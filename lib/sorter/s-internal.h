@@ -228,17 +228,24 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 static u64
 P(internal_estimate)(struct sort_context *ctx, struct sort_bucket *b UNUSED)
 {
+  // Most of this is just wild guesses
 #ifdef SORT_VAR_KEY
-  uns avg = ALIGN_TO(sizeof(P(key))/4, CPU_STRUCT_ALIGN);	// Wild guess...
+  uns avg = ALIGN_TO(sizeof(P(key))/4, CPU_STRUCT_ALIGN);
 #else
   uns avg = ALIGN_TO(sizeof(P(key)), CPU_STRUCT_ALIGN);
 #endif
-  // We ignore the data part of records, it probably won't make the estimate much worse
-  size_t bufsize = ctx->big_buf_size;
-#ifdef SORT_UNIFY_WORKSPACE		// FIXME: Or if radix-sorting
-  bufsize /= 2;
+  uns ws = 0;
+#ifdef SORT_UNIFY
+  ws += sizeof(void *);
 #endif
-  return (bufsize / (avg + sizeof(P(internal_item_t))) * avg);
+#ifdef SORT_UNIFY_WORKSPACE
+  ws += avg;
+#endif
+#ifdef SORT_INTERNAL_RADIX
+  ws = MAX(ws, sizeof(P(internal_item_t)));
+#endif
+  // We ignore the data part of records, it probably won't make the estimate much worse
+  return (ctx->big_buf_size / (avg + ws + sizeof(P(internal_item_t))) * avg);
 }
 
 #undef SORT_COPY_HASH
