@@ -57,6 +57,10 @@ asort_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, 
     }
 }
 
+#ifdef CONFIG_UCW_THREADS
+
+#endif
+
 void
 asort_run(struct asort_context *ctx)
 {
