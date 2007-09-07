@@ -27,6 +27,7 @@
  *  ASORT_THRESHOLD	threshold for switching between quicksort and insertsort
  *  ASORT_PAGE_ALIGNED	the array is guaranteed to be aligned to a multiple of CPU_PAGE_SIZE  (FIXME: Do we need this?)
  *  ASORT_HASH(x)	a monotone hash function (safisfying hash(x) < hash(y) => x<y)
+ *  ASORT_LONG_HASH	hashes are 64-bit numbers (default is 32 bits)
  *  ASORT_RADIX_BITS	FIXME
  *  ASORT_SWAP		FIXME: probably keep private
  *
@@ -59,7 +60,7 @@ typedef ASORT_KEY_TYPE Q(key);
 #endif
 
 #ifndef ASORT_RADIX_BITS
-#define ASORT_RADIX_BITS 10		// FIXME: Tune automatically?
+#define ASORT_RADIX_BITS 12		// FIXME: Tune automatically?
 #endif
 #define ASORT_RADIX_MASK ((1 << (ASORT_RADIX_BITS)) - 1)
 
@@ -181,15 +182,59 @@ static void Q(quicksort)(void *array_ptr, uns num_elts)
 static void Q(radix_count)(void *src_ptr, uns num_elts, uns *cnt, uns shift)
 {
   Q(key) *src = src_ptr;
-  for (uns i=0; i<num_elts; i++)
-    cnt[ (ASORT_HASH(src[i]) >> shift) & ASORT_RADIX_MASK ] ++;
+  uns i;
+
+  switch (shift)
+    {
+#define RC(s) \
+    case s:								\
+      for (i=0; i<num_elts; i++)					\
+	cnt[ (ASORT_HASH(src[i]) >> s) & ASORT_RADIX_MASK ] ++;		\
+      break;								\
+
+#ifdef ASORT_LONG_HASH
+      RC(63); RC(62); RC(61); RC(60); RC(59); RC(58); RC(57); RC(56);
+      RC(55); RC(54); RC(53); RC(52); RC(51); RC(50); RC(49); RC(48);
+      RC(47); RC(46); RC(45); RC(44); RC(43); RC(42); RC(41); RC(40);
+      RC(39); RC(38); RC(37); RC(36); RC(35); RC(34); RC(33); RC(32);
+#endif
+      RC(31); RC(30); RC(29); RC(28); RC(27); RC(26); RC(25); RC(24);
+      RC(23); RC(22); RC(21); RC(20); RC(19); RC(18); RC(17); RC(16);
+      RC(15); RC(14); RC(13); RC(12); RC(11); RC(10); RC(9); RC(8);
+      RC(7); RC(6); RC(5); RC(4); RC(3); RC(2); RC(1); RC(0);
+    default:
+      ASSERT(0);
+    }
+#undef RC
 }
 
 static void Q(radix_split)(void *src_ptr, void *dest_ptr, uns num_elts, uns *ptrs, uns shift)
 {
   Q(key) *src = src_ptr, *dest = dest_ptr;
-  for (uns i=0; i<num_elts; i++)
-    dest[ ptrs[ (ASORT_HASH(src[i]) >> shift) & ASORT_RADIX_MASK ]++ ] = src[i];
+  uns i;
+
+  switch (shift)
+    {
+#define RS(s) \
+    case s:										\
+      for (i=0; i<num_elts; i++)							\
+	dest[ ptrs[ (ASORT_HASH(src[i]) >> s) & ASORT_RADIX_MASK ]++ ] = src[i];	\
+      break;
+
+#ifdef ASORT_LONG_HASH
+      RS(63); RS(62); RS(61); RS(60); RS(59); RS(58); RS(57); RS(56);
+      RS(55); RS(54); RS(53); RS(52); RS(51); RS(50); RS(49); RS(48);
+      RS(47); RS(46); RS(45); RS(44); RS(43); RS(42); RS(41); RS(40);
+      RS(39); RS(38); RS(37); RS(36); RS(35); RS(34); RS(33); RS(32);
+#endif
+      RS(31); RS(30); RS(29); RS(28); RS(27); RS(26); RS(25); RS(24);
+      RS(23); RS(22); RS(21); RS(20); RS(19); RS(18); RS(17); RS(16);
+      RS(15); RS(14); RS(13); RS(12); RS(11); RS(10); RS(9); RS(8);
+      RS(7); RS(6); RS(5); RS(4); RS(3); RS(2); RS(1); RS(0);
+    default:
+      ASSERT(0);
+    }
+#undef RS
 }
 
 #endif
@@ -223,4 +268,5 @@ static Q(key) *Q(sort)(Q(key) *array, uns num_elts, Q(key) *buffer, uns hash_bit
 #undef ASORT_HASH
 #undef ASORT_RADIX_BITS
 #undef ASORT_RADIX_MASK
+#undef ASORT_LONG_HASH
 #undef Q

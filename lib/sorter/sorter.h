@@ -131,6 +131,7 @@ typedef SORT_KEY P(key);
 #ifdef SORT_INT64
 typedef u64 P(hash_t);
 #define SORT_INT SORT_INT64
+#define SORT_LONG_HASH
 #else
 typedef uns P(hash_t);
 #endif
@@ -303,6 +304,7 @@ static struct fastbuf *P(sort)(
 #undef SORT_ASSERT_UNIQUE
 #undef SORT_DELETE_INPUT
 #undef SORT_INTERNAL_RADIX
+#undef SORT_LONG_HASH
 #undef SWAP
 #undef LESS
 #undef P
