@@ -24,6 +24,10 @@ asort_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, 
   uns shift = (hash_bits > ctx->radix_bits) ? (hash_bits - ctx->radix_bits) : 0;
   uns cnt[buckets];
 
+#if 0
+  static int reported[64];
+  if (!reported[hash_bits]++)
+#endif
   DBG(">>> n=%d h=%d s=%d sw=%d", num_elts, hash_bits, shift, swapped_output);
 
   bzero(cnt, sizeof(cnt));

@@ -17,6 +17,12 @@ typedef struct {
 #define ASORT_PREFIX(x) SORT_PREFIX(array_##x)
 #define ASORT_KEY_TYPE P(internal_item_t)
 #define ASORT_LT(x,y) (P(compare)((x).key, (y).key) < 0)
+#ifdef SORT_INTERNAL_RADIX
+#  define ASORT_HASH(x) P(hash)((x).key)
+#    ifdef SORT_LONG_HASH
+#      define ASORT_LONG_HASH
+#    endif
+#endif
 #include "lib/sorter/array.h"
 
 /*
