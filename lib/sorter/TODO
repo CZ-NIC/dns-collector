@@ -15,3 +15,18 @@ o  Switching between direct and normal I/O. Should use normal I/O if the input i
 o  How does the speed of radix splitting decrease with increasing number of hash bits?
    Does it help to use more bits than we need, so that we sort less data in memory?
 o  Add automatic joining to the custom presorter interface?
+
+Users of lib/arraysort.h on big arrays (consider conversion to lib/sorter/array.h):
+
+indexer/chewer.c			fixed		hash + others
+indexer/chewer.c			u32		id
+indexer/imagesigs.c			fixed		s32
+indexer/lexfreq.c			ptr		indirect int
+indexer/lexorder.c			ptr		complex
+indexer/lexorder.c			ptr		complex
+indexer/lexsort.c			ptr		complex
+indexer/mergeimages.c			fixed		s32
+indexer/mkgraph.c			u32		indirect int
+indexer/mkgraph.c			2*u32		complex, but have hash
+indexer/mkgraph.c			2*u32		complex, but have hash
+indexer/reftexts.c			fixed		indirect int
