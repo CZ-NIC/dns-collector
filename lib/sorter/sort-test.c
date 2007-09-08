@@ -468,7 +468,7 @@ static int s5_presort(struct fastbuf *dest, void *buf, size_t bufsize)
     n++;
   if (!n)
     return 0;
-  s5p_sort(a, n, NULL, 0);
+  s5p_sort(a, n);
   uns i = 0;
   while (i < n)
     {

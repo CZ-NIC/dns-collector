@@ -72,11 +72,9 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 	stk_fsize(n * P(internal_workspace)()));
   timestamp_t timer;
   init_timer(&timer);
-  buf = P(array_sort)(buf, n,
+  buf = P(array_sort)(buf, n
 #ifdef SORT_INTERNAL_RADIX
-    workspace, bin->hash_bits
-#else
-    NULL, 0
+    , workspace, bin->hash_bits
 #endif
     );
   ctx->total_int_time += get_timer(&timer);

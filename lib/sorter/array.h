@@ -34,13 +34,13 @@
  *			radix-sorting.
  *
  *  After including this file, a function
- * 	ASORT_KEY_TYPE *ASORT_PREFIX(sort)(ASORT_KEY_TYPE *array, uns num_elts, ASORT_KEY_TYPE *buf, uns hash_bits)
+ * 	ASORT_KEY_TYPE *ASORT_PREFIX(sort)(ASORT_KEY_TYPE *array, uns num_elts [, ASORT_KEY_TYPE *buf, uns hash_bits])
  *  is declared and all parameter macros are automatically undef'd. Here `buf' is an
  *  auxiliary buffer of the same size as the input array, required whenever radix
  *  sorting should be used, and `hash_bits' is the number of significant bits returned
  *  by the hash function. If the buffer is specified, the sorting function returns either
  *  a pointer to the input array or to the buffer, depending on where the result is stored.
- *  If you do not use hashing, these parameters should be NULL and 0, respectively.
+ *  If you do not use hashing, these parameters should be omitted.
  */
 
 #include "lib/sorter/common.h"
@@ -284,17 +284,21 @@ static void Q(radix_split)(void *src_ptr, void *dest_ptr, uns num_elts, uns *ptr
 
 #endif
 
-static Q(key) *Q(sort)(Q(key) *array, uns num_elts, Q(key) *buffer, uns hash_bits)
+static Q(key) *Q(sort)(Q(key) *array, uns num_elts
+#ifdef ASORT_HASH
+  , Q(key) *buffer, uns hash_bits
+#endif  
+  )
 {
   struct asort_context ctx = {
     .array = array,
-    .buffer = buffer,
     .num_elts = num_elts,
-    .hash_bits = hash_bits,
     .elt_size = sizeof(Q(key)),
     .quicksort = Q(quicksort),
     .quicksplit = Q(quicksplit),
 #ifdef ASORT_HASH
+    .buffer = buffer,
+    .hash_bits = hash_bits,
     .radix_count = Q(radix_count),
     .radix_split = Q(radix_split),
     .radix_bits = ASORT_RADIX_BITS,
