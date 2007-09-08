@@ -14,7 +14,6 @@ Improvements:
 o  Switching between direct and normal I/O. Should use normal I/O if the input is small enough.
 o  How does the speed of radix splitting decrease with increasing number of hash bits?
    Does it help to use more bits than we need, so that we sort less data in memory?
-o  Add automatic joining to the custom presorter interface?
 
 Users of lib/sorter/array.h which might use radix-sorting:
 indexer/chewer.c

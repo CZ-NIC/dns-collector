@@ -48,6 +48,11 @@ sorter_presort(struct sort_context *ctx, struct sort_bucket *in, struct sort_buc
   sorter_alloc_buf(ctx);
   if (in->flags & SBF_CUSTOM_PRESORT)
     {
+      /*
+       *  The trick with automatic joining, which we use for the normal presorter,
+       *  is not necessary with the custom presorter, because the custom presorter
+       *  is never called in the middle of the sorted data.
+       */
       struct fastbuf *f = sbuck_write(out);
       out->runs++;
       return ctx->custom_presort(f, ctx->big_buf, ctx->big_buf_size);
