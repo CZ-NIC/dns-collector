@@ -50,7 +50,7 @@ sorter_presort(struct sort_context *ctx, struct sort_bucket *in, struct sort_buc
     {
       struct fastbuf *f = sbuck_write(out);
       out->runs++;
-      return ctx->custom_presort(f, ctx->big_buf, ctx->big_buf_size);	// FIXME: out_only optimization?
+      return ctx->custom_presort(f, ctx->big_buf, ctx->big_buf_size);
     }
   return ctx->internal_sort(ctx, in, out, out_only);
 }
@@ -325,7 +325,7 @@ sorter_decide(struct sort_context *ctx, struct sort_bucket *b)
   // How many bits of bucket size we have to reduce before it fits in the RAM?
   // (this is insanely large if the input size is unknown, but it serves our purpose)
   u64 insize = sbuck_size(b);
-  u64 mem = ctx->internal_estimate(ctx, b) * 0.8;	// FIXME: Magical factor for various non-uniformities
+  u64 mem = ctx->internal_estimate(ctx, b) * 0.8;	// Magical factor accounting for various non-uniformities
   uns bits = 0;
   while ((insize >> bits) > mem)
     bits++;
