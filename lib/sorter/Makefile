@@ -3,7 +3,11 @@
 DIRS+=lib/sorter
 
 LIBUCW_MODS+=$(addprefix sorter/, config govern sbuck array)
-PROGS+=$(o)/lib/sorter/sort-test $(o)/lib/sorter/old-test
+#LIBUCW_INCLUDES+=$(addprefix sorter/, array.h common.h s-fixint.h \
+#	s-internal.h s-multiway.h s-radix.h s-twoway.h sorter.h)
+
+ifdef CONFIG_DEBUG_TOOLS
+PROGS+=$(o)/lib/sorter/sort-test
+endif
 
 $(o)/lib/sorter/sort-test: $(o)/lib/sorter/sort-test.o $(LIBUCW)
-$(o)/lib/sorter/old-test: $(o)/lib/sorter/old-test.o $(LIBUCW)

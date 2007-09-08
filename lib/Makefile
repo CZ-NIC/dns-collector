@@ -12,7 +12,7 @@ LIBUCW_MODS= \
 	threads \
 	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt eltpool \
 	mmap pagecache partmap hashfunc \
-	lists slists simple-lists sorter bitsig \
+	lists slists simple-lists bitsig \
 	log log-file proctitle \
 	conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section \
 	ipaccess \
@@ -38,7 +38,7 @@ LIBUCW_MODS= \
 LIBUCW_INCLUDES= \
 	lib.h config.h threads.h \
 	mempool.h pagecache.h \
-	sorter.h sorter-globals.h arraysort.h \
+	arraysort.h \
 	lists.h clists.h slists.h simple-lists.h \
 	unaligned.h prefetch.h \
 	bbuf.h gbuf.h bitarray.h bitsig.h \
@@ -89,7 +89,6 @@ $(o)/lib/lizard.o: CFLAGS += $(COPT2) -funroll-loops
 $(o)/lib/db-test: $(o)/lib/db-test.o $(LIBUCW)
 $(o)/lib/db-tool: $(o)/lib/db-tool.o $(LIBUCW)
 $(o)/lib/conf-test: $(o)/lib/conf-test.o $(LIBUCW)
-$(o)/lib/sort-test: $(o)/lib/sort-test.o $(LIBUCW)
 $(o)/lib/lfs-test: $(o)/lib/lfs-test.o $(LIBUCW)
 $(o)/lib/hash-test: $(o)/lib/hash-test.o $(LIBUCW)
 $(o)/lib/str-test: $(o)/lib/str-test.o $(LIBUCW)
