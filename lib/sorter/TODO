@@ -5,10 +5,11 @@ o  Empty files.
 
 Cleanups:
 o  Clean up data types and make sure they cannot overflow. (size_t vs. u64 vs. sh_off_t vs. uns)
+o  Clean up log levels.
+o  Clean up introductory comments.
 o  Log messages should show both original and new size of the data. The speed
    should be probably calculated from the former.
 o  Automatically tune ASORT_MIN_RADIX, ASORT_MIN_SHIFT and especially ASORT_RADIX_BITS.
-o  Check undefs in sorter.h and array.h.
 
 Improvements:
 o  Switching between direct and normal I/O. Should use normal I/O if the input is small enough.

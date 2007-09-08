@@ -23,7 +23,7 @@
  *  ASORT_PREFIX(x) [*]	add a name prefix (used on all global names
  *			defined by the sorter)
  *  ASORT_KEY_TYPE  [*]	data type of a single array entry key
- *  ASORT_LT(x,y)	x < y for ASORT_TYPE (default: "x<y")
+ *  ASORT_LT(x,y)	x < y for ASORT_KEY_TYPE (default: "x<y")
  *  ASORT_HASH(x)	a monotone hash function (safisfying hash(x) < hash(y) => x<y)
  *  ASORT_LONG_HASH	hashes are 64-bit numbers (default is 32 bits)
  *
@@ -308,15 +308,14 @@ static Q(key) *Q(sort)(Q(key) *array, uns num_elts
   return ctx.array;
 }
 
-/* FIXME */
-#undef ASORT_PREFIX
-#undef ASORT_KEY_TYPE
-#undef ASORT_LT
-#undef ASORT_SWAP
-#undef ASORT_THRESHOLD
-#undef ASORT_PAGE_ALIGNED
 #undef ASORT_HASH
+#undef ASORT_KEY_TYPE
+#undef ASORT_LONG_HASH
+#undef ASORT_LT
+#undef ASORT_PAGE_ALIGNED
+#undef ASORT_PREFIX
 #undef ASORT_RADIX_BITS
 #undef ASORT_RADIX_MASK
-#undef ASORT_LONG_HASH
+#undef ASORT_SWAP
+#undef ASORT_THRESHOLD
 #undef Q

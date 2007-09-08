@@ -124,7 +124,7 @@ struct asort_context {
   void *buffer;				// Auxiliary buffer (required when radix-sorting)
   uns num_elts;				// Number of elements in the array
   uns elt_size;				// Bytes per element
-  uns hash_bits;			// Remaining bits of hash function
+  uns hash_bits;			// Remaining bits of the hash function
   uns radix_bits;			// How many bits to process in a single radix-sort pass
   void (*quicksort)(void *array_ptr, uns num_elts);
   void (*quicksplit)(void *array_ptr, uns num_elts, int *leftp, int *rightp);
