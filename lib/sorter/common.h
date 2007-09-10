@@ -135,7 +135,6 @@ struct asort_context {
   // Used internally by array.c
   struct rs_work **rs_works;
   struct work_queue *rs_work_queue;
-  clist rs_bits;
   struct eltpool *eltpool;
 };
 

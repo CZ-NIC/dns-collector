@@ -229,6 +229,18 @@ rs_finish(struct worker_thread *thr UNUSED, struct work *ww)
 }
 
 static void
+rs_wait_small(struct asort_context *ctx)
+{
+  struct rs_work *w;
+
+  while (w = (struct rs_work *) work_wait(ctx->rs_work_queue))
+    {
+      DBG("Reaping small chunk of %d items", w->num_elts);
+      ep_free(ctx->eltpool, w);
+    }
+}
+
+static void
 rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns hash_bits, uns swapped_output)
 {
   uns buckets = (1 << ctx->radix_bits);
@@ -236,6 +248,9 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
   uns cnt[buckets];
   uns blksize = num_elts / sorter_threads;
   DBG(">>> n=%d h=%d s=%d blk=%d sw=%d", num_elts, hash_bits, shift, blksize, swapped_output);
+
+  // If there are any small chunks in progress, wait for them to finish
+  rs_wait_small(ctx);
 
   // Start parallel counting
   void *iptr = array;
@@ -321,8 +336,8 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
 	    }
 	  else
 	    {
-	      clist_add_tail(&ctx->rs_bits, &w->w.n);
 	      DBG("Scheduling block %d+%d", pos, n);
+	      work_submit(ctx->rs_work_queue, &w->w);
 	    }
 	}
       else
@@ -348,8 +363,7 @@ threaded_radixsort(struct asort_context *ctx)
   for (uns i=0; i<sorter_threads; i++)
     ctx->rs_works[i] = big_alloc(sizeof(struct rs_work) + sizeof(uns) * (1 << ctx->radix_bits));
 
-  // Prepare work structures for all remaining small bits which will be sorted later.
-  clist_init(&ctx->rs_bits);
+  // Prepare a pool for all remaining small bits which will be sorted on background.
   ctx->eltpool = ep_new(sizeof(struct rs_work), 1000);
 
   // Do the big splitting
@@ -359,12 +373,9 @@ threaded_radixsort(struct asort_context *ctx)
     big_free(ctx->rs_works[i], sizeof(struct rs_work) + sizeof(uns) * (1 << ctx->radix_bits));
 
   // Finish the small blocks
-  struct rs_work *w, *tmp;
-  CLIST_WALK_DELSAFE(w, ctx->rs_bits, tmp)
-    work_submit(&q, &w->w);
-  while (work_wait(&q))
-    ;
+  rs_wait_small(ctx);
 
+  ASSERT(!ctx->eltpool->num_allocated);
   ep_delete(ctx->eltpool);
   work_queue_cleanup(&q);
   asort_stop_threads();
