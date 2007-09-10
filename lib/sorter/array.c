@@ -48,7 +48,7 @@ asort_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, 
   for (uns i=0; i<buckets; i++)
     {
       uns n = cnt[i] - pos;
-      if (n * cts->elt_size < sorter_radix_threshold || shift < ASORT_MIN_SHIFT)
+      if (n * ctx->elt_size < sorter_radix_threshold || shift < ASORT_MIN_SHIFT)
 	{
 	  ctx->quicksort(buffer, n);
 	  if (!swapped_output)
@@ -216,7 +216,7 @@ rs_finish(struct worker_thread *thr UNUSED, struct work *ww)
 
   if (thr)
     DBG("Thread %d: Finishing %d items, shift=%d", thr->id, w->num_elts, w->shift);
-  if (w->shift < ASORT_MIN_SHIFT || w->num_elts * ctx->elt_size < sorter_radix_threshold)
+  if (w->shift < ASORT_MIN_SHIFT || w->num_elts * w->ctx->elt_size < sorter_radix_threshold)
     {
       w->ctx->quicksort(w->in, w->num_elts);
       if (w->swap_output)
