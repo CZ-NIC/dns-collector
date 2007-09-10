@@ -21,6 +21,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+/*** A hack for overriding radix-sorter configuration ***/
+
+#ifdef FORCE_RADIX_BITS
+#undef CONFIG_UCW_RADIX_SORTER_BITS
+#define CONFIG_UCW_RADIX_SORTER_BITS FORCE_RADIX_BITS
+#endif
+
 /*** Time measurement ***/
 
 static timestamp_t timer;
@@ -663,9 +670,20 @@ main(int argc, char **argv)
 	  goto usage;
 	break;
       case 't':
-	t = atol(optarg);
-	if (t >= TMAX)
-	  goto usage;
+	  {
+	    char *w[32];
+	    int f = sepsplit(optarg, ',', w, ARRAY_SIZE(w));
+	    if (f < 0)
+	      goto usage;
+	    t = 0;
+	    for (int i=0; i<f; i++)
+	      {
+		int j = atol(w[i]);
+		if (j >= TMAX)
+		  goto usage;
+		t |= 1 << j;
+	      }
+	  }
 	break;
       case 'v':
 	sorter_trace++;
@@ -678,10 +696,8 @@ main(int argc, char **argv)
   if (optind != argc)
     goto usage;
 
-  if (t != ~0U)
-    run_test(t, size);
-  else
-    for (uns i=0; i<TMAX; i++)
+  for (uns i=0; i<TMAX; i++)
+    if (t & (1 << i))
       run_test(i, size);
 
   return 0;
