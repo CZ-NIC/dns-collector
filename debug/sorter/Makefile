@@ -1,8 +1,9 @@
 # Tests related to the new sorter
 
 DIRS+=debug/sorter
-PROGS+=$(addprefix $(o)/debug/sorter/,retros radix-file-test radix-asio-test)
+PROGS+=$(addprefix $(o)/debug/sorter/,retros radix-file-test radix-asio-test radix-tune-bits)
 
 $(o)/debug/sorter/retros: $(o)/debug/sorter/retros.o $(LIBSH)
 $(o)/debug/sorter/radix-file-test: $(o)/debug/sorter/radix-file-test.o $(LIBSH)
 $(o)/debug/sorter/radix-asio-test: $(o)/debug/sorter/radix-asio-test.o $(LIBSH)
+$(o)/debug/sorter/radix-tune-bits: $(s)/debug/sorter/radix-tune-bits.sh
