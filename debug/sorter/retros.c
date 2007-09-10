@@ -1,5 +1,7 @@
 /*
- *  An experiment with sorting algorithms
+ *  Experiments with various sorting algorithms
+ *
+ *  (c) 2007 Martin Mares <mj@ucw.cz>
  */
 
 #include "sherlock/sherlock.h"
