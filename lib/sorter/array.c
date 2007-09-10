@@ -15,7 +15,6 @@
 #include <string.h>
 #include <alloca.h>
 
-#define ASORT_MIN_RADIX 5000		// FIXME: var?
 #define ASORT_MIN_SHIFT 2
 
 static void
@@ -49,7 +48,7 @@ asort_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, 
   for (uns i=0; i<buckets; i++)
     {
       uns n = cnt[i] - pos;
-      if (n < ASORT_MIN_RADIX || shift < ASORT_MIN_SHIFT)
+      if (n < sorter_radix_threshold || shift < ASORT_MIN_SHIFT)
 	{
 	  ctx->quicksort(buffer, n);
 	  if (!swapped_output)
@@ -216,7 +215,7 @@ rs_finish(struct worker_thread *thr UNUSED, struct work *ww)
   struct rs_work *w = (struct rs_work *) ww;
 
   DBG("Thread %d: Finishing %d items, shift=%d", thr->id, w->num_elts, w->shift);
-  if (w->shift < ASORT_MIN_SHIFT || w->num_elts < ASORT_MIN_RADIX)
+  if (w->shift < ASORT_MIN_SHIFT || w->num_elts < sorter_radix_threshold)
     {
       w->ctx->quicksort(w->in, w->num_elts);
       if (w->swap_output)
@@ -373,7 +372,7 @@ asort_run(struct asort_context *ctx)
 			      ctx->num_elts * ctx->elt_size >= sorter_thread_threshold &&
 			      !(sorter_debug & SORT_DEBUG_ASORT_NO_THREADS));
 
-  if (ctx->num_elts < ASORT_MIN_RADIX ||
+  if (ctx->num_elts < sorter_radix_threshold ||
       ctx->hash_bits <= ASORT_MIN_SHIFT ||
       !ctx->radix_split ||
       (sorter_debug & SORT_DEBUG_ASORT_NO_RADIX))

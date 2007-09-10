@@ -22,6 +22,7 @@ uns sorter_min_multiway_bits;
 uns sorter_max_multiway_bits;
 uns sorter_threads;
 uns sorter_thread_threshold;
+uns sorter_radix_threshold = 4096;
 struct fb_params sorter_fb_params;
 
 static struct cf_section sorter_config = {
@@ -37,6 +38,7 @@ static struct cf_section sorter_config = {
     CF_UNS("MaxMultiwayBits", &sorter_max_multiway_bits),
     CF_UNS("Threads", &sorter_threads),
     CF_UNS("ThreadThreshold", &sorter_thread_threshold),
+    CF_UNS("RadixThreshold", &sorter_radix_threshold),
     CF_END
   }
 };

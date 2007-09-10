@@ -16,7 +16,7 @@
 extern uns sorter_trace, sorter_stream_bufsize;
 extern uns sorter_debug, sorter_min_radix_bits, sorter_max_radix_bits;
 extern uns sorter_min_multiway_bits, sorter_max_multiway_bits;
-extern uns sorter_threads, sorter_thread_threshold;
+extern uns sorter_threads, sorter_thread_threshold, sorter_radix_threshold;
 extern u64 sorter_bufsize;
 extern struct fb_params sorter_fb_params;
 

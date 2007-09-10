@@ -20,7 +20,10 @@ SIZE=$(($SORTBUF/2 - 8192))
 log "Decided to benchmark sorting of $SIZE byte data"
 
 # Which bit widths we try
-WIDTHS="6 7 8 9 10 11 12 13 14"
+WIDTHS="0 6 7 8 9 10 11 12 13 14"
+
+# Which RadixThresholds we try
+THRS="100 500 1000 2500 5000"
 
 # Which sort-test tests we try
 TESTS="2,5,8,15"
@@ -28,18 +31,33 @@ TESTS="2,5,8,15"
 # Check various bit widths of the radix sorter
 rm -f tmp/radix-*
 for W in $WIDTHS ; do
-	log "Compiling with $W-bit radix splits"
 	rm -f $BUILD/obj/lib/sorter/sort-test{,.o}
-	( cd $BUILD && make CEXTRA="-DFORCE_RADIX_BITS=$W" obj/lib/sorter/sort-test )
-	log "Running the tests"
-	$BUILD/obj/lib/sorter/sort-test -s$SIZE -t$TESTS -v 2>&1 | tee tmp/radix-$W
+	if [ $W = 0 ] ; then
+		log "Compiling with no radix splits"
+		( cd $BUILD && make obj/lib/sorter/sort-test )
+		OPT="-d32"
+	else
+		log "Compiling with $W-bit radix splits"
+		( cd $BUILD && make CEXTRA="-DFORCE_RADIX_BITS=$W" obj/lib/sorter/sort-test )
+		OPT=
+	fi
+	for THR in $THRS ; do
+		log "Testing with RadixThreshold=$THR"
+		$BUILD/obj/lib/sorter/sort-test -SSorter.RadixThreshold=$THR -s$SIZE -t$TESTS $OPT -v 2>&1 | tee -a tmp/radix-$W
+	done
 done
 
-log "Trying with radix-sort switched off"
-$BUILD/obj/lib/sorter/sort-test -s$SIZE -t$TESTS -v -d32 2>&1 | tee tmp/radix-0
+echo "thresh" >tmp/radix-thrs
+echo "test#" >tmp/radix-tests
+for THR in $THRS ; do
+	for TEST in `echo $TESTS | tr ',' ' '` ; do
+		echo $THR >>tmp/radix-thrs
+		echo $TEST >>tmp/radix-tests
+	done
+done
 
-FILES=""
-for W in 0 $WIDTHS ; do
+FILES="tmp/radix-thrs tmp/radix-tests"
+for W in $WIDTHS ; do
 	a=tmp/radix-$W
 	echo >$a.out "$W bits"
 	sed 's/.* \([0-9.]\+\)s internal sorting.*/\1/;t;d' <$a >>$a.out
@@ -47,5 +65,4 @@ for W in 0 $WIDTHS ; do
 done
 
 log "These are the results:"
-echo "test#,$TESTS" | tr , '\n' >tmp/radix-tests
-paste tmp/radix-tests $FILES
+paste $FILES
