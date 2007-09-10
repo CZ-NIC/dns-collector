@@ -16,6 +16,7 @@ struct eltpool {
   uns elt_size;
   uns chunk_size;
   uns elts_per_chunk;
+  uns num_allocated;		// Just for debugging
 };
 
 struct eltpool_chunk {
@@ -34,6 +35,7 @@ void *ep_alloc_slow(struct eltpool *pool);
 static inline void *
 ep_alloc(struct eltpool *pool)
 {
+  pool->num_allocated++;
 #ifdef CONFIG_FAKE_ELTPOOL
   return xmalloc(pool->elt_size);
 #else
@@ -49,6 +51,7 @@ ep_alloc(struct eltpool *pool)
 static inline void
 ep_free(struct eltpool *pool, void *p)
 {
+  pool->num_allocated--;
 #ifdef CONFIG_FAKE_ELTPOOL
   (void) pool;
   xfree(p);
