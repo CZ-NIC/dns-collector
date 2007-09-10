@@ -23,7 +23,7 @@ log "Decided to benchmark sorting of $SIZE byte data"
 WIDTHS="0 6 7 8 9 10 11 12 13 14"
 
 # Which RadixThresholds we try
-THRS="100 500 1000 2500 5000"
+THRS="2000 4000 10000 20000 50000"
 
 # Which sort-test tests we try
 TESTS="2,5,8,15"
