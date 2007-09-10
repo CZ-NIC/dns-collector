@@ -21,6 +21,7 @@
 static void
 asort_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns hash_bits, uns swapped_output)
 {
+  // swap_output == 0 if result should be returned in `array', otherwise in `buffer'
   uns buckets = (1 << ctx->radix_bits);
   uns shift = (hash_bits > ctx->radix_bits) ? (hash_bits - ctx->radix_bits) : 0;
   uns cnt[buckets];
@@ -217,12 +218,12 @@ rs_finish(struct worker_thread *thr UNUSED, struct work *ww)
   DBG("Thread %d: Finishing %d items, shift=%d", thr->id, w->num_elts, w->shift);
   if (w->shift < ASORT_MIN_SHIFT || w->num_elts < ASORT_MIN_RADIX)
     {
-      w->ctx->quicksort(w->out, w->num_elts);
-      if (!w->swap_output)
-	memcpy(w->in, w->out, w->num_elts * w->ctx->elt_size);
+      w->ctx->quicksort(w->in, w->num_elts);
+      if (w->swap_output)
+	memcpy(w->out, w->in, w->num_elts * w->ctx->elt_size);
     }
   else
-    asort_radix(w->ctx, w->out, w->in, w->num_elts, w->shift, !w->swap_output);
+    asort_radix(w->ctx, w->in, w->out, w->num_elts, w->shift, w->swap_output);
   DBG("Thread %d: Finishing done", thr->id);
 }
 
@@ -244,12 +245,13 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
       w->w.go = rs_count;
       w->ctx = ctx;
       w->in = iptr;
-      w->out = ctx->buffer;
+      w->out = buffer;
       w->num_elts = blksize;
       if (i == sorter_threads-1)
 	w->num_elts += num_elts % sorter_threads;
       w->shift = shift;
       iptr += w->num_elts * ctx->elt_size;
+      bzero(w->cnt, sizeof(uns) * buckets);
       work_submit(ctx->rs_work_queue, &w->w);
     }
 
@@ -297,17 +299,17 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
   for (uns i=0; i<buckets; i++)
     {
       uns n = cnt[i] - pos;
-      if (n < sorter_thread_threshold)
+      if (n * ctx->elt_size < sorter_thread_threshold)
 	{
 	  struct rs_work *w = ep_alloc(ctx->eltpool);
 	  w->w.priority = 0;
 	  w->w.go = rs_finish;
 	  w->ctx = ctx;
-	  w->in = array;
-	  w->out = buffer;
+	  w->in = buffer;
+	  w->out = array;
 	  w->num_elts = n;
 	  w->shift = shift;
-	  w->swap_output = swapped_output;
+	  w->swap_output = !swapped_output;
 	  clist_add_tail(&ctx->rs_bits, &w->w.n);
 	  DBG("Scheduling block %d+%d", pos, n);
 	}
