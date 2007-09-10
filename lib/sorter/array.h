@@ -62,7 +62,7 @@ typedef ASORT_KEY_TYPE Q(key);
 #endif
 
 #ifndef ASORT_RADIX_BITS
-#define ASORT_RADIX_BITS 12		// FIXME: Tune automatically?
+#define ASORT_RADIX_BITS CONFIG_UCW_RADIX_SORTER_BITS
 #endif
 #define ASORT_RADIX_MASK ((1 << (ASORT_RADIX_BITS)) - 1)
 
