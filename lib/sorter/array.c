@@ -214,7 +214,8 @@ rs_finish(struct worker_thread *thr UNUSED, struct work *ww)
 {
   struct rs_work *w = (struct rs_work *) ww;
 
-  DBG("Thread %d: Finishing %d items, shift=%d", thr->id, w->num_elts, w->shift);
+  if (thr)
+    DBG("Thread %d: Finishing %d items, shift=%d", thr->id, w->num_elts, w->shift);
   if (w->shift < ASORT_MIN_SHIFT || w->num_elts < sorter_radix_threshold)
     {
       w->ctx->quicksort(w->in, w->num_elts);
@@ -223,7 +224,8 @@ rs_finish(struct worker_thread *thr UNUSED, struct work *ww)
     }
   else
     asort_radix(w->ctx, w->in, w->out, w->num_elts, w->shift, w->swap_output);
-  DBG("Thread %d: Finishing done", thr->id);
+  if (thr)
+    DBG("Thread %d: Finishing done", thr->id);
 }
 
 static void
@@ -298,6 +300,8 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
   for (uns i=0; i<buckets; i++)
     {
       uns n = cnt[i] - pos;
+      if (!n)
+	continue;
       if (n * ctx->elt_size < sorter_thread_threshold)
 	{
 	  struct rs_work *w = ep_alloc(ctx->eltpool);
@@ -309,8 +313,17 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
 	  w->num_elts = n;
 	  w->shift = shift;
 	  w->swap_output = !swapped_output;
-	  clist_add_tail(&ctx->rs_bits, &w->w.n);
-	  DBG("Scheduling block %d+%d", pos, n);
+	  if (n * ctx->elt_size < sorter_thread_chunk)
+	    {
+	      DBG("Sorting block %d+%d inline", pos, n);
+	      rs_finish(NULL, &w->w);
+	      ep_free(ctx->eltpool, w);
+	    }
+	  else
+	    {
+	      clist_add_tail(&ctx->rs_bits, &w->w.n);
+	      DBG("Scheduling block %d+%d", pos, n);
+	    }
 	}
       else
 	rs_radix(ctx, buffer, array, n, shift, !swapped_output);
