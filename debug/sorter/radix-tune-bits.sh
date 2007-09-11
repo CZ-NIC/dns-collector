@@ -43,7 +43,7 @@ for W in $WIDTHS ; do
 	fi
 	for THR in $THRS ; do
 		log "Testing with RadixThreshold=$THR"
-		$BUILD/obj/lib/sorter/sort-test -SSorter.RadixThreshold=$THR -s$SIZE -t$TESTS $OPT -v 2>&1 | tee -a tmp/radix-$W
+		$BUILD/obj/lib/sorter/sort-test -SThreads.DefaultStackSize=2M -SSorter.RadixThreshold=$THR -s$SIZE -t$TESTS $OPT -v 2>&1 | tee -a tmp/radix-$W
 	done
 done
 
