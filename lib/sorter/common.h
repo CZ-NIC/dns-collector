@@ -18,8 +18,8 @@ extern uns sorter_debug, sorter_min_radix_bits, sorter_max_radix_bits, sorter_ad
 extern uns sorter_min_multiway_bits, sorter_max_multiway_bits;
 extern uns sorter_threads, sorter_thread_threshold, sorter_thread_chunk;
 extern uns sorter_radix_threshold;
-extern u64 sorter_bufsize;
-extern struct fb_params sorter_fb_params;
+extern u64 sorter_bufsize, sorter_small_input;
+extern struct fb_params sorter_fb_params, sorter_small_fb_params;
 
 #define SORT_TRACE(x...) do { if (sorter_trace) msg(L_DEBUG, x); } while(0)
 #define SORT_XTRACE(level, x...) do { if (sorter_trace >= level) msg(L_DEBUG, x); } while(0)
@@ -41,6 +41,7 @@ struct sort_context {
   struct fastbuf *out_fb;
   uns hash_bits;
   u64 in_size;
+  struct fb_params *fb_params;
 
   struct mempool *pool;
   clist bucket_list;
