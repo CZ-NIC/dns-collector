@@ -349,7 +349,7 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
 }
 
 static void
-threaded_radixsort(struct asort_context *ctx)
+threaded_radixsort(struct asort_context *ctx, uns swap)
 {
   struct work_queue q;
 
@@ -367,8 +367,7 @@ threaded_radixsort(struct asort_context *ctx)
   ctx->eltpool = ep_new(sizeof(struct rs_work), 1000);
 
   // Do the big splitting
-  // FIXME: Set the swap bit carefully.
-  rs_radix(ctx, ctx->array, ctx->buffer, ctx->num_elts, ctx->hash_bits, 0);
+  rs_radix(ctx, ctx->array, ctx->buffer, ctx->num_elts, ctx->hash_bits, swap);
   for (uns i=0; i<sorter_threads; i++)
     big_free(ctx->rs_works[i], sizeof(struct rs_work) + sizeof(uns) * (1 << ctx->radix_bits));
 
@@ -387,6 +386,23 @@ void asort_start_threads(uns run UNUSED) { }
 void asort_stop_threads(void) { }
 
 #endif
+
+static uns
+predict_swap(struct asort_context *ctx)
+{
+  uns bits = ctx->radix_bits;
+  uns elts = ctx->num_elts;
+  uns swap = 0;
+
+  while (elts * ctx->elt_size >= sorter_radix_threshold && bits >= ASORT_MIN_SHIFT)
+    {
+      DBG("Predicting pass: %d elts, %d bits", elts, bits);
+      swap = !swap;
+      elts >>= ctx->radix_bits;
+      bits = MAX(bits, ctx->radix_bits) - ctx->radix_bits;
+    }
+  return swap;
+}
 
 void
 asort_run(struct asort_context *ctx)
@@ -414,17 +430,19 @@ asort_run(struct asort_context *ctx)
     }
   else
     {
+      uns swap = predict_swap(ctx);
 #ifdef CONFIG_UCW_THREADS
       if (allow_threads)
 	{
-	  SORT_XTRACE(12, "Decided to use parallel radix-sort");
-	  threaded_radixsort(ctx);
+	  SORT_XTRACE(12, "Decided to use parallel radix-sort (swap=%d)", swap);
+	  threaded_radixsort(ctx, swap);
 	  return;
 	}
 #endif
-      SORT_XTRACE(12, "Decided to use sequential radix-sort");
-      // FIXME: select dest buffer
-      asort_radix(ctx, ctx->array, ctx->buffer, ctx->num_elts, ctx->hash_bits, 0);
+      SORT_XTRACE(12, "Decided to use sequential radix-sort (swap=%d)", swap);
+      asort_radix(ctx, ctx->array, ctx->buffer, ctx->num_elts, ctx->hash_bits, swap);
+      if (swap)
+	ctx->array = ctx->buffer;
     }
 
   SORT_XTRACE(11, "Array-sort finished");
