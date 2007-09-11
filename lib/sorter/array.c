@@ -182,7 +182,7 @@ threaded_quicksort(struct asort_context *ctx)
 struct rs_work {
   struct work w;
   struct asort_context *ctx;
-  void *in, *out;
+  void *array, *buffer;		// Like asort_radix().
   uns num_elts;
   uns shift;
   uns swap_output;
@@ -195,7 +195,7 @@ rs_count(struct worker_thread *thr UNUSED, struct work *ww)
   struct rs_work *w = (struct rs_work *) ww;
 
   DBG("Thread %d: Counting %d items, shift=%d", thr->id, w->num_elts, w->shift);
-  w->ctx->radix_count(w->in, w->num_elts, w->cnt, w->shift);
+  w->ctx->radix_count(w->array, w->num_elts, w->cnt, w->shift);
   DBG("Thread %d: Counting done", thr->id);
 }
 
@@ -205,7 +205,7 @@ rs_split(struct worker_thread *thr UNUSED, struct work *ww)
   struct rs_work *w = (struct rs_work *) ww;
 
   DBG("Thread %d: Splitting %d items, shift=%d", thr->id, w->num_elts, w->shift);
-  w->ctx->radix_split(w->in, w->out, w->num_elts, w->cnt, w->shift);
+  w->ctx->radix_split(w->array, w->buffer, w->num_elts, w->cnt, w->shift);
   DBG("Thread %d: Splitting done", thr->id);
 }
 
@@ -218,12 +218,12 @@ rs_finish(struct worker_thread *thr UNUSED, struct work *ww)
     DBG("Thread %d: Finishing %d items, shift=%d", thr->id, w->num_elts, w->shift);
   if (w->shift < ASORT_MIN_SHIFT || w->num_elts * w->ctx->elt_size < sorter_radix_threshold)
     {
-      w->ctx->quicksort(w->in, w->num_elts);
+      w->ctx->quicksort(w->array, w->num_elts);
       if (w->swap_output)
-	memcpy(w->out, w->in, w->num_elts * w->ctx->elt_size);
+	memcpy(w->buffer, w->array, w->num_elts * w->ctx->elt_size);
     }
   else
-    asort_radix(w->ctx, w->in, w->out, w->num_elts, w->shift, w->swap_output);
+    asort_radix(w->ctx, w->array, w->buffer, w->num_elts, w->shift, w->swap_output);
   if (thr)
     DBG("Thread %d: Finishing done", thr->id);
 }
@@ -260,8 +260,8 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
       w->w.priority = 0;
       w->w.go = rs_count;
       w->ctx = ctx;
-      w->in = iptr;
-      w->out = buffer;
+      w->array = iptr;
+      w->buffer = buffer;
       w->num_elts = blksize;
       if (i == sorter_threads-1)
 	w->num_elts += num_elts % sorter_threads;
@@ -323,8 +323,8 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
 	  w->w.priority = 0;
 	  w->w.go = rs_finish;
 	  w->ctx = ctx;
-	  w->in = buffer;
-	  w->out = array;
+	  w->array = buffer;
+	  w->buffer = array;
 	  w->num_elts = n;
 	  w->shift = shift;
 	  w->swap_output = !swapped_output;
