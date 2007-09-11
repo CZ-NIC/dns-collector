@@ -75,6 +75,15 @@ static uns asort_threads_use_count;
 static uns asort_threads_ready;
 static struct worker_pool asort_thread_pool;
 
+static uns
+rs_estimate_stack(void)
+{
+  // Stack space needed by the recursive radix-sorter
+  uns ctrsize = sizeof(uns) * (1 << CONFIG_UCW_RADIX_SORTER_BITS);
+  uns maxdepth = (64 / CONFIG_UCW_RADIX_SORTER_BITS) + 1;
+  return ctrsize * maxdepth;
+}
+
 void
 asort_start_threads(uns run)
 {
@@ -82,8 +91,11 @@ asort_start_threads(uns run)
   asort_threads_use_count++;
   if (run && !asort_threads_ready)
     {
-      ASORT_TRACE("Initializing thread pool (%d threads)", sorter_threads);
+      // XXX: If somebody overrides the radix-sorter parameters to insane values,
+      // he also should override the stack size to insane values.
+      asort_thread_pool.stack_size = default_thread_stack_size + rs_estimate_stack();
       asort_thread_pool.num_threads = sorter_threads;
+      ASORT_TRACE("Initializing thread pool (%d threads, %dK stack)", sorter_threads, asort_thread_pool.stack_size >> 10);
       worker_pool_init(&asort_thread_pool);
       asort_threads_ready = 1;
     }
