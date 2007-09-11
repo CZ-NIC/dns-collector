@@ -283,6 +283,9 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 static void
 sorter_radix(struct sort_context *ctx, struct sort_bucket *b, uns bits)
 {
+  // Add more bits if requested and allowed.
+  bits = MIN(bits + sorter_add_radix_bits, sorter_max_radix_bits);
+
   uns nbuck = 1 << bits;
   SORT_XTRACE(2, "Running radix split on %s with hash %d bits of %d (expecting %s buckets)",
 	      F_BSIZE(b), bits, b->hash_bits, stk_fsize(sbuck_size(b) / nbuck));
