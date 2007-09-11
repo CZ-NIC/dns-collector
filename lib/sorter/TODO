@@ -9,13 +9,12 @@ o  Clean up log levels.
 o  Clean up introductory comments.
 o  Log messages should show both original and new size of the data. The speed
    should be probably calculated from the former.
-o  Automatically tune ASORT_MIN_RADIX, ASORT_MIN_SHIFT and especially ASORT_RADIX_BITS.
 o  Buffer sizing in shep-export.
+o  Problems with thread stack limit in radix-sorting of arrays.
+o  Prediction of destination buffer in array radix-sorts.
 
 Improvements:
 o  Switching between direct and normal I/O. Should use normal I/O if the input is small enough.
-o  How does the speed of radix splitting decrease with increasing number of hash bits?
-   Does it help to use more bits than we need, so that we sort less data in memory?
 
 Users of lib/sorter/array.h which might use radix-sorting:
 indexer/chewer.c
