@@ -437,11 +437,13 @@ asort_run(struct asort_context *ctx)
 	{
 	  ASORT_XTRACE(2, "Decided to use parallel quicksort");
 	  threaded_quicksort(ctx);
-	  return;
 	}
+      else
 #endif
-      ASORT_XTRACE(2, "Decided to use sequential quicksort");
-      ctx->quicksort(ctx->array, ctx->num_elts);
+	{
+	  ASORT_XTRACE(2, "Decided to use sequential quicksort");
+	  ctx->quicksort(ctx->array, ctx->num_elts);
+	}
     }
   else
     {
@@ -453,9 +455,12 @@ asort_run(struct asort_context *ctx)
 	  threaded_radixsort(ctx, swap);
 	  return;
 	}
+      else
 #endif
-      ASORT_XTRACE(2, "Decided to use sequential radix-sort (swap=%d)", swap);
-      asort_radix(ctx, ctx->array, ctx->buffer, ctx->num_elts, ctx->hash_bits, swap);
+	{
+	  ASORT_XTRACE(2, "Decided to use sequential radix-sort (swap=%d)", swap);
+	  asort_radix(ctx, ctx->array, ctx->buffer, ctx->num_elts, ctx->hash_bits, swap);
+	}
       if (swap)
 	ctx->array = ctx->buffer;
     }
