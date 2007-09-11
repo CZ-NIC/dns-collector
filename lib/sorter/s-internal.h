@@ -115,7 +115,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 #ifdef SORT_VAR_DATA
   if (sizeof(key) + 2*CPU_PAGE_SIZE + SORT_DATA_SIZE(key) + P(internal_workspace)(&key) > bufsize)
     {
-      SORT_XTRACE(3, "s-internal: Generating a giant run");
+      SORT_XTRACE(4, "s-internal: Generating a giant run");
       struct fastbuf *out = sbuck_write(bout);
       P(copy_data)(&key, in, out);
       bout->runs++;
@@ -123,7 +123,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
     }
 #endif
 
-  SORT_XTRACE(4, "s-internal: Reading");
+  SORT_XTRACE(5, "s-internal: Reading");
   P(internal_item_t) *item_array = ctx->big_buf, *item = item_array, *last_item;
   byte *end = (byte *) ctx->big_buf + bufsize;
   size_t remains = bufsize - CPU_PAGE_SIZE;
@@ -165,7 +165,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 
   uns count = last_item - item_array;
   void *workspace UNUSED = ALIGN_PTR(last_item, CPU_PAGE_SIZE);
-  SORT_XTRACE(3, "s-internal: Read %u items (%s items, %s workspace, %s data)",
+  SORT_XTRACE(4, "s-internal: Read %u items (%s items, %s workspace, %s data)",
 	count,
 	stk_fsize((byte*)last_item - (byte*)item_array),
 	stk_fsize(end - (byte*)last_item - remains),
@@ -179,7 +179,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
     );
   ctx->total_int_time += get_timer(&timer);
 
-  SORT_XTRACE(4, "s-internal: Writing");
+  SORT_XTRACE(5, "s-internal: Writing");
   if (!ctx->more_keys)
     bout = bout_only;
   struct fastbuf *out = sbuck_write(bout);
@@ -217,7 +217,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 #endif
     }
 #ifdef SORT_UNIFY
-  SORT_XTRACE(3, "Merging reduced %u records", merged);
+  SORT_XTRACE(4, "Merging reduced %u records", merged);
 #endif
 
   return ctx->more_keys;

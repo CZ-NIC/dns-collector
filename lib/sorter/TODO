@@ -1,11 +1,4 @@
-Testing:
-o  Giant runs.
-o  Records of odd lengths.
-o  Empty files.
-
 Cleanups:
-o  Clean up data types and make sure they cannot overflow. (size_t vs. u64 vs. sh_off_t vs. uns)
-o  Clean up log levels.
 o  Clean up introductory comments.
 o  Log messages should show both original and new size of the data. The speed
    should be probably calculated from the former.

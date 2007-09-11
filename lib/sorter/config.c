@@ -13,6 +13,7 @@
 #include "lib/sorter/common.h"
 
 uns sorter_trace;
+uns sorter_trace_array;
 u64 sorter_bufsize = 65536;
 uns sorter_debug;
 uns sorter_min_radix_bits;
@@ -31,6 +32,7 @@ u64 sorter_small_input;
 static struct cf_section sorter_config = {
   CF_ITEMS {
     CF_UNS("Trace", &sorter_trace),
+    CF_UNS("TraceArray", &sorter_trace_array),
     CF_SECTION("FileAccess", &sorter_fb_params, &fbpar_cf),
     CF_SECTION("SmallFileAccess", &sorter_fb_params, &fbpar_cf),
     CF_U64("SmallInput", &sorter_small_input),

@@ -17,6 +17,9 @@
 
 #define ASORT_MIN_SHIFT 2
 
+#define ASORT_TRACE(x...) ASORT_XTRACE(1, x)
+#define ASORT_XTRACE(level, x...) do { if (sorter_trace_array >= level) msg(L_DEBUG, x); } while(0)
+
 static void
 asort_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns hash_bits, uns swapped_output)
 {
@@ -79,7 +82,7 @@ asort_start_threads(uns run)
   asort_threads_use_count++;
   if (run && !asort_threads_ready)
     {
-      SORT_XTRACE(2, "Initializing thread pool (%d threads)", sorter_threads);
+      ASORT_TRACE("Initializing thread pool (%d threads)", sorter_threads);
       asort_thread_pool.num_threads = sorter_threads;
       worker_pool_init(&asort_thread_pool);
       asort_threads_ready = 1;
@@ -93,7 +96,7 @@ asort_stop_threads(void)
   ucwlib_lock();
   if (!--asort_threads_use_count && asort_threads_ready)
     {
-      SORT_XTRACE(2, "Shutting down thread pool");
+      ASORT_TRACE("Shutting down thread pool");
       worker_pool_cleanup(&asort_thread_pool);
       asort_threads_ready = 0;
     }
@@ -407,7 +410,7 @@ predict_swap(struct asort_context *ctx)
 void
 asort_run(struct asort_context *ctx)
 {
-  SORT_XTRACE(10, "Array-sorting %d items per %d bytes, hash_bits=%d", ctx->num_elts, ctx->elt_size, ctx->hash_bits);
+  ASORT_TRACE("Array-sorting %d items per %d bytes, hash_bits=%d", ctx->num_elts, ctx->elt_size, ctx->hash_bits);
   uns allow_threads UNUSED = (sorter_threads > 1 &&
 			      ctx->num_elts * ctx->elt_size >= sorter_thread_threshold &&
 			      !(sorter_debug & SORT_DEBUG_ASORT_NO_THREADS));
@@ -420,12 +423,12 @@ asort_run(struct asort_context *ctx)
 #ifdef CONFIG_UCW_THREADS
       if (allow_threads)
 	{
-	  SORT_XTRACE(12, "Decided to use parallel quicksort");
+	  ASORT_XTRACE(2, "Decided to use parallel quicksort");
 	  threaded_quicksort(ctx);
 	  return;
 	}
 #endif
-      SORT_XTRACE(12, "Decided to use sequential quicksort");
+      ASORT_XTRACE(2, "Decided to use sequential quicksort");
       ctx->quicksort(ctx->array, ctx->num_elts);
     }
   else
@@ -434,16 +437,16 @@ asort_run(struct asort_context *ctx)
 #ifdef CONFIG_UCW_THREADS
       if (allow_threads)
 	{
-	  SORT_XTRACE(12, "Decided to use parallel radix-sort (swap=%d)", swap);
+	  ASORT_XTRACE(2, "Decided to use parallel radix-sort (swap=%d)", swap);
 	  threaded_radixsort(ctx, swap);
 	  return;
 	}
 #endif
-      SORT_XTRACE(12, "Decided to use sequential radix-sort (swap=%d)", swap);
+      ASORT_XTRACE(2, "Decided to use sequential radix-sort (swap=%d)", swap);
       asort_radix(ctx, ctx->array, ctx->buffer, ctx->num_elts, ctx->hash_bits, swap);
       if (swap)
 	ctx->array = ctx->buffer;
     }
 
-  SORT_XTRACE(11, "Array-sort finished");
+  ASORT_XTRACE(2, "Array-sort finished");
 }

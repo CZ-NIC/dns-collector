@@ -105,7 +105,7 @@ sorter_join(struct sort_bucket *b)
     {
       // The final bucket doesn't have any file associated yet, so replace
       // it with the new bucket.
-      SORT_XTRACE(2, "Replaced final bucket");
+      SORT_XTRACE(3, "Replaced final bucket");
       b->flags |= SBF_FINAL;
       sbuck_drop(join);
     }
@@ -136,7 +136,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 	{
 	  sorter_stop_timer(ctx, &ctx->total_pre_time);
 	  sh_off_t size = sbuck_ins_or_join(ins[0], list_pos, join, join_size);
-	  SORT_XTRACE(((b->flags & SBF_SOURCE) ? 1 : 2), "Sorted in memory (%s, %dMB/s)", stk_fsize(size), sorter_speed(ctx, size));
+	  SORT_XTRACE(((b->flags & SBF_SOURCE) ? 1 : 3), "Sorted in memory (%s, %dMB/s)", stk_fsize(size), sorter_speed(ctx, size));
 	  sbuck_drop(b);
 	  return;
 	}
@@ -201,7 +201,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
   cnode *list_pos = b->n.prev;
   sh_off_t join_size;
   struct sort_bucket *join = sbuck_join_to(b, &join_size);
-  uns trace_level = (b->flags & SBF_SOURCE) ? 1 : 2;
+  uns trace_level = (b->flags & SBF_SOURCE) ? 1 : 3;
 
   clist_init(&parts);
   ASSERT(!(sorter_debug & SORT_DEBUG_NO_PRESORT));
@@ -240,7 +240,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 
   uns max_ways = 1 << sorter_max_multiway_bits;
   struct sort_bucket *ways[max_ways+1];
-  SORT_XTRACE(2, "Starting up to %d-way merge", max_ways);
+  SORT_XTRACE(3, "Starting up to %d-way merge", max_ways);
   for (;;)
     {
       uns n = 0;
@@ -287,7 +287,7 @@ sorter_radix(struct sort_context *ctx, struct sort_bucket *b, uns bits)
   bits = MIN(bits + sorter_add_radix_bits, sorter_max_radix_bits);
 
   uns nbuck = 1 << bits;
-  SORT_XTRACE(2, "Running radix split on %s with hash %d bits of %d (expecting %s buckets)",
+  SORT_XTRACE(3, "Running radix split on %s with hash %d bits of %d (expecting %s buckets)",
 	      F_BSIZE(b), bits, b->hash_bits, stk_fsize(sbuck_size(b) / nbuck));
   sorter_free_buf(ctx);
   sorter_start_timer(ctx);
@@ -325,7 +325,7 @@ sorter_decide(struct sort_context *ctx, struct sort_bucket *b)
   // Drop empty buckets
   if (!sbuck_have(b))
     {
-      SORT_XTRACE(3, "Dropping empty bucket");
+      SORT_XTRACE(4, "Dropping empty bucket");
       sbuck_drop(b);
       return;
     }
@@ -365,7 +365,7 @@ sorter_decide(struct sort_context *ctx, struct sort_bucket *b)
 	multiway_bits = 0;
     }
 
-  SORT_XTRACE(2, "Decisions: size=%s max=%s runs=%d bits=%d hash=%d -> radix=%d multi=%d",
+  SORT_XTRACE(3, "Decisions: size=%s max=%s runs=%d bits=%d hash=%d -> radix=%d multi=%d",
 	stk_fsize(insize), stk_fsize(mem), b->runs, bits, b->hash_bits,
 	radix_bits, multiway_bits);
 

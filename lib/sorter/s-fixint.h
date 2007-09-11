@@ -58,7 +58,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   P(key) *buf = ctx->big_buf;
   uns maxkeys = P(internal_num_keys)(ctx);
 
-  SORT_XTRACE(4, "s-fixint: Reading (maxkeys=%u, hash_bits=%d)", maxkeys, bin->hash_bits);
+  SORT_XTRACE(5, "s-fixint: Reading (maxkeys=%u, hash_bits=%d)", maxkeys, bin->hash_bits);
   uns n = 0;
   while (n < maxkeys && P(read_key)(in, &buf[n]))
     n++;
@@ -66,7 +66,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
     return 0;
   void *workspace UNUSED = ALIGN_PTR(&buf[n], CPU_PAGE_SIZE);
 
-  SORT_XTRACE(3, "s-fixint: Sorting %u items (%s items, %s workspace)",
+  SORT_XTRACE(4, "s-fixint: Sorting %u items (%s items, %s workspace)",
 	n,
 	stk_fsize(n * sizeof(P(key))),
 	stk_fsize(n * P(internal_workspace)()));
@@ -79,7 +79,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
     );
   ctx->total_int_time += get_timer(&timer);
 
-  SORT_XTRACE(4, "s-fixint: Writing");
+  SORT_XTRACE(5, "s-fixint: Writing");
   if (n < maxkeys)
     bout = bout_only;
   struct fastbuf *out = sbuck_write(bout);
@@ -111,7 +111,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
       P(write_key)(out, &buf[i]);
     }
 #ifdef SORT_UNIFY
-  SORT_XTRACE(3, "Merging reduced %d records", merged);
+  SORT_XTRACE(4, "Merging reduced %d records", merged);
 #endif
 
   return (n == maxkeys);

@@ -143,7 +143,7 @@ sorter_alloc_buf(struct sort_context *ctx)
   if (ctx->big_buf)
     return;
   ctx->big_buf = big_alloc(ctx->big_buf_size);
-  SORT_XTRACE(2, "Allocated sorting buffer (%s)", stk_fsize(ctx->big_buf_size));
+  SORT_XTRACE(3, "Allocated sorting buffer (%s)", stk_fsize(ctx->big_buf_size));
 }
 
 void
@@ -153,5 +153,5 @@ sorter_free_buf(struct sort_context *ctx)
     return;
   big_free(ctx->big_buf, ctx->big_buf_size);
   ctx->big_buf = NULL;
-  SORT_XTRACE(2, "Freed sorting buffer");
+  SORT_XTRACE(3, "Freed sorting buffer");
 }
