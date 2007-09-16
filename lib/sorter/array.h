@@ -287,7 +287,7 @@ static void Q(radix_split)(void *src_ptr, void *dest_ptr, uns num_elts, uns *ptr
 static Q(key) *Q(sort)(Q(key) *array, uns num_elts
 #ifdef ASORT_HASH
   , Q(key) *buffer, uns hash_bits
-#endif  
+#endif
   )
 {
   struct asort_context ctx = {

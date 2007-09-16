@@ -436,4 +436,5 @@ sorter_run(struct sort_context *ctx)
   SORT_XTRACE(2, "Final timings: %.3fs external sorting, %.3fs presorting, %.3fs internal sorting",
 	      ctx->total_ext_time/1000., ctx->total_pre_time/1000., ctx->total_int_time/1000.);
   ctx->out_fb = sbuck_read(bout);
+  mp_delete(ctx->pool);
 }
