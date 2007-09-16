@@ -332,7 +332,7 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
       uns n = cnt[i] - pos;
       if (!n)
 	continue;
-      if (n * ctx->elt_size < sorter_thread_threshold)
+      if (n * ctx->elt_size < sorter_thread_threshold || shift < ASORT_MIN_SHIFT)
 	{
 	  struct rs_work *w = ep_alloc(ctx->eltpool);
 	  w->w.priority = 0;
