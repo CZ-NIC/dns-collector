@@ -72,7 +72,8 @@ sbuck_swap_in(struct sort_bucket *b)
       b->fb = bopen_file(b->filename, O_RDWR, b->ctx->fb_params);
       if (b->flags & SBF_OPEN_WRITE)
 	bseek(b->fb, 0, SEEK_END);
-      bconfig(b->fb, BCONFIG_IS_TEMP_FILE, 1);
+      if (!(sorter_debug & SORT_DEBUG_KEEP_BUCKETS))
+	bconfig(b->fb, BCONFIG_IS_TEMP_FILE, 1);
       b->flags &= ~SBF_SWAPPED_OUT;
       SORT_XTRACE(3, "Swapped in %s", b->filename);
     }
