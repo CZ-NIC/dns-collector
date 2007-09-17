@@ -51,7 +51,7 @@ asort_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, 
   for (uns i=0; i<buckets; i++)
     {
       uns n = cnt[i] - pos;
-      if (n * ctx->elt_size < sorter_radix_threshold || shift < ASORT_MIN_SHIFT)
+      if (n < ctx->radix_threshold || shift < ASORT_MIN_SHIFT)
 	{
 	  ctx->quicksort(buffer, n);
 	  if (!swapped_output)
@@ -128,15 +128,16 @@ static void
 qs_handle_work(struct worker_thread *thr UNUSED, struct work *ww)
 {
   struct qs_work *w = (struct qs_work *) ww;
+  struct asort_context *ctx = w->ctx;
 
   DBG("Thread %d: got %d elts", thr->id, w->num_elts);
-  if (w->num_elts * w->ctx->elt_size < sorter_thread_threshold)
+  if (w->num_elts < ctx->thread_threshold)
     {
-      w->ctx->quicksort(w->array, w->num_elts);
+      ctx->quicksort(w->array, w->num_elts);
       w->left = w->right = LR_UNDEF;
     }
   else
-    w->ctx->quicksplit(w->array, w->num_elts, &w->left, &w->right);
+    ctx->quicksplit(w->array, w->num_elts, &w->left, &w->right);
   DBG("Thread %d: returning l=%d r=%d", thr->id, w->left, w->right);
 }
 
@@ -231,7 +232,7 @@ rs_finish(struct worker_thread *thr UNUSED, struct work *ww)
 
   if (thr)
     DBG("Thread %d: Finishing %d items, shift=%d", thr->id, w->num_elts, w->shift);
-  if (w->shift < ASORT_MIN_SHIFT || w->num_elts * w->ctx->elt_size < sorter_radix_threshold)
+  if (w->shift < ASORT_MIN_SHIFT || w->num_elts < w->ctx->radix_threshold)
     {
       w->ctx->quicksort(w->array, w->num_elts);
       if (w->swap_output)
@@ -332,7 +333,7 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
       uns n = cnt[i] - pos;
       if (!n)
 	continue;
-      if (n * ctx->elt_size < sorter_thread_threshold || shift < ASORT_MIN_SHIFT)
+      if (n < ctx->thread_threshold || shift < ASORT_MIN_SHIFT)
 	{
 	  struct rs_work *w = ep_alloc(ctx->eltpool);
 	  w->w.priority = 0;
@@ -343,7 +344,7 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
 	  w->num_elts = n;
 	  w->shift = shift;
 	  w->swap_output = !swapped_output;
-	  if (n * ctx->elt_size < sorter_thread_chunk)
+	  if (n < ctx->thread_chunk)
 	    {
 	      DBG("Sorting block %d+%d inline", pos, n);
 	      rs_finish(NULL, &w->w);
@@ -409,7 +410,7 @@ predict_swap(struct asort_context *ctx)
   uns elts = ctx->num_elts;
   uns swap = 0;
 
-  while (elts * ctx->elt_size >= sorter_radix_threshold && bits >= ASORT_MIN_SHIFT)
+  while (elts >= ctx->radix_threshold && bits >= ASORT_MIN_SHIFT)
     {
       DBG("Predicting pass: %d elts, %d bits", elts, bits);
       swap = !swap;
@@ -422,12 +423,18 @@ predict_swap(struct asort_context *ctx)
 void
 asort_run(struct asort_context *ctx)
 {
+  ctx->thread_threshold = MIN(sorter_thread_threshold / ctx->elt_size, ~0U);
+  ctx->thread_chunk = MIN(sorter_thread_chunk / ctx->elt_size, ~0U);
+  ctx->radix_threshold = MIN(sorter_radix_threshold / ctx->elt_size, ~0U);
+
   ASORT_TRACE("Array-sorting %d items per %d bytes, hash_bits=%d", ctx->num_elts, ctx->elt_size, ctx->hash_bits);
+  ASORT_XTRACE(2, "Limits: thread_threshold=%u, thread_chunk=%u, radix_threshold=%u",
+    	ctx->thread_threshold, ctx->thread_chunk, ctx->radix_threshold);
   uns allow_threads UNUSED = (sorter_threads > 1 &&
-			      ctx->num_elts * ctx->elt_size >= sorter_thread_threshold &&
+			      ctx->num_elts >= ctx->thread_threshold &&
 			      !(sorter_debug & SORT_DEBUG_ASORT_NO_THREADS));
 
-  if (ctx->num_elts * ctx->elt_size < sorter_radix_threshold ||
+  if (ctx->num_elts < ctx->radix_threshold ||
       ctx->hash_bits <= ASORT_MIN_SHIFT ||
       !ctx->radix_split ||
       (sorter_debug & SORT_DEBUG_ASORT_NO_RADIX))
