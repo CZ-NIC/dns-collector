@@ -111,7 +111,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
       P(write_key)(out, &buf[i]);
     }
 #ifdef SORT_UNIFY
-  SORT_XTRACE(4, "Merging reduced %d records", merged);
+  SORT_XTRACE(4, "Merging reduced %u records", merged);
 #endif
 
   return (n == maxkeys);
