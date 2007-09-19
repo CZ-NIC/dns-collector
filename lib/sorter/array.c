@@ -460,7 +460,6 @@ asort_run(struct asort_context *ctx)
 	{
 	  ASORT_XTRACE(2, "Decided to use parallel radix-sort (swap=%d)", swap);
 	  threaded_radixsort(ctx, swap);
-	  return;
 	}
       else
 #endif
