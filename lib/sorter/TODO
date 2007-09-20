@@ -6,6 +6,7 @@ o  Buffer sizing in shep-export.
 Improvements:
 o  When quicksorting a large input (especially in threaded case), invest more
    time to picking a good pivot.
+o  Overlay presorter I/O with internal sorting.
 
 Users of lib/sorter/array.h which might use radix-sorting:
 indexer/chewer.c
