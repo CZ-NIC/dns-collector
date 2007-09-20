@@ -1,5 +1,7 @@
 /*
  *  An experiment with parallel reading and writing of files.
+ *
+ *  (c) 2007 Martin Mares <mj@ucw.cz>
  */
 
 #include "lib/lib.h"
