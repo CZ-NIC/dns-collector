@@ -14,19 +14,26 @@
  *  corresponding preprocessor macros, it generates a file sorter
  *  with the parameters given.
  *
- *  FIXME: explain the basics (keys and data, callbacks etc.)
+ *  The sorter operates on fastbufs containing sequences of items. Each items
+ *  consists of a key, optionally followed by data. The keys are represented
+ *  by fixed-size structures of type SORT_KEY internally, if this format differs
+ *  from the on-disk format, explicit reading and writing routines can be provided.
+ *  The data are always copied verbatim, unless the sorter is in the merging
+ *  mode in which it calls callbacks for merging of items with equal keys.
+ *
+ *  All callbacks must be thread-safe.
  *
  *  Basic parameters and callbacks:
  *
- *  SORT_PREFIX(x)      add a name prefix (used on all global names
- *			defined by the sorter)
+ *  SORT_PREFIX(x)      add a name prefix (used on all global names defined by the sorter)
  *
- *  SORT_KEY		data type capable of storing a single key.
+ *  SORT_KEY		data type capable of holding a single key in memory (the on-disk
+ *			representation can be different). Alternatively, you can use:
  *  SORT_KEY_REGULAR	data type holding a single key both in memory and on disk;
  *			in this case, bread() and bwrite() is used to read/write keys
  *			and it's also assumed that the keys are not very long.
  *  int PREFIX_compare(SORT_KEY *a, SORT_KEY *b)
- *			compares two keys, result like strcmp(). Mandatory.
+ *			compares two keys, returns result like strcmp(). Mandatory.
  *  int PREFIX_read_key(struct fastbuf *f, SORT_KEY *k)
  *			reads a key from a fastbuf, returns nonzero=ok, 0=EOF.
  *			Mandatory unless SORT_KEY_REGULAR is defined.
@@ -42,22 +49,24 @@
  *
  *  Integer sorting:
  *
- *  SORT_INT(key)	We are sorting by an integer value. In this mode, PREFIX_compare
- *			is supplied automatically and the sorting function gets an extra
- *			parameter specifying a range of the integers. The better the range
- *			fits, the faster we sort. Sets up SORT_HASH_xxx automatically.
+ *  SORT_INT(key)	we are sorting by an integer value returned by this macro.
+ *			In this mode, PREFIX_compare is supplied automatically and the sorting
+ *			function gets an extra parameter specifying the range of the integers.
+ *			The better the range fits, the faster we sort.
+ *			Sets up SORT_HASH_xxx automatically.
  *  SORT_INT64(key)	the same for 64-bit integers.
  *
  *  Hashing (optional, but it can speed sorting up):
  *
  *  SORT_HASH_BITS	signals that a monotone hashing function returning a given number of
- *			bits is available. Monotone hash is a function f such that f(x) < f(y)
- *			implies x < y and which is approximately uniformly distributed.
+ *			bits is available. A monotone hash is a function f from keys to integers
+ *			such that f(x) < f(y) implies x < y, which is approximately uniformly
+ *			distributed. It should be declared as:
  *  uns PREFIX_hash(SORT_KEY *a)
  *
  *  Unification:
  *
- *  SORT_UNIFY		merge items with identical keys, needs the following functions:
+ *  SORT_UNIFY		merge items with identical keys. It requires the following functions:
  *  void PREFIX_write_merged(struct fastbuf *f, SORT_KEY **keys, void **data, uns n, void *buf)
  *			takes n records in memory with keys which compare equal and writes
  *			a single record to the given fastbuf. `buf' points to a buffer which
@@ -65,7 +74,8 @@
  *			over all given records. The function is allowed to modify all its inputs.
  *  void PREFIX_copy_merged(SORT_KEY **keys, struct fastbuf **data, uns n, struct fastbuf *dest)
  *			takes n records with keys in memory and data in fastbufs and writes
- *			a single record. Used only if SORT_DATA_SIZE or SORT_UNIFY_WORKSPACE is defined.
+ *			a single record. Used only if SORT_DATA_SIZE or SORT_UNIFY_WORKSPACE
+ *			is defined.
  *  SORT_UNIFY_WORKSPACE(key)
  *			gets a key and returns the amount of workspace required when merging
  *			the given record. Defaults to 0.
@@ -87,7 +97,7 @@
  *
  *  SORT_OUTPUT_FILE	file of a given name
  *  SORT_OUTPUT_FB	temporary fastbuf stream
- *  SORT_OUTPUT_THIS_FB	a given fastbuf stream which can already contain a header
+ *  SORT_OUTPUT_THIS_FB	a given fastbuf stream which can already contain some data
  *
  *  Other switches:
  *
@@ -99,7 +109,6 @@
  *			<in> = input file name/fastbuf or NULL
  *			<out> = output file name/fastbuf or NULL
  *			<range> = maximum integer value for the SORT_INT mode
- *			<outfb> = output fastbuf (in SORT_OUTPUT_FB mode)
  *
  *  After including this file, all parameter macros are automatically
  *  undef'd.

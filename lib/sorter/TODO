@@ -1,5 +1,4 @@
 Cleanups:
-o  Clean up introductory comments.
 o  Log messages should show both original and new size of the data. The speed
    should be probably calculated from the former.
 o  Buffer sizing in shep-export.
