@@ -397,7 +397,7 @@ static int s5_gen(struct s5_pair *p)
 {
   if (s5_j >= s5_N)
     {
-      if (s5_i >= s5_N-1)
+      if (!s5_N || s5_i >= s5_N-1)
 	return 0;
       s5_j = 0;
       s5_i++;
@@ -520,6 +520,8 @@ test_graph(uns mode, u64 size)
   uns N = 3;
   while ((u64)N*(N+2)*4 < size)
     N = nextprime(N);
+  if (!size)
+    N = 0;
   msg(L_INFO, ">>> Graph%s (N=%u)", (mode ? "" : " with custom presorting"), N);
   s5_N = N;
   s5_K = N/4*3;

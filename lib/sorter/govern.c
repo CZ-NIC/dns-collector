@@ -77,7 +77,7 @@ sbuck_join_to(struct sort_bucket *b, sh_off_t *sizep)
 static sh_off_t
 sbuck_ins_or_join(struct sort_bucket *b, cnode *list_pos, struct sort_bucket *join, sh_off_t join_size)
 {
-  if (join)
+  if (join && join->runs >= 2)
     {
       if (b)
 	sbuck_drop(b);
