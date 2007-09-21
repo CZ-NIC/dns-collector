@@ -38,7 +38,7 @@ help(void)
 Usage: config [-C<configfile>] [-S<section>.<option>=<value>] <sections>\n\
 \n\
 <sections>\t<section>[;<sections>]\n\
-<section>\t[*]<name>{[<items>]}\n\
+<section>\t[!]<name>{[<items>]}\n\
 <items>\t\t[-]<item>[;<items>]\n\
 <item>\t\t<static> | <array> | <list>\n\
 <static>\t<type><name>[=<value>]\n\

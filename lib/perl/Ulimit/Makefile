@@ -10,6 +10,7 @@ extras:: $(o)/lib/perl/Ulimit/arch/auto/UCW/Ulimit/Ulimit.$(SOEXT)
 $(o)/lib/perl/Ulimit/arch/auto/UCW/Ulimit/Ulimit.$(SOEXT): $(o)/$(ULIMIT_DIR)/Ulimit.xs $(o)/$(ULIMIT_DIR)/Ulimit.pm $(o)/$(ULIMIT_DIR)/Makefile
 	$(M)MAKE $@
 	$(Q)cd $(o)/$(ULIMIT_DIR) && $(MAKE) -f Makefile $(MAKESILENT)
+	$(Q)touch $@
 	$(Q)cp $@ run/$(DATADIR)/
 
 $(o)/$(ULIMIT_DIR)/Makefile: $(o)/$(ULIMIT_DIR)/Makefile.PL

@@ -37,7 +37,8 @@ typedef uint64_t u64;			/* exactly 64 bits, unsigned */
 typedef int64_t s64;			/* exactly 64 bits, signed */
 
 typedef unsigned int uns;		/* at least 32 bits */
-typedef u32 sh_time_t;			/* Timestamp */
+typedef u32 sh_time_t;			/* seconds since UNIX epoch */
+typedef s64 timestamp_t;		/* milliseconds since UNIX epoch */
 
 #ifdef CONFIG_LARGE_FILES		/* File positions */
 typedef s64 sh_off_t;

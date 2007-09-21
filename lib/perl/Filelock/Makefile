@@ -10,6 +10,7 @@ extras:: $(o)/lib/perl/Filelock/arch/auto/UCW/Filelock/Filelock.$(SOEXT)
 $(o)/lib/perl/Filelock/arch/auto/UCW/Filelock/Filelock.$(SOEXT): $(o)/$(FILELOCK_DIR)/Filelock.xs $(o)/$(FILELOCK_DIR)/Filelock.pm $(o)/$(FILELOCK_DIR)/Makefile
 	$(M)MAKE $@
 	$(Q)cd $(o)/$(FILELOCK_DIR) && $(MAKE) -f Makefile $(MAKESILENT)
+	$(Q)touch $@
 	$(Q)cp $@ run/$(DATADIR)/
 
 $(o)/$(FILELOCK_DIR)/Makefile: $(o)/$(FILELOCK_DIR)/Makefile.PL

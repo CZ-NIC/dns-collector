@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Temporary Fastbufs
  *
- *	(c) 2002--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2002--2007 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -43,15 +43,28 @@ temp_file_name(char *buf)
 }
 
 struct fastbuf *
+bopen_tmp_file(struct fb_params *params)
+{
+  char name[TEMP_FILE_NAME_LEN];
+  temp_file_name(name);
+  struct fastbuf *fb = bopen_file(name, O_RDWR | O_CREAT | O_TRUNC, params);
+  bconfig(fb, BCONFIG_IS_TEMP_FILE, 1);
+  return fb;
+}
+
+struct fastbuf *
 bopen_tmp(uns buflen)
 {
-  char buf[TEMP_FILE_NAME_LEN];
-  struct fastbuf *f;
+  return bopen_tmp_file(&(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
+}
 
-  temp_file_name(buf);
-  f = bopen(buf, O_RDWR | O_CREAT | O_TRUNC, buflen);
-  bconfig(f, BCONFIG_IS_TEMP_FILE, 1);
-  return f;
+void bfix_tmp_file(struct fastbuf *fb, const char *name)
+{
+  int was_temp = bconfig(fb, BCONFIG_IS_TEMP_FILE, 0);
+  ASSERT(was_temp == 1);
+  if (rename(fb->name, name))
+    die("Cannot rename %s to %s: %m", fb->name, name);
+  bclose(fb);
 }
 
 #ifdef TEST

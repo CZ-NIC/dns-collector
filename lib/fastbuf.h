@@ -73,7 +73,33 @@ struct fastbuf {
   int can_overwrite_buffer;		/* Can the buffer be altered? (see discussion above) 0=never, 1=temporarily, 2=permanently */
 };
 
-/* FastIO on standard files (specify buffer size 0 to enable mmaping) */
+/* FastIO on files with several configurable back-ends */
+
+enum fb_type {				/* Which back-end you want to use */
+  FB_STD,				/* Standard buffered I/O */
+  FB_DIRECT,				/* Direct I/O bypassing system caches (see fb-direct.c for a description) */
+  FB_MMAP				/* Memory mapped files */
+};
+
+struct fb_params {
+  enum fb_type type;
+  uns buffer_size;			/* 0 for default size */
+  uns keep_back_buf;			/* FB_STD: optimize for bi-directional access */
+  uns read_ahead;			/* FB_DIRECT options */
+  uns write_back;
+  struct asio_queue *asio;
+};
+
+struct cf_section;
+extern struct cf_section fbpar_cf;
+extern struct fb_params fbpar_def;
+
+struct fastbuf *bopen_file(const char *name, int mode, struct fb_params *params);	/* Use params==NULL for defaults */
+struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *params);
+struct fastbuf *bopen_tmp_file(struct fb_params *params);
+struct fastbuf *bopen_fd(int fd, struct fb_params *params);
+
+/* FastIO on standard files (shortcuts for FB_STD) */
 
 struct fastbuf *bopen(const char *name, uns mode, uns buflen);
 struct fastbuf *bopen_try(const char *name, uns mode, uns buflen);
@@ -82,17 +108,27 @@ struct fastbuf *bfdopen(int fd, uns buflen);
 struct fastbuf *bfdopen_shared(int fd, uns buflen);
 void bfilesync(struct fastbuf *b);
 
+/* Temporary files */
+
 #define TEMP_FILE_NAME_LEN 256
 void temp_file_name(char *name);
+void bfix_tmp_file(struct fastbuf *fb, const char *name);
+
+/* Internal functions of some file back-ends */
+
+struct fastbuf *bfdopen_internal(int fd, const char *name, uns buflen);
+struct fastbuf *bfmmopen_internal(int fd, const char *name, uns mode);
+
+extern uns fbdir_cheat;
+struct asio_queue;
+struct fastbuf *fbdir_open_fd_internal(int fd, const char *name, struct asio_queue *io_queue, uns buffer_size, uns read_ahead, uns write_back);
+
+void bclose_file_helper(struct fastbuf *f, int fd, int is_temp_file);
 
 /* FastIO on in-memory streams */
 
 struct fastbuf *fbmem_create(uns blocksize);		/* Create stream and return its writing fastbuf */
 struct fastbuf *fbmem_clone_read(struct fastbuf *);	/* Create reading fastbuf */
-
-/* FastIO on memory mapped files */
-
-struct fastbuf *bopen_mm(const char *name, uns mode);
 
 /* FastI on file descriptors with limit */
 
@@ -113,6 +149,20 @@ fbbuf_count_written(struct fastbuf *f)
 struct fastbuf *fbgrow_create(unsigned basic_size);
 void fbgrow_reset(struct fastbuf *b);			/* Reset stream and prepare for writing */
 void fbgrow_rewind(struct fastbuf *b);			/* Prepare for reading */
+
+/* FastO on memory pools */
+
+struct mempool;
+struct fbpool {
+  struct fastbuf fb;
+  struct mempool *mp;
+};
+
+void fbpool_init(struct fbpool *fb);	/* Initialize a new fastbuf */
+void fbpool_start(struct fbpool *fb, struct mempool *mp, uns init_size);
+					/* Start a new continuous block and prepare for writing (see mp_start()) */
+void *fbpool_end(struct fbpool *fb);	/* Close the block and return its address (see mp_end()).
+					   The length can be determined with mp_size(mp, ptr). */
 
 /* FastO with atomic writes for multi-threaded programs */
 
@@ -136,9 +186,12 @@ fbatomic_commit(struct fastbuf *b)
 
 /* Configuring stream parameters */
 
-int bconfig(struct fastbuf *f, uns type, int data);
+enum bconfig_type {
+  BCONFIG_IS_TEMP_FILE,			/* 0=normal file, 1=temporary file, 2=shared fd */
+  BCONFIG_KEEP_BACK_BUF,		/* Optimize for bi-directional access */
+};
 
-#define BCONFIG_IS_TEMP_FILE 0
+int bconfig(struct fastbuf *f, uns type, int data);
 
 /* Universal functions working on all fastbuf's */
 
@@ -147,7 +200,7 @@ void bflush(struct fastbuf *f);
 void bseek(struct fastbuf *f, sh_off_t pos, int whence);
 void bsetpos(struct fastbuf *f, sh_off_t pos);
 void brewind(struct fastbuf *f);
-sh_off_t bfilesize(struct fastbuf *f);		// -1 if not seekable
+sh_off_t bfilesize(struct fastbuf *f);		/* -1 if not seekable */
 
 static inline sh_off_t btell(struct fastbuf *f)
 {

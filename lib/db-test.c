@@ -262,6 +262,7 @@ int main(int argc, char **argv)
   uns ks, vs, vs2, perc, cnt;
   char *ch;
   int dont_delete = 0;
+  timestamp_t timer;
 
   log_init("dbtest");
   setvbuf(stdout, NULL, _IONBF, 0);
@@ -333,7 +334,7 @@ int main(int argc, char **argv)
   while (optind < argc)
     {
       char *o = argv[optind++];
-      init_timer();
+      init_timer(&timer);
       switch (*o)
 	{
 	case 'c':
@@ -459,7 +460,7 @@ int main(int argc, char **argv)
 	  help();
 	}
       sdbm_sync(d);
-      printf("%d ms\n", get_timer());
+      printf("%d ms\n", get_timer(&timer));
     }
 
   verb("CLOSE\n");
