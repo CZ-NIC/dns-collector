@@ -14,7 +14,7 @@
  *  corresponding preprocessor macros, it generates a file sorter
  *  with the parameters given.
  *
- *  The sorter operates on fastbufs containing sequences of items. Each items
+ *  The sorter operates on fastbufs containing sequences of items. Each item
  *  consists of a key, optionally followed by data. The keys are represented
  *  by fixed-size structures of type SORT_KEY internally, if this format differs
  *  from the on-disk format, explicit reading and writing routines can be provided.
