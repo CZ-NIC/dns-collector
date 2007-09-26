@@ -90,7 +90,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 #ifdef SORT_UNIFY
       if (i < n-1 && !P(compare)(&buf[i], &buf[i+1]))
 	{
-	  P(key) **keys = workspace;
+	  P(key) **keys = (ctx->big_buf == (void *)buf) ? (void *)workspace : ctx->big_buf;
 	  uns n = 2;
 	  keys[0] = &buf[i];
 	  keys[1] = &buf[i+1];
