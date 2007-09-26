@@ -192,11 +192,11 @@ uns prev_table_prime(uns x);
 
 /* timer.c */
 
-struct timeval;
+timestamp_t get_timestamp(void);
 
-void init_timer(void);
-uns get_timer(void);
-void get_last_timeval(struct timeval *tv);
+void init_timer(timestamp_t *timer);
+uns get_timer(timestamp_t *timer);
+uns switch_timer(timestamp_t *old, timestamp_t *new);
 
 /* regex.c */
 
@@ -267,11 +267,13 @@ char *str_format_flags(char *dest, const char *fmt, uns flags);
 
 /* bigalloc.c */
 
-void *page_alloc(unsigned int len) LIKE_MALLOC; // allocates a multiple of CPU_PAGE_SIZE bytes with mmap
-void page_free(void *start, unsigned int len);
-void *page_realloc(void *start, unsigned int old_len, unsigned int new_len);
+void *page_alloc(u64 len) LIKE_MALLOC; // allocates a multiple of CPU_PAGE_SIZE bytes with mmap
+void *page_alloc_zero(u64 len) LIKE_MALLOC;
+void page_free(void *start, u64 len);
+void *page_realloc(void *start, u64 old_len, u64 new_len);
 
-void *big_alloc(unsigned int len) LIKE_MALLOC; // allocate a large memory block in the most efficient way available
-void big_free(void *start, unsigned int len);
+void *big_alloc(u64 len) LIKE_MALLOC; // allocate a large memory block in the most efficient way available
+void *big_alloc_zero(u64 len) LIKE_MALLOC;
+void big_free(void *start, u64 len);
 
 #endif

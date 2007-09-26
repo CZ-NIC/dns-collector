@@ -61,15 +61,17 @@ static int qs_comp(const struct elt *X, const struct elt *Y)
 
 int main(void)
 {
+  timestamp_t timer;
+
   generate();
-  init_timer();
+  init_timer(&timer);
   qsort(array, N, sizeof(array[0]), (int (*)(const void *, const void *)) qs_comp);
-  printf("qsort: %d ms\n", get_timer());
+  printf("qsort: %d ms\n", get_timer(&timer));
   check();
   generate();
-  init_timer();
+  init_timer(&timer);
   as_sort(N);
-  printf("asort: %d ms\n", get_timer());
+  printf("asort: %d ms\n", get_timer(&timer));
   check();
   return 0;
 }

@@ -1256,18 +1256,19 @@ main(void)
   byte *a = xmalloc(3 * CNT), *b = xmalloc(3 * CNT);
   for (uns i = 0; i < 3 * CNT; i++)
     a[i] = random_max(256);
-  init_timer();
+  timestamp_t timer;
+  init_timer(&timer);
   for (uns i = 0; i < TESTS; i++)
     memcpy(b, a, CNT * 3);
-  DBG("memcpy time=%d", (uns)get_timer());
-  init_timer();
+  DBG("memcpy time=%d", get_timer(&timer));
+  init_timer(&timer);
   for (uns i = 0; i < TESTS; i++)
     srgb_to_luv_pixels(b, a, CNT);
-  DBG("direct time=%d", (uns)get_timer());
-  init_timer();
+  DBG("direct time=%d", get_timer(&timer));
+  init_timer(&timer);
   for (uns i = 0; i < TESTS; i++)
     color_conv_pixels(b, a, CNT, srgb_to_luv_grid);
-  DBG("grid time=%d", (uns)get_timer());
+  DBG("grid time=%d", get_timer(&timer));
 #endif
   return 0;
 }
