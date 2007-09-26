@@ -77,6 +77,8 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
     , workspace, bin->hash_bits
 #endif
     );
+  if ((void *)buf != ctx->big_buf)
+    workspace = ctx->big_buf;
   ctx->total_int_time += get_timer(&timer);
 
   SORT_XTRACE(5, "s-fixint: Writing");

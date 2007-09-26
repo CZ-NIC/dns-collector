@@ -177,6 +177,8 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
     , workspace, bin->hash_bits
 #endif
     );
+  if ((void *)item_array != ctx->big_buf)
+    workspace = ctx->big_buf;
   last_item = item_array + count;
   ctx->total_int_time += get_timer(&timer);
 
