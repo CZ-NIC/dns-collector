@@ -137,7 +137,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 #endif
       uns dsize = SORT_DATA_SIZE(key);
       uns recsize = ALIGN_TO(ksize_aligned + dsize, CPU_STRUCT_ALIGN);
-      size_t totalsize = recsize + 2 * P(internal_workspace)(&key);
+      size_t totalsize = recsize + sizeof(P(internal_item_t)) + P(internal_workspace)(&key);
       if (unlikely(totalsize > remains
 #ifdef CPU_64BIT_POINTERS
 		   || item >= item_array + ~0U		// The number of items must fit in an uns
