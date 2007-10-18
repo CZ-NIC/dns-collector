@@ -38,7 +38,7 @@ sorter_speed(struct sort_context *ctx, u64 size)
   if (!size)
     return 0;
   if (!ctx->last_pass_time)
-    return -1;
+    return 0;
   return (uns)((double)size / (1<<20) * 1000 / ctx->last_pass_time);
 }
 
