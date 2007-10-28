@@ -59,7 +59,7 @@ LIBUCW_INCLUDES= \
 	md5.h \
 	base64.h base224.h \
 	qache.h \
-	kmp.h kmp-search.h \
+	kmp.h kmp-search.h binsearch.h \
 	partmap.h
 
 ifdef CONFIG_UCW_THREADS
