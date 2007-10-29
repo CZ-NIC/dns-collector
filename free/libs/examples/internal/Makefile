@@ -28,5 +28,8 @@ include $(s)/images/Makefile
 PROGS+=$(o)/test
 $(o)/test: $(o)/test.o $(LIBUCW) $(LIBLANG) $(LIBCHARSET) $(LIBIMAGES)
 
+# All tests (%-t) get automatically linked with libucw
+TESTING_DEPS=$(LIBUCW)
+
 # And finally the default rules of the build system
 include $(s)/build/Makebottom
