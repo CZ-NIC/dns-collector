@@ -93,6 +93,8 @@ test_image_iface(void)
   mp_delete(pool);
 }
 
+#ifdef CONFIG_UCW_THREADS
+
 #define TEST_THREADS_COUNT 4
 
 static void *
@@ -187,9 +189,12 @@ test_threads_thread(void *param UNUSED)
   return NULL;
 }
 
+#endif
+
 static void
 test_threads(void)
 {
+#ifdef CONFIG_UCW_THREADS
   pthread_t threads[TEST_THREADS_COUNT - 1];
   pthread_attr_t attr;
   if (pthread_attr_init(&attr) < 0 ||
@@ -204,6 +209,9 @@ test_threads(void)
   for (uns i = 0; i < TEST_THREADS_COUNT - 1; i++)
     if (pthread_join(threads[i], NULL) < 0)
       die("Cannot join thread: %m");
+#else
+  msg(L_WARN, "Disabled CONFIG_UCW_THREADS, threaded tests skipped");
+#endif
 }
 
 int
