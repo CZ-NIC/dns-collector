@@ -27,7 +27,7 @@ fbpar_cf_commit(struct fb_params *p UNUSED)
 {
 #ifndef CONFIG_UCW_THREADS
   if (p->type == FB_DIRECT)
-    p->type = FB_STD;
+    return "Direct I/O is supported only with CONFIG_UCW_THREADS";
 #endif
   return NULL;
 }
