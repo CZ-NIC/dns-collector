@@ -20,11 +20,22 @@ struct fb_params fbpar_def = {
   .buffer_size = 65536,
   .read_ahead = 1,
   .write_back = 1,
-}; 
+};
+
+static char *
+fbpar_cf_commit(struct fb_params *p UNUSED)
+{
+#ifndef CONFIG_UCW_THREADS
+  if (p->type == FB_DIRECT)
+    p->type = FB_STD;
+#endif
+  return NULL;
+}
 
 struct cf_section fbpar_cf = {
 # define F(x) PTR_TO(struct fb_params, x)
   CF_TYPE(struct fb_params),
+  CF_COMMIT(fbpar_cf_commit),
   CF_ITEMS {
     CF_LOOKUP("Type", (int *)F(type), ((char *[]){"std", "direct", "mmap", NULL})),
     CF_UNS("BufSize", F(buffer_size)),
@@ -61,12 +72,7 @@ bopen_fd_internal(int fd, struct fb_params *params, uns mode, const char *name)
   struct fastbuf *fb;
   switch (params->type)
     {
-      case FB_STD:
-	fb = bfdopen_internal(fd, name,
-	    params->buffer_size ? : fbpar_def.buffer_size);
-	if (params->keep_back_buf)
-	  bconfig(fb, BCONFIG_KEEP_BACK_BUF, 1);
-	return fb;
+#ifdef CONFIG_UCW_THREADS
       case FB_DIRECT:
 	fb = fbdir_open_fd_internal(fd, name, params->asio,
 	    params->buffer_size ? : fbpar_def.buffer_size,
@@ -74,6 +80,13 @@ bopen_fd_internal(int fd, struct fb_params *params, uns mode, const char *name)
 	    params->write_back ? : fbpar_def.write_back);
 	if (!~mode && !fbdir_cheat && ((int)(mode = fcntl(fd, F_GETFL)) < 0 || fcntl(fd, F_SETFL, mode | O_DIRECT)) < 0)
           msg(L_WARN, "Cannot set O_DIRECT on fd %d: %m", fd);
+	return fb;
+#endif
+      case FB_STD:
+	fb = bfdopen_internal(fd, name,
+	    params->buffer_size ? : fbpar_def.buffer_size);
+	if (params->keep_back_buf)
+	  bconfig(fb, BCONFIG_KEEP_BACK_BUF, 1);
 	return fb;
       case FB_MMAP:
 	if (!~mode && (int)(mode = fcntl(fd, F_GETFL)) < 0)
@@ -89,8 +102,10 @@ bopen_file_internal(const char *name, int mode, struct fb_params *params, int tr
 {
   if (!params)
     params = &fbpar_def;
+#ifdef CONFIG_UCW_THREADS
   if (params->type == FB_DIRECT && !fbdir_cheat)
     mode |= O_DIRECT;
+#endif
   if (params->type == FB_MMAP && (mode & O_ACCMODE) == O_WRONLY)
     mode = (mode & ~O_ACCMODE) | O_RDWR;
   int fd = sh_open(name, mode, 0666);
