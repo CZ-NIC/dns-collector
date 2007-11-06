@@ -13,7 +13,7 @@
 #include <alloca.h>
 
 byte *
-mp_strconv(struct mempool *mp, byte *s, uns in_cs, uns out_cs)
+mp_strconv(struct mempool *mp, const byte *s, uns in_cs, uns out_cs)
 {
   if (in_cs == out_cs)
     return mp_strdup(mp, s);

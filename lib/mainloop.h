@@ -12,7 +12,6 @@
 
 #include "lib/clists.h"
 
-typedef s64 timestamp_t;			/* We measure time in milliseconds */
 extern timestamp_t main_now;			/* Current time in milliseconds since UNIX epoch */
 extern sh_time_t main_now_seconds;		/* Current time in seconds since the epoch */
 extern uns main_shutdown;
@@ -91,7 +90,7 @@ struct main_process {
   cnode n;
   int pid;					/* Process id (0=not running) */
   int status;					/* Exit status (-1=fork failed) */
-  byte status_msg[EXIT_STATUS_MSG_SIZE];
+  char status_msg[EXIT_STATUS_MSG_SIZE];
   void (*handler)(struct main_process *mp);	/* [*] Called when the process exits; process_del done automatically */
   void *data;					/* [*] For use by the handler */
 };

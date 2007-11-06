@@ -27,16 +27,16 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
 {
   switch (type) {
     case CT_INT:	bprintf(fb, "%d ", *(uns*)ptr); break;
-    case CT_U64:	bprintf(fb, "%llu ", *(u64*)ptr); break;
+    case CT_U64:	bprintf(fb, "%llu ", (long long) *(u64*)ptr); break;
     case CT_DOUBLE:	bprintf(fb, "%lg ", *(double*)ptr); break;
     case CT_IP:		bprintf(fb, "%08x ", *(uns*)ptr); break;
     case CT_STRING:
-      if (*(byte**)ptr)
-	bprintf(fb, "'%s' ", *(byte**)ptr);
+      if (*(char**)ptr)
+	bprintf(fb, "'%s' ", *(char**)ptr);
       else
 	bprintf(fb, "NULL ");
       break;
-    case CT_LOOKUP:	bprintf(fb, "%s ", *(int*)ptr >= 0 ? u->lookup[ *(int*)ptr ] : (byte*) "???"); break;
+    case CT_LOOKUP:	bprintf(fb, "%s ", *(int*)ptr >= 0 ? u->lookup[ *(int*)ptr ] : "???"); break;
     case CT_USER:
       if (u->utype->dumper)
 	u->utype->dumper(fb, ptr);
@@ -48,12 +48,12 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
 
 static void dump_section(struct fastbuf *fb, struct cf_section *sec, int level, void *ptr);
 
-static byte *class_names[] = { "end", "static", "dynamic", "parser", "section", "list", "bitmap" };
+static char *class_names[] = { "end", "static", "dynamic", "parser", "section", "list", "bitmap" };
 
 static void
 dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
 {
-  ptr += (addr_int_t) item->ptr;
+  ptr += (uintptr_t) item->ptr;
   enum cf_type type = item->type;
   uns size = cf_type_size(item->type, item->u.utype);
   int i;

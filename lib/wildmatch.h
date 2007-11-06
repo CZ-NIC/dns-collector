@@ -10,6 +10,6 @@
 struct wildpatt;
 struct mempool;
 
-struct wildpatt *wp_compile(byte *, struct mempool *);
-int wp_match(struct wildpatt *, byte *);
-int wp_min_size(byte *);
+struct wildpatt *wp_compile(const byte *, struct mempool *);
+int wp_match(struct wildpatt *, const byte *);
+int wp_min_size(const byte *);

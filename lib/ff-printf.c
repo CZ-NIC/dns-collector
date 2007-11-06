@@ -10,10 +10,11 @@
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 
+#include <stdio.h>
 #include <alloca.h>
 
 int
-vbprintf(struct fastbuf *b, char *msg, va_list args)
+vbprintf(struct fastbuf *b, const char *msg, va_list args)
 {
   byte *buf;
   int len, r;
@@ -57,7 +58,7 @@ vbprintf(struct fastbuf *b, char *msg, va_list args)
 }
 
 int
-bprintf(struct fastbuf *b, char *msg, ...)
+bprintf(struct fastbuf *b, const char *msg, ...)
 {
   va_list args;
   int res;

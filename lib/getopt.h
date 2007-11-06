@@ -11,14 +11,21 @@
 #ifndef	_UCW_GETOPT_H
 #define	_UCW_GETOPT_H
 
+#ifdef CONFIG_OWN_GETOPT
+#include "lib/getopt/getopt-sh.h"
+#else
 #include <getopt.h>
+#endif
+
+void reset_getopt(void);
 
 /* Safe loading and reloading of configuration files: conf-input.c */
 
-extern byte *cf_def_file;		/* DEFAULT_CONFIG; NULL if already loaded */
-int cf_reload(byte *file);
-int cf_load(byte *file);
-int cf_set(byte *string);
+extern char *cf_def_file;		/* DEFAULT_CONFIG; NULL if already loaded */
+extern char *cf_env_file;		/* ENV_VAR_CONFIG */
+int cf_reload(const char *file);
+int cf_load(const char *file);
+int cf_set(const char *string);
 
 /* Direct access to configuration items: conf-intr.c */
 
@@ -34,8 +41,8 @@ enum cf_operation { CF_OPERATIONS };
 #undef T
 
 struct cf_item;
-byte *cf_find_item(byte *name, struct cf_item *item);
-byte *cf_write_item(struct cf_item *item, enum cf_operation op, int number, byte **pars);
+char *cf_find_item(const char *name, struct cf_item *item);
+char *cf_write_item(struct cf_item *item, enum cf_operation op, int number, char **pars);
 
 /* Debug dumping: conf-dump.c */
 

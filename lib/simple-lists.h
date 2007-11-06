@@ -15,7 +15,7 @@
 typedef struct simp_node {
   cnode n;
   union {
-    byte *s;
+    char *s;
     void *p;
     int i;
     uns u;
@@ -25,13 +25,13 @@ typedef struct simp_node {
 typedef struct simp2_node {
   cnode n;
   union {
-    byte *s1;
+    char *s1;
     void *p1;
     int i1;
     uns u1;
   };
   union {
-    byte *s2;
+    char *s2;
     void *p2;
     int i2;
     uns u2;

@@ -9,13 +9,14 @@
 #include "lib/lib.h"
 #include "lib/bitops.h"
 #include "lib/fastbuf.h"
+#include "lib/ff-binary.h"
 #include "lib/qache.h"
 
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <sys/user.h>
 
 /*
  *  The cache lives in a mmapped file of the following format:
@@ -59,7 +60,7 @@ struct qache {
   int fd;
   byte *mmap_data;
   uns file_size;
-  byte *file_name;
+  char *file_name;
   uns locked;
 };
 
@@ -67,10 +68,10 @@ struct qache {
 #define first_free_block entry_table[0].first_data_block
 #define num_free_blocks entry_table[0].data_len
 
-static inline byte *
+static inline char *
 format_key(qache_key_t *key)
 {
-  static byte keybuf[2*sizeof(qache_key_t)+1];
+  static char keybuf[2*sizeof(qache_key_t)+1];
   for (uns i=0; i<sizeof(qache_key_t); i++)
     sprintf(keybuf+2*i, "%02x", (*key)[i]);
   return keybuf;
@@ -81,11 +82,11 @@ qache_msync(struct qache *q UNUSED, uns start UNUSED, uns len UNUSED)
 {
 #ifndef CONFIG_LINUX
   /* We don't need msyncing on Linux, since the mappings are guaranteed to be coherent */
-  len += (start % PAGE_SIZE);
-  start -= start % PAGE_SIZE;
-  len = ALIGN_TO(len, PAGE_SIZE);
+  len += (start % CPU_PAGE_SIZE);
+  start -= start % CPU_PAGE_SIZE;
+  len = ALIGN_TO(len, CPU_PAGE_SIZE);
   if (msync(q->mmap_data + start, len, MS_ASYNC | MS_INVALIDATE) < 0)
-    log(L_ERROR, "Cache %s: msync failed: %m", q->file_name);
+    msg(L_ERROR, "Cache %s: msync failed: %m", q->file_name);
 #endif
 }
 
@@ -127,7 +128,7 @@ enum entry_audit_flags {
   ET_HASH = 4
 };
 
-static byte *
+static char *
 audit_entries(struct qache *q, byte *entrymap)
 {
   uns i, j;
@@ -183,7 +184,7 @@ enum block_audit_flags {
   BT_ALLOC = 2
 };
 
-static byte *
+static char *
 audit_blocks(struct qache *q, byte *entrymap, byte *blockmap)
 {
   uns i, j;
@@ -225,7 +226,7 @@ audit_blocks(struct qache *q, byte *entrymap, byte *blockmap)
   return NULL;
 }
 
-static byte *
+static char *
 do_audit(struct qache *q)
 {
   byte *entry_map = xmalloc_zero(q->hdr->max_entries);
@@ -254,7 +255,7 @@ qache_open_existing(struct qache *q, struct qache_params *par)
     return 0;
 
   struct stat st;
-  byte *err = "stat failed";
+  char *err = "stat failed";
   if (fstat(q->fd, &st) < 0)
     goto close_and_fail;
 
@@ -290,14 +291,14 @@ qache_open_existing(struct qache *q, struct qache_params *par)
     goto unlock_and_fail;
 
   qache_unlock(q, 0);
-  log(L_INFO, "Cache %s: using existing data", q->file_name);
+  msg(L_INFO, "Cache %s: using existing data", q->file_name);
   return 1;
 
  unlock_and_fail:
   qache_unlock(q, 0);
   munmap(q->mmap_data, q->file_size);
  close_and_fail:
-  log(L_INFO, "Cache %s: ignoring old contents (%s)", q->file_name, err);
+  msg(L_INFO, "Cache %s: ignoring old contents (%s)", q->file_name, err);
   close(q->fd);
   return 0;
 }
@@ -330,7 +331,7 @@ qache_create(struct qache *q, struct qache_params *par)
   bwrite(fb, &h, sizeof(h));
 
   /* Entry #0: heads of all lists */
-  ASSERT(btell(fb) == h.entry_table_start);
+  ASSERT(btell(fb) == (sh_off_t)h.entry_table_start);
   struct qache_entry ent;
   bzero(&ent, sizeof(ent));
   ent.first_data_block = h.first_data_block;
@@ -348,18 +349,18 @@ qache_create(struct qache *q, struct qache_params *par)
     }
 
   /* The hash table */
-  ASSERT(btell(fb) == h.hash_table_start);
+  ASSERT(btell(fb) == (sh_off_t)h.hash_table_start);
   for (uns i=0; i<h.hash_size; i++)
     bputl(fb, 0);
 
   /* The next pointers */
-  ASSERT(btell(fb) == h.next_table_start);
+  ASSERT(btell(fb) == (sh_off_t)h.next_table_start);
   for (uns i=0; i<h.num_blocks; i++)
     bputl(fb, (i < h.first_data_block || i == h.num_blocks-1) ? 0 : i+1);
 
   /* Padding */
-  ASSERT(btell(fb) <= h.first_data_block << h.block_shift);
-  while (btell(fb) < h.first_data_block << h.block_shift)
+  ASSERT(btell(fb) <= (sh_off_t)(h.first_data_block << h.block_shift));
+  while (btell(fb) < (sh_off_t)(h.first_data_block << h.block_shift))
     bputc(fb, 0);
 
   /* Data blocks */
@@ -367,9 +368,9 @@ qache_create(struct qache *q, struct qache_params *par)
     for (uns j=0; j<h.block_size; j+=4)
       bputl(fb, 0);
 
-  ASSERT(btell(fb) == par->cache_size);
+  ASSERT(btell(fb) == (sh_off_t)par->cache_size);
   bclose(fb);
-  log(L_INFO, "Cache %s: created (%d bytes, %d slots, %d buckets)", q->file_name, par->cache_size, h.max_entries, h.hash_size);
+  msg(L_INFO, "Cache %s: created (%d bytes, %d slots, %d buckets)", q->file_name, par->cache_size, h.max_entries, h.hash_size);
 
   if ((q->mmap_data = mmap(NULL, par->cache_size, PROT_READ | PROT_WRITE, MAP_SHARED, q->fd, 0)) == MAP_FAILED)
     die("Cache %s: mmap failed (%m)", par->file_name);
@@ -401,7 +402,7 @@ qache_close(struct qache *q, uns retain_data)
   munmap(q->mmap_data, q->file_size);
   close(q->fd);
   if (!retain_data && unlink(q->file_name) < 0)
-    log(L_ERROR, "Cache %s: unlink failed (%m)", q->file_name);
+    msg(L_ERROR, "Cache %s: unlink failed (%m)", q->file_name);
   xfree(q->file_name);
   xfree(q);
 }
@@ -701,32 +702,32 @@ qache_delete(struct qache *q, qache_key_t *key, uns pos_hint)
 void
 qache_debug(struct qache *q)
 {
-  log(L_DEBUG, "Cache %s: block_size=%d (%d data), num_blocks=%d (%d first data), %d slots, %d hash buckets",
+  msg(L_DEBUG, "Cache %s: block_size=%d (%d data), num_blocks=%d (%d first data), %d slots, %d hash buckets",
       q->file_name, q->hdr->block_size, q->hdr->block_size, q->hdr->num_blocks, q->hdr->first_data_block,
       q->hdr->max_entries, q->hdr->hash_size);
 
-  log(L_DEBUG, "Table of cache entries:");
-  log(L_DEBUG, "\tEntry\tLruPrev\tLruNext\tDataLen\tDataBlk\tHashNxt\tKey");
+  msg(L_DEBUG, "Table of cache entries:");
+  msg(L_DEBUG, "\tEntry\tLruPrev\tLruNext\tDataLen\tDataBlk\tHashNxt\tKey");
   for (uns e=0; e<q->hdr->max_entries; e++)
     {
       struct qache_entry *ent = &q->entry_table[e];
-      log(L_DEBUG, "\t%d\t%d\t%d\t%d\t%d\t%d\t%s", e, ent->lru_prev, ent->lru_next, ent->data_len,
+      msg(L_DEBUG, "\t%d\t%d\t%d\t%d\t%d\t%d\t%s", e, ent->lru_prev, ent->lru_next, ent->data_len,
 	  ent->first_data_block, ent->hash_next, format_key(&ent->key));
     }
 
-  log(L_DEBUG, "Hash table:");
+  msg(L_DEBUG, "Hash table:");
   for (uns h=0; h<q->hdr->hash_size; h++)
-    log(L_DEBUG, "\t%04x\t%d", h, q->hash_table[h]);
+    msg(L_DEBUG, "\t%04x\t%d", h, q->hash_table[h]);
 
-  log(L_DEBUG, "Next pointers:");
+  msg(L_DEBUG, "Next pointers:");
   for (uns blk=q->hdr->first_data_block; blk<q->hdr->num_blocks; blk++)
-    log(L_DEBUG, "\t%d\t%d", blk, q->next_table[blk]);
+    msg(L_DEBUG, "\t%d\t%d", blk, q->next_table[blk]);
 }
 
 void
 qache_audit(struct qache *q)
 {
-  byte *err;
+  char *err;
   qache_lock(q);
   if (err = do_audit(q))
     die("Cache %s: %s", q->file_name, err);
@@ -776,7 +777,7 @@ int main(int argc UNUSED, char **argv UNUSED)
 	  found++;
 	}
     }
-  log(L_INFO, "Found %d of %d entries", found, N);
+  msg(L_INFO, "Found %d of %d entries", found, N);
 
   qache_close(q, 1);
   return 0;

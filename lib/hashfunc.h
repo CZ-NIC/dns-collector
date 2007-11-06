@@ -14,8 +14,8 @@
 #include "lib/lib.h"
 
 /* The following functions need str to be aligned to uns.  */
-uns str_len_aligned(const byte *str) PURE;
-uns hash_string_aligned(const byte *str) PURE;
+uns str_len_aligned(const char *str) PURE;
+uns hash_string_aligned(const char *str) PURE;
 uns hash_block_aligned(const byte *str, uns len) PURE;
 
 #ifdef	CPU_ALLOW_UNALIGNED
@@ -23,12 +23,12 @@ uns hash_block_aligned(const byte *str, uns len) PURE;
 #define	hash_string(str)	hash_string_aligned(str)
 #define	hash_block(str, len)	hash_block_aligned(str, len)
 #else
-uns str_len(const byte *str) PURE;
-uns hash_string(const byte *str) PURE;
+uns str_len(const char *str) PURE;
+uns hash_string(const char *str) PURE;
 uns hash_block(const byte *str, uns len) PURE;
 #endif
 
-uns hash_string_nocase(const byte *str) PURE;
+uns hash_string_nocase(const char *str) PURE;
 
 /*
  *  We hash integers by multiplying by a reasonably large prime with
@@ -38,6 +38,6 @@ uns hash_string_nocase(const byte *str) PURE;
  */
 static inline uns CONST hash_u32(uns x) { return 0x01008041*x; }
 static inline uns CONST hash_u64(u64 x) { return hash_u32((uns)x ^ (uns)(x >> 32)); }
-static inline uns CONST hash_pointer(void *x) { return ((sizeof(x) <= 4) ? hash_u32((uns)(addr_int_t)x) : hash_u64((u64)(addr_int_t)x)); }
+static inline uns CONST hash_pointer(void *x) { return ((sizeof(x) <= 4) ? hash_u32((uns)(uintptr_t)x) : hash_u64((u64)(uintptr_t)x)); }
 
 #endif

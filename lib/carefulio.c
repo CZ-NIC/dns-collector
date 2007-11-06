@@ -34,9 +34,9 @@ careful_read(int fd, void *buf, int len)
 }
 
 int
-careful_write(int fd, void *buf, int len)
+careful_write(int fd, const void *buf, int len)
 {
-  byte *pos = buf;
+  const byte *pos = buf;
   while (len)
     {
       int l = write(fd, pos, len);

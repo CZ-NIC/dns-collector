@@ -1,0 +1,11 @@
+# pkg-config metadata for libcharset
+
+libdir=@LIBDIR@
+incdir=.
+
+Name: libcharset
+Description: Character set conversion library
+Version: @SHERLOCK_VERSION@
+Cflags: -I${incdir}
+Libs: -L${libdir} -lcharset
+Requires: @DEPS@

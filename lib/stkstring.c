@@ -28,7 +28,7 @@ stk_array_join(char *x, char **s, uns cnt, uns sep)
 }
 
 uns
-stk_printf_internal(char *fmt, ...)
+stk_printf_internal(const char *fmt, ...)
 {
   uns len = 256;
   char *buf = alloca(len);
@@ -50,8 +50,30 @@ stk_printf_internal(char *fmt, ...)
     }
 }
 
+uns
+stk_vprintf_internal(const char *fmt, va_list args)
+{
+  uns len = 256;
+  char *buf = alloca(len);
+  va_list args2;
+  for (;;)
+    {
+      va_copy(args2, args);
+      int l = vsnprintf(buf, len, fmt, args2);
+      va_end(args2);
+      if (l < 0)
+	len *= 2;
+      else
+	{
+	  va_end(args);
+	  return l+1;
+	}
+      buf = alloca(len);
+    }
+}
+
 void
-stk_hexdump_internal(char *dst, byte *src, uns n)
+stk_hexdump_internal(char *dst, const byte *src, uns n)
 {
   for (uns i=0; i<n; i++)
     {
@@ -60,6 +82,27 @@ stk_hexdump_internal(char *dst, byte *src, uns n)
       dst += sprintf(dst, "%02x", *src++);
     }
   *dst = 0;
+}
+
+void
+stk_fsize_internal(char *buf, u64 x)
+{
+  if (x < 1<<10)
+    sprintf(buf, "%dB", (int)x);
+  else if (x < 10<<10)
+    sprintf(buf, "%.1fK", (double)x/(1<<10));
+  else if (x < 1<<20)
+    sprintf(buf, "%dK", (int)(x/(1<<10)));
+  else if (x < 10<<20)
+    sprintf(buf, "%.1fM", (double)x/(1<<20));
+  else if (x < 1<<30)
+    sprintf(buf, "%dM", (int)(x/(1<<20)));
+  else if (x < (u64)10<<30)
+    sprintf(buf, "%.1fG", (double)x/(1<<30));
+  else if (x != ~(u64)0)
+    sprintf(buf, "%dG", (int)(x/(1<<30)));
+  else
+    strcpy(buf, "unknown");
 }
 
 #ifdef TEST
@@ -76,6 +119,7 @@ int main(void)
   puts(stk_hexdump(a, 3));
   char *ary[] = { "The", "jaws", "that", "bite" };
   puts(stk_strjoin(ary, 4, ' '));
+  puts(stk_fsize(1234567));
   return 0;
 }
 

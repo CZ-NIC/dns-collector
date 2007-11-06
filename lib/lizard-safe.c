@@ -12,7 +12,6 @@
 #include "lib/lizard.h"
 
 #include <sys/mman.h>
-#include <sys/user.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <setjmp.h>
@@ -38,13 +37,13 @@ lizard_free(struct lizard_buffer *buf)
 {
   unhandle_signal(SIGSEGV);
   if (buf->ptr)
-    munmap(buf->ptr, buf->len + PAGE_SIZE);
+    munmap(buf->ptr, buf->len + CPU_PAGE_SIZE);
   xfree(buf);
 }
 
 static void
 lizard_realloc(struct lizard_buffer *buf, uns max_len)
-  /* max_len needs to be aligned to PAGE_SIZE */
+  /* max_len needs to be aligned to CPU_PAGE_SIZE */
 {
   if (max_len <= buf->len)
     return;
@@ -52,12 +51,12 @@ lizard_realloc(struct lizard_buffer *buf, uns max_len)
     max_len = 2*buf->len;
 
   if (buf->ptr)
-    munmap(buf->ptr, buf->len + PAGE_SIZE);
+    munmap(buf->ptr, buf->len + CPU_PAGE_SIZE);
   buf->len = max_len;
-  buf->ptr = mmap(NULL, buf->len + PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  buf->ptr = mmap(NULL, buf->len + CPU_PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   if (buf->ptr == MAP_FAILED)
-    die("mmap(anonymous, %d bytes): %m", (uns)(buf->len + PAGE_SIZE));
-  if (mprotect(buf->ptr + buf->len, PAGE_SIZE, PROT_NONE) < 0)
+    die("mmap(anonymous, %d bytes): %m", (uns)(buf->len + CPU_PAGE_SIZE));
+  if (mprotect(buf->ptr + buf->len, CPU_PAGE_SIZE, PROT_NONE) < 0)
     die("mprotect: %m");
 }
 
@@ -70,14 +69,14 @@ sigsegv_handler(int signal UNUSED)
 }
 
 byte *
-lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
+lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uns expected_length)
   /* Decompresses in into buf, sets *ptr to the data, and returns the
    * uncompressed length.  If an error has occured, -1 is returned and errno is
    * set.  The buffer buf is automatically reallocated.  SIGSEGV is caught in
    * case of buffer-overflow.  The function is not re-entrant because of a
    * static longjmp handler.  */
 {
-  uns lock_offset = ALIGN_TO(expected_length + 3, PAGE_SIZE);	// +3 due to the unaligned access
+  uns lock_offset = ALIGN_TO(expected_length + 3, CPU_PAGE_SIZE);	// +3 due to the unaligned access
   if (lock_offset > buf->len)
     lizard_realloc(buf, lock_offset);
   volatile sh_sighandler_t old_handler = set_signal_handler(SIGSEGV, sigsegv_handler);
@@ -94,7 +93,7 @@ lizard_decompress_safe(byte *in, struct lizard_buffer *buf, uns expected_length)
   }
   else
   {
-    log(L_ERROR, "SIGSEGV caught in lizard_decompress()");
+    msg(L_ERROR, "SIGSEGV caught in lizard_decompress()");
     ptr = NULL;
     errno = EFAULT;
   }

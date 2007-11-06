@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 char *
-bb_vprintf_at(bb_t *bb, uns ofs, char *fmt, va_list args)
+bb_vprintf_at(bb_t *bb, uns ofs, const char *fmt, va_list args)
 {
   bb_grow(bb, ofs + 1);
   va_list args2;
@@ -44,7 +44,7 @@ bb_vprintf_at(bb_t *bb, uns ofs, char *fmt, va_list args)
 }
 
 char *
-bb_printf_at(bb_t *bb, uns ofs, char *fmt, ...)
+bb_printf_at(bb_t *bb, uns ofs, const char *fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
@@ -54,13 +54,13 @@ bb_printf_at(bb_t *bb, uns ofs, char *fmt, ...)
 }
 
 char *
-bb_vprintf(bb_t *bb, char *fmt, va_list args)
+bb_vprintf(bb_t *bb, const char *fmt, va_list args)
 {
   return bb_vprintf_at(bb, 0, fmt, args);
 }
 
 char *
-bb_printf(bb_t *bb, char *fmt, ...)
+bb_printf(bb_t *bb, const char *fmt, ...)
 {
   va_list args;
   va_start(args, fmt);

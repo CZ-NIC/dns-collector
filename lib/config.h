@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Configuration-Dependent Definitions
  *
- *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2007 Martin Mares <mj@ucw.cz>
  *	(c) 2006 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -13,48 +13,37 @@
 
 /* Configuration switches */
 
-#include "lib/autoconf.h"
+#include "autoconf.h"
 
-/* Types */
+/* Tell libc we're going to use all extensions available */
 
-typedef unsigned char byte;		/* exactly 8 bits, unsigned */
-typedef signed char sbyte;		/* exactly 8 bits, signed */
-typedef unsigned char u8;		/* exactly 8 bits, unsigned */
-typedef signed char s8;			/* exactly 8 bits, signed */
-typedef unsigned short word;		/* exactly 16 bits, unsigned */
-typedef short sword;			/* exactly 16 bits, signed */
-typedef unsigned short u16;		/* exactly 16 bits, unsigned */
-typedef short s16;			/* exactly 16 bits, signed */
-typedef unsigned int u32;		/* exactly 32 bits, unsigned */
-typedef int s32;			/* exactly 32 bits, signed */
-typedef unsigned int uns;		/* at least 32 bits */
-typedef unsigned long long int u64;	/* exactly 64 bits, unsigned */
-typedef long long int s64;		/* exactly 64 bits, signed */
-typedef unsigned long addr_int_t;	/* Both integer and address */
-typedef unsigned int sh_time_t;		/* Timestamp */
-
-#ifndef NULL
-#define NULL (void *)0
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
 #endif
+
+/* Types (based on standard C99 integers) */
+
+#include <stddef.h>
+#include <stdint.h>
+
+typedef uint8_t byte;			/* exactly 8 bits, unsigned */
+typedef uint8_t u8;			/* exactly 8 bits, unsigned */
+typedef int8_t s8;			/* exactly 8 bits, signed */
+typedef uint16_t u16;			/* exactly 16 bits, unsigned */
+typedef int16_t s16;			/* exactly 16 bits, signed */
+typedef uint32_t u32;			/* exactly 32 bits, unsigned */
+typedef int32_t s32;			/* exactly 32 bits, signed */
+typedef uint64_t u64;			/* exactly 64 bits, unsigned */
+typedef int64_t s64;			/* exactly 64 bits, signed */
+
+typedef unsigned int uns;		/* at least 32 bits */
+typedef u32 sh_time_t;			/* seconds since UNIX epoch */
+typedef s64 timestamp_t;		/* milliseconds since UNIX epoch */
 
 #ifdef CONFIG_LARGE_FILES		/* File positions */
 typedef s64 sh_off_t;
 #else
 typedef s32 sh_off_t;
-#endif
-
-#ifdef CPU_64BIT_POINTERS
-#define BYTES_PER_P 8
-#define bgetp(f) bgetq(f)
-#define bputp(f,l) bputq(f,l)
-#define GET_P(p) GET_U64(p)
-#define PUT_P(p,x) PUT_U64(p,x)
-#else
-#define BYTES_PER_P 4
-#define bgetp(f) bgetl(f)
-#define bputp(f,l) bputl(f,l)
-#define GET_P(p) GET_U32(p)
-#define PUT_P(p,x) PUT_U32(p,x)
 #endif
 
 #endif

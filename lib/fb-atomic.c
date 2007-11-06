@@ -103,7 +103,7 @@ fbatomic_close(struct fastbuf *f)
 }
 
 struct fastbuf *
-fbatomic_open(byte *name, struct fastbuf *master, uns bufsize, int record_len)
+fbatomic_open(const char *name, struct fastbuf *master, uns bufsize, int record_len)
 {
   struct fb_atomic *F = xmalloc_zero(sizeof(*F));
   struct fastbuf *f = &F->fb;

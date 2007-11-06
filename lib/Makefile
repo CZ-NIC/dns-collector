@@ -1,6 +1,8 @@
-# Makefile for the UCW Library (c) 1997--2006 Martin Mares <mj@ucw.cz>
+# Makefile for the UCW Library (c) 1997--2007 Martin Mares <mj@ucw.cz>
 
 DIRS+=lib
+CONFIGS+=library
+LIBUCW=$(o)/lib/libucw.pc
 
 ifdef CONFIG_UCW_DBTOOL
 PROGS+=$(o)/lib/db-tool
@@ -8,15 +10,15 @@ endif
 
 LIBUCW_MODS= \
 	threads \
-	alloc alloc_str realloc mempool mempool-str mempool-fmt \
+	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt eltpool \
 	mmap pagecache partmap hashfunc \
-	lists slists simple-lists sorter bitsig \
+	lists slists simple-lists bitsig \
 	log log-file proctitle \
 	conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section \
 	ipaccess \
 	profile \
 	fastbuf ff-binary ff-string ff-printf ff-utf8 \
-	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow fb-atomic \
+	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param \
 	str_ctype str_upper str_lower unicode-utf8 stkstring \
 	wildmatch wordsplit ctmatch patimatch patmatch regex \
 	prime primetable random timer randomkey \
@@ -30,21 +32,24 @@ LIBUCW_MODS= \
 	sync \
 	qache \
 	string \
-	bbuf
+	bbuf \
+	getopt
 
 LIBUCW_INCLUDES= \
-	lib.h config.h threads.h math.h \
+	lib.h config.h threads.h \
 	mempool.h pagecache.h \
-	sorter.h arraysort.h \
-	lists.h clists.h \
+	arraysort.h \
+	lists.h clists.h slists.h simple-lists.h \
 	unaligned.h prefetch.h \
 	bbuf.h gbuf.h bitarray.h bitsig.h \
 	hashfunc.h hashtable.h \
 	heap.h binheap.h binheap-node.h \
 	redblack.h \
+	binsearch.h \
+	bitops.h \
 	conf.h getopt.h ipaccess.h \
 	profile.h \
-	fastbuf.h lfs.h ff-utf8.h \
+	fastbuf.h lfs.h ff-utf8.h ff-binary.h \
 	chartype.h unicode.h stkstring.h \
 	wildmatch.h patmatch.h \
 	db.h \
@@ -53,20 +58,26 @@ LIBUCW_INCLUDES= \
 	lizard.h \
 	md5.h \
 	base64.h base224.h \
-	qache.h
+	qache.h \
+	kmp.h kmp-search.h binsearch.h \
+	partmap.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
-LIBS+=-lpthread
-LIBUCW_MODS+=threads-conf workqueue
-LIBUCW_INCLUDES+=workqueue.h
+LIBUCW_MODS+=threads-conf workqueue asio fb-direct
+LIBUCW_INCLUDES+=workqueue.h semaphore.h asio.h
 endif
 
 ifdef CONFIG_OWN_REGEX
 include $(s)/lib/regex/Makefile
 endif
 
-LIBUCW=$(o)/lib/libucw.$(LS)
+ifdef CONFIG_OWN_GETOPT
+include $(s)/lib/getopt/Makefile
+endif
+
+include $(s)/lib/sorter/Makefile
+
 LIBUCW_MOD_PATHS=$(addprefix $(o)/lib/,$(LIBUCW_MODS))
 
 $(o)/lib/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
@@ -78,7 +89,6 @@ $(o)/lib/lizard.o: CFLAGS += $(COPT2) -funroll-loops
 $(o)/lib/db-test: $(o)/lib/db-test.o $(LIBUCW)
 $(o)/lib/db-tool: $(o)/lib/db-tool.o $(LIBUCW)
 $(o)/lib/conf-test: $(o)/lib/conf-test.o $(LIBUCW)
-$(o)/lib/sort-test: $(o)/lib/sort-test.o $(LIBUCW)
 $(o)/lib/lfs-test: $(o)/lib/lfs-test.o $(LIBUCW)
 $(o)/lib/hash-test: $(o)/lib/hash-test.o $(LIBUCW)
 $(o)/lib/str-test: $(o)/lib/str-test.o $(LIBUCW)
@@ -89,22 +99,34 @@ $(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
 $(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 $(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
 
-TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test slists.test kmp-test.test bbuf.test)
+TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test \
+    slists.test kmp-test.test bbuf.test getopt.test fastbuf.test eltpool.test)
+
 $(o)/lib/regex.test: $(o)/lib/regex-t
 $(o)/lib/unicode-utf8.test: $(o)/lib/unicode-utf8-t
 $(o)/lib/hash-test.test: $(o)/lib/hash-test
-$(o)/lib/mempool.test: $(o)/lib/mempool-fmt-t $(o)/lib/mempool-str-t
+$(o)/lib/mempool.test: $(o)/lib/mempool-t $(o)/lib/mempool-fmt-t $(o)/lib/mempool-str-t
 $(o)/lib/stkstring.test: $(o)/lib/stkstring-t
 $(o)/lib/bitops.test: $(o)/lib/bit-ffs-t $(o)/lib/bit-fls-t
 $(o)/lib/slists.test: $(o)/lib/slists-t
 $(o)/lib/kmp-test.test: $(o)/lib/kmp-test
 $(o)/lib/bbuf.test: $(o)/lib/bbuf-t
+$(o)/lib/getopt.test: $(o)/lib/getopt-t
+$(o)/lib/fastbuf.test: $(o)/lib/fb-file-t $(o)/lib/fb-grow-t $(o)/lib/fb-pool-t
+$(o)/lib/eltpool.test: $(o)/lib/eltpool-t
 
-INCLUDES+=$(o)/lib/.include-stamp
-$(o)/lib/.include-stamp: $(addprefix $(s)/lib/,$(LIBUCW_INCLUDES))
-	$(s)/build/install-includes $(s)/lib run/include/lib $(?F)
-	$(s)/build/install-includes $(o)/lib run/include/lib autoconf.h
-	touch $(o)/lib/.include-stamp
+ifdef CONFIG_UCW_THREADS
+TESTS+=$(addprefix $(o)/lib/,asio.test)
+$(o)/lib/asio.test: $(o)/lib/asio-t
+endif
+
+API_LIBS+=libucw
+API_INCLUDES+=$(o)/lib/.include-stamp
+$(o)/lib/.include-stamp: $(addprefix $(s)/lib/,$(LIBUCW_INCLUDES)) obj/autoconf.h
+	$(Q)$(s)/build/install-includes $(<D) run/include/lib $(LIBUCW_INCLUDES)
+	$(Q)$(s)/build/install-includes obj run/include/lib autoconf.h
+	$(Q)touch $@
+run/lib/pkgconfig/libucw.pc: $(o)/lib/libucw.pc
 
 ifdef CONFIG_UCW_PERL
 include $(s)/lib/perl/Makefile

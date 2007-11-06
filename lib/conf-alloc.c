@@ -26,18 +26,18 @@ cf_malloc_zero(uns size)
   return mp_alloc_zero(cf_pool, size);
 }
 
-byte *
-cf_strdup(byte *s)
+char *
+cf_strdup(const char *s)
 {
   return mp_strdup(cf_pool, s);
 }
 
-byte *
-cf_printf(char *fmt, ...)
+char *
+cf_printf(const char *fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
-  byte *res = mp_vprintf(cf_pool, fmt, args);
+  char *res = mp_vprintf(cf_pool, fmt, args);
   va_end(args);
   return res;
 }

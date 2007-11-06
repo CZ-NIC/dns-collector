@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Fast Buffered I/O
  *
- *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2007 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -11,14 +11,8 @@
 #ifndef _UCW_FASTBUF_H
 #define _UCW_FASTBUF_H
 
-#ifndef EOF
-#include <stdio.h>
-#endif
-
 #include <string.h>
 #include <alloca.h>
-
-#include "lib/unaligned.h"
 
 /*
  *  Generic buffered I/O. You supply hooks to be called for low-level operations
@@ -69,36 +63,72 @@ struct fastbuf {
   byte is_fastbuf[0];			/* Dummy field for checking of type casts */
   byte *bptr, *bstop;			/* Access pointers */
   byte *buffer, *bufend;		/* Start and end of the buffer */
-  byte *name;				/* File name for error messages */
+  char *name;				/* File name for error messages */
   sh_off_t pos;				/* Position of bstop in the file */
   int (*refill)(struct fastbuf *);	/* Get a buffer with new data */
   void (*spout)(struct fastbuf *);	/* Write buffer data to the file */
-  void (*seek)(struct fastbuf *, sh_off_t, int);  /* Slow path for bseek(), buffer already flushed */
+  int (*seek)(struct fastbuf *, sh_off_t, int);  /* Slow path for bseek(), buffer already flushed; returns success */
   void (*close)(struct fastbuf *);	/* Close the stream */
   int (*config)(struct fastbuf *, uns, int);	/* Configure the stream */
   int can_overwrite_buffer;		/* Can the buffer be altered? (see discussion above) 0=never, 1=temporarily, 2=permanently */
 };
 
-/* FastIO on standard files (specify buffer size 0 to enable mmaping) */
+/* FastIO on files with several configurable back-ends */
 
-struct fastbuf *bopen(byte *name, uns mode, uns buflen);
-struct fastbuf *bopen_try(byte *name, uns mode, uns buflen);
+enum fb_type {				/* Which back-end you want to use */
+  FB_STD,				/* Standard buffered I/O */
+  FB_DIRECT,				/* Direct I/O bypassing system caches (see fb-direct.c for a description) */
+  FB_MMAP				/* Memory mapped files */
+};
+
+struct fb_params {
+  enum fb_type type;
+  uns buffer_size;			/* 0 for default size */
+  uns keep_back_buf;			/* FB_STD: optimize for bi-directional access */
+  uns read_ahead;			/* FB_DIRECT options */
+  uns write_back;
+  struct asio_queue *asio;
+};
+
+struct cf_section;
+extern struct cf_section fbpar_cf;
+extern struct fb_params fbpar_def;
+
+struct fastbuf *bopen_file(const char *name, int mode, struct fb_params *params);	/* Use params==NULL for defaults */
+struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *params);
+struct fastbuf *bopen_tmp_file(struct fb_params *params);
+struct fastbuf *bopen_fd(int fd, struct fb_params *params);
+
+/* FastIO on standard files (shortcuts for FB_STD) */
+
+struct fastbuf *bopen(const char *name, uns mode, uns buflen);
+struct fastbuf *bopen_try(const char *name, uns mode, uns buflen);
 struct fastbuf *bopen_tmp(uns buflen);
 struct fastbuf *bfdopen(int fd, uns buflen);
 struct fastbuf *bfdopen_shared(int fd, uns buflen);
 void bfilesync(struct fastbuf *b);
 
+/* Temporary files */
+
 #define TEMP_FILE_NAME_LEN 256
-void temp_file_name(byte *name);
+void temp_file_name(char *name);
+void bfix_tmp_file(struct fastbuf *fb, const char *name);
+
+/* Internal functions of some file back-ends */
+
+struct fastbuf *bfdopen_internal(int fd, const char *name, uns buflen);
+struct fastbuf *bfmmopen_internal(int fd, const char *name, uns mode);
+
+extern uns fbdir_cheat;
+struct asio_queue;
+struct fastbuf *fbdir_open_fd_internal(int fd, const char *name, struct asio_queue *io_queue, uns buffer_size, uns read_ahead, uns write_back);
+
+void bclose_file_helper(struct fastbuf *f, int fd, int is_temp_file);
 
 /* FastIO on in-memory streams */
 
-struct fastbuf *fbmem_create(unsigned blocksize);	/* Create stream and return its writing fastbuf */
+struct fastbuf *fbmem_create(uns blocksize);		/* Create stream and return its writing fastbuf */
 struct fastbuf *fbmem_clone_read(struct fastbuf *);	/* Create reading fastbuf */
-
-/* FastIO on memory mapped files */
-
-struct fastbuf *bopen_mm(byte *name, uns mode);
 
 /* FastI on file descriptors with limit */
 
@@ -120,6 +150,20 @@ struct fastbuf *fbgrow_create(unsigned basic_size);
 void fbgrow_reset(struct fastbuf *b);			/* Reset stream and prepare for writing */
 void fbgrow_rewind(struct fastbuf *b);			/* Prepare for reading */
 
+/* FastO on memory pools */
+
+struct mempool;
+struct fbpool {
+  struct fastbuf fb;
+  struct mempool *mp;
+};
+
+void fbpool_init(struct fbpool *fb);	/* Initialize a new fastbuf */
+void fbpool_start(struct fbpool *fb, struct mempool *mp, uns init_size);
+					/* Start a new continuous block and prepare for writing (see mp_start()) */
+void *fbpool_end(struct fbpool *fb);	/* Close the block and return its address (see mp_end()).
+					   The length can be determined with mp_size(mp, ptr). */
+
 /* FastO with atomic writes for multi-threaded programs */
 
 struct fb_atomic {
@@ -130,7 +174,7 @@ struct fb_atomic {
 };
 #define FB_ATOMIC(f) ((struct fb_atomic *)(f)->is_fastbuf)
 
-struct fastbuf *fbatomic_open(byte *name, struct fastbuf *master, uns bufsize, int record_len);
+struct fastbuf *fbatomic_open(const char *name, struct fastbuf *master, uns bufsize, int record_len);
 void fbatomic_internal_write(struct fastbuf *b);
 
 static inline void
@@ -142,9 +186,12 @@ fbatomic_commit(struct fastbuf *b)
 
 /* Configuring stream parameters */
 
-int bconfig(struct fastbuf *f, uns type, int data);
+enum bconfig_type {
+  BCONFIG_IS_TEMP_FILE,			/* 0=normal file, 1=temporary file, 2=shared fd */
+  BCONFIG_KEEP_BACK_BUF,		/* Optimize for bi-directional access */
+};
 
-#define BCONFIG_IS_TEMP_FILE 0
+int bconfig(struct fastbuf *f, uns type, int data);
 
 /* Universal functions working on all fastbuf's */
 
@@ -153,7 +200,7 @@ void bflush(struct fastbuf *f);
 void bseek(struct fastbuf *f, sh_off_t pos, int whence);
 void bsetpos(struct fastbuf *f, sh_off_t pos);
 void brewind(struct fastbuf *f);
-sh_off_t bfilesize(struct fastbuf *f);
+sh_off_t bfilesize(struct fastbuf *f);		/* -1 if not seekable */
 
 static inline sh_off_t btell(struct fastbuf *f)
 {
@@ -198,110 +245,6 @@ bavailw(struct fastbuf *f)
   return f->bufend - f->bptr;
 }
 
-int bgetw_slow(struct fastbuf *f);
-static inline int bgetw(struct fastbuf *f)
-{
-  int w;
-  if (bavailr(f) >= 2)
-    {
-      w = GET_U16(f->bptr);
-      f->bptr += 2;
-      return w;
-    }
-  else
-    return bgetw_slow(f);
-}
-
-u32 bgetl_slow(struct fastbuf *f);
-static inline u32 bgetl(struct fastbuf *f)
-{
-  u32 l;
-  if (bavailr(f) >= 4)
-    {
-      l = GET_U32(f->bptr);
-      f->bptr += 4;
-      return l;
-    }
-  else
-    return bgetl_slow(f);
-}
-
-u64 bgetq_slow(struct fastbuf *f);
-static inline u64 bgetq(struct fastbuf *f)
-{
-  u64 l;
-  if (bavailr(f) >= 8)
-    {
-      l = GET_U64(f->bptr);
-      f->bptr += 8;
-      return l;
-    }
-  else
-    return bgetq_slow(f);
-}
-
-u64 bget5_slow(struct fastbuf *f);
-static inline u64 bget5(struct fastbuf *f)
-{
-  u64 l;
-  if (bavailr(f) >= 5)
-    {
-      l = GET_U40(f->bptr);
-      f->bptr += 5;
-      return l;
-    }
-  else
-    return bget5_slow(f);
-}
-
-void bputw_slow(struct fastbuf *f, uns w);
-static inline void bputw(struct fastbuf *f, uns w)
-{
-  if (bavailw(f) >= 2)
-    {
-      PUT_U16(f->bptr, w);
-      f->bptr += 2;
-    }
-  else
-    bputw_slow(f, w);
-}
-
-void bputl_slow(struct fastbuf *f, u32 l);
-static inline void bputl(struct fastbuf *f, u32 l)
-{
-  if (bavailw(f) >= 4)
-    {
-      PUT_U32(f->bptr, l);
-      f->bptr += 4;
-    }
-  else
-    bputl_slow(f, l);
-}
-
-void bputq_slow(struct fastbuf *f, u64 l);
-static inline void bputq(struct fastbuf *f, u64 l)
-{
-  if (bavailw(f) >= 8)
-    {
-      PUT_U64(f->bptr, l);
-      f->bptr += 8;
-    }
-  else
-    bputq_slow(f, l);
-}
-
-void bput5_slow(struct fastbuf *f, u64 l);
-static inline void bput5(struct fastbuf *f, u64 l)
-{
-  if (bavailw(f) >= 5)
-    {
-      PUT_U40(f->bptr, l);
-      f->bptr += 5;
-    }
-  else
-    bput5_slow(f, l);
-}
-
 uns bread_slow(struct fastbuf *f, void *b, uns l, uns check);
 static inline uns bread(struct fastbuf *f, void *b, uns l)
 {
@@ -327,8 +270,8 @@ static inline uns breadb(struct fastbuf *f, void *b, uns l)
     return bread_slow(f, b, l, 1);
 }
 
-void bwrite_slow(struct fastbuf *f, void *b, uns l);
-static inline void bwrite(struct fastbuf *f, void *b, uns l)
+void bwrite_slow(struct fastbuf *f, const void *b, uns l);
+static inline void bwrite(struct fastbuf *f, const void *b, uns l)
 {
   if (bavailw(f) >= l)
     {
@@ -339,14 +282,29 @@ static inline void bwrite(struct fastbuf *f, void *b, uns l)
     bwrite_slow(f, b, l);
 }
 
-byte *bgets(struct fastbuf *f, byte *b, uns l);	/* Non-std */
-int bgets_nodie(struct fastbuf *f, byte *b, uns l);
-byte *bgets0(struct fastbuf *f, byte *b, uns l);
+/*
+ *  Functions for reading of strings:
+ *
+ *     bgets()		reads a line, strip the trailing '\n' and return a pointer
+ *			to the terminating 0 or NULL on EOF. Dies if the line is too long.
+ *     bgets0()		does the same for 0-terminated strings.
+ *     bgets_nodie()	a variant of bgets() which returns either the length of the
+ *     			string (excluding the terminator) or -1 if the line does not fit
+ *     			in the buffer. In such cases, it returns after reading exactly `l'
+ *     			bytes of input.
+ *     bgets_bb()	a variant of bgets() which allocates the string in a growing buffer
+ *     bgets_mp()	the same, but in a mempool
+ *     bgets_stk()	the same, but on the stack by alloca()
+ */
+
+char *bgets(struct fastbuf *f, char *b, uns l);
+char *bgets0(struct fastbuf *f, char *b, uns l);
+int bgets_nodie(struct fastbuf *f, char *b, uns l);
 
 struct mempool;
 struct bb_t;
 uns bgets_bb(struct fastbuf *f, struct bb_t *b, uns limit);
-byte *bgets_mp(struct fastbuf *f, struct mempool *mp);
+char *bgets_mp(struct fastbuf *f, struct mempool *mp);
 
 struct bgets_stk_struct {
   struct fastbuf *f;
@@ -358,19 +316,19 @@ void bgets_stk_step(struct bgets_stk_struct *s);
 #define bgets_stk(fb) ({ struct bgets_stk_struct _s; _s.f = (fb); for (bgets_stk_init(&_s); _s.cur_len; _s.cur_buf = alloca(_s.cur_len), bgets_stk_step(&_s)); _s.cur_buf; })
 
 static inline void
-bputs(struct fastbuf *f, byte *b)
+bputs(struct fastbuf *f, const char *b)
 {
   bwrite(f, b, strlen(b));
 }
 
 static inline void
-bputs0(struct fastbuf *f, byte *b)
+bputs0(struct fastbuf *f, const char *b)
 {
   bwrite(f, b, strlen(b)+1);
 }
 
 static inline void
-bputsn(struct fastbuf *f, byte *b)
+bputsn(struct fastbuf *f, const char *b)
 {
   bputs(f, b);
   bputc(f, '\n');
@@ -401,16 +359,6 @@ static inline int bskip(struct fastbuf *f, uns len)
   else
     return bskip_slow(f, len);
 }
-
-/* I/O on addr_int_t */
-
-#ifdef CPU_64BIT_POINTERS
-#define bputa(x,p) bputq(x,p)
-#define bgeta(x) bgetq(x)
-#else
-#define bputa(x,p) bputl(x,p)
-#define bgeta(x) bgetl(x)
-#endif
 
 /* Direct I/O on buffers */
 
@@ -456,7 +404,7 @@ bdirect_write_commit(struct fastbuf *f, byte *pos)
 
 /* Formatted output */
 
-int bprintf(struct fastbuf *b, char *msg, ...) FORMAT_CHECK(printf,2,3);
-int vbprintf(struct fastbuf *b, char *msg, va_list args);
+int bprintf(struct fastbuf *b, const char *msg, ...) FORMAT_CHECK(printf,2,3);
+int vbprintf(struct fastbuf *b, const char *msg, va_list args);
 
 #endif

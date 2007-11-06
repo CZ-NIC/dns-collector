@@ -8,7 +8,7 @@
  */
 
 int
-MATCH_FUNC_NAME(byte *p, byte *s)
+MATCH_FUNC_NAME(const char *p, const char *s)
 {
   while (*p)
     {

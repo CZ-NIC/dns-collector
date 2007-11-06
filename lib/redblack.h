@@ -136,6 +136,7 @@
  *  undef'd.
  */
 
+#include <stdio.h>
 #include <string.h>
 
 #if !defined(TREE_NODE) || !defined(TREE_PREFIX)
@@ -263,13 +264,13 @@ typedef struct P(stack_entry) {
 #else
 	/* Pointers are aligned, hence we can use lower bits.  */
 	static inline uns P(red_flag) (P(bucket) *node)
-	{ return ((addr_int_t) node->son[0]) & 1L; }
+	{ return ((uintptr_t) node->son[0]) & 1L; }
 	static inline void P(set_red_flag) (P(bucket) *node, uns flag)
-	{ node->son[0] = (void*) ( (((addr_int_t) node->son[0]) & ~1L) | (flag & 1L) ); }
+	{ node->son[0] = (void*) ( (((uintptr_t) node->son[0]) & ~1L) | (flag & 1L) ); }
 	static inline P(bucket) * P(tree_son) (P(bucket) *node, uns id)
-	{ return (void *) (((addr_int_t) node->son[id]) & ~1L); }
+	{ return (void *) (((uintptr_t) node->son[id]) & ~1L); }
 	static inline void P(set_tree_son) (P(bucket) *node, uns id, P(bucket) *son)
-	{ node->son[id] = (void *) ((addr_int_t) son | (((addr_int_t) node->son[id]) & 1L) ); }
+	{ node->son[id] = (void *) ((uintptr_t) son | (((uintptr_t) node->son[id]) & 1L) ); }
 #endif
 
 /* Defaults for missing parameters.  */

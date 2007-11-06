@@ -14,7 +14,7 @@
 #include <errno.h>
 
 int
-format_exit_status(byte *msg, int stat)
+format_exit_status(char *msg, int stat)
 {
   if (stat < 0)
     sprintf(msg, "failed to fork (err=%d)", errno);

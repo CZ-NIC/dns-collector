@@ -133,7 +133,7 @@ int main(int argc, char **argv)
       fprintf(fo, "{ \"%s\", %s },\n", ht[i]->w, ht[i]->extra);
     else
       fprintf(fo, "{ NULL },\n");
-  fprintf(fo, "};\n\nconst %s *%s(register const char *x, register unsigned int len)\n\
+  fprintf(fo, "};\n\nconst %s *%s(const char *x, unsigned int len)\n\
 {\n\
   const char *c = x;\n\
   unsigned int h = 0;\n\

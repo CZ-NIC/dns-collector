@@ -72,7 +72,7 @@ bitsig_init(uns perrlog, uns maxn)
   b->maxn = maxn;
   b->max_m_mult = (0xffffffff / m) * m;
   bzero(b->array, mbytes);
-  log(L_DEBUG, "Initialized bitsig array with l=%d, m=%u (%u KB), expecting %d items", b->l, b->m, (mbytes+1023)/1024, maxn);
+  msg(L_DEBUG, "Initialized bitsig array with l=%d, m=%u (%u KB), expecting %d items", b->l, b->m, (mbytes+1023)/1024, maxn);
   return b;
 }
 
@@ -139,7 +139,7 @@ bitsig_insert(struct bitsig *b, byte *item)
 	}
     }
   if (!was && b->n++ == b->maxn+1)
-    log(L_ERROR, "bitsig: Too many items inserted, error rate will be higher than estimated!");
+    msg(L_ERROR, "bitsig: Too many items inserted, error rate will be higher than estimated!");
   return was;
 }
 

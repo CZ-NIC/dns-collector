@@ -24,7 +24,7 @@
 
 /* Internals */
 
-uns stk_strconv_init(struct conv_context *c, byte *s, uns cs_in, uns cs_out);
+uns stk_strconv_init(struct conv_context *c, const byte *s, uns cs_in, uns cs_out);
 uns stk_strconv_step(struct conv_context *c, byte *buf, uns len);
 
 #endif

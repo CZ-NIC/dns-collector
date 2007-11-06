@@ -29,14 +29,14 @@ main(int argc, char **argv)
   else
     log_init(argv[1]);
   if (argc > 3)
-    log(argv[2][0], argv[3]);
+    msg(argv[2][0], argv[3]);
   else
     while (fgets(buf, sizeof(buf), stdin))
       {
 	c = strchr(buf, '\n');
 	if (c)
 	  *c = 0;
-	log(argv[2][0], buf);
+	msg(argv[2][0], buf);
       }
   return 0;
 }

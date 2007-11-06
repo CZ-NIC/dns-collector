@@ -70,7 +70,7 @@ sort_dirty(void)
 struct cf_section cf_sections;	// root section
 
 struct cf_item *
-cf_find_subitem(struct cf_section *sec, byte *name)
+cf_find_subitem(struct cf_section *sec, const char *name)
 {
   struct cf_item *ci = sec->cfg;
   for (; ci->cls; ci++)
@@ -104,7 +104,7 @@ inspect_section(struct cf_section *sec)
 }
 
 void
-cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown)
+cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown)
 {
   if (!cf_sections.cfg)
   {
@@ -132,7 +132,7 @@ cf_declare_section(byte *name, struct cf_section *sec, uns allow_unknown)
 }
 
 void
-cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero)
+cf_init_section(const char *name, struct cf_section *sec, void *ptr, uns do_bzero)
 {
   if (do_bzero) {
     ASSERT(sec->size);
@@ -140,38 +140,38 @@ cf_init_section(byte *name, struct cf_section *sec, void *ptr, uns do_bzero)
   }
   for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION)
-      cf_init_section(ci->name, ci->u.sec, ptr + (addr_int_t) ci->ptr, 0);
+      cf_init_section(ci->name, ci->u.sec, ptr + (uintptr_t) ci->ptr, 0);
     else if (ci->cls == CC_LIST)
-      clist_init(ptr + (addr_int_t) ci->ptr);
+      clist_init(ptr + (uintptr_t) ci->ptr);
     else if (ci->cls == CC_DYNAMIC) {
-      void **dyn = ptr + (addr_int_t) ci->ptr;
+      void **dyn = ptr + (uintptr_t) ci->ptr;
       if (!*dyn) {			// replace NULL by an empty array
 	static uns zero = 0;
 	*dyn = (&zero) + 1;
       }
     }
   if (sec->init) {
-    byte *msg = sec->init(ptr);
+    char *msg = sec->init(ptr);
     if (msg)
       die("Cannot initialize section %s: %s", name, msg);
   }
 }
 
-static byte *
+static char *
 commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 {
-  byte *err;
+  char *err;
   for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
-      if ((err = commit_section(ci->u.sec, ptr + (addr_int_t) ci->ptr, commit_all))) {
-	log(L_ERROR, "Cannot commit section %s: %s", ci->name, err);
+      if ((err = commit_section(ci->u.sec, ptr + (uintptr_t) ci->ptr, commit_all))) {
+	msg(L_ERROR, "Cannot commit section %s: %s", ci->name, err);
 	return "commit of a subsection failed";
       }
     } else if (ci->cls == CC_LIST) {
       uns idx = 0;
-      CLIST_FOR_EACH(cnode *, n, * (clist*) (ptr + (addr_int_t) ci->ptr))
+      CLIST_FOR_EACH(cnode *, n, * (clist*) (ptr + (uintptr_t) ci->ptr))
 	if (idx++, err = commit_section(ci->u.sec, n, commit_all)) {
-	  log(L_ERROR, "Cannot commit node #%d of list %s: %s", idx, ci->name, err);
+	  msg(L_ERROR, "Cannot commit node #%d of list %s: %s", idx, ci->name, err);
 	  return "commit of a list failed";
 	}
     }

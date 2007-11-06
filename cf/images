@@ -13,6 +13,7 @@ ImageMaxBytes		256M		# Maximum size in bytes
 
 }
 
+#if CONFIG_IMAGES_DUP || CONFIG_IMAGES_SIM
 ######## Image signatures #######################################################
 
 ImageSig {
@@ -80,9 +81,11 @@ CompareFeaturesWeights	4 6 6 4 4 4 4 4 4 4 4
 
 }
 
+#endif
+#ifdef CONFIG_IMAGES_DUP
 ######## Duplicate finder #######################################################
 
 ImageDup {
 # Detection of image duplicates does not work yet.
 }
-
+#endif

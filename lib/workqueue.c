@@ -128,7 +128,7 @@ raw_queue_put(struct raw_queue *q, struct work *w)
 	{
 	  struct work **old_heap = q->pri_heap;
 	  q->heap_max = (q->heap_max ? 2*q->heap_max : 16);
-	  q->pri_heap = xrealloc(old_heap, q->heap_max * sizeof(struct work *));
+	  q->pri_heap = xrealloc(old_heap, (q->heap_max + 1) * sizeof(struct work *));
 	}
       struct work **heap = q->pri_heap;
       heap[++q->heap_cnt] = w;

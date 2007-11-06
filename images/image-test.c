@@ -64,7 +64,7 @@ test_image_iface(void)
   ASSERT(i1->pixel_size == 4);
   ASSERT(IMAGE_SSE_ALIGN_SIZE >= 16);
   ASSERT(!(i1->row_size & (IMAGE_SSE_ALIGN_SIZE - 1)));
-  ASSERT(!((addr_int_t)i1->pixels & (IMAGE_SSE_ALIGN_SIZE - 1)));
+  ASSERT(!((uintptr_t)i1->pixels & (IMAGE_SSE_ALIGN_SIZE - 1)));
   image_destroy(i1);
 
   i1 = image_new(&ctx, 283, 329, COLOR_SPACE_RGB, NULL);
@@ -92,6 +92,8 @@ test_image_iface(void)
   image_context_cleanup(&ctx);
   mp_delete(pool);
 }
+
+#ifdef CONFIG_UCW_THREADS
 
 #define TEST_THREADS_COUNT 4
 
@@ -187,9 +189,12 @@ test_threads_thread(void *param UNUSED)
   return NULL;
 }
 
+#endif
+
 static void
 test_threads(void)
 {
+#ifdef CONFIG_UCW_THREADS
   pthread_t threads[TEST_THREADS_COUNT - 1];
   pthread_attr_t attr;
   if (pthread_attr_init(&attr) < 0 ||
@@ -204,6 +209,9 @@ test_threads(void)
   for (uns i = 0; i < TEST_THREADS_COUNT - 1; i++)
     if (pthread_join(threads[i], NULL) < 0)
       die("Cannot join thread: %m");
+#else
+  msg(L_WARN, "Disabled CONFIG_UCW_THREADS, threaded tests skipped");
+#endif
 }
 
 int

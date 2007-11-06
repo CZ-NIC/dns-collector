@@ -46,7 +46,7 @@ static struct option longopts[] =
   { "transormations",	0, 0, 't' },
   { NULL,		0, 0, 0 }
 };
-							  
+
 static uns verbose = 1;
 static byte *file_name_1;
 static byte *file_name_2;
@@ -55,7 +55,7 @@ static enum image_format format_2;
 static struct color background_color;
 static uns transformations = IMAGE_DUP_TRANS_ALL;
 
-#define MSG(x...) do{ if (verbose) log(L_INFO, ##x); }while(0)
+#define MSG(x...) do{ if (verbose) msg(L_INFO, ##x); }while(0)
 
 int
 main(int argc, char **argv)

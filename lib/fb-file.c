@@ -1,7 +1,8 @@
 /*
  *	UCW Library -- Fast Buffered I/O on Files
  *
- *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2007 Martin Mares <mj@ucw.cz>
+ *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -11,6 +12,7 @@
 #include "lib/fastbuf.h"
 #include "lib/lfs.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -18,7 +20,10 @@
 struct fb_file {
   struct fastbuf fb;
   int fd;				/* File descriptor */
-  int is_temp_file;			/* 0=normal file, 1=temporary file, delete on close, -1=shared FD */
+  int is_temp_file;
+  int keep_back_buf;			/* Optimize for backwards reading */
+  sh_off_t wpos;			/* Real file position */
+  uns wlen;				/* Window size */
 };
 #define FB_FILE(f) ((struct fb_file *)(f)->is_fastbuf)
 #define FB_BUFFER(f) (byte *)(FB_FILE(f) + 1)
@@ -26,22 +31,132 @@ struct fb_file {
 static int
 bfd_refill(struct fastbuf *f)
 {
-  f->bptr = f->buffer = FB_BUFFER(f);
-  int l = read(FB_FILE(f)->fd, f->buffer, f->bufend-f->buffer);
-  if (l < 0)
-    die("Error reading %s: %m", f->name);
-  f->bstop = f->buffer + l;
-  f->pos += l;
-  return l;
+  struct fb_file *F = FB_FILE(f);
+  byte *read_ptr = (f->buffer = FB_BUFFER(f));
+  uns blen = f->bufend - f->buffer, back = F->keep_back_buf ? blen >> 2 : 0, read_len = blen;
+  /* Forward or no seek */
+  if (F->wpos <= f->pos)
+    {
+      sh_off_t diff = f->pos - F->wpos;
+      /* Formula for long forward seeks (prefer lseek()) */
+      if (diff > ((sh_off_t)blen << 2))
+        {
+long_seek:
+	  f->bptr = f->buffer + back;
+	  f->bstop = f->buffer + blen;
+	  goto seek;
+	}
+      /* Short forward seek (prefer read() to skip data )*/
+      else if ((uns)diff >= back)
+        {
+	  uns skip = diff - back;
+	  F->wpos += skip;
+	  while (skip)
+	    {
+	      int l = read(F->fd, f->buffer, MIN(skip, blen));
+	      if (unlikely(l <= 0))
+		if (l < 0)
+		  die("Error reading %s: %m", f->name);
+		else
+		  {
+		    F->wpos -= skip;
+		    goto eof;
+		  }
+	      skip -= l;
+	    }
+	}
+      /* Reuse part of the previous window and append new data (also F->wpos == f->pos) */
+      else
+        {
+	  uns keep = back - (uns)diff;
+	  if (keep >= F->wlen)
+	    back = diff + (keep = F->wlen);
+	  else
+	    memmove(f->buffer, f->buffer + F->wlen - keep, keep);
+	  read_len -= keep;
+	  read_ptr += keep;
+	}
+      f->bptr = f->buffer + back;
+      f->bstop = f->buffer + blen;
+    }
+  /* Backwards seek */
+  else
+    {
+      sh_off_t diff = F->wpos - f->pos;
+      /* Formula for long backwards seeks (keep smaller backbuffer than for shorter seeks ) */
+      if (diff > ((sh_off_t)blen << 1))
+        {
+	  if ((sh_off_t)back > f->pos)
+	    back = f->pos;
+	  goto long_seek;
+	}
+      /* Seek into previous window (do nothing... for example brewind) */
+      else if ((uns)diff <= F->wlen) 
+        {
+	  f->bstop = f->buffer + F->wlen;
+	  f->bptr = f->bstop - diff;
+	  f->pos = F->wpos;
+	  return 1;
+	}
+      back *= 3;
+      if ((sh_off_t)back > f->pos)
+	back = f->pos;
+      f->bptr = f->buffer + back;
+      read_len = blen;
+      f->bstop = f->buffer + read_len;
+      /* Reuse part of previous window */
+      if (F->wlen && read_len <= back + diff && read_len > back + diff - F->wlen)
+        {
+	  uns keep = read_len + F->wlen - back - diff;
+	  memmove(f->buffer + read_len - keep, f->buffer, keep);
+	}
+seek:
+      /* Do lseek() */
+      F->wpos = f->pos + (f->buffer - f->bptr);
+      if (sh_seek(F->fd, F->wpos, SEEK_SET) < 0)
+	die("Error seeking %s: %m", f->name);
+    }
+  /* Read (part of) buffer */
+  do
+    {
+      int l = read(F->fd, read_ptr, read_len);
+      if (unlikely(l < 0))
+	die("Error reading %s: %m", f->name);
+      if (!l)
+	if (unlikely(read_ptr < f->bptr))
+	  goto eof;
+	else
+	  break; /* Incomplete read because of EOF */
+      read_ptr += l;
+      read_len -= l;
+      F->wpos += l;
+    }
+  while (read_ptr <= f->bptr);
+  if (read_len)
+    f->bstop = read_ptr;
+  f->pos += f->bstop - f->bptr;
+  F->wlen = f->bstop - f->buffer;
+  return f->bstop - f->bptr;
+eof:
+  /* Seeked behind EOF */
+  f->bptr = f->bstop = f->buffer;
+  F->wlen = 0;
+  return 0;
 }
 
 static void
 bfd_spout(struct fastbuf *f)
 {
+  /* Do delayed lseek() if needed */
+  if (FB_FILE(f)->wpos != f->pos && sh_seek(FB_FILE(f)->fd, f->pos, SEEK_SET) < 0)
+    die("Error seeking %s: %m", f->name);
+
   int l = f->bptr - f->buffer;
   byte *c = f->buffer;
 
-  f->pos += l;
+  /* Write the buffer */
+  FB_FILE(f)->wpos = (f->pos += l);
+  FB_FILE(f)->wlen = 0;
   while (l)
     {
       int z = write(FB_FILE(f)->fd, c, l);
@@ -53,50 +168,67 @@ bfd_spout(struct fastbuf *f)
   f->bptr = f->buffer = FB_BUFFER(f);
 }
 
-static void
+static int
 bfd_seek(struct fastbuf *f, sh_off_t pos, int whence)
 {
-  if (whence == SEEK_SET && pos == f->pos)
-    return;
-
-  sh_off_t l = sh_seek(FB_FILE(f)->fd, pos, whence);
-  if (l < 0)
-    die("lseek on %s: %m", f->name);
-  f->pos = l;
+  /* Delay the seek for the next refill() or spout() call (if whence != SEEK_END). */
+  sh_off_t l;
+  switch (whence)
+    {
+      case SEEK_SET:
+	f->pos = pos;
+	return 1;
+      case SEEK_CUR:
+	l = f->pos + pos;
+	if ((pos > 0) ^ (l > f->pos))
+	  return 0;
+	f->pos = l;
+	return 1;
+      case SEEK_END:
+	l = sh_seek(FB_FILE(f)->fd, pos, SEEK_END);
+	if (l < 0)
+	  return 0;
+	FB_FILE(f)->wpos = f->pos = l;
+	FB_FILE(f)->wlen = 0;
+	return 1;
+      default:
+	ASSERT(0);
+    }
 }
 
 static void
 bfd_close(struct fastbuf *f)
 {
-  switch (FB_FILE(f)->is_temp_file)
-    {
-    case 1:
-      if (unlink(f->name) < 0)
-	log(L_ERROR, "unlink(%s): %m", f->name);
-    case 0:
-      close(FB_FILE(f)->fd);
-    }
+  bclose_file_helper(f, FB_FILE(f)->fd, FB_FILE(f)->is_temp_file);
   xfree(f);
 }
 
 static int
 bfd_config(struct fastbuf *f, uns item, int value)
 {
+  int orig;
+
   switch (item)
     {
-    case BCONFIG_IS_TEMP_FILE:
-      FB_FILE(f)->is_temp_file = value;
-      return 0;
-    default:
-      return -1;
+      case BCONFIG_IS_TEMP_FILE:
+	orig = FB_FILE(f)->is_temp_file;
+	FB_FILE(f)->is_temp_file = value;
+	return orig;
+      case BCONFIG_KEEP_BACK_BUF:
+        orig = FB_FILE(f)->keep_back_buf;
+	FB_FILE(f)->keep_back_buf = value;
+	return orig;
+      default:
+	return -1;
     }
 }
 
-static struct fastbuf *
-bfdopen_internal(int fd, uns buflen, byte *name)
+struct fastbuf *
+bfdopen_internal(int fd, const char *name, uns buflen)
 {
+  ASSERT(buflen);
   int namelen = strlen(name) + 1;
-  struct fb_file *F = xmalloc(sizeof(struct fb_file) + buflen + namelen);
+  struct fb_file *F = xmalloc_zero(sizeof(struct fb_file) + buflen + namelen);
   struct fastbuf *f = &F->fb;
 
   bzero(F, sizeof(*F));
@@ -115,65 +247,27 @@ bfdopen_internal(int fd, uns buflen, byte *name)
   return f;
 }
 
-struct fastbuf *
-bopen_try(byte *name, uns mode, uns buflen)
-{
-  int fd = sh_open(name, mode, 0666);
-  if (fd < 0)
-    return NULL;
-  struct fastbuf *b = bfdopen_internal(fd, buflen, name);
-  if (mode & O_APPEND)
-    bfd_seek(b, 0, SEEK_END);
-  return b;
-}
-
-struct fastbuf *
-bopen(byte *name, uns mode, uns buflen)
-{
-  if (!buflen)
-    return bopen_mm(name, mode);
-  struct fastbuf *b = bopen_try(name, mode, buflen);
-  if (!b)
-    die("Unable to %s file %s: %m",
-	(mode & O_CREAT) ? "create" : "open", name);
-  return b;
-}
-
-struct fastbuf *
-bfdopen(int fd, uns buflen)
-{
-  byte x[32];
-
-  sprintf(x, "fd%d", fd);
-  return bfdopen_internal(fd, buflen, x);
-}
-
-struct fastbuf *
-bfdopen_shared(int fd, uns buflen)
-{
-  struct fastbuf *f = bfdopen(fd, buflen);
-  FB_FILE(f)->is_temp_file = -1;
-  return f;
-}
-
 void
 bfilesync(struct fastbuf *b)
 {
   bflush(b);
   if (fsync(FB_FILE(b)->fd) < 0)
-    log(L_ERROR, "fsync(%s) failed: %m", b->name);
+    msg(L_ERROR, "fsync(%s) failed: %m", b->name);
 }
 
 #ifdef TEST
 
-int main(int argc UNUSED, char **argv UNUSED)
+int main(void)
 {
   struct fastbuf *f, *t;
-
-  f = bopen("/etc/profile", O_RDONLY, 16);
-  t = bfdopen(1, 13);
-  bbcopy(f, t, 100);
-  printf("%d %d\n", (int)btell(f), (int)btell(t));
+  f = bopen_tmp(16);
+  t = bfdopen_shared(1, 13);
+  for (uns i = 0; i < 16; i++)
+    bwrite(f, "<hello>", 7);
+  bprintf(t, "%d\n", (int)btell(f));
+  brewind(f);
+  bbcopy(f, t, ~0U);
+  bprintf(t, "\n%d %d\n", (int)btell(f), (int)btell(t));
   bclose(f);
   bclose(t);
   return 0;

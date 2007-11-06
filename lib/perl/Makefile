@@ -1,8 +1,10 @@
 # Perl modules
 
 DIRS+=lib/perl
-PROGS+=$(addprefix $(o)/lib/perl/,Config.pm)
+EXTRA_RUNDIRS+=lib/perl5/UCW
+PROGS+=$(addprefix $(o)/lib/perl/,Config.pm Log.pm CGI.pm)
 
-ifdef CONFIG_UCW_PERL_ULIMIT
+ifdef CONFIG_UCW_PERL_MODULES
 include $(s)/lib/perl/Ulimit/Makefile
+include $(s)/lib/perl/Filelock/Makefile
 endif

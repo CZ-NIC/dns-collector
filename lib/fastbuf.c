@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Fast Buffered I/O
  *
- *	(c) 1997--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2007 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -10,6 +10,7 @@
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 void bclose(struct fastbuf *f)
@@ -38,7 +39,8 @@ inline void bsetpos(struct fastbuf *f, sh_off_t pos)
   else
     {
       bflush(f);
-      f->seek(f, pos, SEEK_SET);
+      if (!f->seek || !f->seek(f, pos, SEEK_SET))
+	die("bsetpos: stream not seekable");
     }
 }
 
@@ -52,7 +54,8 @@ void bseek(struct fastbuf *f, sh_off_t pos, int whence)
       return bsetpos(f, btell(f) + pos);
     case SEEK_END:
       bflush(f);
-      f->seek(f, pos, SEEK_END);
+      if (!f->seek || !f->seek(f, pos, SEEK_END))
+	die("bseek: stream not seekable");
       break;
     default:
       die("bseek: invalid whence=%d", whence);
@@ -64,7 +67,7 @@ int bgetc_slow(struct fastbuf *f)
   if (f->bptr < f->bstop)
     return *f->bptr++;
   if (!f->refill(f))
-    return EOF;
+    return -1;
   return *f->bptr++;
 }
 
@@ -73,7 +76,7 @@ int bpeekc_slow(struct fastbuf *f)
   if (f->bptr < f->bstop)
     return *f->bptr;
   if (!f->refill(f))
-    return EOF;
+    return -1;
   return *f->bptr;
 }
 
@@ -111,7 +114,7 @@ uns bread_slow(struct fastbuf *f, void *b, uns l, uns check)
   return total;
 }
 
-void bwrite_slow(struct fastbuf *f, void *b, uns l)
+void bwrite_slow(struct fastbuf *f, const void *b, uns l)
 {
   while (l)
     {
@@ -192,7 +195,9 @@ bfilesize(struct fastbuf *f)
   if (!f)
     return 0;
   sh_off_t pos = btell(f);
-  bseek(f, 0, SEEK_END);
+  bflush(f);
+  if (!f->seek(f, 0, SEEK_END))
+    return -1;
   sh_off_t len = btell(f);
   bsetpos(f, pos);
   return len;

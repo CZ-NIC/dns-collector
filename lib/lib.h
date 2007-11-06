@@ -1,9 +1,10 @@
 /*
  *	The UCW Library -- Miscellaneous Functions
  *
- *	(c) 1997--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2007 Martin Mares <mj@ucw.cz>
  *	(c) 2005 Tomas Valla <tom@ucw.cz>
  *	(c) 2006 Robert Spalek <robert@ucw.cz>
+ *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -15,12 +16,6 @@
 #include "lib/config.h"
 #include <stdarg.h>
 
-/* Tell libc we're going to use all extensions available */
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 /* Macros for handling structurues, offsets and alignment */
 
 #define CHECK_PTR_TYPE(x, type) ((x)-(type)(x) + (type)(x))
@@ -28,8 +23,8 @@
 #define OFFSETOF(s, i) ((unsigned int) PTR_TO(s, i))
 #define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))
 #define ALIGN_TO(s, a) (((s)+a-1)&~(a-1))
-#define ALIGN_PTR(p, s) ((addr_int_t)(p) % (s) ? (typeof(p))((addr_int_t)(p) + (s) - (addr_int_t)(p) % (s)) : (p))
-#define UNALIGNED_PART(ptr, type) (((addr_int_t) (ptr)) % sizeof(type))
+#define ALIGN_PTR(p, s) ((uintptr_t)(p) % (s) ? (typeof(p))((uintptr_t)(p) + (s) - (uintptr_t)(p) % (s)) : (p))
+#define UNALIGNED_PART(ptr, type) (((uintptr_t) (ptr)) % sizeof(type))
 
 /* Some other macros */
 
@@ -104,28 +99,27 @@ extern void (*log_die_hook)(void);
 struct tm;
 extern void (*log_switch_hook)(struct tm *tm);
 
-void log_msg(unsigned int cat, const char *msg, ...) FORMAT_CHECK(printf,2,3);
-#define log log_msg
-void vlog_msg(unsigned int cat, const char *msg, va_list args);
+void msg(uns cat, const char *fmt, ...) FORMAT_CHECK(printf,2,3);
+void vmsg(uns cat, const char *fmt, va_list args);
 void die(const char *, ...) NONRET FORMAT_CHECK(printf,1,2);
-void log_init(byte *argv0);
-void log_file(byte *name);
+void log_init(const char *argv0);
+void log_file(const char *name);
 void log_fork(void);
 int log_switch(void);
 
-void assert_failed(char *assertion, char *file, int line) NONRET;
+void assert_failed(const char *assertion, const char *file, int line) NONRET;
 void assert_failed_noinfo(void) NONRET;
 
 #ifdef DEBUG_ASSERTS
-#define ASSERT(x) do { if (unlikely(!(x))) assert_failed(#x, __FILE__, __LINE__); } while(0)
+#define ASSERT(x) ({ if (unlikely(!(x))) assert_failed(#x, __FILE__, __LINE__); 1; })
 #else
-#define ASSERT(x) do { if (__builtin_constant_p(x) && !(x)) assert_failed_noinfo(); } while(0)
+#define ASSERT(x) ({ if (__builtin_constant_p(x) && !(x)) assert_failed_noinfo(); 1; })
 #endif
 
 #define COMPILE_ASSERT(name,x) typedef char _COMPILE_ASSERT_##name[!!(x)-1]
 
 #ifdef LOCAL_DEBUG
-#define DBG(x,y...) log(L_DEBUG, x,##y)
+#define DBG(x,y...) msg(L_DEBUG, x,##y)
 #else
 #define DBG(x,y...) do { } while(0)
 #endif
@@ -156,40 +150,40 @@ static inline void log_switch_enable(void) { ASSERT(log_switch_nest); log_switch
  * their own xmalloc and we don't want to interfere with them, hence
  * the renaming.
  */
-void *xmalloc(unsigned) LIKE_MALLOC;
-void *xrealloc(void *, unsigned);
+void *xmalloc(uns) LIKE_MALLOC;
+void *xrealloc(void *, uns);
 void xfree(void *);
 #endif
 
-void *xmalloc_zero(unsigned) LIKE_MALLOC;
-byte *xstrdup(byte *) LIKE_MALLOC;
+void *xmalloc_zero(uns) LIKE_MALLOC;
+char *xstrdup(const char *) LIKE_MALLOC;
 
 /* Content-Type pattern matching and filters */
 
-int match_ct_patt(byte *, byte *);
+int match_ct_patt(const char *, const char *);
 
 /* wordsplit.c */
 
-int sepsplit(byte *str, byte sep, byte **rec, uns max);
-int wordsplit(byte *, byte **, uns);
+int sepsplit(char *str, uns sep, char **rec, uns max);
+int wordsplit(char *str, char **rec, uns max);
 
 /* pat(i)match.c: Matching of shell patterns */
 
-int match_pattern(byte *, byte *);
-int match_pattern_nocase(byte *, byte *);
+int match_pattern(const char *patt, const char *str);
+int match_pattern_nocase(const char *patt, const char *str);
 
 /* md5hex.c */
 
-void md5_to_hex(byte *, byte *);
-void hex_to_md5(byte *, byte *);
+void md5_to_hex(const byte *s, char *d);
+void hex_to_md5(const char *s, byte *d);
 
 #define MD5_SIZE 16
 #define MD5_HEX_SIZE 33
 
 /* prime.c */
 
-int isprime(uns);
-uns nextprime(uns);
+int isprime(uns x);
+uns nextprime(uns x);
 
 /* primetable.c */
 
@@ -198,36 +192,37 @@ uns prev_table_prime(uns x);
 
 /* timer.c */
 
-struct timeval;
+timestamp_t get_timestamp(void);
 
-void init_timer(void);
-uns get_timer(void);
-void get_last_timeval(struct timeval *tv);
+void init_timer(timestamp_t *timer);
+uns get_timer(timestamp_t *timer);
+uns switch_timer(timestamp_t *old, timestamp_t *new);
 
 /* regex.c */
 
 typedef struct regex regex;
 
-regex *rx_compile(byte *r, int icase);
+regex *rx_compile(const char *r, int icase);
 void rx_free(regex *r);
-int rx_match(regex *r, byte *s);
-int rx_subst(regex *r, byte *by, byte *src, byte *dest, uns destlen);
+int rx_match(regex *r, const char *s);
+int rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen);
 
 /* random.c */
 
+uns random_u32(void);
 uns random_max(uns max);
 u64 random_u64(void);
 u64 random_max_u64(u64 max);
 
 /* mmap.c */
 
-void *mmap_file(byte *name, unsigned *len, int writeable);
+void *mmap_file(const char *name, unsigned *len, int writeable);
 void munmap_file(void *start, unsigned len);
 
 /* proctitle.c */
 
 void setproctitle_init(int argc, char **argv);
-void setproctitle(char *msg, ...) FORMAT_CHECK(printf,1,2);
+void setproctitle(const char *msg, ...) FORMAT_CHECK(printf,1,2);
 char *getproctitle(void);
 
 /* randomkey.c */
@@ -237,25 +232,25 @@ void randomkey(byte *buf, uns size);
 /* exitstatus.c */
 
 #define EXIT_STATUS_MSG_SIZE 32
-int format_exit_status(byte *msg, int stat);
+int format_exit_status(char *msg, int stat);
 
 /* runcmd.c */
 
-int run_command(byte *cmd, ...);
-void NONRET exec_command(byte *cmd, ...);
-void echo_command(byte *buf, int size, byte *cmd, ...);
-int run_command_v(byte *cmd, va_list args);
-void NONRET exec_command_v(byte *cmd, va_list args);
-void echo_command_v(byte *buf, int size, byte *cmd, va_list args);
+int run_command(const char *cmd, ...);
+void NONRET exec_command(const char *cmd, ...);
+void echo_command(char *buf, int size, const char *cmd, ...);
+int run_command_v(const char *cmd, va_list args);
+void NONRET exec_command_v(const char *cmd, va_list args);
+void echo_command_v(char *buf, int size, const char *cmd, va_list args);
 
 /* carefulio.c */
 
 int careful_read(int fd, void *buf, int len);
-int careful_write(int fd, void *buf, int len);
+int careful_write(int fd, const void *buf, int len);
 
 /* sync.c */
 
-void sync_dir(byte *name);
+void sync_dir(const char *name);
 
 /* sighandler.c */
 
@@ -267,6 +262,18 @@ sh_sighandler_t set_signal_handler(int signum, sh_sighandler_t new);
 
 /* string.c */
 
-byte *str_unesc(byte *dest, byte *src);
+char *str_unesc(char *dest, const char *src);
+char *str_format_flags(char *dest, const char *fmt, uns flags);
+
+/* bigalloc.c */
+
+void *page_alloc(u64 len) LIKE_MALLOC; // allocates a multiple of CPU_PAGE_SIZE bytes with mmap
+void *page_alloc_zero(u64 len) LIKE_MALLOC;
+void page_free(void *start, u64 len);
+void *page_realloc(void *start, u64 old_len, u64 new_len);
+
+void *big_alloc(u64 len) LIKE_MALLOC; // allocate a large memory block in the most efficient way available
+void *big_alloc_zero(u64 len) LIKE_MALLOC;
+void big_free(void *start, u64 len);
 
 #endif

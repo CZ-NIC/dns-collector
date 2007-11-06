@@ -9,14 +9,14 @@
 
 #undef LOCAL_DEBUG
 
-#include "sherlock/sherlock.h"
-#include "lib/math.h"
+#include "lib/lib.h"
 #include "images/images.h"
 #include "images/color.h"
 #include "images/error.h"
 #include "images/math.h"
 
 #include <string.h>
+#include <math.h>
 
 uns color_space_channels[COLOR_SPACE_MAX] = {
   [COLOR_SPACE_UNKNOWN] = 0,
@@ -1256,18 +1256,19 @@ main(void)
   byte *a = xmalloc(3 * CNT), *b = xmalloc(3 * CNT);
   for (uns i = 0; i < 3 * CNT; i++)
     a[i] = random_max(256);
-  init_timer();
+  timestamp_t timer;
+  init_timer(&timer);
   for (uns i = 0; i < TESTS; i++)
     memcpy(b, a, CNT * 3);
-  DBG("memcpy time=%d", (uns)get_timer());
-  init_timer();
+  DBG("memcpy time=%d", get_timer(&timer));
+  init_timer(&timer);
   for (uns i = 0; i < TESTS; i++)
     srgb_to_luv_pixels(b, a, CNT);
-  DBG("direct time=%d", (uns)get_timer());
-  init_timer();
+  DBG("direct time=%d", get_timer(&timer));
+  init_timer(&timer);
   for (uns i = 0; i < TESTS; i++)
     color_conv_pixels(b, a, CNT, srgb_to_luv_grid);
-  DBG("grid time=%d", (uns)get_timer());
+  DBG("grid time=%d", get_timer(&timer));
 #endif
   return 0;
 }

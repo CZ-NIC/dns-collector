@@ -15,7 +15,7 @@
 #define INITIAL_SCALE		2
 
 uns
-stk_strconv_init(struct conv_context *c, byte *s, uns in_cs, uns out_cs)
+stk_strconv_init(struct conv_context *c, const byte *s, uns in_cs, uns out_cs)
 {
   uns l = strlen(s);
   if (in_cs == out_cs)

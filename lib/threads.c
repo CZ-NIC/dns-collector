@@ -14,6 +14,20 @@
 
 #include <pthread.h>
 
+#ifdef CONFIG_LINUX
+#include <sys/types.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#ifdef __NR_gettid
+static pid_t
+gettid(void)
+{
+  return syscall(__NR_gettid);
+}
+#define CONFIG_USE_GETTID
+#endif
+#endif
+
 static pthread_key_t ucwlib_context_key;
 static pthread_mutex_t ucwlib_master_mutex;
 
@@ -35,9 +49,17 @@ static int
 ucwlib_tid(void)
 {
   static int tid_counter;
+  int tid;
+
+#ifdef CONFIG_USE_GETTID
+  tid = gettid();
+  if (tid > 0)
+    return tid;
+  /* The syscall might be unimplemented */
+#endif
 
   ucwlib_lock();
-  int tid = ++tid_counter;
+  tid = ++tid_counter;
   ucwlib_unlock();
   return tid;
 }

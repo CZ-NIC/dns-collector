@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Configuration file and script preprocessor
-# (c) 2004 Martin Mares <mj@ucw.cz>
+# (c) 2004--2007 Martin Mares <mj@ucw.cz>
 
 use strict;
 use warnings;
@@ -9,11 +9,29 @@ use warnings;
 
 open CF, $ARGV[2] or die "Unable to open $ARGV[2]";
 my %options = ();
+my %vars = ();
+sub opt {
+	my ($k,$v) = @_;
+	$vars{$k} = $v;
+	$options{$k} = 1 if ($k =~ /^CONFIG_/);
+}
+foreach my $k (keys %ENV) {
+	opt($k, $ENV{$k});
+}
 while (<CF>) {
-	/^(CONFIG_\w+)=[^0]/ || next;
-	$options{$1} = 1;
+	chomp;
+	if (my ($k,$v) = /^(\w+)=(.*)/) {
+		$v =~ s/\s+$//;
+		opt($k, $v);
+	}
 }
 close CF;
+
+sub eval_expr {
+	$_ = shift @_;
+	s/\b(CONFIG_\w+)\b/defined($options{$1}) ? 1 : 0/ge;
+	return eval $_;
+}
 
 open IN, $ARGV[0] or die "Unable to open $ARGV[0]";
 open OUT, ">$ARGV[1]" or die "Unable to create $ARGV[1]";
@@ -24,12 +42,18 @@ while (<IN>) {
 		push @ifs, (@ifs && $ifs[$#ifs] <= 0) ? 0 : (defined $options{$1}) ? 1 : -1;
 	} elsif (/^#ifndef\s+(\w+)/) {
 		push @ifs, (@ifs && $ifs[$#ifs] <= 0) ? 0 : (defined $options{$1}) ? -1 : 1;
+	} elsif (/^#if\s(.*)$/) {
+		push @ifs, (@ifs && $ifs[$#ifs] <= 0) ? 0 : (eval_expr $1) ? 1 : -1;
 	} elsif (/^#endif/) {
 		defined pop @ifs || die "Improper nesting of conditionals";
 	} elsif (/^#else/) {
 		my $x = pop @ifs;
 		defined $x || die "Improper nesting of conditionals";
-		push @ifs, -$x;
+		push @ifs, $x >= 0 ? 0 : 1;
+	} elsif (/^#elsif\s(.*)$/) {
+		my $x = pop @ifs;
+		defined $x || die "Improper nesting of conditionals";
+		push @ifs, $x >= 0 ? 0 : (eval_expr $1) ? 1 : -1;
 	} else {
 		@ifs && $ifs[$#ifs] <= 0 && next;
 		if (/^$/) {
@@ -37,8 +61,17 @@ while (<IN>) {
 			$empty = 1;
 		} else { $empty = 0; }
 		if (/^#pipe\s+(.+)/) {
+			my $cmd = $1;
+			my $val = `$cmd`;
+			die "Piped command '$cmd' failed" if $?;
 			print OUT `$1`;
 		} else {
+			sub repl ($) {
+				my $v = shift @_;
+				exists $vars{$v} or die "Cannot substitute $v: variable not set";
+				return $vars{$v};
+			}
+			s/@(\w+)@/repl($1)/ge;
 			print OUT;
 		}
 	}

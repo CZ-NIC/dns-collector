@@ -12,7 +12,7 @@
 #include "lib/unicode.h"
 
 uns
-utf8_strlen(byte *str)
+utf8_strlen(const byte *str)
 {
   uns len = 0;
   while (*str)
@@ -24,10 +24,10 @@ utf8_strlen(byte *str)
 }
 
 uns
-utf8_strnlen(byte *str, uns n)
+utf8_strnlen(const byte *str, uns n)
 {
   uns len = 0;
-  byte *end = str + n;
+  const byte *end = str + n;
   while (str < end)
     {
       UTF8_SKIP(str);

@@ -17,11 +17,11 @@
 #define OP_1ST 0x200		// in the 1st phase selectors are recorded into the mask
 #define OP_2ND 0x400		// in the 2nd phase real data are entered
 enum cf_operation;
-extern byte *cf_op_names[];
-extern byte *cf_type_names[];
+extern char *cf_op_names[];
+extern char *cf_type_names[];
 
 uns cf_type_size(enum cf_type type, struct cf_user_type *utype);
-byte *cf_interpret_line(byte *name, enum cf_operation op, int number, byte **pars);
+char *cf_interpret_line(char *name, enum cf_operation op, int number, char **pars);
 void cf_init_stack(void);
 int cf_check_stack(void);
 
@@ -37,7 +37,7 @@ void cf_journal_delete(void);
 enum cf_commit_mode { CF_NO_COMMIT, CF_COMMIT, CF_COMMIT_ALL };
 extern struct cf_section cf_sections;
 
-struct cf_item *cf_find_subitem(struct cf_section *sec, byte *name);
+struct cf_item *cf_find_subitem(struct cf_section *sec, const char *name);
 int cf_commit_all(enum cf_commit_mode cm);
 void cf_add_dirty(struct cf_section *sec, void *ptr);
 

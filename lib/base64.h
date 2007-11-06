@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-uns base64_encode(byte *dest, byte *src, uns len);
-uns base64_decode(byte *dest, byte *src, uns len);
+uns base64_encode(byte *dest, const byte *src, uns len);
+uns base64_decode(byte *dest, const byte *src, uns len);
 
 /*
  * Use this macro to calculate buffer size.

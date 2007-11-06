@@ -1,12 +1,12 @@
 #include "lib/lib.h"
 #include "lib/getopt.h"
 #include "lib/fastbuf.h"
+#include "lib/ff-binary.h"
 #include "lib/lizard.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/user.h>
 
 static char *options = CF_SHORT_OPTS "cdtx";
 static char *help = "\
@@ -105,8 +105,8 @@ main(int argc, char **argv)
   else
   {
     int smaller_li;
-    if (li >= (int) PAGE_SIZE)
-      smaller_li = li - PAGE_SIZE;
+    if (li >= (int) CPU_PAGE_SIZE)
+      smaller_li = li - CPU_PAGE_SIZE;
     else
       smaller_li = 0;
     struct lizard_buffer *buf = lizard_alloc();

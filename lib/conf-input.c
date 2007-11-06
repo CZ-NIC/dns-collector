@@ -23,13 +23,13 @@
 
 /* Text file parser */
 
-static byte *name_parse_fb;
+static const char *name_parse_fb;
 static struct fastbuf *parse_fb;
 static uns line_num;
 
 #define MAX_LINE	4096
-static byte line_buf[MAX_LINE];
-static byte *line = line_buf;
+static char line_buf[MAX_LINE];
+static char *line = line_buf;
 
 #include "lib/bbuf.h"
 static bb_t copy_buf;
@@ -43,7 +43,7 @@ static uns words;
 static uns ends_by_brace;		// the line is ended by "{"
 
 static int
-get_line(byte **msg)
+get_line(char **msg)
 {
   int err = bgets_nodie(parse_fb, line_buf, MAX_LINE);
   line_num++;
@@ -58,7 +58,7 @@ get_line(byte **msg)
 }
 
 static void
-append(byte *start, byte *end)
+append(char *start, char *end)
 {
   uns len = end - start;
   bb_grow(&copy_buf, copied + len + 1);
@@ -67,14 +67,14 @@ append(byte *start, byte *end)
   copy_buf.ptr[copied-1] = 0;
 }
 
-static byte *
+static char *
 get_word(uns is_command_name)
 {
-  byte *msg;
+  char *msg;
   if (*line == '\'') {
     line++;
     while (1) {
-      byte *start = line;
+      char *start = line;
       while (*line && *line != '\'')
 	line++;
       append(start, line);
@@ -82,7 +82,7 @@ get_word(uns is_command_name)
 	break;
       copy_buf.ptr[copied-1] = '\n';
       if (!get_line(&msg))
-	return msg ? : (byte*) "Unterminated apostrophe word at the end";
+	return msg ? : "Unterminated apostrophe word at the end";
     }
     line++;
 
@@ -90,7 +90,7 @@ get_word(uns is_command_name)
     line++;
     uns start_copy = copied;
     while (1) {
-      byte *start = line;
+      char *start = line;
       uns escape = 0;
       while (*line) {
 	if (*line == '"' && !escape)
@@ -109,11 +109,11 @@ get_word(uns is_command_name)
       else // merge two lines
 	copied -= 2;
       if (!get_line(&msg))
-	return msg ? : (byte*) "Unterminated quoted word at the end";
+	return msg ? : "Unterminated quoted word at the end";
     }
     line++;
 
-    byte *tmp = stk_str_unesc(copy_buf.ptr + start_copy);
+    char *tmp = stk_str_unesc(copy_buf.ptr + start_copy);
     uns l = strlen(tmp);
     bb_grow(&copy_buf, start_copy + l + 1);
     strcpy(copy_buf.ptr + start_copy, tmp);
@@ -121,7 +121,7 @@ get_word(uns is_command_name)
 
   } else {
     // promised that *line is non-null and non-blank
-    byte *start = line;
+    char *start = line;
     while (*line && !Cblank(*line)
 	&& *line != '{' && *line != '}' && *line != ';'
 	&& (*line != '=' || !is_command_name))
@@ -140,41 +140,41 @@ get_word(uns is_command_name)
   return NULL;
 }
 
-static byte *
-get_token(uns is_command_name, byte **msg)
+static char *
+get_token(uns is_command_name, char **err)
 {
-  *msg = NULL;
+  *err = NULL;
   while (1) {
     if (!*line || *line == '#') {
-      if (!is_command_name || !get_line(msg))
+      if (!is_command_name || !get_line(err))
 	return NULL;
     } else if (*line == ';') {
-      *msg = get_word(0);
-      if (!is_command_name || *msg)
+      *err = get_word(0);
+      if (!is_command_name || *err)
 	return NULL;
     } else if (*line == '\\' && !line[1]) {
-      if (!get_line(msg)) {
-	if (!*msg)
-	  *msg = "Last line ends by a backslash";
+      if (!get_line(err)) {
+	if (!*err)
+	  *err = "Last line ends by a backslash";
 	return NULL;
       }
       if (!*line || *line == '#')
-	log(L_WARN, "The line %s:%d following a backslash is empty", name_parse_fb ? : (byte*) "", line_num);
+	msg(L_WARN, "The line %s:%d following a backslash is empty", name_parse_fb ? : "", line_num);
     } else {
       split_grow(&word_buf, words+1);
       uns start = copied;
       word_buf.ptr[words++] = copied;
-      *msg = get_word(is_command_name);
-      return *msg ? NULL : copy_buf.ptr + start;
+      *err = get_word(is_command_name);
+      return *err ? NULL : copy_buf.ptr + start;
     }
   }
 }
 
-static byte *
+static char *
 split_command(void)
 {
   words = copied = ends_by_brace = 0;
-  byte *msg, *start_word;
+  char *msg, *start_word;
   if (!(start_word = get_token(1, &msg)))
     return msg;
   if (*start_word == '{')			// only one opening brace
@@ -194,10 +194,10 @@ split_command(void)
 
 /* Parsing multiple files */
 
-static byte *
-parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
+static char *
+parse_fastbuf(const char *name_fb, struct fastbuf *fb, uns depth)
 {
-  byte *msg;
+  char *err;
   name_parse_fb = name_fb;
   parse_fb = fb;
   line_num = 0;
@@ -205,41 +205,41 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
   *line = 0;
   while (1)
   {
-    msg = split_command();
-    if (msg)
+    err = split_command();
+    if (err)
       goto error;
     if (!words)
       return NULL;
-    byte *name = copy_buf.ptr + word_buf.ptr[0];
-    byte *pars[words-1];
+    char *name = copy_buf.ptr + word_buf.ptr[0];
+    char *pars[words-1];
     for (uns i=1; i<words; i++)
       pars[i-1] = copy_buf.ptr + word_buf.ptr[i];
     if (!strcasecmp(name, "include"))
     {
       if (words != 2)
-	msg = "Expecting one filename";
+	err = "Expecting one filename";
       else if (depth > 8)
-	msg = "Too many nested files";
+	err = "Too many nested files";
       else if (*line && *line != '#')		// because the contents of line_buf is not re-entrant and will be cleared
-	msg = "The input command must be the last one on a line";
-      if (msg)
+	err = "The input command must be the last one on a line";
+      if (err)
 	goto error;
       struct fastbuf *new_fb = bopen_try(pars[0], O_RDONLY, 1<<14);
       if (!new_fb) {
-	msg = cf_printf("Cannot open file %s: %m", pars[0]);
+	err = cf_printf("Cannot open file %s: %m", pars[0]);
 	goto error;
       }
       uns ll = line_num;
-      msg = parse_fastbuf(stk_strdup(pars[0]), new_fb, depth+1);
+      err = parse_fastbuf(stk_strdup(pars[0]), new_fb, depth+1);
       line_num = ll;
       bclose(new_fb);
-      if (msg)
+      if (err)
 	goto error;
       parse_fb = fb;
       continue;
     }
     enum cf_operation op;
-    byte *c = strchr(name, ':');
+    char *c = strchr(name, ':');
     if (!c)
       op = strcmp(name, "}") ? OP_SET : OP_CLOSE;
     else {
@@ -259,30 +259,35 @@ parse_fastbuf(byte *name_fb, struct fastbuf *fb, uns depth)
 	default: op = OP_SET; break;
       }
       if (strcasecmp(c, cf_op_names[op])) {
-	msg = cf_printf("Unknown operation %s", c);
+	err = cf_printf("Unknown operation %s", c);
 	goto error;
       }
     }
     if (ends_by_brace)
       op |= OP_OPEN;
-    msg = cf_interpret_line(name, op, words-1, pars);
-    if (msg)
+    err = cf_interpret_line(name, op, words-1, pars);
+    if (err)
       goto error;
   }
 error:
   if (name_fb)
-    log(L_ERROR, "File %s, line %d: %s", name_fb, line_num, msg);
+    msg(L_ERROR, "File %s, line %d: %s", name_fb, line_num, err);
   else if (line_num == 1)
-    log(L_ERROR, "Manual setting of configuration: %s", msg);
+    msg(L_ERROR, "Manual setting of configuration: %s", err);
   else
-    log(L_ERROR, "Manual setting of configuration, line %d: %s", line_num, msg);
+    msg(L_ERROR, "Manual setting of configuration, line %d: %s", line_num, err);
   return "included from here";
 }
 
 #ifndef DEFAULT_CONFIG
 #define DEFAULT_CONFIG NULL
 #endif
-byte *cf_def_file = DEFAULT_CONFIG;
+char *cf_def_file = DEFAULT_CONFIG;
+
+#ifndef ENV_VAR_CONFIG
+#define ENV_VAR_CONFIG NULL
+#endif
+char *cf_env_file = ENV_VAR_CONFIG;
 
 static uns postpone_commit;			// only for cf_getopt()
 static uns everything_committed;		// after the 1st load, this flag is set on
@@ -300,36 +305,36 @@ done_stack(void)
 }
 
 static int
-load_file(byte *file)
+load_file(const char *file)
 {
   cf_init_stack();
   struct fastbuf *fb = bopen_try(file, O_RDONLY, 1<<14);
   if (!fb) {
-    log(L_ERROR, "Cannot open %s: %m", file);
+    msg(L_ERROR, "Cannot open %s: %m", file);
     return 1;
   }
-  byte *msg = parse_fastbuf(file, fb, 0);
+  char *err_msg = parse_fastbuf(file, fb, 0);
   bclose(fb);
-  int err = !!msg || done_stack();
+  int err = !!err_msg || done_stack();
   if (!err)
     cf_def_file = NULL;
   return err;
 }
 
 static int
-load_string(byte *string)
+load_string(const char *string)
 {
   cf_init_stack();
   struct fastbuf fb;
-  fbbuf_init_read(&fb, string, strlen(string), 0);
-  byte *msg = parse_fastbuf(NULL, &fb, 0);
+  fbbuf_init_read(&fb, (byte *)string, strlen(string), 0);
+  char *msg = parse_fastbuf(NULL, &fb, 0);
   return !!msg || done_stack();
 }
 
 /* Safe loading and reloading */
 
 int
-cf_reload(byte *file)
+cf_reload(const char *file)
 {
   cf_journal_swap();
   struct cf_journal_item *oldj = cf_journal_new_transaction(1);
@@ -351,7 +356,7 @@ cf_reload(byte *file)
 }
 
 int
-cf_load(byte *file)
+cf_load(const char *file)
 {
   struct cf_journal_item *oldj = cf_journal_new_transaction(1);
   int err = load_file(file);
@@ -363,7 +368,7 @@ cf_load(byte *file)
 }
 
 int
-cf_set(byte *string)
+cf_set(const char *string)
 {
   struct cf_journal_item *oldj = cf_journal_new_transaction(0);
   int err = load_string(string);
@@ -380,8 +385,16 @@ static void
 load_default(void)
 {
   if (cf_def_file)
-    if (cf_load(cf_def_file))
-      die("Cannot load default config %s", cf_def_file);
+    {
+      char *env;
+      if (cf_env_file && (env = getenv(cf_env_file)))
+        {
+	  if (cf_load(env))
+	    die("Cannot load config file %s", env);
+	}
+      else if (cf_load(cf_def_file))
+        die("Cannot load default config %s", cf_def_file);
+    }
 }
 
 static void

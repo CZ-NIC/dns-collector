@@ -59,7 +59,7 @@ encode_block(byte *w, u32 hi, u32 lo)
 }
 
 uns
-base224_encode(byte *dest, byte *src, uns len)
+base224_encode(byte *dest, const byte *src, uns len)
 {
   u32 lo=0, hi=0;			/* 64-bit buffer accumulating input bits */
   uns i=0;				/* How many source bits do we have buffered */
@@ -96,7 +96,7 @@ base224_encode(byte *dest, byte *src, uns len)
 }
 
 uns
-base224_decode(byte *dest, byte *src, uns len)
+base224_decode(byte *dest, const byte *src, uns len)
 {
   u32 hi=0, lo=0;			/* 64-bit buffer accumulating output bits */
   uns i=0;				/* How many bits do we have accumulated */
