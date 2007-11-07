@@ -351,7 +351,7 @@ image_signatures_dist_average_explain(struct image_signature *sig1, struct image
   uns dist = 0;
   for (uns i = 0; i < IMAGE_VEC_F; i++)
     {
-      uns d = image_sig_cmp_features_weights[0] * isqr((int)sig1->vec.f[i] - (int)sig2->vec.f[i]); 
+      uns d = image_sig_cmp_features_weights[0] * isqr((int)sig1->vec.f[i] - (int)sig2->vec.f[i]);
       MSGL("feature %u: d=%u (%u %u)", i, d, sig1->vec.f[i], sig2->vec.f[i]);
       dist += d;
     }

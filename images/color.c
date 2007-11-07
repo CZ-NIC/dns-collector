@@ -154,7 +154,7 @@ color_put(struct image_context *ctx, struct color *color, byte *dest, uns dest_s
 struct image_conv_options image_conv_defaults = {
   .flags = IMAGE_CONV_COPY_ALPHA | IMAGE_CONV_FILL_ALPHA | IMAGE_CONV_APPLY_ALPHA,
   .background = { .color_space = COLOR_SPACE_GRAYSCALE } };
-  
+
 /* Grayscale <-> RGB */
 
 #define IMAGE_WALK_PREFIX(x) walk_##x
@@ -348,7 +348,7 @@ image_conv_color_space(struct image_context *ctx UNUSED, struct image *dest, str
       case COLOR_SPACE_CMYK:
         switch (src->flags & IMAGE_CHANNELS_FORMAT)
           {
- 	    case COLOR_SPACE_RGB:
+	    case COLOR_SPACE_RGB:
 	      if (dest->pixel_size == 4)
 	        {
 	          image_conv_rgb_n_to_cmyk_4(dest, src);

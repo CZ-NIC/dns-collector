@@ -85,7 +85,7 @@ read_image_obj_thumb(struct image_obj_info *ioi, struct fastbuf *fb, struct imag
   return img;
 error:
   DBG("Failed to decompress thumbnail: %s", io->thread->err_msg);
-  return NULL;  
+  return NULL;
 }
 
 void

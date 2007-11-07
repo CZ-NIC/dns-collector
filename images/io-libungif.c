@@ -190,8 +190,8 @@ libungif_read_data(struct image_io *io)
 		return 0;
 	      }
 #	  define DO_ROW_END do{ \
-  	      walk_row_start += dein_step; \
-  	      while (walk_row_start >= img_end) \
+	      walk_row_start += dein_step; \
+	      while (walk_row_start >= img_end) \
 		{ uns n = dein_next >> 1; walk_row_start = rdi.image->pixels + n, dein_step = dein_next; dein_next = n; } \
 	    }while(0)
 #	  define IMAGE_WALK_PREFIX(x) walk_##x

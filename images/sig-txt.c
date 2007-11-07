@@ -27,7 +27,7 @@ image_sig_detect_textured(struct image_sig_data *data)
       DBG("Zero textured threshold.");
       return;
     }
-	
+
   uns cols = data->cols;
   uns rows = data->rows;
   uns cell_cols = MIN((cols + 1) / 2, MAX_CELLS_COLS);
@@ -44,7 +44,7 @@ image_sig_detect_textured(struct image_sig_data *data)
     }
 
   DBG("Detecting textured image... cols=%u rows=%u cell_cols=%u cell_rows=%u", cols, rows, cell_cols, cell_rows);
-  
+
   /* Compute cells boundaries */
   for (i = 1, j = 0; i < cell_cols; i++)
     cell_x[i] = fast_div_u32_u8(j += cols, cell_cols);
@@ -59,7 +59,7 @@ image_sig_detect_textured(struct image_sig_data *data)
   for (uns i = 0; i < data->regions_count; i++)
     for (struct image_sig_block *block = data->regions[i].blocks; block; block = block->next)
       block->region = i;
-  
+
   /* Process cells */
   double e = 0;
   for (uns j = 0; j < cell_rows; j++)
@@ -79,7 +79,7 @@ image_sig_detect_textured(struct image_sig_data *data)
 	  }
 	for (uns k = 0; k < data->regions_count; k++)
 	  {
-	    int a = data->blocks_count * cnt[k] - cell_area * data->regions[k].count; 
+	    int a = data->blocks_count * cnt[k] - cell_area * data->regions[k].count;
 	    e += (double)a * a / ((double)isqr(data->regions[k].count) * cell_area);
 	  }
       }

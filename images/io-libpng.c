@@ -201,7 +201,7 @@ libpng_read_data(struct image_io *io)
     }
 
   uns read_flags = io->flags;
-  
+
   /* Apply transformations */
   if (rd->bit_depth == 16)
     png_set_strip_16(rd->png_ptr);
@@ -254,7 +254,7 @@ libpng_read_data(struct image_io *io)
 	      read_flags = (read_flags & IMAGE_CHANNELS_FORMAT) | IMAGE_ALPHA;
 	    else
               png_set_strip_alpha(rd->png_ptr);
-	  }  
+	  }
 	break;
       case PNG_COLOR_TYPE_RGB:
 	if ((read_flags & IMAGE_COLOR_SPACE) == COLOR_SPACE_GRAYSCALE)

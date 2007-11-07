@@ -92,7 +92,7 @@ image_dup_init(struct image_context *ctx, struct image_dup *dup, struct image *i
             {
               for (uns x = 0; x < (uns)(1 << i); x++)
                 {
- 	          pixels_average(d, s, s + line_size);
+	          pixels_average(d, s, s + line_size);
 		  d += 3;
 		  s += 3;
 		}

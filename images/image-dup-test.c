@@ -106,7 +106,7 @@ main(int argc, char **argv)
     usage();
   file_name_1 = argv[optind++];
   file_name_2 = argv[optind];
-  
+
 #define TRY(x) do{ if (!(x)) exit(1); }while(0)
   MSG("Initializing image library");
   struct image_context ctx;
@@ -129,7 +129,7 @@ main(int argc, char **argv)
   bclose(io.fastbuf);
   img1 = io.image;
   MSG("Image size=%ux%u", img1->cols, img1->rows);
-  
+
   image_io_reset(&io);
   MSG("Reading %s", file_name_2);
   io.fastbuf = bopen(file_name_2, O_RDONLY, 1 << 18);
@@ -155,7 +155,7 @@ main(int argc, char **argv)
   MSG("Similarity bitmap %02x", image_dup_compare(&dup1, &dup2, transformations | IMAGE_DUP_SCALE | IMAGE_DUP_WANT_ALL));
 
   mp_delete(pool);
-  
+
   image_destroy(img1);
   image_destroy(img2);
   image_context_cleanup(&ctx);

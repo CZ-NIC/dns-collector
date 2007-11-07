@@ -188,7 +188,7 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
   sig->flags = data->flags;
   if (!sig->len)
     return;
-  
+
   /* For each region */
   u64 w_total = 0;
   uns w_border = MIN(data->cols, data->rows) * image_sig_border_size;

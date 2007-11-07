@@ -52,7 +52,7 @@ libungif_failed:
 #endif
 #ifdef CONFIG_IMAGES_LIBPNG
   libpng_cleanup(io);
-libpng_failed:  
+libpng_failed:
 #endif
 #ifdef CONFIG_IMAGES_LIBJPEG
   libjpeg_cleanup(io);

@@ -112,7 +112,7 @@ static void
 write_segmentation(struct image_sig_data *data, byte *fn)
 {
   MSG("Writing segmentation to %s", fn);
-  
+
   struct fastbuf *fb = bopen(fn, O_WRONLY | O_CREAT | O_TRUNC, 4096);
   struct image *img;
   TRY(img = image_new(&ctx, data->image->cols, data->image->rows, COLOR_SPACE_RGB, NULL));
@@ -127,9 +127,9 @@ write_segmentation(struct image_sig_data *data, byte *fn)
       luv[2] = ((int)data->regions[i].a[2] - 128) * (4 / 2.55);
       luv_to_xyz_exact(xyz, luv);
       xyz_to_srgb_exact(srgb, xyz);
-      c[0] = CLAMP(srgb[0] * 255, 0, 255); 
-      c[1] = CLAMP(srgb[1] * 255, 0, 255); 
-      c[2] = CLAMP(srgb[2] * 255, 0, 255); 
+      c[0] = CLAMP(srgb[0] * 255, 0, 255);
+      c[1] = CLAMP(srgb[1] * 255, 0, 255);
+      c[2] = CLAMP(srgb[2] * 255, 0, 255);
       for (struct image_sig_block *block = data->regions[i].blocks; block; block = block->next)
         {
 	  uns x1 = block->x * 4;
@@ -152,7 +152,7 @@ write_segmentation(struct image_sig_data *data, byte *fn)
 
   io.fastbuf = fb;
   io.image = img;
-  io.format = image_file_name_to_format(fn); 
+  io.format = image_file_name_to_format(fn);
   TRY(image_io_write(&io));
   image_io_reset(&io);
 

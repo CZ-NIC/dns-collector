@@ -119,15 +119,15 @@ enum image_format {
 };
 
 struct image_io {
-  					/*  R - read_header input */
-  					/*   H - read_header output */
-  					/*    I - read_data input */
-  					/*     O - read_data output */
-  					/*      W - write input */
+					/*  R - read_header input */
+					/*   H - read_header output */
+					/*    I - read_data input */
+					/*     O - read_data output */
+					/*      W - write input */
 
   struct image *image;			/* [   OW] - image data */
   enum image_format format;		/* [R   W] - file format (IMAGE_FORMAT_x) */
-  struct fastbuf *fastbuf;      	/* [R   W] - source/destination stream */
+  struct fastbuf *fastbuf;		/* [R   W] - source/destination stream */
   struct mempool *pool;			/* [  I  ] - parameter to image_new */
   uns cols;				/* [ HI  ] - number of columns, parameter to image_new */
   uns rows;				/* [ HI  ] - number of rows, parameter to image_new */

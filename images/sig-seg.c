@@ -176,7 +176,7 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
 		cval++;
 	      }
 	}
-      
+
       /* Select split value - to minimize error */
       uns b1 = val[0] * cnt[0];
       uns c1 = isqr(val[0]) * cnt[0];
@@ -195,7 +195,7 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
 	  c2 -= c0;
 	  i += cnt[k];
 	  j -= cnt[k];
-	  u64 err = (u64)c1 - (u64)b1 * b1 / i + (u64)c2 - (u64)b2 * b2 / j; 
+	  u64 err = (u64)c1 - (u64)b1 * b1 / i + (u64)c2 - (u64)b2 * b2 / j;
 	  if (err < best_err)
 	    {
 	      best_err = err;
