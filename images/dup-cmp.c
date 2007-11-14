@@ -17,9 +17,6 @@
 
 #include <fcntl.h>
 
-static uns image_dup_ratio_threshold = 140;
-static uns image_dup_error_threshold = 100;
-
 static inline uns
 err (int a, int b)
 {
@@ -68,18 +65,18 @@ err_sum_transformed(byte *pos1, byte *pos2, uns cols, uns rows, int row_step_1, 
 }
 
 static inline int
-aspect_ratio_test(uns cols1, uns rows1, uns cols2, uns rows2)
+aspect_ratio_test(struct image_dup_context *ctx, uns cols1, uns rows1, uns cols2, uns rows2)
 {
   DBG("aspect_ratio_test(cols1=%u rows1=%u cols2=%u rows2=%u)", cols1, rows1, cols2, rows2);
   uns r1 = cols1 * rows2;
   uns r2 = rows1 * cols2;
   return
-    r1 <= ((r2 * image_dup_ratio_threshold) >> 7) &&
-    r2 <= ((r1 * image_dup_ratio_threshold) >> 7);
+    r1 <= ((r2 * ctx->ratio_threshold) >> 7) &&
+    r2 <= ((r1 * ctx->ratio_threshold) >> 7);
 }
 
 static inline int
-average_compare(struct image_dup *dup1, struct image_dup *dup2)
+average_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2)
 {
   byte *block1 = image_dup_block(dup1, 0, 0);
   byte *block2 = image_dup_block(dup2, 0, 0);
@@ -87,11 +84,11 @@ average_compare(struct image_dup *dup1, struct image_dup *dup2)
     err(block1[0], block2[0]) +
     err(block1[1], block2[1]) +
     err(block1[2], block2[2]);
-  return e <= image_dup_error_threshold;
+  return e <= ctx->error_threshold;
 }
 
 static int
-blocks_compare(struct image_dup *dup1, struct image_dup *dup2, uns tab_col, uns tab_row, uns trans)
+blocks_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2, uns tab_col, uns tab_row, uns trans)
 {
   DBG("blocks_compare(tab_col=%d tab_row=%d trans=%d)", tab_col, tab_row, trans);
   byte *block1 = image_dup_block(dup1, tab_col, tab_row);
@@ -106,7 +103,7 @@ blocks_compare(struct image_dup *dup1, struct image_dup *dup2, uns tab_col, uns 
       case 0: ;
 	uns err = (err_sum(block1, block2, 1 << (tab_col + tab_row)) >> (tab_col + tab_row));
 	DBG("average error=%d", err);
-	return err <= image_dup_error_threshold;
+	return err <= ctx->error_threshold;
       case 1:
 	col_step = -3;
 	row_step = (3 << tab_col);
@@ -146,14 +143,14 @@ blocks_compare(struct image_dup *dup1, struct image_dup *dup2, uns tab_col, uns 
     }
   uns err = (err_sum_transformed(block1, block2, (1 << tab_col), (1 << tab_row), (3 << tab_col), col_step, row_step) >> (tab_col + tab_row));
   DBG("average error=%d", err);
-  return err <= image_dup_error_threshold;
+  return err <= ctx->error_threshold;
 }
 
 static int
-same_size_compare(struct image_dup *dup1, struct image_dup *dup2, uns trans)
+same_size_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2, uns trans)
 {
-  struct image *img1 = dup1->image;
-  struct image *img2 = dup2->image;
+  struct image *img1 = &dup1->image;
+  struct image *img2 = &dup2->image;
   byte *block1 = img1->pixels;
   byte *block2 = img2->pixels;
   int col_step, row_step;
@@ -203,23 +200,24 @@ same_size_compare(struct image_dup *dup1, struct image_dup *dup2, uns trans)
     }
   uns err = (err_sum_transformed(block1, block2, img1->cols, img1->rows, img1->row_size, col_step, row_step) / ((u64)img1->cols * img1->rows));
   DBG("average error=%d", err);
-  return err <= image_dup_error_threshold;
+  return err <= ctx->error_threshold;
 }
 
 uns
-image_dup_compare(struct image_dup *dup1, struct image_dup *dup2, uns flags)
+image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2)
 {
   DBG("image_dup_compare()");
-  if (!average_compare(dup1, dup2))
+  if (!average_compare(ctx, dup1, dup2))
     return 0;
-  struct image *img1 = dup1->image;
-  struct image *img2 = dup2->image;
+  struct image *img1 = &dup1->image;
+  struct image *img2 = &dup2->image;
+  uns flags = ctx->flags;
   if (flags & IMAGE_DUP_SCALE)
     {
       DBG("Scale support");
-      if (!aspect_ratio_test(img1->cols, img1->rows, img2->cols, img2->rows))
+      if (!aspect_ratio_test(ctx, img1->cols, img1->rows, img2->cols, img2->rows))
 	flags &= ~0x0f;
-      if (!aspect_ratio_test(img1->cols, img1->rows, img2->rows, img2->cols))
+      if (!aspect_ratio_test(ctx, img1->cols, img1->rows, img2->rows, img2->cols))
 	flags &= ~0xf0;
     }
   else
@@ -245,11 +243,11 @@ image_dup_compare(struct image_dup *dup1, struct image_dup *dup2, uns flags)
               {
 	        uns col = MAX(0, (int)(cols - i));
 	        uns row = MAX(0, (int)(rows - i));
-	        if (!blocks_compare(dup1, dup2, col, row, t))
+	        if (!blocks_compare(ctx, dup1, dup2, col, row, t))
 		  break;
 		if (!i &&
 		    (img1->cols != img2->cols || img1->rows != img2->rows ||
-		    same_size_compare(dup1, dup2, t)))
+		    same_size_compare(ctx, dup1, dup2, t)))
 		  {
 		    result |= 1 << t;
 		    if (!(flags & IMAGE_DUP_WANT_ALL))
@@ -272,11 +270,11 @@ image_dup_compare(struct image_dup *dup1, struct image_dup *dup2, uns flags)
               {
 	        uns col = MAX(0, (int)(cols - i));
 	        uns row = MAX(0, (int)(rows - i));
-	        if (!blocks_compare(dup1, dup2, col, row, t))
+	        if (!blocks_compare(ctx, dup1, dup2, col, row, t))
 		  break;
 		if (!i &&
 		    (img1->cols != img2->rows || img1->rows != img2->cols ||
-		    same_size_compare(dup1, dup2, t)) )
+		    same_size_compare(ctx, dup1, dup2, t)) )
 		  {
 		    result |= 1 << t;
 		    if (!(flags & IMAGE_DUP_WANT_ALL))

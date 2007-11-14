@@ -1,7 +1,7 @@
 /*
  *      Image Library -- Duplicates Comparison
  *
- *      (c) 2006 Pavel Charvat <pchar@ucw.cz>
+ *      (c) 2006--2007 Pavel Charvat <pchar@ucw.cz>
  *
  *      This software may be freely distributed and used according to the terms
  *      of the GNU Lesser General Public License.
@@ -17,6 +17,22 @@
 #include "images/duplicates.h"
 
 #include <fcntl.h>
+
+void
+image_dup_context_init(struct image_context *ic, struct image_dup_context *ctx)
+{
+  *ctx = (struct image_dup_context) {
+    .ic = ic,
+    .flags = IMAGE_DUP_TRANS_ID,
+    .ratio_threshold = 140,
+    .error_threshold = 100,
+  };
+}
+
+void
+image_dup_context_cleanup(struct image_dup_context *ctx UNUSED)
+{
+}
 
 static uns image_dup_tab_limit = 8;
 
@@ -41,21 +57,44 @@ image_dup_estimate_size(uns cols, uns rows)
   uns tab_cols, tab_rows;
   for (tab_cols = 0; (uns)(2 << tab_cols) < cols && tab_cols < image_dup_tab_limit; tab_cols++);
   for (tab_rows = 0; (uns)(2 << tab_rows) < rows && tab_rows < image_dup_tab_limit; tab_rows++);
-  return sizeof(struct image) + cols * rows * 3 + sizeof(struct image_dup) + (12 << (tab_cols + tab_rows)) + 64;
+  uns size = sizeof(struct image_dup) + cols * rows * 3  + (12 << (tab_cols + tab_rows)) + 3 * CPU_STRUCT_ALIGN;
+  return ALIGN_TO(size, CPU_STRUCT_ALIGN);
 }
 
 uns
-image_dup_init(struct image_context *ctx, struct image_dup *dup, struct image *img, struct mempool *pool)
+image_dup_new(struct image_context *ctx, struct image *img, void *buffer)
 {
   DBG("image_dup_init()");
+  ASSERT(!((uintptr_t)buffer & (CPU_STRUCT_ALIGN - 1)));
+  void *ptr = buffer;
+
+  /* Allocate the structure */
+  struct image_dup *dup = ptr;
+  ptr += ALIGN_TO(sizeof(*dup), CPU_STRUCT_ALIGN);
+  bzero(dup, sizeof(*dup));
 
   ASSERT((img->flags & IMAGE_PIXEL_FORMAT) == COLOR_SPACE_RGB);
 
-  dup->image = img;
+  /* Clone image */
+  if (!image_init_matrix(ctx, &dup->image, ptr, img->cols, img->rows, img->cols * 3, COLOR_SPACE_RGB))
+    return 0;
+  uns size = img->rows * img->cols * 3;
+  ptr += ALIGN_TO(size, CPU_STRUCT_ALIGN);
+  byte *s = img->pixels;
+  byte *d = dup->image.pixels;
+  for (uns row = img->rows; row--; )
+    {
+      memcpy(d, s, img->row_pixels_size);
+      d += dup->image.row_size;
+      s += img->row_size;
+    }
+
   for (dup->tab_cols = 0; (uns)(2 << dup->tab_cols) < img->cols && dup->tab_cols < image_dup_tab_limit; dup->tab_cols++);
   for (dup->tab_rows = 0; (uns)(2 << dup->tab_rows) < img->rows && dup->tab_rows < image_dup_tab_limit; dup->tab_rows++);
-  dup->tab_pixels = mp_alloc(pool, dup->tab_size = (12 << (dup->tab_cols + dup->tab_rows)));
   dup->tab_row_size = 6 << dup->tab_cols;
+  dup->tab_pixels = ptr;
+  size = 12 << (dup->tab_cols + dup->tab_rows);
+  ptr += ALIGN_TO(size, CPU_STRUCT_ALIGN);
 
   /* Scale original image to right bottom block */
   {
@@ -101,5 +140,5 @@ image_dup_init(struct image_context *ctx, struct image_dup *dup, struct image *i
         }
     }
 
-  return 1;
+  return ptr - buffer;
 }

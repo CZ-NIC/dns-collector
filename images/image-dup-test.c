@@ -110,8 +110,10 @@ main(int argc, char **argv)
 #define TRY(x) do{ if (!(x)) exit(1); }while(0)
   MSG("Initializing image library");
   struct image_context ctx;
+  struct image_dup_context idc;
   struct image_io io;
   image_context_init(&ctx);
+  image_dup_context_init(&ctx, &idc);
 
   struct image *img1, *img2;
 
@@ -146,18 +148,26 @@ main(int argc, char **argv)
   image_io_cleanup(&io);
   MSG("Image size=%ux%u", img2->cols, img2->rows);
 
-  struct image_dup dup1, dup2;
+  struct image_dup *dup1, *dup2;
   struct mempool *pool = mp_new(1 << 18);
   MSG("Creating internal structures");
-  TRY(image_dup_init(&ctx, &dup1, img1, pool));
-  TRY(image_dup_init(&ctx, &dup2, img2, pool));
+  dup1 = mp_start(pool, image_dup_estimate_size(img1->cols, img1->rows));
+  uns size = image_dup_new(&ctx, img1, dup1);
+  TRY(size);
+  mp_end(pool, (void *)dup1 + size);
+  dup2 = mp_start(pool, image_dup_estimate_size(img2->cols, img2->rows));
+  size = image_dup_new(&ctx, img2, dup2);
+  TRY(size);
+  mp_end(pool, (void *)dup2 + size);
 
-  MSG("Similarity bitmap %02x", image_dup_compare(&dup1, &dup2, transformations | IMAGE_DUP_SCALE | IMAGE_DUP_WANT_ALL));
+  idc.flags = transformations | IMAGE_DUP_SCALE | IMAGE_DUP_WANT_ALL;
+  MSG("Similarity bitmap %02x", image_dup_compare(&idc, dup1, dup2));
 
   mp_delete(pool);
 
   image_destroy(img1);
   image_destroy(img2);
+  image_dup_context_cleanup(&idc);
   image_context_cleanup(&ctx);
   MSG("Done.");
   return 0;
