@@ -51,6 +51,10 @@ while (<>) {
 	}
 }
 
+if (! -d "$rundir/tmp") {
+	mkdir "$rundir/tmp" or die "Unable to create $rundir/tmp: $!";
+}
+
 my $i = 0;
 my $errors = 0;
 my $prev_run = undef;
