@@ -67,7 +67,6 @@ TEST: foreach $tt (@tests) {
 
 	my @out_files = ();
 	my @out_checks = ();
-	my @temps = ();
 	my $redirs = "";
 
 	if (defined $tt->{'In'}) {
@@ -76,7 +75,6 @@ TEST: foreach $tt (@tests) {
 		print X $tt->{'In'}, "\n";
 		close X;
 		$redirs .= " <$ifi";
-		push @temps, $ifi;
 	} else {
 		$redirs .= " </dev/null";
 	}
@@ -84,7 +82,6 @@ TEST: foreach $tt (@tests) {
 		my $ofi = "tmp/test$i.out";
 		unlink "$rundir/$ofi";
 		$redirs .= " >$ofi";
-		push @temps, $ofi;
 		push @out_files, $ofi;
 		push @out_checks, $tt->{'Out'};
 	} else {
@@ -94,7 +91,6 @@ TEST: foreach $tt (@tests) {
 		my $f = "tmp/test$i.$arg";
 		if (defined $tt->{"Out$arg"}) {
 			unlink "$rundir/$f";
-			push @temps, $f;
 			push @out_files, $f;
 			push @out_checks, $tt->{"Out$arg"};
 		}
@@ -102,7 +98,6 @@ TEST: foreach $tt (@tests) {
 			open X, ">$rundir/$f" or die "Unable to create $f";
 			print X $tt->{"In$arg"}, "\n";
 			close X;
-			push @temps, $f;
 		}
 	}
 	$run =~ s/\$(\d)/tmp\/test$i.$1/g;
@@ -137,9 +132,7 @@ TEST: foreach $tt (@tests) {
 		}
 	}
 
-	foreach my $f (@temps) {
-		unlink "$rundir/$f";
-	}
+	system "rm $rundir/tmp/test$i.*";
 	print "OK\n";
 }
 
