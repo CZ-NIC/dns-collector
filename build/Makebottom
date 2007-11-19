@@ -126,7 +126,7 @@ $(o)/%-t: $(o)/%-tt.o $(TESTING_DEPS)
 
 $(o)/%.test: $(s)/%.t $(s)/build/tester
 	$(M)TEST $@
-	$(Q)$(s)/build/tester $< && touch $@
+	$(Q)$(s)/build/tester --rundir=run $(TESTERFLAGS) $< && touch $@
 
 # Rules for binaries
 
