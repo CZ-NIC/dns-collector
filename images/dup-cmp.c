@@ -91,6 +91,7 @@ static int
 blocks_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2, uns tab_col, uns tab_row, uns trans)
 {
   DBG("blocks_compare(tab_col=%d tab_row=%d trans=%d)", tab_col, tab_row, trans);
+  ctx->sum_pixels += 1 << (tab_col + tab_row);
   byte *block1 = image_dup_block(dup1, tab_col, tab_row);
   byte *block2;
   int col_step, row_step;
@@ -151,6 +152,7 @@ same_size_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct 
 {
   struct image *img1 = &dup1->image;
   struct image *img2 = &dup2->image;
+  ctx->sum_pixels += img1->cols * img1->rows;
   byte *block1 = img1->pixels;
   byte *block2 = img2->pixels;
   int col_step, row_step;
@@ -239,8 +241,10 @@ image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct 
 	if (flags & (1 << t))
 	  {
 	    DBG("Testing trans %d", t);
-            for (uns i = MAX(cols, rows); i--; )
+	    uns i = MAX(cols, rows), depth = 1;
+            while (i--)
               {
+		depth++;
 	        uns col = MAX(0, (int)(cols - i));
 	        uns row = MAX(0, (int)(rows - i));
 	        if (!blocks_compare(ctx, dup1, dup2, col, row, t))
@@ -256,6 +260,7 @@ image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct 
 		      break;
 		  }
 	      }
+	    ctx->sum_depth += depth;
 	  }
     }
   if (flags & 0xf0)
@@ -266,8 +271,10 @@ image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct 
 	if (flags & (1 << t))
 	  {
 	    DBG("Testing trans %d", t);
-            for (uns i = MAX(cols, rows); i--; )
+	    uns i = MAX(cols, rows), depth = 1;
+            while (i--)
               {
+		depth++;
 	        uns col = MAX(0, (int)(cols - i));
 	        uns row = MAX(0, (int)(rows - i));
 	        if (!blocks_compare(ctx, dup1, dup2, col, row, t))
@@ -283,6 +290,7 @@ image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct 
 		      break;
 		  }
 	      }
+	    ctx->sum_depth += depth;
 	  }
     }
   return result;

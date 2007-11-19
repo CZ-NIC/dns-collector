@@ -20,6 +20,8 @@ struct image_dup_context {
   uns flags;
   uns ratio_threshold;
   uns error_threshold;
+  u64 sum_depth;
+  u64 sum_pixels;
 };
 
 struct image_dup {
