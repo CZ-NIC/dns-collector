@@ -26,6 +26,7 @@ image_dup_context_init(struct image_context *ic, struct image_dup_context *ctx)
     .flags = IMAGE_DUP_TRANS_ID,
     .ratio_threshold = 140,
     .error_threshold = 100,
+    .qtree_limit = 8,
   };
 }
 
@@ -33,8 +34,6 @@ void
 image_dup_context_cleanup(struct image_dup_context *ctx UNUSED)
 {
 }
-
-static uns image_dup_tab_limit = 8;
 
 static inline struct image *
 image_dup_subimage(struct image_context *ctx, struct image_dup *dup, struct image *block, uns tab_col, uns tab_row)
@@ -52,17 +51,19 @@ pixels_average(byte *dest, byte *src1, byte *src2)
 }
 
 uns
-image_dup_estimate_size(uns cols, uns rows)
+image_dup_estimate_size(uns cols, uns rows, uns same_size_compare, uns qtree_limit)
 {
   uns tab_cols, tab_rows;
-  for (tab_cols = 0; (uns)(2 << tab_cols) < cols && tab_cols < image_dup_tab_limit; tab_cols++);
-  for (tab_rows = 0; (uns)(2 << tab_rows) < rows && tab_rows < image_dup_tab_limit; tab_rows++);
-  uns size = sizeof(struct image_dup) + cols * rows * 3  + (12 << (tab_cols + tab_rows)) + 3 * CPU_STRUCT_ALIGN;
+  for (tab_cols = 0; (uns)(2 << tab_cols) < cols && tab_cols < qtree_limit; tab_cols++);
+  for (tab_rows = 0; (uns)(2 << tab_rows) < rows && tab_rows < qtree_limit; tab_rows++);
+  uns size = sizeof(struct image_dup) + (12 << (tab_cols + tab_rows)) + 2 * CPU_STRUCT_ALIGN;
+  if (same_size_compare)
+    size += cols * rows * 3 + CPU_STRUCT_ALIGN;
   return ALIGN_TO(size, CPU_STRUCT_ALIGN);
 }
 
 uns
-image_dup_new(struct image_context *ctx, struct image *img, void *buffer)
+image_dup_new(struct image_dup_context *ctx, struct image *img, void *buffer, uns same_size_compare)
 {
   DBG("image_dup_init()");
   ASSERT(!((uintptr_t)buffer & (CPU_STRUCT_ALIGN - 1)));
@@ -76,32 +77,40 @@ image_dup_new(struct image_context *ctx, struct image *img, void *buffer)
   ASSERT((img->flags & IMAGE_PIXEL_FORMAT) == COLOR_SPACE_RGB);
 
   /* Clone image */
-  if (!image_init_matrix(ctx, &dup->image, ptr, img->cols, img->rows, img->cols * 3, COLOR_SPACE_RGB))
-    return 0;
-  uns size = img->rows * img->cols * 3;
-  ptr += ALIGN_TO(size, CPU_STRUCT_ALIGN);
-  byte *s = img->pixels;
-  byte *d = dup->image.pixels;
-  for (uns row = img->rows; row--; )
+  if (same_size_compare)
     {
-      memcpy(d, s, img->row_pixels_size);
-      d += dup->image.row_size;
-      s += img->row_size;
+      if (!image_init_matrix(ctx->ic, &dup->image, ptr, img->cols, img->rows, img->cols * 3, COLOR_SPACE_RGB))
+        return 0;
+      uns size = img->rows * img->cols * 3;
+      ptr += ALIGN_TO(size, CPU_STRUCT_ALIGN);
+      byte *s = img->pixels;
+      byte *d = dup->image.pixels;
+      for (uns row = img->rows; row--; )
+        {
+	  memcpy(d, s, img->row_pixels_size);
+	  d += dup->image.row_size;
+	  s += img->row_size;
+	}
+    }
+  else
+    {
+      dup->image.cols = img->cols;
+      dup->image.rows = img->rows;
     }
 
-  for (dup->tab_cols = 0; (uns)(2 << dup->tab_cols) < img->cols && dup->tab_cols < image_dup_tab_limit; dup->tab_cols++);
-  for (dup->tab_rows = 0; (uns)(2 << dup->tab_rows) < img->rows && dup->tab_rows < image_dup_tab_limit; dup->tab_rows++);
+  for (dup->tab_cols = 0; (uns)(2 << dup->tab_cols) < img->cols && dup->tab_cols < ctx->qtree_limit; dup->tab_cols++);
+  for (dup->tab_rows = 0; (uns)(2 << dup->tab_rows) < img->rows && dup->tab_rows < ctx->qtree_limit; dup->tab_rows++);
   dup->tab_row_size = 6 << dup->tab_cols;
   dup->tab_pixels = ptr;
-  size = 12 << (dup->tab_cols + dup->tab_rows);
+  uns size = 12 << (dup->tab_cols + dup->tab_rows);
   ptr += ALIGN_TO(size, CPU_STRUCT_ALIGN);
 
   /* Scale original image to right bottom block */
   {
     struct image block;
-    if (!image_dup_subimage(ctx, dup, &block, dup->tab_cols, dup->tab_rows))
+    if (!image_dup_subimage(ctx->ic, dup, &block, dup->tab_cols, dup->tab_rows))
       return 0;
-    if (!image_scale(ctx, &block, img))
+    if (!image_scale(ctx->ic, &block, img))
       return 0;
   }
 

@@ -151,12 +151,12 @@ main(int argc, char **argv)
   struct image_dup *dup1, *dup2;
   struct mempool *pool = mp_new(1 << 18);
   MSG("Creating internal structures");
-  dup1 = mp_start(pool, image_dup_estimate_size(img1->cols, img1->rows));
-  uns size = image_dup_new(&ctx, img1, dup1);
+  dup1 = mp_start(pool, image_dup_estimate_size(img1->cols, img1->rows, 1, idc.qtree_limit));
+  uns size = image_dup_new(&idc, img1, dup1, 1);
   TRY(size);
   mp_end(pool, (void *)dup1 + size);
-  dup2 = mp_start(pool, image_dup_estimate_size(img2->cols, img2->rows));
-  size = image_dup_new(&ctx, img2, dup2);
+  dup2 = mp_start(pool, image_dup_estimate_size(img2->cols, img2->rows, 1, idc.qtree_limit));
+  size = image_dup_new(&idc, img2, dup2, 1);
   TRY(size);
   mp_end(pool, (void *)dup2 + size);
 

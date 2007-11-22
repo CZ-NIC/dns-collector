@@ -20,6 +20,7 @@ struct image_dup_context {
   uns flags;
   uns ratio_threshold;
   uns error_threshold;
+  uns qtree_limit;
   u64 sum_depth;
   u64 sum_pixels;
 };
@@ -37,8 +38,9 @@ struct image_dup {
 
 void image_dup_context_init(struct image_context *ic, struct image_dup_context *ctx);
 void image_dup_context_cleanup(struct image_dup_context *ctx);
-uns image_dup_estimate_size(uns cols, uns rows);
-uns image_dup_new(struct image_context *ctx, struct image *image, void *buffer);
+
+uns image_dup_estimate_size(uns cols, uns rows, uns same_size_compare, uns qtree_limit);
+uns image_dup_new(struct image_dup_context *ctx, struct image *image, void *buffer, uns same_size_compare);
 
 /* dup-cmp.c */
 

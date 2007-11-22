@@ -152,6 +152,8 @@ same_size_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct 
 {
   struct image *img1 = &dup1->image;
   struct image *img2 = &dup2->image;
+  if (!img1->pixels || !img2->pixels)
+    return 1;
   ctx->sum_pixels += img1->cols * img1->rows;
   byte *block1 = img1->pixels;
   byte *block2 = img2->pixels;
