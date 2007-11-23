@@ -208,7 +208,7 @@ utf8_encoding_len(uns c)
   return 6;
 }
 
-static uns
+static inline uns
 unicode_sanitize_char(uns u)
 {
   if (u >= 0x10000 ||			// We don't accept anything outside the basic plane
