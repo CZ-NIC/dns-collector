@@ -208,6 +208,17 @@ utf8_encoding_len(uns c)
   return 6;
 }
 
+static inline uns
+unicode_sanitize_char(uns u)
+{
+  if (u >= 0x10000 ||			// We don't accept anything outside the basic plane
+      u >= 0xd800 && u < 0xf900 ||	// neither we do surrogates
+      u >= 0x80 && u < 0xa0 ||		// nor latin-1 control chars
+      u < 0x20 && u != '\t')
+    return UNI_REPLACEMENT;
+  return u;
+}
+
 /* unicode-utf8.c */
 
 uns utf8_strlen(const byte *str);
