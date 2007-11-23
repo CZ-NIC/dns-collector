@@ -23,6 +23,7 @@ struct image_dup_context {
   uns qtree_limit;
   u64 sum_depth;
   u64 sum_pixels;
+  uns error;
 };
 
 struct image_dup {

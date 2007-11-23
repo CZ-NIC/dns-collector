@@ -104,6 +104,7 @@ blocks_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct ima
       case 0: ;
 	uns err = (err_sum(block1, block2, 1 << (tab_col + tab_row)) >> (tab_col + tab_row));
 	DBG("average error=%d", err);
+	ctx->error = err;
 	return err <= ctx->error_threshold;
       case 1:
 	col_step = -3;
@@ -144,6 +145,7 @@ blocks_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct ima
     }
   uns err = (err_sum_transformed(block1, block2, (1 << tab_col), (1 << tab_row), (3 << tab_col), col_step, row_step) >> (tab_col + tab_row));
   DBG("average error=%d", err);
+  ctx->error = err;
   return err <= ctx->error_threshold;
 }
 
@@ -204,13 +206,14 @@ same_size_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct 
     }
   uns err = (err_sum_transformed(block1, block2, img1->cols, img1->rows, img1->row_size, col_step, row_step) / ((u64)img1->cols * img1->rows));
   DBG("average error=%d", err);
+  ctx->error = err;
   return err <= ctx->error_threshold;
 }
 
 uns
 image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2)
 {
-  DBG("image_dup_compare()");
+  DBG("image_dup_compare(%p, %p)", dup1, dup2);
   if (!average_compare(ctx, dup1, dup2))
     return 0;
   struct image *img1 = &dup1->image;
