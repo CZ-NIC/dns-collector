@@ -14,6 +14,8 @@
 #include "lib/ff-unicode.h"
 #include "lib/ff-binary.h"
 
+/*** UTF-8 ***/
+
 int
 bget_utf8_slow(struct fastbuf *b, uns repl)
 {
@@ -167,6 +169,8 @@ bput_utf8_32_slow(struct fastbuf *b, uns u)
     }
 }
 
+/*** UTF-16 ***/
+
 int
 bget_utf16_be_slow(struct fastbuf *b, uns repl)
 {
@@ -195,4 +199,42 @@ bget_utf16_le_slow(struct fastbuf *b, uns repl)
   if (x >= 0x400 || bpeekc(b) < 0 || (y = bgetw_le(b) - 0xdc00) >= 0x400)
     return repl;
   return 0x10000 + (x << 10) + y;
+}
+
+void
+bput_utf16_be_slow(struct fastbuf *b, uns u)
+{
+  if (u < 0xd800 || (u < 0x10000 && u >= 0xe000))
+    {
+      bputc(b, u >> 8);
+      bputc(b, u & 0xff);
+    }
+  else if ((u -= 0x10000) < 0x100000)
+    {
+      bputc(b, 0xd8 | (u >> 18));
+      bputc(b, (u >> 10) & 0xff);
+      bputc(b, 0xdc | ((u >> 8) & 0x3));
+      bputc(b, u & 0xff);
+    }
+  else
+    ASSERT(0);
+}
+
+void
+bput_utf16_le_slow(struct fastbuf *b, uns u)
+{
+  if (u < 0xd800 || (u < 0x10000 && u >= 0xe000))
+    {
+      bputc(b, u & 0xff);
+      bputc(b, u >> 8);
+    }
+  else if ((u -= 0x10000) < 0x100000)
+    {
+      bputc(b, (u >> 10) & 0xff);
+      bputc(b, 0xd8 | (u >> 18));
+      bputc(b, u & 0xff);
+      bputc(b, 0xdc | ((u >> 8) & 0x3));
+    }
+  else
+    ASSERT(0);
 }

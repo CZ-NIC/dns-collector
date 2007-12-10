@@ -239,8 +239,8 @@ utf16_le_put(void *p, uns u)
     }
   else if ((u -= 0x10000) < 0x100000)
     {
-      put_u16_le(p, u >> 10);
-      put_u16_le(p + 2, u & 0x7ff);
+      put_u16_le(p, 0xd800 | (u >> 10));
+      put_u16_le(p + 2, 0xdc00 | (u & 0x3ff));
       return p + 4;
     }
   else
@@ -257,8 +257,8 @@ utf16_be_put(void *p, uns u)
     }
   else if ((u -= 0x10000) < 0x100000)
     {
-      put_u16_be(p, u >> 10);
-      put_u16_be(p + 2, u & 0x7ff);
+      put_u16_be(p, 0xd800 | (u >> 10));
+      put_u16_be(p + 2, 0xdc00 | (u & 0x3ff));
       return p + 4;
     }
   else
