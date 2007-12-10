@@ -97,7 +97,7 @@ xml_fatal(struct xml_context *ctx, const char *format, ...)
 
 /*** Charecter categorization ***/
 
-#include "obj/lib/xml-ucat.h"
+#include "obj/sherlock/xml/xml-ucat.h"
 
 static inline uns
 xml_char_cat(uns c)
