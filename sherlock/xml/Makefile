@@ -4,7 +4,7 @@
 DIRS+=sherlock/xml
 
 LIBSH_MODS+=xml/xml
-LIBSH_XML_INCLUDES=xml/xml.h
+LIBSH_XML_INCLUDES=xml.h
 
 $(o)/sherlock/xml/xml-t: $(LIBSH) $(LIBCHARSET)
 $(o)/sherlock/xml/xml.o: $(o)/sherlock/xml/xml-ucat.h
