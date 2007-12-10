@@ -17,7 +17,7 @@
 #include "lib/lib.h"
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
-#include "lib/ff-utf8.h"
+#include "lib/ff-unicode.h"
 #include "lib/ff-binary.h"
 #include "lib/chartype.h"
 #include "lib/unicode.h"

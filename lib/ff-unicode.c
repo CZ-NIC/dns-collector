@@ -11,7 +11,7 @@
 #include "lib/lib.h"
 #include "lib/fastbuf.h"
 #include "lib/unicode.h"
-#include "lib/ff-utf8.h"
+#include "lib/ff-unicode.h"
 
 int
 bget_utf8_slow(struct fastbuf *b)
