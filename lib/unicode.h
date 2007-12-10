@@ -3,6 +3,7 @@
  *
  *	(c) 1997--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>
+ *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -10,6 +11,8 @@
 
 #ifndef _UCW_UNICODE_H
 #define _UCW_UNICODE_H
+
+#include "lib/unaligned.h"
 
 /* Macros for handling UTF-8 */
 
@@ -206,6 +209,94 @@ utf8_encoding_len(uns c)
   if (c < 0xfc)
     return 5;
   return 6;
+}
+
+/* Encode a character from the range [0, 0xD7FF] or [0xE000,0x11FFFF];
+ * up to 4 bytes needed */
+static inline void *
+utf16_le_put(void *p, uns u)
+{
+  if (u < 0xd800 || (u < 0x10000 && u >= 0xe000))
+    {
+      put_u16_le(p, u);
+      return p + 2;
+    }
+  else if ((u -= 0x10000) < 0x100000)
+    {
+      put_u16_le(p, u >> 10);
+      put_u16_le(p + 2, u & 0x7ff);
+      return p + 4;
+    }
+  else
+    ASSERT(0);
+}
+
+static inline void *
+utf16_be_put(void *p, uns u)
+{
+  if (u < 0xd800 || (u < 0x10000 && u >= 0xe000))
+    {
+      put_u16_be(p, u);
+      return p + 2;
+    }
+  else if ((u -= 0x10000) < 0x100000)
+    {
+      put_u16_be(p, u >> 10);
+      put_u16_be(p + 2, u & 0x7ff);
+      return p + 4;
+    }
+  else
+    ASSERT(0);
+}
+
+/* Decode a character from the range [0, 0xD7FF] or [0xE000,11FFFF]
+ * or return `repl' if the encoding has been corrupted */
+static inline void *
+utf16_le_get_repl(const void *p, uns *uu, uns repl)
+{
+  uns u = get_u16_le(p), x, y;
+  x = u - 0xd800;
+  if (x < 0x800)
+    if (x < 0x400 && (y = get_u16_le(p + 2) - 0xdc00) < 0x400)
+      {
+	u = 0x10000 + (x << 10) + y;
+	p += 2;
+      }
+    else
+      u = repl;
+  *uu = u;
+  return (void *)(p + 2);
+}
+
+static inline void *
+utf16_be_get_repl(const void *p, uns *uu, uns repl)
+{
+  uns u = get_u16_be(p), x, y;
+  x = u - 0xd800;
+  if (x < 0x800)
+    if (x < 0x400 && (y = get_u16_be(p + 2) - 0xdc00) < 0x400)
+      {
+	u = 0x10000 + (x << 10) + y;
+	p += 2;
+      }
+    else
+      u = repl;
+  *uu = u;
+  return (void *)(p + 2);
+}
+
+/* Decode a character from the range [0, 0xD7FF] or [0xE000,11FFFF]
+ * or return UNI_REPLACEMENT if the encoding has been corrupted */
+static inline void *
+utf16_le_get(const void *p, uns *uu)
+{
+  return utf16_le_get_repl(p, uu, UNI_REPLACEMENT);
+}
+
+static inline void *
+utf16_be_get(const void *p, uns *uu)
+{
+  return utf16_be_get_repl(p, uu, UNI_REPLACEMENT);
 }
 
 static inline uns
