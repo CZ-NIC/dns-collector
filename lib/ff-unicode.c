@@ -14,7 +14,7 @@
 #include "lib/ff-unicode.h"
 
 int
-bget_utf8_slow(struct fastbuf *b)
+bget_utf8_slow(struct fastbuf *b, uns repl)
 {
   int c = bgetc(b);
   int code;
@@ -22,7 +22,7 @@ bget_utf8_slow(struct fastbuf *b)
   if (c < 0x80)				/* Includes EOF */
     return c;
   if (c < 0xc0)				/* Incorrect combination */
-    return UNI_REPLACEMENT;
+    return repl;
   if (c >= 0xf0)			/* Too large, skip it */
     {
       while ((c = bgetc(b)) >= 0x80 && c < 0xc0)
@@ -51,11 +51,11 @@ bget_utf8_slow(struct fastbuf *b)
  wrong:
   if (c >= 0)
     bungetc(b);
-  return UNI_REPLACEMENT;
+  return repl;
 }
 
 int
-bget_utf8_32_slow(struct fastbuf *b)
+bget_utf8_32_slow(struct fastbuf *b, uns repl)
 {
   int c = bgetc(b);
   int code;
@@ -64,7 +64,7 @@ bget_utf8_32_slow(struct fastbuf *b)
   if (c < 0x80)				/* Includes EOF */
     return c;
   if (c < 0xc0)				/* Incorrect combination */
-    return UNI_REPLACEMENT;
+    return repl;
   if (c < 0xe0)
     {
       code = c & 0x1f;
@@ -107,7 +107,7 @@ bget_utf8_32_slow(struct fastbuf *b)
  wrong:
   if (c >= 0)
     bungetc(b);
-  return UNI_REPLACEMENT;
+  return repl;
 }
 
 void

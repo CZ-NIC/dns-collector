@@ -14,23 +14,47 @@
 #include "lib/fastbuf.h"
 #include "lib/unicode.h"
 
-int bget_utf8_slow(struct fastbuf *b);
-int bget_utf8_32_slow(struct fastbuf *b);
+int bget_utf8_slow(struct fastbuf *b, uns repl);
+int bget_utf8_32_slow(struct fastbuf *b, uns repl);
 void bput_utf8_slow(struct fastbuf *b, uns u);
 void bput_utf8_32_slow(struct fastbuf *b, uns u);
 
 static inline int
-bget_utf8(struct fastbuf *b)
+bget_utf8_repl(struct fastbuf *b, uns repl)
 {
   uns u;
-
   if (bavailr(b) >= 3)
     {
-      GET_UTF8(b->bptr, u);
+      b->bptr = utf8_get_repl(b->bptr, &u, repl);
       return u;
     }
   else
-    return bget_utf8_slow(b);
+    return bget_utf8_slow(b, repl);
+}
+
+static inline int
+bget_utf8_32_repl(struct fastbuf *b, uns repl)
+{
+  uns u;
+  if (bavailr(b) >= 6)
+    {
+      b->bptr = utf8_32_get_repl(b->bptr, &u, repl);
+      return u;
+    }
+  else
+    return bget_utf8_32_slow(b, repl);
+}
+
+static inline int
+bget_utf8(struct fastbuf *b)
+{
+  return bget_utf8_repl(b, UNI_REPLACEMENT);
+}
+
+static inline int
+bget_utf8_32(struct fastbuf *b)
+{
+  return bget_utf8_32_repl(b, UNI_REPLACEMENT);
 }
 
 static inline void
@@ -38,23 +62,9 @@ bput_utf8(struct fastbuf *b, uns u)
 {
   ASSERT(u < 65536);
   if (bavailw(b) >= 3)
-    PUT_UTF8(b->bptr, u);
+    b->bptr = utf8_put(b->bptr, u);
   else
     bput_utf8_slow(b, u);
-}
-
-static inline int
-bget_utf8_32(struct fastbuf *b)
-{
-  uns u;
-
-  if (bavailr(b) >= 6)
-    {
-      GET_UTF8_32(b->bptr, u);
-      return u;
-    }
-  else
-    return bget_utf8_32_slow(b);
 }
 
 static inline void
@@ -62,7 +72,7 @@ bput_utf8_32(struct fastbuf *b, uns u)
 {
   ASSERT(u < (1U<<31));
   if (bavailw(b) >= 6)
-    PUT_UTF8_32(b->bptr, u);
+    b->bptr = utf8_32_put(b->bptr, u);
   else
     bput_utf8_32_slow(b, u);
 }
