@@ -19,7 +19,7 @@ LIBUCW_MODS= \
 	profile \
 	fastbuf ff-binary ff-string ff-printf ff-unicode \
 	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param \
-	str_ctype str_upper str_lower unicode-utf8 stkstring \
+	str_ctype str_upper str_lower unicode stkstring \
 	wildmatch wordsplit ctmatch patimatch patmatch regex \
 	prime primetable random timer randomkey \
 	bit-ffs bit-fls \
@@ -99,11 +99,11 @@ $(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
 $(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 $(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
 
-TESTS+=$(addprefix $(o)/lib/,regex.test unicode-utf8.test hash-test.test mempool.test stkstring.test \
+TESTS+=$(addprefix $(o)/lib/,regex.test unicode.test hash-test.test mempool.test stkstring.test \
     slists.test kmp-test.test bbuf.test getopt.test fastbuf.test eltpool.test)
 
 $(o)/lib/regex.test: $(o)/lib/regex-t
-$(o)/lib/unicode-utf8.test: $(o)/lib/unicode-utf8-t
+$(o)/lib/unicode.test: $(o)/lib/unicode-t
 $(o)/lib/hash-test.test: $(o)/lib/hash-test
 $(o)/lib/mempool.test: $(o)/lib/mempool-t $(o)/lib/mempool-fmt-t $(o)/lib/mempool-str-t
 $(o)/lib/stkstring.test: $(o)/lib/stkstring-t
