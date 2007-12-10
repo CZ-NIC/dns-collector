@@ -1,5 +1,5 @@
 /*
- *	UCW Library -- A simple XML parser
+ *	Sherlock Library -- A simple XML parser
  *
  *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
@@ -7,11 +7,12 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _UCW_XML_H
-#define _UCW_XML_H
+#ifndef _SHERLOCK_XML_H
+#define _SHERLOCK_XML_H
 
 #include "lib/clists.h"
 #include "lib/slists.h"
+#include "lib/mempool.h"
 
 enum xml_error {
   XML_ERR_OK = 0,
@@ -63,7 +64,22 @@ enum xml_want {
 
 enum xml_flags {
   XML_FLAG_VALIDATING = 0x1,
-  XML_FLAG_VERSION_1_1 = 0x2,
+  XML_FLAG_VERSION_1_1 = 0x2,			/* XML version 1.1, otherwise 1.0 */
+  XML_FLAG_HAS_EXTERNAL_SUBSET = 0x4,		/* The document contains a reference to external DTD subset */
+  XML_FLAG_HAS_INTERNAL_SUBSET = 0x8,		/* The document contains an internal subset */
+
+  XML_FLAG_SRC_EOF = 0x10,			/* EOF reached */
+  XML_FLAG_SRC_EXPECTED_DECL = 0x20,		/* Just before optional or required XMLDecl/TextDecl */
+  XML_FLAG_SRC_NEW_LINE = 0x40,			/* The last read character is 0xD */
+  XML_FLAG_SRC_SURROUND = 0x80,			/* Surround the text with 0x20 (references to parameter entities) */
+  XML_FLAG_SRC_DOCUMENT = 0x100,		/* The document entity */
+  XML_FLAG_SRC_EXTERNAL = 0x200,		/* An external entity */
+
+  XML_DOM_SKIP = 0x1000,			/* Do not report DOM nodes */
+  XML_DOM_FREE = 0x2000,			/* Free the subtree when leaving */
+  XML_DOM_IGNORE = XML_DOM_SKIP | XML_DOM_FREE,	/* Completely ignore the subtree */
+
+  XML_FLAG_EMPTY_ELEM = 0x100000,
 };
 
 struct xml_ext_id {
@@ -78,27 +94,6 @@ enum xml_node_type {
   XML_NODE_PI,
 };
 
-#define XML_BUF_SIZE 32
-
-struct xml_source {
-  struct xml_source *next;			/* Link list of pending fastbufs (xml_context.sources) */
-  struct fastbuf *fb;
-  u32 buf[2 * XML_BUF_SIZE];			/* Read buffer with Unicode values and categories */
-  u32 *bptr, *bstop;				/* Current state of the buffer */
-  uns depth;
-  uns flags;
-};
-
-enum xml_source_flags {
-  XML_SRC_DECL = 0x1,				/* Expected document/text declaration */
-  XML_SRC_EOF = 0x2,				/* Reached the end of the fastbuf */
-  XML_SRC_NEW_LINE = 0x4,			/* The last read character is 0xD */
-  XML_SRC_SURROUND = 0x8,			/* Surround the text with 0x20 (references to parameter entities) */
-  XML_SRC_DOCUMENT = 0x10,			/* The document entity */
-  XML_SRC_EXTERNAL = 0x20,			/* An external entity */
-};
-
-#if 0
 struct xml_node {
   cnode n;					/* Node for list of parent's sons */
   uns type;					/* XML_NODE_x */
@@ -112,7 +107,40 @@ struct xml_elem {
   struct xml_dtd_elem *dtd;			/* Element DTD */
   slist attrs;					/* Link list of attributes */
 };
-#endif
+
+struct xml_attr {
+  snode n;
+  struct xml_elem *elem;
+  char *name;
+  char *val;
+};
+
+struct xml_context;
+
+struct xml_stack {
+  struct xml_stack *next;			/* Link list of stack records */
+  uns saved_flags;				/* Saved ctx->flags */
+  struct mempool_state saved_pool;		/* Saved ctx->pool state */
+};
+
+#define XML_BUF_SIZE 32				/* At least 16 -- hardcoded */
+
+struct xml_source {
+  struct xml_source *next;			/* Link list of pending fastbufs (xml_context.sources) */
+  struct fastbuf *fb;				/* Source fastbuf */
+  struct fastbuf wrap_fb;			/* Libcharset or fbmem wrapper */
+  u32 buf[2 * XML_BUF_SIZE];			/* Read buffer with Unicode values and categories */
+  u32 *bptr, *bstop;				/* Current state of the buffer */
+  uns row;					/* File position */
+  char *expected_encoding;			/* Initial encoding before any transformation has been made (expected in XMLDecl/TextDecl) */
+  char *fb_encoding;				/* Encoding of the source fastbuf */
+  char *decl_encoding;				/* Encoding read from the XMLDecl/TextDecl */
+  uns refill_cat1;				/* Character categories, which should be directly passed to the buffer */
+  uns refill_cat2;				/* Character categories, which should be processed as newlines (possibly in some built-in sequences) */
+  void (*refill)(struct xml_context *ctx);	/* Callback to decode source characters to the buffer */
+  unsigned short *refill_in_to_x;		/* Libcharset input table */
+  uns saved_depth;				/* Saved ctx->depth */
+};
 
 struct xml_context {
   /* Error handling */
@@ -128,11 +156,16 @@ struct xml_context {
   struct fastbuf *chars;				/* Character data */
   struct fastbuf *value;				/* Attribute value / comment / processing instruction data */
   char *name;						/* Attribute name, processing instruction target */
+  void *tab_attrs;
+
+  /* Stack */
+  struct xml_stack *stack;				/* See xml_push(), xml_pop() */
+  uns flags;						/* XML_FLAG_x (restored on xml_pop()) */
+  uns depth;						/* Nesting level */
 
   /* Input */
-  struct xml_source *sources;				/* Stack of pending sources */
+  struct xml_source *src;				/* Current source */
   u32 *bptr, *bstop;					/* Character buffer */
-  uns depth;						/* Nesting level */
 
   /* SAX-like interface */
   void (*h_document_start)(struct xml_context *ctx);	/* Called before entering prolog */
@@ -141,14 +174,17 @@ struct xml_context {
   void (*h_doctype_decl)(struct xml_context *ctx);	/* Called in the doctype declaration just before internal subset */
   void (*h_pi)(struct xml_context *ctx);		/* Called after a processing instruction */
   void (*h_comment)(struct xml_context *ctx);		/* Called after a comment */
+  void (*h_element_start)(struct xml_context *ctx);	/* Called after STag or EmptyElemTag */
+  void (*h_element_end)(struct xml_context *ctx);	/* Called before ETag or after EmptyElemTag */
 
-  /* */
-  struct xml_node *node;				/* Current XML node */
-  uns flags;						/* XML_FLAG_x */
-  struct xml_element *element;				/* Current element */
-  void *attribute_table;
+  /* DOM */
+  struct xml_elem *root;				/* DOM root */
+  union {
+    struct xml_node *node;				/* Current DOM node */
+    struct xml_elem *elem;				/* Current element */
+  };
+
   char *version_str;
-  char *encoding;
   uns standalone;
   char *document_type;
   struct xml_dtd *dtd;
@@ -158,8 +194,6 @@ struct xml_context {
 
   void (*start_dtd)(struct xml_context *ctx);
   void (*end_dtd)(struct xml_context *ctx);
-  void (*start_element)(struct xml_context *ctx);
-  void (*end_element)(struct xml_context *ctx);
   void (*start_cdata)(struct xml_context *ctx);
   void (*end_cdata)(struct xml_context *ctx);
   void (*start_entity)(struct xml_context *ctx);
@@ -170,24 +204,10 @@ struct xml_context {
   void (*unparsed_entity_decl)(struct xml_context *ctx);
 };
 
-struct xml_attribute {
-  char *name;
-  char *value;
-  struct xml_element *element;
-  struct xml_attribute *next;
-  struct xml_dtd_attribute *dtd;
-};
-
-struct xml_element {
-  char *name;
-  struct xml_attribute *attrs;
-  struct xml_element *parent;
-  struct xml_dtd_element *dtd;
-};
-
 /*** Document Type Definition (DTD) ***/
 
 struct xml_dtd {
+  struct mempool *pool;			/* Memory pool where to allocate DTD */
   slist gents;				/* Link list of general entities */
   slist pents;				/* Link list of parapeter entities */
   slist notns;				/* Link list of notations */
@@ -229,7 +249,7 @@ struct xml_dtd_ent {
   snode n;				/* Node in xml_dtd.[gp]ents */
   uns flags;				/* XML_DTD_ENT_x */
   char *name;				/* Entity name */
-  char *text;				/* Replacement text / expanded replacement text (XML_DTD_ENT_TRVIAL) */
+  char *text;				/* Replacement text / expanded replacement text (XML_DTD_ENT_TRIVIAL) */
   uns len;				/* Text length */
   struct xml_ext_id eid;		/* External ID */
   struct xml_dtd_notn *notn;		/* Notation (XML_DTD_ENT_UNPARSED only) */

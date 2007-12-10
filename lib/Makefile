@@ -33,8 +33,7 @@ LIBUCW_MODS= \
 	qache \
 	string \
 	bbuf \
-	getopt \
-	xml
+	getopt
 
 LIBUCW_INCLUDES= \
 	lib.h config.h threads.h \
@@ -61,8 +60,7 @@ LIBUCW_INCLUDES= \
 	base64.h base224.h \
 	qache.h \
 	kmp.h kmp-search.h binsearch.h \
-	partmap.h \
-	xml.h
+	partmap.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
@@ -87,11 +85,6 @@ $(o)/lib/libucw.so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 
 $(o)/lib/hashfunc.o $(o)/lib/hashfunc.oo: CFLAGS += -funroll-loops
 $(o)/lib/lizard.o: CFLAGS += $(COPT2) -funroll-loops
-
-$(o)/lib/xml.o: $(o)/lib/xml-ucat.h
-$(o)/lib/xml-ucat.h: $(s)/lib/xml-ucat.pl
-	$(M)GEN $@
-	$(Q)$< >$@
 
 $(o)/lib/db-test: $(o)/lib/db-test.o $(LIBUCW)
 $(o)/lib/db-tool: $(o)/lib/db-tool.o $(LIBUCW)
