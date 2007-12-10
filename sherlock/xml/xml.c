@@ -110,64 +110,6 @@ xml_char_cat(uns c)
     return 1;
 }
 
-/*** Generic UTF decoding ***/
-
-static uns
-bget_utf16_le_slow(struct fastbuf *fb, uns repl)
-{
-  if ((int)bpeekc(fb) < 0)
-    return ~0U;
-  uns u = bgetw_le(fb), x, y;
-  if ((int)u < 0)
-    return repl;
-  if ((x = u - 0xd800) >= 0x800)
-    return u;
-  if (x >= 0x400 || (int)bpeekc(fb) < 0 || (y = bgetw_le(fb) - 0xdc00) >= 0x400)
-    return repl;
-  return 0x10000 + (x << 10) + y;
-}
-
-static uns
-bget_utf16_be_slow(struct fastbuf *fb, uns repl)
-{
-  if ((int)bpeekc(fb) < 0)
-    return ~0U;
-  uns u = bgetw_be(fb), x, y;
-  if ((int)u < 0)
-    return repl;
-  if ((x = u - 0xd800) >= 0x800)
-    return u;
-  if (x >= 0x400 || (int)bpeekc(fb) < 0 || (y = bgetw_be(fb) - 0xdc00) >= 0x400)
-    return repl;
-  return 0x10000 + (x << 10) + y;
-}
-
-static inline uns
-bget_utf16_le_repl(struct fastbuf *fb, uns repl)
-{
-  uns u;
-  if (bavailr(fb) >= 4)
-    {
-      fb->bptr = utf16_le_get_repl(fb->bptr, &u, repl);
-      return u;
-    }
-  else
-    return bget_utf16_le_slow(fb, repl);
-}
-
-static inline uns
-bget_utf16_be_repl(struct fastbuf *fb, uns repl)
-{
-  uns u;
-  if (bavailr(fb) >= 4)
-    {
-      fb->bptr = utf16_be_get_repl(fb->bptr, &u, repl);
-      return u;
-    }
-  else
-    return bget_utf16_be_slow(fb, repl);
-}
-
 /*** Memory management ***/
 
 static void NONRET

@@ -12,6 +12,7 @@
 #include "lib/fastbuf.h"
 #include "lib/unicode.h"
 #include "lib/ff-unicode.h"
+#include "lib/ff-binary.h"
 
 int
 bget_utf8_slow(struct fastbuf *b, uns repl)
@@ -164,4 +165,34 @@ bput_utf8_32_slow(struct fastbuf *b, uns u)
 	}
       bputc(b, 0x80 | (u & 0x3f));
     }
+}
+
+int
+bget_utf16_be_slow(struct fastbuf *b, uns repl)
+{
+  if (bpeekc(b) < 0)
+    return -1;
+  uns u = bgetw_be(b), x, y;
+  if ((int)u < 0)
+    return repl;
+  if ((x = u - 0xd800) >= 0x800)
+    return u;
+  if (x >= 0x400 || bpeekc(b) < 0 || (y = bgetw_be(b) - 0xdc00) >= 0x400)
+    return repl;
+  return 0x10000 + (x << 10) + y;
+}
+
+int
+bget_utf16_le_slow(struct fastbuf *b, uns repl)
+{
+  if (bpeekc(b) < 0)
+    return -1;
+  uns u = bgetw_le(b), x, y;
+  if ((int)u < 0)
+    return repl;
+  if ((x = u - 0xd800) >= 0x800)
+    return u;
+  if (x >= 0x400 || bpeekc(b) < 0 || (y = bgetw_le(b) - 0xdc00) >= 0x400)
+    return repl;
+  return 0x10000 + (x << 10) + y;
 }
