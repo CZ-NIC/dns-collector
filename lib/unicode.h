@@ -84,9 +84,9 @@ put1: *p++ = 0x80 | (u & 0x3f);
 #define UTF8_GET_NEXT if (unlikely((*p & 0xc0) != 0x80)) goto bad; u = (u << 6) | (*p++ & 0x3f)
 
 /* Decode a character from the basic multilingual plane [0, 0xFFFF]
- * or return UNI_REPLACEMENT if the encoding has been corrupted */
+ * or return 'repl' if the encoding has been corrupted */
 static inline byte *
-utf8_get(const byte *p, uns *uu)
+utf8_get_repl(const byte *p, uns *uu, uns repl)
 {
   uns u = *p++;
   if (u < 0x80)
@@ -95,7 +95,7 @@ utf8_get(const byte *p, uns *uu)
     {
       /* Incorrect byte sequence */
     bad:
-      u = UNI_REPLACEMENT;
+      u = repl;
     }
   else if (u < 0xe0)
     {
@@ -115,9 +115,9 @@ utf8_get(const byte *p, uns *uu)
 }
 
 /* Decode a value from the range [0, 0x7FFFFFFF] 
- * or return UNI_REPLACEMENT if the encoding has been corrupted */
+ * or return 'repl' if the encoding has been corrupted */
 static inline byte *
-utf8_32_get(const byte *p, uns *uu)
+utf8_32_get_repl(const byte *p, uns *uu, uns repl)
 {
   uns u = *p++;
   if (u < 0x80)
@@ -126,7 +126,7 @@ utf8_32_get(const byte *p, uns *uu)
     {
       /* Incorrect byte sequence */
     bad:
-      u = UNI_REPLACEMENT;
+      u = repl;
     }
   else if (u < 0xe0)
     {
@@ -161,6 +161,22 @@ get1: UTF8_GET_NEXT;
     goto bad;
   *uu = u;
   return (byte *)p;
+}
+
+/* Decode a character from the basic multilingual plane [0, 0xFFFF]
+ * or return UNI_REPLACEMENT if the encoding has been corrupted */
+static inline byte *
+utf8_get(const byte *p, uns *uu)
+{
+  return utf8_get_repl(p, uu, UNI_REPLACEMENT);
+}
+
+/* Decode a value from the range [0, 0x7FFFFFFF] 
+ * or return UNI_REPLACEMENT if the encoding has been corrupted */
+static inline byte *
+utf8_32_get(const byte *p, uns *uu)
+{
+  return utf8_32_get_repl(p, uu, UNI_REPLACEMENT);
 }
 
 #define PUT_UTF8(p,u) p = utf8_put(p, u)
