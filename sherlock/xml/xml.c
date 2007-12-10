@@ -265,7 +265,10 @@ xml_set_source(struct xml_context *ctx, struct fastbuf *fb)
 static uns
 xml_error_restricted(struct xml_context *ctx, uns c)
 {
-  xml_error(ctx, "Restricted char U+%04X", c);
+  if (c == ~1U)
+    xml_error(ctx, "Corrupted encoding");
+  else
+    xml_error(ctx, "Restricted char U+%04X", c);
   return UNI_REPLACEMENT;
 }
 
@@ -306,7 +309,7 @@ static void xml_parse_decl(struct xml_context *ctx);
 	  *bstop++ = c, *bstop++ = t;							\
 	  break;									\
 	}										\
-      else if ((int)c >= 0)								\
+      else if (~c)									\
         /* Restricted character */							\
         xml_add_char(&bstop, xml_error_restricted(ctx, c));				\
       else										\
@@ -326,20 +329,19 @@ static void xml_parse_decl(struct xml_context *ctx);
 static void
 xml_refill_utf8(struct xml_context *ctx)
 {
-  // FIXME: report corrupted encoding
-  REFILL(ctx, bget_utf8);
+  REFILL(ctx, bget_utf8_repl, ~1U);
 }
 
 static void
 xml_refill_utf16_le(struct xml_context *ctx)
 {
-  REFILL(ctx, bget_utf16_le_repl, 0);
+  REFILL(ctx, bget_utf16_le_repl, ~1U);
 }
 
 static void
 xml_refill_utf16_be(struct xml_context *ctx)
 {
-  REFILL(ctx, bget_utf16_be_repl, 0);
+  REFILL(ctx, bget_utf16_be_repl, ~1U);
 }
 
 #if 0
