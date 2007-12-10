@@ -238,3 +238,109 @@ bput_utf16_le_slow(struct fastbuf *b, uns u)
   else
     ASSERT(0);
 }
+
+#ifdef TEST
+
+#include <stdlib.h>
+#include <stdio.h>
+
+int main(int argc, char **argv)
+{
+#define FUNCS \
+  F(BGET_UTF8) F(BGET_UTF8_32) F(BGET_UTF16_BE) F(BGET_UTF16_LE) \
+  F(BPUT_UTF8) F(BPUT_UTF8_32) F(BPUT_UTF16_BE) F(BPUT_UTF16_LE)
+
+  enum {
+#define F(x) FUNC_##x,
+    FUNCS
+#undef F
+  };
+  char *names[] = {
+#define F(x) [FUNC_##x] = #x,
+    FUNCS
+#undef F
+  };
+
+  uns func = ~0U;
+  if (argc > 1)
+    for (uns i = 0; i < ARRAY_SIZE(names); i++)
+      if (!strcasecmp(names[i], argv[1]))
+	func = i;
+  if (!~func)
+    {
+      fprintf(stderr, "Invalid usage!\n");
+      return 1;
+    }
+
+  struct fastbuf *b = fbgrow_create(8);
+  if (func < FUNC_BPUT_UTF8)
+    {
+      uns u;
+      while (scanf("%x", &u) == 1)
+	bputc(b, u);
+      fbgrow_rewind(b);
+      while (bpeekc(b) >= 0)
+        {
+	  if (btell(b))
+	    putchar(' ');
+	  switch (func)
+	    {
+	      case FUNC_BGET_UTF8:
+		u = bget_utf8_slow(b, UNI_REPLACEMENT);
+		break;
+	      case FUNC_BGET_UTF8_32:
+		u = bget_utf8_32_slow(b, UNI_REPLACEMENT);
+		break;
+	      case FUNC_BGET_UTF16_BE:
+		u = bget_utf16_be_slow(b, UNI_REPLACEMENT);
+		break;
+	      case FUNC_BGET_UTF16_LE:
+		u = bget_utf16_le_slow(b, UNI_REPLACEMENT);
+		break;
+	      default:
+		ASSERT(0);
+	    }
+	  printf("%04x", u);
+	}
+      putchar('\n');
+    }
+  else
+    {
+      uns u, i = 0;
+      while (scanf("%x", &u) == 1)
+        {
+	  switch (func)
+	    {
+	      case FUNC_BPUT_UTF8:
+		bput_utf8_slow(b, u);
+		break;
+	      case FUNC_BPUT_UTF8_32:
+		bput_utf8_32_slow(b, u);
+		break;
+	      case FUNC_BPUT_UTF16_BE:
+                bput_utf16_be_slow(b, u);
+		break;
+	      case FUNC_BPUT_UTF16_LE:
+		bput_utf16_le_slow(b, u);
+		break;
+	      default:
+		ASSERT(0);
+	    }
+	  fbgrow_rewind(b);
+	  u = 0;
+	  while (bpeekc(b) >= 0)
+	    {
+	      if (i++)
+		putchar(' ');
+	      printf("%02x", bgetc(b));
+	    }
+	  fbgrow_reset(b);
+	}
+      putchar('\n');
+    }
+  bclose(b);
+
+  return 0;
+}
+
+#endif
