@@ -2,6 +2,7 @@
  *	Character Set Conversion Library 1.2
  *
  *	(c) 1998--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -64,6 +65,8 @@ enum charset_id {
 	CONV_CHARSET_MACCE,
 	CONV_CHARSET_CORK,
 	CONV_CHARSET_UTF8,
+	CONV_CHARSET_UTF16_BE,
+	CONV_CHARSET_UTF16_LE,
 	CONV_NUM_CHARSETS
 };
 

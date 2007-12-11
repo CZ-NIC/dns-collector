@@ -2,12 +2,15 @@
  *	Character Set Conversion Library 1.2
  *
  *	(c) 1998--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  */
 
 #include "lib/lib.h"
+#include "lib/unicode.h"
+#include "lib/unaligned.h"
 #include "charset/charconv.h"
 #include "charset/chartable.h"
 
@@ -32,7 +35,17 @@ enum state {
   SEQ_WRITE,
   UTF8_READ,
   UTF8_WRITE_START,
-  UTF8_WRITE_CONT
+  UTF8_WRITE_CONT,
+  UTF16_BE_WRITE,
+  UTF16_LE_WRITE,
+  UTF16_BE_READ,
+  UTF16_BE_READ_1,
+  UTF16_BE_READ_2,
+  UTF16_BE_READ_3,
+  UTF16_LE_READ,
+  UTF16_LE_READ_1,
+  UTF16_LE_READ_2,
+  UTF16_LE_READ_3,
 };
 
 static int
@@ -51,6 +64,7 @@ conv_slow(struct conv_context *c)
       *d++ = c->code;
       break;
     case SEQ_WRITE:
+seq:
       while (c->remains)
 	{
 	  if (d >= de)
@@ -59,6 +73,7 @@ conv_slow(struct conv_context *c)
 	  c->remains--;
 	}
       break;
+
     case UTF8_READ:
       while (c->remains)
 	{
@@ -77,6 +92,8 @@ conv_slow(struct conv_context *c)
       c->source = s;
       c->state = 0;
       return -1;
+
+    /* Writing of UTF-8 */
     case UTF8_WRITE_START:
       if (d >= de)
 	goto cde;
@@ -110,6 +127,116 @@ conv_slow(struct conv_context *c)
 	  c->remains--;
 	}
       break;
+
+    /* Writing of UTF-16BE */
+    case UTF16_BE_WRITE:
+      {
+	void *p = &c->code;
+	c->string_at = p;
+	if (c->code < 0xd800 || c->code - 0xe000 < 0x2000)
+	  {}
+	else if ((c->code -= 0x10000) < 0x100000)
+	  {
+	    put_u16_be(p, 0xd800 | (c->code >> 10));
+	    put_u16_be(p + 2, 0xdc00 | (c->code & 0x3ff));
+	    c->remains = 4;
+	    goto seq;
+	  }
+	else
+	  c->code = UNI_REPLACEMENT;
+	put_u16_be(p, c->code);
+	c->remains = 2;
+	goto seq;
+      }
+
+    /* Writing of UTF-16LE */
+    case UTF16_LE_WRITE:
+      {
+	void *p = &c->code;
+	c->string_at = p;
+	if (c->code < 0xd800 || c->code - 0xe000 < 0x2000)
+	  {}
+	else if ((c->code -= 0x10000) < 0x100000)
+	  {
+	    put_u16_le(p, 0xd800 | (c->code >> 10));
+	    put_u16_le(p + 2, 0xdc00 | (c->code & 0x3ff));
+	    c->remains = 4;
+	  }
+	else
+	  c->code = UNI_REPLACEMENT;
+        put_u16_le(p, c->code);
+        c->remains = 2;
+	goto seq;
+      }
+
+    /* Reading of UTF16-BE */
+    case UTF16_BE_READ:
+      if (s >= se)
+	goto cse;
+      c->code = *s++;
+      c->state = UTF16_BE_READ_1;
+      /* fall-thru */
+    case UTF16_BE_READ_1:
+      if (s >= se)
+	goto cse;
+      c->code = (c->code << 8) | *s++;
+      if (c->code - 0xd800 >= 0x800)
+	break;
+      c->code = (c->code - 0xd800) << 10;
+      c->state = UTF16_BE_READ_2;
+      /* fall-thru */
+    case UTF16_BE_READ_2:
+      if (s >= se)
+	goto cse;
+      if (*s - 0xdc >= 4)
+	c->code = ~0U;
+      else
+	c->code |= (*s - 0xdc) << 8;
+      s++;
+      c->state = UTF16_BE_READ_3;
+      /* fall-thru */
+    case UTF16_BE_READ_3:
+      if (s >= se)
+	goto cse;
+      if ((int)c->code >= 0)
+	c->code += 0x10000 + *s;
+      else
+	c->code = UNI_REPLACEMENT;
+      s++;
+      break;
+
+    /* Reading of UTF16-LE */
+    case UTF16_LE_READ:
+      if (s >= se)
+	goto cse;
+      c->code = *s++;
+      c->state = UTF16_LE_READ_1;
+      /* fall-thru */
+    case UTF16_LE_READ_1:
+      if (s >= se)
+	goto cse;
+      c->code |= *s++ << 8;
+      if (c->code - 0xd800 >= 0x800)
+	break;
+      c->code = (c->code - 0xd800) << 10;
+      c->state = UTF16_LE_READ_2;
+      /* fall-thru */
+    case UTF16_LE_READ_2:
+      if (s >= se)
+	goto cse;
+      c->code |= *s++;
+      c->state = UTF16_LE_READ_3;
+      /* fall-thru */
+    case UTF16_LE_READ_3:
+      if (s >= se)
+	goto cse;
+      if (*s - 0xdc < 4)
+	c->code += 0x10000 + ((*s - 0xdc) << 8);
+      else
+	c->code = UNI_REPLACEMENT;
+      s++;
+      break;
+
     default:
       ASSERT(0);
     }
@@ -127,191 +254,94 @@ conv_slow(struct conv_context *c)
   return CONV_DEST_END;
 }
 
+/* Generate inlined routines */
+
 static int
-conv_from_utf8(struct conv_context *c)
+conv_std_to_utf8(struct conv_context *c)
 {
-  unsigned short *x_to_out = c->x_to_out;
-  const unsigned char *s, *se;
-  unsigned char *d, *de, *k;
-  unsigned int code, cc, len;
-  int e;
-
-  if (unlikely(c->state))
-    goto slow;
-
-main:
-  s = c->source;
-  se = c->source_end;
-  d = c->dest;
-  de = c->dest_end;
-  while (s < se)			/* Optimized for speed, beware of spaghetti code */
-    {
-      cc = *s++;
-      if (cc < 0x80)
-	code = cc;
-      else if (cc >= 0xc0)
-	{
-	  if (s + 6 > se)
-	    goto send_utf;
-	  if (cc < 0xe0)
-	    {
-	      if ((s[0] & 0xc0) != 0x80)
-		goto nocode;
-	      code = cc & 0x1f;
-	      code = (code << 6) | (*s++ & 0x3f);
-	    }
-	  else if (cc < 0xf0)
-	    {
-	      if ((s[0] & 0xc0) != 0x80 || (s[1] & 0xc0) != 0x80)
-		goto nocode;
-	      code = cc & 0x0f;
-	      code = (code << 6) | (*s++ & 0x3f);
-	      code = (code << 6) | (*s++ & 0x3f);
-	    }
-	  else if (cc < 0xfc)
-	    {
-	      while (cc & 0x80)
-		{
-		  if ((*s++ & 0xc0) != 0x80)
-		    break;
-		  cc <<= 1;
-		}
-	      goto nocode;
-	    }
-	  else
-	    goto nocode;
-	}
-      else
-	{
-	nocode:
-	  code = 0xfffd;
-	}
-    got_code:
-      code = x_to_out[uni_to_x[code >> 8U][code & 0xff]];
-      if (code < 0x100)
-	{
-	  if (d >= de)
-	    goto dend_char;
-	  *d++ = code;
-	}
-      else
-	{
-	  k = string_table + code - 0x100;
-	  len = *k++;
-	  if (d + len > de)
-	    goto dend_str;
-	  while (len--)
-	    *d++ = *k++;
-	}
-    }
-  c->source = s;
-  c->dest = d;
-  return CONV_SOURCE_END;
-
-send_utf:
-  if (cc < 0xe0)		{ c->code = cc & 0x1f; c->remains = 1; }
-  else if (cc < 0xf0)		{ c->code = cc & 0x0f; c->remains = 2; }
-  else
-    {
-      c->code = ~0U;
-      if (cc < 0xf8)		c->remains = 3;
-      else if (cc < 0xfc)      	c->remains = 4;
-      else if (cc < 0xfe)	c->remains = 5;
-      else goto nocode;
-    }
-  c->state = UTF8_READ;
-  goto go_slow;
-
-dend_str:
-  c->state = SEQ_WRITE;
-  c->string_at = k;
-  c->remains = len;
-  goto go_slow;
-
-dend_char:
-  c->state = SINGLE_WRITE;
-  c->code = code;
-go_slow:
-  c->source = s;
-  c->dest = d;
-slow:
-  e = conv_slow(c);
-  if (e < 0)
-    {
-      code = c->code;
-      s = c->source;
-      se = c->source_end;
-      d = c->dest;
-      de = c->dest_end;
-      goto got_code;
-    }
-  if (e)
-    return e;
-  goto main;
+#define CONV_READ_STD
+#define CONV_WRITE_UTF8
+#include "charset/charconv-gen.h"
 }
 
 static int
-conv_to_utf8(struct conv_context *c)
+conv_utf8_to_std(struct conv_context *c)
 {
-  unsigned short *in_to_x = c->in_to_x;
-  const unsigned char *s, *se;
-  unsigned char *d, *de;
-  unsigned int code;
-  int e;
+#define CONV_READ_UTF8
+#define CONV_WRITE_STD
+#include "charset/charconv-gen.h"
+}
 
-  if (unlikely(c->state))
-    goto slow;
+static int
+conv_std_to_utf16_be(struct conv_context *c)
+{
+#define CONV_READ_STD
+#define CONV_WRITE_UTF16_BE
+#include "charset/charconv-gen.h"
+}
 
-main:
-  s = c->source;
-  se = c->source_end;
-  d = c->dest;
-  de = c->dest_end;
-  while (s < se)
-    {
-      code = x_to_uni[in_to_x[*s]];
-      if (code < 0x80)
-	{
-	  if (d >= de)
-	    goto dend;
-	  *d++ = code;
-	}
-      else if (code < 0x800)
-	{
-	  if (d + 2 > de)
-	    goto dend_utf;
-	  *d++ = 0xc0 | (code >> 6);
-	  *d++ = 0x80 | (code & 0x3f);
-	}
-      else
-	{
-	  if (d + 3 > de)
-	    goto dend_utf;
-	  *d++ = 0xe0 | (code >> 12);
-	  *d++ = 0x80 | ((code >> 6) & 0x3f);
-	  *d++ = 0x80 | (code & 0x3f);
-	}
-      s++;
-    }
-  c->source = s;
-  c->dest = d;
-  return CONV_SOURCE_END;
+static int
+conv_utf16_be_to_std(struct conv_context *c)
+{
+#define CONV_READ_UTF16_BE
+#define CONV_WRITE_STD
+#include "charset/charconv-gen.h"
+}
 
-dend:
-  c->source = s;
-  c->dest = d;
-  return CONV_DEST_END;
+static int
+conv_std_to_utf16_le(struct conv_context *c)
+{
+#define CONV_READ_STD
+#define CONV_WRITE_UTF16_LE
+#include "charset/charconv-gen.h"
+}
 
-dend_utf:
-  c->source = s+1;
-  c->dest = d;
-  c->state = UTF8_WRITE_START;
-  c->code = code;
-slow:
-  e = conv_slow(c);
-  if (e)
-    return e;
-  goto main;
+static int
+conv_utf16_le_to_std(struct conv_context *c)
+{
+#define CONV_READ_UTF16_LE
+#define CONV_WRITE_STD
+#include "charset/charconv-gen.h"
+}
+
+static int
+conv_utf8_to_utf16_be(struct conv_context *c)
+{
+#define CONV_READ_UTF8
+#define CONV_WRITE_UTF16_BE
+#include "charset/charconv-gen.h"
+}
+
+static int
+conv_utf16_be_to_utf8(struct conv_context *c)
+{
+#define CONV_READ_UTF16_BE
+#define CONV_WRITE_UTF8
+#include "charset/charconv-gen.h"
+}
+
+static int
+conv_utf8_to_utf16_le(struct conv_context *c)
+{
+#define CONV_READ_UTF8
+#define CONV_WRITE_UTF16_LE
+#include "charset/charconv-gen.h"
+}
+
+static int
+conv_utf16_le_to_utf8(struct conv_context *c)
+{
+#define CONV_READ_UTF16_LE
+#define CONV_WRITE_UTF8
+#include "charset/charconv-gen.h"
+}
+
+static int
+conv_utf16_be_to_utf16_le(struct conv_context *c)
+{
+#define CONV_READ_UTF16_BE
+#define CONV_WRITE_UTF16_LE
+#include "charset/charconv-gen.h"
 }
 
 static int
@@ -382,14 +412,23 @@ conv_set_charset(struct conv_context *c, int src, int dest)
     c->convert = conv_none;
   else
     {
-      c->convert = conv_standard;
-      if (src == CONV_CHARSET_UTF8)
-	c->convert = conv_from_utf8;
-      else
+      static uns lookup[] = {
+	[CONV_CHARSET_UTF8] = 1,
+	[CONV_CHARSET_UTF16_BE] = 2,
+	[CONV_CHARSET_UTF16_LE] = 3,
+      };
+      static int (*tab[4][4])(struct conv_context *c) = {
+	{ conv_standard,	conv_std_to_utf8,	conv_std_to_utf16_be,	conv_std_to_utf16_le },
+	{ conv_utf8_to_std,	conv_none,		conv_utf8_to_utf16_be,	conv_utf8_to_utf16_le },
+	{ conv_utf16_be_to_std,	conv_utf16_be_to_utf8,	conv_none,		conv_utf16_be_to_utf16_le },
+	{ conv_utf16_le_to_std,	conv_utf16_le_to_utf8,	conv_utf16_be_to_utf16_le,	conv_none },
+      };
+      uns src_idx = ((uns)src < ARRAY_SIZE(lookup)) ? lookup[src] : 0;
+      uns dest_idx = ((uns)dest < ARRAY_SIZE(lookup)) ? lookup[dest] : 0;
+      c->convert = tab[src_idx][dest_idx];
+      if (!src_idx)
 	c->in_to_x = input_to_x[src];
-      if (dest == CONV_CHARSET_UTF8)
-	c->convert = conv_to_utf8;
-      else
+      if (!dest_idx)
 	c->x_to_out = x_to_output[dest];
     }
   c->state = 0;

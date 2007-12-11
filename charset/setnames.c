@@ -2,6 +2,7 @@
  *	Character Set Conversion Library 1.0 -- Character Set Names
  *
  *	(c) 1998--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU General Public License.
@@ -39,7 +40,9 @@ static const char *cs_names[] = {
 	"cp852",
 	"x-mac-ce",
 	"x-cork",
-	"utf-8"
+	"utf-8",
+	"utf-16be",
+	"utf-16le"
 };
 
 int
