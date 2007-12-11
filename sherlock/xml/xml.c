@@ -27,6 +27,7 @@
 #include "charset/charconv.h"
 #include "charset/fb-charconv.h"
 #include "sherlock/xml/xml.h"
+#include "sherlock/xml/dtd.h"
 
 #include <setjmp.h>
 
@@ -97,7 +98,7 @@ xml_fatal(struct xml_context *ctx, const char *format, ...)
 
 /*** Charecter categorization ***/
 
-#include "obj/sherlock/xml/xml-ucat.h"
+#include "obj/sherlock/xml/unicat.h"
 
 static inline uns
 xml_char_cat(uns c)
@@ -941,6 +942,45 @@ xml_dtd_find_pent(struct xml_context *ctx, char *name)
 XML_HASH_GIVE_ALLOC
 #include "lib/hashtable.h"
 
+/* Element sons */
+
+struct xml_dtd_enodes_table;
+
+static inline uns
+xml_dtd_enodes_hash(struct xml_dtd_enodes_table *tab UNUSED, struct xml_dtd_elem_node *parent, struct xml_dtd_elem *elem)
+{
+  return hash_pointer(parent) ^ hash_pointer(elem);
+}
+
+static inline int
+xml_dtd_enodes_eq(struct xml_dtd_enodes_table *tab UNUSED, struct xml_dtd_elem_node *parent1, struct xml_dtd_elem *elem1, struct xml_dtd_elem_node *parent2, struct xml_dtd_elem *elem2)
+{
+  return (parent1 == parent2) && (elem1 == elem2);
+}
+
+static inline void
+xml_dtd_enodes_init_key(struct xml_dtd_enodes_table *tab UNUSED, struct xml_dtd_elem_node *node, struct xml_dtd_elem_node *parent, struct xml_dtd_elem *elem)
+{
+  node->parent = parent;
+  node->elem = elem;
+}
+
+#define HASH_PREFIX(x) xml_dtd_enodes_##x
+#define HASH_NODE struct xml_dtd_elem_node
+#define HASH_KEY_COMPLEX(x) x parent, x elem
+#define HASH_KEY_DECL struct xml_dtd_elem_node *parent, struct xml_dtd_elem *elem
+#define HASH_GIVE_HASHFN
+#define HASH_GIVE_EQ
+#define HASH_GIVE_INIT_KEY
+#define HASH_TABLE_DYNAMIC
+#define HASH_ZERO_FILL
+#define HASH_WANT_FIND
+#define HASH_WANT_NEW
+#define HASH_GIVE_ALLOC
+#define HASH_TABLE_ALLOC
+XML_HASH_GIVE_ALLOC
+#include "lib/hashtable.h"
+
 /* Element attributes */
 
 struct xml_dtd_attrs_table;
@@ -1070,6 +1110,7 @@ xml_dtd_init(struct xml_context *ctx)
   xml_dtd_ents_init(dtd->tab_pents = xml_hash_new(pool, sizeof(struct xml_dtd_ents_table)));
   xml_dtd_notns_init(dtd->tab_notns = xml_hash_new(pool, sizeof(struct xml_dtd_notns_table)));
   xml_dtd_elems_init(dtd->tab_elems = xml_hash_new(pool, sizeof(struct xml_dtd_elems_table)));
+  xml_dtd_enodes_init(dtd->tab_enodes = xml_hash_new(pool, sizeof(struct xml_dtd_enodes_table)));
   xml_dtd_attrs_init(dtd->tab_attrs = xml_hash_new(pool, sizeof(struct xml_dtd_attrs_table)));
   xml_dtd_evals_init(dtd->tab_evals = xml_hash_new(pool, sizeof(struct xml_dtd_evals_table)));
   xml_dtd_enotns_init(dtd->tab_enotns = xml_hash_new(pool, sizeof(struct xml_dtd_enotns_table)));
@@ -1412,7 +1453,7 @@ xml_parse_external_id(struct xml_context *ctx, struct xml_ext_id *eid, uns allow
     xml_fatal(ctx, "Expected an external ID");
 }
 
-/* DTD: Notation declaration */
+/* DTD: <!NOTATION ...> */
 
 static void
 xml_parse_notation_decl(struct xml_context *ctx)
@@ -1440,6 +1481,8 @@ xml_parse_notation_decl(struct xml_context *ctx)
     }
   xml_dec(ctx);
 }
+
+/* DTD: <!ENTITY ...> */
 
 static void
 xml_parse_entity_decl(struct xml_context *ctx)
@@ -1530,6 +1573,314 @@ xml_parse_entity_decl(struct xml_context *ctx)
   xml_dec(ctx);
 }
 
+/* DTD: <!ELEMENT ...> */
+
+static void
+xml_parse_element_decl(struct xml_context *ctx)
+{
+  /* Elementdecl ::= '<!ELEMENT' S  Name  S  contentspec  S? '>'
+   * Already parsed: '<!ELEMENT' */
+  xml_parse_dtd_white(ctx, 1);
+  char *name = xml_parse_name(ctx);
+  xml_parse_dtd_white(ctx, 1);
+  struct xml_dtd *dtd = ctx->dtd;
+  struct xml_dtd_elem *elem = xml_dtd_elems_lookup(dtd->tab_elems, name);
+  if (elem->flags & XML_DTD_ELEM_DECLARED)
+    xml_fatal(ctx, "Element <%s> already declared", name);
+
+  /* contentspec ::= 'EMPTY' | 'ANY' | Mixed | children */
+  uns c = xml_peek_char(ctx);
+  if (c == 'E')
+    {
+      xml_parse_seq(ctx, "EMPTY");
+      elem->type = XML_DTD_ELEM_EMPTY;
+    }
+  else if (c == 'A')
+    {
+      xml_parse_seq(ctx, "ANY");
+      elem->type = XML_DTD_ELEM_ANY;
+    }
+  else if (c == '(')
+    {
+      xml_skip_char(ctx);
+      xml_inc(ctx);
+      xml_parse_dtd_white(ctx, 0);
+      struct xml_dtd_elem_node *parent = elem->node = mp_alloc_zero(dtd->pool, sizeof(*parent));
+      if (xml_peek_char(ctx) == '#')
+        {
+	  /* Mixed ::= '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')' */
+	  xml_skip_char(ctx);
+	  xml_parse_seq(ctx, "PCDATA");
+	  elem->type = XML_DTD_ELEM_MIXED;
+          parent->type = XML_DTD_ELEM_PCDATA;
+	  while (1)
+	    {
+	      xml_parse_dtd_white(ctx, 0);
+	      if ((c = xml_get_char(ctx)) == ')')
+		break;
+	      else if (c != '|')
+		xml_fatal_expected(ctx, ')');
+	      xml_parse_dtd_white(ctx, 0);
+	      struct xml_dtd_elem *son_elem = xml_dtd_elems_lookup(dtd->tab_elems, xml_parse_name(ctx));
+	      if (xml_dtd_enodes_find(dtd->tab_enodes, parent, son_elem))
+		xml_error(ctx, "Duplicate content '%s'", son_elem->name);
+	      else
+	        {
+		  struct xml_dtd_elem_node *son = xml_dtd_enodes_new(dtd->tab_enodes, parent, son_elem);
+		  slist_add_tail(&parent->sons, &son->n);
+		}
+	    }
+	  xml_dec(ctx);
+	  if (xml_peek_char(ctx) == '*')
+	    {
+	      xml_skip_char(ctx);
+	      parent->occur = XML_DTD_ELEM_OCCUR_MULT;
+	    }
+	  else if (!slist_head(&parent->sons))
+	    parent->occur = XML_DTD_ELEM_OCCUR_ONCE;
+	  else
+	    xml_fatal_expected(ctx, '*');
+	}
+      else
+        {
+	  /* children ::= (choice | seq) ('?' | '*' | '+')?
+	   * cp ::= (Name | choice | seq) ('?' | '*' | '+')?
+	   * choice ::= '(' S? cp ( S? '|' S? cp )+ S? ')'
+	   * seq ::= '(' S? cp ( S? ',' S? cp )* S? ')' */
+
+	  elem->type = XML_DTD_ELEM_CHILDREN;
+	  parent->type = XML_DTD_ELEM_PCDATA;
+	  uns c;
+	  goto first;
+
+	  while (1)
+	    {
+	      /* After name */
+	      xml_parse_dtd_white(ctx, 0);
+	      if ((c = xml_get_char(ctx)) ==  ')')
+	        {
+		  xml_dec(ctx);
+		  if (parent->type == XML_DTD_ELEM_PCDATA)
+		    parent->type = XML_DTD_ELEM_SEQ;
+		  if ((c = xml_get_char(ctx)) == '?')
+		    parent->occur = XML_DTD_ELEM_OCCUR_OPT;
+		  else if (c == '*')
+		    parent->occur = XML_DTD_ELEM_OCCUR_MULT;
+		  else if (c == '+')
+		    parent->occur = XML_DTD_ELEM_OCCUR_PLUS;
+		  else
+		    {
+		      xml_unget_char(ctx);
+		      parent->occur = XML_DTD_ELEM_OCCUR_ONCE;
+		    }
+		  if (!parent->parent)
+		    break;
+		  parent = parent->parent;
+		  continue;
+		}
+	      else if (c == '|')
+	        {
+		  if (parent->type == XML_DTD_ELEM_PCDATA)
+		    parent->type = XML_DTD_ELEM_OR;
+		  else if (parent->type != XML_DTD_ELEM_OR)
+		    xml_fatal(ctx, "Mixed operators in the list of element children");
+		}
+	      else if (c == ',')
+	        {
+		  if (parent->type == XML_DTD_ELEM_PCDATA)
+		    parent->type = XML_DTD_ELEM_SEQ;
+		  else if (parent->type != XML_DTD_ELEM_SEQ)
+		    xml_fatal(ctx, "Mixed operators in the list of element children");
+		}
+	      else if (c == '(')
+	        {
+		  xml_inc(ctx);
+		  struct xml_dtd_elem_node *son = mp_alloc_zero(dtd->pool, sizeof(*son));
+		  son->parent = parent;
+		  slist_add_tail(&parent->sons, &son->n);
+		  parent = son->parent;
+		  son->type = XML_DTD_ELEM_MIXED;
+		}
+	      else
+	        xml_unget_char(ctx);
+
+	      /* Before name */
+	      xml_parse_dtd_white(ctx, 0);
+first:;
+	      struct xml_dtd_elem *son_elem = xml_dtd_elems_lookup(dtd->tab_elems, xml_parse_name(ctx));
+	      // FIXME: duplicates, occurance
+	      //struct xml_dtd_elem_node *son = xml_dtd_enodes_new(dtd->tab_enodes, parent, son_elem);
+	      struct xml_dtd_elem_node *son = mp_alloc_zero(dtd->pool, sizeof(*son));
+	      son->parent = parent;
+	      son->elem = son_elem;
+	      slist_add_tail(&parent->sons, &son->n);
+	    }
+	}
+    }
+  else
+    xml_fatal(ctx, "Expected element content specification");
+
+  xml_parse_dtd_white(ctx, 0);
+  xml_parse_char(ctx, '>');
+  xml_dec(ctx);
+}
+
+static char *
+xml_parse_attr_value(struct xml_context *ctx, struct xml_dtd_attr *attr UNUSED)
+{
+  uns quote = xml_parse_quote(ctx);
+  xml_push(ctx);
+  struct fastbuf *out = ctx->value;
+  while (1)
+    {
+      uns c = xml_get_char(ctx);
+      if (c == '&')
+        {
+	  xml_inc(ctx);
+	  xml_parse_ge_ref(ctx, out);
+	}
+      else if (c == quote) // FIXME: beware quotes inside parsed
+	break;
+      else if (c == '<')
+	xml_error(ctx, "Attribute value must not contain '<'"); 
+      else
+	bput_utf8_32(out, c);
+    }
+  xml_pop(ctx);
+  bputc(out, 0);
+  fbgrow_rewind(out);
+  char *value = mp_memdup(ctx->pool, out->bptr, out->bstop - out->bptr);
+  // FIXME: check value constraints / normalize value
+  fbgrow_reset(out);
+  return value;
+}
+
+static void
+xml_parse_attr_list_decl(struct xml_context *ctx)
+{
+  /* AttlistDecl ::= '<!ATTLIST' S Name AttDef* S? '>'
+   * AttDef ::= S Name S AttType S DefaultDecl
+   * Already parsed: '<!ATTLIST' */
+  xml_parse_dtd_white(ctx, 1);
+  struct xml_dtd_elem *elem = xml_dtd_elems_lookup(ctx->dtd->tab_elems, xml_parse_name(ctx));
+
+  while (xml_parse_dtd_white(ctx, 0) && xml_peek_char(ctx) != '>')
+    {
+      char *name = xml_parse_name(ctx);
+      struct xml_dtd_attr *attr = xml_dtd_attrs_find(ctx->dtd->tab_attrs, elem, name);
+      uns ignored = 0;
+      if (attr)
+        {
+	  xml_warn(ctx, "Duplicate attribute definition");
+	  ignored++;
+	}
+      else
+	attr = xml_dtd_attrs_new(ctx->dtd->tab_attrs, elem, name);
+      xml_parse_dtd_white(ctx, 1);
+      if (xml_peek_char(ctx) == '(')
+        {
+	  xml_skip_char(ctx); // FIXME: xml_inc/dec ?
+	  if (!ignored)
+	    attr->type = XML_ATTR_ENUM;
+	  do
+	    {
+	      xml_parse_dtd_white(ctx, 0);
+	      char *value = xml_parse_nmtoken(ctx);
+	      if (!ignored)
+		if (xml_dtd_evals_find(ctx->dtd->tab_evals, attr, value))
+		  xml_error(ctx, "Duplicate enumeration value");
+	        else
+		  xml_dtd_evals_new(ctx->dtd->tab_evals, attr, value);
+	      xml_parse_dtd_white(ctx, 0);
+	    }
+	  while (xml_get_char(ctx) == '|');
+	  xml_unget_char(ctx);
+	  xml_parse_char(ctx, ')');
+	}
+      else
+        {
+	  char *type = xml_parse_name(ctx);
+	  enum xml_dtd_attribute_type t;
+	  if (!strcmp(type, "CDATA"))
+	    t = XML_ATTR_CDATA;
+	  else if (!strcmp(type, "ID"))
+	    t = XML_ATTR_ID;
+	  else if (!strcmp(type, "IDREF"))
+	    t = XML_ATTR_IDREF;
+	  else if (!strcmp(type, "IDREFS"))
+	    t = XML_ATTR_IDREFS;
+	  else if (!strcmp(type, "ENTITY"))
+	    t = XML_ATTR_ENTITY;
+	  else if (!strcmp(type, "ENTITIES"))
+	    t = XML_ATTR_ENTITIES;
+	  else if (!strcmp(type, "NMTOKEN"))
+	    t = XML_ATTR_NMTOKEN;
+	  else if (!strcmp(type, "NMTOKENS"))
+	    t = XML_ATTR_NMTOKENS;
+	  else if (!strcmp(type, "NOTATION"))
+	    {
+	      if (elem->type == XML_DTD_ELEM_EMPTY)
+		xml_fatal(ctx, "Empty element must not have notation attribute");
+	      // FIXME: An element type MUST NOT have more than one NOTATION attribute specified.
+	      t = XML_ATTR_NOTATION;
+	      xml_parse_dtd_white(ctx, 1);
+	      xml_parse_char(ctx, '(');
+	      do
+	        {
+		  xml_parse_dtd_white(ctx, 0);
+		  struct xml_dtd_notn *n = xml_dtd_notns_lookup(ctx->dtd->tab_notns, xml_parse_name(ctx));
+		  if (!ignored)
+		    if (xml_dtd_enotns_find(ctx->dtd->tab_enotns, attr, n))
+		      xml_error(ctx, "Duplicate enumerated notation");
+		    else
+		      xml_dtd_enotns_new(ctx->dtd->tab_enotns, attr, n);
+		  xml_parse_dtd_white(ctx, 0);
+		}
+	      while (xml_get_char(ctx) == '|');
+	      xml_unget_char(ctx);
+	      xml_parse_char(ctx, ')');
+	    }
+	  else
+	    xml_fatal(ctx, "Unknown attribute type");
+	  if (!ignored)
+	    attr->type = t;
+	}
+      xml_parse_dtd_white(ctx, 1);
+      enum xml_dtd_attribute_default def = XML_ATTR_NONE;
+      if (xml_get_char(ctx) == '#')
+	switch (xml_peek_char(ctx))
+          {
+	    case 'R':
+	      xml_parse_seq(ctx, "REQUIRED");
+	      def = XML_ATTR_REQUIRED;
+	      break;
+	    case 'I':
+	      xml_parse_seq(ctx, "IMPLIED");
+	      def = XML_ATTR_IMPLIED;
+	      break;
+	    case 'F':
+	      xml_parse_seq(ctx, "FIXED");
+	      def = XML_ATTR_FIXED;
+	      xml_parse_dtd_white(ctx, 1);
+	      break;
+	    default:
+	      xml_fatal(ctx, "Expected a modifier for default attribute value");
+	  }
+      else
+	xml_unget_char(ctx);
+      if (def != XML_ATTR_REQUIRED && def != XML_ATTR_IMPLIED)
+        {
+	  char *v = xml_parse_attr_value(ctx, attr);
+	  if (!ignored)
+	    attr->default_value = v;
+	}
+      if (!ignored)
+	attr->default_mode = def;
+    }
+  xml_skip_char(ctx);
+  xml_dec(ctx);
+}
+
 /* DTD: Internal subset */
 
 static void
@@ -1565,14 +1916,14 @@ xml_parse_internal_subset(struct xml_context *ctx)
 		else if (c == 'L')
 		  {
 		    xml_parse_seq(ctx, "EMENT");
-		    // FIXME: Element
+		    xml_parse_element_decl(ctx);
 		  }
 		else
 		  goto invalid_markup;
 		break;
 	      case 'A':
 		xml_parse_seq(ctx, "TTLIST");
-		// FIXME: AttList
+		xml_parse_attr_list_decl(ctx);
 		break;
 	      default:
 		goto invalid_markup;
@@ -1812,209 +2163,6 @@ xml_pop_element(struct xml_context *ctx)
     xml_attribute_remove(ctx->attribute_table, a);
 #endif
 }
-
-static void
-xml_parse_element_decl(struct xml_context *ctx)
-{
-  // FIXME
-  mp_push(ctx->pool);
-  xml_parse_seq(ctx, "<!ELEMENT");
-  xml_parse_white(ctx, 1);
-  xml_parse_name(ctx);
-  xml_parse_white(ctx, 1);
-
-  uns c = xml_get_char(ctx);
-  if (c == 'E')
-    {
-      xml_parse_seq(ctx, "MPTY");
-      // FIXME
-    }
-  else if (c == 'A')
-    {
-      xml_parse_seq(ctx, "NY");
-      // FIXME
-    }
-  else if (c == '(')
-    {
-      xml_parse_white(ctx, 0);
-      if (xml_get_char(ctx) == '#')
-        {
-	  xml_parse_seq(ctx, "PCDATA");
-	  while (1)
-	    {
-	      xml_parse_white(ctx, 0);
-	      if ((c = xml_get_char(ctx)) == ')')
-		break;
-	      else if (c != '|')
-		xml_fatal_expected(ctx, ')');
-	      xml_parse_white(ctx, 0);
-	      xml_parse_name(ctx);
-	      // FIXME
-	    }
-	}
-      else
-        {
-	  xml_unget_char(ctx);
-	  uns depth = 1;
-	  while (1)
-	    {
-	      xml_parse_white(ctx, 0);
-	      if ((c = xml_get_char(ctx)) == '(')
-	        {
-		  depth++;
-		}
-	      else if (c == ')')
-	        {
-		  if ((c = xml_get_char(ctx)) == '?' || c == '*' || c == '+')
-		    {
-		    }
-		  else
-		    xml_unget_char(ctx);
-		  if (!--depth)
-		    break;
-		}
-	      else if (c == '|')
-	        {
-		}
-	      else if (c == ',')
-	        {
-		}
-	      else
-	        {
-		  xml_unget_char(ctx);
-		  xml_parse_name(ctx);
-		}
-	    }
-	}
-    }
-  else
-    xml_fatal(ctx, "Expected element content specification");
-
-  xml_parse_white(ctx, 0);
-  xml_parse_char(ctx, '>');
-  mp_pop(ctx->pool);
-}
-
-#if 0
-static void
-xml_parse_attr_list_decl(struct xml_context *ctx)
-{
-  /* AttlistDecl ::= '<!ATTLIST' S Name AttDef* S? '>'
-   * AttDef ::= S Name S AttType S DefaultDecl */
-  xml_parse_seq(ctx, "ATTLIST");
-  xml_parse_white(ctx, 1);
-  struct xml_dtd_elem *e = xml_dtd_elems_lookup(ctx->dtd->tab_elems, xml_parse_name(ctx));
-  e->attlist_declared = 1;
-
-  while (xml_parse_white(ctx, 0) && xml_get_char(ctx) != '>')
-    {
-      xml_unget_char(ctx);
-      char *name = xml_parse_name(ctx);
-      struct xml_dtd_attr *a = xml_dtd_attrs_find(ctx->dtd->tab_attrs, e, name);
-      uns ignored = 0;
-      if (a)
-        {
-	  xml_warn(ctx, "Duplicate attribute definition");
-	  ignored++;
-	}
-      else
-	a = xml_dtd_attrs_new(ctx->dtd->tab_attrs, e, name);
-      xml_parse_white(ctx, 1);
-      if (xml_get_char(ctx) == '(')
-        {
-	  if (!ignored)
-	    a->type = XML_ATTR_ENUM;
-	  do
-	    {
-	      xml_parse_white(ctx, 0);
-	      char *value = xml_parse_nmtoken(ctx);
-	      if (!ignored)
-		if (xml_dtd_evals_find(ctx->dtd->tab_evals, a, value))
-		  xml_error(ctx, "Duplicate enumeration value");
-	        else
-		  xml_dtd_evals_new(ctx->dtd->tab_evals, a, value);
-	      xml_parse_white(ctx, 0);
-	    }
-	  while (xml_get_char(ctx) == '|');
-	  xml_unget_char(ctx);
-	  xml_parse_char(ctx, ')');
-	}
-      else
-        {
-	  xml_unget_char(ctx);
-	  char *type = xml_parse_name(ctx);
-	  enum xml_dtd_attribute_type t;
-	  if (!strcmp(type, "CDATA"))
-	    t = XML_ATTR_CDATA;
-	  else if (!strcmp(type, "ID"))
-	    t = XML_ATTR_ID;
-	  else if (!strcmp(type, "IDREF"))
-	    t = XML_ATTR_IDREF;
-	  else if (!strcmp(type, "IDREFS"))
-	    t = XML_ATTR_IDREFS;
-	  else if (!strcmp(type, "ENTITY"))
-	    t = XML_ATTR_ENTITY;
-	  else if (!strcmp(type, "ENTITIES"))
-	    t = XML_ATTR_ENTITIES;
-	  else if (!strcmp(type, "NMTOKEN"))
-	    t = XML_ATTR_NMTOKEN;
-	  else if (!strcmp(type, "NMTOKENS"))
-	    t = XML_ATTR_NMTOKENS;
-	  else if (!strcmp(type, "NOTATION"))
-	    {
-	      t = XML_ATTR_NOTATION;
-	      xml_parse_white(ctx, 1);
-	      xml_parse_char(ctx, '(');
-	      do
-	        {
-		  xml_parse_white(ctx, 0);
-		  struct xml_dtd_notn *n = xml_dtd_notns_lookup(ctx->dtd->tab_notns, xml_parse_name(ctx));
-		  if (!ignored)
-		    if (xml_dtd_enotns_find(ctx->dtd->tab_enotns, a, n))
-		      xml_error(ctx, "Duplicate enumerated notation");
-		    else
-		      xml_dtd_enotns_new(ctx->dtd->tab_enotns, a, n);
-		  xml_parse_white(ctx, 0);
-		}
-	      while (xml_get_char(ctx) == '|');
-	      xml_unget_char(ctx);
-	      xml_parse_char(ctx, ')');
-	    }
-	  else
-	    xml_fatal(ctx, "Unknown attribute type");
-	  if (!ignored)
-	    a->type = t;
-	}
-      xml_parse_white(ctx, 1);
-      enum xml_dtd_attribute_default def = XML_ATTR_NONE;
-      if (xml_get_char(ctx) == '#')
-	switch (xml_get_char(ctx))
-          {
-	    case 'R':
-	      xml_parse_seq(ctx, "EQUIRED");
-	      def = XML_ATTR_REQUIRED;
-	      break;
-	    case 'I':
-	      xml_parse_seq(ctx, "MPLIED");
-	      def = XML_ATTR_IMPLIED;
-	      break;
-	    case 'F':
-	      xml_parse_seq(ctx, "IXED");
-	      def = XML_ATTR_FIXED;
-	      break;
-	    default:
-	      xml_fatal(ctx, "Expected a modifier for default attribute value");
-	  }
-      else
-	xml_unget_char(ctx);
-      if (def != XML_ATTR_REQUIRED && def != XML_ATTR_IMPLIED)
-        {
-	  xml_parse_system_literal(ctx);
-	  // FIXME
-	}
-    }
-}
-#endif
 
 static void
 xml_parse_doctype_decl(struct xml_context *ctx)

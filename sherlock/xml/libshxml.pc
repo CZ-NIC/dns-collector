@@ -1,0 +1,11 @@
+# pkg-config metadata for libshxml
+
+libdir=@LIBDIR@
+incdir=.
+
+Name: libshxml
+Description: XML parser for Sherlock project
+Version: @SHERLOCK_VERSION@
+Cflags: -I${incdir}
+Libs: -L${libdir} -lshxml
+Requires: @DEPS@
