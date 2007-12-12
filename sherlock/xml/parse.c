@@ -84,27 +84,20 @@ char *
 xml_parse_name(struct xml_context *ctx, struct mempool *pool)
 {
   /* Name ::= NameStartChar (NameChar)* */
-  return xml_parse_string(ctx, pool,
-      !(ctx->flags & XML_VERSION_1_1) ? XML_CHAR_SNAME_1_0 : XML_CHAR_SNAME_1_1,
-      !(ctx->flags & XML_VERSION_1_1) ? XML_CHAR_NAME_1_0 : XML_CHAR_NAME_1_1,
-      "Expected a name");
+  return xml_parse_string(ctx, pool, ctx->cat_sname, ctx->cat_name, "Expected a name");
 }
 
 void
 xml_skip_name(struct xml_context *ctx)
 {
-  xml_skip_string(ctx,
-      !(ctx->flags & XML_VERSION_1_1) ? XML_CHAR_SNAME_1_0 : XML_CHAR_SNAME_1_1,
-      !(ctx->flags & XML_VERSION_1_1) ? XML_CHAR_NAME_1_0 : XML_CHAR_NAME_1_1,
-      "Expected a name");
+  xml_skip_string(ctx, ctx->cat_sname, ctx->cat_name, "Expected a name");
 }
 
 char *
 xml_parse_nmtoken(struct xml_context *ctx, struct mempool *pool)
 {
   /* Nmtoken ::= (NameChar)+ */
-  uns cat = !(ctx->flags & XML_VERSION_1_1) ? XML_CHAR_NAME_1_0 : XML_CHAR_NAME_1_1;
-  return xml_parse_string(ctx, pool, cat, cat, "Expected a nmtoken");
+  return xml_parse_string(ctx, pool, ctx->cat_name, ctx->cat_name, "Expected a nmtoken");
 }
 
 /*** Simple literals ***/
@@ -411,7 +404,7 @@ xml_parse_char_ref(struct xml_context *ctx)
       while (v < 0x110000 && (xml_get_cat(ctx) & XML_CHAR_DIGIT));
     }
   uns cat = xml_char_cat(v);
-  if (!(cat & XML_CHAR_UNRESTRICTED_1_1) && ((ctx->flags & XML_VERSION_1_1) || !(cat & XML_CHAR_VALID_1_0)))
+  if (!(cat & ctx->cat_unrestricted))
     {
       xml_error(ctx, "Character reference out of range");
       goto recover;
