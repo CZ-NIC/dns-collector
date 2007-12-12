@@ -62,6 +62,8 @@ struct xml_dtd_ent {
   struct xml_dtd_notn *notn;		/* Notation (XML_DTD_ENT_UNPARSED only) */
 };
 
+struct xml_dtd_ent *xml_dtd_find_gent(struct xml_context *ctx, char *name);
+
 /* Elements */
 
 enum xml_dtd_elem_flags {
@@ -144,5 +146,9 @@ struct xml_dtd_enotn {
   struct xml_dtd_attr *attr;
   struct xml_dtd_notn *notn;
 };
+
+void xml_dtd_init(struct xml_context *ctx);
+void xml_dtd_cleanup(struct xml_context *ctx);
+void xml_dtd_finish(struct xml_context *ctx);
 
 #endif

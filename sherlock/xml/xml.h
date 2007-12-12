@@ -13,6 +13,7 @@
 #include "lib/clists.h"
 #include "lib/slists.h"
 #include "lib/mempool.h"
+#include "lib/fastbuf.h"
 
 enum xml_error {
   XML_ERR_OK = 0,
@@ -98,30 +99,28 @@ struct xml_node {
   cnode n;					/* Node for list of parent's sons */
   uns type;					/* XML_NODE_x */
   struct xml_node *parent;			/* Parent node */
-};
-
-struct xml_elem {
-  struct xml_node node;
-  char *name;					/* Element name */
-  clist sons;					/* List of subnodes */
-  struct xml_dtd_elem *dtd;			/* Element DTD */
-  slist attrs;					/* Link list of attributes */
+  char *name;					/* Element name / PI target */
+  clist sons;					/* Children nodes */
+  union {
+    struct {
+      char *text;				/* PI text / Comment / CDATA */
+      uns len;					/* Text length in bytes */
+    };
+    struct {
+      struct xml_dtd_elem *dtd;			/* Element DTD */
+      slist attrs;				/* Link list of element attributes */
+    };
+  };
 };
 
 struct xml_attr {
   snode n;
-  struct xml_elem *elem;
+  struct xml_node *elem;
   char *name;
   char *val;
 };
 
 struct xml_context;
-
-struct xml_stack {
-  struct xml_stack *next;			/* Link list of stack records */
-  uns saved_flags;				/* Saved ctx->flags */
-  struct mempool_state saved_pool;		/* Saved ctx->pool state */
-};
 
 #define XML_BUF_SIZE 32				/* At least 16 -- hardcoded */
 
@@ -152,16 +151,13 @@ struct xml_context {
   void (*h_fatal)(struct xml_context *ctx);		/* Unrecoverable error callback */
 
   /* Memory management */
-  struct mempool *pool;					/* Most data */
-  struct fastbuf *chars;				/* Character data */
-  struct fastbuf *value;				/* Attribute value / comment / processing instruction data */
-  char *name;						/* Attribute name, processing instruction target */
-  void *tab_attrs;
-
-  /* Stack */
-  struct xml_stack *stack;				/* See xml_push(), xml_pop() */
+  struct mempool *pool;					/* DOM pool */
+  struct mempool *stack;				/* Stack pool (freed as soon as possible) */
+  struct xml_stack *stack_list;				/* See xml_push(), xml_pop() */
   uns flags;						/* XML_FLAG_x (restored on xml_pop()) */
   uns depth;						/* Nesting level */
+  struct fastbuf chars;					/* Character data / attribute value */
+  void *tab_attrs;
 
   /* Input */
   struct xml_source *src;				/* Current source */
@@ -172,17 +168,16 @@ struct xml_context {
   void (*h_document_end)(struct xml_context *ctx);	/* Called after leaving epilog */
   void (*h_xml_decl)(struct xml_context *ctx);		/* Called after the XML declaration */
   void (*h_doctype_decl)(struct xml_context *ctx);	/* Called in the doctype declaration just before internal subset */
-  void (*h_pi)(struct xml_context *ctx);		/* Called after a processing instruction */
   void (*h_comment)(struct xml_context *ctx);		/* Called after a comment */
+  void (*h_pi)(struct xml_context *ctx);		/* Called after a processing instruction */
   void (*h_element_start)(struct xml_context *ctx);	/* Called after STag or EmptyElemTag */
   void (*h_element_end)(struct xml_context *ctx);	/* Called before ETag or after EmptyElemTag */
+  void (*h_chars)(struct xml_context *ctx);		/* Called after some characters */
+  void (*h_cdata)(struct xml_context *ctx);		/* Called after a CDATA section */
 
   /* DOM */
-  struct xml_elem *root;				/* DOM root */
-  union {
-    struct xml_node *node;				/* Current DOM node */
-    struct xml_elem *elem;				/* Current element */
-  };
+  struct xml_node *root;				/* DOM root */
+  struct xml_node *node;				/* Current DOM node */
 
   char *version_str;
   uns standalone;
@@ -194,11 +189,8 @@ struct xml_context {
 
   void (*start_dtd)(struct xml_context *ctx);
   void (*end_dtd)(struct xml_context *ctx);
-  void (*start_cdata)(struct xml_context *ctx);
-  void (*end_cdata)(struct xml_context *ctx);
   void (*start_entity)(struct xml_context *ctx);
   void (*end_entity)(struct xml_context *ctx);
-  void (*chacacters)(struct xml_context *ctx);
   struct fastbuf *(*resolve_entity)(struct xml_context *ctx);
   void (*notation_decl)(struct xml_context *ctx);
   void (*unparsed_entity_decl)(struct xml_context *ctx);
@@ -208,5 +200,6 @@ void xml_init(struct xml_context *ctx);
 void xml_cleanup(struct xml_context *ctx);
 void xml_set_source(struct xml_context *ctx, struct fastbuf *fb);
 int xml_next(struct xml_context *ctx);
+uns xml_row(struct xml_context *ctx);
 
 #endif

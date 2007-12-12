@@ -88,9 +88,14 @@ set("SNAME_1_1", @sname_1_1);
 set("NAME_1_1", @sname_1_1, "[-.0-9]", 0xB7, [0x0300,0x036F], [0x203F,0x2040]);
 set("GT", "[>]");
 
+($ARGV[0] eq "" || $ARGV[1] eq "") && die("Invalid usage");
 find_cls();
+open(H, ">", $ARGV[0]) or die("Cannot create $ARGV[0]");
+open(C, ">", $ARGV[1]) or die("Cannot create $ARGV[1]");
 gen_enum();
 gen_tabs();
+close(H);
+close(C);
 
 sub set {
   my $id = shift;
@@ -113,21 +118,26 @@ sub find_cls {
 }
 
 sub gen_enum {
-  print "enum xml_char_type {\n";
+  print H "enum xml_char_type {\n";
   foreach my $id (sort keys %ids) {
     my $mask = 0;
     foreach my $i (keys %cls) {
       $mask |= 1 << $cls{$i} if $cls{$i} && ($i & (1 << $ids{$id}));
     }
-    printf "  XML_CHAR_%-20s = 0x%08x,\n", $id, $mask;
+    printf H "  XML_CHAR_%-20s = 0x%08x,\n", $id, $mask;
   }
-  print "};\n\n";
+  print H "};\n\n";
 }
 
 sub gen_tabs {
   my @tab = ();
   my %hash = ();
-  print "static const uns xml_char_tab1[] = {\n  ";
+
+  print H "extern const byte xml_char_tab1[];\n";
+  print H "extern const uns xml_char_tab2[];\n";
+  print H "extern const byte xml_char_tab3[];\n";
+
+  print C "const uns xml_char_tab2[] = {\n  ";
   for (my $t=0; $t<256; $t++) {
     my $i = $t * 256;
     my @x = ();
@@ -139,17 +149,17 @@ sub gen_tabs {
       $hash{$sub} = 256 * scalar @tab;
       push @tab, $sub;
     }
-    printf("0x%x", $hash{$sub});
-    print((~$t & 15) ? "," : ($t < 255) ? ",\n  " : "\n};\n\n");
+    printf C "0x%x", $hash{$sub};
+    print C ((~$t & 15) ? "," : ($t < 255) ? ",\n  " : "\n};\n\n");
   }
 
-  print "static const byte xml_char_tab2[] = {\n";
-  print join(",\n\n", @tab);
-  print "\n};\n\n";
+  print C "const byte xml_char_tab1[] = {\n";
+  print C join(",\n\n", @tab);
+  print C "\n};\n\n";
 
   my @l = ();
   for (my $i=0; $i<0x11; $i++) {
     push @l, sprintf("%d", $cls{$lcat[$i]});
   }
-  print "static const byte xml_char_tab3[] = {" . join(",", @l) . "};\n";
+  print C "const byte xml_char_tab3[] = {" . join(",", @l) . "};\n";
 }
