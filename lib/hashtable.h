@@ -401,8 +401,8 @@ static void P(init) (TA)
 #else
   T.hash_hard_max = 1 << 28;
 #endif
-  P(alloc_table)(TT);
   P(init_alloc)(TT);
+  P(alloc_table)(TT);
 }
 
 #ifdef HASH_WANT_CLEANUP
@@ -644,6 +644,8 @@ do {											\
 #undef HASH_KEY_DECL
 #undef HASH_KEY_ENDSTRING
 #undef HASH_KEY_STRING
+#undef HASH_KEY_MEMORY
+#undef HASH_KEY_SIZE
 #undef HASH_NOCASE
 #undef HASH_NODE
 #undef HASH_PREFIX
