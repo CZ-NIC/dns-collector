@@ -4,7 +4,7 @@
 DIRS+=sherlock/xml
 PROGS+=$(o)/sherlock/xml/xml-test
 
-LIBSHXML_MODS=common parse dtd
+LIBSHXML_MODS=common source parse dtd
 LIBSHXML_INCLUDES=xml.h dtd.h
 
 LIBSHXML_MOD_PATHS=$(addprefix $(o)/sherlock/xml/,$(LIBSHXML_MODS))

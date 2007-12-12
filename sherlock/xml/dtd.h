@@ -14,11 +14,11 @@
 
 struct xml_dtd {
   struct mempool *pool;			/* Memory pool where to allocate DTD */
-  slist gents;				/* Link list of general entities */
+  slist ents;				/* Link list of general entities */
   slist pents;				/* Link list of parapeter entities */
   slist notns;				/* Link list of notations */
   slist elems;				/* Link list of elements */
-  void *tab_gents;			/* Hash table of general entities */
+  void *tab_ents;			/* Hash table of general entities */
   void *tab_pents;			/* Hash table of parameter entities */
   void *tab_notns;			/* Hash table of notations */
   void *tab_elems;			/* Hash table of elements */
@@ -26,6 +26,11 @@ struct xml_dtd {
   void *tab_attrs;			/* Hash table of element attributes */
   void *tab_evals;			/* Hash table of enumerated attribute values */
   void *tab_enotns;			/* hash table of enumerated attribute notations */
+};
+
+struct xml_ext_id {
+  char *system_id;
+  char *public_id;
 };
 
 /* Notations */
@@ -62,7 +67,7 @@ struct xml_dtd_ent {
   struct xml_dtd_notn *notn;		/* Notation (XML_DTD_ENT_UNPARSED only) */
 };
 
-struct xml_dtd_ent *xml_dtd_find_gent(struct xml_context *ctx, char *name);
+struct xml_dtd_ent *xml_dtd_find_ent(struct xml_context *ctx, char *name);
 
 /* Elements */
 
@@ -107,6 +112,8 @@ enum xml_dtd_elem_node_occur {
   XML_DTD_ELEM_OCCUR_PLUS,
 };
 
+struct xml_dtd_elem *xml_dtd_find_elem(struct xml_context *ctx, char *name);
+
 /* Attributes */
 
 enum xml_dtd_attribute_default {
@@ -150,5 +157,7 @@ struct xml_dtd_enotn {
 void xml_dtd_init(struct xml_context *ctx);
 void xml_dtd_cleanup(struct xml_context *ctx);
 void xml_dtd_finish(struct xml_context *ctx);
+
+struct xml_dtd_attr *xml_dtd_find_attr(struct xml_context *ctx, struct xml_dtd_elem *elem, char *name);
 
 #endif

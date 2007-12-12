@@ -26,49 +26,9 @@
 void NONRET xml_throw(struct xml_context *ctx);
 void xml_warn(struct xml_context *ctx, const char *format, ...);
 void xml_error(struct xml_context *ctx, const char *format, ...);
-void xml_fatal(struct xml_context *ctx, const char *format, ...);
-
-/*** Charecter categorization ***/
-
-#include "obj/sherlock/xml/unicat.h"
-
-static inline uns
-xml_char_cat(uns c)
-{
-  if (c < 0x10000)
-    return 1U << xml_char_tab1[(c & 0xff) + xml_char_tab2[c >> 8]];
-  else if (likely(c < 0x110000))
-    return 1U << xml_char_tab3[c >> 16];
-  else
-    return 1;
-}
-
-static inline uns
-xml_ascii_cat(uns c)
-{
-  return xml_char_tab1[c];
-}
+void NONRET xml_fatal(struct xml_context *ctx, const char *format, ...);
 
 /*** Memory management ***/
-
-void NONRET xml_fatal_nested(struct xml_context *ctx);
-
-static inline void
-xml_inc(struct xml_context *ctx)
-{
-  /* Called after the first character of a block */
-  TRACE(ctx, "inc");
-  ctx->depth++;
-}
-
-static inline void
-xml_dec(struct xml_context *ctx)
-{
-  /* Called after the last character of a block */
-  TRACE(ctx, "dec");
-  if (unlikely(!ctx->depth--))
-    xml_fatal_nested(ctx);
-}
 
 struct xml_stack {
   struct xml_stack *next;
@@ -133,14 +93,14 @@ xml_push_dom(struct xml_context *ctx)
 }
 
 static inline void
-xml_pop_dom(struct xml_context *ctx)
+xml_pop_dom(struct xml_context *ctx, uns free)
 {
   /* Leave DOM subtree */
   TRACE(ctx, "pop_dom");
   ASSERT(ctx->node);
   struct xml_node *p = ctx->node->parent;
   struct xml_dom_stack *s = (void *)ctx->stack_list;
-  if (ctx->flags & XML_DOM_FREE)
+  if (free)
     {
       /* See xml_pop_element() for cleanup of attribute hash table */
       if (p)
@@ -182,6 +142,64 @@ xml_end_chars(struct xml_context *ctx, uns *len)
 }
 
 /*** Reading of document/external entities ***/
+
+#define XML_BUF_SIZE 32					/* At least 8 -- hardcoded */
+
+struct xml_source {
+  struct xml_source *next;				/* Link list of pending fastbufs (xml_context.sources) */
+  struct fastbuf *fb;					/* Source fastbuf */
+  struct fastbuf *wrapped_fb;				/* Original wrapped fastbuf (needed for cleanup) */
+  struct fastbuf wrap_fb;				/* Fbmem wrapper */
+  u32 buf[2 * XML_BUF_SIZE];				/* Read buffer with Unicode values and categories */
+  u32 *bptr, *bstop;					/* Current state of the buffer */
+  uns row;						/* File position */
+  char *expected_encoding;				/* Initial encoding before any transformation has been made (expected in XMLDecl/TextDecl) */
+  char *fb_encoding;					/* Encoding of the source fastbuf */
+  char *decl_encoding;					/* Encoding read from the XMLDecl/TextDecl */
+  uns refill_cat1;					/* Character categories, which should be directly passed to the buffer */
+  uns refill_cat2;					/* Character categories, which should be processed as newlines (possibly in some built-in sequences) */
+  void (*refill)(struct xml_context *ctx);		/* Callback to decode source characters to the buffer */
+  unsigned short *refill_in_to_x;			/* Libcharset input table */
+  uns saved_depth;					/* Saved ctx->depth */
+};
+
+void NONRET xml_fatal_nested(struct xml_context *ctx);
+
+static inline void
+xml_inc(struct xml_context *ctx)
+{
+  /* Called after the first character of a block */
+  TRACE(ctx, "inc");
+  ctx->depth++;
+}
+
+static inline void
+xml_dec(struct xml_context *ctx)
+{
+  /* Called after the last character of a block */
+  TRACE(ctx, "dec");
+  if (unlikely(!ctx->depth--))
+    xml_fatal_nested(ctx);
+}
+
+#include "obj/sherlock/xml/unicat.h"
+
+static inline uns
+xml_char_cat(uns c)
+{
+  if (c < 0x10000)
+    return 1U << xml_char_tab1[(c & 0xff) + xml_char_tab2[c >> 8]];
+  else if (likely(c < 0x110000))
+    return 1U << xml_char_tab3[c >> 16];
+  else
+    return 1;
+}
+
+static inline uns
+xml_ascii_cat(uns c)
+{
+  return xml_char_tab1[c];
+}
 
 struct xml_source *xml_push_source(struct xml_context *ctx, uns flags);
 void xml_push_entity(struct xml_context *ctx, struct xml_dtd_ent *ent);
@@ -246,7 +264,9 @@ xml_unget_char(struct xml_context *ctx)
   return *(ctx->bptr -= 2);
 }
 
-/*** Basic parsing ***/
+void xml_sources_cleanup(struct xml_context *ctx);
+
+/*** Parsing ***/
 
 void NONRET xml_fatal_expected(struct xml_context *ctx, uns c);
 void NONRET xml_fatal_expected_white(struct xml_context *ctx);
@@ -296,32 +316,33 @@ xml_parse_quote(struct xml_context *ctx)
   return c;
 }
 
-/* Names and nmtokens */
-
 char *xml_parse_name(struct xml_context *ctx, struct mempool *pool);
 void xml_skip_name(struct xml_context *ctx);
 char *xml_parse_nmtoken(struct xml_context *ctx, struct mempool *pool);
 
-/* Simple literals */
-
 char *xml_parse_system_literal(struct xml_context *ctx, struct mempool *pool);
 char *xml_parse_pubid_literal(struct xml_context *ctx, struct mempool *pool);
-
-/* Parsing */
 
 uns xml_parse_char_ref(struct xml_context *ctx);
 void xml_parse_ref(struct xml_context *ctx);
 void xml_parse_pe_ref(struct xml_context *ctx);
+
 char *xml_parse_attr_value(struct xml_context *ctx, struct xml_dtd_attr *attr);
+
 void xml_parse_notation_decl(struct xml_context *ctx);
 void xml_parse_entity_decl(struct xml_context *ctx);
 void xml_parse_element_decl(struct xml_context *ctx);
 void xml_parse_attr_list_decl(struct xml_context *ctx);
+
 void xml_push_comment(struct xml_context *ctx);
 void xml_pop_comment(struct xml_context *ctx);
 void xml_skip_comment(struct xml_context *ctx);
+
 void xml_push_pi(struct xml_context *ctx);
 void xml_pop_pi(struct xml_context *ctx);
 void xml_skip_pi(struct xml_context *ctx);
+
+void xml_attrs_table_init(struct xml_context *ctx);
+void xml_attrs_table_cleanup(struct xml_context *ctx);
 
 #endif

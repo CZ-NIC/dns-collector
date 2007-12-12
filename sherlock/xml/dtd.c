@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#define LOCAL_DEBUG
+#undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
 #include "sherlock/xml/xml.h"
@@ -23,7 +23,6 @@
 #define HASH_KEY_STRING name
 #define HASH_ZERO_FILL
 #define HASH_TABLE_DYNAMIC
-#define HASH_WANT_FIND
 #define HASH_WANT_LOOKUP
 #define HASH_GIVE_ALLOC
 #define HASH_TABLE_ALLOC
@@ -45,16 +44,16 @@ XML_HASH_GIVE_ALLOC
 #include "lib/hashtable.h"
 
 static struct xml_dtd_ent *
-xml_dtd_declare_trivial_gent(struct xml_context *ctx, char *name, char *text)
+xml_dtd_declare_trivial_ent(struct xml_context *ctx, char *name, char *text)
 {
   struct xml_dtd *dtd = ctx->dtd;
-  struct xml_dtd_ent *ent = xml_dtd_ents_lookup(dtd->tab_gents, name);
+  struct xml_dtd_ent *ent = xml_dtd_ents_lookup(dtd->tab_ents, name);
   if (ent->flags & XML_DTD_ENT_DECLARED)
     {
       xml_warn(ctx, "Entity &%s; already declared", name);
       return NULL;
     }
-  slist_add_tail(&dtd->gents, &ent->n);
+  slist_add_tail(&dtd->ents, &ent->n);
   ent->flags = XML_DTD_ENT_DECLARED | XML_DTD_ENT_TRIVIAL;
   ent->text = text;
   ent->len = strlen(text);
@@ -62,22 +61,22 @@ xml_dtd_declare_trivial_gent(struct xml_context *ctx, char *name, char *text)
 }
 
 static void
-xml_dtd_declare_default_gents(struct xml_context *ctx)
+xml_dtd_declare_default_ents(struct xml_context *ctx)
 {
-  xml_dtd_declare_trivial_gent(ctx, "lt", "<");
-  xml_dtd_declare_trivial_gent(ctx, "gt", ">");
-  xml_dtd_declare_trivial_gent(ctx, "amp", "&");
-  xml_dtd_declare_trivial_gent(ctx, "apos", "'");
-  xml_dtd_declare_trivial_gent(ctx, "quot", "\"");
+  xml_dtd_declare_trivial_ent(ctx, "lt", "<");
+  xml_dtd_declare_trivial_ent(ctx, "gt", ">");
+  xml_dtd_declare_trivial_ent(ctx, "amp", "&");
+  xml_dtd_declare_trivial_ent(ctx, "apos", "'");
+  xml_dtd_declare_trivial_ent(ctx, "quot", "\"");
 }
 
 struct xml_dtd_ent *
-xml_dtd_find_gent(struct xml_context *ctx, char *name)
+xml_dtd_find_ent(struct xml_context *ctx, char *name)
 {
   struct xml_dtd *dtd = ctx->dtd;
   if (dtd)
     {
-      struct xml_dtd_ent *ent = xml_dtd_ents_find(dtd->tab_gents, name);
+      struct xml_dtd_ent *ent = xml_dtd_ents_find(dtd->tab_ents, name);
       return !ent ? NULL : (ent->flags & XML_DTD_ENT_DECLARED) ? ent : NULL;
     }
   else
@@ -127,11 +126,18 @@ xml_dtd_find_pent(struct xml_context *ctx, char *name)
 #define HASH_KEY_STRING name
 #define HASH_TABLE_DYNAMIC
 #define HASH_ZERO_FILL
+#define HASH_WANT_FIND
 #define HASH_WANT_LOOKUP
 #define HASH_GIVE_ALLOC
 #define HASH_TABLE_ALLOC
 XML_HASH_GIVE_ALLOC
 #include "lib/hashtable.h"
+
+struct xml_dtd_elem *
+xml_dtd_find_elem(struct xml_context *ctx, char *name)
+{
+  return ctx->dtd ? xml_dtd_elems_find(ctx->dtd->tab_elems, name) : NULL;
+}
 
 /* Element sons */
 
@@ -210,6 +216,12 @@ xml_dtd_attrs_init_key(struct xml_dtd_attrs_table *tab UNUSED, struct xml_dtd_at
 #define HASH_TABLE_ALLOC
 XML_HASH_GIVE_ALLOC
 #include "lib/hashtable.h"
+
+struct xml_dtd_attr *
+xml_dtd_find_attr(struct xml_context *ctx, struct xml_dtd_elem *elem, char *name)
+{
+  return ctx->dtd ? xml_dtd_attrs_find(ctx->dtd->tab_attrs, elem, name) : NULL;
+}
 
 /* Enumerated attribute values */
 
@@ -297,7 +309,7 @@ xml_dtd_init(struct xml_context *ctx)
   struct mempool *pool = mp_new(4096);
   struct xml_dtd *dtd = ctx->dtd = mp_alloc_zero(pool, sizeof(*ctx->dtd));
   dtd->pool = pool;
-  xml_dtd_ents_init(dtd->tab_gents = xml_hash_new(pool, sizeof(struct xml_dtd_ents_table)));
+  xml_dtd_ents_init(dtd->tab_ents = xml_hash_new(pool, sizeof(struct xml_dtd_ents_table)));
   xml_dtd_ents_init(dtd->tab_pents = xml_hash_new(pool, sizeof(struct xml_dtd_ents_table)));
   xml_dtd_notns_init(dtd->tab_notns = xml_hash_new(pool, sizeof(struct xml_dtd_notns_table)));
   xml_dtd_elems_init(dtd->tab_elems = xml_hash_new(pool, sizeof(struct xml_dtd_elems_table)));
@@ -305,7 +317,7 @@ xml_dtd_init(struct xml_context *ctx)
   xml_dtd_attrs_init(dtd->tab_attrs = xml_hash_new(pool, sizeof(struct xml_dtd_attrs_table)));
   xml_dtd_evals_init(dtd->tab_evals = xml_hash_new(pool, sizeof(struct xml_dtd_evals_table)));
   xml_dtd_enotns_init(dtd->tab_enotns = xml_hash_new(pool, sizeof(struct xml_dtd_enotns_table)));
-  xml_dtd_declare_default_gents(ctx);
+  xml_dtd_declare_default_ents(ctx);
 }
 
 void
@@ -457,8 +469,8 @@ xml_parse_entity_decl(struct xml_context *ctx)
   else
     xml_unget_char(ctx);
 
-  struct xml_dtd_ent *ent = xml_dtd_ents_lookup(flags ? dtd->tab_pents : dtd->tab_gents, xml_parse_name(ctx, dtd->pool));
-  slist *list = flags ? &dtd->pents : &dtd->gents;
+  struct xml_dtd_ent *ent = xml_dtd_ents_lookup(flags ? dtd->tab_pents : dtd->tab_ents, xml_parse_name(ctx, dtd->pool));
+  slist *list = flags ? &dtd->pents : &dtd->ents;
   xml_parse_dtd_white(ctx, 1);
   if (ent->flags & XML_DTD_ENT_DECLARED)
     {
