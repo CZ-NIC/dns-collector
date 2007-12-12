@@ -644,6 +644,8 @@ do {											\
 #undef HASH_KEY_DECL
 #undef HASH_KEY_ENDSTRING
 #undef HASH_KEY_STRING
+#undef HASH_KEY_MEMORY
+#undef HASH_KEY_SIZE
 #undef HASH_NOCASE
 #undef HASH_NODE
 #undef HASH_PREFIX
