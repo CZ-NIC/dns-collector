@@ -17,6 +17,7 @@
 
 enum {
   WANT_FIRST = 0x100,
+  WANT_PARSE_DTD,
   WANT_HIDE_ERRORS,
   WANT_UNFOLD_CDATA,
   WANT_IGNORE_COMMENTS,
@@ -29,6 +30,7 @@ static struct option longopts[] = {
   { "sax",		0, 0, 's' },
   { "pull",		0, 0, 'p' },
   { "dom",		0, 0, 'd' },
+  { "dtd",		0, 0, WANT_PARSE_DTD },
   { "hide-errors",	0, 0, WANT_HIDE_ERRORS },
   { "unfold-cdata",	0, 0, WANT_UNFOLD_CDATA },
   { "ignore-comments",	0, 0, WANT_IGNORE_COMMENTS },
@@ -45,9 +47,10 @@ Usage: xml-test [options] < input.xml\n\
 Options:\n"
 CF_USAGE
 "\
--s, --pull              Test PULL interface\n\
+-p, --pull              Test PULL interface\n\
 -s, --sax               Test SAX interface\n\
 -d, --dom               Test DOM interface\n\
+    --dtd               Enable parsing of DTD\n\
     --hide-errors       Hide warnings and error messages\n\
     --unfold-cdata      Unfold CDATA sections\n\
     --ignore-comments   Ignore processing instructions\n\
@@ -59,6 +62,7 @@ CF_USAGE
 static uns want_sax;
 static uns want_pull;
 static uns want_dom;
+static uns want_parse_dtd;
 static uns want_hide_errors;
 static uns want_unfold_cdata;
 static uns want_ignore_comments;
@@ -222,6 +226,9 @@ main(int argc, char **argv)
 	case 'd':
 	  want_dom++;
 	  break;
+	case WANT_PARSE_DTD:
+	  want_parse_dtd++;
+	  break;
 	case WANT_HIDE_ERRORS:
 	  want_hide_errors++;
 	  break;
@@ -262,6 +269,8 @@ main(int argc, char **argv)
     }
   if (want_dom)
     ctx.flags |= XML_ALLOC_ALL;
+  if (want_parse_dtd)
+    ctx.flags |= XML_PARSE_DTD;
   if (want_unfold_cdata)
     ctx.flags |= XML_UNFOLD_CDATA;
   if (want_ignore_comments)

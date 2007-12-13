@@ -80,6 +80,7 @@ enum xml_flags {
   /* Other parameters */
   XML_UNFOLD_CDATA =			0x00000100,	/* Unfold CDATA sections */
   XML_VALIDATING =			0x00000200,	/* Validate everything (not fully implemented!) */
+  XML_PARSE_DTD =			0x00000400,	/* Enable parsing of DTD */
 
   /* Internals, do not change! */
   XML_EMPTY_ELEM_TAG =			0x00010000,	/* The current element match EmptyElemTag */

@@ -329,6 +329,7 @@ void xml_parse_pe_ref(struct xml_context *ctx);
 
 char *xml_parse_attr_value(struct xml_context *ctx, struct xml_dtd_attr *attr);
 
+void xml_skip_internal_subset(struct xml_context *ctx);
 void xml_parse_notation_decl(struct xml_context *ctx);
 void xml_parse_entity_decl(struct xml_context *ctx);
 void xml_parse_element_decl(struct xml_context *ctx);

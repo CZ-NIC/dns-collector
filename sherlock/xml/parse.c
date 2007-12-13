@@ -835,6 +835,7 @@ error:
 	  {
 	    xml_parse_white(ctx, 0);
 	    xml_parse_char(ctx, '<');
+	    xml_inc(ctx);
 	    if ((c = xml_get_char(ctx)) == '?')
 	      /* Processing intruction */
 	      if (!(ctx->flags & XML_REPORT_PIS))
@@ -868,19 +869,25 @@ error:
 		PULL(DOCTYPE_DECL);
 		if (xml_peek_char(ctx) == '[')
 		  {
-		    // FIXME: ability to skip the subset
 		    xml_skip_char(ctx);
 		    xml_inc(ctx);
-		    xml_dtd_init(ctx);
-		    if (ctx->h_dtd_start)
-		      ctx->h_dtd_start(ctx);
-		    xml_parse_internal_subset(ctx);
-		    // FIXME: external subset
-		    if (ctx->h_dtd_end)
-		      ctx->h_dtd_end(ctx);
-		    xml_parse_white(ctx, 0);
+		    if (ctx->flags & XML_PARSE_DTD)
+		      {
+			xml_dtd_init(ctx);
+			if (ctx->h_dtd_start)
+			  ctx->h_dtd_start(ctx);
+			// FIXME: pu;; iface?
+			xml_parse_internal_subset(ctx);
+			// FIXME: external subset
+			if (ctx->h_dtd_end)
+			  ctx->h_dtd_end(ctx);
+		      }
+		    else
+		      xml_skip_internal_subset(ctx);
 		  }
+		xml_parse_white(ctx, 0);
 		xml_parse_char(ctx, '>');
+		xml_dec(ctx);
 	      }
 	  }
 
@@ -896,9 +903,9 @@ error:
 	      }
 	    else
 	      xml_skip_char(ctx);
-first_tag: ;
-
 	    xml_inc(ctx);
+first_tag:
+
 	    if ((c = xml_get_char(ctx)) == '?')
 	      {
 		/* PI */
@@ -1050,7 +1057,11 @@ epilog:
 uns
 xml_parse(struct xml_context *ctx)
 {
-  ctx->pull = 0;
-  xml_next(ctx);
+  /* This cycle shoud run only once unless the user overrides the value of ctx->pull in a SAX handler */
+  do
+    {
+      ctx->pull = 0;
+    }
+  while (xml_next(ctx));
   return ctx->err_code;
 }

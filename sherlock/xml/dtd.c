@@ -833,3 +833,33 @@ xml_parse_attr_list_decl(struct xml_context *ctx)
   xml_skip_char(ctx);
   xml_dec(ctx);
 }
+
+void
+xml_skip_internal_subset(struct xml_context *ctx)
+{
+  TRACE(ctx, "skip_internal_subset");
+  /* AlreadyParsed: '[' */
+  uns c;
+  while ((c = xml_get_char(ctx)) != ']')
+    {
+      if (c != '<')
+	continue;
+      if ((c = xml_get_char(ctx)) == '?')
+        {
+          xml_inc(ctx);
+	  xml_skip_pi(ctx);
+	}
+      else if (c != '!')
+	xml_dec(ctx);
+      else if (xml_get_char(ctx) == '-')
+        {
+	  xml_inc(ctx);
+	  xml_skip_comment(ctx);
+	}
+      else
+	while ((c = xml_get_char(ctx)) != '>')
+	  if (c == '\'' || c == '"')
+	    while (xml_get_char(ctx) != c);
+    }
+  xml_dec(ctx);
+}
