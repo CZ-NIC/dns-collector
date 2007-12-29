@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Circular Linked Lists
  *
- *	(c) 2003--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2007 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -84,6 +84,22 @@ static inline void clist_remove(cnode *n)
   cnode *after = n->next;
   before->next = after;
   after->prev = before;
+}
+
+static inline void *clist_remove_head(clist *l)
+{
+  cnode *n = clist_head(l);
+  if (n)
+    clist_remove(n);
+  return n;
+}
+
+static inline void *clist_remove_tail(clist *l)
+{
+  cnode *n = clist_tail(l);
+  if (n)
+    clist_remove(n);
+  return n;
 }
 
 static inline void clist_init(clist *l)
