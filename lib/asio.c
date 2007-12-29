@@ -69,9 +69,8 @@ asio_cleanup_queue(struct asio_queue *q)
   ASSERT(clist_empty(&q->done_list));
 
   struct asio_request *r;
-  while (r = clist_head(&q->idle_list))
+  while (r = clist_remove_head(&q->idle_list))
     {
-      clist_remove(&r->work.n);
       big_free(r->buffer, q->buffer_size);
       xfree(r);
     }
