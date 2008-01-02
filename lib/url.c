@@ -32,6 +32,7 @@ static uns url_ignore_underflow;
 static char *url_component_separators = "";
 static uns url_min_repeat_count = 0x7fffffff;
 static uns url_max_repeat_length = 0;
+static uns url_max_occurences = ~0U;
 
 static struct cf_section url_config = {
   CF_ITEMS {
@@ -40,6 +41,7 @@ static struct cf_section url_config = {
     CF_STRING("ComponentSeparators", &url_component_separators),
     CF_UNS("MinRepeatCount", &url_min_repeat_count),
     CF_UNS("MaxRepeatLength", &url_max_repeat_length),
+    CF_UNS("MaxOccurences", &url_max_occurences),
     CF_END
   }
 };
@@ -667,6 +669,7 @@ int main(int argc, char **argv)
 struct component {
 	const byte *start;
 	int length;
+	uns count;
 	u32 hash;
 };
 
@@ -703,10 +706,10 @@ repeat_count(struct component *comp, uns count, uns len)
 int
 url_has_repeated_component(const byte *url)
 {
-	struct component *comp;
+	struct component *comp, **hash;
 	uns comps, comp_len, rep_prefix;
 	const byte *c;
-	uns i;
+	uns i, j;
 
 	for (comps=0, c=url; c; comps++)
 	{
@@ -714,9 +717,9 @@ url_has_repeated_component(const byte *url)
 		if (c)
 			c++;
 	}
-	if (comps < url_min_repeat_count)
+	if (comps < url_min_repeat_count && comps <= url_max_occurences)
 		return 0;
-	comp = alloca(comps * sizeof(struct component));
+	comp = alloca(comps * sizeof(*comp));
 	for (i=0, c=url; c; i++)
 	{
 		comp[i].start = c;
@@ -732,6 +735,24 @@ url_has_repeated_component(const byte *url)
 	ASSERT(i == comps);
 	for (i=0; i<comps; i++)
 		comp[i].hash = hashf(comp[i].start, comp[i].length);
+	if (comps > url_max_occurences)
+	{
+		hash = alloca(comps * sizeof(*hash));
+		bzero(hash, comps * sizeof(*hash));
+		for (i=0; i<comps; i++)
+		{
+			j = comp[i].hash % comps;
+			while (hash[j] && memcmp(hash[j]->start, comp[i].start, comp[i].length))
+				j = (j + 1) % comps;
+			if (!hash[j])
+			{
+				hash[j] = &comp[i];
+				comp[i].count = 1;
+			}
+			else if (hash[j]->count++ >= url_max_occurences)
+				return 1;
+		}
+	}
 	for (comp_len = 1; comp_len <= url_max_repeat_length && comp_len <= comps; comp_len++)
 		for (rep_prefix = 0; rep_prefix <= comps - comp_len; rep_prefix++)
 			if (repeat_count(comp + rep_prefix, comps - rep_prefix, comp_len) >= url_min_repeat_count)
