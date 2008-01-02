@@ -707,7 +707,7 @@ int
 url_has_repeated_component(const byte *url)
 {
 	struct component *comp, **hash;
-	uns comps, comp_len, rep_prefix;
+	uns comps, comp_len, rep_prefix, hash_size;
 	const byte *c;
 	uns i, j;
 
@@ -737,13 +737,15 @@ url_has_repeated_component(const byte *url)
 		comp[i].hash = hashf(comp[i].start, comp[i].length);
 	if (comps > url_max_occurences)
 	{
-		hash = alloca(comps * sizeof(*hash));
-		bzero(hash, comps * sizeof(*hash));
+		hash_size = next_table_prime(comps * 2);
+		hash = alloca(hash_size * sizeof(*hash));
+		bzero(hash, hash_size * sizeof(*hash));
 		for (i=0; i<comps; i++)
 		{
-			j = comp[i].hash % comps;
+			j = comp[i].hash % hash_size;
 			while (hash[j] && memcmp(hash[j]->start, comp[i].start, comp[i].length))
-				j = (j + 1) % comps;
+				if (++j == hash_size)
+					j = 0;
 			if (!hash[j])
 			{
 				hash[j] = &comp[i];
