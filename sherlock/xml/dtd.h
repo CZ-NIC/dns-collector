@@ -54,7 +54,8 @@ enum xml_dtd_ent_flags {
   XML_DTD_ENT_PARAMETER = 0x4,		/* Parameter entity, general otherwise */
   XML_DTD_ENT_EXTERNAL = 0x8,		/* External entity, internal otherwise */
   XML_DTD_ENT_UNPARSED = 0x10,		/* Unparsed entity, parsed otherwise */
-  XML_DTD_ENT_TRIVIAL = 0x20,		/* Replacement text is a sequence of characters and character references */
+  XML_DTD_ENT_TRIVIAL_STR = 0x20,	/* Replacement text is a sequence of characters and character references */
+  XML_DTD_ENT_TRIVIAL_UNI = 0x40,	/* Replacement text is a single Unicode character */
 };
 
 struct xml_dtd_ent {
@@ -63,6 +64,7 @@ struct xml_dtd_ent {
   char *name;				/* Entity name */
   char *text;				/* Replacement text / expanded replacement text (XML_DTD_ENT_TRIVIAL) */
   uns len;				/* Text length */
+  uns uni;				/* Unicode value */
   struct xml_ext_id eid;		/* External ID */
   struct xml_dtd_notn *notn;		/* Notation (XML_DTD_ENT_UNPARSED only) */
 };

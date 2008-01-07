@@ -15,6 +15,9 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 
+struct xml_context;
+struct xml_dtd_ent;
+
 enum xml_error {
   // FIXME
   XML_ERR_OK = 0,
@@ -121,6 +124,7 @@ struct xml_node {
       slist attrs;					/* Link list of element attributes */
     };
   };
+  void *user;						/* User-defined (initialized to NULL) */
 };
 
 struct xml_attr {
@@ -128,6 +132,7 @@ struct xml_attr {
   struct xml_node *elem;				/* Parent element */
   char *name;						/* Attribute name */
   char *val;						/* Attribute value */
+  void *user;						/* User-defined (initialized to NULL) */
 };
 
 struct xml_context {
@@ -163,16 +168,17 @@ struct xml_context {
   void (*h_xml_decl)(struct xml_context *ctx);		/* Called after the XML declaration */
   void (*h_doctype_decl)(struct xml_context *ctx);	/* Called in the doctype declaration (before optional internal subset) */
   void (*h_comment)(struct xml_context *ctx);		/* Called after a comment (only with XML_REPORT_COMMENTS) */
-  void (*h_pi)(struct xml_context *ctx);		/* Called after a processing instruction (only with XML_REPORT_PIS) */
+  void (*h_pi)(struct xml_context *ctx);			/* Called after a processing instruction (only with XML_REPORT_PIS) */
   void (*h_stag)(struct xml_context *ctx);		/* Called after STag or EmptyElemTag (only with XML_REPORT_TAGS) */
   void (*h_etag)(struct xml_context *ctx);		/* Called before ETag or after EmptyElemTag (only with XML_REPORT_TAGS) */
   void (*h_chars)(struct xml_context *ctx);		/* Called after some characters (only with XML_REPORT_CHARS) */
   void (*h_cdata)(struct xml_context *ctx);		/* Called after a CDATA section (only with XML_REPORT_CHARS and XML_UNFOLD_CDATA) */
   void (*h_dtd_start)(struct xml_context *ctx);		/* Called just after the DTD structure is initialized */
   void (*h_dtd_end)(struct xml_context *ctx);		/* Called after DTD subsets subsets */
+  struct xml_dtd_ent *(*h_resolve_entity)(struct xml_context *ctx, char *name);
 
   /* DOM */
-  struct xml_node *root;				/* DOM root */
+  struct xml_node *dom;					/* DOM root */
   struct xml_node *node;				/* Current DOM node */
 
   char *version_str;
@@ -186,7 +192,6 @@ struct xml_context {
 
   void (*start_entity)(struct xml_context *ctx);
   void (*end_entity)(struct xml_context *ctx);
-  struct fastbuf *(*resolve_entity)(struct xml_context *ctx);
   void (*notation_decl)(struct xml_context *ctx);
   void (*unparsed_entity_decl)(struct xml_context *ctx);
 };

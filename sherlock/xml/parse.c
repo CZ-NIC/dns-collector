@@ -451,7 +451,12 @@ xml_parse_ref(struct xml_context *ctx)
 	  bputs(out, name);
 	  bputc(out, ';');
 	}
-      else if (ent->flags & XML_DTD_ENT_TRIVIAL)
+      else if (ent->flags & XML_DTD_ENT_TRIVIAL_UNI)
+        {
+	  TRACE(ctx, "Trivial entity &%s;", name);
+	  bput_utf8_32(out, ent->uni);
+	}
+      else if (ent->flags & XML_DTD_ENT_TRIVIAL_STR)
         {
 	  TRACE(ctx, "Trivial entity &%s;", name);
 	  bwrite(out, ent->text, ent->len);
@@ -529,6 +534,7 @@ xml_attrs_init_key(struct xml_attrs_table *t UNUSED, struct xml_attr *a, struct 
   a->elem = e;
   a->name = name;
   a->val = NULL;
+  a->user = NULL;
   slist_add_tail(&e->attrs, &a->n);
 }
 
@@ -602,7 +608,7 @@ xml_push_element(struct xml_context *ctx)
   slist_init(&e->attrs);
   if (!e->parent)
     {
-      ctx->root = e;
+      ctx->dom = e;
       if (ctx->doctype && strcmp(e->name, ctx->doctype))
 	xml_error(ctx, "The root element %s does not match the document type %s", e->name, ctx->doctype);
     }
@@ -638,7 +644,7 @@ xml_pop_element(struct xml_context *ctx)
   if (free)
     {
       if (!e->parent)
-	ctx->root = NULL;
+	ctx->dom = NULL;
       /* Restore hash table of attributes */
       SLIST_FOR_EACH(struct xml_attr *, a, e->attrs)
 	xml_attrs_remove(ctx->tab_attrs, a);
@@ -876,7 +882,7 @@ error:
 			xml_dtd_init(ctx);
 			if (ctx->h_dtd_start)
 			  ctx->h_dtd_start(ctx);
-			// FIXME: pu;; iface?
+			// FIXME: pull iface?
 			xml_parse_internal_subset(ctx);
 			// FIXME: external subset
 			if (ctx->h_dtd_end)

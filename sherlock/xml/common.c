@@ -161,5 +161,7 @@ xml_reset(struct xml_context *ctx)
   mp_flush(pool);
   mp_flush(stack);
   bzero(ctx, sizeof(*ctx));
+  ctx->pool = pool;
+  ctx->stack = stack;
   xml_do_init(ctx);
 }

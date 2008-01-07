@@ -87,6 +87,7 @@ xml_push_dom(struct xml_context *ctx)
   struct xml_dom_stack *s = xml_do_push(ctx, sizeof(*s));
   mp_save(ctx->pool, &s->state);
   struct xml_node *n = mp_alloc(ctx->pool, sizeof(*n));
+  n->user = NULL;
   if (n->parent = ctx->node)
     clist_add_tail(&n->parent->sons, &n->n);
   return ctx->node = n;

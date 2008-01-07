@@ -322,7 +322,7 @@ main(int argc, char **argv)
     {
       bputs(out, "PULL: eof\n");
       if (want_dom)
-	show_tree(ctx.root, 0);
+	show_tree(ctx.dom, 0);
     }
 
   xml_cleanup(&ctx);

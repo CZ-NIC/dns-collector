@@ -44,7 +44,7 @@ XML_HASH_GIVE_ALLOC
 #include "lib/hashtable.h"
 
 static struct xml_dtd_ent *
-xml_dtd_declare_trivial_ent(struct xml_context *ctx, char *name, char *text)
+xml_dtd_declare_trivial_ent(struct xml_context *ctx, char *name, uns uni)
 {
   struct xml_dtd *dtd = ctx->dtd;
   struct xml_dtd_ent *ent = xml_dtd_ents_lookup(dtd->tab_ents, name);
@@ -54,35 +54,36 @@ xml_dtd_declare_trivial_ent(struct xml_context *ctx, char *name, char *text)
       return NULL;
     }
   slist_add_tail(&dtd->ents, &ent->n);
-  ent->flags = XML_DTD_ENT_DECLARED | XML_DTD_ENT_TRIVIAL;
-  ent->text = text;
-  ent->len = strlen(text);
+  ent->flags = XML_DTD_ENT_DECLARED | XML_DTD_ENT_TRIVIAL_UNI;
+  ent->uni = uni;
   return ent;
 }
 
 static void
 xml_dtd_declare_default_ents(struct xml_context *ctx)
 {
-  xml_dtd_declare_trivial_ent(ctx, "lt", "<");
-  xml_dtd_declare_trivial_ent(ctx, "gt", ">");
-  xml_dtd_declare_trivial_ent(ctx, "amp", "&");
-  xml_dtd_declare_trivial_ent(ctx, "apos", "'");
-  xml_dtd_declare_trivial_ent(ctx, "quot", "\"");
+  xml_dtd_declare_trivial_ent(ctx, "lt", 60);
+  xml_dtd_declare_trivial_ent(ctx, "gt", 62);
+  xml_dtd_declare_trivial_ent(ctx, "amp", 38);
+  xml_dtd_declare_trivial_ent(ctx, "apos", 39);
+  xml_dtd_declare_trivial_ent(ctx, "quot", 34);
 }
 
 struct xml_dtd_ent *
 xml_dtd_find_ent(struct xml_context *ctx, char *name)
 {
   struct xml_dtd *dtd = ctx->dtd;
-  if (dtd)
+  if (ctx->h_resolve_entity)
+    return ctx->h_resolve_entity(ctx, name);
+  else if (dtd)
     {
       struct xml_dtd_ent *ent = xml_dtd_ents_find(dtd->tab_ents, name);
       return !ent ? NULL : (ent->flags & XML_DTD_ENT_DECLARED) ? ent : NULL;
     }
   else
     {
-#define ENT(n, t) ent_##n = { .name = #n, .text = t, .len = 1, .flags = XML_DTD_ENT_DECLARED | XML_DTD_ENT_TRIVIAL }
-      static struct xml_dtd_ent ENT(lt, "<"), ENT(gt, ">"), ENT(amp, "&"), ENT(apos, "'"), ENT(quot, "\"");
+#define ENT(n, u) ent_##n = { .name = #n, .uni = u, .flags = XML_DTD_ENT_DECLARED | XML_DTD_ENT_TRIVIAL_UNI }
+      static struct xml_dtd_ent ENT(lt, 60), ENT(gt, 62), ENT(amp, 38), ENT(apos, 39), ENT(quot, 34);
 #undef ENT
       switch (name[0])
         {
