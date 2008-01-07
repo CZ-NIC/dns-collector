@@ -395,6 +395,11 @@ load_default(void)
       else if (cf_load(cf_def_file))
         die("Cannot load default config %s", cf_def_file);
     }
+  else
+    {
+      // We need to create an empty pool
+      cf_journal_commit_transaction(1, cf_journal_new_transaction(1));
+    }
 }
 
 static void
