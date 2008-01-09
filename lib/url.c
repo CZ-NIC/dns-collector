@@ -706,10 +706,10 @@ repeat_count(struct component *comp, uns count, uns len)
 int
 url_has_repeated_component(const byte *url)
 {
-	struct component *comp, **hash;
-	uns comps, comp_len, rep_prefix, hash_size;
+	struct component *comp;
+	uns comps, comp_len, rep_prefix, hash_size, *hash, *next;
 	const byte *c;
-	uns i, j;
+	uns i, j, k;
 
 	for (comps=0, c=url; c; comps++)
 	{
@@ -737,22 +737,26 @@ url_has_repeated_component(const byte *url)
 		comp[i].hash = hashf(comp[i].start, comp[i].length);
 	if (comps > url_max_occurences)
 	{
-		hash_size = next_table_prime(comps * 2);
+		hash_size = next_table_prime(comps);
 		hash = alloca(hash_size * sizeof(*hash));
-		bzero(hash, hash_size * sizeof(*hash));
+		next = alloca(comps * sizeof(*next));
+		memset(hash, 255, hash_size * sizeof(*hash));
 		for (i=0; i<comps; i++)
 		{
 			j = comp[i].hash % hash_size;
-			while (hash[j] && memcmp(hash[j]->start, comp[i].start, comp[i].length))
-				if (++j == hash_size)
-					j = 0;
-			if (!hash[j])
+			for (k = hash[j]; ~k && (comp[i].hash != comp[k].hash || comp[i].length != comp[k].length ||
+			    memcmp(comp[k].start, comp[i].start, comp[i].length)); k = next[k]);
+			if (!~k)
 			{
-				hash[j] = &comp[i];
+				next[i] = hash[j];
+				hash[j] = i;
 				comp[i].count = 1;
 			}
-			else if (hash[j]->count++ >= url_max_occurences)
-				return 1;
+			else
+			{
+				if (comp[k].count++ >= url_max_occurences)
+					return 1;
+			}
 		}
 	}
 	for (comp_len = 1; comp_len <= url_max_repeat_length && comp_len <= comps; comp_len++)
