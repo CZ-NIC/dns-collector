@@ -154,7 +154,7 @@ got_code:
       if (code < 0x80)
         {
 	  if (d >= de)
-	    goto dend;
+	    goto dend_utf;
 	  *d++ = code;
 	}
       else if (code < 0x800)
@@ -247,10 +247,6 @@ write_slow:
 #endif
 
 #ifdef CONV_WRITE_UTF8
- dend:
-  c->source = s;
-  c->dest = d;
-  return CONV_DEST_END;
  dend_utf:
   c->state = UTF8_WRITE_START;
   c->code = code;
