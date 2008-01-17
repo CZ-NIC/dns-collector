@@ -19,7 +19,9 @@ $(o)/sherlock/xml/unicat.stamp: $(s)/sherlock/xml/unicat.pl
 	$(Q)$< $(addprefix $(o)/sherlock/xml/unicat,.h .c)
 	$(Q)touch $@
 
+TESTS+=$(o)/sherlock/xml/xml-test.test
 $(o)/sherlock/xml/xml-test: $(o)/sherlock/xml/xml-test.o $(LIBSHXML)
+$(o)/sherlock/xml/xml-test.test: $(o)/sherlock/xml/xml-test
 
 API_LIBS+=libshxml
 API_INCLUDES+=$(o)/sherlock/xml/.include-stamp

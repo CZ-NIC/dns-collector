@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- A simple XML parser
  *
- *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -15,6 +15,7 @@
 #include "sherlock/xml/common.h"
 #include "lib/fastbuf.h"
 #include "lib/ff-unicode.h"
+#include "lib/unicode.h"
 
 /* Notations */
 
@@ -24,15 +25,24 @@
 #define HASH_ZERO_FILL
 #define HASH_TABLE_DYNAMIC
 #define HASH_WANT_LOOKUP
+#define HASH_WANT_FIND
 #define HASH_GIVE_ALLOC
 #define HASH_TABLE_ALLOC
 XML_HASH_GIVE_ALLOC
 #include "lib/hashtable.h"
 
+struct xml_dtd_notn *
+xml_dtd_find_notn(struct xml_context *ctx, char *name)
+{
+  struct xml_dtd *dtd = ctx->dtd;
+  struct xml_dtd_notn *notn = xml_dtd_notns_find(dtd->tab_notns, name);
+  return !notn ? NULL : (notn->flags & XML_DTD_NOTN_DECLARED) ? notn : NULL;
+}
+
 /* General entities */
 
 #define HASH_PREFIX(x) xml_dtd_ents_##x
-#define HASH_NODE struct xml_dtd_ent
+#define HASH_NODE struct xml_dtd_entity
 #define HASH_KEY_STRING name
 #define HASH_ZERO_FILL
 #define HASH_TABLE_DYNAMIC
@@ -43,81 +53,85 @@ XML_HASH_GIVE_ALLOC
 XML_HASH_GIVE_ALLOC
 #include "lib/hashtable.h"
 
-static struct xml_dtd_ent *
-xml_dtd_declare_trivial_ent(struct xml_context *ctx, char *name, uns uni)
+static struct xml_dtd_entity *
+xml_dtd_declare_trivial_entity(struct xml_context *ctx, char *name, char *text)
 {
   struct xml_dtd *dtd = ctx->dtd;
-  struct xml_dtd_ent *ent = xml_dtd_ents_lookup(dtd->tab_ents, name);
-  if (ent->flags & XML_DTD_ENT_DECLARED)
+  struct xml_dtd_entity *ent = xml_dtd_ents_lookup(dtd->tab_ents, name);
+  if (ent->flags & XML_DTD_ENTITY_DECLARED)
     {
       xml_warn(ctx, "Entity &%s; already declared", name);
       return NULL;
     }
   slist_add_tail(&dtd->ents, &ent->n);
-  ent->flags = XML_DTD_ENT_DECLARED | XML_DTD_ENT_TRIVIAL_UNI;
-  ent->uni = uni;
+  ent->flags = XML_DTD_ENTITY_DECLARED | XML_DTD_ENTITY_TRIVIAL;
+  ent->text = text;
   return ent;
 }
 
 static void
-xml_dtd_declare_default_ents(struct xml_context *ctx)
+xml_dtd_declare_default_entities(struct xml_context *ctx)
 {
-  xml_dtd_declare_trivial_ent(ctx, "lt", 60);
-  xml_dtd_declare_trivial_ent(ctx, "gt", 62);
-  xml_dtd_declare_trivial_ent(ctx, "amp", 38);
-  xml_dtd_declare_trivial_ent(ctx, "apos", 39);
-  xml_dtd_declare_trivial_ent(ctx, "quot", 34);
+  xml_dtd_declare_trivial_entity(ctx, "lt", "<");
+  xml_dtd_declare_trivial_entity(ctx, "gt", ">");
+  xml_dtd_declare_trivial_entity(ctx, "amp", "&");
+  xml_dtd_declare_trivial_entity(ctx, "apos", "'");
+  xml_dtd_declare_trivial_entity(ctx, "quot", "\"");
 }
 
-struct xml_dtd_ent *
-xml_dtd_find_ent(struct xml_context *ctx, char *name)
+struct xml_dtd_entity *
+xml_def_find_entity(struct xml_context *ctx UNUSED, char *name)
+{
+#define ENT(n, t) ent_##n = { .name = #n, .text = t, .flags = XML_DTD_ENTITY_DECLARED | XML_DTD_ENTITY_TRIVIAL }
+  static struct xml_dtd_entity ENT(lt, "<"), ENT(gt, ">"), ENT(amp, "&"), ENT(apos, "'"), ENT(quot, "\"");
+#undef ENT
+  switch (name[0])
+    {
+      case 'l':
+	if (!strcmp(name, "lt"))
+	  return &ent_lt;
+	break;
+      case 'g':
+	if (!strcmp(name, "gt"))
+	  return &ent_gt;
+	break;
+      case 'a':
+	if (!strcmp(name, "amp"))
+	  return &ent_amp;
+	if (!strcmp(name, "apos"))
+	  return &ent_apos;
+	break;
+      case 'q':
+	if (!strcmp(name, "quot"))
+	  return &ent_quot;
+	break;
+    }
+  return NULL;
+}
+
+struct xml_dtd_entity *
+xml_dtd_find_entity(struct xml_context *ctx, char *name)
 {
   struct xml_dtd *dtd = ctx->dtd;
-  if (ctx->h_resolve_entity)
-    return ctx->h_resolve_entity(ctx, name);
+  if (ctx->h_find_entity)
+    return ctx->h_find_entity(ctx, name);
   else if (dtd)
     {
-      struct xml_dtd_ent *ent = xml_dtd_ents_find(dtd->tab_ents, name);
-      return !ent ? NULL : (ent->flags & XML_DTD_ENT_DECLARED) ? ent : NULL;
+      struct xml_dtd_entity *ent = xml_dtd_ents_find(dtd->tab_ents, name);
+      return !ent ? NULL : (ent->flags & XML_DTD_ENTITY_DECLARED) ? ent : NULL;
     }
   else
-    {
-#define ENT(n, u) ent_##n = { .name = #n, .uni = u, .flags = XML_DTD_ENT_DECLARED | XML_DTD_ENT_TRIVIAL_UNI }
-      static struct xml_dtd_ent ENT(lt, 60), ENT(gt, 62), ENT(amp, 38), ENT(apos, 39), ENT(quot, 34);
-#undef ENT
-      switch (name[0])
-        {
-	  case 'l':
-	    if (!strcmp(name, "lt"))
-	      return &ent_lt;
-	    break;
-	  case 'g':
-	    if (!strcmp(name, "gt"))
-	      return &ent_gt;
-	    break;
-	  case 'a':
-	    if (!strcmp(name, "amp"))
-	      return &ent_amp;
-	    if (!strcmp(name, "apos"))
-	      return &ent_apos;
-	    break;
-	  case 'q':
-	    if (!strcmp(name, "quot"))
-	      return &ent_quot;
-	    break;
-	}
-      return NULL;
-    }
+    return xml_def_find_entity(ctx, name);
 }
 
 /* Parameter entities */
 
-static struct xml_dtd_ent *
-xml_dtd_find_pent(struct xml_context *ctx, char *name)
+static struct xml_dtd_entity *
+xml_dtd_find_pentity(struct xml_context *ctx, char *name)
 {
   struct xml_dtd *dtd = ctx->dtd;
-  struct xml_dtd_ent *ent = xml_dtd_ents_find(dtd->tab_pents, name);
-  return !ent ? NULL : (ent->flags & XML_DTD_ENT_DECLARED) ? ent : NULL;
+  struct xml_dtd_entity *ent = xml_dtd_ents_find(dtd->tab_pents, name);
+  return !ent ? NULL : (ent->flags & XML_DTD_ENTITY_DECLARED) ? ent : NULL;
 }
 
 /* Elements */
@@ -318,7 +332,7 @@ xml_dtd_init(struct xml_context *ctx)
   xml_dtd_attrs_init(dtd->tab_attrs = xml_hash_new(pool, sizeof(struct xml_dtd_attrs_table)));
   xml_dtd_evals_init(dtd->tab_evals = xml_hash_new(pool, sizeof(struct xml_dtd_evals_table)));
   xml_dtd_enotns_init(dtd->tab_enotns = xml_hash_new(pool, sizeof(struct xml_dtd_enotns_table)));
-  xml_dtd_declare_default_ents(ctx);
+  xml_dtd_declare_default_entities(ctx);
 }
 
 void
@@ -351,7 +365,7 @@ xml_parse_pe_ref(struct xml_context *ctx)
   mp_save(ctx->stack, &state);
   char *name = xml_parse_name(ctx, ctx->stack);
   xml_parse_char(ctx, ';');
-  struct xml_dtd_ent *ent = xml_dtd_find_pent(ctx, name);
+  struct xml_dtd_entity *ent = xml_dtd_find_pentity(ctx, name);
   if (!ent)
     xml_error(ctx, "Unknown entity %%%s;", name);
   else
@@ -401,25 +415,26 @@ xml_parse_dtd_white(struct xml_context *ctx, uns mandatory)
 }
 
 static void
-xml_dtd_parse_external_id(struct xml_context *ctx, struct xml_ext_id *eid, uns allow_public)
+xml_dtd_parse_external_id(struct xml_context *ctx, char **system_id, char **public_id, uns allow_public)
 {
   struct xml_dtd *dtd = ctx->dtd;
-  bzero(eid, sizeof(*eid));
   uns c = xml_peek_char(ctx);
   if (c == 'S')
     {
       xml_parse_seq(ctx, "SYSTEM");
       xml_parse_dtd_white(ctx, 1);
-      eid->system_id = xml_parse_system_literal(ctx, dtd->pool);
+      *public_id = NULL;
+      *system_id = xml_parse_system_literal(ctx, dtd->pool);
     }
   else if (c == 'P')
     {
       xml_parse_seq(ctx, "PUBLIC");
       xml_parse_dtd_white(ctx, 1);
-      eid->public_id = xml_parse_pubid_literal(ctx, dtd->pool);
-      if (xml_parse_dtd_white(ctx, 0)) // FIXME
+      *system_id = NULL;
+      *public_id = xml_parse_pubid_literal(ctx, dtd->pool);
+      if (xml_parse_dtd_white(ctx, !allow_public))
 	if ((c = xml_peek_char(ctx)) == '\'' || c == '"' || !allow_public)
-	  eid->system_id = xml_parse_system_literal(ctx, dtd->pool);
+	  *system_id = xml_parse_system_literal(ctx, dtd->pool);
     }
   else
     xml_fatal(ctx, "Expected an external ID");
@@ -438,8 +453,8 @@ xml_parse_notation_decl(struct xml_context *ctx)
 
   struct xml_dtd_notn *notn = xml_dtd_notns_lookup(dtd->tab_notns, xml_parse_name(ctx, dtd->pool));
   xml_parse_dtd_white(ctx, 1);
-  struct xml_ext_id eid;
-  xml_dtd_parse_external_id(ctx, &eid, 1);
+  char *system_id, *public_id;
+  xml_dtd_parse_external_id(ctx, &system_id, &public_id, 1);
   xml_parse_dtd_white(ctx, 0);
   xml_parse_char(ctx, '>');
 
@@ -448,7 +463,8 @@ xml_parse_notation_decl(struct xml_context *ctx)
   else
     {
       notn->flags = XML_DTD_NOTN_DECLARED;
-      notn->eid = eid;
+      notn->system_id = system_id;
+      notn->public_id = public_id;
       slist_add_tail(&dtd->notns, &notn->n);
     }
   xml_dec(ctx);
@@ -464,16 +480,16 @@ xml_parse_entity_decl(struct xml_context *ctx)
   struct xml_dtd *dtd = ctx->dtd;
   xml_parse_dtd_white(ctx, 1);
 
-  uns flags = (xml_get_char(ctx) == '%') ? XML_DTD_ENT_PARAMETER : 0;
+  uns flags = (xml_get_char(ctx) == '%') ? XML_DTD_ENTITY_PARAMETER : 0;
   if (flags)
     xml_parse_dtd_white(ctx, 1);
   else
     xml_unget_char(ctx);
 
-  struct xml_dtd_ent *ent = xml_dtd_ents_lookup(flags ? dtd->tab_pents : dtd->tab_ents, xml_parse_name(ctx, dtd->pool));
+  struct xml_dtd_entity *ent = xml_dtd_ents_lookup(flags ? dtd->tab_pents : dtd->tab_ents, xml_parse_name(ctx, dtd->pool));
   slist *list = flags ? &dtd->pents : &dtd->ents;
   xml_parse_dtd_white(ctx, 1);
-  if (ent->flags & XML_DTD_ENT_DECLARED)
+  if (ent->flags & XML_DTD_ENTITY_DECLARED)
     {
        xml_fatal(ctx, "Entity &%s; already declared, skipping not implemented", ent->name);
        // FIXME: should be only warning
@@ -511,6 +527,7 @@ xml_parse_entity_decl(struct xml_context *ctx)
 		  p = mp_spread(dtd->pool, p, 3 + l);
 		  *p++ = '&';
 		  memcpy(p, n, l);
+		  p += l;
 		  *p++ = ';';;
 		  mp_restore(ctx->stack, &state);
 		  continue;
@@ -528,27 +545,27 @@ xml_parse_entity_decl(struct xml_context *ctx)
       ent->len = p - (char *)mp_ptr(dtd->pool);
       ent->text = mp_end(dtd->pool, p + 1);
       slist_add_tail(list, &ent->n);
-      ent->flags = flags | XML_DTD_ENT_DECLARED;
+      ent->flags = flags | XML_DTD_ENTITY_DECLARED;
     }
   else
     {
       /* External entity */
-      struct xml_ext_id eid;
       struct xml_dtd_notn *notn = NULL;
-      xml_dtd_parse_external_id(ctx, &eid, 0);
-      if (!xml_parse_dtd_white(ctx, 0) || !flags)
-	xml_parse_char(ctx, '>');
-      else if (xml_get_char(ctx) != '>')
+      char *system_id, *public_id;
+      xml_unget_char(ctx);
+      xml_dtd_parse_external_id(ctx, &system_id, &public_id, 0);
+      if (xml_parse_dtd_white(ctx, 0) && flags && xml_peek_char(ctx) != '>')
         {
 	  /* General external unparsed entity */
-	  flags |= XML_DTD_ENT_UNPARSED;
+	  flags |= XML_DTD_ENTITY_UNPARSED;
 	  xml_parse_seq(ctx, "NDATA");
 	  xml_parse_dtd_white(ctx, 1);
 	  notn = xml_dtd_notns_lookup(dtd->tab_notns, xml_parse_name(ctx, dtd->pool));
 	}
       slist_add_tail(list, &ent->n);
-      ent->flags = flags | XML_DTD_ENT_DECLARED | XML_DTD_ENT_EXTERNAL;
-      ent->eid = eid;
+      ent->flags = flags | XML_DTD_ENTITY_DECLARED | XML_DTD_ENTITY_EXTERNAL;
+      ent->system_id = system_id;
+      ent->public_id = public_id;
       ent->notn = notn;
     }
   xml_parse_dtd_white(ctx, 0);
@@ -754,7 +771,7 @@ xml_parse_attr_list_decl(struct xml_context *ctx)
       else
         {
 	  char *type = xml_parse_name(ctx, dtd->pool);
-	  enum xml_dtd_attribute_type t = XML_ATTR_CDATA;
+	  enum xml_dtd_attr_type t = XML_ATTR_CDATA;
 	  if (!strcmp(type, "CDATA"))
 	    t = XML_ATTR_CDATA;
 	  else if (!strcmp(type, "ID"))
@@ -800,7 +817,7 @@ xml_parse_attr_list_decl(struct xml_context *ctx)
 	    attr->type = t;
 	}
       xml_parse_dtd_white(ctx, 1);
-      enum xml_dtd_attribute_default def = XML_ATTR_NONE;
+      enum xml_dtd_attr_default def = XML_ATTR_NONE;
       if (xml_get_char(ctx) == '#')
 	switch (xml_peek_char(ctx))
           {
@@ -863,4 +880,112 @@ xml_skip_internal_subset(struct xml_context *ctx)
 	    while (xml_get_char(ctx) != c);
     }
   xml_dec(ctx);
+}
+
+/*** Validation of attribute values ***/
+
+static uns
+xml_check_tokens(char *value, uns first_cat, uns next_cat, uns seq)
+{
+  char *p = value;
+  uns u;
+  while (1)
+    {
+      p = utf8_32_get(p, &u);
+      if (!(xml_char_cat(u) & first_cat))
+        return 0;
+      while (*p & ~0x20)
+        {
+	  p = utf8_32_get(p, &u);
+	  if (!(xml_char_cat(u) & next_cat))
+	    return 0;
+	}
+      if (!*p)
+	return 1;
+      if (!seq)
+	return 0;
+      p++;
+    }
+}
+
+static uns
+xml_is_name(struct xml_context *ctx, char *value)
+{
+  /* Name ::= NameStartChar (NameChar)* */
+  return xml_check_tokens(value, ctx->cat_sname, ctx->cat_name, 0);
+}
+
+static uns
+xml_is_names(struct xml_context *ctx, char *value)
+{
+  /* Names ::= Name (#x20 Name)* */
+  return xml_check_tokens(value, ctx->cat_sname, ctx->cat_name, 1);
+}
+
+static uns
+xml_is_nmtoken(struct xml_context *ctx, char *value)
+{
+  /* Nmtoken ::= (NameChar)+ */
+  return xml_check_tokens(value, ctx->cat_name, ctx->cat_name, 0);
+}
+
+static uns
+xml_is_nmtokens(struct xml_context *ctx, char *value)
+{
+  /* Nmtokens ::= Nmtoken (#x20 Nmtoken)* */
+  return xml_check_tokens(value, ctx->cat_name, ctx->cat_name, 1);
+}
+
+static void
+xml_err_attr_format(struct xml_context *ctx, struct xml_dtd_attr *dtd, char *type)
+{
+  xml_error(ctx, "Attribute %s in <%s> does not match the production of %s", dtd->name, dtd->elem->name, type);
+}
+
+void
+xml_validate_attr(struct xml_context *ctx, struct xml_dtd_attr *dtd, char *value)
+{
+  if (dtd->type == XML_ATTR_CDATA)
+    return;
+  xml_normalize_white(ctx, value);
+  switch (dtd->type)
+    {
+      case XML_ATTR_ID:
+	if (!xml_is_name(ctx, value))
+	  xml_err_attr_format(ctx, dtd, "NAME");
+	//FIXME: add to a hash table
+	break;
+      case XML_ATTR_IDREF:
+	if (!xml_is_name(ctx, value))
+	  xml_err_attr_format(ctx, dtd, "NAME");
+	// FIXME: find in hash table (beware forward references)
+	break;
+      case XML_ATTR_IDREFS:
+	if (!xml_is_names(ctx, value))
+	  xml_err_attr_format(ctx, dtd, "NAMES");
+	// FIXME: find
+	break;
+      case XML_ATTR_ENTITY:
+	// FIXME
+	break;
+      case XML_ATTR_ENTITIES:
+	// FIXME
+	break;
+      case XML_ATTR_NMTOKEN:
+	if (!xml_is_nmtoken(ctx, value))
+	  xml_err_attr_format(ctx, dtd, "NMTOKEN");
+	break;
+      case XML_ATTR_NMTOKENS:
+	if (!xml_is_nmtokens(ctx, value))
+	  xml_err_attr_format(ctx, dtd, "NMTOKENS");
+	break;
+      case XML_ATTR_ENUM:
+	if (!xml_dtd_evals_find(ctx->dtd->tab_evals, dtd, value))
+	  xml_error(ctx, "Attribute %s in <%s> contains an undefined enumeration value", dtd->name, dtd->elem->name);
+	break;
+      case XML_ATTR_NOTATION:
+	if (!xml_dtd_find_notn(ctx, value))
+	  xml_error(ctx, "Attribute %s in <%s> contains an undefined notation", dtd->name, dtd->elem->name);
+	break;
+    }
 }

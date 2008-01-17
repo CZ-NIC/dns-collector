@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- A simple XML parser
  *
- *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -67,7 +67,7 @@ xml_add_char(u32 **bstop, uns c)
 }
 
 struct xml_source *
-xml_push_source(struct xml_context *ctx, uns flags)
+xml_push_source(struct xml_context *ctx)
 {
   xml_push(ctx);
   struct xml_source *src = ctx->src;
@@ -80,11 +80,17 @@ xml_push_source(struct xml_context *ctx, uns flags)
   src->next = ctx->src;
   src->saved_depth = ctx->depth;
   ctx->src = src;
-  ctx->flags = (ctx->flags & ~(XML_SRC_EOF | XML_SRC_EXPECTED_DECL | XML_SRC_NEW_LINE | XML_SRC_SURROUND | XML_SRC_DOCUMENT)) | flags;
+  ctx->flags &= ~(XML_SRC_EOF | XML_SRC_EXPECTED_DECL | XML_SRC_NEW_LINE | XML_SRC_SURROUND | XML_SRC_DOCUMENT);
   ctx->bstop = ctx->bptr = src->buf;
   ctx->depth = 0;
-  if (flags & XML_SRC_SURROUND)
-    xml_add_char(&ctx->bstop, 0x20);
+  return src;
+}
+
+struct xml_source *
+xml_push_fastbuf(struct xml_context *ctx, struct fastbuf *fb)
+{
+  struct xml_source *src = xml_push_source(ctx);
+  src->fb = fb;
   return src;
 }
 
@@ -101,11 +107,10 @@ xml_pop_source(struct xml_context *ctx)
 {
   TRACE(ctx, "pop_source");
   if (unlikely(ctx->depth != 0))
-    {
-      xml_fatal(ctx, "Unexpected end of entity");
-    }
+    xml_fatal(ctx, "Unexpected end of entity");
   struct xml_source *src = ctx->src;
-  ASSERT(src);
+  if (!src)
+    xml_fatal(ctx, "Undefined source");
   xml_close_source(src);
   ctx->depth = src->saved_depth;
   ctx->src = src = src->next;
@@ -133,31 +138,31 @@ xml_sources_cleanup(struct xml_context *ctx)
 static void xml_refill_utf8(struct xml_context *ctx);
 
 void
-xml_push_entity(struct xml_context *ctx, struct xml_dtd_ent *ent)
+xml_def_resolve_entity(struct xml_context *ctx, struct xml_dtd_entity *ent UNUSED)
 {
-  TRACE(ctx, "xml_push_entity");
-  uns cat1 = ctx->src->refill_cat1;
-  uns cat2 = ctx->src->refill_cat2;
-  struct xml_source *src = xml_push_source(ctx, 0);
-  src->refill_cat1 = cat1;
-  src->refill_cat2 = cat2;
-  if (ent->flags & XML_DTD_ENT_EXTERNAL)
-    xml_fatal(ctx, "External entities not implemented"); // FIXME
-  else
-    {
-      fbbuf_init_read(src->fb = &src->wrap_fb, ent->text, ent->len, 0);
-      src->refill = xml_refill_utf8;
-    }
+  xml_error(ctx, "References to external entities are not supported");
 }
 
 void
-xml_set_source(struct xml_context *ctx, struct fastbuf *fb)
+xml_push_entity(struct xml_context *ctx, struct xml_dtd_entity *ent)
 {
-  TRACE(ctx, "xml_set_source");
-  ASSERT(!ctx->src);
-  struct xml_source *src = xml_push_source(ctx, XML_SRC_DOCUMENT | XML_SRC_EXPECTED_DECL);
-  src->fb = fb;
-  ctx->state = XML_STATE_START;
+  TRACE(ctx, "xml_push_entity");
+  struct xml_source *src;
+  if (ent->flags & XML_DTD_ENTITY_EXTERNAL)
+    {
+      ASSERT(ctx->h_resolve_entity);
+      ctx->h_resolve_entity(ctx, ent);
+      ctx->flags |= XML_SRC_EXPECTED_DECL;
+      src = ctx->src;
+    }
+  else
+    {
+      src = xml_push_source(ctx);
+      fbbuf_init_read(src->fb = &src->wrap_fb, ent->text, strlen(ent->text), 0);
+    }
+  src->refill = xml_refill_utf8;
+  src->refill_cat1 = ctx->cat_unrestricted & ~ctx->cat_new_line;
+  src->refill_cat2 = ctx->cat_new_line;
 }
 
 static uns
@@ -242,23 +247,6 @@ xml_refill_utf16_be(struct xml_context *ctx)
   REFILL(ctx, bget_utf16_be_repl, ~1U);
 }
 
-#if 0
-static inline uns
-xml_refill_libcharset_bget(struct fastbuf *fb, unsigned short int *in_to_x)
-{
-  // FIXME: slow
-  int c;
-  return (unlikely(c = bgetc(fb) < 0)) ? c : (int)conv_x_to_ucs(in_to_x[c]);
-}
-
-static void
-xml_refill_libcharset(struct xml_context *ctx)
-{
-  unsigned short int *in_to_x = ctx->src->refill_in_to_x;
-  REFILL(ctx, xml_refill_libcharset_bget, in_to_x);
-}
-#endif
-
 #undef REFILL
 
 void
@@ -279,17 +267,20 @@ xml_refill(struct xml_context *ctx)
   while (ctx->bptr == ctx->bstop);
 }
 
-uns
-xml_row(struct xml_context *ctx)
+static uns
+xml_source_row(struct xml_context *ctx, struct xml_source *src)
 {
-  struct xml_source *src = ctx->src;
-  if (!src)
-    return 0;
   uns row = src->row;
   for (u32 *p = ctx->bstop; p != ctx->bptr; p -= 2)
     if (p[-1] & src->refill_cat2)
       row--;
   return row + 1;
+}
+
+uns
+xml_row(struct xml_context *ctx)
+{
+  return ctx->src ? xml_source_row(ctx, ctx->src) : 0;
 }
 
 /* Document/external entity header */
@@ -318,18 +309,11 @@ xml_parse_encoding_name(struct xml_context *ctx)
 static void
 xml_init_charconv(struct xml_context *ctx, int cs)
 {
-  // FIXME: hack
+  // XXX: with a direct access to libcharset tables could be faster
   struct xml_source *src = ctx->src;
   TRACE(ctx, "wrapping charset %s", charset_name(cs));
-#if 0
-  struct conv_context conv;
-  conv_set_charset(&conv, cs, CONV_CHARSET_UTF8);
-  src->refill = xml_refill_libcharset;
-  src->refill_in_to_x = conv.in_to_x;
-#else
   src->wrapped_fb = src->fb;
   src->fb = fb_wrap_charconv_in(src->fb, cs, CONV_CHARSET_UTF8);
-#endif
 }
 
 void

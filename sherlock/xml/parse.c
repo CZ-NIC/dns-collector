@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- A simple XML parser
  *
- *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -143,7 +143,7 @@ xml_push_comment(struct xml_context *ctx)
   /* Comment ::= '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
    * Already parsed: '<!-' */
   xml_parse_char(ctx, '-');
-  struct xml_node *n = xml_push_dom(ctx);
+  struct xml_node *n = xml_push_dom(ctx, NULL);
   n->type = XML_NODE_COMMENT;
   char *p = mp_start_noalign(ctx->pool, 6);
   while (1)
@@ -192,7 +192,7 @@ xml_push_pi(struct xml_context *ctx)
    *   PI ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>'
    *   PITarget ::= Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
    * Already parsed: '<?' */
-  struct xml_node *n = xml_push_dom(ctx);
+  struct xml_node *n = xml_push_dom(ctx, NULL);
   n->type = XML_NODE_PI;
   n->name = xml_parse_name(ctx, ctx->pool);
   if (unlikely(!strcasecmp(n->name, "xml")))
@@ -256,118 +256,6 @@ xml_skip_pi(struct xml_context *ctx)
   xml_dec(ctx);
 }
 
-/*** Character data ***/
-
-static inline uns
-xml_flush_chars(struct xml_context *ctx)
-{
-  struct fastbuf *fb = &ctx->chars;
-  if (fb->bufend == fb->buffer)
-    return 0;
-  TRACE(ctx, "flush_chars");
-  struct xml_node *n = ctx->node;
-  n->text = xml_end_chars(ctx, &n->len);
-  n->len = fb->bufend - fb->buffer;
-  if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_chars)
-    ctx->h_chars(ctx);
-  return 1;
-}
-
-static inline void
-xml_pop_chars(struct xml_context *ctx)
-{
-  xml_pop_dom(ctx, !(ctx->flags & XML_ALLOC_CHARS));
-  TRACE(ctx, "pop_chars");
-}
-
-static inline void
-xml_append_chars(struct xml_context *ctx)
-{
-  TRACE(ctx, "append_chars");
-  struct fastbuf *out = &ctx->chars;
-  while (xml_get_char(ctx) != '<')
-    if (xml_last_char(ctx) == '&')
-      {
-	xml_inc(ctx);
-        xml_parse_ref(ctx);
-      }
-    else
-      bput_utf8_32(out, xml_last_char(ctx));
-  xml_unget_char(ctx);
-}
-
-/*** CDATA sections ***/
-
-static void
-xml_push_cdata(struct xml_context *ctx)
-{
-  TRACE(ctx, "push_cdata");
-  /* CDSect :== '<![CDATA[' (Char* - (Char* ']]>' Char*)) ']]>'
-   * Already parsed: '<![' */
-  xml_parse_seq(ctx, "CDATA[");
-  struct xml_node *n = xml_push_dom(ctx);
-  n->type = XML_NODE_CHARS;
-  char *p = mp_start_noalign(ctx->pool, 7);
-  while (1)
-    {
-      if (xml_get_char(ctx) == ']')
-        {
-          if (xml_get_char(ctx) == ']')
-	    if (xml_get_char(ctx) == '>')
-	      break;
-	    else
-	      *p++ = ']';
-	  *p++ = ']';
-	}
-      p = utf8_32_put(p, xml_last_char(ctx));
-      p = mp_spread(ctx->pool, p, 7);
-    }
-  *p = 0;
-  n->len = p - (char *)mp_ptr(ctx->pool);
-  n->text = mp_end(ctx->pool, p + 1);
-  if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_cdata)
-    ctx->h_cdata(ctx);
-}
-
-static void
-xml_pop_cdata(struct xml_context *ctx)
-{
-  xml_pop_dom(ctx, !(ctx->flags & XML_ALLOC_CHARS));
-  xml_dec(ctx);
-  TRACE(ctx, "pop_cdata");
-}
-
-static void
-xml_append_cdata(struct xml_context *ctx)
-{
-  TRACE(ctx, "append_cdata");
-  xml_parse_seq(ctx, "CDATA[");
-  struct fastbuf *out = &ctx->chars;
-  while (1)
-    {
-      if (xml_get_char(ctx) == ']')
-        {
-          if (xml_get_char(ctx) == ']')
-	    if (xml_get_char(ctx) == '>')
-	      break;
-	    else
-	      bputc(out, ']');
-	  bputc(out, ']');
-	}
-      bput_utf8_32(out, xml_last_char(ctx));
-    }
-  xml_dec(ctx);
-}
-
-static void UNUSED
-xml_skip_cdata(struct xml_context *ctx)
-{
-  TRACE(ctx, "skip_cdata");
-  xml_parse_seq(ctx, "CDATA[");
-  while (xml_get_char(ctx) != ']' || xml_get_char(ctx) != ']' || xml_get_char(ctx) != '>');
-  xml_dec(ctx);
-}
-
 /*** Character references ***/
 
 uns
@@ -424,7 +312,7 @@ recover:
 
 /*** References to general entities ***/
 
-void
+static void
 xml_parse_ref(struct xml_context *ctx)
 {
   /* Reference ::= EntityRef | CharRef
@@ -443,7 +331,7 @@ xml_parse_ref(struct xml_context *ctx)
       mp_save(ctx->stack, &state);
       char *name = xml_parse_name(ctx, ctx->stack);
       xml_parse_char(ctx, ';');
-      struct xml_dtd_ent *ent = xml_dtd_find_ent(ctx, name);
+      struct xml_dtd_entity *ent = xml_dtd_find_entity(ctx, name);
       if (!ent)
         {
 	  xml_error(ctx, "Unknown entity &%s;", name);
@@ -451,15 +339,10 @@ xml_parse_ref(struct xml_context *ctx)
 	  bputs(out, name);
 	  bputc(out, ';');
 	}
-      else if (ent->flags & XML_DTD_ENT_TRIVIAL_UNI)
+      else if (ent->flags & XML_DTD_ENTITY_TRIVIAL)
         {
 	  TRACE(ctx, "Trivial entity &%s;", name);
-	  bput_utf8_32(out, ent->uni);
-	}
-      else if (ent->flags & XML_DTD_ENT_TRIVIAL_STR)
-        {
-	  TRACE(ctx, "Trivial entity &%s;", name);
-	  bwrite(out, ent->text, ent->len);
+	  bputs(out, ent->text);
 	}
       else
         {
@@ -474,6 +357,151 @@ xml_parse_ref(struct xml_context *ctx)
     }
 }
 
+/*** Character data ***/
+
+void
+xml_spout_chars(struct fastbuf *fb)
+{
+  if (fb->bptr < fb->bufend)
+    return;
+  struct xml_context *ctx = SKIP_BACK(struct xml_context, chars, fb);
+  struct mempool *pool = ctx->pool;
+  if (fb->bufend != fb->buffer)
+    {
+      TRACE(ctx, "growing chars");
+      uns len = fb->bufend - fb->buffer;
+      uns reported = fb->bstop - fb->buffer;
+      fb->buffer = mp_expand(pool);
+      fb->bufend = fb->buffer + mp_avail(pool);
+      fb->bptr = fb->buffer + len;
+      fb->bstop = fb->buffer + reported;
+    }
+  else
+    {
+      TRACE(ctx, "starting chars");
+      mp_save(pool, &ctx->chars_state);
+      fb->bptr = fb->buffer = fb->bstop = mp_start_noalign(pool, 2);
+      fb->bufend = fb->buffer + mp_avail(pool) - 1;
+    }
+}
+
+static inline uns
+xml_end_chars(struct xml_context *ctx, char **out)
+{
+  struct fastbuf *fb = &ctx->chars;
+  uns len = fb->bptr - fb->buffer;
+  if (len)
+    {
+      TRACE(ctx, "ending chars");
+      *fb->bptr = 0;
+      *out = mp_end(ctx->pool, fb->bptr + 1);
+      fb->bufend = fb->bstop = fb->bptr = fb->buffer;
+    }
+  return len;
+}
+
+static inline uns
+xml_report_chars(struct xml_context *ctx, char **out)
+{
+  struct fastbuf *fb = &ctx->chars;
+  uns len = fb->bptr - fb->buffer;
+  if (len)
+    {
+      *fb->bptr = 0;
+      *out = fb->bstop;
+      fb->bstop = fb->bptr;
+    }
+  return len;
+}
+
+static inline uns
+xml_flush_chars(struct xml_context *ctx)
+{
+  char *text, *rtext;
+  uns len = xml_end_chars(ctx, &text), rlen;
+  if (len)
+    {
+      if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_block && (rlen = xml_report_chars(ctx, &rtext)))
+	ctx->h_block(ctx, rtext, rlen);
+      if (!(ctx->flags & XML_ALLOC_CHARS) && (!(ctx->flags & XML_REPORT_CHARS) || !ctx->h_chars))
+        {
+	  mp_restore(ctx->pool, &ctx->chars_state);
+	  return 0;
+	}
+      struct xml_node *n = xml_push_dom(ctx, &ctx->chars_state);
+      n->type = XML_NODE_CHARS;
+      n->text = text;
+      n->len = len;
+      if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_chars)
+        ctx->h_chars(ctx);
+    }
+  return len;
+}
+
+static inline void
+xml_pop_chars(struct xml_context *ctx)
+{
+  xml_pop_dom(ctx, !(ctx->flags & XML_ALLOC_CHARS));
+  TRACE(ctx, "pop_chars");
+}
+
+static inline void
+xml_append_chars(struct xml_context *ctx)
+{
+  TRACE(ctx, "append_chars");
+  struct fastbuf *out = &ctx->chars;
+  while (xml_get_char(ctx) != '<')
+    if (xml_last_char(ctx) == '&')
+      {
+	xml_inc(ctx);
+        xml_parse_ref(ctx);
+      }
+    else
+      bput_utf8_32(out, xml_last_char(ctx));
+  xml_unget_char(ctx);
+}
+
+/*** CDATA sections ***/
+
+static void
+xml_append_cdata(struct xml_context *ctx)
+{
+  /* CDSect :== '<![CDATA[' (Char* - (Char* ']]>' Char*)) ']]>'
+   * Already parsed: '<![' */
+  TRACE(ctx, "append_cdata");
+  xml_parse_seq(ctx, "CDATA[");
+  struct fastbuf *out = &ctx->chars;
+  uns rlen;
+  char *rtext;
+  if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_block && (rlen = xml_report_chars(ctx, &rtext)))
+    ctx->h_block(ctx, rtext, rlen);
+  while (1)
+    {
+      if (xml_get_char(ctx) == ']')
+        {
+          if (xml_get_char(ctx) == ']')
+	    if (xml_get_char(ctx) == '>')
+	      break;
+	    else
+	      bputc(out, ']');
+	  bputc(out, ']');
+	}
+      bput_utf8_32(out, xml_last_char(ctx));
+    }
+  if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_cdata && (rlen = xml_report_chars(ctx, &rtext)))
+    ctx->h_cdata(ctx, rtext, rlen);
+  xml_dec(ctx);
+}
+
+static void UNUSED
+xml_skip_cdata(struct xml_context *ctx)
+{
+  TRACE(ctx, "skip_cdata");
+  xml_parse_seq(ctx, "CDATA[");
+  while (xml_get_char(ctx) != ']' || xml_get_char(ctx) != ']' || xml_get_char(ctx) != '>');
+  xml_dec(ctx);
+}
+
 /*** Attribute values ***/
 
 char *
@@ -481,15 +509,12 @@ xml_parse_attr_value(struct xml_context *ctx, struct xml_dtd_attr *attr UNUSED)
 {
   TRACE(ctx, "parse_attr_value");
   /* AttValue ::= '"' ([^<&"] | Reference)* '"'	| "'" ([^<&'] | Reference)* "'" */
-  /* FIXME:
-   * -- copying from ctx->chars to ctx->pool is not necessary, we could directly write to ctx->pool
-   * -- berare quotes inside parased entities
-   * -- check value constrains / normalize value */
+  /* FIXME: -- check value constrains / normalize leading/trailing WS and repeated WS */
   struct mempool_state state;
   uns quote = xml_parse_quote(ctx);
   mp_save(ctx->stack, &state);
-  xml_start_chars(ctx);
   struct fastbuf *out = &ctx->chars;
+  struct xml_source *src = ctx->src;
   while (1)
     {
       uns c = xml_get_char(ctx);
@@ -498,7 +523,7 @@ xml_parse_attr_value(struct xml_context *ctx, struct xml_dtd_attr *attr UNUSED)
 	  xml_inc(ctx);
 	  xml_parse_ref(ctx);
 	}
-      else if (c == quote) // FIXME: beware quotes inside parsed entities
+      else if (c == quote && src == ctx->src)
 	break;
       else if (c == '<')
 	xml_error(ctx, "Attribute value must not contain '<'");
@@ -508,8 +533,29 @@ xml_parse_attr_value(struct xml_context *ctx, struct xml_dtd_attr *attr UNUSED)
 	bput_utf8_32(out, c);
     }
   mp_restore(ctx->stack, &state);
-  uns len;
-  return xml_end_chars(ctx, &len);
+  char *text;
+  return xml_end_chars(ctx, &text) ? text : "";
+}
+
+uns
+xml_normalize_white(struct xml_context *ctx UNUSED, char *text)
+{
+  char *s = text, *d = text;
+  while (*s == 0x20)
+    s++;
+  while (1)
+    {
+      while (*s & ~0x20)
+	*d++ = *s++;
+      if (!*s)
+	break;
+      while (*++s == 0x20);
+      *d++ = 0x20;
+    }
+  if (d != text && d[-1] == 0x20)
+    d--;
+  *d = 0;
+  return d - text;
 }
 
 /*** Attributes ***/
@@ -559,18 +605,23 @@ xml_parse_attr(struct xml_context *ctx)
 {
   TRACE(ctx, "parse_attr");
   /* Attribute ::= Name Eq AttValue */
-  /* FIXME:
-   * -- memory management
-   * -- DTD */
   struct xml_node *e = ctx->node;
   char *n = xml_parse_name(ctx, ctx->pool);
   struct xml_attr *a = xml_attrs_lookup(ctx->tab_attrs, e, n);
   xml_parse_eq(ctx);
   char *v = xml_parse_attr_value(ctx, NULL);
   if (a->val)
-    xml_error(ctx, "Attribute %s is not unique", n);
+    {
+      xml_error(ctx, "Attribute %s is not unique in element <%s>", n, e->name);
+      return;
+    }
+  a->val = v;
+  if (!e->dtd)
+    a->dtd = NULL;
+  else if (!(a->dtd = xml_dtd_find_attr(ctx, e->dtd, a->name)))
+    xml_error(ctx, "Undefined attribute %s in element <%s>", n, e->name);
   else
-    a->val = v;
+    xml_validate_attr(ctx, a->dtd, a->val);
 }
 
 struct xml_attr *
@@ -601,7 +652,7 @@ xml_push_element(struct xml_context *ctx)
    * EmptyElemTag ::= '<' Name (S  Attribute)* S? '/>'
    * STag ::= '<' Name (S  Attribute)* S? '>'
    * Already parsed: '<' */
-  struct xml_node *e = xml_push_dom(ctx);
+  struct xml_node *e = xml_push_dom(ctx, NULL);
   clist_init(&e->sons);
   e->type = XML_NODE_ELEM;
   e->name = xml_parse_name(ctx, ctx->pool);
@@ -610,7 +661,15 @@ xml_push_element(struct xml_context *ctx)
     {
       ctx->dom = e;
       if (ctx->doctype && strcmp(e->name, ctx->doctype))
-	xml_error(ctx, "The root element %s does not match the document type %s", e->name, ctx->doctype);
+	xml_error(ctx, "The root element <%s> does not match the document type <%s>", e->name, ctx->doctype);
+    }
+  if (!ctx->dtd)
+    e->dtd = NULL;
+  else if (!(e->dtd = xml_dtd_find_elem(ctx, e->name)))
+    xml_error(ctx, "Undefined element <%s>", e->name);
+  else
+    {
+      // FIXME: validate regular expressions
     }
   while (1)
     {
@@ -828,6 +887,7 @@ error:
     {
       case XML_STATE_START:
 	TRACE(ctx, "entering prolog");
+	ctx->flags |= XML_SRC_DOCUMENT | XML_SRC_EXPECTED_DECL;
 	if (ctx->h_document_start)
 	  ctx->h_document_start(ctx);
 	/* XMLDecl */
@@ -951,19 +1011,7 @@ first_tag:
 	      else if (c == '[')
 	        {
 		  /* CDATA */
-		  if (!(ctx->flags & XML_UNFOLD_CDATA))
-		    xml_append_cdata(ctx);
-		  else
-		    {
-		      if (xml_flush_chars(ctx))
-		        {
-			  PULL_STATE(CHARS, CHARS_BEFORE_CDATA);
-			  xml_pop_chars(ctx);
-			}
-		      xml_push_cdata(ctx);
-		      PULL(CDATA);
-		      xml_pop_cdata(ctx);
-		    }
+		  xml_append_cdata(ctx);
 		}
 	      else
 		xml_fatal(ctx, "Unexpected character after '<!'");

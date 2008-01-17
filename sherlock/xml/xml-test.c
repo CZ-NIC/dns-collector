@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- A simple XML parser
  *
- *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -9,19 +9,22 @@
 
 #include "sherlock/sherlock.h"
 #include "sherlock/xml/xml.h"
+#include "sherlock/xml/dtd.h"
 #include "lib/getopt.h"
 #include "lib/fastbuf.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 
 enum {
   WANT_FIRST = 0x100,
   WANT_PARSE_DTD,
   WANT_HIDE_ERRORS,
-  WANT_UNFOLD_CDATA,
   WANT_IGNORE_COMMENTS,
   WANT_IGNORE_PIS,
+  WANT_REPORT_BLOCKS,
+  WANT_FILE_ENTITIES,
 };
 
 static char *shortopts = "spd" CF_SHORT_OPTS;
@@ -32,9 +35,10 @@ static struct option longopts[] = {
   { "dom",		0, 0, 'd' },
   { "dtd",		0, 0, WANT_PARSE_DTD },
   { "hide-errors",	0, 0, WANT_HIDE_ERRORS },
-  { "unfold-cdata",	0, 0, WANT_UNFOLD_CDATA },
   { "ignore-comments",	0, 0, WANT_IGNORE_COMMENTS },
   { "ignore-pis",	0, 0, WANT_IGNORE_PIS },
+  { "reports-blocks",	0, 0, WANT_REPORT_BLOCKS },
+  { "file-entities",	0, 0, WANT_FILE_ENTITIES },
   { NULL,		0, 0, 0 }
 };
 
@@ -52,9 +56,10 @@ CF_USAGE
 -d, --dom               Test DOM interface\n\
     --dtd               Enable parsing of DTD\n\
     --hide-errors       Hide warnings and error messages\n\
-    --unfold-cdata      Unfold CDATA sections\n\
     --ignore-comments   Ignore processing instructions\n\
     --ignore-pis        Ignore comments\n\
+    --report-blocks	Report blocks or characters and CDATA sections\n\
+    --file-entities     Resolve file external entities (not fully normative)\n\
 \n", stderr);
   exit(1);
 }
@@ -64,9 +69,10 @@ static uns want_pull;
 static uns want_dom;
 static uns want_parse_dtd;
 static uns want_hide_errors;
-static uns want_unfold_cdata;
 static uns want_ignore_comments;
 static uns want_ignore_pis;
+static uns want_report_blocks;
+static uns want_file_entities;
 
 static struct fastbuf *out;
 
@@ -190,10 +196,15 @@ h_chars(struct xml_context *ctx)
 }
 
 static void
-h_cdata(struct xml_context *ctx)
+h_block(struct xml_context *ctx UNUSED, char *text, uns len UNUSED)
 {
-  bputs(out, "SAX:  cdata");
-  show_node(ctx->node);
+  bprintf(out, "SAX:  block text='%s'\n", text);
+}
+
+static void
+h_cdata(struct xml_context *ctx UNUSED, char *text, uns len UNUSED)
+{
+  bprintf(out, "SAX:  cdata text='%s'\n", text);
 }
 
 static void
@@ -206,6 +217,12 @@ static void
 h_dtd_end(struct xml_context *ctx UNUSED)
 {
   bputs(out, "SAX:  dtd_end\n");
+}
+
+static void
+h_resolve_entity(struct xml_context *ctx, struct xml_dtd_entity *e)
+{
+  xml_push_fastbuf(ctx, bopen(e->system_id, O_RDONLY, 4096));
 }
 
 int
@@ -232,14 +249,17 @@ main(int argc, char **argv)
 	case WANT_HIDE_ERRORS:
 	  want_hide_errors++;
 	  break;
-	case WANT_UNFOLD_CDATA:
-	  want_unfold_cdata++;
-	  break;
 	case WANT_IGNORE_COMMENTS:
 	  want_ignore_comments++;
 	  break;
 	case WANT_IGNORE_PIS:
 	  want_ignore_pis++;
+	  break;
+	case WANT_REPORT_BLOCKS:
+	  want_report_blocks++;
+	  break;
+	case WANT_FILE_ENTITIES:
+	  want_file_entities++;
 	  break;
 	default:
 	  usage();
@@ -263,7 +283,11 @@ main(int argc, char **argv)
       ctx.h_stag = h_stag;
       ctx.h_etag = h_etag;
       ctx.h_chars = h_chars;
-      ctx.h_cdata = h_cdata;
+      if (want_report_blocks)
+        {
+          ctx.h_block = h_block;
+          ctx.h_cdata = h_cdata;
+	}
       ctx.h_dtd_start = h_dtd_start;
       ctx.h_dtd_end = h_dtd_end;
     }
@@ -271,27 +295,23 @@ main(int argc, char **argv)
     ctx.flags |= XML_ALLOC_ALL;
   if (want_parse_dtd)
     ctx.flags |= XML_PARSE_DTD;
-  if (want_unfold_cdata)
-    ctx.flags |= XML_UNFOLD_CDATA;
   if (want_ignore_comments)
     ctx.flags &= ~(XML_REPORT_COMMENTS | XML_ALLOC_COMMENTS);
   if (want_ignore_pis)
     ctx.flags &= ~(XML_REPORT_PIS | XML_ALLOC_PIS);
-  xml_set_source(&ctx, bfdopen_shared(0, 4096));
+  if (want_file_entities)
+    ctx.h_resolve_entity = h_resolve_entity;
+  xml_push_fastbuf(&ctx, bfdopen_shared(0, 4096));
   bputs(out, "PULL: start\n");
   if (want_pull)
     {
-      ctx.pull = XML_PULL_CHARS | XML_PULL_CDATA | XML_PULL_STAG | XML_PULL_ETAG | XML_PULL_COMMENT | XML_PULL_PI;
+      ctx.pull = XML_PULL_CHARS | XML_PULL_STAG | XML_PULL_ETAG | XML_PULL_COMMENT | XML_PULL_PI;
       uns state;
       while (state = xml_next(&ctx))
 	switch (state)
 	  {
 	    case XML_STATE_CHARS:
 	      bputs(out, "PULL: chars");
-	      show_node(ctx.node);
-	      break;
-	    case XML_STATE_CDATA:
-	      bputs(out, "PULL: cdata");
 	      show_node(ctx.node);
 	      break;
 	    case XML_STATE_STAG:

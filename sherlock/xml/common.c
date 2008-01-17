@@ -83,56 +83,29 @@ xml_hash_new(struct mempool *pool, uns size)
   return tab + XML_HASH_HDR_SIZE;
 }
 
-static void
-xml_chars_spout(struct fastbuf *fb)
-{
-  if (fb->bptr >= fb->bufend)
-    {
-      struct xml_context *ctx = SKIP_BACK(struct xml_context, chars, fb);
-      struct mempool *pool = ctx->pool;
-      if (fb->bufend != fb->buffer)
-        {
-	  uns len = fb->bufend - fb->buffer;
-	  TRACE(ctx, "grow_chars");
-	  fb->buffer = mp_expand(pool);
-	  fb->bufend = fb->buffer + mp_avail(pool);
-	  fb->bstop = fb->buffer;
-	  fb->bptr = fb->buffer + len;
-	}
-      else
-        {
-	  TRACE(ctx, "push_chars");
-	  struct xml_node *n = xml_push_dom(ctx);
-	  n->type = XML_NODE_CHARS;
-	  xml_start_chars(ctx);
-	}
-    }
-}
-
-static void
-xml_init_chars(struct xml_context *ctx)
-{
-  struct fastbuf *fb = &ctx->chars;
-  fb->name = "<xml-chars>";
-  fb->spout = xml_chars_spout;
-  fb->can_overwrite_buffer = 1;
-  fb->bptr = fb->bstop = fb->buffer = fb->bufend = NULL;
-}
-
 /*** Initialization ***/
+
+static struct xml_context xml_defaults = {
+  .flags = XML_SRC_EOF | XML_REPORT_ALL,
+  .state = XML_STATE_START,
+  .h_resolve_entity = xml_def_resolve_entity,
+  .chars = {
+    .name = "<xml_chars>",
+    .spout = xml_spout_chars,
+    .can_overwrite_buffer = 1,
+  },
+};
 
 static void
 xml_do_init(struct xml_context *ctx)
 {
-  ctx->flags = XML_REPORT_ALL;
-  xml_init_chars(ctx);
   xml_attrs_table_init(ctx);
 }
 
 void
 xml_init(struct xml_context *ctx)
 {
-  bzero(ctx, sizeof(*ctx));
+  *ctx = xml_defaults;
   ctx->pool = mp_new(65536);
   ctx->stack = mp_new(65536);
   xml_do_init(ctx);
@@ -160,7 +133,7 @@ xml_reset(struct xml_context *ctx)
   xml_sources_cleanup(ctx);
   mp_flush(pool);
   mp_flush(stack);
-  bzero(ctx, sizeof(*ctx));
+  *ctx = xml_defaults;
   ctx->pool = pool;
   ctx->stack = stack;
   xml_do_init(ctx);

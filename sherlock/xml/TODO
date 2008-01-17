@@ -1,0 +1,18 @@
+Non-normative / not-implemented:
+-- introduce numeric error codes
+-- cycle detection in internal entities (and possibly external?)
+-- conditional sections in DTD
+-- validation of elements (regular expressions, non-cdata)
+-- validation of attributes (unfinished)
+-- notations
+-- URI normalization
+-- support for xml:space
+-- support for xml:lang
+-- full support for standalone documents
+-- Unicode normalization
+
+Bugs:
+-- definitions of parameter entities do not work because of '%' expansion in "<!ELEMENT %" is expanded as a reference
+
+Optimizations:
+-- detect definitions of trivial entities

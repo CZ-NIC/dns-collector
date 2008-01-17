@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- A simple XML parser
  *
- *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -16,10 +16,10 @@
 #include "lib/fastbuf.h"
 
 struct xml_context;
-struct xml_dtd_ent;
+struct xml_source;
+struct xml_dtd_entity;
 
 enum xml_error {
-  // FIXME
   XML_ERR_OK = 0,
   XML_ERR_WARN = 1000,					/* Warning */
   XML_ERR_ERROR = 2000,					/* Recoverable error */
@@ -33,7 +33,6 @@ enum xml_state {
   XML_STATE_XML_DECL,					/* XML_PULL_XML_DECL */
   XML_STATE_DOCTYPE_DECL,				/* XML_PULL_DOCTYPE_DECL */
   XML_STATE_CHARS,					/* XML_PULL_CHARS */
-  XML_STATE_CDATA,					/* XML_PULL_CDATA */
   XML_STATE_STAG,					/* XML_PULL_STAG */
   XML_STATE_ETAG,					/* XML_PULL_ETAG */
   XML_STATE_COMMENT,					/* XML_PULL_COMMENT */
@@ -55,11 +54,10 @@ enum xml_pull {
   XML_PULL_XML_DECL =			0x00000001,	/* Stop after the XML declaration */
   XML_PULL_DOCTYPE_DECL =		0x00000002,	/* Stop in the doctype declaration (before optional internal subset) */
   XML_PULL_CHARS =			0x00000004,
-  XML_PULL_CDATA =			0x00000008,
-  XML_PULL_STAG =			0x00000010,
-  XML_PULL_ETAG =			0x00000020,
-  XML_PULL_COMMENT =			0x00000040,
-  XML_PULL_PI =				0x00000080,
+  XML_PULL_STAG =			0x00000008,
+  XML_PULL_ETAG =			0x00000010,
+  XML_PULL_COMMENT =			0x00000020,
+  XML_PULL_PI =				0x00000040,
   XML_PULL_ALL =			0xffffffff,
 };
 
@@ -81,9 +79,8 @@ enum xml_flags {
   XML_ALLOC_ALL = XML_ALLOC_MISC | XML_ALLOC_CHARS | XML_ALLOC_TAGS,
 
   /* Other parameters */
-  XML_UNFOLD_CDATA =			0x00000100,	/* Unfold CDATA sections */
-  XML_VALIDATING =			0x00000200,	/* Validate everything (not fully implemented!) */
-  XML_PARSE_DTD =			0x00000400,	/* Enable parsing of DTD */
+  XML_VALIDATING =			0x00000100,	/* Validate everything (not fully implemented!) */
+  XML_PARSE_DTD =			0x00000200,	/* Enable parsing of DTD */
 
   /* Internals, do not change! */
   XML_EMPTY_ELEM_TAG =			0x00010000,	/* The current element match EmptyElemTag */
@@ -130,6 +127,7 @@ struct xml_node {
 struct xml_attr {
   snode n;						/* Node for elem->attrs */
   struct xml_node *elem;				/* Parent element */
+  struct xml_dtd_attr *dtd;				/* Attribute DTD */
   char *name;						/* Attribute name */
   char *val;						/* Attribute value */
   void *user;						/* User-defined (initialized to NULL) */
@@ -146,11 +144,13 @@ struct xml_context {
 
   /* Memory management */
   struct mempool *pool;					/* DOM pool */
-  struct mempool *stack;				/* Stack pool (free as soon as possible) */
+  struct mempool *stack;				/* Stack pool (freed as soon as possible) */
   struct xml_stack *stack_list;				/* See xml_push(), xml_pop() */
   uns flags;						/* XML_FLAG_x (restored on xml_pop()) */
-  uns depth;						/* Nesting level */
+  uns depth;						/* Nesting level (for checking of valid source nesting -> valid pushes/pops on memory pools) */
   struct fastbuf chars;					/* Character data / attribute value */
+  struct mempool_state chars_state;			/* Mempool state before the current character block has started */
+  char *chars_trivial;					/* If not empty, it will be appended to chars */
   void *tab_attrs;					/* Hash table of element attributes */
 
   /* Input */
@@ -168,14 +168,16 @@ struct xml_context {
   void (*h_xml_decl)(struct xml_context *ctx);		/* Called after the XML declaration */
   void (*h_doctype_decl)(struct xml_context *ctx);	/* Called in the doctype declaration (before optional internal subset) */
   void (*h_comment)(struct xml_context *ctx);		/* Called after a comment (only with XML_REPORT_COMMENTS) */
-  void (*h_pi)(struct xml_context *ctx);			/* Called after a processing instruction (only with XML_REPORT_PIS) */
+  void (*h_pi)(struct xml_context *ctx);		/* Called after a processing instruction (only with XML_REPORT_PIS) */
   void (*h_stag)(struct xml_context *ctx);		/* Called after STag or EmptyElemTag (only with XML_REPORT_TAGS) */
   void (*h_etag)(struct xml_context *ctx);		/* Called before ETag or after EmptyElemTag (only with XML_REPORT_TAGS) */
   void (*h_chars)(struct xml_context *ctx);		/* Called after some characters (only with XML_REPORT_CHARS) */
-  void (*h_cdata)(struct xml_context *ctx);		/* Called after a CDATA section (only with XML_REPORT_CHARS and XML_UNFOLD_CDATA) */
+  void (*h_block)(struct xml_context *ctx, char *text, uns len);	/* Called for each continuous block of characters not reported by h_cdata() (only with XML_REPORT_CHARS) */
+  void (*h_cdata)(struct xml_context *ctx, char *text, uns len);	/* Called for each CDATA section (only with XML_REPORT_CHARS) */
   void (*h_dtd_start)(struct xml_context *ctx);		/* Called just after the DTD structure is initialized */
   void (*h_dtd_end)(struct xml_context *ctx);		/* Called after DTD subsets subsets */
-  struct xml_dtd_ent *(*h_resolve_entity)(struct xml_context *ctx, char *name);
+  struct xml_dtd_entity *(*h_find_entity)(struct xml_context *ctx, char *name);		/* Called when needed to resolve a general entity */
+  void (*h_resolve_entity)(struct xml_context *ctx, struct xml_dtd_entity *ent);	/* User should push source fastbuf for a parsed external entity (either general or parameter) */
 
   /* DOM */
   struct xml_node *dom;					/* DOM root */
@@ -205,8 +207,8 @@ void xml_cleanup(struct xml_context *ctx);
 /* Reuse XML context */
 void xml_reset(struct xml_context *ctx);
 
-/* Setup XML source (fastbuf will be automatically closed) */
-void xml_set_source(struct xml_context *ctx, struct fastbuf *fb);
+/* Add XML source (fastbuf will be automatically closed) */
+struct xml_source *xml_push_fastbuf(struct xml_context *ctx, struct fastbuf *fb);
 
 /* Parse without the PUSH interface, return XML_ERR_x code (zero on success) */
 uns xml_parse(struct xml_context *ctx);
@@ -214,7 +216,19 @@ uns xml_parse(struct xml_context *ctx);
 /* Parse with the PUSH interface, return XML_STATE_x (zero on EOF or fatal error) */
 uns xml_next(struct xml_context *ctx);
 
+/* Returns the current row number in the document entity */
 uns xml_row(struct xml_context *ctx);
+
+/* Finds a given attribute value in a XML_NODE_ELEM node */
 struct xml_attr *xml_attr_find(struct xml_context *ctx, struct xml_node *node, char *name);
+
+/* The default value of h_find_entity(), knows &lt;, &gt;, &amp;, &apos; and &quot; */
+struct xml_dtd_entity *xml_def_find_entity(struct xml_context *ctx, char *name);
+
+/* The default value of h_resolve_entity(), throws an error */
+void xml_def_resolve_entity(struct xml_context *ctx, struct xml_dtd_entity *ent);
+
+/* Remove leading/trailing spaces and replaces sequences of spaces to a single space character (non-CDATA attribute normalization) */
+uns xml_normalize_white(struct xml_context *ctx, char *value);
 
 #endif

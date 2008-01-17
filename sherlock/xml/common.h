@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- A simple XML parser
  *
- *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -80,12 +80,15 @@ struct xml_dom_stack {
 };
 
 static inline struct xml_node *
-xml_push_dom(struct xml_context *ctx)
+xml_push_dom(struct xml_context *ctx, struct mempool_state *state)
 {
   /* Create a new DOM node */
   TRACE(ctx, "push_dom");
   struct xml_dom_stack *s = xml_do_push(ctx, sizeof(*s));
-  mp_save(ctx->pool, &s->state);
+  if (state)
+    s->state = *state;
+  else
+    mp_save(ctx->pool, &s->state);
   struct xml_node *n = mp_alloc(ctx->pool, sizeof(*n));
   n->user = NULL;
   if (n->parent = ctx->node)
@@ -120,27 +123,7 @@ xml_pop_dom(struct xml_context *ctx, uns free)
 
 void *xml_hash_new(struct mempool *pool, uns size);
 
-static inline void
-xml_start_chars(struct xml_context *ctx)
-{
-  struct fastbuf *fb = &ctx->chars;
-  fb->bstop = fb->bptr = fb->buffer = mp_start_noalign(ctx->pool, 1);
-  fb->bufend = fb->buffer + mp_avail(ctx->pool);
-}
-
-static inline char *
-xml_end_chars(struct xml_context *ctx, uns *len)
-{
-  struct fastbuf *fb = &ctx->chars;
-  uns l = fb->bufend - fb->buffer;
-  if (fb->bptr == fb->bufend)
-    fb->bptr = mp_expand(ctx->pool) + l;
-  *fb->bptr = 0;
-  char *c = mp_end(ctx->pool, fb->bptr + 1);
-  fb->bptr = fb->bstop = fb->buffer = fb->bufend = NULL;
-  *len = l;
-  return c;
-}
+void xml_spout_chars(struct fastbuf *fb);
 
 /*** Reading of document/external entities ***/
 
@@ -202,8 +185,8 @@ xml_ascii_cat(uns c)
   return xml_char_tab1[c];
 }
 
-struct xml_source *xml_push_source(struct xml_context *ctx, uns flags);
-void xml_push_entity(struct xml_context *ctx, struct xml_dtd_ent *ent);
+struct xml_source *xml_push_source(struct xml_context *ctx);
+void xml_push_entity(struct xml_context *ctx, struct xml_dtd_entity *ent);
 
 void xml_refill(struct xml_context *ctx);
 
@@ -325,7 +308,6 @@ char *xml_parse_system_literal(struct xml_context *ctx, struct mempool *pool);
 char *xml_parse_pubid_literal(struct xml_context *ctx, struct mempool *pool);
 
 uns xml_parse_char_ref(struct xml_context *ctx);
-void xml_parse_ref(struct xml_context *ctx);
 void xml_parse_pe_ref(struct xml_context *ctx);
 
 char *xml_parse_attr_value(struct xml_context *ctx, struct xml_dtd_attr *attr);
@@ -346,5 +328,7 @@ void xml_skip_pi(struct xml_context *ctx);
 
 void xml_attrs_table_init(struct xml_context *ctx);
 void xml_attrs_table_cleanup(struct xml_context *ctx);
+
+void xml_validate_attr(struct xml_context *ctx, struct xml_dtd_attr *dtd, char *value);
 
 #endif

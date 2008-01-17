@@ -1,7 +1,7 @@
 /*
  *	Sherlock Library -- A simple XML parser
  *
- *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -28,11 +28,6 @@ struct xml_dtd {
   void *tab_enotns;			/* hash table of enumerated attribute notations */
 };
 
-struct xml_ext_id {
-  char *system_id;
-  char *public_id;
-};
-
 /* Notations */
 
 enum xml_dtd_notn_flags {
@@ -43,33 +38,37 @@ struct xml_dtd_notn {
   snode n;				/* Node in xml_dtd.notns */
   uns flags;				/* XML_DTD_NOTN_x */
   char *name;				/* Notation name */
-  struct xml_ext_id eid;		/* External id */
+  char *system_id;			/* External ID */
+  char *public_id;
+  void *user;				/* User-defined */
 };
+
+struct xml_dtd_notn *xml_dtd_find_notn(struct xml_context *ctx, char *name);
 
 /* Entities */
 
-enum xml_dtd_ent_flags {
-  XML_DTD_ENT_DECLARED = 0x1,		/* The entity has been declared (internal usage) */
-  XML_DTD_ENT_VISITED = 0x2,		/* Cycle detection (internal usage) */
-  XML_DTD_ENT_PARAMETER = 0x4,		/* Parameter entity, general otherwise */
-  XML_DTD_ENT_EXTERNAL = 0x8,		/* External entity, internal otherwise */
-  XML_DTD_ENT_UNPARSED = 0x10,		/* Unparsed entity, parsed otherwise */
-  XML_DTD_ENT_TRIVIAL_STR = 0x20,	/* Replacement text is a sequence of characters and character references */
-  XML_DTD_ENT_TRIVIAL_UNI = 0x40,	/* Replacement text is a single Unicode character */
+enum xml_dtd_entity_flags {
+  XML_DTD_ENTITY_DECLARED = 0x1,	/* The entity has been declared (internal usage) */
+  XML_DTD_ENTITY_VISITED = 0x2,		/* Cycle detection (internal usage) */
+  XML_DTD_ENTITY_PARAMETER = 0x4,	/* Parameter entity, general otherwise */
+  XML_DTD_ENTITY_EXTERNAL = 0x8,	/* External entity, internal otherwise */
+  XML_DTD_ENTITY_UNPARSED = 0x10,	/* Unparsed entity, parsed otherwise */
+  XML_DTD_ENTITY_TRIVIAL = 0x20,	/* Replacement text is a sequence of characters and character references */
 };
 
-struct xml_dtd_ent {
+struct xml_dtd_entity {
   snode n;				/* Node in xml_dtd.[gp]ents */
   uns flags;				/* XML_DTD_ENT_x */
   char *name;				/* Entity name */
   char *text;				/* Replacement text / expanded replacement text (XML_DTD_ENT_TRIVIAL) */
   uns len;				/* Text length */
-  uns uni;				/* Unicode value */
-  struct xml_ext_id eid;		/* External ID */
+  char *system_id;			/* External ID */
+  char *public_id;
   struct xml_dtd_notn *notn;		/* Notation (XML_DTD_ENT_UNPARSED only) */
+  void *user;				/* User-defined */
 };
 
-struct xml_dtd_ent *xml_dtd_find_ent(struct xml_context *ctx, char *name);
+struct xml_dtd_entity *xml_dtd_find_entity(struct xml_context *ctx, char *name);
 
 /* Elements */
 
@@ -90,6 +89,7 @@ struct xml_dtd_elem {
   uns type;
   char *name;
   struct xml_dtd_elem_node *node;
+  void *user;				/* User-defined */
 };
 
 struct xml_dtd_elem_node {
@@ -99,6 +99,7 @@ struct xml_dtd_elem_node {
   slist sons;
   uns type;
   uns occur;
+  void *user;				/* User-defined */
 };
 
 enum xml_dtd_elem_node_type {
@@ -118,14 +119,14 @@ struct xml_dtd_elem *xml_dtd_find_elem(struct xml_context *ctx, char *name);
 
 /* Attributes */
 
-enum xml_dtd_attribute_default {
+enum xml_dtd_attr_default {
   XML_ATTR_NONE,
   XML_ATTR_REQUIRED,
   XML_ATTR_IMPLIED,
   XML_ATTR_FIXED,
 };
 
-enum xml_dtd_attribute_type {
+enum xml_dtd_attr_type {
   XML_ATTR_CDATA,
   XML_ATTR_ID,
   XML_ATTR_IDREF,
@@ -139,11 +140,11 @@ enum xml_dtd_attribute_type {
 };
 
 struct xml_dtd_attr {
-  char *name;
-  struct xml_dtd_elem *elem;
-  enum xml_dtd_attribute_type type;
-  enum xml_dtd_attribute_default default_mode;
-  char *default_value;
+  char *name;				/* Attribute name */
+  struct xml_dtd_elem *elem;		/* Owner element */
+  uns type;				/* See enum xml_dtd_attr_type */
+  uns default_mode;			/* See enum xml_dtd_attr_default */
+  char *default_value;			/* The default value defined in DTD (or NULL) */
 };
 
 struct xml_dtd_eval {
