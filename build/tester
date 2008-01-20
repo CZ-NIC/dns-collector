@@ -132,7 +132,7 @@ TEST: foreach $tt (@tests) {
 		}
 	}
 
-	system "rm $rundir/tmp/test$i.*";
+	system "rm -f $rundir/tmp/test$i.*";
 	print "OK\n";
 }
 
