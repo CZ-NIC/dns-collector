@@ -409,7 +409,11 @@ conv_set_charset(struct conv_context *c, int src, int dest)
   c->source_charset = src;
   c->dest_charset = dest;
   if (src == dest)
-    c->convert = conv_none;
+    {
+      c->convert = conv_none;
+      c->in_to_x = NULL;
+      c->x_to_out = NULL;
+    }
   else
     {
       static uns lookup[] = {
@@ -426,10 +430,8 @@ conv_set_charset(struct conv_context *c, int src, int dest)
       uns src_idx = ((uns)src < ARRAY_SIZE(lookup)) ? lookup[src] : 0;
       uns dest_idx = ((uns)dest < ARRAY_SIZE(lookup)) ? lookup[dest] : 0;
       c->convert = tab[src_idx][dest_idx];
-      if (!src_idx)
-	c->in_to_x = input_to_x[src];
-      if (!dest_idx)
-	c->x_to_out = x_to_output[dest];
+      c->in_to_x = src_idx ? NULL : input_to_x[src];
+      c->x_to_out = dest_idx ? NULL : x_to_output[dest];
     }
   c->state = 0;
 }
