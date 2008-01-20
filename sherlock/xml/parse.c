@@ -1111,7 +1111,7 @@ epilog:
 uns
 xml_parse(struct xml_context *ctx)
 {
-  /* This cycle should run only once unless the user overrides the value of ctx->pull in a SAX handler */
+  /* This cycle should run only once even when the user overrides the value of ctx->pull in a SAX handler */
   do
     {
       ctx->pull = 0;
