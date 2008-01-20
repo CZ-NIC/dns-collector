@@ -55,8 +55,8 @@ CF_USAGE
 -t, --dom               Test DOM interface\n\
 -d, --dtd               Enable parsing of DTD\n\
     --hide-errors       Hide warnings and error messages\n\
-    --ignore-comments   Ignore processing instructions\n\
-    --ignore-pis        Ignore comments\n\
+    --ignore-comments   Ignore comments\n\
+    --ignore-pis        Ignore processing instructions\n\
     --report-blocks	Report blocks or characters and CDATA sections\n\
     --file-entities     Resolve file external entities (not fully normative)\n\
 \n", stderr);

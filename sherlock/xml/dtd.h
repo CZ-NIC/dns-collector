@@ -15,7 +15,7 @@
 struct xml_dtd {
   struct mempool *pool;			/* Memory pool where to allocate DTD */
   slist ents;				/* Link list of general entities */
-  slist pents;				/* Link list of parapeter entities */
+  slist pents;				/* Link list of parameter entities */
   slist notns;				/* Link list of notations */
   slist elems;				/* Link list of elements */
   void *tab_ents;			/* Hash table of general entities */
@@ -31,7 +31,7 @@ struct xml_dtd {
 /* Notations */
 
 enum xml_dtd_notn_flags {
-  XML_DTD_NOTN_DECLARED = 0x1,		/* The notation has been declared (interbal usage) */
+  XML_DTD_NOTN_DECLARED = 0x1,		/* The notation has been declared (internal usage) */
 };
 
 struct xml_dtd_notn {
