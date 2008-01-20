@@ -80,7 +80,7 @@ xml_push_source(struct xml_context *ctx)
   src->next = ctx->src;
   src->saved_depth = ctx->depth;
   ctx->src = src;
-  ctx->flags &= ~(XML_SRC_EOF | XML_SRC_EXPECTED_DECL | XML_SRC_NEW_LINE | XML_SRC_SURROUND | XML_SRC_DOCUMENT);
+  ctx->flags &= ~(XML_SRC_EOF | XML_SRC_EXPECTED_DECL | XML_SRC_NEW_LINE | XML_SRC_DOCUMENT);
   ctx->bstop = ctx->bptr = src->buf;
   ctx->depth = 0;
   return src;
@@ -218,8 +218,6 @@ void xml_parse_decl(struct xml_context *ctx);
       else										\
         {										\
 	  /* EOF */									\
-	  if (f & XML_SRC_SURROUND)							\
-	    xml_add_char(&bstop, 0x20);							\
           f |= XML_SRC_EOF;								\
           break;									\
 	}										\

@@ -89,9 +89,8 @@ enum xml_flags {
   XML_SRC_EOF =				0x00100000,	/* EOF reached */
   XML_SRC_EXPECTED_DECL =		0x00200000,	/* Just before optional or required XMLDecl/TextDecl */
   XML_SRC_NEW_LINE =			0x00400000,	/* The last read character is 0xD */
-  XML_SRC_SURROUND =			0x00800000,	/* Surround the text with 0x20 (references to parameter entities) */
-  XML_SRC_DOCUMENT =			0x01000000,	/* The document entity */
-  XML_SRC_EXTERNAL =			0x02000000,	/* An external entity */
+  XML_SRC_DOCUMENT =			0x00800000,	/* The document entity */
+  XML_SRC_EXTERNAL =			0x01000000,	/* An external entity */
 };
 
 enum xml_node_type {
@@ -211,11 +210,6 @@ struct xml_context {
   struct xml_dtd *dtd;					/* The DTD structure (or NULL) */
   uns state;						/* Current state for the PULL interface (XML_STATE_x) */
   uns pull;						/* Parameters for the PULL interface (XML_PULL_x) */
-
-  void (*start_entity)(struct xml_context *ctx);
-  void (*end_entity)(struct xml_context *ctx);
-  void (*notation_decl)(struct xml_context *ctx);
-  void (*unparsed_entity_decl)(struct xml_context *ctx);
 };
 
 /* Initialize XML context */
