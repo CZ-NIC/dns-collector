@@ -11,8 +11,5 @@ Non-normative / not-implemented:
 -- full support for standalone documents
 -- Unicode normalization
 
-Bugs:
--- definitions of parameter entities do not work because of '%' expansion in "<!ELEMENT %" is expanded as a reference
-
 Optimizations:
 -- detect definitions of trivial entities

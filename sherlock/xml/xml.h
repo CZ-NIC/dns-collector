@@ -16,7 +16,6 @@
 #include "lib/fastbuf.h"
 
 struct xml_context;
-struct xml_source;
 struct xml_dtd_entity;
 
 enum xml_error {
@@ -133,6 +132,27 @@ struct xml_attr {
   void *user;						/* User-defined (initialized to NULL) */
 };
 
+#define XML_BUF_SIZE 32                                 /* At least 8 -- hardcoded */
+
+struct xml_source {
+  struct xml_source *next;				/* Link list of pending fastbufs (xml_context.sources) */
+  struct fastbuf *fb;					/* Source fastbuf */
+  struct fastbuf *wrapped_fb;				/* Original wrapped fastbuf (needed for cleanup) */
+  struct fastbuf wrap_fb;				/* Fbmem wrapper */
+  u32 buf[2 * XML_BUF_SIZE];				/* Read buffer with Unicode values and categories */
+  u32 *bptr, *bstop;					/* Current state of the buffer */
+  uns row;						/* File position */
+  char *expected_encoding;				/* Initial encoding before any transformation has been made (expected in XMLDecl/TextDecl) */
+  char *fb_encoding;					/* Encoding of the source fastbuf */
+  char *decl_encoding;					/* Encoding read from the XMLDecl/TextDecl */
+  uns refill_cat1;					/* Character categories, which should be directly passed to the buffer */
+  uns refill_cat2;					/* Character categories, which should be processed as newlines (possibly in some built-in
+							   sequences) */
+  void (*refill)(struct xml_context *ctx);		/* Callback to decode source characters to the buffer */
+  unsigned short *refill_in_to_x;			/* Libcharset input table */
+  uns saved_depth;					/* Saved ctx->depth */
+};
+
 struct xml_context {
   /* Error handling */
   char *err_msg;					/* Last error message */
@@ -204,7 +224,7 @@ void xml_init(struct xml_context *ctx);
 /* Clean up all internal structures */
 void xml_cleanup(struct xml_context *ctx);
 
-/* Reuse XML context */
+/* Reuse XML context, equivalent to xml_cleanup() and xml_init() */
 void xml_reset(struct xml_context *ctx);
 
 /* Add XML source (fastbuf will be automatically closed) */
@@ -230,5 +250,10 @@ void xml_def_resolve_entity(struct xml_context *ctx, struct xml_dtd_entity *ent)
 
 /* Remove leading/trailing spaces and replaces sequences of spaces to a single space character (non-CDATA attribute normalization) */
 uns xml_normalize_white(struct xml_context *ctx, char *value);
+
+/* Public part of error handling */
+void xml_warn(struct xml_context *ctx, const char *format, ...);
+void xml_error(struct xml_context *ctx, const char *format, ...);
+void NONRET xml_fatal(struct xml_context *ctx, const char *format, ...);
 
 #endif

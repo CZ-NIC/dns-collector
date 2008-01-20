@@ -150,7 +150,7 @@ h_document_end(struct xml_context *ctx UNUSED)
 static void
 h_xml_decl(struct xml_context *ctx)
 {
-  bprintf(out, "SAX:  xml_decl version=%s standalone=%d\n", ctx->version_str, ctx->standalone);
+  bprintf(out, "SAX:  xml_decl version=%s standalone=%d fb_encoding=%s\n", ctx->version_str, ctx->standalone, ctx->src->fb_encoding);
 }
 
 static void

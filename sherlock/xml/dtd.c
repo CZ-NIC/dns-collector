@@ -12,7 +12,7 @@
 #include "sherlock/sherlock.h"
 #include "sherlock/xml/xml.h"
 #include "sherlock/xml/dtd.h"
-#include "sherlock/xml/common.h"
+#include "sherlock/xml/internals.h"
 #include "lib/fastbuf.h"
 #include "lib/ff-unicode.h"
 #include "lib/unicode.h"
@@ -380,24 +380,32 @@ xml_parse_pe_ref(struct xml_context *ctx)
   xml_dec(ctx);
 }
 
-static void
-xml_parse_dtd_pe(struct xml_context *ctx)
+static uns
+xml_parse_dtd_pe(struct xml_context *ctx, uns entity_decl)
 {
+  /* Already parsed: '%' */
   do
     {
-      xml_skip_char(ctx);
       xml_inc(ctx);
+      if (!~entity_decl && (xml_peek_cat(ctx) & XML_CHAR_WHITE))
+        {
+	  xml_dec(ctx);
+	  return ~0U;
+	}
+      xml_parse_pe_ref(ctx);
       while (xml_peek_cat(ctx) & XML_CHAR_WHITE)
 	xml_skip_char(ctx);
-      xml_parse_pe_ref(ctx);
     }
-  while (xml_peek_char(ctx) != '%');
+  while (xml_get_char(ctx) == '%');
+  xml_unget_char(ctx);
+  return 1;
 }
 
 static inline uns
 xml_parse_dtd_white(struct xml_context *ctx, uns mandatory)
 {
-  /* Whitespace or parameter entity */
+  /* Whitespace or parameter entity,
+   * mandatory==~0U has a special maening of the whitespace before the '%' character in an parameter entity declaration */
   uns cnt = 0;
   while (xml_peek_cat(ctx) & XML_CHAR_WHITE)
     {
@@ -406,8 +414,8 @@ xml_parse_dtd_white(struct xml_context *ctx, uns mandatory)
     }
   if (xml_peek_char(ctx) == '%')
     {
-      xml_parse_dtd_pe(ctx);
-      return 1;
+      xml_skip_char(ctx);
+      return xml_parse_dtd_pe(ctx, mandatory);
     }
   else if (unlikely(mandatory && !cnt))
     xml_fatal_expected_white(ctx);
@@ -478,23 +486,17 @@ xml_parse_entity_decl(struct xml_context *ctx)
   /* Already parsed: '<!ENTITY' */
   TRACE(ctx, "parse_entity_decl");
   struct xml_dtd *dtd = ctx->dtd;
-  xml_parse_dtd_white(ctx, 1);
-
-  uns flags = (xml_get_char(ctx) == '%') ? XML_DTD_ENTITY_PARAMETER : 0;
+  uns flags = ~xml_parse_dtd_white(ctx, ~0U) ? 0 : XML_DTD_ENTITY_PARAMETER;
   if (flags)
     xml_parse_dtd_white(ctx, 1);
-  else
-    xml_unget_char(ctx);
-
   struct xml_dtd_entity *ent = xml_dtd_ents_lookup(flags ? dtd->tab_pents : dtd->tab_ents, xml_parse_name(ctx, dtd->pool));
-  slist *list = flags ? &dtd->pents : &dtd->ents;
   xml_parse_dtd_white(ctx, 1);
+  slist *list = flags ? &dtd->pents : &dtd->ents;
   if (ent->flags & XML_DTD_ENTITY_DECLARED)
     {
        xml_fatal(ctx, "Entity &%s; already declared, skipping not implemented", ent->name);
        // FIXME: should be only warning
     }
-
   uns c, sep = xml_get_char(ctx);
   if (sep == '\'' || sep == '"')
     {

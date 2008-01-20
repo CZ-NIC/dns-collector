@@ -12,7 +12,7 @@
 #include "sherlock/sherlock.h"
 #include "sherlock/xml/xml.h"
 #include "sherlock/xml/dtd.h"
-#include "sherlock/xml/common.h"
+#include "sherlock/xml/internals.h"
 #include "lib/stkstring.h"
 #include "lib/ff-unicode.h"
 

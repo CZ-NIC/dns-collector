@@ -12,7 +12,7 @@ In:	<?xml version="1.0" encoding="ISO-8859-1"?>
 	<html><a a1="val1" a2="val2">text1&amp;amp;&lt;</a>text2</html>
 Out:	PULL: start
 	SAX:  document_start
-	SAX:  xml_decl version=1.0 standalone=0
+	SAX:  xml_decl version=1.0 standalone=0 fb_encoding=ISO-8859-1
 	SAX:  stag <html>
 	SAX:  stag <a> a1='val1' a2='val2'
 	SAX:  chars text='text1&amp;<'
@@ -22,22 +22,37 @@ Out:	PULL: start
 	SAX:  document_end
 	PULL: eof
 
-Run:	../obj/sherlock/xml/xml-test -s --dtd
+Run:	(printf '\376\377' && bin/cs2cs UTF-8 UTF-16BE) | ../obj/sherlock/xml/xml-test -spd --dtd
 In:	<?xml version="1.0"?>
 	<!DOCTYPE root [
 	<!ELEMENT root ANY>
-	<!ENTITY e1 "text">
+	<!ENTITY % pe1 "<!ENTITY e1 'text'>">
+	%pe1;
 	<!ENTITY e2 '&lt;&e1;&gt;'>
+	<!ELEMENT a ANY>
 	]>
-	<root>&e1;&e2;</root>
+	<root>&e1;<a>&e2;</a></root>
 Out:	PULL: start
 	SAX:  document_start
-	SAX:  xml_decl version=1.0 standalone=0
+	SAX:  xml_decl version=1.0 standalone=0 fb_encoding=UTF-16BE
 	SAX:  doctype_decl type=root public='' system='' extsub=0 intsub=1
 	SAX:  dtd_start
 	SAX:  dtd_end
 	SAX:  stag <root>
-	SAX:  chars text='text<text>'
+	PULL: stag <root>
+	SAX:  chars text='text'
+	PULL: chars text='text'
+	SAX:  stag <a>
+	PULL: stag <a>
+	SAX:  chars text='<text>'
+	PULL: chars text='<text>'
+	PULL: etag </a>
+	SAX:  etag </a>
+	PULL: etag </root>
 	SAX:  etag </root>
 	SAX:  document_end
 	PULL: eof
+	DOM:  element <root>
+	DOM:      chars text='text'
+	DOM:      element <a>
+	DOM:          chars text='<text>'

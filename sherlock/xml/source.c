@@ -12,7 +12,7 @@
 #include "sherlock/sherlock.h"
 #include "sherlock/xml/xml.h"
 #include "sherlock/xml/dtd.h"
-#include "sherlock/xml/common.h"
+#include "sherlock/xml/internals.h"
 #include "lib/unicode.h"
 #include "lib/ff-unicode.h"
 #include "charset/charconv.h"
@@ -331,7 +331,7 @@ xml_parse_decl(struct xml_context *ctx)
   src->refill_cat2 = ctx->cat_new_line;
 
   /* Initialize the supplied charset (if any) or try to guess it */
-  char *expected_encoding = src->expected_encoding ? : src->fb_encoding;
+  char *expected_encoding = src->expected_encoding;
   src->refill = xml_refill_utf8;
   int bom = bpeekc(src->fb);
   if (bom < 0)
@@ -358,8 +358,6 @@ xml_parse_decl(struct xml_context *ctx)
 	  src->refill = xml_refill_utf16_be;
 	  if (bom == 0xff)
 	    src->refill = xml_refill_utf16_le;
-	  if (!src->expected_encoding)
-	    expected_encoding = (bom == 0xff) ? "UTF-16LE" : "UTF-16BE";
 	}
       else if (strcasecmp(src->fb_encoding, "UTF-16BE"))
 	src->refill = xml_refill_utf16_be;
@@ -372,10 +370,15 @@ xml_parse_decl(struct xml_context *ctx)
 	}
     }
   uns utf16 = src->refill == xml_refill_utf16_le || src->refill == xml_refill_utf16_be;
+  if (utf16)
+    src->fb_encoding = (src->refill == xml_refill_utf16_be) ? "UTF-16BE" : "UTF-16LE";
+  if (!expected_encoding)
+    expected_encoding = src->fb_encoding;
   if (bom > 0 && xml_peek_char(ctx) == 0xfeff)
     xml_skip_char(ctx);
   else if (utf16)
     xml_error(ctx, "Missing or corrupted BOM");
+  TRACE(ctx, "Initial encoding=%s", src->fb_encoding ? : "?");
 
   /* Look ahead for presence of XMLDecl or optional TextDecl */
   if (!(ctx->flags & XML_SRC_EOF) && ctx->bstop != src->buf + ARRAY_SIZE(src->buf))
@@ -462,13 +465,19 @@ end:
       if (cs < 0 && !expected_encoding)
 	xml_error(ctx, "Unknown encoding '%s'", src->decl_encoding);
       else if (!src->fb_encoding && cs >= 0 && cs != CONV_CHARSET_UTF8)
-	xml_init_charconv(ctx, cs);
+        {
+	  xml_init_charconv(ctx, cs);
+	  src->fb_encoding = src->decl_encoding;
+	}
       else if (expected_encoding && strcasecmp(src->decl_encoding, expected_encoding) && (!utf16 ||
 	!(!strcasecmp(src->decl_encoding, "UTF-16") ||
 	 (!strcasecmp(src->decl_encoding, "UTF-16BE") && strcasecmp(expected_encoding, "UTF-16LE")) ||
 	 (!strcasecmp(src->decl_encoding, "UTF-16LE") && strcasecmp(expected_encoding, "UTF-16BE")))))
 	xml_error(ctx, "The header contains encoding '%s' instead of expected '%s'", src->decl_encoding, expected_encoding);
     }
+  if (!src->fb_encoding)
+    src->fb_encoding = "UTF-8";
+  TRACE(ctx, "Final encoding=%s", src->fb_encoding);
 
 exit:
   /* Update valid Unicode ranges */
