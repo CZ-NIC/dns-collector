@@ -22,7 +22,7 @@ Out:	PULL: start
 	SAX:  document_end
 	PULL: eof
 
-Run:	(printf '\376\377' && bin/cs2cs UTF-8 UTF-16BE) | ../obj/sherlock/xml/xml-test -spd --dtd
+Run:	(printf '\376\377' && bin/cs2cs UTF-8 UTF-16BE) | ../obj/sherlock/xml/xml-test -sptd
 In:	<?xml version="1.0"?>
 	<!DOCTYPE root [
 	<!ELEMENT root ANY>

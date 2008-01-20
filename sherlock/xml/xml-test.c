@@ -19,7 +19,6 @@
 
 enum {
   WANT_FIRST = 0x100,
-  WANT_PARSE_DTD,
   WANT_HIDE_ERRORS,
   WANT_IGNORE_COMMENTS,
   WANT_IGNORE_PIS,
@@ -27,13 +26,13 @@ enum {
   WANT_FILE_ENTITIES,
 };
 
-static char *shortopts = "spd" CF_SHORT_OPTS;
+static char *shortopts = "spdt" CF_SHORT_OPTS;
 static struct option longopts[] = {
   CF_LONG_OPTS
   { "sax",		0, 0, 's' },
   { "pull",		0, 0, 'p' },
-  { "dom",		0, 0, 'd' },
-  { "dtd",		0, 0, WANT_PARSE_DTD },
+  { "dom",		0, 0, 't' },
+  { "dtd",		0, 0, 'd' },
   { "hide-errors",	0, 0, WANT_HIDE_ERRORS },
   { "ignore-comments",	0, 0, WANT_IGNORE_COMMENTS },
   { "ignore-pis",	0, 0, WANT_IGNORE_PIS },
@@ -240,10 +239,10 @@ main(int argc, char **argv)
 	case 'p':
 	  want_pull++;
 	  break;
-	case 'd':
+	case 't':
 	  want_dom++;
 	  break;
-	case WANT_PARSE_DTD:
+	case 'd':
 	  want_parse_dtd++;
 	  break;
 	case WANT_HIDE_ERRORS:
