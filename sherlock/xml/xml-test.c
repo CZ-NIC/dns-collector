@@ -52,8 +52,8 @@ CF_USAGE
 "\
 -p, --pull              Test PULL interface\n\
 -s, --sax               Test SAX interface\n\
--d, --dom               Test DOM interface\n\
-    --dtd               Enable parsing of DTD\n\
+-t, --dom               Test DOM interface\n\
+-d, --dtd               Enable parsing of DTD\n\
     --hide-errors       Hide warnings and error messages\n\
     --ignore-comments   Ignore processing instructions\n\
     --ignore-pis        Ignore comments\n\
