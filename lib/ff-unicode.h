@@ -1,15 +1,16 @@
 /*
- *	UCW Library: Reading and writing of UTF-8 on Fastbuf Streams
+ *	UCW Library: Reading and writing of UTF-8 and UTF-16 on Fastbuf Streams
  *
  *	(c) 2001--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>
+ *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _UCW_FF_UTF8_H
-#define _UCW_FF_UTF8_H
+#ifndef _UCW_FF_UNICODE_H
+#define _UCW_FF_UNICODE_H
 
 #include "lib/fastbuf.h"
 #include "lib/unicode.h"
