@@ -58,7 +58,7 @@
 #define FF_ALL(type, name, bits, defendian) FF_ALL_X(type, name, bits, defendian)
 
 FF_ALL(int, w, 16, FF_ENDIAN)
-FF_ALL(u32, l, 32, FF_ENDIAN)
+FF_ALL(uns, l, 32, FF_ENDIAN)
 FF_ALL(u64, q, 64, FF_ENDIAN)
 FF_ALL(u64, 5, 40, FF_ENDIAN)
 
