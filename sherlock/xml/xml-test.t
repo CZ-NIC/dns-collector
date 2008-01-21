@@ -22,7 +22,7 @@ Out:	PULL: start
 	SAX:  document_end
 	PULL: eof
 
-Run:	(printf '\376\377' && bin/cs2cs UTF-8 UTF-16BE) | ../obj/sherlock/xml/xml-test -sptd
+Run:	../obj/sherlock/xml/xml-test -sptd
 In:	<?xml version="1.0"?>
 	<!DOCTYPE root [
 	<!ELEMENT root ANY>
@@ -34,7 +34,7 @@ In:	<?xml version="1.0"?>
 	<root>&e1;<a>&e2;</a></root>
 Out:	PULL: start
 	SAX:  document_start
-	SAX:  xml_decl version=1.0 standalone=0 fb_encoding=UTF-16BE
+	SAX:  xml_decl version=1.0 standalone=0 fb_encoding=UTF-8
 	SAX:  doctype_decl type=root public='' system='' extsub=0 intsub=1
 	SAX:  dtd_start
 	SAX:  dtd_end

@@ -14,9 +14,13 @@ $(o)/sherlock/xml/libshxml.so: $(addsuffix .oo,$(LIBSHXML_MOD_PATHS))
 $(o)/sherlock/xml/libshxml.pc: $(LIBSH) $(LIBCHARSET)
 
 $(o)/sherlock/xml/common.o: $(o)/sherlock/xml/unicat.h
+$(o)/sherlock/xml/common.oo: $(o)/sherlock/xml/unicat.h
 $(o)/sherlock/xml/source.o: $(o)/sherlock/xml/unicat.h
-$(o)/sherlock/xml/parse.o: $(o)/sherlock/xml/unicat.h
+$(o)/sherlock/xml/source.oo: $(o)/sherlock/xml/unicat.h
 $(o)/sherlock/xml/dtd.o: $(o)/sherlock/xml/unicat.h
+$(o)/sherlock/xml/dtd.oo: $(o)/sherlock/xml/unicat.h
+$(o)/sherlock/xml/parse.o: $(o)/sherlock/xml/unicat.h
+$(o)/sherlock/xml/parse.oo: $(o)/sherlock/xml/unicat.h
 $(o)/sherlock/xml/unicat.h: $(s)/sherlock/xml/unicat.pl
 	$(M)GEN $(addprefix $(o)/sherlock/xml/unicat,.h .c)
 	$(Q)$< $(addprefix $(o)/sherlock/xml/unicat,.h .c)
