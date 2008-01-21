@@ -89,6 +89,7 @@ seq:
 	}
       if (c->code >= 0x10000)
 	c->code = 0xfffd;
+got_char:
       c->source = s;
       c->state = 0;
       return -1;
@@ -133,19 +134,23 @@ seq:
       {
 	void *p = &c->code;
 	c->string_at = p;
-	if (c->code < 0xd800 || c->code - 0xe000 < 0x2000)
+	uns code = c->code;
+	c->string_at = p;
+	if (code < 0xd800 || code - 0xe000 < 0x2000)
 	  {}
-	else if ((c->code -= 0x10000) < 0x100000)
+	else if ((code -= 0x10000) < 0x100000)
 	  {
-	    put_u16_be(p, 0xd800 | (c->code >> 10));
-	    put_u16_be(p + 2, 0xdc00 | (c->code & 0x3ff));
+	    put_u16_be(p, 0xd800 | (code >> 10));
+	    put_u16_be(p + 2, 0xdc00 | (code & 0x3ff));
 	    c->remains = 4;
+	    c->state = SEQ_WRITE;
 	    goto seq;
 	  }
 	else
-	  c->code = UNI_REPLACEMENT;
-	put_u16_be(p, c->code);
+	  code = UNI_REPLACEMENT;
+	put_u16_be(p, code);
 	c->remains = 2;
+        c->state = SEQ_WRITE;
 	goto seq;
       }
 
@@ -154,18 +159,22 @@ seq:
       {
 	void *p = &c->code;
 	c->string_at = p;
-	if (c->code < 0xd800 || c->code - 0xe000 < 0x2000)
+	uns code = c->code;
+	c->string_at = p;
+	if (code < 0xd800 || code - 0xe000 < 0x2000)
 	  {}
-	else if ((c->code -= 0x10000) < 0x100000)
+	else if ((code -= 0x10000) < 0x100000)
 	  {
-	    put_u16_le(p, 0xd800 | (c->code >> 10));
-	    put_u16_le(p + 2, 0xdc00 | (c->code & 0x3ff));
+	    put_u16_le(p, 0xd800 | (code >> 10));
+	    put_u16_le(p + 2, 0xdc00 | (code & 0x3ff));
 	    c->remains = 4;
+            c->state = SEQ_WRITE;
 	  }
 	else
-	  c->code = UNI_REPLACEMENT;
-        put_u16_le(p, c->code);
+	  code = UNI_REPLACEMENT;
+        put_u16_le(p, code);
         c->remains = 2;
+        c->state = SEQ_WRITE;
 	goto seq;
       }
 
@@ -181,7 +190,7 @@ seq:
 	goto cse;
       c->code = (c->code << 8) | *s++;
       if (c->code - 0xd800 >= 0x800)
-	break;
+        goto got_char;
       c->code = (c->code - 0xd800) << 10;
       c->state = UTF16_BE_READ_2;
       /* fall-thru */
@@ -203,7 +212,7 @@ seq:
       else
 	c->code = UNI_REPLACEMENT;
       s++;
-      break;
+      goto got_char;
 
     /* Reading of UTF16-LE */
     case UTF16_LE_READ:
@@ -217,7 +226,7 @@ seq:
 	goto cse;
       c->code |= *s++ << 8;
       if (c->code - 0xd800 >= 0x800)
-	break;
+        goto got_char;
       c->code = (c->code - 0xd800) << 10;
       c->state = UTF16_LE_READ_2;
       /* fall-thru */
@@ -235,7 +244,7 @@ seq:
       else
 	c->code = UNI_REPLACEMENT;
       s++;
-      break;
+      goto got_char;
 
     default:
       ASSERT(0);

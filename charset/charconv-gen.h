@@ -13,6 +13,7 @@
 do {
 
 /*** Header ***/
+
   const byte *s, *se;
   byte *d, *de;
   uns code;
@@ -193,6 +194,7 @@ got_code:
       else
         {
 write_slow:
+	  c->code = code;
 	  c->state = UTF16_BE_WRITE;
 	  goto go_slow;
 	}
@@ -217,6 +219,7 @@ write_slow:
       else
         {
 write_slow:
+	  c->code = code;
 	  c->state = UTF16_LE_WRITE;
 	  goto go_slow;
 	}
