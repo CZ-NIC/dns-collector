@@ -3,6 +3,7 @@
  *
  *	(c) 2005--2007 Martin Mares <mj@ucw.cz>
  *	(c) 2005 Tomas Valla <tom@ucw.cz>
+ *	(c) 2008 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -26,6 +27,7 @@
 #define stk_hexdump(s,n) ({ uns _n=(n); char *_x=alloca(3*_n+1); stk_hexdump_internal(_x,(char*)(s),_n); _x; })
 #define stk_str_unesc(s) ({ const char *_s=(s); char *_d=alloca(strlen(_s)+1); str_unesc(_d, _s); _d; })
 #define stk_fsize(n) ({ char *_s=alloca(16); stk_fsize_internal(_s, n); _s; })
+#define stk_sepsplit(s, sep) ({ const char *_s=(s), char **_a; uns _sep=(sep), _n=1; for (const char *p=_s; *p; *p++) _n+=*p==_sep; _a=alloca((_n+1)*sizeof(*_a)); sepsplit(s,sep,_a,_n); _a[_n]=NULL; _a; })
 
 uns stk_array_len(char **s, uns cnt);
 void stk_array_join(char *x, char **s, uns cnt, uns sep);
