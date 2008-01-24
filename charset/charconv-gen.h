@@ -139,7 +139,7 @@ got_code:
         {
 	  byte *k = string_table + code - 0x100;
 	  uns len = *k++;
-	  if (unlikely(de - d < len))
+	  if (unlikely((uns)(de - d) < len))
 	    {
 	      c->state = SEQ_WRITE;
 	      c->string_at = k;
