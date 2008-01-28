@@ -121,4 +121,12 @@ static inline void clist_insert_list_after(clist *what, cnode *after)
     }
 }
 
+static inline uns clist_size(clist *l)
+{
+  uns i = 0;
+  CLIST_FOR_EACH(cnode *, n, *l)
+    i++;
+  return i;
+}
+
 #endif
