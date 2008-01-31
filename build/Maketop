@@ -4,6 +4,9 @@
 # Set to 1 if you want verbose output
 V=0
 
+# Set to 'y' (or 'n') if you want to auto-confirm (auto-reject) all questions
+CONFIRM=
+
 # Disable all built-in rules and variables. Speeds up make and simplifies debugging.
 MAKEFLAGS+=-rR
 
