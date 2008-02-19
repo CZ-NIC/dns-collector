@@ -27,7 +27,7 @@ struct mempool {
 
 /* Statistics (see mp_stats()) */
 struct mempool_stats {
-  uns total_size;			/* Real allocated size in bytes */
+  u64 total_size;			/* Real allocated size in bytes */
   uns chain_count[3];			/* Number of allocated chunks in small/big/unused chains */
   uns chain_size[3];			/* Size of allocated chunks in small/big/unused chains */
 };
@@ -46,6 +46,7 @@ void mp_flush(struct mempool *pool);
 
 /* Compute some statistics for debug purposes. See the definition of the mempool_stats structure. */
 void mp_stats(struct mempool *pool, struct mempool_stats *stats);
+u64 mp_total_size(struct mempool *pool);
 
 
 /*** Allocation routines ***/
