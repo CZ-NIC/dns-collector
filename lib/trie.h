@@ -29,6 +29,7 @@
  *	    TRIE_WANT_FIND		node *find(char *str)
  *	    TRIE_WANT_FIND_BUF		node *find_buf(byte *ptr, uns len)
  *	    TRIE_WANT_ADD		add(*node)
+ *	    TRIE_WANT_ADD_OVER		node *add_over(*node)
  * 	    TRIE_WANT_DELETE		delete(char *str)
  * 	    TRIE_WANT_DELETE_BUF	delete_buf(byte *ptr, uns len)
  * 	    TRIE_WANT_REMOVE		remove(*node)
@@ -120,7 +121,7 @@ TRIE_COMPILE_ASSERT(bucket_size, TRIE_BUCKET_SIZE >= 3 && TRIE_BUCKET_SIZE <= 25
 #define TRIE_WANT_DO_FIND_PREFIX
 #endif
 
-#if !defined(TRIE_WANT_DO_LOOKUP) && defined(TRIE_WANT_ADD)
+#if !defined(TRIE_WANT_DO_LOOKUP) && (defined(TRIE_WANT_ADD) || defined(TRIE_WANT_ADD_OVER))
 #define TRIE_WANT_DO_LOOKUP
 #endif
 
@@ -749,6 +750,17 @@ P(add)(TAC P(node_t) *node)
 }
 #endif
 
+#ifdef TRIE_WANT_ADD_OVER
+static inline P(node_t) *
+P(add_over)(TAC P(node_t) *node)
+{
+  struct P(edge) *edge = P(do_lookup)(TTC P(str_get)(node), P(str_len)(node));
+  P(node_t) *over = edge->node;
+  edge->node = node;
+  return over;
+}
+#endif
+
 #ifdef TRIE_WANT_DELETE
 static inline P(node_t) *
 P(delete)(TAC char *str)
@@ -923,6 +935,7 @@ P(audit)(TA)
 #undef TRIE_WANT_FIND
 #undef TRIE_WANT_FIND_BUF
 #undef TRIE_WANT_ADD
+#undef TRIE_WANT_ADD_OVER
 #undef TRIE_WANT_DELETE
 #undef TRIE_WANT_DELETE_BUF
 #undef TRIE_WANT_REMOVE
