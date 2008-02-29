@@ -37,6 +37,7 @@
  *	    TRIE_WANT_WALK_ALL		walk_all(walk)
  *	    TRIE_WANT_WALK_PREFIX	walk_prefix(walk, char *str)
  *	    TRIE_WANT_AUDIT		audit()
+ *	    TRIW_WANT_STATS
  */
 
 /*** Define once ***/
@@ -897,6 +898,37 @@ P(audit)(TA)
   walk.walk.edge_action = P(audit_action);
   P(walk_all)(TTC &walk.walk);
   TRIE_DBG("Found %u edges", walk.count);
+}
+
+#endif
+
+/*** Statistics ***/
+
+#ifdef TRIE_WANT_STATS
+
+struct P(stats) {
+  u64 total_size;
+  u64 small_size;
+  u64 hash_size;
+};
+
+static void
+P(stats)(TAC struct P(stats) *stats)
+{
+  bzero(stats, sizeof(*stats));
+  for (uns i = 0; i < ARRAY_SIZE(T.epool); i++)
+    stats->small_size += ep_total_size(T.epool[i]);
+  for (uns i = 0; i < ARRAY_SIZE(T.hpool); i++)
+    stats->hash_size += ep_total_size(T.hpool[i]);
+  stats->total_size = stats->small_size + stats->total_size + sizeof(T);
+}
+
+static inline u64
+P(total_size)(TA)
+{
+  struct P(stats) stats;
+  P(stats)(TTC &stats);
+  return stats.total_size;
 }
 
 #endif
