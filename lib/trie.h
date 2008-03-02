@@ -17,7 +17,7 @@
  *	[*] TRIE_PREFIX(x)		macro to add a name prefix (used on all global names
  *					defined by the trie generator).
  *
- *	[*] TRIE_NODE_TYPE		data type where a node dwells (usually a struct, default=void).
+ *	[*] TRIE_NODE_TYPE		data type where a node dwells (usually a struct).
  *	    TRIE_NODE_KEY(node)		macro to return the pointer to the key (default=&x)
  *	    TRIE_NODE_LEN(node)		macro to return the length of the key (default=str_len(TRIE_NODE_KEY(node)))
  *	    TRIE_LEN_TYPE		integer type large enough to hold length of any inserted string (default=u32).
@@ -34,10 +34,8 @@
  * 	    TRIE_WANT_DELETE_BUF	delete_buf(byte *ptr, uns len)
  * 	    TRIE_WANT_REMOVE		remove(*node)
  *
- *	    TRIE_WANT_WALK_ALL		walk_all(walk)
- *	    TRIE_WANT_WALK_PREFIX	walk_prefix(walk, char *str)
  *	    TRIE_WANT_AUDIT		audit()
- *	    TRIW_WANT_STATS
+ *	    TRIE_WANT_STATS
  */
 
 /*** Define once ***/
@@ -89,14 +87,17 @@ typedef TRIE_LEN_TYPE P(len_t);
 #define TRIE_HASH_THRESHOLD (6 - sizeof(P(len_t)))
 #endif
 
-#ifndef TRIE_BUCKET_SIZE
-#define TRIE_BUCKET_SIZE (sizeof(void *) - 1)
+#ifndef TRIE_BUCKET_RANK
+#define TRIE_BUCKET_RANK (2U + sizeof(void *) > 4)
 #endif
+#define TRIE_BUCKET_SIZE (1U << TRIE_BUCKET_RANK)
+#define TRIE_BUCKET_MASK (TRIE_BUCKET_SIZE - 1)
+enum { P(bucket_rank) = TRIE_BUCKET_RANK };
 
 #define TRIE_COMPILE_ASSERT(x, y) typedef char TRIE_PREFIX(x##_compile_assert)[!!(y)-1]
 TRIE_COMPILE_ASSERT(len_type, sizeof(P(len_t)) <= sizeof(uns));
 TRIE_COMPILE_ASSERT(hash_threshold, TRIE_HASH_THRESHOLD >= 2);
-TRIE_COMPILE_ASSERT(bucket_size, TRIE_BUCKET_SIZE >= 3 && TRIE_BUCKET_SIZE <= 255);
+TRIE_COMPILE_ASSERT(bucket_size, TRIE_BUCKET_RANK >= 1 && TRIE_BUCKET_MASK < sizeof(void *));
 
 #ifdef TRIE_TRACE
 #define TRIE_DBG(x...) msg(L_DEBUG, "TRIE: " x)
@@ -106,20 +107,8 @@ TRIE_COMPILE_ASSERT(bucket_size, TRIE_BUCKET_SIZE >= 3 && TRIE_BUCKET_SIZE <= 25
 
 /*** Solve dependencies ***/
 
-#if !defined(TRIE_WANT_WALK_ALL) && defined(TRIE_WANT_AUDIT)
-#define TRIE_WANT_WALK_ALL
-#endif
-
-#if !defined(TRIE_WANT_WALK_SUBTREE) && (defined(TRIE_WANT_WALK_ALL) || defined(TRIE_WANT_WALK_PREFIX))
-#define TRIE_WANT_WALK_SUBTREE
-#endif
-
 #if !defined(TRIE_WANT_DO_FIND) && (defined(TRIE_WANT_FIND) || defined(TRIE_WANT_FIND_BUF))
 #define TRIE_WANT_DO_FIND
-#endif
-
-#if !defined(TRIE_WANT_DO_FIND_PREFIX) && defined(TRIE_WANT_WALK_PREFIX)
-#define TRIE_WANT_DO_FIND_PREFIX
 #endif
 
 #if !defined(TRIE_WANT_DO_LOOKUP) && (defined(TRIE_WANT_ADD) || defined(TRIE_WANT_REPLACE))
@@ -142,12 +131,6 @@ struct P(trie) {
   struct eltpool *hpool[9];			// eltpools for edges with hash table
 };
 
-struct P(bucket) {				// hash bucket
-  byte count;					// number of inserted + deleted entries
-  byte trans[TRIE_BUCKET_SIZE];			// transition characters
-  struct P(edge) *son[TRIE_BUCKET_SIZE];	// sons (or NULL for deleted entries)
-};
-
 struct P(edge) {
   u16 flags;					// TRIE_FLAG_x
   union {
@@ -163,10 +146,8 @@ struct P(edge) {
     P(node_t) *node;				// inserted data (TRIE_FLAG_NODE)
     struct P(edge) *leaf;			// reference to a descendant with data (!TRIE_FLAG_NODE)
   };
-  union {
-    struct P(bucket) hash[0];			// array of buckets (TRIE_FLAG_HASH)
-    struct P(edge) *son[0];			// array of sons (!TRIE_FLAG_HASH)
-  };
+  struct P(edge) *son[0];			// array of sons (!TRIE_FLAG_HASH)
+						//   or hash table (TRIE_FLAG_HASH)
 };
 
 #ifdef TRIE_DYNAMIC
@@ -198,7 +179,7 @@ P(init)(TA)
     }
   for (uns i = 0; i < ARRAY_SIZE(T.hpool); i++)
     {
-      uns size = sizeof(struct P(edge)) + (sizeof(struct P(bucket)) << i);
+      uns size = sizeof(struct P(edge)) + ((sizeof(void *) << TRIE_BUCKET_RANK) << i);
       T.hpool[i] = ep_new(size, MAX(TRIE_ELTPOOL_SIZE / size, 1));
     }
 }
@@ -222,13 +203,13 @@ P(edge_alloc)(TAC uns flags)
   if (flags & TRIE_FLAG_HASH)
     {
       uns rank = 0, deg = flags & TRIE_FLAG_DEG;
-      while ((TRIE_BUCKET_SIZE << rank) < deg * 2) // 25-50% density
+      while ((TRIE_BUCKET_MASK << rank) < deg * 2) // 25-50% density
 	rank++;
       ASSERT(rank < ARRAY_SIZE(T.hpool));
       edge = ep_alloc(T.hpool[rank]);
       edge->hash_rank = rank;
       edge->hash_deleted = 0;
-      bzero(edge->hash, sizeof(struct P(bucket)) << rank);
+      bzero(edge->son, (sizeof(void *) << TRIE_BUCKET_RANK) << rank);
     }
   else
     edge = ep_alloc(T.epool[flags & TRIE_FLAG_DEG]);
@@ -291,6 +272,16 @@ P(str_suffix)(byte *ptr, uns len UNUSED, uns suffix UNUSED)
 #endif
 }
 
+static inline uns
+P(common_prefix)(byte *ptr1, uns len1, byte *ptr2, uns len2)
+{
+  uns l = MIN(len1, len2), i;
+  for (i = 0; i < l; i++)
+    if (P(str_char)(ptr1, len1, i) != P(str_char)(ptr2, len2, i))
+      break;
+  return i;
+}
+
 /*** Sons ***/
 
 static inline uns
@@ -302,74 +293,53 @@ P(hash_func)(uns c)
 static inline struct P(edge) **
 P(hash_find)(struct P(edge) *edge, uns c)
 {
-  uns mask = (1U << edge->hash_rank) - 1;
-  for (uns x = P(hash_func)(c); ; x++)
-    {
-      struct P(bucket) *b = &edge->hash[x & mask];
-      for (uns i = 0; i < b->count; i++)
-	if (b->trans[i] == c && b->son[i])
-	  return &b->son[i];
-      if (b->count != TRIE_BUCKET_SIZE)
+  uns mask = (TRIE_BUCKET_SIZE << edge->hash_rank) - 1;
+  for (uns i = P(hash_func)(c); ; i++)
+    if (((i &= mask) & TRIE_BUCKET_MASK) && (uintptr_t)edge->son[i] != 1)
+      if (!edge->son[i])
 	return NULL;
-    }
+      else if (((byte *)&edge->son[i & ~TRIE_BUCKET_MASK])[i & TRIE_BUCKET_MASK] == c)
+        return &edge->son[i];
 }
 
-static struct P(edge) **
+static inline struct P(edge) **
 P(hash_insert)(struct P(edge) *edge, uns c)
 {
-  uns mask = (1U << edge->hash_rank) - 1, i, x;
-  struct P(bucket) *b;
-  for (x = P(hash_func)(c); ; x++)
-    {
-      b = &edge->hash[x & mask];
-      for (i = 0; i < b->count; i++)
-	if (!b->son[i])
-	  {
-	    edge->hash_deleted--;
-	    goto end;
-	  }
-      if (i != TRIE_BUCKET_SIZE)
-        {
-	  b->count = i + 1;
-	  break;
-	}
-    }
-end:
-  b->trans[i] = c;
-  return &b->son[i];
+  uns mask = (TRIE_BUCKET_SIZE << edge->hash_rank) - 1;
+  for (uns i = P(hash_func)(c); ; i++)
+    if (((i &= mask) & TRIE_BUCKET_MASK) && (uintptr_t)edge->son[i] <= 1)
+      {
+	edge->hash_deleted -= (uintptr_t)edge->son[i];
+	edge->son[i] = NULL;
+	((byte *)&edge->son[i & ~TRIE_BUCKET_MASK])[i & TRIE_BUCKET_MASK] = c;
+	return &edge->son[i];
+      }
 }
 
 #ifdef TRIE_WANT_DO_DELETE
-static void
+static inline void
 P(hash_delete)(struct P(edge) *edge, uns c)
 {
-  uns mask = (1U << edge->hash_rank) - 1;
-  for (uns x = P(hash_func)(c); ; x++)
-    {
-      struct P(bucket) *b = &edge->hash[x & mask];
-      for (uns i = 0; i < b->count; i++)
-	if (b->trans[i] == c && b->son[i])
-	  {
-	    b->trans[i] = 0; // not necessary
-	    b->son[i] = NULL;
-	    edge->hash_deleted++;
-	    return;
-	  }
-      if (b->count != TRIE_BUCKET_SIZE)
-	ASSERT(0);
-    }
+  uns mask = (TRIE_BUCKET_SIZE << edge->hash_rank) - 1;
+  for (uns i = P(hash_func)(c); ; i++)
+    if (((i &= mask) & TRIE_BUCKET_MASK) && (uintptr_t)edge->son[i] > 1 &&
+      ((byte *)&edge->son[i & ~TRIE_BUCKET_MASK])[i & TRIE_BUCKET_MASK] == c)
+      {
+	edge->hash_deleted++;
+	edge->son[i] = (void *)1;
+	return;
+      }
 }
 #endif
 
 #define TRIE_HASH_FOR_ALL(xedge, xtrans, xson) do { \
   struct P(edge) *_edge = (xedge); \
-  for (struct P(bucket) *_b = _edge->hash + (1U << _edge->hash_rank); --_b >= _edge->hash; ) \
-    for (uns _i = 0; _i < _b->count; _i++) \
-      if (_b->son[_i]) { \
-	UNUSED uns xtrans = _b->trans[_i]; \
-	UNUSED struct P(edge) *xson = _b->son[_i]; \
-	do {
-#define TRIE_HASH_END_FOR }while(0); } }while(0)
+  for (uns _i = (TRIE_BUCKET_SIZE << _edge->hash_rank); _i--; ) \
+    if ((_i & TRIE_BUCKET_MASK) && (uintptr_t)_edge->son[_i] > 1) { \
+      UNUSED uns xtrans = ((byte *)&_edge->son[_i & ~TRIE_BUCKET_MASK])[_i & TRIE_BUCKET_MASK]; \
+      UNUSED struct P(edge) *xson = _edge->son[_i]; \
+      do {
+#define TRIE_HASH_END_FOR }while(0);}}while(0)
 
 static void
 P(hash_realloc)(TAC struct P(edge) **ref)
@@ -406,7 +376,7 @@ P(son_insert)(TAC struct P(edge) **ref, uns c)
   if (old->flags & TRIE_FLAG_HASH)
     {
       old->flags++;
-      if ((deg + 1 + old->hash_deleted) * 4 > (TRIE_BUCKET_SIZE << old->hash_rank) * 3) // >75% density
+      if ((deg + 1 + old->hash_deleted) * 4 > (TRIE_BUCKET_MASK << old->hash_rank) * 3) // >75% density
         {
 	  P(hash_realloc)(TTC ref);
 	  edge = *ref;
@@ -467,7 +437,7 @@ P(son_delete)(TAC struct P(edge) **ref, uns c)
 	  TRIE_HASH_END_FOR;
 	  ASSERT(k == deg);
 	}
-      else if (deg * 6 >= (TRIE_BUCKET_SIZE << old->hash_rank)) // >= 16%
+      else if (deg * 6 >= (TRIE_BUCKET_MASK << old->hash_rank)) // >= 16%
 	return;
       else
         {
@@ -505,10 +475,9 @@ P(son_any)(struct P(edge) *edge)
   if (!(edge->flags & TRIE_FLAG_HASH))
     return edge->son[0];
   else
-    for (struct P(bucket) *b = edge->hash; ; b++)
-      for (uns i = 0; i < b->count; i++)
-	if (b->son[i])
-	  return b->son[i];
+    for (uns i = 0; ; i++)
+      if ((i & TRIE_BUCKET_MASK) && (uintptr_t)edge->son[i] > 1)
+	return edge->son[i];
 }
 #endif
 
@@ -526,25 +495,6 @@ P(do_find)(TAC byte *ptr, uns len)
 	return NULL;
       else if (edge->len == len)
 	return ((edge->flags & TRIE_FLAG_NODE) && !memcmp(ptr, P(str_get)(edge->node), len)) ? edge : NULL;
-    }
-  while (ref = P(son_find)(edge, P(str_char)(ptr, len, edge->len)));
-  return NULL;
-}
-#endif
-
-#ifdef TRIE_WANT_DO_FIND_PREFIX
-static struct P(edge) *
-P(do_find_prefix)(TAC byte *ptr, uns len)
-{
-  // find shortest edge with a given prefix (may not contain data)
-  TRIE_DBG("do_find_prefix('%.*s')", len, ptr);
-  struct P(edge) **ref = &T.root, *edge;
-  do
-    {
-      if (!(edge = *ref))
-	return NULL;
-      else if (edge->len >= len)
-	return !memcmp(ptr, P(str_prefix)(P(str_get)(edge->node), edge->len, len), len) ? edge : NULL;
     }
   while (ref = P(son_find)(edge, P(str_char)(ptr, len, edge->len)));
   return NULL;
@@ -576,13 +526,10 @@ P(do_lookup)(TAC byte *ptr, uns len)
       ASSERT(edge->flags & TRIE_FLAG_NODE);
       eptr = P(str_get)(edge->node);
       elen = edge->len;
-      uns l = MIN(elen, len);
-      for (prefix = 0; prefix < l; prefix++)
-	if (P(str_char)(ptr, len, prefix) != P(str_char)(eptr, elen, prefix))
-	  break;
+      prefix = P(common_prefix)(ptr, len, eptr, elen);
       if (prefix == len && prefix == elen)
 	return edge;
-      TRIE_DBG("The longest common prefix is '%.*s'", prefix, P(str_prefix)(eptr, elen, prefix));
+      TRIE_DBG("The longest common prefix is '%.*s'", prefix, P(str_prefix)(ptr, len, prefix));
 
       if (prefix < len)
         {
@@ -787,117 +734,149 @@ P(remove)(TAC P(node_t) *node)
 }
 #endif
 
-/*** Traversing subtrees ***/
+/*** Traversing prefixes and subtrees ***/
 
-#ifdef TRIE_WANT_WALK_SUBTREE
-struct P(walk) {
-#ifdef TRIE_DYNAMIC
-  struct P(trie) *trie;
-#endif
-  struct P(edge) *edge;
-  void (*node_action)(struct P(walk) *walk);
-  void (*edge_action)(struct P(walk) *walk);
-};
+#ifndef TRIE_FOR_ALL
 
-static void
-P(walk_subtree)(struct P(walk) *walk, struct P(edge) *edge)
-{
-  walk->edge = edge;
-  if (walk->edge_action)
-    walk->edge_action(walk);
-  if ((edge->flags & TRIE_FLAG_NODE) && walk->node_action)
-    walk->node_action(walk);
-  if (edge->flags & TRIE_FLAG_HASH)
-  {
-    TRIE_HASH_FOR_ALL(edge, trans, son)
-      P(walk_subtree)(walk, son);
-    TRIE_HASH_END_FOR;
-  }
-  else
-    for (uns i = edge->flags & TRIE_FLAG_DEG; i--; )
-      P(walk_subtree)(walk, edge->son[i]);
-}
-#endif
+// for all matched edges until the first >=xlen (including)
+#define TRIE_FOR_PREFIX_EDGES(px, xtrie, xptr, xlen, xedge)		\
+  do									\
+    {									\
+      byte *_ptr = (xptr);						\
+      uns _len = (xlen);						\
+      struct px##trie *_trie = (xtrie);					\
+      struct px##edge *xedge, **_ref;					\
+      if (!(xedge = _trie->root))					\
+        break;								\
+      while (xedge->len < _len && (_ref = px##son_find(xedge, px##str_char(_ptr, _len, xedge->len))))		\
+        xedge = *_ref;							\
+      if (!(xedge->flags & TRIE_FLAG_NODE))				\
+	xedge = xedge->leaf;						\
+      uns _prefix = px##common_prefix(_ptr, _len, px##str_get(xedge->node), xedge->len);			\
+      for (_ref = &_trie->root; _ref && ((xedge = *_ref)->len <= _prefix || _prefix == _len);			\
+	_ref = (xedge->len < _prefix) ? px##son_find(xedge, px##str_char(_ptr, _len, xedge->len)) : NULL)	\
+        {
+#define TRIE_END_PREFIX_EDGES						\
+	}								\
+    }									\
+  while (0)
 
-#ifdef TRIE_WANT_WALK_ALL
-static void
-P(walk_all)(TAC struct P(walk) *walk)
-{
-#ifdef TRIE_DYNAMIC
-  walk->trie = &T;
-#endif
-  if (T.root)
-    P(walk_subtree)(walk, T.root);
-}
-#endif
+// for entire subtree starting in the xstart edge
+#define TRIE_FOR_SUBTREE_EDGES(px, xstart, xedge)			\
+  do									\
+    {									\
+      struct { struct px##edge *edge; uns pos; }			\
+        *_sbuf = alloca(sizeof(*_sbuf) * 16),				\
+        *_sptr = _sbuf, *_send = _sbuf + 16;				\
+      struct px##edge *_next = (xstart), *xedge;			\
+      while (xedge = _next)						\
+	{								\
+	  if (xedge->flags & TRIE_FLAG_DEG)				\
+	    {								\
+	      if (_sptr == _send)					\
+	        {							\
+		  uns stack_size = _sptr - _sbuf;			\
+		  _sptr = alloca(sizeof(*_sptr) * (stack_size * 2));	\
+		  memcpy(_sptr, _sbuf, sizeof(*_sptr) * stack_size);	\
+		  _sbuf = _sptr;					\
+		  _send = _sptr + stack_size * 2;			\
+		}							\
+	      _sptr->edge = xedge;					\
+	      _sptr->pos = (xedge->flags & TRIE_FLAG_HASH) ?		\
+	        (1U << px##bucket_rank) << xedge->hash_rank :		\
+	        (xedge->flags & TRIE_FLAG_DEG);				\
+	      _sptr++;							\
+	    }								\
+	  while (1)							\
+	    {								\
+	      if (_sptr == _sbuf)					\
+	        {							\
+		  _next = NULL;						\
+		  break;						\
+		}							\
+	      _next = (--_sptr)->edge;					\
+	      uns pos = --(_sptr->pos);					\
+	      uns flags = _next->flags;					\
+	      _next = _next->son[pos];					\
+	      if (pos)							\
+	        _sptr++;						\
+	      if (!(flags & TRIE_FLAG_HASH) ||				\
+		((pos & ((1U << px##bucket_rank) - 1)) &&		\
+		 (uintptr_t)_next > 1))					\
+	        break;							\
+	    }
+#define TRIE_END_SUBTREE_EDGES						\
+	}								\
+    }									\
+  while (0)
 
-#ifdef TRIE_WANT_WALK_PREFIX
-static void
-P(walk_prefix)(TAC struct P(walk) *walk, char *str)
-{
-  walk->trie = trie;
-  struct P(edge) *edge = P(do_find_prefix)(trie, str, str_len(str));
-  if (edge)
-    P(walk_subtree)(walk, edge);
-}
+#define TRIE_FOR_SUBTREE(px, xstart, xnode)				\
+  TRIE_FOR_SUBTREE_EDGES(px, xstart, _edge)				\
+    if (_edge->flags & TRIE_FLAG_NODE)					\
+      {									\
+	px##node_t *xnode = _edge->node;
+#define TRIE_END_SUBTREE						\
+      }									\
+  TRIE_END_SUBTREE_EDGES;
+
+#define TRIE_FOR_ALL_EDGES(px, xtrie, xedge) TRIE_FOR_SUBTREE_EDGES(px, (xtrie)->root, xedge)
+#define TRIE_END_ALL_EDGES TRIE_END_SUBTREE_EDGES
+
+#define TRIE_FOR_ALL(px, xtrie, xnode) TRIE_FOR_SUBTREE(px, (xtrie)->root, xnode)
+#define TRIE_END_ALL TRIE_END_SUBTREE
+
 #endif
 
 /*** Check consistency ***/
 
 #ifdef TRIE_WANT_AUDIT
 
-struct P(audit_walk) {
-  struct P(walk) walk;
-  uns count;
-};
-
-static void
-P(audit_action)(struct P(walk) *walk)
-{
-  struct P(edge) *edge = walk->edge, *leaf;
-  ASSERT(edge);
-  uns deg = edge->flags & TRIE_FLAG_DEG;
-  ASSERT(edge->node);
-  leaf = (edge->flags & TRIE_FLAG_NODE) ? edge : edge->leaf;
-  if (leaf != edge)
-    {
-      ASSERT(leaf->flags & TRIE_FLAG_NODE);
-      ASSERT(leaf->len > edge->len);
-      ASSERT(leaf->node);
-    }
-  TRIE_DBG("Checking edge %p, %s=%p, flags=0x%x, key='%.*s'",
-      edge, (edge->flags & TRIE_FLAG_NODE) ? "node" : "leaf", edge->node, edge->flags,
-      edge->len, P(str_prefix)(P(str_get)(leaf->node), leaf->len, edge->len));
-  ASSERT(deg >= 2 || (edge->flags & TRIE_FLAG_NODE));
-  if (edge->flags & TRIE_FLAG_HASH)
-    {
-      ASSERT(deg >= 1 && deg <= 256);
-      uns mask = (1U << edge->hash_rank) - 1, count = 0, deleted = 0;
-      for (uns i = 0; i <= mask; i++)
-        {
-	  struct P(bucket) *b = &edge->hash[i];
-	  for (uns i = 0; i < b->count; i++)
-	    if (b->son[i])
-	      count++;
-	    else
-	      deleted++;
-	}
-      ASSERT(count == deg);
-      ASSERT(deleted == edge->hash_deleted);
-    }
-  else
-    ASSERT(deg <= TRIE_HASH_THRESHOLD);
-  ((struct P(audit_walk) *)walk)->count++;
-}
-
 static void
 P(audit)(TA)
 {
-  struct P(audit_walk) walk;
-  bzero(&walk, sizeof(walk));
-  walk.walk.edge_action = P(audit_action);
-  P(walk_all)(TTC &walk.walk);
-  TRIE_DBG("Found %u edges", walk.count);
+  uns count = 0;
+  TRIE_FOR_ALL_EDGES(TRIE_PREFIX(), &T, edge)
+    {
+      ASSERT(edge);
+      uns deg = edge->flags & TRIE_FLAG_DEG;
+      ASSERT(edge->node);
+      struct P(edge) * leaf = (edge->flags & TRIE_FLAG_NODE) ? edge : edge->leaf;
+      if (leaf != edge)
+        {
+	  ASSERT(leaf->flags & TRIE_FLAG_NODE);
+	  ASSERT(leaf->len > edge->len);
+	  ASSERT(leaf->node);
+	}
+      TRIE_DBG("Checking edge %p, %s=%p, flags=0x%x, key='%.*s'",
+	  edge, (edge->flags & TRIE_FLAG_NODE) ? "node" : "leaf", edge->node, edge->flags,
+	  edge->len, P(str_prefix)(P(str_get)(leaf->node), leaf->len, edge->len));
+      ASSERT(deg >= 2 || (edge->flags & TRIE_FLAG_NODE));
+      if (edge->flags & TRIE_FLAG_HASH)
+        {
+	  ASSERT(deg > 1 && deg <= 256);
+	  uns count = 0, deleted = 0;
+	  for (uns i = TRIE_BUCKET_SIZE << edge->hash_rank; i--; )
+	    if (i & TRIE_BUCKET_MASK)
+	      if ((uintptr_t)edge->son[i] == 1)
+		deleted++;
+	      else if (edge->son[i])
+	        {
+		  ASSERT(edge->son[i]->len > edge->len);
+		  count++;
+		}
+	  ASSERT(count == deg);
+	  ASSERT(deleted == edge->hash_deleted);
+	}
+      else
+        {
+	  ASSERT(deg <= TRIE_HASH_THRESHOLD);
+	  for (uns i = 0; i < deg; i++)
+	    ASSERT(edge->son[i]->len > edge->len);
+	}
+      count++;
+    }
+  TRIE_END_ALL_EDGES;
+  TRIE_DBG("Found %u edges", count);
 }
 
 #endif
@@ -951,7 +930,9 @@ P(total_size)(TA)
 #undef TRIE_DYNAMIC
 #undef TRIE_ELTPOOL_SIZE
 #undef TRIE_HASH_THRESHOLD
+#undef TRIE_BUCKET_RANK
 #undef TRIE_BUCKET_SIZE
+#undef TRIE_BUCKET_MASK
 #undef TRIE_TRACE
 #undef TRIE_DBG
 #undef TRIE_HASH_FOR_ALL
@@ -960,7 +941,6 @@ P(total_size)(TA)
 #undef TRIE_WANT_CLEANUP
 
 #undef TRIE_WANT_DO_FIND
-#undef TRIE_WANT_DO_FIND_PREFIX
 #undef TRIE_WANT_DO_LOOKUP
 #undef TRIE_WANT_DO_DELETE
 
@@ -972,7 +952,4 @@ P(total_size)(TA)
 #undef TRIE_WANT_DELETE_BUF
 #undef TRIE_WANT_REMOVE
 
-#undef TRIE_WANT_WALK_SUBTREE
-#undef TRIE_WANT_WALK_ALL
-#undef TRIE_WANT_WALK_PREFIX
 #undef TRIE_WANT_AUDIT
