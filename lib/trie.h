@@ -88,7 +88,7 @@ typedef TRIE_LEN_TYPE P(len_t);
 #endif
 
 #ifndef TRIE_BUCKET_RANK
-#define TRIE_BUCKET_RANK (2U + sizeof(void *) > 4)
+#define TRIE_BUCKET_RANK (2U + (sizeof(void *) > 4))
 #endif
 #define TRIE_BUCKET_SIZE (1U << TRIE_BUCKET_RANK)
 #define TRIE_BUCKET_MASK (TRIE_BUCKET_SIZE - 1)
@@ -899,7 +899,7 @@ P(stats)(TAC struct P(stats) *stats)
     stats->small_size += ep_total_size(T.epool[i]);
   for (uns i = 0; i < ARRAY_SIZE(T.hpool); i++)
     stats->hash_size += ep_total_size(T.hpool[i]);
-  stats->total_size = stats->small_size + stats->total_size + sizeof(T);
+  stats->total_size = stats->small_size + stats->hash_size + sizeof(T);
 }
 
 static inline u64
