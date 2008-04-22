@@ -423,7 +423,7 @@ xml_flush_chars(struct xml_context *ctx)
     {
       if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_block && (rlen = xml_report_chars(ctx, &rtext)))
 	ctx->h_block(ctx, rtext, rlen);
-      if (!(ctx->flags & XML_ALLOC_CHARS) && (!(ctx->flags & XML_REPORT_CHARS) || !ctx->h_chars))
+      if (!(ctx->flags & XML_ALLOC_CHARS) && !(ctx->flags & XML_REPORT_CHARS) && !ctx->h_chars)
         {
 	  mp_restore(ctx->pool, &ctx->chars_state);
 	  return 0;
