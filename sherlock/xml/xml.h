@@ -88,9 +88,8 @@ enum xml_flags {
   XML_HAS_INTERNAL_SUBSET =		0x00080000,	/* The document contains an internal subset */
   XML_SRC_EOF =				0x00100000,	/* EOF reached */
   XML_SRC_EXPECTED_DECL =		0x00200000,	/* Just before optional or required XMLDecl/TextDecl */
-  XML_SRC_NEW_LINE =			0x00400000,	/* The last read character is 0xD */
-  XML_SRC_DOCUMENT =			0x00800000,	/* The document entity */
-  XML_SRC_EXTERNAL =			0x01000000,	/* An external entity */
+  XML_SRC_DOCUMENT =			0x00400000,	/* The document entity */
+  XML_SRC_EXTERNAL =			0x00800000,	/* An external entity */
 };
 
 enum xml_node_type {
@@ -150,6 +149,7 @@ struct xml_source {
   void (*refill)(struct xml_context *ctx);		/* Callback to decode source characters to the buffer */
   unsigned short *refill_in_to_x;			/* Libcharset input table */
   uns saved_depth;					/* Saved ctx->depth */
+  uns pending_0xd;					/* The last read character is 0xD */
 };
 
 struct xml_context {
