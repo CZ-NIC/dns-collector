@@ -654,6 +654,18 @@ xml_attr_find(struct xml_context *ctx, struct xml_node *node, char *name)
   return xml_attrs_find(ctx->tab_attrs, node, name);
 }
 
+char *
+xml_attr_value(struct xml_context *ctx, struct xml_node *node, char *name)
+{
+  struct xml_attr *attr = xml_attrs_find(ctx->tab_attrs, node, name);
+  if (attr)
+    return attr->val;
+  if (!node->dtd)
+    return NULL;
+  struct xml_dtd_attr *dtd = xml_dtd_find_attr(ctx, node->dtd, name);
+  return dtd ? dtd->default_value : NULL;
+}
+
 void
 xml_attrs_table_init(struct xml_context *ctx)
 {

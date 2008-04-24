@@ -244,6 +244,9 @@ uns xml_row(struct xml_context *ctx);
 /* Finds a given attribute value in a XML_NODE_ELEM node */
 struct xml_attr *xml_attr_find(struct xml_context *ctx, struct xml_node *node, char *name);
 
+/* Similar to xml_attr_find, but it deals also the default values */
+char *xml_attr_value(struct xml_context *ctx, struct xml_node *node, char *name);
+
 /* The default value of h_find_entity(), knows &lt;, &gt;, &amp;, &apos; and &quot; */
 struct xml_dtd_entity *xml_def_find_entity(struct xml_context *ctx, char *name);
 
