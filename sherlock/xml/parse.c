@@ -1138,6 +1138,28 @@ epilog:
 }
 
 uns
+xml_next_state(struct xml_context *ctx, uns pull)
+{
+  uns saved = ctx->pull;
+  ctx->pull = pull;
+  uns res = xml_next(ctx);
+  ctx->pull = saved;
+  return res;
+}
+
+uns
+xml_skip_element(struct xml_context *ctx)
+{
+  ASSERT(ctx->state == XML_STATE_STAG);
+  struct xml_node *node = ctx->node;
+  uns saved = ctx->pull, res;
+  ctx->pull = XML_PULL_ETAG;
+  while ((res = xml_next(ctx)) && ctx->node != node);
+  ctx->pull = saved;
+  return res;
+}
+
+uns
 xml_parse(struct xml_context *ctx)
 {
   /* This cycle should run only once unless the user overrides the value of ctx->pull in a SAX handler */

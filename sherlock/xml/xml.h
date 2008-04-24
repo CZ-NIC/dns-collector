@@ -232,6 +232,12 @@ uns xml_parse(struct xml_context *ctx);
 /* Parse with the PUSH interface, return XML_STATE_x (zero on EOF or fatal error) */
 uns xml_next(struct xml_context *ctx);
 
+/* Equivalent to xml_next, but with temporarily changed ctx->pull value */
+uns xml_next_state(struct xml_context *ctx, uns pull);
+
+/* May be called on XML_STATE_STAG to skip it's content; can return XML_STATE_ETAG or XML_STATE_EOF on fatal error */
+uns xml_skip_element(struct xml_context *ctx);
+
 /* Returns the current row number in the document entity */
 uns xml_row(struct xml_context *ctx);
 
