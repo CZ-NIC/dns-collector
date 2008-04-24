@@ -87,6 +87,7 @@ enum xml_flags {
   XML_VERSION_1_1 =			0x00020000,	/* XML version is 1.1, otherwise 1.0 */
   XML_HAS_EXTERNAL_SUBSET =		0x00040000,	/* The document contains a reference to external DTD subset */
   XML_HAS_INTERNAL_SUBSET =		0x00080000,	/* The document contains an internal subset */
+  XML_HAS_DTD =	XML_HAS_EXTERNAL_SUBSET | XML_HAS_INTERNAL_SUBSET,
   XML_SRC_EOF =				0x00100000,	/* EOF reached */
   XML_SRC_EXPECTED_DECL =		0x00200000,	/* Just before optional or required XMLDecl/TextDecl */
   XML_SRC_DOCUMENT =			0x00400000,	/* The document entity */

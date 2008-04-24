@@ -845,7 +845,11 @@ xml_parse_doctype_decl(struct xml_context *ctx)
       ctx->flags |= XML_HAS_EXTERNAL_SUBSET;
     }
   if (xml_peek_char(ctx) == '[')
-    ctx->flags |= XML_HAS_INTERNAL_SUBSET;
+    {
+      ctx->flags |= XML_HAS_INTERNAL_SUBSET;
+      xml_skip_char(ctx);
+      xml_inc(ctx);
+    }
   if (ctx->h_doctype_decl)
     ctx->h_doctype_decl(ctx);
 }
@@ -857,12 +861,19 @@ xml_parse_doctype_decl(struct xml_context *ctx)
 /* DTD: Internal subset */
 
 static void
-xml_parse_internal_subset(struct xml_context *ctx)
+xml_parse_subset(struct xml_context *ctx, uns external)
 {
-  // FIXME: comments/pi have no parent
+  // FIXME:
+  // -- comments/pi have no parent
+  // -- conditional sections in external subset
+  // -- check corectness of parameter entities
+
   /* '[' intSubset ']'
    * intSubset :== (markupdecl | DeclSep)
-   * Already parsed: ']' */
+   * Already parsed: '['
+   *
+   * extSubsetDecl ::= ( markupdecl | conditionalSect | DeclSep)*
+   */
   while (1)
     {
       xml_parse_white(ctx, 0);
@@ -910,16 +921,21 @@ xml_parse_internal_subset(struct xml_context *ctx)
 	  goto invalid_markup;
       else if (c == '%')
 	xml_parse_pe_ref(ctx);
-      else if (c == ']')
-	break;
+      else if (c == ']' && !external)
+        {
+	  break;
+	}
+      else if (c == '>' && external)
+        {
+	  break;
+	}
       else
 	goto invalid_markup;
     }
   xml_dec(ctx);
-  xml_dec(ctx);
   return;
-invalid_markup:
-  xml_fatal(ctx, "Invalid markup in the internal subset");
+invalid_markup: ;
+  xml_fatal(ctx, "Invalid markup in the %s subset", external ? "external" : "internal");
 }
 
 /*** The State Machine ***/
@@ -994,24 +1010,37 @@ error:
 		xml_unget_char(ctx);
 		xml_parse_doctype_decl(ctx);
 		PULL(DOCTYPE_DECL);
-		if (xml_peek_char(ctx) == '[')
-		  {
-		    xml_skip_char(ctx);
-		    xml_inc(ctx);
-		    if (ctx->flags & XML_PARSE_DTD)
-		      {
-			xml_dtd_init(ctx);
-			if (ctx->h_dtd_start)
-			  ctx->h_dtd_start(ctx);
-			// FIXME: pull iface?
-			xml_parse_internal_subset(ctx);
-			// FIXME: external subset
-			if (ctx->h_dtd_end)
-			  ctx->h_dtd_end(ctx);
-		      }
-		    else
-		      xml_skip_internal_subset(ctx);
-		  }
+		if (ctx->flags & XML_HAS_DTD)
+		  if (ctx->flags & XML_PARSE_DTD)
+		    {
+		      xml_dtd_init(ctx);
+		      if (ctx->h_dtd_start)
+		        ctx->h_dtd_start(ctx);
+		      if (ctx->flags & XML_HAS_INTERNAL_SUBSET)
+		        {
+		          xml_parse_subset(ctx, 0);
+			  xml_dec(ctx);
+			}
+		      if (ctx->flags & XML_HAS_EXTERNAL_SUBSET)
+		        {
+		          struct xml_dtd_entity ent = {
+			    .system_id = ctx->system_id,
+			    .public_id = ctx->public_id,
+			  };
+			  xml_parse_white(ctx, 0);
+			  xml_parse_char(ctx, '>');
+			  xml_unget_char(ctx);
+			  ASSERT(ctx->h_resolve_entity);
+			  ctx->h_resolve_entity(ctx, &ent);
+			  ctx->flags |= XML_SRC_EXPECTED_DECL;
+			  xml_parse_subset(ctx, 1);
+			  xml_unget_char(ctx);;
+			}
+		      if (ctx->h_dtd_end)
+		        ctx->h_dtd_end(ctx);
+		    }
+		  else if (ctx->flags & XML_HAS_INTERNAL_SUBSET)
+		    xml_skip_internal_subset(ctx);
 		xml_parse_white(ctx, 0);
 		xml_parse_char(ctx, '>');
 		xml_dec(ctx);
