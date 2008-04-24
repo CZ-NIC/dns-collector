@@ -421,9 +421,16 @@ xml_flush_chars(struct xml_context *ctx)
   uns len = xml_end_chars(ctx, &text), rlen;
   if (len)
     {
+      if (ctx->flags & XML_NO_CHARS)
+        {
+          if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_ignorable)
+            ctx->h_ignorable(ctx, text, len);
+	  mp_restore(ctx->pool, &ctx->chars_state);
+	  return 0;
+	}
       if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_block && (rlen = xml_report_chars(ctx, &rtext)))
 	ctx->h_block(ctx, rtext, rlen);
-      if (!(ctx->flags & XML_ALLOC_CHARS) && !(ctx->flags & XML_REPORT_CHARS) && !ctx->h_chars)
+      if (!(ctx->flags & XML_ALLOC_CHARS) && !(ctx->flags & XML_REPORT_CHARS))
         {
 	  mp_restore(ctx->pool, &ctx->chars_state);
 	  return 0;
@@ -450,18 +457,38 @@ xml_append_chars(struct xml_context *ctx)
 {
   TRACE(ctx, "append_chars");
   struct fastbuf *out = &ctx->chars;
-  while (xml_get_char(ctx) != '<')
-    if (xml_last_char(ctx) == '&')
-      {
-	xml_inc(ctx);
-        xml_parse_ref(ctx);
-      }
-    else
-      bput_utf8_32(out, xml_last_char(ctx));
+  if (ctx->flags & XML_NO_CHARS)
+    while (xml_get_char(ctx) != '<')
+      if (xml_last_cat(ctx) & XML_CHAR_WHITE)
+	bput_utf8_32(out, xml_last_char(ctx));
+      else
+        {
+	  xml_error(ctx, "This element must not contain character data");
+	  while (xml_get_char(ctx) != '<');
+	  break;
+	}
+  else
+    while (xml_get_char(ctx) != '<')
+      if (xml_last_char(ctx) == '&')
+        {
+	  xml_inc(ctx);
+          xml_parse_ref(ctx);
+        }
+      else
+        bput_utf8_32(out, xml_last_char(ctx));
   xml_unget_char(ctx);
 }
 
 /*** CDATA sections ***/
+
+static void
+xml_skip_cdata(struct xml_context *ctx)
+{
+  TRACE(ctx, "skip_cdata");
+  xml_parse_seq(ctx, "CDATA[");
+  while (xml_get_char(ctx) != ']' || xml_get_char(ctx) != ']' || xml_get_char(ctx) != '>');
+  xml_dec(ctx);
+}
 
 static void
 xml_append_cdata(struct xml_context *ctx)
@@ -469,6 +496,12 @@ xml_append_cdata(struct xml_context *ctx)
   /* CDSect :== '<![CDATA[' (Char* - (Char* ']]>' Char*)) ']]>'
    * Already parsed: '<![' */
   TRACE(ctx, "append_cdata");
+  if (ctx->flags & XML_NO_CHARS)
+    {
+      xml_error(ctx, "This element must not contain CDATA");
+      xml_skip_cdata(ctx);
+      return;
+    }
   xml_parse_seq(ctx, "CDATA[");
   struct fastbuf *out = &ctx->chars;
   uns rlen;
@@ -490,15 +523,6 @@ xml_append_cdata(struct xml_context *ctx)
     }
   if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_cdata && (rlen = xml_report_chars(ctx, &rtext)))
     ctx->h_cdata(ctx, rtext, rlen);
-  xml_dec(ctx);
-}
-
-static void UNUSED
-xml_skip_cdata(struct xml_context *ctx)
-{
-  TRACE(ctx, "skip_cdata");
-  xml_parse_seq(ctx, "CDATA[");
-  while (xml_get_char(ctx) != ']' || xml_get_char(ctx) != ']' || xml_get_char(ctx) != '>');
   xml_dec(ctx);
 }
 
@@ -669,6 +693,11 @@ xml_push_element(struct xml_context *ctx)
     xml_error(ctx, "Undefined element <%s>", e->name);
   else
     {
+      if (e->dtd->type == XML_DTD_ELEM_MIXED)
+        ctx->flags &= ~XML_NO_CHARS;
+      else
+	ctx->flags |= XML_NO_CHARS;
+
       // FIXME: validate regular expressions
     }
   while (1)

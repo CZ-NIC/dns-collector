@@ -80,6 +80,7 @@ enum xml_flags {
   /* Other parameters */
   XML_VALIDATING =			0x00000100,	/* Validate everything (not fully implemented!) */
   XML_PARSE_DTD =			0x00000200,	/* Enable parsing of DTD */
+  XML_NO_CHARS =			0x00000400,	/* The current element must not contain character data (filled automaticaly if using DTD) */
 
   /* Internals, do not change! */
   XML_EMPTY_ELEM_TAG =			0x00010000,	/* The current element match EmptyElemTag */
@@ -193,6 +194,7 @@ struct xml_context {
   void (*h_chars)(struct xml_context *ctx);		/* Called after some characters (only with XML_REPORT_CHARS) */
   void (*h_block)(struct xml_context *ctx, char *text, uns len);	/* Called for each continuous block of characters not reported by h_cdata() (only with XML_REPORT_CHARS) */
   void (*h_cdata)(struct xml_context *ctx, char *text, uns len);	/* Called for each CDATA section (only with XML_REPORT_CHARS) */
+  void (*h_ignorable)(struct xml_context *ctx, char *text, uns len);	/* Called for ignorable whitespace (content in tags without #PCDATA) */
   void (*h_dtd_start)(struct xml_context *ctx);		/* Called just after the DTD structure is initialized */
   void (*h_dtd_end)(struct xml_context *ctx);		/* Called after DTD subsets subsets */
   struct xml_dtd_entity *(*h_find_entity)(struct xml_context *ctx, char *name);		/* Called when needed to resolve a general entity */
