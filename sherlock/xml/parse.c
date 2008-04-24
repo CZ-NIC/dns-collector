@@ -680,6 +680,18 @@ xml_attrs_table_cleanup(struct xml_context *ctx)
 
 /*** Elements ***/
 
+static uns
+xml_validate_element(struct xml_dtd_elem_node *root, struct xml_dtd_elem *elem)
+{
+  if (root->elem)
+    return elem == root->elem;
+  else
+    SLIST_FOR_EACH(struct xml_dtd_elem_node *, son, root->sons)
+      if (xml_validate_element(son, elem))
+	return 1;
+  return 0;
+}
+
 static void
 xml_push_element(struct xml_context *ctx)
 {
@@ -705,12 +717,20 @@ xml_push_element(struct xml_context *ctx)
     xml_error(ctx, "Undefined element <%s>", e->name);
   else
     {
-      if (e->dtd->type == XML_DTD_ELEM_MIXED)
+      struct xml_dtd_elem *dtd = e->dtd, *parent_dtd = e->parent ? e->parent->dtd : NULL;
+      if (dtd->type == XML_DTD_ELEM_MIXED)
         ctx->flags &= ~XML_NO_CHARS;
       else
 	ctx->flags |= XML_NO_CHARS;
-
-      // FIXME: validate regular expressions
+      if (parent_dtd)
+        if (parent_dtd->type == XML_DTD_ELEM_EMPTY)
+	  xml_error(ctx, "Empty element must not contain children");
+        else if (parent_dtd->type != XML_DTD_ELEM_ANY)
+	  {
+	    // FIXME: validate regular expressions
+	    if (!xml_validate_element(parent_dtd->node, dtd))
+	      xml_error(ctx, "Unexpected element <%s>", e->name);
+	  }
     }
   while (1)
     {
