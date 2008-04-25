@@ -257,6 +257,12 @@ void xml_def_resolve_entity(struct xml_context *ctx, struct xml_dtd_entity *ent)
 /* Remove leading/trailing spaces and replaces sequences of spaces to a single space character (non-CDATA attribute normalization) */
 uns xml_normalize_white(struct xml_context *ctx, char *value);
 
+/* Merge character contents of a given element to a single string (not recursive) */
+char *xml_merge_chars(struct xml_context *ctx, struct xml_node *node, struct mempool *pool);
+
+/* Merge character contents of a given subtree to a single string */
+char *xml_merge_dom_chars(struct xml_context *ctx, struct xml_node *node, struct mempool *pool);
+
 /* Public part of error handling */
 void xml_warn(struct xml_context *ctx, const char *format, ...);
 void xml_error(struct xml_context *ctx, const char *format, ...);

@@ -1231,3 +1231,42 @@ xml_parse(struct xml_context *ctx)
   while (xml_next(ctx));
   return ctx->err_code;
 }
+
+char *
+xml_merge_chars(struct xml_context *ctx UNUSED, struct xml_node *node, struct mempool *pool)
+{
+  ASSERT(node->type == XML_NODE_ELEM);
+  char *p = mp_start_noalign(pool, 1);
+  XML_NODE_FOR_EACH(son, node)
+    if (son->type == XML_NODE_CHARS)
+      {
+	p = mp_spread(pool, p, son->len + 1);
+	memcpy(p, son->text, son->len);
+      }
+  *p++ = 0;
+  return mp_end(pool, p);
+}
+
+static char *
+xml_append_dom_chars(char *p, struct mempool *pool, struct xml_node *node)
+{
+  XML_NODE_FOR_EACH(son, node)
+    if (son->type == XML_NODE_CHARS)
+      {
+	p = mp_spread(pool, p, son->len + 1);
+	memcpy(p, son->text, son->len);
+      }
+    else if (son->type == XML_NODE_ELEM)
+      p = xml_append_dom_chars(p, pool, son);
+  return p;
+}
+
+char *
+xml_merge_dom_chars(struct xml_context *ctx UNUSED, struct xml_node *node, struct mempool *pool)
+{
+  ASSERT(node->type == XML_NODE_ELEM);
+  char *p = mp_start_noalign(pool, 1);
+  p = xml_append_dom_chars(p, pool, node);
+  *p++ = 0;
+  return mp_end(pool, p);
+}
