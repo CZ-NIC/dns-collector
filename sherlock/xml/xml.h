@@ -81,6 +81,7 @@ enum xml_flags {
   XML_VALIDATING =			0x00000100,	/* Validate everything (not fully implemented!) */
   XML_PARSE_DTD =			0x00000200,	/* Enable parsing of DTD */
   XML_NO_CHARS =			0x00000400,	/* The current element must not contain character data (filled automaticaly if using DTD) */
+  XML_ALLOC_DEFAULT_ATTRS =		0x00000800,	/* Allocate default attribute values so they can be found by XML_ATTR_FOR_EACH */
 
   /* Internals, do not change! */
   XML_EMPTY_ELEM_TAG =			0x00010000,	/* The current element match EmptyElemTag */

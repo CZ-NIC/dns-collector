@@ -749,6 +749,19 @@ xml_push_element(struct xml_context *ctx)
       xml_unget_char(ctx);
       xml_parse_attr(ctx);
     }
+  if (e->dtd)
+    SLIST_FOR_EACH(struct xml_dtd_attr *, a, e->dtd->attrs)
+      if (a->default_mode == XML_ATTR_REQUIRED)
+        {
+	  if (!xml_attrs_find(ctx->tab_attrs, e, a->name))
+	    xml_error(ctx, "Missing required attribute %s in element <%s>", a->name, e->name);
+	}
+      else if (a->default_mode != XML_ATTR_IMPLIED && ctx->flags & XML_ALLOC_DEFAULT_ATTRS)
+        {
+	  struct xml_attr *attr = xml_attrs_lookup(ctx->tab_attrs, e, a->name);
+	  if (!attr->val)
+	    attr->val = a->default_value;
+	}
   if ((ctx->flags & XML_REPORT_TAGS) && ctx->h_stag)
     ctx->h_stag(ctx);
 }
