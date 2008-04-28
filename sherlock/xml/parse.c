@@ -1255,6 +1255,7 @@ xml_merge_chars(struct xml_context *ctx UNUSED, struct xml_node *node, struct me
       {
 	p = mp_spread(pool, p, son->len + 1);
 	memcpy(p, son->text, son->len);
+	p += son->len;
       }
   *p++ = 0;
   return mp_end(pool, p);
@@ -1268,6 +1269,7 @@ xml_append_dom_chars(char *p, struct mempool *pool, struct xml_node *node)
       {
 	p = mp_spread(pool, p, son->len + 1);
 	memcpy(p, son->text, son->len);
+	p += son->len;
       }
     else if (son->type == XML_NODE_ELEM)
       p = xml_append_dom_chars(p, pool, son);
