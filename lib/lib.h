@@ -101,6 +101,8 @@ extern void (*log_switch_hook)(struct tm *tm);
 
 void msg(uns cat, const char *fmt, ...) FORMAT_CHECK(printf,2,3);
 void vmsg(uns cat, const char *fmt, va_list args);
+void safe_msg(uns cat, const char *fmt, ...) FORMAT_CHECK(printf,2,3);
+void safe_vmsg(uns cat, const char *fmt, va_list args);
 void die(const char *, ...) NONRET FORMAT_CHECK(printf,1,2);
 void log_init(const char *argv0);
 void log_file(const char *name);

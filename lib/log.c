@@ -97,6 +97,67 @@ msg(unsigned int cat, const char *fmt, ...)
 }
 
 void
+safe_vmsg(unsigned int cat, const char *fmt, va_list args)
+{
+  byte *buf, *p;
+  int buflen = 256;
+  int l, l0, r;
+  va_list args2;
+
+  while (1)
+    {
+      p = buf = alloca(buflen);
+      *p++ = cat;
+      p += sprintf(p, " \?\?\?\?-\?\?-\?\? \?\?:\?\?:\?\?");
+      if (log_precise_timings)
+        p += sprintf(p, ".\?\?\?\?\?\?");
+      *p++ = ' ';
+      if (log_title)
+	{
+	  if (log_pid)
+	    p += sprintf(p, "[%s (%d)] ", log_title, log_pid);
+	  else
+	    p += sprintf(p, "[%s] ", log_title);
+	}
+      else
+	{
+	  if (log_pid)
+	    p += sprintf(p, "[%d] ", log_pid);
+	}
+      l0 = p - buf + 1;
+      r = buflen - l0;
+      va_copy(args2, args);
+      l = vsnprintf(p, r, fmt, args2);
+      va_end(args2);
+      if (l < 0)
+	l = r;
+      else if (l < r)
+	{
+	  while (*p)
+	    {
+	      if (*p < 0x20 && *p != '\t')
+		*p = 0x7f;
+	      p++;
+	    }
+	  *p = '\n';
+	  write(2, buf, l + l0);
+	  return;
+	}
+      buflen = l + l0 + 1;
+    }
+}
+
+void
+safe_msg(unsigned int cat, const char *fmt, ...)
+{
+  va_list args;
+
+  va_start(args, fmt);
+  safe_vmsg(cat, fmt, args);
+  va_end(args);
+}
+
+void
 die(const char *fmt, ...)
 {
   va_list args;
