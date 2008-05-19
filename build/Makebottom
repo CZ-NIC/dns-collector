@@ -185,7 +185,7 @@ $(DATAFILES): $(o)/%: $(s)/%
 # Default installation target
 
 default-install:
-	SH_EXTRA_RUNDIRS="$(sort $(EXTRA_RUNDIRS))" SH_INSTALL_RUNDIRS="$(sort $(INSTALL_RUNDIRS))" SH_CONFIGS="$(sort $(CONFIGS))" $(s)/build/installer $(INSTALL_DIR)
+	SH_EXTRA_RUNDIRS="$(sort $(EXTRA_RUNDIRS))" SH_INSTALL_RUNDIRS="$(sort $(INSTALL_RUNDIRS))" SH_CONFIGS="$(sort $(CONFIGS))" SH_AUTO_CONFIRM="$(CONFIRM)" $(s)/build/installer $(INSTALL_DIR)
 
 # Don't delete intermediate targets. There shouldn't be any, but due to bugs
 # in GNU Make rules with targets in not-yet-existing directories are ignored

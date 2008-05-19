@@ -421,9 +421,16 @@ xml_flush_chars(struct xml_context *ctx)
   uns len = xml_end_chars(ctx, &text), rlen;
   if (len)
     {
+      if (ctx->flags & XML_NO_CHARS)
+        {
+          if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_ignorable)
+            ctx->h_ignorable(ctx, text, len);
+	  mp_restore(ctx->pool, &ctx->chars_state);
+	  return 0;
+	}
       if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_block && (rlen = xml_report_chars(ctx, &rtext)))
 	ctx->h_block(ctx, rtext, rlen);
-      if (!(ctx->flags & XML_ALLOC_CHARS) && (!(ctx->flags & XML_REPORT_CHARS) || !ctx->h_chars))
+      if (!(ctx->flags & XML_ALLOC_CHARS) && !(ctx->flags & XML_REPORT_CHARS))
         {
 	  mp_restore(ctx->pool, &ctx->chars_state);
 	  return 0;
@@ -450,18 +457,38 @@ xml_append_chars(struct xml_context *ctx)
 {
   TRACE(ctx, "append_chars");
   struct fastbuf *out = &ctx->chars;
-  while (xml_get_char(ctx) != '<')
-    if (xml_last_char(ctx) == '&')
-      {
-	xml_inc(ctx);
-        xml_parse_ref(ctx);
-      }
-    else
-      bput_utf8_32(out, xml_last_char(ctx));
+  if (ctx->flags & XML_NO_CHARS)
+    while (xml_get_char(ctx) != '<')
+      if (xml_last_cat(ctx) & XML_CHAR_WHITE)
+	bput_utf8_32(out, xml_last_char(ctx));
+      else
+        {
+	  xml_error(ctx, "This element must not contain character data");
+	  while (xml_get_char(ctx) != '<');
+	  break;
+	}
+  else
+    while (xml_get_char(ctx) != '<')
+      if (xml_last_char(ctx) == '&')
+        {
+	  xml_inc(ctx);
+          xml_parse_ref(ctx);
+        }
+      else
+        bput_utf8_32(out, xml_last_char(ctx));
   xml_unget_char(ctx);
 }
 
 /*** CDATA sections ***/
+
+static void
+xml_skip_cdata(struct xml_context *ctx)
+{
+  TRACE(ctx, "skip_cdata");
+  xml_parse_seq(ctx, "CDATA[");
+  while (xml_get_char(ctx) != ']' || xml_get_char(ctx) != ']' || xml_get_char(ctx) != '>');
+  xml_dec(ctx);
+}
 
 static void
 xml_append_cdata(struct xml_context *ctx)
@@ -469,6 +496,12 @@ xml_append_cdata(struct xml_context *ctx)
   /* CDSect :== '<![CDATA[' (Char* - (Char* ']]>' Char*)) ']]>'
    * Already parsed: '<![' */
   TRACE(ctx, "append_cdata");
+  if (ctx->flags & XML_NO_CHARS)
+    {
+      xml_error(ctx, "This element must not contain CDATA");
+      xml_skip_cdata(ctx);
+      return;
+    }
   xml_parse_seq(ctx, "CDATA[");
   struct fastbuf *out = &ctx->chars;
   uns rlen;
@@ -490,15 +523,6 @@ xml_append_cdata(struct xml_context *ctx)
     }
   if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_cdata && (rlen = xml_report_chars(ctx, &rtext)))
     ctx->h_cdata(ctx, rtext, rlen);
-  xml_dec(ctx);
-}
-
-static void UNUSED
-xml_skip_cdata(struct xml_context *ctx)
-{
-  TRACE(ctx, "skip_cdata");
-  xml_parse_seq(ctx, "CDATA[");
-  while (xml_get_char(ctx) != ']' || xml_get_char(ctx) != ']' || xml_get_char(ctx) != '>');
   xml_dec(ctx);
 }
 
@@ -630,6 +654,18 @@ xml_attr_find(struct xml_context *ctx, struct xml_node *node, char *name)
   return xml_attrs_find(ctx->tab_attrs, node, name);
 }
 
+char *
+xml_attr_value(struct xml_context *ctx, struct xml_node *node, char *name)
+{
+  struct xml_attr *attr = xml_attrs_find(ctx->tab_attrs, node, name);
+  if (attr)
+    return attr->val;
+  if (!node->dtd)
+    return NULL;
+  struct xml_dtd_attr *dtd = xml_dtd_find_attr(ctx, node->dtd, name);
+  return dtd ? dtd->default_value : NULL;
+}
+
 void
 xml_attrs_table_init(struct xml_context *ctx)
 {
@@ -643,6 +679,18 @@ xml_attrs_table_cleanup(struct xml_context *ctx)
 }
 
 /*** Elements ***/
+
+static uns
+xml_validate_element(struct xml_dtd_elem_node *root, struct xml_dtd_elem *elem)
+{
+  if (root->elem)
+    return elem == root->elem;
+  else
+    SLIST_FOR_EACH(struct xml_dtd_elem_node *, son, root->sons)
+      if (xml_validate_element(son, elem))
+	return 1;
+  return 0;
+}
 
 static void
 xml_push_element(struct xml_context *ctx)
@@ -669,7 +717,20 @@ xml_push_element(struct xml_context *ctx)
     xml_error(ctx, "Undefined element <%s>", e->name);
   else
     {
-      // FIXME: validate regular expressions
+      struct xml_dtd_elem *dtd = e->dtd, *parent_dtd = e->parent ? e->parent->dtd : NULL;
+      if (dtd->type == XML_DTD_ELEM_MIXED)
+        ctx->flags &= ~XML_NO_CHARS;
+      else
+	ctx->flags |= XML_NO_CHARS;
+      if (parent_dtd)
+        if (parent_dtd->type == XML_DTD_ELEM_EMPTY)
+	  xml_error(ctx, "Empty element must not contain children");
+        else if (parent_dtd->type != XML_DTD_ELEM_ANY)
+	  {
+	    // FIXME: validate regular expressions
+	    if (!xml_validate_element(parent_dtd->node, dtd))
+	      xml_error(ctx, "Unexpected element <%s>", e->name);
+	  }
     }
   while (1)
     {
@@ -688,6 +749,19 @@ xml_push_element(struct xml_context *ctx)
       xml_unget_char(ctx);
       xml_parse_attr(ctx);
     }
+  if (e->dtd)
+    SLIST_FOR_EACH(struct xml_dtd_attr *, a, e->dtd->attrs)
+      if (a->default_mode == XML_ATTR_REQUIRED)
+        {
+	  if (!xml_attrs_find(ctx->tab_attrs, e, a->name))
+	    xml_error(ctx, "Missing required attribute %s in element <%s>", a->name, e->name);
+	}
+      else if (a->default_mode != XML_ATTR_IMPLIED && ctx->flags & XML_ALLOC_DEFAULT_ATTRS)
+        {
+	  struct xml_attr *attr = xml_attrs_lookup(ctx->tab_attrs, e, a->name);
+	  if (!attr->val)
+	    attr->val = a->default_value;
+	}
   if ((ctx->flags & XML_REPORT_TAGS) && ctx->h_stag)
     ctx->h_stag(ctx);
 }
@@ -784,7 +858,11 @@ xml_parse_doctype_decl(struct xml_context *ctx)
       ctx->flags |= XML_HAS_EXTERNAL_SUBSET;
     }
   if (xml_peek_char(ctx) == '[')
-    ctx->flags |= XML_HAS_INTERNAL_SUBSET;
+    {
+      ctx->flags |= XML_HAS_INTERNAL_SUBSET;
+      xml_skip_char(ctx);
+      xml_inc(ctx);
+    }
   if (ctx->h_doctype_decl)
     ctx->h_doctype_decl(ctx);
 }
@@ -796,12 +874,19 @@ xml_parse_doctype_decl(struct xml_context *ctx)
 /* DTD: Internal subset */
 
 static void
-xml_parse_internal_subset(struct xml_context *ctx)
+xml_parse_subset(struct xml_context *ctx, uns external)
 {
-  // FIXME: comments/pi have no parent
+  // FIXME:
+  // -- comments/pi have no parent
+  // -- conditional sections in external subset
+  // -- check corectness of parameter entities
+
   /* '[' intSubset ']'
    * intSubset :== (markupdecl | DeclSep)
-   * Already parsed: ']' */
+   * Already parsed: '['
+   *
+   * extSubsetDecl ::= ( markupdecl | conditionalSect | DeclSep)*
+   */
   while (1)
     {
       xml_parse_white(ctx, 0);
@@ -849,16 +934,21 @@ xml_parse_internal_subset(struct xml_context *ctx)
 	  goto invalid_markup;
       else if (c == '%')
 	xml_parse_pe_ref(ctx);
-      else if (c == ']')
-	break;
+      else if (c == ']' && !external)
+        {
+	  break;
+	}
+      else if (c == '>' && external)
+        {
+	  break;
+	}
       else
 	goto invalid_markup;
     }
   xml_dec(ctx);
-  xml_dec(ctx);
   return;
-invalid_markup:
-  xml_fatal(ctx, "Invalid markup in the internal subset");
+invalid_markup: ;
+  xml_fatal(ctx, "Invalid markup in the %s subset", external ? "external" : "internal");
 }
 
 /*** The State Machine ***/
@@ -933,24 +1023,37 @@ error:
 		xml_unget_char(ctx);
 		xml_parse_doctype_decl(ctx);
 		PULL(DOCTYPE_DECL);
-		if (xml_peek_char(ctx) == '[')
-		  {
-		    xml_skip_char(ctx);
-		    xml_inc(ctx);
-		    if (ctx->flags & XML_PARSE_DTD)
-		      {
-			xml_dtd_init(ctx);
-			if (ctx->h_dtd_start)
-			  ctx->h_dtd_start(ctx);
-			// FIXME: pull iface?
-			xml_parse_internal_subset(ctx);
-			// FIXME: external subset
-			if (ctx->h_dtd_end)
-			  ctx->h_dtd_end(ctx);
-		      }
-		    else
-		      xml_skip_internal_subset(ctx);
-		  }
+		if (ctx->flags & XML_HAS_DTD)
+		  if (ctx->flags & XML_PARSE_DTD)
+		    {
+		      xml_dtd_init(ctx);
+		      if (ctx->h_dtd_start)
+		        ctx->h_dtd_start(ctx);
+		      if (ctx->flags & XML_HAS_INTERNAL_SUBSET)
+		        {
+		          xml_parse_subset(ctx, 0);
+			  xml_dec(ctx);
+			}
+		      if (ctx->flags & XML_HAS_EXTERNAL_SUBSET)
+		        {
+		          struct xml_dtd_entity ent = {
+			    .system_id = ctx->system_id,
+			    .public_id = ctx->public_id,
+			  };
+			  xml_parse_white(ctx, 0);
+			  xml_parse_char(ctx, '>');
+			  xml_unget_char(ctx);
+			  ASSERT(ctx->h_resolve_entity);
+			  ctx->h_resolve_entity(ctx, &ent);
+			  ctx->flags |= XML_SRC_EXPECTED_DECL;
+			  xml_parse_subset(ctx, 1);
+			  xml_unget_char(ctx);;
+			}
+		      if (ctx->h_dtd_end)
+		        ctx->h_dtd_end(ctx);
+		    }
+		  else if (ctx->flags & XML_HAS_INTERNAL_SUBSET)
+		    xml_skip_internal_subset(ctx);
 		xml_parse_white(ctx, 0);
 		xml_parse_char(ctx, '>');
 		xml_dec(ctx);
@@ -1109,6 +1212,28 @@ epilog:
 }
 
 uns
+xml_next_state(struct xml_context *ctx, uns pull)
+{
+  uns saved = ctx->pull;
+  ctx->pull = pull;
+  uns res = xml_next(ctx);
+  ctx->pull = saved;
+  return res;
+}
+
+uns
+xml_skip_element(struct xml_context *ctx)
+{
+  ASSERT(ctx->state == XML_STATE_STAG);
+  struct xml_node *node = ctx->node;
+  uns saved = ctx->pull, res;
+  ctx->pull = XML_PULL_ETAG;
+  while ((res = xml_next(ctx)) && ctx->node != node);
+  ctx->pull = saved;
+  return res;
+}
+
+uns
 xml_parse(struct xml_context *ctx)
 {
   /* This cycle should run only once unless the user overrides the value of ctx->pull in a SAX handler */
@@ -1118,4 +1243,45 @@ xml_parse(struct xml_context *ctx)
     }
   while (xml_next(ctx));
   return ctx->err_code;
+}
+
+char *
+xml_merge_chars(struct xml_context *ctx UNUSED, struct xml_node *node, struct mempool *pool)
+{
+  ASSERT(node->type == XML_NODE_ELEM);
+  char *p = mp_start_noalign(pool, 1);
+  XML_NODE_FOR_EACH(son, node)
+    if (son->type == XML_NODE_CHARS)
+      {
+	p = mp_spread(pool, p, son->len + 1);
+	memcpy(p, son->text, son->len);
+	p += son->len;
+      }
+  *p++ = 0;
+  return mp_end(pool, p);
+}
+
+static char *
+xml_append_dom_chars(char *p, struct mempool *pool, struct xml_node *node)
+{
+  XML_NODE_FOR_EACH(son, node)
+    if (son->type == XML_NODE_CHARS)
+      {
+	p = mp_spread(pool, p, son->len + 1);
+	memcpy(p, son->text, son->len);
+	p += son->len;
+      }
+    else if (son->type == XML_NODE_ELEM)
+      p = xml_append_dom_chars(p, pool, son);
+  return p;
+}
+
+char *
+xml_merge_dom_chars(struct xml_context *ctx UNUSED, struct xml_node *node, struct mempool *pool)
+{
+  ASSERT(node->type == XML_NODE_ELEM);
+  char *p = mp_start_noalign(pool, 1);
+  p = xml_append_dom_chars(p, pool, node);
+  *p++ = 0;
+  return mp_end(pool, p);
 }

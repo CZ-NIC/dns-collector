@@ -80,17 +80,19 @@ enum xml_flags {
   /* Other parameters */
   XML_VALIDATING =			0x00000100,	/* Validate everything (not fully implemented!) */
   XML_PARSE_DTD =			0x00000200,	/* Enable parsing of DTD */
+  XML_NO_CHARS =			0x00000400,	/* The current element must not contain character data (filled automaticaly if using DTD) */
+  XML_ALLOC_DEFAULT_ATTRS =		0x00000800,	/* Allocate default attribute values so they can be found by XML_ATTR_FOR_EACH */
 
   /* Internals, do not change! */
   XML_EMPTY_ELEM_TAG =			0x00010000,	/* The current element match EmptyElemTag */
   XML_VERSION_1_1 =			0x00020000,	/* XML version is 1.1, otherwise 1.0 */
   XML_HAS_EXTERNAL_SUBSET =		0x00040000,	/* The document contains a reference to external DTD subset */
   XML_HAS_INTERNAL_SUBSET =		0x00080000,	/* The document contains an internal subset */
+  XML_HAS_DTD =	XML_HAS_EXTERNAL_SUBSET | XML_HAS_INTERNAL_SUBSET,
   XML_SRC_EOF =				0x00100000,	/* EOF reached */
   XML_SRC_EXPECTED_DECL =		0x00200000,	/* Just before optional or required XMLDecl/TextDecl */
-  XML_SRC_NEW_LINE =			0x00400000,	/* The last read character is 0xD */
-  XML_SRC_DOCUMENT =			0x00800000,	/* The document entity */
-  XML_SRC_EXTERNAL =			0x01000000,	/* An external entity */
+  XML_SRC_DOCUMENT =			0x00400000,	/* The document entity */
+  XML_SRC_EXTERNAL =			0x00800000,	/* An external entity */
 };
 
 enum xml_node_type {
@@ -150,6 +152,7 @@ struct xml_source {
   void (*refill)(struct xml_context *ctx);		/* Callback to decode source characters to the buffer */
   unsigned short *refill_in_to_x;			/* Libcharset input table */
   uns saved_depth;					/* Saved ctx->depth */
+  uns pending_0xd;					/* The last read character is 0xD */
 };
 
 struct xml_context {
@@ -193,6 +196,7 @@ struct xml_context {
   void (*h_chars)(struct xml_context *ctx);		/* Called after some characters (only with XML_REPORT_CHARS) */
   void (*h_block)(struct xml_context *ctx, char *text, uns len);	/* Called for each continuous block of characters not reported by h_cdata() (only with XML_REPORT_CHARS) */
   void (*h_cdata)(struct xml_context *ctx, char *text, uns len);	/* Called for each CDATA section (only with XML_REPORT_CHARS) */
+  void (*h_ignorable)(struct xml_context *ctx, char *text, uns len);	/* Called for ignorable whitespace (content in tags without #PCDATA) */
   void (*h_dtd_start)(struct xml_context *ctx);		/* Called just after the DTD structure is initialized */
   void (*h_dtd_end)(struct xml_context *ctx);		/* Called after DTD subsets subsets */
   struct xml_dtd_entity *(*h_find_entity)(struct xml_context *ctx, char *name);		/* Called when needed to resolve a general entity */
@@ -230,11 +234,20 @@ uns xml_parse(struct xml_context *ctx);
 /* Parse with the PUSH interface, return XML_STATE_x (zero on EOF or fatal error) */
 uns xml_next(struct xml_context *ctx);
 
+/* Equivalent to xml_next, but with temporarily changed ctx->pull value */
+uns xml_next_state(struct xml_context *ctx, uns pull);
+
+/* May be called on XML_STATE_STAG to skip it's content; can return XML_STATE_ETAG or XML_STATE_EOF on fatal error */
+uns xml_skip_element(struct xml_context *ctx);
+
 /* Returns the current row number in the document entity */
 uns xml_row(struct xml_context *ctx);
 
 /* Finds a given attribute value in a XML_NODE_ELEM node */
 struct xml_attr *xml_attr_find(struct xml_context *ctx, struct xml_node *node, char *name);
+
+/* Similar to xml_attr_find, but it deals also with default values */
+char *xml_attr_value(struct xml_context *ctx, struct xml_node *node, char *name);
 
 /* The default value of h_find_entity(), knows &lt;, &gt;, &amp;, &apos; and &quot; */
 struct xml_dtd_entity *xml_def_find_entity(struct xml_context *ctx, char *name);
@@ -244,6 +257,12 @@ void xml_def_resolve_entity(struct xml_context *ctx, struct xml_dtd_entity *ent)
 
 /* Remove leading/trailing spaces and replaces sequences of spaces to a single space character (non-CDATA attribute normalization) */
 uns xml_normalize_white(struct xml_context *ctx, char *value);
+
+/* Merge character contents of a given element to a single string (not recursive) */
+char *xml_merge_chars(struct xml_context *ctx, struct xml_node *node, struct mempool *pool);
+
+/* Merge character contents of a given subtree to a single string */
+char *xml_merge_dom_chars(struct xml_context *ctx, struct xml_node *node, struct mempool *pool);
 
 /* Public part of error handling */
 void xml_warn(struct xml_context *ctx, const char *format, ...);

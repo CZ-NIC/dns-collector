@@ -23,6 +23,7 @@ enum {
   WANT_IGNORE_COMMENTS,
   WANT_IGNORE_PIS,
   WANT_REPORT_BLOCKS,
+  WANT_REPORT_IGNORABLE,
   WANT_FILE_ENTITIES,
 };
 
@@ -36,7 +37,8 @@ static struct option longopts[] = {
   { "hide-errors",	0, 0, WANT_HIDE_ERRORS },
   { "ignore-comments",	0, 0, WANT_IGNORE_COMMENTS },
   { "ignore-pis",	0, 0, WANT_IGNORE_PIS },
-  { "reports-blocks",	0, 0, WANT_REPORT_BLOCKS },
+  { "report-blocks",	0, 0, WANT_REPORT_BLOCKS },
+  { "report-ignorable",	0, 0, WANT_REPORT_IGNORABLE },
   { "file-entities",	0, 0, WANT_FILE_ENTITIES },
   { NULL,		0, 0, 0 }
 };
@@ -58,6 +60,7 @@ CF_USAGE
     --ignore-comments   Ignore comments\n\
     --ignore-pis        Ignore processing instructions\n\
     --report-blocks	Report blocks or characters and CDATA sections\n\
+    --report-ignorable  Report ignorable whitespace\n\
     --file-entities     Resolve file external entities (not fully normative)\n\
 \n", stderr);
   exit(1);
@@ -71,6 +74,7 @@ static uns want_hide_errors;
 static uns want_ignore_comments;
 static uns want_ignore_pis;
 static uns want_report_blocks;
+static uns want_report_ignorable;
 static uns want_file_entities;
 
 static struct fastbuf *out;
@@ -207,6 +211,12 @@ h_cdata(struct xml_context *ctx UNUSED, char *text, uns len UNUSED)
 }
 
 static void
+h_ignorable(struct xml_context *ctx UNUSED, char *text, uns len UNUSED)
+{
+  bprintf(out, "SAX:  ignorable text='%s'\n", text);
+}
+
+static void
 h_dtd_start(struct xml_context *ctx UNUSED)
 {
   bputs(out, "SAX:  dtd_start\n");
@@ -257,6 +267,9 @@ main(int argc, char **argv)
 	case WANT_REPORT_BLOCKS:
 	  want_report_blocks++;
 	  break;
+	case WANT_REPORT_IGNORABLE:
+	  want_report_ignorable++;
+	  break;
 	case WANT_FILE_ENTITIES:
 	  want_file_entities++;
 	  break;
@@ -287,6 +300,8 @@ main(int argc, char **argv)
           ctx.h_block = h_block;
           ctx.h_cdata = h_cdata;
 	}
+      if (want_report_ignorable)
+        ctx.h_ignorable = h_ignorable;
       ctx.h_dtd_start = h_dtd_start;
       ctx.h_dtd_end = h_dtd_end;
     }
