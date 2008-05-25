@@ -103,15 +103,19 @@ sub FindFile($) {
 
 sub Init($$) {
 	my ($srcdir,$defconfig) = @_;
-	if ((!defined $defconfig && !@ARGV) || @ARGV && $ARGV[0] eq "--help") {
-		print STDERR "Usage: [<srcdir>/]configure " . (defined $defconfig ? "[" : "") . "<config-name>" . (defined $defconfig ? "]" : "") .
+	sub usage($) {
+		my ($dc) = @_;
+		print STDERR "Usage: [<srcdir>/]configure " . (defined $dc ? "[" : "") . "<config-name>" . (defined $dc ? "]" : "") .
 			" [<option>[=<value>] | -<option>] ...\n";
 		exit 1;
 	}
-	if (@ARGV && $ARGV[0] !~ /=/) {
-		Set('CONFIG' => shift @ARGV);
-	} else {
-		Set('CONFIG' => $defconfig);
+	Set('CONFIG' => $defconfig) if defined $defconfig;
+	if (@ARGV) {
+		usage($defconfig) if $ARGV[0] eq "--help";
+		if (!defined($defconfig) || $ARGV[0] !~ /^-?[A-Z][A-Z0-9_]*(=|$)/) {
+			# This does not look like an option, so read it as a file name
+			Set('CONFIG' => shift @ARGV);
+		}
 	}
 	Set("SRCDIR", $srcdir);
 
@@ -129,6 +133,7 @@ sub Init($$) {
 		}
 	}
 
+	defined Get("CONFIG") or usage($defconfig);
 	if (!TryFindFile(Get("CONFIG"))) {
 		TryFindFile(Get("CONFIG")."/config") or Fail "Cannot find configuration " . Get("CONFIG");
 		Override("CONFIG" => Get("CONFIG")."/config");
