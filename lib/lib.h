@@ -90,11 +90,10 @@
 #define L_ERROR_R	'e'
 #define L_FATAL		'!'		/* die() */
 
-#define L_SIGHANDLER	0x10000		/* Avoid things which are unsafe in signal handlers */
+#define L_SIGHANDLER	0x10000		/* Avoid operations that are unsafe in signal handlers */
 
-extern char *log_title;			/* NULL - print no title, default is log_progname */
+extern char *log_title;			/* NULL - print no title, default is program name given to log_init() */
 extern char *log_filename;		/* Expanded name of the current log file */
-extern volatile int log_switch_nest;	/* log_switch() nesting counter, increment to disable automatic switches */
 extern int log_pid;			/* 0 if shouldn't be logged */
 extern int log_precise_timings;		/* Include microsecond timestamps in log messages */
 extern void (*log_die_hook)(void);
@@ -106,8 +105,13 @@ void vmsg(uns cat, const char *fmt, va_list args);
 void die(const char *, ...) NONRET FORMAT_CHECK(printf,1,2);
 void log_init(const char *argv0);
 void log_file(const char *name);
-void log_fork(void);
+void log_fork(void);			/* Call after fork() to update log_pid */
+
+/* If the log name contains metacharacters for date and time, we switch the logs
+ * automatically whenever the name changes. You can disable it and switch explicitly. */
 int log_switch(void);
+void log_switch_disable(void);
+void log_switch_enable(void);
 
 void assert_failed(const char *assertion, const char *file, int line) NONRET;
 void assert_failed_noinfo(void) NONRET;
@@ -125,9 +129,6 @@ void assert_failed_noinfo(void) NONRET;
 #else
 #define DBG(x,y...) do { } while(0)
 #endif
-
-static inline void log_switch_disable(void) { log_switch_nest++; }
-static inline void log_switch_enable(void) { ASSERT(log_switch_nest); log_switch_nest--; }
 
 /* Memory allocation */
 
