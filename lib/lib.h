@@ -1,7 +1,7 @@
 /*
  *	The UCW Library -- Miscellaneous Functions
  *
- *	(c) 1997--2007 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2008 Martin Mares <mj@ucw.cz>
  *	(c) 2005 Tomas Valla <tom@ucw.cz>
  *	(c) 2006 Robert Spalek <robert@ucw.cz>
  *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
@@ -90,6 +90,8 @@
 #define L_ERROR_R	'e'
 #define L_FATAL		'!'		/* die() */
 
+#define L_SIGHANDLER	0x10000		/* Avoid things which are unsafe in signal handlers */
+
 extern char *log_title;			/* NULL - print no title, default is log_progname */
 extern char *log_filename;		/* Expanded name of the current log file */
 extern volatile int log_switch_nest;	/* log_switch() nesting counter, increment to disable automatic switches */
@@ -101,8 +103,6 @@ extern void (*log_switch_hook)(struct tm *tm);
 
 void msg(uns cat, const char *fmt, ...) FORMAT_CHECK(printf,2,3);
 void vmsg(uns cat, const char *fmt, va_list args);
-void safe_msg(uns cat, const char *fmt, ...) FORMAT_CHECK(printf,2,3);
-void safe_vmsg(uns cat, const char *fmt, va_list args);
 void die(const char *, ...) NONRET FORMAT_CHECK(printf,1,2);
 void log_init(const char *argv0);
 void log_file(const char *name);

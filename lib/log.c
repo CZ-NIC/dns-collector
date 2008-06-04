@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Logging
  *
- *	(c) 1997--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2008 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -29,27 +29,39 @@ void
 vmsg(unsigned int cat, const char *fmt, va_list args)
 {
   struct timeval tv;
+  int have_tm = 0;
   struct tm tm;
   byte *buf, *p;
   int buflen = 256;
   int l, l0, r;
   va_list args2;
 
-  gettimeofday(&tv, NULL);
-  if (!localtime_r(&tv.tv_sec, &tm))
-    bzero(&tm, sizeof(tm));
+  if (!(cat & L_SIGHANDLER))
+    {
+      /* CAVEAT: These calls are not safe in signal handlers. */
+      gettimeofday(&tv, NULL);
+      if (localtime_r(&tv.tv_sec, &tm))
+	have_tm = 1;
+      if (log_switch_hook)
+	log_switch_hook(&tm);
+    }
 
-  if (log_switch_hook)
-    log_switch_hook(&tm);
   while (1)
     {
       p = buf = alloca(buflen);
-      *p++ = cat;
-      /* We cannot use strftime() here, because it's not re-entrant */
-      p += sprintf(p, " %4d-%02d-%02d %02d:%02d:%02d", tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday,
-		   tm.tm_hour, tm.tm_min, tm.tm_sec);
-      if (log_precise_timings)
-        p += sprintf(p, ".%06d", (int)tv.tv_usec);
+      *p++ = cat & 0xff;
+      if (have_tm)
+	{
+	  p += strftime(p, buflen, " %Y-%m-%d %H:%M:%S", &tm);
+	  if (log_precise_timings)
+	    p += sprintf(p, ".%06d", (int)tv.tv_usec);
+	}
+      else
+	{
+	  p += sprintf(p, " \?\?\?\?-\?\?-\?\? \?\?:\?\?:\?\?");
+	  if (log_precise_timings)
+	    p += sprintf(p, ".\?\?\?\?\?\?");
+	}
       *p++ = ' ';
       if (log_title)
 	{
@@ -93,67 +105,6 @@ msg(unsigned int cat, const char *fmt, ...)
 
   va_start(args, fmt);
   vmsg(cat, fmt, args);
-  va_end(args);
-}
-
-void
-safe_vmsg(unsigned int cat, const char *fmt, va_list args)
-{
-  byte *buf, *p;
-  int buflen = 256;
-  int l, l0, r;
-  va_list args2;
-
-  while (1)
-    {
-      p = buf = alloca(buflen);
-      *p++ = cat;
-      p += sprintf(p, " \?\?\?\?-\?\?-\?\? \?\?:\?\?:\?\?");
-      if (log_precise_timings)
-        p += sprintf(p, ".\?\?\?\?\?\?");
-      *p++ = ' ';
-      if (log_title)
-	{
-	  if (log_pid)
-	    p += sprintf(p, "[%s (%d)] ", log_title, log_pid);
-	  else
-	    p += sprintf(p, "[%s] ", log_title);
-	}
-      else
-	{
-	  if (log_pid)
-	    p += sprintf(p, "[%d] ", log_pid);
-	}
-      l0 = p - buf + 1;
-      r = buflen - l0;
-      va_copy(args2, args);
-      l = vsnprintf(p, r, fmt, args2);
-      va_end(args2);
-      if (l < 0)
-	l = r;
-      else if (l < r)
-	{
-	  while (*p)
-	    {
-	      if (*p < 0x20 && *p != '\t')
-		*p = 0x7f;
-	      p++;
-	    }
-	  *p = '\n';
-	  write(2, buf, l + l0);
-	  return;
-	}
-      buflen = l + l0 + 1;
-    }
-}
-
-void
-safe_msg(unsigned int cat, const char *fmt, ...)
-{
-  va_list args;
-
-  va_start(args, fmt);
-  safe_vmsg(cat, fmt, args);
   va_end(args);
 }
 
