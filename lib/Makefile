@@ -49,7 +49,7 @@ LIBUCW_INCLUDES= \
 	bitops.h \
 	conf.h getopt.h ipaccess.h \
 	profile.h \
-	fastbuf.h lfs.h ff-unicode.h ff-utf8.h ff-binary.h \
+	fastbuf.h lfs.h ff-unicode.h ff-binary.h \
 	chartype.h unicode.h stkstring.h \
 	wildmatch.h patmatch.h \
 	db.h \
