@@ -68,6 +68,10 @@ LIBUCW_MODS+=threads-conf workqueue asio fb-direct
 LIBUCW_INCLUDES+=workqueue.h semaphore.h asio.h
 endif
 
+ifdef CONFIG_OWN_REGEX
+include $(s)/lib/regex/Makefile
+endif
+
 ifdef CONFIG_OWN_GETOPT
 include $(s)/lib/getopt/Makefile
 endif

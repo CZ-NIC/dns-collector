@@ -15,11 +15,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef CONFIG_POSIX_REGEX
+#if defined(CONFIG_OWN_REGEX) || defined(CONFIG_POSIX_REGEX)
 
 /* POSIX regular expression library */
 
+#ifdef CONFIG_OWN_REGEX
+#include "lib/regex/regex-sh.h"
+#else
 #include <regex.h>
+#endif
 
 struct regex {
   regex_t rx;
