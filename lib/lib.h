@@ -201,15 +201,6 @@ void init_timer(timestamp_t *timer);
 uns get_timer(timestamp_t *timer);
 uns switch_timer(timestamp_t *old, timestamp_t *new);
 
-/* regex.c */
-
-typedef struct regex regex;
-
-regex *rx_compile(const char *r, int icase);
-void rx_free(regex *r);
-int rx_match(regex *r, const char *s);
-int rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen);
-
 /* random.c */
 
 uns random_u32(void);

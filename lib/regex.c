@@ -11,6 +11,7 @@
 #include "lib/lib.h"
 #include "lib/chartype.h"
 #include "lib/hashfunc.h"
+#include "lib/regex.h"
 
 #include <stdio.h>
 #include <string.h>

@@ -40,7 +40,8 @@ LIBUCW_INCLUDES= \
 	mempool.h pagecache.h \
 	arraysort.h \
 	lists.h clists.h slists.h simple-lists.h \
-	string.h \
+	string.h stkstring.h unicode.h chartype.h regex.h \
+	wildmatch.h patmatch.h \
 	unaligned.h prefetch.h \
 	bbuf.h gbuf.h bitarray.h bitsig.h \
 	hashfunc.h hashtable.h \
@@ -51,8 +52,6 @@ LIBUCW_INCLUDES= \
 	conf.h getopt.h ipaccess.h \
 	profile.h \
 	fastbuf.h lfs.h ff-unicode.h ff-binary.h \
-	chartype.h unicode.h stkstring.h \
-	wildmatch.h patmatch.h \
 	db.h \
 	url.h \
 	mainloop.h \
