@@ -31,7 +31,7 @@ LIBUCW_MODS= \
 	base64 base224 \
 	sync \
 	qache \
-	string str-esc str-split str-match str-imatch \
+	string str-esc str-split str-match str-imatch str-hex \
 	bbuf \
 	getopt
 

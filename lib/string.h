@@ -29,6 +29,11 @@ int str_wordsplit(char *str, char **rec, uns max);
 int str_match_pattern(const char *patt, const char *str);
 int str_match_pattern_nocase(const char *patt, const char *str);
 
+/* str-hex.c */
+
+void mem_to_hex(char *dest, const byte *src, uns bytes);
+const char *hex_to_mem(byte *dest, const char *src, uns max_bytes);
+
 /* md5hex.c */
 
 void md5_to_hex(const byte *s, char *d);
