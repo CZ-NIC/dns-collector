@@ -65,7 +65,8 @@ str_unesc(char *d, const char *s)
 		  else
 		    DBG("octal escape sequence out of range");
 	        }
-	      *d++ = *s++;
+	      else
+		*d++ = *s++;
 	      break;
 	  }
       else
@@ -74,3 +75,25 @@ str_unesc(char *d, const char *s)
   *d = 0;
   return d;
 }
+
+#ifdef TEST
+
+#include <stdio.h>
+#include <string.h>
+
+int main(int argc, char **argv)
+{
+  if (argc < 2)
+    return 1;
+
+  char tmp[strlen(argv[1]) + 1];
+  int len = str_unesc(tmp, argv[1]) - tmp;
+
+  char hex[2*len + 1];
+  mem_to_hex(hex, tmp, len, ' ');
+  puts(hex);
+
+  return 0;
+}
+
+#endif
