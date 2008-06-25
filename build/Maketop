@@ -80,3 +80,4 @@ space:=$(empty) $(empty)
 backref=$(subst $(space),/,$(patsubst %,..,$(subst /,$(space),$(1))))
 tack-on=$(if $(patsubst /%,,$(2)),$(1)/$(2),$(2))
 symlink=ln -sf $(call tack-on,$(call backref,$(2)),$(1)) $(2)/
+symlink-alias=ln -sf $(call tack-on,$(call backref,$(2)),$(1)) $(2)/$(3)
