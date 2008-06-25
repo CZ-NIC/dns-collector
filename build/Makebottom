@@ -55,13 +55,13 @@ $(o)/%.cf: $(s)/%.cf $(o)/config.mk $(s)/build/genconf
 	$(Q)rm -f $@
 	$(Q)ar rcs $@ $^
 ifdef CONFIG_INSTALL_API
-	$(Q)$(call symlink,$@,run/lib)
+	$(Q)$(call symlink-alias,$@,run/lib,$(*F)$(LIBNAME_INFIX).a)
 endif
 
 %.so:
 	$(M)LD $@
 	$(Q)$(CC) $(LSHARED) $(LDFLAGS) -o $@ $^
-	$(Q)$(call symlink,$@,run/lib)
+	$(Q)$(call symlink-alias,$@,run/lib,$(*F)$(SONAME_INFIX).so$(SONAME_SUFFIX))
 
 $(o)/%.pc: $(s)/%.pc $(o)/%.$(LS)
 	$(M)PC $<
