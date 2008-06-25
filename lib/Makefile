@@ -19,7 +19,7 @@ LIBUCW_MODS= \
 	profile \
 	fastbuf ff-binary ff-string ff-printf ff-unicode \
 	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param fb-socket \
-	str_ctype str_upper str_lower unicode stkstring \
+	char-cat char-upper char-lower unicode stkstring \
 	wildmatch ctmatch regex \
 	prime primetable random timer randomkey \
 	bit-ffs bit-fls \

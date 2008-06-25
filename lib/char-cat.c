@@ -11,6 +11,6 @@
 
 const unsigned char _c_cat[256] = {
 #define CHAR(code,upper,lower,cat) cat,
-#include "lib/charmap.h"
+#include "lib/char-map.h"
 #undef CHAR
 };
