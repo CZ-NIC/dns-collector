@@ -31,12 +31,10 @@ int str_match_pattern_nocase(const char *patt, const char *str);
 
 /* str-hex.c */
 
-void mem_to_hex(char *dest, const byte *src, uns bytes, uns sep);
-const char *hex_to_mem(byte *dest, const char *src, uns max_bytes, uns sep);
+void mem_to_hex(char *dest, const byte *src, uns bytes, uns flags);
+const char *hex_to_mem(byte *dest, const char *src, uns max_bytes, uns flags);
 
-/* md5hex.c */
-
-void md5_to_hex(const byte *s, char *d);
-void hex_to_md5(const char *s, byte *d);
+// Bottom 8 bits of flags are an optional separator of bytes, the rest is:
+#define MEM_TO_HEX_UPCASE 0x100
 
 #endif

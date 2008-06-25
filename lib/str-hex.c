@@ -18,12 +18,20 @@ hex_make(uns x)
 }
 
 void
-mem_to_hex(char *dest, const byte *src, uns bytes, uns sep)
+mem_to_hex(char *dest, const byte *src, uns bytes, uns flags)
 {
+  uns sep = flags & 0xff;
+
   while (bytes--)
     {
-      *dest++ = hex_make(*src >> 4);
-      *dest++ = hex_make(*src & 0x0f);
+      dest[0] = hex_make(*src >> 4);
+      dest[1] = hex_make(*src & 0x0f);
+      if (flags & MEM_TO_HEX_UPCASE)
+	{
+	  dest[0] = Cupcase(dest[0]);
+	  dest[1] = Cupcase(dest[1]);
+	}
+      dest += 2;
       if (sep && bytes)
 	*dest++ = sep;
       src++;
@@ -40,8 +48,9 @@ hex_parse(uns c)
 }
 
 const char *
-hex_to_mem(byte *dest, const char *src, uns max_bytes, uns sep)
+hex_to_mem(byte *dest, const char *src, uns max_bytes, uns flags)
 {
+  uns sep = flags & 0xff;
   while (max_bytes-- && Cxdigit(src[0]) && Cxdigit(src[1]))
     {
       *dest++ = (hex_parse(src[0]) << 4) | hex_parse(src[1]);
@@ -66,6 +75,8 @@ int main(void)
   byte y[4];
   char a[16];
 
+  mem_to_hex(a, x, 4, MEM_TO_HEX_UPCASE);
+  puts(a);
   mem_to_hex(a, x, 4, ':');
   puts(a);
   const char *z = hex_to_mem(y, a, 4, ':');
