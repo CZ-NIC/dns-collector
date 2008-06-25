@@ -73,7 +73,15 @@ $(o)/%.pc: $(s)/%.pc $(o)/%.$(LS)
 
 ifdef CONFIG_INSTALL_API
 
+ifdef CONFIG_LOCAL
+# Need an absolute path
 API_ROOT:=$(shell pwd)/run
+API_LIBDIR=$(API_ROOT)/lib
+API_INCDIR=$(API_ROOT)/include
+else
+API_LIBDIR=$(INSTALL_LIB_DIR)
+API_INCDIR=$(INSTALL_INCLUDE_DIR)
+endif
 INSTALL_RUNDIRS+=include lib/pkgconfig
 api: $(API_INCLUDES) $(addprefix run/lib/pkgconfig/,$(addsuffix .pc,$(API_LIBS)))
 
@@ -83,7 +91,7 @@ $(o)/%/.include-stamp:
 
 run/lib/pkgconfig/%.pc:		# RHS supplied in the sub-makefile
 	$(M)PC-API $@
-	$(Q)sed <$< >$@ "s@^libdir=.*@libdir=$(API_ROOT)/lib@;s@^incdir=.*@incdir=$(API_ROOT)/include@"
+	$(Q)sed <$< >$@ "s@^libdir=.*@libdir=$(API_LIBDIR)@;s@^incdir=.*@incdir=$(API_INCDIR)@"
 
 else
 api:
