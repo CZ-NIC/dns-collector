@@ -263,11 +263,6 @@ void handle_signal(int signum);
 void unhandle_signal(int signum);
 sh_sighandler_t set_signal_handler(int signum, sh_sighandler_t new);
 
-/* string.c */
-
-char *str_unesc(char *dest, const char *src);
-char *str_format_flags(char *dest, const char *fmt, uns flags);
-
 /* bigalloc.c */
 
 void *page_alloc(u64 len) LIKE_MALLOC; // allocates a multiple of CPU_PAGE_SIZE bytes with mmap

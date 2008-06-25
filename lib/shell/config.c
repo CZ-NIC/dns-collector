@@ -25,6 +25,7 @@
 #include "lib/mempool.h"
 #include "lib/chartype.h"
 #include "lib/bbuf.h"
+#include "lib/string.h"
 
 #include <stdlib.h>
 #include <stdio.h>

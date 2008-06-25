@@ -1,4 +1,4 @@
-# Makefile for the UCW Library (c) 1997--2007 Martin Mares <mj@ucw.cz>
+# Makefile for the UCW Library (c) 1997--2008 Martin Mares <mj@ucw.cz>
 
 DIRS+=lib
 CONFIGS+=library
@@ -31,7 +31,7 @@ LIBUCW_MODS= \
 	base64 base224 \
 	sync \
 	qache \
-	string \
+	string str-esc \
 	bbuf \
 	getopt
 
@@ -40,6 +40,7 @@ LIBUCW_INCLUDES= \
 	mempool.h pagecache.h \
 	arraysort.h \
 	lists.h clists.h slists.h simple-lists.h \
+	string.h \
 	unaligned.h prefetch.h \
 	bbuf.h gbuf.h bitarray.h bitsig.h \
 	hashfunc.h hashtable.h \

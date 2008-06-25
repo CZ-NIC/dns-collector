@@ -15,6 +15,7 @@
 #include "lib/mempool.h"
 #include "lib/fastbuf.h"
 #include "lib/chartype.h"
+#include "lib/string.h"
 #include "lib/stkstring.h"
 
 #include <stdlib.h>
