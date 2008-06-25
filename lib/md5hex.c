@@ -9,6 +9,8 @@
 
 #include "lib/lib.h"
 #include "lib/chartype.h"
+#include "lib/md5.h"
+#include "lib/string.h"
 
 #include <stdio.h>
 

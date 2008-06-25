@@ -21,4 +21,7 @@ void MD5Update(struct MD5Context *context, unsigned char const *buf,
 void MD5Final(unsigned char digest[16], struct MD5Context *context);
 void MD5Transform(uint32 buf[4], uint32 const in[16]);
 
+#define MD5_HEX_SIZE 33
+#define MD5_SIZE 16
+
 #endif /* !_UCW_MD5_H */

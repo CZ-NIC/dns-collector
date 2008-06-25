@@ -41,7 +41,7 @@ LIBUCW_INCLUDES= \
 	arraysort.h \
 	lists.h clists.h slists.h simple-lists.h \
 	string.h stkstring.h unicode.h chartype.h regex.h \
-	wildmatch.h patmatch.h \
+	wildmatch.h \
 	unaligned.h prefetch.h \
 	bbuf.h gbuf.h bitarray.h bitsig.h \
 	hashfunc.h hashtable.h \

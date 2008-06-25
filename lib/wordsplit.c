@@ -10,11 +10,12 @@
 
 #include "lib/lib.h"
 #include "lib/chartype.h"
+#include "lib/string.h"
 
 #include <string.h>
 
 int
-sepsplit(char *str, uns sep, char **rec, uns max)
+str_sepsplit(char *str, uns sep, char **rec, uns max)
 {
   uns cnt = 0;
   while (1)
@@ -30,7 +31,7 @@ sepsplit(char *str, uns sep, char **rec, uns max)
 }
 
 int
-wordsplit(char *src, char **dst, uns max)
+str_wordsplit(char *src, char **dst, uns max)
 {
   uns cnt = 0;
 

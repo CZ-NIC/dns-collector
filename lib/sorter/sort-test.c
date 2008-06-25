@@ -14,6 +14,7 @@
 #include "lib/ff-binary.h"
 #include "lib/hashfunc.h"
 #include "lib/md5.h"
+#include "lib/string.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -674,7 +675,7 @@ main(int argc, char **argv)
       case 't':
 	  {
 	    char *w[32];
-	    int f = sepsplit(optarg, ',', w, ARRAY_SIZE(w));
+	    int f = str_sepsplit(optarg, ',', w, ARRAY_SIZE(w));
 	    if (f < 0)
 	      goto usage;
 	    t = 0;

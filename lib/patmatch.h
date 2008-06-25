@@ -7,6 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
+#include "lib/string.h"
+
 int
 MATCH_FUNC_NAME(const char *p, const char *s)
 {

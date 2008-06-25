@@ -165,24 +165,6 @@ char *xstrdup(const char *) LIKE_MALLOC;
 
 int match_ct_patt(const char *, const char *);
 
-/* wordsplit.c */
-
-int sepsplit(char *str, uns sep, char **rec, uns max);
-int wordsplit(char *str, char **rec, uns max);
-
-/* pat(i)match.c: Matching of shell patterns */
-
-int match_pattern(const char *patt, const char *str);
-int match_pattern_nocase(const char *patt, const char *str);
-
-/* md5hex.c */
-
-void md5_to_hex(const byte *s, char *d);
-void hex_to_md5(const char *s, byte *d);
-
-#define MD5_SIZE 16
-#define MD5_HEX_SIZE 33
-
 /* prime.c */
 
 int isprime(uns x);
