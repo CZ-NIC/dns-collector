@@ -7,7 +7,7 @@ runtree: run/.tree-stamp $(addsuffix /.dir-stamp,$(addprefix $(o)/,$(DIRS)))
 
 run/.tree-stamp: $(o)/config.mk
 	$(M)Creating runtree
-	$(Q)mkdir -p run $(addprefix run/, cf $(EXTRA_RUNDIRS) $(INSTALL_RUNDIRS))
+	$(Q)mkdir -p run $(addprefix run/, $(CONFIG_DIR) $(EXTRA_RUNDIRS) $(INSTALL_RUNDIRS))
 	$(Q)touch run/.tree-stamp
 
 # Miscellaneous targets
@@ -15,7 +15,7 @@ run/.tree-stamp: $(o)/config.mk
 programs: $(PROGS)
 datafiles: $(DATAFILES)
 tests: $(TESTS)
-configs: $(addprefix run/cf/,$(CONFIGS))
+configs: $(addprefix run/$(CONFIG_DIR)/,$(CONFIGS))
 
 tags:
 	etags `find . -name "*.[ch]"`
@@ -39,14 +39,14 @@ force:
 
 # Rules for configuration files
 
-run/cf/%: $(s)/cf/% $(o)/config.mk $(s)/build/genconf
+run/$(CONFIG_DIR)/%: $(s)/$(CONFIG_DIR)/% $(o)/config.mk $(s)/build/genconf
 	$(M)CF $<
 	$(Q)$(s)/build/genconf $< $@ $(o)/config.mk
 
 $(o)/%.cf: $(s)/%.cf $(o)/config.mk $(s)/build/genconf
 	$(M)CF $<
 	$(Q)$(s)/build/genconf $< $@ $(o)/config.mk
-	$(Q)cp $@ run/cf/$(basename $(@F))
+	$(Q)cp $@ run/$(CONFIG_DIR)/$(basename $(@F))
 
 # Rules for libraries
 

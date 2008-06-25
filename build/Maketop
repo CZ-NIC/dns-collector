@@ -1,5 +1,5 @@
 # Top part of Makefile for the UCW Libraries
-# (c) 1997--2007 Martin Mares <mj@ucw.cz>
+# (c) 1997--2008 Martin Mares <mj@ucw.cz>
 
 # Set to 1 if you want verbose output
 V=0
@@ -16,6 +16,7 @@ LDFLAGS=$(LOPT) $(LEXTRA)
 DIRS=
 PROGS=
 CONFIGS=
+CONFIG_DIR=cf
 TESTS=
 EXTRA_RUNDIRS=tmp log
 INSTALL_RUNDIRS=bin lib
