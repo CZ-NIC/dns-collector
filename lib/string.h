@@ -31,8 +31,8 @@ int str_match_pattern_nocase(const char *patt, const char *str);
 
 /* str-hex.c */
 
-void mem_to_hex(char *dest, const byte *src, uns bytes);
-const char *hex_to_mem(byte *dest, const char *src, uns max_bytes);
+void mem_to_hex(char *dest, const byte *src, uns bytes, uns sep);
+const char *hex_to_mem(byte *dest, const char *src, uns max_bytes, uns sep);
 
 /* md5hex.c */
 

@@ -18,12 +18,14 @@ hex_make(uns x)
 }
 
 void
-mem_to_hex(char *dest, const byte *src, uns bytes)
+mem_to_hex(char *dest, const byte *src, uns bytes, uns sep)
 {
   while (bytes--)
     {
       *dest++ = hex_make(*src >> 4);
       *dest++ = hex_make(*src & 0x0f);
+      if (sep && bytes)
+	*dest++ = sep;
       src++;
     }
   *dest = 0;
@@ -38,12 +40,18 @@ hex_parse(uns c)
 }
 
 const char *
-hex_to_mem(byte *dest, const char *src, uns max_bytes)
+hex_to_mem(byte *dest, const char *src, uns max_bytes, uns sep)
 {
   while (max_bytes-- && Cxdigit(src[0]) && Cxdigit(src[1]))
     {
       *dest++ = (hex_parse(src[0]) << 4) | hex_parse(src[1]);
       src += 2;
+      if (sep && *src && max_bytes)
+	{
+	  if (*src != (char)sep)
+	    return src;
+	  src++;
+	}
     }
   return src;
 }
@@ -56,14 +64,15 @@ int main(void)
 {
   byte x[4] = { 0xfe, 0xed, 0xf0, 0x0d };
   byte y[4];
-  char a[10];
+  char a[16];
 
-  mem_to_hex(a, x, 4);
+  mem_to_hex(a, x, 4, ':');
   puts(a);
-  const char *z = hex_to_mem(y, a, 4);
+  const char *z = hex_to_mem(y, a, 4, ':');
   if (*z)
-    return 1;
-  printf("%02x%02x%02x%02x\n", y[0], y[1], y[2], y[3]);
+    puts("BAD");
+  else
+    printf("%02x%02x%02x%02x\n", y[0], y[1], y[2], y[3]);
 
   return 0;
 }
