@@ -1,5 +1,17 @@
+/*
+ *	UCW Library -- Strings Allocated on the Stack
+ *
+ *	(c) 2005--2007 Martin Mares <mj@ucw.cz>
+ *	(c) 2005 Tomas Valla <tom@ucw.cz>
+ *	(c) 2008 Pavel Charvat <pchar@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
+ */
+
 #include "lib/lib.h"
 #include "lib/stkstring.h"
+#include "lib/string.h"
 
 #include <stdio.h>
 
@@ -75,13 +87,7 @@ stk_vprintf_internal(const char *fmt, va_list args)
 void
 stk_hexdump_internal(char *dst, const byte *src, uns n)
 {
-  for (uns i=0; i<n; i++)
-    {
-      if (i)
-	*dst++ = ' ';
-      dst += sprintf(dst, "%02x", *src++);
-    }
-  *dst = 0;
+  mem_to_hex(dst, src, n, ' ');
 }
 
 void
