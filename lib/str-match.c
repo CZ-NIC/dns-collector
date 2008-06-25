@@ -12,4 +12,4 @@
 #define Convert(x) (x)
 #define MATCH_FUNC_NAME str_match_pattern
 
-#include "lib/patmatch.h"
+#include "lib/str-match.h"

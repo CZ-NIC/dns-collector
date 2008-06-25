@@ -13,4 +13,4 @@
 #define Convert(x) Cupcase(x)
 #define MATCH_FUNC_NAME str_match_pattern_nocase
 
-#include "lib/patmatch.h"
+#include "lib/str-match.h"

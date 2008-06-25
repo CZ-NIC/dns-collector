@@ -11,15 +11,20 @@
 #ifndef _UCW_STRING_H
 #define _UCW_STRING_H
 
-char *str_unesc(char *dest, const char *src);
+/* string.c */
+
 char *str_format_flags(char *dest, const char *fmt, uns flags);
 
-/* wordsplit.c */
+/* str-esc.c */
+
+char *str_unesc(char *dest, const char *src);
+
+/* str-split.c */
 
 int str_sepsplit(char *str, uns sep, char **rec, uns max);
 int str_wordsplit(char *str, char **rec, uns max);
 
-/* pat(i)match.c: Matching of shell patterns */
+/* str-(i)match.c: Matching of shell patterns */
 
 int str_match_pattern(const char *patt, const char *str);
 int str_match_pattern_nocase(const char *patt, const char *str);

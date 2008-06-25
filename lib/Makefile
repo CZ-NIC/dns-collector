@@ -20,7 +20,7 @@ LIBUCW_MODS= \
 	fastbuf ff-binary ff-string ff-printf ff-unicode \
 	fb-file carefulio fb-mem fb-temp fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param fb-socket \
 	str_ctype str_upper str_lower unicode stkstring \
-	wildmatch wordsplit ctmatch patimatch patmatch regex \
+	wildmatch ctmatch regex \
 	prime primetable random timer randomkey \
 	bit-ffs bit-fls \
 	db \
@@ -31,7 +31,7 @@ LIBUCW_MODS= \
 	base64 base224 \
 	sync \
 	qache \
-	string str-esc \
+	string str-esc str-split str-match str-imatch \
 	bbuf \
 	getopt
 
