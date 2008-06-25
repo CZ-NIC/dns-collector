@@ -1,7 +1,6 @@
 # Makefile for the UCW Library (c) 1997--2008 Martin Mares <mj@ucw.cz>
 
 DIRS+=lib
-CONFIGS+=library
 LIBUCW=$(o)/lib/libucw.pc
 
 ifdef CONFIG_UCW_DBTOOL
