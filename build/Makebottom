@@ -123,7 +123,7 @@ $(o)/%-tt.o: $(s)/%.c $(o)/autoconf.h
 
 $(o)/%-t: $(o)/%-tt.o $(TESTING_DEPS)
 	$(M)LD-TEST $@
-	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell $(s)/build/lib-flags $^) $(LIBS)
+	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(s)/build/lib-flags $^) $(LIBS)
 
 $(o)/%.test: $(s)/%.t $(s)/build/tester
 	$(M)TEST $@
@@ -135,7 +135,7 @@ BINDIR=bin
 
 $(o)/%: $(o)/%.o
 	$(M)LD $@
-	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell $(s)/build/lib-flags $^) $(LIBS)
+	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(s)/build/lib-flags $^) $(LIBS)
 	$(Q)$(call symlink,$@,run/$(BINDIR))
 
 $(o)/%: $(s)/%.sh $(o)/config.mk $(s)/build/genconf
