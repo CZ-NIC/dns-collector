@@ -200,6 +200,7 @@ sub Finish() {
 sub TryCmd($) {
 	my ($cmd) = @_;
 	my $res = `$cmd`;
+	defined $res or return;
 	chomp $res;
 	return $res unless $?;
 	return;
