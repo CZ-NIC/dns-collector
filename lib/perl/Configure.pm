@@ -238,9 +238,9 @@ sub PkgConfig($@) {
 	Set("CONFIG_HAVE_$upper" => 1);
 	Set("CONFIG_VER_$upper" => $ver);
 	my $cf = TryCmd("pkg-config --cflags $pkg");
-	Set("CFLAGS_$upper" => $cf) if defined $cf;
+	Set("${upper}_CFLAGS" => $cf) if defined $cf;
 	my $lf = TryCmd("pkg-config --libs $pkg");
-	Set("LIBS_$upper" => $lf) if defined $lf;
+	Set("${upper}_LIBS" => $lf) if defined $lf;
 	return 1;
 }
 
@@ -271,10 +271,14 @@ sub TrivConfig($@) {
 	Log("YES: version $ver\n");
 	Set("CONFIG_HAVE_$upper" => 1);
 	Set("CONFIG_VER_$upper" => $ver);
-	my $cf = TryCmd("$pc --cflags");
-	Set("CFLAGS_$upper" => $cf) if defined $cf;
-	my $lf = TryCmd("$pc --libs");
-	Set("LIBS_$upper" => $lf) if defined $lf;
+
+	my $want = $opts{want};
+	defined $want or $want = ["cflags", "libs"];
+	for my $w (@$want) {
+		my $uw = $w; $uw =~ tr/a-z/A-Z/;
+		my $cf = TryCmd("$pc --$w");
+		Set("${upper}_${uw}" => $cf) if defined $cf;
+	}
 	return 1;
 }
 
