@@ -96,7 +96,7 @@ $(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/lib/,regex.test unicode.test hash-test.test mempool.test stkstring.test \
     slists.test kmp-test.test bbuf.test getopt.test fastbuf.test ff-unicode.test eltpool.test \
-    fb-socket.test string.test)
+    fb-socket.test string.test sha1.test)
 
 $(o)/lib/regex.test: $(o)/lib/regex-t
 $(o)/lib/unicode.test: $(o)/lib/unicode-t
