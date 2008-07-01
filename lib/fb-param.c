@@ -37,7 +37,7 @@ struct cf_section fbpar_cf = {
   CF_TYPE(struct fb_params),
   CF_COMMIT(fbpar_cf_commit),
   CF_ITEMS {
-    CF_LOOKUP("Type", (int *)F(type), ((char *[]){"std", "direct", "mmap", NULL})),
+    CF_LOOKUP("Type", (int *)F(type), ((const char * const []){"std", "direct", "mmap", NULL})),
     CF_UNS("BufSize", F(buffer_size)),
     CF_UNS("KeepBackBuf", F(keep_back_buf)),
     CF_UNS("ReadAhead", F(read_ahead)),

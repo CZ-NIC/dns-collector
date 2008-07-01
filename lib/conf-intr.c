@@ -52,9 +52,9 @@ cf_type_size(enum cf_type type, struct cf_user_type *utype)
 }
 
 static char *
-cf_parse_lookup(char *str, int *ptr, char **t)
+cf_parse_lookup(char *str, int *ptr, const char * const *t)
 {
-  char **n = t;
+  const char * const *n = t;
   uns total_len = 0;
   while (*n && strcasecmp(*n, str)) {
     total_len += strlen(*n) + 2;
