@@ -58,7 +58,7 @@ static struct cf_section image_sig_config = {
     CF_INT("BorderBonus", &image_sig_border_bonus),
     CF_DOUBLE_ARY("InertiaScale", image_sig_inertia_scale, 3),
     CF_DOUBLE("TexturedThreshold", &image_sig_textured_threshold),
-    CF_LOOKUP("CompareMethod", &image_sig_compare_method, ((char *[]){"integrated", "fuzzy", "average", NULL})),
+    CF_LOOKUP("CompareMethod", &image_sig_compare_method, ((const char * const []){"integrated", "fuzzy", "average", NULL})),
     CF_UNS_ARY("CompareFeaturesWeights", image_sig_cmp_features_weights, IMAGE_REG_F + IMAGE_REG_H),
     CF_END
   }
