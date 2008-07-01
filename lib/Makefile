@@ -26,7 +26,7 @@ LIBUCW_MODS= \
 	url \
 	mainloop exitstatus runcmd sighandler \
 	lizard lizard-safe adler32 \
-	md5 sha1 \
+	md5 sha1 sha1-hmac \
 	base64 base224 \
 	sync \
 	qache \
@@ -113,7 +113,7 @@ $(o)/lib/ff-unicode.test: $(o)/lib/ff-unicode-t
 $(o)/lib/eltpool.test: $(o)/lib/eltpool-t
 $(o)/lib/fb-socket.test: $(o)/lib/fb-socket-t
 $(o)/lib/string.test: $(o)/lib/str-hex-t $(o)/lib/str-esc-t
-$(o)/lib/sha1.test: $(o)/lib/sha1-t
+$(o)/lib/sha1.test: $(o)/lib/sha1-t $(o)/lib/sha1-hmac-t
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/lib/,asio.test)

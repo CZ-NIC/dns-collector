@@ -28,7 +28,11 @@ byte *sha1_final(sha1_context *hd);
 /* One-shot interface */
 void sha1_hash_buffer(byte *outbuf, const byte *buffer, uns length);
 
+/* HMAC */
+void sha1_hmac(byte *outbuf, const byte *key, uns keylen, const byte *data, uns datalen);
+
 #define SHA1_SIZE 20
 #define SHA1_HEX_SIZE 41
+#define SHA1_BLOCK_SIZE 64
 
 #endif
