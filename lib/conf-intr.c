@@ -168,21 +168,21 @@ add_to_list(cnode *where, cnode *new_node, enum cf_operation op)
 {
   switch (op)
   {
-    case OP_EDIT:		// edition has been done in-place
+    case OP_EDIT:		// editation has been done in-place
       break;
     case OP_REMOVE:
       CF_JOURNAL_VAR(where->prev->next);
       CF_JOURNAL_VAR(where->next->prev);
       clist_remove(where);
       break;
-    case OP_AFTER:		// implementation dependend (prepend_head = after(list)), and where==list, see clists.h:74
+    case OP_AFTER:		// implementation dependent (prepend_head = after(list)), and where==list, see clists.h:74
     case OP_PREPEND:
     case OP_COPY:
       CF_JOURNAL_VAR(where->next->prev);
       CF_JOURNAL_VAR(where->next);
       clist_insert_after(new_node, where);
       break;
-    case OP_BEFORE:		// implementation dependend (append_tail = before(list))
+    case OP_BEFORE:		// implementation dependent (append_tail = before(list))
     case OP_APPEND:
     case OP_SET:
       CF_JOURNAL_VAR(where->prev->next);
