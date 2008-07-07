@@ -89,6 +89,7 @@ struct xml_dtd_elem {
   uns type;
   char *name;
   struct xml_dtd_elem_node *node;
+  slist attrs;
   void *user;				/* User-defined */
 };
 
@@ -140,6 +141,7 @@ enum xml_dtd_attr_type {
 };
 
 struct xml_dtd_attr {
+  snode n;
   char *name;				/* Attribute name */
   struct xml_dtd_elem *elem;		/* Owner element */
   uns type;				/* See enum xml_dtd_attr_type */

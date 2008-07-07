@@ -25,11 +25,11 @@ Out:	PULL: start
 Run:	../obj/sherlock/xml/xml-test -sptd
 In:	<?xml version="1.0"?>
 	<!DOCTYPE root [
-	<!ELEMENT root ANY>
+	<!ELEMENT root (#PCDATA|a)*>
 	<!ENTITY % pe1 "<!ENTITY e1 'text'>">
 	%pe1;
 	<!ENTITY e2 '&lt;&e1;&gt;'>
-	<!ELEMENT a ANY>
+	<!ELEMENT a (#PCDATA)*>
 	]>
 	<root>&e1;<a>&e2;</a></root>
 Out:	PULL: start

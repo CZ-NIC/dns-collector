@@ -80,7 +80,7 @@ xml_push_source(struct xml_context *ctx)
   src->next = ctx->src;
   src->saved_depth = ctx->depth;
   ctx->src = src;
-  ctx->flags &= ~(XML_SRC_EOF | XML_SRC_EXPECTED_DECL | XML_SRC_NEW_LINE | XML_SRC_DOCUMENT);
+  ctx->flags &= ~(XML_SRC_EOF | XML_SRC_EXPECTED_DECL | XML_SRC_DOCUMENT);
   ctx->bstop = ctx->bptr = src->buf;
   ctx->depth = 0;
   return src;
@@ -182,9 +182,9 @@ void xml_parse_decl(struct xml_context *ctx);
   struct fastbuf *fb = src->fb;								\
   if (ctx->bptr == ctx->bstop)								\
     ctx->bptr = ctx->bstop = src->buf;							\
-  uns f = ctx->flags, c, t1 = src->refill_cat1, t2 = src->refill_cat2, row = src->row;	\
+  uns c, t1 = src->refill_cat1, t2 = src->refill_cat2, row = src->row;		\
   u32 *bend = src->buf + ARRAY_SIZE(src->buf), *bstop = ctx->bstop,			\
-      *last_0xd = (f & XML_SRC_NEW_LINE) ? bstop : bend;				\
+      *last_0xd = src->pending_0xd ? bstop : NULL;					\
   do											\
     {											\
       c = func(fb, ##params);								\
@@ -201,7 +201,7 @@ void xml_parse_decl(struct xml_context *ctx);
 	    last_0xd = bstop + 2;							\
 	  else if (c != 0x2028 && last_0xd == bstop)					\
 	    {										\
-	      last_0xd = bend;								\
+	      last_0xd = NULL;								\
 	      continue;									\
 	    }										\
 	  xml_add_char(&bstop, 0xa), row++;						\
@@ -218,12 +218,12 @@ void xml_parse_decl(struct xml_context *ctx);
       else										\
         {										\
 	  /* EOF */									\
-          f |= XML_SRC_EOF;								\
+          ctx->flags |= XML_SRC_EOF;							\
           break;									\
 	}										\
     }											\
   while (bstop < bend);									\
-  ctx->flags = (last_0xd == bstop) ? f | XML_SRC_NEW_LINE : f & ~XML_SRC_NEW_LINE;	\
+  src->pending_0xd = (last_0xd == bstop);						\
   ctx->bstop = bstop;									\
   src->row = row;
 

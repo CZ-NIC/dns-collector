@@ -136,6 +136,14 @@ xml_dtd_find_pentity(struct xml_context *ctx, char *name)
 
 /* Elements */
 
+struct xml_dtd_elems_table;
+
+static void
+xml_dtd_elems_init_data(struct xml_dtd_elems_table *tab UNUSED, struct xml_dtd_elem *e)
+{
+  slist_init(&e->attrs);
+}
+
 #define HASH_PREFIX(x) xml_dtd_elems_##x
 #define HASH_NODE struct xml_dtd_elem
 #define HASH_KEY_STRING name
@@ -144,6 +152,7 @@ xml_dtd_find_pentity(struct xml_context *ctx, char *name)
 #define HASH_WANT_FIND
 #define HASH_WANT_LOOKUP
 #define HASH_GIVE_ALLOC
+#define HASH_GIVE_INIT_DATA
 #define HASH_TABLE_ALLOC
 XML_HASH_GIVE_ALLOC
 #include "lib/hashtable.h"
@@ -214,6 +223,7 @@ xml_dtd_attrs_init_key(struct xml_dtd_attrs_table *tab UNUSED, struct xml_dtd_at
 {
   attr->elem = elem;
   attr->name = name;
+  slist_add_tail(&elem->attrs, &attr->n);
 }
 
 #define HASH_PREFIX(x) xml_dtd_attrs_##x

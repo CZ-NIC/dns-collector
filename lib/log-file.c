@@ -20,7 +20,7 @@
 static char *log_name_patt;
 static int log_params;
 static int log_filename_size;
-volatile int log_switch_nest;
+static int log_switch_nest;
 
 static int
 do_log_switch(struct tm *tm)
@@ -92,6 +92,19 @@ void
 log_fork(void)
 {
   log_pid = getpid();
+}
+
+void
+log_switch_disable(void)
+{
+  log_switch_nest++;
+}
+
+void
+log_switch_enable(void)
+{
+  ASSERT(log_switch_nest);
+  log_switch_nest--;
 }
 
 #ifdef TEST

@@ -39,13 +39,14 @@ force:
 
 # Rules for configuration files
 
-run/cf/%: custom/cf/% $(o)/config.mk $(s)/build/genconf
-	$(M)CF $<
-	$(Q)$(s)/build/genconf $< $@ $(o)/config.mk
-
 run/cf/%: $(s)/cf/% $(o)/config.mk $(s)/build/genconf
 	$(M)CF $<
 	$(Q)$(s)/build/genconf $< $@ $(o)/config.mk
+
+$(o)/%.cf: $(s)/%.cf $(o)/config.mk $(s)/build/genconf
+	$(M)CF $<
+	$(Q)$(s)/build/genconf $< $@ $(o)/config.mk
+	$(Q)cp $@ run/cf/$(basename $(@F))
 
 # Rules for libraries
 
