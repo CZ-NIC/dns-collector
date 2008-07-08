@@ -17,6 +17,7 @@ struct eltpool {
   uns chunk_size;
   uns elts_per_chunk;
   uns num_allocated;		// Just for debugging
+  uns num_chunks;
 };
 
 struct eltpool_chunk {
@@ -31,6 +32,7 @@ struct eltpool_free {
 struct eltpool *ep_new(uns elt_size, uns elts_per_chunk);
 void ep_delete(struct eltpool *pool);
 void *ep_alloc_slow(struct eltpool *pool);
+u64 ep_total_size(struct eltpool *pool);
 
 static inline void *
 ep_alloc(struct eltpool *pool)
