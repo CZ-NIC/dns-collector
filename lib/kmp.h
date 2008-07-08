@@ -214,7 +214,7 @@ P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(s
 {
   bzero(s, sizeof(*s));
 # ifdef KMP_INIT_STATE
-  struct P(struct) *kmp = (struct P(struct) *)t;
+  UNUSED struct P(struct) *kmp = (struct P(struct) *)t;
   { KMP_INIT_STATE(kmp, s); }
 # endif
   s->from = f;
