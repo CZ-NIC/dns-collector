@@ -38,12 +38,17 @@ static void generate(void)
 #endif
 }
 
+int errors = 0;
+
 static void check(void)
 {
   uns i;
   for (i=0; i<N; i++)
     if (ASORT_ELT(i) != i)
+    {
       printf("error at pos %d: %08x != %08x\n", i, ASORT_ELT(i), i);
+      errors = 1;
+    }
 }
 
 static int qs_comp(const struct elt *X, const struct elt *Y)
@@ -73,5 +78,5 @@ int main(void)
   as_sort(N);
   printf("asort: %d ms\n", get_timer(&timer));
   check();
-  return 0;
+  return errors;
 }
