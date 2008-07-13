@@ -97,7 +97,7 @@ $(o)/lib/trie-test: $(o)/lib/trie-test.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/lib/,regex.test unicode.test hash-test.test mempool.test stkstring.test \
     slists.test kmp-test.test bbuf.test getopt.test fastbuf.test ff-unicode.test eltpool.test \
-    fb-socket.test trie-test.test string.test sha1.test asort-test.test)
+    fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test)
 
 $(o)/lib/regex.test: $(o)/lib/regex-t
 $(o)/lib/unicode.test: $(o)/lib/unicode-t
@@ -117,6 +117,7 @@ $(o)/lib/string.test: $(o)/lib/str-hex-t $(o)/lib/str-esc-t
 $(o)/lib/sha1.test: $(o)/lib/sha1-t $(o)/lib/sha1-hmac-t
 $(o)/lib/trie-test.test: $(o)/lib/trie-test
 $(o)/lib/asort-test.test: $(o)/lib/asort-test
+$(o)/lib/binheap-test.test: $(o)/lib/binheap-test
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/lib/,asio.test)
