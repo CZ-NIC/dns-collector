@@ -85,11 +85,7 @@ bitsig_free(struct bitsig *b)
 static void
 bitsig_hash_init(struct bitsig *b, byte *item)
 {
-  struct MD5Context c;
-
-  MD5Init(&c);
-  MD5Update(&c, item, strlen(item));
-  MD5Final((byte *) b->hash, &c);
+  md5_hash_buffer((byte *) b->hash, item, strlen(item));
   b->hindex = 0;
 }
 

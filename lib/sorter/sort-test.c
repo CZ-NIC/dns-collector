@@ -203,10 +203,7 @@ gen_hash_key(int mode, struct key3 *k, uns i)
       k->hash[3] = k->payload[2];
       break;
     default: ;
-      struct MD5Context ctx;
-      MD5Init(&ctx);
-      MD5Update(&ctx, (byte*) &k->i, 4);
-      MD5Final((byte*) &k->hash, &ctx);
+      md5_hash_buffer((byte *) &k->hash, (byte *) &k->i, 4);
       break;
     }
 }

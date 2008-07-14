@@ -7,19 +7,21 @@
 #ifndef _UCW_MD5_H
 #define _UCW_MD5_H
 
-typedef u32 uint32;
+typedef struct {
+	u32 buf[4];
+	u32 bits[2];
+	byte in[64];
+} md5_context;
 
-struct MD5Context {
-	uint32 buf[4];
-	uint32 bits[2];
-	unsigned char in[64];
-};
+void md5_init(md5_context *context);
+void md5_update(md5_context *context, const byte *buf, uns len);
+/* The data are stored inside the context */
+byte *md5_final(md5_context *context);
 
-void MD5Init(struct MD5Context *context);
-void MD5Update(struct MD5Context *context, unsigned char const *buf,
-	       unsigned len);
-void MD5Final(unsigned char digest[16], struct MD5Context *context);
-void MD5Transform(uint32 buf[4], uint32 const in[16]);
+void md5_transform(u32 buf[4], const u32 in[16]);
+
+/* One-shot interface */
+void md5_hash_buffer(byte *outbuf, const byte *buffer, uns length);
 
 #define MD5_HEX_SIZE 33
 #define MD5_SIZE 16
