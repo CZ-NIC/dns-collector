@@ -60,7 +60,14 @@ ep_alloc_slow(struct eltpool *pool)
     }
   ch->next = pool->first_chunk;
   pool->first_chunk = ch;
+  pool->num_chunks++;
   return p;
+}
+
+u64
+ep_total_size(struct eltpool *pool)
+{
+  return (u64)pool->num_chunks * pool->chunk_size + sizeof(*pool);
 }
 
 #ifdef TEST

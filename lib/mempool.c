@@ -168,6 +168,14 @@ mp_stats(struct mempool *pool, struct mempool_stats *stats)
   mp_stats_chain(pool->unused, stats, 2);
 }
 
+u64
+mp_total_size(struct mempool *pool)
+{
+  struct mempool_stats stats;
+  mp_stats(pool, &stats);
+  return stats.total_size;
+}
+
 void *
 mp_alloc_internal(struct mempool *pool, uns size)
 {
