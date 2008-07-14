@@ -38,7 +38,7 @@ static void generate(void)
 #endif
 }
 
-int errors = 0;
+static int errors = 0;
 
 static void check(void)
 {

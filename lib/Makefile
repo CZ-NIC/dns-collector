@@ -7,6 +7,8 @@ ifdef CONFIG_UCW_DBTOOL
 PROGS+=$(o)/lib/db-tool
 endif
 
+PROGS+=$(o)/lib/basecode
+
 LIBUCW_MODS= \
 	threads \
 	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt eltpool \
@@ -93,12 +95,12 @@ $(o)/lib/binheap-test: $(o)/lib/binheap-test.o $(LIBUCW)
 $(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
 $(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 $(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
-$(o)/lib/trie-test: $(o)/lib/trie-test.o $(LIBUCW)
+$(o)/lib/basecode: $(o)/lib/basecode.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/lib/,regex.test unicode.test hash-test.test mempool.test stkstring.test \
     slists.test kmp-test.test bbuf.test getopt.test fastbuf.test ff-unicode.test eltpool.test \
     fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test \
-    redblack-test.test)
+    redblack-test.test basecode.test)
 
 $(o)/lib/regex.test: $(o)/lib/regex-t
 $(o)/lib/unicode.test: $(o)/lib/unicode-t
@@ -120,6 +122,7 @@ $(o)/lib/trie-test.test: $(o)/lib/trie-test
 $(o)/lib/asort-test.test: $(o)/lib/asort-test
 $(o)/lib/binheap-test.test: $(o)/lib/binheap-test
 $(o)/lib/redblack-test.test: $(o)/lib/redblack-test
+$(o)/lib/basecode.test: $(o)/lib/basecode
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/lib/,asio.test)
