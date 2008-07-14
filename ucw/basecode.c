@@ -91,8 +91,9 @@ int main(int argc, char **argv)
   // Prepare buffers
   struct fastbuf *in = bfdopen_shared(0, 4096);
   struct fastbuf *out = bfdopen_shared(1, 4096);
-  uns offset = (!actions[mode].add_prefix && prefix) ? strlen(prefix) : 0;
-  uns read_size = actions[mode].in_block * blocks + offset + !!offset;
+  int has_offset = !actions[mode].add_prefix && prefix;
+  uns offset = has_offset ? strlen(prefix) : 0;
+  uns read_size = actions[mode].in_block * blocks + offset + has_offset;
   uns write_size = actions[mode].out_block * blocks;
   byte in_buff[read_size], out_buff[write_size];
   uns isize;
@@ -109,7 +110,7 @@ int main(int argc, char **argv)
             || (strncmp(prefix, in_buff, offset)))
           die("Invalid line syntax");
     }
-    uns osize = actions[mode].function(out_buff, in_buff + offset, isize - offset - !!offset);
+    uns osize = actions[mode].function(out_buff, in_buff + offset, isize - offset - has_offset);
     bwrite(out, out_buff, osize);
     if (actions[mode].add_prefix && prefix)
       bputc(out, '\n');
