@@ -95,6 +95,7 @@ $(o)/lib/binheap-test: $(o)/lib/binheap-test.o $(LIBUCW)
 $(o)/lib/lizard-test: $(o)/lib/lizard-test.o $(LIBUCW)
 $(o)/lib/kmp-test: $(o)/lib/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 $(o)/lib/ipaccess-test: $(o)/lib/ipaccess-test.o $(LIBUCW)
+$(o)/lib/trie-test: $(o)/lib/trie-test.o $(LIBUCW)
 $(o)/lib/basecode: $(o)/lib/basecode.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/lib/,regex.test unicode.test hash-test.test mempool.test stkstring.test \
