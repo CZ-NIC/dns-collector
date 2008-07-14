@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "lib/lib.h"
-#include "lib/fastbuf.h"
+#include "ucw/lib.h"
+#include "ucw/fastbuf.h"
 #include "charset/charconv.h"
 #include "charset/fb-charconv.h"
 

@@ -21,7 +21,7 @@ LIBCHARSET=$(o)/charset/libcharset.pc
 LIBSH=$(o)/sherlock/libsh.pc
 
 # Include makefiles of libraries we wish to use
-include $(s)/lib/Makefile
+include $(s)/ucw/Makefile
 include $(s)/charset/Makefile
 include $(s)/sherlock/Makefile
 

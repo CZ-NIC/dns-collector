@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "lib/lib.h"
+#include "ucw/lib.h"
 #include "charset/stk-charconv.h"
 #include <string.h>
 

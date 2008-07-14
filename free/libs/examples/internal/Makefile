@@ -19,7 +19,7 @@ LIBCHARSET=$(o)/charset/libcharset.pc
 LIBIMAGES=$(o)/images/libimages.pc
 
 # Include makefiles of libraries we wish to use
-include $(s)/lib/Makefile
+include $(s)/ucw/Makefile
 include $(s)/charset/Makefile
 include $(s)/lang/Makefile
 include $(s)/images/Makefile

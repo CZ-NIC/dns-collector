@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "lib/lib.h"
+#include "ucw/lib.h"
 #include "images/images.h"
 #include "images/signature.h"
 #include <stdio.h>

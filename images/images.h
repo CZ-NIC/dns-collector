@@ -10,7 +10,7 @@
 #ifndef _IMAGES_IMAGES_H
 #define _IMAGES_IMAGES_H
 
-#include "lib/bbuf.h"
+#include "ucw/bbuf.h"
 
 struct mempool;
 struct fastbuf;

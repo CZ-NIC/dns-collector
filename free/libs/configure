@@ -7,7 +7,7 @@ use strict;
 
 our $srcdir;
 BEGIN {
-	my $pkgfile = "lib/wildmatch.c";
+	my $pkgfile = "ucw/wildmatch.c";
 	if (!defined ($srcdir = $ENV{"SRCDIR"})) {
 		if (-f $pkgfile) {
 			$srcdir=".";
@@ -17,15 +17,15 @@ BEGIN {
 			die "Don't know how to find myself. Please set SRCDIR manually.";
 		}
 	}
-	require "$srcdir/lib/perl/Configure.pm";
+	require "$srcdir/ucw/perl/Configure.pm";
 	UCW::Configure::import UCW::Configure;
 }
 
 Init($srcdir, "default.cfg");
-Include "lib/default.cfg";
+Include "ucw/default.cfg";
 Log "### Configuring Sherlock Libraries " . Get("SHERLOCK_VERSION") . " with configuration " . Get("CONFIG") . "\n";
 Include Get("CONFIG");
-Include "lib/autoconf.cfg";
+Include "ucw/autoconf.cfg";
 Finish();
 
 Log "\nConfigured, run `make' to build everything.\n";

@@ -9,7 +9,7 @@
 
 #undef LOCAL_DEBUG
 
-#include "lib/lib.h"
+#include "ucw/lib.h"
 #include "images/math.h"
 #include "images/images.h"
 #include "images/signature.h"
@@ -20,7 +20,7 @@
 #define ASORT_KEY_TYPE uns
 #define ASORT_ELT(i) items[i]
 #define ASORT_EXTRA_ARGS , uns *items
-#include "lib/arraysort.h"
+#include "ucw/arraysort.h"
 
 #define EXPLAIN
 #include "images/sig-cmp-gen.h"

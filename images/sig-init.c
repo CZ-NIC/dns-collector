@@ -9,9 +9,9 @@
 
 #undef LOCAL_DEBUG
 
-#include "lib/lib.h"
-#include "lib/fastbuf.h"
-#include "lib/conf.h"
+#include "ucw/lib.h"
+#include "ucw/fastbuf.h"
+#include "ucw/conf.h"
 #include "images/images.h"
 #include "images/math.h"
 #include "images/error.h"

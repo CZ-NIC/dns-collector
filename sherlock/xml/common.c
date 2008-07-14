@@ -13,8 +13,8 @@
 #include "sherlock/xml/xml.h"
 #include "sherlock/xml/dtd.h"
 #include "sherlock/xml/internals.h"
-#include "lib/stkstring.h"
-#include "lib/ff-unicode.h"
+#include "ucw/stkstring.h"
+#include "ucw/ff-unicode.h"
 
 #include <setjmp.h>
 

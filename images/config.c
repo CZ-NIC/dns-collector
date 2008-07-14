@@ -6,8 +6,8 @@
 
 #undef LOCAL_DEBUG
 
-#include "lib/lib.h"
-#include "lib/conf.h"
+#include "ucw/lib.h"
+#include "ucw/conf.h"
 #include "images/images.h"
 #if defined(CONFIG_IMAGES_SIM) || defined(CONFIG_IMAGES_DUP)
 #include "images/signature.h"

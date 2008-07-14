@@ -9,9 +9,9 @@
 #undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
-#include "lib/base224.h"
-#include "lib/mempool.h"
-#include "lib/fastbuf.h"
+#include "ucw/base224.h"
+#include "ucw/mempool.h"
+#include "ucw/fastbuf.h"
 #include "sherlock/object.h"
 #include "images/images.h"
 #include "images/object.h"

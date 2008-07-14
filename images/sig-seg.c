@@ -9,9 +9,9 @@
 
 #undef LOCAL_DEBUG
 
-#include "lib/lib.h"
-#include "lib/conf.h"
-#include "lib/heap.h"
+#include "ucw/lib.h"
+#include "ucw/conf.h"
+#include "ucw/heap.h"
 #include "images/images.h"
 #include "images/signature.h"
 #include "images/math.h"
@@ -95,7 +95,7 @@ prequant_heap_cmp(struct image_sig_region *a, struct image_sig_region *b)
 #define ASORT_KEY_TYPE uns
 #define ASORT_ELT(i) val[i]
 #define ASORT_EXTRA_ARGS , uns *val
-#include "lib/arraysort.h"
+#include "ucw/arraysort.h"
 
 static uns
 prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_region *regions)

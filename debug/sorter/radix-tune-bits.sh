@@ -7,7 +7,7 @@ UCW_PROGNAME="$0"
 
 # Path to Sherlock build directory
 [ -n "$BUILD" ] || BUILD=..
-[ -f "$BUILD/lib/sorter/sorter.h" ] || die "BUILD does not point to Sherlock build directory"
+[ -f "$BUILD/ucw/sorter/sorter.h" ] || die "BUILD does not point to Sherlock build directory"
 
 # Find out sort buffer size
 parse-config 'Sorter{##SortBuffer}'
@@ -31,19 +31,19 @@ TESTS="2,5,8,15"
 # Check various bit widths of the radix sorter
 rm -f tmp/radix-*
 for W in $WIDTHS ; do
-	rm -f $BUILD/obj/lib/sorter/sort-test{,.o}
+	rm -f $BUILD/obj/ucw/sorter/sort-test{,.o}
 	if [ $W = 0 ] ; then
 		log "Compiling with no radix splits"
-		( cd $BUILD && make obj/lib/sorter/sort-test )
+		( cd $BUILD && make obj/ucw/sorter/sort-test )
 		OPT="-d32"
 	else
 		log "Compiling with $W-bit radix splits"
-		( cd $BUILD && make CEXTRA="-DFORCE_RADIX_BITS=$W" obj/lib/sorter/sort-test )
+		( cd $BUILD && make CEXTRA="-DFORCE_RADIX_BITS=$W" obj/ucw/sorter/sort-test )
 		OPT=
 	fi
 	for THR in $THRS ; do
 		log "Testing with RadixThreshold=$THR"
-		$BUILD/obj/lib/sorter/sort-test -SThreads.DefaultStackSize=2M -SSorter.RadixThreshold=$THR -s$SIZE -t$TESTS $OPT -v 2>&1 | tee -a tmp/radix-$W
+		$BUILD/obj/ucw/sorter/sort-test -SThreads.DefaultStackSize=2M -SSorter.RadixThreshold=$THR -s$SIZE -t$TESTS $OPT -v 2>&1 | tee -a tmp/radix-$W
 	done
 done
 

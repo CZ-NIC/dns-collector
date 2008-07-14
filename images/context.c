@@ -9,8 +9,8 @@
 
 #undef LOCAL_DEBUG
 
-#include "lib/lib.h"
-#include "lib/bbuf.h"
+#include "ucw/lib.h"
+#include "ucw/bbuf.h"
 #include "images/images.h"
 #include "images/error.h"
 

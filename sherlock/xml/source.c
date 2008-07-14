@@ -13,8 +13,8 @@
 #include "sherlock/xml/xml.h"
 #include "sherlock/xml/dtd.h"
 #include "sherlock/xml/internals.h"
-#include "lib/unicode.h"
-#include "lib/ff-unicode.h"
+#include "ucw/unicode.h"
+#include "ucw/ff-unicode.h"
 #include "charset/charconv.h"
 #include "charset/fb-charconv.h"
 

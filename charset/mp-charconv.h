@@ -10,7 +10,7 @@
 #ifndef _CHARSET_MP_CHARCONV_H
 #define _CHARSET_MP_CHARCONV_H
 
-#include "lib/mempool.h"
+#include "ucw/mempool.h"
 #include "charset/charconv.h"
 
 byte *mp_strconv(struct mempool *mp, const byte *s, uns cs_in, uns cs_out);

@@ -8,9 +8,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "lib/lib.h"
-#include "lib/unicode.h"
-#include "lib/unaligned.h"
+#include "ucw/lib.h"
+#include "ucw/unicode.h"
+#include "ucw/unaligned.h"
 #include "charset/charconv.h"
 #include "charset/chartable.h"
 

@@ -9,8 +9,8 @@
 
 #undef LOCAL_DEBUG
 
-#include "lib/lib.h"
-#include "lib/mempool.h"
+#include "ucw/lib.h"
+#include "ucw/mempool.h"
 #include "images/images.h"
 #include "images/error.h"
 #include "images/io-main.h"

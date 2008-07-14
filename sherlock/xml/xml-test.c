@@ -10,8 +10,8 @@
 #include "sherlock/sherlock.h"
 #include "sherlock/xml/xml.h"
 #include "sherlock/xml/dtd.h"
-#include "lib/getopt.h"
-#include "lib/fastbuf.h"
+#include "ucw/getopt.h"
+#include "ucw/fastbuf.h"
 
 #include <stdio.h>
 #include <stdlib.h>

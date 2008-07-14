@@ -7,7 +7,7 @@ UCW_PROGNAME="$0"
 
 # Path to Sherlock build directory
 [ -n "$BUILD" ] || BUILD=..
-[ -f "$BUILD/lib/sorter/sorter.h" ] || die "BUILD does not point to Sherlock build directory"
+[ -f "$BUILD/ucw/sorter/sorter.h" ] || die "BUILD does not point to Sherlock build directory"
 
 # Find out sort buffer size
 parse-config 'Sorter{##SortBuffer}'
@@ -43,7 +43,7 @@ while [ $SIZE -gt 262144 ] ; do
 	echo $SIZE >>tmp/radix-sizes
 	for T in $THRS ; do
 		log "Trying size $SIZE with threshold $T"
-		$BUILD/obj/lib/sorter/sort-test -SSorter.RadixThreshold=$T -s$SIZE -t$TEST -v 2>&1 | tee -a tmp/radix-$T
+		$BUILD/obj/ucw/sorter/sort-test -SSorter.RadixThreshold=$T -s$SIZE -t$TEST -v 2>&1 | tee -a tmp/radix-$T
 	done
 	SIZE=$(($SIZE/2))
 done

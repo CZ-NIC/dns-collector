@@ -13,11 +13,11 @@
 #include "sherlock/xml/xml.h"
 #include "sherlock/xml/dtd.h"
 #include "sherlock/xml/internals.h"
-#include "lib/fastbuf.h"
-#include "lib/ff-unicode.h"
-#include "lib/unicode.h"
-#include "lib/chartype.h"
-#include "lib/hashfunc.h"
+#include "ucw/fastbuf.h"
+#include "ucw/ff-unicode.h"
+#include "ucw/unicode.h"
+#include "ucw/chartype.h"
+#include "ucw/hashfunc.h"
 
 #include <setjmp.h>
 
@@ -622,7 +622,7 @@ xml_attrs_init_key(struct xml_attrs_table *t UNUSED, struct xml_attr *a, struct 
 #define HASH_WANT_FIND
 #define HASH_GIVE_ALLOC
 XML_HASH_GIVE_ALLOC
-#include "lib/hashtable.h"
+#include "ucw/hashtable.h"
 
 static void
 xml_parse_attr(struct xml_context *ctx)

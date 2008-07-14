@@ -9,7 +9,7 @@
 
 #undef LOCAL_DEBUG
 
-#include "lib/lib.h"
+#include "ucw/lib.h"
 #include "images/images.h"
 #include "images/signature.h"
 #include "images/math.h"

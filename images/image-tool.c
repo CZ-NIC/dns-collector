@@ -7,8 +7,8 @@
  *	of the GNU General Public License.
  */
 
-#include "lib/lib.h"
-#include "lib/fastbuf.h"
+#include "ucw/lib.h"
+#include "ucw/fastbuf.h"
 #include "images/images.h"
 #include "images/color.h"
 
