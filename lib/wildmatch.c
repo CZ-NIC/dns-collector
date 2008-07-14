@@ -22,7 +22,7 @@
 #define HASH_SKIP 137
 
 struct nfa_state {
-  byte ch;			/* 0 for non-matching state */
+  char ch;			/* 0 for non-matching state */
   byte final;			/* Accepting state */
   u32 match_states;		/* States to go to when input character == ch */
   u32 default_states;		/* States to go to whatever the input is */
@@ -83,7 +83,7 @@ wp_new_state(struct wildpatt *w, u32 set)
       {
 	struct nfa_state *n = &w->nfa[bit];
 	if (n->ch)
-	  d->edge[n->ch] |= n->match_states | 1;
+	  d->edge[(unsigned char)n->ch] |= n->match_states | 1;
 	d->final |= n->final;
 	def_set |= n->default_states;
       }
@@ -99,7 +99,7 @@ wp_new_state(struct wildpatt *w, u32 set)
 }
 
 struct wildpatt *
-wp_compile(const byte *p, struct mempool *pool)
+wp_compile(const char *p, struct mempool *pool)
 {
   struct wildpatt *w;
   uns i;
@@ -148,7 +148,7 @@ wp_prune_cache(struct wildpatt *w)
 }
 
 int
-wp_match(struct wildpatt *w, const byte *s)
+wp_match(struct wildpatt *w, const char *s)
 {
   struct dfa_state *d;
 
@@ -157,12 +157,12 @@ wp_match(struct wildpatt *w, const byte *s)
   d = w->dfa_start;
   while (*s)
     {
-      uintptr_t next = d->edge[*s];
+      uintptr_t next = d->edge[(unsigned char)*s];
       if (next & 1)
 	{
 	  /* Need to lookup/create the destination state */
 	  struct dfa_state *new = wp_new_state(w, next & ~1);
-	  d->edge[*s] = (uintptr_t) new;
+	  d->edge[(unsigned char)*s] = (uintptr_t) new;
 	  d = new;
 	}
       else if (!next)
@@ -175,7 +175,7 @@ wp_match(struct wildpatt *w, const byte *s)
 }
 
 int
-wp_min_size(const byte *p)
+wp_min_size(const char *p)
 {
   int s = 0;
 
