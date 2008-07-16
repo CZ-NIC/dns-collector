@@ -179,12 +179,6 @@ utf8_32_get(const byte *p, uns *uu)
   return utf8_32_get_repl(p, uu, UNI_REPLACEMENT);
 }
 
-#define PUT_UTF8(p,u) p = utf8_put(p, u)
-#define GET_UTF8(p,u) p = (byte*)utf8_get(p, &(u))
-
-#define PUT_UTF8_32(p,u) p = utf8_32_put(p, u)
-#define GET_UTF8_32(p,u) p = (byte*)utf8_32_get(p, &(u))
-
 #define UTF8_SKIP(p) do {				\
     uns c = *p++;					\
     if (c >= 0xc0)					\
