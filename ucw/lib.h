@@ -161,10 +161,6 @@ void xfree(void *);
 void *xmalloc_zero(uns) LIKE_MALLOC;
 char *xstrdup(const char *) LIKE_MALLOC;
 
-/* Content-Type pattern matching and filters */
-
-int match_ct_patt(const char *, const char *);
-
 /* prime.c */
 
 int isprime(uns x);
