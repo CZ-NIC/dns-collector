@@ -9,7 +9,7 @@ LIBUCW_MODS= \
 	threads \
 	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt eltpool \
 	mmap partmap hashfunc \
-	lists slists simple-lists bitsig \
+	slists simple-lists bitsig \
 	log log-file proctitle \
 	conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section \
 	ipaccess \
@@ -35,7 +35,7 @@ LIBUCW_INCLUDES= \
 	lib.h config.h threads.h \
 	mempool.h \
 	arraysort.h \
-	lists.h clists.h slists.h simple-lists.h \
+	clists.h slists.h simple-lists.h \
 	string.h stkstring.h unicode.h chartype.h regex.h \
 	wildmatch.h \
 	unaligned.h prefetch.h \
