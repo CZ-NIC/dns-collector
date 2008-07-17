@@ -3,10 +3,6 @@
 DIRS+=ucw
 LIBUCW=$(o)/ucw/libucw.pc
 
-ifdef CONFIG_UCW_DBTOOL
-PROGS+=$(o)/ucw/db-tool
-endif
-
 PROGS+=$(o)/ucw/basecode
 
 LIBUCW_MODS= \
@@ -24,7 +20,6 @@ LIBUCW_MODS= \
 	wildmatch regex \
 	prime primetable random timer randomkey \
 	bit-ffs bit-fls \
-	db \
 	url \
 	mainloop exitstatus runcmd sighandler \
 	lizard lizard-safe adler32 \
@@ -53,7 +48,6 @@ LIBUCW_INCLUDES= \
 	conf.h getopt.h ipaccess.h \
 	profile.h \
 	fastbuf.h lfs.h ff-unicode.h ff-binary.h \
-	db.h \
 	url.h \
 	mainloop.h \
 	lizard.h \
@@ -83,8 +77,6 @@ $(o)/ucw/libucw.so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 $(o)/ucw/hashfunc.o $(o)/ucw/hashfunc.oo: CFLAGS += -funroll-loops
 $(o)/ucw/lizard.o: CFLAGS += $(COPT2) -funroll-loops
 
-$(o)/ucw/db-test: $(o)/ucw/db-test.o $(LIBUCW)
-$(o)/ucw/db-tool: $(o)/ucw/db-tool.o $(LIBUCW)
 $(o)/ucw/conf-test: $(o)/ucw/conf-test.o $(LIBUCW)
 $(o)/ucw/lfs-test: $(o)/ucw/lfs-test.o $(LIBUCW)
 $(o)/ucw/hash-test: $(o)/ucw/hash-test.o $(LIBUCW)
