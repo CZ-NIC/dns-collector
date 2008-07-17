@@ -60,10 +60,10 @@ enhex(uns x)
 }
 
 int
-url_deescape(const byte *s, byte *d)
+url_deescape(const char *s, char *d)
 {
-  byte *dstart = d;
-  byte *end = d + MAX_URL_SIZE - 10;
+  char *dstart = d;
+  char *end = d + MAX_URL_SIZE - 10;
   while (*s)
     {
       if (d >= end)
@@ -98,11 +98,11 @@ url_deescape(const byte *s, byte *d)
 	  *d++ = val;
 	  s += 3;
 	}
-      else if (*s > 0x20)
+      else if ((byte) *s > 0x20)
 	*d++ = *s++;
       else if (Cspace(*s))
 	{
-	  const byte *s0 = s;
+	  const char *s0 = s;
 	  while (Cspace(*s))
 	    s++;
 	  if (!url_ignore_spaces || !(!*s || d == dstart))
@@ -123,9 +123,9 @@ url_deescape(const byte *s, byte *d)
 }
 
 int
-url_enescape(const byte *s, byte *d)
+url_enescape(const char *s, char *d)
 {
-  byte *end = d + MAX_URL_SIZE - 10;
+  char *end = d + MAX_URL_SIZE - 10;
   unsigned int c;
 
   while (c = *s)
@@ -141,7 +141,7 @@ url_enescape(const byte *s, byte *d)
 	*d++ = *s++;
       else
 	{
-	  uns val = (*s < NCC_MAX) ? NCC_CHARS[*s] : *s;
+	  uns val = ((byte)*s < NCC_MAX) ? NCC_CHARS[(byte)*s] : *s;
 	  *d++ = '%';
 	  *d++ = enhex(val >> 4);
 	  *d++ = enhex(val & 0x0f);
@@ -153,22 +153,23 @@ url_enescape(const byte *s, byte *d)
 }
 
 int
-url_enescape_friendly(const byte *src, byte *dest)
+url_enescape_friendly(const char *src, char *dest)
 {
-  byte *end = dest + MAX_URL_SIZE - 10;
-  while (*src)
+  char *end = dest + MAX_URL_SIZE - 10;
+  const byte *srcb = src;
+  while (*srcb)
     {
       if (dest >= end)
 	return URL_ERR_TOO_LONG;
-      if (*src < NCC_MAX)
-	*dest++ = NCC_CHARS[*src++];
-      else if (*src >= 0x20 && *src < 0x7f)
-	*dest++ = *src++;
+      if (*srcb < NCC_MAX)
+	*dest++ = NCC_CHARS[*srcb++];
+      else if (*srcb >= 0x20 && *srcb < 0x7f)
+	*dest++ = *srcb++;
       else
 	{
 	  *dest++ = '%';
-	  *dest++ = enhex(*src >> 4);
-	  *dest++ = enhex(*src++ & 0x0f);
+	  *dest++ = enhex(*srcb >> 4);
+	  *dest++ = enhex(*srcb++ & 0x0f);
 	}
     }
   *dest = 0;
@@ -177,11 +178,11 @@ url_enescape_friendly(const byte *src, byte *dest)
 
 /* Split an URL (several parts may be copied to the destination buffer) */
 
-byte *url_proto_names[URL_PROTO_MAX] = URL_PNAMES;
+char *url_proto_names[URL_PROTO_MAX] = URL_PNAMES;
 static int url_proto_path_flags[URL_PROTO_MAX] = URL_PATH_FLAGS;
 
 uns
-identify_protocol(const byte *p)
+identify_protocol(const char *p)
 {
   uns i;
 
@@ -192,7 +193,7 @@ identify_protocol(const byte *p)
 }
 
 int
-url_split(byte *s, struct url *u, byte *d)
+url_split(char *s, struct url *u, char *d)
 {
   bzero(u, sizeof(struct url));
   u->port = ~0;
@@ -200,7 +201,7 @@ url_split(byte *s, struct url *u, byte *d)
 
   if (s[0] != '/')			/* Seek for "protocol:" */
     {
-      byte *p = s;
+      char *p = s;
       while (*p && Calnum(*p))
 	p++;
       if (p != s && *p == ':')
@@ -227,8 +228,8 @@ url_split(byte *s, struct url *u, byte *d)
     {
       if (s[1] == '/')			/* Host spec */
 	{
-	  byte *q, *e;
-	  byte *at = NULL;
+	  char *q, *e;
+	  char *at = NULL;
 	  char *ep;
 
 	  s += 2;
@@ -285,11 +286,11 @@ static uns std_ports[] = URL_DEFPORTS;	/* Default port numbers */
 static int
 relpath_merge(struct url *u, struct url *b)
 {
-  byte *a = u->rest;
-  byte *o = b->rest;
-  byte *d = u->buf;
-  byte *e = u->bufend;
-  byte *p;
+  char *a = u->rest;
+  char *o = b->rest;
+  char *d = u->buf;
+  char *e = u->bufend;
+  char *p;
 
   if (a[0] == '/')			/* Absolute path => OK */
     return 0;
@@ -452,7 +453,7 @@ url_normalize(struct url *u, struct url *b)
 /* Name canonicalization */
 
 static void
-lowercase(byte *b)
+lowercase(char *b)
 {
   if (b)
     while (*b)
@@ -464,9 +465,9 @@ lowercase(byte *b)
 }
 
 static void
-kill_end_dot(byte *b)
+kill_end_dot(char *b)
 {
-  byte *k;
+  char *k;
 
   if (b)
     {
@@ -493,8 +494,8 @@ url_canonicalize(struct url *u)
 
 /* Pack a broken-down URL */
 
-static byte *
-append(byte *d, const byte *s, byte *e)
+static char *
+append(char *d, const char *s, char *e)
 {
   if (d)
     while (*s)
@@ -507,9 +508,9 @@ append(byte *d, const byte *s, byte *e)
 }
 
 int
-url_pack(struct url *u, byte *d)
+url_pack(struct url *u, char *d)
 {
-  byte *e = d + MAX_URL_SIZE - 10;
+  char *e = d + MAX_URL_SIZE - 10;
 
   if (u->protocol)
     {
@@ -573,7 +574,7 @@ url_error(uns err)
 /* Standard cookbook recipes */
 
 int
-url_canon_split_rel(const byte *u, byte *buf1, byte *buf2, struct url *url, struct url *base)
+url_canon_split_rel(const char *u, char *buf1, char *buf2, struct url *url, struct url *base)
 {
   int err;
 
@@ -587,9 +588,9 @@ url_canon_split_rel(const byte *u, byte *buf1, byte *buf2, struct url *url, stru
 }
 
 int
-url_auto_canonicalize_rel(const byte *src, byte *dst, struct url *base)
+url_auto_canonicalize_rel(const char *src, char *dst, struct url *base)
 {
-  byte buf1[MAX_URL_SIZE], buf2[MAX_URL_SIZE], buf3[MAX_URL_SIZE];
+  char buf1[MAX_URL_SIZE], buf2[MAX_URL_SIZE], buf3[MAX_URL_SIZE];
   int err;
   struct url ur;
 
@@ -667,14 +668,14 @@ int main(int argc, char **argv)
 #endif
 
 struct component {
-	const byte *start;
+	const char *start;
 	int length;
 	uns count;
 	u32 hash;
 };
 
 static inline u32
-hashf(const byte *start, int length)
+hashf(const char *start, int length)
 {
 	u32 hf = length;
 	while (length-- > 0)
@@ -704,11 +705,11 @@ repeat_count(struct component *comp, uns count, uns len)
 }
 
 int
-url_has_repeated_component(const byte *url)
+url_has_repeated_component(const char *url)
 {
 	struct component *comp;
 	uns comps, comp_len, rep_prefix, hash_size, *hash, *next;
-	const byte *c;
+	const char *c;
 	uns i, j, k;
 
 	for (comps=0, c=url; c; comps++)

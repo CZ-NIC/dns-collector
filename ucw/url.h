@@ -29,36 +29,36 @@
 
 /* Remove/Introduce '%' escapes */
 
-int url_deescape(const byte *s, byte *d);
-int url_enescape(const byte *s, byte *d);
-int url_enescape_friendly(const byte *src, byte *dest);	// for cards.c only
+int url_deescape(const char *s, char *d);
+int url_enescape(const char *s, char *d);
+int url_enescape_friendly(const char *src, char *dest);	// for cards.c only
 
 /* URL splitting and normalization */
 
 struct url {
-  byte *protocol;
+  char *protocol;
   uns protoid;
-  byte *user;
-  byte *pass;
-  byte *host;
+  char *user;
+  char *pass;
+  char *host;
   uns port;				/* ~0 if unspec */
-  byte *rest;
-  byte *buf, *bufend;
+  char *rest;
+  char *buf, *bufend;
 };
 
-int url_split(byte *s, struct url *u, byte *d);
+int url_split(char *s, struct url *u, char *d);
 int url_normalize(struct url *u, struct url *b);
 int url_canonicalize(struct url *u);
-int url_pack(struct url *u, byte *d);
-int url_canon_split_rel(const byte *url, byte *buf1, byte *buf2, struct url *u, struct url *base);
-int url_auto_canonicalize_rel(const byte *src, byte *dst, struct url *base);
-uns identify_protocol(const byte *p);
-int url_has_repeated_component(const byte *url);
+int url_pack(struct url *u, char *d);
+int url_canon_split_rel(const char *url, char *buf1, char *buf2, struct url *u, struct url *base);
+int url_auto_canonicalize_rel(const char *src, char *dst, struct url *base);
+uns identify_protocol(const char *p);
+int url_has_repeated_component(const char *url);
 
-static inline int url_canon_split(const byte *url, byte *buf1, byte *buf2, struct url *u)
+static inline int url_canon_split(const char *url, char *buf1, char *buf2, struct url *u)
 { return url_canon_split_rel(url, buf1, buf2, u, NULL); }
 
-static inline int url_auto_canonicalize(const byte *src, byte *dst)
+static inline int url_auto_canonicalize(const char *src, char *dst)
 { return url_auto_canonicalize_rel(src, dst, NULL); }
 
 /* Error codes */
@@ -85,6 +85,6 @@ char *url_error(uns);
 #define URL_DEFPORTS { ~0, 80, 21, 0 }
 #define URL_PATH_FLAGS { 0, 1, 1, 1 }
 
-extern byte *url_proto_names[];
+extern char *url_proto_names[];
 
 #endif
