@@ -1,7 +1,8 @@
 /*
  *	UCW Library -- Temporary Fastbufs
  *
- *	(c) 2002--2007 Martin Mares <mj@ucw.cz>
+ *	(c) 2002--2008 Martin Mares <mj@ucw.cz>
+ *	(c) 2008 Michal Vaner <vorner@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -11,6 +12,7 @@
 #include "ucw/conf.h"
 #include "ucw/fastbuf.h"
 #include "ucw/threads.h"
+#include "ucw/lfs.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -19,11 +21,13 @@
 #include <sys/time.h>
 #include <errno.h>
 
-static char *temp_prefix;
+static char *temp_prefix = "temp";
+static char *temp_dir;
 static int public_dir = 1;
 
 static struct cf_section temp_config = {
   CF_ITEMS {
+    CF_STRING("Dir", &temp_dir),
     CF_STRING("Prefix", &temp_prefix),
     CF_INT("PublicDir", &public_dir),
     CF_END
@@ -38,30 +42,19 @@ static void CONSTRUCTOR temp_global_init(void)
 void
 temp_file_name(char *name_buf, int *open_flags)
 {
-  char *prefix;
-  int free_prefix = 0;
-  if (temp_prefix)
-    prefix = temp_prefix;
-  else
-    {
-      char *env = getenv("TMPDIR");
-      if (env)
-        {
-          prefix = xmalloc(strlen(env) + 6);
-          sprintf(prefix, "%s/temp", env);
-          free_prefix = 1;
-        }
-      else
-        prefix = "/tmp/temp";
-    }
+  char *dir = temp_dir;
+  if (!dir && !(dir = getenv("TMPDIR")))
+    dir = "/tmp";
+
+  int len;
   if (public_dir)
     {
       struct timeval tv;
       if (gettimeofday(&tv, NULL))
-        die("Could not generate temp file name: %m");
-      sprintf(name_buf, "%s-%u", prefix, (uns) tv.tv_usec);
+	die("gettimeofday() failed: %m");
+      len = snprintf(name_buf, TEMP_FILE_NAME_LEN, "%s/%s%u", dir, temp_prefix, (uns) tv.tv_usec);
       if (open_flags)
-        *open_flags = O_EXCL;
+	*open_flags = O_EXCL;
     }
   else
     {
@@ -69,14 +62,13 @@ temp_file_name(char *name_buf, int *open_flags)
       int cnt = ++ctx->temp_counter;
       int pid = getpid();
       if (ctx->thread_id == pid)
-        sprintf(name_buf, "%s%d-%d", temp_prefix, pid, cnt);
+	len = snprintf(name_buf, TEMP_FILE_NAME_LEN, "%s/%s%d-%d", dir, temp_prefix, pid, cnt);
       else
-        sprintf(name_buf, "%s%d-%d-%d", temp_prefix, pid, ctx->thread_id, cnt);
+	len = snprintf(name_buf, TEMP_FILE_NAME_LEN, "%s/%s%d-%d-%d", dir, temp_prefix, pid, ctx->thread_id, cnt);
       if (open_flags)
-        *open_flags = 0;
+	*open_flags = 0;
     }
-  if (free_prefix)
-    xfree(prefix);
+  ASSERT(len < TEMP_FILE_NAME_LEN);
 }
 
 struct fastbuf *
@@ -95,8 +87,8 @@ open_tmp(char *name_buf, int open_flags, int mode)
   int create_flags, fd, retry = 10;
   do
     {
-      temp_file_name(name, &create_mode);
-      fd = ucw_open(name, flags | create_mode, mode);
+      temp_file_name(name_buf, &create_flags);
+      fd = ucw_open(name_buf, open_flags | create_flags, mode);
     }
   while (fd < 0 && errno == EEXIST && retry --);
   if (fd < 0)
