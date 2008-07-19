@@ -11,8 +11,6 @@
 
 #include <stdlib.h>
 
-#ifndef DEBUG_DMALLOC
-
 void *
 xrealloc(void *old, uns size)
 {
@@ -22,5 +20,3 @@ xrealloc(void *old, uns size)
     die("Cannot reallocate %d bytes of memory", size);
   return x;
 }
-
-#endif
