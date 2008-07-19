@@ -134,9 +134,9 @@ bopen_file_try(const char *name, int mode, struct fb_params *params)
 }
 
 struct fastbuf *
-bopen_fd(int fd, struct fb_params *params)
+bopen_fd_name(int fd, struct fb_params *params, const char *name)
 {
-  return bopen_fd_internal(fd, params ? : &fbpar_def, ~0U, NULL);
+  return bopen_fd_internal(fd, params ? : &fbpar_def, ~0U, name);
 }
 
 /* Function for use by individual file back-ends */

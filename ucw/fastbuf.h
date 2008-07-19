@@ -97,7 +97,11 @@ extern struct fb_params fbpar_def;
 struct fastbuf *bopen_file(const char *name, int mode, struct fb_params *params);	/* Use params==NULL for defaults */
 struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *params);
 struct fastbuf *bopen_tmp_file(struct fb_params *params);
-struct fastbuf *bopen_fd(int fd, struct fb_params *params);
+struct fastbuf *bopen_fd_name(int fd, struct fb_params *params, const char *name);
+static inline struct fastbuf *bopen_fd(int fd, struct fb_params *params)
+{
+  return bopen_fd_name(fd, params, NULL);
+}
 
 /* FastIO on standard files (shortcuts for FB_STD) */
 
