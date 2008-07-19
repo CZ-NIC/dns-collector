@@ -61,7 +61,7 @@ sorter_presort(struct sort_context *ctx, struct sort_bucket *in, struct sort_buc
 }
 
 static struct sort_bucket *
-sbuck_join_to(struct sort_bucket *b, sh_off_t *sizep)
+sbuck_join_to(struct sort_bucket *b, ucw_off_t *sizep)
 {
   if (sorter_debug & SORT_DEBUG_NO_JOIN)
     return NULL;
@@ -74,8 +74,8 @@ sbuck_join_to(struct sort_bucket *b, sh_off_t *sizep)
   return out;
 }
 
-static sh_off_t
-sbuck_ins_or_join(struct sort_bucket *b, cnode *list_pos, struct sort_bucket *join, sh_off_t join_size)
+static ucw_off_t
+sbuck_ins_or_join(struct sort_bucket *b, cnode *list_pos, struct sort_bucket *join, ucw_off_t join_size)
 {
   if (join && join->runs >= 2)
     {
@@ -124,7 +124,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 {
   struct sort_bucket *ins[3] = { NULL }, *outs[3] = { NULL };
   cnode *list_pos = b->n.prev;
-  sh_off_t join_size;
+  ucw_off_t join_size;
   struct sort_bucket *join = sbuck_join_to(b, &join_size);
 
   if (!(sorter_debug & SORT_DEBUG_NO_PRESORT) || (b->flags & SBF_CUSTOM_PRESORT))
@@ -135,7 +135,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
       if (!sorter_presort(ctx, b, ins[0], join ? : ins[0]))
 	{
 	  sorter_stop_timer(ctx, &ctx->total_pre_time);
-	  sh_off_t size = sbuck_ins_or_join(ins[0], list_pos, join, join_size);
+	  ucw_off_t size = sbuck_ins_or_join(ins[0], list_pos, join, join_size);
 	  SORT_XTRACE(((b->flags & SBF_SOURCE) ? 1 : 3), "Sorted in memory (%s, %dMB/s)", stk_fsize(size), sorter_speed(ctx, size));
 	  sbuck_drop(b);
 	  return;
@@ -169,7 +169,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
 	outs[0] = join;
 	outs[1] = NULL;
 	ctx->twoway_merge(ctx, ins, outs);
-	sh_off_t size = sbuck_ins_or_join(NULL, NULL, join, join_size);
+	ucw_off_t size = sbuck_ins_or_join(NULL, NULL, join, join_size);
 	sorter_stop_timer(ctx, &ctx->total_ext_time);
 	SORT_TRACE("Mergesort pass %d (final run, %s, %dMB/s)", pass, stk_fsize(size), sorter_speed(ctx, size));
 	sbuck_drop(ins[0]);
@@ -199,7 +199,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 {
   clist parts;
   cnode *list_pos = b->n.prev;
-  sh_off_t join_size;
+  ucw_off_t join_size;
   struct sort_bucket *join = sbuck_join_to(b, &join_size);
   uns trace_level = (b->flags & SBF_SOURCE) ? 1 : 3;
 
@@ -231,7 +231,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 
   if (part_cnt <= 1)
     {
-      sh_off_t size = sbuck_ins_or_join(clist_head(&parts), list_pos, (part_cnt ? NULL : join), join_size);
+      ucw_off_t size = sbuck_ins_or_join(clist_head(&parts), list_pos, (part_cnt ? NULL : join), join_size);
       SORT_XTRACE(trace_level, "Sorted in memory (%s, %dMB/s)", stk_fsize(size), sorter_speed(ctx, size));
       return;
     }
@@ -267,7 +267,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 
       if (clist_empty(&parts))
 	{
-	  sh_off_t size = sbuck_ins_or_join((join ? NULL : out), list_pos, join, join_size);
+	  ucw_off_t size = sbuck_ins_or_join((join ? NULL : out), list_pos, join, join_size);
 	  SORT_TRACE("Multi-way merge completed (%d ways, %s, %dMB/s)", n, stk_fsize(size), sorter_speed(ctx, size));
 	  return;
 	}

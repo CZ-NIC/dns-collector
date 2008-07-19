@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 
 #ifdef COPY
   msg(L_INFO, "Creating input file");
-  int in_fd = sh_open("tmp/ft-in", O_RDWR | O_CREAT | O_TRUNC | DIRECT, 0666);
+  int in_fd = ucw_open("tmp/ft-in", O_RDWR | O_CREAT | O_TRUNC | DIRECT, 0666);
   ASSERT(in_fd >= 0);
   ASSERT(!(total_size % xbufsize));
   P_INIT;
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
   for (uns i=0; i<files; i++)
     {
       sprintf(name[i], "tmp/ft-%d", i);
-      fd[i] = sh_open(name[i], O_RDWR | O_CREAT | O_TRUNC | DIRECT, 0666);
+      fd[i] = ucw_open(name[i], O_RDWR | O_CREAT | O_TRUNC | DIRECT, 0666);
       if (fd[i] < 0)
 	die("Cannot create %s: %m", name[i]);
       buf[i] = big_alloc(bufsize);

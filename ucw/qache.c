@@ -331,7 +331,7 @@ qache_create(struct qache *q, struct qache_params *par)
   bwrite(fb, &h, sizeof(h));
 
   /* Entry #0: heads of all lists */
-  ASSERT(btell(fb) == (sh_off_t)h.entry_table_start);
+  ASSERT(btell(fb) == (ucw_off_t)h.entry_table_start);
   struct qache_entry ent;
   bzero(&ent, sizeof(ent));
   ent.first_data_block = h.first_data_block;
@@ -349,18 +349,18 @@ qache_create(struct qache *q, struct qache_params *par)
     }
 
   /* The hash table */
-  ASSERT(btell(fb) == (sh_off_t)h.hash_table_start);
+  ASSERT(btell(fb) == (ucw_off_t)h.hash_table_start);
   for (uns i=0; i<h.hash_size; i++)
     bputl(fb, 0);
 
   /* The next pointers */
-  ASSERT(btell(fb) == (sh_off_t)h.next_table_start);
+  ASSERT(btell(fb) == (ucw_off_t)h.next_table_start);
   for (uns i=0; i<h.num_blocks; i++)
     bputl(fb, (i < h.first_data_block || i == h.num_blocks-1) ? 0 : i+1);
 
   /* Padding */
-  ASSERT(btell(fb) <= (sh_off_t)(h.first_data_block << h.block_shift));
-  while (btell(fb) < (sh_off_t)(h.first_data_block << h.block_shift))
+  ASSERT(btell(fb) <= (ucw_off_t)(h.first_data_block << h.block_shift));
+  while (btell(fb) < (ucw_off_t)(h.first_data_block << h.block_shift))
     bputc(fb, 0);
 
   /* Data blocks */
@@ -368,7 +368,7 @@ qache_create(struct qache *q, struct qache_params *par)
     for (uns j=0; j<h.block_size; j+=4)
       bputl(fb, 0);
 
-  ASSERT(btell(fb) == (sh_off_t)par->cache_size);
+  ASSERT(btell(fb) == (ucw_off_t)par->cache_size);
   bclose(fb);
   msg(L_INFO, "Cache %s: created (%d bytes, %d slots, %d buckets)", q->file_name, par->cache_size, h.max_entries, h.hash_size);
 

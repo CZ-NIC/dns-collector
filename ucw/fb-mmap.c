@@ -39,9 +39,9 @@ struct fb_mmap {
   struct fastbuf fb;
   int fd;
   int is_temp_file;
-  sh_off_t file_size;
-  sh_off_t file_extend;
-  sh_off_t window_pos;
+  ucw_off_t file_size;
+  ucw_off_t file_extend;
+  ucw_off_t window_pos;
   uns window_size;
   int mode;
 };
@@ -51,8 +51,8 @@ static void
 bfmm_map_window(struct fastbuf *f)
 {
   struct fb_mmap *F = FB_MMAP(f);
-  sh_off_t pos0 = f->pos & ~(sh_off_t)(CPU_PAGE_SIZE-1);
-  int l = MIN((sh_off_t)mmap_window_size, F->file_extend - pos0);
+  ucw_off_t pos0 = f->pos & ~(ucw_off_t)(CPU_PAGE_SIZE-1);
+  int l = MIN((ucw_off_t)mmap_window_size, F->file_extend - pos0);
   uns ll = ALIGN_TO(l, CPU_PAGE_SIZE);
   int prot = ((F->mode & O_ACCMODE) == O_RDONLY) ? PROT_READ : (PROT_READ | PROT_WRITE);
 
@@ -64,9 +64,9 @@ bfmm_map_window(struct fastbuf *f)
     }
   F->window_size = ll;
   if (!f->buffer)
-    f->buffer = sh_mmap(NULL, ll, prot, MAP_SHARED, F->fd, pos0);
+    f->buffer = ucw_mmap(NULL, ll, prot, MAP_SHARED, F->fd, pos0);
   else
-    f->buffer = sh_mmap(f->buffer, ll, prot, MAP_SHARED | MAP_FIXED, F->fd, pos0);
+    f->buffer = ucw_mmap(f->buffer, ll, prot, MAP_SHARED | MAP_FIXED, F->fd, pos0);
   if (f->buffer == (byte *) MAP_FAILED)
     die("mmap(%s): %m", f->name);
 #ifdef MADV_SEQUENTIAL
@@ -101,7 +101,7 @@ static void
 bfmm_spout(struct fastbuf *f)
 {
   struct fb_mmap *F = FB_MMAP(f);
-  sh_off_t end = f->pos + (f->bptr - f->bstop);
+  ucw_off_t end = f->pos + (f->bptr - f->bstop);
 
   DBG("Spout <- %p %p %p %p", f->buffer, f->bptr, f->bstop, f->bufend);
   if (end > F->file_size)
@@ -111,8 +111,8 @@ bfmm_spout(struct fastbuf *f)
   f->pos = end;
   if (f->pos >= F->file_extend)
     {
-      F->file_extend = ALIGN_TO(F->file_extend + mmap_extend_size, (sh_off_t)CPU_PAGE_SIZE);
-      if (sh_ftruncate(F->fd, F->file_extend))
+      F->file_extend = ALIGN_TO(F->file_extend + mmap_extend_size, (ucw_off_t)CPU_PAGE_SIZE);
+      if (ucw_ftruncate(F->fd, F->file_extend))
 	die("ftruncate(%s): %m", f->name);
     }
   bfmm_map_window(f);
@@ -121,7 +121,7 @@ bfmm_spout(struct fastbuf *f)
 }
 
 static int
-bfmm_seek(struct fastbuf *f, sh_off_t pos, int whence)
+bfmm_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 {
   if (whence == SEEK_END)
     pos += FB_MMAP(f)->file_size;
@@ -142,7 +142,7 @@ bfmm_close(struct fastbuf *f)
   if (f->buffer)
     munmap(f->buffer, F->window_size);
   if (F->file_extend > F->file_size &&
-      sh_ftruncate(F->fd, F->file_size))
+      ucw_ftruncate(F->fd, F->file_size))
     die("ftruncate(%s): %m", f->name);
   bclose_file_helper(f, F->fd, F->is_temp_file);
   xfree(f);
@@ -175,7 +175,7 @@ bfmmopen_internal(int fd, const char *name, uns mode)
   f->name = (byte *)(F+1);
   memcpy(f->name, name, namelen);
   F->fd = fd;
-  F->file_extend = F->file_size = sh_seek(fd, 0, SEEK_END);
+  F->file_extend = F->file_size = ucw_seek(fd, 0, SEEK_END);
   if (F->file_size < 0)
     die("seek(%s): %m", name);
   if (mode & O_APPEND)

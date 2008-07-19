@@ -95,8 +95,8 @@ open_tmp(char *name_buf, int open_flags, int mode)
   int create_flags, fd, retry = 10;
   do
     {
-      temp_file_name(name_buf, &create_flags);
-      fd = open(name_buf, open_flags | create_flags, mode);
+      temp_file_name(name, &create_mode);
+      fd = ucw_open(name, flags | create_mode, mode);
     }
   while (fd < 0 && errno == EEXIST && retry --);
   if (fd < 0)

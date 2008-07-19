@@ -117,7 +117,7 @@ fbatomic_open(const char *name, struct fastbuf *master, uns bufsize, int record_
   else
     {
       af = xmalloc_zero(sizeof(*af) + strlen(name));
-      if ((af->fd = sh_open(name, O_WRONLY | O_CREAT | O_TRUNC | O_APPEND, 0666)) < 0)
+      if ((af->fd = ucw_open(name, O_WRONLY | O_CREAT | O_TRUNC | O_APPEND, 0666)) < 0)
 	die("Cannot create %s: %m", name);
       af->use_count = 1;
       af->record_len = record_len;

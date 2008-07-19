@@ -52,13 +52,13 @@ unhandle_signal(int signum)
   ucwlib_unlock();
 }
 
-sh_sighandler_t
-set_signal_handler(int signum, sh_sighandler_t new)
+ucw_sighandler_t
+set_signal_handler(int signum, ucw_sighandler_t new)
 {
   struct ucwlib_context *ctx = ucwlib_thread_context();
   if (!ctx->signal_handlers)
-    ctx->signal_handlers = xmalloc_zero(NSIG * sizeof(sh_sighandler_t));
-  sh_sighandler_t old = ctx->signal_handlers[signum];
+    ctx->signal_handlers = xmalloc_zero(NSIG * sizeof(ucw_sighandler_t));
+  ucw_sighandler_t old = ctx->signal_handlers[signum];
   ctx->signal_handlers[signum] = new;
   return old;
 }

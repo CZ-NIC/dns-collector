@@ -24,7 +24,7 @@
 #include <sys/time.h>
 
 timestamp_t main_now;
-sh_time_t main_now_seconds;
+ucw_time_t main_now_seconds;
 uns main_shutdown;
 
 clist main_timer_list, main_file_list, main_hook_list, main_process_list;

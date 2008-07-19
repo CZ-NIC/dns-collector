@@ -20,7 +20,7 @@ struct memstream {
 
 struct msblock {
   struct msblock *next;
-  sh_off_t pos;
+  ucw_off_t pos;
   unsigned size;
   byte data[0];
 };
@@ -96,7 +96,7 @@ fbmem_spout(struct fastbuf *f)
 }
 
 static int
-fbmem_seek(struct fastbuf *f, sh_off_t pos, int whence)
+fbmem_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 {
   struct memstream *m = FB_MEM(f)->stream;
   struct msblock *b;
@@ -110,7 +110,7 @@ fbmem_seek(struct fastbuf *f, sh_off_t pos, int whence)
   /* Yes, this is linear. But considering the average number of buckets, it doesn't matter. */
   for (b=m->first; b; b=b->next)
     {
-      if (pos <= b->pos + (sh_off_t)b->size) /* <=, because we need to be able to seek just after file end */
+      if (pos <= b->pos + (ucw_off_t)b->size) /* <=, because we need to be able to seek just after file end */
 	{
 	  f->buffer = b->data;
 	  f->bptr = b->data + (pos - b->pos);

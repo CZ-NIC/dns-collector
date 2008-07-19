@@ -45,7 +45,7 @@ int main(void)
 	for (i=0; i<TESTS; i++)
 	{
 		uns idx = random()%COUNT;
-		sh_off_t ofs = idx*BLOCK;
+		ucw_off_t ofs = idx*BLOCK;
 		bseek(b, ofs, SEEK_SET);
 		bread(b, block, BLOCK);
 		if (block[17] != (idx & 0xff))

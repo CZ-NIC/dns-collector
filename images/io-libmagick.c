@@ -82,7 +82,7 @@ libmagick_read_header(struct image_io *io)
   DBG("libmagick_read_header()");
 
   /* Read entire stream */
-  sh_off_t file_size = bfilesize(io->fastbuf) - btell(io->fastbuf);
+  ucw_off_t file_size = bfilesize(io->fastbuf) - btell(io->fastbuf);
   if (unlikely(file_size > MAX_FILE_SIZE))
     {
       IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Too long stream.");

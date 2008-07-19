@@ -20,10 +20,10 @@ fbbuf_refill(struct fastbuf *f UNUSED)
 }
 
 static int
-fbbuf_seek(struct fastbuf *f, sh_off_t pos, int whence)
+fbbuf_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 {
   /* Somebody might want to seek to the end of buffer, try to be nice to him. */
-  sh_off_t len = f->bufend - f->buffer;
+  ucw_off_t len = f->bufend - f->buffer;
   if (whence == SEEK_END)
     pos += len;
   ASSERT(pos >= 0 && pos <= len);

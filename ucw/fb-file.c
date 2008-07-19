@@ -22,7 +22,7 @@ struct fb_file {
   int fd;				/* File descriptor */
   int is_temp_file;
   int keep_back_buf;			/* Optimize for backwards reading */
-  sh_off_t wpos;			/* Real file position */
+  ucw_off_t wpos;			/* Real file position */
   uns wlen;				/* Window size */
 };
 #define FB_FILE(f) ((struct fb_file *)(f)->is_fastbuf)
@@ -37,9 +37,9 @@ bfd_refill(struct fastbuf *f)
   /* Forward or no seek */
   if (F->wpos <= f->pos)
     {
-      sh_off_t diff = f->pos - F->wpos;
+      ucw_off_t diff = f->pos - F->wpos;
       /* Formula for long forward seeks (prefer lseek()) */
-      if (diff > ((sh_off_t)blen << 2))
+      if (diff > ((ucw_off_t)blen << 2))
         {
 long_seek:
 	  f->bptr = f->buffer + back;
@@ -82,11 +82,11 @@ long_seek:
   /* Backwards seek */
   else
     {
-      sh_off_t diff = F->wpos - f->pos;
+      ucw_off_t diff = F->wpos - f->pos;
       /* Formula for long backwards seeks (keep smaller backbuffer than for shorter seeks ) */
-      if (diff > ((sh_off_t)blen << 1))
+      if (diff > ((ucw_off_t)blen << 1))
         {
-	  if ((sh_off_t)back > f->pos)
+	  if ((ucw_off_t)back > f->pos)
 	    back = f->pos;
 	  goto long_seek;
 	}
@@ -99,7 +99,7 @@ long_seek:
 	  return 1;
 	}
       back *= 3;
-      if ((sh_off_t)back > f->pos)
+      if ((ucw_off_t)back > f->pos)
 	back = f->pos;
       f->bptr = f->buffer + back;
       read_len = blen;
@@ -113,7 +113,7 @@ long_seek:
 seek:
       /* Do lseek() */
       F->wpos = f->pos + (f->buffer - f->bptr);
-      if (sh_seek(F->fd, F->wpos, SEEK_SET) < 0)
+      if (ucw_seek(F->fd, F->wpos, SEEK_SET) < 0)
 	die("Error seeking %s: %m", f->name);
     }
   /* Read (part of) buffer */
@@ -148,7 +148,7 @@ static void
 bfd_spout(struct fastbuf *f)
 {
   /* Do delayed lseek() if needed */
-  if (FB_FILE(f)->wpos != f->pos && sh_seek(FB_FILE(f)->fd, f->pos, SEEK_SET) < 0)
+  if (FB_FILE(f)->wpos != f->pos && ucw_seek(FB_FILE(f)->fd, f->pos, SEEK_SET) < 0)
     die("Error seeking %s: %m", f->name);
 
   int l = f->bptr - f->buffer;
@@ -169,10 +169,10 @@ bfd_spout(struct fastbuf *f)
 }
 
 static int
-bfd_seek(struct fastbuf *f, sh_off_t pos, int whence)
+bfd_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 {
   /* Delay the seek for the next refill() or spout() call (if whence != SEEK_END). */
-  sh_off_t l;
+  ucw_off_t l;
   switch (whence)
     {
       case SEEK_SET:
@@ -185,7 +185,7 @@ bfd_seek(struct fastbuf *f, sh_off_t pos, int whence)
 	f->pos = l;
 	return 1;
       case SEEK_END:
-	l = sh_seek(FB_FILE(f)->fd, pos, SEEK_END);
+	l = ucw_seek(FB_FILE(f)->fd, pos, SEEK_END);
 	if (l < 0)
 	  return 0;
 	FB_FILE(f)->wpos = f->pos = l;

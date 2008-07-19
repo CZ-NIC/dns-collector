@@ -114,7 +114,7 @@ struct sort_bucket *sbuck_new(struct sort_context *ctx);
 void sbuck_drop(struct sort_bucket *b);
 int sbuck_have(struct sort_bucket *b);
 int sbuck_has_file(struct sort_bucket *b);
-sh_off_t sbuck_size(struct sort_bucket *b);
+ucw_off_t sbuck_size(struct sort_bucket *b);
 struct fastbuf *sbuck_read(struct sort_bucket *b);
 struct fastbuf *sbuck_write(struct sort_bucket *b);
 void sbuck_swap_out(struct sort_bucket *b);

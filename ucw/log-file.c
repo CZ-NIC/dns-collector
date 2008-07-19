@@ -40,7 +40,7 @@ do_log_switch(struct tm *tm)
   if (strcmp(name, log_filename))
     {
       strcpy(log_filename, name);
-      fd = sh_open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
+      fd = ucw_open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
       if (fd < 0)
 	die("Unable to open log file %s: %m", name);
       dup2(fd, 2);

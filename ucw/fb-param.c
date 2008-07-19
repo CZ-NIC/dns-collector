@@ -108,7 +108,7 @@ bopen_file_internal(const char *name, int mode, struct fb_params *params, int tr
 #endif
   if (params->type == FB_MMAP && (mode & O_ACCMODE) == O_WRONLY)
     mode = (mode & ~O_ACCMODE) | O_RDWR;
-  int fd = sh_open(name, mode, 0666);
+  int fd = ucw_open(name, mode, 0666);
   if (fd < 0)
     if (try)
       return NULL;

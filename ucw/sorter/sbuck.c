@@ -43,7 +43,7 @@ sbuck_drop(struct sort_bucket *b)
     }
 }
 
-sh_off_t
+ucw_off_t
 sbuck_size(struct sort_bucket *b)
 {
   if ((b->flags & SBF_OPEN_WRITE) && !(b->flags & SBF_SWAPPED_OUT))

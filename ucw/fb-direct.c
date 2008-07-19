@@ -190,7 +190,7 @@ fbdir_spout(struct fastbuf *f)
 	  asio_submit(r);
 	  asio_sync(F->io_queue);
 	  DBG("FB-DIRECT: Truncating at %llu", (long long)f->pos);
-	  if (sh_ftruncate(F->fd, f->pos) < 0)
+	  if (ucw_ftruncate(F->fd, f->pos) < 0)
 	    die("Error truncating %s: %m", f->name);
 	}
       else
@@ -205,7 +205,7 @@ fbdir_spout(struct fastbuf *f)
 }
 
 static int
-fbdir_seek(struct fastbuf *f, sh_off_t pos, int whence)
+fbdir_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 {
   DBG("FB-DIRECT: Seek %llu %d", (long long)pos, whence);
 
@@ -213,7 +213,7 @@ fbdir_seek(struct fastbuf *f, sh_off_t pos, int whence)
     return 1;
 
   fbdir_change_mode(FB_DIRECT(f), M_NULL);			// Wait for all async requests to finish
-  sh_off_t l = sh_seek(FB_DIRECT(f)->fd, pos, whence);
+  ucw_off_t l = ucw_seek(FB_DIRECT(f)->fd, pos, whence);
   if (l < 0)
     return 0;
   f->pos = l;

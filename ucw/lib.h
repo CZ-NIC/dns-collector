@@ -132,9 +132,9 @@ void assert_failed_noinfo(void) NONRET;
 
 /* Memory allocation */
 
-#define xmalloc sh_xmalloc
-#define xrealloc sh_xrealloc
-#define xfree sh_xfree
+#define xmalloc ucw_xmalloc
+#define xrealloc ucw_xrealloc
+#define xfree ucw_xfree
 
 /*
  * Unfortunately, several libraries we might want to link to define
@@ -213,11 +213,11 @@ void sync_dir(const char *name);
 
 /* sighandler.c */
 
-typedef int (*sh_sighandler_t)(int);	// gets signum, returns nonzero if abort() should be called
+typedef int (*ucw_sighandler_t)(int);	// gets signum, returns nonzero if abort() should be called
 
 void handle_signal(int signum);
 void unhandle_signal(int signum);
-sh_sighandler_t set_signal_handler(int signum, sh_sighandler_t new);
+ucw_sighandler_t set_signal_handler(int signum, ucw_sighandler_t new);
 
 /* bigalloc.c */
 

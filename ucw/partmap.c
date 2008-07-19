@@ -34,10 +34,10 @@ partmap_open(char *name, int writeable)
 {
   struct partmap *p = xmalloc_zero(sizeof(struct partmap));
 
-  p->fd = sh_open(name, writeable ? O_RDWR : O_RDONLY);
+  p->fd = ucw_open(name, writeable ? O_RDWR : O_RDONLY);
   if (p->fd < 0)
     die("open(%s): %m", name);
-  if ((p->file_size = sh_seek(p->fd, 0, SEEK_END)) < 0)
+  if ((p->file_size = ucw_seek(p->fd, 0, SEEK_END)) < 0)
     die("lseek(%s): %m", name);
   p->writeable = writeable;
 #ifdef CONFIG_PARTMAP_IS_MMAP
@@ -46,7 +46,7 @@ partmap_open(char *name, int writeable)
   return p;
 }
 
-sh_off_t
+ucw_off_t
 partmap_size(struct partmap *p)
 {
   return p->file_size;
@@ -62,18 +62,18 @@ partmap_close(struct partmap *p)
 }
 
 void
-partmap_load(struct partmap *p, sh_off_t start, uns size)
+partmap_load(struct partmap *p, ucw_off_t start, uns size)
 {
   if (p->start_map)
     munmap(p->start_map, p->end_off - p->start_off);
-  sh_off_t end = start + size;
-  sh_off_t win_start = start/CPU_PAGE_SIZE * CPU_PAGE_SIZE;
+  ucw_off_t end = start + size;
+  ucw_off_t win_start = start/CPU_PAGE_SIZE * CPU_PAGE_SIZE;
   size_t win_len = PARTMAP_WINDOW;
-  if ((sh_off_t) (win_start+win_len) > p->file_size)
+  if ((ucw_off_t) (win_start+win_len) > p->file_size)
     win_len = ALIGN_TO(p->file_size - win_start, CPU_PAGE_SIZE);
-  if ((sh_off_t) (win_start+win_len) < end)
+  if ((ucw_off_t) (win_start+win_len) < end)
     die("partmap_map: Window is too small for mapping %d bytes", size);
-  p->start_map = sh_mmap(NULL, win_len, p->writeable ? (PROT_READ | PROT_WRITE) : PROT_READ, MAP_SHARED, p->fd, win_start);
+  p->start_map = ucw_mmap(NULL, win_len, p->writeable ? (PROT_READ | PROT_WRITE) : PROT_READ, MAP_SHARED, p->fd, win_start);
   if (p->start_map == MAP_FAILED)
     die("mmap failed at position %lld: %m", (long long)win_start);
   p->start_off = win_start;

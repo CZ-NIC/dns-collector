@@ -79,7 +79,7 @@ lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uns expected_l
   uns lock_offset = ALIGN_TO(expected_length + 3, CPU_PAGE_SIZE);	// +3 due to the unaligned access
   if (lock_offset > buf->len)
     lizard_realloc(buf, lock_offset);
-  volatile sh_sighandler_t old_handler = set_signal_handler(SIGSEGV, sigsegv_handler);
+  volatile ucw_sighandler_t old_handler = set_signal_handler(SIGSEGV, sigsegv_handler);
   byte *ptr;
   if (!setjmp(safe_decompress_jump))
   {

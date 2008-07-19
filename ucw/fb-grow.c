@@ -47,10 +47,10 @@ fbgrow_spout(struct fastbuf *b)
 }
 
 static int
-fbgrow_seek(struct fastbuf *b, sh_off_t pos, int whence)
+fbgrow_seek(struct fastbuf *b, ucw_off_t pos, int whence)
 {
   ASSERT(FB_GBUF(b)->last_written);	/* Seeks allowed only in read mode */
-  sh_off_t len = FB_GBUF(b)->last_written - b->buffer;
+  ucw_off_t len = FB_GBUF(b)->last_written - b->buffer;
   if (whence == SEEK_END)
     pos += len;
   ASSERT(pos >= 0 && pos <= len);

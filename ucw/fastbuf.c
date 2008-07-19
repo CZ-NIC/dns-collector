@@ -31,7 +31,7 @@ void bflush(struct fastbuf *f)
     f->bptr = f->bstop = f->buffer;
 }
 
-inline void bsetpos(struct fastbuf *f, sh_off_t pos)
+inline void bsetpos(struct fastbuf *f, ucw_off_t pos)
 {
   /* We can optimize seeks only when reading */
   if (pos >= f->pos - (f->bstop - f->buffer) && pos <= f->pos)
@@ -44,7 +44,7 @@ inline void bsetpos(struct fastbuf *f, sh_off_t pos)
     }
 }
 
-void bseek(struct fastbuf *f, sh_off_t pos, int whence)
+void bseek(struct fastbuf *f, ucw_off_t pos, int whence)
 {
   switch (whence)
     {
@@ -189,16 +189,16 @@ bskip_slow(struct fastbuf *f, uns len)
   return 1;
 }
 
-sh_off_t
+ucw_off_t
 bfilesize(struct fastbuf *f)
 {
   if (!f)
     return 0;
-  sh_off_t pos = btell(f);
+  ucw_off_t pos = btell(f);
   bflush(f);
   if (!f->seek(f, 0, SEEK_END))
     return -1;
-  sh_off_t len = btell(f);
+  ucw_off_t len = btell(f);
   bsetpos(f, pos);
   return len;
 }
