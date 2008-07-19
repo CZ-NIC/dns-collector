@@ -31,7 +31,7 @@
 
 int url_deescape(const char *s, char *d);
 int url_enescape(const char *s, char *d);
-int url_enescape_friendly(const char *src, char *dest);	// for cards.c only
+int url_enescape_friendly(const char *src, char *dest);
 
 /* URL splitting and normalization */
 
