@@ -9,67 +9,10 @@
  */
 
 #include "ucw/lib.h"
-#include "ucw/conf.h"
 #include "ucw/fastbuf.h"
-#include "ucw/threads.h"
-#include "ucw/lfs.h"
 
 #include <stdio.h>
-#include <unistd.h>
-#include <sys/fcntl.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <errno.h>
-
-static char *temp_prefix = "temp";
-static char *temp_dir;
-static int public_dir = 1;
-
-static struct cf_section temp_config = {
-  CF_ITEMS {
-    CF_STRING("Dir", &temp_dir),
-    CF_STRING("Prefix", &temp_prefix),
-    CF_INT("PublicDir", &public_dir),
-    CF_END
-  }
-};
-
-static void CONSTRUCTOR temp_global_init(void)
-{
-  cf_declare_section("Tempfiles", &temp_config, 0);
-}
-
-void
-temp_file_name(char *name_buf, int *open_flags)
-{
-  char *dir = temp_dir;
-  if (!dir && !(dir = getenv("TMPDIR")))
-    dir = "/tmp";
-
-  int len;
-  if (public_dir)
-    {
-      struct timeval tv;
-      if (gettimeofday(&tv, NULL))
-	die("gettimeofday() failed: %m");
-      len = snprintf(name_buf, TEMP_FILE_NAME_LEN, "%s/%s%u", dir, temp_prefix, (uns) tv.tv_usec);
-      if (open_flags)
-	*open_flags = O_EXCL;
-    }
-  else
-    {
-      struct ucwlib_context *ctx = ucwlib_thread_context();
-      int cnt = ++ctx->temp_counter;
-      int pid = getpid();
-      if (ctx->thread_id == pid)
-	len = snprintf(name_buf, TEMP_FILE_NAME_LEN, "%s/%s%d-%d", dir, temp_prefix, pid, cnt);
-      else
-	len = snprintf(name_buf, TEMP_FILE_NAME_LEN, "%s/%s%d-%d-%d", dir, temp_prefix, pid, ctx->thread_id, cnt);
-      if (open_flags)
-	*open_flags = 0;
-    }
-  ASSERT(len < TEMP_FILE_NAME_LEN);
-}
+#include <fcntl.h>
 
 struct fastbuf *
 bopen_tmp_file(struct fb_params *params)
@@ -79,21 +22,6 @@ bopen_tmp_file(struct fb_params *params)
   struct fastbuf *fb = bopen_fd_name(fd, params, name);
   bconfig(fb, BCONFIG_IS_TEMP_FILE, 1);
   return fb;
-}
-
-int
-open_tmp(char *name_buf, int open_flags, int mode)
-{
-  int create_flags, fd, retry = 10;
-  do
-    {
-      temp_file_name(name_buf, &create_flags);
-      fd = ucw_open(name_buf, open_flags | create_flags, mode);
-    }
-  while (fd < 0 && errno == EEXIST && retry --);
-  if (fd < 0)
-    die("Unable to create temp file %s: %m", name_buf);
-  return fd;
 }
 
 struct fastbuf *
