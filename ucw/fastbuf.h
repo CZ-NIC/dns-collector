@@ -115,8 +115,9 @@ void bfilesync(struct fastbuf *b);
 /* Temporary files */
 
 #define TEMP_FILE_NAME_LEN 256
-void temp_file_name(char *name);
+void temp_file_name(char *name_buf, int *open_flags);
 void bfix_tmp_file(struct fastbuf *fb, const char *name);
+int open_tmp(char *name_buf, int open_flags, int mode);
 
 /* Internal functions of some file back-ends */
 
