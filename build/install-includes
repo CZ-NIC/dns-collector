@@ -10,7 +10,7 @@ while [ -n "$1" ] ; do
 	if [ ! -f "$DEST/$1" -o "$SRC/$1" -nt "$DEST/$1" ] ; then
 		echo "INC $SRC/$1 -> $DEST/$1"
 		mkdir -p $DEST/`dirname $1`
-		cp $SRC/$1 $DEST/$1
+		sed -e 's/^\(#include[	 ]*\)"\(.*\)"/\1<\2>/' <$SRC/$1 >$DEST/$1
 	fi
 	shift
 done
