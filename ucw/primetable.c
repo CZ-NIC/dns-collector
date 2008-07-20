@@ -8,6 +8,7 @@
  */
 
 #include "ucw/lib.h"
+#include "ucw/prime.h"
 #include "ucw/binsearch.h"
 
 /* A table of odd primes, each is about 1.2 times the previous one */

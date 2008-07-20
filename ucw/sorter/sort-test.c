@@ -15,6 +15,7 @@
 #include "ucw/hashfunc.h"
 #include "ucw/md5.h"
 #include "ucw/string.h"
+#include "ucw/prime.h"
 
 #include <stdlib.h>
 #include <stdio.h>

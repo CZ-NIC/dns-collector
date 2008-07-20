@@ -148,16 +148,6 @@ void xfree(void *);
 void *xmalloc_zero(uns) LIKE_MALLOC;
 char *xstrdup(const char *) LIKE_MALLOC;
 
-/* prime.c */
-
-int isprime(uns x);
-uns nextprime(uns x);
-
-/* primetable.c */
-
-uns next_table_prime(uns x);
-uns prev_table_prime(uns x);
-
 /* timer.c */
 
 timestamp_t get_timestamp(void);

@@ -19,6 +19,7 @@
 #include "ucw/url.h"
 #include "ucw/chartype.h"
 #include "ucw/conf.h"
+#include "ucw/prime.h"
 
 #include <string.h>
 #include <stdlib.h>

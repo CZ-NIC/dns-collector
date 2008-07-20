@@ -43,7 +43,7 @@ LIBUCW_INCLUDES= \
 	hashfunc.h hashtable.h \
 	heap.h binheap.h binheap-node.h \
 	redblack.h \
-	binsearch.h \
+	binsearch.h prime.h \
 	bitops.h \
 	conf.h getopt.h ipaccess.h \
 	profile.h \

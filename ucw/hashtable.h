@@ -124,6 +124,8 @@
 #include "ucw/hashfunc.h"
 #endif
 
+#include "ucw/prime.h"
+
 #include <string.h>
 
 /* Initial setup of parameters */
