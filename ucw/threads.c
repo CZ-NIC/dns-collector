@@ -116,7 +116,7 @@ int main(void)
 {
   ucwlib_lock();
   ucwlib_unlock();
-  log(L_INFO, "tid=%d", ucwlib_thread_context()->thread_id);
+  msg(L_INFO, "tid=%d", ucwlib_thread_context()->thread_id);
   return 0;
 }
 

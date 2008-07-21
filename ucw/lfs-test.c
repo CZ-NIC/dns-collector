@@ -25,7 +25,7 @@ int main(void)
 	if (!b)
 		die("Cannot create large-file");
 
-	log(L_DEBUG, "Writing %d blocks of size %d", COUNT, BLOCK);
+	msg(L_DEBUG, "Writing %d blocks of size %d", COUNT, BLOCK);
 	for (i=0; i<COUNT; i++)
 	{
 		memset(block, i & 0xff, BLOCK);
@@ -41,7 +41,7 @@ int main(void)
 	if (!b)
 		die("Cannot create large-file");
 #endif
-	log(L_DEBUG, "Checking the file contents in %d tests", TESTS);
+	msg(L_DEBUG, "Checking the file contents in %d tests", TESTS);
 	for (i=0; i<TESTS; i++)
 	{
 		uns idx = random()%COUNT;
@@ -56,7 +56,7 @@ int main(void)
 			fflush(stdout);
 		}
 	}
-	log(L_DEBUG, "Done");
+	msg(L_DEBUG, "Done");
 
 	bclose(b);
 	return 0;

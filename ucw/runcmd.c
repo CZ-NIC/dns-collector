@@ -126,7 +126,7 @@ int main(void)
 {
   char msg[1024];
   echo_command(msg, sizeof(msg), "/bin/echo", "datel", "strakapoud", NULL);
-  log(L_INFO, "Running <%s>", msg);
+  msg(L_INFO, "Running <%s>", msg);
   run_command("/bin/echo", "datel", "strakapoud", NULL);
   return 0;
 }

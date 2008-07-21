@@ -462,50 +462,50 @@ static void dread(struct main_file *fi)
 {
   if (fi->rpos < fi->rlen)
     {
-      log(L_INFO, "Read EOF");
+      msg(L_INFO, "Read EOF");
       file_del(fi);
     }
   else
     {
-      log(L_INFO, "Read done");
+      msg(L_INFO, "Read done");
       file_read(fi, rb, sizeof(rb));
     }
 }
 
 static void derror(struct main_file *fi, int cause)
 {
-  log(L_INFO, "Error: %m !!! (cause %d)", cause);
+  msg(L_INFO, "Error: %m !!! (cause %d)", cause);
   file_del(fi);
 }
 
 static void dwrite(struct main_file *fi UNUSED)
 {
-  log(L_INFO, "Write done");
+  msg(L_INFO, "Write done");
 }
 
 static int dhook(struct main_hook *ho UNUSED)
 {
-  log(L_INFO, "Hook called");
+  msg(L_INFO, "Hook called");
   return 0;
 }
 
 static void dtimer(struct main_timer *tm)
 {
-  log(L_INFO, "Timer tick");
+  msg(L_INFO, "Timer tick");
   timer_add(tm, main_now + 10000);
 }
 
 static void dentry(void)
 {
-  log(L_INFO, "*** SUBPROCESS START ***");
+  msg(L_INFO, "*** SUBPROCESS START ***");
   sleep(2);
-  log(L_INFO, "*** SUBPROCESS FINISH ***");
+  msg(L_INFO, "*** SUBPROCESS FINISH ***");
   exit(0);
 }
 
 static void dexit(struct main_process *pr)
 {
-  log(L_INFO, "Subprocess %d exited with status %x", pr->pid, pr->status);
+  msg(L_INFO, "Subprocess %d exited with status %x", pr->pid, pr->status);
 }
 
 int
@@ -539,7 +539,7 @@ main(void)
   main_debug();
 
   main_loop();
-  log(L_INFO, "Finished.");
+  msg(L_INFO, "Finished.");
 }
 
 #endif

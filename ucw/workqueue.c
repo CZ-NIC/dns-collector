@@ -229,12 +229,12 @@ work_try_wait(struct work_queue *q)
 
 static void wt_init(struct worker_thread *t)
 {
-  log(L_INFO, "INIT %d", t->id);
+  msg(L_INFO, "INIT %d", t->id);
 }
 
 static void wt_cleanup(struct worker_thread *t)
 {
-  log(L_INFO, "CLEANUP %d", t->id);
+  msg(L_INFO, "CLEANUP %d", t->id);
 }
 
 struct w {
@@ -244,7 +244,7 @@ struct w {
 
 static void go(struct worker_thread *t, struct work *w)
 {
-  log(L_INFO, "GO %d: request %d (pri %d)", t->id, ((struct w *)w)->id, w->priority);
+  msg(L_INFO, "GO %d: request %d (pri %d)", t->id, ((struct w *)w)->id, w->priority);
   usleep(1);
 }
 
@@ -267,12 +267,12 @@ int main(void)
       w->w.priority = (i < 250 ? i : 0);
       w->id = i;
       work_submit(&q, &w->w);
-      log(L_INFO, "Submitted request %d (pri %d)", w->id, w->w.priority);
+      msg(L_INFO, "Submitted request %d (pri %d)", w->id, w->w.priority);
     }
 
   struct w *w;
   while (w = (struct w *) work_wait(&q))
-    log(L_INFO, "Finished request %d", w->id);
+    msg(L_INFO, "Finished request %d", w->id);
 
   work_queue_cleanup(&q);
   worker_pool_cleanup(&pool);

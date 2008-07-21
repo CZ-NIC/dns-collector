@@ -9,7 +9,7 @@
 #include <string.h>
 
 #if 0
-#define TRACE(x...) do{log(L_DEBUG, x);}while(0)
+#define TRACE(x...) do{msg(L_DEBUG, x);}while(0)
 #else
 #define TRACE(x...) do{}while(0)
 #endif

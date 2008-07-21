@@ -114,7 +114,7 @@ int main(int argc, char **argv)
   log_init(argv[0]);
   log_file("/proc/self/fd/1");
   for (int i=1; i<argc; i++)
-    log(L_INFO, argv[i]);
+    msg(L_INFO, argv[i]);
   return 0;
 }
 
