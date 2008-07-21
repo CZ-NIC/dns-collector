@@ -68,3 +68,51 @@ fbbuf_init_write(struct fastbuf *f, byte *buf, uns size)
   f->config = NULL;
   f->can_overwrite_buffer = 0;
 }
+
+#ifdef TEST
+
+int main(int argc, char *argv[])
+{
+  if (argc < 2)
+    {
+      fprintf(stderr, "You must specify a test (r, w, o)\n");
+      return 1;
+    }
+  switch (*argv[1])
+    {
+      case 'r':
+        {
+          struct fastbuf fb;
+          char *data = "Two\nlines\n";
+          fbbuf_init_read(&fb, data, strlen(data), 0);
+          char buffer[10];
+          while (bgets(&fb, buffer, 10))
+            puts(buffer);
+          bclose(&fb);
+          break;
+        }
+      case 'w':
+        {
+          struct fastbuf fb;
+          char buff[20];
+          fbbuf_init_write(&fb, buff, 20);
+          bputs(&fb, "Hello world\n");
+          bputc(&fb, '\0');
+          fputs(buff, stdout);
+          break;
+        }
+      case 'o':
+        {
+          struct fastbuf fb;
+          char buff[4];
+          fbbuf_init_write(&fb, buff, 4);
+          bputs(&fb, "Hello");
+          bputc(&fb, '\0');
+          fputs(buff, stdout);
+          break;
+        }
+    }
+  return 0;
+}
+
+#endif
