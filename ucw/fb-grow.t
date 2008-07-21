@@ -1,9 +1,4 @@
-# Tests for fastbufs
-
-Run:	../obj/ucw/fb-file-t
-Out:	112
-	<hello><hello><hello><hello><hello><hello><hello><hello><hello><hello><hello><hello><hello><hello><hello><hello>
-	112 116
+# Tests for fb-grow.c
 
 Run:	../obj/ucw/fb-grow-t
 Out:	<10><10><0>1234512345<10><9>5<10>
@@ -12,4 +7,3 @@ Out:	<10><10><0>1234512345<10><9>5<10>
 	<10><10><0>1234512345<10><9>5<10>
 	<10><10><0>1234512345<10><9>5<10>
 
-Run:	../obj/ucw/fb-pool-t

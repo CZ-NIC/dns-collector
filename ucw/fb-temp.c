@@ -50,6 +50,7 @@ int main(int argc, char **argv)
     die("Hey, whaddya want?");
 
   struct fastbuf *f = bopen_tmp(65536);
+  ASSERT(f && f->name);
   bputsn(f, "Hello, world!");
   bclose(f);
   return 0;

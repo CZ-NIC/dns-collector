@@ -145,13 +145,13 @@ int main(int argc UNUSED, char **argv UNUSED)
 {
   struct fastbuf *f, *g;
 
-  log(L_INFO, "Testing block writes");
+  msg(L_INFO, "Testing block writes");
   f = fbatomic_open("test", NULL, 16, 4);
   for (u32 i=0; i<17; i++)
     bwrite(f, &i, 4);
   bclose(f);
 
-  log(L_INFO, "Testing interleaved var-size writes");
+  msg(L_INFO, "Testing interleaved var-size writes");
   f = fbatomic_open("test2", NULL, 23, -5);
   g = fbatomic_open("test2", f, 23, -5);
   for (int i=0; i<100; i++)

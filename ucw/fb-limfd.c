@@ -60,7 +60,7 @@ bopen_limited_fd(int fd, uns buflen, uns limit)
 
 #ifdef TEST
 
-int main(int argc, char **argv)
+int main(int UNUSED argc, char UNUSED **argv)
 {
   struct fastbuf *f = bopen_limited_fd(0, 3, 13);
   struct fastbuf *o = bfdopen_shared(1, 16);

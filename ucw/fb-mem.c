@@ -213,6 +213,7 @@ int main(void)
   printf("<!%d>", (int)btell(r));
   while ((t = bgetc(r)) >= 0)
     putchar(t);
+  putchar('\n');
   fflush(stdout);
   bclose(r);
   return 0;

@@ -91,9 +91,10 @@ $(o)/ucw/trie-test: $(o)/ucw/trie-test.o $(LIBUCW)
 $(o)/ucw/basecode: $(o)/ucw/basecode.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test stkstring.test \
-    slists.test kmp-test.test bbuf.test getopt.test fastbuf.test ff-unicode.test eltpool.test \
+    slists.test kmp-test.test bbuf.test getopt.test ff-unicode.test eltpool.test \
     fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test \
-    redblack-test.test basecode.test)
+    redblack-test.test basecode.test fb-file.test fb-grow.test fb-pool.test fb-atomic.test \
+    fb-limfd.test fb-temp.test fb-mem.test)
 
 $(o)/ucw/regex.test: $(o)/ucw/regex-t
 $(o)/ucw/unicode.test: $(o)/ucw/unicode-t
@@ -105,10 +106,8 @@ $(o)/ucw/slists.test: $(o)/ucw/slists-t
 $(o)/ucw/kmp-test.test: $(o)/ucw/kmp-test
 $(o)/ucw/bbuf.test: $(o)/ucw/bbuf-t
 $(o)/ucw/getopt.test: $(o)/ucw/getopt-t
-$(o)/ucw/fastbuf.test: $(o)/ucw/fb-file-t $(o)/ucw/fb-grow-t $(o)/ucw/fb-pool-t
 $(o)/ucw/ff-unicode.test: $(o)/ucw/ff-unicode-t
 $(o)/ucw/eltpool.test: $(o)/ucw/eltpool-t
-$(o)/ucw/fb-socket.test: $(o)/ucw/fb-socket-t
 $(o)/ucw/string.test: $(o)/ucw/str-hex-t $(o)/ucw/str-esc-t
 $(o)/ucw/sha1.test: $(o)/ucw/sha1-t $(o)/ucw/sha1-hmac-t
 $(o)/ucw/trie-test.test: $(o)/ucw/trie-test
@@ -116,6 +115,8 @@ $(o)/ucw/asort-test.test: $(o)/ucw/asort-test
 $(o)/ucw/binheap-test.test: $(o)/ucw/binheap-test
 $(o)/ucw/redblack-test.test: $(o)/ucw/redblack-test
 $(o)/ucw/basecode.test: $(o)/ucw/basecode
+$(addprefix $(o)/ucw/fb-,file.test grow.test pool.test socket.test atomic.test \
+	limfd.test temp.test mem.test): %.test: %-t
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/ucw/,asio.test)
