@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
           char buff[20];
           fbbuf_init_write(&fb, buff, 20);
           bputs(&fb, "Hello world\n");
-          bputc(&fb, '\0');
+          bputc(&fb, 0);
           fputs(buff, stdout);
           break;
         }
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
           char buff[4];
           fbbuf_init_write(&fb, buff, 4);
           bputs(&fb, "Hello");
-          bputc(&fb, '\0');
+          bputc(&fb, 0);
           fputs(buff, stdout);
           break;
         }
