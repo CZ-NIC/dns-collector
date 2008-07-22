@@ -14,6 +14,7 @@
 /* string.c */
 
 char *str_format_flags(char *dest, const char *fmt, uns flags);
+uns str_count_char(const char *str, uns chr);
 
 /* str-esc.c */
 
