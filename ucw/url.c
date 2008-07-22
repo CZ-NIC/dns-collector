@@ -9,7 +9,6 @@
  *
  *	The URL syntax corresponds to RFC 2396 with several exceptions:
  *
- *	   o  Escaping of special characters still follows RFC 1738.
  *	   o  Interpretation of path parameters follows RFC 1808.
  *
  *	XXX: The buffer handling in this module is really horrible, but it works.
@@ -95,6 +94,12 @@ url_deescape(const char *s, char *d)
 	      val = NCC_AND; break;
 	    case '#':
 	      val = NCC_HASH; break;
+	    case '$':
+	      val = NCC_DOLLAR; break;
+	    case '+':
+	      val = NCC_PLUS; break;
+	    case ',':
+	      val = NCC_COMMA; break;
 	    }
 	  *d++ = val;
 	  s += 3;
@@ -133,12 +138,12 @@ url_enescape(const char *s, char *d)
     {
       if (d >= end)
 	return URL_ERR_TOO_LONG;
-      if (Calnum(c) ||							/* RFC 1738(2.2): Only alphanumerics ... */
-	  c == '$' || c == '-' || c == '_' || c == '.' || c == '+' ||	/* ... and several other exceptions ... */
+      if (Calnum(c) ||							/* RFC 2396 (2.1-2.3): Only alphanumerics ... */
+	  c == '-' || c == '_' || c == '.' || c == '+' || c == '~' ||	/* ... and several other exceptions ... */
 	  c == '!' || c == '*' || c == '\'' || c == '(' || c == ')' ||
-	  c == ',' ||
 	  c == '/' || c == '?' || c == ':' || c == '@' ||		/* ... and reserved chars used for reserved purpose */
-	  c == '=' || c == '&' || c == '#' || c == ';')
+	  c == '=' || c == '&' || c == '#' || c == ';' ||
+	  c == '$' || c == '+' || c == ',')
 	*d++ = *s++;
       else
 	{

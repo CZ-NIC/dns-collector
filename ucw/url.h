@@ -15,17 +15,24 @@
 
 /* Non-control meanings of control characters */
 
-#define NCC_SEMICOLON 1
-#define NCC_SLASH 2
-#define NCC_QUEST 3
-#define NCC_COLON 4
-#define NCC_AT 5
-#define NCC_EQUAL 6
-#define NCC_AND 7
-#define NCC_HASH 8
-#define NCC_MAX 9
+enum {
+  NCC_SEMICOLON = 1,
+  NCC_SLASH = 2,
+  NCC_QUEST = 3,
+  NCC_COLON = 4,
+  NCC_AT = 5,
+  NCC_EQUAL = 6,
+  NCC_AND = 7,
+  NCC_HASH = 8,
+  // Avoid 9 (\t) and 10 (\n)
+  NCC_DOLLAR = 11,
+  NCC_PLUS = 12,
+  // Avoid 13 (\r)
+  NCC_COMMA = 14,
+  NCC_MAX = 15
+};
 
-#define NCC_CHARS " ;/?:@=&#"
+#define NCC_CHARS " ;/?:@=&#\t\n$+\r,"
 
 /* Remove/Introduce '%' escapes */
 
