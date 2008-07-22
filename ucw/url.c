@@ -605,7 +605,7 @@ int main(int argc, char **argv)
   char buf1[MAX_URL_SIZE], buf2[MAX_URL_SIZE], buf3[MAX_URL_SIZE], buf4[MAX_URL_SIZE];
   int err;
   struct url url, url0;
-  char *base = "http://mj@www.hell.org/123/sub_dir/index.html;param?query&zzz/subquery#fragment";
+  char *base = "http://mj@www.hell.org/123/sub_dir;param/index.html;param?query&zzz/sub;query+#fragment?";
 
   if (argc != 2 && argc != 3)
     return 1;
