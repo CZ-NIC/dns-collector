@@ -7,10 +7,6 @@
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  *
- *	The URL syntax corresponds to RFC 2396 with several exceptions:
- *
- *	   o  Interpretation of path parameters follows RFC 1808.
- *
  *	XXX: The buffer handling in this module is really horrible, but it works.
  */
 
@@ -323,15 +319,9 @@ relpath_merge(struct url *u, struct url *b)
 	;
       goto copy;
     }
-  if (a[0] == ';')			/* Change parameters */
-    {
-      for(p=o; *p && *p != ';' && *p != '?' && *p != '#'; p++)
-	;
-      goto copy;
-    }
 
   p = NULL;				/* Copy original path and find the last slash */
-  while (*o && *o != ';' && *o != '?' && *o != '#')
+  while (*o && *o != '?' && *o != '#')
     {
       if (d >= e)
 	return URL_ERR_TOO_LONG;
