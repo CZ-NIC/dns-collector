@@ -94,8 +94,18 @@ struct cf_section;
 extern struct cf_section fbpar_cf;
 extern struct fb_params fbpar_def;
 
+/*DOC
+ * Opens a file.
+ */
 struct fastbuf *bopen_file(const char *name, int mode, struct fb_params *params);	/* Use params==NULL for defaults */
-struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *params);
+/*DOC
+ * Tries to open a file (does not die, if it isn't sucessful).
+ */
+struct fastbuf /*BLAXLA*/ *bopen_file_try(const /*BAX*/ char *name, int mode, struct fb_params *params);
+/*DOC
+ * Opens a temporary file.
+ * It is placed with other temp filenames and deleted when closed.
+ */
 struct fastbuf *bopen_tmp_file(struct fb_params *params);
 struct fastbuf *bopen_fd_name(int fd, struct fb_params *params, const char *name);
 static inline struct fastbuf *bopen_fd(int fd, struct fb_params *params)

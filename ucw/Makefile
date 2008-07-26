@@ -68,6 +68,7 @@ include $(s)/ucw/getopt/Makefile
 endif
 
 include $(s)/ucw/sorter/Makefile
+include $(s)/ucw/doc/Makefile
 
 LIBUCW_MOD_PATHS=$(addprefix $(o)/ucw/,$(LIBUCW_MODS))
 

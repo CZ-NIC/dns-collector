@@ -16,6 +16,7 @@ programs: $(PROGS)
 datafiles: $(DATAFILES)
 tests: $(TESTS)
 configs: $(addprefix run/$(CONFIG_DIR)/,$(CONFIGS))
+docs: runtree $(DOCS)
 
 tags:
 	etags `find . -name "*.[ch]"`
@@ -190,6 +191,15 @@ $(DATAFILES): $(o)/%: $(s)/%
 	$(M)DATA $<
 	$(Q)cp $^ $@
 	$(Q)$(call symlink,$@,run/$(DATADIR))
+
+# Rules for documentation
+$(o)/%.html: $(o)/%.txt
+	$(M)"AD $< -> $@"
+	$(Q)asciidoc $<
+
+$(o)/%.txt: $(s)/%.txt
+	$(M)"ED $< -> $@"
+	$(Q)$(s)/build/extract-doc.pl $< $@ $(o)/depend.new $(s)
 
 # Default installation target
 

@@ -1,0 +1,12 @@
+Fastbufs
+========
+
+Fastbufs are stream and file abstractions. They work with normal
+files, network sockets, memory buffers or just any file descriptor. It
+should be easy to implement other types by providing functions to
+refill and read the buffer.
+
+Apart from abstraction, they are very fast.
+
+The main iclude file is +ucw/fastbuf.h+: +
+!!ucw/fastbuf.h

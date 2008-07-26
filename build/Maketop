@@ -72,6 +72,9 @@ distclean:: clean
 testclean::
 	rm -f `find obj -name "*.test"`
 
+docclean::
+	rm -f $(DOCS) $(patsubst %.html,%.txt,$(DOCS))
+
 # Extra default rules (appended to by submakefiles)
 extras::
 
