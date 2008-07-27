@@ -192,7 +192,7 @@ bfmmopen_internal(int fd, const char *name, uns mode)
 
 #ifdef TEST
 
-int main(int argc, char **argv)
+int main(int UNUSED argc, char **argv)
 {
   struct fb_params par = { .type = FB_MMAP };
   struct fastbuf *f = bopen_file(argv[1], O_RDONLY, &par);
