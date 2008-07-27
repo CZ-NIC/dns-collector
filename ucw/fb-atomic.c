@@ -32,15 +32,29 @@
  *		or -(expected maximum record length) for variable-sized ones.
  */
 
-#define LOCAL_DEBUG
-
 #include "ucw/lib.h"
 #include "ucw/fastbuf.h"
 #include "ucw/lfs.h"
+#include "ucw/conf.h"
 
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+
+static uns trace;
+
+static struct cf_section fbatomic_config = {
+  CF_ITEMS {
+    CF_UNS("Trace", &trace)
+  }
+};
+
+static void CONSTRUCTOR fbatomic_init_config(void)
+{
+  cf_declare_section("FBAtomic", &fbatomic_config, 1);
+}
+
+#define TRACE(m...) do { if(trace) msg(L_DEBUG, "FB_ATOMIC: " m); } while(0)
 
 struct fb_atomic_file {
   int fd;
@@ -79,7 +93,7 @@ fbatomic_spout(struct fastbuf *f)
       uns written = f->bptr - f->buffer;
       uns size = f->bufend - f->buffer + F->slack_size;
       F->slack_size *= 2;
-      DBG("Reallocating buffer for atomic file %s with slack %d", f->name, F->slack_size);
+      TRACE("Reallocating buffer for atomic file %s with slack %d", f->name, F->slack_size);
       f->buffer = xrealloc(f->buffer, size);
       f->bufend = f->buffer + size;
       f->bptr = f->buffer + written;
@@ -144,6 +158,9 @@ fbatomic_open(const char *name, struct fastbuf *master, uns bufsize, int record_
 int main(int argc UNUSED, char **argv UNUSED)
 {
   struct fastbuf *f, *g;
+
+  // Always trace in the test
+  trace = 1;
 
   msg(L_INFO, "Testing block writes");
   f = fbatomic_open("test", NULL, 16, 4);
