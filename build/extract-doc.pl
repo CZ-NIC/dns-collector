@@ -29,6 +29,8 @@ sub process( $ ) {
 	my $verbatim;
 	my $buff;
 	my $head;
+	my $levelMark = '-';
+	my $markDepth;
 	while( defined( $line = <FILE> ) ) {
 		chomp $line;
 		if( $verbatim ) {
@@ -39,9 +41,7 @@ sub process( $ ) {
 				print OUT "$line\n";
 			}
 		} elsif( $active ) {
-			if( $line =~ /END\*\// ) {
-				print OUT "$buff\n";
-			} elsif( $line =~ /\*\// ) {
+			if( $line =~ /\*\// ) {
 				$active = 0;
 			} else {
 				$line =~ s/^\s*\* ?//;
@@ -54,17 +54,33 @@ sub process( $ ) {
 				$line =~ s/^\s*//;
 				$line =~ s/\/\/.*//;
 				$head .= "\n$line";
-				if( $head =~ /;/ ) {
+				if( $head =~ /[;{]/ ) {
 					$head =~ s/\/\*.*?\*\///gs;
 					$head =~ s/\s+/ /g;
-					$head =~ s/;.*/;/;
-					print OUT "- + +++$head+++ +\n+\n$buff\n";
+					$head =~ s/([;{]).*/$1/;
+					print OUT $levelMark." + +++$head+++ +\n+\n$buff\n";
+					if( $head =~ /\{/ ) {
+						$levelMark = '*' unless( $markDepth ++ );
+					}
 					$head = undef;
 					$buff = undef;
 				}
-			} elsif( $line =~ /\/\*VERBATIM/ ) {
+			} elsif( my( $head, $comment ) = ( $line =~ /^(.*)\/\*\*(.*)\*\*\// ) ) {
+				$head =~ s/^\s*//;
+				$head =~ s/\/\*.*?\*\///gs;
+				$head =~ s/\s+/ /g;
+				$head =~ s/([;{]).*/$1/;
+				$comment =~ s/^\s*//;
+				$comment =~ s/\s*$//;
+				print OUT $levelMark." + +++$head+++ +\n+\n$comment\n\n";
+				if( $head =~ /\{/ ) {
+					$levelMark = '*' unless( $markDepth ++ );
+				}
+			} elsif( $line =~ /\}/ && $markDepth ) {
+				$levelMark = '-' unless( -- $markDepth );
+			} elsif( $line =~ /\/\*\*\*/ ) {
 				$verbatim = 1;
-			} elsif( $line =~ /\/\*DOC/ ) {
+			} elsif( $line =~ /\/\*\*/ ) {
 				$active = 1;
 			}
 		}

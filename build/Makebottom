@@ -195,7 +195,7 @@ $(DATAFILES): $(o)/%: $(s)/%
 # Rules for documentation
 $(o)/%.html: $(o)/%.txt
 	$(M)"AD $< -> $@"
-	$(Q)asciidoc $<
+	$(Q)asciidoc -f $(s)/build/docconfig $<
 
 $(o)/%.txt: $(s)/%.txt
 	$(M)"ED $< -> $@"

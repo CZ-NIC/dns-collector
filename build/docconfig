@@ -1,0 +1,2 @@
+[replacements]
+@(\w+)=<i><tt>\1</tt></i>

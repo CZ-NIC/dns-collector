@@ -8,5 +8,7 @@ refill and read the buffer.
 
 Apart from abstraction, they are very fast.
 
-The main iclude file is +ucw/fastbuf.h+: +
+ucw/fastbuf.h
+-------------
+
 !!ucw/fastbuf.h

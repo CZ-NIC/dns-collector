@@ -14,11 +14,11 @@
 #include <string.h>
 #include <alloca.h>
 
-/*
- *  Generic buffered I/O. You supply hooks to be called for low-level operations
- *  (swapping of buffers, seeking and closing), we do the rest.
+/***
+ * Generic buffered I/O. You supply hooks to be called for low-level operations
+ * (swapping of buffers, seeking and closing), we do the rest.
  *
- *  Buffer layout when reading:
+ * Buffer layout when reading:
  *
  *  +----------------+---------------------------+
  *  | read data      | free space                |
@@ -26,11 +26,11 @@
  *  ^        ^        ^                           ^
  *  buffer   bptr     bstop                       bufend
  *
- *  After the last character is read, bptr == bstop and buffer refill
- *  is deferred to the next read attempt. This gives us an easy way
- *  how to implement bungetc().
+ * After the last character is read, +bptr == bstop+ and buffer refill
+ * is deferred to the next read attempt. This gives us an easy way
+ * how to implement +bungetc()+.
  *
- *  When writing:
+ * When writing:
  *
  *  +--------+--------------+--------------------+
  *  | unused | written data | free space         |
@@ -38,74 +38,75 @@
  *  ^         ^              ^                    ^
  *  buffer    bstop          bptr                 bufend
  *
- *  Dirty tricks:
+ * Dirty tricks:
  *
  *    - You can mix reads and writes on the same stream, but you must
- *	call bflush() in between and remember that the file position
+ *	call +bflush()+ in between and remember that the file position
  *	points after the flushed buffer which is not necessarily the same
  *	as after the data you've read.
  *    - The spout/refill hooks can change not only bptr and bstop, but also
- *	the location of the buffer; fb-mem.c takes advantage of it.
- *    - In some cases, the user of the bdirect interface can be allowed to modify
+ *	the location of the buffer; +fb-mem.c+ takes advantage of it.
+ *    - In some cases, the user of the +bdirect+ interface can be allowed to modify
  *	the data in the buffer to avoid unnecessary copying. If the back-end
- *	allows such modifications, it can set can_overwrite_buffer accordingly:
+ *	allows such modifications, it can set +can_overwrite_buffer+ accordingly:
  *		*  0 if no modification is allowed,
  *		*  1 if the user can modify the buffer on the condition that
  *		     the modifications will be undone before calling the next
  *		     fastbuf operation
  *		*  2 if the user is allowed to overwrite the data in the buffer
- *		     if bdirect_read_commit_modified() is called afterwards.
+ *		     if +bdirect_read_commit_modified()+ is called afterwards.
  *		     In this case, the back-end must be prepared for trimming
  *		     of the buffer which is done by the commit function.
- */
+ *
+ * File content
+ * ~~~~~~~~~~~~
+ ***/
 
-struct fastbuf {
-  byte is_fastbuf[0];			/* Dummy field for checking of type casts */
-  byte *bptr, *bstop;			/* Access pointers */
-  byte *buffer, *bufend;		/* Start and end of the buffer */
-  char *name;				/* File name for error messages */
-  ucw_off_t pos;				/* Position of bstop in the file */
-  int (*refill)(struct fastbuf *);	/* Get a buffer with new data */
-  void (*spout)(struct fastbuf *);	/* Write buffer data to the file */
-  int (*seek)(struct fastbuf *, ucw_off_t, int);  /* Slow path for bseek(), buffer already flushed; returns success */
-  void (*close)(struct fastbuf *);	/* Close the stream */
-  int (*config)(struct fastbuf *, uns, int);	/* Configure the stream */
-  int can_overwrite_buffer;		/* Can the buffer be altered? (see discussion above) 0=never, 1=temporarily, 2=permanently */
+struct fastbuf { /** Fastbuf structure **/
+  byte is_fastbuf[0];			/** Dummy field for checking of type casts **/
+  byte *bptr, *bstop;			/** Access pointers **/
+  byte *buffer, *bufend;		/** Start and end of the buffer **/
+  char *name;				/** File name for error messages **/
+  ucw_off_t pos;				/** Position of bstop in the file **/
+  int (*refill)(struct fastbuf *);	/** Get a buffer with new data **/
+  void (*spout)(struct fastbuf *);	/** Write buffer data to the file **/
+  int (*seek)(struct fastbuf *, ucw_off_t, int);  /** Slow path for bseek(), buffer already flushed; returns success **/
+  void (*close)(struct fastbuf *);	/** Close the stream **/
+  int (*config)(struct fastbuf *, uns, int);	/** Configure the stream **/
+  int can_overwrite_buffer;		/** Can the buffer be altered? (see discussion above) 0=never, 1=temporarily, 2=permanently **/
 };
 
 /* FastIO on files with several configurable back-ends */
 
-enum fb_type {				/* Which back-end you want to use */
-  FB_STD,				/* Standard buffered I/O */
-  FB_DIRECT,				/* Direct I/O bypassing system caches (see fb-direct.c for a description) */
-  FB_MMAP				/* Memory mapped files */
+enum fb_type {				/** Which back-end you want to use **/
+  FB_STD,				/** Standard buffered I/O **/
+  FB_DIRECT,				/** Direct I/O bypassing system caches (see +fb-direct.c+ for a description) **/
+  FB_MMAP				/** Memory mapped files **/
 };
 
-struct fb_params {
-  enum fb_type type;
-  uns buffer_size;			/* 0 for default size */
-  uns keep_back_buf;			/* FB_STD: optimize for bi-directional access */
-  uns read_ahead;			/* FB_DIRECT options */
-  uns write_back;
-  struct asio_queue *asio;
+struct fb_params { /** **/
+  enum fb_type type; /** **/
+  uns buffer_size;			/** 0 for default size **/
+  uns keep_back_buf;			/** FB_STD: optimize for bi-directional access **/
+  uns read_ahead;			/** FB_DIRECT options **/
+  uns write_back;			/** **/
+  struct asio_queue *asio;		/** **/
 };
 
 struct cf_section;
-extern struct cf_section fbpar_cf;
-extern struct fb_params fbpar_def;
+extern struct cf_section fbpar_cf; /** Config **/
+extern struct fb_params fbpar_def; /** Default parameters **/
 
-/*DOC
+/**
  * Opens a file.
- */
-struct fastbuf *bopen_file(const char *name, int mode, struct fb_params *params);	/* Use params==NULL for defaults */
-/*DOC
- * Tries to open a file (does not die, if it isn't sucessful).
- */
-struct fastbuf /*BLAXLA*/ *bopen_file_try(const /*BAX*/ char *name, int mode, struct fb_params *params);
-/*DOC
+ * Use +@params = NULL+ for defaults.
+ **/
+struct fastbuf *bopen_file(const char *name, int mode, struct fb_params *params);
+struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *params); /** Tries to open a file (does not die, if unsuccessful) **/
+/**
  * Opens a temporary file.
  * It is placed with other temp filenames and deleted when closed.
- */
+ **/
 struct fastbuf *bopen_tmp_file(struct fb_params *params);
 struct fastbuf *bopen_fd_name(int fd, struct fb_params *params, const char *name);
 static inline struct fastbuf *bopen_fd(int fd, struct fb_params *params)
