@@ -275,7 +275,7 @@ sub TrivConfig($@) {
 	my $want = $opts{want};
 	defined $want or $want = ["cflags", "libs"];
 	for my $w (@$want) {
-		my $uw = $w; $uw =~ tr/a-z/A-Z/;
+		my $uw = $w; $uw =~ tr/a-z-/A-Z_/;
 		my $cf = TryCmd("$pc --$w");
 		Set("${upper}_${uw}" => $cf) if defined $cf;
 	}
