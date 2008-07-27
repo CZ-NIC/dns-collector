@@ -66,10 +66,13 @@ while (<IN>) {
 			die "Piped command '$cmd' failed" if $?;
 			print OUT `$1`;
 		} else {
-			sub repl ($) {
+			sub repl($);
+			sub repl($) {
 				my $v = shift @_;
 				exists $vars{$v} or die "Cannot substitute $v: variable not set";
-				return $vars{$v};
+				my $x = $vars{$v};
+				while ($x =~ s/\$\((\w+)\)/repl($1)/ge) { }
+				return $x;
 			}
 			s/@(\w+)@/repl($1)/ge;
 			print OUT;
