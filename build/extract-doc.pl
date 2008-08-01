@@ -21,6 +21,17 @@ if( defined $depname ) {
 
 print DEP "$outname:" if( $hasdep );
 
+sub formatNote( $$ ) {
+        my( $head, $comment ) = @_;
+	$head =~ s/[\t ]+/ /g;
+	print OUT "\n";
+        print OUT "''''\n";
+	print OUT "..................\n";
+        print OUT "$head\n";
+        print OUT "..................\n\n";
+        print OUT "$comment\n";
+}
+
 sub process( $ ) {
 	my $file = shift;
 	open FILE, $file or die "Could nod read $file ($!)\n";
@@ -29,11 +40,18 @@ sub process( $ ) {
 	my $verbatim;
 	my $buff;
 	my $head;
-	my $levelMark = '-';
-	my $markDepth;
+	my $struct;
 	while( defined( $line = <FILE> ) ) {
 		chomp $line;
-		if( $verbatim ) {
+		if( $struct ) {
+			$head .= "\n".$line;
+			if( $line =~ /}/ ) {
+				formatNote( $head, $buff );
+				$struct = 0;
+				$buff = undef;
+				$head = undef;
+			}
+		} elsif( $verbatim ) {
 			if( $line =~ /\*\// ) {
 				$verbatim = 0;
 			} else {
@@ -50,34 +68,32 @@ sub process( $ ) {
 			}
 		} else {
 			if( ( $line =~ /\S/ ) && ( defined $buff ) ) {
-				chomp $line;
-				$line =~ s/^\s*//;
-				$line =~ s/\/\/.*//;
-				$head .= "\n$line";
-				if( $head =~ /[;{]/ ) {
-					$head =~ s/\/\*.*?\*\///gs;
-					$head =~ s/\s+/ /g;
-					$head =~ s/([;{]).*/$1/;
-					print OUT $levelMark." + +++$head+++ +\n+\n$buff\n";
-					if( $head =~ /\{/ ) {
-						$levelMark = '*' unless( $markDepth ++ );
-					}
+				if( $line =~ /\(/ || $line !~ /{/ ) {
+					$_ = $line;
+					s/^\s*\s?//;
+					s/\/\/.*//;
+				        s/\/\*.*?\*\///gs;
+					s/[;{].*//;
+					formatNote( $_, $buff );
 					$head = undef;
 					$buff = undef;
+				} else {
+					$head = $line;
+					$struct = 1;
 				}
-			} elsif( my( $head, $comment ) = ( $line =~ /^(.*)\/\*\*(.*)\*\*\// ) ) {
-				$head =~ s/^\s*//;
-				$head =~ s/\/\*.*?\*\///gs;
-				$head =~ s/\s+/ /g;
-				$head =~ s/([;{]).*/$1/;
-				$comment =~ s/^\s*//;
-				$comment =~ s/\s*$//;
-				print OUT $levelMark." + +++$head+++ +\n+\n$comment\n\n";
-				if( $head =~ /\{/ ) {
-					$levelMark = '*' unless( $markDepth ++ );
+			} elsif( ( $head, $buff ) = ( $line =~ /^(.*)\/\*\*(.*)\*\*\// ) ) {
+				$buff =~ s/^\s*//;
+				$buff =~ s/\s*$//;
+				if( $head =~ /\(/ || $head !~ /{/ ) {
+					$head =~ s/^\s*//;
+					$head =~ s/\/\*.*?\*\///gs;
+					$head =~ s/([;{]).*/$1/;
+					formatNote( $head, $buff );
+					$head = undef;
+					$buff = undef;
+				} else {
+					$struct = 1;
 				}
-			} elsif( $line =~ /\}/ && $markDepth ) {
-				$levelMark = '-' unless( -- $markDepth );
 			} elsif( $line =~ /\/\*\*\*/ ) {
 				$verbatim = 1;
 			} elsif( $line =~ /\/\*\*/ ) {
