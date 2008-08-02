@@ -22,14 +22,14 @@ if( defined $depname ) {
 print DEP "$outname:" if( $hasdep );
 
 sub formatNote( $$ ) {
-        my( $head, $comment ) = @_;
-	$head =~ s/[\t ]+/ /g;
+	my( $head, $comment ) = @_;
+	$head =~ s/(\S)[ ]+/$1 /g;
 	print OUT "\n";
-        print OUT "''''\n";
+	print OUT "''''\n";
 	print OUT "..................\n";
-        print OUT "$head\n";
-        print OUT "..................\n\n";
-        print OUT "$comment\n";
+	print OUT "$head\n";
+	print OUT "..................\n\n";
+	print OUT "$comment\n\n";
 }
 
 sub process( $ ) {
@@ -54,6 +54,7 @@ sub process( $ ) {
 		} elsif( $verbatim ) {
 			if( $line =~ /\*\// ) {
 				$verbatim = 0;
+				print OUT "\n";
 			} else {
 				$line =~ s/^\s*\* ?//;
 				print OUT "$line\n";
@@ -63,7 +64,6 @@ sub process( $ ) {
 				$active = 0;
 			} else {
 				$line =~ s/^\s*\* ?//;
-				$line =~ s/^\s*$/+/;
 				$buff .= "$line\n";
 			}
 		} else {
@@ -72,7 +72,7 @@ sub process( $ ) {
 					$_ = $line;
 					s/^\s*\s?//;
 					s/\/\/.*//;
-				        s/\/\*.*?\*\///gs;
+					s/\/\*.*?\*\///gs;
 					s/[;{].*//;
 					formatNote( $_, $buff );
 					$head = undef;
@@ -81,13 +81,17 @@ sub process( $ ) {
 					$head = $line;
 					$struct = 1;
 				}
+			} elsif( ( $buff ) = ( $line =~ /\/\*\*\*(.*)\*\*\*\// ) ) {
+				$buff =~ s/\s?//;
+				print OUT "$buff\n\n";
+				$buff = undef;
 			} elsif( ( $head, $buff ) = ( $line =~ /^(.*)\/\*\*(.*)\*\*\// ) ) {
 				$buff =~ s/^\s*//;
 				$buff =~ s/\s*$//;
 				if( $head =~ /\(/ || $head !~ /{/ ) {
 					$head =~ s/^\s*//;
 					$head =~ s/\/\*.*?\*\///gs;
-					$head =~ s/([;{]).*/$1/;
+					$head =~ s/[;{].*//;
 					formatNote( $head, $buff );
 					$head = undef;
 					$buff = undef;
