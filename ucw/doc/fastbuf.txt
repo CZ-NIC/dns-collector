@@ -12,3 +12,24 @@ ucw/fastbuf.h
 -------------
 
 !!ucw/fastbuf.h
+
+ucw/fb-socket.h
+---------------
+
+Fastbufs on network sockets with timeouts.
+
+!!ucw/fb-socket.h
+
+ucw/ff-unicode.h
+----------------
+
+Reading and writing of unicode characters.
+
+Invalid codes are replaced by +UNI_REPLACEMENT+ when reading.
+
+!!ucw/ff-unicode.h
+
+ucw/ff-binary.h
+---------------
+
+Reading and writing of binary values.
