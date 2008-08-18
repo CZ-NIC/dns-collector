@@ -26,9 +26,14 @@ sub formatNote( $$ ) {
 	$head =~ s/(\S)[ ]+/$1 /g;
 	print OUT "\n";
 	print OUT "''''\n";
-	print OUT "..................\n";
-	print OUT "$head\n";
-	print OUT "..................\n\n";
+	chomp $head;
+	if($head =~ /\w+\([^()]*\)/ && $head !~ /\n/) {
+		print OUT "!!f!$head!!!\n\n";
+	} else {
+		print OUT "..................\n";
+		print OUT "$head\n";
+		print OUT "..................\n\n";
+	}
 	print OUT "$comment\n\n";
 }
 

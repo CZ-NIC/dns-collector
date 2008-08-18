@@ -1,3 +1,5 @@
 [replacements]
 @(\w+)=<i><tt>\1</tt></i>
+!!f!((.*\W|)(\w+))(\([^()]*\).*)!!!=<div class="literalblock" id="fun_\3"><div class="content"><pre><tt>!?\1!?\4!?</tt></pre></div></div>
 ((\w+)\([^()]*\))=<a href='#fun_\2'><tt>\1</tt></a>
+!\?((.*\W|)(\w+))!\?(\([^()]*\).*)!\?=\1\4

@@ -551,7 +551,8 @@ bdirect_write_commit(struct fastbuf *f, byte *pos)
 /**
  * printf into a fastbuf.
  **/
-int bprintf(struct fastbuf *b, const char *msg, ...) FORMAT_CHECK(printf,2,3);
+int bprintf(struct fastbuf *b, const char *msg, ...)
+  FORMAT_CHECK(printf,2,3);
 int vbprintf(struct fastbuf *b, const char *msg, va_list args); /** vprintf into a fastbuf. **/
 
 #endif
