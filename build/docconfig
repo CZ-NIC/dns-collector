@@ -1,2 +1,3 @@
 [replacements]
 @(\w+)=<i><tt>\1</tt></i>
+((\w+)\([^()]*\))=<a href='#fun_\2'><tt>\1</tt></a>

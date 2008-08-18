@@ -28,7 +28,7 @@
  *
  * After the last character is read, +bptr == bstop+ and buffer refill
  * is deferred to the next read attempt. This gives us an easy way
- * how to implement +bungetc()+.
+ * how to implement bungetc().
  *
  * When writing:
  *
@@ -41,7 +41,7 @@
  * Dirty tricks:
  *
  *    - You can mix reads and writes on the same stream, but you must
- *	call +bflush()+ in between and remember that the file position
+ *	call bflush() in between and remember that the file position
  *	points after the flushed buffer which is not necessarily the same
  *	as after the data you've read.
  *    - The spout/refill hooks can change not only bptr and bstop, but also
@@ -54,7 +54,7 @@
  *		     the modifications will be undone before calling the next
  *		     fastbuf operation
  *		*  2 if the user is allowed to overwrite the data in the buffer
- *		     if +bdirect_read_commit_modified()+ is called afterwards.
+ *		     if bdirect_read_commit_modified() is called afterwards.
  *		     In this case, the back-end must be prepared for trimming
  *		     of the buffer which is done by the commit function.
  *
@@ -111,7 +111,7 @@ extern struct fb_params fbpar_def; /** Default parameters. **/
 /**
  * Opens a file.
  * Use +@params = NULL+ for defaults.
- * See standard unix +open+ for information about @mode.
+ * See standard unix open() for information about @mode.
  **/
 struct fastbuf *bopen_file(const char *name, int mode, struct fb_params *params);
 struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *params); /** Tries to open a file (does not die, if unsuccessful). **/
@@ -142,7 +142,7 @@ static inline struct fastbuf *bopen_fd(int fd, struct fb_params *params) /** Sam
  * Dies if unsuccessful.
  */
 struct fastbuf *bopen(const char *name, uns mode, uns buflen);
-struct fastbuf *bopen_try(const char *name, uns mode, uns buflen);/** Same as +bopen+, but does not die when unsuccessful. **/
+struct fastbuf *bopen_try(const char *name, uns mode, uns buflen);/** Same as bopen(), but does not die when unsuccessful. **/
 struct fastbuf *bopen_tmp(uns buflen);/** Opens a temporary file (read-write). Deletes it, when closed. **/
 struct fastbuf *bfdopen(int fd, uns buflen);/** Wraps a filedescriptor into a fastbuf. **/
 struct fastbuf *bfdopen_shared(int fd, uns buflen);/** Wraps a filedescriptor and marks it as shared. **/
@@ -154,11 +154,11 @@ void bfilesync(struct fastbuf *b);/** Sync file to disk. **/
 /**
  * Generates a temporary filename.
  * Provide a buffer (as @name_buf, at last +TEMP_FILE_NAME_LEN+ long) to store the name into.
- * If @open_flags are not +NULL+, flags that should be ored with other flags to +open+ will be set.
+ * If @open_flags are not +NULL+, flags that should be ored with other flags to open() will be set.
  *
  * The provided name can already exist.
  * If it is not safe to overwrite existing files, +O_EXCL+ is specified in @open_flags.
- * Check for the result of +open+.
+ * Check for the result of open().
  *
  * This is not specific to fastbufs, can be used separately.
  **/
@@ -254,13 +254,13 @@ struct fbpool { /** Structure for fastbufs & mempools. **/
 
 void fbpool_init(struct fbpool *fb);	/** Initialize a new mempool fastbuf. **/
 /**
- * Start a new continuous block and prepare for writing (see +mp_start()+).
+ * Start a new continuous block and prepare for writing (see mp_start()).
  * Provide the memory pool you want to use for this block (in @mp).
  **/
 void fbpool_start(struct fbpool *fb, struct mempool *mp, uns init_size);
 /**
- * Close the block and return its address (see +mp_end()+).
- * The length can be determined with +mp_size(mp, ptr)+.
+ * Close the block and return its address (see mp_end()).
+ * The length can be determined with mp_size(mp, ptr).
  **/
 void *fbpool_end(struct fbpool *fb);
 
@@ -417,7 +417,7 @@ static inline void bwrite(struct fastbuf *f, const void *b, uns l) /** Writes bu
  * Dies if the line is longer than @l.
  **/
 char *bgets(struct fastbuf *f, char *b, uns l);
-char *bgets0(struct fastbuf *f, char *b, uns l);	/** The same as +bgets+, but for 0-terminated strings. **/
+char *bgets0(struct fastbuf *f, char *b, uns l);	/** The same as bgets(), but for 0-terminated strings. **/
 /**
  * Returns either length of read string (excluding the terminator) or -1 if it is too long.
  * In such cases exactly @l bytes are read.
@@ -445,7 +445,7 @@ void bgets_stk_init(struct bgets_stk_struct *s);
 void bgets_stk_step(struct bgets_stk_struct *s);
 
 /**
- * Read a string, strip the trailing +\n+ and store it on the stack (allocated using +alloca+).
+ * Read a string, strip the trailing +\n+ and store it on the stack (allocated using alloca()).
  **/
 #define bgets_stk(fb) \
   ({ struct bgets_stk_struct _s; _s.f = (fb); for (bgets_stk_init(&_s); _s.cur_len; _s.cur_buf = alloca(_s.cur_len), bgets_stk_step(&_s)); _s.cur_buf; })
