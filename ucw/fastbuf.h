@@ -123,7 +123,7 @@ extern struct fb_params fbpar_def;	/** The default `fb_params` **/
 /**
  * Opens a file with file mode @mode (see the man page of open()).
  * Use @params to select the fastbuf back-end and its parameters or
- * pass `NULL` if you are fine with defaults.
+ * pass NULL if you are fine with defaults.
  *
  * Dies if the file does not exist.
  **/
@@ -133,7 +133,7 @@ struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *par
 /**
  * Opens a temporary file.
  * It is placed with other temp files and it is deleted when closed.
- * Again, use `NULL` for @params if you want the defaults.
+ * Again, use NULL for @params if you want the defaults.
  **/
 struct fastbuf *bopen_tmp_file(struct fb_params *params);
 
@@ -179,7 +179,7 @@ struct fastbuf *bfdopen_shared(int fd, uns buflen);			/** Like bfdopen(), but it
 
 /**
  * Generates a temporary filename and stores it to the @name_buf (of size
- * at least * `TEMP_FILE_NAME_LEN`). If @open_flags are not `NULL`, flags that
+ * at least * `TEMP_FILE_NAME_LEN`). If @open_flags are not NULL, flags that
  * should be OR-ed with other flags to open() will be stored there.
  *
  * The location and style of temporary files is controlled by the configuration.
@@ -198,7 +198,7 @@ void temp_file_name(char *name_buf, int *open_flags);
  * Opens a temporary file and returns its file descriptor.
  * You specify the file @mode and @open_flags passed to open().
  *
- * If the @name_buf (of at last `TEMP_FILE_NAME_LEN` chars) is not `NULL`,
+ * If the @name_buf (of at last `TEMP_FILE_NAME_LEN` chars) is not NULL,
  * the filename is also stored in it.
  *
  * This function is not specific to fastbufs, it can be used separately.
@@ -365,7 +365,7 @@ struct fb_atomic {
 
 /**
  * Open an atomic fastbuf.
- * If @master is `NULL`, the file @name is opened. If it is non-null,
+ * If @master is NULL, the file @name is opened. If it is non-null,
  * a new clone of an existing atomic fastbuf is created.
  *
  * If the file has fixed record length, just set @record_len to it.
