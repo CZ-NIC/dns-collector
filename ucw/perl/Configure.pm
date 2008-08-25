@@ -166,7 +166,9 @@ sub Finish() {
 	} else {
 		Log "Preparing for compilation from current directory to obj/ ... ";
 	}
-	`rm -rf obj` if -d "obj"; Fail "Cannot delete old obj directory" if $?;
+	if (-d "obj") {
+		`rm -rf obj`; Fail "Cannot delete old obj directory" if $?;
+	}
 	-d "obj" or mkdir("obj", 0777) or Fail "Cannot create obj directory: $!";
 	-d "obj/ucw" or mkdir("obj/ucw", 0777) or Fail "Cannot create obj/ucw directory: $!";
 	Log "done\n";
