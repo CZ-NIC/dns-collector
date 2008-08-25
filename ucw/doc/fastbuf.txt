@@ -1,12 +1,40 @@
 Fastbufs
 ========
 
-Fastbufs are stream and file abstractions. They work with normal
-files, network sockets, memory buffers or just any file descriptor. It
-should be easy to implement other types by providing functions to
-refill and read the buffer.
+A *fastbuf* is a stream (or file) abstraction optimized for both speed
+and flexibility.
 
-Apart from abstraction, they are very fast.
+Fastbufs can represent many different kinds of objects: regular files, network
+sockets, file descriptors in general, or various memory buffers. These objects
+are handled by different fastbuf *back-ends.*
+
+Once you have a fastbuf, you can access it by fuctions similar to those of
+`stdio.h`, or you can use a variety of fastbuf *front-ends* providing various
+formatted operations.
+
+Please keep in mind that fastbufs do not allow arbitrary mixing of reads and
+writes on the same stream. If you need to mix them, you have to call bflush()
+inbetween and remember that the file position reported by btell() points after
+the flushed buffer, which is not necessarily the same as after the data you've
+really read.
+
+.Back-ends:
+- xref:fbparam[Files (parametrized)]
+- xref:fbfile[Regular files]
+- xref:fbtemp[Temporary files]
+- xref:fblim[File fragments]
+- xref:fbmem[In-memory streams]
+- xref:fbbuf[Buffers]
+- xref:fbgrow[Growing buffers]
+- xref:fbpool[Memory pools]
+- xref:fbatomic[Atomic files]
+
+.Front-ends:
+- xref:ffbasic[Basic functions]
+
+.Other reading:
+- xref:internal[Internal structure]
+- xref:bconfig[Configuring streams]
 
 ucw/fastbuf.h
 -------------
