@@ -18,6 +18,8 @@ struct ucwlib_context {
   struct asio_queue *io_queue;		// Async I/O queue for fb-direct.c
   ucw_sighandler_t *signal_handlers;	// Signal handlers for sighandler.c
   struct main_context *main_context;	// Current context for mainloop.c
+  struct mempool *trans_pool;		// Transaction mempool for trans.c
+  struct trans *current_trans;		// Currently open transaction for trans.c
 };
 
 #ifdef CONFIG_UCW_THREADS
