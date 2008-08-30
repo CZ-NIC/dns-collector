@@ -33,7 +33,8 @@ LIBUCW_MODS= \
 	string str-esc str-split str-match str-imatch str-hex \
 	bbuf gary \
 	getopt \
-	strtonum
+	strtonum \
+	trans
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h threads.h \
@@ -59,7 +60,8 @@ LIBUCW_MAIN_INCLUDES= \
 	qache.h \
 	kmp.h kmp-search.h binsearch.h \
 	partmap.h \
-	strtonum.h
+	strtonum.h \
+	trans.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
