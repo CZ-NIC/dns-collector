@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _UCW_THREAD_H
-#define _UCW_THREAD_H
+#ifndef _UCW_THREADS_H
+#define _UCW_THREADS_H
 
 /* This structure holds per-thread data */
 
