@@ -44,6 +44,7 @@ res_malloc(size_t size, struct resource **ptr)
 {
   void *p = xmalloc(size);
   struct resource *r = res_new(&mem_res_class, p);
+  ASSERT(r);
   ((struct res_mem *) r) -> size = size;
   if (ptr)
     *ptr = r;
