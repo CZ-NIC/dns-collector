@@ -162,6 +162,7 @@ fbmem_create(unsigned blocksize)
   f->name = "<fbmem-write>";
   f->spout = fbmem_spout;
   f->close = fbmem_close;
+  fb_tie(f);
   return f;
 }
 
@@ -180,6 +181,7 @@ fbmem_clone_read(struct fastbuf *b)
   f->seek = fbmem_seek;
   f->close = fbmem_close;
   f->can_overwrite_buffer = 1;
+  fb_tie(f);
   return f;
 }
 

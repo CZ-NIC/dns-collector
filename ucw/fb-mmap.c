@@ -189,6 +189,7 @@ bfmmopen_internal(int fd, const char *name, uns mode)
   f->seek = bfmm_seek;
   f->close = bfmm_close;
   f->config = bfmm_config;
+  fb_tie(f);
   return f;
 }
 

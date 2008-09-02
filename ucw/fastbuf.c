@@ -9,6 +9,7 @@
 
 #include "ucw/lib.h"
 #include "ucw/fastbuf.h"
+#include "ucw/respool.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,6 +21,8 @@ void bclose(struct fastbuf *f)
       bflush(f);
       if (f->close)
 	f->close(f);
+      if (f->res)
+	res_drop(f->res);
     }
 }
 
@@ -201,4 +204,41 @@ bfilesize(struct fastbuf *f)
   ucw_off_t len = btell(f);
   bsetpos(f, pos);
   return len;
+}
+
+/* Resources */
+
+static void
+fb_res_detach(struct resource *r)
+{
+  struct fastbuf *f = r->priv;
+  f->res = NULL;
+}
+
+static void
+fb_res_free(struct resource *r)
+{
+  struct fastbuf *f = r->priv;
+  f->res = NULL;
+  bclose(f);
+}
+
+static void
+fb_res_dump(struct resource *r)
+{
+  struct fastbuf *f = r->priv;
+  printf(" name=%s", f->name);
+}
+
+static const struct res_class fb_res_class = {
+  .name = "fastbuf",
+  .detach = fb_res_detach,
+  .dump = fb_res_dump,
+  .free = fb_res_free,
+};
+
+void
+fb_tie(struct fastbuf *f)
+{
+  f->res = res_new(&fb_res_class, f);
 }

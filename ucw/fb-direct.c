@@ -308,6 +308,7 @@ fbdir_open_fd_internal(int fd, const char *name, struct asio_queue *q, uns buffe
   f->close = fbdir_close;
   f->config = fbdir_config;
   f->can_overwrite_buffer = 2;
+  fb_tie(f);
   return f;
 }
 

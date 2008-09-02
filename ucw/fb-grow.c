@@ -80,6 +80,7 @@ fbgrow_create(unsigned basic_size)
   b->seek = fbgrow_seek;
   b->close = fbgrow_close;
   b->can_overwrite_buffer = 1;
+  fb_tie(b);
   return b;
 }
 
