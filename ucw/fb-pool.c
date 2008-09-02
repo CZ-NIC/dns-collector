@@ -40,7 +40,7 @@ fbpool_start(struct fbpool *b, struct mempool *mp, uns init_size)
 void *
 fbpool_end(struct fbpool *b)
 {
-  return mp_end(b->mp, b->fb.bptr); 
+  return mp_end(b->mp, b->fb.bptr);
 }
 
 void
@@ -60,7 +60,7 @@ int main(void)
   struct fbpool fb;
   byte *p;
   uns l;
-  
+
   mp = mp_new(64);
   fbpool_init(&fb);
   fbpool_start(&fb, mp, 16);
@@ -74,7 +74,7 @@ int main(void)
     if (memcmp(p + i * 7, "<hello>", 7))
       ASSERT(0);
   mp_delete(mp);
-  
+
   return 0;
 }
 
