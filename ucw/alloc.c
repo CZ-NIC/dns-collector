@@ -13,11 +13,11 @@
 #include <string.h>
 
 void *
-xmalloc(uns size)
+xmalloc(size_t size)
 {
   void *x = malloc(size);
   if (!x)
-    die("Cannot allocate %d bytes of memory", size);
+    die("Cannot allocate %zu bytes of memory", size);
   return x;
 }
 

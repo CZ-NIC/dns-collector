@@ -12,11 +12,11 @@
 #include <stdlib.h>
 
 void *
-xrealloc(void *old, uns size)
+xrealloc(void *old, size_t size)
 {
   /* We assume that realloc(NULL, x) works like malloc(x), which is true with the glibc. */
   void *x = realloc(old, size);
   if (!x)
-    die("Cannot reallocate %d bytes of memory", size);
+    die("Cannot reallocate %zu bytes of memory", size);
   return x;
 }
