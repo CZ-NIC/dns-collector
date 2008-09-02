@@ -7,6 +7,13 @@
  *	of the GNU Lesser General Public License.
  */
 
+/*
+ * FIXME:
+ *	- check other candidates for resourcification
+ *	- respool as a resource in another respool?
+ *	- unit tests
+ */
+
 #ifndef _UCW_RESPOOL_H
 #define _UCW_RESPOOL_H
 
@@ -22,7 +29,7 @@ struct respool {
 struct resource {
   cnode n;
   struct respool *rpool;
-  struct res_class *rclass;
+  const struct res_class *rclass;
   void *priv;						// Private to the class
 };
 
@@ -31,6 +38,7 @@ struct res_class {
   void (*detach)(struct resource *r);
   void (*free)(struct resource *r);
   void (*dump)(struct resource *r);
+  uns res_size;						// Size of the resource structure (0=default)
 };
 
 struct respool *rp_new(const char *name, struct mempool *mp);
@@ -52,15 +60,16 @@ rp_switch(struct respool *rp)
   return orp;
 }
 
-struct resource *res_alloc(void);			// Returns NULL if there is no pool active
+struct resource *res_alloc(const struct res_class *rc);	// Returns NULL if there is no pool active
+void res_drop(struct resource *r);
 void res_detach(struct resource *r);
 void res_free(struct resource *r);
 void res_dump(struct resource *r);
 
 static inline struct resource *				// Returns NULL if there is no pool active
-res_new(struct res_class *rc, void *priv)
+res_new(const struct res_class *rc, void *priv)
 {
-  struct resource *r = res_alloc();
+  struct resource *r = res_alloc(rc);
   if (r)
     {
       r->rclass = rc;
@@ -68,5 +77,13 @@ res_new(struct res_class *rc, void *priv)
     }
   return r;
 }
+
+/* Various special types of resources */
+
+struct resource *res_for_fd(int fd);			// Creates a resource that closes a given file descriptor
+
+void *res_malloc(size_t size, struct resource **ptr);	// Allocates memory and creates a resource for it
+void *res_malloc_zero(size_t size, struct resource **ptr);	// Allocates zero-initialized memory and creates a resource for it
+void *res_realloc(struct resource *res, size_t size);
 
 #endif

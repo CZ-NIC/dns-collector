@@ -35,9 +35,14 @@ rp_delete(struct respool *rp)
 {
   struct resource *r;
   while (r = clist_tail(&rp->resources))
-    res_free(r);
+    {
+      ASSERT(r->rpool == rp);
+      res_free(r);
+    }
   if (!rp->mpool)
     xfree(rp);
+  if (rp_current() == rp)
+    rp_switch(NULL);
 }
 
 void
@@ -49,19 +54,21 @@ rp_dump(struct respool *rp)
 }
 
 struct resource *
-res_alloc(void)
+res_alloc(const struct res_class *rc)
 {
   struct respool *rp = rp_current();
   if (!rp)
     return NULL;
 
-  struct resource *r = (rp->mpool ? mp_alloc_fast(rp->mpool, sizeof(*r)) : xmalloc(sizeof(*r)));
+  uns size = (rc->res_size ? : sizeof(struct resource));
+  struct resource *r = (rp->mpool ? mp_alloc_fast(rp->mpool, size) : xmalloc(size));
+  r->rpool = rp;
   clist_add_tail(&rp->resources, &r->n);
   return r;
 }
 
-static inline void
-res_do_free(struct resource *r)
+void
+res_drop(struct resource *r)
 {
   clist_remove(&r->n);
   if (!r->rpool->mpool)
@@ -73,7 +80,7 @@ res_detach(struct resource *r)
 {
   if (r->rclass->detach)
     r->rclass->detach(r);
-  res_do_free(r);
+  res_drop(r);
 }
 
 void
@@ -81,7 +88,7 @@ res_free(struct resource *r)
 {
   if (r->rclass->free)
     r->rclass->free(r);
-  res_do_free(r);
+  res_drop(r);
 }
 
 void
@@ -95,10 +102,18 @@ res_dump(struct resource *r)
 
 #ifdef TEST
 
+#include "ucw/fastbuf.h"
+
 int main(void)
 {
+  // struct mempool *mp = mp_new(4096);
   struct respool *rp = rp_new("test", NULL);
+  rp_switch(rp);
+  struct fastbuf *f = bfdopen_shared(1, 0);
   rp_dump(rp);
+  bputsn(f, "Hello, all worlds!");
+  bclose(f);
+  rp_delete(rp);
   return 0;
 }
 
