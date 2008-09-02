@@ -30,6 +30,15 @@ rp_new(const char *name, struct mempool *mp)
   return rp;
 }
 
+static void
+rp_free(struct respool *rp)
+{
+  if (!rp->mpool)
+    xfree(rp);
+  if (rp_current() == rp)
+    rp_switch(NULL);
+}
+
 void
 rp_delete(struct respool *rp)
 {
@@ -39,10 +48,19 @@ rp_delete(struct respool *rp)
       ASSERT(r->rpool == rp);
       res_free(r);
     }
-  if (!rp->mpool)
-    xfree(rp);
-  if (rp_current() == rp)
-    rp_switch(NULL);
+  rp_free(rp);
+}
+
+void
+rp_detach(struct respool *rp)
+{
+  struct resource *r;
+  while (r = clist_head(&rp->resources))
+    {
+      ASSERT(r->rpool == rp);
+      res_detach(r);
+    }
+  rp_free(rp);
 }
 
 void

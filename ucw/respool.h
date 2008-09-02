@@ -12,6 +12,7 @@
  *	- check other candidates for resourcification
  *	- respool as a resource in another respool?
  *	- unit tests
+ *	- automatic freeing of trans pool on thread exit
  */
 
 #ifndef _UCW_RESPOOL_H
@@ -43,6 +44,7 @@ struct res_class {
 
 struct respool *rp_new(const char *name, struct mempool *mp);
 void rp_delete(struct respool *rp);
+void rp_detach(struct respool *rp);
 void rp_dump(struct respool *rp);
 
 static inline struct respool *
