@@ -32,6 +32,7 @@ struct resource {
   struct respool *rpool;
   const struct res_class *rclass;
   void *priv;						// Private to the class
+  // More data specific for the particular class can follow
 };
 
 struct res_class {

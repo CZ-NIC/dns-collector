@@ -22,6 +22,8 @@ struct ucwlib_context {
   struct respool *current_respool;	// Current resource pool
   struct mempool *trans_pool;		// Transaction mempool
   struct trans *current_trans;		// Currently open transaction
+  struct mempool *exc_pool;		// Exception mempool
+  struct exception *current_exc;	// Currently active exception
 };
 
 #ifdef CONFIG_UCW_THREADS
