@@ -22,7 +22,7 @@ xmalloc(size_t size)
 }
 
 void *
-xmalloc_zero(uns size)
+xmalloc_zero(size_t size)
 {
   void *x = xmalloc(size);
   bzero(x, size);
