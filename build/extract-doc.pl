@@ -81,7 +81,8 @@ sub process( $ ) {
 					s/^\s*\s?//;
 					s/\/\/.*//;
 					s/\/\*.*?\*\///gs;
-					s/[;{].*//;
+					s/([;{]).*/";"x length( $1 )/e;
+					s/\)\s*;$/);/;
 					formatNote( $_, $buff );
 					$head = undef;
 					$buff = undef;
@@ -99,7 +100,8 @@ sub process( $ ) {
 				if( $head =~ /\(/ || $head !~ /{/ ) {
 					$head =~ s/^\s*//;
 					$head =~ s/\/\*.*?\*\///gs;
-					$head =~ s/[;{].*//;
+					$head =~ s/([;{]).*/";"x length( $1 )/e;
+					$head =~ s/\)\s*;$/);/;
 					formatNote( $head, $buff );
 					$head = undef;
 					$buff = undef;
