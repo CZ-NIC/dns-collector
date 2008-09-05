@@ -195,7 +195,7 @@ $(DATAFILES): $(o)/%: $(s)/%
 # Rules for documentation
 $(o)/%.html: $(o)/%.txt
 	$(M)"AD $< -> $@"
-	$(Q)asciidoc -f $(s)/build/docconfig $<
+	$(Q)asciidoc -e -f $(s)/build/asciidoc.conf -f $(s)/build/asciidoc-xhtml.conf -f /etc/asciidoc/asciidoc.conf -f /etc/asciidoc/xhtml11.conf $<
 
 $(o)/%.txt: $(s)/%.txt
 	$(M)"ED $< -> $@"
