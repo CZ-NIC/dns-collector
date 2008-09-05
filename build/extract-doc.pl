@@ -1,4 +1,7 @@
 #!/usr/bin/perl
+# Script for extracting documentation out of header files
+# (c) 2008 Michal Vaner <vorner@ucw.cz>
+
 use strict;
 use warnings;
 
