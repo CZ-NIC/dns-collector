@@ -28,6 +28,7 @@ while( defined( my $line = <> ) ) {
 	$file = $dircp."/".$file;
 	$file =~ s/^\///;
 	$file =~ s/\.[^.]+$//;
+	$text =~ s/\(/!!PARENT_OPEN!!/g;
 	print OUT "- <<$file:auto_$num,`$text`>>\n";
 }
 
