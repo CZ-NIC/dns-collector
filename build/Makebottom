@@ -16,7 +16,7 @@ programs: $(PROGS)
 datafiles: $(DATAFILES)
 tests: $(TESTS)
 configs: $(addprefix run/$(CONFIG_DIR)/,$(CONFIGS))
-docs: runtree $(DOCS) $(DOC_INDEXES)
+docs: runtree $(DOCS) $(DOC_INDECES)
 
 tags:
 	etags `find . -name "*.[ch]"`
@@ -197,7 +197,7 @@ $(o)/%.html: $(o)/%.txt
 	$(M)"AD $< -> $@"
 	$(Q)asciidoc -e -f $(s)/build/asciidoc.conf -f $(s)/build/asciidoc-xhtml.conf -f /etc/asciidoc/asciidoc.conf -f /etc/asciidoc/xhtml11.conf $<
 
-$(patsubst %.html,%.txt,$(DOC_INDEXES)): $(o)/%.txt:
+$(patsubst %.html,%.txt,$(DOC_INDECES)): $(o)/%.txt:
 	$(M)"DD -> $@"
 	$(Q)echo $@: $(DOC_HEAD) $(DOC_LIST) >> $(o)/depend.new
 	$(Q)$(s)/build/def-doc.pl $(DOC_HEAD) $@ $(DOC_LIST)
