@@ -138,7 +138,7 @@ while( defined( $line = <IN> ) ) {
 }
 
 if( defined $depname ) {
-	open DEP, ">$depname" or die "Could not write dep file $depname ($!)\n";
+	open DEP, ">>$depname" or die "Could not write dep file $depname ($!)\n";
 	print DEP "$outname:";
 	print DEP " $_" foreach( @deps );
 	print DEP "\n";
