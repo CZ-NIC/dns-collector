@@ -5,7 +5,7 @@
 use strict;
 use warnings;
 
-my( $inname, $outname, $depname, $basedir ) = @ARGV;
+my( $inname, $outname, $depname, $basedir, $defdump ) = @ARGV;
 if( defined $inname ) {
 	open IN, $inname or die "Could not read $inname ($!)\n";
 } else {
@@ -16,13 +16,14 @@ if( defined $outname ) {
 } else {
 	open OUT, ">&STDOUT" or die "Could not write to stdout ($!)\n";
 }
-my $hasdep;
-if( defined $depname ) {
-	open DEP, ">>$depname" or die "Could not write $depname ($!)\n";
-	$hasdep = 1;
+my $hasdump;
+if( defined $defdump ) {
+	open DUMP, ">>$defdump" or die "Could not write definition dump $defdump ($!)\n";
+	$hasdump = 1;
 }
 
-print DEP "$outname:" if( $hasdep );
+my @deps;
+my $id = 0;
 
 sub formatNote( $$ ) {
 	my( $head, $comment ) = @_;
@@ -30,12 +31,18 @@ sub formatNote( $$ ) {
 	print OUT "\n";
 	print OUT "''''\n";
 	chomp $head;
+	print OUT "[[auto_$id]]\n";
 	if($head =~ /\w+\([^()]*\)/ && $head !~ /\n/) {
 		print OUT "!!f!$head!!!\n\n";
 	} else {
 		print OUT "..................\n";
 		print OUT "$head\n";
 		print OUT "..................\n\n";
+	}
+	if( $hasdump ) {
+		$head =~ s/\n.*//s;
+		print DUMP "$outname,$id,$head\n";
+		$id ++;
 	}
 	print OUT "$comment\n\n";
 }
@@ -124,14 +131,25 @@ while( defined( $line = <IN> ) ) {
 	if( my( $fname ) = ( $line =~ /^!!\s*(.*\S)/ ) ) {
 		$fname = "$basedir/$fname" if( ( $fname !~ /^\// ) && defined $basedir );
 		process( $fname );
-		print DEP " $fname" if( $hasdep );
+		push @deps, $fname;
 	} else {
 		print OUT "$line\n";
 	}
 }
 
-print DEP "\n" if( $hasdep );
+if( defined $depname ) {
+	open DEP, ">$depname" or die "Could not write dep file $depname ($!)\n";
+	print DEP "$outname:";
+	print DEP " $_" foreach( @deps );
+	print DEP "\n";
+	if( $hasdump ) {
+		print DEP "$defdump:";
+		print DEP " $_" foreach( @deps );
+		print DEP "\n";
+	}
+	close DEP;
+}
 
 close IN;
 close OUT;
-close DEP;
+close DUMP;
