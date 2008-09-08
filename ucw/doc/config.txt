@@ -1,8 +1,9 @@
 Configuration files
 ===================
 
-This document describes run-time configuration of UCW using
-config files. For compile-time configuration, see doc/configure.
+This document describes run-time configuration of libucw-based
+programs using config files. For compile-time configuration,
+see <<configure>>.
 
 Terminology
 -----------
