@@ -6,7 +6,7 @@ What can be configured
 There are two different levels of configuring/customizing program
 based on libucw:
 
-  - runtime configuration in configuration files (see <<config>>)
+  - runtime configuration in configuration files (see <<config:>>)
 
   - compile-time configuration of the libraries: config switches set
     before compiling, selecting optional features.

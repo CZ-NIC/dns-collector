@@ -3,7 +3,7 @@ Configuration files
 
 This document describes run-time configuration of libucw-based
 programs using config files. For compile-time configuration,
-see <<configure>>.
+see <<configure:>>.
 
 Terminology
 -----------
