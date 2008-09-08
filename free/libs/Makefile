@@ -13,6 +13,12 @@ obj/config.mk:
 # We will use the libucw build system
 include $(s)/build/Maketop
 
+# The UCW library
+include $(s)/ucw/Makefile
+
+# Stripped down version
+ifndef CONFIG_UCW_ONLY
+
 # Install config files
 CONFIGS+=sherlock local
 
@@ -21,7 +27,6 @@ LIBCHARSET=$(o)/charset/libcharset.pc
 LIBSH=$(o)/sherlock/libsh.pc
 
 # Include makefiles of libraries we wish to use
-include $(s)/ucw/Makefile
 include $(s)/charset/Makefile
 include $(s)/sherlock/Makefile
 
@@ -33,6 +38,8 @@ endif
 ifdef CONFIG_IMAGES
 LIBIMAGES=$(o)/images/libimages.pc
 include $(s)/images/Makefile
+endif
+
 endif
 
 libs: $(LIBUCW) $(LIBSH) $(LIBIMAGES) $(LIBCHARSET) $(LIBLANG)
