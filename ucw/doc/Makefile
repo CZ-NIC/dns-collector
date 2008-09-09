@@ -9,4 +9,4 @@ $(UCW_INDEX): DOC_HEAD:=$(s)/ucw/doc/index.txt
 $(UCW_INDEX): DOC_LIST:=$(patsubst %,$(o)/ucw/doc/%.deflist,$(UCW_DOCS))
 
 DOCS+=$(addprefix $(o)/ucw/doc/,$(addsuffix .html,$(UCW_DOCS)))
-DOC_INDECES+=$(UCW_INDEX)
+DOC_INDICES+=$(UCW_INDEX)
