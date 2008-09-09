@@ -201,12 +201,12 @@ $(o)/%.html: $(o)/%.txt
 $(patsubst %.html,%.txt,$(DOC_INDICES)): $(o)/%.txt:
 	$(M)"DOC-DEFS $@"
 	$(Q)echo $@: $(DOC_HEAD) $(DOC_LIST) >> $(o)/depend.new
-	$(Q)$(s)/build/def-doc.pl $(DOC_HEAD) $@ $(DOC_LIST)
+	$(Q)$(s)/build/doc-defs $(DOC_HEAD) $@ $(DOC_LIST)
 
 #FIXME: this one outputs .deflist too. How do I specify that one run of the rule has multiple target files?
 $(patsubst %.html,%.txt,$(DOCS)): $(o)/%.txt: $(s)/%.txt
 	$(M)"DOC-EXT $<"
-	$(Q)$(s)/build/extract-doc.pl $< $@ $(o)/depend.new $(s) $(patsubst %.txt,%.deflist,$@)
+	$(Q)$(s)/build/doc-extract $< $@ $(o)/depend.new $(s) $(patsubst %.txt,%.deflist,$@)
 
 # Default installation target
 
