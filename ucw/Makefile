@@ -3,7 +3,11 @@
 DIRS+=ucw
 LIBUCW=$(o)/ucw/libucw.pc
 
-PROGS+=$(o)/ucw/basecode
+ifdef CONFIG_UCW_UTILS
+UCW_UTILS=basecode b224 rotate-log urltool daemon-helper hex
+
+PROGS+=$(addprefix $(o)/ucw/,$(UCW_UTILS))
+endif
 
 LIBUCW_MODS= \
 	threads \
@@ -94,7 +98,7 @@ $(o)/ucw/basecode: $(o)/ucw/basecode.o $(LIBUCW)
 TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test stkstring.test \
     slists.test kmp-test.test bbuf.test getopt.test ff-unicode.test eltpool.test \
     fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test \
-    redblack-test.test basecode.test fb-file.test fb-grow.test fb-pool.test fb-atomic.test \
+    redblack-test.test fb-file.test fb-grow.test fb-pool.test fb-atomic.test \
     fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test url.test)
 
 $(o)/ucw/regex.test: $(o)/ucw/regex-t
@@ -115,7 +119,6 @@ $(o)/ucw/trie-test.test: $(o)/ucw/trie-test
 $(o)/ucw/asort-test.test: $(o)/ucw/asort-test
 $(o)/ucw/binheap-test.test: $(o)/ucw/binheap-test
 $(o)/ucw/redblack-test.test: $(o)/ucw/redblack-test
-$(o)/ucw/basecode.test: $(o)/ucw/basecode
 $(addprefix $(o)/ucw/fb-,file.test grow.test pool.test socket.test atomic.test \
 	limfd.test temp.test mem.test buffer.test mmap.test): %.test: %-t
 $(o)/ucw/fb-atomic-tt.o: CFLAGS += -DFB_ATOMIC_TRACE
@@ -140,4 +143,14 @@ endif
 
 ifdef CONFIG_UCW_SHELL_UTILS
 include $(s)/ucw/shell/Makefile
+endif
+
+ifdef CONFIG_UCW_UTILS
+$(o)/ucw/b224: $(o)/ucw/b224.o $(LIBUCW)
+$(o)/ucw/daemon-helper: $(o)/ucw/daemon-helper.o $(LIBUCW)
+$(o)/ucw/urltool: $(o)/ucw/urltool.o $(LIBUCW)
+$(o)/ucw/hex: $(o)/ucw/hex.o $(LIBUCW)
+
+TESTS+=$(o)/ucw/basecode.test
+$(o)/ucw/basecode.test: $(o)/ucw/basecode
 endif
