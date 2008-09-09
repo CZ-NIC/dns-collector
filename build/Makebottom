@@ -193,18 +193,19 @@ $(DATAFILES): $(o)/%: $(s)/%
 	$(Q)$(call symlink,$@,run/$(DATADIR))
 
 # Rules for documentation
+
 $(o)/%.html: $(o)/%.txt
-	$(M)"AD $< -> $@"
+	$(M)"DOC-HTML $<"
 	$(Q)asciidoc -e -f $(s)/build/asciidoc.conf -f $(s)/build/asciidoc-xhtml.conf -f /etc/asciidoc/asciidoc.conf -f /etc/asciidoc/xhtml11.conf $<
 
 $(patsubst %.html,%.txt,$(DOC_INDICES)): $(o)/%.txt:
-	$(M)"DD -> $@"
+	$(M)"DOC-DEFS $@"
 	$(Q)echo $@: $(DOC_HEAD) $(DOC_LIST) >> $(o)/depend.new
 	$(Q)$(s)/build/def-doc.pl $(DOC_HEAD) $@ $(DOC_LIST)
 
 #FIXME: this one outputs .deflist too. How do I specify that one run of the rule has multiple target files?
 $(patsubst %.html,%.txt,$(DOCS)): $(o)/%.txt: $(s)/%.txt
-	$(M)"ED $< -> $@"
+	$(M)"DOC-EXT $<"
 	$(Q)$(s)/build/extract-doc.pl $< $@ $(o)/depend.new $(s) $(patsubst %.txt,%.deflist,$@)
 
 # Default installation target
