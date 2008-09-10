@@ -19,22 +19,22 @@ the flushed buffer, which is not necessarily the same as after the data you've
 really read.
 
 .Back-ends:
-- xref:fbparam[Files (parametrized)]
-- xref:fbfile[Regular files]
-- xref:fbtemp[Temporary files]
-- xref:fblim[File fragments]
-- xref:fbmem[In-memory streams]
-- xref:fbbuf[Buffers]
-- xref:fbgrow[Growing buffers]
-- xref:fbpool[Memory pools]
-- xref:fbatomic[Atomic files]
+- <<fbparam,Files (parametrized)>>
+- <<fbfile,Regular files>>
+- <<fbtemp,Temporary files>>
+- <<fblim,File fragments>>
+- <<fbmem,In-memory streams>>
+- <<fbbuf,Buffers>>
+- <<fbgrow,Growing buffers>>
+- <<fbpool,Memory pools>>
+- <<fbatomic,Atomic files>>
 
 .Front-ends:
-- xref:ffbasic[Basic functions]
+- <<ffbasic,Basic functions>>
 
 .Other reading:
-- xref:internal[Internal structure]
-- xref:bconfig[Configuring streams]
+- <<internal,Internal structure>>
+- <<bconfig,Configuring streams>>
 
 ucw/fastbuf.h
 -------------
@@ -53,7 +53,7 @@ ucw/ff-unicode.h
 
 Reading and writing of unicode characters.
 
-Invalid codes are replaced by +UNI_REPLACEMENT+ when reading.
+Invalid codes are replaced by `UNI_REPLACEMENT` when reading.
 
 !!ucw/ff-unicode.h
 

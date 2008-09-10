@@ -267,7 +267,7 @@ struct fastbuf *fbmem_clone_read(struct fastbuf *f);	/** Given a writing fastbuf
  *
  * In some cases, the front-ends can take advantage of rewriting the contents
  * of the buffer temporarily. In this case, set @can_overwrite as described
- * in xref:internal[Internals]. If you do not care, keep @can_overwrite zero.
+ * in <<internal,Internals>>. If you do not care, keep @can_overwrite zero.
  *
  * It is not possible to close this fastbuf.
  */
@@ -294,7 +294,7 @@ static inline uns fbbuf_count_written(struct fastbuf *f) /** Calculates, how man
  * === Fastbuf on recyclable growing buffers [[fbgrow]]
  *
  * The `fbgrow` back-end keeps the stream in a contiguous buffer stored in the
- * main memory, but unlike xref:fbmem[`fbmem`], the buffer does not have a fixed
+ * main memory, but unlike <<fbmem,`fbmem`>>, the buffer does not have a fixed
  * size and it is expanded to accomodate all data.
  *
  * At every moment, you can use `fastbuf->buffer` to gain access to the stream.
@@ -404,11 +404,11 @@ int bconfig(struct fastbuf *f, uns type, int data); /** Configure a fastbuf. Ret
 
 /**
  * Close and free fastbuf.
- * Can not be used for fastbufs not returned from function (initialized in a parameter, for example the one from +fbbuf_init_read+).
+ * Can not be used for fastbufs not returned from function (initialized in a parameter, for example the one from `fbbuf_init_read`).
  */
 void bclose(struct fastbuf *f);
 void bflush(struct fastbuf *f);					/** Write data (if it makes any sense, do not use for in-memory buffers). **/
-void bseek(struct fastbuf *f, ucw_off_t pos, int whence);	/** Seek in the buffer. See +man fseek+ for description of @whence. Only for seekable fastbufs. **/
+void bseek(struct fastbuf *f, ucw_off_t pos, int whence);	/** Seek in the buffer. See `man fseek` for description of @whence. Only for seekable fastbufs. **/
 void bsetpos(struct fastbuf *f, ucw_off_t pos);			/** Set position to @pos bytes from beginning. Only for seekable fastbufs. **/
 void brewind(struct fastbuf *f);				/** Go to the beginning of the fastbuf. Only for seekable ones. **/
 ucw_off_t bfilesize(struct fastbuf *f);				/** How large is the file? -1 if not seekable. **/
@@ -502,8 +502,8 @@ static inline void bwrite(struct fastbuf *f, const void *b, uns l) /** Writes bu
 }
 
 /**
- * Reads a line into @b and strips trailing +\n+.
- * Returns pointer to the terminating 0 or +NULL+ on EOF.
+ * Reads a line into @b and strips trailing `\n`.
+ * Returns pointer to the terminating 0 or NULL on `EOF`.
  * Dies if the line is longer than @l.
  **/
 char *bgets(struct fastbuf *f, char *b, uns l);
@@ -517,12 +517,12 @@ int bgets_nodie(struct fastbuf *f, char *b, uns l);
 struct mempool;
 struct bb_t;
 /**
- * Read a string, strip the trailing +\n+ and store it into growing buffer @b.
+ * Read a string, strip the trailing `\n` and store it into growing buffer @b.
  * Dies if the line is longer than @limit.
  **/
 uns bgets_bb(struct fastbuf *f, struct bb_t *b, uns limit);
 /**
- * Read a string, strip the trailing +\n+ and store it into buffer allocated from a memory pool.
+ * Read a string, strip the trailing `\n` and store it into buffer allocated from a memory pool.
  **/
 char *bgets_mp(struct fastbuf *f, struct mempool *mp);
 
@@ -535,13 +535,13 @@ void bgets_stk_init(struct bgets_stk_struct *s);
 void bgets_stk_step(struct bgets_stk_struct *s);
 
 /**
- * Read a string, strip the trailing +\n+ and store it on the stack (allocated using alloca()).
+ * Read a string, strip the trailing `\n` and store it on the stack (allocated using alloca()).
  **/
 #define bgets_stk(fb) \
   ({ struct bgets_stk_struct _s; _s.f = (fb); for (bgets_stk_init(&_s); _s.cur_len; _s.cur_buf = alloca(_s.cur_len), bgets_stk_step(&_s)); _s.cur_buf; })
 
 /**
- * Write a string, without 0 or +\n+ at the end.
+ * Write a string, without 0 or `\n` at the end.
  **/
 static inline void bputs(struct fastbuf *f, const char *b)
 {
