@@ -23,7 +23,15 @@ while( defined( my $line = <> ) ) {
 	push @dump, [ split /,/, $line, 5 ];
 }
 
-foreach( sort { $a->[3] cmp $b->[3]; } @dump ) {
+my %groups = (
+	'enum' => 1,
+	'struct' => 1,
+	'function' => 2,
+	'variable' => 3,
+	'define' => 4
+);
+
+foreach( sort { ( $groups{$a->[2]} <=> $groups{$b->[2]} ) or ( $a->[3] cmp $b->[3] ); } @dump ) {
 	my( $file, $num, $type, $name, $text ) = @{$_};
 	my $dircp = $dir;
 	while( shift @{[ $dircp =~ /([^\/]+)/, "//" ]} eq shift @{[ $file =~ /([^\/]+)/, "///" ]} ) {
