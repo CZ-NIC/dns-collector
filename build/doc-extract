@@ -60,7 +60,7 @@ sub formatNote( $$ ) {
 	}
 	if( $hasdump ) {
 		$head =~ s/\n.*//s;
-		print DUMP "$outname,$id,$head\n";
+		print DUMP "$outname,$id,$type,$name,$head\n";
 		$id ++;
 	}
 	print OUT "$comment\n\n";
