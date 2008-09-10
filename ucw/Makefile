@@ -4,9 +4,7 @@ DIRS+=ucw
 LIBUCW=$(o)/ucw/libucw.pc
 
 ifdef CONFIG_UCW_UTILS
-UCW_UTILS=basecode b224 rotate-log urltool daemon-helper hex
-
-PROGS+=$(addprefix $(o)/ucw/,$(UCW_UTILS))
+include $(s)/ucw/utils/Makefile
 endif
 
 LIBUCW_MODS= \
@@ -93,7 +91,6 @@ $(o)/ucw/lizard-test: $(o)/ucw/lizard-test.o $(LIBUCW)
 $(o)/ucw/kmp-test: $(o)/ucw/kmp-test.o $(LIBUCW) $(LIBCHARSET)
 $(o)/ucw/ipaccess-test: $(o)/ucw/ipaccess-test.o $(LIBUCW)
 $(o)/ucw/trie-test: $(o)/ucw/trie-test.o $(LIBUCW)
-$(o)/ucw/basecode: $(o)/ucw/basecode.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test stkstring.test \
     slists.test kmp-test.test bbuf.test getopt.test ff-unicode.test eltpool.test \
@@ -143,14 +140,4 @@ endif
 
 ifdef CONFIG_UCW_SHELL_UTILS
 include $(s)/ucw/shell/Makefile
-endif
-
-ifdef CONFIG_UCW_UTILS
-$(o)/ucw/b224: $(o)/ucw/b224.o $(LIBUCW)
-$(o)/ucw/daemon-helper: $(o)/ucw/daemon-helper.o $(LIBUCW)
-$(o)/ucw/urltool: $(o)/ucw/urltool.o $(LIBUCW)
-$(o)/ucw/hex: $(o)/ucw/hex.o $(LIBUCW)
-
-TESTS+=$(o)/ucw/basecode.test
-$(o)/ucw/basecode.test: $(o)/ucw/basecode
 endif
