@@ -29,13 +29,13 @@ sub detect( $ ) {
         return( 'struct', 0, $1 ) if( /struct\s+(\w+)\s+{/ );
         return( 'enum', 0, $1 ) if( /enum\s+(\w+)\s+{/ );
         if( $l > length ) {
-                warn( "Unknown statemen $_\n" );
+                warn( "Unknown statement $_\n" );
                 return( '', 0, $_ );
         }
         return( 'define', 0, $1 ) if( /#define\s+(\w+)/ );
         return( 'function', 1, $1 ) if( /(\w+)\(.*\)/ );
         return( 'variable', 1, $1 ) if( /\s(\w+);/ );
-        warn( "Unknown statemen $_\n" );
+        warn( "Unknown statement $_\n" );
         return( '', 0, $_ );
 }
 
