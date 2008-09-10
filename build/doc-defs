@@ -16,9 +16,15 @@ close HEAD;
 my $dir = $out;
 $dir =~ s/\/[^\/]+$//;
 
+my @dump;
+
 while( defined( my $line = <> ) ) {
 	chomp $line;
-	my( $file, $num, $type, $name, $text ) = split /,/, $line, 5;
+	push @dump, [ split /,/, $line, 5 ];
+}
+
+foreach( sort { $a->[3] cmp $b->[3]; } @dump ) {
+	my( $file, $num, $type, $name, $text ) = @{$_};
 	my $dircp = $dir;
 	while( shift @{[ $dircp =~ /([^\/]+)/, "//" ]} eq shift @{[ $file =~ /([^\/]+)/, "///" ]} ) {
 		$dircp =~ s/[^\/]+\/?//;
