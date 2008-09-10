@@ -2,10 +2,10 @@
 
 DIRS+=ucw/doc
 
-UCW_DOCS=fastbuf
-UCW_INDEX=$(o)/ucw/doc/index.html
+UCW_DOCS=fastbuf index
+UCW_INDEX=$(o)/ucw/doc/def_index.html
 
-$(UCW_INDEX): DOC_HEAD=$(s)/ucw/doc/index.txt
+$(UCW_INDEX): DOC_HEAD=$(s)/ucw/doc/def_index.txt
 $(UCW_INDEX): DOC_LIST=$(patsubst %,$(o)/ucw/doc/%.deflist,$(UCW_DOCS))
 
 DOCS+=$(addprefix $(o)/ucw/doc/,$(addsuffix .html,$(UCW_DOCS)))

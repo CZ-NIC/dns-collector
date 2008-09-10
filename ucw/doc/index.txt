@@ -5,9 +5,8 @@ UCW libraries
 TODO: Some general description, what the libraries are, why, etc...
 ////
 
+You can see list of <<def_index:,definitions>>.
+
 Modules
 -------
 - <<fastbuf:,Fastbufs>>
-
-Definitions
------------
