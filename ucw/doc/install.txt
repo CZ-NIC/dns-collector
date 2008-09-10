@@ -1,0 +1,48 @@
+Installation of libucw
+======================
+
+Prerequisities
+--------------
+To build and run, you need:
+
+  -  The GNU toolchain (gcc 4.0 or newer is required)
+  -  GNU bison and flex
+  -  GNU bash 2.0 or newer
+  -  Perl (any reasonably new version; 5.6.1 works for me)
+  -  ZLib (newer than stone-age)
+  -  pkg-config
+  -  Linux (porting to other systems should be easy)
+  -  GNUPlot 4.0 or newer (if you want to use Watson to draw nice graphs
+     with various statistics)
+  -  Libjpeg, libpng and libungif to support all image formats
+     (jpeg, png and gif). These libraries can be replaced by libgif (gif)
+     and GraphicsMagick >= 1.1 (jpeg, png, gif and possible more formats).
+     See sherlock/default.cfg for related configuration switches.
+  -  Mutt mail client for mail reports in some scripts
+     (any reasonably new version; 1.5.9 works)
+  -  GNU readline (optional, only non-free version of Sherlock)
+
+Compiling
+---------
+First of all, you need to run the `configure` script to set up compile-time
+options. If you want to compile the library with the default feature set,
+just use:
+
+	./configure free
+
+If you need to set anything unusual, please consult <<configure:>> for details.
+
+The defaults determined by the configure script should be correct on Linux/i386,
+on other architectures you will probably need to tweak the CPU detection section
+in `ucw/autoconf.cfg` and possibly also the typedefs in `ucw/config.h`.
+
+Then run
+
+	make
+
+which builds the whole package in the `run` directory and you can play there.
+If you want to install it anywhere else, just use
+
+//TODO Implement the installation
+
+	make install INSTALL_DIR=/where/to/install
