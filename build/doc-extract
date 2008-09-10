@@ -50,7 +50,7 @@ sub formatNote( $$ ) {
 	chomp $head;
 	print OUT "[[auto_$id]]\n";
         my( $type, $semicolon, $name ) = detect( $head );
-        $head =~ s/;?\s+$/;/ if( $semicolon );
+        $head =~ s/;?\s*$/;/ if( $semicolon );
 	if( $type eq 'function' ) {
 		print OUT "!!f!$head!!!\n\n";
 	} else {
@@ -107,8 +107,6 @@ sub process( $ ) {
 					s/^\s*\s?//;
 					s/\/\/.*//;
 					s/\/\*.*?\*\///gs;
-					s/([;{]).*/";"x length( $1 )/e;
-					s/\)\s*;$/);/;
 					formatNote( $_, $buff );
 					$head = undef;
 					$buff = undef;
@@ -126,8 +124,6 @@ sub process( $ ) {
 				if( $head =~ /\(/ || $head !~ /{/ ) {
 					$head =~ s/^\s*//;
 					$head =~ s/\/\*.*?\*\///gs;
-					$head =~ s/([;{]).*/";"x length( $1 )/e;
-					$head =~ s/\)\s*;$/);/;
 					formatNote( $head, $buff );
 					$head = undef;
 					$buff = undef;
