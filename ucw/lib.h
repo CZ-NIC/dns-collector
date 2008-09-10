@@ -20,7 +20,7 @@
 
 #define CHECK_PTR_TYPE(x, type) ((x)-(type)(x) + (type)(x))		/** Check that a pointer @x is of type @type. Fail compilation if not. **/
 #define PTR_TO(s, i) &((s*)0)->i					/** Return OFFSETOF() in form of a pointer. **/
-#define OFFSETOF(s, i) ((unsigned int) (uintptr_t) PTR_TO(s, i))	/** Offset of item @i from the start of structure @s **/
+#define OFFSETOF(s, i) offsetof(s, i)					/** Offset of item @i from the start of structure @s **/
 #define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))		/** Given a pointer @p to item @i of structure @s, return a pointer to the start of the struct. **/
 
 /** Align an integer @s to the nearest higher multiple of @a (which should be a power of two) **/
