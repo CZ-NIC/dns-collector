@@ -3,7 +3,8 @@ Base64 and Base224 encodings
 
 These modules can be used to encode and decode data to and from
 base64 (described in RFC 3548) and base224 (not described in any
-standard, uses all non-control characters of ASCII).
+standard, uses all non-control characters, briefly described in
+a comment at the beginning of `ucw/base224.c`).
 
 - <<base64,Base64>>
 - <<base224,Base224>>
