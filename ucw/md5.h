@@ -9,7 +9,7 @@
 
 /**
  * Internal MD5 hash state.
- * You can use it just as a opaque handle.
+ * You should use it just as an opaque handle only.
  */
 typedef struct {
 	u32 buf[4];
@@ -22,22 +22,25 @@ void md5_init(md5_context *context); /** Initialize the MD5 hashing algorithm in
  * Push another @len bytes of data from @buf to the MD5 hash
  * represented by @context. You can call it multiple time on the same
  * @context without reinitializing it and the result will be the same
- * as you concatenated all the data together and fed them here all at
+ * as if you concatenated all the data together and fed them here all at
  * once.
  */
 void md5_update(md5_context *context, const byte *buf, uns len);
 /**
  * Call this after the last md5_update(). It will terminate the
- * algorithm and return pointer to the result.
+ * algorithm and return a pointer to the result.
  *
  * Note that the data it points to are stored inside the @context, so
  * if you use it to compute another hash or it ceases to exist, the
  * pointer becomes invalid.
+ *
+ * To convert the hash to its usual hexadecimal representation, see
+ * <<string:mem_to_hex()>>.
  */
 byte *md5_final(md5_context *context);
 
 /**
- * This is the core routine of MD5 algorithm. It takes 16 longwords of
+ * This is the core routine of the MD5 algorithm. It takes 16 longwords of
  * data in @in and transforms the hash in @buf according to them.
  *
  * You probably do not want to call this one directly.

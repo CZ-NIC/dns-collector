@@ -16,8 +16,7 @@
 
 /**
  * Internal SHA1 state.
- * You can consider it an opaque handle, if you want just hash
- * functions.
+ * You should use it just as an opaque handle only.
  */
 typedef struct {
   u32 h0,h1,h2,h3,h4;
@@ -37,15 +36,18 @@ void sha1_init(sha1_context *hd); /** Initialize new algorithm run in the @hd co
 void sha1_update(sha1_context *hd, const byte *inbuf, uns inlen);
 /**
  * No more sha1_update() calls will be done. This terminates the hash
- * and returns pointer to it.
+ * and returns a pointer to it.
  *
- * Note the pointer points into data in the @hd context. If it ceases
+ * Note that the pointer points into data in the @hd context. If it ceases
  * to exist, the pointer becomes invalid.
+ *
+ * To convert the hash to its usual hexadecimal representation, see
+ * <<string:mem_to_hex()>>.
  */
 byte *sha1_final(sha1_context *hd);
 
 /**
- * Convenience one-shot function for SHA1 hash.
+ * A convenience one-shot function for SHA1 hash.
  * It is equivalent to this snippet of code:
  *
  *  sha1_context hd;
