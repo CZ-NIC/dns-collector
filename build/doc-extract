@@ -24,19 +24,21 @@ if( defined $defdump ) {
 
 sub detect( $ ) {
         ( $_ ) = @_;
+	return( 'struct', 1, $1, "typedef struct { ... } $1;" ) if( /^\s*typedef\s+struct\s*{.*}\s*(\w+)\s*;\s*$/s );
+	return( 'enum', 1, $1, "typedef enum { ... } $1;" ) if( /^\s*typedef\s+enum\s*{.*}\s*(\w+)\s*;\s*$/s );
         my $l = length;
         s/\n.*//s;
-        return( 'struct', 0, $1 ) if( /struct\s+(\w+)\s+{/ );
-        return( 'enum', 0, $1 ) if( /enum\s+(\w+)\s+{/ );
+        return( 'struct', 0, $1, $_ ) if( /struct\s+(\w+)\s+{/ );
+        return( 'enum', 0, $1, $_ ) if( /enum\s+(\w+)\s+{/ );
         if( $l > length ) {
                 warn( "Unknown statement $_\n" );
-                return( '', 0, $_ );
+                return( '', 0, $_, $_ );
         }
-        return( 'define', 0, $1 ) if( /#define\s+(\w+)/ );
-        return( 'function', 1, $1 ) if( /(\w+)\(.*\)/ );
-        return( 'variable', 1, $1 ) if( /\s(\w+);/ );
+        return( 'define', 0, $1, $_ ) if( /#define\s+(\w+)/ );
+        return( 'function', 1, $1, $_ ) if( /(\w+)\(.*\)/ );
+        return( 'variable', 1, $1, $_ ) if( /\s(\w+);/ );
         warn( "Unknown statement $_\n" );
-        return( '', 0, $_ );
+        return( '', 0, $_, $_ );
 }
 
 my @deps;
@@ -49,7 +51,7 @@ sub formatNote( $$ ) {
 	print OUT "''''\n";
 	chomp $head;
 	print OUT "[[auto_$id]]\n";
-        my( $type, $semicolon, $name ) = detect( $head );
+        my( $type, $semicolon, $name, $oneline ) = detect( $head );
         $head =~ s/;?\s*$/;/ if( $semicolon );
 	if( $type eq 'function' ) {
 		print OUT "!!f!$head!!!\n\n";
@@ -59,8 +61,7 @@ sub formatNote( $$ ) {
 		print OUT "..................\n\n";
 	}
 	if( $hasdump ) {
-		$head =~ s/\n.*//s;
-		print DUMP "$outname,$id,$type,$name,$head\n";
+		print DUMP "$outname,$id,$type,$name,$oneline\n";
 		$id ++;
 	}
 	print OUT "$comment\n\n";
