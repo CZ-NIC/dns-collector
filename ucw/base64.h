@@ -7,11 +7,21 @@
  *	of the GNU Lesser General Public License.
  */
 
+/**
+ * Encodes @len bytes of data pointed to by @src by base64 encoding.
+ * Stores them in @dest and returns the number of bytes the output
+ * takes.
+ */
 uns base64_encode(byte *dest, const byte *src, uns len);
+/**
+ * Decodes @len bytes of data pointed to by @src from base64 encoding.
+ * All invalid characters are ignored. The result is stored into @dest
+ * and length of the result is returned.
+ */
 uns base64_decode(byte *dest, const byte *src, uns len);
 
-/*
- * Use this macro to calculate buffer size.
+/**
+ * Use this macro to calculate base64_encode() output buffer size.
  */
 #define BASE64_ENC_LENGTH(x) (((x)+2)/3 *4)
 
@@ -20,6 +30,6 @@ uns base64_decode(byte *dest, const byte *src, uns len);
  * always BASE64_OUT_CHUNK bytes long. If a longer block is split
  * to such chunks, the result will be identical.
  */
-#define BASE64_IN_CHUNK 3
-#define BASE64_OUT_CHUNK 4
+#define BASE64_IN_CHUNK 3 /** Size of chunk on the un-encoded side. **/
+#define BASE64_OUT_CHUNK 4 /** Size of chunk on the encoded side. **/
 

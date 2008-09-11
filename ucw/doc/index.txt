@@ -10,3 +10,4 @@ You can see list of <<def_index:,definitions>>.
 Modules
 -------
 - <<fastbuf:,Fastbufs>>
+- <<basecode:,Base64 and Base224 encoding>>
