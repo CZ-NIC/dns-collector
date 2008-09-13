@@ -35,7 +35,7 @@ sub detect( $ ) {
                 return( '', 0, $_, $_ );
         }
         return( 'def', 0, $1, $_ ) if( /#define\s+(\w+)/ );
-        return( 'fun', 1, $1, $_ ) if( /(\w+)\(.*\)/ );
+        return( 'fun', 1, $2, $1 ) if( /^(.*?(\w+)\([^{]*\)[^{]*)/ );
         return( 'var', 1, $1, $_ ) if( /\s(\w+);/ );
         warn( "Unknown statement $_\n" );
         return( '', 0, $_, $_ );
