@@ -57,7 +57,7 @@ use warnings;
 require Exporter;
 our $VERSION = 1.0;
 our @ISA = qw(Exporter);
-our @EXPORT = qw(&html_escape &url_escape &url_param_escape &self_ref &self_form &http_get);
+our @EXPORT = qw(&html_escape &url_escape &url_deescape &url_param_escape &url_param_deescape &self_ref &self_form &http_get);
 our @EXPORT_OK = qw();
 
 ### Escaping ###
@@ -68,11 +68,23 @@ sub url_escape($) {
 	return $x;
 }
 
+sub url_deescape($) {
+	my $x = shift @_;
+	$x =~ s/%(..)/pack("H2",$1)/ge;
+	return $x;
+}
+
 sub url_param_escape($) {
 	my $x = shift @_;
 	$x = url_escape($x);
 	$x =~ s/%20/+/g;
 	return $x;
+}
+
+sub url_param_deescape($) {
+	my $x = shift @_;
+	$x =~ s/\+/ /g;
+	return url_deescape($x);
 }
 
 sub html_escape($) {
@@ -105,8 +117,7 @@ sub rfc822_prepare($) {
 
 sub rfc822_deescape($) {
 	my $x = shift @_;
-	$x =~ s/%(..)/pack("H2",$1)/ge;
-	return $x;
+	return url_deescape($x);
 }
 
 ### Reading of HTTP headers ###
