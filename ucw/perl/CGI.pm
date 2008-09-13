@@ -427,13 +427,19 @@ sub set_cookie($$@) {
 	#	max-age		maximal age in seconds
 	#	domain		domain name scope
 	#	path		path name scope
-	#	secure		if non-zero, cookie applies only to SSL connections
+	#	secure		if present, cookie applies only to SSL connections
+	#			(in this case, the value should be undefined)
+	#	discard		if present with any value, the cookie is discarded
 	#
 
 	my $key = shift @_;
 	my $value = shift @_;
 	my %other = @_;
-	if (my $age = $other{'max-age'}) {
+	if (exists $other{'discard'}) {
+		delete $other{'discard'};
+		$other{'max-age'} = 0;
+	}
+	if (defined(my $age = $other{'max-age'})) {
 		delete $other{'max-age'};
 		my $exp = ($age ? (time + $age) : 0);
 		# Avoid problems with locales
@@ -443,14 +449,12 @@ sub set_cookie($$@) {
 		$other{'expires'} = sprintf("%s, %02d-%s-%d %02d:%02d:%02d GMT",
 			$wdays[$wd], $d, $mons[$m], $y+1900, $H, $M, $S);
 	}
-	my $secure = $other{'secure'};
-	delete $other{'secure'};
 
 	print "Set-Cookie: $key=", url_escape($value);
 	foreach my $k (keys %other) {
-		print "; $k=", $other{$k};
+		print "; $k";
+		print "=", $other{$k} if defined $other{$k};
 	}
-	print "; secure" if $secure;
 	print "\n";
 }
 
