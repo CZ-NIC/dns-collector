@@ -160,9 +160,10 @@ Preprocessing
 During compilation, all configuration files are pre-processed by a simple
 C-like preprocessor, which supports `#ifdef`, `#ifndef`, `#if`,
 `#elsif`, `#else` and `#endif` directives referring to compile-time
-configuration variables. `#if` and `#elsif` can contain any Perl expression
-where each `CONFIG_xyz` configuration variable is substituted to 0 or 1
-depending on its value.
+configuration variables (the ones detected by `configure` script, you
+can see list of them in `obj/autoconf.h`). `#if` and `#elsif` can contain
+any Perl expression where each `CONFIG_xyz` configuration variable is
+substituted to 0 or 1 depending on its value.
 
 The preprocessor also substitutes `@VARIABLE@` by the value of the variable,
 which must be defined.
