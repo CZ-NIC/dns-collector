@@ -52,6 +52,7 @@ sub formatNote( $$ ) {
 	chomp $head;
         my( $type, $semicolon, $name, $oneline ) = detect( $head );
 	$oneline =~ s/\s+$//;
+	$oneline =~ s/;?$/;/ if( $semicolon );
         $head =~ s/;?\s*$/;/ if( $semicolon );
 	$head =~ s/(\.\.\.)/\\$1/g;
 	print OUT "[[${type}_$name]]\n";
