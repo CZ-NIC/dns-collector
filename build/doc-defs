@@ -24,15 +24,29 @@ while( defined( my $line = <> ) ) {
 }
 
 my %groups = (
-	'enum' => 1,
+	'enum' => 0,
 	'struct' => 1,
 	'fun' => 2,
 	'var' => 3,
 	'def' => 4
 );
 
+my %heads = (
+	'enum' => 'Enums',
+	'struct' => 'Structs',
+	'fun' => 'Functions',
+	'var' => 'Variables',
+	'def' => 'Preprocessor definitions'
+);
+
+my $lasttype = '';
+
 foreach( sort { ( $groups{$a->[2]} <=> $groups{$b->[2]} ) or ( $a->[3] cmp $b->[3] ); } @dump ) {
 	my( $file, $anchor, $type, $name, $text ) = @{$_};
+	if( $lasttype ne $type ) {
+		$lasttype = $type;
+		print OUT "\n== $heads{$type} [[$type]]\n\n";
+	}
 	my $dircp = $dir;
 	while( shift @{[ $dircp =~ /([^\/]+)/, "//" ]} eq shift @{[ $file =~ /([^\/]+)/, "///" ]} ) {
 		$dircp =~ s/[^\/]+\/?//;
