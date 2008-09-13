@@ -43,6 +43,7 @@ foreach( sort { ( $groups{$a->[2]} <=> $groups{$b->[2]} ) or ( $a->[3] cmp $b->[
 	$file =~ s/^\///;
 	$file =~ s/\.[^.]+$//;
 	$text =~ s/\(/!!PARENT_OPEN!!/g;
+	$text =~ s/(\.\.\.)/\\$1/g;
 	print OUT "- <<$file:auto_$num,`$text`>>\n";
 }
 
