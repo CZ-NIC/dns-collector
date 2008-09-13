@@ -56,13 +56,10 @@ sub formatNote( $$ ) {
         $head =~ s/;?\s*$/;/ if( $semicolon );
 	$head =~ s/(\.\.\.)/\\$1/g;
 	print OUT "[[${type}_$name]]\n";
-	if( $type eq 'fun' ) {
-		print OUT "!!f!$head!!!\n\n";
-	} else {
-		print OUT "..................\n";
-		print OUT "$head\n";
-		print OUT "..................\n\n";
-	}
+	$head = $oneline if $type eq 'fun';#Remove { from inline functions
+	print OUT "..................\n";
+	print OUT "$head\n";
+	print OUT "..................\n\n";
 	if( $hasdump ) {
 		print DUMP "$outname,${type}_$name,$type,$name,$oneline\n";
 		$id ++;
