@@ -26,13 +26,13 @@ while( defined( my $line = <> ) ) {
 my %groups = (
 	'enum' => 1,
 	'struct' => 1,
-	'function' => 2,
-	'variable' => 3,
-	'define' => 4
+	'fun' => 2,
+	'var' => 3,
+	'def' => 4
 );
 
 foreach( sort { ( $groups{$a->[2]} <=> $groups{$b->[2]} ) or ( $a->[3] cmp $b->[3] ); } @dump ) {
-	my( $file, $num, $type, $name, $text ) = @{$_};
+	my( $file, $anchor, $type, $name, $text ) = @{$_};
 	my $dircp = $dir;
 	while( shift @{[ $dircp =~ /([^\/]+)/, "//" ]} eq shift @{[ $file =~ /([^\/]+)/, "///" ]} ) {
 		$dircp =~ s/[^\/]+\/?//;
@@ -44,7 +44,7 @@ foreach( sort { ( $groups{$a->[2]} <=> $groups{$b->[2]} ) or ( $a->[3] cmp $b->[
 	$file =~ s/\.[^.]+$//;
 	$text =~ s/\(/!!PARENT_OPEN!!/g;
 	$text =~ s/(\.\.\.)/\\$1/g;
-	print OUT "- <<$file:auto_$num,`$text`>>\n";
+	print OUT "- <<$file:$anchor,`$text`>>\n";
 }
 
 close OUT;
