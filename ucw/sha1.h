@@ -53,7 +53,7 @@ byte *sha1_final(sha1_context *hd);
  *  sha1_context hd;
  *  sha1_init(&hd);
  *  sha1_update(&hd, buffer, length);
- *  memcpy(outbuf, sha1_final(&hd), 20);
+ *  memcpy(outbuf, sha1_final(&hd), SHA1_SIZE);
  */
 void sha1_hash_buffer(byte *outbuf, const byte *buffer, uns length);
 

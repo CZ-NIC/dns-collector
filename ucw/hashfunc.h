@@ -13,22 +13,26 @@
 
 #include "ucw/lib.h"
 
+/*** == String hashes [[strhash]] ***/
+
 /* The following functions need str to be aligned to uns.  */
-uns str_len_aligned(const char *str) PURE;
-uns hash_string_aligned(const char *str) PURE;
-uns hash_block_aligned(const byte *str, uns len) PURE;
+uns str_len_aligned(const char *str) PURE; /** Get the string length (actually hash function too). The string must be aligned to uns. For unaligned see str_len(). **/
+uns hash_string_aligned(const char *str) PURE; /** Hash the string. The string must be aligned to uns. For unaligned see hash_string(). **/
+uns hash_block_aligned(const byte *str, uns len) PURE; /** Hash arbitrary data. They must be aligned to uns. For unaligned see hash_block(). **/
 
 #ifdef	CPU_ALLOW_UNALIGNED
 #define	str_len(str)		str_len_aligned(str)
 #define	hash_string(str)	hash_string_aligned(str)
 #define	hash_block(str, len)	hash_block_aligned(str, len)
 #else
-uns str_len(const char *str) PURE;
-uns hash_string(const char *str) PURE;
-uns hash_block(const byte *str, uns len) PURE;
+uns str_len(const char *str) PURE; /** Get the string length (actually a hash function too). If you know it is aligned to uns, you can use faster str_len_aligned(). **/
+uns hash_string(const char *str) PURE; /** Hash the string. If it is aligned to uns, you can use faster hash_string_aligned(). **/
+uns hash_block(const byte *str, uns len) PURE; /** Hash arbitrary data. If they are aligned to uns, use faster hash_block_aligned(). **/
 #endif
 
-uns hash_string_nocase(const char *str) PURE;
+uns hash_string_nocase(const char *str) PURE; /** Hash the string in a case insensitive way. **/
+
+/*** == Integer hashes [[inthash]] ***/
 
 /*
  *  We hash integers by multiplying by a reasonably large prime with
@@ -36,8 +40,8 @@ uns hash_string_nocase(const char *str) PURE;
  *  of using shifts and adds on architectures where multiplication
  *  instructions are slow).
  */
-static inline uns CONST hash_u32(uns x) { return 0x01008041*x; }
-static inline uns CONST hash_u64(u64 x) { return hash_u32((uns)x ^ (uns)(x >> 32)); }
-static inline uns CONST hash_pointer(void *x) { return ((sizeof(x) <= 4) ? hash_u32((uns)(uintptr_t)x) : hash_u64((u64)(uintptr_t)x)); }
+static inline uns CONST hash_u32(uns x) { return 0x01008041*x; } /** Hash a 32 bit unsigned integer. **/
+static inline uns CONST hash_u64(u64 x) { return hash_u32((uns)x ^ (uns)(x >> 32)); } /** Hash a 64 bit unsigned integer. **/
+static inline uns CONST hash_pointer(void *x) { return ((sizeof(x) <= 4) ? hash_u32((uns)(uintptr_t)x) : hash_u64((u64)(uintptr_t)x)); } /** Hash a pointer. **/
 
 #endif

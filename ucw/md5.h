@@ -52,6 +52,7 @@ void md5_transform(u32 buf[4], const u32 in[16]);
  * @buffer, creates the hash from them and returns it in @output.
  *
  * It is equivalent to this code:
+ *
  *  md5_context c;
  *  md5_init(&c);
  *  md5_update(&c, buffer, length);

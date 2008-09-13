@@ -2,11 +2,23 @@ Hashing routines
 ================
 
 Libucw contains two cryptographic hash algorithms: MD5 (RFC 1321) and SHA1 (RFC
-3174).
+3174). A SHA1-HMAC (RFC 2104) message authentication is available.
+
+There are non-cryptographic hashes as well.
+
+Cryptographic ones
+------------------
 
 - <<md5,MD5>>
 - <<sha1,SHA1>>
+- <<sha1:sha1_hmac(),SHA1_HMAC>>
 - <<usage,Common usage>>
+
+Non-cryptographic ones
+----------------------
+
+- <<strhash,String & block hashes>>
+- <<inthash,Integer hashes>>
 
 [[md5]]
 MD5
@@ -19,8 +31,8 @@ SHA1
 !!ucw/sha1.h
 
 [[usage]]
-Usage
------
+Common usage
+------------
 
 There are two ways you can use the hashing routines.
 
@@ -48,3 +60,5 @@ There are two ways you can use the hashing routines.
 SHA1 has the same interface, so the same two ways apply.
 
 See also <<string:mem_to_hex()>>.
+
+!!ucw/hashfunc.h
