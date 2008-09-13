@@ -416,38 +416,50 @@ sub self_form(@) {
 
 ### Cookies
 
-sub cookie_esc($) {
-	my $x = shift @_;
-	if ($x !~ /^[a-zA-Z0-9%]+$/) {
-		$x =~ s/([\\\"])/\\$1/g;
-		$x = "\"$x\"";
-	}
-	return $x;
-}
-
 sub set_cookie($$@) {
+	#
+	# Unfortunately, the support for the new cookie standard (RFC 2965) among
+	# web browsers is still very scarce, so we are still using the old Netscape
+	# specification.
+	#
+	# Usage: set_cookie(name, value, option => value...), where options are:
+	#
+	#	max-age		maximal age in seconds
+	#	domain		domain name scope
+	#	path		path name scope
+	#	secure		if non-zero, cookie applies only to SSL connections
+	#
+
 	my $key = shift @_;
 	my $value = shift @_;
 	my %other = @_;
-	$other{'version'} = 1 unless defined $other{'version'};
-	print "Set-Cookie: $key=", cookie_esc($value);
-	foreach my $k (keys %other) {
-		print ";$k=", cookie_esc($other{$k});
+	if (my $age = $other{'max-age'}) {
+		delete $other{'max-age'};
+		my $exp = ($age ? (time + $age) : 0);
+		# Avoid problems with locales
+		my ($S,$M,$H,$d,$m,$y,$wd) = gmtime $exp;
+		my @wdays = ( 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' );
+		my @mons = ( 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' );
+		$other{'expires'} = sprintf("%s, %02d-%s-%d %02d:%02d:%02d GMT",
+			$wdays[$wd], $d, $mons[$m], $y+1900, $H, $M, $S);
 	}
+	my $secure = $other{'secure'};
+	delete $other{'secure'};
+
+	print "Set-Cookie: $key=", url_escape($value);
+	foreach my $k (keys %other) {
+		print "; $k=", $other{$k};
+	}
+	print "; secure" if $secure;
 	print "\n";
 }
 
 sub parse_cookies() {
 	my $h = http_get("Cookie") or return ();
 	my @cook = ();
-	while (my ($padding,$name,$val,$xx,$rest) = ($h =~ /\s*([,;]\s*)*([^ =]+)=([^ =,;\"]*|\"([^\"\\]|\\.)*\")(\s.*|;.*|$)/)) {
-		if ($val =~ /^\"/) {
-			$val =~ s/^\"//;
-			$val =~ s/\"$//;
-			$val =~ s/\\(.)/$1/g;
-		}
-		push @cook, $name, $val;
-		$h = $rest;
+	foreach my $x (split /;\s*/, $h) {
+		my ($k,$v) = split /=/, $x;
+		push @cook, $k => url_deescape($v);
 	}
 	return @cook;
 }
