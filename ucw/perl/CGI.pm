@@ -459,7 +459,8 @@ sub parse_cookies() {
 	my @cook = ();
 	foreach my $x (split /;\s*/, $h) {
 		my ($k,$v) = split /=/, $x;
-		push @cook, $k => url_deescape($v);
+		$v = url_deescape($v) if defined $v;
+		push @cook, $k => $v;
 	}
 	return @cook;
 }
