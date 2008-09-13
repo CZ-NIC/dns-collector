@@ -194,19 +194,19 @@ $(DATAFILES): $(o)/%: $(s)/%
 
 # Rules for documentation
 
-$(o)/%.html: $(o)/%.txt
+$(o)/%.html: $(o)/%.txt $(s)/build/asciidoc.conf $(s)/build/asciidoc-xhtml.conf
 	$(M)"DOC-HTML $<"
 	$(Q)asciidoc -e -f $(s)/build/asciidoc.conf -f $(s)/build/asciidoc-xhtml.conf -f /etc/asciidoc/asciidoc.conf -f /etc/asciidoc/xhtml11.conf $<
 
 # In reality, we do not depend on the .txt files, but on the corresponding .deflist's.
 # However, the Makefile language cannot express that doc-extract generates both .txt
 # and .deflist, so we always use the .txt's in dependencies.
-$(patsubst %.html,%.txt,$(DOC_INDICES)): $(o)/%.txt: $(patsubst %.html,%.txt,$(DOCS))
+$(patsubst %.html,%.txt,$(DOC_INDICES)): $(o)/%.txt: $(patsubst %.html,%.txt,$(DOCS)) $(s)/build/doc-defs
 	$(M)"DOC-DEFS $@"
 	$(Q)echo $@: $(DOC_HEAD) $(DOC_LIST) >> $(o)/depend.new
 	$(Q)$(s)/build/doc-defs $(DOC_HEAD) $@ $(DOC_LIST)
 
-$(patsubst %.html,%.txt,$(DOCS)): $(o)/%.txt: $(s)/%.txt
+$(patsubst %.html,%.txt,$(DOCS)): $(o)/%.txt: $(s)/%.txt $(s)/build/doc-extract
 	$(M)"DOC-EXT $<"
 	$(Q)$(s)/build/doc-extract $< $@ $(o)/depend.new $(s) $(patsubst %.txt,%.deflist,$@)
 
