@@ -13,8 +13,8 @@ Once you have a fastbuf, you can access it by fuctions similar to those of
 formatted operations.
 
 Please keep in mind that fastbufs do not allow arbitrary mixing of reads and
-writes on the same stream. If you need to mix them, you have to call bflush()
-inbetween and remember that the file position reported by btell() points after
+writes on the same stream. If you need to mix them, you have to call @bflush()
+inbetween and remember that the file position reported by @btell() points after
 the flushed buffer, which is not necessarily the same as after the data you've
 really read.
 

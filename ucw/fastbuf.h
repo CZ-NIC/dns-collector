@@ -35,7 +35,7 @@
  *
  * Here `bptr` points to the next character to be read. After the last character is
  * read, `bptr == bstop` and the `refill` callback gets called upon the next read
- * attempt to bring further data. This gives us an easy way how to implement bungetc().
+ * attempt to bring further data. This gives us an easy way how to implement @bungetc().
  *
  * When writing, the situation looks like:
  *
@@ -61,7 +61,7 @@
  *		     the modifications will be undone before calling the next
  *		     fastbuf operation
  *		*  2 if the user is allowed to overwrite the data in the buffer
- *		     if bdirect_read_commit_modified() is called afterwards.
+ *		     if @bdirect_read_commit_modified() is called afterwards.
  *		     In this case, the back-end must be prepared for trimming
  *		     of the buffer which is done by the commit function.
  *
@@ -79,7 +79,7 @@ struct fastbuf {
   ucw_off_t pos;				/* Position of bstop in the file */
   int (*refill)(struct fastbuf *);		/* Get a buffer with new data, returns 0 on EOF */
   void (*spout)(struct fastbuf *);		/* Write buffer data to the file */
-  int (*seek)(struct fastbuf *, ucw_off_t, int);/* Slow path for bseek(), buffer already flushed; returns success */
+  int (*seek)(struct fastbuf *, ucw_off_t, int);/* Slow path for @bseek(), buffer already flushed; returns success */
   void (*close)(struct fastbuf *);		/* Close the stream */
   int (*config)(struct fastbuf *, uns, int);	/* Configure the stream */
   int can_overwrite_buffer;			/* Can the buffer be altered? 0=never, 1=temporarily, 2=permanently */
@@ -141,7 +141,7 @@ struct fastbuf *bopen_tmp_file(struct fb_params *params);
  * Creates a fastbuf from a file descriptor @fd and sets its filename
  * to @name (the name is used only in error messages).
  * When the fastbuf is closed, the fd is closed as well. You can override
- * this behavior by calling bconfig().
+ * this behavior by calling @bconfig().
  */
 struct fastbuf *bopen_fd_name(int fd, struct fb_params *params, const char *name);
 static inline struct fastbuf *bopen_fd(int fd, struct fb_params *params) /** Same as above, but with an auto-generated filename. **/
@@ -161,16 +161,16 @@ void bfilesync(struct fastbuf *b);
  * up any parameters, there is a couple of shortcuts.
  ***/
 
-struct fastbuf *bopen(const char *name, uns mode, uns buflen);		/** Equivalent to bopen_file() with `FB_STD` back-end. **/
-struct fastbuf *bopen_try(const char *name, uns mode, uns buflen);	/** Equivalent to bopen_file_try() with `FB_STD` back-end. **/
-struct fastbuf *bopen_tmp(uns buflen);					/** Equivalent to bopen_tmp_file() with `FB_STD` back-end. **/
-struct fastbuf *bfdopen(int fd, uns buflen);				/** Equivalent to bopen_fd() with `FB_STD` back-end. **/
-struct fastbuf *bfdopen_shared(int fd, uns buflen);			/** Like bfdopen(), but it does not close the @fd on bclose(). **/
+struct fastbuf *bopen(const char *name, uns mode, uns buflen);		/** Equivalent to @bopen_file() with `FB_STD` back-end. **/
+struct fastbuf *bopen_try(const char *name, uns mode, uns buflen);	/** Equivalent to @bopen_file_try() with `FB_STD` back-end. **/
+struct fastbuf *bopen_tmp(uns buflen);					/** Equivalent to @bopen_tmp_file() with `FB_STD` back-end. **/
+struct fastbuf *bfdopen(int fd, uns buflen);				/** Equivalent to @bopen_fd() with `FB_STD` back-end. **/
+struct fastbuf *bfdopen_shared(int fd, uns buflen);			/** Like @bfdopen(), but it does not close the @fd on @bclose(). **/
 
 /***
  * === Temporary files [[fbtemp]]
  *
- * Usually, bopen_tmp_file() is the best way how to come to a temporary file.
+ * Usually, @bopen_tmp_file() is the best way how to come to a temporary file.
  * However, in some specific cases you can need more, so there is also a set
  * of more general functions.
  ***/
@@ -207,8 +207,8 @@ int open_tmp(char *name_buf, int open_flags, int mode);
 
 /**
  * Sometimes, a file is created as temporary and then moved to a stable
- * location. This function takes a fastbuf created by bopen_tmp_file()
- * or bopen_tmp(), marks it as permanent, closes it and renames it to
+ * location. This function takes a fastbuf created by @bopen_tmp_file()
+ * or @bopen_tmp(), marks it as permanent, closes it and renames it to
  * @name.
  *
  * Please note that it assumes that the temporary file and the @name
@@ -245,8 +245,8 @@ struct fastbuf *bopen_limited_fd(int fd, uns bufsize, uns limit); /** Create a f
  * in memory (as a linked list of memory blocks, so address space
  * fragmentation is avoided).
  *
- * First, you use fbmem_create() to create the stream and the fastbuf
- * used for writing to it. Then you can call fbmem_clone_read() to get
+ * First, you use @fbmem_create() to create the stream and the fastbuf
+ * used for writing to it. Then you can call @fbmem_clone_read() to get
  * an arbitrary number of fastbuf for reading from the stream.
  ***/
 
@@ -278,7 +278,7 @@ void fbbuf_init_read(struct fastbuf *f, byte *buffer, uns size, uns can_overwrit
  * The fastbuf structure is allocated by the caller and pointed to by @f.
  * An attempt to write behind the end of the buffer dies.
  *
- * Data are written directly into the buffer, so it is not necessary to call bflush()
+ * Data are written directly into the buffer, so it is not necessary to call @bflush()
  * at any moment.
  *
  * It is not possible to close this fastbuf.
@@ -322,13 +322,13 @@ struct fbpool { /** Structure for fastbufs & mempools. **/
  **/
 void fbpool_init(struct fbpool *fb);	/** Initialize a new mempool fastbuf. **/
 /**
- * Start a new continuous block and prepare for writing (see mp_start()).
+ * Start a new continuous block and prepare for writing (see <<mempool:mp_start()>>).
  * Provide the memory pool you want to use for this block as @mp.
  **/
 void fbpool_start(struct fbpool *fb, struct mempool *mp, uns init_size);
 /**
- * Close the block and return the address of its start (see mp_end()).
- * The length can be determined by calling mp_size(mp, ptr).
+ * Close the block and return the address of its start (see <<mempool:mp_end()>>).
+ * The length can be determined by calling <<mempool:mp_size(mp, ptr)>>.
  **/
 void *fbpool_end(struct fbpool *fb);
 
@@ -371,7 +371,7 @@ struct fb_atomic {
  * If the file has fixed record length, just set @record_len to it.
  * Otherwise set @record_len to the expected maximum record length
  * with a negative sign (you need not fit in this length, but as long
- * as you do, the fastbuf is more efficient) and call fbatomic_commit()
+ * as you do, the fastbuf is more efficient) and call @fbatomic_commit()
  * after each record.
  *
  * You can specify @record_len, if it is known (for optimisations).
@@ -507,7 +507,7 @@ static inline void bwrite(struct fastbuf *f, const void *b, uns l) /** Writes bu
  * Dies if the line is longer than @l.
  **/
 char *bgets(struct fastbuf *f, char *b, uns l);
-char *bgets0(struct fastbuf *f, char *b, uns l);	/** The same as bgets(), but for 0-terminated strings. **/
+char *bgets0(struct fastbuf *f, char *b, uns l);	/** The same as @bgets(), but for 0-terminated strings. **/
 /**
  * Returns either length of read string (excluding the terminator) or -1 if it is too long.
  * In such cases exactly @l bytes are read.
