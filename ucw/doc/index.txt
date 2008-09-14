@@ -12,3 +12,7 @@ Modules
 - <<fastbuf:,Fastbufs>>
 - <<basecode:,Base64 and Base224 encoding>>
 - <<hash:,Hashing routines>>
+
+Other features
+--------------
+- <<docsys:,Documentation system>>

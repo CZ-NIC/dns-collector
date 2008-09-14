@@ -1,0 +1,109 @@
+The documentation system
+========================
+
+////
+Warning: if you read this file in plain-text, keep in mind the markup
+had to be escaped to show in the result as the thing you should type.
+You should ignore all backspaces here, or better, read the html
+version.
+////
+
+The ucw documentation system is based on the
+http://www.methods.co.nz/asciidoc/[ASCIIDOC] documentation formatter.
+It supports all it's markup, but it was extended slightly.
+
+[[markup]]
+Markup extensions
+-----------------
+
+[[xrefs]]
+Cross referencing
+~~~~~~~~~~~~~~~~~
+ASCIIDOC supports creating anchors with `\[[anchor-name]]` and links
+to them with `\<<anchor,caption>>`. The extension supports links to
+anchor in other files (`\\<<filename:anchor,caption>>`) or to other
+files (`\\<<filename:,caption>>`). The `filename` is without any suffix
+like `.txt` or `.html`, it is added to the link automatically. The caption
+is optional, if you omit it, some reasonable one will be guessed from
+the anchor name.
+
+The links support linking to function descriptions (the anchors for
+them are generated automatically by <<extract,header extraction>>).
+Just write `\<<function(),caption>>` or
+`\\<<filename:function(),caption>>`.
+
+[[symbols]]
+Symbol formatting
+~~~~~~~~~~~~~~~~~
+If you talk about function parameter, prefix its name with `@`. It
+will be typeset in monoscope italic font to mark it visually, like
+this: @parameter.
+
+If a word is suffixed by parenthesis without a space (eg. word()), it
+is considered to be a function name and is typeset in monoscope font.
+
+You can prefix a function name by `@`, which makes it a link to that
+function (`\@function()` is equivalent to `\<<function()>>`).
+
+If you write NULL anywhere, it is recognized and typeset in monoscope.
+
+[[extract]]
+Header extraction
+-----------------
+Line starting with two exclamation marks, followed by a filename, is a
+command to process source file. Special comments and commented
+declarations are extracted and included in the place of the command.
+
+The command looks like this:
+
+  !!filename
+
+[[scomm]]
+Stand-alone comments
+~~~~~~~~~~~~~~~~~~~~
+C comments with tripled asterisks are extracted, the left side
+asterisk decoration is removed and the rest is put trough verbatim.
+
+Single-line version looks like
+
+ /*** This will be put into documentation. ***/
+
+If you need more than one line, use the same type of comment.
+
+ /***
+  * This is part of documentation too.
+  * But the asterisks on the left side aren't.
+  ***/
+
+[[defcomm]]
+Definition comments
+~~~~~~~~~~~~~~~~~~~
+You can write comments documenting specific definition. Definition
+comment has the asterisks doubled. The multi-line version must be
+directly above the definition, the single-line on the same line right
+of the definition.
+
+ void function(int parameter);  /** This is a function. **/
+
+or
+
+ /**
+  * This is a complicated function.
+  * It takes multiple lines to describe how useful it is.
+  **/
+ void function(int parameter);
+
+Each such commented definition is taken and formatted, with the
+description attached. It also generates an anchor for the symbol name.
+The anchors look like `symboltype_symbolname`. The symbol types are
+these:
+
+- `fun` for functions
+- `def` for preprocessor macro
+- `var` for variable
+- `struct` for structure
+- `enum` for enumeration
+- `type` for a type definition
+
+There is a support for building a page with list of all symbols with
+links to them. Look into `ucw/doc/Makefile` to see how to request that.

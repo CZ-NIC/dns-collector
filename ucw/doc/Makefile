@@ -2,7 +2,7 @@
 
 DIRS+=ucw/doc
 
-UCW_DOCS=fastbuf index basecode hash
+UCW_DOCS=fastbuf index basecode hash docsys
 UCW_INDEX=$(o)/ucw/doc/def_index.html
 
 $(UCW_INDEX): DOC_HEAD=$(s)/ucw/doc/def_index.txt
