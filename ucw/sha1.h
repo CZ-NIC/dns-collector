@@ -30,12 +30,12 @@ void sha1_init(sha1_context *hd); /** Initialize new algorithm run in the @hd co
  * Push another @inlen bytes of data pointed to by @inbuf onto the
  * SHA1 hash currently in @hd. You can call this any times you want on
  * the same hash (and you do not need to reinitialize it by
- * sha1_init()). It has the same effect as concatenating all the data
+ * @sha1_init()). It has the same effect as concatenating all the data
  * together and passing them at once.
  */
 void sha1_update(sha1_context *hd, const byte *inbuf, uns inlen);
 /**
- * No more sha1_update() calls will be done. This terminates the hash
+ * No more @sha1_update() calls will be done. This terminates the hash
  * and returns a pointer to it.
  *
  * Note that the pointer points into data in the @hd context. If it ceases

@@ -16,18 +16,18 @@
 /*** === String hashes [[strhash]] ***/
 
 /* The following functions need str to be aligned to sizeof(uns).  */
-uns str_len_aligned(const char *str) PURE; /** Get the string length (not a really useful hash function, but there is no better place for it). The string must be aligned to sizeof(uns). For unaligned see str_len(). **/
-uns hash_string_aligned(const char *str) PURE; /** Hash the string. The string must be aligned to sizeof(uns). For unaligned see hash_string(). **/
-uns hash_block_aligned(const byte *str, uns len) PURE; /** Hash arbitrary data. They must be aligned to sizeof(uns). For unaligned see hash_block(). **/
+uns str_len_aligned(const char *str) PURE; /** Get the string length (not a really useful hash function, but there is no better place for it). The string must be aligned to sizeof(uns). For unaligned see @str_len(). **/
+uns hash_string_aligned(const char *str) PURE; /** Hash the string. The string must be aligned to sizeof(uns). For unaligned see @hash_string(). **/
+uns hash_block_aligned(const byte *str, uns len) PURE; /** Hash arbitrary data. They must be aligned to sizeof(uns). For unaligned see @hash_block(). **/
 
 #ifdef	CPU_ALLOW_UNALIGNED
 #define	str_len(str)		str_len_aligned(str)
 #define	hash_string(str)	hash_string_aligned(str)
 #define	hash_block(str, len)	hash_block_aligned(str, len)
 #else
-uns str_len(const char *str) PURE; /** Get the string length. If you know it is aligned to sizeof(uns), you can use faster str_len_aligned(). **/
-uns hash_string(const char *str) PURE; /** Hash the string. If it is aligned to sizeof(uns), you can use faster hash_string_aligned(). **/
-uns hash_block(const byte *str, uns len) PURE; /** Hash arbitrary data. If they are aligned to sizeof(uns), use faster hash_block_aligned(). **/
+uns str_len(const char *str) PURE; /** Get the string length. If you know it is aligned to sizeof(uns), you can use faster @str_len_aligned(). **/
+uns hash_string(const char *str) PURE; /** Hash the string. If it is aligned to sizeof(uns), you can use faster @hash_string_aligned(). **/
+uns hash_block(const byte *str, uns len) PURE; /** Hash arbitrary data. If they are aligned to sizeof(uns), use faster @hash_block_aligned(). **/
 #endif
 
 uns hash_string_nocase(const char *str) PURE; /** Hash the string in a case insensitive way. Works only with ASCII characters. **/

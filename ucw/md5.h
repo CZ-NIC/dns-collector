@@ -27,7 +27,7 @@ void md5_init(md5_context *context); /** Initialize the MD5 hashing algorithm in
  */
 void md5_update(md5_context *context, const byte *buf, uns len);
 /**
- * Call this after the last md5_update(). It will terminate the
+ * Call this after the last @md5_update(). It will terminate the
  * algorithm and return a pointer to the result.
  *
  * Note that the data it points to are stored inside the @context, so
