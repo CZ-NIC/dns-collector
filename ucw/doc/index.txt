@@ -12,6 +12,7 @@ Modules
 - <<fastbuf:,Fastbufs>>
 - <<basecode:,Base64 and Base224 encoding>>
 - <<hash:,Hashing routines>>
+- <<conf:,Configuration and command line parser>>
 
 Other features
 --------------
