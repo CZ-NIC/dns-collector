@@ -21,7 +21,7 @@ uns base224_encode(byte *dest, const byte *src, uns len);
 uns base224_decode(byte *dest, const byte *src, uns len);
 
 /**
- * Use this macro to calculate base224_encode() output buffer size.
+ * Use this macro to calculate @base224_encode() output buffer size.
  * It can happen 4 more bytes would be needed, this macro takes care
  * of that.
  */

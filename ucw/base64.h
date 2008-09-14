@@ -21,7 +21,7 @@ uns base64_encode(byte *dest, const byte *src, uns len);
 uns base64_decode(byte *dest, const byte *src, uns len);
 
 /**
- * Use this macro to calculate base64_encode() output buffer size.
+ * Use this macro to calculate @base64_encode() output buffer size.
  */
 #define BASE64_ENC_LENGTH(x) (((x)+2)/3 *4)
 
