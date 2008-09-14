@@ -23,21 +23,22 @@ while( defined( my $line = <> ) ) {
 	push @dump, [ split /,/, $line, 5 ];
 }
 
-my %groups = (
-	'enum' => 0,
-	'struct' => 1,
-	'fun' => 2,
-	'var' => 3,
-	'def' => 4
+my @types = (
+	[ 'enum', 'Enumerations' ],
+	[ 'struct', 'Structures' ],
+	[ 'type', 'Types' ],
+	[ 'fun', 'Functions' ],
+	[ 'var', 'Variables' ],
+	[ 'def', 'Preprocessor definitions' ]
 );
 
-my %heads = (
-	'enum' => 'Enums',
-	'struct' => 'Structs',
-	'fun' => 'Functions',
-	'var' => 'Variables',
-	'def' => 'Preprocessor definitions'
-);
+my( $index, %groups, %heads ) = ( 0 );
+
+foreach( @types ) {
+	my( $name, $value ) = @{$_};
+	$groups{$name} = ++ $index;
+	$heads{$name} = $value;
+}
 
 my $lasttype = '';
 
