@@ -4,16 +4,29 @@ How to Configure Sherlock libraries
 What can be configured
 ----------------------
 There are two different levels of configuring/customizing program
-based on libucw:
+based on sherlock libraries:
 
   - runtime configuration in configuration files (see <<config:>>)
 
   - compile-time configuration of the libraries: config switches set
     before compiling, selecting optional features.
 
+Where to build
+--------------
+If you run configure in the source directory, it prepares for compilation inside
+the source tree. In this case, an `obj` subdirectory is created to hold all generated
+files (object files, binaries, generated source files etc.) and all final files
+are linked to the `run` subdirectory. No other parts of the source tree are written into.
+
+Alternatively, you can compile in a separate object tree (which is useful when you
+want to build several different configurations from a single source tree). In order
+to do that, switch to the destination directory and issue `<source-dir>/configure ...`.
+This way, configure will create the `obj` and `run` directories locally and set up
+a Makefile which refers to the original source tree.
+
 How to configure
 ----------------
-To set up compilation for, possibly overriding default compile-time
+To set up compilation, possibly overriding default compile-time
 options, just run
 
 	./configure [<option> | -<option> | <option>=<value> ...]
@@ -39,16 +52,3 @@ Examples
   - `./configure -CONFIG_IMAGES` avoids building the image library.
   - `./configure CONFIG_UCW_ONLY -CONFIG_UCW_UTILS` compiles only the
     libucw library without its util programs.
-
-Where to build
---------------
-If you run configure in the source directory, it prepares for compilation inside
-the source tree. In this case, an `obj` subdirectory is created to hold all generated
-files (object files, binaries, generated source files etc.) and all final files
-are linked to the `run` subdirectory. No other parts of the source tree are written into.
-
-Alternatively, you can compile in a separate object tree (which is useful when you
-want to build several different configurations from a single source tree). In order
-to do that, switch to the destination directory and issue `<source-dir>/configure ...`.
-This way, configure will create the `obj` and `run` directories locally and set up
-a Makefile which refers to the original source tree.
