@@ -23,24 +23,24 @@ if( defined $defdump ) {
 }
 
 sub detect( $ ) {
-        ( $_ ) = @_;
+	( $_ ) = @_;
 	return( 'struct', 1, $1, "typedef struct { ... } $1;" ) if /^\s*typedef\s+struct\s*{.*}\s*(\w+)\s*;\s*$/s;
 	return( 'enum', 1, $1, "typedef enum { ... } $1;" ) if /^\s*typedef\s+enum\s*{.*}\s*(\w+)\s*;\s*$/s;
-        my $l = length;
-        s/\n.*//s;
-        return( 'struct', 0, $1, $_ ) if /struct\s+(\w+)\s+{/;
-        return( 'enum', 0, $1, $_ ) if /enum\s+(\w+)\s+{/;
-        if( $l > length ) {
-                warn( "Unknown statement $_\n" );
-                return( '', 0, $_, $_ );
-        }
-        return( 'def', 0, $1, $_ ) if /#define\s+(\w+)/;
+	my $l = length;
+	s/\n.*//s;
+	return( 'struct', 0, $1, $_ ) if /struct\s+(\w+)\s+{/;
+	return( 'enum', 0, $1, $_ ) if /enum\s+(\w+)\s+{/;
+	if( $l > length ) {
+		warn( "Unknown multiline statement $_\n" );
+		return( '', 0, $_, $_ );
+	}
+	return( 'def', 0, $1, $_ ) if /#define\s+(\w+)/;
 	return( 'type', 1, $2, $_ ) if /^\s*typedef[^()]+?(\(\s*?\*\s*?)?(\w+)(\s*\))?\s*\(.*\)/;
-        return( 'fun', 1, $2, $1 ) if /^(.*?(\w+)\([^{]*\)[^{]*)/;
+	return( 'fun', 1, $2, $1 ) if /^(.*?(\w+)\([^{]*\)[^{]*)/;
 	return( 'type', 1, $1, $_ ) if /^\s*typedef.*?(\w+);/;
-        return( 'var', 1, $1, $_ ) if /\s(\w+);/;
-        warn( "Unknown statement $_\n" );
-        return( '', 0, $_, $_ );
+	return( 'var', 1, $1, $_ ) if /\s\**(\w+);/;
+	warn( "Unknown statement $_\n" );
+	return( '', 0, $_, $_ );
 }
 
 my @deps;
@@ -52,10 +52,10 @@ sub formatNote( $$ ) {
 	print OUT "\n";
 	print OUT "''''\n";
 	chomp $head;
-        my( $type, $semicolon, $name, $oneline ) = detect( $head );
+	my( $type, $semicolon, $name, $oneline ) = detect( $head );
 	$oneline =~ s/\s+$//;
 	$oneline =~ s/;?$/;/ if( $semicolon );
-        $head =~ s/;?\s*$/;/ if( $semicolon );
+	$head =~ s/;?\s*$/;/ if( $semicolon );
 	$head =~ s/(\.\.\.)/\\$1/g;
 	print OUT "[[${type}_$name]]\n";
 	$head = $oneline if $type eq 'fun';#Remove { from inline functions
