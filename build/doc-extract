@@ -35,6 +35,7 @@ sub detect( $ ) {
                 return( '', 0, $_, $_ );
         }
         return( 'def', 0, $1, $_ ) if /#define\s+(\w+)/;
+	return( 'type', 1, $2, $_ ) if /^\s*typedef[^()]+?(\(\s*?\*\s*?)?(\w+)(\s*\))?\s*\(.*\)/;
         return( 'fun', 1, $2, $1 ) if /^(.*?(\w+)\([^{]*\)[^{]*)/;
 	return( 'type', 1, $1, $_ ) if /^\s*typedef.*?(\w+);/;
         return( 'var', 1, $1, $_ ) if /\s(\w+);/;

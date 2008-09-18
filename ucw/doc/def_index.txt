@@ -1,8 +1,9 @@
 All definitions in libucw
 =========================
 
-- <<enum,Enums>>
-- <<struct,Structs>>
+- <<enum,Enumerations>>
+- <<struct,Structures>>
+- <<type,Types>>
 - <<fun,Functions>>
 - <<var,Variables>>
 - <<def,Preprocessor definitions>>
