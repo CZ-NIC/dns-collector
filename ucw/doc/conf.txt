@@ -20,6 +20,12 @@ from command line.
 - <<example,Example>>
   * <<ex_structure,The structure>>
   * <<ex_load,Loading>>
+- <<conf_h,ucw/conf.h>>
+  * <<conf_types,Data types>>
+  * <<conf_macros,Convenience macros>>
+  * <<alloc,Memory allocation>>
+  * <<journal,Undo journal>>
+  * <<bparser,Parsers for basic types>>
 
 [[example]]
 Example
@@ -61,9 +67,9 @@ it exists.
   }
 
 The variables are used to store the loaded values. Their initial
-values work as default, if nothing else is loaded. The `hw_config`
-structure assigns the variables to configuration names. The `hw_init`
-function (because of the `CONSTRUCTOR` macro) is run before `main()`
+values work as default, if nothing else is loaded. The hw_config()
+structure assigns the variables to configuration names. The hw_init()
+function (because of the `CONSTRUCTOR` macro) is run before main()
 is called and it plugs in the whole section to the parser.
 
 You can plug in as many configuration sections as you like, from
@@ -100,7 +106,16 @@ configuration. You can do it in a similar way to this example.
 The `short_opts` and `long_opts` variables describe the command line
 arguments. Notice the `CF_SHORT_OPTS` and `CF_LONG_OPTS` macros. They
 add options for the configuration parser. These options are handled
-internally by cf_getopt(). It loads the configuration before it starts
+internally by @cf_getopt(). It loads the configuration before it starts
 giving you your program's options.
 
 See documentation of unix getopt_long() function.
+
+[[conf_h]]
+ucw/conf.h
+----------
+
+Use this file if you want define a configuration section, request
+loading of some variables or create new item type.
+
+!!ucw/conf.h

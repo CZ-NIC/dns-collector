@@ -11,7 +11,9 @@
 #ifndef	_UCW_CONF_H
 #define	_UCW_CONF_H
 
-enum cf_class {
+/*** === Data types [[conf_types]] ***/
+
+enum cf_class {				/** Class of the configuration item. **/
   CC_END,				// end of list
   CC_STATIC,				// single variable or static array
   CC_DYNAMIC,				// dynamically allocated array
@@ -21,7 +23,7 @@ enum cf_class {
   CC_BITMAP				// of up to 32 items
 };
 
-enum cf_type {
+enum cf_type {				/** Type of a single value. **/
   CT_INT, CT_U64, CT_DOUBLE,		// number types
   CT_IP,				// IP address
   CT_STRING,				// string type
@@ -30,33 +32,44 @@ enum cf_type {
 };
 
 struct fastbuf;
-typedef char *cf_parser(uns number, char **pars, void *ptr);
-  /* A parser function gets an array of (strdup'ed) strings and a pointer with
-   * the customized information (most likely the target address).  It can store
-   * the parsed value anywhere in any way it likes, however it must first call
-   * cf_journal_block() on the overwritten memory block.  It returns an error
-   * message or NULL if everything is all right.  */
-typedef char *cf_parser1(char *string, void *ptr);
-  /* A parser function for user-defined types gets a string and a pointer to
-   * the destination variable.  It must store the value within [ptr,ptr+size),
-   * where size is fixed for each type.  It should not call cf_journal_block().  */
-typedef char *cf_hook(void *ptr);
-  /* An init- or commit-hook gets a pointer to the section or NULL if this
-   * is the global section.  It returns an error message or NULL if everything
-   * is all right.  The init-hook should fill in default values (needed for
-   * dynamically allocated nodes of link lists or for filling global variables
-   * that are run-time dependent).  The commit-hook should perform sanity
-   * checks and postprocess the parsed values.  Commit-hooks must call
-   * cf_journal_block() too.  Caveat! init-hooks for static sections must not
-   * use cf_malloc() but normal xmalloc().  */
-typedef void cf_dumper1(struct fastbuf *fb, void *ptr);
-  /* Dumps the contents of a variable of a user-defined type.  */
-typedef char *cf_copier(void *dest, void *src);
-  /* Similar to init-hook, but it copies attributes from another list node
-   * instead of setting the attributes to default values.  You have to provide
-   * it if your node contains parsed values and/or sub-lists.  */
 
-struct cf_user_type {
+/**
+ * A parser function gets an array of (strdup'ed) strings and a pointer with
+ * the customized information (most likely the target address).  It can store
+ * the parsed value anywhere in any way it likes, however it must first call
+ * @cf_journal_block() on the overwritten memory block.  It returns an error
+ * message or NULL if everything is all right.
+ **/
+typedef char *cf_parser(uns number, char **pars, void *ptr);
+/**
+ * A parser function for user-defined types gets a string and a pointer to
+ * the destination variable.  It must store the value within [ptr,ptr+size),
+ * where size is fixed for each type.  It should not call @cf_journal_block().
+ **/
+typedef char *cf_parser1(char *string, void *ptr);
+/**
+ * An init- or commit-hook gets a pointer to the section or NULL if this
+ * is the global section.  It returns an error message or NULL if everything
+ * is all right.  The init-hook should fill in default values (needed for
+ * dynamically allocated nodes of link lists or for filling global variables
+ * that are run-time dependent).  The commit-hook should perform sanity
+ * checks and postprocess the parsed values.  Commit-hooks must call
+ * @cf_journal_block() too.  Caveat! init-hooks for static sections must not
+ * use @cf_malloc() but normal <<memory:xmalloc()>>.
+ **/
+typedef char *cf_hook(void *ptr);
+/**
+ * Dumps the contents of a variable of a user-defined type.
+ **/
+typedef void cf_dumper1(struct fastbuf *fb, void *ptr);
+/**
+ * Similar to init-hook, but it copies attributes from another list node
+ * instead of setting the attributes to default values.  You have to provide
+ * it if your node contains parsed values and/or sub-lists.
+ **/
+typedef char *cf_copier(void *dest, void *src);
+
+struct cf_user_type {			/** Structure to store information about user-defined variable type. **/
   uns size;				// of the parsed attribute
   char *name;				// name of the type (for dumping)
   cf_parser1 *parser;			// how to parse it
@@ -64,7 +77,7 @@ struct cf_user_type {
 };
 
 struct cf_section;
-struct cf_item {
+struct cf_item {			/** Single configuration item. **/
   const char *name;			// case insensitive
   int number;				// length of an array or #parameters of a parser (negative means at most)
   void *ptr;				// pointer to a global variable or an offset in a section
@@ -78,7 +91,7 @@ struct cf_item {
   enum cf_type type:16;			// type of a static or dynamic attribute
 };
 
-struct cf_section {
+struct cf_section {			/** A section. **/
   uns size;				// 0 for a global block, sizeof(struct) for a section
   cf_hook *init;			// fills in default values (no need to bzero)
   cf_hook *commit;			// verifies parsed data (optional)
@@ -86,6 +99,15 @@ struct cf_section {
   struct cf_item *cfg;			// CC_END-terminated array of items
   uns flags;				// for internal use only
 };
+
+/***
+ * [[conf_macros]]
+ * Convenience macros
+ * ~~~~~~~~~~~~~~~~~~
+ *
+ * You could create the structures manually, but you can use these macros to
+ * save some typing.
+ */
 
 /* Declaration of cf_section */
 #define CF_TYPE(s)	.size = sizeof(s)
@@ -136,15 +158,28 @@ struct cf_section {
 #define DARY_ALLOC(type,len,val...) ((struct { uns l; type a[len]; }) { .l = len, .a = { val } }).a
   // creates a static instance of a dynamic array
 
-/* Memory allocation: conf-alloc.c */
+/***
+ * [[alloc]]
+ * Memory allocation
+ * ~~~~~~~~~~~~~~~~~
+ *
+ * Uses <<mempool:,memory pools>> for efficiency and journal recovery.
+ * You should use these routines when implementing custom parsers.
+ ***/
 struct mempool;
-extern struct mempool *cf_pool;
-void *cf_malloc(uns size);
-void *cf_malloc_zero(uns size);
-char *cf_strdup(const char *s);
-char *cf_printf(const char *fmt, ...) FORMAT_CHECK(printf,1,2);
+extern struct mempool *cf_pool;	/** A <<mempool:type_mempool,memory pool>> for configuration parser needs. **/
+void *cf_malloc(uns size);	/** Returns @size bytes of memory. **/
+void *cf_malloc_zero(uns size);	/** Like @cf_malloc(), but zeroes the memory. **/
+char *cf_strdup(const char *s);	/** Copy a string into @cf_malloc()ed memory. **/
+char *cf_printf(const char *fmt, ...) FORMAT_CHECK(printf,1,2); /** printf() into @cf_malloc()ed memory. **/
 
-/* Undo journal for error recovery: conf-journal.c */
+/***
+ * [[journal]]
+ * Undo journal
+ * ~~~~~~~~~~~~
+ *
+ * For error recovery
+ ***/
 extern uns cf_need_journal;
 void cf_journal_block(void *ptr, uns len);
 #define CF_JOURNAL_VAR(var) cf_journal_block(&(var), sizeof(var))
@@ -153,11 +188,11 @@ void cf_journal_block(void *ptr, uns len);
 void cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown);
 void cf_init_section(const char *name, struct cf_section *sec, void *ptr, uns do_bzero);
 
-/* Parsers for basic types: conf-parse.c */
-char *cf_parse_int(const char *str, int *ptr);
-char *cf_parse_u64(const char *str, u64 *ptr);
-char *cf_parse_double(const char *str, double *ptr);
-char *cf_parse_ip(const char *p, u32 *varp);
+/*** === Parsers for basic types [[bparser]] ***/
+char *cf_parse_int(const char *str, int *ptr);		/** Parser for integers. **/
+char *cf_parse_u64(const char *str, u64 *ptr);		/** Parser for 64 unsigned integers. **/
+char *cf_parse_double(const char *str, double *ptr);	/** Parser for doubles. **/
+char *cf_parse_ip(const char *p, u32 *varp);		/** Parser for IP addresses. **/
 
 #endif
 
