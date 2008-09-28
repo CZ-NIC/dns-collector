@@ -30,11 +30,11 @@ sub detect( $ ) {
 	s/\n.*//s;
 	return( 'struct', 0, $1, $_ ) if /struct\s+(\w+)\s+{/;
 	return( 'enum', 0, $1, $_ ) if /enum\s+(\w+)\s+{/;
+	return( 'def', 0, $1, $_ ) if /#define\s+(\w+)/;
 	if( $l > length ) {
 		warn( "Unknown multiline statement $_\n" );
 		return( '', 0, $_, $_ );
 	}
-	return( 'def', 0, $1, $_ ) if /#define\s+(\w+)/;
 	return( 'type', 1, $2, $_ ) if /^\s*typedef[^()]+?(\(\s*?\*\s*?)?(\w+)(\s*\))?\s*\(.*\)/;
 	return( 'fun', 1, $2, $1 ) if /^(.*?(\w+)\([^{]*\)[^{]*)/;
 	return( 'type', 1, $1, $_ ) if /^\s*typedef.*?(\w+);/;
@@ -78,9 +78,18 @@ sub process( $ ) {
 	my $buff;
 	my $head;
 	my $struct;
+	my $def;
 	while( defined( $line = <FILE> ) ) {
 		chomp $line;
-		if( $struct ) {
+		if( $def ) {
+			$head .= "\n".$line;
+			$line =~ s/(\/\*.*?\*\/|\/\/.*)//g;
+			if( $line !~ /\\\s*$/ ) {
+				formatNote( $head, $buff );
+				$def = 0;
+				$buff = $head = undef;
+			}
+		} elsif( $struct ) {
 			$head .= "\n".$line;
 			if( $line =~ /}/ ) {
 				formatNote( $head, $buff );
@@ -105,7 +114,10 @@ sub process( $ ) {
 			}
 		} else {
 			if( ( $line =~ /\S/ ) && ( defined $buff ) ) {
-				if( $line =~ /\(/ || $line !~ /{/ ) {
+				if( $line =~ /^\s*#define.*\\(\s*(\/\/.*|\/\*.*?\*\/|))*/ ) {
+					$head = $line;
+					$def = 1;
+				} elsif( $line =~ /\(/ || $line !~ /{/ || $line =~ /^\s*#define/ ) {
 					$_ = $line;
 					s/^\s*\s?//;
 					s/\/\/.*//;
