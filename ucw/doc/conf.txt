@@ -26,6 +26,12 @@ from command line.
   * <<alloc,Memory allocation>>
   * <<journal,Undo journal>>
   * <<bparser,Parsers for basic types>>
+- <<getopt_h,ucw/getopt.h>>
+  * <<conf_load,Safe configuration loading>>
+  * <<conf_direct,Direct access>>
+  * <<conf_dump,Debug dumping>>
+  * <<conf_journal,Journaling control>>
+  * <<conf_getopt,Loading by cf_getopt()>>
 
 [[example]]
 Example
@@ -119,3 +125,12 @@ Use this file if you want define a configuration section, request
 loading of some variables or create new item type.
 
 !!ucw/conf.h
+
+[[getopt_h]]
+ucw/getopt.h
+------------
+
+This header contains routines for parsing command line arguments and
+loading the configuration.
+
+!!ucw/getopt.h
