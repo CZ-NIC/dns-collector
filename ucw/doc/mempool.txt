@@ -1,0 +1,17 @@
+Memory pools
+============
+
+You can use them for efficient allocation of large amount of small
+memory blocks. You can use them to allocate many blocks and free them
+all at once. They allow storing and restoring state of what is
+allocated, growing and shrinking the last block and other tricks.
+
+* <<defs,Definitions>>
+* <<basic,Basic manipulation>>
+* <<alloc,Allocation routines>>
+* <<gbuf,Growing buffers>>
+* <<store,Storing and restoring state>>
+* <<string,String operations>>
+* <<format,Formated output>>
+
+!!ucw/mempool.h
