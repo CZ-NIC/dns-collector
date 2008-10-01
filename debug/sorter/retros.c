@@ -1,7 +1,7 @@
 /*
  *  Experiments with various sorting algorithms
  *
- *  (c) 2007 Martin Mares <mj@ucw.cz>
+ *  (c) 2007--2008 Martin Mares <mj@ucw.cz>
  */
 
 #include "sherlock/sherlock.h"
@@ -623,6 +623,18 @@ static void heapsort(void)
   uns nn = n;
   while (nn)
     HEAP_DELMIN(struct elt, heap, nn, H_LESS, HEAP_SWAP);
+#undef H_LESS
+}
+
+static void heapsort_ind(void)
+{
+#define H_LESS(_a,_b) ((_a)->key > (_b)->key)
+  struct elt **heap = ind-1;
+  HEAP_INIT(struct elt *, heap, n, H_LESS, HEAP_SWAP);
+  uns nn = n;
+  while (nn)
+    HEAP_DELMIN(struct elt *, heap, nn, H_LESS, HEAP_SWAP);
+#undef H_LESS
 }
 
 static void mk_ary(void)
@@ -707,6 +719,8 @@ int main(int argc, char **argv)
   for (uns i=0; i<n; i++)
     array0[i] = array1[i] = (struct elt) { 0 };
 
+  log(L_INFO, "Testing with %u elements", n);
+
   mk_ary();
   timestamp_t timer;
   init_timer(&timer);
@@ -741,6 +755,7 @@ int main(int argc, char **argv)
   BENCH(ary, "samplesort", samplesort());
   BENCH(ary, "samplesort2", samplesort2());
   BENCH(ary, "heapsort", heapsort());
+  BENCH(ind, "indirect heapsort", heapsort_ind());
 
   free_elts(array0, n);
   free_elts(array1, n);
