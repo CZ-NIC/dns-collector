@@ -375,7 +375,7 @@ char *mp_multicat(struct mempool *, ...) LIKE_MALLOC SENTINEL_CHECK;
 /**
  * Concatenates two strings and stores result on @mp.
  */
-static inline char LIKE_MALLOC *mp_strcat(struct mempool *mp, const char *x, const char *y)
+static inline char *LIKE_MALLOC mp_strcat(struct mempool *mp, const char *x, const char *y)
 {
   return mp_multicat(mp, x, y, NULL);
 }
