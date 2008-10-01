@@ -7,6 +7,7 @@
 #include "sherlock/sherlock.h"
 #include "ucw/getopt.h"
 #include "ucw/md5.h"
+#include "ucw/heap.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -614,6 +615,16 @@ static void samplesort2(void)
   xfree(aux);
 }
 
+static void heapsort(void)
+{
+#define H_LESS(_a,_b) ((_a).key > (_b).key)
+  struct elt *heap = ary-1;
+  HEAP_INIT(struct elt, heap, n, H_LESS, HEAP_SWAP);
+  uns nn = n;
+  while (nn)
+    HEAP_DELMIN(struct elt, heap, nn, H_LESS, HEAP_SWAP);
+}
+
 static void mk_ary(void)
 {
   ary = array0;
@@ -715,20 +726,21 @@ int main(int argc, char **argv)
 
 #define BENCH(type, name, func) mk_##type(); init_timer(&timer); func; log(L_DEBUG, name ": %d", get_timer(&timer)); chk_##type()
 
-  //BENCH(ary, "qsort", qsort(ary, n, sizeof(struct elt), comp));
-  //BENCH(ary, "arraysort", as_sort(n, ary));
-  //BENCH(ind, "indirect qsort", qsort(ind, n, sizeof(struct elt *), comp_ind));
-  //BENCH(ind, "indirect arraysort", asi_sort(n));
-  //BENCH(ary, "radix1", r1_sort());
-  //BENCH(ary, "radix1b", r1b_sort());
+  BENCH(ary, "qsort", qsort(ary, n, sizeof(struct elt), comp));
+  BENCH(ary, "arraysort", as_sort(n, ary));
+  BENCH(ind, "indirect qsort", qsort(ind, n, sizeof(struct elt *), comp_ind));
+  BENCH(ind, "indirect arraysort", asi_sort(n));
+  BENCH(ary, "radix1", r1_sort());
+  BENCH(ary, "radix1b", r1b_sort());
   BENCH(ary, "radix1c", r1c_sort());
-  //BENCH(ary, "radix1c-sse", r1c_sse_sort());
-  //BENCH(ary, "radix1d", r1d_sort());
-  //BENCH(ary, "radix2", r2_sort());
+  BENCH(ary, "radix1c-sse", r1c_sse_sort());
+  BENCH(ary, "radix1d", r1d_sort());
+  BENCH(ary, "radix2", r2_sort());
   BENCH(ary, "radix3", r3_sort());
-  //BENCH(ary, "mergesort", mergesort());
-  //BENCH(ary, "samplesort", samplesort());
-  //BENCH(ary, "samplesort2", samplesort2());
+  BENCH(ary, "mergesort", mergesort());
+  BENCH(ary, "samplesort", samplesort());
+  BENCH(ary, "samplesort2", samplesort2());
+  BENCH(ary, "heapsort", heapsort());
 
   free_elts(array0, n);
   free_elts(array1, n);
