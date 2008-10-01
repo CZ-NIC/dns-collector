@@ -109,6 +109,8 @@ struct cf_section {			/** A section. **/
  * save some typing.
  */
 
+// TODO
+
 /* Declaration of cf_section */
 #define CF_TYPE(s)	.size = sizeof(s)
 #define CF_INIT(f)	.init = (cf_hook*) f
