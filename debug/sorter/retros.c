@@ -618,8 +618,8 @@ static void mk_ary(void)
 {
   ary = array0;
   alt = array1;
-  struct MD5Context ctx;
-  MD5Init(&ctx);
+  md5_context ctx;
+  md5_init(&ctx);
   u32 block[16];
   bzero(block, sizeof(block));
 
@@ -630,7 +630,7 @@ static void mk_ary(void)
       if (!(i % 4))
 	{
 	  block[i%16] = i;
-	  MD5Transform(ctx.buf, block);
+	  md5_transform(ctx.buf, block);
 	}
       ary[i].key = ctx.buf[i%4];
 #else
