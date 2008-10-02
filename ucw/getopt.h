@@ -69,7 +69,7 @@ struct cf_item;
  **/
 char *cf_find_item(const char *name, struct cf_item *item);
 // TODO What does this do?
-char *cf_write_item(struct cf_item *item, enum cf_operation op, int number, char **pars);
+char *cf_modify_item(struct cf_item *item, enum cf_operation op, int number, char **pars);
 
 /***
  * [[conf_dump]]
