@@ -389,7 +389,7 @@ char *mp_strjoin(struct mempool *p, char **a, uns n, uns sep) LIKE_MALLOC;
 
 /***
  * [[format]]
- * Formated output
+ * Formatted output
  * ---------------
  ***/
 

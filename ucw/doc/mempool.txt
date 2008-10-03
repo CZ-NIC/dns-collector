@@ -12,6 +12,6 @@ allocated, growing and shrinking the last block and other tricks.
 * <<gbuf,Growing buffers>>
 * <<store,Storing and restoring state>>
 * <<string,String operations>>
-* <<format,Formated output>>
+* <<format,Formatted output>>
 
 !!ucw/mempool.h
