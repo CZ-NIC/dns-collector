@@ -19,14 +19,19 @@
 
 /**
  * Memory pool state (see @mp_push(), ...).
- ***/
+ * You should use this one as an opaque handle only, the insides are internal.
+ **/
 struct mempool_state {
   uns free[2];
   void *last[2];
   struct mempool_state *next;
 };
 
-struct mempool { /** Memory pool. **/
+/**
+ * Memory pool.
+ * You should use this one as an opaque handle only, the insides are internal.
+ **/
+struct mempool {
   struct mempool_state state;
   void *unused, *last_big;
   uns chunk_size, threshold, idx;
