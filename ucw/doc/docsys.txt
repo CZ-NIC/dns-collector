@@ -36,16 +36,16 @@ Just write `\<<function(),caption>>` or
 Symbol formatting
 ~~~~~~~~~~~~~~~~~
 If you talk about function parameter, prefix its name with `@`. It
-will be typeset in monoscope italic font to mark it visually, like
+will be typeset in monospace italic font to mark it visually, like
 this: @parameter.
 
 If a word is suffixed by parenthesis without a space (eg. word()), it
-is considered to be a function name and is typeset in monoscope font.
+is considered to be a function name and is typeset in monospace font.
 
 You can prefix a function name by `@`, which makes it a link to that
 function (`\@function()` is equivalent to `\<<function()>>`).
 
-If you write NULL anywhere, it is recognized and typeset in monoscope.
+If you write NULL anywhere, it is recognized and typeset in monospace.
 
 [[extract]]
 Header extraction
