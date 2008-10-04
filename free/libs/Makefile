@@ -25,6 +25,7 @@ CONFIGS+=sherlock local
 # Set up names of common libraries (to avoid forward references in rules)
 LIBCHARSET=$(o)/charset/libcharset.pc
 LIBSH=$(o)/sherlock/libsh.pc
+LIBSHXML=$(o)/sherlock/xml/libshxml.pc
 
 # Include makefiles of libraries we wish to use
 include $(s)/charset/Makefile

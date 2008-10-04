@@ -35,3 +35,18 @@ API_INCLUDES+=$(o)/sherlock/xml/.include-stamp
 $(o)/sherlock/xml/.include-stamp: $(addprefix $(s)/sherlock/xml/,$(LIBSHXML_INCLUDES))
 $(o)/sherlock/xml/.include-stamp: IDST=sherlock/xml
 run/lib/pkgconfig/libshxml.pc: $(o)/sherlock/xml/libshxml.pc
+
+ifdef CONFIG_SHARED
+LIBSHXML_NAME=libshxml.so
+else
+LIBSHXML_NAME=libshxml.a
+endif
+
+INSTALL_TARGETS+=install-sh-xml
+install-sh-xml:
+	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/sherlock/xml $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+	install -m 644 $(addprefix run/include/sherlock/xml/,$(LIBSHXML_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/sherlock/xml
+	install -m 644 run/lib/pkgconfig/libshxml.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+	install -m 644 run/lib/$(LIBSHXML_NAME) $(DESTDIR)$(INSTALL_LIB_DIR)
+
+.PHONY: install-sh-xml
