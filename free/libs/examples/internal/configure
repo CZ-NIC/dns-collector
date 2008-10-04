@@ -25,7 +25,9 @@ Init($srcdir, "default.cfg");
 Include "ucw/default.cfg";
 Log "### Configuring TestApp ###\n\n";
 Include Get("CONFIG");
+Include "ucw/paths.cfg";
 Include "ucw/autoconf.cfg";
+Include "ucw/ucw.cfg";
 Finish();
 
 Log "\nConfigured, run `make' to build everything.\n";
