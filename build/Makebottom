@@ -224,4 +224,4 @@ default-install:
 # when searching for implicit rules and thence targets considered intermediate.
 .SECONDARY:
 
-.PHONY: all clean distclean runtree programs api datafiles force tags configs dust install default-install
+.PHONY: all clean distclean runtree programs api datafiles force tags configs dust install default-install docs
