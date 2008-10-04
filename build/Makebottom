@@ -3,7 +3,7 @@
 
 # The run tree
 
-runtree: run/.tree-stamp $(addsuffix /.dir-stamp,$(addprefix $(o)/,$(DIRS)))
+runtree: run/.tree-stamp $(addsuffix /.dir-stamp,$(addprefix $(o)/,$(DIRS)) $(addprefix run/$(DOCDIR)/,$(DOC_MODULES)))
 
 run/.tree-stamp: $(o)/config.mk
 	$(M)Creating runtree
@@ -194,9 +194,13 @@ $(DATAFILES): $(o)/%: $(s)/%
 
 # Rules for documentation
 
-$(o)/%.html: $(o)/%.txt $(s)/build/asciidoc.conf $(s)/build/asciidoc-xhtml.conf
+
+DOCDIR=doc
+
+$(o)/%.html: $(o)/%.txt $(s)/build/asciidoc.conf $(s)/build/asciidoc-xhtml.conf run/$(DOCDIR)/$(DOC_MODULE)/.dir-stamp
 	$(M)"DOC-HTML $<"
 	$(Q)asciidoc -e -f $(s)/build/asciidoc.conf -f $(s)/build/asciidoc-xhtml.conf -f /etc/asciidoc/asciidoc.conf -f /etc/asciidoc/xhtml11.conf $<
+	$(Q)$(call symlink,$@,run/$(DOCDIR)/$(DOC_MODULE))
 
 # In reality, we do not depend on the .txt files, but on the corresponding .deflist's.
 # However, the Makefile language cannot express that doc-extract generates both .txt
