@@ -141,3 +141,18 @@ endif
 ifdef CONFIG_UCW_SHELL_UTILS
 include $(s)/ucw/shell/Makefile
 endif
+
+ifdef CONFIG_SHARED
+LIBUCW_NAME=libucw.so
+else
+LIBUCW_NAME=libucw.a
+endif
+
+INSTALL_TARGETS+=install-libucw
+install-libucw:
+	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/ $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+	install -m 644 `find run/include/ucw/ -maxdepth 1 -type f` $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
+	install -m 644 run/lib/pkgconfig/libucw.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+	install -m 644 run/lib/$(LIBUCW_NAME) $(DESTDIR)$(INSTALL_LIB_DIR)
+
+.PHONY: install-libucw

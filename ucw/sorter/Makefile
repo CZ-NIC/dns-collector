@@ -11,3 +11,10 @@ PROGS+=$(o)/ucw/sorter/sort-test
 endif
 
 $(o)/ucw/sorter/sort-test: $(o)/ucw/sorter/sort-test.o $(LIBUCW)
+
+INSTALL_TARGETS+=install-ucw-sorter
+install-ucw-sorter:
+	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/sorter
+	install -m 644 run/include/ucw/sorter/* $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/sorter/
+
+.PHONY: install-ucw-sorter

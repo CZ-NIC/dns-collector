@@ -46,3 +46,11 @@ libs: $(LIBUCW) $(LIBSH) $(LIBIMAGES) $(LIBCHARSET) $(LIBLANG)
 
 # And finally the default rules of the build system
 include $(s)/build/Makebottom
+
+ifndef CONFIG_LOCAL
+install: $(INSTALL_TARGETS)
+else
+install:
+	@echo "Nothing to install, this is a local build." && false
+endif
+.PHONY: install
