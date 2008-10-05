@@ -20,7 +20,13 @@ include $(s)/ucw/Makefile
 ifndef CONFIG_UCW_ONLY
 
 # Install config files
-CONFIGS+=sherlock local
+FREE_CONFIGS=sherlock local
+CONFIGS+=$(FREE_CONFIGS)
+
+INSTALL_TARGETS+=install-configs
+install-configs:
+	install -d -m 755 $(DESTDIR)$(INSTALL_CONFIG_DIR)
+	install -m 644 $(addprefix run/cf/,$(FREE_CONFIGS)) $(DESTDIR)$(INSTALL_CONFIG_DIR)
 
 # Set up names of common libraries (to avoid forward references in rules)
 LIBCHARSET=$(o)/charset/libcharset.pc
