@@ -29,13 +29,11 @@ The defaults determined by the configure script should be correct on Linux/i386,
 on other architectures you will probably need to tweak the CPU detection section
 in `ucw/autoconf.cfg` and possibly also the typedefs in `ucw/config.h`.
 
-Then run
+Then run:
 
 	make
 
-which builds the whole package in the `run` directory and you can play there.
-If you want to install it anywhere else, just use
+It compiles the package. You need to install it (unless you specified
+a <<configure:local_build,local build>>). To do so, execute:
 
-//TODO Implement the installation
-
-	make install INSTALL_DIR=/where/to/install
+	make install

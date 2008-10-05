@@ -27,7 +27,7 @@ a Makefile which refers to the original source tree.
 How to configure
 ----------------
 To set up compilation, possibly overriding default compile-time
-options, just run
+options, just run:
 
 	./configure [<option> | -<option> | <option>=<value> ...]
 
@@ -46,9 +46,29 @@ to specify the other options in this way, it probably won't have the desired
 effect, because configure also generates C include files containing the
 options.
 
+Installation options
+--------------------
+By default, the package is compiled to be installed and it chooses a
+place where it will install. If you want to place it somewhere else,
+set the `PREFIX` option:
+
+	./configure PREFIX=/where/to/install
+
+[[local_build]]
+You can create a local compilation, which does not need to be
+installed. All paths are set relative to a `run` directory and
+programs expect to have current working directory set to it. However,
+you can move the `run` directory around your filesystem as you like.
+To compile it that way, turn on the `CONFIG_LOCAL` option (and do not
+set `PREFIX`):
+
+	./configure CONFIG_LOCAL
+
 Examples
 --------
   - `./configure -CONFIG_SHARED` will build the libraries statically.
   - `./configure -CONFIG_IMAGES` avoids building the image library.
   - `./configure CONFIG_UCW_ONLY -CONFIG_UCW_UTILS` compiles only the
     libucw library without its util programs.
+  - `./configure CONFIG_XML PREFIX=$HOME/sherlock` includes a xml
+    library and installs into your home directory.
