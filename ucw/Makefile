@@ -33,7 +33,7 @@ LIBUCW_MODS= \
 	bbuf \
 	getopt
 
-LIBUCW_INCLUDES= \
+LIBUCW_LOCAL_INCLUDES= \
 	lib.h config.h threads.h \
 	mempool.h \
 	arraysort.h \
@@ -45,7 +45,7 @@ LIBUCW_INCLUDES= \
 	hashfunc.h hashtable.h \
 	heap.h binheap.h binheap-node.h \
 	redblack.h \
-	binsearch.h prime.h \
+	prime.h \
 	bitops.h \
 	conf.h getopt.h ipaccess.h \
 	profile.h \
@@ -62,12 +62,14 @@ LIBUCW_INCLUDES= \
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
 LIBUCW_MODS+=threads-conf workqueue asio fb-direct
-LIBUCW_INCLUDES+=workqueue.h semaphore.h asio.h
+LIBUCW_LOCAL_INCLUDES+=workqueue.h semaphore.h asio.h
 endif
 
 ifdef CONFIG_OWN_GETOPT
 include $(s)/ucw/getopt/Makefile
 endif
+
+LIBUCW_INCLUDES=$(LIBUCW_LOCAL_INCLUDES)
 
 include $(s)/ucw/sorter/Makefile
 include $(s)/ucw/doc/Makefile
@@ -151,7 +153,7 @@ endif
 INSTALL_TARGETS+=install-libucw
 install-libucw:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/ $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
-	install -m 644 `find run/include/ucw/ -maxdepth 1 -type f` $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
+	install -m 644 $(addprefix run/include/ucw/,$(LIBUCW_LOCAL_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
 	install -m 644 run/lib/pkgconfig/libucw.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 run/lib/$(LIBUCW_NAME) $(DESTDIR)$(INSTALL_LIB_DIR)
 
