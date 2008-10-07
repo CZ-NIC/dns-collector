@@ -73,7 +73,7 @@ struct mempool *mp_new(uns chunk_size);
 void mp_delete(struct mempool *pool);
 
 /**
- * Free all data on a memory pool, but leaves it working.
+ * Frees all data on a memory pool, but leaves it working.
  * It can keep some of the chunks allocated to serve
  * further allocation requests. Leaves the @pool alive,
  * even if it was created with @mp_new().
