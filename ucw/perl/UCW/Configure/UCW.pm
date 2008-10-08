@@ -4,6 +4,9 @@
 # (c) 2005--2008 Martin Mares <mj@ucw.cz>
 # (c) 2006 Robert Spalek <robert@ucw.cz>
 
+package UCW::Configure::UCW;
+use UCW::Configure;
+
 # Determine page size
 Test("CPU_PAGE_SIZE", "Determining page size", sub {
 	my $p;
@@ -44,3 +47,5 @@ if (Get("CPU_ARCH") eq "default" || Get("CPU_ARCH") =~ /^i[345]86$/) {
 # Remember PKG_CONFIG_PATH used for building, so that it will be propagated to
 # pkg-config's run locally in the makefiles.
 Set("PKG_CONFIG_PATH", $ENV{"PKG_CONFIG_PATH"}) if defined $ENV{"PKG_CONFIG_PATH"};
+
+1;

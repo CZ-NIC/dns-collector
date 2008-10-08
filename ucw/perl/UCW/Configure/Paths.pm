@@ -4,9 +4,12 @@
 # (c) 2005--2008 Martin Mares <mj@ucw.cz>
 # (c) 2006 Robert Spalek <robert@ucw.cz>
 
+package UCW::Configure::Paths;
+use UCW::Configure;
+
 Log "Determining installation prefix ... ";
 if (IsSet("CONFIG_LOCAL")) {
-	Log "local build\n";
+	Log("local build\n");
 	Set("INSTALL_PREFIX", "");
 	Set("INSTALL_USR_PREFIX", "");
 	Set("INSTALL_VAR_PREFIX", "");
@@ -19,7 +22,7 @@ if (IsSet("CONFIG_LOCAL")) {
 	Set("INSTALL_USR_PREFIX", $upx);
 	$upx =~ s{^/usr\b}{/var};
 	Set("INSTALL_VAR_PREFIX", $upx);
-	Log Get("PREFIX") . "\n";
+	Log(Get("PREFIX") . "\n");
 }
 
 Set("INSTALL_CONFIG_DIR", '$(INSTALL_PREFIX)$(CONFIG_DIR)');

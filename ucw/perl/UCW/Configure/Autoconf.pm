@@ -5,6 +5,9 @@
 
 ### OS ###
 
+package UCW::Configure::Autoconf;
+use UCW::Configure;
+
 Test("OS", "Checking on which OS we run", sub {
 	my $os = `uname`;
 	chomp $os;
