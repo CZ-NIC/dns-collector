@@ -33,7 +33,7 @@ LIBUCW_MODS= \
 	bbuf \
 	getopt
 
-LIBUCW_LOCAL_INCLUDES= \
+LIBUCW_THISDIR_INCLUDES= \
 	lib.h config.h threads.h \
 	mempool.h \
 	arraysort.h \
@@ -62,14 +62,14 @@ LIBUCW_LOCAL_INCLUDES= \
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
 LIBUCW_MODS+=threads-conf workqueue asio fb-direct
-LIBUCW_LOCAL_INCLUDES+=workqueue.h semaphore.h asio.h
+LIBUCW_THISDIR_INCLUDES+=workqueue.h semaphore.h asio.h
 endif
 
 ifdef CONFIG_OWN_GETOPT
 include $(s)/ucw/getopt/Makefile
 endif
 
-LIBUCW_INCLUDES=$(LIBUCW_LOCAL_INCLUDES)
+LIBUCW_INCLUDES=$(LIBUCW_THISDIR_INCLUDES)
 
 include $(s)/ucw/sorter/Makefile
 include $(s)/ucw/doc/Makefile
@@ -147,7 +147,7 @@ endif
 INSTALL_TARGETS+=install-libucw
 install-libucw:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/ $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
-	install -m 644 $(addprefix run/include/ucw/,$(LIBUCW_LOCAL_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
+	install -m 644 $(addprefix run/include/ucw/,$(LIBUCW_THISDIR_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
 	sed -e 's/^#include .autoconf\.h./#include <ucw\/autoconf.h>/' <run/include/ucw/config.h >$(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/config.h
 	install -m 644 run/lib/pkgconfig/libucw.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 run/lib/libucw.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
