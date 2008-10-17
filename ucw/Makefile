@@ -144,18 +144,12 @@ ifdef CONFIG_UCW_SHELL_UTILS
 include $(s)/ucw/shell/Makefile
 endif
 
-ifdef CONFIG_SHARED
-LIBUCW_NAME=libucw.so
-else
-LIBUCW_NAME=libucw.a
-endif
-
 INSTALL_TARGETS+=install-libucw
 install-libucw:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/ $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 $(addprefix run/include/ucw/,$(LIBUCW_LOCAL_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
 	sed -e 's/^#include .autoconf\.h./#include <ucw\/autoconf.h>/' <run/include/ucw/config.h >$(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/config.h
 	install -m 644 run/lib/pkgconfig/libucw.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
-	install -m 644 run/lib/$(LIBUCW_NAME) $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/libucw.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
 
 .PHONY: install-libucw
