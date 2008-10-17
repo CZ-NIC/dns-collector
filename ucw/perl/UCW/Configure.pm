@@ -112,7 +112,6 @@ sub FindFile($) {
 }
 
 sub Init($$) {
-  print "YYY\n";
 	my ($srcdir,$defconfig) = @_;
 	sub usage($) {
 		my ($dc) = @_;
