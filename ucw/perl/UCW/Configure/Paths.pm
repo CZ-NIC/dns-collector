@@ -37,5 +37,9 @@ Set("INSTALL_LOG_DIR", '$(INSTALL_VAR_PREFIX)log');
 Set("INSTALL_STATE_DIR", '$(INSTALL_VAR_PREFIX)lib');
 Set("INSTALL_RUN_DIR", '$(INSTALL_VAR_PREFIX)run');
 
+# Remember PKG_CONFIG_PATH used for building, so that it will be propagated to
+# pkg-config's run locally in the makefiles.
+Set("PKG_CONFIG_PATH", $ENV{"PKG_CONFIG_PATH"}) if defined $ENV{"PKG_CONFIG_PATH"};
 # We succeeded
+
 1;

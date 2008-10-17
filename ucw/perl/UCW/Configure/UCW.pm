@@ -44,8 +44,4 @@ if (Get("CPU_ARCH") eq "default" || Get("CPU_ARCH") =~ /^i[345]86$/) {
 # If debugging memory allocations:
 #LIBS+=-lefence
 
-# Remember PKG_CONFIG_PATH used for building, so that it will be propagated to
-# pkg-config's run locally in the makefiles.
-Set("PKG_CONFIG_PATH", $ENV{"PKG_CONFIG_PATH"}) if defined $ENV{"PKG_CONFIG_PATH"};
-
 1;
