@@ -20,6 +20,10 @@ from command line.
 - <<example,Example>>
   * <<ex_structure,The structure>>
   * <<ex_load,Loading>>
+- <<deep,Getting deeper>>
+  * <<reload,Reloading configuration>>
+  * <<custom_parser,Creating custom parsers>>
+  * <<hooks,Hooks>>
 - <<conf_h,ucw/conf.h>>
   * <<conf_types,Data types>>
   * <<conf_macros,Convenience macros>>
@@ -36,6 +40,10 @@ from command line.
 [[example]]
 Example
 -------
+If you want to just load simple configuration, this is the part you
+want to read. This simple example should give you the overview. Look
+into the <<conf_macros,convenience macros>> section to see list of
+supported data types, sections, etc.
 
 [[ex_cfile]]
 Let's say you have configuration file with this content and want to
@@ -116,6 +124,84 @@ internally by @cf_getopt(). It loads the configuration before it starts
 giving you your program's options.
 
 See documentation of unix getopt_long() function.
+
+[[deep]]
+Getting deeper
+--------------
+
+Since the configuration system is somehow complicated, this part gives
+you a little overview of what you can find and where.
+
+[[reload]]
+Reloading configuration
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The configuration system allows you to reload configuration at
+runtime. The new config changes the values against the default values.
+It means, if the default value for variable `A` is `10`, the currently
+loaded config sets it to `42` and the new config does not talk about
+this variable, `A` will have a value of `10` after a successful load.
+
+Furthermore, if the loading of a new configuration fails, the current
+configuration is preserved.
+
+All this is done with <<journal,config journaling>>. The load of the
+first config creates a journal entry. If you try to load some new
+configuration, it is partially rolled back to defaults (the rollback
+happens, but instead of removing the journal entry, another journal
+entry is added for the rollback). If the loading succeeds, the two
+journal entries are removed and a new one, for the new configuration,
+is added. If it fails, the first one is replayed and the rollback
+entry is removed.
+
+See <<cf_reload()>>.
+
+[[custom_parser]]
+Creating custom parsers
+~~~~~~~~~~~~~~~~~~~~~~~
+
+If you need to parse some data type the configuration system can't
+handle, you can write your own parser. But before you start, you
+should know few thinks.
+
+The parser needs to support <<journal,journaling>>. To accomplish that,
+you have to use the <<alloc,configuration mempool>> for memory allocation.
+Furthermore, you need to call @cf_journal_block() before you change
+the configuration (eg. before you save the parsed value to the destination
+variable). You can use <<def_CF_JOURNAL_VAR,`CF_JOURNAL_VAR`>> macro
+instead if it is simple variable.
+
+Now, you need a function with the same signature as
+<<type_cf_parser1,`cf_parser1`>>. Parse the first parameter (the
+string), call @cf_journal_block() on the second parameter and store
+the data there. You may want to write a dumper function, with
+signature of <<type_cf_dumper1,`cf_dumper1`>> (needed for debug
+dumps).
+
+// TODO Does the config system support storing of configuration?
+
+Fill in a <<struct_cf_user_type,structure cf_user_type>> and use the
+new data type in your configuration description with
+<<def_CF_USER,`CF_USER` macro>>.
+
+[[hooks]]
+Hooks
+~~~~~
+
+The configuration system supports hooks. They are used to initiate the
+configuration (if simple default value of variable is not enough) and
+to check the sanity of loaded data.
+
+Each hook is of type <<type_cf_hook,`cf_hook`>> and you can include
+them in configuration description using <<def_CF_INIT,`CF_INIT`>> and
+<<def_CF_COMMIT,`CF_COMMIT`>> macros.
+
+The hooks should follow similar guidelines as custom parsers (well,
+init hooks do not need to call @cf_journal_block()) to support
+journaling. If you change nothing in the commit hook, you do not need
+to care about the journaling either.
+
+// TODO maybe copier here too? What good is it?
 
 [[conf_h]]
 ucw/conf.h
