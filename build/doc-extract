@@ -136,7 +136,7 @@ sub process( $ ) {
 			} elsif( ( $head, $buff ) = ( $line =~ /^(.*)\/\*\*(.*)\*\*\// ) ) {
 				$buff =~ s/^\s*//;
 				$buff =~ s/\s*$//;
-				if( $head =~ /\(/ || $head !~ /{/ ) {
+				if( $head =~ /\(/ || $head !~ /{/ || $head =~/}/ ) {
 					$head =~ s/^\s*//;
 					$head =~ s/\/\*.*?\*\///gs;
 					formatNote( $head, $buff );
