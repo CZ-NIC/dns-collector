@@ -175,7 +175,7 @@ write a dumper function, with signature of
 
 Fill in a structure <<struct_cf_user_type,cf_user_type>> and use the
 new data type in your configuration description with
-<<def_CF_USER,`CF_USER`>> macro.
+<<def_CF_USER,`CF_USER`>> macro as its @t parameter.
 
 You do not need to call @cf_journal_block() on the variable you store
 the result. It is true you change it, but it was stored to journal

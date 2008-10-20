@@ -109,47 +109,94 @@ struct cf_section {			/** A section. **/
  * save some typing.
  */
 
-// TODO
-
-/* Declaration of cf_section */
-#define CF_TYPE(s)	.size = sizeof(s)
-#define CF_INIT(f)	.init = (cf_hook*) f
-#define CF_COMMIT(f)	.commit = (cf_hook*) f
-#define CF_COPY(f)	.copy = (cf_copier*) f
-#define CF_ITEMS	.cfg = ( struct cf_item[] )
-#define CF_END		{ .cls = CC_END }
-/* Configuration items */
-#define CF_STATIC(n,p,T,t,c)	{ .cls = CC_STATIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t*) }
-#define CF_DYNAMIC(n,p,T,t,c)	{ .cls = CC_DYNAMIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t**) }
-#define CF_PARSER(n,p,f,c)	{ .cls = CC_PARSER, .name = n, .number = c, .ptr = p, .u.par = (cf_parser*) f }
-#define CF_SECTION(n,p,s)	{ .cls = CC_SECTION, .name = n, .number = 1, .ptr = p, .u.sec = s }
-#define CF_LIST(n,p,s)		{ .cls = CC_LIST, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,clist*), .u.sec = s }
-#define CF_BITMAP_INT(n,p)	{ .cls = CC_BITMAP, .type = CT_INT, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,u32*) }
-#define CF_BITMAP_LOOKUP(n,p,t)	{ .cls = CC_BITMAP, .type = CT_LOOKUP, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,u32*), .u.lookup = t }
-/* Configuration items for basic types */
-#define CF_INT(n,p)		CF_STATIC(n,p,INT,int,1)
-#define CF_INT_ARY(n,p,c)	CF_STATIC(n,p,INT,int,c)
-#define CF_INT_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,int,c)
-#define CF_UNS(n,p)		CF_STATIC(n,p,INT,uns,1)
-#define CF_UNS_ARY(n,p,c)	CF_STATIC(n,p,INT,uns,c)
-#define CF_UNS_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,uns,c)
-#define CF_U64(n,p)		CF_STATIC(n,p,U64,u64,1)
-#define CF_U64_ARY(n,p,c)	CF_STATIC(n,p,U64,u64,c)
-#define CF_U64_DYN(n,p,c)	CF_DYNAMIC(n,p,U64,u64,c)
-#define CF_DOUBLE(n,p)		CF_STATIC(n,p,DOUBLE,double,1)
-#define CF_DOUBLE_ARY(n,p,c)	CF_STATIC(n,p,DOUBLE,double,c)
-#define CF_DOUBLE_DYN(n,p,c)	CF_DYNAMIC(n,p,DOUBLE,double,c)
-#define CF_IP(n,p)		CF_STATIC(n,p,IP,u32,1)
-#define CF_IP_ARY(n,p,c)	CF_STATIC(n,p,IP,u32,c)
-#define CF_IP_DYN(n,p,c)	CF_DYNAMIC(n,p,IP,u32,c)
-#define CF_STRING(n,p)		CF_STATIC(n,p,STRING,char*,1)
-#define CF_STRING_ARY(n,p,c)	CF_STATIC(n,p,STRING,char*,c)
-#define CF_STRING_DYN(n,p,c)	CF_DYNAMIC(n,p,STRING,char*,c)
+/***
+ * Declaration of <<struct_cf_section,`cf_section`>>
+ * ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ *
+ * These macros can be used to configure the top-level <<struct_cf_section,`cf_section`>>
+ * structure.
+ ***/
+#define CF_TYPE(s)	.size = sizeof(s)		/** Type of the section. **/
+#define CF_INIT(f)	.init = (cf_hook*) f		/** Init <<hooks,hook>>. **/
+#define CF_COMMIT(f)	.commit = (cf_hook*) f		/** Commit <<hooks,hook>>. **/
+#define CF_COPY(f)	.copy = (cf_copier*) f		/** <<hooks,Copy function>>. **/
+#define CF_ITEMS	.cfg = ( struct cf_item[] )	/** List of sub-items. **/
+#define CF_END		{ .cls = CC_END }		/** End of the structure. **/
+/***
+ * Declaration of a configuration item
+ * ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ *
+ * Each of these describe single <<struct_cf_item,configuration item>>. They are mostly
+ * for internal use, do not use them directly unless you really know what you are doing.
+ ***/
+#define CF_STATIC(n,p,T,t,c)	{ .cls = CC_STATIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t*) }			/** Static array of items. **/
+#define CF_DYNAMIC(n,p,T,t,c)	{ .cls = CC_DYNAMIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t**) }			/** Dynamic array of items. **/
+#define CF_PARSER(n,p,f,c)	{ .cls = CC_PARSER, .name = n, .number = c, .ptr = p, .u.par = (cf_parser*) f }					/** A low-level parser. **/
+#define CF_SECTION(n,p,s)	{ .cls = CC_SECTION, .name = n, .number = 1, .ptr = p, .u.sec = s }						/** A sub-section. **/
+#define CF_LIST(n,p,s)		{ .cls = CC_LIST, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,clist*), .u.sec = s }				/** A list with sub-items. **/
+#define CF_BITMAP_INT(n,p)	{ .cls = CC_BITMAP, .type = CT_INT, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,u32*) }			/** A bitmap. **/
+#define CF_BITMAP_LOOKUP(n,p,t)	{ .cls = CC_BITMAP, .type = CT_LOOKUP, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,u32*), .u.lookup = t }	/** A bitmap with named bits. **/
+/***
+ * Basic configuration items
+ * ^^^^^^^^^^^^^^^^^^^^^^^^^
+ *
+ * They describe basic data types used in the configuration. This should be enough for
+ * most real-life purposes.
+ *
+ * The parameters are as follows:
+ *
+ * * @n -- name of the item.
+ * * @p -- pointer to the variable where it shall be stored.
+ * * @c -- count.
+ **/
+#define CF_INT(n,p)		CF_STATIC(n,p,INT,int,1)		/** Single `int` value. **/
+#define CF_INT_ARY(n,p,c)	CF_STATIC(n,p,INT,int,c)		/** Static array of `int` s. **/
+#define CF_INT_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,int,c)		/** Dynamic array of `int` s. **/
+#define CF_UNS(n,p)		CF_STATIC(n,p,INT,uns,1)		/** Single `uns` (`unsigned`) value. **/
+#define CF_UNS_ARY(n,p,c)	CF_STATIC(n,p,INT,uns,c)		/** Static array of `uns` es. **/
+#define CF_UNS_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,uns,c)		/** Dynamic array of `uns` es. **/
+#define CF_U64(n,p)		CF_STATIC(n,p,U64,u64,1)		/** Single unsigned 64bit integer (`u64`). **/
+#define CF_U64_ARY(n,p,c)	CF_STATIC(n,p,U64,u64,c)		/** Static array of `u64` s. **/
+#define CF_U64_DYN(n,p,c)	CF_DYNAMIC(n,p,U64,u64,c)		/** Dynamic array of `u64` s. **/
+#define CF_DOUBLE(n,p)		CF_STATIC(n,p,DOUBLE,double,1)		/** Single instance of `double`. **/
+#define CF_DOUBLE_ARY(n,p,c)	CF_STATIC(n,p,DOUBLE,double,c)		/** Static array of `double` s. **/
+#define CF_DOUBLE_DYN(n,p,c)	CF_DYNAMIC(n,p,DOUBLE,double,c)		/** Dynamic array of `double` s. **/
+#define CF_IP(n,p)		CF_STATIC(n,p,IP,u32,1)			/** Single IPv4 address. **/
+#define CF_IP_ARY(n,p,c)	CF_STATIC(n,p,IP,u32,c)			/** Static array of IP addresses. **/.
+#define CF_IP_DYN(n,p,c)	CF_DYNAMIC(n,p,IP,u32,c)		/** Dynamic array of IP addresses. **/
+#define CF_STRING(n,p)		CF_STATIC(n,p,STRING,char*,1)		/** One string. **/
+#define CF_STRING_ARY(n,p,c)	CF_STATIC(n,p,STRING,char*,c)		/** Static array of strings. **/
+#define CF_STRING_DYN(n,p,c)	CF_DYNAMIC(n,p,STRING,char*,c)		/** Dynamic array of strings. **/
+/**
+ * One string out of a predefined set.
+ * You provide the set as an array of strings terminated by NULL (similar to @argv argument
+ * of main()) as the @t parameter.
+ **/
 #define CF_LOOKUP(n,p,t)	{ .cls = CC_STATIC, .type = CT_LOOKUP, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,int*), .u.lookup = t }
+/**
+ * Static array of strings out of predefined set.
+ * See <<def_CF_LOOKUP,`CF_LOOKUP`>>.
+ **/
 #define CF_LOOKUP_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int*), .u.lookup = t }
+/**
+ * Dynamic array of strings out of predefined set.
+ * See <<def_CF_LOOKUP,`CF_LOOKUP`>>.
+ **/
 #define CF_LOOKUP_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int**), .u.lookup = t }
+/**
+ * A user defined type.
+ * See <<custom_parser,creating custom parsers>> section if you want to know more.
+ **/
 #define CF_USER(n,p,t)		{ .cls = CC_STATIC, .type = CT_USER, .name = n, .number = 1, .ptr = p, .u.utype = t }
+/**
+ * Static array of user defined types (all of the same type).
+ * See <<custom_parser,creating custom parsers>> section.
+ **/
 #define CF_USER_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_USER, .name = n, .number = c, .ptr = p, .u.utype = t }
+/**
+ * Dynamic array of user defined types.
+ * See <<custom_parser,creating custom parsers>> section.
+ **/
 #define CF_USER_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_USER, .name = n, .number = c, .ptr = p, .u.utype = t }
 
 /* If you aren't picky about the number of parameters */
