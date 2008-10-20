@@ -13,7 +13,7 @@ It is modular. It means you do not have to write all configuration at
 the same place, you just declare the parts you need locally and do not
 care about the other parts.
 
-The command line parser has the same interface as unix getopt_long,
+The command line parser has the same interface as unix getopt_long(),
 but handles setting of configuration files and configuration values
 from command line.
 
@@ -162,14 +162,14 @@ Creating custom parsers
 
 If you need to parse some data type the configuration system can't
 handle, you can write your own parser. But before you start, you
-should know few thinks.
+should know a few things.
 
 The parser needs to support <<journal,journaling>>. To accomplish that,
 you have to use the <<alloc,configuration mempool>> for memory allocation.
 Furthermore, you need to call @cf_journal_block() before you change
 the configuration (eg. before you save the parsed value to the destination
 variable). You can use <<def_CF_JOURNAL_VAR,`CF_JOURNAL_VAR`>> macro
-instead if it is simple variable.
+instead if it is a simple variable.
 
 Now, you need a function with the same signature as
 <<type_cf_parser1,`cf_parser1`>>. Parse the first parameter (the
@@ -177,8 +177,6 @@ string), call @cf_journal_block() on the second parameter and store
 the data there. You may want to write a dumper function, with
 signature of <<type_cf_dumper1,`cf_dumper1`>> (needed for debug
 dumps).
-
-// TODO Does the config system support storing of configuration?
 
 Fill in a <<struct_cf_user_type,structure cf_user_type>> and use the
 new data type in your configuration description with
@@ -188,7 +186,7 @@ new data type in your configuration description with
 Hooks
 ~~~~~
 
-The configuration system supports hooks. They are used to initiate the
+The configuration system supports hooks. They are used to initialize the
 configuration (if simple default value of variable is not enough) and
 to check the sanity of loaded data.
 
@@ -201,7 +199,14 @@ init hooks do not need to call @cf_journal_block()) to support
 journaling. If you change nothing in the commit hook, you do not need
 to care about the journaling either.
 
-// TODO maybe copier here too? What good is it?
+You may use the return value to inform about errors. Just return the
+error message, or NULL if everything went well.
+
+Another similar function is a copy function. It is very similar to a
+hook and is used when the item is copied and is too complicated to use
+simple memcpy(). Its type is <<type_cf_copier,`cf_copier`>> and is
+specified by the <<def_CF_COPY,`CF_COPY`>> macro. It's return value is
+the same as the one of a hook.
 
 [[conf_h]]
 ucw/conf.h
