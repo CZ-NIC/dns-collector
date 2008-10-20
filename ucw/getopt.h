@@ -32,7 +32,7 @@ void reset_getopt(void);	/** If you want to start parsing of the arguments from 
  * You can set it to something else manually.
  */
 extern char *cf_def_file;		/* DEFAULT_CONFIG; NULL if already loaded */
-extern char *cf_env_file;		/* ENV_VAR_CONFIG */
+extern char *cf_env_file;		/** ENV_VAR_CONFIG **/
 int cf_reload(const char *file);	/** Reload configuration from @file, replace the old one. **/
 int cf_load(const char *file);		/** Load configuration from @file. **/
 /**
@@ -50,6 +50,11 @@ int cf_set(const char *string);
  * You probably should not need this.
  ***/
 
+/**
+ * List of operations used on items.
+ * This macro is used to generate internal source code,
+ * but you may be interested in the actions it creates.
+ **/
 #define CF_OPERATIONS T(CLOSE) T(SET) T(CLEAR) T(ALL) \
   T(APPEND) T(PREPEND) T(REMOVE) T(EDIT) T(AFTER) T(BEFORE) T(COPY)
   /* Closing brace finishes previous block.
@@ -58,7 +63,7 @@ int cf_set(const char *string);
    * Sections can be used with SET.
    * Lists can be used with everything. */
 #define T(x) OP_##x,
-enum cf_operation { CF_OPERATIONS };
+enum cf_operation { CF_OPERATIONS };	/** Allowed operations on items. See <<def_CF_OPERATIONS,`CF_OPERATIONS`>>. **/
 #undef T
 
 struct cf_item;
@@ -68,7 +73,9 @@ struct cf_item;
  * Otherwise, an error is returned and @item is zeroed.
  **/
 char *cf_find_item(const char *name, struct cf_item *item);
-// TODO What does this do?
+/**
+ * Performs a single operation on a given item.
+ **/
 char *cf_modify_item(struct cf_item *item, enum cf_operation op, int number, char **pars);
 
 /***
@@ -87,12 +94,37 @@ void cf_dump_sections(struct fastbuf *fb);
  * [[conf_journal]]
  * Journaling control
  * ~~~~~~~~~~~~~~~~~~
+ *
+ * The configuration system uses journaling to safely reload
+ * configuration. It begins a transaction and tries to load the
+ * configuration. If it fails, it restores the original state.
+ *
+ * The behaviour of journal is described in <<reload,reloading configuration>>.
  ***/
 
-struct cf_journal_item;
-// TODO
+struct cf_journal_item;		/** Opaque identifier of the journal state. **/
+/**
+ * Starts a new transaction. It returns the current state so you can
+ * get back to it. The @new_pool parameter tells if a new memory pool
+ * should be created and used from now.
+ **/
 struct cf_journal_item *cf_journal_new_transaction(uns new_pool);
+/**
+ * Marks current state as a complete transaction. The @new_pool
+ * parameter tells if the transaction was created with new memory pool
+ * (the parameter must be the same as the one with
+ * @cf_journal_new_transaction() was called with). The @oldj parameter
+ * is the journal state returned from last
+ * @cf_journal_new_transaction() call.
+ **/
 void cf_journal_commit_transaction(uns new_pool, struct cf_journal_item *oldj);
+/**
+ * Returns to an old journal state, reverting anything the current
+ * transaction did. The @new_pool parameter must be the same as the
+ * one you used when you created the transaction. The @oldj parameter
+ * is the journal state you got from @cf_journal_new_transaction() --
+ * it is the state to return to.
+ **/
 void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj);
 
 /***
@@ -136,7 +168,7 @@ void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj)
 #define CF_USAGE_DEBUG
 #endif
 
-/***
+/**
  * Takes care of parsing the command-line arguments, loading the
  * default configuration file (<<var_cf_def_file,`cf_def_file`>>) and processing
  * configuration options. The calling convention is the same as with GNU getopt_long(),
@@ -144,10 +176,10 @@ void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj)
  * <<def_CF_LONG_OPTS,`CF_LONG_OPTS`>> or <<def_CF_SHORT_OPTS,`CF_SHORT_OPTS`>>or
  * pass <<def_CF_NO_LONG_OPTS,`CF_NO_LONG_OPTS`>> if there are no long options.
  *
- * The default configuration file can be overwriten by the --config options,
+ * The default configuration file can be overwritten by the --config options,
  * which must come first. During parsing of all other options, the configuration
  * is already available.
- ***/
+ **/
 int cf_getopt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index);
 
 #endif
