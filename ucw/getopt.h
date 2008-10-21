@@ -173,7 +173,7 @@ void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj)
  * default configuration file (<<var_cf_def_file,`cf_def_file`>>) and processing
  * configuration options. The calling convention is the same as with GNU getopt_long(),
  * but you must prefix your own short/long options by the
- * <<def_CF_LONG_OPTS,`CF_LONG_OPTS`>> or <<def_CF_SHORT_OPTS,`CF_SHORT_OPTS`>>or
+ * <<def_CF_LONG_OPTS,`CF_LONG_OPTS`>> or <<def_CF_SHORT_OPTS,`CF_SHORT_OPTS`>> or
  * pass <<def_CF_NO_LONG_OPTS,`CF_NO_LONG_OPTS`>> if there are no long options.
  *
  * The default configuration file can be overwritten by the --config options,
