@@ -12,5 +12,5 @@ See doc/install.html for build requirements and instructions.
 
 See doc/configure.html if you want to tweak build options.
 
-After you compile thi library, you can issue `make docs' to build the api
+After you compile the library, you can issue `make docs' to build the api
 documentation. It will appear in run/doc.
