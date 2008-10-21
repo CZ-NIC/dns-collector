@@ -84,7 +84,8 @@ The variables are used to store the loaded values. Their initial
 values work as default, if nothing else is loaded. The hw_config()
 structure assigns the variables to configuration names. The hw_init()
 function (because of the `CONSTRUCTOR` macro) is run before main()
-is called and it plugs in the whole section to the parser.
+is called and it plugs in the whole section to the parser (alternatively,
+you can call @cf_declare_section() at the start of your main()).
 
 You can plug in as many configuration sections as you like, from
 various places across your code.
@@ -92,8 +93,10 @@ various places across your code.
 [[ex_load]]
 Loading of the values
 ~~~~~~~~~~~~~~~~~~~~~
-You need to parse the command line arguments and load the
-configuration. You can do it in a similar way to this example.
+Suppose you need to parse the command line arguments and load the
+configuration. Then @cf_getopt() is there for you: it works like
+the the traditional @getopt() from the C library, but it also handles
+configuration files.
 
   #include <ucw/lib.h>
   #include <ucw/conf.h>
@@ -116,14 +119,15 @@ configuration. You can do it in a similar way to this example.
 	case 'v': verbose = 1; break;
 	default: fprintf("Unknown option %c\n", opt); return 1;
       }
+  }
 
 The `short_opts` and `long_opts` variables describe the command line
 arguments. Notice the `CF_SHORT_OPTS` and `CF_LONG_OPTS` macros. They
-add options for the configuration parser. These options are handled
-internally by @cf_getopt(). It loads the configuration before it starts
-giving you your program's options.
+add the `-S` and `-C` options for the configuration parser as described
+in <<config:>>. These options are handled internally by @cf_getopt().
 
-See documentation of unix getopt_long() function.
+You can rely on the configuration files having been loaded before the
+first of your program's options is parsed.
 
 [[deep]]
 Getting deeper
