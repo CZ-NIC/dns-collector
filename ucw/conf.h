@@ -229,23 +229,51 @@ struct cf_section {			/** A section. **/
 #define CF_IP(n,p)		CF_STATIC(n,p,IP,u32,1)			/** Single IPv4 address. **/
 #define CF_IP_ARY(n,p,c)	CF_STATIC(n,p,IP,u32,c)			/** Static array of IP addresses. **/.
 #define CF_IP_DYN(n,p,c)	CF_DYNAMIC(n,p,IP,u32,c)		/** Dynamic array of IP addresses. **/
-#define CF_STRING(n,p)		CF_STATIC(n,p,STRING,char*,1)		/** One string. **/
+/**
+ * A string.
+ * You provide a pointer to a `char *` variable and it will fill it with
+ * dynamically allocated string. For example:
+ *
+ *   static char *string = "Default string";
+ *
+ *   static struct cf_section section = {
+ *     CF_ITEMS {
+ *       CF_STRING("string", &string),
+ *       CF_END
+ *     }
+ *   };
+ **/
+#define CF_STRING(n,p)		CF_STATIC(n,p,STRING,char*,1)
 #define CF_STRING_ARY(n,p,c)	CF_STATIC(n,p,STRING,char*,c)		/** Static array of strings. **/
 #define CF_STRING_DYN(n,p,c)	CF_DYNAMIC(n,p,STRING,char*,c)		/** Dynamic array of strings. **/
 /**
  * One string out of a predefined set.
  * You provide the set as an array of strings terminated by NULL (similar to @argv argument
  * of main()) as the @t parameter.
+ *
+ * The configured variable (pointer to `int`) is set to index of the string.
+ * So, it works this way:
+ *
+ *   static *strings[] = { "First", "Second", "Third", NULL };
+ *
+ *   static int variable;
+ *
+ *   static struct cf_section section = {
+ *     CF_ITEMS {
+ *       CF_LOOKUP("choice", &variable, strings),
+ *       CF_END
+ *     }
+ *   };
+ *
+ * Now, if the configuration contains `choice "Second"`, `variable` will be set to 1.
  **/
 #define CF_LOOKUP(n,p,t)	{ .cls = CC_STATIC, .type = CT_LOOKUP, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,int*), .u.lookup = t }
 /**
  * Static array of strings out of predefined set.
- * See <<def_CF_LOOKUP,`CF_LOOKUP`>>.
  **/
 #define CF_LOOKUP_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int*), .u.lookup = t }
 /**
  * Dynamic array of strings out of predefined set.
- * See <<def_CF_LOOKUP,`CF_LOOKUP`>>.
  **/
 #define CF_LOOKUP_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int**), .u.lookup = t }
 /**
