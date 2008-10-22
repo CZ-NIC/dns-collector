@@ -21,6 +21,7 @@ from command line.
   * <<ex_structure,The structure>>
   * <<ex_load,Loading>>
 - <<deep,Getting deeper>>
+  * <<conf_multi,Arrays and lists>>
   * <<reload,Reloading configuration>>
   * <<custom_parser,Creating custom parsers>>
   * <<hooks,Hooks>>
@@ -135,6 +136,69 @@ Getting deeper
 
 Since the configuration system is somehow complicated, this part gives
 you a little overview of what you can find and where.
+
+[[conf_multi]]
+Arrays and lists
+~~~~~~~~~~~~~~~~
+
+It is sometime needed to have multiple items of the same type. There
+are three ways to do that:
+
+*Static arrays*::
+  An array with fixed maximum length. You provide
+  the length and already allocated array which is filled with items.
+  The configuration may contain less than the maximum length items.
++
+For example, you can have an static array of five unsigned integers:
++
+  static uns array = { 1, 2, 3, 4, 5 };
++
+  static struct cf_section section = {
+    CF_ITEMS {
+      CF_UNS_ARY("array", array, 5),
+      CF_END
+    }
+  };
+
+*Dynamic arrays*::
+  Similar to static array, but you provide pointer
+  to pointer to the given item (eg. if you want dynamic array of
+  `int` s, you give `**int`). The parser allocates an array of needed
+  size. You can use the <<def_DARY_LEN,`DARY_LEN`>> macro to find out
+  the number of elements actually loaded.
++
+If you want dynamic array of strings, you would use:
++
+  static char *array[];
++
+  static struct cf_section section = {
+    CF_ITEMS {
+      CF_STRING_DYN("array", &array, CF_ANY_NUM),
+      CF_END
+    }
+  };
+
+*Lists*::
+  Linked lists based on <<clist:>>. You provide description
+  of single node and pointer to the
+  <<clist:struct_clist,`struct clist`>> variable. All the nodes will
+  be created dynamically and put there.
++
+First element of your structure must be <<clist:type_cnode,`cnode`>>.
++
+The first example is list of strings and uses <<clist:simple,simple
+lists>>:
+  struct clist list;
++
+  static struct cf_section section = {
+    CF_ITEMS {
+      CF_LIST("list", &list, &cf_string_list_cofnig),
+      CF_END
+    }
+  };
++
+Another example, describing how to create more complicated list node
+than just a string can be found at the <<def_CF_TYPE,`CF_TYPE`>> macro.
 
 [[reload]]
 Reloading configuration

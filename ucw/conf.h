@@ -113,10 +113,45 @@ struct cf_section {			/** A section. **/
  * Declaration of <<struct_cf_section,`cf_section`>>
  * ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  *
- * These macros can be used to configure the top-level <<struct_cf_section,`cf_section`>>
+ * These macros can be used to configure the <<struct_cf_section,`cf_section`>>
  * structure.
  ***/
-#define CF_TYPE(s)	.size = sizeof(s)		/** Type of the section. **/
+
+/**
+ * Data type of a section.
+ * If you store the section into a structure, use this macro.
+ *
+ * Storing a section into a structure is useful mostly when you may have multiple instances of the
+ * section (eg. <<conf_multi,array or list>>).
+ *
+ * Example:
+ *
+ *   struct list_node {
+ *     cnode n;		// This one is for the list itself
+ *     char *name;
+ *     uns value;
+ *   };
+ *
+ *   struct clist nodes;
+ *
+ *   static struct cf_section node = {
+ *     CF_TYPE(struct list_node),
+ *     CF_ITEMS {
+ *       CF_STRING("name", PTR_TO(struct list_node, name)),
+ *       CF_UNS("value", PTR_TO(struct list_node, value)),
+ *       CF_END
+ *     }
+ *   };
+ *
+ *   static struct cf_section section = {
+ *     CF_LIST("node", &nodes, &node),
+ *     CF_END
+ *   };
+ *
+ * You could use <<def_CF_STATIC,`def_CF_STATIC`>> or <<def_CF_DYNAMIC,`def_CF_DYNAMIC`>>
+ * macros to create arrays.
+ */
+#define CF_TYPE(s)	.size = sizeof(s)
 #define CF_INIT(f)	.init = (cf_hook*) f		/** Init <<hooks,hook>>. **/
 #define CF_COMMIT(f)	.commit = (cf_hook*) f		/** Commit <<hooks,hook>>. **/
 #define CF_COPY(f)	.copy = (cf_copier*) f		/** <<hooks,Copy function>>. **/
@@ -129,8 +164,18 @@ struct cf_section {			/** A section. **/
  * Each of these describe single <<struct_cf_item,configuration item>>. They are mostly
  * for internal use, do not use them directly unless you really know what you are doing.
  ***/
-#define CF_STATIC(n,p,T,t,c)	{ .cls = CC_STATIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t*) }			/** Static array of items. **/
-#define CF_DYNAMIC(n,p,T,t,c)	{ .cls = CC_DYNAMIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t**) }			/** Dynamic array of items. **/
+
+/**
+ * Static array of items.
+ * Expects you to allocate the memory and provide pointer to it.
+ **/
+#define CF_STATIC(n,p,T,t,c)	{ .cls = CC_STATIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t*) }
+/**
+ * Dynamic array of items.
+ * Expects you to provide pointer to your pointer to data and it will allocate new memory for it
+ * and set your pointer to it.
+ **/
+#define CF_DYNAMIC(n,p,T,t,c)	{ .cls = CC_DYNAMIC, .type = CT_##T, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,t**) }
 #define CF_PARSER(n,p,f,c)	{ .cls = CC_PARSER, .name = n, .number = c, .ptr = p, .u.par = (cf_parser*) f }					/** A low-level parser. **/
 #define CF_SECTION(n,p,s)	{ .cls = CC_SECTION, .name = n, .number = 1, .ptr = p, .u.sec = s }						/** A sub-section. **/
 #define CF_LIST(n,p,s)		{ .cls = CC_LIST, .name = n, .number = 1, .ptr = CHECK_PTR_TYPE(p,clist*), .u.sec = s }				/** A list with sub-items. **/
@@ -199,11 +244,12 @@ struct cf_section {			/** A section. **/
  **/
 #define CF_USER_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_USER, .name = n, .number = c, .ptr = p, .u.utype = t }
 
-/* If you aren't picky about the number of parameters */
+/**
+ * Any number of dynamic array elements
+ **/
 #define CF_ANY_NUM		-0x7fffffff
 
-#define DARY_LEN(a) ((uns*)a)[-1]
-  // length of a dynamic array
+#define DARY_LEN(a) ((uns*)a)[-1]	/** Length of an dynamic array. **/
 #define DARY_ALLOC(type,len,val...) ((struct { uns l; type a[len]; }) { .l = len, .a = { val } }).a
   // creates a static instance of a dynamic array
 
