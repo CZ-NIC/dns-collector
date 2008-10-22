@@ -68,7 +68,7 @@ char *
 mp_vprintf_append(struct mempool *mp, char *ptr, const char *fmt, va_list args)
 {
   uns ofs = mp_open(mp, ptr);
-  ASSERT(ofs);
+  ASSERT(ofs && !ptr[ofs - 1]);
   return mp_vprintf_at(mp, ofs - 1, fmt, args);
 }
 
