@@ -152,9 +152,29 @@ struct cf_section {			/** A section. **/
  * macros to create arrays.
  */
 #define CF_TYPE(s)	.size = sizeof(s)
-#define CF_INIT(f)	.init = (cf_hook*) f		/** Init <<hooks,hook>>. **/
-#define CF_COMMIT(f)	.commit = (cf_hook*) f		/** Commit <<hooks,hook>>. **/
-#define CF_COPY(f)	.copy = (cf_copier*) f		/** <<hooks,Copy function>>. **/
+/**
+ * An init <<hooks,hook>>.
+ * You can use this to initialize dynamically allocated items (for a dynamic array or list).
+ * The hook returns an error message or NULL if everything was OK.
+ */
+#define CF_INIT(f)	.init = (cf_hook*) f
+/**
+ * A commit <<hooks,hook>>.
+ * You can use this one to check sanity of loaded data and postprocess them.
+ * You must call @cf_journal_block() if you change anything.
+ *
+ * Return error message or NULL if everything went OK.
+ **/
+#define CF_COMMIT(f)	.commit = (cf_hook*) f
+/**
+ * A <<hooks,copy function>>.
+ * You need to provide one for too complicated sections where a memcpy is not
+ * enough to copy it properly. It happens, for example, when you have a dynamically
+ * allocated section containing a list of other sections.
+ *
+ * You return an error message or NULL if you succeed.
+ **/
+#define CF_COPY(f)	.copy = (cf_copier*) f		/**  **/
 #define CF_ITEMS	.cfg = ( struct cf_item[] )	/** List of sub-items. **/
 #define CF_END		{ .cls = CC_END }		/** End of the structure. **/
 /***
