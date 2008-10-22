@@ -277,17 +277,17 @@ struct cf_section {			/** A section. **/
  **/
 #define CF_LOOKUP_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_LOOKUP, .name = n, .number = c, .ptr = CHECK_PTR_TYPE(p,int**), .u.lookup = t }
 /**
- * A user defined type.
+ * A user-defined type.
  * See <<custom_parser,creating custom parsers>> section if you want to know more.
  **/
 #define CF_USER(n,p,t)		{ .cls = CC_STATIC, .type = CT_USER, .name = n, .number = 1, .ptr = p, .u.utype = t }
 /**
- * Static array of user defined types (all of the same type).
+ * Static array of user-defined types (all of the same type).
  * See <<custom_parser,creating custom parsers>> section.
  **/
 #define CF_USER_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_USER, .name = n, .number = c, .ptr = p, .u.utype = t }
 /**
- * Dynamic array of user defined types.
+ * Dynamic array of user-defined types.
  * See <<custom_parser,creating custom parsers>> section.
  **/
 #define CF_USER_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_USER, .name = n, .number = c, .ptr = p, .u.utype = t }

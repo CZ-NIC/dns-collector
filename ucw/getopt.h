@@ -31,8 +31,12 @@ void reset_getopt(void);	/** If you want to start parsing of the arguments from 
  * The default config (DEFAULT_CONFIG config option) or NULL if already loaded.
  * You can set it to something else manually.
  */
-extern char *cf_def_file;		/* DEFAULT_CONFIG; NULL if already loaded */
-extern char *cf_env_file;		/** ENV_VAR_CONFIG **/
+extern char *cf_def_file;
+/**
+ * Name of environment variable that can override what configuration
+ * is loaded.
+ **/
+extern char *cf_env_file;
 int cf_reload(const char *file);	/** Reload configuration from @file, replace the old one. **/
 int cf_load(const char *file);		/** Load configuration from @file. **/
 /**
