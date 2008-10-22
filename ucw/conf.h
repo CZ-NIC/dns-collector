@@ -321,17 +321,51 @@ char *cf_printf(const char *fmt, ...) FORMAT_CHECK(printf,1,2); /** printf() int
  * Undo journal
  * ~~~~~~~~~~~~
  *
- * For error recovery
+ * For error recovery when <<reload,reloading configuration>>.
  ***/
-extern uns cf_need_journal;
+extern uns cf_need_journal;	/** Is the journal needed? If you do not reload configuration, you set this to 0 and gain a little more performance and free memory. **/
+/**
+ * When a block of memory is about to be changed, put the old value
+ * into journal with this function. You need to call it from a <<hooks,commit hook>>
+ * if you change anything. It is used internally by low-level parsers.
+ * <<custom_parser,Custom parsers>> do not need to call it, it is called
+ * before them.
+ **/
 void cf_journal_block(void *ptr, uns len);
-#define CF_JOURNAL_VAR(var) cf_journal_block(&(var), sizeof(var))
+#define CF_JOURNAL_VAR(var) cf_journal_block(&(var), sizeof(var))	// Store single value into journal.
 
-/* Declaration: conf-section.c */
+/***
+ * [[declare]]
+ * Section declaration
+ * ~~~~~~~~~~~~~~~~~~~
+ **/
+
+/**
+ * Plug another top-level section into the configuration system.
+ * @name is the name in the configuration file,
+ * @sec is pointer to the section description.
+ * If @allow_unknown is set to 0 and a variable not described in @sec
+ * is found in the configuration file, it produces an error.
+ * If you set it to 1, all such variables are ignored.
+ **/
 void cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown);
+/**
+ * If you have a section in a structure and you want to initialize it
+ * (eg. if you want a copy of default values outside the configuration),
+ * you can use this. It initializes it recursively.
+ *
+ * This is used mostly internally. You probably do not need it.
+ **/
 void cf_init_section(const char *name, struct cf_section *sec, void *ptr, uns do_bzero);
 
-/*** === Parsers for basic types [[bparser]] ***/
+/***
+ * [[bparser]]
+ * Parsers for basic types
+ * ~~~~~~~~~~~~~~~~~~~~~~~
+ *
+ * Each of them gets a string to parse and pointer to store the value.
+ * It returns either NULL or error message.
+ ***/
 char *cf_parse_int(const char *str, int *ptr);		/** Parser for integers. **/
 char *cf_parse_u64(const char *str, u64 *ptr);		/** Parser for 64 unsigned integers. **/
 char *cf_parse_double(const char *str, double *ptr);	/** Parser for doubles. **/

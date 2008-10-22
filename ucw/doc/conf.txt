@@ -30,6 +30,7 @@ from command line.
   * <<conf_macros,Convenience macros>>
   * <<alloc,Memory allocation>>
   * <<journal,Undo journal>>
+  * <<declare,Section declaration>>
   * <<bparser,Parsers for basic types>>
 - <<getopt_h,ucw/getopt.h>>
   * <<conf_load,Safe configuration loading>>
