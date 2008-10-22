@@ -356,6 +356,20 @@ struct mempool_state *mp_push(struct mempool *pool);
 void mp_restore(struct mempool *pool, struct mempool_state *state);
 
 /**
+ * Inlined version of @mp_restore().
+ **/
+static inline void mp_restore_fast(struct mempool *pool, struct mempool_state *state)
+{
+  if (pool->state.last[0] != state->last[0] || pool->state.last[1] != state->last[1])
+    mp_restore(pool, state);
+  else
+    {
+      pool->state = *state;
+      pool->last_big = &pool->last_big;
+    }
+}
+
+/**
  * Restore the state saved by the last call to @mp_push().
  * @mp_pop() and @mp_push() works as a stack so you can push more states safely.
  **/
@@ -407,11 +421,11 @@ char *mp_printf(struct mempool *mp, const char *fmt, ...) FORMAT_CHECK(printf,2,
  **/
 char *mp_vprintf(struct mempool *mp, const char *fmt, va_list args) LIKE_MALLOC;
 /**
- * Like @mp_printf(), but it appends the data at the end of memory
- * block pointed to by @ptr. The block is @mp_open()ed, so you have to
+ * Like @mp_printf(), but it appends the data at the end of string
+ * pointed to by @ptr. The string is @mp_open()ed, so you have to
  * provide something that can be.
  *
- * Returns pointer to the beginning of the block (the pointer may have
+ * Returns pointer to the beginning of the string (the pointer may have
  * changed due to reallocation).
  **/
 char *mp_printf_append(struct mempool *mp, char *ptr, const char *fmt, ...) FORMAT_CHECK(printf,3,4);
