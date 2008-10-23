@@ -57,7 +57,10 @@ int cf_set(const char *string);
 /**
  * List of operations used on items.
  * This macro is used to generate internal source code,
- * but you may be interested in the actions it creates.
+ * but you may be interested in the list of operations it creates.
+ *
+ * Each operation corresponds to the same-named operation
+ * described in <<config:operations,configuration syntax>>.
  **/
 #define CF_OPERATIONS T(CLOSE) T(SET) T(CLEAR) T(ALL) \
   T(APPEND) T(PREPEND) T(REMOVE) T(EDIT) T(AFTER) T(BEFORE) T(COPY)
@@ -67,7 +70,7 @@ int cf_set(const char *string);
    * Sections can be used with SET.
    * Lists can be used with everything. */
 #define T(x) OP_##x,
-enum cf_operation { CF_OPERATIONS };	/** Allowed operations on items. See <<def_CF_OPERATIONS,`CF_OPERATIONS`>>. **/
+enum cf_operation { CF_OPERATIONS };	/** Allowed operations on items. See <<def_CF_OPERATIONS,`CF_OPERATIONS`>> for list (they have an `OP_` prefix -- it means you use `OP_SET` instead of just `SET`). **/
 #undef T
 
 struct cf_item;
