@@ -5,6 +5,7 @@ This document describes run-time configuration of libucw-based
 programs using config files. For compile-time configuration,
 see <<configure:>>.
 
+[[terminology]]
 Terminology
 -----------
 
@@ -35,6 +36,7 @@ type.  The basic types supported by the configuration mechanism are:
 Program modules can define their own special types (such as network
 masks or attribute names) and decide how are they parsed.
 
+[[format]]
 Format of configuration files
 -----------------------------
 
@@ -64,6 +66,8 @@ assignment commands:
 
 Numerical values can be succeeded by a unit.  The following units are
 supported:
+
+[[units]]
 
 	d=86400		k=1000		K=1024
 	h=3600		m=1000000	M=1048576
@@ -106,6 +110,8 @@ Lists support several operations besides adding a new node.  You just
 have to write a colon immediately after the attribute name, followed by
 the name of the operation.  The following operations are supported:
 
+[[operations]]
+
   List:clear				# removes all nodes
   List:append { attr1=value1; ... }	# adds a new node at the end
   List:prepend { attr1=value1; ... }	# adds a new node at the beginning
@@ -125,6 +131,7 @@ The commands :clear, :append, and :prepend are also supported by var-length
 arrays.  The command :clear can also be used on string values.  The following
 operations can be used on bitmaps: :set, :remove, :clear, and :all.
 
+[[include]]
 Including other files
 ---------------------
 
@@ -134,6 +141,7 @@ To include another file, use the command
 
 (Beware that this command has to be the last one on the line.)
 
+[[command_line]]
 Command-line parameters
 -----------------------
 
@@ -154,6 +162,7 @@ items and exits.
 All these switches must be used before any other parameters of the
 program.
 
+[[preprocess]]
 Preprocessing
 -------------
 
@@ -168,6 +177,7 @@ substituted to 0 or 1 depending on its value.
 The preprocessor also substitutes `@VARIABLE@` by the value of the variable,
 which must be defined.
 
+[[caveats]]
 Caveats
 -------
 
