@@ -215,17 +215,17 @@ struct cf_section {			/** A section. **/
  * * @c -- count.
  **/
 #define CF_INT(n,p)		CF_STATIC(n,p,INT,int,1)		/** Single `int` value. **/
-#define CF_INT_ARY(n,p,c)	CF_STATIC(n,p,INT,int,c)		/** Static array of `int` s. **/
-#define CF_INT_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,int,c)		/** Dynamic array of `int` s. **/
+#define CF_INT_ARY(n,p,c)	CF_STATIC(n,p,INT,int,c)		/** Static array of integers. **/
+#define CF_INT_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,int,c)		/** Dynamic array of integers. **/
 #define CF_UNS(n,p)		CF_STATIC(n,p,INT,uns,1)		/** Single `uns` (`unsigned`) value. **/
-#define CF_UNS_ARY(n,p,c)	CF_STATIC(n,p,INT,uns,c)		/** Static array of `uns` es. **/
-#define CF_UNS_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,uns,c)		/** Dynamic array of `uns` es. **/
+#define CF_UNS_ARY(n,p,c)	CF_STATIC(n,p,INT,uns,c)		/** Static array of unsigned integers. **/
+#define CF_UNS_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,uns,c)		/** Dynamic array of unsigned integers. **/
 #define CF_U64(n,p)		CF_STATIC(n,p,U64,u64,1)		/** Single unsigned 64bit integer (`u64`). **/
-#define CF_U64_ARY(n,p,c)	CF_STATIC(n,p,U64,u64,c)		/** Static array of `u64` s. **/
-#define CF_U64_DYN(n,p,c)	CF_DYNAMIC(n,p,U64,u64,c)		/** Dynamic array of `u64` s. **/
+#define CF_U64_ARY(n,p,c)	CF_STATIC(n,p,U64,u64,c)		/** Static array of u64s. **/
+#define CF_U64_DYN(n,p,c)	CF_DYNAMIC(n,p,U64,u64,c)		/** Dynamic array of u64s. **/
 #define CF_DOUBLE(n,p)		CF_STATIC(n,p,DOUBLE,double,1)		/** Single instance of `double`. **/
-#define CF_DOUBLE_ARY(n,p,c)	CF_STATIC(n,p,DOUBLE,double,c)		/** Static array of `double` s. **/
-#define CF_DOUBLE_DYN(n,p,c)	CF_DYNAMIC(n,p,DOUBLE,double,c)		/** Dynamic array of `double` s. **/
+#define CF_DOUBLE_ARY(n,p,c)	CF_STATIC(n,p,DOUBLE,double,c)		/** Static array of doubles. **/
+#define CF_DOUBLE_DYN(n,p,c)	CF_DYNAMIC(n,p,DOUBLE,double,c)		/** Dynamic array of doubles. **/
 #define CF_IP(n,p)		CF_STATIC(n,p,IP,u32,1)			/** Single IPv4 address. **/
 #define CF_IP_ARY(n,p,c)	CF_STATIC(n,p,IP,u32,c)			/** Static array of IP addresses. **/.
 #define CF_IP_DYN(n,p,c)	CF_DYNAMIC(n,p,IP,u32,c)		/** Dynamic array of IP addresses. **/

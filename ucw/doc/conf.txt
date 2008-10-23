@@ -164,7 +164,7 @@ For example, you can have an static array of five unsigned integers:
 *Dynamic arrays*::
   Similar to static array, but you provide pointer
   to pointer to the given item (eg. if you want dynamic array of
-  `int` s, you give `**int`). The parser allocates an array of needed
+  integers, you give `**int`). The parser allocates an array of needed
   size. You can use the <<def_DARY_LEN,`DARY_LEN`>> macro to find out
   the number of elements actually loaded.
 +
