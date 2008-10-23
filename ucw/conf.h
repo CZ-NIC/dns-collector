@@ -310,8 +310,14 @@ struct cf_section {			/** A section. **/
  * You should use these routines when implementing custom parsers.
  ***/
 struct mempool;
-extern struct mempool *cf_pool;	/** A <<mempool:type_mempool,memory pool>> for configuration parser needs. **/
-void *cf_malloc(uns size);	/** Returns @size bytes of memory. **/
+/**
+ * A <<mempool:type_mempool,memory pool>> for configuration parser needs.
+ * Memory allocated from here is valid as long as the current config is loaded
+ * (if you allocate some memory and rollback the transaction or you load some
+ * other configuration, it gets lost).
+ **/
+extern struct mempool *cf_pool;
+void *cf_malloc(uns size);	/** Returns @size bytes of memory. Allocates from <<var_cf_pool,`cf_pool`>>. **/
 void *cf_malloc_zero(uns size);	/** Like @cf_malloc(), but zeroes the memory. **/
 char *cf_strdup(const char *s);	/** Copy a string into @cf_malloc()ed memory. **/
 char *cf_printf(const char *fmt, ...) FORMAT_CHECK(printf,1,2); /** printf() into @cf_malloc()ed memory. **/
