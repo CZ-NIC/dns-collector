@@ -371,6 +371,8 @@ void cf_init_section(const char *name, struct cf_section *sec, void *ptr, uns do
  *
  * Each of them gets a string to parse and pointer to store the value.
  * It returns either NULL or error message.
+ *
+ * The parsers support units. See <<config:units,their list>>.
  ***/
 char *cf_parse_int(const char *str, int *ptr);		/** Parser for integers. **/
 char *cf_parse_u64(const char *str, u64 *ptr);		/** Parser for 64 unsigned integers. **/
