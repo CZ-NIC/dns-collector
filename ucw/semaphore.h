@@ -28,10 +28,11 @@ sem_alloc(void)
 {
   char buf[TEMP_FILE_NAME_LEN];
   int mode, retry = 10;
+  sem_t *sem;
   do
     {
       temp_file_name(buf, &mode);
-      sem_t *sem = sem_open(buf, mode | O_CREAT, 0777, 0);
+      sem = sem_open(buf, mode | O_CREAT, 0777, 0);
     }
   while (sem == (sem_t*) SEM_FAILED && errno == EEXIST && retry --);
   ASSERT(sem != (sem_t*) SEM_FAILED);
