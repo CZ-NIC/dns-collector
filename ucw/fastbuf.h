@@ -568,7 +568,7 @@ static inline void bputsn(struct fastbuf *f, const char *b)
 void bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uns l);
 /**
  * Copy @l bytes of data from fastbuf @f to fastbuf @t.
- * `~0U` means all data, even if more than `~0U` bytes remain.
+ * `UINT_MAX` (`~0U`) means all data, even if more than `UINT_MAX` bytes remain.
  **/
 static inline void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
 {
