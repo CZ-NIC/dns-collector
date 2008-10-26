@@ -24,12 +24,11 @@ if( defined $defdump ) {
 
 sub detect( $ ) {
 	( $_ ) = @_;
-	return( 'struct', 1, $1, "typedef struct { ... } $1;" ) if /^\s*typedef\s+struct\s*{.*}\s*(\w+)\s*;\s*$/s;
-	return( 'enum', 1, $1, "typedef enum { ... } $1;" ) if /^\s*typedef\s+enum\s*{.*}\s*(\w+)\s*;\s*$/s;
+	return( $1, 1, $2, "typedef $1 { ... } $2;" ) if /^\s*typedef\s+(struct|enum)\s*{.*}\s*(\w+)\s*;\s*$/s;
+	return( $1, 1, $2, $_ ) if /^\s*(struct|enum)\s+(\w+)\s*;\s*$/s;
 	my $l = length;
 	s/\n.*//s;
-	return( 'struct', 0, $1, $_ ) if /struct\s+(\w+)\s+{/;
-	return( 'enum', 0, $1, $_ ) if /enum\s+(\w+)\s+{/;
+	return( $1, 0, $2, $_ ) if /(struct|enum)\s+(\w+)\s+{/;
 	return( 'def', 0, $1, $_ ) if /#define\s+(\w+)/;
 	if( $l > length ) {
 		warn( "Unknown multiline statement $_\n" );
