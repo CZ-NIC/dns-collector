@@ -104,14 +104,14 @@ configuration files.
   #include <ucw/conf.h>
   #include <ucw/getopt.h>
 
-  static byte short_opts[] = CF_SHORT_OPTS "v";
+  static char short_opts[] = CF_SHORT_OPTS "v";
   static struct option long_opts[] = {
     CF_LONG_OPTS
     { "verbose", 0, 0, 'v' },
     { NULL, 0, 0, 0 }
   };
 
-  int verbose;
+  static int verbose;
 
   int main(int argc, char *argv[]) {
     cf_def_file = "default.cf";

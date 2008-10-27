@@ -162,7 +162,7 @@ static struct cf_section cf_top = {
   }
 };
 
-static byte short_opts[] = CF_SHORT_OPTS "v";
+static char short_opts[] = CF_SHORT_OPTS "v";
 static struct option long_opts[] = {
 	CF_LONG_OPTS
 	{"verbose",	0, 0, 'v'},
