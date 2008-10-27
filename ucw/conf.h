@@ -132,7 +132,7 @@ struct cf_section {			/** A section. **/
  *     uns value;
  *   };
  *
- *   struct clist nodes;
+ *   static struct clist nodes;
  *
  *   static struct cf_section node = {
  *     CF_TYPE(struct list_node),
@@ -148,7 +148,7 @@ struct cf_section {			/** A section. **/
  *     CF_END
  *   };
  *
- * You could use <<def_CF_STATIC,`def_CF_STATIC`>> or <<def_CF_DYNAMIC,`def_CF_DYNAMIC`>>
+ * You could use <<def_CF_STATIC,`CF_STATIC`>> or <<def_CF_DYNAMIC,`CF_DYNAMIC`>>
  * macros to create arrays.
  */
 #define CF_TYPE(s)	.size = sizeof(s)

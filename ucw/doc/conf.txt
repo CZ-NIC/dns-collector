@@ -189,11 +189,12 @@ First element of your structure must be <<clist:type_cnode,`cnode`>>.
 +
 The first example is list of strings and uses <<clist:simple,simple
 lists>>:
-  struct clist list;
++
+  static struct clist list;
 +
   static struct cf_section section = {
     CF_ITEMS {
-      CF_LIST("list", &list, &cf_string_list_cofnig),
+      CF_LIST("list", &list, &cf_string_list_config),
       CF_END
     }
   };
