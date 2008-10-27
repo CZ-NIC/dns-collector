@@ -152,7 +152,7 @@ are three ways to do that:
 +
 For example, you can have an static array of five unsigned integers:
 +
-  static uns array = { 1, 2, 3, 4, 5 };
+  static uns array[] = { 1, 2, 3, 4, 5 };
 +
   static struct cf_section section = {
     CF_ITEMS {
