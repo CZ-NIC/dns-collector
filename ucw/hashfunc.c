@@ -97,9 +97,9 @@ hash_string_aligned(const char *str)
 }
 
 inline uns
-hash_block_aligned(const byte *str, uns len)
+hash_block_aligned(const byte *buf, uns len)
 {
-	const uns *u = (const uns *) str;
+	const uns *u = (const uns *) buf;
 	uns hash = 0;
 	while (len >= sizeof(uns))
 	{
@@ -159,11 +159,11 @@ hash_string(const char *str)
 }
 
 uns
-hash_block(const byte *str, uns len)
+hash_block(const byte *buf, uns len)
 {
-	uns shift = UNALIGNED_PART(str, uns);
+	uns shift = UNALIGNED_PART(buf, uns);
 	if (!shift)
-		return hash_block_aligned(str, len);
+		return hash_block_aligned(buf, len);
 	else
 	{
 		uns hash = 0;
@@ -181,7 +181,7 @@ hash_block(const byte *str, uns len)
 				hash = ROL(hash, SHIFT_BITS);
 			if (i >= len)
 				break;
-			hash ^= str[i] << (shift * 8);
+			hash ^= buf[i] << (shift * 8);
 		}
 		return hash;
 	}
