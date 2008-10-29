@@ -20,6 +20,9 @@
  *		printf("%s\n", PROF_STR(cnt));
  */
 
+#ifndef _UCW_PROFILE_H
+#define _UCW_PROFILE_H
+
 /* PROFILE_TOD: gettimeofday() profiler */
 
 struct prof_tod {
@@ -136,5 +139,7 @@ static inline void prof_switch(prof_t *c UNUSED, prof_t *d UNUSED) { }
 static inline void prof_format(char *b, prof_t *c UNUSED) { b[0]='?'; b[1]=0; }
 #define PROF_STR_SIZE 2
 #define PROF_STR(C) "?"
+
+#endif
 
 #endif

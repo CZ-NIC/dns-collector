@@ -7,6 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
+#ifndef _UCW_BINHEAP_NODE_H
+#define _UCW_BINHEAP_NODE_H
+
 struct bh_node {
   struct bh_node *first_son;
   struct bh_node *last_son;
@@ -17,3 +20,5 @@ struct bh_node {
 struct bh_heap {
   struct bh_node root;
 };
+
+#endif
