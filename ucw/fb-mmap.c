@@ -70,7 +70,10 @@ bfmm_map_window(struct fastbuf *f)
   else
     f->buffer = ucw_mmap(f->buffer, ll, prot, MAP_SHARED | MAP_FIXED, F->fd, pos0);
   if (f->buffer == (byte *) MAP_FAILED)
-    bthrow(f, "fb.mmap", "mmap(%s): %m", f->name);
+    {
+      f->buffer = NULL;
+      bthrow(f, "fb.mmap", "mmap(%s): %m", f->name);
+    }
 #ifdef MADV_SEQUENTIAL
   if (ll > CPU_PAGE_SIZE)
     madvise(f->buffer, ll, MADV_SEQUENTIAL);
@@ -140,10 +143,10 @@ static void
 bfmm_close(struct fastbuf *f)
 {
   struct fb_mmap *F = FB_MMAP(f);
-
   if (f->buffer)
     munmap(f->buffer, F->window_size);
-  if (F->file_extend > F->file_size &&
+  if (!(f->flags & FB_DEAD) &&
+      F->file_extend > F->file_size &&
       ucw_ftruncate(F->fd, F->file_size))
     bthrow(f, "fb.write", "ftruncate(%s): %m", f->name);
   bclose_file_helper(f, F->fd, F->is_temp_file);
