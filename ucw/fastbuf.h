@@ -133,6 +133,7 @@ struct fastbuf {
   byte *buffer, *bufend;			/* Start and end of the buffer */
   char *name;					/* File name (used for error messages) */
   ucw_off_t pos;				/* Position of bstop in the file */
+  uns flags;					/* See enum fb_flags */
   int (*refill)(struct fastbuf *);		/* Get a buffer with new data, returns 0 on EOF */
   void (*spout)(struct fastbuf *);		/* Write buffer data to the file */
   int (*seek)(struct fastbuf *, ucw_off_t, int);/* Slow path for @bseek(), buffer already flushed; returns success */
@@ -143,6 +144,14 @@ struct fastbuf {
 };
 
 void fb_tie(struct fastbuf *b);			/* Tie fastbuf to a resource if there is an active pool */
+
+/**
+ * Fastbuf flags
+ */
+enum fb_flags {
+  FB_DEAD = 0x1,				/* Some fastbuf's method has thrown an exception */
+  FB_DIE_ON_EOF = 0x2,				/* Most of read operations throw "fb.eof" on EOF */
+};
 
 /***
  * === Fastbuf on files [[fbparam]]
@@ -481,6 +490,9 @@ int bconfig(struct fastbuf *f, uns type, int data); /** Configure a fastbuf. Ret
  * Can not be used for fastbufs not returned from function (initialized in a parameter, for example the one from `fbbuf_init_read`).
  */
 void bclose(struct fastbuf *f);
+void bthrow(struct fastbuf *f, const char *id, const char *fmt, ...) FORMAT_CHECK(printf,3,4) NONRET;	/** Throw exception on a given fastbuf **/
+int brefill(struct fastbuf *f, int allow_eof);
+void bspout(struct fastbuf *f);
 void bflush(struct fastbuf *f);					/** Write data (if it makes any sense, do not use for in-memory buffers). **/
 void bseek(struct fastbuf *f, ucw_off_t pos, int whence);	/** Seek in the buffer. See `man fseek` for description of @whence. Only for seekable fastbufs. **/
 void bsetpos(struct fastbuf *f, ucw_off_t pos);			/** Set position to @pos bytes from beginning. Only for seekable fastbufs. **/
@@ -502,6 +514,12 @@ int bpeekc_slow(struct fastbuf *f);
 static inline int bpeekc(struct fastbuf *f)			/** Return next character from the buffer, but keep the current position. **/
 {
   return (f->bptr < f->bstop) ? (int) *f->bptr : bpeekc_slow(f);
+}
+
+int beof_slow(struct fastbuf *f);
+static inline int beof(struct fastbuf *f)			/** Have I reached EOF? **/
+{
+  return (f->bptr < f->bstop) ? 0 : beof_slow(f);
 }
 
 static inline void bungetc(struct fastbuf *f)			/** Return last read character back. Only one back is guaranteed to work. **/

@@ -213,6 +213,7 @@ trans_throw(const char *id, void *object, const char *fmt, ...)
 void
 trans_vthrow(const char *id, void *object, const char *fmt, va_list args)
 {
+  trans_init();
   struct mempool *mp = trans_get_pool();
   struct exception *x = mp_alloc(mp, sizeof(*x));
   x->id = id;

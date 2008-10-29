@@ -12,6 +12,7 @@
 #include "ucw/conf.h"
 #include "ucw/lfs.h"
 #include "ucw/fastbuf.h"
+#include "ucw/trans.h"
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -101,7 +102,7 @@ bopen_fd_internal(int fd, struct fb_params *params, uns mode, const char *name)
 	return fb;
       case FB_MMAP:
 	if (!~mode && (int)(mode = fcntl(fd, F_GETFL)) < 0)
-          die("Cannot get flags of fd %d: %m", fd);
+          trans_throw("fb.open", NULL, "Cannot get flags of fd %d: %m", fd);
 	return bfmmopen_internal(fd, name, mode);
       default:
 	ASSERT(0);
@@ -124,7 +125,7 @@ bopen_file_internal(const char *name, int mode, struct fb_params *params, int tr
     if (try)
       return NULL;
     else
-      die("Unable to %s file %s: %m", (mode & O_CREAT) ? "create" : "open", name);
+      trans_throw("fb.open", NULL, "Unable to %s file %s: %m", (mode & O_CREAT) ? "create" : "open", name);
   struct fastbuf *fb = bopen_fd_internal(fd, params, mode, name);
   ASSERT(fb);
   if (mode & O_APPEND)
@@ -162,7 +163,7 @@ bclose_file_helper(struct fastbuf *f, int fd, int is_temp_file)
 	msg(L_ERROR, "unlink(%s): %m", f->name);
     case 0:
       if (close(fd))
-	die("close(%s): %m", f->name);
+	msg(L_ERROR, "close(%s): %m", f->name);
     }
 }
 

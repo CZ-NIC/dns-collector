@@ -10,6 +10,7 @@
 #include "ucw/lib.h"
 #include "ucw/fastbuf.h"
 #include "ucw/respool.h"
+#include "ucw/trans.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +19,8 @@ void bclose(struct fastbuf *f)
 {
   if (f)
     {
-      bflush(f);
+      if (!(f->flags & FB_DEAD))
+        bflush(f);
       if (f->close)
 	f->close(f);
       if (f->res)
@@ -26,10 +28,47 @@ void bclose(struct fastbuf *f)
     }
 }
 
+void NONRET bthrow(struct fastbuf *f, const char *id, const char *fmt, ...)
+{
+  ASSERT(!(f->flags & FB_DEAD));
+  f->flags |= FB_DEAD;
+  va_list args;
+  va_start(args, fmt);
+  trans_vthrow(id, f, fmt, args);
+}
+
+int brefill(struct fastbuf *f, int allow_eof)
+{
+  ASSERT(f->bptr >= f->bstop);
+  if (!f->refill)
+    bthrow(f, "fb.read", "Stream not readable");
+  if (f->refill(f))
+    {
+      ASSERT(f->bptr < f->bstop);
+      return 1;
+    }
+  else
+    {
+      if (!allow_eof && (f->flags & FB_DIE_ON_EOF))
+	bthrow(f, "fb.eof", "Unexpected EOF");
+      ASSERT(f->bptr == f->bstop);
+      return 0;
+    }
+}
+
+void bspout(struct fastbuf *f)
+{
+  ASSERT(f->bptr > f->bstop || f->bptr >= f->bufend);
+  if (!f->spout)
+    bthrow(f, "fb.write", "Stream not writeable");
+  f->spout(f);
+  ASSERT(f->bptr < f->bufend);
+}
+
 void bflush(struct fastbuf *f)
 {
   if (f->bptr > f->bstop)
-    f->spout(f);
+    bspout(f);
   else if (f->bstop > f->buffer)
     f->bptr = f->bstop = f->buffer;
 }
@@ -43,7 +82,7 @@ inline void bsetpos(struct fastbuf *f, ucw_off_t pos)
     {
       bflush(f);
       if (!f->seek || !f->seek(f, pos, SEEK_SET))
-	die("bsetpos: stream not seekable");
+	bthrow(f, "fb.seek", "Stream not seekable");
     }
 }
 
@@ -58,7 +97,7 @@ void bseek(struct fastbuf *f, ucw_off_t pos, int whence)
     case SEEK_END:
       bflush(f);
       if (!f->seek || !f->seek(f, pos, SEEK_END))
-	die("bseek: stream not seekable");
+	bthrow(f, "fb.seek", "Stream not seekable");
       break;
     default:
       die("bseek: invalid whence=%d", whence);
@@ -69,7 +108,7 @@ int bgetc_slow(struct fastbuf *f)
 {
   if (f->bptr < f->bstop)
     return *f->bptr++;
-  if (!f->refill(f))
+  if (!brefill(f, 0))
     return -1;
   return *f->bptr++;
 }
@@ -78,15 +117,20 @@ int bpeekc_slow(struct fastbuf *f)
 {
   if (f->bptr < f->bstop)
     return *f->bptr;
-  if (!f->refill(f))
+  if (!brefill(f, 0))
     return -1;
   return *f->bptr;
+}
+
+int beof_slow(struct fastbuf *f)
+{
+  return f->bptr >= f->bstop && !brefill(f, 1);
 }
 
 void bputc_slow(struct fastbuf *f, uns c)
 {
   if (f->bptr >= f->bufend)
-    f->spout(f);
+    bspout(f);
   *f->bptr++ = c;
 }
 
@@ -99,7 +143,7 @@ uns bread_slow(struct fastbuf *f, void *b, uns l, uns check)
 
       if (!k)
 	{
-	  f->refill(f);
+	  brefill(f, check);
 	  k = f->bstop - f->bptr;
 	  if (!k)
 	    break;
@@ -113,7 +157,7 @@ uns bread_slow(struct fastbuf *f, void *b, uns l, uns check)
       total += k;
     }
   if (check && total && l)
-    die("breadb: short read");
+    bthrow(f, "fb.read", "breadb: short read");
   return total;
 }
 
@@ -125,7 +169,7 @@ void bwrite_slow(struct fastbuf *f, const void *b, uns l)
 
       if (!k)
 	{
-	  f->spout(f);
+	  bspout(f);
 	  k = f->bufend - f->bptr;
 	}
       if (k > l)

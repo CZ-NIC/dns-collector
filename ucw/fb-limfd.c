@@ -27,7 +27,7 @@ bfl_refill(struct fastbuf *f)
   int max = MIN(FB_LIMFD(f)->limit - f->pos, f->bufend - f->buffer);
   int l = read(FB_LIMFD(f)->fd, f->buffer, max);
   if (l < 0)
-    die("Error reading %s: %m", f->name);
+    bthrow(f, "fb.read", "Error reading %s: %m", f->name);
   f->bstop = f->buffer + l;
   f->pos += l;
   return l;
