@@ -17,9 +17,10 @@
  * Conventions
  * -----------
  *
- * The description of structures contain some fields marked as `[*]`.
- * These are the only ones that are user defined. The rest is for
- * internal use and you must initialize it to zeroes.
+ * The descriptions of structures contain some fields marked with `[*]`.
+ * These are the only ones that are intended to be manipulated by the user.
+ * The remaining fields serve for internal use only and you must initialize them
+ * to zeroes.
  ***/
 
 /***
@@ -27,21 +28,21 @@
  * Time manipulation
  * -----------------
  *
- * This part allows you to know the current time and request
+ * This part allows you to get the current time and request
  * to have your function called when the time comes.
  ***/
 
-extern timestamp_t main_now;			/** Current time in milliseconds since UNIX epoch. See @main_get_time(). **/
+extern timestamp_t main_now;			/** Current time in milliseconds since the UNIX epoch. See @main_get_time(). **/
 extern ucw_time_t main_now_seconds;		/** Current time in seconds since the epoch. **/
 extern clist main_timer_list, main_file_list, main_hook_list, main_process_list;
 
 /**
  * This is a description of a timer.
- * You fill it with a handler function, any user-defined data and
- * add it using @timer_add().
+ * You fill in a handler function, any user-defined data you wish to pass
+ * to the handler, and then you invoke @timer_add().
  *
- * The handler() function must add it again or delete it with
- * @timer_del().
+ * The handler() function must either call @timer_del() to delete the timer,
+ * or call @timer_add() with a different expiration time.
  **/
 struct main_timer {
   cnode n;
@@ -51,18 +52,18 @@ struct main_timer {
 };
 
 /**
- * Adds a new timer into the mainloop to be watched and called,
- * when it expires. It can be used to modify an already running
- * timer.
+ * Adds a new timer into the mainloop to be watched and called
+ * when it expires. It can also be used to modify an already running
+ * timer. It is permitted (and usual) to call this function from the
+ * timer's handler itself if you want the timer to trigger again.
  *
- * The @expire parameter is absolute -- you may use
- * <<var_main_now,`main_now`>>, if you need it relative to now.
+ * The @expire parameter is absolute, just add <<var_main_now,`main_now`>> if you need a relative timer.
  **/
 void timer_add(struct main_timer *tm, timestamp_t expires);
 /**
- * Removes a timer from the watched ones. You need to call this, when
- * the timer expires and you do not want to use it any more. It can be
- * used to remove a still active timer too.
+ * Removes a timer from the active ones. It is permitted (and usual) to call
+ * this function from the timer's handler itself if you want to deactivate
+ * the timer.
  **/
 void timer_del(struct main_timer *tm);
 
