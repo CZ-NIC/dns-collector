@@ -22,6 +22,7 @@
 static uns mmap_window_size = 16*CPU_PAGE_SIZE;
 static uns mmap_extend_size = 4*CPU_PAGE_SIZE;
 
+#ifndef TEST
 static struct cf_section fbmm_config = {
   CF_ITEMS {
     CF_UNS("WindowSize", &mmap_window_size),
@@ -34,6 +35,7 @@ static void CONSTRUCTOR fbmm_init_config(void)
 {
   cf_declare_section("FBMMap", &fbmm_config, 0);
 }
+#endif
 
 struct fb_mmap {
   struct fastbuf fb;
