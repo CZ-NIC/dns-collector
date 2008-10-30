@@ -128,21 +128,19 @@ TESTS+=$(addprefix $(o)/ucw/,asio.test)
 $(o)/ucw/asio.test: $(o)/ucw/asio-t
 endif
 
-API_LIBS+=libucw
-API_INCLUDES+=$(o)/ucw/.include-stamp
-$(o)/ucw/.include-stamp: $(addprefix $(s)/ucw/,$(LIBUCW_INCLUDES)) $(o)/ucw/autoconf.h $(o)/ucw/config.h
-	$(Q)$(s)/build/install-includes $(<D) run/include/ucw $(LIBUCW_INCLUDES)
-	$(Q)$(s)/build/install-includes $(o)/ucw run/include/ucw autoconf.h config.h
-	$(Q)touch $@
-run/lib/pkgconfig/libucw.pc: $(o)/ucw/libucw.pc
-
 # The version of autoconf.h that is a part of the public API needs to have
 # the internal symbols filtered out, so we generate ucw/autoconf.h in the
 # configure script and let the public config.h refer to <ucw/autoconf.h>
 # instead of plain "autoconf.h".
-$(o)/ucw/config.h: $(s)/ucw/config.h
-	$(M)"FILTER $< -> $@"
-	$(Q)sed -e 's/^#include "autoconf\.h"/#include <ucw\/autoconf.h>/' <$< >$@
+
+API_LIBS+=libucw
+API_INCLUDES+=$(o)/ucw/.include-stamp
+$(o)/ucw/.include-stamp: $(addprefix $(s)/ucw/,$(LIBUCW_INCLUDES)) $(o)/ucw/autoconf.h
+	$(Q)$(s)/build/install-includes $(<D) run/include/ucw $(LIBUCW_INCLUDES)
+	$(Q)$(s)/build/install-includes $(o)/ucw run/include/ucw autoconf.h
+	$(Q)sed -e 's/^#include "autoconf\.h"/#include <ucw\/autoconf.h>/' <$(s)/ucw/config.h >run/include/ucw/config.h
+	$(Q)touch $@
+run/lib/pkgconfig/libucw.pc: $(o)/ucw/libucw.pc
 
 ifdef CONFIG_UCW_PERL
 include $(s)/ucw/perl/Makefile
