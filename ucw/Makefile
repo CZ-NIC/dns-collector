@@ -34,7 +34,7 @@ LIBUCW_MODS= \
 	getopt
 
 LIBUCW_MAIN_INCLUDES= \
-	lib.h config.h threads.h \
+	lib.h threads.h \
 	mempool.h \
 	arraysort.h \
 	clists.h slists.h simple-lists.h \
@@ -130,11 +130,22 @@ endif
 
 API_LIBS+=libucw
 API_INCLUDES+=$(o)/ucw/.include-stamp
-$(o)/ucw/.include-stamp: $(addprefix $(s)/ucw/,$(LIBUCW_INCLUDES)) obj/autoconf.h
+$(o)/ucw/.include-stamp: $(addprefix $(s)/ucw/,$(LIBUCW_INCLUDES)) $(o)/ucw/autoconf.h $(o)/ucw/config.h
 	$(Q)$(s)/build/install-includes $(<D) run/include/ucw $(LIBUCW_INCLUDES)
-	$(Q)$(s)/build/install-includes obj run/include/ucw autoconf.h
+	$(Q)$(s)/build/install-includes $(o)/ucw run/include/ucw autoconf.h config.h
 	$(Q)touch $@
 run/lib/pkgconfig/libucw.pc: $(o)/ucw/libucw.pc
+
+# The version of autoconf.h that is a part of the public API needs to have
+# the internal symbols filtered out.
+$(o)/ucw/autoconf.h: $(o)/autoconf.h
+	$(M)"FILTER $< -> $@"
+	$(Q)sed -f $(s)/ucw/filter-autoconf.sed <$< >$@
+
+# Also, public config.h needs to refer to <ucw/autoconf.h> instead of "autoconf.h"
+$(o)/ucw/config.h: $(s)/ucw/config.h
+	$(M)"FILTER $< -> $@"
+	$(Q)sed -e 's/^#include "autoconf\.h"/#include <ucw\/autoconf.h>/' <$< >$@
 
 ifdef CONFIG_UCW_PERL
 include $(s)/ucw/perl/Makefile
@@ -147,9 +158,7 @@ endif
 INSTALL_TARGETS+=install-libucw
 install-libucw:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/ $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
-	install -m 644 $(addprefix run/include/ucw/,$(LIBUCW_MAIN_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
-	install -m 644 obj/autoconf.h $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
-	sed -e 's/^#include .autoconf\.h./#include <ucw\/autoconf.h>/' <run/include/ucw/config.h >$(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/config.h
+	install -m 644 $(addprefix run/include/ucw/,$(LIBUCW_MAIN_INCLUDES) autoconf.h config.h) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
 	install -m 644 run/lib/pkgconfig/libucw.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 run/lib/libucw.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
 
