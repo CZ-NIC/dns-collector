@@ -1,9 +1,16 @@
 UCW libraries
 =============
 
-////
-TODO: Some general description, what the libraries are, why, etc...
-////
+The UCW libraries aim to provide some general purpose tools for C
+programming language. It contains faster implementations of some
+algorithms found in libc (for example, sorting), few commonly used not
+available in libc (sha1 hash), several generic data structures (hash
+tables, binomial heap) and some less common tools (memory pools).
+
+It is probable you may save yourself some time by using this library.
+
+Please note this documentation is not yet complete. There are lot of
+modules not yet described, look into the source code.
 
 You can see list of <<def_index:,definitions>>.
 
