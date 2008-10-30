@@ -33,8 +33,8 @@ LIBUCW_MODS= \
 	bbuf \
 	getopt
 
-LIBUCW_INCLUDES= \
-	lib.h config.h threads.h \
+LIBUCW_MAIN_INCLUDES= \
+	lib.h threads.h \
 	mempool.h \
 	arraysort.h \
 	clists.h slists.h simple-lists.h \
@@ -45,7 +45,7 @@ LIBUCW_INCLUDES= \
 	hashfunc.h hashtable.h \
 	heap.h binheap.h binheap-node.h \
 	redblack.h \
-	binsearch.h prime.h \
+	prime.h \
 	bitops.h \
 	conf.h getopt.h ipaccess.h \
 	profile.h \
@@ -62,12 +62,14 @@ LIBUCW_INCLUDES= \
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
 LIBUCW_MODS+=threads-conf workqueue asio fb-direct
-LIBUCW_INCLUDES+=workqueue.h semaphore.h asio.h
+LIBUCW_MAIN_INCLUDES+=workqueue.h semaphore.h asio.h
 endif
 
 ifdef CONFIG_OWN_GETOPT
 include $(s)/ucw/getopt/Makefile
 endif
+
+LIBUCW_INCLUDES=$(LIBUCW_MAIN_INCLUDES)
 
 include $(s)/ucw/sorter/Makefile
 include $(s)/ucw/doc/Makefile
@@ -126,11 +128,17 @@ TESTS+=$(addprefix $(o)/ucw/,asio.test)
 $(o)/ucw/asio.test: $(o)/ucw/asio-t
 endif
 
+# The version of autoconf.h that is a part of the public API needs to have
+# the internal symbols filtered out, so we generate ucw/autoconf.h in the
+# configure script and let the public config.h refer to <ucw/autoconf.h>
+# instead of plain "autoconf.h".
+
 API_LIBS+=libucw
 API_INCLUDES+=$(o)/ucw/.include-stamp
-$(o)/ucw/.include-stamp: $(addprefix $(s)/ucw/,$(LIBUCW_INCLUDES)) obj/autoconf.h
+$(o)/ucw/.include-stamp: $(addprefix $(s)/ucw/,$(LIBUCW_INCLUDES)) $(o)/ucw/autoconf.h
 	$(Q)$(s)/build/install-includes $(<D) run/include/ucw $(LIBUCW_INCLUDES)
-	$(Q)$(s)/build/install-includes obj run/include/ucw autoconf.h
+	$(Q)$(s)/build/install-includes $(o)/ucw run/include/ucw autoconf.h
+	$(Q)sed -e 's/^#include "autoconf\.h"/#include <ucw\/autoconf.h>/' <$(s)/ucw/config.h >run/include/ucw/config.h
 	$(Q)touch $@
 run/lib/pkgconfig/libucw.pc: $(o)/ucw/libucw.pc
 
@@ -141,3 +149,13 @@ endif
 ifdef CONFIG_UCW_SHELL_UTILS
 include $(s)/ucw/shell/Makefile
 endif
+
+INSTALL_TARGETS+=install-libucw
+install-libucw:
+	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/ $(DESTDIR)$(INSTALL_PKGCONFIG_DIR) $(DESTDIR)$(INSTALL_CONFIG_DIR)
+	install -m 644 $(addprefix run/include/ucw/,$(LIBUCW_MAIN_INCLUDES) autoconf.h config.h) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
+	install -m 644 run/lib/pkgconfig/libucw.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+	install -m 644 run/lib/libucw.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/cf/libucw $(DESTDIR)$(INSTALL_CONFIG_DIR)
+
+.PHONY: install-libucw

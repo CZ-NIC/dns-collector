@@ -1,6 +1,6 @@
 #	Perl module for UCW Configure Scripts
 #
-#	(c) 2005 Martin Mares <mj@ucw.cz>
+#	(c) 2005--2008 Martin Mares <mj@ucw.cz>
 #
 #	This software may be freely distributed and used according to the terms
 #	of the GNU Lesser General Public License.
@@ -16,13 +16,20 @@ BEGIN {
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 	$VERSION = 1.0;
 	@ISA = qw(Exporter);
-	@EXPORT = qw(&Init &Log &Notice &Warn &Fail &IsSet &IsGiven &Set &UnSet &Append &Override &Get &Test &Include &Finish &FindFile &TryFindFile &TryCmd &PkgConfig &TrivConfig);
+	@EXPORT = qw(&Init &Log &Notice &Warn &Fail &IsSet &IsGiven &Set &UnSet &Append &Override &Get &Test &Include &Finish &FindFile &TryFindFile &TryCmd &PkgConfig &TrivConfig &DebugDump &PostConfig &AtWrite);
 	@EXPORT_OK = qw();
 	%EXPORT_TAGS = ();
 }
 
-our %vars = ();
-our %overriden = ();
+our %vars;
+our %overriden;
+our @postconfigs;
+our @atwrites;
+
+sub DebugDump() {
+	print "VARS:\n";
+	print "$_: $vars{$_}\n" foreach( keys %vars );
+}
 
 sub Log($) {
 	print @_;
@@ -152,7 +159,19 @@ sub Include($) {
 	require $f;
 }
 
+sub PostConfig(&) {
+	unshift @postconfigs, $_[0];
+}
+
+sub AtWrite(&) {
+	unshift @atwrites, $_[0];
+}
+
 sub Finish() {
+	for my $post (@postconfigs) {
+		&$post();
+	}
+
 	print "\n";
 
 	if (Get("SRCDIR") ne ".") {
@@ -173,20 +192,6 @@ sub Finish() {
 	-d "obj/ucw" or mkdir("obj/ucw", 0777) or Fail "Cannot create obj/ucw directory: $!";
 	Log "done\n";
 
-	Log "Generating autoconf.h ... ";
-	open X, ">obj/autoconf.h" or Fail $!;
-	print X "/* Generated automatically by $0, please don't touch manually. */\n";
-	foreach my $x (sort keys %vars) {
-		# Don't export variables which contain no underscores
-		next unless $x =~ /_/;
-		my $v = $vars{$x};
-		# Try to add quotes if necessary
-		$v = '"' . $v . '"' unless ($v =~ /^"/ || $v =~ /^\d*$/);
-		print X "#define $x $v\n";
-	}
-	close X;
-	Log "done\n";
-
 	Log "Generating config.mk ... ";
 	open X, ">obj/config.mk" or Fail $!;
 	print X "# Generated automatically by $0, please don't touch manually.\n";
@@ -197,6 +202,10 @@ sub Finish() {
 	print X "o=obj\n";
 	close X;
 	Log "done\n";
+
+	for my $wr (@atwrites) {
+		&$wr();
+	}
 }
 
 sub TryCmd($) {

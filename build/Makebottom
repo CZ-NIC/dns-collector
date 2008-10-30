@@ -1,5 +1,5 @@
 # Bottom part of Makefile for the UCW Libraries
-# (c) 1997--2007 Martin Mares <mj@ucw.cz>
+# (c) 1997--2008 Martin Mares <mj@ucw.cz>
 
 # The run tree
 
@@ -196,7 +196,6 @@ $(DATAFILES): $(o)/%: $(s)/%
 
 # Rules for documentation
 
-
 $(o)/%.html: $(o)/%.txt $(s)/build/asciidoc.conf $(s)/build/asciidoc-xhtml.conf run/$(DOCDIR)/$(DOC_MODULE)/.dir-stamp
 	$(M)"DOC-HTML $<"
 	$(Q)asciidoc -e -f $(s)/build/asciidoc.conf -f $(s)/build/asciidoc-xhtml.conf -f /etc/asciidoc/asciidoc.conf -f /etc/asciidoc/xhtml11.conf $<
@@ -214,14 +213,9 @@ $(patsubst %.html,%.txt,$(DOCS)): $(o)/%.txt: $(s)/%.txt $(s)/build/doc-extract
 	$(M)"DOC-EXT $<"
 	$(Q)$(s)/build/doc-extract $< $@ $(o)/depend.new $(s) $(patsubst %.txt,%.deflist,$@)
 
-# Default installation target
-
-default-install:
-	SH_EXTRA_RUNDIRS="$(sort $(EXTRA_RUNDIRS))" SH_INSTALL_RUNDIRS="$(sort $(INSTALL_RUNDIRS))" SH_CONFIGS="$(sort $(CONFIGS))" SH_AUTO_CONFIRM="$(CONFIRM)" $(s)/build/installer $(INSTALL_DIR)
-
 # Don't delete intermediate targets. There shouldn't be any, but due to bugs
 # in GNU Make rules with targets in not-yet-existing directories are ignored
 # when searching for implicit rules and thence targets considered intermediate.
 .SECONDARY:
 
-.PHONY: all clean distclean runtree programs api datafiles force tags configs dust install default-install docs
+.PHONY: all clean distclean runtree programs api datafiles force tags configs dust install docs

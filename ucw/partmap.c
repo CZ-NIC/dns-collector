@@ -19,7 +19,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
-#ifdef CONFIG_PARTMAP_IS_MMAP
+#ifdef CONFIG_UCW_PARTMAP_IS_MMAP
 #define PARTMAP_WINDOW ~(size_t)0
 #else
 #ifdef TEST
@@ -40,7 +40,7 @@ partmap_open(char *name, int writeable)
   if ((p->file_size = ucw_seek(p->fd, 0, SEEK_END)) < 0)
     die("lseek(%s): %m", name);
   p->writeable = writeable;
-#ifdef CONFIG_PARTMAP_IS_MMAP
+#ifdef CONFIG_UCW_PARTMAP_IS_MMAP
   partmap_load(p, 0, p->file_size);
 #endif
   return p;
