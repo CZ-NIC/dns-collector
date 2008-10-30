@@ -38,12 +38,12 @@ void lizard_free(struct lizard_buffer *buf);
 byte *lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uns expected_length);
 
 /* adler32.c */
-uns update_adler32(uns adler, const byte *ptr, uns len);
+uns adler32_update(uns adler, const byte *ptr, uns len);
 
 static inline uns
 adler32(const byte *buf, uns len)
 {
-  return update_adler32(1, buf, len);
+  return adler32_update(1, buf, len);
 }
 
 #endif
