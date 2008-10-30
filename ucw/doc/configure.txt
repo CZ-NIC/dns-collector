@@ -33,8 +33,8 @@ options, just run:
 
 The default values of feature options are taken from `default.cfg`.
 Compiler flags and options dependent on compiler, OS and CPU type
-are set in `ucw/autoconf.cfg`. Everything can be overriden by options
-specified on the configure's command line, which have the highest
+are set in `ucw/perl/UCW/Configure/C.pm`. Everything can be overriden by
+options specified on the configure's command line, which have the highest
 priority.
 
 If you want to see the resulting set of options, take a look at

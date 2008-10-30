@@ -27,7 +27,7 @@ If you need to set anything unusual, please consult <<configure:>> for details.
 
 The defaults determined by the configure script should be correct on Linux/i386,
 on other architectures you will probably need to tweak the CPU detection section
-in `ucw/autoconf.cfg` and possibly also the typedefs in `ucw/config.h`.
+in `ucw/perl/UCW/Configure/C.pm` and possibly also the typedefs in `ucw/config.h`.
 
 Then run:
 
