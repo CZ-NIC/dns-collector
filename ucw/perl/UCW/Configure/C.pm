@@ -5,7 +5,7 @@
 
 ### OS ###
 
-package UCW::Configure::Autoconf;
+package UCW::Configure::C;
 use UCW::Configure;
 
 Test("OS", "Checking on which OS we run", sub {
@@ -241,6 +241,41 @@ if (IsSet("CONFIG_DARWIN")) {
 	# Fill in some constants not found in the system header files
 	Set("SOL_TCP" => 6);		# missing in /usr/include/netinet/tcp.h
 }
+
+### Writing C headers with configuration ###
+
+sub ConfigHeader($$) {
+	my ($hdr, $rules) = @_;
+	Log "Generating $hdr ... ";
+	open X, ">obj/$hdr" or Fail $!;
+	print X "/* Generated automatically by $0, please don't touch manually. */\n";
+
+	sub match_rules($) {
+		my ($name) = @_;
+		for (my $i=0; $i < scalar @$rules; $i++) {
+			my ($r, $v) = ($rules->[$i], $rules->[$i+1]);
+			return $v if $name =~ $r;
+		}
+		return 0;
+	}
+
+	foreach my $x (sort keys %UCW::Configure::vars) {
+		next unless match_rules($x);
+		my $v = $UCW::Configure::vars{$x};
+		# Try to add quotes if necessary
+		$v = '"' . $v . '"' unless ($v =~ /^"/ || $v =~ /^\d*$/);
+		print X "#define $x $v\n";
+	}
+	close X;
+	Log "done\n";
+}
+
+AtWrite {
+	ConfigHeader("autoconf.h", [
+		# Symbols with "_" anywhere in their name are exported
+		"_" => 1
+	]);
+};
 
 # Return success
 1;
