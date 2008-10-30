@@ -90,6 +90,8 @@ Yet undocumented modules
 
 Other features
 --------------
+- <<configure:,Compile time configuration>>
+- <<config:,Configuration file syntax>>
 - <<docsys:,Documentation system>>
 
 License
