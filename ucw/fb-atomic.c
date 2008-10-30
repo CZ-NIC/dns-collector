@@ -18,6 +18,8 @@
 
 static uns trace;
 
+#ifndef TEST
+
 static struct cf_section fbatomic_config = {
   CF_ITEMS {
     CF_UNS("Trace", &trace)
@@ -28,6 +30,8 @@ static void CONSTRUCTOR fbatomic_init_config(void)
 {
   cf_declare_section("FBAtomic", &fbatomic_config, 1);
 }
+
+#endif
 
 #define TRACE(m...) do { if(trace) msg(L_DEBUG, "FB_ATOMIC: " m); } while(0)
 
