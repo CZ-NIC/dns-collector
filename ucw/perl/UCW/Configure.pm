@@ -23,6 +23,7 @@ BEGIN {
 
 our %vars;
 our %overriden;
+our @postconfigs;
 
 sub debPrint() {
   print "VARS:\n";
@@ -157,7 +158,15 @@ sub Include($) {
 	require $f;
 }
 
+sub PostConfig(&) {
+	unshift @postconfigs, $_[0];
+}
+
 sub Finish() {
+	for my $post (@postconfigs) {
+		&$post();
+	}
+
 	print "\n";
 
 	if (Get("SRCDIR") ne ".") {
