@@ -21,6 +21,12 @@ Modules
 - <<mempool:,Memory pools>>
 - <<mainloop:,Mainloop>>
 
+Other features
+--------------
+- <<configure:,Compile time configuration>>
+- <<config:,Configuration file syntax>>
+- <<docsys:,Documentation system>>
+
 Yet undocumented modules
 ------------------------
 - Sorting
@@ -87,12 +93,6 @@ Yet undocumented modules
   * `unaligned.h`
 - URL manipulation
   * `url.h`
-
-Other features
---------------
-- <<configure:,Compile time configuration>>
-- <<config:,Configuration file syntax>>
-- <<docsys:,Documentation system>>
 
 License
 -------
