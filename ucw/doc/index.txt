@@ -23,6 +23,73 @@ Modules
 - <<mempool:,Memory pools>>
 - <<mainloop:,Mainloop>>
 
+Yet undocumented modules
+------------------------
+- Sorting
+  * `arraysort.h`
+  * `sorter/`
+- Growing buffers
+  * `gbuf.h`
+  * `bbuf.h`
+- Heaps
+  * `binheap.h`
+  * `binheap-node.h`
+  * `heap.h`
+- Binary search
+  * `binsearch.h`
+- Bit manipulation
+  * `bitarray.h`
+  * `bitopts.h`
+  * `bitsig.h`
+- Character manipulation
+  * `char-map.h`
+  * `chartype.h`
+  * `unicode.h`
+- Link lists
+  * `clists.h`
+  * `simple-lists.h`
+  * `slists.h`
+- Fixed-sized allocator
+  * `eltpool.h`
+- Hash tables
+  * `hashtable.h`
+- IP address access lists
+  * `ipaccess.h`
+- String manipulation
+  * `kmp.h`
+  * `kmp-search.h`
+  * `regex.h`
+  * `stkstring.h`
+  * `string.h`
+  * `str-match.h`
+  * `wildmatch.h`
+- File manipulation
+  * `asio.h`
+  * `lfs.h`
+  * `partmap.h`
+- Compression
+  * `lizard.h`
+- Prefetching of memory
+  * `prefetch.h`
+- Primes
+  * `prime.h`
+- Profiling support
+  * `profile.h`
+- Caches
+  * `qache.h`
+- Red-black trees
+  * `redblack.h`
+- Threads
+  * `semaphore.h`
+  * `threads.h`
+  * `workqueue.h`
+- Trie
+  * `trie.h`
+- Unaligned data
+  * `unaligned.h`
+- URL manipulation
+  * `url.h`
+
 Other features
 --------------
 - <<docsys:,Documentation system>>
