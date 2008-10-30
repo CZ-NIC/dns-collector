@@ -120,7 +120,6 @@ $(o)/ucw/binheap-test.test: $(o)/ucw/binheap-test
 $(o)/ucw/redblack-test.test: $(o)/ucw/redblack-test
 $(addprefix $(o)/ucw/fb-,file.test grow.test pool.test socket.test atomic.test \
 	limfd.test temp.test mem.test buffer.test mmap.test): %.test: %-t
-$(o)/ucw/fb-atomic-tt.o: CFLAGS += -DFB_ATOMIC_TRACE
 $(o)/ucw/url.test: $(o)/ucw/url-t
 
 ifdef CONFIG_UCW_THREADS
