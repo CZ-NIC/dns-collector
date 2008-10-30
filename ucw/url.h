@@ -59,7 +59,7 @@ int url_canonicalize(struct url *u);
 int url_pack(struct url *u, char *d);
 int url_canon_split_rel(const char *url, char *buf1, char *buf2, struct url *u, struct url *base);
 int url_auto_canonicalize_rel(const char *src, char *dst, struct url *base);
-uns identify_protocol(const char *p);
+uns url_identify_protocol(const char *p);
 int url_has_repeated_component(const char *url);
 
 static inline int url_canon_split(const char *url, char *buf1, char *buf2, struct url *u)

@@ -184,7 +184,7 @@ char *url_proto_names[URL_PROTO_MAX] = URL_PNAMES;
 static int url_proto_path_flags[URL_PROTO_MAX] = URL_PATH_FLAGS;
 
 uns
-identify_protocol(const char *p)
+url_identify_protocol(const char *p)
 {
   uns i;
 
@@ -212,7 +212,7 @@ url_split(char *s, struct url *u, char *d)
 	  while (s < p)
 	    *d++ = *s++;
 	  *d++ = 0;
-	  u->protoid = identify_protocol(u->protocol);
+	  u->protoid = url_identify_protocol(u->protocol);
 	  s++;
 	  if (url_proto_path_flags[u->protoid] && (s[0] != '/' || s[1] != '/'))
 	    {
@@ -512,7 +512,7 @@ url_pack(struct url *u, char *d)
     {
       d = append(d, u->protocol, e);
       d = append(d, ":", e);
-      u->protoid = identify_protocol(u->protocol);
+      u->protoid = url_identify_protocol(u->protocol);
     }
   if (u->host)
     {
