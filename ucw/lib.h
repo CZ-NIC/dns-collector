@@ -155,7 +155,7 @@ timestamp_t get_timestamp(void);
 
 void init_timer(timestamp_t *timer);
 uns get_timer(timestamp_t *timer);
-uns switch_timer(timestamp_t *old, timestamp_t *new);
+uns switch_timer(timestamp_t *oldt, timestamp_t *newt);
 
 /* random.c */
 
@@ -208,7 +208,7 @@ typedef int (*ucw_sighandler_t)(int);	// gets signum, returns nonzero if abort()
 
 void handle_signal(int signum);
 void unhandle_signal(int signum);
-ucw_sighandler_t set_signal_handler(int signum, ucw_sighandler_t new);
+ucw_sighandler_t set_signal_handler(int signum, ucw_sighandler_t newh);
 
 /* bigalloc.c */
 

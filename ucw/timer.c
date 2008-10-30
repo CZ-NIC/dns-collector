@@ -36,8 +36,8 @@ get_timer(timestamp_t *timer)
 }
 
 uns
-switch_timer(timestamp_t *old, timestamp_t *new)
+switch_timer(timestamp_t *oldt, timestamp_t *newt)
 {
-  *new = get_timestamp();
-  return MIN(*new-*old, ~0U);
+  *newt = get_timestamp();
+  return MIN(*newt-*oldt, ~0U);
 }
