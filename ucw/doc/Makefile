@@ -2,7 +2,7 @@
 
 DIRS+=ucw/doc
 
-UCW_DOCS=fastbuf index basecode hash docsys conf mempool
+UCW_DOCS=fastbuf index basecode hash docsys conf mempool mainloop
 UCW_INDEX=$(o)/ucw/doc/def_index.html
 UCW_DOCS_HTML=$(addprefix $(o)/ucw/doc/,$(addsuffix .html,$(UCW_DOCS)))
 

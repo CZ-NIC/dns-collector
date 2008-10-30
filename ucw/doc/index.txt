@@ -21,6 +21,7 @@ Modules
 - <<hash:,Hashing routines>>
 - <<conf:,Configuration and command line parser>>
 - <<mempool:,Memory pools>>
+- <<mainloop:,Mainloop>>
 
 Other features
 --------------

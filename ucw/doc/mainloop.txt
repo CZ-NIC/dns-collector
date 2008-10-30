@@ -1,0 +1,21 @@
+Mainloop
+========
+
+Not every program is sequential. You may need an event driven program
+sometime, lets say a railway server. It has a connection to each
+station and train to know, where each one is, some things happen at
+given times, like train is scheduled to leave as station and so on.
+
+With the mainloop module you can write just the hooks and tell it to
+watch over a set of file descriptors, timers and running processes.
+
+// TODO Example?
+
+- <<conventions,Conventions>>
+- <<time,Time manipulation>>
+- <<file,Activity on file descriptors>>
+- <<hooks,Loop hooks>>
+- <<process,Child processes>>
+- <<control,Control of the mainloop>>
+
+!!ucw/mainloop.h
