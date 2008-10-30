@@ -1,4 +1,4 @@
-# Automatic configuration, OS & CPU detection part
+# UCW Library configuration system: OS and C compiler
 # (c) 2005--2008 Martin Mares <mj@ucw.cz>
 # (c) 2006 Robert Spalek <robert@ucw.cz>
 # (c) 2008 Michal Vaner <vorner@ucw.cz>

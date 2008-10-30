@@ -1,10 +1,9 @@
-# Automatic configuration, libucw specific part
-# (c) 2008 Michal Vaner <vorner@ucw.cz>
-# Code taken from autoconf.cfg by:
+# UCW Library configuration system: parameters of the library
 # (c) 2005--2008 Martin Mares <mj@ucw.cz>
 # (c) 2006 Robert Spalek <robert@ucw.cz>
+# (c) 2008 Michal Vaner <vorner@ucw.cz>
 
-package UCW::Configure::UCW;
+package UCW::Configure::LibUCW;
 use UCW::Configure;
 
 # Determine page size
@@ -41,7 +40,5 @@ if (Get("CPU_ARCH") eq "default" || Get("CPU_ARCH") =~ /^i[345]86$/) {
 	Set("CONFIG_UCW_RADIX_SORTER_BITS" => 12);
 }
 
-# If debugging memory allocations:
-#LIBS+=-lefence
-
+# We succeeded
 1;

@@ -27,8 +27,8 @@ Include "ucw/default.cfg";
 Log "### Configuring Sherlock Libraries " . Get("SHERLOCK_VERSION") . " with configuration " . Get("CONFIG") . "\n";
 Include Get("CONFIG");
 require UCW::Configure::Paths;
-require UCW::Configure::Autoconf;
-require UCW::Configure::UCW;
+require UCW::Configure::C;
+require UCW::Configure::LibUCW;
 Finish();
 
 Log "\nConfigured, run `make' to build everything.\n";

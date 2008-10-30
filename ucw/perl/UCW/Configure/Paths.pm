@@ -1,8 +1,7 @@
-# Automatic configuration, installation paths part
-# (c) 2008 Michal Vaner <vorner@ucw.cz>
-# Code taken from autoconf.cfg by:
+# UCW Library configuration system: installation paths
 # (c) 2005--2008 Martin Mares <mj@ucw.cz>
 # (c) 2006 Robert Spalek <robert@ucw.cz>
+# (c) 2008 Michal Vaner <vorner@ucw.cz>
 
 package UCW::Configure::Paths;
 use UCW::Configure;
@@ -40,6 +39,6 @@ Set("INSTALL_RUN_DIR", '$(INSTALL_VAR_PREFIX)run');
 # Remember PKG_CONFIG_PATH used for building, so that it will be propagated to
 # pkg-config's run locally in the makefiles.
 Set("PKG_CONFIG_PATH", $ENV{"PKG_CONFIG_PATH"}) if defined $ENV{"PKG_CONFIG_PATH"};
-# We succeeded
 
+# We succeeded
 1;
