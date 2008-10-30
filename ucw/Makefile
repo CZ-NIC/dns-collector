@@ -137,12 +137,9 @@ $(o)/ucw/.include-stamp: $(addprefix $(s)/ucw/,$(LIBUCW_INCLUDES)) $(o)/ucw/auto
 run/lib/pkgconfig/libucw.pc: $(o)/ucw/libucw.pc
 
 # The version of autoconf.h that is a part of the public API needs to have
-# the internal symbols filtered out.
-$(o)/ucw/autoconf.h: $(o)/autoconf.h
-	$(M)"FILTER $< -> $@"
-	$(Q)sed -f $(s)/ucw/filter-autoconf.sed <$< >$@
-
-# Also, public config.h needs to refer to <ucw/autoconf.h> instead of "autoconf.h"
+# the internal symbols filtered out, so we generate ucw/autoconf.h in the
+# configure script and let the public config.h refer to <ucw/autoconf.h>
+# instead of plain "autoconf.h".
 $(o)/ucw/config.h: $(s)/ucw/config.h
 	$(M)"FILTER $< -> $@"
 	$(Q)sed -e 's/^#include "autoconf\.h"/#include <ucw\/autoconf.h>/' <$< >$@

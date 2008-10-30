@@ -43,5 +43,20 @@ if (Get("CPU_ARCH") eq "default" || Get("CPU_ARCH") =~ /^i[345]86$/) {
 	Set("CONFIG_UCW_RADIX_SORTER_BITS" => 12);
 }
 
+PostConfig {
+	AtWrite {
+		UCW::Configure::C::ConfigHeader("ucw/autoconf.h", [
+			# Excluded symbols (danger of collision)
+			'^CONFIG_DEBUG$' => 0,
+
+			# Included symbols
+			'^CONFIG_' => 1,
+			'^CPU_' => 1,
+			'^SHERLOCK_VERSION_' => 1,
+
+		]);
+	} if Get("CONFIG_INSTALL_API");
+};
+
 # We succeeded
 1;
