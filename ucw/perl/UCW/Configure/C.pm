@@ -8,6 +8,9 @@
 package UCW::Configure::C;
 use UCW::Configure;
 
+use strict;
+use warnings;
+
 Test("OS", "Checking on which OS we run", sub {
 	my $os = `uname`;
 	chomp $os;
@@ -70,9 +73,9 @@ sub parse_cpuinfo_linux() {
 }
 
 sub parse_cpuinfo_darwin() {
-	@cpu = (`sysctl -n machdep.cpu.vendor`,
-		`sysctl -n machdep.cpu.family`,
-		`sysctl -n machdep.cpu.model`);
+	my @cpu = (`sysctl -n machdep.cpu.vendor`,
+		   `sysctl -n machdep.cpu.family`,
+		   `sysctl -n machdep.cpu.model`);
 	chomp @cpu;
 	return @cpu;
 }
@@ -250,8 +253,8 @@ sub ConfigHeader($$) {
 	open X, ">obj/$hdr" or Fail $!;
 	print X "/* Generated automatically by $0, please don't touch manually. */\n";
 
-	sub match_rules($) {
-		my ($name) = @_;
+	sub match_rules($$) {
+		my ($rules, $name) = @_;
 		for (my $i=0; $i < scalar @$rules; $i++) {
 			my ($r, $v) = ($rules->[$i], $rules->[$i+1]);
 			return $v if $name =~ $r;
@@ -260,7 +263,7 @@ sub ConfigHeader($$) {
 	}
 
 	foreach my $x (sort keys %UCW::Configure::vars) {
-		next unless match_rules($x);
+		next unless match_rules($rules, $x);
 		my $v = $UCW::Configure::vars{$x};
 		# Try to add quotes if necessary
 		$v = '"' . $v . '"' unless ($v =~ /^"/ || $v =~ /^\d*$/);

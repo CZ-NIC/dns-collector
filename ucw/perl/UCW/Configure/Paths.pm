@@ -6,6 +6,9 @@
 package UCW::Configure::Paths;
 use UCW::Configure;
 
+use strict;
+use warnings;
+
 Log "Determining installation prefix ... ";
 if (IsSet("CONFIG_LOCAL")) {
 	Log("local build\n");

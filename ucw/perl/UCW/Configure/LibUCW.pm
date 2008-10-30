@@ -6,6 +6,9 @@
 package UCW::Configure::LibUCW;
 use UCW::Configure;
 
+use strict;
+use warnings;
+
 # Determine page size
 Test("CPU_PAGE_SIZE", "Determining page size", sub {
 	my $p;
