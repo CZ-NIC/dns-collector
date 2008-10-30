@@ -55,10 +55,7 @@ libs: $(LIBUCW) $(LIBSH) $(LIBIMAGES) $(LIBCHARSET) $(LIBLANG)
 include $(s)/build/Makebottom
 
 ifndef CONFIG_LOCAL
-install: $(INSTALL_TARGETS)
-	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw
-	install -m 644 obj/autoconf.h $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw
-
+install: all $(INSTALL_TARGETS)
 else
 install:
 	@echo "Nothing to install, this is a local build." && false
