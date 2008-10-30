@@ -50,7 +50,7 @@ worker_pool_init(struct worker_pool *p)
 
   pthread_attr_t attr;
   if (pthread_attr_init(&attr) < 0 ||
-      pthread_attr_setstacksize(&attr, p->stack_size ? : default_thread_stack_size) < 0)
+      pthread_attr_setstacksize(&attr, p->stack_size ? : ucwlib_thread_stack_size) < 0)
     ASSERT(0);
 
   for (uns i=0; i < p->num_threads; i++)

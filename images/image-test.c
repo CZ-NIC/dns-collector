@@ -198,7 +198,7 @@ test_threads(void)
   pthread_t threads[TEST_THREADS_COUNT - 1];
   pthread_attr_t attr;
   if (pthread_attr_init(&attr) < 0 ||
-      pthread_attr_setstacksize(&attr, default_thread_stack_size) < 0)
+      pthread_attr_setstacksize(&attr, ucwlib_thread_stack_size) < 0)
     ASSERT(0);
   for (uns i = 0; i < TEST_THREADS_COUNT - 1; i++)
     {

@@ -93,7 +93,7 @@ asort_start_threads(uns run)
     {
       // XXX: If somebody overrides the radix-sorter parameters to insane values,
       // he also should override the stack size to insane values.
-      asort_thread_pool.stack_size = default_thread_stack_size + rs_estimate_stack();
+      asort_thread_pool.stack_size = ucwlib_thread_stack_size + rs_estimate_stack();
       asort_thread_pool.num_threads = sorter_threads;
       ASORT_TRACE("Initializing thread pool (%d threads, %dK stack)", sorter_threads, asort_thread_pool.stack_size >> 10);
       worker_pool_init(&asort_thread_pool);

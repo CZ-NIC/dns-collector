@@ -11,11 +11,11 @@
 #include "ucw/threads.h"
 #include "ucw/conf.h"
 
-uns default_thread_stack_size = 65556;
+uns ucwlib_thread_stack_size = 65556;
 
 static struct cf_section threads_config = {
   CF_ITEMS {
-    CF_UNS("DefaultStackSize", &default_thread_stack_size),
+    CF_UNS("DefaultStackSize", &ucwlib_thread_stack_size),
     CF_END
   }
 };

@@ -28,7 +28,7 @@ void ucwlib_unlock(void);
 
 #ifdef CONFIG_UCW_THREADS
 
-extern uns default_thread_stack_size;
+extern uns ucwlib_thread_stack_size;
 
 #endif
 
