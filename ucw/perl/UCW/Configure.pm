@@ -16,7 +16,7 @@ BEGIN {
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 	$VERSION = 1.0;
 	@ISA = qw(Exporter);
-	@EXPORT = qw(&Init &Log &Notice &Warn &Fail &IsSet &IsGiven &Set &UnSet &Append &Override &Get &Test &Include &Finish &FindFile &TryFindFile &TryCmd &PkgConfig &TrivConfig &debPrint, &PostConfig, &AtWrite);
+	@EXPORT = qw(&Init &Log &Notice &Warn &Fail &IsSet &IsGiven &Set &UnSet &Append &Override &Get &Test &Include &Finish &FindFile &TryFindFile &TryCmd &PkgConfig &TrivConfig &debPrint &PostConfig &AtWrite);
 	@EXPORT_OK = qw();
 	%EXPORT_TAGS = ();
 }
