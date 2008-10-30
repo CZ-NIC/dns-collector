@@ -17,15 +17,18 @@ BEGIN {
 			die "Don't know how to find myself. Please set SRCDIR manually.";
 		}
 	}
-	require "$srcdir/ucw/perl/Configure.pm";
-	UCW::Configure::import UCW::Configure;
 }
+
+use lib "$srcdir/ucw/perl/";
+use UCW::Configure;
 
 Init($srcdir, "default.cfg");
 Include "ucw/default.cfg";
 Log "### Configuring Sherlock Libraries " . Get("SHERLOCK_VERSION") . " with configuration " . Get("CONFIG") . "\n";
 Include Get("CONFIG");
-Include "ucw/autoconf.cfg";
+require UCW::Configure::Paths;
+require UCW::Configure::C;
+require UCW::Configure::LibUCW;
 Finish();
 
 Log "\nConfigured, run `make' to build everything.\n";

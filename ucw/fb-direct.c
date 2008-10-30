@@ -37,15 +37,6 @@
 #include <unistd.h>
 #include <stdio.h>
 
-uns fbdir_cheat;
-
-static struct cf_section fbdir_cf = {
-  CF_ITEMS {
-    CF_UNS("Cheat", &fbdir_cheat),
-    CF_END
-  }
-};
-
 #define FBDIR_ALIGN 512
 
 enum fbdir_mode {				// Current operating mode
@@ -68,11 +59,22 @@ struct fb_direct {
 };
 #define FB_DIRECT(f) ((struct fb_direct *)(f)->is_fastbuf)
 
+#ifndef TEST
+uns fbdir_cheat;
+
+static struct cf_section fbdir_cf = {
+  CF_ITEMS {
+    CF_UNS("Cheat", &fbdir_cheat),
+    CF_END
+  }
+};
+
 static void CONSTRUCTOR
 fbdir_global_init(void)
 {
   cf_declare_section("FBDirect", &fbdir_cf, 0);
 }
+#endif
 
 static void
 fbdir_read_sync(struct fb_direct *F)

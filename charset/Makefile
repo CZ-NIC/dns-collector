@@ -20,3 +20,12 @@ build_charsets:
 
 clean::
 	rm -f $(s)/charset/misc/u-*
+
+INSTALL_TARGETS+=install-libcharset
+install-libcharset:
+	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/charset $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+	install -m 644 $(addprefix run/include/charset/,$(LIBCHARSET_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/charset
+	install -m 644 run/lib/libcharset.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/pkgconfig/libcharset.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+
+.PHONY: install-libcharset

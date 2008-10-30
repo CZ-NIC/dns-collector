@@ -26,7 +26,7 @@ struct mempool_chunk {
 static uns
 mp_align_size(uns size)
 {
-#ifdef POOL_IS_MMAP
+#ifdef CONFIG_UCW_POOL_IS_MMAP
   return ALIGN_TO(size + MP_CHUNK_TAIL, CPU_PAGE_SIZE) - MP_CHUNK_TAIL;
 #else
   return ALIGN_TO(size, CPU_STRUCT_ALIGN);
@@ -61,7 +61,7 @@ mp_free_big_chunk(struct mempool_chunk *chunk)
 static void *
 mp_new_chunk(uns size)
 {
-#ifdef POOL_IS_MMAP
+#ifdef CONFIG_UCW_POOL_IS_MMAP
   struct mempool_chunk *chunk;
   chunk = page_alloc(size + MP_CHUNK_TAIL) + size;
   chunk->size = size;
@@ -74,7 +74,7 @@ mp_new_chunk(uns size)
 static void
 mp_free_chunk(struct mempool_chunk *chunk)
 {
-#ifdef POOL_IS_MMAP
+#ifdef CONFIG_UCW_POOL_IS_MMAP
   page_free((void *)chunk - chunk->size, chunk->size + MP_CHUNK_TAIL);
 #else
   mp_free_big_chunk(chunk);

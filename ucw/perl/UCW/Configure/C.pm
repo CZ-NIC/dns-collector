@@ -1,40 +1,15 @@
-# Automatic configuration of the UCW Library
+# UCW Library configuration system: OS and C compiler
 # (c) 2005--2008 Martin Mares <mj@ucw.cz>
 # (c) 2006 Robert Spalek <robert@ucw.cz>
-
-### Installation paths ###
-
-Log "Determining installation prefix ... ";
-if (IsSet("CONFIG_LOCAL")) {
-	Log "local build\n";
-	Set("INSTALL_PREFIX", "");
-	Set("INSTALL_USR_PREFIX", "");
-	Set("INSTALL_VAR_PREFIX", "");
-} else {
-	Set("PREFIX", "/usr/local") unless IsSet("PREFIX");
-	my $ipx = Get("PREFIX");
-	$ipx =~ s{/$}{};
-	Set("INSTALL_PREFIX", "$ipx/");
-	my $upx = ($ipx eq "" ? "/usr/" : "$ipx/");
-	Set("INSTALL_USR_PREFIX", $upx);
-	$upx =~ s{^/usr\b}{/var};
-	Set("INSTALL_VAR_PREFIX", $upx);
-	Log Get("PREFIX") . "\n";
-}
-
-Set("INSTALL_CONFIG_DIR", '$(INSTALL_PREFIX)$(CONFIG_DIR)');
-Set("INSTALL_BIN_DIR", '$(INSTALL_USR_PREFIX)bin');
-Set("INSTALL_SBIN_DIR", '$(INSTALL_USR_PREFIX)sbin');
-Set("INSTALL_LIB_DIR", '$(INSTALL_USR_PREFIX)lib');
-Set("INSTALL_INCLUDE_DIR", '$(INSTALL_USR_PREFIX)include');
-Set("INSTALL_PKGCONFIG_DIR", '$(INSTALL_USR_PREFIX)lib/pkgconfig');
-Set("INSTALL_SHARE_DIR", '$(INSTALL_USR_PREFIX)share');
-Set("INSTALL_MAN_DIR", '$(INSTALL_USR_PREFIX)share/man');
-Set("INSTALL_LOG_DIR", '$(INSTALL_VAR_PREFIX)log');
-Set("INSTALL_STATE_DIR", '$(INSTALL_VAR_PREFIX)lib');
-Set("INSTALL_RUN_DIR", '$(INSTALL_VAR_PREFIX)run');
+# (c) 2008 Michal Vaner <vorner@ucw.cz>
 
 ### OS ###
+
+package UCW::Configure::C;
+use UCW::Configure;
+
+use strict;
+use warnings;
 
 Test("OS", "Checking on which OS we run", sub {
 	my $os = `uname`;
@@ -98,9 +73,9 @@ sub parse_cpuinfo_linux() {
 }
 
 sub parse_cpuinfo_darwin() {
-	@cpu = (`sysctl -n machdep.cpu.vendor`,
-		`sysctl -n machdep.cpu.family`,
-		`sysctl -n machdep.cpu.model`);
+	my @cpu = (`sysctl -n machdep.cpu.vendor`,
+		   `sysctl -n machdep.cpu.family`,
+		   `sysctl -n machdep.cpu.model`);
 	chomp @cpu;
 	return @cpu;
 }
@@ -270,46 +245,40 @@ if (IsSet("CONFIG_DARWIN")) {
 	Set("SOL_TCP" => 6);		# missing in /usr/include/netinet/tcp.h
 }
 
-# Determine page size
-Test("CPU_PAGE_SIZE", "Determining page size", sub {
-	my $p;
-	if (IsSet("CONFIG_DARWIN")) {
-		$p = `sysctl -n hw.pagesize`;
-		defined $p or Fail "sysctl hw.pagesize failed";
-	} elsif (IsSet("CONFIG_LINUX")) {
-		$p = `getconf PAGE_SIZE`;
-		defined $p or Fail "getconf PAGE_SIZE failed";
+### Writing C headers with configuration ###
+
+sub ConfigHeader($$) {
+	my ($hdr, $rules) = @_;
+	Log "Generating $hdr ... ";
+	open X, ">obj/$hdr" or Fail $!;
+	print X "/* Generated automatically by $0, please don't touch manually. */\n";
+
+	sub match_rules($$) {
+		my ($rules, $name) = @_;
+		for (my $i=0; $i < scalar @$rules; $i++) {
+			my ($r, $v) = ($rules->[$i], $rules->[$i+1]);
+			return $v if $name =~ $r;
+		}
+		return 0;
 	}
-	chomp $p;
-	return $p;
-});
 
-if (IsSet("CONFIG_LARGE_FILES") && IsSet("CONFIG_LINUX")) {
-	# Use 64-bit versions of file functions
-	Set("CONFIG_LFS");
+	foreach my $x (sort keys %UCW::Configure::vars) {
+		next unless match_rules($rules, $x);
+		my $v = $UCW::Configure::vars{$x};
+		# Try to add quotes if necessary
+		$v = '"' . $v . '"' unless ($v =~ /^"/ || $v =~ /^\d*$/);
+		print X "#define $x $v\n";
+	}
+	close X;
+	Log "done\n";
 }
 
-# Decide how will ucw/partmap.c work
-Set("PARTMAP_IS_MMAP") if IsSet("CPU_64BIT_POINTERS");
-
-# Option for ucw/mempool.c
-Set("POOL_IS_MMAP");
-
-# Guess optimal bit width of the radix-sorter
-if (Get("CPU_ARCH") eq "default" || Get("CPU_ARCH") =~ /^i[345]86$/) {
-	# This should be safe everywhere
-	Set("CONFIG_UCW_RADIX_SORTER_BITS" => 10);
-} else {
-	# Use this on modern CPU's
-	Set("CONFIG_UCW_RADIX_SORTER_BITS" => 12);
-}
-
-# If debugging memory allocations:
-#LIBS+=-lefence
-
-# Remember PKG_CONFIG_PATH used for building, so that it will be propagated to
-# pkg-config's run locally in the makefiles.
-Set("PKG_CONFIG_PATH", $ENV{"PKG_CONFIG_PATH"}) if defined $ENV{"PKG_CONFIG_PATH"};
+AtWrite {
+	ConfigHeader("autoconf.h", [
+		# Symbols with "_" anywhere in their name are exported
+		"_" => 1
+	]);
+};
 
 # Return success
 1;

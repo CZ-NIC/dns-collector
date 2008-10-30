@@ -1,18 +1,16 @@
-UCW libraries
-=============
+The UCW library
+===============
 
-The UCW libraries aim to provide some general purpose tools for C
-programming language. It contains faster implementations of some
-algorithms found in libc (for example, sorting), few commonly used not
-available in libc (sha1 hash), several generic data structures (hash
-tables, binomial heap) and some less common tools (memory pools).
+The UCW library aims to provide a set general purpose tools for programming
+in the C language. It contains generic data structures (lists, trees, hash
+tables etc.), fast memory allocators optimized for various usage patterns,
+abstract I/O streams and optimized implementations of some common algorithms
+(e.g., sorting of arrays and files).
 
-It is probable you may save yourself some time by using this library.
+Please note that this documentation is not yet complete. Many modules are
+not described, so you might need to look into the source code.
 
-Please note this documentation is not yet complete. There are lot of
-modules not yet described, look into the source code.
-
-You can see list of <<def_index:,definitions>>.
+You can see the index of <<def_index:,documented definitions>>.
 
 Modules
 -------
@@ -93,3 +91,15 @@ Yet undocumented modules
 Other features
 --------------
 - <<docsys:,Documentation system>>
+
+License
+-------
+The UCW library is copyrighted by its authors:
+
+- Pavel Charvát <mailto:pchar\@ucw.cz[]>
+- Martin Mareš <mailto:mj\@ucw.cz[]>
+- Robert Špalek <mailto:robert\@ucw.cz[]>
+- Michal Vaner <mailto:vorner\@ucw.cz[]>
+
+It can be freely distributed and used according to the terms of
+the GNU Lesser General Public License.

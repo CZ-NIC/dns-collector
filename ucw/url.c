@@ -30,6 +30,7 @@ static uns url_min_repeat_count = 0x7fffffff;
 static uns url_max_repeat_length = 0;
 static uns url_max_occurences = ~0U;
 
+#ifndef TEST
 static struct cf_section url_config = {
   CF_ITEMS {
     CF_UNS("IgnoreSpaces", &url_ignore_spaces),
@@ -46,6 +47,7 @@ static void CONSTRUCTOR url_init_config(void)
 {
   cf_declare_section("URL", &url_config, 0);
 }
+#endif
 
 /* Escaping and de-escaping */
 
