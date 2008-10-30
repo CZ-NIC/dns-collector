@@ -26,10 +26,10 @@ if (IsSet("CONFIG_LARGE_FILES") && IsSet("CONFIG_LINUX")) {
 }
 
 # Decide how will ucw/partmap.c work
-Set("PARTMAP_IS_MMAP") if IsSet("CPU_64BIT_POINTERS");
+Set("CONFIG_UCW_PARTMAP_IS_MMAP") if IsSet("CPU_64BIT_POINTERS");
 
 # Option for ucw/mempool.c
-Set("POOL_IS_MMAP");
+Set("CONFIG_UCW_POOL_IS_MMAP");
 
 # Guess optimal bit width of the radix-sorter
 if (Get("CPU_ARCH") eq "default" || Get("CPU_ARCH") =~ /^i[345]86$/) {
