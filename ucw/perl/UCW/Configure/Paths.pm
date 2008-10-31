@@ -38,6 +38,7 @@ Set("INSTALL_MAN_DIR", '$(INSTALL_USR_PREFIX)share/man');
 Set("INSTALL_LOG_DIR", '$(INSTALL_VAR_PREFIX)log');
 Set("INSTALL_STATE_DIR", '$(INSTALL_VAR_PREFIX)lib');
 Set("INSTALL_RUN_DIR", '$(INSTALL_VAR_PREFIX)run');
+Set("INSTALL_DOC_DIR", '$(INSTALL_USR_PREFIX)share/doc');
 
 # Remember PKG_CONFIG_PATH used for building, so that it will be propagated to
 # pkg-config's run locally in the makefiles.

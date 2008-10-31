@@ -13,3 +13,13 @@ $(UCW_INDEX) $(UCW_DOCS_HTML): DOC_MODULE=ucw
 DOCS+=$(UCW_DOCS_HTML)
 DOC_INDICES+=$(UCW_INDEX)
 DOC_MODULES+=ucw
+
+ifdef CONFIG_DOC
+INSTALL_TARGETS+=install-libucw-docs
+endif
+
+.PHONY: install-libucw-docs
+install-libucw-docs: $(UCW_INDEX) $(UCW_DOCS_HTML)
+	install -d -m 755 $(DESTDIR)$(INSTALL_DOC_DIR)/ucw/
+	install -m 644 $^ $(DESTDIR)$(INSTALL_DOC_DIR)/ucw/
+
