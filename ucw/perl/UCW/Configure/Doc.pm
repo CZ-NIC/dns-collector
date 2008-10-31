@@ -1,7 +1,7 @@
 # UCW Library configuration system: documentation requirements
 # (c) 2008 Michal Vaner <vorner@ucw.cz>
 
-package UCW::Configure::Paths;
+package UCW::Configure::Doc;
 use UCW::Configure;
 
 use strict;

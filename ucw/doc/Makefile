@@ -22,4 +22,3 @@ endif
 install-libucw-docs: $(UCW_INDEX) $(UCW_DOCS_HTML)
 	install -d -m 755 $(DESTDIR)$(INSTALL_DOC_DIR)/ucw/
 	install -m 644 $^ $(DESTDIR)$(INSTALL_DOC_DIR)/ucw/
-
