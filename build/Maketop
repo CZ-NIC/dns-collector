@@ -63,7 +63,8 @@ dust::
 	rm -f allocs.tmp cscope.out TAGS
 
 clean:: dust
-	rm -rf `find obj -mindepth 1 -maxdepth 1 -not \( -name config.mk -o -name autoconf.h \)`
+	rm -rf `find obj/ucw -mindepth 1 -maxdepth 1 -not -name autoconf.h`
+	rm -rf `find obj -mindepth 1 -maxdepth 1 -not \( -name config.mk -o -name autoconf.h -o -name ucw \)`
 	rm -rf tests run/{bin,lib,include,.tree-stamp}
 
 distclean:: clean
