@@ -49,6 +49,11 @@ endif
 
 endif
 
+# Build documentation by default?
+ifdef CONFIG_DOC
+all: docs
+endif
+
 libs: $(LIBUCW) $(LIBSH) $(LIBIMAGES) $(LIBCHARSET) $(LIBLANG)
 
 # And finally the default rules of the build system
