@@ -149,6 +149,8 @@ ifdef CONFIG_UCW_SHELL_UTILS
 include $(s)/ucw/shell/Makefile
 endif
 
+CONFIGS+=libucw
+
 INSTALL_TARGETS+=install-libucw
 install-libucw:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/ $(DESTDIR)$(INSTALL_PKGCONFIG_DIR) $(DESTDIR)$(INSTALL_CONFIG_DIR)
