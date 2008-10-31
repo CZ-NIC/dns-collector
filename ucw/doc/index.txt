@@ -32,6 +32,10 @@ Yet undocumented modules
 - Sorting
   * `arraysort.h`
   * `sorter/`
+- Binary search
+  * `binsearch.h`
+- Primes
+  * `prime.h`
 - Growing buffers
   * `gbuf.h`
   * `bbuf.h`
@@ -39,8 +43,16 @@ Yet undocumented modules
   * `binheap.h`
   * `binheap-node.h`
   * `heap.h`
-- Binary search
-  * `binsearch.h`
+- Link lists
+  * `clists.h`
+  * `simple-lists.h`
+  * `slists.h`
+- Hash tables
+  * `hashtable.h`
+- Trie
+  * `trie.h`
+- Red-black trees
+  * `redblack.h`
 - Bit manipulation
   * `bitarray.h`
   * `bitopts.h`
@@ -49,16 +61,6 @@ Yet undocumented modules
   * `char-map.h`
   * `chartype.h`
   * `unicode.h`
-- Link lists
-  * `clists.h`
-  * `simple-lists.h`
-  * `slists.h`
-- Fixed-sized allocator
-  * `eltpool.h`
-- Hash tables
-  * `hashtable.h`
-- IP address access lists
-  * `ipaccess.h`
 - String manipulation
   * `kmp.h`
   * `kmp-search.h`
@@ -71,28 +73,25 @@ Yet undocumented modules
   * `asio.h`
   * `lfs.h`
   * `partmap.h`
-- Compression
-  * `lizard.h`
+- Address manipulation
+  * `url.h`
+  * `ipaccess.h`
+- Fixed-sized allocator
+  * `eltpool.h`
 - Prefetching of memory
   * `prefetch.h`
-- Primes
-  * `prime.h`
-- Profiling support
-  * `profile.h`
+- Unaligned data
+  * `unaligned.h`
+- Compression
+  * `lizard.h`
 - Caches
   * `qache.h`
-- Red-black trees
-  * `redblack.h`
 - Threads
   * `semaphore.h`
   * `threads.h`
   * `workqueue.h`
-- Trie
-  * `trie.h`
-- Unaligned data
-  * `unaligned.h`
-- URL manipulation
-  * `url.h`
+- Profiling support
+  * `profile.h`
 
 License
 -------
