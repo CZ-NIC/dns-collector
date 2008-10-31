@@ -29,6 +29,7 @@ Include Get("CONFIG");
 require UCW::Configure::Paths;
 require UCW::Configure::C;
 require UCW::Configure::LibUCW;
+require UCW::Configure::Doc;
 Finish();
 
 Log "\nConfigured, run `make' to build everything.\n";
