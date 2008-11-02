@@ -81,12 +81,38 @@ void main_get_time(void);
  * ----------------------------
  *
  * You can let the mainloop watch over a set of file descriptors
- * for changes.
+ * for a changes.
  *
- * //TODO: This probably needs some example how the handlers can be
- * //used, describe the use of this part of module.
+ * It supports two ways of use. With the first one, you provide
+ * low-level handlers for reading and writing (`read_handler` and
+ * `write_handler`). They will be called every time the file descriptor
+ * is ready to be read or written.
+ *
+ * Return non-zero if you want to get the handler called again right now (you
+ * handled a block of data and expect more). If you return `0`, it will
+ * be called again in the next iteration, if it is still ready to be read/written.
+ *
+ * This way is suitable for listening sockets, interactive connections, where
+ * you need to parse everything that comes right away and similar.
+ *
+ * The second way is to ask mainloop to read or write a buffer of data. You
+ * provide a `read_done` or `write_done` handler respectively and call @file_read()
+ * or @file_write(). This is handy for data connections where you need to transfer
+ * data between two endpoints or for binary connections where the size of message
+ * is known.
+ *
+ * It is possible to combine both methods, but it may be tricky to do it right.
+ *
+ * Both ways use `error_handler` to notify you about errors.
  ***/
 
+/**
+ * If you want mainloop to watch a file descriptor, fill at last `fd` into this
+ * structure. To get any useful information from the mainloop, provide some handlers
+ * too.
+ *
+ * After that, insert it into the mainloop by calling @file_add().
+ **/
 struct main_file {
   cnode n;
   int fd;					/* [*] File descriptor */
@@ -98,34 +124,103 @@ struct main_file {
   uns rpos, rlen;
   byte *wbuf;
   uns wpos, wlen;
-  void (*read_done)(struct main_file *fi); 	/* [*] Called when file_read is finished; rpos < rlen if EOF */
+  void (*read_done)(struct main_file *fi);	/* [*] Called when file_read is finished; rpos < rlen if EOF */
   void (*write_done)(struct main_file *fi);	/* [*] Called when file_write is finished */
   struct main_timer timer;
   struct pollfd *pollfd;
 };
 
+/**
+ * Specifies when or why an error happened. This is passed to the error handler.
+ * `errno` is still set to the original source of error. The only exception
+ * is `MFERR_TIMEOUT`, in which case `errno` is not set and the only possible
+ * cause of it is timeout on the file descriptor (see @file_set_timeout).
+ **/
 enum main_file_err_cause {
   MFERR_READ,
   MFERR_WRITE,
   MFERR_TIMEOUT
 };
 
+/**
+ * Inserts a <<struct_main_file,`main_file`>> structure into the mainloop to be
+ * watched for activity. You can call this at any time, even inside a handler
+ * (of course for a different file descriptor than the one of the handler).
+ **/
 void file_add(struct main_file *fi);
+/**
+ * Tells the mainloop the file has changed it's state. Call it whenever you
+ * change any of the handlers.
+ **/
 void file_chg(struct main_file *fi);
+/**
+ * Removes a file from the watched set. You have to call this on closed files
+ * too, since the mainloop does not handle close in any way.
+ *
+ * Can be called from a handler.
+ **/
 void file_del(struct main_file *fi);
+/**
+ * Asks the mainloop to read @len bytes of data from @fi into @buf.
+ * It cancels any previous unfinished read requested this way and overwrites
+ * `read_handler`.
+ *
+ * When the read is done, read_done() handler is called. If an EOF occurred,
+ * `rpos < rlen` (eg. not all data were read).
+ *
+ * Can be called from a handler.
+ *
+ * You can use a call with zero @len to cancel current read, but all read data
+ * will be thrown away.
+ **/
 void file_read(struct main_file *fi, void *buf, uns len);
+/**
+ * Requests that the mainloop writes @len bytes of data from @buf to @fi.
+ * Cancels any previous unfinished write and overwrites `write_handler`.
+ *
+ * When it is written, write_done() handler is called.
+ *
+ * Can be called from a handler.
+ *
+ * If you call it with zero @len, it will cancel the previous write, but note
+ * some data may already be written.
+ **/
 void file_write(struct main_file *fi, void *buf, uns len);
+/**
+ * Sets a timer for a file @fi. If the timer is not overwritten or disabled
+ * until @expires, the file timeouts and error_handler() is called with
+ * <<enum_main_file_err_cause,`MFERR_TIMEOUT`>>.
+ *
+ * The mainloop does not disable or reset it, when something happens, it just
+ * bundles a timer with the file. If you want to watch for inactivity, it is
+ * your task to reset it whenever your handler is called.
+ *
+ * The @expires parameter is absolute (add <<var_main_now,`main_now`>> if you
+ * need relative). The call and overwrites previously set timeout. Value of `0`
+ * disables the timeout (the <<enum_main_file_err_cause,`MFERR_TIMEOUT`>> will
+ * not trigger).
+ *
+ * The use-cases for this are mainly sockets or pipes, when:
+ *
+ * - You want to drop inactive connections (no data com or go).
+ * - You want to enforce answer in given time (for example authentication).
+ * - You give maximum time for a whole connection.
+ **/
 void file_set_timeout(struct main_file *fi, timestamp_t expires);
-void file_close_all(void);			/* Close all known main_file's; frequently used after fork() */
+/**
+ * Closes all file descriptors known to mainloop. Often used between fork()
+ * and exec().
+ **/
+void file_close_all(void);
 
 /***
  * [[hooks]]
  * Loop hooks
  * ----------
  *
- * The hooks can be called whenever the mainloop perform an iteration.
- * You can shutdown the mainloop from within them or request next call
- * only when the loop is idle (for background operations).
+ * The hooks are called whenever the mainloop perform an iteration.
+ * You can shutdown the mainloop from within them or request an iteration
+ * to happen without sleeping (just poll, no waiting for events).
  ***/
 
 /**
@@ -133,6 +228,8 @@ void file_close_all(void);			/* Close all known main_file's; frequently used aft
  *
  * The handler() must return one value from
  * <<enum_main_hook_return,`main_hook_return`>>.
+ *
+ * Fill with the hook and data and pass it to @hook_add().
  **/
 struct main_hook {
   cnode n;
@@ -143,20 +240,28 @@ struct main_hook {
 /**
  * Return value of the hook handler().
  * Specifies what should happen next.
+ *
+ * - `HOOK_IDLE` -- Let the loop sleep until something happens, call after that.
+ * - `HOOK_RETRY` -- Force the loop to perform another iteration without sleeping.
+ *   This will cause calling of all the hooks again soon.
+ * - `HOOK_DONE` -- The loop will terminate if all hooks return this.
+ * - `HOOK_SHUTDOWN` -- Shuts down the loop.
  **/
 enum main_hook_return {
-  HOOK_IDLE,					/* Call again when the main loop becomes idle again */
-  HOOK_RETRY,					/* Call again as soon as possible */
-  HOOK_DONE = -1,				/* Shut down the main loop if all hooks return this value */
-  HOOK_SHUTDOWN = -2				/* Shut down the main loop immediately */
+  HOOK_IDLE,
+  HOOK_RETRY,
+  HOOK_DONE = -1,
+  HOOK_SHUTDOWN = -2
 };
 
 /**
  * Inserts a new hook into the loop.
+ * May be called from inside a hook handler too.
  **/
 void hook_add(struct main_hook *ho);
 /**
  * Removes an existing hook from the loop.
+ * May be called from inside a hook handler (to delete itself or other hook).
  **/
 void hook_del(struct main_hook *ho);
 
