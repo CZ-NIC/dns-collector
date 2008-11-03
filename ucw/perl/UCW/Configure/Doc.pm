@@ -9,7 +9,7 @@ use warnings;
 
 if (!IsGiven("CONFIG_DOC") || IsSet("CONFIG_DOC")) {
 	Test("HAVE_ASCII_DOC", "Checking for AsciiDoc", sub {
-		my $version = `asciidoc --version`;
+		my $version = `asciidoc --version 2>&1`;
 		return "none" if !defined $version || $version eq "";
 		my( $vnum ) = $version =~ / (\d+\.\S*)$/;
 		return $vnum;
