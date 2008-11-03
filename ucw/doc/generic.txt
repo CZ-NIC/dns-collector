@@ -2,9 +2,9 @@ Generic data structures and algorithms
 ======================================
 
 The C preprocessor is a very powerful tool. One handy way to use it
-can be generating generic data structures and algorithms. You can find
-some conventions how they are written in libUCW and hints how to use
-them.
+can be generating generic data structures and algorithms. Here you can
+find some conventions that are used in all such generic structures in
+libUCW, and also hints for use of these structures.
 
 - <<idea,General idea>>
 - <<use,How to use them>>
@@ -19,8 +19,8 @@ General idea
 
 The idea is simple. If you have some code, you can customize it a
 little by preprocessor macros. You can change constants, data types it
-operates on, whole expressions, or you can exclude parts of the code
-from compilation. You can generate new function names using macros.
+operates on, whole expressions, or you can compile parts of the code
+conditionally. You can generate new function names using macros.
 
 So if you provide few macros for data types, function names and
 parameters and include some code using them, it gets modified by it
@@ -39,14 +39,14 @@ and an indexing function, which returns a pointer to n'th element.
 To get an array of integers, we need to provide macro for used data
 type and macro that will provide prefixes for identifier names. Then
 we include the file. Then we could get another array with unsigned
-integers, so we will do the same.
+integers, so we will do the same:
 
   #define ARRAY_TYPE int
-  #define ARRAY_PREFIX(suffix) intarray_##suffix
+  #define ARRAY_PREFIX(name) intarray_##name
   #include <array.h>
 
   #define ARRAY_TYPE uns
-  #define ARRAY_PREFIX(suffix) unsarray_##suffix
+  #define ARRAY_PREFIX(name) unsarray_##name
   #include <array.h>
 
 This will generate the data types (presumably `intarray_t` and
@@ -54,14 +54,14 @@ This will generate the data types (presumably `intarray_t` and
 `unsarray_index`). We can use them like anything else.
 
 Maybe the `ARRAY_PREFIX` deserves some attention. When the header file
-wants to generate a name of some identifier, it uses this macro with
-some suffix. Then the macro takes the suffix, adds a prefix to it and
+wants to generate an identifier, it uses this macro with
+some name. Then the macro takes the name, adds a prefix to it and
 returns the new identifier, so `ARRAY_PREFIX(t)` will generate
 `intarray_t` in the first case and `unsarray_t` in the second. This
 allows having more than one instance of the same data structure or
-algorithm, because it generates different names for them.
+algorithm, because it generates different identifiers for them.
 
-Similar macro is needed for every generic header in libUCW.
+A similar macro is needed for every generic header in libUCW.
 
 [[implement]]
 How it is implemented
@@ -82,7 +82,7 @@ works, here is the `array.h` header and some description to it.
   #undef ARRAY_TYPE
   #undef ARRAY_PREFIX
 
-There are few thinks that are worth noticing. The first two lines
+There are few things that are worth noticing. The first two lines
 define the data type. The macro (`ARRAY_A_TYPE`) is only for
 convenience inside the header, since such type names can be used quite
 often inside the header (if it is large).

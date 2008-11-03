@@ -86,20 +86,20 @@ void main_get_time(void);
  * It supports two ways of use. With the first one, you provide
  * low-level handlers for reading and writing (`read_handler` and
  * `write_handler`). They will be called every time the file descriptor
- * is ready to be read or written.
+ * is ready to be read from or written to.
  *
  * Return non-zero if you want to get the handler called again right now (you
- * handled a block of data and expect more). If you return `0`, it will
+ * handled a block of data and expect more). If you return `0`, the hook will
  * be called again in the next iteration, if it is still ready to be read/written.
  *
  * This way is suitable for listening sockets, interactive connections, where
- * you need to parse everything that comes right away and similar.
+ * you need to parse everything that comes right away and similar cases.
  *
  * The second way is to ask mainloop to read or write a buffer of data. You
  * provide a `read_done` or `write_done` handler respectively and call @file_read()
  * or @file_write(). This is handy for data connections where you need to transfer
  * data between two endpoints or for binary connections where the size of message
- * is known.
+ * is known in advance.
  *
  * It is possible to combine both methods, but it may be tricky to do it right.
  *
@@ -149,8 +149,10 @@ enum main_file_err_cause {
  **/
 void file_add(struct main_file *fi);
 /**
- * Tells the mainloop the file has changed it's state. Call it whenever you
+ * Tells the mainloop the file has changed its state. Call it whenever you
  * change any of the handlers.
+ *
+ * Can be called only on active files (only the ones added by @file_add()).
  **/
 void file_chg(struct main_file *fi);
 /**
@@ -202,8 +204,9 @@ void file_write(struct main_file *fi, void *buf, uns len);
  *
  * The use-cases for this are mainly sockets or pipes, when:
  *
- * - You want to drop inactive connections (no data com or go).
- * - You want to enforce answer in given time (for example authentication).
+ * - You want to drop inactive connections (no data come or go for a given time, not
+ *   incomplete messages).
+ * - You want to enforce answer in a given time (for example authentication).
  * - You give maximum time for a whole connection.
  **/
 void file_set_timeout(struct main_file *fi, timestamp_t expires);
