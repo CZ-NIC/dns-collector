@@ -30,7 +30,6 @@ Other features
 Yet undocumented modules
 ------------------------
 - Sorting
-  * `arraysort.h`
   * `sorter/`
 - Binary search
   * `binsearch.h`
