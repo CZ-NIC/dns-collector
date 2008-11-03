@@ -1,9 +1,0 @@
-# .git/info/exclude
-# Lines that start with '#' are comments.
-custom
-run
-obj
-charset/unidata
-TAGS
-*~
-_*
