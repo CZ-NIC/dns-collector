@@ -51,13 +51,13 @@ static int comp_ind(const void *x, const void *y)
 #define ASORT_ELT(i) a[i].key
 #define ASORT_SWAP(i,j) do { struct elt t=a[i]; a[i]=a[j]; a[j]=t; } while (0)
 #define ASORT_EXTRA_ARGS , struct elt *a
-#include "ucw/arraysort.h"
+#include "ucw/sorter/array-simple.h"
 
 #define ASORT_PREFIX(x) asi_##x
 #define ASORT_KEY_TYPE u32
 #define ASORT_ELT(i) ind[i]->key
 #define ASORT_SWAP(i,j) do { struct elt *t=ind[i]; ind[i]=ind[j]; ind[j]=t; } while (0)
-#include "ucw/arraysort.h"
+#include "ucw/sorter/array-simple.h"
 
 static void r1_sort(void)
 {

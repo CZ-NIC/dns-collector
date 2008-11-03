@@ -95,7 +95,7 @@ prequant_heap_cmp(struct image_sig_region *a, struct image_sig_region *b)
 #define ASORT_KEY_TYPE uns
 #define ASORT_ELT(i) val[i]
 #define ASORT_EXTRA_ARGS , uns *val
-#include "ucw/arraysort.h"
+#include "ucw/sorter/array-simple.h"
 
 static uns
 prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_region *regions)

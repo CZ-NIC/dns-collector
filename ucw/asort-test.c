@@ -62,7 +62,7 @@ static int qs_comp(const struct elt *X, const struct elt *Y)
 }
 
 #define ASORT_PREFIX(x) as_##x
-#include "ucw/arraysort.h"
+#include "ucw/sorter/array-simple.h"
 
 int main(void)
 {

@@ -411,7 +411,7 @@ static int s5_gen(struct s5_pair *p)
 #define ASORT_KEY_TYPE u32
 #define ASORT_ELT(i) ary[i]
 #define ASORT_EXTRA_ARGS , u32 *ary
-#include "ucw/arraysort.h"
+#include "ucw/sorter/array-simple.h"
 
 static void s5_write_merged(struct fastbuf *f, struct key5 **keys, void **data, uns n, void *buf)
 {

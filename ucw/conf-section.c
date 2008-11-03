@@ -44,7 +44,7 @@ cf_add_dirty(struct cf_section *sec, void *ptr)
 #define ASORT_KEY_TYPE	struct dirty_section
 #define ASORT_ELT(i)	dirty.ptr[i]
 #define ASORT_LT(x,y)	x.sec < y.sec || x.sec == y.sec && x.ptr < y.ptr
-#include "ucw/arraysort.h"
+#include "ucw/sorter/array-simple.h"
 
 static void
 sort_dirty(void)

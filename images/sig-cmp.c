@@ -20,7 +20,7 @@
 #define ASORT_KEY_TYPE uns
 #define ASORT_ELT(i) items[i]
 #define ASORT_EXTRA_ARGS , uns *items
-#include "ucw/arraysort.h"
+#include "ucw/sorter/array-simple.h"
 
 #define EXPLAIN
 #include "images/sig-cmp-gen.h"
