@@ -163,7 +163,7 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
     q[i] = reg2->wb;
 
   /* Sort entries in distance matrix */
-  image_signatures_dist_integrated_sort(n, dist);
+  image_signatures_dist_integrated_sort(dist, n);
 
   /* Compute significance matrix and resulting distance */
   uns sum = 0;

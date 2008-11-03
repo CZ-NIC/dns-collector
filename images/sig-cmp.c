@@ -18,8 +18,6 @@
 
 #define ASORT_PREFIX(x) image_signatures_dist_integrated_##x
 #define ASORT_KEY_TYPE uns
-#define ASORT_ELT(i) items[i]
-#define ASORT_EXTRA_ARGS , uns *items
 #include "ucw/sorter/array-simple.h"
 
 #define EXPLAIN

@@ -93,8 +93,6 @@ prequant_heap_cmp(struct image_sig_region *a, struct image_sig_region *b)
 
 #define ASORT_PREFIX(x) prequant_##x
 #define ASORT_KEY_TYPE uns
-#define ASORT_ELT(i) val[i]
-#define ASORT_EXTRA_ARGS , uns *val
 #include "ucw/sorter/array-simple.h"
 
 static uns
@@ -163,7 +161,7 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
           block = region->blocks;
           for (uns i = 0; i < region->count; i++, block = block->next)
 	    val[i] = block->v[axis];
-	  prequant_sort(region->count, val);
+	  prequant_sort(val, region->count);
 	  cval = 1;
 	  cnt[0] = 1;
 	  for (uns i = 1; i < region->count; i++)
