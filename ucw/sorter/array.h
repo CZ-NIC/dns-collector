@@ -9,7 +9,7 @@
 
 /*
  *  This is a generator of routines for sorting huge arrays, similar to the one
- *  in ucw/arraysort.h. It cannot handle discontiguous arrays, but it is able
+ *  in ucw/sorter/array-simple.h. It cannot handle discontiguous arrays, but it is able
  *  to employ radix-sorting if a monotone hash function is available and also
  *  use several threads in parallel on SMP systems (this assumes that all
  *  callbacks you provide are thread-safe).
