@@ -36,7 +36,6 @@ LIBUCW_MODS= \
 LIBUCW_MAIN_INCLUDES= \
 	lib.h threads.h \
 	mempool.h \
-	arraysort.h \
 	clists.h slists.h simple-lists.h \
 	string.h stkstring.h unicode.h chartype.h regex.h \
 	wildmatch.h \

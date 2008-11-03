@@ -3,7 +3,7 @@
 DIRS+=ucw/sorter
 
 LIBUCW_MODS+=$(addprefix sorter/, config govern sbuck array)
-LIBUCW_SORTER_INCLUDES=$(addprefix sorter/, array.h common.h s-fixint.h \
+LIBUCW_SORTER_INCLUDES=$(addprefix sorter/, array.h array-simple.h common.h s-fixint.h \
 	s-internal.h s-multiway.h s-radix.h s-twoway.h sorter.h)
 LIBUCW_INCLUDES+=$(LIBUCW_SORTER_INCLUDES)
 
