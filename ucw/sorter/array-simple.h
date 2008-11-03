@@ -1,7 +1,7 @@
 /*
- *	UCW Library -- Universal Array Sorter
+ *	UCW Library -- Universal Simple Array Sorter
  *
- *	(c) 2003 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2008 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -25,7 +25,8 @@
  *  ASORT_PREFIX(x) [*]	add a name prefix (used on all global names
  *			defined by the sorter)
  *  ASORT_KEY_TYPE  [*]	data type of a single array entry key
- *  ASORT_ELT(i)    [*]	returns the key of i-th element
+ *  ASORT_ELT(i)	returns the key of i-th element; if this macro is not
+ *			defined, the function gets a pointer to an array to be sorted
  *  ASORT_LT(x,y)	x < y for ASORT_TYPE (default: "x<y")
  *  ASORT_SWAP(i,j)	swap i-th and j-th element (default: assume _ELT
  *			is an l-value and swap just the keys)
@@ -34,7 +35,9 @@
  *			visible in all the macros supplied above), starts with comma
  *
  *  After including this file, a function ASORT_PREFIX(sort)(uns array_size)
- *  is declared and all parameter macros are automatically undef'd.
+ *  or ASORT_PREFIX(sort)(ASORT_KEY_TYPE *array, uns array_size) [if ASORT_ELT
+ *  is not defined] is declared and all parameter macros are automatically
+ *  undef'd.
  */
 
 #ifndef ASORT_LT
@@ -53,7 +56,16 @@
 #define ASORT_EXTRA_ARGS
 #endif
 
-static void ASORT_PREFIX(sort)(uns array_size ASORT_EXTRA_ARGS)
+#ifndef ASORT_ELT
+#define ASORT_ARRAY_ARG
+#define ASORT_ELT(i) array[i]
+#endif
+
+static void ASORT_PREFIX(sort)(
+#ifdef ASORT_ARRAY_ARG
+  ASORT_KEY_TYPE *array,
+#endif
+  uns array_size ASORT_EXTRA_ARGS)
 {
   struct stk { int l, r; } stack[8*sizeof(uns)];
   int l, r, left, right, m;
@@ -172,3 +184,4 @@ static void ASORT_PREFIX(sort)(uns array_size ASORT_EXTRA_ARGS)
 #undef ASORT_SWAP
 #undef ASORT_THRESHOLD
 #undef ASORT_EXTRA_ARGS
+#undef ASORT_ARRAY_ARG

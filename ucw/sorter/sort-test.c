@@ -409,8 +409,6 @@ static int s5_gen(struct s5_pair *p)
 
 #define ASORT_PREFIX(x) s5m_##x
 #define ASORT_KEY_TYPE u32
-#define ASORT_ELT(i) ary[i]
-#define ASORT_EXTRA_ARGS , u32 *ary
 #include "ucw/sorter/array-simple.h"
 
 static void s5_write_merged(struct fastbuf *f, struct key5 **keys, void **data, uns n, void *buf)
@@ -422,7 +420,7 @@ static void s5_write_merged(struct fastbuf *f, struct key5 **keys, void **data, 
       memcpy(&a[m], data[i], 4*keys[i]->cnt);
       m += keys[i]->cnt;
     }
-  s5m_sort(m, a);
+  s5m_sort(a, m);
   keys[0]->cnt = m;
   bwrite(f, keys[0], sizeof(struct key5));
   bwrite(f, a, 4*m);
