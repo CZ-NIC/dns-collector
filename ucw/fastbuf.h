@@ -22,32 +22,92 @@
  * empty or fills up, they ask the corresponding callback to solve the
  * situation. Back-ends then differ just in the definition of the callbacks.
  * The state of the fastbuf is represented by `struct fastbuf`, which
- * is a simple structure describing the state of the buffer and pointers
- * to the callback functions.
+ * is a simple structure describing the state of the buffer, cursor's position
+ * and pointers to the callback functions.
  *
- * When we are reading from the fastbuf, the buffer is laid out as follows:
  *
- *  +----------------+---------------------------+
- *  | read data      | free space                |
- *  +----------------+---------------------------+
- *  ^        ^        ^                           ^
- *  buffer   bptr     bstop                       bufend
+ * The buffer can be in one of the following states:
  *
- * Here `bptr` points to the next character to be read. After the last character is
- * read, `bptr == bstop` and the `refill` callback gets called upon the next read
- * attempt to bring further data. This gives us an easy way how to implement @bungetc().
+ * 1. Flushed:
+ *  
+ *    +----------------+---------------------------+
+ *    | unused         | free space                |
+ *    +----------------+---------------------------+
+ *    ^                ^                           ^
+ *    buffer        <= bptr == bstop (pos)      <= bufend
  *
- * When writing, the situation looks like:
+ *   * If `bptr == bstop`, then there is no cached data and
+ *     the fastbuf is ready for any read or write operation.
+ *     Position of the back-end's cursor equals the front-end's one.
+ *   * The interval `[bstop, bufend]` can be used by front-ends
+ *     for writing. If it is empty, the `spout` callback gets called
+ *     upon the first write attempt to allocate a new buffer.
+ *   * When a front-end needs to read something, it calls the `spout` callback.
+ *   * The pointers can be NULL.
  *
- *  +--------+--------------+--------------------+
- *  | unused | written data | free space         |
- *  +--------+--------------+--------------------+
- *  ^         ^              ^                    ^
- *  buffer    bstop          bptr                 bufend
+ * 2. Reading:
  *
- * In this case, the `bptr` points at the position where the next character
- * will be written to. When we want to write, but `bptr == bufend`, we call
- * the `spout` hook to flush the data and get an empty buffer.
+ *    +----------------+---------------------------+
+ *    | read data      | unused                    |
+ *    +----------------+---------------------------+
+ *    ^         ^      ^                           ^
+ *    buffer <= bptr <= bstop (pos)             <= bufend
+ *
+ *   * If we try to read something, we get to the reading mode.
+ *   * No writing is allowed until a flush operation. But note that @bflush()
+ *     will simply set `bptr` to `bstop` and breaks the position of the front-end's cursor.
+ *   * The interval `[buffer, bstop]` contains a block of data read by the back-end.
+ *     `bptr` is the front-end's cursor and points to the next character to be read.
+ *     After the last character is read, `bptr == bstop` and the `refill` callback
+ *     gets called upon the next read attempt to bring further data.
+ *     This gives us an easy way how to implement @bungetc().
+ *
+ * 3. Writing:
+ *
+ *    +---------+--------------+-------------------+
+ *    | unused  | written data | free space        |
+ *    +---------+--------------+-------------------+
+ *    ^         ^              ^                   ^
+ *    buffer <= bstop (pos)  < bptr             <= bufend
+ *
+ *   * This schema corresponds to the situation after a write attempt.
+ *   * No reading is allowed until a flush operation.
+ *   * The `bptr` points at the position where the next character
+ *     will be written to. When we want to write, but `bptr == bufend`, we call
+ *     the `spout` hook to flush the data and get an empty buffer.
+ *
+ *
+ * Rules for back-ends:
+ *
+ *   - Front-ends are only allowed to change the value of `bptr`, some flags
+ *     and if a fatal error occures also `bstop`.
+ *   - `buffer <= bstop <= bufend`.
+ *   - `pos` and `bstop` should correspond to the back-end's cursor.
+ *   - Failed callbacks (except `close`) should use @bthrow().
+ *   - All callback pointers can be NULL.
+ *     
+ *   - initialization:
+ *     * out: `buffer <= bptr == bstop <= bufend` (flushed)
+ *
+ *   - `refill`:
+ *     * in: `buffer <= bptr == bstop <= bufend` (reading or flushed)
+ *     * out: `buffer <= bptr < bstop <= bufend` (reading)
+ *
+ *   - `spout`:
+ *     * in: `buffer <= bstop <= bptr <= bufend` (writing or flushed)
+ *     * out: `buffer <= bstop <= bufend` (flushed)
+ *     * `bptr` is set automatically to `bstop`.
+ *     * If the input `bptr` equals ` bstop`, then the resulting `bstop` muset be lower than `bufend`.
+ *
+ *   - `seek`:
+ *     * in: `buffer <= bstop == bptr <= bufend` (flushed)
+ *     * out: `buffer <= bstop <= bufend` (flushed)
+ *     * `bptr` is set automatically to `bstop`.
+ *
+ *   - `close`:
+ *     * out: `buffer <= bptr == bstop <= bufend` (flushed)
+ *     * `close` must always free all internal structures, even when it throws an exception.
+ *
  *
  * Several dirty tricks can be played:
  *
