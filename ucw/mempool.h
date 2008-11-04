@@ -157,6 +157,8 @@ static inline void *mp_alloc_fast_noalign(struct mempool *pool, uns size)
  * You do not need to know, how a buffer will need to be large,
  * you can grow it incrementally to needed size. You can grow only
  * one buffer at a time on a given mempool.
+ *
+ * Similar functionality is provided by <<growbuf:,growing buffes>> module.
  ***/
 
 /* For internal use only, do not call directly */
