@@ -4,13 +4,23 @@ The documentation system
 ////
 Warning: if you read this file in plain-text, keep in mind the markup
 had to be escaped to show in the result as the thing you should type.
-You should ignore all backspaces here, or better, read the html
+You should ignore all backslashes here, or better, read the html
 version.
 ////
 
 The ucw documentation system is based on the
 http://www.methods.co.nz/asciidoc/[ASCIIDOC] documentation formatter.
 It supports all it's markup, but it was extended slightly.
+
+- <<markup,Markup extensions>>
+  * <<xrefs,Cross referencing>>
+  * <<symbols,Symbol formatting>>
+- <<extract,Header extraction>>
+  * <<scomm,Stand-alone comments>>
+  * <<defcomm,Definition comments>>
+- <<generics,Macro generics>>
+  * <<geext,Generics extraction>>
+  * <<gelink,Links to generics>>
 
 [[markup]]
 Markup extensions
@@ -107,3 +117,47 @@ these:
 
 There is a support for building a page with list of all symbols with
 links to them. Look into `ucw/doc/Makefile` to see how to request that.
+
+[[generics]]
+Support for macro generics
+--------------------------
+
+Some of the headers contain <<generic:,macro generics>>. Since the
+preprocessor macros look somewhat weird, the documentation extractor
+needs some help to understand them.
+
+[[geext]]
+Extraction of generics
+~~~~~~~~~~~~~~~~~~~~~~
+
+When extracting info from some header, the extractor needs to know,
+which prefix macros are used in the source file, to distinguish them
+from function calls. To inform it about them, append a comma separated
+list of such macros to the extraction command, like this:
+
+  !!filename PREFIX_MACRO_ONE,PREFIX_MACRO_TWO
+
+Then this will be correctly identified as a structure:
+
+  struct PREFIX_MACRO_ONE(struct_name) {
+    content;
+  };
+
+[[gelink]]
+Links to generics
+~~~~~~~~~~~~~~~~~
+
+Since the anchors for them are generated in a complicated manner and
+typing them in plain-text would convert them back to the original,
+with real parenthesis, there is a special pattern to create the
+symbolname part of the anchor. It looks like:
+
+  _GENERIC_LINK_|PREFIX_MACRO|symbol_name|
+
+So link to the above structure would look like:
+
+  <<struct__GENERIC_LINK_|PREFIX_MACRO_ONE|struct_name|,link text>>
+
+However, this is implemented only in the included header files (if it
+is needed, it will be implemented in the top-level documentation files
+too).
