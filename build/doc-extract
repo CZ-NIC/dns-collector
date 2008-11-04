@@ -58,18 +58,28 @@ sub formatNote( $$ ) {
 	$head =~ s/(\.\.\.)/\\$1/g;
 	print OUT "[[${type}_$name]]\n";
 	$head = $oneline if $type eq 'fun';#Remove { from inline functions
+	$head =~ s/_OPEN_PAREN_/(/g;
+	$head =~ s/_CLOSE_PAREN_/)/g;
 	print OUT "..................\n";
 	print OUT "$head\n";
 	print OUT "..................\n\n";
 	if( $hasdump ) {
-		print DUMP "$outname,${type}_$name,$type,$name,$oneline\n";
+		$oneline =~ s/_OPEN_PAREN_/(/g;
+		$oneline =~ s/_CLOSE_PAREN_/)/g;
+		my $symname = $type.'_'.$name;
+		$name =~ s/_OPEN_PAREN_/(/g;
+		$name =~ s/_CLOSE_PAREN_/)/g;
+		print DUMP "$outname,$symname,$type,$name,$oneline\n";
 		$id ++;
 	}
+	$comment =~ s/_OPEN_PAREN_/(/g;
+	$comment =~ s/_CLOSE_PAREN_/)/g;
+	$comment =~ s/_GENERIC_LINK_\|([^|]+)\|([^|]+)\|/${1}_OPEN_PAREN_${2}_CLOSE_PAREN_/g;
 	print OUT "$comment\n\n";
 }
 
-sub process( $ ) {
-	my $file = shift;
+sub process( $$ ) {
+	my( $file, $prefixes ) = @_;
 	open FILE, $file or die "Could nod read $file ($!)\n";
 	my $line;
 	my $active;
@@ -80,6 +90,7 @@ sub process( $ ) {
 	my $def;
 	while( defined( $line = <FILE> ) ) {
 		chomp $line;
+		$line =~ s/$_\(([^()]+)\)/${_}_OPEN_PAREN_${1}_CLOSE_PAREN_/g foreach @{$prefixes};
 		if( $def ) {
 			$head .= "\n".$line;
 			$line =~ s/(\/\*.*?\*\/|\/\/.*)//g;
@@ -157,9 +168,13 @@ sub process( $ ) {
 my $line;
 while( defined( $line = <IN> ) ) {
 	chomp $line;
-	if( my( $fname ) = ( $line =~ /^!!\s*(.*\S)/ ) ) {
+	my $prefixes;
+	if( my( $fname, $prefixes ) = ( $line =~ /^!!\s*(\S+)(.*)/ ) ) {
 		$fname = "$basedir/$fname" if( ( $fname !~ /^\// ) && defined $basedir );
-		process( $fname );
+		process( $fname, [ ( map( {
+			my( $result ) = /^\s*(.*\S)\s*$/;
+			$result;
+		} ( split /,/, $prefixes ) ) ) ] );
 		push @deps, $fname;
 	} else {
 		print OUT "$line\n";
