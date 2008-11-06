@@ -42,7 +42,7 @@
  * - `_le` for little-endian
  * - `_be` for big-endian
  *
- * If we fail to read enough bytes because the EOF, the reading function returns `(TYPE)-1`.
+ * If we fail to read enough bytes because of EOF, the reading function returns `(TYPE)-1`.
  *
  ***/
 
