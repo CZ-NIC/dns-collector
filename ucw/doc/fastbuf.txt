@@ -60,4 +60,4 @@ Invalid codes are replaced by `UNI_REPLACEMENT` when reading.
 ucw/ff-binary.h
 ---------------
 
-Reading and writing of binary values.
+!!ucw/ff-binary.h

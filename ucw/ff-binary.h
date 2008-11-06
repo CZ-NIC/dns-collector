@@ -20,6 +20,32 @@
 #define FF_ENDIAN le
 #endif
 
+/***
+ *
+ * We define several functions to read or write binary integer values.
+ *
+ * The name patterns for such routines are:
+ *
+ * - `TYPE bget \#\# NAME \#\# ENDIAN(struct fastbuf *f);`
+ * - `void bput \#\# NAME \#\# ENDIAN(struct fastbuf *f, TYPE value);`
+ *
+ * where `NAME` together with `TYPE` can be:
+ *
+ * - `w` for 16-bit unsigned integers stored in sequences of 2 bytes, the `TYPE` is int
+ * - `l` for 32-bit unsigned integers stored in sequences of 4 bytes, the `TYPE` is uns
+ * - `5` for 40-bit unsigned integers stored in sequences of 5 bytes, the `TYPE` is u64
+ * - `q` for 64-bit unsigned integers stored in sequences of 8 bytes, the `TYPE` is u64
+ *
+ * and supported `ENDIAN` suffixes are:
+ *
+ * - empty for the default order of bytes (defined by CPU)
+ * - `_le` for little-endian
+ * - `_be` for big-endian
+ *
+ * If we fail to read enough bytes because the EOF, the reading function returns `(TYPE)-1`.
+ *
+ ***/
+
 #define GET_FUNC(type, name, bits, endian)			\
   type bget##name##_##endian##_slow(struct fastbuf *f);		\
   static inline type bget##name##_##endian(struct fastbuf *f)	\
