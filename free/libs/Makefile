@@ -26,7 +26,7 @@ CONFIGS+=$(FREE_CONFIGS)
 INSTALL_TARGETS+=install-configs
 install-configs:
 	install -d -m 755 $(DESTDIR)$(INSTALL_CONFIG_DIR)
-	install -m 644 $(addprefix run/cf/,$(FREE_CONFIGS)) $(DESTDIR)$(INSTALL_CONFIG_DIR)
+	install -m 644 $(addprefix run/$(CONFIG_DIR)/,$(FREE_CONFIGS)) $(DESTDIR)$(INSTALL_CONFIG_DIR)
 
 # Set up names of common libraries (to avoid forward references in rules)
 LIBCHARSET=$(o)/charset/libcharset.pc
