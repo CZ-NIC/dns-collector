@@ -73,11 +73,30 @@ static inline int clist_empty(clist *l)
   return (l->head.next == &l->head);
 }
 
+/**
+ * Loop over all nodes in the @list and perform the next C statement on them. The current node is stored in @n which must be defined before as pointer to any type.
+ * The list should not be changed during this loop command.
+ **/
 #define CLIST_WALK(n,list) for(n=(void*)(list).head.next; (cnode*)(n) != &(list).head; n=(void*)((cnode*)(n))->next)
+
+/**
+ * Same as @CLIST_WALK(), but allows removal of the current node. This macro requires one more variable to store some temporary pointers.
+ **/
 #define CLIST_WALK_DELSAFE(n,list,tmp) for(n=(void*)(list).head.next; tmp=(void*)((cnode*)(n))->next, (cnode*)(n) != &(list).head; n=(void*)tmp)
+
+/**
+ * Same as @CLIST_WALK(), but it defines the variable for the current node in place. @type should be a pointer type.
+ **/
 #define CLIST_FOR_EACH(type,n,list) for(type n=(void*)(list).head.next; (cnode*)(n) != &(list).head; n=(void*)((cnode*)(n))->next)
+
+/**
+ * Same as @CLIST_WALK_DELSAFE(), but it defines the variable for the current node in place. @type should be a pointer type. The temporary variable must be still known before.
+ **/
 #define CLIST_FOR_EACH_DELSAFE(type,n,list,tmp) for(type n=(void*)(list).head.next; tmp=(void*)((cnode*)(n))->next, (cnode*)(n) != &(list).head; n=(void*)tmp)
 
+/**
+ * Reversed version of @CLIST_FOR_EACH().
+ **/
 #define CLIST_FOR_EACH_BACKWARDS(type,n,list) for(type n=(void*)(list).head.prev; (cnode*)(n) != &(list).head; n=(void*)((cnode*)(n))->prev)
 
 /**

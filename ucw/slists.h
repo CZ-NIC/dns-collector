@@ -123,8 +123,20 @@ static inline void slist_remove_head(slist *l)
 
 /* Loops */
 
+/**
+ * Loop over all nodes in the @list and perform the next C statement on them. The current node is stored in @n which must be defined before as pointer to any type.
+ * The list should not be changed during this loop command.
+ **/
 #define SLIST_WALK(n,list) for(n=(void*)(list).head.next; (n); (n)=(void*)((snode*)(n))->next)
+
+/**
+ * Same as @SLIST_WALK(), but allows removal of the current node. This macro requires one more variable to store the pointer to the previous node (useful for @slist_remove_after()).
+ **/
 #define SLIST_WALK_DELSAFE(n,list,prev) for((prev)=(void*)&(list).head; (n)=(void*)((snode*)prev)->next; (prev)=(((snode*)(prev))->next==(snode*)(n) ? (void*)(n) : (void*)(prev)))
+
+/**
+ * Same as @SLIST_WALK(), but it defines the variable for the current node in place. @type should be a pointer type.
+ **/
 #define SLIST_FOR_EACH(type,n,list) for(type n=(void*)(list).head.next; n; n=(void*)((snode*)(n))->next)
 
 /* Non-trivial functions */
