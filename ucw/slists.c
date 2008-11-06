@@ -40,8 +40,11 @@ slist_insert_before(slist *l, snode *what, snode *before)
 void
 slist_remove(slist *l, snode *n)
 {
-  snode *p = slist_raw_prev(l, n);
-  slist_remove_after(l, p);
+  if (n)
+    {
+      snode *p = slist_raw_prev(l, n);
+      slist_remove_after(l, p);
+    }
 }
 
 #ifdef TEST

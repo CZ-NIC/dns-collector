@@ -21,6 +21,7 @@ Modules
 - <<mempool:,Memory pools>>
 - <<mainloop:,Mainloop>>
 - <<unaligned:,Unaligned data>>
+- <<lists:,Link lists>>
 
 Other features
 --------------
@@ -43,10 +44,6 @@ Yet undocumented modules
   * `binheap.h`
   * `binheap-node.h`
   * `heap.h`
-- Link lists
-  * `clists.h`
-  * `simple-lists.h`
-  * `slists.h`
 - Hash tables
   * `hashtable.h`
 - Trie
