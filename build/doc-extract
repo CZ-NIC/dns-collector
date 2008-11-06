@@ -52,12 +52,14 @@ sub formatNote( $$ ) {
 	print OUT "''''\n";
 	chomp $head;
 	my( $type, $semicolon, $name, $oneline ) = detect( $head );
+	# Just few transformations of the result
 	$oneline =~ s/\s+$//;
 	$oneline =~ s/;?$/;/ if( $semicolon );
 	$head =~ s/;?\s*$/;/ if( $semicolon );
 	$head =~ s/(\.\.\.)/\\$1/g;
 	print OUT "[[${type}_$name]]\n";
 	$head = $oneline if $type eq 'fun';#Remove { from inline functions
+	# Remove the generic hack markup
 	$head =~ s/_OPEN_PAREN_/(/g;
 	$head =~ s/_CLOSE_PAREN_/)/g;
 	print OUT "..................\n";
@@ -88,8 +90,10 @@ sub process( $$ ) {
 	my $head;
 	my $struct;
 	my $def;
+	my $sdepth;
 	while( defined( $line = <FILE> ) ) {
 		chomp $line;
+		# Generic macro hack - replaces the parenthesis so it is valid identifier
 		$line =~ s/$_\(([^()]+)\)/${_}_OPEN_PAREN_${1}_CLOSE_PAREN_/g foreach @{$prefixes};
 		if( $def ) {
 			$head .= "\n".$line;
@@ -101,7 +105,10 @@ sub process( $$ ) {
 			}
 		} elsif( $struct ) {
 			$head .= "\n".$line;
-			if( $line =~ /}/ ) {
+			my $cp = $line;
+			$sdepth += ($cp =~ tr/{//);
+			$sdepth -= ($cp =~ tr/}//);
+			if( !$sdepth ) {
 				formatNote( $head, $buff );
 				$struct = 0;
 				$buff = undef;
@@ -137,7 +144,7 @@ sub process( $$ ) {
 					$buff = undef;
 				} else {
 					$head = $line;
-					$struct = 1;
+					$struct = $sdepth = 1;
 				}
 			} elsif( ( $buff ) = ( $line =~ /\/\*\*\*(.*)\*\*\*\// ) ) {
 				$buff =~ s/\s?//;
@@ -153,7 +160,7 @@ sub process( $$ ) {
 					$head = undef;
 					$buff = undef;
 				} else {
-					$struct = 1;
+					$struct = $sdepth = 1;
 				}
 			} elsif( $line =~ /\/\*\*\*/ ) {
 				$verbatim = 1;
