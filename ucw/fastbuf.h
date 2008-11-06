@@ -86,6 +86,8 @@
  *   - `pos` should be the position in the file corresponding of the location of `bstop` in the buffer.
  *   - Failed callbacks (except `close`) should use @bthrow().
  *   - Any callback pointers may be NULL in case the callback is not implemented.
+ *   - Callbacks can change not only `bptr` and `bstop`, but also the location and size of the buffer;
+ *     the fb-mem back-end takes advantage of it.
  *
  *   - initialization:
  *     * out: `buffer <= bptr == bstop <= bufend` (flushed)
@@ -106,25 +108,8 @@
  *     * `bptr` is set automatically to `bstop`.
  *
  *   - `close`:
- *     * out: `buffer <= bptr == bstop <= bufend` (flushed)
+ *     * in: `buffer <= bptr == bstop <= bufend` (flushed)
  *     * `close` must always free all internal structures, even when it throws an exception.
- *
- *
- * Several dirty tricks can be played:
- *
- *    - The `spout`/`refill` hooks can change not only `bptr` and `bstop`, but also
- *	the location and size of the buffer; the fb-mem back-end takes advantage of it.
- *    - In some cases, the user of the `bdirect` interface can be allowed to modify
- *	the data in the buffer to avoid unnecessary copying. If the back-end
- *	allows such modifications, it can set `fastbuf->can_overwrite_buffer` accordingly:
- *		*  0 if no modification is allowed,
- *		*  1 if the user can modify the buffer on the condition that
- *		     the modifications will be undone before calling the next
- *		     fastbuf operation
- *		*  2 if the user is allowed to overwrite the data in the buffer
- *		     if @bdirect_read_commit_modified() is called afterwards.
- *		     In this case, the back-end must be prepared for trimming
- *		     of the buffer which is done by the commit function.
  *
  ***/
 
@@ -505,12 +490,12 @@ static inline void bputc(struct fastbuf *f, uns c)		/** Write a single character
     bputc_slow(f, c);
 }
 
-static inline uns bavailr(struct fastbuf *f)
+static inline uns bavailr(struct fastbuf *f)			/** Return the length of the cached data to be read. Do not use directly. **/
 {
   return f->bstop - f->bptr;
 }
 
-static inline uns bavailw(struct fastbuf *f)
+static inline uns bavailw(struct fastbuf *f)			/** Return the length of the buffer available for writing. Do not use directly. **/
 {
   return f->bufend - f->bptr;
 }
@@ -656,10 +641,28 @@ static inline int bskip(struct fastbuf *f, uns len) /** Skip @len bytes without 
 }
 
 /*** === Direct I/O on buffers ***/
-// TODO Documentation -- what do they do?
 
-static inline uns
-bdirect_read_prepare(struct fastbuf *f, byte **buf)
+/**
+ * Begin direct reading from fastbuf's internal buffer to avoid unnecessary copying.
+ * The function returns a buffer @buf together with its length in bytes (zero means EOF)
+ * with cached data to be read.
+ *
+ * Some back-ends allow the user to modify the data in the returned buffer to avoid unnecessary.
+ * If the back-end allows such modifications, it can set `f->can_overwrite_buffer` accordingly:
+ *
+ *   - 0 if no modification is allowed,
+ *   - 1 if the user can modify the buffer on the condition that
+ *       the modifications will be undone before calling the next
+ *       fastbuf operation
+ *   - 2 if the user is allowed to overwrite the data in the buffer
+ *       if @bdirect_read_commit_modified() is called afterwards.
+ *       In this case, the back-end must be prepared for trimming
+ *       of the buffer which is done by the commit function.
+ *
+ * The reading must be ended by @bdirect_read_commit() or @bdirect_read_commit_modified(),
+ * unless the user did not read or modified anything.
+ **/
+static inline uns bdirect_read_prepare(struct fastbuf *f, byte **buf)
 {
   if (f->bptr == f->bstop && !f->refill(f))
     {
@@ -670,21 +673,33 @@ bdirect_read_prepare(struct fastbuf *f, byte **buf)
   return bavailr(f);
 }
 
-static inline void
-bdirect_read_commit(struct fastbuf *f, byte *pos)
+/**
+ * End direct reading started by @bdirect_read_prepare() and move the cursor at @pos.
+ * Data in the returned buffer must be same as after @bdirect_read_prepare() and
+ * @pos must point somewhere inside the buffer.
+ **/
+static inline void bdirect_read_commit(struct fastbuf *f, byte *pos)
 {
   f->bptr = pos;
 }
 
-static inline void
-bdirect_read_commit_modified(struct fastbuf *f, byte *pos)
+/**
+ * Similar to @bdirect_read_commit(), but accepts also modified data before @pos.
+ * Note that such modifications are supported only if `f->can_overwrite_buffer == 2`.
+ **/
+static inline void bdirect_read_commit_modified(struct fastbuf *f, byte *pos)
 {
   f->bptr = pos;
   f->buffer = pos;	/* Avoid seeking backwards in the buffer */
 }
 
-static inline uns
-bdirect_write_prepare(struct fastbuf *f, byte **buf)
+/**
+ * Start direct writing to fastbuf's internal buffer to avoid copy overhead.
+ * The function returns the length of the buffer in @buf (at least one byte)
+ * where we can write to. The operation must be ended by @bdirect_write_commit(),
+ * unless nothing is written
+ **/
+static inline uns bdirect_write_prepare(struct fastbuf *f, byte **buf)
 {
   if (f->bptr == f->bufend)
     f->spout(f);
@@ -692,8 +707,12 @@ bdirect_write_prepare(struct fastbuf *f, byte **buf)
   return bavailw(f);
 }
 
-static inline void
-bdirect_write_commit(struct fastbuf *f, byte *pos)
+/**
+ * Commit the data written to the buffer returned by @bdirect_write_prepare().
+ * The length is specified by @pos which must point just after the written data.
+ * Also moves the cursor to @pos.
+ **/
+static inline void bdirect_write_commit(struct fastbuf *f, byte *pos)
 {
   f->bptr = pos;
 }
