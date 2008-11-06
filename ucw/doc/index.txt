@@ -20,6 +20,7 @@ Modules
 - <<conf:,Configuration and command line parser>>
 - <<mempool:,Memory pools>>
 - <<mainloop:,Mainloop>>
+- <<unaligned:,Unaligned data>>
 
 Other features
 --------------
@@ -79,8 +80,6 @@ Yet undocumented modules
   * `eltpool.h`
 - Prefetching of memory
   * `prefetch.h`
-- Unaligned data
-  * `unaligned.h`
 - Compression
   * `lizard.h`
 - Caches
