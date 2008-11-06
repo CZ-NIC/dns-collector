@@ -90,6 +90,6 @@ install-libimages:
 	install -m 644 $(addprefix run/include/images/,$(LIBIMAGES_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/images
 	install -m 644 run/lib/libimages.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
 	install -m 644 run/lib/pkgconfig/libimages.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
-	install -m 644 $(addprefix run/cf/,$(LIBIMAGES_CONFIGS)) $(DESTDIR)$(INSTALL_CONFIG_DIR)
+	install -m 644 $(addprefix run/$(CONFIG_DIR)/,$(LIBIMAGES_CONFIGS)) $(DESTDIR)$(INSTALL_CONFIG_DIR)
 
 .PHONY: install-libimages
