@@ -32,9 +32,9 @@
 #define _C_WORD (_C_ALNUM | _C_INNER)
 #define _C_WSTART (_C_ALPHA | _C_INNER)
 
-extern const unsigned char _c_cat[256], _c_upper[256], _c_lower[256];
+extern const byte _c_cat[256], _c_upper[256], _c_lower[256];
 
-#define Category(x) (_c_cat[(unsigned char)(x)])
+#define Category(x) (_c_cat[(byte)(x)])
 #define Ccat(x,y) (Category(x) & y)
 
 #define Cupper(x) Ccat(x, _C_UPPER)	/** Checks for an upper-case character (`A-Z`). **/
@@ -49,8 +49,8 @@ extern const unsigned char _c_cat[256], _c_upper[256], _c_lower[256];
 #define Cctrl(x) Ccat(x, _C_CTRL)	/** Checks for control characters (`0x0-0x1F`, `0x7F`). **/
 #define Cspace(x) Cblank(x)
 
-#define Cupcase(x) (_c_upper[(unsigned char)(x)]) /** Convert a letter to upper case, leave non-letter characters unchanged. **/
-#define Clocase(x) (_c_lower[(unsigned char)(x)]) /** Convert a letter to lower case, leave non-letter characters unchanged. **/
+#define Cupcase(x) (_c_upper[(byte)(x)]) /** Convert a letter to upper case, leave non-letter characters unchanged. **/
+#define Clocase(x) (_c_lower[(byte)(x)]) /** Convert a letter to lower case, leave non-letter characters unchanged. **/
 
 /**
  * Compute the value of a valid hexadecimal character (ie. passed the @Cxdigit() check).

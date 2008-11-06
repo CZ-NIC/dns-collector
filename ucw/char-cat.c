@@ -10,7 +10,7 @@
 #include "ucw/lib.h"
 #include "ucw/chartype.h"
 
-const unsigned char _c_cat[256] = {
+const byte _c_cat[256] = {
 #define CHAR(code,upper,lower,cat) cat,
 #include "ucw/char-map.h"
 #undef CHAR
