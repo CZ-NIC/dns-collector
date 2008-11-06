@@ -660,7 +660,7 @@ static inline int bskip(struct fastbuf *f, uns len) /** Skip @len bytes without 
  *       of the buffer which is done by the commit function.
  *
  * The reading must be ended by @bdirect_read_commit() or @bdirect_read_commit_modified(),
- * unless the user did not read or modified anything.
+ * unless the user did not read or modify anything.
  **/
 static inline uns bdirect_read_prepare(struct fastbuf *f, byte **buf)
 {
@@ -697,7 +697,7 @@ static inline void bdirect_read_commit_modified(struct fastbuf *f, byte *pos)
  * Start direct writing to fastbuf's internal buffer to avoid copy overhead.
  * The function returns the length of the buffer in @buf (at least one byte)
  * where we can write to. The operation must be ended by @bdirect_write_commit(),
- * unless nothing is written
+ * unless nothing is written.
  **/
 static inline uns bdirect_write_prepare(struct fastbuf *f, byte **buf)
 {
