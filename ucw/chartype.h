@@ -10,6 +10,14 @@
 #ifndef _UCW_CHARTYPE_H
 #define _UCW_CHARTYPE_H
 
+/***
+ * We define our own routines to classify 8-bit characters (based on US-ASCII charset).
+ * This way we bypass most possible problems with different compilation environments.
+ *
+ * All functions and macros accept any numeric parameters and if it is necessary, they simply ignore higher bits.
+ * It does not matter whether a parameter is signed or unsigned.
+ ***/
+
 #define _C_UPPER 1			/* Upper-case letters */
 #define _C_LOWER 2			/* Lower-case letters */
 #define _C_PRINT 4			/* Printable */
@@ -29,21 +37,27 @@ extern const unsigned char _c_cat[256], _c_upper[256], _c_lower[256];
 #define Category(x) (_c_cat[(unsigned char)(x)])
 #define Ccat(x,y) (Category(x) & y)
 
-#define Cupper(x) Ccat(x, _C_UPPER)
-#define Clower(x) Ccat(x, _C_LOWER)
-#define Calpha(x) Ccat(x, _C_ALPHA)
-#define Calnum(x) Ccat(x, _C_ALNUM)
-#define Cprint(x) Ccat(x, _C_PRINT)
-#define Cdigit(x) Ccat(x, _C_DIGIT)
-#define Cxdigit(x) Ccat(x, _C_XDIGIT)
-#define Cword(x) Ccat(x, _C_WORD)
-#define Cblank(x) Ccat(x, _C_BLANK)
-#define Cctrl(x) Ccat(x, _C_CTRL)
+#define Cupper(x) Ccat(x, _C_UPPER)	/** Checks for an upper-case character (`A-Z`). **/
+#define Clower(x) Ccat(x, _C_LOWER)	/** Checks for a lower-case character (`a-z`). **/
+#define Calpha(x) Ccat(x, _C_ALPHA)	/** Checks for an alphabetic character (`a-z`, `A-Z`). **/
+#define Calnum(x) Ccat(x, _C_ALNUM)	/** Checks for an alpha-numeric character (`a-z`, `A-Z`, `0-9`). */
+#define Cprint(x) Ccat(x, _C_PRINT)	/** Checks for printable characters, including 8-bit values (`\t`, `0x20-0x7E`, `0x80-0xFF`). **/
+#define Cdigit(x) Ccat(x, _C_DIGIT)	/** Checks for a digit (`0-9`). **/
+#define Cxdigit(x) Ccat(x, _C_XDIGIT)	/** Checks for a hexadecimal digit (`0-9`, `a-f`, `A-F`). **/
+#define Cword(x) Ccat(x, _C_WORD)	/** Checks for an alpha-numeric character or an inner punctation (`a-z`, `A-Z`, `0-9`, `_`). **/
+#define Cblank(x) Ccat(x, _C_BLANK)	/** Checks for a white space (`0x20`, `\t`, `\n`, `\r`, `0x8`, `0xC`). **/
+#define Cctrl(x) Ccat(x, _C_CTRL)	/** Checks for control characters (`0x0-0x1F`, `0x7F`). **/
 #define Cspace(x) Cblank(x)
 
-#define Cupcase(x) _c_upper[(unsigned char)(x)]
-#define Clocase(x) _c_lower[(unsigned char)(x)]
+#define Cupcase(x) (_c_upper[(unsigned char)(x)]) /** Convert a letter to upper case, leave non-letter characters unchanged. **/
+#define Clocase(x) (_c_lower[(unsigned char)(x)]) /** Convert a letter to lower case, leave non-letter characters unchanged. **/
 
-#define Cxvalue(x) (((x)<'A')?((x)-'0'):(((x)&0xdf)-'A'+10))
+/**
+ * Compute the value of a valid hexadecimal character (ie. passed the @Cxdigit() check).
+ **/
+static inline uns Cxvalue(byte x)
+{
+  return (x < (uns)'A') ? x - '0' : (x & 0xdf) - 'A' + 10;
+}
 
 #endif

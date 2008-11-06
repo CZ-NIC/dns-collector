@@ -7,6 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
+#include "ucw/lib.h"
 #include "ucw/chartype.h"
 
 const unsigned char _c_upper[256] = {

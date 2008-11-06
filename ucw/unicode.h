@@ -16,12 +16,13 @@
 
 /* Macros for handling UTF-8 */
 
-#define UNI_REPLACEMENT 0xfffc
+#define UNI_REPLACEMENT 0xfffc	/** Unicode value used as a default replacement of invalid characters. **/
 
-/* Encode a character from the basic multilingual plane [0, 0xFFFF]
- * (subset of Unicode 4.0); up to 3 bytes needed (RFC2279) */
-static inline byte *
-utf8_put(byte *p, uns u)
+/**
+ * Encode a value from the range `[0, 0xFFFF]`
+ * (basic multilingual plane); up to 3 bytes needed (RFC2279).
+ **/
+static inline byte *utf8_put(byte *p, uns u)
 {
   if (u < 0x80)
     *p++ = u;
@@ -40,10 +41,11 @@ utf8_put(byte *p, uns u)
   return p;
 }
 
-/* Encode a value from the range [0, 0x7FFFFFFF];
- * (superset of Unicode 4.0) up to 6 bytes needed (RFC2279) */
-static inline byte *
-utf8_32_put(byte *p, uns u)
+/**
+ * Encode a value from the range `[0, 0x7FFFFFFF]`;
+ * (superset of Unicode 4.0) up to 6 bytes needed (RFC2279).
+ **/
+static inline byte *utf8_32_put(byte *p, uns u)
 {
   if (u < 0x80)
     *p++ = u;
@@ -83,10 +85,11 @@ put1: *p++ = 0x80 | (u & 0x3f);
 
 #define UTF8_GET_NEXT if (unlikely((*p & 0xc0) != 0x80)) goto bad; u = (u << 6) | (*p++ & 0x3f)
 
-/* Decode a character from the basic multilingual plane [0, 0xFFFF]
- * or return 'repl' if the encoding has been corrupted */
-static inline byte *
-utf8_get_repl(const byte *p, uns *uu, uns repl)
+/**
+ * Decode a value from the range `[0, 0xFFFF]` (basic multilingual plane)
+ * or return @repl if the encoding has been corrupted.
+ **/
+static inline byte *utf8_get_repl(const byte *p, uns *uu, uns repl)
 {
   uns u = *p++;
   if (u < 0x80)
@@ -114,10 +117,11 @@ utf8_get_repl(const byte *p, uns *uu, uns repl)
   return (byte *)p;
 }
 
-/* Decode a value from the range [0, 0x7FFFFFFF] 
- * or return 'repl' if the encoding has been corrupted */
-static inline byte *
-utf8_32_get_repl(const byte *p, uns *uu, uns repl)
+/**
+ * Decode a value from the range `[0, 0x7FFFFFFF]`
+ * or return @repl if the encoding has been corrupted.
+ **/
+static inline byte *utf8_32_get_repl(const byte *p, uns *uu, uns repl)
 {
   uns u = *p++;
   if (u < 0x80)
@@ -163,18 +167,20 @@ get1: UTF8_GET_NEXT;
   return (byte *)p;
 }
 
-/* Decode a character from the basic multilingual plane [0, 0xFFFF]
- * or return UNI_REPLACEMENT if the encoding has been corrupted */
-static inline byte *
-utf8_get(const byte *p, uns *uu)
+/**
+ * Decode a value from the range `[0, 0xFFFF]` (basic multilignual plane)
+ * or return `UNI_REPLACEMENT` if the encoding has been corrupted.
+ **/
+static inline byte *utf8_get(const byte *p, uns *uu)
 {
   return utf8_get_repl(p, uu, UNI_REPLACEMENT);
 }
 
-/* Decode a value from the range [0, 0x7FFFFFFF] 
- * or return UNI_REPLACEMENT if the encoding has been corrupted */
-static inline byte *
-utf8_32_get(const byte *p, uns *uu)
+/**
+ * Decode a value from the range `[0, 0x7FFFFFFF]`
+ * or return `UNI_REPLACEMENT` if the encoding has been corrupted.
+ **/
+static inline byte *utf8_32_get(const byte *p, uns *uu)
 {
   return utf8_32_get_repl(p, uu, UNI_REPLACEMENT);
 }
@@ -188,8 +194,10 @@ utf8_32_get(const byte *p, uns *uu)
 
 #define UTF8_SKIP_BWD(p) while ((*--(p) & 0xc0) == 0x80)
 
-static inline uns
-utf8_space(uns u)
+/**
+ * Return the number of bytes needed to encode a given value from the range `[0, 0x7FFFFFFF]` to UTF-8.
+ **/
+static inline uns utf8_space(uns u)
 {
   if (u < 0x80)
     return 1;
@@ -204,8 +212,10 @@ utf8_space(uns u)
   return 6;
 }
 
-static inline uns
-utf8_encoding_len(uns c)
+/**
+ * Compute the length of a single UTF-8 character from it's first byte. The encoding must be valid.
+ **/
+static inline uns utf8_encoding_len(uns c)
 {
   if (c < 0x80)
     return 1;
@@ -221,10 +231,11 @@ utf8_encoding_len(uns c)
   return 6;
 }
 
-/* Encode a character from the range [0, 0xD7FF] or [0xE000,0x11FFFF];
- * up to 4 bytes needed */
-static inline void *
-utf16_le_put(void *p, uns u)
+/**
+ * Encode an UTF-16LE character from the range `[0, 0xD7FF]` or `[0xE000,0x11FFFF]`;
+ * up to 4 bytes needed.
+ **/
+static inline void *utf16_le_put(void *p, uns u)
 {
   if (u < 0xd800 || (u < 0x10000 && u >= 0xe000))
     {
@@ -241,8 +252,11 @@ utf16_le_put(void *p, uns u)
     ASSERT(0);
 }
 
-static inline void *
-utf16_be_put(void *p, uns u)
+/**
+ * Encode an UTF-16BE character from the range `[0, 0xD7FF]` or `[0xE000,0x11FFFF]`;
+ * up to 4 bytes needed.
+ **/
+static inline void *utf16_be_put(void *p, uns u)
 {
   if (u < 0xd800 || (u < 0x10000 && u >= 0xe000))
     {
@@ -259,10 +273,11 @@ utf16_be_put(void *p, uns u)
     ASSERT(0);
 }
 
-/* Decode a character from the range [0, 0xD7FF] or [0xE000,11FFFF]
- * or return `repl' if the encoding has been corrupted */
-static inline void *
-utf16_le_get_repl(const void *p, uns *uu, uns repl)
+/**
+ * Decode an UTF-16LE character from the range `[0, 0xD7FF]` or `[0xE000,11FFFF]`
+ * or return @repl if the encoding has been corrupted.
+ **/
+static inline void *utf16_le_get_repl(const void *p, uns *uu, uns repl)
 {
   uns u = get_u16_le(p), x, y;
   x = u - 0xd800;
@@ -278,8 +293,11 @@ utf16_le_get_repl(const void *p, uns *uu, uns repl)
   return (void *)(p + 2);
 }
 
-static inline void *
-utf16_be_get_repl(const void *p, uns *uu, uns repl)
+/**
+ * Decode an UTF-16BE character from the range `[0, 0xD7FF]` or `[0xE000,11FFFF]`
+ * or return @repl if the encoding has been corrupted.
+ **/
+static inline void *utf16_be_get_repl(const void *p, uns *uu, uns repl)
 {
   uns u = get_u16_be(p), x, y;
   x = u - 0xd800;
@@ -295,22 +313,28 @@ utf16_be_get_repl(const void *p, uns *uu, uns repl)
   return (void *)(p + 2);
 }
 
-/* Decode a character from the range [0, 0xD7FF] or [0xE000,11FFFF]
- * or return UNI_REPLACEMENT if the encoding has been corrupted */
-static inline void *
-utf16_le_get(const void *p, uns *uu)
+/**
+ * Decode an UTF-16LE  character from the range `[0, 0xD7FF]` or `[0xE000,11FFFF]`
+ * or return `UNI_REPLACEMENT` if the encoding has been corrupted.
+ **/
+static inline void *utf16_le_get(const void *p, uns *uu)
 {
   return utf16_le_get_repl(p, uu, UNI_REPLACEMENT);
 }
 
-static inline void *
-utf16_be_get(const void *p, uns *uu)
+/**
+ * Decode an UTF-16BE  character from the range `[0, 0xD7FF]` or `[0xE000,11FFFF]`
+ * or return `UNI_REPLACEMENT` if the encoding has been corrupted.
+ **/
+static inline void *utf16_be_get(const void *p, uns *uu)
 {
   return utf16_be_get_repl(p, uu, UNI_REPLACEMENT);
 }
 
-static inline uns
-unicode_sanitize_char(uns u)
+/**
+ * Check an Unicode value and if it seems to be useless (defined by Ucwlib; it may change in future) return `UNI_REPLACEMENT` instead.
+ **/
+static inline uns unicode_sanitize_char(uns u)
 {
   if (u >= 0x10000 ||			// We don't accept anything outside the basic plane
       u >= 0xd800 && u < 0xf900 ||	// neither we do surrogates
@@ -322,7 +346,15 @@ unicode_sanitize_char(uns u)
 
 /* unicode-utf8.c */
 
+/**
+ * Count the number of Unicode character in a zero-terminated UTF-8 string.
+ * Returned value for corrupted encoding is undefined, but is never greater than `strlen(str)`.
+ **/
 uns utf8_strlen(const byte *str);
+
+/**
+ * Same as @utf8_strlen(), but returns at most @n characters.
+ **/
 uns utf8_strnlen(const byte *str, uns n);
 
 #endif

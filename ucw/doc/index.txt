@@ -23,6 +23,8 @@ Modules
 - <<unaligned:,Unaligned data>>
 - <<lists:,Link lists>>
 - <<growbuf:,Growing buffers>>
+- <<chartype:,Single-byte characters>>
+- <<unicode:,Multi-byte characters>>
 
 Other features
 --------------
@@ -53,10 +55,6 @@ Yet undocumented modules
   * `bitarray.h`
   * `bitopts.h`
   * `bitsig.h`
-- Character manipulation
-  * `char-map.h`
-  * `chartype.h`
-  * `unicode.h`
 - String manipulation
   * `kmp.h`
   * `kmp-search.h`
