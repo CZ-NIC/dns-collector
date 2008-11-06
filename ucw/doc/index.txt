@@ -22,12 +22,14 @@ Modules
 - <<mainloop:,Mainloop>>
 - <<unaligned:,Unaligned data>>
 - <<lists:,Link lists>>
+- <<growbuf:,Growing buffers>>
 
 Other features
 --------------
 - <<configure:,Compile time configuration>>
 - <<config:,Configuration file syntax>>
 - <<docsys:,Documentation system>>
+- <<generic:,Macro-generated generics>>
 
 Yet undocumented modules
 ------------------------
@@ -37,9 +39,6 @@ Yet undocumented modules
   * `binsearch.h`
 - Primes
   * `prime.h`
-- Growing buffers
-  * `gbuf.h`
-  * `bbuf.h`
 - Heaps
   * `binheap.h`
   * `binheap-node.h`
