@@ -14,7 +14,7 @@
  * We define our own routines to classify 8-bit characters (based on US-ASCII charset).
  * This way we bypass most possible problems with different compilation environments.
  *
- * All functions and macros accept any numeric parameters and if it is necessary, they simply ignore higher bits.
+ * All functions and macros accept any numbers and if it is necessary, they simply ignore higher bits.
  * It does not matter whether a parameter is signed or unsigned.
  ***/
 
