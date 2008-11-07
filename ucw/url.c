@@ -92,12 +92,14 @@ url_deescape(const char *s, char *d)
 	      val = NCC_AND; break;
 	    case '#':
 	      val = NCC_HASH; break;
+#ifndef CONFIG_URL_ESCAPE_COMPAT
 	    case '$':
 	      val = NCC_DOLLAR; break;
 	    case '+':
 	      val = NCC_PLUS; break;
 	    case ',':
 	      val = NCC_COMMA; break;
+#endif
 	    }
 	  *d++ = val;
 	  s += 3;
@@ -137,11 +139,14 @@ url_enescape(const char *s, char *d)
       if (d >= end)
 	return URL_ERR_TOO_LONG;
       if (Calnum(c) ||							/* RFC 2396 (2.1-2.3): Only alphanumerics ... */
-	  c == '-' || c == '_' || c == '.' || c == '+' || c == '~' ||	/* ... and several other exceptions ... */
-	  c == '!' || c == '*' || c == '\'' || c == '(' || c == ')' ||
-	  c == '/' || c == '?' || c == ':' || c == '@' ||		/* ... and reserved chars used for reserved purpose */
-	  c == '=' || c == '&' || c == '#' || c == ';' ||
-	  c == '$' || c == '+' || c == ',')
+	  c == '!' || c == '*' || c == '\'' || c == '(' || c == ')' ||	/* ... and some exceptions and reserved chars */
+	  c == '$' || c == '-' || c == '_' || c == '.' || c == '+' ||
+	  c == ',' || c == '=' || c == '&' || c == '#' || c == ';' ||
+	  c == '/' || c == '?' || c == ':' || c == '@'
+#ifndef CONFIG_URL_ESCAPE_COMPAT
+	  || c == '~'
+#endif
+	)
 	*d++ = *s++;
       else
 	{
