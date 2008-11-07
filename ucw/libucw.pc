@@ -9,6 +9,9 @@ threads=-lpthread
 threads=
 #endif
 
+perl_modules_dir=@INSTALL_PERL_DIR@
+perl_module_flags=-I${perl_modules_dir}
+
 Name: libucw
 Description: A library of utility functions and data structures
 Version: @SHERLOCK_VERSION@
