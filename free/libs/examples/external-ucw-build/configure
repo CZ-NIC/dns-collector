@@ -1,0 +1,46 @@
+#!/usr/bin/perl
+# Configure script for the libucw example
+# (c) 2008 Michal Vaner <vorner@ucw.cz>
+# A lot copyed from ../external/configure
+# (c) 2007 Martin Mares <mj@ucw.cz>
+
+use warnings;
+use strict;
+
+our($srcdir, $libdir);
+BEGIN {
+	# Find the sources
+	my $pkgfile = "test.c";
+	if (!defined ($srcdir = $ENV{"SRCDIR"})) {
+		if (-f $pkgfile) {
+			$srcdir=".";
+		} elsif ($0 =~ m@^(.*)/configure$@ && -f "$1/$pkgfile") {
+			$srcdir=$1;
+		} else {
+			die "Don't know how to find myself. Please set SRCDIR manually.";
+		}
+	}
+	# Ask pkg-config for the rest of configure
+	$libdir=`pkg-config libucw --variable=perl_modules_dir`;
+	chomp $libdir;
+	die "libUCW not found. Is PKG_CONFIG_PATH set properly?" if $? || not defined $libdir;
+}
+use lib $libdir;
+use UCW::Configure;
+
+Init($srcdir, 'default.cfg');
+Log "### Configuring TestApp ###\n\n";
+Include Get("CONFIG");
+# What should be detected?
+require UCW::Configure::Build;
+require UCW::Configure::Paths;
+require UCW::Configure::C;
+require UCW::Configure::Pkg;
+# You could generate your own documentation, too
+# require UCW::Configure::Doc;
+
+# Get some libraries
+UCW::Configure::Pkg::PkgConfig("libucw") or Fail("libUCW is required");
+Finish();
+
+Log "\nConfigured, run `make' to build everything.\n";
