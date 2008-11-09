@@ -31,7 +31,7 @@ tags:
 -include $(o)/depend
 
 $(o)/depend: force
-	$(Q)if [ -s $(o)/depend.new ] ; then $(BUILDSYS_PATH)/mergedeps $(o)/depend $(o)/depend.new ; >$(o)/depend.new ; fi
+	$(Q)if [ -s $(o)/depend.new ] ; then $(BUILDSYS)/mergedeps $(o)/depend $(o)/depend.new ; >$(o)/depend.new ; fi
 
 force:
 
@@ -42,13 +42,13 @@ force:
 
 # Rules for configuration files
 
-run/$(CONFIG_DIR)/%: $(s)/cf/% $(o)/config.mk $(BUILDSYS_PATH)/genconf
+run/$(CONFIG_DIR)/%: $(s)/cf/% $(o)/config.mk $(BUILDSYS)/genconf
 	$(M)CF $<
-	$(Q)$(BUILDSYS_PATH)/genconf $< $@ $(o)/config.mk
+	$(Q)$(BUILDSYS)/genconf $< $@ $(o)/config.mk
 
-$(o)/%.cf: $(s)/%.cf $(o)/config.mk $(BUILDSYS_PATH)/genconf
+$(o)/%.cf: $(s)/%.cf $(o)/config.mk $(BUILDSYS)/genconf
 	$(M)CF $<
-	$(Q)$(BUILDSYS_PATH)/genconf $< $@ $(o)/config.mk
+	$(Q)$(BUILDSYS)/genconf $< $@ $(o)/config.mk
 	$(Q)cp $@ run/$(CONFIG_DIR)/$(basename $(@F))
 
 # Rules for libraries
@@ -68,7 +68,7 @@ endif
 
 $(o)/%.pc: $(s)/%.pc $(o)/%.$(LS)
 	$(M)PC $<
-	$(Q)DEPS="$(shell $(BUILDSYS_PATH)/lib-deps $^)" LIBDIR=$(@D) $(BUILDSYS_PATH)/genconf $< $@ $(o)/config.mk
+	$(Q)DEPS="$(shell $(BUILDSYS)/lib-deps $^)" LIBDIR=$(@D) $(BUILDSYS)/genconf $< $@ $(o)/config.mk
 	$(Q)mkdir -p $(o)/pkgconfig
 	$(Q)$(call symlink,$@,$(o)/pkgconfig)
 
@@ -89,7 +89,7 @@ INSTALL_RUNDIRS+=include lib/pkgconfig
 api: $(API_INCLUDES) $(addprefix run/lib/pkgconfig/,$(addsuffix .pc,$(API_LIBS)))
 
 $(o)/%/.include-stamp:
-	$(Q)$(BUILDSYS_PATH)/install-includes $(<D) run/include/$(IDST) $(?F)
+	$(Q)$(BUILDSYS)/install-includes $(<D) run/include/$(IDST) $(?F)
 	$(Q)touch $@
 
 run/lib/pkgconfig/%.pc:		# RHS supplied in the sub-makefile
@@ -134,11 +134,11 @@ $(o)/%-tt.o: $(s)/%.c $(o)/autoconf.h
 
 $(o)/%-t: $(o)/%-tt.o $(TESTING_DEPS)
 	$(M)LD-TEST $@
-	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(BUILDSYS_PATH)/lib-flags $^) $(LIBS)
+	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(BUILDSYS)/lib-flags $^) $(LIBS)
 
-$(o)/%.test: $(s)/%.t $(BUILDSYS_PATH)/tester
+$(o)/%.test: $(s)/%.t $(BUILDSYS)/tester
 	$(M)TEST $@
-	$(Q)$(BUILDSYS_PATH)/tester --rundir=run $(TESTERFLAGS) $< && touch $@
+	$(Q)$(BUILDSYS)/tester --rundir=run $(TESTERFLAGS) $< && touch $@
 
 # Rules for binaries
 
@@ -146,30 +146,30 @@ BINDIR=bin
 
 $(o)/%: $(o)/%.o
 	$(M)LD $@
-	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(BUILDSYS_PATH)/lib-flags $^) $(LIBS)
+	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(BUILDSYS)/lib-flags $^) $(LIBS)
 	$(Q)$(call symlink,$@,run/$(BINDIR))
 
-$(o)/%: $(s)/%.sh $(o)/config.mk $(BUILDSYS_PATH)/genconf
+$(o)/%: $(s)/%.sh $(o)/config.mk $(BUILDSYS)/genconf
 	$(M)PP $<
-	$(Q)$(BUILDSYS_PATH)/genconf $< $@ $(o)/config.mk
+	$(Q)$(BUILDSYS)/genconf $< $@ $(o)/config.mk
 	$(Q)chmod +x $@
 	$(Q)$(call symlink,$@,run/$(BINDIR))
 
-$(o)/%: %.sh $(o)/config.mk $(BUILDSYS_PATH)/genconf
+$(o)/%: %.sh $(o)/config.mk $(BUILDSYS)/genconf
 	$(M)PP $<
-	$(Q)$(BUILDSYS_PATH)/genconf $< $@ $(o)/config.mk
+	$(Q)$(BUILDSYS)/genconf $< $@ $(o)/config.mk
 	$(Q)chmod +x $@
 	$(Q)$(call symlink,$@,run/$(BINDIR))
 
-$(o)/%: $(s)/%.pl $(o)/config.mk $(BUILDSYS_PATH)/genconf
+$(o)/%: $(s)/%.pl $(o)/config.mk $(BUILDSYS)/genconf
 	$(M)PP $<
-	$(Q)$(BUILDSYS_PATH)/genconf $< $@ $(o)/config.mk
+	$(Q)$(BUILDSYS)/genconf $< $@ $(o)/config.mk
 	$(Q)chmod +x $@
 	$(Q)$(call symlink,$@,run/$(BINDIR))
 
-$(o)/%: %.pl $(o)/config.mk $(BUILDSYS_PATH)/genconf
+$(o)/%: %.pl $(o)/config.mk $(BUILDSYS)/genconf
 	$(M)PP $<
-	$(Q)$(BUILDSYS_PATH)/genconf $< $@ $(o)/config.mk
+	$(Q)$(BUILDSYS)/genconf $< $@ $(o)/config.mk
 	$(Q)chmod +x $@
 	$(Q)$(call symlink,$@,run/$(BINDIR))
 
@@ -196,22 +196,22 @@ $(DATAFILES): $(o)/%: $(s)/%
 
 # Rules for documentation
 
-$(o)/%.html: $(o)/%.txt $(BUILDSYS_PATH)/asciidoc.conf $(BUILDSYS_PATH)/asciidoc-xhtml.conf run/$(DOCDIR)/$(DOC_MODULE)/.dir-stamp
+$(o)/%.html: $(o)/%.txt $(BUILDSYS)/asciidoc.conf $(BUILDSYS)/asciidoc-xhtml.conf run/$(DOCDIR)/$(DOC_MODULE)/.dir-stamp
 	$(M)"DOC-HTML $<"
-	$(Q)asciidoc -e -f $(BUILDSYS_PATH)/asciidoc.conf -f $(BUILDSYS_PATH)/asciidoc-xhtml.conf -f /etc/asciidoc/asciidoc.conf -f /etc/asciidoc/xhtml11.conf $<
+	$(Q)asciidoc -e -f $(BUILDSYS)/asciidoc.conf -f $(BUILDSYS)/asciidoc-xhtml.conf -f /etc/asciidoc/asciidoc.conf -f /etc/asciidoc/xhtml11.conf $<
 	$(Q)$(call symlink,$@,run/$(DOCDIR)/$(DOC_MODULE))
 
 # In reality, we do not depend on the .txt files, but on the corresponding .deflist's.
 # However, the Makefile language cannot express that doc-extract generates both .txt
 # and .deflist, so we always use the .txt's in dependencies.
-$(patsubst %.html,%.txt,$(DOC_INDICES)): $(o)/%.txt: $(patsubst %.html,%.txt,$(DOCS)) $(BUILDSYS_PATH)/doc-defs
+$(patsubst %.html,%.txt,$(DOC_INDICES)): $(o)/%.txt: $(patsubst %.html,%.txt,$(DOCS)) $(BUILDSYS)/doc-defs
 	$(M)"DOC-DEFS $@"
 	$(Q)echo $@: $(DOC_HEAD) $(DOC_LIST) >> $(o)/depend.new
-	$(Q)$(BUILDSYS_PATH)/doc-defs $(DOC_HEAD) $@ $(DOC_LIST)
+	$(Q)$(BUILDSYS)/doc-defs $(DOC_HEAD) $@ $(DOC_LIST)
 
-$(patsubst %.html,%.txt,$(DOCS)): $(o)/%.txt: $(s)/%.txt $(BUILDSYS_PATH)/doc-extract
+$(patsubst %.html,%.txt,$(DOCS)): $(o)/%.txt: $(s)/%.txt $(BUILDSYS)/doc-extract
 	$(M)"DOC-EXT $<"
-	$(Q)$(BUILDSYS_PATH)/doc-extract $< $@ $(o)/depend.new $(s) $(patsubst %.txt,%.deflist,$@)
+	$(Q)$(BUILDSYS)/doc-extract $< $@ $(o)/depend.new $(s) $(patsubst %.txt,%.deflist,$@)
 
 # Don't delete intermediate targets. There shouldn't be any, but due to bugs
 # in GNU Make rules with targets in not-yet-existing directories are ignored

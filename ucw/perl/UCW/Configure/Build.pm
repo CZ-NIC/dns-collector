@@ -11,8 +11,8 @@ use UCW::Configure;
 use strict;
 use warnings;
 
-if (!IsGiven("BUILDSYS_PATH")) {
-	Test("BUILDSYS_PATH", "Looking for UCW build system", sub {
+if (!IsGiven("BUILDSYS")) {
+	Test("BUILDSYS", "Looking for UCW build system", sub {
 		my $path=`pkg-config libucw --variable=build_system`;
 		if($? || not defined $path) {
 			Fail("Not found (is libUCW installed and PKG_CONFIG_PATH set?)");

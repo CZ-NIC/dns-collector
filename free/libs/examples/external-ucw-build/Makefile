@@ -11,12 +11,12 @@ s=.
 obj/config.mk:
 	@echo "You need to run configure first." && false
 
-# Do not show strange errors if the BUILDSYS_PATH is not set
+# Do not show strange errors if the BUILDSYS is not set
 # (means noone yet called configure and it reported above)
-ifdef BUILDSYS_PATH
+ifdef BUILDSYS
 
 # We will use the libucw build system
-include $(BUILDSYS_PATH)/Maketop
+include $(BUILDSYS)/Maketop
 
 # Add the detected flags to all the global flags
 CFLAGS+=$(LIBUCW_CFLAGS)
@@ -29,6 +29,6 @@ PROGS+=$(o)/test
 $(o)/test: $(o)/test.o $(LIBUCW)
 
 # And finally the default rules of the build system
-include $(BUILDSYS_PATH)/Makebottom
+include $(BUILDSYS)/Makebottom
 
 endif

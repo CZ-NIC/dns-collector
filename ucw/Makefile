@@ -134,8 +134,8 @@ endif
 API_LIBS+=libucw
 API_INCLUDES+=$(o)/ucw/.include-stamp
 $(o)/ucw/.include-stamp: $(addprefix $(s)/ucw/,$(LIBUCW_INCLUDES)) $(o)/ucw/autoconf.h
-	$(Q)$(BUILDSYS_PATH)/install-includes $(<D) run/include/ucw $(LIBUCW_INCLUDES)
-	$(Q)$(BUILDSYS_PATH)/install-includes $(o)/ucw run/include/ucw autoconf.h
+	$(Q)$(BUILDSYS)/install-includes $(<D) run/include/ucw $(LIBUCW_INCLUDES)
+	$(Q)$(BUILDSYS)/install-includes $(o)/ucw run/include/ucw autoconf.h
 	$(Q)sed -e 's/^#include "autoconf\.h"/#include <ucw\/autoconf.h>/' <$(s)/ucw/config.h >run/include/ucw/config.h
 	$(Q)touch $@
 run/lib/pkgconfig/libucw.pc: $(o)/ucw/libucw.pc
