@@ -46,15 +46,27 @@ $gccver >= 3000 or Fail "GCC older than 3.0 doesn't support C99 well enough.";
 ### CPU ###
 
 Test("ARCH", "Checking for machine architecture", sub {
-	my $mach = `uname -m`;
+	#
+	# We have to ask GCC for the target architecture, because it may
+	# differ from what uname tells us. This can happen even if we are
+	# not cross-compiling, for example on Linux with amd64 kernel, but
+	# i386 userspace.
+	#
+	my $gcc = Get("CC");
+	my $mach = `$gcc -dumpmachine 2>/dev/null`;
+	if (!$? && $mach ne "") {
+		$mach =~ s/-.*//;
+	} else {
+		$mach = `uname -m`;
+		Fail "Unable to determine machine type" if $? || $mach eq "";
+	}
 	chomp $mach;
-	Fail "Unable to determine machine type" if $? || $mach eq "";
 	if ($mach =~ /^i[0-9]86$/) {
 		return "i386";
 	} elsif ($mach =~ /^(x86[_-]|amd)64$/) {
 		return "amd64";
 	} else {
-		return "unknown";
+		return "unknown ($mach)";
 	}
 });
 
