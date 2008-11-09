@@ -19,9 +19,9 @@ BEGIN {
 		}
 	}
 	# Ask pkg-config for the rest of configure
-	$libdir=`pkg-config libucw --variable=perl_modules_dir`;
+	$libdir=`pkg-config libucw --atleast-version=3.13 --variable=perl_modules_dir`;
 	chomp $libdir;
-	die "Package `libucw' not found. Is PKG_CONFIG_PATH set properly?" if $? || not defined $libdir;
+	die "Package `libucw' (version 3.13 or newer) not found. Is PKG_CONFIG_PATH set properly?" if $? || not defined $libdir;
 }
 use lib $libdir;
 use UCW::Configure;
