@@ -2,7 +2,7 @@
 
 DIRS+=ucw/perl/UCW/Configure
 EXTRA_RUNDIRS+=lib/perl5/UCW/Configure
-UCW_CONFIGURE_PERL_MODULES=$(addsuffix .pm, C Doc Paths Pkg)
+UCW_CONFIGURE_PERL_MODULES=$(addsuffix .pm, C Doc Paths Pkg Build)
 CONFIGURE_MODULES=$(addprefix $(o)/ucw/perl/UCW/Configure/,$(UCW_CONFIGURE_PERL_MODULES))
 PROGS+=$(CONFIGURE_MODULES)
 
