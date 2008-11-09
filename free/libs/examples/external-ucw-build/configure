@@ -1,8 +1,6 @@
 #!/usr/bin/perl
-# Configure script for the libucw example
+# Configure script for the libucw example (inspired by ../external/configure)
 # (c) 2008 Michal Vaner <vorner@ucw.cz>
-# A lot copyed from ../external/configure
-# (c) 2007 Martin Mares <mj@ucw.cz>
 
 use warnings;
 use strict;
@@ -23,7 +21,7 @@ BEGIN {
 	# Ask pkg-config for the rest of configure
 	$libdir=`pkg-config libucw --variable=perl_modules_dir`;
 	chomp $libdir;
-	die "libUCW not found. Is PKG_CONFIG_PATH set properly?" if $? || not defined $libdir;
+	die "Package `libucw' not found. Is PKG_CONFIG_PATH set properly?" if $? || not defined $libdir;
 }
 use lib $libdir;
 use UCW::Configure;

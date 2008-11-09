@@ -12,7 +12,7 @@ obj/config.mk:
 	@echo "You need to run configure first." && false
 
 # Do not show strange errors if the BUILDSYS is not set
-# (means noone yet called configure and it reported above)
+# (it happens if noone called configure as reported above)
 ifdef BUILDSYS
 
 # We will use the libucw build system
