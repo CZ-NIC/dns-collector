@@ -22,3 +22,10 @@ $(o)/$(ULIMIT_DIR)/Ulimit.xs: $(s)/$(ULIMIT_DIR)/Ulimit.xs
 
 $(o)/$(ULIMIT_DIR)/Makefile.PL: $(s)/$(ULIMIT_DIR)/Makefile.PL
 	$(Q)cp $^ $@
+
+INSTALL_TARGETS+=install-perl-ucw-ulimit
+install-perl-ucw-ulimit:
+	install -d -m 755 $(DESTDIR)$(INSTALL_PERL_DIR)/UCW/ $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 $(s)/$(ULIMIT_DIR)/Ulimit.pm $(DESTDIR)$(INSTALL_PERL_DIR)/UCW/
+	install -m 644 $(o)/ucw/perl/Ulimit/arch/auto/UCW/Ulimit/Ulimit.$(SOEXT) $(DESTDIR)$(INSTALL_LIB_DIR)
+.PHONY: install-perl-ucw-ulimit
