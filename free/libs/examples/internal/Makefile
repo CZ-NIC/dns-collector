@@ -10,8 +10,10 @@ s=.
 obj/config.mk:
 	@echo "You need to run configure first." && false
 
+BUILDSYS_PATH=$(s)/build
+
 # We will use the libucw build system
-include $(s)/build/Maketop
+include $(BUILDSYS_PATH)/Maketop
 
 # Set up names of common libraries (to avoid forward references in rules)
 LIBLANG=$(o)/lang/liblang.pc
@@ -32,4 +34,4 @@ $(o)/test: $(o)/test.o $(LIBUCW) $(LIBLANG) $(LIBCHARSET) $(LIBIMAGES)
 TESTING_DEPS=$(LIBUCW)
 
 # And finally the default rules of the build system
-include $(s)/build/Makebottom
+include $(BUILDSYS_PATH)/Makebottom

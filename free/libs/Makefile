@@ -10,11 +10,13 @@ s=.
 obj/config.mk:
 	@echo "You need to run configure first." && false
 
+BUILDSYS_PATH=$(s)/build
+
 # We will use the libucw build system
-include $(s)/build/Maketop
+include $(BUILDSYS_PATH)/Maketop
 
 # Install the build system
-include $(s)/build/Makefile
+include $(BUILDSYS_PATH)/Makefile
 
 # The UCW library
 include $(s)/ucw/Makefile
@@ -60,7 +62,7 @@ endif
 libs: $(LIBUCW) $(LIBSH) $(LIBIMAGES) $(LIBCHARSET) $(LIBLANG)
 
 # And finally the default rules of the build system
-include $(s)/build/Makebottom
+include $(BUILDSYS_PATH)/Makebottom
 
 ifndef CONFIG_LOCAL
 install: all $(INSTALL_TARGETS)
