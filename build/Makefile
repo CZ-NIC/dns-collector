@@ -10,3 +10,10 @@ $(o)/build/genhash: $(o)/build/genhash.o
 # A proper solution would be using a different rule for linking build/*, but
 # as it currently concerns only genhash, it's easier to battle this way.
 $(o)/build/genhash: LIBS=
+
+INSTALL_TARGETS+=install-build
+install-build:
+	install -d -m 755 $(DESTDIR)$(INSTALL_SHARE_DIR)/ucw/build
+	install -m 755 $(addprefix $(s)/build/,install-includes doc-defs doc-extract genconf mergedeps tester lib-deps lib-flags) $(DESTDIR)$(INSTALL_SHARE_DIR)/ucw/build
+	install -m 644 $(addprefix $(s)/build/,asciidoc.conf asciidoc-xhtml.conf Makebottom Maketop) $(DESTDIR)$(INSTALL_SHARE_DIR)/ucw/build
+.PHONY: install-build

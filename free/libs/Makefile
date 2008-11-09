@@ -13,6 +13,9 @@ obj/config.mk:
 # We will use the libucw build system
 include $(s)/build/Maketop
 
+# Install the build system
+include $(s)/build/Makefile
+
 # The UCW library
 include $(s)/ucw/Makefile
 
