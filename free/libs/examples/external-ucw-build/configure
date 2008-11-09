@@ -18,10 +18,12 @@ BEGIN {
 			die "Don't know how to find myself. Please set SRCDIR manually.";
 		}
 	}
-	# Ask pkg-config for the rest of configure
-	$libdir=`pkg-config libucw --atleast-version=3.13 --variable=perl_modules_dir`;
+	# Ask pkg-config if libucw is installed and find its configure modules
+	`pkg-config libucw --atleast-version=3.13`;
+	!$? or die "Package `libucw' (version 3.13 or newer) not found. Is PKG_CONFIG_PATH set properly?";
+	$libdir=`pkg-config libucw --variable=perl_modules_dir`;
 	chomp $libdir;
-	die "Package `libucw' (version 3.13 or newer) not found. Is PKG_CONFIG_PATH set properly?" if $? || not defined $libdir;
+	die "Unable to find the libucw configure system" if $? || not defined $libdir;
 }
 use lib $libdir;
 use UCW::Configure;
