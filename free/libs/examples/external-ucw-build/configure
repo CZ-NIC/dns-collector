@@ -15,15 +15,15 @@ BEGIN {
 		} elsif ($0 =~ m@^(.*)/configure$@ && -f "$1/$pkgfile") {
 			$srcdir=$1;
 		} else {
-			die "Don't know how to find myself. Please set SRCDIR manually.";
+			die "Don't know how to find myself. Please set SRCDIR manually.\n";
 		}
 	}
 	# Ask pkg-config if libucw is installed and find its configure modules
 	`pkg-config libucw --atleast-version=3.13`;
-	!$? or die "Package `libucw' (version 3.13 or newer) not found. Is PKG_CONFIG_PATH set properly?";
+	!$? or die "Package `libucw' (version 3.13 or newer) not found. Is PKG_CONFIG_PATH set properly?\n";
 	$libdir=`pkg-config libucw --variable=perl_modules_dir`;
 	chomp $libdir;
-	die "Unable to find the libucw configure system" if $? || not defined $libdir;
+	die "Unable to find the libucw configure system\n" if $? || not defined $libdir;
 }
 use lib $libdir;
 use UCW::Configure;

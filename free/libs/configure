@@ -14,7 +14,7 @@ BEGIN {
 		} elsif ($0 =~ m@^(.*)/configure$@ && -f "$1/$pkgfile") {
 			$srcdir=$1;
 		} else {
-			die "Don't know how to find myself. Please set SRCDIR manually.";
+			die "Don't know how to find myself. Please set SRCDIR manually.\n";
 		}
 	}
 }
