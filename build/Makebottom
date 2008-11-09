@@ -218,4 +218,4 @@ $(patsubst %.html,%.txt,$(DOCS)): $(o)/%.txt: $(s)/%.txt $(BUILDSYS)/doc-extract
 # when searching for implicit rules and thence targets considered intermediate.
 .SECONDARY:
 
-.PHONY: all clean distclean runtree programs api datafiles force tags configs dust install docs
+.PHONY: all clean distclean runtree programs api datafiles force tags configs dust install docs tests
