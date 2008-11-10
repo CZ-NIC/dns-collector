@@ -26,6 +26,7 @@ Modules
 - <<growbuf:,Growing buffers>>
 - <<chartype:,Single-byte characters>>
 - <<unicode:,Multi-byte characters>>
+- <<prime:,Prime numbers>>
 
 Other features
 --------------
@@ -40,8 +41,6 @@ Yet undocumented modules
   * `sorter/`
 - Binary search
   * `binsearch.h`
-- Primes
-  * `prime.h`
 - Heaps
   * `binheap.h`
   * `binheap-node.h`
