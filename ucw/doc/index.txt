@@ -71,8 +71,6 @@ Yet undocumented modules
 - Address manipulation
   * `url.h`
   * `ipaccess.h`
-- Fixed-sized allocator
-  * `eltpool.h`
 - Prefetching of memory
   * `prefetch.h`
 - Compression
