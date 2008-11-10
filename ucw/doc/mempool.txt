@@ -49,7 +49,7 @@ not need to walk trough it and free each node, you just
 
   struct trie *trie_new(void) {
     struct mempool *pool = mn_new(4096);
-    struct trie *result = mp_alloc_zero(pool, sizeof *result);
+    struct trie *result = mp_alloc_zero(pool, sizeof(*result));
     result->pool = pool;
     return result;
   }
@@ -57,7 +57,7 @@ not need to walk trough it and free each node, you just
   void trie_insert_internal(struct trie_node *where, struct mempool *pool, const char *string) {
     if(*string) {
       if(!where->subs[*string])
-        where->subs[*string] = mp_alloc_zero(pool, sizeof *where->subs[*string]);
+        where->subs[*string] = mp_alloc_zero(pool, sizeof(*where->subs[*string]));
       trie_insert_internal(where->subs[*string], pool, string + 1);
     } else {
       where->present = 1;
@@ -89,7 +89,7 @@ mempool state.
   void load_file(struct mempool *pool, const char *file) {
     struct mempool_state state;
     mp_save(pool, &state);              // Store the current state
-    struct file_data *data = mp_alloc_zero(pool, sizeof *data);
+    struct file_data *data = mp_alloc_zero(pool, sizeof(*data));
     if(!(
         file_open(file, data, pool) &&  // Load the file
         header_load(data, pool) &&
