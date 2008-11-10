@@ -27,6 +27,7 @@ Modules
 - <<chartype:,Single-byte characters>>
 - <<unicode:,Multi-byte characters>>
 - <<prime:,Prime numbers>>
+- <<binsearch:,Binary search>>
 
 Other features
 --------------
@@ -39,8 +40,6 @@ Yet undocumented modules
 ------------------------
 - Sorting
   * `sorter/`
-- Binary search
-  * `binsearch.h`
 - Heaps
   * `binheap.h`
   * `binheap-node.h`
