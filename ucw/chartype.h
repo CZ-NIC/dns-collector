@@ -15,7 +15,8 @@
  * This way we bypass most possible problems with different compilation environments.
  *
  * All functions and macros accept any numbers and if it is necessary, they simply ignore higher bits.
- * It does not matter whether a parameter is signed or unsigned.
+ * It does not matter whether a parameter is signed or unsigned. Parameters are evaluated exactly once,
+ * so they can have side-effects.
  ***/
 
 #define _C_UPPER 1			/* Upper-case letters */
