@@ -19,6 +19,7 @@ Modules
 - <<hash:,Hashing routines>>
 - <<conf:,Configuration and command line parser>>
 - <<mempool:,Memory pools>>
+- <<eltpool:,Fixed-sized allocators>>
 - <<mainloop:,Mainloop>>
 - <<unaligned:,Unaligned data>>
 - <<lists:,Link lists>>
