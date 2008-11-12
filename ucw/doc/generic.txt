@@ -11,6 +11,7 @@ libUCW, and also hints for use of these structures.
 - <<implement,How it is implemented>>
 - Modules with generics
   * <<growbuf:gbuf,`gbuf.h`>>
+  * <<binheap:,`binheap.h`>>
 
 // TODO The module list
 
