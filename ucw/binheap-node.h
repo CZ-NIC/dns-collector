@@ -11,7 +11,7 @@
 #define _UCW_BINHEAP_NODE_H
 
 /***
- * [common]
+ * [[common]]
  * Common definitions
  * ------------------
  ***/
