@@ -28,6 +28,8 @@ Modules
 - <<unicode:,Multi-byte characters>>
 - <<prime:,Prime numbers>>
 - <<binsearch:,Binary search>>
+- <<heap:,Binary heaps>>
+- <<binheap:,Binomial heaps>>
 
 Other features
 --------------
@@ -40,10 +42,6 @@ Yet undocumented modules
 ------------------------
 - Sorting
   * `sorter/`
-- Heaps
-  * `binheap.h`
-  * `binheap-node.h`
-  * `heap.h`
 - Hash tables
   * `hashtable.h`
 - Trie

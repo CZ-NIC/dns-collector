@@ -10,6 +10,15 @@
 #ifndef _UCW_BINHEAP_NODE_H
 #define _UCW_BINHEAP_NODE_H
 
+/***
+ * [common]
+ * Common definitions
+ * ------------------
+ ***/
+
+/**
+ * Common header of binomial heap nodes.
+ **/
 struct bh_node {
   struct bh_node *first_son;
   struct bh_node *last_son;
@@ -17,6 +26,9 @@ struct bh_node {
   byte order;
 };
 
+/**
+ * A binomial heap.
+ **/
 struct bh_heap {
   struct bh_node root;
 };
