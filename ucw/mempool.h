@@ -128,7 +128,7 @@ static inline void *mp_alloc_fast(struct mempool *pool, uns size)
   if (size <= avail)
     {
       pool->state.free[0] = avail - size;
-      return pool->state.last[0] - avail;
+      return (byte *)pool->state.last[0] - avail;
     }
   else
     return mp_alloc_internal(pool, size);
@@ -141,7 +141,7 @@ static inline void *mp_alloc_fast_noalign(struct mempool *pool, uns size)
 {
   if (size <= pool->state.free[0])
     {
-      void *ptr = pool->state.last[0] - pool->state.free[0];
+      void *ptr = (byte *)pool->state.last[0] - pool->state.free[0];
       pool->state.free[0] -= size;
       return ptr;
     }
@@ -198,7 +198,7 @@ static inline void *mp_start_fast(struct mempool *pool, uns size)
     {
       pool->idx = 0;
       pool->state.free[0] = avail;
-      return pool->state.last[0] - avail;
+      return (byte *)pool->state.last[0] - avail;
     }
   else
     return mp_start_internal(pool, size);
@@ -212,7 +212,7 @@ static inline void *mp_start_fast_noalign(struct mempool *pool, uns size)
   if (size <= pool->state.free[0])
     {
       pool->idx = 0;
-      return pool->state.last[0] - pool->state.free[0];
+      return (byte *)pool->state.last[0] - pool->state.free[0];
     }
   else
     return mp_start_internal(pool, size);
@@ -223,7 +223,7 @@ static inline void *mp_start_fast_noalign(struct mempool *pool, uns size)
  **/
 static inline void *mp_ptr(struct mempool *pool)
 {
-  return pool->state.last[pool->idx] - pool->state.free[pool->idx];
+  return (byte *)pool->state.last[pool->idx] - pool->state.free[pool->idx];
 }
 
 /**
@@ -260,7 +260,7 @@ static inline void *mp_expand(struct mempool *pool)
  **/
 static inline void *mp_spread(struct mempool *pool, void *p, uns size)
 {
-  return (((uns)(pool->state.last[pool->idx] - p) >= size) ? p : mp_spread_internal(pool, p, size));
+  return (((uns)((byte *)pool->state.last[pool->idx] - (byte *)p) >= size) ? p : mp_spread_internal(pool, p, size));
 }
 
 /**
@@ -271,7 +271,7 @@ static inline void *mp_spread(struct mempool *pool, void *p, uns size)
 static inline void *mp_end(struct mempool *pool, void *end)
 {
   void *p = mp_ptr(pool);
-  pool->state.free[pool->idx] = pool->state.last[pool->idx] - end;
+  pool->state.free[pool->idx] = (byte *)pool->state.last[pool->idx] - (byte *)end;
   return p;
 }
 
@@ -281,7 +281,7 @@ static inline void *mp_end(struct mempool *pool, void *end)
 static inline uns mp_size(struct mempool *pool, void *ptr)
 {
   uns idx = mp_idx(pool, ptr);
-  return pool->state.last[idx] - ptr - pool->state.free[idx];
+  return ((byte *)pool->state.last[idx] - (byte *)ptr) - pool->state.free[idx];
 }
 
 /**
@@ -297,7 +297,7 @@ uns mp_open(struct mempool *pool, void *ptr);
 static inline uns mp_open_fast(struct mempool *pool, void *ptr)
 {
   pool->idx = mp_idx(pool, ptr);
-  uns size = pool->state.last[pool->idx] - ptr - pool->state.free[pool->idx];
+  uns size = ((byte *)pool->state.last[pool->idx] - (byte *)ptr) - pool->state.free[pool->idx];
   pool->state.free[pool->idx] += size;
   return size;
 }
@@ -321,7 +321,7 @@ static inline void *mp_realloc_fast(struct mempool *pool, void *ptr, uns size)
 {
   mp_open_fast(pool, ptr);
   ptr = mp_grow(pool, size);
-  mp_end(pool, ptr + size);
+  mp_end(pool, (byte *)ptr + size);
   return ptr;
 }
 
