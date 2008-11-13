@@ -22,41 +22,47 @@
  * empty or fills up, they ask the corresponding callback to handle the
  * situation. Back-ends then differ just in the definition of the callbacks.
  *
- * The state of the fastbuf is represented by a `struct fastbuf`, which
- * is a simple structure describing the state of the buffer (the pointers
- * `buffer`, `bufend`), two front-end cursors (`bptr`, `bstop`), position in the file (`pos`)
+ * The state of the fastbuf is represented by a <<struct_fastbuf,`struct fastbuf`>>,
+ * which is a simple structure describing the state of the buffer (the pointers
+ * `buffer`, `bufend`), the front-end cursor (`bptr`), the back-end cursor (`bstop`),
+ * position of the back-end cursor in the file (`pos`), some flags (`flags`)
  * and pointers to the callback functions.
  *
  * The buffer can be in one of the following states:
  *
  * 1. Flushed:
  *
- *    +----------------+---------------------------+
- *    | unused         | free space                |
- *    +----------------+---------------------------+
- *    ^                ^                           ^
- *    buffer        <= bptr == bstop (pos)      <= bufend
+ *    +------------------------------------+---------------------------+
+ *    | unused                             | free space                |
+ *    +------------------------------------+---------------------------+
+ *    ^              ^                     ^                           ^
+ *    buffer      <= bstop (BE pos)     <= bptr (FE pos)            <= bufend
  *
- *   * If `bptr == bstop`, then there is no cached data and
- *     the fastbuf is ready for any read or write operation.
- *     Position of the back-end's cursor equals the front-end's one.
- *   * The interval `[bstop, bufend]` can be used by front-ends
+ *   * This schema describes a fastbuf after its initialization or bflush().
+ *   * There is no cached data and we are ready for any read or write operation
+ *     (well, only if the back-end supports it).
+ *   * The interval `[bptr, bufend]` can be used by front-ends
  *     for writing. If it is empty, the `spout` callback gets called
- *     upon the first write attempt to allocate a new buffer.
- *   * When a front-end needs to read something, it calls the `spout` callback.
- *   * Any of the pointers can be NULL.
+ *     upon the first write attempt to allocate a new buffer. Otherwise
+ *     the fastbuf silently comes to the writing mode.
+ *   * When a front-end needs to read something, it calls the `refill` callback.
+ *   * The pointers can be either all non-`NULL` or all NULL.
+ *   * `bstop == bptr` in most back-ends, but it is not necessary. Some
+ *     in-memory streams take advantage of this.
  *
  * 2. Reading:
  *
- *    +----------------+---------------------------+
- *    | read data      | unused                    |
- *    +----------------+---------------------------+
- *    ^         ^      ^                           ^
- *    buffer <= bptr <= bstop (pos)             <= bufend
+ *    +------------------------------------+---------------------------+
+ *    | read data                          | unused                    |
+ *    +------------------------------------+---------------------------+
+ *    ^               ^                    ^                           ^
+ *    buffer       <= bptr (FE pos)     <= bstop (BE pos)           <= bufend
  *
  *   * If we try to read something, we get to the reading mode.
  *   * No writing is allowed until a flush operation. But note that @bflush()
- *     will simply set `bptr` to `bstop` and it breaks the position of the front-end's cursor.
+ *     will simply set `bptr` to `bstop` before `spout`
+ *     and it breaks the position of the front-end's cursor,
+ *     so the user should seek afwards.
  *   * The interval `[buffer, bstop]` contains a block of data read by the back-end.
  *     `bptr` is the front-end's cursor which points to the next character to be read.
  *     After the last character is read, `bptr == bstop` and the `refill` callback
@@ -65,52 +71,56 @@
  *
  * 3. Writing:
  *
- *    +---------+--------------+-------------------+
- *    | unused  | written data | free space        |
- *    +---------+--------------+-------------------+
- *    ^         ^              ^                   ^
- *    buffer <= bstop (pos)  < bptr             <= bufend
+ *    +-----------------------+----------------+-----------------------+
+ *    | unused                | written data   | free space            |
+ *    +-----------------------+----------------+-----------------------+
+ *    ^            ^                           ^                       ^
+ *    buffer    <= bstop (BE pos)            < bptr (FE pos)        <= bufend
  *
  *   * This schema corresponds to the situation after a write attempt.
  *   * No reading is allowed until a flush operation.
  *   * The `bptr` points at the position where the next character
  *     will be written to. When we want to write, but `bptr == bufend`, we call
- *     the `spout` hook to flush the data and get an empty buffer.
+ *     the `spout` hook to flush the witten data and get an empty buffer.
+ *   * `bstop` usually points at the beginning of the written data,
+ *     but it is not necessary.
  *
  *
  * Rules for back-ends:
  *
  *   - Front-ends are only allowed to change the value of `bptr`, some flags
- *     and if a fatal error occurs, then also `bstop`.
- *   - `buffer <= bstop <= bufend`.
- *   - `pos` should be the position in the file corresponding of the location of `bstop` in the buffer.
+ *     and if a fatal error occurs, then also `bstop`. Back-ends can rely on it.
+ *   - `buffer <= bstop <= bufend` and `buffer <= bptr <= bufend`.
+ *   - `pos` should be the real position in the file corresponding to the location of `bstop` in the buffer.
+ *     It can be modified by any back-end's callback, but the position of `bptr` (`pos + (bptr - bstop)`)
+ *     must stay unchanged (except the `seek` callback of course).
  *   - Failed callbacks (except `close`) should use @bthrow().
- *   - Any callback pointers may be NULL in case the callback is not implemented.
+ *   - Any callback pointer may be NULL in case the callback is not implemented.
  *   - Callbacks can change not only `bptr` and `bstop`, but also the location and size of the buffer;
  *     the fb-mem back-end takes advantage of it.
  *
- *   - initialization:
- *     * out: `buffer <= bptr == bstop <= bufend` (flushed)
+ *   - Initialization:
+ *     * out: `buffer <= bstop <= bptr <= bufend` (flushed).
  *
  *   - `refill`:
- *     * in: `buffer <= bptr == bstop <= bufend` (reading or flushed)
- *     * out: `buffer <= bptr < bstop <= bufend` (reading)
+ *     * in: `buffer <= bstop <= bptr <= bufend` (reading or flushed).
+ *     * out: `buffer <= bptr <= bstop <= bufend` (reading).
+ *     * Resulting `bptr == bstop` signals the end of file.
+ *       The next reading attempt will again call `refill` which can succeed this time.
+ *     * The callback must also return zero on EOF (iff `bptr == bstop`).
  *
  *   - `spout`:
- *     * in: `buffer <= bstop <= bptr <= bufend` (writing or flushed)
- *     * out: `buffer <= bstop <= bufend` (flushed)
- *     * `bptr` is set automatically to `bstop`.
- *     * If the input `bptr` equals ` bstop`, then the resulting `bstop` must be lower than `bufend`.
+ *     * in: `buffer <= bstop <= bptr <= bufend` (writing or flushed).
+ *     * out: `buffer <= bstop <= bptr < bufend` (flushed).
  *
  *   - `seek`:
- *     * in: `buffer <= bstop == bptr <= bufend` (flushed)
- *     * out: `buffer <= bstop <= bufend` (flushed)
- *     * `bptr` is set automatically to `bstop`.
+ *     * in: `buffer <= bstop <= bptr <= bufend` (flushed).
+ *     * in: `(ofs >= 0 && whence == SEEK_SET) || (ofs <= 0 && whence == SEEK_END)`.
+ *     * out: `buffer <= bstop <= bptr <= bufend` (flushed).
  *
  *   - `close`:
- *     * in: `buffer <= bptr == bstop <= bufend` (flushed)
+ *     * in: `buffer <= bstop <= bptr <= bufend` (flushed or after @bthrow()).
  *     * `close` must always free all internal structures, even when it throws an exception.
- *
  ***/
 
 /**
@@ -163,7 +173,7 @@ struct fb_params {
 };
 
 struct cf_section;
-extern struct cf_section fbpar_cf; 	/** Configuration section with which you can fill the `fb_params` **/
+extern struct cf_section fbpar_cf;	/** Configuration section with which you can fill the `fb_params` **/
 extern struct fb_params fbpar_def;	/** The default `fb_params` **/
 
 /**
