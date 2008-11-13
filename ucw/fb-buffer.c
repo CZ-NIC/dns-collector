@@ -14,9 +14,11 @@
 #include <stdlib.h>
 
 static int
-fbbuf_refill(struct fastbuf *f UNUSED)
+fbbuf_refill(struct fastbuf *f)
 {
-  return 0;
+  f->bstop = f->bufend;
+  f->pos = f->bstop - f->buffer;
+  return f->bptr < f->bstop;
 }
 
 static int
@@ -26,10 +28,11 @@ fbbuf_seek(struct fastbuf *f, ucw_off_t pos, int whence)
   ucw_off_t len = f->bufend - f->buffer;
   if (whence == SEEK_END)
     pos += len;
-  ASSERT(pos >= 0 && pos <= len);
+  if (pos < 0 || pos > len)
+    bthrow(f, "fb.seek", "Seek out of range");
   f->bptr = f->buffer + pos;
-  f->bstop = f->bufend;
-  f->pos = len;
+  f->bstop = f->buffer;
+  f->pos = 0;
   return 1;
 }
 

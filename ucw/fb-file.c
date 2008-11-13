@@ -91,7 +91,7 @@ long_seek:
 	  goto long_seek;
 	}
       /* Seek into previous window (do nothing... for example brewind) */
-      else if ((uns)diff <= F->wlen) 
+      else if ((uns)diff <= F->wlen)
         {
 	  f->bstop = f->buffer + F->wlen;
 	  f->bptr = f->bstop - diff;
@@ -165,29 +165,23 @@ bfd_spout(struct fastbuf *f)
       l -= z;
       c += z;
     }
-  f->bptr = f->buffer = FB_BUFFER(f);
+  f->bptr = f->bstop = f->buffer = FB_BUFFER(f);
 }
 
 static int
 bfd_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 {
+  ASSERT(f->bptr == f->bstop);
   /* Delay the seek for the next refill() or spout() call (if whence != SEEK_END). */
-  ucw_off_t l;
   switch (whence)
     {
       case SEEK_SET:
 	f->pos = pos;
 	return 1;
-      case SEEK_CUR:
-	l = f->pos + pos;
-	if ((pos > 0) ^ (l > f->pos))
-	  return 0;
-	f->pos = l;
-	return 1;
-      case SEEK_END:
-	l = ucw_seek(FB_FILE(f)->fd, pos, SEEK_END);
+      case SEEK_END: ;
+	ucw_off_t l = ucw_seek(FB_FILE(f)->fd, pos, SEEK_END);
 	if (l < 0)
-	  return 0;
+	  bthrow(f, "fb.seek", "Error seeking %s: %m", f->name);
 	FB_FILE(f)->wpos = f->pos = l;
 	FB_FILE(f)->wlen = 0;
 	return 1;

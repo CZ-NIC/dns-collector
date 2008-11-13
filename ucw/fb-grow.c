@@ -9,100 +9,107 @@
 
 #include "ucw/lib.h"
 #include "ucw/fastbuf.h"
+#include "ucw/mempool.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
 struct fb_gbuf {
   struct fastbuf fb;
-  byte *last_written;
+  struct mempool *mp;
+  byte *end;
 };
 #define FB_GBUF(f) ((struct fb_gbuf *)(f)->is_fastbuf)
 
-static int
-fbgrow_refill(struct fastbuf *b)
+static int fbgrow_refill(struct fastbuf *b)
 {
-  if (b->bstop != FB_GBUF(b)->last_written)
-    {
-      /* There was an intervening flush */
-      b->bstop = FB_GBUF(b)->last_written;
-      b->pos = b->bstop - b->buffer;
-      return 1;
-    }
-  /* We are at the end */
-  return 0;
+  b->bstop = FB_GBUF(b)->end;
+  b->pos = b->bstop - b->buffer;
+  return b->bstop > b->bptr;
 }
 
-static void
-fbgrow_spout(struct fastbuf *b)
+static void fbgrow_spout(struct fastbuf *b)
 {
-  if (b->bptr >= b->bufend)
+  if (b->bptr == b->bufend)
     {
       uns len = b->bufend - b->buffer;
-      b->buffer = xrealloc(b->buffer, 2*len);
-      b->bufend = b->buffer + 2*len;
-      b->bstop = b->buffer;
-      b->bptr = b->buffer + len;
+      if (FB_GBUF(b)->mp)
+	{
+	  byte *old = b->buffer;
+	  b->buffer = mp_alloc(FB_GBUF(b)->mp, 2 * len);
+	  memcpy(b->buffer, old, len);
+	}
+      else
+        b->buffer = xrealloc(b->buffer, 2 * len);
+      b->bufend = b->buffer + 2 * len;
+      FB_GBUF(b)->end = b->bptr = b->buffer + len;
     }
+  else if (FB_GBUF(b)->end < b->bptr)
+    FB_GBUF(b)->end = b->bptr;
+  b->bstop = b->buffer;
+  b->pos = 0;
 }
 
-static int
-fbgrow_seek(struct fastbuf *b, ucw_off_t pos, int whence)
+static int fbgrow_seek(struct fastbuf *b, ucw_off_t pos, int whence)
 {
-  ASSERT(FB_GBUF(b)->last_written);	/* Seeks allowed only in read mode */
-  ucw_off_t len = FB_GBUF(b)->last_written - b->buffer;
+  ucw_off_t len = FB_GBUF(b)->end - b->buffer;
   if (whence == SEEK_END)
     pos += len;
-  ASSERT(pos >= 0 && pos <= len);
+  if (pos < 0 || pos > len)
+    bthrow(b, "fb.seek", "Seek out of range");
   b->bptr = b->buffer + pos;
-  b->bstop = FB_GBUF(b)->last_written;
-  b->pos = len;
+  b->bstop = b->buffer;
+  b->pos = 0;
   return 1;
 }
 
-static void
-fbgrow_close(struct fastbuf *b)
+static void fbgrow_close(struct fastbuf *b)
 {
   xfree(b->buffer);
   xfree(b);
 }
 
-struct fastbuf *
-fbgrow_create(unsigned basic_size)
+struct fastbuf *fbgrow_create_mp(struct mempool *mp, unsigned basic_size)
 {
-  struct fastbuf *b = xmalloc_zero(sizeof(struct fb_gbuf));
-  b->buffer = xmalloc(basic_size);
+  ASSERT(basic_size);
+  struct fastbuf *b;
+  if (mp)
+    {
+      b = mp_alloc_zero(mp, sizeof(struct fb_gbuf));
+      b->buffer = mp_alloc(mp, basic_size);
+      FB_GBUF(b)->mp = mp;
+    }
+  else
+    {
+      b = xmalloc_zero(sizeof(struct fb_gbuf));
+      b->buffer = xmalloc(basic_size);
+      b->close = fbgrow_close;
+    }
   b->bufend = b->buffer + basic_size;
   b->bptr = b->bstop = b->buffer;
   b->name = "<fbgbuf>";
   b->refill = fbgrow_refill;
   b->spout = fbgrow_spout;
   b->seek = fbgrow_seek;
-  b->close = fbgrow_close;
   b->can_overwrite_buffer = 1;
   fb_tie(b);
   return b;
 }
 
-void
-fbgrow_reset(struct fastbuf *b)
+struct fastbuf *fbgrow_create(unsigned basic_size)
 {
-  b->bptr = b->bstop = b->buffer;
-  b->pos = 0;
-  FB_GBUF(b)->last_written = NULL;
+  return fbgrow_create_mp(NULL, basic_size);
 }
 
-void
-fbgrow_rewind(struct fastbuf *b)
+void fbgrow_reset(struct fastbuf *b)
 {
-  if (!FB_GBUF(b)->last_written)
-    {
-      /* Last operation was a write, so remember the end position */
-      FB_GBUF(b)->last_written = b->bptr;
-    }
-  b->bptr = b->buffer;
-  b->bstop = FB_GBUF(b)->last_written;
-  b->pos = b->bstop - b->buffer;
+  FB_GBUF(b)->end = b->bptr = b->bstop = b->buffer;
+  b->pos = 0;
+}
+
+void fbgrow_rewind(struct fastbuf *b)
+{
+  brewind(b);
 }
 
 #ifdef TEST

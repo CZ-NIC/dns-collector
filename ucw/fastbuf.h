@@ -380,7 +380,10 @@ static inline uns fbbuf_count_written(struct fastbuf *f) /** Calculates, how man
  * All fastbufs of this type are tied to resources automatically.
  ***/
 
+struct mempool;
+
 struct fastbuf *fbgrow_create(unsigned basic_size);	/** Create the growing buffer pre-allocated to @basic_size bytes. **/
+struct fastbuf *fbgrow_create_mp(struct mempool *mp, unsigned basic_size); /** Create the growing buffer pre-allocated to @basic_size bytes. **/
 void fbgrow_reset(struct fastbuf *b);			/** Reset stream and prepare for writing. **/
 void fbgrow_rewind(struct fastbuf *b);			/** Prepare for reading (of already written data). **/
 
@@ -391,7 +394,6 @@ void fbgrow_rewind(struct fastbuf *b);			/** Prepare for reading (of already wri
  * buffer, but this time the buffer is allocated from within a memory pool.
  ***/
 
-struct mempool;
 struct fbpool { /** Structure for fastbufs & mempools. **/
   struct fastbuf fb;
   struct mempool *mp;

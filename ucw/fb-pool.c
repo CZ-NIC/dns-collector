@@ -19,12 +19,11 @@
 static void
 fbpool_spout(struct fastbuf *b)
 {
-  if (b->bptr >= b->bufend)
+  if (b->bptr == b->bufend)
     {
       uns len = b->bufend - b->buffer;
-      b->buffer = mp_expand(FB_POOL(b)->mp);
+      b->bstop = b->buffer = mp_expand(FB_POOL(b)->mp);
       b->bufend = b->buffer + mp_avail(FB_POOL(b)->mp);
-      b->bstop = b->buffer;
       b->bptr = b->buffer + len;
     }
 }
