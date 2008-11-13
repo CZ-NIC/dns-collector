@@ -141,7 +141,7 @@ static inline void bput_utf16_be(struct fastbuf *b, uns u)
  * Write an utf16 character to fastbuf.
  * Little endian version.
  **/
-static inline void bput_utf16_lbe(struct fastbuf *b, uns u)
+static inline void bput_utf16_le(struct fastbuf *b, uns u)
 {
   if (bavailw(b) >= 4)
     b->bptr = utf16_le_put(b->bptr, u);
