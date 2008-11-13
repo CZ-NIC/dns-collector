@@ -93,7 +93,7 @@
  *   - `buffer <= bstop <= bufend` and `buffer <= bptr <= bufend`.
  *   - `pos` should be the real position in the file corresponding to the location of `bstop` in the buffer.
  *     It can be modified by any back-end's callback, but the position of `bptr` (`pos + (bptr - bstop)`)
- *     must stay unchanged (except the `seek` callback of course).
+ *     must stay unchanged after `refill` or `spout`.
  *   - Failed callbacks (except `close`) should use @bthrow().
  *   - Any callback pointer may be NULL in case the callback is not implemented.
  *   - Callbacks can change not only `bptr` and `bstop`, but also the location and size of the buffer;
