@@ -14,5 +14,5 @@ See doc/install.html for build requirements and instructions.
 
 See doc/configure.html if you want to tweak build options.
 
-When you compile the libraries, an API documentation is also built. It will
-appear in run/doc/. (It is not complete yet, though.)
+After you compile the library, you can issue `make docs' to build the API
+documentation. It will appear in run/doc. (It is not complete yet, though.)
