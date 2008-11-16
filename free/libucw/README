@@ -1,14 +1,11 @@
-Sherlock Holmes Libraries 3.99
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The UCW Library 3.99
+~~~~~~~~~~~~~~~~~~~~
 (c) 1997--2008 Martin Mares <mj@ucw.cz>
 (c) 2000--2008 Robert Spalek <robert@ucw.cz>
 (c) 2006--2008 Pavel Charvat <pchar@ucw.cz>
 (c) 2008 Michal Vaner <vorner@ucw.cz>
 
-This package contains all libraries from the freely distributable version
-of the Sherlock Holmes search engine (see http://www.ucw.cz/holmes/).
-
-See doc/using-libs for description of the libraries.
+See doc/using-libs for description of the library.
 
 See doc/install.html for build requirements and instructions.
 
