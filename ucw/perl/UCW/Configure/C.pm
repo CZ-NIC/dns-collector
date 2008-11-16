@@ -130,7 +130,8 @@ Test("CPU_ARCH", "Checking for CPU architecture", sub {
 					elsif ($model >= 3) { $arch = "prescott"; }
 					else { $arch = "pentium4"; }
 				} elsif ($family == 6 && $gccver >= 3003) {
-					if ($model == 15) { $arch = "prescott"; }
+					if ($model == 23) { $arch = "nocona"; }
+					elsif ($model == 15) { $arch = "prescott"; }
 					elsif (($model == 9 || $model == 13) && $gccver >= 3004) { $arch = "pentium-m"; }
 					elsif ($model >= 7) { $arch = "pentium3"; }
 					elsif ($model >= 3) { $arch = "pentium2"; }
