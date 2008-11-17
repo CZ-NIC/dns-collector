@@ -21,6 +21,12 @@ div.menu div.nocount
 	border-color: gray;
 	border-width: 2px;
 }
+div.menu div.logo img
+{
+	margin-left: 4em;
+	width: 4em;
+	height: 4em;
+}
 div.menu div.icons,
 div.menu div.nocount
 {
@@ -40,7 +46,6 @@ div.menu div.links
 {
 	border-bottom-style: solid;
 	border-top-style: solid;
-	margin-top: 2em;
 }
 div.menu a
 {
