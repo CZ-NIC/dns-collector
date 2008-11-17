@@ -1,0 +1,87 @@
+body
+{
+	font-family: serif;
+	margin: 0;
+	padding: 0;
+}
+div.menu
+{
+	position: fixed;
+	overflow: auto;
+	top: 0em;
+	bottom: 0em;
+	left: 0em;
+	width: 12em;
+}
+div.menu div.icons,
+div.menu div.links,
+div.menu div.nocount
+{
+	text-align: center;
+	border-color: gray;
+	border-width: 2px;
+}
+div.menu div.icons,
+div.menu div.nocount
+{
+	border-bottom-style: solid;
+}
+img
+{
+	border: none;
+	margin-top: 0.5ex;
+}
+div.menu div.nocount p
+{
+	margin-left: 0.5ex;
+	margin-right: 0.5ex;
+}
+div.menu div.links
+{
+	border-bottom-style: solid;
+	border-top-style: solid;
+	margin-top: 2em;
+}
+div.menu a
+{
+	display: block;
+	width: 100%;
+	font-size: 125%;
+	margin-top: 0.5ex;
+	margin-bottom: 0.5ex;
+}
+a
+{
+	text-decoration: none;
+}
+a:hover
+{
+	color: white;
+	background: #08A;
+}
+div.main
+{
+	position: fixed;
+	overflow: auto;
+	top: 0em;
+	bottom: 0em;
+	left: 12em;
+	right: 0em;
+	border-style: solid;
+	border-width: 3px;
+	border-color: #08a;
+}
+div.main div.section
+{
+	margin-left: 1ex;
+	margin-right: 0.6ex;
+}
+h1
+{
+	text-align: center;
+	background: #00FFFF;
+	color: black;
+	margin-top: 0em;
+	padding-top: 0.4em;
+	padding-bottom: 0.4em;
+}
