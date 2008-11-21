@@ -63,8 +63,8 @@ endif
 
 %.so:
 	$(M)LD $@
-	$(Q)$(CC) $(LSHARED) $(LDFLAGS) -o $@ $^
-	$(Q)$(call symlink-alias,$@,run/lib,$(*F)$(SONAME_INFIX).so$(SONAME_SUFFIX))
+	$(Q)$(CC) $(LSHARED) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(BUILDSYS)/lib-flags $^) $(LIBS)
+	$(Q)$(call symlink-alias,$@,run/$(SO_RUNDIR),$(*F)$(SONAME_INFIX).so$(SONAME_SUFFIX))
 
 $(o)/%.pc: $(s)/%.pc $(o)/%.$(LS)
 	$(M)PC $<

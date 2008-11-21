@@ -39,6 +39,7 @@ SOEXT=bundle
 else
 SOEXT=so
 endif
+SO_RUNDIR=lib
 
 # Whenever "make -s" (silent) is run, turn on verbose mode (paradoxical, but gives the right result)
 ifneq ($(findstring s,$(MAKEFLAGS)),)
