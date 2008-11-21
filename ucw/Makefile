@@ -76,6 +76,7 @@ include $(s)/ucw/doc/Makefile
 LIBUCW_MOD_PATHS=$(addprefix $(o)/ucw/,$(LIBUCW_MODS))
 
 $(o)/ucw/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
+$(o)/ucw/libucw-pic.a: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 $(o)/ucw/libucw.so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 
 $(o)/ucw/hashfunc.o $(o)/ucw/hashfunc.oo: CFLAGS += -funroll-loops
