@@ -59,7 +59,7 @@ endif
 # Clean needs to be a double-colon rule since we want sub-makefiles to be able
 # to define their own cleanup actions.
 dust::
-	rm -f `find . -path "*~" -or -name "\#*\#" -or -name core`
+	rm -f `find . -path "*~" -or -name "\#*\#"`
 	rm -f allocs.tmp cscope.out TAGS
 
 clean:: dust
