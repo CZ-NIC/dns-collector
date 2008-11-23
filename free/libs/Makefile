@@ -24,6 +24,8 @@ include $(s)/ucw/Makefile
 # Stripped down version
 ifndef CONFIG_UCW_ONLY
 
+TESTING_DEPS=$(LIBSH)
+
 # Install config files
 FREE_CONFIGS=sherlock local
 CONFIGS+=$(FREE_CONFIGS)
