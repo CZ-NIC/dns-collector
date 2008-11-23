@@ -43,11 +43,11 @@ install-configs:
 	install -d -m 755 $(DESTDIR)$(INSTALL_CONFIG_DIR)
 	install -m 644 $(addprefix run/$(CONFIG_DIR)/,$(FREE_CONFIGS)) $(DESTDIR)$(INSTALL_CONFIG_DIR)
 
+# Submakefiles of libraries
 include $(s)/sherlock/Makefile
 endif
 
 ifdef CONFIG_CHARSET
-# Include makefiles of libraries we wish to use
 include $(s)/charset/Makefile
 endif
 

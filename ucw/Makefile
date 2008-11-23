@@ -89,7 +89,10 @@ $(o)/ucw/asort-test: $(o)/ucw/asort-test.o $(LIBUCW)
 $(o)/ucw/redblack-test: $(o)/ucw/redblack-test.o $(LIBUCW)
 $(o)/ucw/binheap-test: $(o)/ucw/binheap-test.o $(LIBUCW)
 $(o)/ucw/lizard-test: $(o)/ucw/lizard-test.o $(LIBUCW)
-$(o)/ucw/kmp-test: $(o)/ucw/kmp-test.o $(LIBUCW) $(LIBCHARSET)
+$(o)/ucw/kmp-test: $(o)/ucw/kmp-test.o $(LIBUCW)
+ifdef CONFIG_CHARSET
+$(o)/ucw/kmp-test: $(LIBCHARSET)
+endif
 $(o)/ucw/ipaccess-test: $(o)/ucw/ipaccess-test.o $(LIBUCW)
 $(o)/ucw/trie-test: $(o)/ucw/trie-test.o $(LIBUCW)
 
