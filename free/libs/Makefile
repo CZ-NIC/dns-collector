@@ -18,22 +18,23 @@ include $(BUILDSYS)/Maketop
 # Install the build system
 include $(BUILDSYS)/Makefile
 
-ifndef CONFIG_UCW_ONLY
 # Set up names of common libraries (to avoid forward references in rules)
+ifdef CONFIG_CHARSET
 LIBCHARSET=$(o)/charset/libcharset.pc
+endif
+ifdef CONFIG_SHERLOCK_LIB
 LIBSH=$(o)/sherlock/libsh.pc
 LIBSHXML=$(o)/sherlock/xml/libshxml.pc
+TESTING_DEPS=$(LIBSH)
+else
+TESTING_DEPS=$(LIBUCW)
 endif
 
 # The UCW library
 include $(s)/ucw/Makefile
 
-# Stripped down version
-ifndef CONFIG_UCW_ONLY
-
-TESTING_DEPS=$(LIBSH)
-
 # Install config files
+ifdef CONFIG_SHERLOCK_LIB
 FREE_CONFIGS=sherlock local
 CONFIGS+=$(FREE_CONFIGS)
 
@@ -42,9 +43,13 @@ install-configs:
 	install -d -m 755 $(DESTDIR)$(INSTALL_CONFIG_DIR)
 	install -m 644 $(addprefix run/$(CONFIG_DIR)/,$(FREE_CONFIGS)) $(DESTDIR)$(INSTALL_CONFIG_DIR)
 
+include $(s)/sherlock/Makefile
+endif
+
+ifdef CONFIG_CHARSET
 # Include makefiles of libraries we wish to use
 include $(s)/charset/Makefile
-include $(s)/sherlock/Makefile
+endif
 
 ifdef CONFIG_LANG
 LIBLANG=$(o)/lang/liblang.pc
@@ -54,12 +59,6 @@ endif
 ifdef CONFIG_IMAGES
 LIBIMAGES=$(o)/images/libimages.pc
 include $(s)/images/Makefile
-endif
-
-else
-
-TESTING_DEPS=$(LIBUCW)
-
 endif
 
 # Build documentation by default?

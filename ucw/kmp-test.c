@@ -50,7 +50,7 @@ test1(void)
   kmp1_cleanup(&kmp);
 }
 
-#ifndef CONFIG_UCW_ONLY		/* This one depends on LIBCHARSET */
+#ifdef CONFIG_CHARSET		/* This one depends on LIBCHARSET */
 
 /* TEST2 - various tracing */
 
@@ -203,7 +203,7 @@ int
 main(void)
 {
   test1();
-#ifndef CONFIG_UCW_ONLY
+#ifdef CONFIG_CHARSET
   test2();
 #endif
   test3();
