@@ -50,6 +50,8 @@ test1(void)
   kmp1_cleanup(&kmp);
 }
 
+#ifndef CONFIG_UCW_ONLY		/* This one depends on LIBCHARSET */
+
 /* TEST2 - various tracing */
 
 #define KMP_PREFIX(x) kmp2_##x
@@ -88,6 +90,8 @@ test2(void)
   kmp2_run(&kmp, "Šíleně žluťoučký kůň úpěl ďábelské ódy labababaks sdahojdhsaladsjhla");
   kmp2_cleanup(&kmp);
 }
+
+#endif
 
 /* TEST3 - random tests */
 
@@ -199,7 +203,9 @@ int
 main(void)
 {
   test1();
+#ifndef CONFIG_UCW_ONLY
   test2();
+#endif
   test3();
   test4();
   return 0;

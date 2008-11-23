@@ -56,6 +56,10 @@ LIBIMAGES=$(o)/images/libimages.pc
 include $(s)/images/Makefile
 endif
 
+else
+
+TESTING_DEPS=$(LIBUCW)
+
 endif
 
 # Build documentation by default?
