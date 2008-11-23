@@ -18,6 +18,13 @@ include $(BUILDSYS)/Maketop
 # Install the build system
 include $(BUILDSYS)/Makefile
 
+ifndef CONFIG_UCW_ONLY
+# Set up names of common libraries (to avoid forward references in rules)
+LIBCHARSET=$(o)/charset/libcharset.pc
+LIBSH=$(o)/sherlock/libsh.pc
+LIBSHXML=$(o)/sherlock/xml/libshxml.pc
+endif
+
 # The UCW library
 include $(s)/ucw/Makefile
 
@@ -34,11 +41,6 @@ INSTALL_TARGETS+=install-configs
 install-configs:
 	install -d -m 755 $(DESTDIR)$(INSTALL_CONFIG_DIR)
 	install -m 644 $(addprefix run/$(CONFIG_DIR)/,$(FREE_CONFIGS)) $(DESTDIR)$(INSTALL_CONFIG_DIR)
-
-# Set up names of common libraries (to avoid forward references in rules)
-LIBCHARSET=$(o)/charset/libcharset.pc
-LIBSH=$(o)/sherlock/libsh.pc
-LIBSHXML=$(o)/sherlock/xml/libshxml.pc
 
 # Include makefiles of libraries we wish to use
 include $(s)/charset/Makefile
