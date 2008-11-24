@@ -42,8 +42,10 @@ INSTALL_TARGETS+=install-configs
 install-configs:
 	install -d -m 755 $(DESTDIR)$(INSTALL_CONFIG_DIR)
 	install -m 644 $(addprefix run/$(CONFIG_DIR)/,$(FREE_CONFIGS)) $(DESTDIR)$(INSTALL_CONFIG_DIR)
+endif
 
-# Submakefiles of libraries
+# Include submakefiles of requested libraries
+ifdef CONFIG_SHERLOCK_LIB
 include $(s)/sherlock/Makefile
 endif
 
