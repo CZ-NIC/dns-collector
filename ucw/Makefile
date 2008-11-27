@@ -58,6 +58,8 @@ LIBUCW_MAIN_INCLUDES= \
 	kmp.h kmp-search.h binsearch.h \
 	partmap.h
 
+export LIBUCW_LIBS=
+
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
 LIBUCW_MODS+=threads-conf workqueue asio fb-direct
@@ -66,6 +68,10 @@ endif
 
 ifdef CONFIG_OWN_GETOPT
 include $(s)/ucw/getopt/Makefile
+endif
+
+ifdef CONFIG_PCRE
+LIBUCW_LIBS+=-lpcre
 endif
 
 LIBUCW_INCLUDES=$(LIBUCW_MAIN_INCLUDES)

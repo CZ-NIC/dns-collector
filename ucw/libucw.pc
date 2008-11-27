@@ -17,4 +17,4 @@ Name: libucw
 Description: A library of utility functions and data structures
 Version: @SHERLOCK_VERSION@
 Cflags: -I${incdir}
-Libs: -L${libdir} -lucw ${threads}
+Libs: -L${libdir} -lucw ${threads} @LIBUCW_LIBS@
