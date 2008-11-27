@@ -198,7 +198,7 @@ $(DATAFILES): $(o)/%: $(s)/%
 
 $(o)/%.html: $(o)/%.txt $(BUILDSYS)/asciidoc.conf $(BUILDSYS)/asciidoc-xhtml.conf run/$(DOCDIR)/$(DOC_MODULE)/.dir-stamp
 	$(M)"DOC-HTML $<"
-	$(Q)asciidoc -e -f $(BUILDSYS)/asciidoc.conf -f $(BUILDSYS)/asciidoc-xhtml.conf -f $(PREFIX)/etc/asciidoc/asciidoc.conf -f $(PREFIX)/etc/asciidoc/xhtml11.conf $<
+	$(Q)asciidoc -e -f $(BUILDSYS)/asciidoc.conf -f $(BUILDSYS)/asciidoc-xhtml.conf -f $(HOST_PREFIX)/etc/asciidoc/asciidoc.conf -f $(HOST_PREFIX)/etc/asciidoc/xhtml11.conf $<
 	$(Q)$(call symlink,$@,run/$(DOCDIR)/$(DOC_MODULE))
 
 # In reality, we do not depend on the .txt files, but on the corresponding .deflist's.
