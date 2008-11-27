@@ -9,6 +9,12 @@ threads=-lpthread
 threads=
 #endif
 
+#ifdef CONFIG_PCRE
+regex=-lpcre
+#else
+regex=
+#endif
+
 perl_modules_dir=@INSTALL_PERL_DIR@
 perl_module_flags=-I${perl_modules_dir}
 build_system=@INSTALL_SHARE_DIR@/ucw/build
@@ -17,4 +23,4 @@ Name: libucw
 Description: A library of utility functions and data structures
 Version: @SHERLOCK_VERSION@
 Cflags: -I${incdir}
-Libs: -L${libdir} -lucw ${threads} @LIBUCW_LIBS@
+Libs: -L${libdir} -lucw ${threads} ${regex}
