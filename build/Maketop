@@ -36,8 +36,10 @@ endif
 
 ifdef CONFIG_DARWIN
 SOEXT=bundle
+PREFIX=/sw
 else
 SOEXT=so
+PREFIX=
 endif
 SO_RUNDIR=lib
 

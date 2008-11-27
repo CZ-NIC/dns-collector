@@ -208,11 +208,7 @@ rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
 
 /* BSD regular expression library */
 
-#ifdef CONFIG_OWN_BSD_REGEX
-#include "ucw/regex/regex-sh.h"
-#else
 #include <regex.h>
-#endif
 
 #define INITIAL_MEM 1024		/* Initial space allocated for each pattern */
 #define CHAR_SET_SIZE 256		/* How many characters in the character set.  */

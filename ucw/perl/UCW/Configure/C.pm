@@ -257,6 +257,10 @@ if (IsSet("CONFIG_DARWIN")) {
 	# Fill in some constants not found in the system header files
 	Set("SOL_TCP" => 6);		# missing in /usr/include/netinet/tcp.h
 	Set("O_DIRECT" => 0);		# Darwin doesn't support direct IO, so make Sherlock at least compilable
+	if (!IsSet("CONFIG_POSIX_REGEX") && !IsSet("CONFIG_PCRE")) {
+		Set("CONFIG_POSIX_REGEX" => 1);
+		Warn "BSD regexp library on Darwin isn't compatible, using POSIX regexp.\n";
+	}
 }
 
 ### Writing C headers with configuration ###
