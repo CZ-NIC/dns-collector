@@ -1,0 +1,15 @@
+Compression
+===========
+
+The library contains a compression routine, called LiZaRd.  It is
+modified Lempel-Ziv 77 method with slightly worse compression ratio,
+but with faster compression and decompression.
+
+// TODO Meaning of the abbreviation
+// TODO Actual numbers how fast it is?
+
+- <<basic,Basic application>>
+- <<safe,Safe decompression>>
+- <<adler,Adler-32 checksum>>
+
+!!ucw/lizard.h

@@ -30,6 +30,7 @@ Modules
 - <<binsearch:,Binary search>>
 - <<heap:,Binary heaps>>
 - <<binheap:,Binomial heaps>>
+- <<compress:,Compression>>
 
 Other features
 --------------
@@ -69,8 +70,6 @@ Yet undocumented modules
   * `ipaccess.h`
 - Prefetching of memory
   * `prefetch.h`
-- Compression
-  * `lizard.h`
 - Caches
   * `qache.h`
 - Threads

@@ -13,6 +13,9 @@ There are non-cryptographic hashes as well.
 - <<sha1:sha1_hmac(),SHA1_HMAC>>
 - <<usage,Common usage>>
 
+<<checksum,Checksums>>:
+- <<crypto:adler,Adler-32>>
+
 <<nocrypto,Non-cryptographic ones>>:
 
 - <<strhash,String & block hashes>>
@@ -63,9 +66,21 @@ SHA1 has the same interface, so the same two ways apply.
 
 See also <<string:mem_to_hex()>>.
 
+[[checksum]]
+Checksums
+---------
+
+Their purpose is checking against random data changes, hardware
+failures and alike. They are not to be used against aimed attacks.
+
+The <<compress:adler,Adler-32 checksum>> is documented in the
+<<compression,compression capter>>.
+
 [[nocrypto]]
 Non-cryptographic hashes
 ------------------------
+
+They are usually used to identify values in hash tables.
 
 All these functions expect to be moduled by the size of a hash table.
 The size should be a prime number (it gives better distribution).
