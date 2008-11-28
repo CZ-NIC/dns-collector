@@ -145,8 +145,4 @@ static inline uns adler32(const byte *buf, uns len)
   return adler32_update(1, buf, len);
 }
 
-a
-a
-a
-a
 #endif
