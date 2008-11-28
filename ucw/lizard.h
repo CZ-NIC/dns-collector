@@ -87,18 +87,35 @@ int lizard_decompress(const byte *in, byte *out);
 struct lizard_buffer;	/** Type of the output buffer for @lizard_decompress_safe(). **/
 
 struct lizard_buffer *lizard_alloc(void);	/** Get me a new <<struct_lizard_buffer,`lizard_buffer`>>. **/
-void lizard_free(struct lizard_buffer *buf);	/** Return memory used by a <<struct_lizard_buffer,`lizard_buffer`>>. **/
+/**
+ * Return memory used by a <<struct_lizard_buffer,`lizard_buffer`>>.
+ * It frees even the data stored in it (the result of
+ * @lizard_decompress_safe() call that used this buffer).
+ **/
+void lizard_free(struct lizard_buffer *buf);
 
 /**
- * Decompress data previously compressed by @lizard_compress().
- * Input is taken from @in. @buf is used to store the output.
- * You need to provide the length of the uncompressed data in @expected_length.
+ * This one acts much like @lizard_decompress(). The difference is it
+ * checks the data to be of correct length (therefore it will not
+ * crash on invalid data).
  *
- * The pointer to data is returned.
+ * It decompresses data provided by @in. The @buf is used to get the
+ * memory for output (you get one by @lizard_alloc()).
  *
- * If an error occurs, NULL is returned and `errno` is set.
- * `EINVAL` means the actual length does not match @expected_length.
- * `EFAULT` means a segfault was encountered while decompressing (probably @expected_length was way too low).
+ * The pointer to decompressed data is returned. To free it, free the
+ * buffer by @lizard_free().
+ *
+ * In the case of error, NULL is returned. In that case, `errno` is
+ * set either to `EINVAL` (expected_length does not match) or to
+ * `EFAULT` (a segfault has been caught while decompressing -- it
+ * probably means expected_length was set way too low). Both cases
+ * suggest either wrongly computed length or data corruption.
+ *
+ * The @buf argument may be reused for multiple decompresses. However,
+ * the data will be overwritten by the next call.
+ *
+ * Beware this function is not thread-safe and is not even reentrant
+ * (because of internal segfault handling).
  **/
 byte *lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uns expected_length);
 
@@ -128,4 +145,8 @@ static inline uns adler32(const byte *buf, uns len)
   return adler32_update(1, buf, len);
 }
 
+a
+a
+a
+a
 #endif
