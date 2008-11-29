@@ -26,21 +26,24 @@ API_LIBS=
 # Various files whose type does not fit into PROGS
 DATAFILES=
 
+ifdef CONFIG_DARWIN
+DYNAMIC_LIBRARIES=dylib
+SOEXT=bundle
+HOST_PREFIX=/sw
+else
+DYNAMIC_LIBRARIES=so
+SOEXT=so
+HOST_PREFIX=
+endif
+
 ifdef CONFIG_SHARED
-LS=so
+LS=$(DYNAMIC_LIBRARIES)
 OS=oo
 else
 LS=a
 OS=o
 endif
 
-ifdef CONFIG_DARWIN
-SOEXT=bundle
-HOST_PREFIX=/sw
-else
-SOEXT=so
-HOST_PREFIX=
-endif
 SO_RUNDIR=lib
 
 # Whenever "make -s" (silent) is run, turn on verbose mode (paradoxical, but gives the right result)
