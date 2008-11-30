@@ -25,14 +25,21 @@ struct fb_params fbpar_def = {
 static char *
 fbpar_cf_commit(struct fb_params *p UNUSED)
 {
-#ifndef CONFIG_UCW_THREADS
   if (p->type == FB_DIRECT)
-    return "Direct I/O is supported only with CONFIG_UCW_THREADS";
+    {
+#ifndef CONFIG_UCW_THREADS
+      return "Direct I/O is supported only with CONFIG_UCW_THREADS";
+#endif
+#ifdef CONFIG_DARWIN
+      return "Direct I/O is not supported on darwin";
+#endif
+#ifndef CONFIG_DIRECT_IO
+      return "Direct I/O disabled by configure switch -CONFIG_DIRECT_IO";
 #endif
 #ifndef CONFIG_UCW_FB_DIRECT
-  if (p->type == FB_DIRECT)
-    return "Direct I/O is disabled";
+      return "Direct I/O disabled by configure switch -CONFIG_UCW_FB_DIRECT";
 #endif
+    }
   return NULL;
 }
 
