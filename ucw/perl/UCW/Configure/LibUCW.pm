@@ -43,6 +43,19 @@ if (Get("CPU_ARCH") eq "default" || Get("CPU_ARCH") =~ /^i[345]86$/) {
 	Set("CONFIG_UCW_RADIX_SORTER_BITS" => 12);
 }
 
+# fb_direct needs threads
+if (!IsSet("CONFIG_UCW_THREADS")) {
+	if (IsGiven("CONFIG_DIRECT") && IsSet("CONFIG_DIRECT")) {
+		if (!IsGiven("CONFIG_UCW_THREADS")) {
+			Set("CONFIG_UCW_THREADS");
+		} else {
+			Fail("CONFIG_DIRECT needs CONFIG_UCW_THREADS");
+		}
+	} else {
+		UnSet("CONFIG_DIRECT");
+	}
+}
+
 PostConfig {
 	AtWrite {
 		UCW::Configure::C::ConfigHeader("ucw/autoconf.h", [
