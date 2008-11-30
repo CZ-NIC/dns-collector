@@ -64,7 +64,7 @@ LIBUCW_MODS+=threads-conf workqueue asio
 LIBUCW_MAIN_INCLUDES+=workqueue.h semaphore.h asio.h
 endif
 
-ifdef CONFIG_DIRECT
+ifdef CONFIG_UCW_FB_DIRECT
 LIBUCW_MODS+=fb-direct
 endif
 

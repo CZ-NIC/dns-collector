@@ -29,7 +29,7 @@ fbpar_cf_commit(struct fb_params *p UNUSED)
   if (p->type == FB_DIRECT)
     return "Direct I/O is supported only with CONFIG_UCW_THREADS";
 #endif
-#ifndef CONFIG_DIRECT
+#ifndef CONFIG_UCW_FB_DIRECT
   if (p->type == FB_DIRECT)
     return "Direct I/O is disabled";
 #endif
@@ -76,7 +76,7 @@ bopen_fd_internal(int fd, struct fb_params *params, uns mode, const char *name)
   struct fastbuf *fb;
   switch (params->type)
     {
-#ifdef CONFIG_DIRECT
+#ifdef CONFIG_UCW_FB_DIRECT
       case FB_DIRECT:
 	fb = fbdir_open_fd_internal(fd, name, params->asio,
 	    params->buffer_size ? : fbpar_def.buffer_size,
@@ -106,7 +106,7 @@ bopen_file_internal(const char *name, int mode, struct fb_params *params, int tr
 {
   if (!params)
     params = &fbpar_def;
-#ifdef CONFIG_DIRECT
+#ifdef CONFIG_UCW_FB_DIRECT
   if (params->type == FB_DIRECT && !fbdir_cheat)
     mode |= O_DIRECT;
 #endif
