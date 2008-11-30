@@ -256,11 +256,7 @@ if (IsSet("CONFIG_DARWIN")) {
 	Append("COPT" => "-I/sw/include");
 	# Fill in some constants not found in the system header files
 	Set("SOL_TCP" => 6);		# missing in /usr/include/netinet/tcp.h
-	if(IsGiven("O_DIRECT") && IsSet("O_DIRECT") && (Get("O_DIRECT") != 0))
-	{
-		Fail("Darwin does not support direct IO");
-	}
-	Set("O_DIRECT" => 0);
+	Set("O_DIRECT" => 0);		# Darwin doesn't support direct IO, so make Sherlock at least compilable
 }
 
 ### Writing C headers with configuration ###
