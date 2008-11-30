@@ -60,8 +60,12 @@ LIBUCW_MAIN_INCLUDES= \
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
-LIBUCW_MODS+=threads-conf workqueue asio fb-direct
+LIBUCW_MODS+=threads-conf workqueue asio
 LIBUCW_MAIN_INCLUDES+=workqueue.h semaphore.h asio.h
+endif
+
+ifdef CONFIG_DIRECT
+LIBUCW_MODS+=fb-direct
 endif
 
 ifdef CONFIG_OWN_GETOPT
