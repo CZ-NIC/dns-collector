@@ -279,9 +279,11 @@ void bfix_tmp_file(struct fastbuf *fb, const char *name);
 struct fastbuf *bfdopen_internal(int fd, const char *name, uns buflen);
 struct fastbuf *bfmmopen_internal(int fd, const char *name, uns mode);
 
+#ifdef CONFIG_DIRECT
 extern uns fbdir_cheat;
 struct asio_queue;
 struct fastbuf *fbdir_open_fd_internal(int fd, const char *name, struct asio_queue *io_queue, uns buffer_size, uns read_ahead, uns write_back);
+#endif
 
 void bclose_file_helper(struct fastbuf *f, int fd, int is_temp_file);
 
