@@ -16,11 +16,7 @@
 #include <unistd.h>
 
 #define COPY
-#ifdef O_DIRECT
 #define DIRECT O_DIRECT
-#else
-#define DIRECT 0	// Direct IO not supported, fallback to normal mode
-#endif
 
 static timestamp_t timer;
 
