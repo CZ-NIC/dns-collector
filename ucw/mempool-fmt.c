@@ -37,7 +37,7 @@ mp_vprintf_at(struct mempool *mp, uns ofs, const char *fmt, va_list args)
     }
   else if ((uns)cnt >= mp_avail(mp) - ofs)
     {
-      ret = mp_grow(mp, cnt + 1) + ofs;
+      ret = mp_grow(mp, ofs + cnt + 1) + ofs;
       va_copy(args2, args);
       int cnt2 = vsnprintf(ret, cnt + 1, fmt, args2);
       va_end(args2);
