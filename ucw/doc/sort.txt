@@ -13,7 +13,9 @@ All routines described below are <<generic:,generic algorithms>>.
   * <<mandatory-simple,Mandatory macros>>
   * <<optional-simple,Optional macros>>
   * <<example-simple,Example>>
-- <<array,Advanced array sorting>>
+- <<array,Huge array sorting>>
+  * <<mandatory-array,Mandatory macros>>
+  * <<optional-array,Optional macros>>
 - <<external,External sorting>>
 
 [[array-simple]]
@@ -24,19 +26,21 @@ If you want to sort some data in memory and you aren't too picky about
 setting how, you just use the routine defined in
 `sorter/array-simple.h`. It is an optimised hybrid
 quick-sort/insert-sort algorithm (quick-sort is used to split the
-input into small parts, each is then sorted by insert-sort).
+input into small parts, each is then sorted by insert-sort). It is
+more than 2 times faster than stdlib's qsort(), mostly because of
+inlining.
 
 You need to define few macros and include the header. You get a
 sorting function in return. It will be called
 <<fun__GENERIC_LINK_|ASORT_PREFIX|sort|,`ASORT_PREFIX(sort)`>>.
 
-[mandatory-simple]
+[[mandatory-simple]]
 Mandatory macros
 ~~~~~~~~~~~~~~~~
 - `ASORT_PREFIX(name)` -- The identifier generating macro.
 - `ASORT_KEY_TYPE` -- Data type of a single array entry key.
 
-[optional-simple]
+[[optional-simple]]
 Optional macros
 ~~~~~~~~~~~~~~~
 - `ASORT_ELT(i)` -- Indexing macro. Returns the key of the
@@ -54,7 +58,7 @@ Optional macros
 
 !!ucw/sorter/array-simple.h ASORT_PREFIX
 
-[example-simple]
+[[example-simple]]
 Example
 ~~~~~~~
 
@@ -87,3 +91,46 @@ to sort them by the strings.
 
 Now we got a complicated_sort(uns array_size, struct elem *odd_array,
 struct *even_array) function to perform our sorting.
+
+[[array]]
+Huge array sorting
+------------------
+
+This one is very similar to the simple array sorter, but it is
+optimised for huge arrays. It is used mostly by the
+<<external,external sorter>> machinery described below, but you can
+use it directly.
+
+It differs in few details:
+- It supports only continuous arrays, no indexing macro can be
+  provided.
+- It is able to sort in parallel on SMP systems. It assumes all
+  callbacks you provide are thread-safe.
+- If you provide a monotone hash function (if `hash(x) < hash(y)`, then
+  `x < y`, but `x` and `y` may differ when `hash(x) == hash(y)`), it
+  will use it to gain some more speed by radix-sort.
+
+[[mandatory-array]]
+Mandatory macros
+~~~~~~~~~~~~~~~~
+
+- `ASORT_PREFIX(x)` -- The identifier generating macro.
+- `ASORT_KEY_TYPE` -- Type of elements in the array.
+
+[[optional-array]]
+Optional macros
+~~~~~~~~~~~~~~~
+
+- `ASORT_LT(x,y)` -- Comparing macro. Uses the `<` operator if not
+  provided.
+- `ASORT_HASH(x)` -- A monotone hash function (or macro). Should
+  return `uns`.
+- `ASORT_LONG_HASH(x)` -- Like `ASORT_HASH(x)`, but returns 64-bit
+  number instead of 32-bit.
+- `ASORT_TRESHOLD` -- How small should a chunk of data be to be sorted
+  by insert-sort? Defaults to `8` elements.
+- `ASORT_RADIX_BITS` -- How many bits of the hash function should be
+  used at once for radix-sort? The default is guessed from your
+  architecture.
+
+!!ucw/sorter/array.h ASORT_PREFIX

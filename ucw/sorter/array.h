@@ -284,11 +284,25 @@ static void Q(radix_split)(void *src_ptr, void *dest_ptr, uns num_elts, uns *ptr
 
 #endif
 
-static Q(key) *Q(sort)(Q(key) *array, uns num_elts
 #ifdef ASORT_HASH
-  , Q(key) *buffer, uns hash_bits
+#define ASORT_HASH_ARGS , Q(key) *buffer, uns hash_bits
+#else
+#define ASORT_HASH_ARGS
 #endif
-  )
+
+/**
+ * The generated function. The @array is the data to be sorted, @num_elts tells
+ * how many elements the array has.  If you did not provide `ASORT_HASH`, then
+ * the `ASORT_HASH_ARGS` is empty (there are only the two parameters in that
+ * case).  When you provide it, the function gains two more parameters in the
+ * `ASORT_HASH_ARGS` macro. They are `ASORT_KEY_TYPE *@buffer`, which must be a
+ * memory buffer of the same size as the input array, and `uns @hash_bits`,
+ * specifying how many significant bits the hash function returns.
+ *
+ * The function returns pointer to the sorted data, either the @array or the
+ * @buffer argument.
+ **/
+static ASORT_KEY_TYPE *ASORT_PREFIX(sort)(ASORT_KEY_TYPE *array, uns num_elts ASORT_HASH_ARGS)
 {
   struct asort_context ctx = {
     .array = array,
@@ -318,4 +332,5 @@ static Q(key) *Q(sort)(Q(key) *array, uns num_elts
 #undef ASORT_RADIX_MASK
 #undef ASORT_SWAP
 #undef ASORT_THRESHOLD
+#undef ASORT_HASH_ARGS
 #undef Q
