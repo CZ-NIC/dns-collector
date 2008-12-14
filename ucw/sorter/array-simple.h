@@ -57,15 +57,19 @@
 #endif
 
 #ifndef ASORT_ELT
-#define ASORT_ARRAY_ARG
+#define ASORT_ARRAY_ARG ASORT_KEY_TYPE *array,
 #define ASORT_ELT(i) array[i]
+#else
+#define ASORT_ARRAY_ARG
 #endif
 
-static void ASORT_PREFIX(sort)(
-#ifdef ASORT_ARRAY_ARG
-  ASORT_KEY_TYPE *array,
-#endif
-  uns array_size ASORT_EXTRA_ARGS)
+/**
+ * The generated sorting function. If `ASORT_ELT` macro is not provided, the
+ * @ASORT_ARRAY_ARG is equal to `ASORT_KEY_TYPE *array` and is the array to be
+ * sorted. If the macro is provided, this parameter is omitted. In that case,
+ * you can sort global variables or pass your structure by @ASORT_EXTRA_ARGS.
+ **/
+static void ASORT_PREFIX(sort)(ASORT_ARRAY_ARG uns array_size ASORT_EXTRA_ARGS)
 {
   struct stk { int l, r; } stack[8*sizeof(uns)];
   int l, r, left, right, m;

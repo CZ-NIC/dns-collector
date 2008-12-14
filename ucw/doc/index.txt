@@ -27,6 +27,7 @@ Modules
 - <<chartype:,Single-byte characters>>
 - <<unicode:,Multi-byte characters>>
 - <<prime:,Prime numbers>>
+- <<sort:,Sorting>>
 - <<binsearch:,Binary search>>
 - <<heap:,Binary heaps>>
 - <<binheap:,Binomial heaps>>
@@ -41,8 +42,6 @@ Other features
 
 Yet undocumented modules
 ------------------------
-- Sorting
-  * `sorter/`
 - Hash tables
   * `hashtable.h`
 - Trie

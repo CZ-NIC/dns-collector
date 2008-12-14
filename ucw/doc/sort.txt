@@ -1,0 +1,89 @@
+Sorting
+=======
+
+A very common need is sorting data. Therefore libUCW contains few
+routines to accomplish that task. They are much more universal than
+qsort(), since they allow you to sort structures indexed by a macro,
+sort data externally, if they do not fit into memory, merge data with
+the same keys and sort data of variable length.
+
+All routines described below are <<generic:,generic algorithms>>.
+
+- <<array-simple,Simple array sorting>>
+  * <<mandatory-simple,Mandatory macros>>
+  * <<optional-simple,Optional macros>>
+  * <<example-simple,Example>>
+- <<array,Advanced array sorting>>
+- <<external,External sorting>>
+
+[[array-simple]]
+Simple array sorting
+--------------------
+
+If you want to sort some data in memory and you aren't too picky about
+setting how, you just use the routine defined in
+`sorter/array-simple.h`. It is an optimised hybrid
+quick-sort/insert-sort algorithm (quick-sort is used to split the
+input into small parts, each is then sorted by insert-sort).
+
+You need to define few macros and include the header. You get a
+sorting function in return. It will be called
+<<fun__GENERIC_LINK_|ASORT_PREFIX|sort|,`ASORT_PREFIX(sort)`>>.
+
+[mandatory-simple]
+Mandatory macros
+~~~~~~~~~~~~~~~~
+- `ASORT_PREFIX(name)` -- The identifier generating macro.
+- `ASORT_KEY_TYPE` -- Data type of a single array entry key.
+
+[optional-simple]
+Optional macros
+~~~~~~~~~~~~~~~
+- `ASORT_ELT(i)` -- Indexing macro. Returns the key of the
+  corresponding entry. If not provided, usual array with sequential
+  indexing is assumed.
+- `ASORT_LT(x,y)` -- Comparing macro. If not provided, compares by the
+  `<` operator.
+- `ASORT_SWAP(i,j)` -- Swap elements with indices `i` and `j`. If not
+  provided, it assumes `ASORT_ELT` is l-value and it just swaps keys.
+- `ASORT_TRESHOLD` -- Sequences of at most this amount of elements are
+  sorted by quick-sort, smaller are sorted by insert-sort. Defaults to
+  `8` (result of experimentation).
+- `ASORT_EXTRA_ARGS` -- Pass some extra arguments to the function.
+  They are visible from all the macros. Must start with a comma.
+
+!!ucw/sorter/array-simple.h ASORT_PREFIX
+
+[example-simple]
+Example
+~~~~~~~
+
+Let's sort an array of integers, in the usual way.
+
+  #define ASORT_PREFIX(X) intarr_##X
+  #define ASORT_TYPE int
+  #include <ucw/sorter/array-simple.h>
+
+This generates an intarr_sort(int *array, uns array_size) function that
+can be used the obvious way.
+
+A more complicated example could be sorting a structure, where items
+with odd indices are stored in one array, even in another. Each item
+could be a structure containing a string and an integer. We would like
+to sort them by the strings.
+
+  struct elem {
+    char *string;
+    int integer;
+  };
+
+  #include <string.h>	// Because of strcmp
+  #define ASORT_PREFIX(X) complicated_##X
+  #define ASORT_TYPE struct elem
+  #define ASORT_ELT(i) ((i % 2 ? even_array : odd_array)[i / 2])
+  #define ASORT_LT(x, y) (strcmp((x).string, (y).string) < 0)
+  #define ASORT_EXTRA_ARGS , struct elem *odd_array, struct elem *even_array
+  #include <ucw/sorter/sorter/array-simple.h>
+
+Now we got a complicated_sort(uns array_size, struct elem *odd_array,
+struct *even_array) function to perform our sorting.
