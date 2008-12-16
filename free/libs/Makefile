@@ -15,6 +15,8 @@ BUILDSYS=$(s)/build
 # We will use the libucw build system
 include $(BUILDSYS)/Maketop
 
+CONFIG_SRC_DIR=etc
+
 # Install the build system
 include $(BUILDSYS)/Makefile
 

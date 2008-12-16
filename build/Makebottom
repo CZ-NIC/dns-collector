@@ -42,7 +42,7 @@ force:
 
 # Rules for configuration files
 
-run/$(CONFIG_DIR)/%: $(s)/$(CONFIG_DIR)/% $(o)/config.mk $(BUILDSYS)/genconf
+run/$(CONFIG_DIR)/%: $(s)/$(CONFIG_SRC_DIR)/% $(o)/config.mk $(BUILDSYS)/genconf
 	$(M)CF $<
 	$(Q)$(BUILDSYS)/genconf $< $@ $(o)/config.mk
 
