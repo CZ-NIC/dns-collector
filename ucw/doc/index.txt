@@ -23,14 +23,15 @@ Modules
 - <<mainloop:,Mainloop>>
 - <<unaligned:,Unaligned data>>
 - <<lists:,Link lists>>
+- <<heap:,Binary heaps>>
+- <<binheap:,Binomial heaps>>
+- <<hashtable:,Hash tables>>
 - <<growbuf:,Growing buffers>>
 - <<chartype:,Single-byte characters>>
 - <<unicode:,Multi-byte characters>>
 - <<prime:,Prime numbers>>
 - <<sort:,Sorting>>
 - <<binsearch:,Binary search>>
-- <<heap:,Binary heaps>>
-- <<binheap:,Binomial heaps>>
 - <<compress:,Compression>>
 
 Other features
@@ -42,8 +43,6 @@ Other features
 
 Yet undocumented modules
 ------------------------
-- Hash tables
-  * `hashtable.h`
 - Trie
   * `trie.h`
 - Red-black trees

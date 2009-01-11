@@ -394,7 +394,11 @@ static void P(alloc_table) (TAU)
     T.hash_min = 0;
 }
 
-static void P(init) (TA)
+/**
+ * Initializes the hash table.
+ * This one is available no matter what `HASH_WANT_` macros you defined or not.
+ **/
+static void HASH_PREFIX(init)(TA)
 {
   T.hash_count = 0;
   T.hash_size = HASH_DEFAULT_SIZE;
@@ -408,7 +412,11 @@ static void P(init) (TA)
 }
 
 #ifdef HASH_WANT_CLEANUP
-static void P(cleanup) (TA)
+/**
+ * Deallocates the hash table, including the nodes.
+ * It is available if you defined <<want_cleanup,`HASH_WANT_CLEANUP`>>.
+ **/
+static void HASH_PREFIX(cleanup)(TA)
 {
 #ifndef HASH_USE_POOL
   uns i;
@@ -462,7 +470,13 @@ static void P(rehash) (TAC uns size)
 }
 
 #ifdef HASH_WANT_FIND
-static P(node) * P(find) (TAC HASH_KEY_DECL)
+/**
+ * Finds a node with given key (specified in the @HAS_KEY_DECL parameter).
+ * If it does not exist, NULL is returned.
+ *
+ * Enabled by the <<want_find,`HASH_WANT_FIND`>> macro.
+ **/
+static HASH_NODE* HASH_PREFIX(find)(TAC HASH_KEY_DECL)
 {
   uns h0 = P(hash) (TTC HASH_KEY( ));
   uns h = h0 % T.hash_size;
@@ -482,7 +496,12 @@ static P(node) * P(find) (TAC HASH_KEY_DECL)
 #endif
 
 #ifdef HASH_WANT_FIND_NEXT
-static P(node) * P(find_next) (TAC P(node) *start)
+/**
+ * Finds next node with the same key. Returns NULL if it does not exist.
+ *
+ * Enabled by the <<want_find_next,`HASH_WANT_FIND_NEXT`>> macro.
+ **/
+static HASH_NODE* HASH_PREFIX(find_next)(TAC P(node) *start)
 {
 #ifndef HASH_CONSERVE_SPACE
   uns h0 = P(hash) (TTC HASH_KEY(start->));
@@ -503,7 +522,12 @@ static P(node) * P(find_next) (TAC P(node) *start)
 #endif
 
 #ifdef HASH_WANT_NEW
-static P(node) * P(new) (TAC HASH_KEY_DECL)
+/**
+ * Generates a new node with a given key.
+ *
+ * Enabled by the <<want_new,`HASH_WANT_NEW`>> macro.
+ **/
+static HASH_NODE * HASH_PREFIX(new)(TAC HASH_KEY_DECL)
 {
   uns h0, h;
   P(bucket) *b;
@@ -525,7 +549,13 @@ static P(node) * P(new) (TAC HASH_KEY_DECL)
 #endif
 
 #ifdef HASH_WANT_LOOKUP
-static P(node) * P(lookup) (TAC HASH_KEY_DECL)
+/**
+ * Finds a node with a given key. If it does not exist, a new one is created.
+ * It is strongly recommended to use <<give_init_data,`HASH_GIVE_INIT_DATA`>>.
+ *
+ * This one is enabled by the <<want_lookup,`HASH_WANT_LOOKUP`>> macro.
+ **/
+static HASH_NODE* HASH_PREFIX(lookup)(TAC HASH_KEY_DECL)
 {
   uns h0 = P(hash) (TTC HASH_KEY( ));
   uns h = h0 % T.hash_size;
@@ -556,7 +586,14 @@ static P(node) * P(lookup) (TAC HASH_KEY_DECL)
 #endif
 
 #ifdef HASH_WANT_DELETE
-static int P(delete) (TAC HASH_KEY_DECL)
+/**
+ * Removes a node with the given key from hash table and deallocates it.
+ *
+ * Success is returned.
+ *
+ * This one is enabled by <<want_delete,`HASH_WANT_DELETE`>> macro.
+ **/
+static int HASH_PREFIX(delete)(TAC HASH_KEY_DECL)
 {
   uns h0 = P(hash) (TTC HASH_KEY( ));
   uns h = h0 % T.hash_size;
@@ -582,7 +619,14 @@ static int P(delete) (TAC HASH_KEY_DECL)
 #endif
 
 #ifdef HASH_WANT_REMOVE
-static void P(remove) (TAC P(node) *n)
+/**
+ * Removes a given node and deallocates it.
+ * It differs from <<fun__GENERIC_LINK|HASH_PREFIX|delete,`HASH_PREFIX(delete)()`>>
+ * in its type of parameter -- this one deletes a specific node, that one looks for it by a key.
+ *
+ * Enabled by <<want_remove,`HASH_WANT_REMOVE`>> macro.
+ **/
+static void HASH_PREFIX(remove)(TAC HASH_NODE *n)
 {
   P(bucket) *x = SKIP_BACK(struct P(bucket), n, n);
   uns h0 = P(bucket_hash)(TTC x);

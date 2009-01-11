@@ -13,6 +13,7 @@ libUCW, and also hints for use of these structures.
   * <<growbuf:gbuf,`gbuf.h`>>
   * <<sort:,Sorting>>
   * <<binheap:,`binheap.h`>>
+  * <<hashtable:,`hashtable.h`>>
 
 // TODO The module list
 

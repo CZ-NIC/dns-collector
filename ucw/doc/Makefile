@@ -2,7 +2,7 @@
 
 DIRS+=ucw/doc
 
-UCW_DOCS=fastbuf index config configure install basecode hash docsys conf mempool eltpool mainloop generic growbuf unaligned lists chartype unicode prime binsearch heap binheap compress sort
+UCW_DOCS=fastbuf index config configure install basecode hash docsys conf mempool eltpool mainloop generic growbuf unaligned lists chartype unicode prime binsearch heap binheap compress sort hashtable
 UCW_INDEX=$(o)/ucw/doc/def_index.html
 UCW_DOCS_HTML=$(addprefix $(o)/ucw/doc/,$(addsuffix .html,$(UCW_DOCS)))
 
