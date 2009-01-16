@@ -3,7 +3,7 @@ Hash tables
 
 A hash table is very universal data structure. It does most of it's
 operations in O(1) average time. The library contains a header to
-generate hash tables suiting to your needs.
+generate hash tables suiting your needs.
 
 They are <<generic:,generic data structures>>.
 
