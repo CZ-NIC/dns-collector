@@ -1,7 +1,7 @@
 /*
  *	SHA-1 Hash Function (FIPS 180-1, RFC 3174)
  *
- *	(c) 2008 Martin Mares <mj@ucw.cz>
+ *	(c) 2008--2009 Martin Mares <mj@ucw.cz>
  *
  *	Based on the code from libgcrypt-1.2.3, which was:
  *
@@ -62,6 +62,19 @@ void sha1_hash_buffer(byte *outbuf, const byte *buffer, uns length);
  * the result will be stored in @outbuf.
  */
 void sha1_hmac(byte *outbuf, const byte *key, uns keylen, const byte *data, uns datalen);
+
+/**
+ * The HMAC also exists in a stream version in a way analogous to the
+ * plain SHA1. Pass this as a context.
+ */
+typedef struct {
+  sha1_context ictx;
+  sha1_context octx;
+} sha1_hmac_context;
+
+void sha1_hmac_init(sha1_hmac_context *hd, const byte *key, uns keylen);	/** Initialize HMAC with context @hd and the given key. See sha1_init(). */
+void sha1_hmac_update(sha1_hmac_context *hd, const byte *data, uns datalen);	/** Hash another @datalen bytes of data. See sha1_update(). */
+byte *sha1_hmac_final(sha1_hmac_context *hd);					/** Terminate the HMAC and return a pointer to the allocated hash. See sha1_final(). */
 
 #define SHA1_SIZE 20 /** Size of the SHA1 hash in its binary representation **/
 #define SHA1_HEX_SIZE 41 /** Buffer length for a string containing SHA1 in hexadecimal format. **/
