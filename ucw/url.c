@@ -150,7 +150,7 @@ url_enescape(const char *s, char *d)
 	*d++ = *s++;
       else
 	{
-	  uns val = ((byte)*s < NCC_MAX) ? NCC_CHARS[(byte)*s] : *s;
+	  uns val = (byte)(((byte)*s < NCC_MAX) ? NCC_CHARS[(byte)*s] : *s);
 	  *d++ = '%';
 	  *d++ = enhex(val >> 4);
 	  *d++ = enhex(val & 0x0f);
@@ -170,14 +170,14 @@ url_enescape_friendly(const char *src, char *dest)
     {
       if (dest >= end)
 	return URL_ERR_TOO_LONG;
-      if (*srcb < NCC_MAX)
+      if ((byte)*srcb < NCC_MAX)
 	*dest++ = NCC_CHARS[*srcb++];
       else if (*srcb >= 0x20 && *srcb < 0x7f)
 	*dest++ = *srcb++;
       else
 	{
 	  *dest++ = '%';
-	  *dest++ = enhex(*srcb >> 4);
+	  *dest++ = enhex((byte)*srcb >> 4);
 	  *dest++ = enhex(*srcb++ & 0x0f);
 	}
     }
