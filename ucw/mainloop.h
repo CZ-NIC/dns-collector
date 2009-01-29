@@ -34,6 +34,7 @@
 
 extern timestamp_t main_now;			/** Current time in milliseconds since the UNIX epoch. See @main_get_time(). **/
 extern ucw_time_t main_now_seconds;		/** Current time in seconds since the epoch. **/
+extern timestamp_t main_idle_time;		/** Total time in milliseconds spent in the poll() call. **/
 extern clist main_timer_list, main_file_list, main_hook_list, main_process_list;
 
 /**
