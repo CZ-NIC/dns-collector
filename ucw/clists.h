@@ -100,7 +100,7 @@ static inline int clist_empty(clist *l)
 #define CLIST_FOR_EACH_BACKWARDS(type,n,list) for(type n=(void*)(list).head.prev; (cnode*)(n) != &(list).head; n=(void*)((cnode*)(n))->prev)
 
 /**
- * Insert a new node just after the node @after. To insert a new head, use @clist_add_head() instead.
+ * Insert a new node just after the node @after. To insert at the head of the list, use @clist_add_head() instead.
  **/
 static inline void clist_insert_after(cnode *what, cnode *after)
 {
@@ -112,7 +112,7 @@ static inline void clist_insert_after(cnode *what, cnode *after)
 }
 
 /**
- * Insert a new node just before the node @before. To insert a new tail, use @clist_add_tail() instead.
+ * Insert a new node just before the node @before. To insert at the tail of the list, use @clist_add_tail() instead.
  **/
 static inline void clist_insert_before(cnode *what, cnode *before)
 {

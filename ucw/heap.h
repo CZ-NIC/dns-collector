@@ -98,7 +98,7 @@
   } while(0)
 
 /**
- * Insert `heap[num + 1]` in `O(log(n))` time.
+ * Insert `heap[num]` in `O(log(n))` time. The value of @num must be increased before.
  **/
 #define HEAP_INSERT(type,heap,num,less,swap)						\
   do {											\
@@ -119,6 +119,19 @@
     type x;										\
     _j = pos;										\
     HEAP_BUBBLE_DOWN_J(heap,num,less,swap);						\
+  } while(0)
+
+/**
+ * If you need to decrease the value of `heap[pos]`, just do it and then call this macro to rebuild the heap.
+ * Only `heap[pos]` can be changed, the rest of the array must form a valid heap.
+ * The time complexity is `O(log(n))`.
+ **/
+#define HEAP_DECREASE(type,heap,num,less,swap,pos)					\
+  do {											\
+    uns _j, _u;										\
+    type x;										\
+    _j = pos;										\
+    HEAP_BUBBLE_UP_J(heap,num,less,swap);						\
   } while(0)
 
 /**

@@ -261,6 +261,10 @@ if (IsSet("CONFIG_DARWIN")) {
 	} else {
 		UnSet("CONFIG_DIRECT_IO");
 	}
+	if (!IsSet("CONFIG_POSIX_REGEX") && !IsSet("CONFIG_PCRE")) {
+		Set("CONFIG_POSIX_REGEX" => 1);
+		Warn "BSD regex library on Darwin isn't compatible, using POSIX regex.\n";
+	}
 }
 
 ### Writing C headers with configuration ###

@@ -66,6 +66,14 @@ endif
 	$(Q)$(CC) $(LSHARED) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(BUILDSYS)/lib-flags $^) $(LIBS)
 	$(Q)$(call symlink-alias,$@,run/$(SO_RUNDIR),$(*F)$(SONAME_INFIX).so$(SONAME_SUFFIX))
 
+# On Darwin, gcc expects shared libraries in *.dylib instead of *.so.
+# Surprisingly, when a program is run, it suffices to have *.so files.
+# We don't want to mess up the whole build system with configurable
+# suffices and we also don't want to incur an overhead on Linux, so we
+# just create symbolic links on Darwin, if requested.
+%.dylib: %.so
+	cd $(dir $<) && ln -fs $(notdir $<) $(notdir $@)
+
 $(o)/%.pc: $(s)/%.pc $(o)/%.$(LS)
 	$(M)PC $<
 	$(Q)DEPS="$(shell $(BUILDSYS)/lib-deps $^)" LIBDIR=$(@D) $(BUILDSYS)/genconf $< $@ $(o)/config.mk
@@ -198,7 +206,7 @@ $(DATAFILES): $(o)/%: $(s)/%
 
 $(o)/%.html: $(o)/%.txt $(BUILDSYS)/asciidoc.conf $(BUILDSYS)/asciidoc-xhtml.conf run/$(DOCDIR)/$(DOC_MODULE)/.dir-stamp
 	$(M)"DOC-HTML $<"
-	$(Q)asciidoc -e -f $(BUILDSYS)/asciidoc.conf -f $(BUILDSYS)/asciidoc-xhtml.conf -f /etc/asciidoc/asciidoc.conf -f /etc/asciidoc/xhtml11.conf $<
+	$(Q)asciidoc -e -f $(BUILDSYS)/asciidoc.conf -f $(BUILDSYS)/asciidoc-xhtml.conf -f $(HOST_PREFIX)/etc/asciidoc/asciidoc.conf -f $(HOST_PREFIX)/etc/asciidoc/xhtml11.conf $<
 	$(Q)$(call symlink,$@,run/$(DOCDIR)/$(DOC_MODULE))
 
 # In reality, we do not depend on the .txt files, but on the corresponding .deflist's.

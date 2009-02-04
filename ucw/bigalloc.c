@@ -17,6 +17,8 @@
 void *
 page_alloc(u64 len)
 {
+  if (!len)
+    return NULL;
   if (len > SIZE_MAX)
     die("page_alloc: Size %llu is too large for the current architecture", (long long) len);
   ASSERT(!(len & (CPU_PAGE_SIZE-1)));

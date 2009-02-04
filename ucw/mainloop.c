@@ -25,6 +25,7 @@
 
 timestamp_t main_now;
 ucw_time_t main_now_seconds;
+timestamp_t main_idle_time;
 uns main_shutdown;
 
 clist main_timer_list, main_file_list, main_hook_list, main_process_list;
@@ -366,9 +367,9 @@ main_loop(void)
   struct main_process *pr;
   cnode *tmp;
 
+  main_get_time();
   for (;;)
     {
-      main_get_time();
       timestamp_t wake = main_now + 1000000000;
       while ((tm = clist_head(&main_timer_list)) && tm->expires <= main_now)
 	{
@@ -419,12 +420,16 @@ main_loop(void)
       /* FIXME: Here is a small race window where SIGCHLD can come unnoticed. */
       if ((tm = clist_head(&main_timer_list)) && tm->expires < wake)
 	wake = tm->expires;
+      main_get_time();
       int timeout = (wake ? wake - main_now : 0);
       DBG("MAIN: Poll for %d fds and timeout %d ms", main_file_cnt, timeout);
-      if (poll(main_poll_table, main_file_cnt, timeout))
+      int p = poll(main_poll_table, main_file_cnt, timeout);
+      timestamp_t old_now = main_now;
+      main_get_time();
+      main_idle_time += main_now - old_now;
+      if (p > 0)
 	{
 	  struct pollfd *p = main_poll_table;
-	  main_get_time();
 	  CLIST_WALK(fi, main_file_list)
 	    {
 	      if (p->revents & (POLLIN | POLLHUP | POLLERR))

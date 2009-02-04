@@ -1,5 +1,5 @@
 # UCW Library configuration system: installation paths
-# (c) 2005--2008 Martin Mares <mj@ucw.cz>
+# (c) 2005--2009 Martin Mares <mj@ucw.cz>
 # (c) 2006 Robert Spalek <robert@ucw.cz>
 # (c) 2008 Michal Vaner <vorner@ucw.cz>
 
@@ -27,19 +27,20 @@ if (IsSet("CONFIG_LOCAL")) {
 	Log(Get("PREFIX") . "\n");
 }
 
-Set("INSTALL_CONFIG_DIR", '$(INSTALL_PREFIX)$(CONFIG_DIR)');
-Set("INSTALL_BIN_DIR", '$(INSTALL_USR_PREFIX)bin');
-Set("INSTALL_SBIN_DIR", '$(INSTALL_USR_PREFIX)sbin');
-Set("INSTALL_LIB_DIR", '$(INSTALL_USR_PREFIX)lib');
-Set("INSTALL_INCLUDE_DIR", '$(INSTALL_USR_PREFIX)include');
-Set("INSTALL_PKGCONFIG_DIR", '$(INSTALL_USR_PREFIX)lib/pkgconfig');
-Set("INSTALL_SHARE_DIR", '$(INSTALL_USR_PREFIX)share');
-Set("INSTALL_MAN_DIR", '$(INSTALL_USR_PREFIX)share/man');
-Set("INSTALL_LOG_DIR", '$(INSTALL_VAR_PREFIX)log');
-Set("INSTALL_STATE_DIR", '$(INSTALL_VAR_PREFIX)lib');
-Set("INSTALL_RUN_DIR", '$(INSTALL_VAR_PREFIX)run');
-Set("INSTALL_DOC_DIR", '$(INSTALL_USR_PREFIX)share/doc');
-Set("INSTALL_PERL_DIR", '$(INSTALL_LIB_DIR)/perl5');
+Set('CONFIG_DIR', 'etc') unless IsSet('CONFIG_DIR');
+Set('INSTALL_CONFIG_DIR', Get('INSTALL_PREFIX') . Get('CONFIG_DIR'));
+Set('INSTALL_BIN_DIR', Get('INSTALL_USR_PREFIX') . 'bin');
+Set('INSTALL_SBIN_DIR', Get('INSTALL_USR_PREFIX') . 'sbin');
+Set('INSTALL_LIB_DIR', Get('INSTALL_USR_PREFIX') . 'lib');
+Set('INSTALL_INCLUDE_DIR', Get('INSTALL_USR_PREFIX') . 'include');
+Set('INSTALL_PKGCONFIG_DIR', Get('INSTALL_USR_PREFIX') . 'lib/pkgconfig');
+Set('INSTALL_SHARE_DIR', Get('INSTALL_USR_PREFIX') . 'share');
+Set('INSTALL_MAN_DIR', Get('INSTALL_USR_PREFIX') . 'share/man');
+Set('INSTALL_LOG_DIR', Get('INSTALL_VAR_PREFIX') . 'log');
+Set('INSTALL_STATE_DIR', Get('INSTALL_VAR_PREFIX') . 'lib');
+Set('INSTALL_RUN_DIR', Get('INSTALL_VAR_PREFIX') . 'run');
+Set('INSTALL_DOC_DIR', Get('INSTALL_USR_PREFIX') . 'share/doc');
+Set('INSTALL_PERL_DIR', Get('INSTALL_LIB_DIR') . '/perl5');
 
 # Remember PKG_CONFIG_PATH used for building, so that it will be propagated to
 # pkg-config's run locally in the makefiles.

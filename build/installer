@@ -12,7 +12,7 @@ for d in $SH_INSTALL_RUNDIRS ; do
 	echo "Installing to $DEST/$d"
 	rm -rf $DEST/$d
 	mkdir -p $DEST/$d
-	cp -aL run/$d/* $DEST/$d/
+	cp -pPRL run/$d/* $DEST/$d/
 done
 echo "Installing config files..."
 for a in $SH_CONFIGS ; do
