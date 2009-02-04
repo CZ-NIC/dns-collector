@@ -69,7 +69,7 @@ partmap_load(struct partmap *p, ucw_off_t start, uns size)
   ucw_off_t end = start + size;
   ucw_off_t win_start = start/CPU_PAGE_SIZE * CPU_PAGE_SIZE;
   size_t win_len = PARTMAP_WINDOW;
-  if ((ucw_off_t) (win_start+win_len) > p->file_size)
+  if (win_len > p->file_size - win_start)
     win_len = ALIGN_TO(p->file_size - win_start, CPU_PAGE_SIZE);
   if ((ucw_off_t) (win_start+win_len) < end)
     die("partmap_map: Window is too small for mapping %d bytes", size);
