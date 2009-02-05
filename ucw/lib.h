@@ -20,7 +20,7 @@
 
 #define CHECK_PTR_TYPE(x, type) ((x)-(type)(x) + (type)(x))
 #define PTR_TO(s, i) &((s*)0)->i
-#define OFFSETOF(s, i) ((uintptr_t) PTR_TO(s, i))
+#define OFFSETOF(s, i) ((unsigned int) (uintptr_t) PTR_TO(s, i))
 #define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))
 #define ALIGN_TO(s, a) (((s)+a-1)&~(a-1))
 #define ALIGN_PTR(p, s) ((uintptr_t)(p) % (s) ? (typeof(p))((uintptr_t)(p) + (s) - (uintptr_t)(p) % (s)) : (p))
