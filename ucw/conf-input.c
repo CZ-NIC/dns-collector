@@ -2,7 +2,7 @@
  *	UCW Library -- Configuration files: parsing input streams
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
- *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2009 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -12,6 +12,7 @@
 #include "ucw/conf.h"
 #include "ucw/getopt.h"
 #include "ucw/conf-internal.h"
+#include "ucw/clists.h"
 #include "ucw/mempool.h"
 #include "ucw/fastbuf.h"
 #include "ucw/chartype.h"
@@ -316,10 +317,7 @@ load_file(const char *file)
   }
   char *err_msg = parse_fastbuf(file, fb, 0);
   bclose(fb);
-  int err = !!err_msg || done_stack();
-  if (!err)
-    cf_def_file = NULL;
-  return err;
+  return !!err_msg || done_stack();
 }
 
 static int
@@ -334,6 +332,30 @@ load_string(const char *string)
 
 /* Safe loading and reloading */
 
+struct conf_entry {	/* We remember a list of actions to apply upon reload */
+  cnode n;
+  enum {
+    CE_FILE = 1,
+    CE_STRING = 2,
+  } type;
+  char *arg;
+};
+
+static clist conf_entries;
+
+static void
+cf_remember_entry(uns type, const char *arg)
+{
+  if (!cf_need_journal)
+    return;
+  if (!postpone_commit)
+    return;
+  struct conf_entry *ce = cf_malloc(sizeof(*ce));
+  ce->type = type;
+  ce->arg = cf_strdup(arg);
+  clist_add_tail(&conf_entries, &ce->n);
+}
+
 int
 cf_reload(const char *file)
 {
@@ -341,17 +363,39 @@ cf_reload(const char *file)
   struct cf_journal_item *oldj = cf_journal_new_transaction(1);
   uns ec = everything_committed;
   everything_committed = 0;
-  int err = load_file(file);
+
+  if (!conf_entries.head.next)
+    clist_init(&conf_entries);
+  clist old_entries;
+  clist_move(&old_entries, &conf_entries);
+  postpone_commit = 1;
+
+  int err = 0;
+  if (file)
+    err = load_file(file);
+  else
+    CLIST_FOR_EACH(struct conf_entry *, ce, old_entries) {
+      if (ce->type == CE_FILE)
+	err |= load_file(ce->arg);
+      else
+	err |= load_string(ce->arg);
+      if (err)
+	break;
+      cf_remember_entry(ce->type, ce->arg);
+    }
+
+  postpone_commit = 0;
   if (!err)
-  {
+    err |= done_stack();
+
+  if (!err) {
     cf_journal_delete();
     cf_journal_commit_transaction(1, NULL);
-  }
-  else
-  {
+  } else {
     everything_committed = ec;
     cf_journal_rollback_transaction(1, oldj);
     cf_journal_swap();
+    clist_move(&conf_entries, &old_entries);
   }
   return err;
 }
@@ -361,9 +405,11 @@ cf_load(const char *file)
 {
   struct cf_journal_item *oldj = cf_journal_new_transaction(1);
   int err = load_file(file);
-  if (!err)
+  if (!err) {
     cf_journal_commit_transaction(1, oldj);
-  else
+    cf_remember_entry(CE_FILE, file);
+    cf_def_file = NULL;
+  } else
     cf_journal_rollback_transaction(1, oldj);
   return err;
 }
@@ -373,9 +419,10 @@ cf_set(const char *string)
 {
   struct cf_journal_item *oldj = cf_journal_new_transaction(0);
   int err = load_string(string);
-  if (!err)
+  if (!err) {
     cf_journal_commit_transaction(0, oldj);
-  else
+    cf_remember_entry(CE_STRING, string);
+  } else
     cf_journal_rollback_transaction(0, oldj);
   return err;
 }
@@ -416,6 +463,9 @@ final_commit(void)
 int
 cf_getopt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index)
 {
+  clist_init(&conf_entries);
+  postpone_commit = 1;
+
   static int other_options = 0;
   while (1) {
     int res = getopt_long (argc, argv, short_opts, long_opts, long_index);
@@ -424,12 +474,10 @@ cf_getopt(int argc, char * const argv[], const char *short_opts, const struct op
       if (other_options)
 	die("The -S and -C options must precede all other arguments");
       if (res == 'S') {
-	postpone_commit = 1;
 	load_default();
 	if (cf_set(optarg))
 	  die("Cannot set %s", optarg);
       } else if (res == 'C') {
-	postpone_commit = 1;
 	if (cf_load(optarg))
 	  die("Cannot load config file %s", optarg);
       }
@@ -453,4 +501,3 @@ cf_getopt(int argc, char * const argv[], const char *short_opts, const struct op
     }
   }
 }
-

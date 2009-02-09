@@ -209,6 +209,8 @@ main(int argc, char *argv[])
   //cf_reload("non-existent file");
   cf_load("non-existent file");
   cf_set("top.d1 -1.1; top.master b");
+  cf_reload(NULL);
+  cf_reload(NULL);
   */
 
   struct fastbuf *out = bfdopen(1, 1<<14);
