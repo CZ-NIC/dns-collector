@@ -190,6 +190,17 @@ static inline void clist_insert_list_after(clist *what, cnode *after)
 }
 
 /**
+ * Move all items from a source list to a destination list. The source list
+ * becomes empty, the original contents of the destination list are destroyed.
+ **/
+static inline void clist_move(clist *to, clist *from)
+{
+  clist_init(to);
+  clist_insert_list_after(from, &to->head);
+  clist_init(from);
+}
+
+/**
  * Compute the number of nodes in @l. Beware linear time complexity.
  **/
 static inline uns clist_size(clist *l)
