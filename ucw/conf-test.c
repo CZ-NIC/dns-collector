@@ -133,7 +133,7 @@ commit_top(void *ptr UNUSED)
   return NULL;
 }
 
-static char *alphabet[] = { "alpha", "beta", "gamma", "delta", NULL };
+static const char * const alphabet[] = { "alpha", "beta", "gamma", "delta", NULL };
 static struct cf_section cf_top = {
   CF_INIT(init_top),
   CF_COMMIT(commit_top),
@@ -153,7 +153,7 @@ static struct cf_section cf_top = {
     CF_LOOKUP_DYN("look", &look, alphabet, 1000),
     CF_USER_ARY("numbers", numbers, &u16_type, 10),
     CF_BITMAP_INT("bitmap1", &bitmap1),
-    CF_BITMAP_LOOKUP("bitmap2", &bitmap2, ((char*[]) {
+    CF_BITMAP_LOOKUP("bitmap2", &bitmap2, ((const char* const[]) {
 	  "one", "two", "three", "four", "five", "six", "seven", "eight", 
 	  "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "seventeen", 
 	  "eighteen", "nineteen", "twenty", NULL	// hidden joke here
