@@ -80,17 +80,18 @@
 #error This program requires the GNU C compiler.
 #endif
 
+#include "ucw/logstream.h"
 /* Logging */
-
-#define L_DEBUG		'D'		/* Debugging messages */
-#define L_INFO		'I'		/* Informational msgs, warnings and errors */
+/*
+#define L_DEBUG		'D'		* Debugging messages *
+#define L_INFO		'I'		* Informational msgs, warnings and errors *
 #define L_WARN		'W'
 #define L_ERROR		'E'
-#define L_INFO_R	'i'		/* Errors caused by external events */
+#define L_INFO_R	'i'		* Errors caused by external events *
 #define L_WARN_R	'w'
 #define L_ERROR_R	'e'
-#define L_FATAL		'!'		/* die() */
-
+#define L_FATAL		'!'		* die() *
+*/
 #define L_SIGHANDLER	0x10000		/* Avoid operations that are unsafe in signal handlers */
 
 extern char *log_title;			/* NULL - print no title, default is program name given to log_init() */
