@@ -10,7 +10,7 @@ struct log_stream
 {
   /* optional name, 0-term, de/allocated by constr./destr. or user */
   char *name;
-  /* numer for use with msg parameter (from LS_SET_STRNUM()), -1 for closed log_stream */
+  /* number for use with msg parameter (from LS_SET_STRNUM()), -1 for closed log_stream */
   int regnum;
   /* arbitrary data for filter/handler */
   int idata;
