@@ -516,3 +516,13 @@ struct log_stream *ls_syslog_new(int facility, const char *name)
   ls->close = ls_syslog_close;
   return ls;
 }
+
+#ifdef TEST
+
+int main(void)
+{
+  ls_msg(L_INFO, "Brum!");
+  return 0;
+}
+
+#endif

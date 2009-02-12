@@ -1,4 +1,4 @@
-# Makefile for the UCW Library (c) 1997--2008 Martin Mares <mj@ucw.cz>
+# Makefile for the UCW Library (c) 1997--2009 Martin Mares <mj@ucw.cz>
 
 DIRS+=ucw
 LIBUCW=$(o)/ucw/libucw.pc
@@ -12,7 +12,7 @@ LIBUCW_MODS= \
 	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt eltpool \
 	mmap partmap hashfunc \
 	slists simple-lists bitsig \
-	log log-file proctitle \
+	log log-file logstream proctitle \
 	conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section \
 	ipaccess \
 	profile \
