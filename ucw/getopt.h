@@ -38,7 +38,7 @@ extern char *cf_def_file;
  **/
 extern char *cf_env_file;
 int cf_reload(const char *file);	/** Reload configuration from @file, replace the old one. **/
-int cf_load(const char *file);		/** Load configuration from @file. **/
+int cf_load(const char *file);		/** Load configuration from @file. If @file is NULL, reload all loaded configuration files. **/
 /**
  * Parse some part of configuration passed in @string.
  * The syntax is the same as in the <<config:,configuration file>>.
