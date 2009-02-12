@@ -2,7 +2,7 @@
 #define _UCW_LOGSTREAM_H_
 
 #include "ucw/clists.h"
- 
+
 /* user de/allocated program/process name for use in the logsystem */
 extern char *ls_title;
 
@@ -34,7 +34,7 @@ struct log_stream
 extern const struct log_stream ls_default_log;
 
 /* A message is processed as follows:
- *  1. Discard if message level not in levels 
+ *  1. Discard if message level not in levels
  *  2. Run filter (if any), discard if ret. nonzero
  *  3. Pass the message to all log_streams in substreams
  *  4. Format the message informaion acc. to msgfmt
@@ -76,7 +76,7 @@ enum LS_LEVELS
 ///// Macros for extracting parts of the flags parameter
 // The division of the flags parameter is decided only here
 // The current division is (for 32 bit flags):
-// MSB <5 bits: any internal log flags> <8 bits: "user" flags> <10 bits: stream number> 
+// MSB <5 bits: any internal log flags> <8 bits: "user" flags> <10 bits: stream number>
 //     <8 bits: severity level> LSB
 
 // Bits per section
@@ -115,9 +115,9 @@ enum LS_FLAGMASKS {
 #define LS_SET_FLAGS(flags)     (( flags ) << LS_FLAGS_POS )
 #define LS_SET_INTERNAL(intern) (( intern ) << LS_INTERNAL_POS )
 
-// Internal flags of the logsystem 
-// Avoid operations that are unsafe in signal handlers 
-#define LSFLAG_SIGHANDLER LS_SET_INTERNAL(0x001) 
+// Internal flags of the logsystem
+// Avoid operations that are unsafe in signal handlers
+#define LSFLAG_SIGHANDLER LS_SET_INTERNAL(0x001)
 
 // The module is initialized when a first stream is created.
 // Before that only the default log exists.
@@ -135,7 +135,7 @@ void ls_close(struct log_stream *ls);
 /* close all open streams, un-initialize the module, free all memory,
  * use only ls_default_log */
 void ls_close_all(void);
- 
+
 /* add a new substream, malloc()-ate a new simp_node */
 void ls_add_substream(struct log_stream *where, struct log_stream *what);
 
@@ -161,7 +161,7 @@ void ls_die(const char *fmt, ...);
 /* depth prevents undetected looping */
 /* returns 1 in case of loop detection or other fatal error
  *         0 otherwise */
-int ls_passmsg(int depth, struct log_stream *ls, const char *stime, const char *sutime, 
+int ls_passmsg(int depth, struct log_stream *ls, const char *stime, const char *sutime,
     const char *msg, u32 cat);
 
 /* Maximal depth of ls_passmsg recursion */
@@ -174,7 +174,7 @@ int ls_passmsg(int depth, struct log_stream *ls, const char *stime, const char *
 // NOTE:
 // under unix, for ordinary files open in append mode, the writes
 // are atomic (unless you meet the quota or other bad things happen),
-// so using a single log_stream is thread-safe and the file can be shared 
+// so using a single log_stream is thread-safe and the file can be shared
 // among multiple processes
 
 /* assign log to a file descriptor */
@@ -188,11 +188,11 @@ struct log_stream *ls_file_new(const char *path);
 
 /**** syslog */
 
-// NOTE: 
+// NOTE:
 // The syslog uses a bit different severity levels, for details, see
 // ls_syslog_convert_level().
-// syslog also prepends it's own time and severity info, so the default 
-// messaging passes only clean message 
+// syslog also prepends it's own time and severity info, so the default
+// messaging passes only clean message
 
 /* assign log to a syslog facility */
 /* initialize with no formatting (syslog adds these inforamtion) */

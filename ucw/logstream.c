@@ -24,13 +24,13 @@ const struct log_stream ls_default_log={
   .handler = ls_fdfile_handler,
   .levels = LS_ALL_LEVELS,
   .msgfmt = LSFMT_DEFAULT,
-  // empty clist 
+  // empty clist
   .substreams.head.next = (cnode *) &ls_default_log.substreams.head,
   .substreams.head.prev = (cnode *) &ls_default_log.substreams.head,
 };
 
 /* user de/allocated program/process name for use in the logsystem (for LSFMT_TITLE) */
-char *ls_title = NULL; 
+char *ls_title = NULL;
 
 /* Define an array (growing buffer) for pointers to log_streams. */
 #define GBUF_TYPE struct log_stream*
@@ -52,7 +52,7 @@ int ls_streams_free = -1;
 int ls_streams_after = 0;
 
 /* Initialize the logstream module.
- * It is not neccessary to call this explicitely as it is called by 
+ * It is not neccessary to call this explicitely as it is called by
  * the first ls_new()  (for backward compatibility and ease of use). */
 static void ls_init_module(void)
 {
@@ -62,26 +62,26 @@ static void ls_init_module(void)
   /* create the grow array */
   ls_streams.ptr = NULL;
   ls_streams.len = 0;
-  lsbuf_set_size(&ls_streams, LS_INIT_STREAMS);  
+  lsbuf_set_size(&ls_streams, LS_INIT_STREAMS);
 
   /* bzero */
   memset(ls_streams.ptr, 0, sizeof(struct log_stream*) * (ls_streams.len));
   ls_streams_free = -1;
-  
+
   ls_initialized = 1;
-  
+
   /* init the default stream (0) as forwarder to fd2 */
   struct log_stream *ls = ls_new();
   ASSERT(ls == ls_streams.ptr[0]);
   ASSERT(ls->regnum == 0);
   ls->name = "default";
   ls_add_substream(ls, (struct log_stream *) &ls_default_log);
-  
+
   /* log this */
   ls_msg(L_DEBUG, "logstream module initialized.");
 }
 
-/* close all open streams, un-initialize the module, free all memory, 
+/* close all open streams, un-initialize the module, free all memory,
  * use only ls_default_log */
 void ls_close_all(void)
 {
@@ -129,7 +129,7 @@ int ls_rm_substream(struct log_stream *where, struct log_stream *what)
       clist_remove((cnode*)i);
       xfree(i);
       cnt++;
-    } 
+    }
   return cnt;
 }
 
@@ -180,7 +180,7 @@ void ls_close(struct log_stream *ls)
   {
     clist_remove((cnode*)i);
     xfree(i);
-  } 
+  }
 
   /* close and remember the stream */
   if (ls->close!=NULL)
@@ -197,9 +197,9 @@ struct log_stream *ls_bynum(int num)
 {
   /* get the real number */
   int n = LS_GET_STRNUM(num);
-  if ((n<0) || (n>=ls_streams_after) || (ls_streams.ptr[n]->regnum==-1) ) 
+  if ((n<0) || (n>=ls_streams_after) || (ls_streams.ptr[n]->regnum==-1) )
   {
-    if (n==0) 
+    if (n==0)
       return (struct log_stream *)&ls_default_log;
     else return NULL;
   }
@@ -248,7 +248,7 @@ void ls_vmsg(unsigned int cat, const char *fmt, va_list args)
     snprintf(stime, 24, "\?\?\?\?-\?\?-\?\? \?\?:\?\?:\?\?");
     snprintf(sutime, 12, ".\?\?\?\?\?\?");
   }
-  
+
   /* generate the message string */
   va_copy(args2, args);
   /* WARN: this may be C99 specefic */
@@ -274,7 +274,7 @@ void ls_vmsg(unsigned int cat, const char *fmt, va_list args)
   }
 
   xfree(buf);
-}  
+}
 
 /* The proposed alternative to original msg() */
 void ls_msg(unsigned int cat, const char *fmt, ...)
@@ -294,7 +294,7 @@ void ls_die(const char *fmt, ...)
   va_start(args, fmt);
   ls_vmsg(L_FATAL, fmt, args);
   va_end(args);
-///// why this?  
+///// why this?
 //  if (log_die_hook)
 //    log_die_hook();
 #ifdef DEBUG_DIE_BY_ABORT
@@ -306,7 +306,7 @@ void ls_die(const char *fmt, ...)
 
 /* process a message (string) */
 /* depth prevents undetected looping */
-/* returns 1 in case of loop detection or other fatal error 
+/* returns 1 in case of loop detection or other fatal error
  *         0 otherwise */
 int ls_passmsg(int depth, struct log_stream *ls, const char *stime, const char *sutime, const char *m, u32 cat)
 {
@@ -315,11 +315,11 @@ int ls_passmsg(int depth, struct log_stream *ls, const char *stime, const char *
   /* Check recursion depth */
   if( depth > LS_MAX_DEPTH )
   {
-    ls_passmsg(0, (struct log_stream *)&ls_default_log, stime, sutime, 
+    ls_passmsg(0, (struct log_stream *)&ls_default_log, stime, sutime,
       "Loop in the log_stream system detected.", L_ERROR | (cat&LS_INTERNAL_MASK) );
     return 1;
   }
-  
+
   /* Filter by level and filter hook */
   if(!( (1<<LS_GET_LEVEL(cat)) & ls->levels )) return 0;
   if( ls->filter )
@@ -335,7 +335,7 @@ int ls_passmsg(int depth, struct log_stream *ls, const char *stime, const char *
   /* Prepare for handler */
   if(ls->handler)
   {
-    int len = strlen(m) + strlen(stime) + strlen(sutime) + 32; 
+    int len = strlen(m) + strlen(stime) + strlen(sutime) + 32;
       /* SHOULD be enough for all information, but beware */
     if (ls_title)  len += strlen(ls_title);
     if (ls->name)  len += strlen(ls->name);
@@ -348,7 +348,7 @@ int ls_passmsg(int depth, struct log_stream *ls, const char *stime, const char *
       *p++=LS_LEVEL_LETTER(LS_GET_LEVEL(cat));
       *p++=' ';
     }
-    
+
     /* Time (|stime| + |sutime| + 1 chars) */
     if(ls->msgfmt & LSFMT_TIME)
     {
@@ -446,7 +446,7 @@ struct log_stream *ls_file_new(const char *path)
 {
   struct log_stream *ls;
   int fd = open(path, O_WRONLY | O_CREAT | O_APPEND, 0666);
-  if (fd<0) 
+  if (fd<0)
   {
     ls_msg(L_ERROR, "Opening logfile '%s' failed: %m.", path);
     return NULL;
@@ -494,7 +494,7 @@ static int ls_syslog_handler(struct log_stream *ls, const char *m, u32 flags)
   int prio;
   ASSERT(ls);
   ASSERT(m);
-  
+
   prio = ls_syslog_convert_level(LS_GET_LEVEL(flags)) | (ls->idata);
   if (ls->name)
     syslog(prio | (ls->idata), "%s: %s", ls->name, m);
@@ -516,4 +516,3 @@ struct log_stream *ls_syslog_new(int facility, const char *name)
   ls->close = ls_syslog_close;
   return ls;
 }
-
