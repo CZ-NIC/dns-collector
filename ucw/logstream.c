@@ -1,6 +1,17 @@
+/*
+ *	UCW Library -- Logging
+ *
+ *	(c) 2008 Tomas Gavenciak <gavento@ucw.cz>
+ *	(c) 2009 Martin Mares <mj@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
+ */
+
 #include "ucw/lib.h"
 #include "ucw/clists.h"
 #include "ucw/simple-lists.h"
+#include "ucw/logstream.h"
 
 #include <syslog.h>
 #include <string.h>
@@ -13,7 +24,6 @@
 #include <time.h>
 #include <alloca.h>
 #include <fcntl.h>
-#include "ucw/logstream.h"
 
 /* forward declaration */
 static int ls_fdfile_handler(struct log_stream* ls, const char *m, u32 cat);
@@ -56,16 +66,13 @@ int ls_streams_after = 0;
  * the first ls_new()  (for backward compatibility and ease of use). */
 static void ls_init_module(void)
 {
-  unsigned int i;
   if (ls_initialized) return;
 
   /* create the grow array */
-  ls_streams.ptr = NULL;
-  ls_streams.len = 0;
+  lsbuf_init(&ls_streams);
   lsbuf_set_size(&ls_streams, LS_INIT_STREAMS);
 
-  /* bzero */
-  memset(ls_streams.ptr, 0, sizeof(struct log_stream*) * (ls_streams.len));
+  bzero(ls_streams.ptr, sizeof(struct log_stream*) * (ls_streams.len));
   ls_streams_free = -1;
 
   ls_initialized = 1;
@@ -201,7 +208,8 @@ struct log_stream *ls_bynum(int num)
   {
     if (n==0)
       return (struct log_stream *)&ls_default_log;
-    else return NULL;
+    else
+      return NULL;
   }
   return ls_streams.ptr[n];
 }
@@ -217,7 +225,6 @@ void ls_vmsg(unsigned int cat, const char *fmt, va_list args)
   char sutime[12];
   char *buf,*p;
   int len;
-  int level=LS_GET_LEVEL(cat);
   struct log_stream *ls=ls_bynum(cat);
 
   /* Check the stream existence */
@@ -419,7 +426,7 @@ static void ls_fdfile_close(struct log_stream *ls)
 }
 
 /* handler for standard files */
-static int ls_fdfile_handler(struct log_stream* ls, const char *m, u32 cat)
+static int ls_fdfile_handler(struct log_stream* ls, const char *m, u32 cat UNUSED)
 {
   int len = strlen(m);
   int r = write(ls->idata, m, len);

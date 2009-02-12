@@ -1,3 +1,13 @@
+/*
+ *	UCW Library -- Logging
+ *
+ *	(c) 2008 Tomas Gavenciak <gavento@ucw.cz>
+ *	(c) 2009 Martin Mares <mj@ucw.cz>
+ *
+ *	This software may be freely distributed and used according to the terms
+ *	of the GNU Lesser General Public License.
+ */
+
 #ifndef _UCW_LOGSTREAM_H_
 #define _UCW_LOGSTREAM_H_
 
@@ -30,7 +40,7 @@ struct log_stream
   void (*close)(struct log_stream* ls);
 };
 
-/* the deafult logger */
+/* the default logger */
 extern const struct log_stream ls_default_log;
 
 /* A message is processed as follows:
@@ -42,7 +52,7 @@ extern const struct log_stream ls_default_log;
  */
 
 /* log header verbosity specifying message passed to handler */
-enum LS_FMT
+enum ls_fmt
 {
   LSFMT_LEVEL=1,       /* log severity level (one letter) */
   LSFMT_TIME=2,        /* log time (date-seconds) */
@@ -55,7 +65,7 @@ enum LS_FMT
   LSFMT_DEFAULT=LSFMT_LEVEL+LSFMT_TIME
 };
 
-enum LS_LEVELS
+enum ls_levels
 {
   L_DEBUG=0,     /*  'D'  -  Debugging messages */
   L_INFO,        /*  'I'  -  Informational */
@@ -80,7 +90,7 @@ enum LS_LEVELS
 //     <8 bits: severity level> LSB
 
 // Bits per section
-enum LS_FLAGBITS {
+enum ls_flagbits {
   LS_LEVEL_BITS    = 8,
   LS_STRNUM_BITS   = 16,
   LS_FLAGS_BITS    = 5,
@@ -88,7 +98,7 @@ enum LS_FLAGBITS {
 };
 
 // Section shifts
-enum LS_FLAGPOS {
+enum ls_flagpos {
   LS_LEVEL_POS     = 0,
   LS_STRNUM_POS    = LS_LEVEL_POS + LS_LEVEL_BITS,
   LS_FLAGS_POS     = LS_STRNUM_POS + LS_STRNUM_BITS,
@@ -96,7 +106,7 @@ enum LS_FLAGPOS {
 };
 
 // Bitmasks
-enum LS_FLAGMASKS {
+enum ls_flagmasks {
   LS_LEVEL_MASK    = (( 1 << LS_LEVEL_BITS ) - 1 ) << LS_LEVEL_POS,
   LS_STRNUM_MASK   = (( 1 << LS_STRNUM_BITS ) - 1 ) << LS_STRNUM_POS,
   LS_FLAGS_MASK    = (( 1 << LS_FLAGS_BITS ) - 1 ) << LS_FLAGS_POS,
@@ -120,7 +130,7 @@ enum LS_FLAGMASKS {
 #define LSFLAG_SIGHANDLER LS_SET_INTERNAL(0x001)
 
 // The module is initialized when a first stream is created.
-// Before that only the default log exists.
+// Before that only the default stream exists.
 
 // Initial number of streams to allocate (must be >=2)
 #define LS_INIT_STREAMS 8
@@ -136,7 +146,7 @@ void ls_close(struct log_stream *ls);
  * use only ls_default_log */
 void ls_close_all(void);
 
-/* add a new substream, malloc()-ate a new simp_node */
+/* add a new substream, xmalloc()-ate a new simp_node */
 void ls_add_substream(struct log_stream *where, struct log_stream *what);
 
 /* remove all occurences of a substream, free() the simp_node */
