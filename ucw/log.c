@@ -64,7 +64,7 @@ log_stream_by_flags(uns flags)
 {
   int n = LS_GET_STRNUM(flags);
   if (n < 0 || n >= log_streams_after || log_streams.ptr[n]->regnum == -1)
-    return (n ? NULL : (struct log_stream *) &log_stream_default);
+    return (n ? NULL : LOG_STREAM_DEFAULT);
   return log_streams.ptr[n];
 }
 
@@ -88,7 +88,7 @@ vmsg(uns cat, const char *fmt, va_list args)
   if (!ls)
     {
       msg((LS_INTERNAL_MASK&cat)|L_WARN, "No log_stream with number %d! Logging to the default log.", LS_GET_STRNUM(cat));
-      ls = (struct log_stream *) &log_stream_default;
+      ls = LOG_STREAM_DEFAULT;
     }
 
   /* Get the current time */
@@ -139,7 +139,7 @@ vmsg(uns cat, const char *fmt, va_list args)
   if (log_pass_msg(0, ls, &m))
     {
       /* Error (such as infinite loop) occurred */
-      log_pass_msg(0, (struct log_stream *) &log_stream_default, &m);
+      log_pass_msg(0, LOG_STREAM_DEFAULT, &m);
     }
 
   if (m.raw_msg != msgbuf)
@@ -160,7 +160,7 @@ log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
       struct log_msg errm = *m;
       errm.flags = L_ERROR | (m->flags & LS_INTERNAL_MASK);
       errm.raw_msg = "Loop in the log_stream system detected.";
-      log_pass_msg(0, (struct log_stream *) &log_stream_default, &errm);
+      log_pass_msg(0, LOG_STREAM_DEFAULT, &errm);
     }
 
   /* Filter by level and hook function */

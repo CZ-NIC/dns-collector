@@ -110,7 +110,7 @@ log_file(const char *name)
     {
       struct log_stream *old = s->p;
       log_rm_substream(def, old);
-      if (old != (struct log_stream *) &log_stream_default)
+      if (old != LOG_STREAM_DEFAULT)
 	log_close_stream(old);
     }
   dup2(ls->idata, 2);			// Let fd2 be an alias for the log file

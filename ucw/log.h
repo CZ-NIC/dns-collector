@@ -53,6 +53,7 @@ struct log_stream
 
 /* the default logger */
 extern const struct log_stream log_stream_default;
+#define LOG_STREAM_DEFAULT ((struct log_stream *) &log_stream_default)
 
 /* A message is processed as follows:
  *  1. Discard if message level not in levels
