@@ -40,18 +40,18 @@ syslog_level(int level)
 
 /* simple syslog write handler */
 static int
-syslog_handler(struct log_stream *ls, const char *m, uns flags)
+syslog_handler(struct log_stream *ls, struct log_msg *m)
 {
   int prio;
   ASSERT(ls);
   ASSERT(m);
 
   // FIXME: Logging of PID
-  prio = syslog_level(LS_GET_LEVEL(flags)) | (ls->idata);
+  prio = syslog_level(LS_GET_LEVEL(m->flags)) | (ls->idata);
   if (ls->name)
-    syslog(prio | (ls->idata), "%s: %s", ls->name, m);
+    syslog(prio | (ls->idata), "%s: %s", ls->name, m->m);
   else
-    syslog(prio | (ls->idata), "%s", m);
+    syslog(prio | (ls->idata), "%s", m->m);
   return 0;
 }
 

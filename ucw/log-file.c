@@ -152,18 +152,12 @@ file_close(struct log_stream *ls)
 
 /* handler for standard files */
 static int
-file_handler(struct log_stream *ls, const char *m, uns cat UNUSED)
+file_handler(struct log_stream *ls, struct log_msg *m)
 {
-  if (ls->udata & FF_FORMAT_NAME)
-    {
-      // FIXME: pass the time
-      time_t now = time(NULL);
-      struct tm *tm = localtime(&now);
-      do_log_switch(ls, tm);
-    }
+  if ((ls->udata & FF_FORMAT_NAME) && m->tm)
+    do_log_switch(ls, m->tm);
 
-  int len = strlen(m);
-  int r = write(ls->idata, m, len);
+  int r = write(ls->idata, m->m, m->m_len);
   /* FIXME: check for errors here? */
   return 0;
 }

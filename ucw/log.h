@@ -16,6 +16,17 @@
 /* user de/allocated program/process name for use in the logsystem */
 extern char *ls_title;
 
+struct log_msg
+{
+  char *m;				// The formatted message itself, ending with \n\0
+  int m_len;				// Length without the \0
+  struct tm *tm;
+  uns flags;
+  char *raw_msg;			// Unformatted parts
+  char *stime;
+  char *sutime;
+};
+
 struct log_stream
 {
   /* optional name, 0-term, de/allocated by constr./destr. or user */
@@ -29,14 +40,13 @@ struct log_stream
   /* severity levels to accept - bitmask of (1<<LEVEL) */
   int levels;
   /* if filter returns nonzero, discard the message */
-  int (*filter)(struct log_stream* ls, const char *m, uns cat);
+  int (*filter)(struct log_stream* ls, struct log_msg *m);
   /* pass the message to these streams (simple-list of pointers) */
   struct clist substreams;
   /* what kind of string to format to pass to the handler (bitmask of LSFMT_xxx ) */
   int msgfmt;
-  /* what to do to commit the message (ret 0 on success, nonzero on error)
-   * msg is 0-term string, with desired info, one line, ending with "\n\0". */
-  int (*handler)(struct log_stream* ls, const char *m, uns cat);
+  /* what to do to commit the message (ret 0 on success, nonzero on error) */
+  int (*handler)(struct log_stream *ls, struct log_msg *m);
   /* close the log_stream file/connection */
   void (*close)(struct log_stream* ls);
 };
@@ -148,8 +158,7 @@ struct log_stream *log_stream_by_flags(uns flags);
 /* depth prevents undetected looping */
 /* returns 1 in case of loop detection or other fatal error
  *         0 otherwise */
-int log_pass_msg(int depth, struct log_stream *ls, const char *stime, const char *sutime,
-    const char *msg, uns cat);
+int log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m);
 
 /* Define an array (growing buffer) for pointers to log_streams. */
 #define GBUF_TYPE struct log_stream*

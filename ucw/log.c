@@ -27,10 +27,10 @@ void (*log_die_hook)(void);
 
 /*** The default log stream, which logs to stderr ***/
 
-static int default_log_handler(struct log_stream *ls, const char *m, uns cat UNUSED)
+static int default_log_handler(struct log_stream *ls, struct log_msg *m)
 {
   // This is a completely bare version of the log-file module. Errors are ignored.
-  write(ls->idata, m, strlen(m));
+  write(ls->idata, m->m, m->m_len);
   return 0;
 }
 
@@ -74,15 +74,15 @@ void
 vmsg(uns cat, const char *fmt, va_list args)
 {
   struct timeval tv;
-  int have_tm = 0;
   struct tm tm;
   va_list args2;
   char stime[24];
   char sutime[12];
   char msgbuf[256];
-  char *m, *p;
+  char *p;
   int len;
   struct log_stream *ls = log_stream_by_flags(cat);
+  struct log_msg m = { .flags = cat };
 
   /* Check the stream existence */
   if (!ls)
@@ -97,19 +97,21 @@ vmsg(uns cat, const char *fmt, va_list args)
       /* CAVEAT: These calls are not safe in signal handlers. */
       gettimeofday(&tv, NULL);
       if (localtime_r(&tv.tv_sec, &tm))
-	have_tm = 1;
+	m.tm = &tm;
     }
 
   /* Generate time strings */
-  if (have_tm)
+  if (m.tm)
     {
       strftime(stime, sizeof(stime), "%Y-%m-%d %H:%M:%S", &tm);
       snprintf(sutime, sizeof(sutime), ".%06d", (int)tv.tv_usec);
+      m.stime = stime;
+      m.sutime = sutime;
     }
   else
     {
-      snprintf(stime, sizeof(stime), "\?\?\?\?-\?\?-\?\? \?\?:\?\?:\?\?");
-      snprintf(sutime, sizeof(sutime), ".\?\?\?\?\?\?");
+      m.stime = "\?\?\?\?-\?\?-\?\? \?\?:\?\?:\?\?";
+      m.sutime = ".\?\?\?\?\?\?";
     }
 
   /* Generate the message string */
@@ -117,15 +119,15 @@ vmsg(uns cat, const char *fmt, va_list args)
   len = vsnprintf(msgbuf, sizeof(msgbuf), fmt, args2);
   va_end(args2);
   if (len < (int) sizeof(msgbuf))
-    m = msgbuf;
+    m.raw_msg = msgbuf;
   else
     {
-      m = xmalloc(len+1);
-      vsnprintf(m, len+1, fmt, args);
+      m.raw_msg = xmalloc(len+1);
+      vsnprintf(m.raw_msg, len+1, fmt, args);
     }
 
   /* Remove non-printable characters and newlines */
-  p = m;
+  p = m.raw_msg;
   while (*p)
     {
       if (*p < 0x20 && *p != '\t')
@@ -134,41 +136,42 @@ vmsg(uns cat, const char *fmt, va_list args)
     }
 
   /* Pass the message to the log_stream */
-  if (log_pass_msg(0, ls, stime, sutime, m, cat))
+  if (log_pass_msg(0, ls, &m))
     {
       /* Error (such as infinite loop) occurred */
-      log_pass_msg(0, (struct log_stream *) &log_stream_default, stime, sutime, m, cat);
+      log_pass_msg(0, (struct log_stream *) &log_stream_default, &m);
     }
 
-  if (m != msgbuf)
-    xfree(m);
+  if (m.raw_msg != msgbuf)
+    xfree(m.raw_msg);
 }
 
 /* Maximal depth of log_pass_msg recursion */
 #define LS_MAX_DEPTH 64
 
 int
-log_pass_msg(int depth, struct log_stream *ls, const char *stime, const char *sutime, const char *m, uns cat)
+log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
 {
   ASSERT(ls);
 
   /* Check recursion depth */
   if (depth > LS_MAX_DEPTH)
     {
-      log_pass_msg(0, (struct log_stream *) &log_stream_default, stime, sutime,
-	"Loop in the log_stream system detected.", L_ERROR | (cat & LS_INTERNAL_MASK));
-      return 1;
+      struct log_msg errm = *m;
+      errm.flags = L_ERROR | (m->flags & LS_INTERNAL_MASK);
+      errm.raw_msg = "Loop in the log_stream system detected.";
+      log_pass_msg(0, (struct log_stream *) &log_stream_default, &errm);
     }
 
   /* Filter by level and hook function */
-  if (!((1 << LS_GET_LEVEL(cat)) & ls->levels))
+  if (!((1 << LS_GET_LEVEL(m->flags)) & ls->levels))
     return 0;
-  if (ls->filter && ls->filter(ls, m, cat))
+  if (ls->filter && ls->filter(ls, m))
     return 0;
 
   /* Pass the message to substreams */
   CLIST_FOR_EACH(simp_node *, s, ls->substreams)
-    if (log_pass_msg(depth+1, s->p, stime, sutime, m, cat))
+    if (log_pass_msg(depth+1, s->p, m))
       return 1;
 
   /* Will pass to the handler of this stream... is there any? */
@@ -176,7 +179,7 @@ log_pass_msg(int depth, struct log_stream *ls, const char *stime, const char *su
     return 0;
 
   /* Upper bound on message length */
-  int len = strlen(m) + strlen(stime) + strlen(sutime) + 32;
+  int len = strlen(m->raw_msg) + strlen(m->stime) + strlen(m->sutime) + 32;
   if (log_title)
     len += strlen(log_title);
   if (ls->name)
@@ -184,29 +187,28 @@ log_pass_msg(int depth, struct log_stream *ls, const char *stime, const char *su
 
   /* Get a buffer and format the message */
   char *free_buf = NULL;
-  char *buf;
   if (len <= 256)
-    buf = alloca(len);
+    m->m = alloca(len);
   else
-    buf = free_buf = xmalloc(len);
-  char *p = buf;
+    m->m = free_buf = xmalloc(len);
+  char *p = m->m;
 
   /* Level (2 chars) */
   if (ls->msgfmt & LSFMT_LEVEL)
     {
-      *p++ = LS_LEVEL_LETTER(LS_GET_LEVEL(cat));
+      *p++ = LS_LEVEL_LETTER(LS_GET_LEVEL(m->flags));
       *p++ = ' ';
     }
 
   /* Time (|stime| + |sutime| + 1 chars) */
   if (ls->msgfmt & LSFMT_TIME)
     {
-      const char *q = (char *)stime;
+      const char *q = m->stime;
       while (*q)
 	*p++ = *q++;
       if (ls->msgfmt & LSFMT_USEC)
 	{
-	  q = sutime;
+	  q = m->sutime;
 	  while (*q)
 	    *p++ = *q++;
 	}
@@ -238,12 +240,13 @@ log_pass_msg(int depth, struct log_stream *ls, const char *stime, const char *su
 
   /* The message itself ( |m| + 1 chars ) */
     {
-      const char *q = m;
+      const char *q = m->raw_msg;
       while (*q)
 	*p++ = *q++;
       *p++ = '\n';
-      *p++ = '\0';
-      ls->handler(ls, buf, cat);
+      *p = '\0';
+      m->m_len = p - m->m;
+      ls->handler(ls, m);
     }
 
   if (free_buf)
