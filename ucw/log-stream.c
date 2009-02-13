@@ -48,7 +48,7 @@ log_init_module(void)
   ASSERT(ls == log_streams.ptr[0]);
   ASSERT(ls->regnum == 0);
   ls->name = "default";
-  log_add_substream(ls, (struct log_stream *) &log_stream_default);
+  log_add_substream(ls, &log_stream_default);
 }
 
 /* Close all open streams, un-initialize the module, free all memory,
@@ -73,7 +73,8 @@ log_close_all(void)
   log_initialized = 0;
 }
 
-/* Add a new substream, xmalloc()-ate a new simp_node. */
+/* Add a new substream. The parent stream takes a reference on the substream,
+ * preventing it from being closed as long as it is linked. */
 void
 log_add_substream(struct log_stream *where, struct log_stream *what)
 {
@@ -81,24 +82,25 @@ log_add_substream(struct log_stream *where, struct log_stream *what)
   ASSERT(what);
 
   simp_node *n = xmalloc(sizeof(simp_node));
-  n->p = what;
+  n->p = log_ref_stream(what);
   clist_add_tail(&where->substreams, &n->n);
 }
 
-/* Remove all occurences of a substream, xfree() the simp_node. */
-/* Return the number of deleted entries. */
+/* Remove all occurences of a substream together with the references they
+ * keep. If a substream becomes unreferenced, it is closed. If what is NULL,
+ * all substreams are removed. Returns the number of deleted entries. */
 int
 log_rm_substream(struct log_stream *where, struct log_stream *what)
 {
   void *tmp;
   int cnt = 0;
   ASSERT(where);
-  ASSERT(what);
 
   CLIST_FOR_EACH_DELSAFE(simp_node *, i, where->substreams, tmp)
-    if (i->p == what)
+    if (i->p == what || !what)
       {
 	clist_remove(&i->n);
+	log_close_stream(i->p);
 	xfree(i);
 	cnt++;
       }
@@ -125,7 +127,7 @@ log_new_stream(void)
   else
     {
       index = log_streams_free;
-  l = log_streams.ptr[index];
+      l = log_streams.ptr[index];
       log_streams_free = l->idata;
     }
 
@@ -134,22 +136,22 @@ log_new_stream(void)
   l->levels = LS_ALL_LEVELS;
   l->regnum = LS_SET_STRNUM(index);
   clist_init(&l->substreams);
-  return l;
+  return log_ref_stream(l);
 }
 
-/* Close a stream, unlink (but do not close) all its substreams */
-void
+/* Remove a reference on a stream and close it if it was the last reference.
+ * Closing automatically unlinks all substreams and closes them if they are
+ * no longer referenced. Returns 1 if the stream has been really closed. */
+int
 log_close_stream(struct log_stream *ls)
 {
-  void *tmp;
   ASSERT(ls);
+  ASSERT(ls->use_count);
+  if (--ls->use_count)
+    return 0;
 
-  /* xfree() all the simp_nodes from substreams */
-  CLIST_FOR_EACH_DELSAFE(simp_node *, i, ls->substreams, tmp)
-    {
-      clist_remove(&i->n);
-      xfree(i);
-    }
+  /* Unlink all subtreams */
+  log_rm_substream(ls, NULL);
 
   /* Close the stream and add it to the free-list */
   if (ls->close)
@@ -157,4 +159,5 @@ log_close_stream(struct log_stream *ls)
   ls->idata = log_streams_free;
   log_streams_free = LS_GET_STRNUM(ls->regnum);
   ls->regnum = -1;
+  return 1;
 }

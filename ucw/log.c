@@ -34,9 +34,10 @@ static int default_log_handler(struct log_stream *ls, struct log_msg *m)
   return 0;
 }
 
-const struct log_stream log_stream_default = {
+struct log_stream log_stream_default = {
   .name = "stderr",
   .idata = 2,
+  .use_count = 1000000,
   .handler = default_log_handler,
   .levels = LS_ALL_LEVELS,
   .msgfmt = LSFMT_DEFAULT,

@@ -105,16 +105,9 @@ log_file(const char *name)
 
   struct log_stream *ls = log_new_file(name);
   struct log_stream *def = log_stream_by_flags(0);
-  simp_node *s;
-  while (s = clist_head(&def->substreams))
-    {
-      struct log_stream *old = s->p;
-      log_rm_substream(def, old);
-      if (old != LOG_STREAM_DEFAULT)
-	log_close_stream(old);
-    }
-  dup2(ls->idata, 2);			// Let fd2 be an alias for the log file
+  log_rm_substream(def, NULL);
   log_add_substream(def, ls);
+  dup2(ls->idata, 2);			// Let fd2 be an alias for the log file
 }
 
 /* destructor for standard files */

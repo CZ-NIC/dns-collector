@@ -33,18 +33,19 @@ struct log_stream
   int regnum;				// Stream number, already encoded by LS_SET_STRNUM(); -1 if closed
   uns levels;				// Bitmask of accepted severity levels
   uns msgfmt;				// Formatting flags (LSFMT_xxx)
+  uns use_count;			// Number of references to the stream
   int (*filter)(struct log_stream* ls, struct log_msg *m);	// Filter function, return non-zero to discard the message
   struct clist substreams;		// Pass the message to these streams (simple_list of pointers)
   int (*handler)(struct log_stream *ls, struct log_msg *m);	// Called to commit the message
-  void (*close)(struct log_stream* ls);	// Called on log_close_stream()
+  void (*close)(struct log_stream* ls);	// Called upon log_close_stream()
   int idata;				// Private data of the handler
   void *pdata;
   uns udata;
 };
 
 /* the default logger */
-extern const struct log_stream log_stream_default;
-#define LOG_STREAM_DEFAULT ((struct log_stream *) &log_stream_default)
+extern struct log_stream log_stream_default;
+#define LOG_STREAM_DEFAULT &log_stream_default
 
 /* A message is processed as follows:
  *  1. Discard if message level not in levels
@@ -128,7 +129,15 @@ struct log_stream *log_new_stream(void);
 
 /* Close and xfree() given log_stream */
 /* Does not affect substreams */
-void log_close_stream(struct log_stream *ls);
+int log_close_stream(struct log_stream *ls);
+
+/* Get a new reference on a stream */
+static inline struct log_stream *
+log_ref_stream(struct log_stream *ls)
+{
+  ls->use_count++;
+  return ls;
+}
 
 /* close all open streams, un-initialize the module, free all memory,
  * use only ls_default_log */
