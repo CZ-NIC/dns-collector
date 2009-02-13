@@ -117,30 +117,6 @@ log_file(const char *name)
   log_add_substream(def, ls);
 }
 
-int
-log_switch(void)
-{
-#if 0 // FIXME
-  time_t tim = time(NULL);
-  return do_log_switch(localtime(&tim));
-#else
-  return 0;
-#endif
-}
-
-void
-log_switch_disable(void)
-{
-  log_switch_nest++;
-}
-
-void
-log_switch_enable(void)
-{
-  ASSERT(log_switch_nest);
-  log_switch_nest--;
-}
-
 /* destructor for standard files */
 static void
 file_close(struct log_stream *ls)
@@ -194,8 +170,36 @@ log_new_file(const char *path)
 
   time_t now = time(NULL);
   struct tm *tm = localtime(&now);
+  ASSERT(tm);
   do_log_switch(ls, tm);		// die()'s on errors
   return ls;
+}
+
+int
+log_switch(void)
+{
+  time_t now = time(NULL);
+  struct tm *tm = localtime(&now);
+  ASSERT(tm);
+
+  int switched = 0;
+  for (int i=0; i < log_streams_after; i++)
+    if (log_streams.ptr[i]->handler == file_handler)
+      switched |= do_log_switch(log_streams.ptr[i], tm);
+  return switched;
+}
+
+void
+log_switch_disable(void)
+{
+  log_switch_nest++;
+}
+
+void
+log_switch_enable(void)
+{
+  ASSERT(log_switch_nest);
+  log_switch_nest--;
 }
 
 #ifdef TEST
