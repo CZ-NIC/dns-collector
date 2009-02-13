@@ -13,39 +13,41 @@
 
 #include <syslog.h>
 
-/* destructor for syslog logs */
-static void ls_syslog_close(struct log_stream *ls)
+/* Destructor */
+static void
+syslog_close(struct log_stream *ls)
 {
-  ASSERT(ls);
-  if(ls->name)
+  if (ls->name)
     xfree(ls->name);
 }
 
 /* convert severity level to syslog constants */
-static int ls_syslog_convert_level(int level)
+static int
+syslog_level(int level)
 {
-  switch(level)
-  {
-    case L_DEBUG: return LOG_DEBUG;
-    case L_INFO: return LOG_INFO;
-    case L_INFO_R: return LOG_INFO;
-    case L_WARN: return LOG_WARNING;
-    case L_WARN_R: return LOG_WARNING;
-    case L_ERROR: return LOG_ERR;
-    case L_ERROR_R: return LOG_ERR;
-    case L_FATAL: return LOG_CRIT;
-    default: return LOG_NOTICE;
-  }
+  static const int levels[] = {
+    [L_DEBUG] =		LOG_DEBUG,
+    [L_INFO] =		LOG_INFO,
+    [L_INFO_R] =	LOG_INFO,
+    [L_WARN] =		LOG_WARNING,
+    [L_WARN_R] =	LOG_WARNING,
+    [L_ERROR] =		LOG_ERR,
+    [L_ERROR_R] =	LOG_ERR,
+    [L_FATAL] =		LOG_CRIT,
+  };
+  return ((level < (int)ARRAY_SIZE(levels)) ? levels[level] : LOG_NOTICE);
 }
 
 /* simple syslog write handler */
-static int ls_syslog_handler(struct log_stream *ls, const char *m, uns flags)
+static int
+syslog_handler(struct log_stream *ls, const char *m, uns flags)
 {
   int prio;
   ASSERT(ls);
   ASSERT(m);
 
-  prio = ls_syslog_convert_level(LS_GET_LEVEL(flags)) | (ls->idata);
+  // FIXME: Logging of PID
+  prio = syslog_level(LS_GET_LEVEL(flags)) | (ls->idata);
   if (ls->name)
     syslog(prio | (ls->idata), "%s: %s", ls->name, m);
   else
@@ -56,13 +58,15 @@ static int ls_syslog_handler(struct log_stream *ls, const char *m, uns flags)
 /* assign log to a syslog facility */
 /* initialize with no formatting (syslog adds these inforamtion) */
 /* name is optional prefix (NULL for none) */
-struct log_stream *ls_syslog_new(int facility, const char *name)
+struct log_stream *
+log_new_syslog(int facility, const char *name)
 {
-  struct log_stream *ls=log_new_stream();
-  if (name) ls->name = xstrdup(name);
+  struct log_stream *ls = log_new_stream();
+  if (name)
+    ls->name = xstrdup(name);
   ls->idata = facility;
   ls->msgfmt = LSFMT_NONE;
-  ls->handler = ls_syslog_handler;
-  ls->close = ls_syslog_close;
+  ls->handler = syslog_handler;
+  ls->close = syslog_close;
   return ls;
 }

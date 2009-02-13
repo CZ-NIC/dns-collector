@@ -188,6 +188,6 @@ struct log_stream *ls_file_new(const char *path);
 /* assign log to a syslog facility */
 /* initialize with no formatting (syslog adds these inforamtion) */
 /* name is optional prefix (NULL for none) */
-struct log_stream *ls_syslog_new(int facility, const char *name);
+struct log_stream *log_new_syslog(int facility, const char *name);
 
 #endif
