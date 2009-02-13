@@ -159,7 +159,7 @@ void ls_die(const char *fmt, ...);
 /* depth prevents undetected looping */
 /* returns 1 in case of loop detection or other fatal error
  *         0 otherwise */
-int ls_passmsg(int depth, struct log_stream *ls, const char *stime, const char *sutime,
+int log_pass_msg(int depth, struct log_stream *ls, const char *stime, const char *sutime,
     const char *msg, uns cat);
 
 /* Maximal depth of ls_passmsg recursion */
