@@ -39,7 +39,7 @@ static int ls_syslog_convert_level(int level)
 }
 
 /* simple syslog write handler */
-static int ls_syslog_handler(struct log_stream *ls, const char *m, u32 flags)
+static int ls_syslog_handler(struct log_stream *ls, const char *m, uns flags)
 {
   int prio;
   ASSERT(ls);

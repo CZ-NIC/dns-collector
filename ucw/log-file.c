@@ -124,7 +124,7 @@ static void ls_fdfile_close(struct log_stream *ls)
 }
 
 /* handler for standard files */
-static int ls_fdfile_handler(struct log_stream* ls, const char *m, u32 cat UNUSED)
+static int ls_fdfile_handler(struct log_stream* ls, const char *m, uns cat UNUSED)
 {
   int len = strlen(m);
   int r = write(ls->idata, m, len);

@@ -28,14 +28,14 @@ struct log_stream
   /* severity levels to accept - bitmask of (1<<LEVEL) */
   int levels;
   /* if filter returns nonzero, discard the message */
-  int (*filter)(struct log_stream* ls, const char *m, u32 cat);
+  int (*filter)(struct log_stream* ls, const char *m, uns cat);
   /* pass the message to these streams (simple-list of pointers) */
   struct clist substreams;
   /* what kind of string to format to pass to the handler (bitmask of LSFMT_xxx ) */
   int msgfmt;
   /* what to do to commit the message (ret 0 on success, nonzero on error)
    * msg is 0-term string, with desired info, one line, ending with "\n\0". */
-  int (*handler)(struct log_stream* ls, const char *m, u32 cat);
+  int (*handler)(struct log_stream* ls, const char *m, uns cat);
   /* close the log_stream file/connection */
   void (*close)(struct log_stream* ls);
 };
@@ -160,7 +160,7 @@ void ls_die(const char *fmt, ...);
 /* returns 1 in case of loop detection or other fatal error
  *         0 otherwise */
 int ls_passmsg(int depth, struct log_stream *ls, const char *stime, const char *sutime,
-    const char *msg, u32 cat);
+    const char *msg, uns cat);
 
 /* Maximal depth of ls_passmsg recursion */
 #define LS_MAX_DEPTH 64
