@@ -20,8 +20,8 @@ struct log_msg
 {
   char *m;				// The formatted message itself, ending with \n\0
   int m_len;				// Length without the \0
-  struct tm *tm;
-  uns flags;
+  struct tm *tm;			// Current time
+  uns flags;				// Category and other flags as passed to msg()
   char *raw_msg;			// Unformatted parts
   char *stime;
   char *sutime;
@@ -29,26 +29,17 @@ struct log_msg
 
 struct log_stream
 {
-  /* optional name, 0-term, de/allocated by constr./destr. or user */
-  char *name;
-  /* number for use with msg parameter (from LS_SET_STRNUM()), -1 for closed log_stream */
-  int regnum;
-  /* arbitrary data for filter/handler */
-  int idata;
+  char *name;				// Optional name, allocated by the user (or constructor)
+  int regnum;				// Stream number, already encoded by LS_SET_STRNUM(); -1 if closed
+  uns levels;				// Bitmask of accepted severity levels
+  uns msgfmt;				// Formatting flags (LSFMT_xxx)
+  int (*filter)(struct log_stream* ls, struct log_msg *m);	// Filter function, return non-zero to discard the message
+  struct clist substreams;		// Pass the message to these streams (simple_list of pointers)
+  int (*handler)(struct log_stream *ls, struct log_msg *m);	// Called to commit the message
+  void (*close)(struct log_stream* ls);	// Called on log_close_stream()
+  int idata;				// Private data of the handler
   void *pdata;
   uns udata;
-  /* severity levels to accept - bitmask of (1<<LEVEL) */
-  int levels;
-  /* if filter returns nonzero, discard the message */
-  int (*filter)(struct log_stream* ls, struct log_msg *m);
-  /* pass the message to these streams (simple-list of pointers) */
-  struct clist substreams;
-  /* what kind of string to format to pass to the handler (bitmask of LSFMT_xxx ) */
-  int msgfmt;
-  /* what to do to commit the message (ret 0 on success, nonzero on error) */
-  int (*handler)(struct log_stream *ls, struct log_msg *m);
-  /* close the log_stream file/connection */
-  void (*close)(struct log_stream* ls);
 };
 
 /* the default logger */
