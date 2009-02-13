@@ -20,15 +20,12 @@
 #include <unistd.h>
 #include <time.h>
 
-/*
- *  Use of the private fields of struct log_stream:
- *
- *	idata	file descriptor
- *	udata	various flags (FF_xxx)
- *	pdata	original name with strftime escapes
- *	name	current name of the log file
- *		(a dynamically allocated buffer)
- */
+struct file_stream {
+  struct log_stream ls;		// ls.name is the current name of the log file
+  int fd;
+  uns flags;			// FF_xxx
+  char *orig_name;		// Original name with strftime escapes
+};
 
 enum log_file_flag {
   FF_FORMAT_NAME = 1,		// Name contains strftime escapes
@@ -40,41 +37,41 @@ enum log_file_flag {
 static int log_switch_nest;
 
 static void
-do_log_reopen(struct log_stream *ls, const char *name)
+do_log_reopen(struct file_stream *fs, const char *name)
 {
   int fd = ucw_open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
   if (fd < 0)
     die("Unable to open log file %s: %m", name);
-  if (ls->idata < 0)
-    ls->idata = fd;
+  if (fs->fd < 0)
+    fs->fd = fd;
   else
     {
-      dup2(fd, ls->idata);
+      dup2(fd, fs->fd);
       close(fd);
     }
-  if (ls->name)
+  if (fs->ls.name)
     {
-      xfree(ls->name);
-      ls->name = NULL;		// We have to keep this consistent, die() below can invoke logging
+      xfree(fs->ls.name);
+      fs->ls.name = NULL;	// We have to keep this consistent, die() below can invoke logging
     }
-  ls->name = xstrdup(name);
+  fs->ls.name = xstrdup(name);
 }
 
 static int
-do_log_switch(struct log_stream *ls, struct tm *tm)
+do_log_switch(struct file_stream *fs, struct tm *tm)
 {
-  if (!(ls->udata & FF_FORMAT_NAME))
+  if (!(fs->flags & FF_FORMAT_NAME))
     {
-      if (ls->idata >= 0)
+      if (fs->fd >= 0)
 	return 1;
       else
 	{
-	  do_log_reopen(ls, ls->pdata);
+	  do_log_reopen(fs, fs->orig_name);
 	  return 1;
 	}
     }
 
-  int buflen = strlen(ls->pdata) + MAX_EXPAND;
+  int buflen = strlen(fs->orig_name) + MAX_EXPAND;
   char name[buflen];
   int switched = 0;
 
@@ -82,12 +79,12 @@ do_log_switch(struct log_stream *ls, struct tm *tm)
   if (!log_switch_nest)		// Avoid infinite loops if we die when switching logs
     {
       log_switch_nest++;
-      int l = strftime(name, buflen, ls->pdata, tm);
+      int l = strftime(name, buflen, fs->orig_name, tm);
       if (l < 0 || l >= buflen)
 	die("Error formatting log file name: %m");
-      if (!ls->name || strcmp(name, ls->name))
+      if (!fs->ls.name || strcmp(name, fs->ls.name))
 	{
-	  do_log_reopen(ls, name);
+	  do_log_reopen(fs, name);
 	  switched = 1;
 	}
       log_switch_nest--;
@@ -107,27 +104,29 @@ log_file(const char *name)
   struct log_stream *def = log_stream_by_flags(0);
   log_rm_substream(def, NULL);
   log_add_substream(def, ls);
-  dup2(ls->idata, 2);			// Let fd2 be an alias for the log file
+  dup2(((struct file_stream *)ls)->fd, 2);			// Let fd2 be an alias for the log file
 }
 
 /* destructor for standard files */
 static void
 file_close(struct log_stream *ls)
 {
-  if ((ls->udata & FF_CLOSE_FD) && ls->idata >= 0)
-    close(ls->idata);
-  xfree(ls->name);
-  xfree(ls->pdata);
+  struct file_stream *fs = (struct file_stream *) ls;
+  if ((fs->flags & FF_CLOSE_FD) && fs->fd >= 0)
+    close(fs->fd);
+  xfree(fs->ls.name);
+  xfree(fs->orig_name);
 }
 
 /* handler for standard files */
 static int
 file_handler(struct log_stream *ls, struct log_msg *m)
 {
-  if ((ls->udata & FF_FORMAT_NAME) && m->tm)
-    do_log_switch(ls, m->tm);
+  struct file_stream *fs = (struct file_stream *) ls;
+  if ((fs->flags & FF_FORMAT_NAME) && m->tm)
+    do_log_switch(fs, m->tm);
 
-  int r = write(ls->idata, m->m, m->m_len);
+  int r = write(fs->fd, m->m, m->m_len);
   /* FIXME: check for errors here? */
   return 0;
 }
@@ -137,8 +136,9 @@ file_handler(struct log_stream *ls, struct log_msg *m)
 struct log_stream *
 log_new_fd(int fd)
 {
-  struct log_stream *ls = log_new_stream();
-  ls->idata = fd;
+  struct log_stream *ls = log_new_stream(sizeof(struct file_stream));
+  struct file_stream *fs = (struct file_stream *) ls;
+  fs->fd = fd;
   ls->msgfmt = LSFMT_DEFAULT;
   ls->handler = file_handler;
   ls->close = file_close;
@@ -152,12 +152,13 @@ log_new_fd(int fd)
 struct log_stream *
 log_new_file(const char *path)
 {
-  struct log_stream *ls = log_new_stream();
-  ls->idata = -1;
-  ls->pdata = xstrdup(path);
+  struct log_stream *ls = log_new_stream(sizeof(struct file_stream));
+  struct file_stream *fs = (struct file_stream *) ls;
+  fs->fd = -1;
+  fs->orig_name = xstrdup(path);
   if (strchr(path, '%'))
-    ls->udata = FF_FORMAT_NAME;
-  ls->udata |= FF_CLOSE_FD;
+    fs->flags = FF_FORMAT_NAME;
+  fs->flags |= FF_CLOSE_FD;
   ls->msgfmt = LSFMT_DEFAULT;
   ls->handler = file_handler;
   ls->close = file_close;
@@ -165,7 +166,7 @@ log_new_file(const char *path)
   time_t now = time(NULL);
   struct tm *tm = localtime(&now);
   ASSERT(tm);
-  do_log_switch(ls, tm);		// die()'s on errors
+  do_log_switch(fs, tm);		// die()'s on errors
   return ls;
 }
 
@@ -179,7 +180,7 @@ log_switch(void)
   int switched = 0;
   for (int i=0; i < log_streams_after; i++)
     if (log_streams.ptr[i]->handler == file_handler)
-      switched |= do_log_switch(log_streams.ptr[i], tm);
+      switched |= do_log_switch((struct file_stream *) log_streams.ptr[i], tm);
   return switched;
 }
 

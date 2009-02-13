@@ -20,10 +20,10 @@
 /* Flag indicating initialization of the module */
 static int log_initialized = 0;
 
-/* The head of the list of freed log_streams indexes in log_streams.ptr (-1 if none free).
+/* The head of the list of freed log_streams indexes in log_streams.ptr (~0U if none free).
  * Freed positions in log_streams.ptr are connected into a linked list in the following way:
- * log_streams.ptr[log_streams_free].idata is the index of next freed position (or -1) */
-static int log_streams_free = -1;
+ * log_streams.ptr[log_streams_free].levels is the index of next freed position (or ~0U) */
+static uns log_streams_free = ~0U;
 
 /* Initialize the logstream module.
  * It is not neccessary to call this explicitely as it is called by
@@ -39,12 +39,12 @@ log_init_module(void)
   lsbuf_set_size(&log_streams, LS_INIT_STREAMS);
 
   bzero(log_streams.ptr, sizeof(struct log_stream*) * (log_streams.len));
-  log_streams_free = -1;
+  log_streams_free = ~0U;
 
   log_initialized = 1;
 
   /* init the default stream (0) as forwarder to fd2 */
-  struct log_stream *ls = log_new_stream();
+  struct log_stream *ls = log_new_stream(sizeof(*ls));
   ASSERT(ls == log_streams.ptr[0]);
   ASSERT(ls->regnum == 0);
   ls->name = "default";
@@ -69,7 +69,7 @@ log_close_all(void)
   /* Back to the default state */
   lsbuf_done(&log_streams);
   log_streams_after = 0;
-  log_streams_free = -1;
+  log_streams_free = ~0U;
   log_initialized = 0;
 }
 
@@ -86,7 +86,7 @@ log_add_substream(struct log_stream *where, struct log_stream *what)
   clist_add_tail(&where->substreams, &n->n);
 }
 
-/* Remove all occurences of a substream together with the references they
+/* Remove all occurrences of a substream together with the references they
  * keep. If a substream becomes unreferenced, it is closed. If what is NULL,
  * all substreams are removed. Returns the number of deleted entries. */
 int
@@ -109,7 +109,7 @@ log_rm_substream(struct log_stream *where, struct log_stream *what)
 
 /* Return a pointer to a new stream with no handler and an empty substream list. */
 struct log_stream *
-log_new_stream(void)
+log_new_stream(size_t size)
 {
   struct log_stream *l;
   int index;
@@ -118,17 +118,18 @@ log_new_stream(void)
   log_init_module();
 
   /* Get a free stream, possibly recycling a closed one */
-  if (log_streams_free < 0)
+  if (log_streams_free == ~0U)
     {
       lsbuf_grow(&log_streams, log_streams_after+1);
       index = log_streams_after++;
-      l = log_streams.ptr[index] = xmalloc(sizeof(struct log_stream));
+      l = log_streams.ptr[index] = xmalloc(size);
     }
   else
     {
       index = log_streams_free;
-      l = log_streams.ptr[index];
-      log_streams_free = l->idata;
+      l = xrealloc(log_streams.ptr[index], size);
+      log_streams.ptr[index] = l;
+      log_streams_free = l->levels;
     }
 
   /* Initialize the stream */
@@ -156,7 +157,7 @@ log_close_stream(struct log_stream *ls)
   /* Close the stream and add it to the free-list */
   if (ls->close)
     ls->close(ls);
-  ls->idata = log_streams_free;
+  ls->levels = log_streams_free;
   log_streams_free = LS_GET_STRNUM(ls->regnum);
   ls->regnum = -1;
   return 1;

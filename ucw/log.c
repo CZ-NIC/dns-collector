@@ -27,16 +27,15 @@ void (*log_die_hook)(void);
 
 /*** The default log stream, which logs to stderr ***/
 
-static int default_log_handler(struct log_stream *ls, struct log_msg *m)
+static int default_log_handler(struct log_stream *ls UNUSED, struct log_msg *m)
 {
   // This is a completely bare version of the log-file module. Errors are ignored.
-  write(ls->idata, m->m, m->m_len);
+  write(2, m->m, m->m_len);
   return 0;
 }
 
 struct log_stream log_stream_default = {
   .name = "stderr",
-  .idata = 2,
   .use_count = 1000000,
   .handler = default_log_handler,
   .levels = LS_ALL_LEVELS,

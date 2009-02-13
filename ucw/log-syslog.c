@@ -13,6 +13,11 @@
 
 #include <syslog.h>
 
+struct syslog_stream {
+  struct log_stream ls;
+  int facility;
+};
+
 /* Destructor */
 static void
 syslog_close(struct log_stream *ls)
@@ -42,16 +47,17 @@ syslog_level(int level)
 static int
 syslog_handler(struct log_stream *ls, struct log_msg *m)
 {
+  struct syslog_stream *ss = (struct syslog_stream *) ls;
   int prio;
   ASSERT(ls);
   ASSERT(m);
 
   // FIXME: Logging of PID
-  prio = syslog_level(LS_GET_LEVEL(m->flags)) | (ls->idata);
+  prio = syslog_level(LS_GET_LEVEL(m->flags)) | ss->facility;
   if (ls->name)
-    syslog(prio | (ls->idata), "%s: %s", ls->name, m->m);
+    syslog(prio, "%s: %s", ls->name, m->m);
   else
-    syslog(prio | (ls->idata), "%s", m->m);
+    syslog(prio, "%s", m->m);
   return 0;
 }
 
@@ -61,12 +67,13 @@ syslog_handler(struct log_stream *ls, struct log_msg *m)
 struct log_stream *
 log_new_syslog(int facility, const char *name)
 {
-  struct log_stream *ls = log_new_stream();
+  struct log_stream *ls = log_new_stream(sizeof(struct syslog_stream));
+  struct syslog_stream *ss = (struct syslog_stream *) ls;
   if (name)
     ls->name = xstrdup(name);
-  ls->idata = facility;
   ls->msgfmt = LSFMT_NONE;
   ls->handler = syslog_handler;
   ls->close = syslog_close;
+  ss->facility = facility;
   return ls;
 }

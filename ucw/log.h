@@ -38,9 +38,7 @@ struct log_stream
   struct clist substreams;		// Pass the message to these streams (simple_list of pointers)
   int (*handler)(struct log_stream *ls, struct log_msg *m);	// Called to commit the message
   void (*close)(struct log_stream* ls);	// Called upon log_close_stream()
-  int idata;				// Private data of the handler
-  void *pdata;
-  uns udata;
+  // Private data of the handler follow
 };
 
 /* the default logger */
@@ -123,8 +121,10 @@ enum ls_flagmasks {
 // The module is initialized when a first stream is created.
 // Before that only the default stream exists.
 
-/* Return pointer a new (xmalloc()-ated) stream with no handler and an empty substream list. */
-struct log_stream *log_new_stream(void);
+/* Return pointer a new (xmalloc()-ated) stream with no handler and an empty substream list.
+ * Since struct log_stream is followed by private data, @size bytes of memory are allocated
+ * for the whole structure. */
+struct log_stream *log_new_stream(size_t size);
 
 /* Close and xfree() given log_stream */
 /* Does not affect substreams */
