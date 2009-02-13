@@ -1,13 +1,15 @@
 /*
- *	UCW Library -- Keeping of Log Files
+ *	UCW Library -- Logging to Files
  *
- *	(c) 1997--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2009 Martin Mares <mj@ucw.cz>
+ *	(c) 2008 Tomas Gavenciak <gavento@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  */
 
 #include "ucw/lib.h"
+#include "ucw/log.h"
 #include "ucw/lfs.h"
 #include "ucw/threads.h"
 
@@ -16,6 +18,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
+#include <errno.h>
+
+#if 0 // FIXME
 
 static char *log_name_patt;
 static int log_params;
@@ -105,6 +110,59 @@ log_switch_enable(void)
 {
   ASSERT(log_switch_nest);
   log_switch_nest--;
+}
+
+#endif
+
+/* destructor for standard files */
+static void ls_fdfile_close(struct log_stream *ls)
+{
+  ASSERT(ls);
+  close(ls->idata);
+  if(ls->name)
+    xfree(ls->name);
+}
+
+/* handler for standard files */
+static int ls_fdfile_handler(struct log_stream* ls, const char *m, u32 cat UNUSED)
+{
+  int len = strlen(m);
+  int r = write(ls->idata, m, len);
+  /* TODO: check the errors here? */
+  if (r!=len)
+    return errno;
+  return 0;
+}
+
+/* assign log to a file descriptor */
+/* initialize with the default formatting, does NOT close the descriptor */
+struct log_stream *ls_fdfile_new(int fd)
+{
+  struct log_stream *ls=ls_new();
+  ls->idata=fd;
+  ls->msgfmt=LSFMT_DEFAULT;
+  ls->handler=ls_fdfile_handler;
+  return ls;
+}
+
+/* open() a file (append mode) */
+/* initialize with the default formatting */
+struct log_stream *ls_file_new(const char *path)
+{
+  struct log_stream *ls;
+  int fd = open(path, O_WRONLY | O_CREAT | O_APPEND, 0666);
+  if (fd<0)
+  {
+    ls_msg(L_ERROR, "Opening logfile '%s' failed: %m.", path);
+    return NULL;
+  }
+  ls = ls_new();
+  ls->name = xstrdup(path);
+  ls->idata = fd;
+  ls->msgfmt = LSFMT_DEFAULT;
+  ls->handler = ls_fdfile_handler;
+  ls->close = ls_fdfile_close;
+  return ls;
 }
 
 #ifdef TEST

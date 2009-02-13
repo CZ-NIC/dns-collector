@@ -1,15 +1,15 @@
 /*
  *	UCW Library -- Logging
  *
+ *	(c) 1997--2009 Martin Mares <mj@ucw.cz>
  *	(c) 2008 Tomas Gavenciak <gavento@ucw.cz>
- *	(c) 2009 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _UCW_LOGSTREAM_H_
-#define _UCW_LOGSTREAM_H_
+#ifndef _UCW_LOG_H_
+#define _UCW_LOG_H_
 
 #include "ucw/clists.h"
 
@@ -63,18 +63,6 @@ enum ls_fmt
   LSFMT_NONE=0,
   LSFMT_FULL=LSFMT_LEVEL+LSFMT_TIME+LSFMT_USEC+LSFMT_TITLE+LSFMT_PID+LSFMT_LOGNAME,
   LSFMT_DEFAULT=LSFMT_LEVEL+LSFMT_TIME
-};
-
-enum ls_levels
-{
-  L_DEBUG=0,     /*  'D'  -  Debugging messages */
-  L_INFO,        /*  'I'  -  Informational */
-  L_INFO_R,      /*  'i'  -  xxx_R are messages caused by external events */
-  L_WARN,        /*  'W'  -  Warning */
-  L_WARN_R,      /*  'w'  */
-  L_ERROR,       /*  'E'  -  Error, but non-critical */
-  L_ERROR_R,     /*  'e'  */
-  L_FATAL,       /*  '!'  -  Error, from die() */
 };
 
 /* Mask of containing all existing levels. */
@@ -156,7 +144,7 @@ int ls_rm_substream(struct log_stream *where, struct log_stream *what);
 /* get a stream by its number (regnum) */
 /* returns NULL for free numbers */
 /* defaults to ls_default_stream for 0 when stream number 0 not set */
-struct log_stream *ls_bynum(int num);
+struct log_stream *log_stream_by_flags(uns flags);
 
 /* The proposed alternative to original vmsg() */
 void ls_vmsg(unsigned int cat, const char *fmt, va_list args);
@@ -176,6 +164,14 @@ int ls_passmsg(int depth, struct log_stream *ls, const char *stime, const char *
 
 /* Maximal depth of ls_passmsg recursion */
 #define LS_MAX_DEPTH 64
+
+/* Define an array (growing buffer) for pointers to log_streams. */
+#define GBUF_TYPE struct log_stream*
+#define GBUF_PREFIX(x) lsbuf_##x
+#include "ucw/gbuf.h"
+
+extern struct lsbuf_t log_streams;
+extern int log_streams_after;
 
 /********* Individual handler types (constructors, handlers, destructors) */
 
