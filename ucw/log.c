@@ -53,7 +53,10 @@ int log_streams_after = 0;		/* The first never-used index in log_streams.ptr */
 /*
  *  Find a stream by its identifier given as LS_SET_STRNUM(flags).
  *  Returns NULL if the stream doesn't exist or it's invalid.
- *  When stream #0 is requested, fall back to log_stream_default.
+ *
+ *  If the log-stream machinery has not been initialized (which is normal for programs
+ *  with no fancy logging), the log_streams gbuf is empty and this function only
+ *  translates stream #0 to the static log_stream_default.
  */
 
 struct log_stream *
@@ -140,6 +143,9 @@ vmsg(uns cat, const char *fmt, va_list args)
   if (m != msgbuf)
     xfree(m);
 }
+
+/* Maximal depth of log_pass_msg recursion */
+#define LS_MAX_DEPTH 64
 
 int
 log_pass_msg(int depth, struct log_stream *ls, const char *stime, const char *sutime, const char *m, uns cat)

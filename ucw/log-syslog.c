@@ -58,7 +58,7 @@ static int ls_syslog_handler(struct log_stream *ls, const char *m, uns flags)
 /* name is optional prefix (NULL for none) */
 struct log_stream *ls_syslog_new(int facility, const char *name)
 {
-  struct log_stream *ls=ls_new();
+  struct log_stream *ls=log_new_stream();
   if (name) ls->name = xstrdup(name);
   ls->idata = facility;
   ls->msgfmt = LSFMT_NONE;

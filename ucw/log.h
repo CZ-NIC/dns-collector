@@ -41,7 +41,7 @@ struct log_stream
 };
 
 /* the default logger */
-extern const struct log_stream ls_default_log;
+extern const struct log_stream log_stream_default;
 
 /* A message is processed as follows:
  *  1. Discard if message level not in levels
@@ -120,40 +120,28 @@ enum ls_flagmasks {
 // The module is initialized when a first stream is created.
 // Before that only the default stream exists.
 
-// Initial number of streams to allocate (must be >=2)
-#define LS_INIT_STREAMS 8
-
 /* Return pointer a new (xmalloc()-ated) stream with no handler and an empty substream list. */
-struct log_stream *ls_new(void);
+struct log_stream *log_new_stream(void);
 
 /* Close and xfree() given log_stream */
 /* Does not affect substreams */
-void ls_close(struct log_stream *ls);
+void log_close_stream(struct log_stream *ls);
 
 /* close all open streams, un-initialize the module, free all memory,
  * use only ls_default_log */
-void ls_close_all(void);
+void log_close_all(void);
 
 /* add a new substream, xmalloc()-ate a new simp_node */
-void ls_add_substream(struct log_stream *where, struct log_stream *what);
+void log_add_substream(struct log_stream *where, struct log_stream *what);
 
 /* remove all occurences of a substream, free() the simp_node */
 /* return number of deleted entries */
-int ls_rm_substream(struct log_stream *where, struct log_stream *what);
+int log_rm_substream(struct log_stream *where, struct log_stream *what);
 
 /* get a stream by its number (regnum) */
 /* returns NULL for free numbers */
 /* defaults to ls_default_stream for 0 when stream number 0 not set */
 struct log_stream *log_stream_by_flags(uns flags);
-
-/* The proposed alternative to original vmsg() */
-void ls_vmsg(unsigned int cat, const char *fmt, va_list args);
-
-/* The proposed alternative to original msg() */
-void ls_msg(unsigned int cat, const char *fmt, ...);
-
-/* The proposed alternative to original die() */
-void ls_die(const char *fmt, ...);
 
 /* process a message (string) (INTERNAL) */
 /* depth prevents undetected looping */
@@ -161,9 +149,6 @@ void ls_die(const char *fmt, ...);
  *         0 otherwise */
 int log_pass_msg(int depth, struct log_stream *ls, const char *stime, const char *sutime,
     const char *msg, uns cat);
-
-/* Maximal depth of ls_passmsg recursion */
-#define LS_MAX_DEPTH 64
 
 /* Define an array (growing buffer) for pointers to log_streams. */
 #define GBUF_TYPE struct log_stream*

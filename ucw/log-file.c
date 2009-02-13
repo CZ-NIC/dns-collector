@@ -138,7 +138,7 @@ static int ls_fdfile_handler(struct log_stream* ls, const char *m, uns cat UNUSE
 /* initialize with the default formatting, does NOT close the descriptor */
 struct log_stream *ls_fdfile_new(int fd)
 {
-  struct log_stream *ls=ls_new();
+  struct log_stream *ls=log_new_stream();
   ls->idata=fd;
   ls->msgfmt=LSFMT_DEFAULT;
   ls->handler=ls_fdfile_handler;
@@ -153,10 +153,10 @@ struct log_stream *ls_file_new(const char *path)
   int fd = open(path, O_WRONLY | O_CREAT | O_APPEND, 0666);
   if (fd<0)
   {
-    ls_msg(L_ERROR, "Opening logfile '%s' failed: %m.", path);
+    msg(L_ERROR, "Opening logfile '%s' failed: %m.", path);
     return NULL;
   }
-  ls = ls_new();
+  ls = log_new_stream();
   ls->name = xstrdup(path);
   ls->idata = fd;
   ls->msgfmt = LSFMT_DEFAULT;
