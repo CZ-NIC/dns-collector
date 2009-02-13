@@ -49,9 +49,6 @@ log_init_module(void)
   ASSERT(ls->regnum == 0);
   ls->name = "default";
   log_add_substream(ls, (struct log_stream *) &log_stream_default);
-
-  // FIXME
-  msg(L_DEBUG, "logstream module initialized.");
 }
 
 /* Close all open streams, un-initialize the module, free all memory,
@@ -123,7 +120,7 @@ log_new_stream(void)
     {
       lsbuf_grow(&log_streams, log_streams_after+1);
       index = log_streams_after++;
-      l = log_streams.ptr[log_streams_free] = xmalloc(sizeof(struct log_stream));
+      l = log_streams.ptr[index] = xmalloc(sizeof(struct log_stream));
     }
   else
     {
