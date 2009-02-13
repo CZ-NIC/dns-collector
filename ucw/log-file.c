@@ -124,6 +124,7 @@ file_close(struct log_stream *ls)
   if ((ls->udata & FF_CLOSE_FD) && ls->idata >= 0)
     close(ls->idata);
   xfree(ls->name);
+  xfree(ls->pdata);
 }
 
 /* handler for standard files */
@@ -160,7 +161,7 @@ log_new_file(const char *path)
 {
   struct log_stream *ls = log_new_stream();
   ls->idata = -1;
-  ls->pdata = (void *) path;
+  ls->pdata = xstrdup(path);
   if (strchr(path, '%'))
     ls->udata = FF_FORMAT_NAME;
   ls->udata |= FF_CLOSE_FD;
