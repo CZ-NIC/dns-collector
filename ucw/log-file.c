@@ -18,85 +18,101 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
-#include <errno.h>
 
-#if 0 // FIXME
+/*
+ *  Use of the private fields of struct log_stream:
+ *
+ *	idata	file descriptor
+ *	udata	various flags (FF_xxx)
+ *	pdata	original name with strftime escapes
+ *	name	current name of the log file
+ *		(a dynamically allocated buffer)
+ */
 
-static char *log_name_patt;
-static int log_params;
-static int log_filename_size;
+enum log_file_flag {
+  FF_FORMAT_NAME = 1,		// Name contains strftime escapes
+  FF_CLOSE_FD = 2,		// Close the fd with the stream
+};
+
+#define MAX_EXPAND 64		// Maximum size of expansion of strftime escapes
+
 static int log_switch_nest;
 
-static int
-do_log_switch(struct tm *tm)
+static void
+do_log_reopen(struct log_stream *ls, const char *name)
 {
-  int fd, l;
-  char name[log_filename_size];
+  int fd = ucw_open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
+  if (fd < 0)
+    die("Unable to open log file %s: %m", name);
+  if (ls->idata < 0)
+    ls->idata = fd;
+  else
+    {
+      dup2(fd, ls->idata);
+      close(fd);
+    }
+  if (ls->name)
+    {
+      xfree(ls->name);
+      ls->name = NULL;		// We have to keep this consistent, die() below can invoke logging
+    }
+  ls->name = xstrdup(name);
+}
+
+static int
+do_log_switch(struct log_stream *ls, struct tm *tm)
+{
+  if (!(ls->udata & FF_FORMAT_NAME))
+    {
+      if (ls->idata >= 0)
+	return 1;
+      else
+	{
+	  do_log_reopen(ls, ls->pdata);
+	  return 1;
+	}
+    }
+
+  int buflen = strlen(ls->pdata) + MAX_EXPAND;
+  char name[buflen];
   int switched = 0;
 
-  if (!log_name_patt ||
-      log_filename[0] && !log_params)
-    return 0;
   ucwlib_lock();
-  log_switch_nest++;
-  l = strftime(name, log_filename_size, log_name_patt, tm);
-  if (l < 0 || l >= log_filename_size)
-    die("Error formatting log file name: %m");
-  if (strcmp(name, log_filename))
+  if (!log_switch_nest)		// Avoid infinite loops if we die when switching logs
     {
-      strcpy(log_filename, name);
-      fd = ucw_open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
-      if (fd < 0)
-	die("Unable to open log file %s: %m", name);
-      dup2(fd, 2);
-      close(fd);
-      switched = 1;
+      log_switch_nest++;
+      int l = strftime(name, buflen, ls->pdata, tm);
+      if (l < 0 || l >= buflen)
+	die("Error formatting log file name: %m");
+      if (!ls->name || strcmp(name, ls->name))
+	{
+	  do_log_reopen(ls, name);
+	  switched = 1;
+	}
+      log_switch_nest--;
     }
-  log_switch_nest--;
   ucwlib_unlock();
   return switched;
-}
-
-int
-log_switch(void)
-{
-  time_t tim = time(NULL);
-  return do_log_switch(localtime(&tim));
-}
-
-static void
-internal_log_switch(struct tm *tm)
-{
-  if (!log_switch_nest)
-    do_log_switch(tm);
 }
 
 void
 log_file(const char *name)
 {
-  if (name)
-    {
-      if (log_name_patt)
-	xfree(log_name_patt);
-      if (log_filename)
-	{
-	  xfree(log_filename);
-	  log_filename = NULL;
-	}
-      log_name_patt = xstrdup(name);
-      log_params = !!strchr(name, '%');
-      log_filename_size = strlen(name) + 64;	/* 63 is an upper bound on expansion of % escapes */
-      log_filename = xmalloc(log_filename_size);
-      log_filename[0] = 0;
-      log_switch();
-      log_switch_hook = internal_log_switch;
-    }
+  if (!name)
+    return;
+
+  // FIXME
 }
 
-void
-log_fork(void)
+int
+log_switch(void)
 {
-  log_pid = getpid();
+#if 0 // FIXME
+  time_t tim = time(NULL);
+  return do_log_switch(localtime(&tim));
+#else
+  return 0;
+#endif
 }
 
 void
@@ -112,56 +128,66 @@ log_switch_enable(void)
   log_switch_nest--;
 }
 
-#endif
-
 /* destructor for standard files */
-static void ls_fdfile_close(struct log_stream *ls)
+static void
+file_close(struct log_stream *ls)
 {
-  ASSERT(ls);
-  close(ls->idata);
-  if(ls->name)
-    xfree(ls->name);
+  if ((ls->udata & FF_CLOSE_FD) && ls->idata >= 0)
+    close(ls->idata);
+  xfree(ls->name);
 }
 
 /* handler for standard files */
-static int ls_fdfile_handler(struct log_stream* ls, const char *m, uns cat UNUSED)
+static int
+file_handler(struct log_stream *ls, const char *m, uns cat UNUSED)
 {
+  if (ls->udata & FF_FORMAT_NAME)
+    {
+      // FIXME: pass the time
+      time_t now = time(NULL);
+      struct tm *tm = localtime(&now);
+      do_log_switch(ls, tm);
+    }
+
   int len = strlen(m);
   int r = write(ls->idata, m, len);
-  /* TODO: check the errors here? */
-  if (r!=len)
-    return errno;
+  /* FIXME: check for errors here? */
   return 0;
 }
 
 /* assign log to a file descriptor */
 /* initialize with the default formatting, does NOT close the descriptor */
-struct log_stream *ls_fdfile_new(int fd)
+struct log_stream *
+log_new_fd(int fd)
 {
-  struct log_stream *ls=log_new_stream();
-  ls->idata=fd;
-  ls->msgfmt=LSFMT_DEFAULT;
-  ls->handler=ls_fdfile_handler;
+  struct log_stream *ls = log_new_stream();
+  ls->idata = fd;
+  ls->msgfmt = LSFMT_DEFAULT;
+  ls->handler = file_handler;
+  ls->close = file_close;
+  ls->name = xmalloc(16);
+  snprintf(ls->name, 16, "fd%d", fd);
   return ls;
 }
 
 /* open() a file (append mode) */
 /* initialize with the default formatting */
-struct log_stream *ls_file_new(const char *path)
+struct log_stream *
+log_new_file(const char *path)
 {
-  struct log_stream *ls;
-  int fd = open(path, O_WRONLY | O_CREAT | O_APPEND, 0666);
-  if (fd<0)
-  {
-    msg(L_ERROR, "Opening logfile '%s' failed: %m.", path);
-    return NULL;
-  }
-  ls = log_new_stream();
-  ls->name = xstrdup(path);
-  ls->idata = fd;
+  struct log_stream *ls = log_new_stream();
+  ls->idata = -1;
+  ls->pdata = (void *) path;
+  if (strchr(path, '%'))
+    ls->udata = FF_FORMAT_NAME;
+  ls->udata |= FF_CLOSE_FD;
   ls->msgfmt = LSFMT_DEFAULT;
-  ls->handler = ls_fdfile_handler;
-  ls->close = ls_fdfile_close;
+  ls->handler = file_handler;
+  ls->close = file_close;
+
+  time_t now = time(NULL);
+  struct tm *tm = localtime(&now);
+  do_log_switch(ls, tm);		// die()'s on errors
   return ls;
 }
 
@@ -170,9 +196,11 @@ struct log_stream *ls_file_new(const char *path)
 int main(int argc, char **argv)
 {
   log_init(argv[0]);
-  log_file("/proc/self/fd/1");
+  // log_file("/proc/self/fd/1");
+  // struct log_stream *ls = log_new_fd(1);
+  struct log_stream *ls = log_new_file("/tmp/quork-%Y%m%d-%H%M%S");
   for (int i=1; i<argc; i++)
-    msg(L_INFO, argv[i]);
+    msg(L_INFO | ls->regnum, argv[i]);
   return 0;
 }
 

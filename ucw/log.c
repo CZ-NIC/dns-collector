@@ -316,11 +316,20 @@ log_init(const char *argv0)
     }
 }
 
+void
+log_fork(void)
+{
+  log_pid = getpid();
+}
+
 #ifdef TEST
+
+#include <syslog.h>
 
 int main(void)
 {
-  msg(L_INFO, "Brum <%300s>", ":-)");
+  struct log_stream *ls = log_new_syslog(LOG_USER, "syslog");
+  msg(L_INFO | ls->regnum, "Brum <%300s>", ":-)");
   return 0;
 }
 

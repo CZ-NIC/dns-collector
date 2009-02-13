@@ -110,11 +110,9 @@ void log_fork(void);			/* Call after fork() to update log_pid */
 
 /* If the log name contains metacharacters for date and time, we switch the logs
  * automatically whenever the name changes. You can disable it and switch explicitly. */
-#if 0 // FIXME
 int log_switch(void);
 void log_switch_disable(void);
 void log_switch_enable(void);
-#endif
 
 void assert_failed(const char *assertion, const char *file, int line) NONRET;
 void assert_failed_noinfo(void) NONRET;

@@ -25,6 +25,7 @@ struct log_stream
   /* arbitrary data for filter/handler */
   int idata;
   void *pdata;
+  uns udata;
   /* severity levels to accept - bitmask of (1<<LEVEL) */
   int levels;
   /* if filter returns nonzero, discard the message */
@@ -170,11 +171,11 @@ extern int log_streams_after;
 
 /* assign log to a file descriptor */
 /* initialize with the default formatting, does NOT close the descriptor */
-struct log_stream *ls_fdfile_new(int fd);
+struct log_stream *log_new_fd(int fd);
 
 /* open() a file (append mode) */
 /* initialize with the default formatting */
-struct log_stream *ls_file_new(const char *path);
+struct log_stream *log_new_file(const char *path);
 
 
 /**** syslog */
