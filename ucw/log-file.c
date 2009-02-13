@@ -12,6 +12,7 @@
 #include "ucw/log.h"
 #include "ucw/lfs.h"
 #include "ucw/threads.h"
+#include "ucw/simple-lists.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -95,13 +96,25 @@ do_log_switch(struct log_stream *ls, struct tm *tm)
   return switched;
 }
 
+/* Emulate the old single-file interface: close the existing log file and open a new one. */
 void
 log_file(const char *name)
 {
   if (!name)
     return;
 
-  // FIXME
+  struct log_stream *ls = log_new_file(name);
+  struct log_stream *def = log_stream_by_flags(0);
+  simp_node *s;
+  while (s = clist_head(&def->substreams))
+    {
+      struct log_stream *old = s->p;
+      log_rm_substream(def, old);
+      if (old != (struct log_stream *) &log_stream_default)
+	log_close_stream(old);
+    }
+  dup2(ls->idata, 2);			// Let fd2 be an alias for the log file
+  log_add_substream(def, ls);
 }
 
 int
@@ -196,11 +209,11 @@ log_new_file(const char *path)
 int main(int argc, char **argv)
 {
   log_init(argv[0]);
-  // log_file("/proc/self/fd/1");
+  log_file("/proc/self/fd/1");
   // struct log_stream *ls = log_new_fd(1);
-  struct log_stream *ls = log_new_file("/tmp/quork-%Y%m%d-%H%M%S");
+  // struct log_stream *ls = log_new_file("/tmp/quork-%Y%m%d-%H%M%S");
   for (int i=1; i<argc; i++)
-    msg(L_INFO | ls->regnum, argv[i]);
+    msg(L_INFO, argv[i]);
   return 0;
 }
 
