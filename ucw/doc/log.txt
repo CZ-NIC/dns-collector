@@ -1,0 +1,4 @@
+Logging
+=======
+
+See <<basics:logging,Basics>> for the basic logging functions.

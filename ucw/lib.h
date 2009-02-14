@@ -80,10 +80,13 @@
 #error This program requires the GNU C compiler.
 #endif
 
-/* Logging (more in <ucw/log.h>) */
+/***
+ * [[logging]]
+ *
+ * === Basic logging functions (see <<log:,Logging>> and <ucw/log.h> for more)
+ ***/
 
-enum log_levels
-{
+enum log_levels {			/** The available log levels to pass to msg() and friends. **/
   L_DEBUG=0,				// 'D' - Debugging
   L_INFO,				// 'I' - Informational
   L_WARN,				// 'W' - Warning
@@ -94,30 +97,32 @@ enum log_levels
   L_FATAL,				// '!' - Fatal error
 };
 
-#define L_SIGHANDLER 0x80000000		/* Avoid operations that are unsafe in signal handlers */
+#define L_SIGHANDLER 0x80000000		/** Avoid operations that are unsafe in signal handlers **/
 
-extern char *log_title;			/* NULL - print no title, default is program name given to log_init() */
-extern int log_pid;			/* 0 if shouldn't be logged */
-extern void (*log_die_hook)(void);	// FIXME
-
+/**
+ * This is the basic printf-like function for logging a message.
+ * The @flags contain the log level and possibly other flag bits (like @L_SIGHANDLER).
+ **/
 void msg(uns flags, const char *fmt, ...) FORMAT_CHECK(printf,2,3);
-void vmsg(uns flags, const char *fmt, va_list args);
-void die(const char *, ...) NONRET FORMAT_CHECK(printf,1,2);
+void vmsg(uns flags, const char *fmt, va_list args);		/** A vararg version of msg(). **/
+void die(const char *, ...) NONRET FORMAT_CHECK(printf,1,2);	/** Log a fatal error message and exit the program. **/
 
-void log_init(const char *argv0);
-void log_file(const char *name);
-void log_fork(void);			/* Call after fork() to update log_pid */
+extern char *log_title;			/** An optional log message title. Set to program name by log_init(). **/
+extern int log_pid;			/** An optional PID printed in each log message. Set to 0 if it shouldn't be logged. **/
+extern void (*log_die_hook)(void);	/** An optional function called just before die() exists. **/
 
-/* If the log name contains metacharacters for date and time, we switch the logs
- * automatically whenever the name changes. You can disable it and switch explicitly. */
-int log_switch(void);
-void log_switch_disable(void);
-void log_switch_enable(void);
+void log_init(const char *argv0);	/** Set @log_title to the program name extracted from @argv[0]. **/
+void log_fork(void);			/** Call after fork() to update @log_pid. **/
+void log_file(const char *name);	/** Establish logging to the named file. Also redirect stderr there. **/
 
 void assert_failed(const char *assertion, const char *file, int line) NONRET;
 void assert_failed_noinfo(void) NONRET;
 
 #ifdef DEBUG_ASSERTS
+/**
+ * Check an assertion. If the condition @x is false, stop the program with a fatal error.
+ * These checks are compiled only when @DEBUG_ASSERTS is defined.
+ **/
 #define ASSERT(x) ({ if (unlikely(!(x))) assert_failed(#x, __FILE__, __LINE__); 1; })
 #else
 #define ASSERT(x) ({ if (__builtin_constant_p(x) && !(x)) assert_failed_noinfo(); 1; })
@@ -126,7 +131,7 @@ void assert_failed_noinfo(void) NONRET;
 #define COMPILE_ASSERT(name,x) typedef char _COMPILE_ASSERT_##name[!!(x)-1]
 
 #ifdef LOCAL_DEBUG
-#define DBG(x,y...) msg(L_DEBUG, x,##y)
+#define DBG(x,y...) msg(L_DEBUG, x,##y)	/** If @LOCAL_DEBUG is defined before including <ucw/lib.h>, log a debug message. Otherwise do nothing. **/
 #else
 #define DBG(x,y...) do { } while(0)
 #endif

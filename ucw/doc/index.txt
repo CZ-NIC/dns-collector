@@ -14,6 +14,8 @@ You can see the index of <<def_index:,documented definitions>>.
 
 Modules
 -------
+- <<basics:,Basics>>
+- <<log:,Logging>>
 - <<fastbuf:,Fastbufs>>
 - <<basecode:,Base64 and Base224 encoding>>
 - <<hash:,Hashing routines>>

@@ -195,6 +195,11 @@ struct log_stream *log_new_fd(int fd);
 /* initialize with the default formatting */
 struct log_stream *log_new_file(const char *path);
 
+/* If the log name contains metacharacters for date and time, we switch the logs
+ * automatically whenever the name changes. You can disable it and switch explicitly. */
+void log_switch_disable(void);
+void log_switch_enable(void);
+int log_switch(void);
 
 /**** syslog */
 
