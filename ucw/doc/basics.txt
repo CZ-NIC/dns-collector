@@ -14,7 +14,7 @@ It currently requires the GNU C compiler version 4.0 or newer, but most modules
 should be very easy to adapt to a different C99 compiler. (A notable exception
 is `stkstring.h`, which is heavily tied to GNU extensions.)
 
-The library has been developed on Linux with the GNU libc and it is know to run
+The library has been developed on Linux with the GNU libc and it is known to run
 on Darwin, too. The authors did not try using it on other systems, but most of
 the code is written for a generic POSIX system, so porting to any UNIX-like system
 should be a piece of cake.
