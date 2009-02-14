@@ -149,10 +149,19 @@ void log_add_substream(struct log_stream *where, struct log_stream *what);
 /* return number of deleted entries */
 int log_rm_substream(struct log_stream *where, struct log_stream *what);
 
+/* Set formatting flags of a given stream and all its substreams. The flags are
+ * ANDed with @mask and ORed with @data. */
+void log_set_format(struct log_stream *ls, uns mask, uns data);
+
 /* get a stream by its number (regnum) */
 /* returns NULL for free numbers */
 /* defaults to ls_default_stream for 0 when stream number 0 not set */
 struct log_stream *log_stream_by_flags(uns flags);
+
+static inline struct log_stream *log_default_stream(void)
+{
+  return log_stream_by_flags(0);
+}
 
 /* process a message (string) (INTERNAL) */
 /* depth prevents undetected looping */

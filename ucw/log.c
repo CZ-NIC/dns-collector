@@ -333,6 +333,8 @@ int main(void)
 {
   struct log_stream *ls = log_new_syslog(LOG_USER, "syslog");
   msg(L_INFO | ls->regnum, "Brum <%300s>", ":-)");
+  log_set_format(log_default_stream(), ~0U, LSFMT_USEC);
+  msg(L_INFO, "Brum <%300s>", ":-)");
   return 0;
 }
 

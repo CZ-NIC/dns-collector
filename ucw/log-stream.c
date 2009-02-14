@@ -162,3 +162,11 @@ log_close_stream(struct log_stream *ls)
   ls->regnum = -1;
   return 1;
 }
+
+void
+log_set_format(struct log_stream *ls, uns mask, uns data)
+{
+  ls->msgfmt = (ls->msgfmt & mask) | data;
+  CLIST_FOR_EACH(simp_node *, i, ls->substreams)
+    log_set_format(i->p, mask, data);
+}
