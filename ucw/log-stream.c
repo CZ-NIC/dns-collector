@@ -52,8 +52,6 @@ log_init_module(void)
   log_add_substream(ls, &log_stream_default);
 }
 
-/* Close all open streams, un-initialize the module, free all memory,
- * and fall back to using only log_stream_default. */
 void
 log_close_all(void)
 {
@@ -76,8 +74,6 @@ log_close_all(void)
   log_initialized = 0;
 }
 
-/* Add a new substream. The parent stream takes a reference on the substream,
- * preventing it from being closed as long as it is linked. */
 void
 log_add_substream(struct log_stream *where, struct log_stream *what)
 {
@@ -89,9 +85,6 @@ log_add_substream(struct log_stream *where, struct log_stream *what)
   clist_add_tail(&where->substreams, &n->n);
 }
 
-/* Remove all occurrences of a substream together with the references they
- * keep. If a substream becomes unreferenced, it is closed. If what is NULL,
- * all substreams are removed. Returns the number of deleted entries. */
 int
 log_rm_substream(struct log_stream *where, struct log_stream *what)
 {
@@ -110,7 +103,6 @@ log_rm_substream(struct log_stream *where, struct log_stream *what)
   return cnt;
 }
 
-/* Return a pointer to a new stream with no handler and an empty substream list. */
 struct log_stream *
 log_new_stream(size_t size)
 {
@@ -143,9 +135,6 @@ log_new_stream(size_t size)
   return log_ref_stream(l);
 }
 
-/* Remove a reference on a stream and close it if it was the last reference.
- * Closing automatically unlinks all substreams and closes them if they are
- * no longer referenced. Returns 1 if the stream has been really closed. */
 int
 log_close_stream(struct log_stream *ls)
 {

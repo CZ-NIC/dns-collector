@@ -93,7 +93,6 @@ do_log_switch(struct file_stream *fs, struct tm *tm)
   return switched;
 }
 
-/* destructor for standard files */
 static void
 file_close(struct log_stream *ls)
 {
@@ -104,7 +103,6 @@ file_close(struct log_stream *ls)
   xfree(fs->orig_name);
 }
 
-/* handler for standard files */
 static int
 file_handler(struct log_stream *ls, struct log_msg *m)
 {
@@ -117,8 +115,6 @@ file_handler(struct log_stream *ls, struct log_msg *m)
   return 0;
 }
 
-/* assign log to a file descriptor */
-/* initialize with the default formatting, does NOT close the descriptor */
 struct log_stream *
 log_new_fd(int fd)
 {
@@ -154,8 +150,6 @@ do_log_new_file(const char *path, uns more_flags)
   return ls;
 }
 
-/* open() a file (append mode) */
-/* initialize with the default formatting */
 struct log_stream *
 log_new_file(const char *path)
 {
@@ -189,7 +183,6 @@ log_switch_enable(void)
   log_switch_nest--;
 }
 
-/* Emulate the old single-file interface: close the existing log file and open a new one. */
 void
 log_file(const char *name)
 {

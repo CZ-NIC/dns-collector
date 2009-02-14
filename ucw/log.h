@@ -128,7 +128,8 @@ static inline struct log_stream *log_ref_stream(struct log_stream *ls)
 }
 
 /**
- * Link a substream to a stream. The substream gains a reference.
+ * Link a substream to a stream. The substream gains a reference, preventing
+ * it from being freed until it is unlinked.
  **/
 void log_add_substream(struct log_stream *where, struct log_stream *what);
 

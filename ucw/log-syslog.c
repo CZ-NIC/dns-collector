@@ -18,7 +18,6 @@ struct syslog_stream {
   int facility;
 };
 
-/* Destructor */
 static void
 syslog_close(struct log_stream *ls)
 {
@@ -26,7 +25,7 @@ syslog_close(struct log_stream *ls)
     xfree(ls->name);
 }
 
-/* convert severity level to syslog constants */
+/* Convert severity level to syslog constants */
 static int
 syslog_level(int level)
 {
@@ -61,9 +60,6 @@ syslog_handler(struct log_stream *ls, struct log_msg *m)
   return 0;
 }
 
-/* assign log to a syslog facility */
-/* initialize with no formatting (syslog adds these inforamtion) */
-/* name is optional prefix (NULL for none) */
 struct log_stream *
 log_new_syslog(int facility, const char *name)
 {
