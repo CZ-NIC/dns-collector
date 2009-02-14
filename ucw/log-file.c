@@ -30,6 +30,7 @@ struct file_stream {
 enum log_file_flag {
   FF_FORMAT_NAME = 1,		// Name contains strftime escapes
   FF_CLOSE_FD = 2,		// Close the fd with the stream
+  FF_FD2_FOLLOWS = 4,		// Maintain stderr as a clone of this stream
 };
 
 #define MAX_EXPAND 64		// Maximum size of expansion of strftime escapes
@@ -42,17 +43,15 @@ do_log_reopen(struct file_stream *fs, const char *name)
   int fd = ucw_open(name, O_WRONLY | O_CREAT | O_APPEND, 0666);
   if (fd < 0)
     die("Unable to open log file %s: %m", name);
-  if (fs->fd < 0)
-    fs->fd = fd;
-  else
-    {
-      dup2(fd, fs->fd);
-      close(fd);
-    }
+  if (fs->fd >= 0)
+    close(fs->fd);
+  fs->fd = fd;
+  if (fs->flags & FF_FD2_FOLLOWS)
+    dup2(fd, 2);
   if (fs->ls.name)
     {
       xfree(fs->ls.name);
-      fs->ls.name = NULL;	// We have to keep this consistent, die() below can invoke logging
+      fs->ls.name = NULL;	// We have to keep the stream consistent -- die() below can invoke logging
     }
   fs->ls.name = xstrdup(name);
 }
@@ -91,20 +90,6 @@ do_log_switch(struct file_stream *fs, struct tm *tm)
     }
   ucwlib_unlock();
   return switched;
-}
-
-/* Emulate the old single-file interface: close the existing log file and open a new one. */
-void
-log_file(const char *name)
-{
-  if (!name)
-    return;
-
-  struct log_stream *ls = log_new_file(name);
-  struct log_stream *def = log_stream_by_flags(0);
-  log_rm_substream(def, NULL);
-  log_add_substream(def, ls);
-  dup2(((struct file_stream *)ls)->fd, 2);			// Let fd2 be an alias for the log file
 }
 
 /* destructor for standard files */
@@ -147,10 +132,8 @@ log_new_fd(int fd)
   return ls;
 }
 
-/* open() a file (append mode) */
-/* initialize with the default formatting */
-struct log_stream *
-log_new_file(const char *path)
+static struct log_stream *
+do_log_new_file(const char *path, uns more_flags)
 {
   struct log_stream *ls = log_new_stream(sizeof(struct file_stream));
   struct file_stream *fs = (struct file_stream *) ls;
@@ -158,7 +141,7 @@ log_new_file(const char *path)
   fs->orig_name = xstrdup(path);
   if (strchr(path, '%'))
     fs->flags = FF_FORMAT_NAME;
-  fs->flags |= FF_CLOSE_FD;
+  fs->flags |= FF_CLOSE_FD | more_flags;
   ls->msgfmt = LSFMT_DEFAULT;
   ls->handler = file_handler;
   ls->close = file_close;
@@ -168,6 +151,14 @@ log_new_file(const char *path)
   ASSERT(tm);
   do_log_switch(fs, tm);		// die()'s on errors
   return ls;
+}
+
+/* open() a file (append mode) */
+/* initialize with the default formatting */
+struct log_stream *
+log_new_file(const char *path)
+{
+  return do_log_new_file(path, 0);
 }
 
 int
@@ -195,6 +186,19 @@ log_switch_enable(void)
 {
   ASSERT(log_switch_nest);
   log_switch_nest--;
+}
+
+/* Emulate the old single-file interface: close the existing log file and open a new one. */
+void
+log_file(const char *name)
+{
+  if (!name)
+    return;
+
+  struct log_stream *ls = do_log_new_file(name, FF_FD2_FOLLOWS);
+  struct log_stream *def = log_stream_by_flags(0);
+  log_rm_substream(def, NULL);
+  log_add_substream(def, ls);
 }
 
 #ifdef TEST
