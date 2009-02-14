@@ -101,7 +101,7 @@ enum log_levels {			/** The available log levels to pass to msg() and friends. *
 
 /**
  * This is the basic printf-like function for logging a message.
- * The @flags contain the log level and possibly other flag bits (like @L_SIGHANDLER).
+ * The @flags contain the log level and possibly other flag bits (like `L_SIGHANDLER`).
  **/
 void msg(uns flags, const char *fmt, ...) FORMAT_CHECK(printf,2,3);
 void vmsg(uns flags, const char *fmt, va_list args);		/** A vararg version of msg(). **/
@@ -121,7 +121,7 @@ void assert_failed_noinfo(void) NONRET;
 #ifdef DEBUG_ASSERTS
 /**
  * Check an assertion. If the condition @x is false, stop the program with a fatal error.
- * These checks are compiled only when @DEBUG_ASSERTS is defined.
+ * Assertion checks are compiled only when `DEBUG_ASSERTS` is defined.
  **/
 #define ASSERT(x) ({ if (unlikely(!(x))) assert_failed(#x, __FILE__, __LINE__); 1; })
 #else
@@ -131,7 +131,7 @@ void assert_failed_noinfo(void) NONRET;
 #define COMPILE_ASSERT(name,x) typedef char _COMPILE_ASSERT_##name[!!(x)-1]
 
 #ifdef LOCAL_DEBUG
-#define DBG(x,y...) msg(L_DEBUG, x,##y)	/** If @LOCAL_DEBUG is defined before including <ucw/lib.h>, log a debug message. Otherwise do nothing. **/
+#define DBG(x,y...) msg(L_DEBUG, x,##y)	/** If `LOCAL_DEBUG` is defined before including <ucw/lib.h>, log a debug message. Otherwise do nothing. **/
 #else
 #define DBG(x,y...) do { } while(0)
 #endif

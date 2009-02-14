@@ -10,6 +10,7 @@
 
 #include "ucw/lib.h"
 #include "ucw/log.h"
+#include "ucw/log-internal.h"
 #include "ucw/simple-lists.h"
 
 #include <string.h>
@@ -59,6 +60,7 @@ log_close_all(void)
   if (!log_initialized)
     return;
 
+  // FIXME!
   for (int i=0; i < log_streams_after; i++)
     {
       if (log_streams.ptr[i]->regnum >= 0)
@@ -134,7 +136,7 @@ log_new_stream(size_t size)
 
   /* Initialize the stream */
   bzero(l, sizeof(*l));
-  l->levels = LS_ALL_LEVELS;
+  l->levels = ~0U;
   l->regnum = LS_SET_STRNUM(index);
   clist_init(&l->substreams);
   return log_ref_stream(l);

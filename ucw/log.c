@@ -10,6 +10,7 @@
 
 #include "ucw/lib.h"
 #include "ucw/log.h"
+#include "ucw/log-internal.h"
 #include "ucw/simple-lists.h"
 
 #include <stdio.h>
@@ -38,7 +39,7 @@ struct log_stream log_stream_default = {
   .name = "stderr",
   .use_count = 1000000,
   .handler = default_log_handler,
-  .levels = LS_ALL_LEVELS,
+  .levels = ~0U,
   .msgfmt = LSFMT_DEFAULT,
   // an empty clist
   .substreams.head.next = (cnode *) &log_stream_default.substreams.head,
@@ -87,12 +88,12 @@ vmsg(uns cat, const char *fmt, va_list args)
   /* Check the stream existence */
   if (!ls)
     {
-      msg((LS_INTERNAL_MASK&cat)|L_WARN, "No log_stream with number %d! Logging to the default log.", LS_GET_STRNUM(cat));
+      msg((LS_CTRL_MASK&cat)|L_WARN, "No log_stream with number %d! Logging to the default log.", LS_GET_STRNUM(cat));
       ls = &log_stream_default;
     }
 
   /* Get the current time */
-  if (!(cat & LSFLAG_SIGHANDLER))
+  if (!(cat & L_SIGHANDLER))
     {
       /* CAVEAT: These calls are not safe in signal handlers. */
       gettimeofday(&tv, NULL);
@@ -158,7 +159,7 @@ log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
   if (depth > LS_MAX_DEPTH)
     {
       struct log_msg errm = *m;
-      errm.flags = L_ERROR | (m->flags & LS_INTERNAL_MASK);
+      errm.flags = L_ERROR | (m->flags & LS_CTRL_MASK);
       errm.raw_msg = "Loop in the log_stream system detected.";
       log_pass_msg(0, &log_stream_default, &errm);
     }

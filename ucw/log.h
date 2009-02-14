@@ -13,11 +13,12 @@
 
 #include "ucw/clists.h"
 
-/* user de/allocated program/process name for use in the logsystem */
-extern char *ls_title;
+/*** === Messages and streams ***/
 
-struct log_msg
-{
+/**
+ * Inside the logging system, a log message is always represented by this structure.
+ **/
+struct log_msg {
   char *m;				// The formatted message itself, ending with \n\0
   int m_len;				// Length without the \0
   struct tm *tm;			// Current time
@@ -27,191 +28,178 @@ struct log_msg
   char *sutime;
 };
 
-struct log_stream
-{
+/**
+ * Each stream is represented by an instance of this structure.
+ **/
+struct log_stream {
   char *name;				// Optional name, allocated by the user (or constructor)
   int regnum;				// Stream number, already encoded by LS_SET_STRNUM(); -1 if closed
-  uns levels;				// Bitmask of accepted severity levels
+  uns levels;				// Bitmask of accepted severity levels (default: all)
   uns msgfmt;				// Formatting flags (LSFMT_xxx)
   uns use_count;			// Number of references to the stream
   int (*filter)(struct log_stream* ls, struct log_msg *m);	// Filter function, return non-zero to discard the message
-  struct clist substreams;		// Pass the message to these streams (simple_list of pointers)
+  clist substreams;			// Pass the message to these streams (simple_list of pointers)
   int (*handler)(struct log_stream *ls, struct log_msg *m);	// Called to commit the message
   void (*close)(struct log_stream* ls);	// Called upon log_close_stream()
   // Private data of the handler follow
 };
 
-/* the default logger */
-extern struct log_stream log_stream_default;
-
-/* A message is processed as follows:
- *  1. Discard if message level not in levels
- *  2. Run filter (if any), discard if ret. nonzero
- *  3. Pass the message to all log_streams in substreams
- *  4. Format the message informaion acc. to msgfmt
- *  5. Run the handler
- */
-
-/* log header verbosity specifying message passed to handler */
-enum ls_fmt
-{
-  LSFMT_LEVEL=1,       /* log severity level (one letter) */
-  LSFMT_TIME=2,        /* log time (date-seconds) */
-  LSFMT_USEC=4,        /* log also micro-seconds */
-  LSFMT_TITLE=8,       /* log program title (global string) */
-  LSFMT_PID=16,        /* log program PID */
-  LSFMT_LOGNAME=32,    /* log log_stream name */
-  LSFMT_NONE=0,
-  LSFMT_FULL=LSFMT_LEVEL+LSFMT_TIME+LSFMT_USEC+LSFMT_TITLE+LSFMT_PID+LSFMT_LOGNAME,
-  LSFMT_DEFAULT=LSFMT_LEVEL+LSFMT_TIME
+/**
+ * Formatting flags specifying the format of the message passed to the handler.
+ **/
+enum ls_fmt {
+  LSFMT_LEVEL =		1,		// severity level (one letter) */
+  LSFMT_TIME =		2,		// date and time (YYYY-mm-dd HH:MM:SS) */
+  LSFMT_USEC = 		4,		// also micro-seconds */
+  LSFMT_TITLE =		8,		// program title (log_title) */
+  LSFMT_PID =		16,		// program PID (log_pid) */
+  LSFMT_LOGNAME =	32,		// name of the log_stream */
 };
 
-/* Mask of containing all existing levels. */
-#define LS_ALL_LEVELS 0xfff
+#define LSFMT_DEFAULT (LSFMT_LEVEL | LSFMT_TIME)	/** Default format **/
 
-// return the letter associated with the severity level
+// Return the letter associated with a given severity level
 #define LS_LEVEL_LETTER(level) ("DIiWwEe!###"[( level )])
 
-///// Macros for extracting parts of the flags parameter
-// The division of the flags parameter is decided only here
-// The current division is (for 32 bit flags):
-// MSB <5 bits: any internal log flags> <8 bits: "user" flags> <10 bits: stream number>
-//     <8 bits: severity level> LSB
+/***
+ * === Message flags
+ *
+ * The @flags parameter of msg() is divided to several groups of bits (from the LSB):
+ * message severity level (`L_xxx`), destination stream, message type [currently unused]
+ * and control bits (e.g., `L_SIGHANDLER`).
+ ***/
 
-// Bits per section
-enum ls_flagbits {
-  LS_LEVEL_BITS    = 8,
-  LS_STRNUM_BITS   = 16,
-  LS_FLAGS_BITS    = 5,
-  LS_INTERNAL_BITS = 4,
+enum ls_flagbits {			// Bit widths of groups
+  LS_LEVEL_BITS =	8,
+  LS_STRNUM_BITS =	16,
+  LS_TYPE_BITS =	5,
+  LS_CTRL_BITS =	3,
 };
 
-// Section shifts
-enum ls_flagpos {
-  LS_LEVEL_POS     = 0,
-  LS_STRNUM_POS    = LS_LEVEL_POS + LS_LEVEL_BITS,
-  LS_FLAGS_POS     = LS_STRNUM_POS + LS_STRNUM_BITS,
-  LS_INTERNAL_POS  = LS_FLAGS_POS + LS_FLAGS_BITS,
+enum ls_flagpos {			// Bit positions of groups
+  LS_LEVEL_POS =	0,
+  LS_STRNUM_POS =	LS_LEVEL_POS + LS_LEVEL_BITS,
+  LS_TYPE_POS =		LS_STRNUM_POS + LS_STRNUM_BITS,
+  LS_CTRL_POS =		LS_TYPE_POS + LS_TYPE_BITS,
 };
 
-// Bitmasks
-enum ls_flagmasks {
-  LS_LEVEL_MASK    = (( 1 << LS_LEVEL_BITS ) - 1 ) << LS_LEVEL_POS,
-  LS_STRNUM_MASK   = (( 1 << LS_STRNUM_BITS ) - 1 ) << LS_STRNUM_POS,
-  LS_FLAGS_MASK    = (( 1 << LS_FLAGS_BITS ) - 1 ) << LS_FLAGS_POS,
-  LS_INTERNAL_MASK = (( 1 << LS_INTERNAL_BITS ) - 1 ) << LS_INTERNAL_POS,
+enum ls_flagmasks {			// Bit masks of groups
+  LS_LEVEL_MASK =	((1 << LS_LEVEL_BITS) - 1) << LS_LEVEL_POS,
+  LS_STRNUM_MASK =	((1 << LS_STRNUM_BITS) - 1) << LS_STRNUM_POS,
+  LS_TYPE_MASK =	((1 << LS_TYPE_BITS) - 1) << LS_TYPE_POS,
+  LS_CTRL_MASK =	((1 << LS_CTRL_BITS) - 1) << LS_CTRL_POS,
 };
 
 // "Get" macros (break flags to parts)
-#define LS_GET_LEVEL(flags)     ((( flags ) & LS_LEVEL_MASK ) >> LS_LEVEL_POS )
-#define LS_GET_STRNUM(flags)    ((( flags ) & LS_STRNUM_MASK ) >> LS_STRNUM_POS )
-#define LS_GET_FLAGS(flags)     ((( flags ) & LS_FLAGS_MASK ) >> LS_FLAGS_POS )
-#define LS_GET_INTERNAL(flags)  ((( flags ) & LS_INTERNAL_MASK ) >> LS_INTERNAL_POS )
+#define LS_GET_LEVEL(flags)	(((flags) & LS_LEVEL_MASK) >> LS_LEVEL_POS)	/** Extract severity level **/
+#define LS_GET_STRNUM(flags)	(((flags) & LS_STRNUM_MASK) >> LS_STRNUM_POS)	/** Extract stream number **/
+#define LS_GET_TYPE(flags)	(((flags) & LS_TYPE_MASK) >> LS_TYPE_POS)	/** Extract message type **/
+#define LS_GET_CTRL(flags)	(((flags) & LS_CTRL_MASK) >> LS_CTRL_POS)	/** Extract control bits **/
 
 // "Set" macros (parts to flags)
-#define LS_SET_LEVEL(level)     (( level ) << LS_LEVEL_POS )
-#define LS_SET_STRNUM(strnum)   (( strnum ) << LS_STRNUM_POS )
-#define LS_SET_FLAGS(flags)     (( flags ) << LS_FLAGS_POS )
-#define LS_SET_INTERNAL(intern) (( intern ) << LS_INTERNAL_POS )
+#define LS_SET_LEVEL(level)	((level) << LS_LEVEL_POS)			/** Convert severity level to flags **/
+#define LS_SET_STRNUM(strnum)	((strnum) << LS_STRNUM_POS)			/** Convert stream number to flags **/
+#define LS_SET_TYPE(type)	((type) << LS_TYPE_POS)				/** Convert message type to flags **/
+#define LS_SET_CTRL(ctrl)	((ctrl) << LS_CTRL_POS)				/** Convert control bits to flags **/
 
-// Internal flags of the logsystem
-// Avoid operations that are unsafe in signal handlers
-#define LSFLAG_SIGHANDLER LS_SET_INTERNAL(0x001)
+/*** === Operations on streams ***/
 
-// The module is initialized when a first stream is created.
-// Before that only the default stream exists.
-
-/* Return pointer a new (xmalloc()-ated) stream with no handler and an empty substream list.
+/**
+ * Allocate a new log stream with no handler and an empty substream list.
  * Since struct log_stream is followed by private data, @size bytes of memory are allocated
- * for the whole structure. */
+ * for the whole structure. See below for functions creating specific stream types.
+ **/
 struct log_stream *log_new_stream(size_t size);
 
-/* Close and xfree() given log_stream */
-/* Does not affect substreams */
+/**
+ * Decrement the use count of a stream. If it becomes zero, close the stream,
+ * free its memory, and unlink all its substreams.
+ **/
 int log_close_stream(struct log_stream *ls);
 
-/* Get a new reference on a stream */
-static inline struct log_stream *
-log_ref_stream(struct log_stream *ls)
+/**
+ * Get a new reference on an existing stream. For convenience, the return value is
+ * equal to the argument @ls.
+ **/
+static inline struct log_stream *log_ref_stream(struct log_stream *ls)
 {
   ls->use_count++;
   return ls;
 }
 
-/* close all open streams, un-initialize the module, free all memory,
- * use only ls_default_log */
-void log_close_all(void);
-
-/* add a new substream, xmalloc()-ate a new simp_node */
+/**
+ * Link a substream to a stream. The substream gains a reference.
+ **/
 void log_add_substream(struct log_stream *where, struct log_stream *what);
 
-/* remove all occurences of a substream, free() the simp_node */
-/* return number of deleted entries */
+/**
+ * Unlink all occurrences of a substream @what from stream @where. Each
+ * occurrence loses a reference. If @what is NULL, all substreams are unlinked.
+ * Returns the number of unlinked substreams.
+ **/
 int log_rm_substream(struct log_stream *where, struct log_stream *what);
 
-/* Set formatting flags of a given stream and all its substreams. The flags are
- * ANDed with @mask and ORed with @data. */
+/**
+ * Set formatting flags of a given stream and all its substreams. The flags are
+ * AND'ed with @mask and OR'ed with @data.
+ **/
 void log_set_format(struct log_stream *ls, uns mask, uns data);
 
-/* get a stream by its number (regnum) */
-/* returns NULL for free numbers */
-/* defaults to ls_default_stream for 0 when stream number 0 not set */
+/**
+ * Find a stream by its registration number (in the format of logging flags).
+ * Returns NULL if there is no such stream.
+ **/
 struct log_stream *log_stream_by_flags(uns flags);
 
+/**
+ * Return a pointer to the default stream (stream #0).
+ **/
 static inline struct log_stream *log_default_stream(void)
 {
   return log_stream_by_flags(0);
 }
 
-/* process a message (string) (INTERNAL) */
-/* depth prevents undetected looping */
-/* returns 1 in case of loop detection or other fatal error
- *         0 otherwise */
-int log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m);
+/**
+ * Close all open streams, un-initialize the module, free all memory and
+ * reset the logging mechanism to use stderr only.
+ **/
+void log_close_all(void);
 
-/* Define an array (growing buffer) for pointers to log_streams. */
-#define GBUF_TYPE struct log_stream*
-#define GBUF_PREFIX(x) lsbuf_##x
-#include "ucw/gbuf.h"
+/***
+ * === Logging to files
+ *
+ * All log files are open in append mode, which guarantees atomicity of write()
+ * even in multi-threaded programs.
+ ***/
 
-extern struct lsbuf_t log_streams;
-extern int log_streams_after;
+struct log_stream *log_new_file(const char *path);		/** Create a stream bound to a log file. **/
+struct log_stream *log_new_fd(int fd);				/** Create a stream bound to a file descriptor. **/
 
-/********* Individual handler types (constructors, handlers, destructors) */
-
-/**** standard (filedes) files */
-
-// NOTE:
-// under unix, for ordinary files open in append mode, the writes
-// are atomic (unless you meet the quota or other bad things happen),
-// so using a single log_stream is thread-safe and the file can be shared
-// among multiple processes
-
-/* assign log to a file descriptor */
-/* initialize with the default formatting, does NOT close the descriptor */
-struct log_stream *log_new_fd(int fd);
-
-/* open() a file (append mode) */
-/* initialize with the default formatting */
-struct log_stream *log_new_file(const char *path);
-
-/* If the log name contains metacharacters for date and time, we switch the logs
- * automatically whenever the name changes. You can disable it and switch explicitly. */
+/**
+ * When a time-based name of the log file changes, the logger switches to a new
+ * log file automatically. This can be sometimes inconvenient, so you can use
+ * this function to disable the automatic switches. The calls to this function
+ * can be nested.
+ **/
 void log_switch_disable(void);
-void log_switch_enable(void);
-int log_switch(void);
+void log_switch_enable(void);		/** Negate the effect of log_switch_disable(). **/
+int log_switch(void);			/** Switch log files manually. **/
 
-/**** syslog */
+/***
+ * === Logging to syslog
+ *
+ * This log stream uses the libc interface to the system logging daemon (`syslogd`).
+ * As syslog serverities differ from our scheme, they are translated; if you
+ * are interested in details, search for syslog_level().
+ *
+ * Syslog also provides its own timestamps, so we turn off all formatting
+ * of the LibUCW logger.
+ ***/
 
-// NOTE:
-// The syslog uses a bit different severity levels, for details, see
-// ls_syslog_convert_level().
-// syslog also prepends it's own time and severity info, so the default
-// messaging passes only clean message
-
-/* assign log to a syslog facility */
-/* initialize with no formatting (syslog adds these inforamtion) */
-/* name is optional prefix (NULL for none) */
+/**
+ * Create a log stream for logging to a selected syslog facility.
+ * The @name is an optional prefix of the messages.
+ **/
 struct log_stream *log_new_syslog(int facility, const char *name);
 
 #endif

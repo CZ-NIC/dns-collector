@@ -71,9 +71,10 @@ log_new_syslog(int facility, const char *name)
   struct syslog_stream *ss = (struct syslog_stream *) ls;
   if (name)
     ls->name = xstrdup(name);
-  ls->msgfmt = LSFMT_NONE;
+  ls->msgfmt = 0;
   ls->handler = syslog_handler;
   ls->close = syslog_close;
   ss->facility = facility;
   return ls;
+  // FIXME: L_SIGHANDLER?
 }
