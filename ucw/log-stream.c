@@ -60,13 +60,14 @@ log_close_all(void)
   if (!log_initialized)
     return;
 
-  // FIXME!
+  // Close all open streams
   for (int i=0; i < log_streams_after; i++)
-    {
-      if (log_streams.ptr[i]->regnum >= 0)
-	log_close_stream(log_streams.ptr[i]);
-      xfree(log_streams.ptr[i]);
-    }
+    if (log_streams.ptr[i]->regnum >= 0)
+      log_close_stream(log_streams.ptr[i]);
+
+  // Free all cached structures
+  for (int i=0; i < log_streams_after; i++)
+    xfree(log_streams.ptr[i]);
 
   /* Back to the default state */
   lsbuf_done(&log_streams);
