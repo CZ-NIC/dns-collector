@@ -68,7 +68,7 @@ sub formatNote( $$ ) {
 	$oneline =~ s/\s+$//;
 	$oneline =~ s/;?$/;/ if( $semicolon );
 	$head =~ s/;?\s*$/;/ if( $semicolon );
-	$head =~ s/(\.\.\.)/\\$1/g;
+	$head =~ s/(\s|,|\()(\.\.\.)/$1\\$2/g; # Do not convert tripple dot into ellipsis
 	print OUT "[[${type}_$name]]\n";
 	$head = $oneline if $type eq 'fun';#Remove { from inline functions
 	# Remove the generic hack markup
