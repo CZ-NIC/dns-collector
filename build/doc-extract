@@ -42,6 +42,8 @@ sub detect( $ ) {
 	}
 	# typedef type (*function_type)(params);
 	return( 'type', 1, $2, $_ ) if /^\s*typedef[^()]+?(\(\s*?\*\s*?)?(\w+)(\s*\))?\s*\(.*\)/;
+	# type (*function_var)(params);
+	return( 'var', 1, $1, $_ ) if /^.*?\(\*(\w+)\)\(.*\)/;
 	# type function(name);
 	return( 'fun', 1, $2, $1 ) if /^(.*?(\w+)\([^{]*\)[^{]*)/;
 	# typedef something name;
