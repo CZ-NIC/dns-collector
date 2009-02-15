@@ -91,9 +91,14 @@ Definition comments
 You can write comments documenting specific definition. Definition
 comment has the asterisks doubled. The multi-line version must be
 directly above the definition, the single-line on the same line right
-of the definition.
+of the definition or on a line before.
 
  void function(int parameter);  /** This is a function. **/
+
+or
+
+ /** This is a function. **/
+ void function(int parameter);
 
 or
 
