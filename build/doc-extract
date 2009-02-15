@@ -159,9 +159,12 @@ sub process( $$ ) {
 					$struct = $sdepth = 1;
 				}
 			} elsif( ( $buff ) = ( $line =~ /\/\*\*\*(.*)\*\*\*\// ) ) {
-				$buff =~ s/\s?//;
+				$buff =~ s/^\s?//;
 				print OUT "$buff\n\n";
 				$buff = undef;
+			} elsif( ( $buff ) = ( $line =~ /^\s*\/\*\*(.*)\*\*\// ) ) {
+				$buff =~ s/^\s*//;
+				$buff .= "\n";
 			} elsif( ( $head, $buff ) = ( $line =~ /^(.*)\/\*\*(.*)\*\*\// ) ) {
 				$buff =~ s/^\s*//;
 				$buff =~ s/\s*$//;
