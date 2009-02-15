@@ -22,7 +22,7 @@ if( defined $defdump ) {
 	$hasdump = 1;
 }
 
-# Function to guess type of stytement
+# Function to guess type of statement
 sub detect( $ ) {
 	( $_ ) = @_;
 	# typedef struct|enum { something } name;
