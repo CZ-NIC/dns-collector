@@ -22,21 +22,31 @@ if( defined $defdump ) {
 	$hasdump = 1;
 }
 
+# Function to guess type of stytement
 sub detect( $ ) {
 	( $_ ) = @_;
+	# typedef struct|enum { something } name;
 	return( $1, 1, $2, "typedef $1 { ... } $2;" ) if /^\s*typedef\s+(struct|enum)\s*{.*}\s*(\w+)\s*;\s*$/s;
+	# struct|enum name { something };
 	return( $1, 1, $2, $_ ) if /^\s*(struct|enum)\s+(\w+)\s*;\s*$/s;
 	my $l = length;
 	s/\n.*//s;
+	# struct|enum name {
+	#   something
+	# };
 	return( $1, 0, $2, $_ ) if /(struct|enum)\s+(\w+)\s+{/;
 	return( 'def', 0, $1, $_ ) if /#define\s+(\w+)/;
 	if( $l > length ) {
 		warn( "Unknown multiline statement $_\n" );
 		return( '', 0, $_, $_ );
 	}
+	# typedef type (*function_type)(params);
 	return( 'type', 1, $2, $_ ) if /^\s*typedef[^()]+?(\(\s*?\*\s*?)?(\w+)(\s*\))?\s*\(.*\)/;
+	# type function(name);
 	return( 'fun', 1, $2, $1 ) if /^(.*?(\w+)\([^{]*\)[^{]*)/;
+	# typedef something name;
 	return( 'type', 1, $1, $_ ) if /^\s*typedef.*?(\w+);/;
+	# type name;
 	return( 'var', 1, $1, $_ ) if /\s\**(\w+);/;
 	warn( "Unknown statement $_\n" );
 	return( '', 0, $_, $_ );
