@@ -203,4 +203,24 @@ int log_switch(void);			/** Switch log files manually. **/
  **/
 struct log_stream *log_new_syslog(int facility, const char *name);
 
+/***
+ * === Configuring log streams
+ *
+ * If you use the LibUCW mechanism for parsing config files, you can let your
+ * user configure arbitrary log streams in the Logging section of the config file
+ * (see examples in the default config file). LibUCW automatically verifies that
+ * the configuration is consistent (this is performed in the commit hook of the
+ * config section), but it opens the streams only upon request. The following
+ * functions can be used to control that.
+ ***/
+
+/** Open a log stream configured under the specified name and increase its use count. **/
+struct log_stream *log_new_configured(const char *name);
+
+/**
+ * Verify that a stream called @name was configured. If it wasn't, return an error
+ * message. This is intended to be used in configuration commit hooks.
+ **/
+char *log_check_configured(const char *name);
+
 #endif

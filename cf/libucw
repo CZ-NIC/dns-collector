@@ -172,3 +172,31 @@ MaxRepeatLength		4
 MaxOccurences		4
 
 }
+
+######## Logging ################################################################
+
+Logging {
+
+Stream {
+	Name		logfile
+	FileName	log/test
+}
+
+Stream {
+	Name		logfile2
+	FileName	log/test2
+}
+
+Stream {
+	Name		syslog
+	SyslogFacility	user
+}
+
+Stream {
+	Name		combined
+	Substream	logfile
+	Substream	logfile2
+	Substream	syslog
+}
+
+}
