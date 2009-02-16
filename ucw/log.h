@@ -231,6 +231,9 @@ int log_syslog_facility_exists(const char *facility);
 /** Open a log stream configured under the specified name and increase its use count. **/
 struct log_stream *log_new_configured(const char *name);
 
+/** Open a log stream configured under the specified name and use it as the default destination. **/
+void log_configured(const char *name);
+
 /**
  * Verify that a stream called @name was configured. If it wasn't, return an error
  * message. This is intended to be used in configuration commit hooks.
