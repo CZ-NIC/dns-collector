@@ -219,7 +219,7 @@ log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
   /* Process name, PID ( |log_title| + 6 + (|PID|<=10) chars ) */
   if ((ls->msgfmt & LSFMT_TITLE) && log_title)
     {
-      if (ls->msgfmt & LSFMT_PID)
+      if ((ls->msgfmt & LSFMT_PID) && log_pid)
 	p += sprintf(p, "[%s (%d)] ", log_title, log_pid);
       else
 	p += sprintf(p, "[%s] ", log_title);
