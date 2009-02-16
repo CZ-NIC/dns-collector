@@ -93,7 +93,9 @@ Processes, threads and signals
 ------------------------------
 When you fork a new process, it automatically inherits all currently configured log
 streams. You should however call <<log_fork()>> to update the logger's notion
-of the current PID (at least when you use PID's in your log messages).
+of the current PID (at least when you use PID's in your log messages). Also, if you
+plan to exec() a process after fork(), do not forget to call <<log_close_all()>>,
+so that all file descriptors used for log files (except for stderr) are closed.
 
 The <<basics:msg()>> function itself can be called from multiple threads in parallel
 and it is atomic by design. The functions for setting up the logging machinery
