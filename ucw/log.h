@@ -56,7 +56,7 @@ enum ls_fmt {
   LSFMT_LOGNAME =	32,		// name of the log_stream */
 };
 
-#define LSFMT_DEFAULT (LSFMT_LEVEL | LSFMT_TIME)	/** Default format **/
+#define LSFMT_DEFAULT (LSFMT_LEVEL | LSFMT_TIME | LSFMT_TITLE | LSFMT_PID)	/** Default format **/
 
 // Return the letter associated with a given severity level
 #define LS_LEVEL_LETTER(level) ("DIiWwEe!###"[( level )])
