@@ -193,6 +193,7 @@ log_file(const char *name)
   struct log_stream *def = log_stream_by_flags(0);
   log_rm_substream(def, NULL);
   log_add_substream(def, ls);
+  log_close_stream(ls);
 }
 
 #ifdef TEST
@@ -205,6 +206,7 @@ int main(int argc, char **argv)
   // struct log_stream *ls = log_new_file("/tmp/quork-%Y%m%d-%H%M%S");
   for (int i=1; i<argc; i++)
     msg(L_INFO, argv[i]);
+  log_close_all();
   return 0;
 }
 
