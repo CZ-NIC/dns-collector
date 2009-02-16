@@ -190,18 +190,32 @@ int log_switch(void);			/** Switch log files manually. **/
  * === Logging to syslog
  *
  * This log stream uses the libc interface to the system logging daemon (`syslogd`).
- * As syslog serverities differ from our scheme, they are translated; if you
- * are interested in details, search for syslog_level().
+ * This interface has several limitations:
  *
- * Syslog also provides its own timestamps, so we turn off all formatting
- * of the LibUCW logger.
+ *   * Syslog are poorer than our scheme, so they are translated with a slight
+ *     loss of information (most importantly, the distinction between local and
+ *     remote messages is lost). If you are interested in details, search the
+ *     source for syslog_level().
+ *   * Syslog options (especially logging of PID with each message) must be fixed
+ *     during initialization of the logger
+ *   * Syslog provides its own formatting, so we turn off all formatting flags
+ *     of the LibUCW logger. You can override this manually by setting the @msgfmt
+ *     field of the log stream, but the result won't be nice.
+ *   * Syslog does not support timestamps with sub-second precision.
  ***/
 
 /**
  * Create a log stream for logging to a selected syslog facility.
- * The @name is an optional prefix of the messages.
+ * The @options are passed to openlog(). (Beware, due to limitations of the
+ * syslog interface in libc, the @options are shared for all syslog streams
+ * and they are applied when the first stream is created.)
  **/
-struct log_stream *log_new_syslog(int facility, const char *name);
+struct log_stream *log_new_syslog(const char *facility, int options);
+
+/**
+ * Verify that a facility of the given name exists. Return 1 if it does, 0 otherwise.
+ **/
+int log_syslog_facility_exists(const char *facility);
 
 /***
  * === Configuring log streams

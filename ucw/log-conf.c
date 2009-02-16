@@ -13,7 +13,7 @@
 #include "ucw/simple-lists.h"
 
 #include <string.h>
-#include <syslog.h>	// FIXME
+#include <syslog.h>
 
 struct stream_config {
   cnode n;
@@ -32,6 +32,8 @@ stream_commit(void *ptr)
 
   if (c->file_name && c->syslog_facility)
     return "Both FileName and SyslogFacility selected";
+  if (c->syslog_facility && !log_syslog_facility_exists(c->syslog_facility))
+    return cf_printf("SyslogFacility `%s' is not recognized", c->syslog_facility);
   return NULL;
 }
 
@@ -134,7 +136,7 @@ do_new_configured(struct stream_config *c)
   if (c->file_name)
     ls = log_new_file(c->file_name);
   else if (c->syslog_facility)
-    ls = log_new_syslog(LOG_USER, NULL);	// FIXME: Facility
+    ls = log_new_syslog(c->syslog_facility, 0);		// FIXME: Logging of PID
   else
     ls = log_new_stream(sizeof(*ls));
 
@@ -170,6 +172,7 @@ int main(int argc, char **argv)
   struct log_stream *ls = log_new_configured("combined");
   msg(L_INFO | ls->regnum, "Hello, universe!");
 
+  log_close_all();
   return 0;
 }
 

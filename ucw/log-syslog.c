@@ -11,6 +11,7 @@
 #include "ucw/lib.h"
 #include "ucw/log.h"
 
+#include <string.h>
 #include <syslog.h>
 
 struct syslog_stream {
@@ -18,11 +19,50 @@ struct syslog_stream {
   int facility;
 };
 
+static int syslog_open_count;
+
 static void
-syslog_close(struct log_stream *ls)
+syslog_close(struct log_stream *ls UNUSED)
 {
-  if (ls->name)
-    xfree(ls->name);
+  if (!--syslog_open_count)
+    closelog();
+}
+
+/* Convert syslog facility to its identifier. */
+static int
+syslog_facility(const char *name)
+{
+  // Unfortunately, there is no standard way how to get at the list of facility names
+  static const struct {
+    const char *name;
+    int id;
+  } facilities[] = {
+    { "auth",		LOG_AUTH },
+    { "authpriv",	LOG_AUTHPRIV },
+    { "cron",		LOG_CRON },
+    { "daemon",		LOG_DAEMON },
+    { "ftp",		LOG_FTP },
+    { "kern",		LOG_KERN },
+    { "lpr",		LOG_LPR },
+    { "mail",		LOG_MAIL },
+    { "news",		LOG_NEWS },
+    { "syslog",		LOG_SYSLOG },
+    { "user",		LOG_USER },
+    { "uucp",		LOG_UUCP },
+    { "local0",		LOG_LOCAL0 },
+    { "local1",		LOG_LOCAL1 },
+    { "local2",		LOG_LOCAL2 },
+    { "local3",		LOG_LOCAL3 },
+    { "local4",		LOG_LOCAL4 },
+    { "local5",		LOG_LOCAL5 },
+    { "local6",		LOG_LOCAL6 },
+    { "local7",		LOG_LOCAL7 },
+  };
+
+  for (uns i=0; i < ARRAY_SIZE(facilities); i++)
+    if (!strcmp(facilities[i].name, name))
+      return facilities[i].id;
+  return -1;
 }
 
 /* Convert severity level to syslog constants */
@@ -51,26 +91,33 @@ syslog_handler(struct log_stream *ls, struct log_msg *m)
   ASSERT(ls);
   ASSERT(m);
 
-  // FIXME: Logging of PID
   prio = syslog_level(LS_GET_LEVEL(m->flags)) | ss->facility;
-  if (ls->name)
-    syslog(prio, "%s: %s", ls->name, m->m);
-  else
-    syslog(prio, "%s", m->m);
+  syslog(prio, "%s", m->m);
   return 0;
 }
 
 struct log_stream *
-log_new_syslog(int facility, const char *name)
+log_new_syslog(const char *facility, int options)
 {
+  int fac = syslog_facility(facility);
+  if (fac < 0)
+    die("No such syslog facility: %s", facility);
+
   struct log_stream *ls = log_new_stream(sizeof(struct syslog_stream));
   struct syslog_stream *ss = (struct syslog_stream *) ls;
-  if (name)
-    ls->name = xstrdup(name);
+  ls->name = "syslog";
   ls->msgfmt = 0;
   ls->handler = syslog_handler;
   ls->close = syslog_close;
-  ss->facility = facility;
+  ss->facility = fac;
+
+  if (!syslog_open_count++)
+    openlog(log_title, options, LOG_INFO);
   return ls;
-  // FIXME: L_SIGHANDLER?
+}
+
+int
+log_syslog_facility_exists(const char *facility)
+{
+  return (syslog_facility(facility) >= 0);
 }
