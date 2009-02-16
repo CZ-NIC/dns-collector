@@ -21,6 +21,8 @@ struct stream_config {
   char *file_name;
   char *syslog_facility;
   clist substreams;			// simple_list of names
+  int microseconds;			// Enable logging of precise timestamps
+  int syslog_pids;
   struct log_stream *ls;
   int mark;				// Used temporarily in log_config_commit()
 };
@@ -34,6 +36,8 @@ stream_commit(void *ptr)
     return "Both FileName and SyslogFacility selected";
   if (c->syslog_facility && !log_syslog_facility_exists(c->syslog_facility))
     return cf_printf("SyslogFacility `%s' is not recognized", c->syslog_facility);
+  if (c->syslog_facility && c->microseconds)
+    return "Syslog streams do not support microsecond precision";
   return NULL;
 }
 
@@ -46,6 +50,8 @@ static struct cf_section stream_config = {
     CF_STRING("FileName", P(file_name)),
     CF_STRING("SyslogFacility", P(syslog_facility)),
     CF_LIST("Substream", P(substreams), &cf_string_list_config),
+    CF_INT("Microseconds", P(microseconds)),
+    CF_INT("SyslogPID", P(syslog_pids)),
 #undef P
     CF_END
   }
@@ -136,12 +142,15 @@ do_new_configured(struct stream_config *c)
   if (c->file_name)
     ls = log_new_file(c->file_name);
   else if (c->syslog_facility)
-    ls = log_new_syslog(c->syslog_facility, 0);		// FIXME: Logging of PID
+    ls = log_new_syslog(c->syslog_facility, (c->syslog_pids ? LOG_PID : 0));
   else
     ls = log_new_stream(sizeof(*ls));
 
   CLIST_FOR_EACH(simp_node *, s, c->substreams)
     log_add_substream(ls, do_new_configured(stream_find(s->s)));
+
+  if (c->microseconds)
+    ls->msgfmt |= LSFMT_USEC;
 
   c->ls = ls;
   return ls;

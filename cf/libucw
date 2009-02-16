@@ -185,11 +185,13 @@ Stream {
 Stream {
 	Name		logfile2
 	FileName	log/test2
+	Microseconds	1
 }
 
 Stream {
 	Name		syslog
 	SyslogFacility	user
+	SyslogPID	1
 }
 
 Stream {
