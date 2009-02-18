@@ -23,14 +23,10 @@
 #define OFFSETOF(s, i) ((unsigned int) (uintptr_t) PTR_TO(s, i))	/** Offset of item @i from the start of structure @s **/
 #define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))		/** Given a pointer @p to item @i of structure @s, return a pointer to the start of the struct. **/
 
-/**
- * Align an integer @s to the nearest higher multiple of @a (which should be a power of two)
- **/
+/** Align an integer @s to the nearest higher multiple of @a (which should be a power of two) **/
 #define ALIGN_TO(s, a) (((s)+a-1)&~(a-1))
 
-/**
- * Align a pointer @p to the nearest higher multiple of @s.
- **/
+/** Align a pointer @p to the nearest higher multiple of @s. **/
 #define ALIGN_PTR(p, s) ((uintptr_t)(p) % (s) ? (typeof(p))((uintptr_t)(p) + (s) - (uintptr_t)(p) % (s)) : (p))
 
 #define UNALIGNED_PART(ptr, type) (((uintptr_t) (ptr)) % sizeof(type))

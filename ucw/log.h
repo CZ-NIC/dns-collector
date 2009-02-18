@@ -152,9 +152,7 @@ void log_set_format(struct log_stream *ls, uns mask, uns data);
  **/
 struct log_stream *log_stream_by_flags(uns flags);
 
-/**
- * Return a pointer to the default stream (stream #0).
- **/
+/** Return a pointer to the default stream (stream #0). **/
 static inline struct log_stream *log_default_stream(void)
 {
   return log_stream_by_flags(0);
