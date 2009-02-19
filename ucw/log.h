@@ -39,7 +39,7 @@ struct log_stream {
   uns use_count;			// Number of references to the stream
   int (*filter)(struct log_stream* ls, struct log_msg *m);	// Filter function, return non-zero to discard the message
   clist substreams;			// Pass the message to these streams (simple_list of pointers)
-  int (*handler)(struct log_stream *ls, struct log_msg *m);	// Called to commit the message
+  int (*handler)(struct log_stream *ls, struct log_msg *m);	// Called to commit the message, return 0 for success, errno on error
   void (*close)(struct log_stream* ls);	// Called upon log_close_stream()
   // Private data of the handler follow
 };

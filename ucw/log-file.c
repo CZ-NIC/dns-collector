@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
+#include <errno.h>
 
 struct file_stream {
   struct log_stream ls;		// ls.name is the current name of the log file
@@ -111,8 +112,7 @@ file_handler(struct log_stream *ls, struct log_msg *m)
     do_log_switch(fs, m->tm);
 
   int r = write(fs->fd, m->m, m->m_len);
-  /* FIXME: check for errors here? */
-  return 0;
+  return ((r < 0) ? errno : 0);
 }
 
 struct log_stream *
