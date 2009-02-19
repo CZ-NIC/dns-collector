@@ -20,12 +20,22 @@ struct stream_config {
   char *name;
   char *file_name;
   char *syslog_facility;
+  u32 levels;
   clist substreams;			// simple_list of names
   int microseconds;			// Enable logging of precise timestamps
   int syslog_pids;
   struct log_stream *ls;
   int mark;				// Used temporarily in log_config_commit()
 };
+
+static char *
+stream_init(void *ptr)
+{
+  struct stream_config *c = ptr;
+
+  c->levels = ~0U;
+  return NULL;
+}
 
 static char *
 stream_commit(void *ptr)
@@ -41,14 +51,23 @@ stream_commit(void *ptr)
   return NULL;
 }
 
+static const char * const level_names[] = {
+#define P(x) #x,
+  LOG_LEVEL_NAMES
+#undef P
+  NULL
+};
+
 static struct cf_section stream_config = {
   CF_TYPE(struct stream_config),
+  CF_INIT(stream_init),
   CF_COMMIT(stream_commit),
   CF_ITEMS {
 #define P(x) PTR_TO(struct stream_config, x)
     CF_STRING("Name", P(name)),
     CF_STRING("FileName", P(file_name)),
     CF_STRING("SyslogFacility", P(syslog_facility)),
+    CF_BITMAP_LOOKUP("Levels", P(levels), level_names),
     CF_LIST("Substream", P(substreams), &cf_string_list_config),
     CF_INT("Microseconds", P(microseconds)),
     CF_INT("SyslogPID", P(syslog_pids)),
@@ -149,6 +168,7 @@ do_new_configured(struct stream_config *c)
   CLIST_FOR_EACH(simp_node *, s, c->substreams)
     log_add_substream(ls, do_new_configured(stream_find(s->s)));
 
+  ls->levels = c->levels;
   if (c->microseconds)
     ls->msgfmt |= LSFMT_USEC;
 
