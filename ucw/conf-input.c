@@ -255,7 +255,7 @@ parse_fastbuf(const char *name_fb, struct fastbuf *fb, uns depth)
 		    default: op = OP_ALL;
 		  }; break;
 	case 'p': op = OP_PREPEND; break;
-	case 'r': op = OP_REMOVE; break;
+	case 'r': op = (c[1] && Clocase(c[2]) == 'm') ? OP_REMOVE : OP_RESET; break;
 	case 'e': op = OP_EDIT; break;
 	case 'b': op = OP_BEFORE; break;
 	default: op = OP_SET; break;

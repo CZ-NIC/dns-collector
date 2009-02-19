@@ -519,6 +519,21 @@ find_item(struct cf_section *curr_sec, const char *name, char **msg, void **ptr)
   }
 }
 
+static char *
+interpret_add(char *name, struct cf_item *item, int number, char **pars, int *takenp, void *ptr, enum cf_operation op)
+{
+  switch (item->cls) {
+    case CC_DYNAMIC:
+      return interpret_add_dynamic(item, number, pars, takenp, ptr, op);
+    case CC_LIST:
+      return interpret_add_list(item, number, pars, takenp, ptr, op);
+    case CC_BITMAP:
+      return interpret_add_bitmap(item, number, pars, takenp, ptr, op);
+    default:
+      return cf_printf("Operation %s not supported on attribute %s", cf_op_names[op], name);
+  }
+}
+
 char *
 cf_interpret_line(char *name, enum cf_operation op, int number, char **pars)
 {
@@ -541,18 +556,22 @@ cf_interpret_line(char *name, enum cf_operation op, int number, char **pars)
   op &= OP_MASK;
 
   int taken = 0;		// process as many parameters as possible
-  if (op == OP_CLEAR || op == OP_ALL)
-    msg = interpret_set_all(item, ptr, op);
-  else if (op == OP_SET)
-    msg = interpret_set_item(item, number, pars, &taken, ptr, 1);
-  else if (item->cls == CC_DYNAMIC)
-    msg = interpret_add_dynamic(item, number, pars, &taken, ptr, op);
-  else if (item->cls == CC_LIST)
-    msg = interpret_add_list(item, number, pars, &taken, ptr, op);
-  else if (item->cls == CC_BITMAP)
-    msg = interpret_add_bitmap(item, number, pars, &taken, ptr, op);
-  else
-    return cf_printf("Operation %s not supported on attribute %s", cf_op_names[op], name);
+  switch (op) {
+    case OP_CLEAR:
+    case OP_ALL:
+      msg = interpret_set_all(item, ptr, op);
+      break;
+    case OP_SET:
+      msg = interpret_set_item(item, number, pars, &taken, ptr, 1);
+      break;
+    case OP_RESET:
+      msg = interpret_set_all(item, ptr, OP_CLEAR);
+      if (!msg)
+	msg = interpret_add(name, item, number, pars, &taken, ptr, OP_APPEND);
+      break;
+    default:
+      msg = interpret_add(name, item, number, pars, &taken, ptr, op);
+  }
   if (msg)
     return msg;
   if (taken < number)

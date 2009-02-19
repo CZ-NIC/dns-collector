@@ -63,7 +63,7 @@ int cf_set(const char *string);
  * described in <<config:operations,configuration syntax>>.
  **/
 #define CF_OPERATIONS T(CLOSE) T(SET) T(CLEAR) T(ALL) \
-  T(APPEND) T(PREPEND) T(REMOVE) T(EDIT) T(AFTER) T(BEFORE) T(COPY)
+  T(APPEND) T(PREPEND) T(REMOVE) T(EDIT) T(AFTER) T(BEFORE) T(COPY) T(RESET)
   /* Closing brace finishes previous block.
    * Basic attributes (static, dynamic, parsed) can be used with SET.
    * Dynamic arrays can be used with SET, APPEND, PREPEND.
