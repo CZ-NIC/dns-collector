@@ -228,6 +228,8 @@ interpret_add_list(struct cf_item *item, int number, char **pars, int *processed
 static char *
 interpret_add_bitmap(struct cf_item *item, int number, char **pars, int *processed, u32 *ptr, enum cf_operation op)
 {
+  if (op == OP_PREPEND || op == OP_APPEND)
+    op = OP_SET;
   if (op != OP_SET && op != OP_REMOVE)
     return cf_printf("Cannot apply operation %s on a bitmap", cf_op_names[op]);
   else if (item->type != CT_INT && item->type != CT_LOOKUP)
@@ -590,12 +592,19 @@ cf_modify_item(struct cf_item *item, enum cf_operation op, int number, char **pa
       break;
     case OP_APPEND:
     case OP_PREPEND:
-      if (item->cls == CC_DYNAMIC)
-	msg = interpret_add_dynamic(item, number, pars, &taken, item->ptr, op);
-      else if (item->cls == CC_LIST)
-	msg = interpret_add_list(item, number, pars, &taken, item->ptr, op);
-      else
-	return "The attribute does not support append/prepend";
+      switch (item->cls) {
+	case CC_DYNAMIC:
+	  msg = interpret_add_dynamic(item, number, pars, &taken, item->ptr, op);
+	  break;
+	case CC_LIST:
+	  msg = interpret_add_list(item, number, pars, &taken, item->ptr, op);
+	  break;
+	case CC_BITMAP:
+	  msg = interpret_add_bitmap(item, number, pars, &taken, item->ptr, op);
+	  break;
+	default:
+	  return "The attribute does not support append/prepend";
+      }
       break;
     case OP_REMOVE:
       if (item->cls == CC_BITMAP)

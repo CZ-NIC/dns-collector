@@ -129,7 +129,8 @@ or specify the new values using the shorter one-line syntax.
 
 The commands :clear, :append, and :prepend are also supported by var-length
 arrays.  The command :clear can also be used on string values.  The following
-operations can be used on bitmaps: :set, :remove, :clear, and :all.
+operations can be used on bitmaps: :set (which is equal to :append and :prepend),
+:remove, :clear, and :all (set all bits).
 
 [[include]]
 Including other files
