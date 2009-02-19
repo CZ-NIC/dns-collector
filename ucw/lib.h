@@ -105,6 +105,9 @@ enum log_levels {			/** The available log levels to pass to msg() and friends. *
 
 #define LOG_LEVEL_NAMES P(DEBUG) P(INFO) P(WARN) P(ERROR) P(INFO_R) P(WARN_R) P(ERROR_R) P(FATAL)
 
+// Return the letter associated with a given severity level
+#define LS_LEVEL_LETTER(level) ("DIWEiwe!###"[( level )])
+
 #define L_SIGHANDLER	0x80000000	/** Avoid operations that are unsafe in signal handlers **/
 #define L_LOGGER_ERR	0x40000000	/** Used internally to avoid infinite reporting of logging errors **/
 

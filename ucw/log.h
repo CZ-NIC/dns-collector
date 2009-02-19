@@ -67,9 +67,6 @@ enum ls_flag {
   LSFLAG_ERR_REPORTED =	2,		// A logging error has been already reported on this stream
 };
 
-// Return the letter associated with a given severity level
-#define LS_LEVEL_LETTER(level) ("DIiWwEe!###"[( level )])
-
 /***
  * === Message flags
  *
