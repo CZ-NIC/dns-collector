@@ -187,6 +187,7 @@ Stream {
 	FileName	log/test2
 	Microseconds	1
 	Levels:reset	warn error
+	ErrorsFatal	1
 }
 
 Stream {

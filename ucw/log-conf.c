@@ -24,6 +24,7 @@ struct stream_config {
   clist substreams;			// simple_list of names
   int microseconds;			// Enable logging of precise timestamps
   int syslog_pids;
+  int errors_fatal;
   struct log_stream *ls;
   int mark;				// Used temporarily in log_config_commit()
 };
@@ -71,6 +72,7 @@ static struct cf_section stream_config = {
     CF_LIST("Substream", P(substreams), &cf_string_list_config),
     CF_INT("Microseconds", P(microseconds)),
     CF_INT("SyslogPID", P(syslog_pids)),
+    CF_INT("ErrorsFatal", P(errors_fatal)),
 #undef P
     CF_END
   }
@@ -171,6 +173,8 @@ do_new_configured(struct stream_config *c)
   ls->levels = c->levels;
   if (c->microseconds)
     ls->msgfmt |= LSFMT_USEC;
+  if (c->errors_fatal)
+    ls->stream_flags |= LSFLAG_ERR_IS_FATAL;
 
   c->ls = ls;
   return ls;
