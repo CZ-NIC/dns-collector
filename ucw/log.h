@@ -37,6 +37,7 @@ struct log_stream {
   uns levels;				// Bitmask of accepted severity levels (default: all)
   uns msgfmt;				// Formatting flags (LSFMT_xxx)
   uns use_count;			// Number of references to the stream
+  uns stream_flags;			// Various other flags (LSFLAG_xxx)
   int (*filter)(struct log_stream* ls, struct log_msg *m);	// Filter function, return non-zero to discard the message
   clist substreams;			// Pass the message to these streams (simple_list of pointers)
   int (*handler)(struct log_stream *ls, struct log_msg *m);	// Called to commit the message, return 0 for success, errno on error
@@ -57,6 +58,14 @@ enum ls_fmt {
 };
 
 #define LSFMT_DEFAULT (LSFMT_LEVEL | LSFMT_TIME | LSFMT_TITLE | LSFMT_PID)	/** Default format **/
+
+/**
+ * General stream flags.
+ **/
+enum ls_flag {
+  LSFLAG_ERR_IS_FATAL =	1,		// When a logging error occurs, die() immediately
+  LSFLAG_ERR_REPORTED =	2,		// A logging error has been already reported on this stream
+};
 
 // Return the letter associated with a given severity level
 #define LS_LEVEL_LETTER(level) ("DIiWwEe!###"[( level )])

@@ -26,6 +26,8 @@ char *log_title;
 int log_pid;
 void (*log_die_hook)(void);
 
+static void NONRET do_die(void);
+
 /*** The default log stream, which logs to stderr ***/
 
 static int default_log_handler(struct log_stream *ls UNUSED, struct log_msg *m)
@@ -147,6 +149,35 @@ vmsg(uns cat, const char *fmt, va_list args)
     xfree(m.raw_msg);
 }
 
+static void
+log_report_err(struct log_stream *ls, struct log_msg *m, int err)
+{
+  if (m->flags & L_LOGGER_ERR)
+    return;
+  if (ls->stream_flags & LSFLAG_ERR_REPORTED)
+    return;
+  ls->stream_flags |= LSFLAG_ERR_REPORTED;
+
+  struct log_msg errm = *m;
+  char errbuf[128];
+  char *name = (ls->name ? : "<unnamed>");
+
+  errm.flags = ((ls->stream_flags & LSFLAG_ERR_IS_FATAL) ? L_FATAL : L_ERROR);
+  errm.flags |= L_LOGGER_ERR | (m->flags & LS_CTRL_MASK);
+  errm.raw_msg = errbuf;
+  if (err == EDEADLK)
+    snprintf(errbuf, sizeof(errbuf), "Error logging to %s: Maximum nesting level of log streams exceeded", name);
+  else
+    {
+      errno = err;
+      snprintf(errbuf, sizeof(errbuf), "Error logging to %s: %m", name);
+    }
+  log_pass_msg(0, &log_stream_default, &errm);
+
+  if (ls->stream_flags & LSFLAG_ERR_IS_FATAL)
+    do_die();
+}
+
 /* Maximal depth of log_pass_msg recursion */
 #define LS_MAX_DEPTH 64
 
@@ -158,10 +189,8 @@ log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
   /* Check recursion depth */
   if (depth > LS_MAX_DEPTH)
     {
-      struct log_msg errm = *m;
-      errm.flags = L_ERROR | (m->flags & LS_CTRL_MASK);
-      errm.raw_msg = "Loop in the log_stream system detected.";
-      log_pass_msg(0, &log_stream_default, &errm);
+      log_report_err(ls, m, EDEADLK);
+      return 1;
     }
 
   /* Filter by level and hook function */
@@ -247,7 +276,9 @@ log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
       *p++ = '\n';
       *p = '\0';
       m->m_len = p - m->m;
-      ls->handler(ls, m);
+      int err = ls->handler(ls, m);
+      if (err)
+	log_report_err(ls, m, err);
     }
 
   if (free_buf)
@@ -267,6 +298,16 @@ msg(unsigned int cat, const char *fmt, ...)
   va_end(args);
 }
 
+static void NONRET
+do_die(void)
+{
+#ifdef DEBUG_DIE_BY_ABORT
+  abort();
+#else
+  exit(1);
+#endif
+}
+
 void
 die(const char *fmt, ...)
 {
@@ -277,11 +318,7 @@ die(const char *fmt, ...)
   va_end(args);
   if (log_die_hook)
     log_die_hook();
-#ifdef DEBUG_DIE_BY_ABORT
-  abort();
-#else
-  exit(1);
-#endif
+  do_die();
 }
 
 void
@@ -333,6 +370,10 @@ log_fork(void)
 int main(void)
 {
   struct log_stream *ls = log_new_syslog("local3", 0);
+#if 0
+  log_add_substream(ls, ls);
+  ls->stream_flags |= LSFLAG_ERR_IS_FATAL;
+#endif
   msg(L_INFO | ls->regnum, "Brum <%300s>", ":-)");
   log_set_format(log_default_stream(), ~0U, LSFMT_USEC);
   msg(L_INFO, "Brum <%300s>", ":-)");
