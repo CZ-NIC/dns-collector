@@ -121,6 +121,7 @@ the name of the operation.  The following operations are supported:
   List:after { attr1=search1 } { ... }	# insert a node after a found node
   List:before { attr1=search1 } { ... }	# insert a node before a found node
   List:copy { attr1=search1 } { ... }	# duplicate a node and edit the copy
+  List:reset { attr=value1; ... }	# equivalent to :clear and :append
 
 You can specify several attributes in the search condition and the nodes
 are tested for equality in all these attributes.  In the editing
