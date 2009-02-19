@@ -255,7 +255,7 @@ log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
     }
   else
     {
-      if (ls->msgfmt & LSFMT_PID)
+      if ((ls->msgfmt & LSFMT_PID) && log_pid)
 	p += sprintf(p, "[%d] ", log_pid);
     }
 
