@@ -89,6 +89,15 @@ Example
 	  return 0;
 	}
 
+Message types
+-------------
+Messages can also have types, which can be used for further filtering inside streams.
+By default, there is only the default message type. To obtain an identifier of a new
+type (again to be OR'ed to the log level when calling <<msg()>>), use <<log_register_type()>>.
+The number of types is currently limited to 32.
+
+If you want non-default types to be visible, enable the `LSFMT_TYPE` format flag.
+
 Processes, threads and signals
 ------------------------------
 When you fork a new process, it automatically inherits all currently configured log

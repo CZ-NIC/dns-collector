@@ -35,6 +35,7 @@ struct log_stream {
   char *name;				// Optional name, allocated by the user (or constructor)
   int regnum;				// Stream number, already encoded by LS_SET_STRNUM(); -1 if closed
   uns levels;				// Bitmask of accepted severity levels (default: all)
+  uns types;				// Bitmask of accepted message types (default: all)
   uns msgfmt;				// Formatting flags (LSFMT_xxx)
   uns use_count;			// Number of references to the stream
   uns stream_flags;			// Various other flags (LSFLAG_xxx)
@@ -55,6 +56,7 @@ enum ls_fmt {
   LSFMT_TITLE =		8,		// program title (log_title) */
   LSFMT_PID =		16,		// program PID (log_pid) */
   LSFMT_LOGNAME =	32,		// name of the log_stream */
+  LSFMT_TYPE =		64,		// message type
 };
 
 #define LSFMT_DEFAULT (LSFMT_LEVEL | LSFMT_TIME | LSFMT_TITLE | LSFMT_PID)	/** Default format **/
@@ -71,7 +73,7 @@ enum ls_flag {
  * === Message flags
  *
  * The @flags parameter of msg() is divided to several groups of bits (from the LSB):
- * message severity level (`L_xxx`), destination stream, message type [currently unused]
+ * message severity level (`L_xxx`), destination stream, message type
  * and control bits (e.g., `L_SIGHANDLER`).
  ***/
 
@@ -107,6 +109,15 @@ enum ls_flagmasks {			// Bit masks of groups
 #define LS_SET_STRNUM(strnum)	((strnum) << LS_STRNUM_POS)			/** Convert stream number to flags **/
 #define LS_SET_TYPE(type)	((type) << LS_TYPE_POS)				/** Convert message type to flags **/
 #define LS_SET_CTRL(ctrl)	((ctrl) << LS_CTRL_POS)				/** Convert control bits to flags **/
+
+/** Register a new message type and return the corresponding flag set (encoded by `LS_SET_TYPE`). **/
+int log_register_type(const char *name);
+
+/** Find a message type by name and return the corresponding flag set. Returns -1 if no such type found. **/
+int log_find_type(const char *name);
+
+/** Given a flag set, extract the message type ID and return its name. **/
+char *log_type_name(uns flags);
 
 /*** === Operations on streams ***/
 

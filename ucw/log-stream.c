@@ -136,6 +136,7 @@ log_new_stream(size_t size)
   /* Initialize the stream */
   bzero(l, sizeof(*l));
   l->levels = ~0U;
+  l->types = ~0U;
   l->regnum = LS_SET_STRNUM(index);
   clist_init(&l->substreams);
   return log_ref_stream(l);
@@ -167,4 +168,36 @@ log_set_format(struct log_stream *ls, uns mask, uns data)
   ls->msgfmt = (ls->msgfmt & mask) | data;
   CLIST_FOR_EACH(simp_node *, i, ls->substreams)
     log_set_format(i->p, mask, data);
+}
+
+/*** Registry of type names ***/
+
+int log_register_type(const char *name)
+{
+  if (!log_type_names)
+    {
+      log_type_names = xmalloc_zero(LS_GET_TYPE(~0U) * sizeof(char *));
+      log_type_names[0] = "default";
+    }
+  uns id;
+  for (id=0; id < LS_GET_TYPE(~0U) && log_type_names[id]; id++)
+    if (!strcmp(log_type_names[id], name))
+      return LS_SET_TYPE(id);
+  ASSERT(id < LS_GET_TYPE(~0U));
+  log_type_names[id] = xstrdup(name);
+  return LS_SET_TYPE(id);
+}
+
+/** Find a message type by name and return its ID encoded by `LS_SET_TYPE`. Returns -1 if no such type found. **/
+int log_find_type(const char *name)
+{
+  if (!strcmp(name, "default"))
+    return 0;
+  if (!log_type_names)
+    return -1;
+
+  for (uns id=0; id < LS_GET_TYPE(~0U) && log_type_names[id]; id++)
+    if (!strcmp(log_type_names[id], name))
+      return LS_SET_TYPE(id);
+  return -1;
 }

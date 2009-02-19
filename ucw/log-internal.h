@@ -29,4 +29,6 @@ extern int log_streams_after;
 
 extern struct log_stream log_stream_default;
 
+extern char **log_type_names;
+
 #endif

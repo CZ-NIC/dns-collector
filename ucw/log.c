@@ -42,6 +42,7 @@ struct log_stream log_stream_default = {
   .use_count = 1000000,
   .handler = default_log_handler,
   .levels = ~0U,
+  .types = ~0U,
   .msgfmt = LSFMT_DEFAULT,
   // an empty clist
   .substreams.head.next = (cnode *) &log_stream_default.substreams.head,
@@ -69,6 +70,21 @@ log_stream_by_flags(uns flags)
   if (n < 0 || n >= log_streams_after || log_streams.ptr[n]->regnum == -1)
     return (n ? NULL : &log_stream_default);
   return log_streams.ptr[n];
+}
+
+/*** Known message types ***/
+
+char **log_type_names;
+
+char *
+log_type_name(uns flags)
+{
+  uns type = LS_GET_TYPE(flags);
+
+  if (!log_type_names || !log_type_names[type])
+    return "default";
+  else
+    return log_type_names[type];
 }
 
 /*** Logging ***/
@@ -193,10 +209,10 @@ log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
       return 1;
     }
 
-  /* Filter by level and hook function */
-  if (!((1 << LS_GET_LEVEL(m->flags)) & ls->levels))
-    return 0;
-  if (ls->filter && ls->filter(ls, m))
+  /* Filter by level, type and hook function */
+  if (!((1 << LS_GET_LEVEL(m->flags)) & ls->levels) ||
+      !((1 << LS_GET_TYPE(m->flags)) & ls->types) ||
+      ls->filter && ls->filter(ls, m))
     return 0;
 
   /* Pass the message to substreams */
@@ -208,12 +224,19 @@ log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
   if (!ls->handler)
     return 0;
 
+  /* Will print a message type? */
+  char *type = NULL;
+  if ((ls->msgfmt & LSFMT_TYPE) && LS_GET_TYPE(m->flags))
+    type = log_type_name(m->flags);
+
   /* Upper bound on message length */
   int len = strlen(m->raw_msg) + strlen(m->stime) + strlen(m->sutime) + 32;
   if (log_title)
     len += strlen(log_title);
   if (ls->name)
     len += strlen(ls->name);
+  if (type)
+    len += strlen(type) + 3;
 
   /* Get a buffer and format the message */
   char *free_buf = NULL;
@@ -267,6 +290,10 @@ log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
       else
 	p += sprintf(p, "<?> ");
     }
+
+  /* Message type ( |type| + 3 chars ) */
+  if (ls->msgfmt & LSFMT_TYPE)
+    p += sprintf(p, "{%s} ", type);
 
   /* The message itself ( |m| + 1 chars ) */
     {
@@ -369,14 +396,18 @@ log_fork(void)
 
 int main(void)
 {
+  int type = log_find_type("foo");
+  ASSERT(type < 0);
+  type = log_register_type("foo");
+
   struct log_stream *ls = log_new_syslog("local3", 0);
 #if 0
   log_add_substream(ls, ls);
   ls->stream_flags |= LSFLAG_ERR_IS_FATAL;
 #endif
   msg(L_INFO | ls->regnum, "Brum <%300s>", ":-)");
-  log_set_format(log_default_stream(), ~0U, LSFMT_USEC);
-  msg(L_INFO, "Brum <%300s>", ":-)");
+  log_set_format(log_default_stream(), ~0U, LSFMT_USEC | LSFMT_TYPE);
+  msg(L_INFO | type, "Brum <%300s>", ":-)");
   log_close_all();
   return 0;
 }
