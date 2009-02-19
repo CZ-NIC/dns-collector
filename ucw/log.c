@@ -292,7 +292,7 @@ log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
     }
 
   /* Message type ( |type| + 3 chars ) */
-  if (ls->msgfmt & LSFMT_TYPE)
+  if (type)
     p += sprintf(p, "{%s} ", type);
 
   /* The message itself ( |m| + 1 chars ) */
