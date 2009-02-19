@@ -58,15 +58,17 @@ log_close_all(void)
   if (!log_initialized)
     return;
 
-  // Close all open streams
+  // Remove substreams of all streams
   for (int i=0; i < log_streams_after; i++)
     if (log_streams.ptr[i]->regnum >= 0)
-      log_close_stream(log_streams.ptr[i]);
+      log_rm_substream(log_streams.ptr[i], NULL);
 
-  // Free all cached structures
+  // Close all streams that remain and free all cached structures
   for (int i=0; i < log_streams_after; i++)
     {
       struct log_stream *ls = log_streams.ptr[i];
+      if (ls->regnum >= 0)
+	log_close_stream(ls);
       ASSERT(ls->regnum < 0 || !ls->use_count);
       xfree(ls);
     }
