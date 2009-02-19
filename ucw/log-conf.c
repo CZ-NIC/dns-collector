@@ -21,8 +21,10 @@ struct stream_config {
   char *file_name;
   char *syslog_facility;
   u32 levels;
+  clist types;				// simple_list of names
   clist substreams;			// simple_list of names
   int microseconds;			// Enable logging of precise timestamps
+  int show_types;
   int syslog_pids;
   int errors_fatal;
   struct log_stream *ls;
@@ -69,8 +71,10 @@ static struct cf_section stream_config = {
     CF_STRING("FileName", P(file_name)),
     CF_STRING("SyslogFacility", P(syslog_facility)),
     CF_BITMAP_LOOKUP("Levels", P(levels), level_names),
+    CF_LIST("Types", P(types), &cf_string_list_config),
     CF_LIST("Substream", P(substreams), &cf_string_list_config),
     CF_INT("Microseconds", P(microseconds)),
+    CF_INT("ShowTypes", P(show_types)),
     CF_INT("SyslogPID", P(syslog_pids)),
     CF_INT("ErrorsFatal", P(errors_fatal)),
 #undef P
@@ -173,8 +177,29 @@ do_new_configured(struct stream_config *c)
   ls->levels = c->levels;
   if (c->microseconds)
     ls->msgfmt |= LSFMT_USEC;
+  if (c->show_types)
+    ls->msgfmt |= LSFMT_TYPE;
   if (c->errors_fatal)
     ls->stream_flags |= LSFLAG_ERR_IS_FATAL;
+
+  if (!clist_empty(&c->types))
+    {
+      ls->types = 0;
+      CLIST_FOR_EACH(simp_node *, s, c->types)
+	if (!strcmp(s->s, "all"))
+	  ls->types = ~0U;
+	else
+	  {
+	    /*
+	     *  We intentionally ignore unknown types as not all types are known
+	     *  to all programs sharing a common configuration file. This is also
+	     *  the reason why Types is a list and not a bitmap.
+	     */
+	    int type = log_find_type(s->s);
+	    if (type >= 0)
+	      ls->types |= 1 << LS_GET_TYPE(type);
+	  }
+    }
 
   c->ls = ls;
   return ls;
@@ -212,8 +237,9 @@ int main(int argc, char **argv)
   while ((c = cf_getopt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL)) >= 0)
     die("No options here.");
 
+  int type = log_register_type("foo");
   struct log_stream *ls = log_new_configured("combined");
-  msg(L_INFO | ls->regnum, "Hello, universe!");
+  msg(L_INFO | ls->regnum | type, "Hello, universe!");
 
   log_close_all();
   return 0;

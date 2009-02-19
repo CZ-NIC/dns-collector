@@ -186,8 +186,10 @@ Stream {
 	Name		logfile2
 	FileName	log/test2
 	Microseconds	1
-	Levels:reset	warn error
+	Levels:reset	info warn error
+	Types:reset	default foo
 	ErrorsFatal	1
+	ShowTypes	1
 }
 
 Stream {
