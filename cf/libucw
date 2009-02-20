@@ -180,6 +180,7 @@ Logging {
 Stream {
 	Name		logfile
 	FileName	log/test
+	Limit { Rate 100 }
 }
 
 Stream {

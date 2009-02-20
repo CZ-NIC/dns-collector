@@ -11,9 +11,12 @@
 #include "ucw/log.h"
 #include "ucw/conf.h"
 #include "ucw/simple-lists.h"
+#include "ucw/tbf.h"
+#include "ucw/threads.h"
 
 #include <string.h>
 #include <syslog.h>
+#include <sys/time.h>
 
 struct stream_config {
   cnode n;
@@ -23,12 +26,20 @@ struct stream_config {
   u32 levels;
   clist types;				// simple_list of names
   clist substreams;			// simple_list of names
+  clist limits;				// of struct limit_config's
   int microseconds;			// Enable logging of precise timestamps
   int show_types;
   int syslog_pids;
   int errors_fatal;
   struct log_stream *ls;
   int mark;				// Used temporarily in log_config_commit()
+};
+
+struct limit_config {
+  cnode n;
+  clist types;				// simple_list of names
+  double rate;
+  uns burst;
 };
 
 static char *
@@ -61,6 +72,18 @@ static const char * const level_names[] = {
   NULL
 };
 
+static struct cf_section limit_config = {
+  CF_TYPE(struct limit_config),
+  CF_ITEMS {
+#define P(x) PTR_TO(struct limit_config, x)
+    CF_LIST("Types", P(types), &cf_string_list_config),
+    CF_DOUBLE("Rate", P(rate)),
+    CF_UNS("Burst", P(burst)),
+#undef P
+    CF_END
+  }
+};
+
 static struct cf_section stream_config = {
   CF_TYPE(struct stream_config),
   CF_INIT(stream_init),
@@ -73,6 +96,7 @@ static struct cf_section stream_config = {
     CF_BITMAP_LOOKUP("Levels", P(levels), level_names),
     CF_LIST("Types", P(types), &cf_string_list_config),
     CF_LIST("Substream", P(substreams), &cf_string_list_config),
+    CF_LIST("Limit", P(limits), &limit_config),
     CF_INT("Microseconds", P(microseconds)),
     CF_INT("ShowTypes", P(show_types)),
     CF_INT("SyslogPID", P(syslog_pids)),
@@ -155,6 +179,74 @@ log_check_configured(const char *name)
     return cf_printf("Log stream `%s' not found", name);
 }
 
+static uns
+log_type_mask(clist *l)
+{
+  if (clist_empty(l))
+    return ~0U;
+
+  uns types = 0;
+  CLIST_FOR_EACH(simp_node *, s, *l)
+    if (!strcmp(s->s, "all"))
+      return ~0U;
+    else
+      {
+	/*
+	 *  We intentionally ignore unknown types as not all types are known
+	 *  to all programs sharing a common configuration file. This is also
+	 *  the reason why Types is a list and not a bitmap.
+	 */
+	int type = log_find_type(s->s);
+	if (type >= 0)
+	  types |= 1 << LS_GET_TYPE(type);
+      }
+  return types;
+}
+
+/*
+ *  When limiting is enabled, we let log_stream->filter point to this function
+ *  and log_stream->user_data point to an array of pointers to token bucket
+ *  filters for individual message types.
+ */
+static int
+log_limiter(struct log_stream *ls, struct log_msg *m)
+{
+  struct token_bucket_filter **limits = ls->user_data;
+  if (!limits)
+    return 0;
+  struct token_bucket_filter *tbf = limits[LS_GET_TYPE(m->flags)];
+  if (!tbf)
+    return 0;
+
+  ASSERT(!(m->flags & L_SIGHANDLER));
+  timestamp_t now = ((timestamp_t) m->tv->tv_sec * 1000) + (m->tv->tv_usec / 1000);
+
+  ucwlib_lock();
+  int res = tbf_limit(tbf, now);
+  ucwlib_unlock();
+  return !res;
+}
+
+static void
+log_apply_limits(struct log_stream *ls, struct limit_config *lim)
+{
+  if (!ls->user_data)
+    {
+      ls->user_data = cf_malloc_zero(LS_NUM_TYPES * sizeof(struct token_bucket_filter *));
+      ls->filter = log_limiter;
+    }
+  struct token_bucket_filter **limits = ls->user_data;
+  struct token_bucket_filter *tbf = cf_malloc_zero(sizeof(*lim));
+  tbf->rate = lim->rate;
+  tbf->burst = lim->burst;
+  tbf_init(tbf);
+
+  uns mask = log_type_mask(&lim->types);
+  for (uns i=0; i < LS_NUM_TYPES; i++)
+    if (mask & (1 << i))
+      limits[i] = tbf;
+}
+
 static struct log_stream *
 do_new_configured(struct stream_config *c)
 {
@@ -181,25 +273,10 @@ do_new_configured(struct stream_config *c)
     ls->msgfmt |= LSFMT_TYPE;
   if (c->errors_fatal)
     ls->stream_flags |= LSFLAG_ERR_IS_FATAL;
+  ls->types = log_type_mask(&c->types);
 
-  if (!clist_empty(&c->types))
-    {
-      ls->types = 0;
-      CLIST_FOR_EACH(simp_node *, s, c->types)
-	if (!strcmp(s->s, "all"))
-	  ls->types = ~0U;
-	else
-	  {
-	    /*
-	     *  We intentionally ignore unknown types as not all types are known
-	     *  to all programs sharing a common configuration file. This is also
-	     *  the reason why Types is a list and not a bitmap.
-	     */
-	    int type = log_find_type(s->s);
-	    if (type >= 0)
-	      ls->types |= 1 << LS_GET_TYPE(type);
-	  }
-    }
+  CLIST_FOR_EACH(struct limit_config *, lim, c->limits)
+    log_apply_limits(ls, lim);
 
   c->ls = ls;
   return ls;

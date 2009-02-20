@@ -44,6 +44,7 @@ struct log_stream {
   clist substreams;			// Pass the message to these streams (simple_list of pointers)
   int (*handler)(struct log_stream *ls, struct log_msg *m);	// Called to commit the message, return 0 for success, errno on error
   void (*close)(struct log_stream* ls);	// Called upon log_close_stream()
+  void *user_data;			// Not used by the logging system
   // Private data of the handler follow
 };
 
