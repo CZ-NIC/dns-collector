@@ -12,7 +12,7 @@ LIBUCW_MODS= \
 	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt eltpool \
 	mmap partmap hashfunc \
 	slists simple-lists bitsig \
-	log log-stream log-file log-syslog log-conf proctitle \
+	log log-stream log-file log-syslog log-conf proctitle tbf \
 	conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section \
 	ipaccess \
 	profile \
