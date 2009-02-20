@@ -22,6 +22,7 @@ struct log_msg {
   char *m;				// The formatted message itself, ending with \n\0
   int m_len;				// Length without the \0
   struct tm *tm;			// Current time
+  struct timeval *tv;
   uns flags;				// Category and other flags as passed to msg()
   char *raw_msg;			// Unformatted parts
   char *stime;

@@ -118,6 +118,7 @@ vmsg(uns cat, const char *fmt, va_list args)
     {
       /* CAVEAT: These calls are not safe in signal handlers. */
       gettimeofday(&tv, NULL);
+      m.tv = &tv;
       if (localtime_r(&tv.tv_sec, &tm))
 	m.tm = &tm;
     }
