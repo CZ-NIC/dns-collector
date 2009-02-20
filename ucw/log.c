@@ -100,18 +100,21 @@ vmsg(uns cat, const char *fmt, va_list args)
   char msgbuf[256];
   char *p;
   int len;
-  struct log_stream *ls = log_stream_by_flags(cat);
+  uns sighandler = cat & L_SIGHANDLER;
+  struct log_stream *ls;
   struct log_msg m = { .flags = cat };
 
-  /* Check the stream existence */
-  if (!ls)
+  /* Find the destination stream */
+  if (sighandler)
+    ls = &log_stream_default;
+  else if (!(ls = log_stream_by_flags(cat)))
     {
       msg((LS_CTRL_MASK&cat)|L_WARN, "No log_stream with number %d! Logging to the default log.", LS_GET_STRNUM(cat));
       ls = &log_stream_default;
     }
 
   /* Get the current time */
-  if (!(cat & L_SIGHANDLER))
+  if (!sighandler)
     {
       /* CAVEAT: These calls are not safe in signal handlers. */
       gettimeofday(&tv, NULL);
@@ -137,7 +140,7 @@ vmsg(uns cat, const char *fmt, va_list args)
   va_copy(args2, args);
   len = vsnprintf(msgbuf, sizeof(msgbuf), fmt, args2);
   va_end(args2);
-  if (len < (int) sizeof(msgbuf))
+  if (len < (int) sizeof(msgbuf) || sighandler)
     m.raw_msg = msgbuf;
   else
     {
@@ -240,7 +243,7 @@ log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
 
   /* Get a buffer and format the message */
   char *free_buf = NULL;
-  if (len <= 256)
+  if (len <= 256 || (m->flags & L_SIGHANDLER))
     m->m = alloca(len);
   else
     m->m = free_buf = xmalloc(len);

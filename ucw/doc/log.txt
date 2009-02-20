@@ -18,9 +18,8 @@ A newline character is automatically appended; the message should not contain
 any control characters.
 
 The first argument of `msg` can be OR'ed with additional flags. Most notably, you can
-add `L_SIGHANDLER` if you wish to log a message from a signal handler (calling
-time-related functions in libc from signal handlers is generally unsafe, so
-`msg` does not log a timestamp in such cases).
+add `L_SIGHANDLER` if you wish to log a message from a signal handler (see below
+for discussion on signals and reentrancy in general).
 
 By default, all messages are logged to stderr. If you wish to use a log file,
 call `log_file(@name)`. All subsequent logging will use this file and stderr
@@ -117,6 +116,11 @@ functions for converting time to a human-readable representation aren't safe.
 LibUCW therefore offers only limited logging services in such situations and
 you must use the `L_SIGHANDLER` flag to request it. Otherwise, deadlocks get
 ready to happen.
+
+Messages logged with `L_SIGHANDLER` set are written directly to stderr (which
+is usually an alias for the main log file, at least if you use <<log_file()>>)
+and they do not carry a timestamp. Logging of sighandler messages to general
+log streams or to syslog is therefore not supported.
 
 ucw/log.h
 ---------
