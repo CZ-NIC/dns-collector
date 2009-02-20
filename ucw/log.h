@@ -111,6 +111,8 @@ enum ls_flagmasks {			// Bit masks of groups
 #define LS_SET_TYPE(type)	((type) << LS_TYPE_POS)				/** Convert message type to flags **/
 #define LS_SET_CTRL(ctrl)	((ctrl) << LS_CTRL_POS)				/** Convert control bits to flags **/
 
+#define LS_NUM_TYPES (1 << LS_TYPE_BITS)
+
 /** Register a new message type and return the corresponding flag set (encoded by `LS_SET_TYPE`). **/
 int log_register_type(const char *name);
 

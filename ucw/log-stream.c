@@ -176,14 +176,14 @@ int log_register_type(const char *name)
 {
   if (!log_type_names)
     {
-      log_type_names = xmalloc_zero(LS_GET_TYPE(~0U) * sizeof(char *));
+      log_type_names = xmalloc_zero(LS_NUM_TYPES * sizeof(char *));
       log_type_names[0] = "default";
     }
   uns id;
-  for (id=0; id < LS_GET_TYPE(~0U) && log_type_names[id]; id++)
+  for (id=0; id < LS_NUM_TYPES && log_type_names[id]; id++)
     if (!strcmp(log_type_names[id], name))
       return LS_SET_TYPE(id);
-  ASSERT(id < LS_GET_TYPE(~0U));
+  ASSERT(id < LS_NUM_TYPES);
   log_type_names[id] = xstrdup(name);
   return LS_SET_TYPE(id);
 }
@@ -196,7 +196,7 @@ int log_find_type(const char *name)
   if (!log_type_names)
     return -1;
 
-  for (uns id=0; id < LS_GET_TYPE(~0U) && log_type_names[id]; id++)
+  for (uns id=0; id < LS_NUM_TYPES && log_type_names[id]; id++)
     if (!strcmp(log_type_names[id], name))
       return LS_SET_TYPE(id);
   return -1;
