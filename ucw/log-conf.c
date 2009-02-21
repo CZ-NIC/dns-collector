@@ -282,7 +282,7 @@ do_new_configured(struct stream_config *c)
     return c->ls;
 
   if (c->file_name)
-    ls = log_new_file(c->file_name);
+    ls = log_new_file(c->file_name, 0);
   else if (c->syslog_facility)
     ls = log_new_syslog(c->syslog_facility, (c->syslog_pids ? LOG_PID : 0));
   else

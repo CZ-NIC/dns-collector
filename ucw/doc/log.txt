@@ -82,7 +82,7 @@ Example
 	int main(int argc, char **argv)
 	{
 	  log_init(argv[0]);
-	  struct log_stream *ls = log_new_file("/var/log/utterances");
+	  struct log_stream *ls = log_new_file("/var/log/utterances", 0);
 	  msg(L_INFO | ls->regnum, "Aye captain, we have a log file");
 	  msg(L_INFO, "Alas, stderr still works");
 	  return 0;

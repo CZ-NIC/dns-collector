@@ -192,8 +192,14 @@ void log_close_all(void);
  * even in multi-threaded programs.
  ***/
 
-struct log_stream *log_new_file(const char *path);		/** Create a stream bound to a log file. **/
-struct log_stream *log_new_fd(int fd);				/** Create a stream bound to a file descriptor. **/
+struct log_stream *log_new_file(const char *path, uns flags);	/** Create a stream bound to a log file. See `FF_xxx` for @flags. **/
+struct log_stream *log_new_fd(int fd, uns flags);		/** Create a stream bound to a file descriptor. See `FF_xxx` for @flags. **/
+
+enum log_file_flag {		/** Flags used for file-based logging **/
+  FF_FORMAT_NAME = 1,		// Internal: Name contains strftime escapes
+  FF_CLOSE_FD = 2,		// Close the fd with the stream (use with log_new_fd())
+  FF_FD2_FOLLOWS = 4,		// Maintain stderr as a clone of this stream
+};
 
 /**
  * When a time-based name of the log file changes, the logger switches to a new

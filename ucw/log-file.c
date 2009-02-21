@@ -29,12 +29,6 @@ struct file_stream {
   char *orig_name;		// Original name with strftime escapes
 };
 
-enum log_file_flag {
-  FF_FORMAT_NAME = 1,		// Name contains strftime escapes
-  FF_CLOSE_FD = 2,		// Close the fd with the stream
-  FF_FD2_FOLLOWS = 4,		// Maintain stderr as a clone of this stream
-};
-
 #define MAX_EXPAND 64		// Maximum size of expansion of strftime escapes
 
 static int log_switch_nest;
@@ -116,11 +110,12 @@ file_handler(struct log_stream *ls, struct log_msg *m)
 }
 
 struct log_stream *
-log_new_fd(int fd)
+log_new_fd(int fd, uns flags)
 {
   struct log_stream *ls = log_new_stream(sizeof(struct file_stream));
   struct file_stream *fs = (struct file_stream *) ls;
   fs->fd = fd;
+  fs->flags = flags;
   ls->msgfmt = LSFMT_DEFAULT;
   ls->handler = file_handler;
   ls->close = file_close;
@@ -129,8 +124,8 @@ log_new_fd(int fd)
   return ls;
 }
 
-static struct log_stream *
-do_log_new_file(const char *path, uns more_flags)
+struct log_stream *
+log_new_file(const char *path, uns flags)
 {
   struct log_stream *ls = log_new_stream(sizeof(struct file_stream));
   struct file_stream *fs = (struct file_stream *) ls;
@@ -138,7 +133,7 @@ do_log_new_file(const char *path, uns more_flags)
   fs->orig_name = xstrdup(path);
   if (strchr(path, '%'))
     fs->flags = FF_FORMAT_NAME;
-  fs->flags |= FF_CLOSE_FD | more_flags;
+  fs->flags |= FF_CLOSE_FD | flags;
   ls->msgfmt = LSFMT_DEFAULT;
   ls->handler = file_handler;
   ls->close = file_close;
@@ -148,12 +143,6 @@ do_log_new_file(const char *path, uns more_flags)
   ASSERT(tm);
   do_log_switch(fs, tm);		// die()'s on errors
   return ls;
-}
-
-struct log_stream *
-log_new_file(const char *path)
-{
-  return do_log_new_file(path, 0);
 }
 
 int
@@ -189,7 +178,7 @@ log_file(const char *name)
   if (!name)
     return;
 
-  struct log_stream *ls = do_log_new_file(name, FF_FD2_FOLLOWS);
+  struct log_stream *ls = log_new_file(name, FF_FD2_FOLLOWS);
   struct log_stream *def = log_stream_by_flags(0);
   log_rm_substream(def, NULL);
   log_add_substream(def, ls);
@@ -202,8 +191,8 @@ int main(int argc, char **argv)
 {
   log_init(argv[0]);
   log_file("/proc/self/fd/1");
-  // struct log_stream *ls = log_new_fd(1);
-  // struct log_stream *ls = log_new_file("/tmp/quork-%Y%m%d-%H%M%S");
+  // struct log_stream *ls = log_new_fd(1, 0);
+  // struct log_stream *ls = log_new_file("/tmp/quork-%Y%m%d-%H%M%S", 0);
   for (int i=1; i<argc; i++)
     msg(L_INFO, argv[i]);
   log_close_all();
