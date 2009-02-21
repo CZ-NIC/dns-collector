@@ -244,6 +244,10 @@ log_limiter(struct log_stream *ls, struct log_msg *m)
 static void
 log_apply_limits(struct log_stream *ls, struct limit_config *lim)
 {
+  uns mask = log_type_mask(&lim->types);
+  if (!mask)
+    return;
+
   if (!ls->user_data)
     {
       ls->user_data = cf_malloc_zero(LS_NUM_TYPES * sizeof(struct token_bucket_filter *));
@@ -255,7 +259,6 @@ log_apply_limits(struct log_stream *ls, struct limit_config *lim)
   tbf->burst = lim->burst;
   tbf_init(tbf);
 
-  uns mask = log_type_mask(&lim->types);
   for (uns i=0; i < LS_NUM_TYPES; i++)
     if (mask & (1 << i))
       limits[i] = tbf;
