@@ -29,13 +29,16 @@ tbf_limit(struct token_bucket_filter *f, timestamp_t now)
   b = MIN(b, f->burst);
   if (b >= 1)
     {
+      uns dropped = f->drop_count;
       f->bucket = b - 1;
-      return 1;
+      f->drop_count = 0;
+      return dropped;
     }
   else
     {
       f->bucket = b;
-      return 0;
+      f->drop_count++;
+      return -f->drop_count;
     }
 }
 

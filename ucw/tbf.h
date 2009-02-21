@@ -15,6 +15,7 @@ struct token_bucket_filter {
   uns burst;				// Capacity of the bucket
   timestamp_t last_hit;			// Internal state...
   double bucket;
+  uns drop_count;
 };
 
 void tbf_init(struct token_bucket_filter *f);
