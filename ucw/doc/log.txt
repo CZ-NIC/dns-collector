@@ -125,3 +125,30 @@ log streams or to syslog is therefore not supported.
 ucw/log.h
 ---------
 !!ucw/log.h
+
+Limiting rate: ucw/tbf.h
+------------------------
+
+LibUCW also offers simple means of limiting the rate of log messages (or of any other
+events) by means of a so called 'Token Bucket Filter.' The idea behind this filter is
+simple: To log a message, we need a token. The available tokens are accumulated in
+a bucket which has a fixed 'filling rate' (the number of tokens arriving in the bucket
+per second, which may be a fractional number) and fixed 'maximum capacity.' The
+bucket receives the tokens continuously with the given rate and when it reaches
+the maximum capacity, the extra tokens are dropped on the floor. When a message
+has to be sent, we take a single token from the bucket and if there wasn't any,
+we drop the message.
+
+The filling rate therefore describes the maximum sustained rate of messages,
+while the bucket capacity tells the filter the maximum length of a short burst,
+which can temporarily exceed the rate.
+
+A general bucket filter is available in `ucw/tbf.h`. The usual way of using it
+to limit logging is to set up a filter hook of a stream which asks the TBF for
+every message. (Remember, though, that if your program is multithreaded, the
+filter hook can be run in multiple threads in parallel, so it has to guard the
+TBF by a lock.) The configuration interface for log streams described above
+is able to attach rate limiters to streams per user's request, so you usually
+need not take any extra care.
+
+!!ucw/tbf.h
