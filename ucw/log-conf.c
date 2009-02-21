@@ -9,11 +9,13 @@
 
 #include "ucw/lib.h"
 #include "ucw/log.h"
+#include "ucw/log-internal.h"
 #include "ucw/conf.h"
 #include "ucw/simple-lists.h"
 #include "ucw/tbf.h"
 #include "ucw/threads.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <syslog.h>
 #include <sys/time.h>
@@ -216,12 +218,27 @@ log_limiter(struct log_stream *ls, struct log_msg *m)
     return 0;
 
   ASSERT(!(m->flags & L_SIGHANDLER));
-  timestamp_t now = ((timestamp_t) m->tv->tv_sec * 1000) + (m->tv->tv_usec / 1000);
+  if (m->flags & L_LOGGER_ERR)
+    return 0;
 
+  timestamp_t now = ((timestamp_t) m->tv->tv_sec * 1000) + (m->tv->tv_usec / 1000);
   ucwlib_lock();
   int res = tbf_limit(tbf, now);
   ucwlib_unlock();
-  return !res;
+
+  if (res < 0)
+    {
+      if (res == -1)
+	{
+	  struct log_msg mm = *m;
+	  mm.flags |= L_LOGGER_ERR;
+	  mm.raw_msg = "(maximum logging rate exceeded, some messages will be suppressed)";
+	  log_pass_msg(0, ls, &mm);
+	}
+      return 1;
+    }
+  else
+    return 0;
 }
 
 static void
@@ -313,6 +330,7 @@ log_configured(const char *name)
 
 #ifdef TEST
 
+#include <unistd.h>
 #include "ucw/getopt.h"
 
 int main(int argc, char **argv)
@@ -324,7 +342,11 @@ int main(int argc, char **argv)
 
   int type = log_register_type("foo");
   struct log_stream *ls = log_new_configured("combined");
-  msg(L_INFO | ls->regnum | type, "Hello, universe!");
+  for (uns i=0; i<10; i++)
+    {
+      msg(L_INFO | ls->regnum | type, "Hello, universe!");
+      usleep(200000);
+    }
 
   log_close_all();
   return 0;
