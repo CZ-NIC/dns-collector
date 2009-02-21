@@ -219,6 +219,9 @@ Logging {
 #	# guaranteed to be complete. (default: 0)
 #	ErrorsFatal	1
 #
+#	# Let stderr of the program point to this file-based log_stream (default: 0)
+#	StdErrFollows	1
+#
 #	# Some events are logworthy, but they could happen too frequently and flood the log.
 #	# You can avoid the flooding by setting up a rate limiter for a specific subset of
 #	# message types. If more limiters match the type of a message, only the last one applies.

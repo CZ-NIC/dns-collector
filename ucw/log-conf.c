@@ -35,6 +35,7 @@ struct stream_config {
   int show_types;
   int syslog_pids;
   int errors_fatal;
+  int stderr_follows;
   struct log_stream *ls;
   int mark;				// Used temporarily in log_config_commit()
 };
@@ -60,12 +61,17 @@ stream_commit(void *ptr)
 {
   struct stream_config *c = ptr;
 
-  if (c->file_name && c->syslog_facility)
-    return "Both FileName and SyslogFacility selected";
-  if (c->syslog_facility && !log_syslog_facility_exists(c->syslog_facility))
-    return cf_printf("SyslogFacility `%s' is not recognized", c->syslog_facility);
-  if (c->syslog_facility && c->microseconds)
-    return "Syslog streams do not support microsecond precision";
+  if (c->syslog_facility)
+    {
+      if (!log_syslog_facility_exists(c->syslog_facility))
+	return cf_printf("SyslogFacility `%s' is not recognized", c->syslog_facility);
+      if (c->file_name)
+	return "Both FileName and SyslogFacility selected";
+      if (c->microseconds)
+	return "Syslog streams do not support microsecond precision";
+    }
+  if (c->stderr_follows && !c->file_name)
+    return "StdErrFollows requires a file-based stream";
   return NULL;
 }
 
@@ -105,6 +111,7 @@ static struct cf_section stream_config = {
     CF_INT("ShowTypes", P(show_types)),
     CF_INT("SyslogPID", P(syslog_pids)),
     CF_INT("ErrorsFatal", P(errors_fatal)),
+    CF_INT("StdErrFollows", P(stderr_follows)),
 #undef P
     CF_END
   }
@@ -285,7 +292,7 @@ do_new_configured(struct stream_config *c)
     return c->ls;
 
   if (c->file_name)
-    ls = log_new_file(c->file_name, 0);
+    ls = log_new_file(c->file_name, (c->stderr_follows ? FF_FD2_FOLLOWS : 0));
   else if (c->syslog_facility)
     ls = log_new_syslog(c->syslog_facility, (c->syslog_pids ? LOG_PID : 0));
   else
@@ -350,6 +357,7 @@ int main(int argc, char **argv)
       msg(L_INFO | ls->regnum | type, "Hello, universe!");
       usleep(200000);
     }
+  fprintf(stderr, "Alas, this was printed to stderr.\n");
 
   log_close_all();
   return 0;

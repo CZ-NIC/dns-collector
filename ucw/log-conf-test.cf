@@ -5,6 +5,7 @@ Logging {
 Stream {
 	Name		logfile
 	FileName	log/test
+	StdErrFollows	1
 	Limit { Rate 100 }
 }
 
