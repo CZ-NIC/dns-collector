@@ -18,6 +18,8 @@
 #include <syslog.h>
 #include <sys/time.h>
 
+/*** Configuration of streams ***/
+
 struct stream_config {
   cnode n;
   char *name;
@@ -170,14 +172,7 @@ log_config_init(void)
   cf_declare_section("Logging", &log_config, 0);
 }
 
-char *
-log_check_configured(const char *name)
-{
-  if (stream_find(name))
-    return NULL;
-  else
-    return cf_printf("Log stream `%s' not found", name);
-}
+/*** Type sets ***/
 
 static uns
 log_type_mask(clist *l)
@@ -202,6 +197,8 @@ log_type_mask(clist *l)
       }
   return types;
 }
+
+/*** Generating limiters ***/
 
 /*
  *  When limiting is enabled, we let log_stream->filter point to this function
@@ -245,6 +242,17 @@ log_apply_limits(struct log_stream *ls, struct limit_config *lim)
   for (uns i=0; i < LS_NUM_TYPES; i++)
     if (mask & (1 << i))
       limits[i] = tbf;
+}
+
+/*** Generating streams ***/
+
+char *
+log_check_configured(const char *name)
+{
+  if (stream_find(name))
+    return NULL;
+  else
+    return cf_printf("Log stream `%s' not found", name);
 }
 
 static struct log_stream *
