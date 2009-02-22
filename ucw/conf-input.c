@@ -285,6 +285,7 @@ error:
 #define DEFAULT_CONFIG NULL
 #endif
 char *cf_def_file = DEFAULT_CONFIG;
+static int cf_def_loaded;
 
 #ifndef ENV_VAR_CONFIG
 #define ENV_VAR_CONFIG NULL
@@ -408,7 +409,7 @@ cf_load(const char *file)
   if (!err) {
     cf_journal_commit_transaction(1, oldj);
     cf_remember_entry(CE_FILE, file);
-    cf_def_file = NULL;
+    cf_def_loaded = 1;
   } else
     cf_journal_rollback_transaction(1, oldj);
   return err;
@@ -432,6 +433,8 @@ cf_set(const char *string)
 static void
 load_default(void)
 {
+  if (cf_def_loaded++)
+    return;
   if (cf_def_file)
     {
       char *env;
@@ -445,8 +448,11 @@ load_default(void)
     }
   else
     {
-      // We need to create an empty pool
-      cf_journal_commit_transaction(1, cf_journal_new_transaction(1));
+      // We need to create an empty pool and initialize all configuration items
+      struct cf_journal_item *oldj = cf_journal_new_transaction(1);
+      cf_init_stack();
+      done_stack();
+      cf_journal_commit_transaction(1, oldj);
     }
 }
 
