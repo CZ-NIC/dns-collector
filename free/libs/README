@@ -1,9 +1,10 @@
 Sherlock Holmes Libraries 3.99
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-(c) 1997--2008 Martin Mares <mj@ucw.cz>
-(c) 2000--2008 Robert Spalek <robert@ucw.cz>
-(c) 2006--2008 Pavel Charvat <pchar@ucw.cz>
-(c) 2008 Michal Vaner <vorner@ucw.cz>
+(c) 1997--2009 Martin Mares <mj@ucw.cz>
+(c) 2000--2009 Robert Spalek <robert@ucw.cz>
+(c) 2006--2009 Pavel Charvat <pchar@ucw.cz>
+(c) 2008--2009 Michal Vaner <vorner@ucw.cz>
+(c) 2008 Tomas Gavenciak <gavento@ucw.cz>
 
 This package contains all libraries from the freely distributable version
 of the Sherlock Holmes search engine (see http://www.ucw.cz/holmes/).
