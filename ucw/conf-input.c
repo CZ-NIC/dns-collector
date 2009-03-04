@@ -223,7 +223,7 @@ parse_fastbuf(const char *name_fb, struct fastbuf *fb, uns depth)
       else if (depth > 8)
 	err = "Too many nested files";
       else if (*line && *line != '#')		// because the contents of line_buf is not re-entrant and will be cleared
-	err = "The input command must be the last one on a line";
+	err = "The include command must be the last one on a line";
       if (err)
 	goto error;
       struct fastbuf *new_fb = bopen_try(pars[0], O_RDONLY, 1<<14);
