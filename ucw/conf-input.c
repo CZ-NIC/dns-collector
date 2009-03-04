@@ -499,9 +499,10 @@ cf_getopt(int argc, char * const argv[], const char *short_opts, const struct op
 #endif
     } else {
       /* unhandled option or end of options */
-      if (res != ':' && res != '?')
+      if (res != ':' && res != '?') {
 	load_default();
-      final_commit();
+	final_commit();
+      }
       other_options++;
       return res;
     }
