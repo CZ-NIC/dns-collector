@@ -30,12 +30,33 @@ sub maybe_manually($) {
 	return 0;
 }
 
+sub PkgConfigTool() {
+	Log "Checking for pkg-config ... ";
+	if (!maybe_manually("CONFIG_HAVE_PKGCONFIG")) {
+		my $ver = TryCmd("pkg-config --version 2>/dev/null");
+		if (!defined $ver) {
+			Log("NONE\n");
+			Set("CONFIG_HAVE_PKGCONFIG", 0);
+		} else {
+			Log("YES: version $ver\n");
+			Set("CONFIG_HAVE_PKGCONFIG", 1);
+			Set("CONFIG_VER_PKGCONFIG", $ver);
+		}
+	}
+	return Get("CONFIG_HAVE_PKGCONFIG");
+}
+
 sub PkgConfig($@) {
 	my $pkg = shift @_;
 	my %opts = @_;
 	my $upper = $pkg; $upper =~ tr/a-z/A-Z/; $upper =~ s/[^0-9A-Z]+/_/g;
+	PkgConfigTool() unless IsSet("CONFIG_HAVE_PKGCONFIG");
 	Log "Checking for package $pkg ... ";
 	maybe_manually("CONFIG_HAVE_$upper") and return Get("CONFIG_HAVE_$upper");
+	if (!Get("CONFIG_HAVE_PKGCONFIG")) {
+		Log("NONE: pkg-config missing\n");
+		return 0;
+	}
 	my $ver = TryCmd("pkg-config --modversion $pkg 2>/dev/null");
 	if (!defined $ver) {
 		Log("NONE\n");
