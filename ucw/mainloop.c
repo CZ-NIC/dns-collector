@@ -33,7 +33,7 @@ static uns main_file_cnt;
 static uns main_poll_table_obsolete, main_poll_table_size;
 static struct pollfd *main_poll_table;
 static uns main_sigchld_set_up;
-static sig_atomic_t chld_received = 0;
+static volatile sig_atomic_t chld_received = 0;
 static int sig_pipe_recv, sig_pipe_send;
 
 void
@@ -253,21 +253,35 @@ hook_del(struct main_hook *ho)
 static void
 main_sigchld_handler(int x UNUSED)
 {
+  int old_errno = errno;
   DBG("SIGCHLD received");
   chld_received = 1;
-  if(write(sig_pipe_send, "c", 1) == -1 && errno != EAGAIN)
+  ssize_t result;
+  while((result = write(sig_pipe_send, "c", 1)) == -1 && errno == EINTR);
+  if(result == -1 && errno != EAGAIN)
     die("Could not write to selfpipe: %m");
+  errno = old_errno;
 }
 
 static int
 dummy_read_handler(struct main_file *mp)
 {
-  char *buffer[1024];
+  char buffer[1024];
   ssize_t result = read(mp->fd, buffer, 1024);
-  if(result == -1 && errno != EAGAIN)
+  if(result == -1 && errno != EAGAIN && errno != EINTR)
     die("Could not read from selfpipe: %m");
   file_chg(mp);
   return result == 1024;
+}
+
+static void
+pipe_configure(int fd)
+{
+  int flags;
+  if((flags = fcntl(fd, F_GETFL)) == -1 || fcntl(fd, F_SETFL, flags|O_NONBLOCK))
+    die("Could not set file descriptor %d to non-blocking: %m", fd);
+  if((flags = fcntl(fd, F_GETFD)) == -1 || fcntl(fd, F_SETFD, flags|O_CLOEXEC))
+    die("Could not set file descriptor %d to close-on-exec: %m", fd);
 }
 
 void
@@ -280,8 +294,10 @@ process_add(struct main_process *mp)
   if (!main_sigchld_set_up)
     {
       int pipe_result[2];
-      if(pipe2(pipe_result, O_NONBLOCK|O_CLOEXEC) == -1)
+      if(pipe(pipe_result) == -1)
 	die("Could not create selfpipe:%m");
+      pipe_configure(pipe_result[0]);
+      pipe_configure(pipe_result[1]);
       sig_pipe_recv = pipe_result[0];
       sig_pipe_send = pipe_result[1];
       static struct main_file self_pipe;
