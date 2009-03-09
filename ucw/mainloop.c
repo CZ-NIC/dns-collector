@@ -259,7 +259,7 @@ main_sigchld_handler(int x UNUSED)
   ssize_t result;
   while((result = write(sig_pipe_send, "c", 1)) == -1 && errno == EINTR);
   if(result == -1 && errno != EAGAIN)
-    die("Could not write to selfpipe: %m");
+    msg(L_SIGHANDLER|L_ERROR, "Could not write to self-pipe: %m");
   errno = old_errno;
 }
 
@@ -268,8 +268,8 @@ dummy_read_handler(struct main_file *mp)
 {
   char buffer[1024];
   ssize_t result = read(mp->fd, buffer, 1024);
-  if(result == -1 && errno != EAGAIN && errno != EINTR)
-    die("Could not read from selfpipe: %m");
+  if(result == -1 && errno != EAGAIN)
+    msg(L_ERROR, "Could not read from selfpipe: %m");
   file_chg(mp);
   return result == 1024;
 }
