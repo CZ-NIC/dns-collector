@@ -153,7 +153,7 @@ vmsg(uns cat, const char *fmt, va_list args)
   p = m.raw_msg;
   while (*p)
     {
-      if (*p < 0x20 && *p != '\t')
+      if (*p >= 0 && *p < 0x20 && *p != '\t')
 	*p = 0x7f;
       p++;
     }
