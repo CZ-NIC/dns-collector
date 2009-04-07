@@ -33,6 +33,8 @@ static uns main_file_cnt;
 static uns main_poll_table_obsolete, main_poll_table_size;
 static struct pollfd *main_poll_table;
 static uns main_sigchld_set_up;
+static volatile sig_atomic_t chld_received = 0;
+static int sig_pipe_recv, sig_pipe_send;
 
 void
 main_get_time(void)
@@ -251,7 +253,35 @@ hook_del(struct main_hook *ho)
 static void
 main_sigchld_handler(int x UNUSED)
 {
+  int old_errno = errno;
   DBG("SIGCHLD received");
+  chld_received = 1;
+  ssize_t result;
+  while((result = write(sig_pipe_send, "c", 1)) == -1 && errno == EINTR);
+  if(result == -1 && errno != EAGAIN)
+    msg(L_SIGHANDLER|L_ERROR, "Could not write to self-pipe: %m");
+  errno = old_errno;
+}
+
+static int
+dummy_read_handler(struct main_file *mp)
+{
+  char buffer[1024];
+  ssize_t result = read(mp->fd, buffer, 1024);
+  if(result == -1 && errno != EAGAIN)
+    msg(L_ERROR, "Could not read from selfpipe: %m");
+  file_chg(mp);
+  return result == 1024;
+}
+
+static void
+pipe_configure(int fd)
+{
+  int flags;
+  if((flags = fcntl(fd, F_GETFL)) == -1 || fcntl(fd, F_SETFL, flags|O_NONBLOCK))
+    die("Could not set file descriptor %d to non-blocking: %m", fd);
+  if((flags = fcntl(fd, F_GETFD)) == -1 || fcntl(fd, F_SETFD, flags|O_CLOEXEC))
+    die("Could not set file descriptor %d to close-on-exec: %m", fd);
 }
 
 void
@@ -263,12 +293,26 @@ process_add(struct main_process *mp)
   clist_add_tail(&main_process_list, &mp->n);
   if (!main_sigchld_set_up)
     {
+      int pipe_result[2];
+      if(pipe(pipe_result) == -1)
+	die("Could not create selfpipe:%m");
+      pipe_configure(pipe_result[0]);
+      pipe_configure(pipe_result[1]);
+      sig_pipe_recv = pipe_result[0];
+      sig_pipe_send = pipe_result[1];
+      static struct main_file self_pipe;
+      self_pipe = (struct main_file) {
+	.fd = sig_pipe_recv,
+	.read_handler = dummy_read_handler
+      };
+      file_add(&self_pipe);
       struct sigaction sa;
       bzero(&sa, sizeof(sa));
       sa.sa_handler = main_sigchld_handler;
       sa.sa_flags = SA_NOCLDSTOP | SA_RESTART;
       sigaction(SIGCHLD, &sa, NULL);
       main_sigchld_set_up = 1;
+      chld_received = 1; // The signal may have come before the handler
     }
 }
 
@@ -396,11 +440,12 @@ main_loop(void)
 	wake = 0;
       if (main_poll_table_obsolete)
 	main_rebuild_poll_table();
-      if (!clist_empty(&main_process_list))
+      if (chld_received && !clist_empty(&main_process_list))
 	{
 	  int stat;
 	  pid_t pid;
 	  wake = MIN(wake, main_now + 10000);
+	  chld_received = 0;
 	  while ((pid = waitpid(-1, &stat, WNOHANG)) > 0)
 	    {
 	      DBG("MAIN: Child %d exited with status %x", pid, stat);
@@ -417,7 +462,6 @@ main_loop(void)
 	      wake = 0;
 	    }
 	}
-      /* FIXME: Here is a small race window where SIGCHLD can come unnoticed. */
       if ((tm = clist_head(&main_timer_list)) && tm->expires < wake)
 	wake = tm->expires;
       main_get_time();
