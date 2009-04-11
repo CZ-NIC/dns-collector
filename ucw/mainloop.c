@@ -34,7 +34,13 @@ static uns main_poll_table_obsolete, main_poll_table_size;
 static struct pollfd *main_poll_table;
 static uns main_sigchld_set_up;
 static volatile sig_atomic_t chld_received = 0;
+
+#ifdef CONFIG_LINUX
+// On Linux, O_CLOEXEC flag is available and we can get around the race
+// condition of poll().
+#define USE_SELF_PIPE
 static int sig_pipe_recv, sig_pipe_send;
+#endif
 
 void
 main_get_time(void)
@@ -250,6 +256,7 @@ hook_del(struct main_hook *ho)
   ho->n.next = ho->n.prev = NULL;
 }
 
+#ifdef USE_SELF_PIPE
 static void
 main_sigchld_handler(int x UNUSED)
 {
@@ -283,6 +290,13 @@ pipe_configure(int fd)
   if((flags = fcntl(fd, F_GETFD)) == -1 || fcntl(fd, F_SETFD, flags|O_CLOEXEC))
     die("Could not set file descriptor %d to close-on-exec: %m", fd);
 }
+#else
+static void
+main_sigchld_handler(int x UNUSED)
+{
+  DBG("SIGCHLD received");
+}
+#endif
 
 void
 process_add(struct main_process *mp)
@@ -293,6 +307,7 @@ process_add(struct main_process *mp)
   clist_add_tail(&main_process_list, &mp->n);
   if (!main_sigchld_set_up)
     {
+#ifdef USE_SELF_PIPE
       int pipe_result[2];
       if(pipe(pipe_result) == -1)
 	die("Could not create selfpipe:%m");
@@ -306,6 +321,7 @@ process_add(struct main_process *mp)
 	.read_handler = dummy_read_handler
       };
       file_add(&self_pipe);
+#endif
       struct sigaction sa;
       bzero(&sa, sizeof(sa));
       sa.sa_handler = main_sigchld_handler;
@@ -440,6 +456,10 @@ main_loop(void)
 	wake = 0;
       if (main_poll_table_obsolete)
 	main_rebuild_poll_table();
+#ifndef USE_SELF_PIPE
+      // We don't have a reliable flag without the self-pipe.
+      chld_received = 1;
+#endif
       if (chld_received && !clist_empty(&main_process_list))
 	{
 	  int stat;
