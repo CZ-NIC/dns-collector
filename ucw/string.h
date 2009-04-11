@@ -13,6 +13,10 @@
 
 /* string.c */
 
+#ifdef CONFIG_DARWIN
+uns strnlen(const char *str, uns n);
+#endif
+
 char *str_format_flags(char *dest, const char *fmt, uns flags);
 uns str_count_char(const char *str, uns chr);
 

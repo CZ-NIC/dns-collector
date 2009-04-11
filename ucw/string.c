@@ -13,6 +13,17 @@
 #include "ucw/lib.h"
 #include "ucw/string.h"
 
+#ifdef CONFIG_DARWIN
+uns
+strnlen(const char *str, uns n)
+{
+  const char *end = str + n;
+  const char *c;
+  for (c = str; *c && c < end; c++);
+  return c - str;
+}
+#endif
+
 char *
 str_format_flags(char *dest, const char *fmt, uns flags)
 {
