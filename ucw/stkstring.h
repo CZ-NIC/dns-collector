@@ -16,6 +16,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifdef CONFIG_DARWIN
+uns strnlen(const char *str, uns n);
+#endif
+
 #define stk_strdup(s) ({ const char *_s=(s); uns _l=strlen(_s)+1; char *_x=alloca(_l); memcpy(_x, _s, _l); _x; })
 #define stk_strndup(s,n) ({ const char *_s=(s); uns _l=strnlen(_s,(n)); char *_x=alloca(_l+1); memcpy(_x, _s, _l); _x[_l]=0; _x; })
 #define stk_strcat(s1,s2) ({ const char *_s1=(s1); const char *_s2=(s2); uns _l1=strlen(_s1); uns _l2=strlen(_s2); char *_x=alloca(_l1+_l2+1); memcpy(_x,_s1,_l1); memcpy(_x+_l1,_s2,_l2+1); _x; })

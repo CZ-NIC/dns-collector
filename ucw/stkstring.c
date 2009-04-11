@@ -15,6 +15,17 @@
 
 #include <stdio.h>
 
+#ifdef CONFIG_DARWIN
+uns
+strnlen(const char *str, uns n)
+{
+  const char *end = str + n;
+  const char *c;
+  for (c = str; *c && c < end; c++);
+  return c - str;
+}
+#endif
+
 uns
 stk_array_len(char **s, uns cnt)
 {
