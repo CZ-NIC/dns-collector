@@ -35,9 +35,9 @@ static struct pollfd *main_poll_table;
 static uns main_sigchld_set_up;
 static volatile sig_atomic_t chld_received = 0;
 
-#ifdef CONFIG_LINUX
-// On Linux, O_CLOEXEC flag is available and we can get around the race
-// condition of poll().
+#ifdef O_CLOEXEC
+// On recent Linux systems, O_CLOEXEC flag is available and we can get around
+// the race condition of poll().
 #define USE_SELF_PIPE
 static int sig_pipe_recv, sig_pipe_send;
 #endif
