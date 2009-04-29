@@ -358,39 +358,29 @@ libjpeg_read_data(struct image_io *io)
   uns read_flags = io->flags;
 
   /* Select color space */
-  switch (read_flags & IMAGE_COLOR_SPACE)
+  switch (i->cinfo.jpeg_color_space)
     {
-      case COLOR_SPACE_GRAYSCALE:
-	i->cinfo.out_color_space = JCS_GRAYSCALE;
+      case JCS_GRAYSCALE:
+        read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_YCBCR; 
+        i->cinfo.out_color_space = JCS_YCbCr;
+        break;
+      case JCS_YCbCr:
+	read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_YCBCR; 
+	i->cinfo.out_color_space = JCS_YCbCr;
 	break;
-      case COLOR_SPACE_CMYK:
+      case JCS_CMYK:
+	read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_CMYK; 
 	i->cinfo.out_color_space = JCS_CMYK;
 	break;
-      case COLOR_SPACE_YCCK:
+      case JCS_YCCK:
+	read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_YCCK; 
 	i->cinfo.out_color_space = JCS_YCCK;
 	break;
       default:
-	switch (i->cinfo.jpeg_color_space)
-	  {
-	    case JCS_YCbCr:
-	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_YCBCR; 
-	      i->cinfo.out_color_space = JCS_YCbCr;
-	      break;
-	    case JCS_CMYK:
-	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_CMYK; 
-	      i->cinfo.out_color_space = JCS_CMYK;
-	      break;
-	    case JCS_YCCK:
-	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_YCCK; 
-	      i->cinfo.out_color_space = JCS_YCCK;
-	      break;
-	    default:
-	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_RGB; 
-	      i->cinfo.out_color_space = JCS_RGB;
-	      break;
-	  }
+	read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_RGB; 
+	i->cinfo.out_color_space = JCS_RGB;
 	break;
-    }
+  }
 
   /* Prepare the image  */
   struct image_io_read_data_internals rdi;
