@@ -363,9 +363,6 @@ libjpeg_read_data(struct image_io *io)
       case COLOR_SPACE_GRAYSCALE:
 	i->cinfo.out_color_space = JCS_GRAYSCALE;
 	break;
-      case COLOR_SPACE_YCBCR:
-	i->cinfo.out_color_space = JCS_YCbCr;
-	break;
       case COLOR_SPACE_CMYK:
 	i->cinfo.out_color_space = JCS_CMYK;
 	break;
@@ -375,6 +372,10 @@ libjpeg_read_data(struct image_io *io)
       default:
 	switch (i->cinfo.jpeg_color_space)
 	  {
+	    case JCS_YCbCr:
+	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_YCBCR; 
+	      i->cinfo.out_color_space = JCS_YCbCr;
+	      break;
 	    case JCS_CMYK:
 	      read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_CMYK; 
 	      i->cinfo.out_color_space = JCS_CMYK;
