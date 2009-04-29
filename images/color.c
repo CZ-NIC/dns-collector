@@ -323,7 +323,7 @@ pixel_conv_rgb_to_ycck(byte *dest, byte *src)
 #define IMAGE_WALK_DO_STEP do{ pixel_conv_rgb_to_ycck(walk_pos, walk_sec_pos); }while(0)
 #include "images/image-walk.h"
 
-/* YCCK <-> RGB */
+/* YCCK <-> YCbCr */
 
 #define IMAGE_WALK_PREFIX(x) walk_##x
 #define IMAGE_WALK_FUNC_NAME image_conv_ycck_4_to_ycbcr_n
