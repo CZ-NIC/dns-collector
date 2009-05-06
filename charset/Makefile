@@ -6,6 +6,7 @@ LIBCHARSET_MODS=toupper tolower tocat toligatures unaccent charconv setnames fb-
 LIBCHARSET_INCLUDES=charconv.h unicat.h fb-charconv.h stk-charconv.h mp-charconv.h
 
 $(o)/charset/libcharset.a: $(addsuffix .o,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
+$(o)/charset/libcharset-pic.a: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
 $(o)/charset/libcharset.so: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
 $(o)/charset/libcharset.pc: $(LIBUCW)
 
