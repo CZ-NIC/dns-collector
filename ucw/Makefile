@@ -34,7 +34,7 @@ LIBUCW_MODS= \
 	getopt
 
 LIBUCW_MAIN_INCLUDES= \
-	lib.h threads.h \
+	lib.h log.h threads.h \
 	mempool.h \
 	clists.h slists.h simple-lists.h \
 	string.h stkstring.h unicode.h chartype.h regex.h \
