@@ -1,4 +1,4 @@
-# Configuration of the image library (included by cf/sherlock)
+# Configuration of the image library (included by @INSTALL_CONFIG_DIR@/sherlock)
 
 ######## General parameters #####################################################
 
