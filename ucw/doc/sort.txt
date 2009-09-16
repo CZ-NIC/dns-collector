@@ -59,7 +59,7 @@ Optional macros
   `<` operator.
 - `ASORT_SWAP(i,j)` -- Swap elements with indices `i` and `j`. If not
   provided, it assumes `ASORT_ELT` is l-value and it just swaps keys.
-- `ASORT_TRESHOLD` -- Sequences of at most this amount of elements are
+- `ASORT_THRESHOLD` -- Sequences of at least this amount of elements are
   sorted by quick-sort, smaller are sorted by insert-sort. Defaults to
   `8` (result of experimentation).
 - `ASORT_EXTRA_ARGS` -- Pass some extra arguments to the function.
@@ -74,7 +74,7 @@ Example
 Let's sort an array of integers, in the usual way.
 
   #define ASORT_PREFIX(X) intarr_##X
-  #define ASORT_TYPE int
+  #define ASORT_KEY_TYPE int
   #include <ucw/sorter/array-simple.h>
 
 This generates an intarr_sort(int *array, uns array_size) function that
@@ -92,7 +92,7 @@ to sort them by the strings.
 
   #include <string.h>	// Because of strcmp
   #define ASORT_PREFIX(X) complicated_##X
-  #define ASORT_TYPE struct elem
+  #define ASORT_KEY_TYPE struct elem
   #define ASORT_ELT(i) ((i % 2 ? even_array : odd_array)[i / 2])
   #define ASORT_LT(x, y) (strcmp((x).string, (y).string) < 0)
   #define ASORT_EXTRA_ARGS , struct elem *odd_array, struct elem *even_array
@@ -138,7 +138,7 @@ Optional macros
   return `uns`.
 - `ASORT_LONG_HASH(x)` -- Like `ASORT_HASH(x)`, but returns 64-bit
   number instead of 32-bit.
-- `ASORT_TRESHOLD` -- How small should a chunk of data be to be sorted
+- `ASORT_THRESHOLD` -- How small should a chunk of data be to be sorted
   by insert-sort? Defaults to `8` elements.
 - `ASORT_RADIX_BITS` -- How many bits of the hash function should be
   used at once for radix-sort? The default is guessed from your
