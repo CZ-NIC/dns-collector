@@ -1,6 +1,6 @@
 #	Poor Man's CGI Module for Perl
 #
-#	(c) 2002--2007 Martin Mares <mj@ucw.cz>
+#	(c) 2002--2009 Martin Mares <mj@ucw.cz>
 #	Slightly modified by Tomas Valla <tom@ucw.cz>
 #
 #	This software may be freely distributed and used according to the terms
@@ -268,7 +268,7 @@ sub skip_mp_boundary() {
 	my $b = get_mp_line(0);
 	print STDERR "SEP $b\n" if $debug;
 	$mp_buffer_boundary = index($mp_buffer, $boundary, $mp_buffer_i);
-	if ("\r\n$b" =~ /^$boundary--/) {
+	if (substr("\r\n$b", 0, $boundary_len) eq "$boundary--") {
 		return 0;
 	} else {
 		return 1;
