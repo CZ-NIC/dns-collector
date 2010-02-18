@@ -26,6 +26,7 @@ struct stream_config {
   cnode n;
   char *name;
   char *file_name;
+  int file_desc;
   char *syslog_facility;
   u32 levels;
   clist types;				// simple_list of names
@@ -53,6 +54,7 @@ stream_init(void *ptr)
   struct stream_config *c = ptr;
 
   c->levels = ~0U;
+  c->file_desc = -1;
   return NULL;
 }
 
@@ -102,6 +104,7 @@ static struct cf_section stream_config = {
 #define P(x) PTR_TO(struct stream_config, x)
     CF_STRING("Name", P(name)),
     CF_STRING("FileName", P(file_name)),
+    CF_INT("FileDesc", P(file_desc)),
     CF_STRING("SyslogFacility", P(syslog_facility)),
     CF_BITMAP_LOOKUP("Levels", P(levels), level_names),
     CF_LIST("Types", P(types), &cf_string_list_config),
@@ -293,6 +296,8 @@ do_new_configured(struct stream_config *c)
 
   if (c->file_name)
     ls = log_new_file(c->file_name, (c->stderr_follows ? FF_FD2_FOLLOWS : 0));
+  else if (c->file_desc >= 0)
+    ls = log_new_fd(c->file_desc, (c->stderr_follows ? FF_FD2_FOLLOWS : 0));
   else if (c->syslog_facility)
     ls = log_new_syslog(c->syslog_facility, (c->syslog_pids ? LOG_PID : 0));
   else

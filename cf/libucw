@@ -187,6 +187,9 @@ Logging {
 #	# Escape sequences for current date and time as described in strftime(3) can be used.
 #	FileName	log/test-%Y%m%d
 #
+#	# If you need to log to stderr or another already opened descriptor, you can specify its number.
+#	FileDesc	2
+#
 #	# Instead of a file, a syslog facility can be specified. See syslog(3) for an explanation.
 #	SyslogFacility	daemon
 #
