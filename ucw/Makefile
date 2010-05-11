@@ -31,7 +31,8 @@ LIBUCW_MODS= \
 	qache \
 	string str-esc str-split str-match str-imatch str-hex \
 	bbuf \
-	getopt
+	getopt \
+	strtonum
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h threads.h \
@@ -56,7 +57,8 @@ LIBUCW_MAIN_INCLUDES= \
 	base64.h base224.h \
 	qache.h \
 	kmp.h kmp-search.h binsearch.h \
-	partmap.h
+	partmap.h \
+	strnonum.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
@@ -95,6 +97,7 @@ $(o)/ucw/redblack-test: $(o)/ucw/redblack-test.o $(LIBUCW)
 $(o)/ucw/binheap-test: $(o)/ucw/binheap-test.o $(LIBUCW)
 $(o)/ucw/lizard-test: $(o)/ucw/lizard-test.o $(LIBUCW)
 $(o)/ucw/kmp-test: $(o)/ucw/kmp-test.o $(LIBUCW)
+$(o)/ucw/strtonum-test: $(o)/ucw/strtonum-test.o $(LIBUCW)
 ifdef CONFIG_CHARSET
 $(o)/ucw/kmp-test: $(LIBCHARSET)
 endif
@@ -105,7 +108,7 @@ TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test
     slists.test bbuf.test kmp-test.test getopt.test ff-unicode.test eltpool.test \
     fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test \
     redblack-test.test fb-file.test fb-grow.test fb-pool.test fb-atomic.test \
-    fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test url.test)
+    fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test url.test strtonum-test.test)
 
 $(o)/ucw/regex.test: $(o)/ucw/regex-t
 $(o)/ucw/unicode.test: $(o)/ucw/unicode-t
@@ -125,6 +128,7 @@ $(o)/ucw/trie-test.test: $(o)/ucw/trie-test
 $(o)/ucw/asort-test.test: $(o)/ucw/asort-test
 $(o)/ucw/binheap-test.test: $(o)/ucw/binheap-test
 $(o)/ucw/redblack-test.test: $(o)/ucw/redblack-test
+$(o)/ucw/strtonum-test.test: $(o)/ucw/strtonum-test
 $(addprefix $(o)/ucw/fb-,file.test grow.test pool.test socket.test atomic.test \
 	limfd.test temp.test mem.test buffer.test mmap.test): %.test: %-t
 $(o)/ucw/url.test: $(o)/ucw/url-t
