@@ -68,11 +68,6 @@ STN_DECLARE(STN_TYPE, STN_SUFFIX)
 
     if (!overflow)
       {
-        if ((flags & STN_ZCHAR) && *p)
-          {
-            return err_invalid_character;
-          }
-
         if (!digits)
           {
             return err_no_digits;
@@ -91,6 +86,11 @@ STN_DECLARE(STN_TYPE, STN_SUFFIX)
           {
             return err_numeric_overflow;
           }
+      }
+
+    if ((flags & STN_ZCHAR) && *p)
+      {
+        return err_invalid_character;
       }
 
     if (num)

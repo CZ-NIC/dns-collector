@@ -31,12 +31,19 @@ enum str_to_num_flags {
 #define STN_SFLAGS     (STN_FLAGS | STN_SIGNED)
 #define STN_USFLAGS    (STN_SFLAGS | STN_UNDERSCORE)
 
-#define STN_DECLARE_CONVERTOR(type, suffix)                                                  \
+#define STN_DECLARE_CONVERTOR(type, suffix)                                                         \
 const char *str_to_##suffix(type *num, const char *str, const char **next, const uns flags)
 
+#define STN_SIGNED_CONVERTOR(utype, itype, suffix)                                                  \
+static inline const char *str_to_##suffix(itype *num, const char *str, const char **next, const uns flags) \
+{                                                                                                   \
+  return str_to##suffix((utype*) num, str, next, flags | STN_SIGNED);                               \
+}
+
 STN_DECLARE_CONVERTOR(uns, uns);
-STN_DECLARE_CONVERTOR(long, long);
+STN_SIGNED_CONVERTOR(uns, int, int)
+
 STN_DECLARE_CONVERTOR(uintmax_t, uintmax);
-STN_DECLARE_CONVERTOR(unsigned long long, ull);
+STN_SIGNED_CONVERTOR(uintmax_t, intmax_t, intmax)
 
 #endif
