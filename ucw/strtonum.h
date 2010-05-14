@@ -37,7 +37,7 @@ const char *str_to_##suffix(type *num, const char *str, const char **next, const
 #define STN_SIGNED_CONVERTOR(utype, itype, suffix)                                                  \
 static inline const char *str_to_##suffix(itype *num, const char *str, const char **next, const uns flags) \
 {                                                                                                   \
-  return str_to##suffix((utype*) num, str, next, flags | STN_SIGNED);                               \
+  return str_to_##suffix((utype*) num, str, next, flags | STN_SIGNED);                               \
 }
 
 STN_DECLARE_CONVERTOR(uns, uns);
