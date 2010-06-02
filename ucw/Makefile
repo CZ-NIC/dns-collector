@@ -58,7 +58,7 @@ LIBUCW_MAIN_INCLUDES= \
 	qache.h \
 	kmp.h kmp-search.h binsearch.h \
 	partmap.h \
-	strnonum.h
+	strtonum.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
