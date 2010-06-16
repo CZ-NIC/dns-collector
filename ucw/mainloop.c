@@ -485,7 +485,7 @@ main_loop(void)
       if ((tm = clist_head(&main_timer_list)) && tm->expires < wake)
 	wake = tm->expires;
       main_get_time();
-      int timeout = (wake ? wake - main_now : 0);
+      int timeout = ((wake > main_now) ? wake - main_now : 0);
       DBG("MAIN: Poll for %d fds and timeout %d ms", main_file_cnt, timeout);
       int p = poll(main_poll_table, main_file_cnt, timeout);
       timestamp_t old_now = main_now;
