@@ -81,19 +81,36 @@ timer_add(struct main_timer *tm, timestamp_t expires)
     DBG("MAIN: Setting timer %p (expire at now+%lld)", tm, (long long)(expires-main_now));
   else
     DBG("MAIN: Clearing timer %p", tm);
-  if (tm->expires)
+  if (tm->expires < expires)
     {
-      ASSERT(tm->index && tm->index <= main_timer_cnt);
-      HEAP_DELETE(struct main_timer *, main_timer_table.ptr, main_timer_cnt, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
-      tm->index = 0;
+      if (!tm->expires)
+	{
+	  tm->expires = expires;
+	  tm->index = ++main_timer_cnt;
+	  main_timer_table_grow(&main_timer_table, tm->index + 1);
+	  main_timer_table.ptr[tm->index] = tm;
+	  HEAP_INSERT(struct main_timer *, main_timer_table.ptr, main_timer_cnt, MAIN_TIMER_LESS, MAIN_TIMER_SWAP);
+	}
+      else
+	{
+	  tm->expires = expires;
+	  HEAP_INCREASE(struct main_timer *, main_timer_table.ptr, main_timer_cnt, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
+	}
     }
-  tm->expires = expires;
-  if (expires)
+  else if (tm->expires > expires)
     {
-      tm->index = ++main_timer_cnt;
-      main_timer_table_grow(&main_timer_table, tm->index + 1);
-      main_timer_table.ptr[tm->index] = tm;
-      HEAP_INSERT(struct main_timer *, main_timer_table.ptr, main_timer_cnt, MAIN_TIMER_LESS, MAIN_TIMER_SWAP);
+      if (!expires)
+	{
+	  ASSERT(tm->index && tm->index <= main_timer_cnt);
+	  HEAP_DELETE(struct main_timer *, main_timer_table.ptr, main_timer_cnt, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
+	  tm->index = 0;
+	  tm->expires = 0;
+	}
+      else
+	{
+	  tm->expires = expires;
+	  HEAP_DECREASE(struct main_timer *, main_timer_table.ptr, main_timer_cnt, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
+	}
     }
 }
 
