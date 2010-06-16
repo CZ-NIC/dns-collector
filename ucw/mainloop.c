@@ -10,6 +10,7 @@
 #undef LOCAL_DEBUG
 
 #include "ucw/lib.h"
+#include "ucw/heap.h"
 #include "ucw/mainloop.h"
 
 #include <stdio.h>
@@ -28,7 +29,15 @@ ucw_time_t main_now_seconds;
 timestamp_t main_idle_time;
 uns main_shutdown;
 
-clist main_timer_list, main_file_list, main_hook_list, main_process_list;
+#define GBUF_PREFIX(x) main_timer_table_##x
+#define GBUF_TYPE struct main_timer *
+#include "ucw/gbuf.h"
+static uns main_timer_cnt;
+static main_timer_table_t main_timer_table;
+#define MAIN_TIMER_LESS(x,y) ((x)->expires < (y)->expires)
+#define MAIN_TIMER_SWAP(heap,a,b,t) (t=heap[a], heap[a]=heap[b], heap[b]=t, heap[a]->index=(a), heap[b]->index=(b))
+
+clist main_file_list, main_hook_list, main_process_list;
 static uns main_file_cnt;
 static uns main_poll_table_obsolete, main_poll_table_size;
 static struct pollfd *main_poll_table;
@@ -56,7 +65,7 @@ void
 main_init(void)
 {
   DBG("MAIN: Initializing");
-  clist_init(&main_timer_list);
+  main_timer_cnt = 0;
   clist_init(&main_file_list);
   clist_init(&main_hook_list);
   clist_init(&main_process_list);
@@ -73,14 +82,18 @@ timer_add(struct main_timer *tm, timestamp_t expires)
   else
     DBG("MAIN: Clearing timer %p", tm);
   if (tm->expires)
-    clist_remove(&tm->n);
+    {
+      ASSERT(tm->index && tm->index <= main_timer_cnt);
+      HEAP_DELETE(struct main_timer *, main_timer_table.ptr, main_timer_cnt, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
+      tm->index = 0;
+    }
   tm->expires = expires;
   if (expires)
     {
-      cnode *t = main_timer_list.head.next;
-      while (t != &main_timer_list.head && ((struct main_timer *) t)->expires < expires)
-	t = t->next;
-      clist_insert_before(&tm->n, t);
+      tm->index = ++main_timer_cnt;
+      main_timer_table_grow(&main_timer_table, tm->index + 1);
+      main_timer_table.ptr[tm->index] = tm;
+      HEAP_INSERT(struct main_timer *, main_timer_table.ptr, main_timer_cnt, MAIN_TIMER_LESS, MAIN_TIMER_SWAP);
     }
 }
 
@@ -370,9 +383,11 @@ main_debug(void)
 #ifdef CONFIG_DEBUG
   msg(L_DEBUG, "### Main loop status on %lld", (long long)main_now);
   msg(L_DEBUG, "\tActive timers:");
-  struct main_timer *tm;
-  CLIST_WALK(tm, main_timer_list)
-    msg(L_DEBUG, "\t\t%p (expires %lld, data %p)", tm, (long long)(tm->expires ? tm->expires-main_now : 999999), tm->data);
+  for (uns i = 1; i <= main_timer_cnt; i++)
+    {
+      struct main_timer *tm = main_timer_table.ptr[i];
+      msg(L_DEBUG, "\t\t%p (expires %lld, data %p)", tm, (long long)(tm->expires ? tm->expires-main_now : 999999), tm->data);
+    }
   struct main_file *fi;
   msg(L_DEBUG, "\tActive files:");
   CLIST_WALK(fi, main_file_list)
@@ -419,7 +434,7 @@ void
 main_loop(void)
 {
   DBG("MAIN: Entering main_loop");
-  ASSERT(main_timer_list.head.next);
+  ASSERT(main_hook_list.head.next);
 
   struct main_file *fi;
   struct main_hook *ho;
@@ -430,7 +445,7 @@ main_loop(void)
   for (;;)
     {
       timestamp_t wake = main_now + 1000000000;
-      while ((tm = clist_head(&main_timer_list)) && tm->expires <= main_now)
+      while (main_timer_cnt && (tm = main_timer_table.ptr[1])->expires <= main_now)
 	{
 	  DBG("MAIN: Timer %p expired at now-%lld", tm, (long long)(main_now - tm->expires));
 	  tm->handler(tm);
@@ -485,7 +500,7 @@ main_loop(void)
 	      wake = 0;
 	    }
 	}
-      if ((tm = clist_head(&main_timer_list)) && tm->expires < wake)
+      if (main_timer_cnt && (tm = main_timer_table.ptr[1])->expires < wake)
 	wake = tm->expires;
       main_get_time();
       int timeout = ((wake > main_now) ? wake - main_now : 0);

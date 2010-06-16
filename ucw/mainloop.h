@@ -48,6 +48,7 @@ extern clist main_timer_list, main_file_list, main_hook_list, main_process_list;
 struct main_timer {
   cnode n;
   timestamp_t expires;
+  uns index;
   void (*handler)(struct main_timer *tm);	/* [*] Function to be called when the timer expires. */
   void *data;					/* [*] Data for use by the handler */
 };
