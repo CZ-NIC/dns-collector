@@ -425,7 +425,6 @@ main_loop(void)
   struct main_hook *ho;
   struct main_timer *tm;
   struct main_process *pr;
-  cnode *tmp;
 
   main_get_time();
   for (;;)
@@ -438,13 +437,17 @@ main_loop(void)
 	}
       int hook_min = HOOK_RETRY;
       int hook_max = HOOK_SHUTDOWN;
-      CLIST_WALK_DELSAFE(ho, main_hook_list, tmp)
+      clist hook_done;
+      clist_init(&hook_done);
+      while (ho = clist_remove_head(&main_hook_list))
 	{
+	  clist_add_tail(&hook_done, &ho->n);
 	  DBG("MAIN: Hook %p", ho);
 	  int ret = ho->handler(ho);
 	  hook_min = MIN(hook_min, ret);
 	  hook_max = MAX(hook_max, ret);
 	}
+      clist_move(&main_hook_list, &hook_done);
       if (hook_min == HOOK_SHUTDOWN ||
 	  hook_min == HOOK_DONE && hook_max == HOOK_DONE ||
 	  main_shutdown)
