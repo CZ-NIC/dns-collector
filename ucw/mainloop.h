@@ -35,7 +35,7 @@
 extern timestamp_t main_now;			/** Current time in milliseconds since the UNIX epoch. See @main_get_time(). **/
 extern ucw_time_t main_now_seconds;		/** Current time in seconds since the epoch. **/
 extern timestamp_t main_idle_time;		/** Total time in milliseconds spent in the poll() call. **/
-extern clist main_timer_list, main_file_list, main_hook_list, main_process_list;
+extern clist main_file_list, main_hook_list, main_hook_done_list, main_process_list;
 
 /**
  * This is a description of a timer.
@@ -261,6 +261,7 @@ enum main_hook_return {
 
 /**
  * Inserts a new hook into the loop.
+ * The hook will be scheduled at least once before next sleep.
  * May be called from inside a hook handler too.
  **/
 void hook_add(struct main_hook *ho);

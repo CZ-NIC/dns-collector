@@ -37,7 +37,7 @@ static main_timer_table_t main_timer_table;
 #define MAIN_TIMER_LESS(x,y) ((x)->expires < (y)->expires)
 #define MAIN_TIMER_SWAP(heap,a,b,t) (t=heap[a], heap[a]=heap[b], heap[b]=t, heap[a]->index=(a), heap[b]->index=(b))
 
-clist main_file_list, main_hook_list, main_process_list;
+clist main_file_list, main_hook_list, main_hook_done_list, main_process_list;
 static uns main_file_cnt;
 static uns main_poll_table_obsolete, main_poll_table_size;
 static struct pollfd *main_poll_table;
@@ -68,6 +68,7 @@ main_init(void)
   main_timer_cnt = 0;
   clist_init(&main_file_list);
   clist_init(&main_hook_list);
+  clist_init(&main_hook_done_list);
   clist_init(&main_process_list);
   main_file_cnt = 0;
   main_poll_table_obsolete = 1;
@@ -413,6 +414,8 @@ main_debug(void)
 	(long long)(fi->timer.expires ? fi->timer.expires-main_now : 999999), fi->data);
   msg(L_DEBUG, "\tActive hooks:");
   struct main_hook *ho;
+  CLIST_WALK(ho, main_hook_done_list)
+    msg(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
   CLIST_WALK(ho, main_hook_list)
     msg(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
   msg(L_DEBUG, "\tActive processes:");
@@ -469,17 +472,15 @@ main_loop(void)
 	}
       int hook_min = HOOK_RETRY;
       int hook_max = HOOK_SHUTDOWN;
-      clist hook_done;
-      clist_init(&hook_done);
       while (ho = clist_remove_head(&main_hook_list))
 	{
-	  clist_add_tail(&hook_done, &ho->n);
+	  clist_add_tail(&main_hook_done_list, &ho->n);
 	  DBG("MAIN: Hook %p", ho);
 	  int ret = ho->handler(ho);
 	  hook_min = MIN(hook_min, ret);
 	  hook_max = MAX(hook_max, ret);
 	}
-      clist_move(&main_hook_list, &hook_done);
+      clist_move(&main_hook_list, &main_hook_done_list);
       if (hook_min == HOOK_SHUTDOWN ||
 	  hook_min == HOOK_DONE && hook_max == HOOK_DONE ||
 	  main_shutdown)
