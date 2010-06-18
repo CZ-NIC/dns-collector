@@ -56,7 +56,7 @@ static const char *str_to_num_init(const char **pp, const uns flags, uns *sign, 
   const char *err = NULL;
   const char *p = *pp;
 
-   // Parse sign
+  // Parse sign
   *sign = 0;
   if (flags & (STN_SIGNS))
     {

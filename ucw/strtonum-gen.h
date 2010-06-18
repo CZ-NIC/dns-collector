@@ -7,8 +7,10 @@
  *	of the GNU Lesser General Public License.
  */
 
-/* This is not a normall header file, it is generator of a function for converting strings to integers
- * of a certain type. This file should be used only by ucw/stronum.c .
+/*
+ * This is not a normal header file, it is a generator of a function for
+ * converting strings to integers of a certain type. This file should be used
+ * by ucw/stronum.c only.
  */
 
 #define STN_DECLARE(type, suffix) STN_DECLARE_CONVERTOR(type, suffix)
@@ -27,6 +29,7 @@ STN_DECLARE(STN_TYPE, STN_SUFFIX)
 
   uns sign, base;
   err = str_to_num_init(&p, flags, &sign, &base);
+
   const char *parse_string(void)
   {
     const STN_TYPE max = STN_MAX;
@@ -98,6 +101,7 @@ STN_DECLARE(STN_TYPE, STN_SUFFIX)
 
     return NULL;
   }
+
   if (!err)
     err = parse_string();
 
