@@ -34,16 +34,16 @@ enum str_to_num_flags {
 #define STN_DECLARE_CONVERTOR(type, suffix)                                                         \
 const char *str_to_##suffix(type *num, const char *str, const char **next, const uns flags)
 
-#define STN_SIGNED_CONVERTOR(utype, itype, suffix)                                                  \
-static inline const char *str_to_##suffix(itype *num, const char *str, const char **next, const uns flags) \
+#define STN_SIGNED_CONVERTOR(type, suffix, usuffix)                                                  \
+static inline const char *str_to_##suffix(type *num, const char *str, const char **next, const uns flags) \
 {                                                                                                   \
-  return str_to_##suffix((utype*) num, str, next, flags | STN_SIGNED);                               \
+  return str_to_##usuffix((void *) num, str, next, flags | STN_SIGNED);                               \
 }
 
 STN_DECLARE_CONVERTOR(uns, uns);
-STN_SIGNED_CONVERTOR(uns, int, int)
+STN_SIGNED_CONVERTOR(int, int, uns)
 
 STN_DECLARE_CONVERTOR(uintmax_t, uintmax);
-STN_SIGNED_CONVERTOR(uintmax_t, intmax_t, intmax)
+STN_SIGNED_CONVERTOR(intmax_t, intmax, uintmax)
 
 #endif
