@@ -1,45 +1,45 @@
 # Makefile for the XML parser
 # (c) 2007 Pavel Charvat <pchar@ucw.cz>
 
-DIRS+=sherlock/xml
-PROGS+=$(o)/sherlock/xml/xml-test
+DIRS+=shxml
+PROGS+=$(o)/shxml/xml-test
 
 LIBSHXML_MODS=common source parse dtd
 LIBSHXML_INCLUDES=xml.h dtd.h
 
-LIBSHXML_MOD_PATHS=$(addprefix $(o)/sherlock/xml/,$(LIBSHXML_MODS))
+LIBSHXML_MOD_PATHS=$(addprefix $(o)/shxml/,$(LIBSHXML_MODS))
 
-$(o)/sherlock/xml/libshxml.a: $(addsuffix .o,$(LIBSHXML_MOD_PATHS))
-$(o)/sherlock/xml/libshxml.so: $(addsuffix .oo,$(LIBSHXML_MOD_PATHS))
-$(o)/sherlock/xml/libshxml.pc: $(LIBSH) $(LIBCHARSET)
+$(o)/shxml/libshxml.a: $(addsuffix .o,$(LIBSHXML_MOD_PATHS))
+$(o)/shxml/libshxml.so: $(addsuffix .oo,$(LIBSHXML_MOD_PATHS))
+$(o)/shxml/libshxml.pc: $(LIBSH) $(LIBCHARSET)
 
-$(o)/sherlock/xml/common.o: $(o)/sherlock/xml/unicat.h
-$(o)/sherlock/xml/common.oo: $(o)/sherlock/xml/unicat.h
-$(o)/sherlock/xml/source.o: $(o)/sherlock/xml/unicat.h
-$(o)/sherlock/xml/source.oo: $(o)/sherlock/xml/unicat.h
-$(o)/sherlock/xml/dtd.o: $(o)/sherlock/xml/unicat.h
-$(o)/sherlock/xml/dtd.oo: $(o)/sherlock/xml/unicat.h
-$(o)/sherlock/xml/parse.o: $(o)/sherlock/xml/unicat.h
-$(o)/sherlock/xml/parse.oo: $(o)/sherlock/xml/unicat.h
-$(o)/sherlock/xml/unicat.h: $(s)/sherlock/xml/unicat.pl
-	$(M)GEN $(addprefix $(o)/sherlock/xml/unicat,.h .c)
-	$(Q)$< $(addprefix $(o)/sherlock/xml/unicat,.h .c)
+$(o)/shxml/common.o: $(o)/shxml/unicat.h
+$(o)/shxml/common.oo: $(o)/shxml/unicat.h
+$(o)/shxml/source.o: $(o)/shxml/unicat.h
+$(o)/shxml/source.oo: $(o)/shxml/unicat.h
+$(o)/shxml/dtd.o: $(o)/shxml/unicat.h
+$(o)/shxml/dtd.oo: $(o)/shxml/unicat.h
+$(o)/shxml/parse.o: $(o)/shxml/unicat.h
+$(o)/shxml/parse.oo: $(o)/shxml/unicat.h
+$(o)/shxml/unicat.h: $(s)/shxml/unicat.pl
+	$(M)GEN $(addprefix $(o)/shxml/unicat,.h .c)
+	$(Q)$< $(addprefix $(o)/shxml/unicat,.h .c)
 	$(Q)touch $@
 
-TESTS+=$(o)/sherlock/xml/xml-test.test
-$(o)/sherlock/xml/xml-test: $(o)/sherlock/xml/xml-test.o $(LIBSHXML)
-$(o)/sherlock/xml/xml-test.test: $(o)/sherlock/xml/xml-test
+TESTS+=$(o)/shxml/xml-test.test
+$(o)/shxml/xml-test: $(o)/shxml/xml-test.o $(LIBSHXML)
+$(o)/shxml/xml-test.test: $(o)/shxml/xml-test
 
 API_LIBS+=libshxml
-API_INCLUDES+=$(o)/sherlock/xml/.include-stamp
-$(o)/sherlock/xml/.include-stamp: $(addprefix $(s)/sherlock/xml/,$(LIBSHXML_INCLUDES))
-$(o)/sherlock/xml/.include-stamp: IDST=sherlock/xml
-run/lib/pkgconfig/libshxml.pc: $(o)/sherlock/xml/libshxml.pc
+API_INCLUDES+=$(o)/shxml/.include-stamp
+$(o)/shxml/.include-stamp: $(addprefix $(s)/shxml/,$(LIBSHXML_INCLUDES))
+$(o)/shxml/.include-stamp: IDST=shxml
+run/lib/pkgconfig/libshxml.pc: $(o)/shxml/libshxml.pc
 
 INSTALL_TARGETS+=install-sh-xml
 install-sh-xml:
-	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/sherlock/xml $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
-	install -m 644 $(addprefix run/include/sherlock/xml/,$(LIBSHXML_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/sherlock/xml
+	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/shxml $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+	install -m 644 $(addprefix run/include/shxml/,$(LIBSHXML_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/shxml
 	install -m 644 run/lib/pkgconfig/libshxml.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 run/lib/libshxml.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
 
