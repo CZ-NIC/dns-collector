@@ -1,4 +1,4 @@
-# Configuration of the UCW library and related utilities (included by @INSTALL_CONFIG_DIR@/sherlock)
+# Configuration of the UCW library and related utilities
 
 ######## Memory Mapped Access to Files ##########################################
 
