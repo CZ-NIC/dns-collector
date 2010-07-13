@@ -30,6 +30,7 @@ STN_DECLARE(STN_TYPE, STN_SUFFIX)
   uns sign, base;
   err = str_to_num_init(&p, flags, &sign, &base);
 
+  auto const char *parse_string(void);
   const char *parse_string(void)
   {
     const STN_TYPE max = STN_MAX;
