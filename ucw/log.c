@@ -45,8 +45,10 @@ struct log_stream log_stream_default = {
   .types = ~0U,
   .msgfmt = LSFMT_DEFAULT,
   // an empty clist
-  .substreams.head.next = (cnode *) &log_stream_default.substreams.head,
-  .substreams.head.prev = (cnode *) &log_stream_default.substreams.head,
+  .substreams.head = {
+    .next = (cnode *) &log_stream_default.substreams.head,
+    .prev = (cnode *) &log_stream_default.substreams.head,
+  },
 };
 
 /*** Registry of streams and their identifiers ***/
