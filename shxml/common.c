@@ -9,10 +9,10 @@
 
 #undef LOCAL_DEBUG
 
-#include "sherlock/sherlock.h"
-#include "sherlock/xml/xml.h"
-#include "sherlock/xml/dtd.h"
-#include "sherlock/xml/internals.h"
+#include "ucw/lib.h"
+#include "shxml/xml.h"
+#include "shxml/dtd.h"
+#include "shxml/internals.h"
 #include "ucw/stkstring.h"
 #include "ucw/ff-unicode.h"
 

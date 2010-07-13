@@ -11,7 +11,7 @@ LIBSHXML_MOD_PATHS=$(addprefix $(o)/shxml/,$(LIBSHXML_MODS))
 
 $(o)/shxml/libshxml.a: $(addsuffix .o,$(LIBSHXML_MOD_PATHS))
 $(o)/shxml/libshxml.so: $(addsuffix .oo,$(LIBSHXML_MOD_PATHS))
-$(o)/shxml/libshxml.pc: $(LIBSH) $(LIBCHARSET)
+$(o)/shxml/libshxml.pc: $(LIBCHARSET)
 
 $(o)/shxml/common.o: $(o)/shxml/unicat.h
 $(o)/shxml/common.oo: $(o)/shxml/unicat.h

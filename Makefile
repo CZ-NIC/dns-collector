@@ -25,9 +25,6 @@ include $(BUILDSYS)/Makefile
 ifdef CONFIG_CHARSET
 LIBCHARSET=$(o)/charset/libcharset.pc
 endif
-ifdef CONFIG_SHXML
-LIBSHXML=$(o)/shxml/libshxml.pc
-endif
 
 # The UCW library
 include $(s)/ucw/Makefile
@@ -51,6 +48,11 @@ endif
 ifdef CONFIG_IMAGES
 LIBIMAGES=$(o)/images/libimages.pc
 include $(s)/images/Makefile
+endif
+
+ifdef CONFIG_SHXML
+LIBSHXML=$(o)/shxml/libshxml.pc
+include $(s)/shxml/Makefile
 endif
 
 # Build documentation by default?

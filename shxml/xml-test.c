@@ -7,9 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "sherlock/sherlock.h"
-#include "sherlock/xml/xml.h"
-#include "sherlock/xml/dtd.h"
+#include "ucw/lib.h"
+#include "shxml/xml.h"
+#include "shxml/dtd.h"
 #include "ucw/getopt.h"
 #include "ucw/fastbuf.h"
 

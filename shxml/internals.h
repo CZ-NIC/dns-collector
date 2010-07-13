@@ -10,8 +10,8 @@
 #ifndef _SHERLOCK_XML_INTERNALS_H
 #define _SHERLOCK_XML_INTERNALS_H
 
-#include "sherlock/xml/xml.h"
-#include "sherlock/xml/dtd.h"
+#include "shxml/xml.h"
+#include "shxml/dtd.h"
 
 /*** Debugging ***/
 
@@ -143,7 +143,7 @@ xml_dec(struct xml_context *ctx)
     xml_fatal_nested(ctx);
 }
 
-#include "obj/sherlock/xml/unicat.h"
+#include "obj/shxml/unicat.h"
 
 static inline uns
 xml_char_cat(uns c)

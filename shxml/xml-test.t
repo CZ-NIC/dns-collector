@@ -1,13 +1,13 @@
 # Tests for the XML parser
 # (c) 2008 Pavel Charvat <pchar@ucw.cz>
 
-Run:	../obj/sherlock/xml/xml-test
+Run:	../obj/shxml/xml-test
 In:	<?xml version="1.0"?>
 	<html></html>
 Out:	PULL: start
 	PULL: eof
 
-Run:	../obj/sherlock/xml/xml-test -s
+Run:	../obj/shxml/xml-test -s
 In:	<?xml version="1.0" encoding="ISO-8859-1"?>
 	<html><a a1="val1" a2="val2">text1&amp;amp;&lt;</a>text2</html>
 Out:	PULL: start
@@ -22,7 +22,7 @@ Out:	PULL: start
 	SAX:  document_end
 	PULL: eof
 
-Run:	../obj/sherlock/xml/xml-test -sptd
+Run:	../obj/shxml/xml-test -sptd
 In:	<?xml version="1.0"?>
 	<!DOCTYPE root [
 	<!ELEMENT root (#PCDATA|a)*>
