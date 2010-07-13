@@ -1,0 +1,53 @@
+How to Configure Sherlock    FIXME: update for stand-alone libucw
+*************************
+
+1. What can be configured
+~~~~~~~~~~~~~~~~~~~~~~~~~
+There are three different levels of configuring/customizing Sherlock:
+
+  - runtime configuration in cf/sherlock and cf/local (see doc/config)
+
+  - compile-time configuration: config switches set before compiling, selecting
+    optional features (see sherlock/default.cfg)
+
+  - customization: a set of C declarations and functions, which define word
+    types, attributes and the ways to match them. In most cases, you should
+    use the "free" customization designed for searching in web pages and similar
+    documents. If you want just a simple search engine for indexing databases,
+    the "customs/bare" customization can be better. If you want to extend Sherlock
+    beyond that, you will probably need to write your own customization -- just
+    follow the structure of the "free" customization and the comments there.
+
+
+2. How to configure
+~~~~~~~~~~~~~~~~~~~
+To set up compilation for a given customization, possibly overriding its default
+compile-time options, just run
+
+	./configure <customization> [<option> | -<option> | <option>=<value> ...]
+
+The default values of feature options are taken from sherlock/default.cfg and modified
+by <customization>/config. Compiler flags and options dependent on compiler, OS and
+CPU type are set in ucw/perl/UCW/Configure/C.pm. Everything can be overriden by options specified
+on the configure's command line, which have the highest priority.
+
+If you want to see the resulting set of options, take a look at obj/config.mk.
+
+Options specifying compiler/linker/debugger options can be also overriden during
+compilation by `make <option>=<value>'. While it's also possible to specify the other
+options in this way, it probably won't have the desired effect, because configure
+also generates C include files containing the options.
+
+
+3. Where to build
+~~~~~~~~~~~~~~~~~
+If you run configure in the source directory, it prepares for compilation inside
+the source tree. In this case, an `obj' subdirectory is created to hold all generated
+files (object files, binaries, generated source files etc.) and all final files
+are linked to the `run' subdirectory. No other parts of the source tree are written into.
+
+Alternatively, you can compile in a separate object tree (which is useful when you
+want to build several different configurations from a single source tree). In order
+to do that, switch to the destination directory and issue `<source-dir>/configure ...'.
+This way, configure will create the `obj' and `run' directories locally and set up
+a Makefile which refers to the original source tree.
