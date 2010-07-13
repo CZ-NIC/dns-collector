@@ -1,4 +1,4 @@
-# Makefile for the Sherlock Charset Library (c) 1997--2007 Martin Mares <mj@ucw.cz>
+# Makefile for the UCW Charset Library (c) 1997--2007 Martin Mares <mj@ucw.cz>
 
 DIRS+=charset
 
