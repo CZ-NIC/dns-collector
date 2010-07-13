@@ -5,7 +5,7 @@ incdir=.
 
 Name: libshxml
 Description: XML parser for Sherlock project
-Version: @SHERLOCK_VERSION@
+Version: @UCW_VERSION@
 Cflags: -I${incdir}
 Libs: -L${libdir} -lshxml
 Requires: @DEPS@

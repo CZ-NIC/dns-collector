@@ -21,6 +21,6 @@ build_system=@INSTALL_SHARE_DIR@/ucw/build
 
 Name: libucw
 Description: A library of utility functions and data structures
-Version: @SHERLOCK_VERSION@
+Version: @UCW_VERSION@
 Cflags: -I${incdir}
 Libs: -L${libdir} -lucw ${threads} ${regex}
