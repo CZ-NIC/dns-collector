@@ -196,9 +196,10 @@ sub parse_args($) {			# CAVEAT: attached files must be defined in the main arg t
 		}
 	}
 
-	for my $a (values %$args) {
-		defined($raw_args{$a}) or next;
-		$_ = $raw_args{$a};
+	for my $arg (keys %$args) {
+		my $a = $args->{$arg};
+		defined($raw_args{$arg}) or next;
+		$_ = $raw_args{$arg};
 		$a->{'multiline'} or s/(\n|\t)/ /g;
 		s/^\s+//;
 		s/\s+$//;
@@ -401,7 +402,7 @@ sub parse_multipart_form_data() {
 
 sub make_out_args(@) {		# Usage: make_out_args([arg_table, ...] name => value, ...)
 	my @arg_tables = ( $main_arg_table );
-	while (@_ && ref(@_) eq 'HASH') {
+	while (@_ && ref($_[0]) eq 'HASH') {
 		push @arg_tables, shift @_;
 	}
 	my %overrides = @_;
@@ -411,12 +412,14 @@ sub make_out_args(@) {		# Usage: make_out_args([arg_table, ...] name => value, .
 			my $arg = $table->{$name};
 			defined($arg->{'var'}) || next;
 			defined($arg->{'pass'}) && !$arg->{'pass'} && !exists $overrides{$name} && next;
+			defined $arg->{'default'} or $arg->{'default'} = "";
 			my $value;
 			if (!defined($value = $overrides{$name})) {
 				if (exists $overrides{$name}) {
 					$value = $arg->{'default'};
 				} else {
 					$value = ${$arg->{'var'}};
+					defined $value or $value = $arg->{'default'};
 				}
 			}
 			if ($value ne $arg->{'default'}) {
