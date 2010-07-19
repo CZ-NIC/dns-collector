@@ -1,6 +1,6 @@
 #	Poor Man's CGI Module for Perl
 #
-#	(c) 2002--2009 Martin Mares <mj@ucw.cz>
+#	(c) 2002--2010 Martin Mares <mj@ucw.cz>
 #	Slightly modified by Tomas Valla <tom@ucw.cz>
 #
 #	This software may be freely distributed and used according to the terms
@@ -93,6 +93,7 @@ sub html_escape($) {
 	$x =~ s/</&lt;/g;
 	$x =~ s/>/&gt;/g;
 	$x =~ s/"/&quot;/g;
+	$x =~ s/'/&#39;/g;
 	return $x;
 }
 
