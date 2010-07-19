@@ -130,62 +130,43 @@ sub http_get($) {
 
 ### Parsing of Arguments ###
 
-my $arg_table;
+my $main_arg_table;
+my %raw_args;
 
-sub parse_arg_string($) {
+sub parse_raw_args($) {
 	my ($s) = @_;
 	$s =~ s/\s+//;
-	foreach $_ (split /[&:]/,$s) {
+	for $_ (split /[&:]/, $s) {
 		(/^([^=]+)=(.*)$/) or next;
-		my $arg = $arg_table->{$1} or next;
+		my $arg = $1;
 		$_ = $2;
 		s/\+/ /g;
 		s/%(..)/pack("H2",$1)/eg;
 		s/\r\n/\n/g;
 		s/\r/\n/g;
-		$arg->{'multiline'} || s/(\n|\t)/ /g;
-		s/^\s+//;
-		s/\s+$//;
-		if (my $rx = $arg->{'check'}) {
-			if (!/^$rx$/) { $_ = $arg->{'default'}; }
-		}
-
-		my $r = ref($arg->{'var'});
-		if ($r eq 'SCALAR') {
-			${$arg->{'var'}} = $_;
-		} elsif ($r eq 'ARRAY') {
-			push @{$arg->{'var'}}, $_;
-		}
+		$raw_args{$arg} = $_;
 	}
 }
 
 sub parse_multipart_form_data();
 
-sub parse_args($) {
-	$arg_table = shift @_;
+sub init_args() {
 	if (!defined $ENV{"GATEWAY_INTERFACE"}) {
 		print STDERR "Must be called as a CGI script.\n";
 		$exit_code = 1;
 		exit;
 	}
-	foreach my $a (values %$arg_table) {
-		my $r = ref($a->{'var'});
-		defined($a->{'default'}) or $a->{'default'}="";
-		if ($r eq 'SCALAR') {
-			${$a->{'var'}} = $a->{'default'};
-		} elsif ($r eq 'ARRAY') {
-			@{$a->{'var'}} = ();
-		}
-	}
+
 	my $method = $ENV{"REQUEST_METHOD"};
-	my $qs = $ENV{"QUERY_STRING"};
-	parse_arg_string($qs) if defined($qs);
+	if (my $qs = $ENV{"QUERY_STRING"}) {
+		parse_raw_args($qs);
+	}
 	if ($method eq "GET") {
 	} elsif ($method eq "POST") {
 		if ($ENV{"CONTENT_TYPE"} =~ /^application\/x-www-form-urlencoded\b/i) {
 			while (<STDIN>) {
 				chomp;
-				parse_arg_string($_);
+				parse_raw_args($_);
 			}
 		} elsif ($ENV{"CONTENT_TYPE"} =~ /^multipart\/form-data\b/i) {
 			parse_multipart_form_data();
@@ -194,6 +175,43 @@ sub parse_args($) {
 		}
 	} else {
 		die "Unknown request method";
+	}
+}
+
+sub parse_args($) {			# CAVEAT: attached files must be defined in the main arg table
+	my $args = shift @_;
+	if (!$main_arg_table) {
+		$main_arg_table = $args;
+		init_args();
+	}
+
+	for my $a (values %$args) {
+		my $r = ref($a->{'var'});
+		defined($a->{'default'}) or $a->{'default'}="";
+		if ($r eq 'SCALAR') {
+			${$a->{'var'}} = $a->{'default'};
+		} elsif ($r eq 'ARRAY') {
+			@{$a->{'var'}} = ();
+		}
+	}
+
+	for my $a (values %$args) {
+		defined($raw_args{$a}) or next;
+		$_ = $raw_args{$a};
+		$a->{'multiline'} or s/(\n|\t)/ /g;
+		s/^\s+//;
+		s/\s+$//;
+		if (my $rx = $a->{'check'}) {
+			if (!/^$rx$/) { $_ = $a->{'default'}; }
+		}
+
+		my $v = $a->{'var'};
+		my $r = ref($v);
+		if ($r eq 'SCALAR') {
+			$$v = $_;
+		} elsif ($r eq 'ARRAY') {
+			push @$v, $_;
+		}
 	}
 }
 
@@ -316,7 +334,7 @@ sub parse_multipart_form_data() {
 	# Check upload size in advance
 	if (my $size = http_get("Content-Length")) {
 		my $max_allowed = 0;
-		foreach my $a (values %$arg_table) {
+		foreach my $a (values %$main_arg_table) {
 			$max_allowed += $a->{"maxsize"} || 65536;
 		}
 		if ($size > $max_allowed) {
@@ -343,13 +361,13 @@ sub parse_multipart_form_data() {
 		    ($cdisp = $h->{"content-disposition"}) &&
 		    $cdisp =~ /^form-data/ &&
 		    (($field) = ($cdisp =~ /;name=([^;]+)/)) &&
-		    ($a = $arg_table->{"$field"})) {
+		    ($a = $main_arg_table->{"$field"})) {
 			print STDERR "FIELD $field\n" if $debug;
 			if (defined $h->{"content-transfer-encoding"}) { die "Unexpected Content-Transfer-Encoding"; }
 			if (defined $a->{"var"}) {
 				while (defined (my $l = get_mp_line(1))) {
 					print STDERR "VALUE $l\n" if $debug;
-					parse_arg_string("$field=$l");
+					parse_raw_args("$field=$l");
 				}
 				next PART;
 			} elsif (defined $a->{"file"}) {
@@ -380,37 +398,41 @@ sub parse_multipart_form_data() {
 
 ### Generating Self-ref URL's ###
 
-sub make_out_args($) {
-	my ($overrides) = @_;
+sub make_out_args(@) {		# Usage: make_out_args([arg_table, ...] name => value, ...)
+	my @arg_tables = ( $main_arg_table );
+	while (@_ && ref(@_) eq 'HASH') {
+		push @arg_tables, shift @_;
+	}
+	my %overrides = @_;
 	my $out = {};
-	foreach my $name (keys %$arg_table) {
-		my $arg = $arg_table->{$name};
-		defined($arg->{'var'}) || next;
-		defined($arg->{'pass'}) && !$arg->{'pass'} && !exists $overrides->{$name} && next;
-		my $value;
-		if (!defined($value = $overrides->{$name})) {
-			if (exists $overrides->{$name}) {
-				$value = $arg->{'default'};
-			} else {
-				$value = ${$arg->{'var'}};
+	for my $table (@arg_tables) {
+		for my $name (keys %$table) {
+			my $arg = $table->{$name};
+			defined($arg->{'var'}) || next;
+			defined($arg->{'pass'}) && !$arg->{'pass'} && !exists $overrides{$name} && next;
+			my $value;
+			if (!defined($value = $overrides{$name})) {
+				if (exists $overrides{$name}) {
+					$value = $arg->{'default'};
+				} else {
+					$value = ${$arg->{'var'}};
+				}
 			}
-		}
-		if ($value ne $arg->{'default'}) {
-			$out->{$name} = $value;
+			if ($value ne $arg->{'default'}) {
+				$out->{$name} = $value;
+			}
 		}
 	}
 	return $out;
 }
 
 sub self_ref(@) {
-	my %h = @_;
-	my $out = make_out_args(\%h);
+	my $out = make_out_args(@_);
 	return "?" . join(':', map { "$_=" . url_param_escape($out->{$_}) } sort keys %$out);
 }
 
 sub self_form(@) {
-	my %h = @_;
-	my $out = make_out_args(\%h);
+	my $out = make_out_args(@_);
 	return join('', map { "<input type=hidden name=$_ value='" . html_escape($out->{$_}) . "'>\n" } sort keys %$out);
 }
 
