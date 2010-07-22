@@ -1,7 +1,7 @@
 /*
  *	The UCW Library -- Threading Helpers
  *
- *	(c) 2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2006--2010 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -28,22 +28,23 @@ gettid(void)
 #endif
 #endif
 
-static pthread_key_t ucwlib_context_key;
+/*** Library lock ***/
+
 static pthread_mutex_t ucwlib_master_mutex;
 
-static void
-ucwlib_free_thread_context(void *p)
+void
+ucwlib_lock(void)
 {
-  xfree(p);
+  pthread_mutex_lock(&ucwlib_master_mutex);
 }
 
-static void CONSTRUCTOR
-ucwlib_threads_init(void)
+void
+ucwlib_unlock(void)
 {
-  if (pthread_key_create(&ucwlib_context_key, ucwlib_free_thread_context) < 0)
-    die("Cannot create pthread_key: %m");
-  pthread_mutex_init(&ucwlib_master_mutex, NULL);
+  pthread_mutex_unlock(&ucwlib_master_mutex);
 }
+
+/*** Thread identifiers ***/
 
 static int
 ucwlib_tid(void)
@@ -64,6 +65,38 @@ ucwlib_tid(void)
   return tid;
 }
 
+/*** Thread context ***/
+
+#ifdef CONFIG_UCW_TLS
+
+__thread struct ucwlib_context ucwlib_context;
+
+int
+ucwlib_thread_id(struct ucwlib_context *c)
+{
+  if (!c->_thread_id)
+    c->_thread_id = ucwlib_tid();
+  return c->_thread_id;
+}
+
+#else
+
+static pthread_key_t ucwlib_context_key;
+
+static void
+ucwlib_free_thread_context(void *p)
+{
+  xfree(p);
+}
+
+static void CONSTRUCTOR
+ucwlib_threads_init(void)
+{
+  if (pthread_key_create(&ucwlib_context_key, ucwlib_free_thread_context) < 0)
+    die("Cannot create pthread_key: %m");
+  pthread_mutex_init(&ucwlib_master_mutex, NULL);
+}
+
 struct ucwlib_context *
 ucwlib_thread_context(void)
 {
@@ -71,42 +104,17 @@ ucwlib_thread_context(void)
   if (!c)
     {
       c = xmalloc_zero(sizeof(*c));
-      c->thread_id = ucwlib_tid();
+      c->_thread_id = ucwlib_tid();
       pthread_setspecific(ucwlib_context_key, c);
     }
   return c;
 }
 
-void
-ucwlib_lock(void)
-{
-  pthread_mutex_lock(&ucwlib_master_mutex);
-}
+#endif /* CONFIG_UCW_TLS */
 
-void
-ucwlib_unlock(void)
-{
-  pthread_mutex_unlock(&ucwlib_master_mutex);
-}
+#else /* !CONFIG_UCW_THREADS */
 
-#else
-
-struct ucwlib_context *
-ucwlib_thread_context(void)
-{
-  static struct ucwlib_context ucwlib_context;
-  return &ucwlib_context;
-}
-
-void
-ucwlib_lock(void)
-{
-}
-
-void
-ucwlib_unlock(void)
-{
-}
+struct ucwlib_context default_ucwlib_context;
 
 #endif
 
@@ -116,7 +124,7 @@ int main(void)
 {
   ucwlib_lock();
   ucwlib_unlock();
-  msg(L_INFO, "tid=%d", ucwlib_thread_context()->thread_id);
+  msg(L_INFO, "tid=%d", ucwlib_thread_id(ucwlib_thread_context()));
   return 0;
 }
 

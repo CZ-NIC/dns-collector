@@ -1,5 +1,5 @@
 # UCW Library configuration system: parameters of the library
-# (c) 2005--2008 Martin Mares <mj@ucw.cz>
+# (c) 2005--2010 Martin Mares <mj@ucw.cz>
 # (c) 2006 Robert Spalek <robert@ucw.cz>
 # (c) 2008 Michal Vaner <vorner@ucw.cz>
 
@@ -41,6 +41,17 @@ if (Get("CPU_ARCH") eq "default" || Get("CPU_ARCH") =~ /^i[345]86$/) {
 } else {
 	# Use this on modern CPU's
 	Set("CONFIG_UCW_RADIX_SORTER_BITS" => 12);
+}
+
+# Detect if thread-local storage is supported
+if (Get("CONFIG_UCW_THREADS")) {
+	TestBool("CONFIG_UCW_TLS", "Checking if GCC supports thread-local storage", sub {
+		if (UCW::Configure::C::TestCompile("__thread int i;\nint main(void) { return 0; }\n")) {
+			return 1;
+		} else {
+			return 0;
+		}
+	});
 }
 
 PostConfig {
