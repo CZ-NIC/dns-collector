@@ -30,7 +30,7 @@ LIBUCW_MODS= \
 	sync \
 	qache \
 	string str-esc str-split str-match str-imatch str-hex \
-	bbuf \
+	bbuf gary \
 	getopt \
 	strtonum
 
@@ -41,7 +41,7 @@ LIBUCW_MAIN_INCLUDES= \
 	string.h stkstring.h unicode.h chartype.h regex.h \
 	wildmatch.h \
 	unaligned.h prefetch.h \
-	bbuf.h gbuf.h bitarray.h bitsig.h \
+	bbuf.h gbuf.h gary.h bitarray.h bitsig.h \
 	hashfunc.h hashtable.h \
 	heap.h binheap.h binheap-node.h \
 	redblack.h \
@@ -108,7 +108,8 @@ TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test
     slists.test bbuf.test kmp-test.test getopt.test ff-unicode.test eltpool.test \
     fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test \
     redblack-test.test fb-file.test fb-grow.test fb-pool.test fb-atomic.test \
-    fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test url.test strtonum-test.test)
+    fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test url.test strtonum-test.test \
+    gary.test)
 
 $(o)/ucw/regex.test: $(o)/ucw/regex-t
 $(o)/ucw/unicode.test: $(o)/ucw/unicode-t
@@ -132,6 +133,7 @@ $(o)/ucw/strtonum-test.test: $(o)/ucw/strtonum-test
 $(addprefix $(o)/ucw/fb-,file.test grow.test pool.test socket.test atomic.test \
 	limfd.test temp.test mem.test buffer.test mmap.test): %.test: %-t
 $(o)/ucw/url.test: $(o)/ucw/url-t
+$(o)/ucw/gary.test: $(o)/ucw/gary-t
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/ucw/,asio.test)
