@@ -1,6 +1,6 @@
 #	Perl module for UCW Configure Scripts
 #
-#	(c) 2005--2008 Martin Mares <mj@ucw.cz>
+#	(c) 2005--2010 Martin Mares <mj@ucw.cz>
 #
 #	This software may be freely distributed and used according to the terms
 #	of the GNU Lesser General Public License.
@@ -16,7 +16,7 @@ BEGIN {
 	our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 	$VERSION = 1.0;
 	@ISA = qw(Exporter);
-	@EXPORT = qw(&Init &Log &Notice &Warn &Fail &IsSet &IsGiven &Set &UnSet &Append &Override &Get &Test &Include &Finish &FindFile &TryFindFile &DebugDump &PostConfig &AtWrite);
+	@EXPORT = qw(&Init &Log &Notice &Warn &Fail &IsSet &IsGiven &Set &UnSet &Append &Override &Get &Test &TestBool &Include &Finish &FindFile &TryFindFile &DebugDump &PostConfig &AtWrite);
 	@EXPORT_OK = qw();
 	%EXPORT_TAGS = ();
 }
@@ -89,10 +89,25 @@ sub Override($;$) {
 sub Test($$$) {
 	my ($var,$msg,$sub) = @_;
 	Log "$msg ... ";
-	if (!IsSet($var)) {
-		Set $var, &$sub();
+	if (IsSet($var)) {
+		Log Get($var) . " (preset)\n";
+	} else {
+		my $val = &$sub();
+		Set($var, $val);
+		Log "$val\n";
 	}
-	Log Get($var) . "\n";
+}
+
+sub TestBool($$$) {
+	my ($var,$msg,$sub) = @_;
+	Log "$msg ... ";
+	if (IsSet($var) || IsGiven($var)) {
+		Log ((Get($var) ? "yes" : "no") . " (set)\n");
+	} else {
+		my ($val, $comment) = &$sub();
+		Set($var, $val);
+		Log (($val ? "yes" : "no") . "\n");
+	}
 }
 
 sub TryFindFile($) {
