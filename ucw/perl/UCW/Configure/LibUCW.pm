@@ -46,7 +46,7 @@ if (Get("CPU_ARCH") eq "default" || Get("CPU_ARCH") =~ /^i[345]86$/) {
 # Detect if thread-local storage is supported
 if (Get("CONFIG_UCW_THREADS")) {
 	TestBool("CONFIG_UCW_TLS", "Checking if GCC supports thread-local storage", sub {
-		if (UCW::Configure::C::TestCompile("__thread int i;\nint main(void) { return 0; }\n")) {
+		if (UCW::Configure::C::TestCompile("__thread", "__thread int i;\nint main(void) { return 0; }\n")) {
 			return 1;
 		} else {
 			return 0;

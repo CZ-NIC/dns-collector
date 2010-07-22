@@ -269,9 +269,9 @@ if (IsSet("CONFIG_DARWIN")) {
 
 ### Compiling test programs ###
 
-sub TestCompile($) {
-	my ($source) = @_;
-	my $dir = 'conftest';
+sub TestCompile($$) {
+	my ($testname, $source) = @_;
+	my $dir = "conftest-$testname";
 	`rm -rf $dir && mkdir $dir`; $? and Fail "Cannot initialize $dir";
 
 	open SRC, ">$dir/conftest.c";
@@ -287,6 +287,10 @@ sub TestCompile($) {
 		);
 	`$cmd`;
 	my $result = !$?;
+
+	`rm -rf $dir` unless Get("KEEP_CONFTEST");
+
+	return $result;
 }
 
 ### Writing C headers with configuration ###
