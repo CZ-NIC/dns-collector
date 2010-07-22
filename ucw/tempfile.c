@@ -61,10 +61,10 @@ temp_file_name(char *name_buf, int *open_flags)
       struct ucwlib_context *ctx = ucwlib_thread_context();
       int cnt = ++ctx->temp_counter;
       int pid = getpid();
-      if (ctx->thread_id == pid)
+      if (ucwlib_thread_id(ctx) == pid)
 	len = snprintf(name_buf, TEMP_FILE_NAME_LEN, "%s/%s%d-%d", dir, temp_prefix, pid, cnt);
       else
-	len = snprintf(name_buf, TEMP_FILE_NAME_LEN, "%s/%s%d-%d-%d", dir, temp_prefix, pid, ctx->thread_id, cnt);
+	len = snprintf(name_buf, TEMP_FILE_NAME_LEN, "%s/%s%d-%d-%d", dir, temp_prefix, pid, ucwlib_thread_id(ctx), cnt);
       if (open_flags)
 	*open_flags = 0;
     }
