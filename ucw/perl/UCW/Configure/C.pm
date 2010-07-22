@@ -1,5 +1,5 @@
 # UCW Library configuration system: OS and C compiler
-# (c) 2005--2008 Martin Mares <mj@ucw.cz>
+# (c) 2005--2010 Martin Mares <mj@ucw.cz>
 # (c) 2006 Robert Spalek <robert@ucw.cz>
 # (c) 2008 Michal Vaner <vorner@ucw.cz>
 
@@ -265,6 +265,28 @@ if (IsSet("CONFIG_DARWIN")) {
 		Set("CONFIG_POSIX_REGEX" => 1);
 		Warn "BSD regex library on Darwin isn't compatible, using POSIX regex.\n";
 	}
+}
+
+### Compiling test programs ###
+
+sub TestCompile($) {
+	my ($source) = @_;
+	my $dir = 'conftest';
+	`rm -rf $dir && mkdir $dir`; $? and Fail "Cannot initialize $dir";
+
+	open SRC, ">$dir/conftest.c";
+	print SRC $source;
+	close SRC;
+
+	my $cmd = join(" ",
+		map { defined($_) ? $_ : "" }
+			"cd $dir &&",
+			Get("CC"), Get("CLANG"), Get("COPT"), Get("CEXTRA"), Get("LIBS"),
+			"conftest.c", "-o", "conftest",
+			">conftest.log", "2>&1"
+		);
+	`$cmd`;
+	my $result = !$?;
 }
 
 ### Writing C headers with configuration ###
