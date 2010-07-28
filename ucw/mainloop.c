@@ -174,6 +174,13 @@ timer_add(struct main_timer *tm, timestamp_t expires)
 }
 
 void
+timer_add_rel(struct main_timer *tm, timestamp_t expires_delta)
+{
+  struct main_context *m = main_current();
+  return timer_add(tm, m->now + expires_delta);
+}
+
+void
 timer_del(struct main_timer *tm)
 {
   timer_add(tm, 0);
@@ -666,7 +673,7 @@ static int dhook(struct main_hook *ho UNUSED)
 static void dtimer(struct main_timer *tm)
 {
   msg(L_INFO, "Timer tick");
-  timer_add(tm, main_get_now() + 10000);
+  timer_add_rel(tm, 10000);
 }
 
 static void dentry(void)
@@ -704,7 +711,7 @@ main(void)
   hook_add(&hook);
 
   tm.handler = dtimer;
-  timer_add(&tm, main_get_now() + 1000);
+  timer_add_rel(&tm,  1000);
 
   mp.handler = dexit;
   if (!process_fork(&mp))

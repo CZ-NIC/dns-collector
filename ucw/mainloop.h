@@ -119,6 +119,9 @@ struct main_timer {
  * The @expire parameter is absolute, just add <<var_main_now,`main_now`>> if you need a relative timer.
  **/
 void timer_add(struct main_timer *tm, timestamp_t expires);
+
+void timer_add_rel(struct main_timer *tm, timestamp_t expires_delta);
+
 /**
  * Removes a timer from the active ones. It is permitted (and usual) to call
  * this function from the timer's handler itself if you want to deactivate
