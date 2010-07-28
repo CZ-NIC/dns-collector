@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Main Loop
  *
- *	(c) 2004--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2004--2010 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -12,9 +12,12 @@
 #include "ucw/lib.h"
 #include "ucw/heap.h"
 #include "ucw/mainloop.h"
+#include "ucw/threads.h"
+#include "ucw/gary.h"
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
@@ -24,23 +27,10 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 
-timestamp_t main_now;
-ucw_time_t main_now_seconds;
-timestamp_t main_idle_time;
-uns main_shutdown;
-
-#define GBUF_PREFIX(x) main_timer_table_##x
-#define GBUF_TYPE struct main_timer *
-#include "ucw/gbuf.h"
-static uns main_timer_cnt;
-static main_timer_table_t main_timer_table;
 #define MAIN_TIMER_LESS(x,y) ((x)->expires < (y)->expires)
 #define MAIN_TIMER_SWAP(heap,a,b,t) (t=heap[a], heap[a]=heap[b], heap[b]=t, heap[a]->index=(a), heap[b]->index=(b))
 
-clist main_file_list, main_hook_list, main_hook_done_list, main_process_list;
-static uns main_file_cnt;
-static uns main_poll_table_obsolete, main_poll_table_size;
-static struct pollfd *main_poll_table;
+// FIXME: Delivery of signals to threads?
 static uns main_sigchld_set_up;
 static volatile sig_atomic_t chld_received = 0;
 
@@ -51,66 +41,133 @@ static volatile sig_atomic_t chld_received = 0;
 static int sig_pipe_recv, sig_pipe_send;
 #endif
 
-void
-main_get_time(void)
+static void
+do_main_get_time(struct main_context *m)
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  main_now_seconds = tv.tv_sec;
-  main_now = (timestamp_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
-  // DBG("It's %lld o'clock", (long long) main_now);
+  m->now_seconds = tv.tv_sec;
+  m->now = (timestamp_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
+struct main_context *
+main_new(void)
+{
+  struct main_context *m = xmalloc_zero(sizeof(*m));
+
+  DBG("MAIN: New context");
+  clist_init(&m->file_list);
+  clist_init(&m->hook_list);
+  clist_init(&m->hook_done_list);
+  clist_init(&m->process_list);
+  m->poll_table_obsolete = 1;
+  do_main_get_time(m);
+
+  return m;
+}
+
+void
+main_delete(struct main_context *m)
+{
+  ASSERT(clist_empty(&m->file_list));
+  ASSERT(clist_empty(&m->hook_list));
+  ASSERT(clist_empty(&m->hook_done_list));
+  ASSERT(clist_empty(&m->process_list));
+  if (m->timer_table)
+    GARY_FREE(m->timer_table);
+  // FIXME: Free poll table
+  xfree(m);
+}
+
+struct main_context *
+main_switch_context(struct main_context *m)
+{
+  struct ucwlib_context *c = ucwlib_thread_context();
+  struct main_context *m0 = c->main_context;
+  c->main_context = m;
+  return m0;
+}
+
+struct main_context *
+main_current(void)
+{
+  struct ucwlib_context *c = ucwlib_thread_context();
+  struct main_context *m = c->main_context;
+  ASSERT(m);
+  return m;
 }
 
 void
 main_init(void)
 {
-  DBG("MAIN: Initializing");
-  main_timer_cnt = 0;
-  clist_init(&main_file_list);
-  clist_init(&main_hook_list);
-  clist_init(&main_hook_done_list);
-  clist_init(&main_process_list);
-  main_file_cnt = 0;
-  main_poll_table_obsolete = 1;
-  main_get_time();
+  struct main_context *m = main_switch_context(main_new());
+  ASSERT(!m);
+}
+
+void
+main_cleanup(void)
+{
+  struct main_context *m = main_switch_context(NULL);
+  main_delete(m);
+}
+
+void
+main_get_time(void)
+{
+  do_main_get_time(main_current());
+}
+
+static inline uns
+count_timers(struct main_context *m)
+{
+  return GARY_SIZE(m->timer_table) - 1;
 }
 
 void
 timer_add(struct main_timer *tm, timestamp_t expires)
 {
+  struct main_context *m = main_current();
+
+  if (!m->timer_table)
+    {
+      GARY_INIT(m->timer_table, 1);
+      m->timer_table[0] = NULL;
+    }
+
   if (expires)
-    DBG("MAIN: Setting timer %p (expire at now+%lld)", tm, (long long)(expires-main_now));
+    DBG("MAIN: Setting timer %p (expire at now+%lld)", tm, (long long)(expires - m->now));
   else
     DBG("MAIN: Clearing timer %p", tm);
+  uns num_timers = count_timers(m);
   if (tm->expires < expires)
     {
       if (!tm->expires)
 	{
 	  tm->expires = expires;
-	  tm->index = ++main_timer_cnt;
-	  main_timer_table_grow(&main_timer_table, tm->index + 1);
-	  main_timer_table.ptr[tm->index] = tm;
-	  HEAP_INSERT(struct main_timer *, main_timer_table.ptr, main_timer_cnt, MAIN_TIMER_LESS, MAIN_TIMER_SWAP);
+	  tm->index = num_timers + 1;
+	  *GARY_PUSH(m->timer_table, 1) = tm;
+	  HEAP_INSERT(struct main_timer *, m->timer_table, tm->index, MAIN_TIMER_LESS, MAIN_TIMER_SWAP);
 	}
       else
 	{
 	  tm->expires = expires;
-	  HEAP_INCREASE(struct main_timer *, main_timer_table.ptr, main_timer_cnt, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
+	  HEAP_INCREASE(struct main_timer *, m->timer_table, num_timers, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
 	}
     }
   else if (tm->expires > expires)
     {
       if (!expires)
 	{
-	  ASSERT(tm->index && tm->index <= main_timer_cnt);
-	  HEAP_DELETE(struct main_timer *, main_timer_table.ptr, main_timer_cnt, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
+	  ASSERT(tm->index && tm->index <= num_timers);
+	  HEAP_DELETE(struct main_timer *, m->timer_table, num_timers, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
 	  tm->index = 0;
 	  tm->expires = 0;
+	  GARY_POP(m->timer_table, 1);
 	}
       else
 	{
 	  tm->expires = expires;
-	  HEAP_DECREASE(struct main_timer *, main_timer_table.ptr, main_timer_cnt, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
+	  HEAP_DECREASE(struct main_timer *, m->timer_table, num_timers, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
 	}
     }
 }
@@ -133,13 +190,15 @@ file_timer_expired(struct main_timer *tm)
 void
 file_add(struct main_file *fi)
 {
+  struct main_context *m = main_current();
+
   DBG("MAIN: Adding file %p (fd=%d)", fi, fi->fd);
   ASSERT(!fi->n.next);
-  clist_add_tail(&main_file_list, &fi->n);
+  clist_add_tail(&m->file_list, &fi->n);
   fi->timer.handler = file_timer_expired;
   fi->timer.data = fi;
-  main_file_cnt++;
-  main_poll_table_obsolete = 1;
+  m->file_cnt++;
+  m->poll_table_obsolete = 1;
   if (fcntl(fi->fd, F_SETFL, O_NONBLOCK) < 0)
     msg(L_ERROR, "Error setting fd %d to non-blocking mode: %m. Keep fingers crossed.", fi->fd);
 }
@@ -161,12 +220,14 @@ file_chg(struct main_file *fi)
 void
 file_del(struct main_file *fi)
 {
+  struct main_context *m = main_current();
+
   DBG("MAIN: Deleting file %p (fd=%d)", fi, fi->fd);
   ASSERT(fi->n.next);
   timer_del(&fi->timer);
   clist_remove(&fi->n);
-  main_file_cnt--;
-  main_poll_table_obsolete = 1;
+  m->file_cnt--;
+  m->poll_table_obsolete = 1;
   fi->n.next = fi->n.prev = NULL;
 }
 
@@ -266,16 +327,20 @@ file_set_timeout(struct main_file *fi, timestamp_t expires)
 void
 file_close_all(void)
 {
-  CLIST_FOR_EACH(struct main_file *, f, main_file_list)
+  struct main_context *m = main_current();
+
+  CLIST_FOR_EACH(struct main_file *, f, m->file_list)
     close(f->fd);
 }
 
 void
 hook_add(struct main_hook *ho)
 {
+  struct main_context *m = main_current();
+
   DBG("MAIN: Adding hook %p", ho);
   ASSERT(!ho->n.next);
-  clist_add_tail(&main_hook_list, &ho->n);
+  clist_add_tail(&m->hook_list, &ho->n);
 }
 
 void
@@ -332,10 +397,12 @@ main_sigchld_handler(int x UNUSED)
 void
 process_add(struct main_process *mp)
 {
+  struct main_context *m = main_current();
+
   DBG("MAIN: Adding process %p (pid=%d)", mp, mp->pid);
   ASSERT(!mp->n.next);
   ASSERT(mp->handler);
-  clist_add_tail(&main_process_list, &mp->n);
+  clist_add_tail(&m->process_list, &mp->n);
   if (!main_sigchld_set_up)
     {
 #ifdef USE_SELF_PIPE
@@ -396,116 +463,117 @@ process_fork(struct main_process *mp)
 }
 
 void
-main_debug(void)
+main_debug_context(struct main_context *m UNUSED)
 {
 #ifdef CONFIG_DEBUG
-  msg(L_DEBUG, "### Main loop status on %lld", (long long)main_now);
+  msg(L_DEBUG, "### Main loop status on %lld", (long long) m->now);
   msg(L_DEBUG, "\tActive timers:");
-  for (uns i = 1; i <= main_timer_cnt; i++)
+  uns num_timers = count_timers(m);
+  for (uns i = 1; i <= num_timers; i++)
     {
-      struct main_timer *tm = main_timer_table.ptr[i];
-      msg(L_DEBUG, "\t\t%p (expires %lld, data %p)", tm, (long long)(tm->expires ? tm->expires-main_now : 999999), tm->data);
+      struct main_timer *tm = m->timer_table[i];
+      msg(L_DEBUG, "\t\t%p (expires %lld, data %p)", tm, (long long)(tm->expires ? tm->expires - m->now : 999999), tm->data);
     }
   struct main_file *fi;
   msg(L_DEBUG, "\tActive files:");
-  CLIST_WALK(fi, main_file_list)
+  CLIST_WALK(fi, m->file_list)
     msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, eh %p, expires %lld, data %p)",
 	fi, fi->fd, fi->read_handler, fi->write_handler, fi->error_handler,
-	(long long)(fi->timer.expires ? fi->timer.expires-main_now : 999999), fi->data);
+	(long long)(fi->timer.expires ? fi->timer.expires - m->now : 999999), fi->data);
   msg(L_DEBUG, "\tActive hooks:");
   struct main_hook *ho;
-  CLIST_WALK(ho, main_hook_done_list)
+  CLIST_WALK(ho, m->hook_done_list)
     msg(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
-  CLIST_WALK(ho, main_hook_list)
+  CLIST_WALK(ho, m->hook_list)
     msg(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
   msg(L_DEBUG, "\tActive processes:");
   struct main_process *pr;
-  CLIST_WALK(pr, main_process_list)
+  CLIST_WALK(pr, m->process_list)
     msg(L_DEBUG, "\t\t%p (pid %d, data %p)", pr, pr->pid, pr->data);
 #endif
 }
 
 static void
-main_rebuild_poll_table(void)
+main_rebuild_poll_table(struct main_context *m)
 {
   struct main_file *fi;
-  if (main_poll_table_size < main_file_cnt)
+  if (m->poll_table_size < m->file_cnt)
     {
-      if (main_poll_table)
-	xfree(main_poll_table);
+      if (m->poll_table)
+	xfree(m->poll_table);
       else
-	main_poll_table_size = 1;
-      while (main_poll_table_size < main_file_cnt)
-	main_poll_table_size *= 2;
-      main_poll_table = xmalloc(sizeof(struct pollfd) * main_poll_table_size);
+	m->poll_table_size = 1;
+      while (m->poll_table_size < m->file_cnt)
+	m->poll_table_size *= 2;
+      m->poll_table = xmalloc(sizeof(struct pollfd) * m->poll_table_size);
     }
-  struct pollfd *p = main_poll_table;
-  DBG("MAIN: Rebuilding poll table: %d of %d entries set", main_file_cnt, main_poll_table_size);
-  CLIST_WALK(fi, main_file_list)
+  struct pollfd *p = m->poll_table;
+  DBG("MAIN: Rebuilding poll table: %d of %d entries set", m->file_cnt, m->poll_table_size);
+  CLIST_WALK(fi, m->file_list)
     {
       p->fd = fi->fd;
       fi->pollfd = p++;
       file_chg(fi);
     }
-  main_poll_table_obsolete = 0;
+  m->poll_table_obsolete = 0;
 }
 
 void
 main_loop(void)
 {
   DBG("MAIN: Entering main_loop");
-  ASSERT(main_hook_list.head.next);
+  struct main_context *m = main_current();
 
   struct main_file *fi;
   struct main_hook *ho;
   struct main_timer *tm;
   struct main_process *pr;
 
-  main_get_time();
+  do_main_get_time(m);
   for (;;)
     {
-      timestamp_t wake = main_now + 1000000000;
-      while (main_timer_cnt && (tm = main_timer_table.ptr[1])->expires <= main_now)
+      timestamp_t wake = m->now + 1000000000;
+      while (GARY_SIZE(m->timer_table) > 1 && (tm = m->timer_table[1])->expires <= m->now)
 	{
-	  DBG("MAIN: Timer %p expired at now-%lld", tm, (long long)(main_now - tm->expires));
+	  DBG("MAIN: Timer %p expired at now-%lld", tm, (long long)(m->now - tm->expires));
 	  tm->handler(tm);
 	}
       int hook_min = HOOK_RETRY;
       int hook_max = HOOK_SHUTDOWN;
-      while (ho = clist_remove_head(&main_hook_list))
+      while (ho = clist_remove_head(&m->hook_list))
 	{
-	  clist_add_tail(&main_hook_done_list, &ho->n);
+	  clist_add_tail(&m->hook_done_list, &ho->n);
 	  DBG("MAIN: Hook %p", ho);
 	  int ret = ho->handler(ho);
 	  hook_min = MIN(hook_min, ret);
 	  hook_max = MAX(hook_max, ret);
 	}
-      clist_move(&main_hook_list, &main_hook_done_list);
+      clist_move(&m->hook_list, &m->hook_done_list);
       if (hook_min == HOOK_SHUTDOWN ||
 	  hook_min == HOOK_DONE && hook_max == HOOK_DONE ||
-	  main_shutdown)
+	  m->shutdown)
 	{
-	  DBG("MAIN: Shut down by %s", main_shutdown ? "main_shutdown" : "a hook");
+	  DBG("MAIN: Shut down by %s", m->shutdown ? "main_shutdown" : "a hook");
 	  return;
 	}
       if (hook_max == HOOK_RETRY)
 	wake = 0;
-      if (main_poll_table_obsolete)
-	main_rebuild_poll_table();
+      if (m->poll_table_obsolete)
+	main_rebuild_poll_table(m);
 #ifndef USE_SELF_PIPE
       // We don't have a reliable flag without the self-pipe.
       chld_received = 1;
 #endif
-      if (chld_received && !clist_empty(&main_process_list))
+      if (chld_received && !clist_empty(&m->process_list))
 	{
 	  int stat;
 	  pid_t pid;
-	  wake = MIN(wake, main_now + 10000);
+	  wake = MIN(wake, m->now + 10000);
 	  chld_received = 0;
 	  while ((pid = waitpid(-1, &stat, WNOHANG)) > 0)
 	    {
 	      DBG("MAIN: Child %d exited with status %x", pid, stat);
-	      CLIST_WALK(pr, main_process_list)
+	      CLIST_WALK(pr, m->process_list)
 		if (pr->pid == pid)
 		  {
 		    pr->status = stat;
@@ -518,34 +586,34 @@ main_loop(void)
 	      wake = 0;
 	    }
 	}
-      if (main_timer_cnt && (tm = main_timer_table.ptr[1])->expires < wake)
+      if (count_timers(m) && (tm = m->timer_table[1])->expires < wake)
 	wake = tm->expires;
-      main_get_time();
-      int timeout = ((wake > main_now) ? wake - main_now : 0);
-      DBG("MAIN: Poll for %d fds and timeout %d ms", main_file_cnt, timeout);
-      int p = poll(main_poll_table, main_file_cnt, timeout);
-      timestamp_t old_now = main_now;
-      main_get_time();
-      main_idle_time += main_now - old_now;
+      do_main_get_time(m);
+      int timeout = ((wake > m->now) ? wake - m->now : 0);
+      DBG("MAIN: Poll for %d fds and timeout %d ms", m->file_cnt, timeout);
+      int p = poll(m->poll_table, m->file_cnt, timeout);
+      timestamp_t old_now = m->now;
+      do_main_get_time(m);
+      m->idle_time += m->now - old_now;
       if (p > 0)
 	{
-	  struct pollfd *p = main_poll_table;
-	  CLIST_WALK(fi, main_file_list)
+	  struct pollfd *p = m->poll_table;
+	  CLIST_WALK(fi, m->file_list)
 	    {
 	      if (p->revents & (POLLIN | POLLHUP | POLLERR))
 		{
 		  do
 		    DBG("MAIN: Read event on fd %d", p->fd);
-		  while (fi->read_handler && fi->read_handler(fi) && !main_poll_table_obsolete);
-		  if (main_poll_table_obsolete)	/* File entries have been inserted or deleted => better not risk continuing to nowhere */
+		  while (fi->read_handler && fi->read_handler(fi) && !m->poll_table_obsolete);
+		  if (m->poll_table_obsolete)	/* File entries have been inserted or deleted => better not risk continuing to nowhere */
 		    break;
 		}
 	      if (p->revents & (POLLOUT | POLLERR))
 		{
 		  do
 		    DBG("MAIN: Write event on fd %d", p->fd);
-		  while (fi->write_handler && fi->write_handler(fi) && !main_poll_table_obsolete);
-		  if (main_poll_table_obsolete)
+		  while (fi->write_handler && fi->write_handler(fi) && !m->poll_table_obsolete);
+		  if (m->poll_table_obsolete)
 		    break;
 		}
 	      p++;
@@ -597,7 +665,7 @@ static int dhook(struct main_hook *ho UNUSED)
 static void dtimer(struct main_timer *tm)
 {
   msg(L_INFO, "Timer tick");
-  timer_add(tm, main_now + 10000);
+  timer_add(tm, main_get_now() + 10000);
 }
 
 static void dentry(void)
@@ -635,7 +703,7 @@ main(void)
   hook_add(&hook);
 
   tm.handler = dtimer;
-  timer_add(&tm, main_now + 1000);
+  timer_add(&tm, main_get_now() + 1000);
 
   mp.handler = dexit;
   if (!process_fork(&mp))

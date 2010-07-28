@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Main Loop
  *
- *	(c) 2004--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 2004--2010 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -21,21 +21,78 @@
  * These are the only ones that are intended to be manipulated by the user.
  * The remaining fields serve for internal use only and you must initialize them
  * to zeroes.
+ *
+ * FIXME: The documentation is outdated.
  ***/
+
+struct main_context {
+  timestamp_t now;			/** [*] Current time in milliseconds since the UNIX epoch. See @main_get_time(). **/
+  ucw_time_t now_seconds;		/** [*] Current time in seconds since the epoch. **/
+  timestamp_t idle_time;		/** [*] Total time in milliseconds spent by waiting for events. **/
+  uns shutdown;				/** [*] Setting this to nonzero forces the @main_loop() function to terminate. **/
+  clist file_list;
+  clist hook_list;
+  clist hook_done_list;
+  clist process_list;
+  uns file_cnt;
+  uns poll_table_obsolete;
+  uns poll_table_size;
+  struct pollfd *poll_table;
+  struct main_timer **timer_table;	/* Growing array containing the heap of timers */
+};
+
+struct main_context *main_new(void);
+void main_delete(struct main_context *m);
+struct main_context *main_switch_context(struct main_context *m);
+struct main_context *main_current(void);
+
+void main_init(void);
+void main_cleanup(void);
+
+/**
+ * Start the mainloop.
+ * It will watch the provided objects and call callbacks.
+ * Terminates when someone sets <<var_main_shutdown,`main_shutdown`>>
+ * to nonzero, when all <<hook,hooks>> return
+ * <<enum_main_hook_return,`HOOK_DONE`>> or at last one <<hook,hook>>
+ * returns <<enum_main_hook_return,`HOOK_SHUTDOWN`>>.
+ **/
+void main_loop(void);
+
+void main_debug_context(struct main_context *m);
+
+static inline void
+main_debug(void)
+{
+  main_debug_context(main_current());
+}
 
 /***
  * [[time]]
- * Time manipulation
- * -----------------
+ * Timers
+ * ------
  *
  * This part allows you to get the current time and request
  * to have your function called when the time comes.
  ***/
 
-extern timestamp_t main_now;			/** Current time in milliseconds since the UNIX epoch. See @main_get_time(). **/
-extern ucw_time_t main_now_seconds;		/** Current time in seconds since the epoch. **/
-extern timestamp_t main_idle_time;		/** Total time in milliseconds spent in the poll() call. **/
-extern clist main_file_list, main_hook_list, main_hook_done_list, main_process_list;
+static inline timestamp_t
+main_get_now(void)
+{
+  return main_current()->now;
+}
+
+static inline ucw_time_t
+main_get_now_seconds(void)
+{
+  return main_current()->now_seconds;
+}
+
+static inline void
+main_shut_down(void)
+{
+  main_current()->shutdown = 1;
+}
 
 /**
  * This is a description of a timer.
@@ -321,26 +378,5 @@ void process_del(struct main_process *mp);
  * - Returns 1.
  **/
 int process_fork(struct main_process *mp);
-
-/***
- * [[control]]
- * Control of the mainloop
- * -----------------------
- *
- * These functions control the mainloop as a whole.
- ***/
-
-extern uns main_shutdown;			/** Setting this to nonzero forces the @main_loop() function to terminate. **/
-void main_init(void);				/** Initializes the mainloop structures. Call before any `*_add` function. **/
-/**
- * Start the mainloop.
- * It will watch the provided objects and call callbacks.
- * Terminates when someone sets <<var_main_shutdown,`main_shutdown`>>
- * to nonzero, when all <<hook,hooks>> return
- * <<enum_main_hook_return,`HOOK_DONE`>> or at last one <<hook,hook>>
- * returns <<enum_main_hook_return,`HOOK_SHUTDOWN`>>.
- **/
-void main_loop(void);
-void main_debug(void);				/** Prints a lot of debug information about current status of the mainloop. **/
 
 #endif
