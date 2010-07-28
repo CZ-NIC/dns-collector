@@ -206,15 +206,6 @@ timer_del(struct main_timer *tm)
   timer_add(tm, 0);
 }
 
-static void
-file_timer_expired(struct main_timer *tm)
-{
-  struct main_file *fi = tm->data;
-  timer_del(&fi->timer);
-  if (fi->error_handler)
-    fi->error_handler(fi, MFERR_TIMEOUT);
-}
-
 void
 file_add(struct main_file *fi)
 {
@@ -223,8 +214,6 @@ file_add(struct main_file *fi)
   DBG("MAIN: Adding file %p (fd=%d)", fi, fi->fd);
   ASSERT(!fi->n.next);
   clist_add_tail(&m->file_list, &fi->n);
-  fi->timer.handler = file_timer_expired;
-  fi->timer.data = fi;
   m->file_cnt++;
   m->poll_table_obsolete = 1;
   if (fcntl(fi->fd, F_SETFL, O_NONBLOCK) < 0)
@@ -252,104 +241,10 @@ file_del(struct main_file *fi)
 
   DBG("MAIN: Deleting file %p (fd=%d)", fi, fi->fd);
   ASSERT(fi->n.next);
-  timer_del(&fi->timer);
   clist_remove(&fi->n);
   m->file_cnt--;
   m->poll_table_obsolete = 1;
   fi->n.next = fi->n.prev = NULL;
-}
-
-static int
-file_read_handler(struct main_file *fi)
-{
-  while (fi->rpos < fi->rlen)
-    {
-      int l = read(fi->fd, fi->rbuf + fi->rpos, fi->rlen - fi->rpos);
-      DBG("MAIN: FD %d: read %d", fi->fd, l);
-      if (l < 0)
-	{
-	  if (errno != EINTR && errno != EAGAIN && fi->error_handler)
-	    fi->error_handler(fi, MFERR_READ);
-	  return 0;
-	}
-      else if (!l)
-	break;
-      fi->rpos += l;
-    }
-  DBG("MAIN: FD %d done read %d of %d", fi->fd, fi->rpos, fi->rlen);
-  fi->read_handler = NULL;
-  file_chg(fi);
-  fi->read_done(fi);
-  return 1;
-}
-
-static int
-file_write_handler(struct main_file *fi)
-{
-  while (fi->wpos < fi->wlen)
-    {
-      int l = write(fi->fd, fi->wbuf + fi->wpos, fi->wlen - fi->wpos);
-      DBG("MAIN: FD %d: write %d", fi->fd, l);
-      if (l < 0)
-	{
-	  if (errno != EINTR && errno != EAGAIN && fi->error_handler)
-	    fi->error_handler(fi, MFERR_WRITE);
-	  return 0;
-	}
-      fi->wpos += l;
-    }
-  DBG("MAIN: FD %d done write %d", fi->fd, fi->wpos);
-  fi->write_handler = NULL;
-  file_chg(fi);
-  fi->write_done(fi);
-  return 1;
-}
-
-void
-file_read(struct main_file *fi, void *buf, uns len)
-{
-  ASSERT(fi->n.next);
-  if (len)
-    {
-      fi->read_handler = file_read_handler;
-      fi->rbuf = buf;
-      fi->rpos = 0;
-      fi->rlen = len;
-    }
-  else
-    {
-      fi->read_handler = NULL;
-      fi->rbuf = NULL;
-      fi->rpos = fi->rlen = 0;
-    }
-  file_chg(fi);
-}
-
-void
-file_write(struct main_file *fi, void *buf, uns len)
-{
-  ASSERT(fi->n.next);
-  if (len)
-    {
-      fi->write_handler = file_write_handler;
-      fi->wbuf = buf;
-      fi->wpos = 0;
-      fi->wlen = len;
-    }
-  else
-    {
-      fi->write_handler = NULL;
-      fi->wbuf = NULL;
-      fi->wpos = fi->wlen = 0;
-    }
-  file_chg(fi);
-}
-
-void
-file_set_timeout(struct main_file *fi, timestamp_t expires)
-{
-  ASSERT(fi->n.next);
-  timer_add(&fi->timer, expires);
 }
 
 void
@@ -584,9 +479,9 @@ main_debug_context(struct main_context *m UNUSED)
     }
   msg(L_DEBUG, "\tActive files:");
   CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
-    msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, eh %p, expires %lld, data %p)",
-	fi, fi->fd, fi->read_handler, fi->write_handler, fi->error_handler,
-	(long long)(fi->timer.expires ? fi->timer.expires - m->now : 999999), fi->data);
+    msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, data %p)",
+	fi, fi->fd, fi->read_handler, fi->write_handler, fi->data);
+    // FIXME: Can we display status of block_io requests somehow?
   msg(L_DEBUG, "\tActive hooks:");
   CLIST_FOR_EACH(struct main_hook *, ho, m->hook_done_list)
     msg(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
@@ -706,34 +601,34 @@ main_loop(void)
 #ifdef TEST
 
 static struct main_process mp;
-static struct main_file fin, fout;
+static struct main_block_io fin, fout;
 static struct main_hook hook;
 static struct main_timer tm;
 static struct main_signal sg;
 
 static byte rb[16];
 
-static void dread(struct main_file *fi)
+static void dread(struct main_block_io *bio)
 {
-  if (fi->rpos < fi->rlen)
+  if (bio->rpos < bio->rlen)
     {
       msg(L_INFO, "Read EOF");
-      file_del(fi);
+      block_io_del(bio);
     }
   else
     {
       msg(L_INFO, "Read done");
-      file_read(fi, rb, sizeof(rb));
+      block_io_read(bio, rb, sizeof(rb));
     }
 }
 
-static void derror(struct main_file *fi, int cause)
+static void derror(struct main_block_io *bio, int cause)
 {
   msg(L_INFO, "Error: %m !!! (cause %d)", cause);
-  file_del(fi);
+  block_io_del(bio);
 }
 
-static void dwrite(struct main_file *fi UNUSED)
+static void dwrite(struct main_block_io *bio UNUSED)
 {
   msg(L_INFO, "Write done");
 }
@@ -775,17 +670,15 @@ main(void)
   log_init(NULL);
   main_init();
 
-  fin.fd = 0;
   fin.read_done = dread;
   fin.error_handler = derror;
-  file_add(&fin);
-  file_read(&fin, rb, sizeof(rb));
+  block_io_add(&fin, 0);
+  block_io_read(&fin, rb, sizeof(rb));
 
-  fout.fd = 1;
   fout.write_done = dwrite;
   fout.error_handler = derror;
-  file_add(&fout);
-  file_write(&fout, "Hello, world!\n", 14);
+  block_io_add(&fout, 1);
+  block_io_write(&fout, "Hello, world!\n", 14);
 
   hook.handler = dhook;
   hook_add(&hook);

@@ -1,4 +1,4 @@
-# Makefile for the UCW Library (c) 1997--2009 Martin Mares <mj@ucw.cz>
+# Makefile for the UCW Library (c) 1997--2010 Martin Mares <mj@ucw.cz>
 
 DIRS+=ucw
 LIBUCW=$(o)/ucw/libucw.pc
@@ -23,7 +23,8 @@ LIBUCW_MODS= \
 	prime primetable random timer randomkey \
 	bit-ffs bit-fls \
 	url \
-	mainloop exitstatus runcmd sighandler \
+	mainloop main-block \
+	exitstatus runcmd sighandler \
 	lizard lizard-safe adler32 \
 	md5 sha1 sha1-hmac \
 	base64 base224 \

@@ -188,28 +188,8 @@ struct main_file {
   int fd;					/* [*] File descriptor */
   int (*read_handler)(struct main_file *fi);	/* [*] To be called when ready for reading/writing; must call file_chg() afterwards */
   int (*write_handler)(struct main_file *fi);
-  void (*error_handler)(struct main_file *fi, int cause);	/* [*] Handler to call on errors */
   void *data;					/* [*] Data for use by the handlers */
-  byte *rbuf;					/* Read/write pointers for use by file_read/write */
-  uns rpos, rlen;
-  byte *wbuf;
-  uns wpos, wlen;
-  void (*read_done)(struct main_file *fi);	/* [*] Called when file_read is finished; rpos < rlen if EOF */
-  void (*write_done)(struct main_file *fi);	/* [*] Called when file_write is finished */
-  struct main_timer timer;
   struct pollfd *pollfd;
-};
-
-/**
- * Specifies when or why an error happened. This is passed to the error handler.
- * `errno` is still set to the original source of error. The only exception
- * is `MFERR_TIMEOUT`, in which case `errno` is not set and the only possible
- * cause of it is timeout on the file descriptor (see @file_set_timeout).
- **/
-enum main_file_err_cause {
-  MFERR_READ,
-  MFERR_WRITE,
-  MFERR_TIMEOUT
 };
 
 /**
@@ -233,7 +213,41 @@ void file_chg(struct main_file *fi);
  **/
 void file_del(struct main_file *fi);
 /**
- * Asks the mainloop to read @len bytes of data from @fi into @buf.
+ * Closes all file descriptors known to mainloop. Often used between fork()
+ * and exec().
+ **/
+void file_close_all(void);
+
+struct main_block_io {
+  struct main_file file;
+  byte *rbuf;					/* Read/write pointers for use by file_read/write */
+  uns rpos, rlen;
+  byte *wbuf;
+  uns wpos, wlen;
+  void (*read_done)(struct main_block_io *bio);	/* [*] Called when file_read is finished; rpos < rlen if EOF */
+  void (*write_done)(struct main_block_io *bio);	/* [*] Called when file_write is finished */
+  void (*error_handler)(struct main_block_io *bio, int cause);	/* [*] Handler to call on errors */
+  struct main_timer timer;
+  void *data;					/* [*] Data for use by the handlers */
+};
+
+void block_io_add(struct main_block_io *bio, int fd);
+void block_io_del(struct main_block_io *bio);
+
+/**
+ * Specifies when or why an error happened. This is passed to the error handler.
+ * `errno` is still set to the original source of error. The only exception
+ * is `MFERR_TIMEOUT`, in which case `errno` is not set and the only possible
+ * cause of it is timeout on the file descriptor (see @file_set_timeout).
+ **/
+enum block_io_err_cause {
+  MFERR_READ,
+  MFERR_WRITE,
+  MFERR_TIMEOUT
+};
+
+/**
+ * Asks the mainloop to read @len bytes of data from @bio into @buf.
  * It cancels any previous unfinished read requested this way and overwrites
  * `read_handler`.
  *
@@ -245,9 +259,9 @@ void file_del(struct main_file *fi);
  * You can use a call with zero @len to cancel current read, but all read data
  * will be thrown away.
  **/
-void file_read(struct main_file *fi, void *buf, uns len);
+void block_io_read(struct main_block_io *bio, void *buf, uns len);
 /**
- * Requests that the mainloop writes @len bytes of data from @buf to @fi.
+ * Requests that the mainloop writes @len bytes of data from @buf to @bio.
  * Cancels any previous unfinished write and overwrites `write_handler`.
  *
  * When it is written, write_done() handler is called.
@@ -257,11 +271,11 @@ void file_read(struct main_file *fi, void *buf, uns len);
  * If you call it with zero @len, it will cancel the previous write, but note
  * some data may already be written.
  **/
-void file_write(struct main_file *fi, void *buf, uns len);
+void block_io_write(struct main_block_io *bio, void *buf, uns len);
 /**
- * Sets a timer for a file @fi. If the timer is not overwritten or disabled
+ * Sets a timer for a file @bio. If the timer is not overwritten or disabled
  * until @expires, the file timeouts and error_handler() is called with
- * <<enum_main_file_err_cause,`MFERR_TIMEOUT`>>.
+ * <<enum_block_io_err_cause,`MFERR_TIMEOUT`>>.
  *
  * The mainloop does not disable or reset it, when something happens, it just
  * bundles a timer with the file. If you want to watch for inactivity, it is
@@ -269,7 +283,7 @@ void file_write(struct main_file *fi, void *buf, uns len);
  *
  * The @expires parameter is absolute (add <<var_main_now,`main_now`>> if you
  * need relative). The call and overwrites previously set timeout. Value of `0`
- * disables the timeout (the <<enum_main_file_err_cause,`MFERR_TIMEOUT`>> will
+ * disables the timeout (the <<enum_block_io_err_cause,`MFERR_TIMEOUT`>> will
  * not trigger).
  *
  * The use-cases for this are mainly sockets or pipes, when:
@@ -279,19 +293,14 @@ void file_write(struct main_file *fi, void *buf, uns len);
  * - You want to enforce answer in a given time (for example authentication).
  * - You give maximum time for a whole connection.
  **/
-void file_set_timeout(struct main_file *fi, timestamp_t expires);
-/**
- * Closes all file descriptors known to mainloop. Often used between fork()
- * and exec().
- **/
-void file_close_all(void);
+void block_io_set_timeout(struct main_block_io *bio, timestamp_t expires);
 
 /***
  * [[hooks]]
  * Loop hooks
  * ----------
  *
- * The hooks are called whenever the mainloop perform an iteration.
+ * The hooks are called whenever the mainloop performs an iteration.
  * You can shutdown the mainloop from within them or request an iteration
  * to happen without sleeping (just poll, no waiting for events).
  ***/
