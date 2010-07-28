@@ -75,8 +75,9 @@ main_delete(struct main_context *m)
   ASSERT(clist_empty(&m->process_list));
   if (m->timer_table)
     GARY_FREE(m->timer_table);
-  // FIXME: Free poll table
+  xfree(m->poll_table);
   xfree(m);
+  // FIXME: Some mechanism for cleaning up after fork()
 }
 
 struct main_context *
