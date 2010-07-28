@@ -673,6 +673,7 @@ static int dhook(struct main_hook *ho UNUSED)
 static void dtimer(struct main_timer *tm)
 {
   msg(L_INFO, "Timer tick");
+  timer_add_rel(tm, 11000);
   timer_add_rel(tm, 10000);
 }
 
