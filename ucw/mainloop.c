@@ -27,19 +27,15 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 
+#ifdef CONFIG_UCW_THREADS
+#include <pthread.h>
+#define THREAD_SIGMASK pthread_sigmask
+#else
+#define THREAD_SIGMASK sigprocmask
+#endif
+
 #define MAIN_TIMER_LESS(x,y) ((x)->expires < (y)->expires)
 #define MAIN_TIMER_SWAP(heap,a,b,t) (t=heap[a], heap[a]=heap[b], heap[b]=t, heap[a]->index=(a), heap[b]->index=(b))
-
-// FIXME: Delivery of signals to threads?
-static uns main_sigchld_set_up;
-static volatile sig_atomic_t chld_received = 0;
-
-#ifdef O_CLOEXEC
-// On recent Linux systems, O_CLOEXEC flag is available and we can get around
-// the race condition of poll().
-#define USE_SELF_PIPE
-static int sig_pipe_recv, sig_pipe_send;
-#endif
 
 static void
 do_main_get_time(struct main_context *m)
@@ -60,8 +56,11 @@ main_new(void)
   clist_init(&m->hook_list);
   clist_init(&m->hook_done_list);
   clist_init(&m->process_list);
+  clist_init(&m->signal_list);
   m->poll_table_obsolete = 1;
   do_main_get_time(m);
+  sigemptyset(&m->want_signals);
+  m->sig_pipe_recv = m->sig_pipe_send = -1;
 
   return m;
 }
@@ -69,10 +68,20 @@ main_new(void)
 void
 main_delete(struct main_context *m)
 {
+  if (m->sigchld_handler)
+    signal_del(m->sigchld_handler);
+  if (m->sig_pipe_file)
+    file_del(m->sig_pipe_file);
+  if (m->sig_pipe_recv >= 0)
+    {
+      close(m->sig_pipe_recv);
+      close(m->sig_pipe_send);
+    }
   ASSERT(clist_empty(&m->file_list));
   ASSERT(clist_empty(&m->hook_list));
   ASSERT(clist_empty(&m->hook_done_list));
   ASSERT(clist_empty(&m->process_list));
+  ASSERT(clist_empty(&m->signal_list));
   if (m->timer_table)
     GARY_FREE(m->timer_table);
   xfree(m->poll_table);
@@ -85,7 +94,18 @@ main_switch_context(struct main_context *m)
 {
   struct ucwlib_context *c = ucwlib_thread_context();
   struct main_context *m0 = c->main_context;
+
+  /*
+   *  Not only we need to switch the signal sets of the two contexts,
+   *  but it is also necessary to avoid invoking a signal handler
+   *  in the middle of changing c->main_context.
+   */
+  if (m0 && !clist_empty(&m0->signal_list))
+    THREAD_SIGMASK(SIG_BLOCK, &m0->want_signals, NULL);
   c->main_context = m;
+  if (m && !clist_empty(&m->signal_list))
+    THREAD_SIGMASK(SIG_UNBLOCK, &m->want_signals, NULL);
+
   return m0;
 }
 
@@ -360,47 +380,28 @@ hook_del(struct main_hook *ho)
   ho->n.next = ho->n.prev = NULL;
 }
 
-#ifdef USE_SELF_PIPE
 static void
-main_sigchld_handler(int x UNUSED)
+sigchld_received(struct main_signal *sg UNUSED)
 {
-  int old_errno = errno;
-  DBG("SIGCHLD received");
-  chld_received = 1;
-  ssize_t result;
-  while((result = write(sig_pipe_send, "c", 1)) == -1 && errno == EINTR);
-  if(result == -1 && errno != EAGAIN)
-    msg(L_SIGHANDLER|L_ERROR, "Could not write to self-pipe: %m");
-  errno = old_errno;
-}
+  struct main_context *m = main_current();
+  int stat;
+  pid_t pid;
 
-static int
-dummy_read_handler(struct main_file *mp)
-{
-  char buffer[1024];
-  ssize_t result = read(mp->fd, buffer, 1024);
-  if(result == -1 && errno != EAGAIN)
-    msg(L_ERROR, "Could not read from selfpipe: %m");
-  file_chg(mp);
-  return result == 1024;
+  while ((pid = waitpid(-1, &stat, WNOHANG)) > 0)
+    {
+      DBG("MAIN: Child %d exited with status %x", pid, stat);
+      CLIST_FOR_EACH(struct main_process *, pr, m->process_list)
+	if (pr->pid == pid)
+	  {
+	    pr->status = stat;
+	    process_del(pr);
+	    format_exit_status(pr->status_msg, pr->status);
+	    DBG("MAIN: Calling process exit handler");
+	    pr->handler(pr);
+	    break;
+	  }
+    }
 }
-
-static void
-pipe_configure(int fd)
-{
-  int flags;
-  if((flags = fcntl(fd, F_GETFL)) == -1 || fcntl(fd, F_SETFL, flags|O_NONBLOCK))
-    die("Could not set file descriptor %d to non-blocking: %m", fd);
-  if((flags = fcntl(fd, F_GETFD)) == -1 || fcntl(fd, F_SETFD, flags|O_CLOEXEC))
-    die("Could not set file descriptor %d to close-on-exec: %m", fd);
-}
-#else
-static void
-main_sigchld_handler(int x UNUSED)
-{
-  DBG("SIGCHLD received");
-}
-#endif
 
 void
 process_add(struct main_process *mp)
@@ -411,30 +412,13 @@ process_add(struct main_process *mp)
   ASSERT(!mp->n.next);
   ASSERT(mp->handler);
   clist_add_tail(&m->process_list, &mp->n);
-  if (!main_sigchld_set_up)
+  if (!m->sigchld_handler)
     {
-#ifdef USE_SELF_PIPE
-      int pipe_result[2];
-      if(pipe(pipe_result) == -1)
-	die("Could not create selfpipe:%m");
-      pipe_configure(pipe_result[0]);
-      pipe_configure(pipe_result[1]);
-      sig_pipe_recv = pipe_result[0];
-      sig_pipe_send = pipe_result[1];
-      static struct main_file self_pipe;
-      self_pipe = (struct main_file) {
-	.fd = sig_pipe_recv,
-	.read_handler = dummy_read_handler
-      };
-      file_add(&self_pipe);
-#endif
-      struct sigaction sa;
-      bzero(&sa, sizeof(sa));
-      sa.sa_handler = main_sigchld_handler;
-      sa.sa_flags = SA_NOCLDSTOP | SA_RESTART;
-      sigaction(SIGCHLD, &sa, NULL);
-      main_sigchld_set_up = 1;
-      chld_received = 1; // The signal may have come before the handler
+      struct main_signal *sg = xmalloc_zero(sizeof(*sg));
+      m->sigchld_handler = sg;
+      sg->signum = SIGCHLD;
+      sg->handler = sigchld_received;
+      signal_add(sg);
     }
 }
 
@@ -470,6 +454,122 @@ process_fork(struct main_process *mp)
     }
 }
 
+static int
+pipe_read_handler(struct main_file *mf UNUSED)
+{
+  struct main_context *m = main_current();
+  int signum;
+  int n = read(m->sig_pipe_recv, &signum, sizeof(signum));
+
+  if (n < 0)
+    {
+      if (errno != EAGAIN)
+	msg(L_ERROR, "Error reading signal pipe: %m");
+      return 0;
+    }
+  ASSERT(n == sizeof(signum));
+
+  DBG("MAIN: Sigpipe: received signal %d", signum);
+  struct main_signal *tmp;
+  CLIST_FOR_EACH_DELSAFE(struct main_signal *, sg, m->signal_list, tmp)
+    if (sg->signum == signum)
+      {
+	DBG("MAIN: Sigpipe: invoking handler %p", sg);
+	// FIXME: Can the handler disappear from here?
+	sg->handler(sg);
+      }
+
+  return 1;
+}
+
+static void
+pipe_configure(int fd)
+{
+  int flags;
+  if ((flags = fcntl(fd, F_GETFL)) < 0 || fcntl(fd, F_SETFL, flags|O_NONBLOCK) < 0)
+    die("Could not set file descriptor %d to non-blocking: %m", fd);
+}
+
+static void
+pipe_setup(struct main_context *m)
+{
+  DBG("MAIN: Sigpipe: Setting up the pipe");
+
+  int pipe_result[2];
+  if (pipe(pipe_result) == -1)
+    die("Could not create signal pipe: %m");
+  pipe_configure(pipe_result[0]);
+  pipe_configure(pipe_result[1]);
+  m->sig_pipe_recv = pipe_result[0];
+  m->sig_pipe_send = pipe_result[1];
+
+  struct main_file *f = xmalloc_zero(sizeof(*f));
+  m->sig_pipe_file = f;
+  f->fd = m->sig_pipe_recv;
+  f->read_handler = pipe_read_handler;
+  file_add(f);
+}
+
+static void
+signal_handler_pipe(int signum)
+{
+  struct main_context *m = main_current();
+#ifdef LOCAL_DEBUG
+  msg(L_DEBUG | L_SIGHANDLER, "MAIN: Sigpipe: sending signal %d down the drain", signum);
+#endif
+  write(m->sig_pipe_send, &signum, sizeof(signum));
+}
+
+void
+signal_add(struct main_signal *ms)
+{
+  struct main_context *m = main_current();
+
+  DBG("MAIN: Adding signal %p (sig=%d)", ms, ms->signum);
+
+  ASSERT(!ms->n.next);
+  clist_add_tail(&m->signal_list, &ms->n);
+  if (m->sig_pipe_recv < 0)
+    pipe_setup(m);
+
+  struct sigaction sa = {
+    .sa_handler = signal_handler_pipe,
+    .sa_flags = SA_NOCLDSTOP | SA_RESTART,
+  };
+  sigaction(ms->signum, &sa, NULL);
+
+  sigset_t ss;
+  sigemptyset(&ss);
+  sigaddset(&ss, ms->signum);
+  THREAD_SIGMASK(SIG_UNBLOCK, &ss, NULL);
+  sigaddset(&m->want_signals, ms->signum);
+}
+
+void
+signal_del(struct main_signal *ms)
+{
+  struct main_context *m = main_current();
+
+  DBG("MAIN: Deleting signal %p (sig=%d)", ms, ms->signum);
+
+  ASSERT(ms->n.next);
+  clist_remove(&ms->n);
+  ms->n.next = ms->n.prev = NULL;
+
+  int another = 0;
+  CLIST_FOR_EACH(struct main_signal *, s, m->signal_list)
+    if (s->signum == ms->signum)
+      another++;
+  if (!another)
+    {
+      sigset_t ss;
+      sigemptyset(&ss);
+      sigaddset(&ss, ms->signum);
+      THREAD_SIGMASK(SIG_BLOCK, &ss, NULL);
+      sigdelset(&m->want_signals, ms->signum);
+    }
+}
+
 void
 main_debug_context(struct main_context *m UNUSED)
 {
@@ -482,22 +582,22 @@ main_debug_context(struct main_context *m UNUSED)
       struct main_timer *tm = m->timer_table[i];
       msg(L_DEBUG, "\t\t%p (expires %lld, data %p)", tm, (long long)(tm->expires ? tm->expires - m->now : 999999), tm->data);
     }
-  struct main_file *fi;
   msg(L_DEBUG, "\tActive files:");
-  CLIST_WALK(fi, m->file_list)
+  CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
     msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, eh %p, expires %lld, data %p)",
 	fi, fi->fd, fi->read_handler, fi->write_handler, fi->error_handler,
 	(long long)(fi->timer.expires ? fi->timer.expires - m->now : 999999), fi->data);
   msg(L_DEBUG, "\tActive hooks:");
-  struct main_hook *ho;
-  CLIST_WALK(ho, m->hook_done_list)
+  CLIST_FOR_EACH(struct main_hook *, ho, m->hook_done_list)
     msg(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
-  CLIST_WALK(ho, m->hook_list)
+  CLIST_FOR_EACH(struct main_hook *, ho, m->hook_list)
     msg(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
   msg(L_DEBUG, "\tActive processes:");
-  struct main_process *pr;
-  CLIST_WALK(pr, m->process_list)
-    msg(L_DEBUG, "\t\t%p (pid %d, data %p)", pr, pr->pid, pr->data);
+  CLIST_FOR_EACH(struct main_process *, pr, m->process_list)
+    msg(L_DEBUG, "\t\t%p (pid %d, func %p, data %p)", pr, pr->pid, pr->handler, pr->data);
+  msg(L_DEBUG, "\tActive signal catchers:");
+  CLIST_FOR_EACH(struct main_signal *, sg, m->signal_list)
+    msg(L_DEBUG, "\t\t%p (sig %d, func %p, data %p)", sg, sg->signum, sg->handler, sg->data);
 #endif
 }
 
@@ -535,7 +635,6 @@ main_loop(void)
   struct main_file *fi;
   struct main_hook *ho;
   struct main_timer *tm;
-  struct main_process *pr;
 
   do_main_get_time(m);
   for (;;)
@@ -568,32 +667,6 @@ main_loop(void)
 	wake = 0;
       if (m->poll_table_obsolete)
 	main_rebuild_poll_table(m);
-#ifndef USE_SELF_PIPE
-      // We don't have a reliable flag without the self-pipe.
-      chld_received = 1;
-#endif
-      if (chld_received && !clist_empty(&m->process_list))
-	{
-	  int stat;
-	  pid_t pid;
-	  wake = MIN(wake, m->now + 10000);
-	  chld_received = 0;
-	  while ((pid = waitpid(-1, &stat, WNOHANG)) > 0)
-	    {
-	      DBG("MAIN: Child %d exited with status %x", pid, stat);
-	      CLIST_WALK(pr, m->process_list)
-		if (pr->pid == pid)
-		  {
-		    pr->status = stat;
-		    process_del(pr);
-		    format_exit_status(pr->status_msg, pr->status);
-		    DBG("MAIN: Calling process exit handler");
-		    pr->handler(pr);
-		    break;
-		  }
-	      wake = 0;
-	    }
-	}
       if (count_timers(m) && (tm = m->timer_table[1])->expires < wake)
 	wake = tm->expires;
       do_main_get_time(m);
@@ -636,6 +709,7 @@ static struct main_process mp;
 static struct main_file fin, fout;
 static struct main_hook hook;
 static struct main_timer tm;
+static struct main_signal sg;
 
 static byte rb[16];
 
@@ -690,6 +764,11 @@ static void dexit(struct main_process *pr)
   msg(L_INFO, "Subprocess %d exited with status %x", pr->pid, pr->status);
 }
 
+static void dsignal(struct main_signal *sg UNUSED)
+{
+  msg(L_INFO, "SIGINT received (use Ctrl-\\ to really quit)");
+}
+
 int
 main(void)
 {
@@ -713,6 +792,10 @@ main(void)
 
   tm.handler = dtimer;
   timer_add_rel(&tm,  1000);
+
+  sg.signum = SIGINT;
+  sg.handler = dsignal;
+  signal_add(&sg);
 
   mp.handler = dexit;
   if (!process_fork(&mp))

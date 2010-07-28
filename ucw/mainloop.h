@@ -12,6 +12,8 @@
 
 #include "ucw/clists.h"
 
+#include <signal.h>
+
 /***
  * [[conventions]]
  * Conventions
@@ -34,11 +36,17 @@ struct main_context {
   clist hook_list;
   clist hook_done_list;
   clist process_list;
+  clist signal_list;
   uns file_cnt;
   uns poll_table_obsolete;
   uns poll_table_size;
   struct pollfd *poll_table;
   struct main_timer **timer_table;	/* Growing array containing the heap of timers */
+  sigset_t want_signals;
+  int sig_pipe_send;
+  int sig_pipe_recv;
+  struct main_file *sig_pipe_file;
+  struct main_signal *sigchld_handler;
 };
 
 struct main_context *main_new(void);
@@ -381,5 +389,17 @@ void process_del(struct main_process *mp);
  * - Returns 1.
  **/
 int process_fork(struct main_process *mp);
+
+/* FIXME: Docs */
+
+struct main_signal {
+  cnode n;
+  int signum;
+  void (*handler)(struct main_signal *ms);
+  void *data;
+};
+
+void signal_add(struct main_signal *ms);
+void signal_del(struct main_signal *ms);
 
 #endif
