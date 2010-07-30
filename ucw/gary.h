@@ -18,7 +18,7 @@ struct gary_hdr {
 #define GARY_BODY(ptr) ((byte *)(ptr) + GARY_HDR_SIZE)
 
 #define GARY_INIT(ptr, n) (ptr) = gary_init(sizeof(*(ptr)), (n))
-#define GARY_FREE(ptr) xfree(GARY_HDR(ptr))
+#define GARY_FREE(ptr) do { if (ptr) xfree(GARY_HDR(ptr)); } while (0)
 #define GARY_SIZE(ptr) (GARY_HDR(ptr)->num_elts)
 #define GARY_SET_SIZE(ptr, n) (ptr) = gary_set_size((ptr), (n))
 
