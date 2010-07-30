@@ -362,14 +362,21 @@ pipe_read_handler(struct main_file *mf UNUSED)
   ASSERT(n == sizeof(signum));
 
   DBG("MAIN: Sigpipe: received signal %d", signum);
-  struct main_signal *tmp;
-  CLIST_FOR_EACH_DELSAFE(struct main_signal *, sg, m->signal_list, tmp)
-    if (sg->signum == signum)
-      {
-	DBG("MAIN: Sigpipe: invoking handler %p", sg);
-	// FIXME: Can the handler disappear from here?
-	sg->handler(sg);
-      }
+  struct main_signal iter = { .signum = -1 };
+  struct main_signal *sg = clist_head(&m->signal_list);
+  while (sg)
+    {
+      if (sg->signum == signum)
+	{
+	  DBG("MAIN: Sigpipe: invoking handler %p", sg);
+	  clist_insert_after(&iter.n, &sg->n);
+	  sg->handler(sg);
+	  sg = clist_next(&m->signal_list, &iter.n);
+	  clist_remove(&iter.n);
+	}
+      else
+	sg = clist_next(&m->signal_list, &sg->n);
+    }
 
   return 1;
 }
@@ -420,7 +427,8 @@ signal_add(struct main_signal *ms)
   DBG("MAIN: Adding signal %p (sig=%d)", ms, ms->signum);
 
   ASSERT(!clist_is_linked(&ms->n));
-  clist_add_tail(&m->signal_list, &ms->n);
+  // Adding at the head of the list is better if we are in the middle of walking the list.
+  clist_add_head(&m->signal_list, &ms->n);
   if (m->sig_pipe_recv < 0)
     pipe_setup(m);
 
@@ -488,7 +496,10 @@ main_debug_context(struct main_context *m UNUSED)
     msg(L_DEBUG, "\t\t%p (pid %d, func %p, data %p)", pr, pr->pid, pr->handler, pr->data);
   msg(L_DEBUG, "\tActive signal catchers:");
   CLIST_FOR_EACH(struct main_signal *, sg, m->signal_list)
-    msg(L_DEBUG, "\t\t%p (sig %d, func %p, data %p)", sg, sg->signum, sg->handler, sg->data);
+    if (sg->signum < 0)
+      msg(L_DEBUG, "\t\t(placeholder)");
+    else
+      msg(L_DEBUG, "\t\t%p (sig %d, func %p, data %p)", sg, sg->signum, sg->handler, sg->data);
 #endif
 }
 
