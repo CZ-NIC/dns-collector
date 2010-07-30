@@ -517,49 +517,70 @@ main_rebuild_poll_table(struct main_context *m)
   m->poll_table_obsolete = 0;
 }
 
+static void
+process_timers(struct main_context *m)
+{
+  struct main_timer *tm;
+  while (GARY_SIZE(m->timer_table) > 1 && (tm = m->timer_table[1])->expires <= m->now)
+    {
+      DBG("MAIN: Timer %p expired at now-%lld", tm, (long long)(m->now - tm->expires));
+      tm->handler(tm);
+    }
+}
+
+static enum main_hook_return
+process_hooks(struct main_context *m)
+{
+  int hook_min = HOOK_RETRY;
+  int hook_max = HOOK_SHUTDOWN;
+  struct main_hook *ho;
+
+  while (ho = clist_remove_head(&m->hook_list))
+    {
+      clist_add_tail(&m->hook_done_list, &ho->n);
+      DBG("MAIN: Hook %p", ho);
+      int ret = ho->handler(ho);
+      hook_min = MIN(hook_min, ret);
+      hook_max = MAX(hook_max, ret);
+    }
+  clist_move(&m->hook_list, &m->hook_done_list);
+  if (hook_min == HOOK_SHUTDOWN ||
+    hook_min == HOOK_DONE && hook_max == HOOK_DONE ||
+    m->shutdown)
+    {
+      DBG("MAIN: Shut down by %s", m->shutdown ? "main_shutdown" : "a hook");
+      return HOOK_SHUTDOWN;
+    }
+  if (hook_max == HOOK_RETRY)
+    return HOOK_RETRY;
+  else
+    return HOOK_IDLE;
+}
+
 void
 main_loop(void)
 {
   DBG("MAIN: Entering main_loop");
   struct main_context *m = main_current();
 
-  struct main_file *fi;
-  struct main_hook *ho;
-  struct main_timer *tm;
-
   do_main_get_time(m);
   for (;;)
     {
       timestamp_t wake = m->now + 1000000000;
-      while (GARY_SIZE(m->timer_table) > 1 && (tm = m->timer_table[1])->expires <= m->now)
+      process_timers(m);
+      switch (process_hooks(m))
 	{
-	  DBG("MAIN: Timer %p expired at now-%lld", tm, (long long)(m->now - tm->expires));
-	  tm->handler(tm);
-	}
-      int hook_min = HOOK_RETRY;
-      int hook_max = HOOK_SHUTDOWN;
-      while (ho = clist_remove_head(&m->hook_list))
-	{
-	  clist_add_tail(&m->hook_done_list, &ho->n);
-	  DBG("MAIN: Hook %p", ho);
-	  int ret = ho->handler(ho);
-	  hook_min = MIN(hook_min, ret);
-	  hook_max = MAX(hook_max, ret);
-	}
-      clist_move(&m->hook_list, &m->hook_done_list);
-      if (hook_min == HOOK_SHUTDOWN ||
-	  hook_min == HOOK_DONE && hook_max == HOOK_DONE ||
-	  m->shutdown)
-	{
-	  DBG("MAIN: Shut down by %s", m->shutdown ? "main_shutdown" : "a hook");
+	case HOOK_SHUTDOWN:
 	  return;
+	case HOOK_RETRY:
+	  wake = 0;
+	  break;
+	default: ;
 	}
-      if (hook_max == HOOK_RETRY)
-	wake = 0;
       if (m->poll_table_obsolete)
 	main_rebuild_poll_table(m);
-      if (count_timers(m) && (tm = m->timer_table[1])->expires < wake)
-	wake = tm->expires;
+      if (count_timers(m))
+	wake = MIN(wake, m->timer_table[1]->expires);
       do_main_get_time(m);
       int timeout = ((wake > m->now) ? wake - m->now : 0);
       DBG("MAIN: Poll for %d fds and timeout %d ms", m->file_cnt, timeout);
@@ -570,7 +591,7 @@ main_loop(void)
       if (p > 0)
 	{
 	  struct pollfd *p = m->poll_table;
-	  CLIST_WALK(fi, m->file_list)
+	  CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
 	    {
 	      if (p->revents & (POLLIN | POLLHUP | POLLERR))
 		{
