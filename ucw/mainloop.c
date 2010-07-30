@@ -69,6 +69,7 @@ main_new(void)
   if (m->epoll_fd < 0)
     die("epoll_create() failed: %m");
   m->epoll_events = xmalloc(EPOLL_BUF_SIZE * sizeof(struct epoll_event *));
+  clist_init(&m->file_recalc_list);
 #else
   m->poll_table_obsolete = 1;
 #endif
@@ -99,6 +100,7 @@ main_delete(struct main_context *m)
   ASSERT(clist_empty(&m->signal_list));
   GARY_FREE(m->timer_table);
 #ifdef CONFIG_UCW_EPOLL
+  ASSERT(clist_empty(&m->file_recalc_list));
   xfree(m->epoll_events);
   close(m->epoll_fd);
 #else
@@ -253,6 +255,7 @@ file_add(struct main_file *fi)
   };
   if (epoll_ctl(m->epoll_fd, EPOLL_CTL_ADD, fi->fd, &evt) < 0)
     die("epoll_ctl() failed: %m");
+  fi->last_want_events = evt.events;
 #else
   m->poll_table_obsolete = 1;
 #endif
@@ -264,12 +267,8 @@ void
 file_chg(struct main_file *fi)
 {
 #ifdef CONFIG_UCW_EPOLL
-  struct epoll_event evt = {
-    .events = file_want_events(fi),
-    .data.ptr = fi,
-  };
-  if (epoll_ctl(main_current()->epoll_fd, EPOLL_CTL_MOD, fi->fd, &evt) < 0)
-    die("epoll_ctl() failed: %m");
+  clist_remove(&fi->n);
+  clist_add_tail(&main_current()->file_recalc_list, &fi->n);
 #else
   struct pollfd *p = fi->pollfd;
   if (p)
@@ -537,6 +536,11 @@ main_debug_context(struct main_context *m UNUSED)
     msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, data %p) [pending events: %x]",
 	fi, fi->fd, fi->read_handler, fi->write_handler, fi->data, fi->events);
     // FIXME: Can we display status of block_io requests somehow?
+#ifdef CONFIG_UCW_EPOLL
+  CLIST_FOR_EACH(struct main_file *, fi, m->file_recalc_list)
+    msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, data %p) [pending recalculation]",
+	fi, fi->fd, fi->read_handler, fi->write_handler, fi->data);
+#endif
   msg(L_DEBUG, "\tActive hooks:");
   CLIST_FOR_EACH(struct main_hook *, ho, m->hook_done_list)
     msg(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
@@ -594,10 +598,34 @@ process_hooks(struct main_context *m)
     return HOOK_IDLE;
 }
 
-#ifndef CONFIG_UCW_EPOLL
+#ifdef CONFIG_UCW_EPOLL
 
 static void
-main_rebuild_poll_table(struct main_context *m)
+recalc_files(struct main_context *m)
+{
+  struct main_file *fi;
+
+  while (fi = clist_remove_head(&m->file_recalc_list))
+    {
+      struct epoll_event evt = {
+	.events = file_want_events(fi),
+	.data.ptr = fi,
+      };
+      if (evt.events != fi->last_want_events)
+	{
+	  DBG("MAIN: Changing requested events for fd %d to %x", fi->fd, evt.events);
+	  fi->last_want_events = evt.events;
+	  if (epoll_ctl(main_current()->epoll_fd, EPOLL_CTL_MOD, fi->fd, &evt) < 0)
+	    die("epoll_ctl() failed: %m");
+	}
+      clist_add_tail(&m->file_list, &fi->n);
+    }
+}
+
+#else
+
+static void
+rebuild_poll_table(struct main_context *m)
 {
   GARY_INIT_OR_RESIZE(m->poll_table, m->file_cnt);
   GARY_INIT_OR_RESIZE(m->poll_file_table, m->file_cnt);
@@ -608,8 +636,8 @@ main_rebuild_poll_table(struct main_context *m)
   CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
     {
       p->fd = fi->fd;
+      p->events = file_want_events(fi);
       fi->pollfd = p++;
-      file_chg(fi);
       *pf++ = fi;
     }
   m->poll_table_obsolete = 0;
@@ -643,11 +671,12 @@ main_loop(void)
       int timeout = ((wake > m->now) ? wake - m->now : 0);
 
 #ifdef CONFIG_UCW_EPOLL
+      recalc_files(m);
       DBG("MAIN: Epoll for %d fds and timeout %d ms", m->file_cnt, timeout);
       int n = epoll_wait(m->epoll_fd, m->epoll_events, EPOLL_BUF_SIZE, timeout);
 #else
       if (m->poll_table_obsolete)
-	main_rebuild_poll_table(m);
+	rebuild_poll_table(m);
       DBG("MAIN: Poll for %d fds and timeout %d ms", m->file_cnt, timeout);
       int n = poll(m->poll_table, m->file_cnt, timeout);
 #endif

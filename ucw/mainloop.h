@@ -42,6 +42,7 @@ struct main_context {
 #ifdef CONFIG_UCW_EPOLL
   int epoll_fd;				/* File descriptor used for epoll */
   struct epoll_event *epoll_events;
+  clist file_recalc_list;
 #else
   uns poll_table_obsolete;
   struct pollfd *poll_table;
@@ -196,7 +197,9 @@ struct main_file {
   int (*write_handler)(struct main_file *fi);
   void *data;					/* [*] Data for use by the handlers */
   uns events;
-#ifndef CONFIG_UCW_EPOLL
+#ifdef CONFIG_UCW_EPOLL
+  uns last_want_events;
+#else
   struct pollfd *pollfd;
 #endif
 };
