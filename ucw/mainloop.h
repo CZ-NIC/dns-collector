@@ -33,13 +33,20 @@ struct main_context {
   timestamp_t idle_time;		/** [*] Total time in milliseconds spent by waiting for events. **/
   uns shutdown;				/** [*] Setting this to nonzero forces the @main_loop() function to terminate. **/
   clist file_list;
+  clist file_active_list;
   clist hook_list;
   clist hook_done_list;
   clist process_list;
   clist signal_list;
   uns file_cnt;
+#ifdef CONFIG_UCW_EPOLL
+  int epoll_fd;				/* File descriptor used for epoll */
+  struct epoll_event *epoll_events;
+#else
   uns poll_table_obsolete;
   struct pollfd *poll_table;
+  struct main_file **poll_file_table;
+#endif
   struct main_timer **timer_table;	/* Growing array containing the heap of timers */
   sigset_t want_signals;
   int sig_pipe_send;
@@ -188,7 +195,10 @@ struct main_file {
   int (*read_handler)(struct main_file *fi);	/* [*] To be called when ready for reading/writing; must call file_chg() afterwards */
   int (*write_handler)(struct main_file *fi);
   void *data;					/* [*] Data for use by the handlers */
+  uns events;
+#ifndef CONFIG_UCW_EPOLL
   struct pollfd *pollfd;
+#endif
 };
 
 /**

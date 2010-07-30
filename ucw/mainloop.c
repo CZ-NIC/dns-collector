@@ -34,8 +34,14 @@
 #define THREAD_SIGMASK sigprocmask
 #endif
 
+#ifdef CONFIG_UCW_EPOLL
+#include <sys/epoll.h>
+#endif
+
 #define MAIN_TIMER_LESS(x,y) ((x)->expires < (y)->expires)
 #define MAIN_TIMER_SWAP(heap,a,b,t) (t=heap[a], heap[a]=heap[b], heap[b]=t, heap[a]->index=(a), heap[b]->index=(b))
+
+#define EPOLL_BUF_SIZE 256
 
 static void
 do_main_get_time(struct main_context *m)
@@ -53,11 +59,19 @@ main_new(void)
 
   DBG("MAIN: New context");
   clist_init(&m->file_list);
+  clist_init(&m->file_active_list);
   clist_init(&m->hook_list);
   clist_init(&m->hook_done_list);
   clist_init(&m->process_list);
   clist_init(&m->signal_list);
+#ifdef CONFIG_UCW_EPOLL
+  m->epoll_fd = epoll_create(64);
+  if (m->epoll_fd < 0)
+    die("epoll_create() failed: %m");
+  m->epoll_events = xmalloc(EPOLL_BUF_SIZE * sizeof(struct epoll_event *));
+#else
   m->poll_table_obsolete = 1;
+#endif
   do_main_get_time(m);
   sigemptyset(&m->want_signals);
   m->sig_pipe_recv = m->sig_pipe_send = -1;
@@ -78,12 +92,19 @@ main_delete(struct main_context *m)
       close(m->sig_pipe_send);
     }
   ASSERT(clist_empty(&m->file_list));
+  ASSERT(clist_empty(&m->file_active_list));
   ASSERT(clist_empty(&m->hook_list));
   ASSERT(clist_empty(&m->hook_done_list));
   ASSERT(clist_empty(&m->process_list));
   ASSERT(clist_empty(&m->signal_list));
   GARY_FREE(m->timer_table);
+#ifdef CONFIG_UCW_EPOLL
+  xfree(m->epoll_events);
+  close(m->epoll_fd);
+#else
   GARY_FREE(m->poll_table);
+  GARY_FREE(m->poll_file_table);
+#endif
   xfree(m);
   // FIXME: Some mechanism for cleaning up after fork()
 }
@@ -205,6 +226,17 @@ timer_del(struct main_timer *tm)
   timer_add(tm, 0);
 }
 
+static uns
+file_want_events(struct main_file *fi)
+{
+  uns events = 0;
+  if (fi->read_handler)
+    events |= POLLIN | POLLHUP | POLLERR;
+  if (fi->write_handler)
+    events |= POLLOUT | POLLERR;
+  return events;
+}
+
 void
 file_add(struct main_file *fi)
 {
@@ -214,7 +246,16 @@ file_add(struct main_file *fi)
   ASSERT(!clist_is_linked(&fi->n));
   clist_add_tail(&m->file_list, &fi->n);
   m->file_cnt++;
+#ifdef CONFIG_UCW_EPOLL
+  struct epoll_event evt = {
+    .events = file_want_events(fi),
+    .data.ptr = fi,
+  };
+  if (epoll_ctl(m->epoll_fd, EPOLL_CTL_ADD, fi->fd, &evt) < 0)
+    die("epoll_ctl() failed: %m");
+#else
   m->poll_table_obsolete = 1;
+#endif
   if (fcntl(fi->fd, F_SETFL, O_NONBLOCK) < 0)
     msg(L_ERROR, "Error setting fd %d to non-blocking mode: %m. Keep fingers crossed.", fi->fd);
 }
@@ -222,15 +263,18 @@ file_add(struct main_file *fi)
 void
 file_chg(struct main_file *fi)
 {
+#ifdef CONFIG_UCW_EPOLL
+  struct epoll_event evt = {
+    .events = file_want_events(fi),
+    .data.ptr = fi,
+  };
+  if (epoll_ctl(main_current()->epoll_fd, EPOLL_CTL_MOD, fi->fd, &evt) < 0)
+    die("epoll_ctl() failed: %m");
+#else
   struct pollfd *p = fi->pollfd;
   if (p)
-    {
-      p->events = 0;
-      if (fi->read_handler)
-	p->events |= POLLIN | POLLHUP | POLLERR;
-      if (fi->write_handler)
-	p->events |= POLLOUT | POLLERR;
-    }
+    p->events = file_want_events(fi);
+#endif
 }
 
 void
@@ -242,7 +286,12 @@ file_del(struct main_file *fi)
   ASSERT(clist_is_linked(&fi->n));
   clist_unlink(&fi->n);
   m->file_cnt--;
+#ifdef CONFIG_UCW_EPOLL
+  if (epoll_ctl(m->epoll_fd, EPOLL_CTL_DEL, fi->fd, NULL) < 0)
+    die("epoll_ctl() failed: %m");
+#else
   m->poll_table_obsolete = 1;
+#endif
 }
 
 void
@@ -484,6 +533,9 @@ main_debug_context(struct main_context *m UNUSED)
   CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
     msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, data %p)",
 	fi, fi->fd, fi->read_handler, fi->write_handler, fi->data);
+  CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
+    msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, data %p) [pending events: %x]",
+	fi, fi->fd, fi->read_handler, fi->write_handler, fi->data, fi->events);
     // FIXME: Can we display status of block_io requests somehow?
   msg(L_DEBUG, "\tActive hooks:");
   CLIST_FOR_EACH(struct main_hook *, ho, m->hook_done_list)
@@ -500,22 +552,6 @@ main_debug_context(struct main_context *m UNUSED)
     else
       msg(L_DEBUG, "\t\t%p (sig %d, func %p, data %p)", sg, sg->signum, sg->handler, sg->data);
 #endif
-}
-
-static void
-main_rebuild_poll_table(struct main_context *m)
-{
-  GARY_INIT_OR_RESIZE(m->poll_table, m->file_cnt);
-  DBG("MAIN: Rebuilding poll table: %d entries", m->file_cnt);
-
-  struct pollfd *p = m->poll_table;
-  CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
-    {
-      p->fd = fi->fd;
-      fi->pollfd = p++;
-      file_chg(fi);
-    }
-  m->poll_table_obsolete = 0;
 }
 
 static void
@@ -558,6 +594,29 @@ process_hooks(struct main_context *m)
     return HOOK_IDLE;
 }
 
+#ifndef CONFIG_UCW_EPOLL
+
+static void
+main_rebuild_poll_table(struct main_context *m)
+{
+  GARY_INIT_OR_RESIZE(m->poll_table, m->file_cnt);
+  GARY_INIT_OR_RESIZE(m->poll_file_table, m->file_cnt);
+  DBG("MAIN: Rebuilding poll table: %d entries", m->file_cnt);
+
+  struct pollfd *p = m->poll_table;
+  struct main_file **pf = m->poll_file_table;
+  CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
+    {
+      p->fd = fi->fd;
+      fi->pollfd = p++;
+      file_chg(fi);
+      *pf++ = fi;
+    }
+  m->poll_table_obsolete = 0;
+}
+
+#endif
+
 void
 main_loop(void)
 {
@@ -578,39 +637,70 @@ main_loop(void)
 	  break;
 	default: ;
 	}
-      if (m->poll_table_obsolete)
-	main_rebuild_poll_table(m);
       if (count_timers(m))
 	wake = MIN(wake, m->timer_table[1]->expires);
       do_main_get_time(m);
       int timeout = ((wake > m->now) ? wake - m->now : 0);
+
+#ifdef CONFIG_UCW_EPOLL
+      DBG("MAIN: Epoll for %d fds and timeout %d ms", m->file_cnt, timeout);
+      int n = epoll_wait(m->epoll_fd, m->epoll_events, EPOLL_BUF_SIZE, timeout);
+#else
+      if (m->poll_table_obsolete)
+	main_rebuild_poll_table(m);
       DBG("MAIN: Poll for %d fds and timeout %d ms", m->file_cnt, timeout);
-      int p = poll(m->poll_table, m->file_cnt, timeout);
+      int n = poll(m->poll_table, m->file_cnt, timeout);
+#endif
+
+      DBG("\t-> %d events", n);
+      if (n < 0 && errno != EAGAIN && errno != EINTR)
+	die("(e)poll failed: %m");
       timestamp_t old_now = m->now;
       do_main_get_time(m);
       m->idle_time += m->now - old_now;
-      if (p > 0)
+
+      if (n <= 0)
+	continue;
+
+      // Relink all files with a pending event to file_active_list
+#ifdef CONFIG_UCW_EPOLL
+      for (int i=0; i<n; i++)
 	{
-	  struct pollfd *p = m->poll_table;
-	  CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
+	  struct epoll_event *e = &m->epoll_events[i];
+	  struct main_file *fi = e->data.ptr;
+	  clist_remove(&fi->n);
+	  clist_add_tail(&m->file_active_list, &fi->n);
+	  fi->events = e->events;
+	}
+#else
+      struct pollfd *p = m->poll_table;
+      struct main_file **pf = m->poll_file_table;
+      for (uns i=0; i < m->file_cnt; i++)
+	if (p[i].revents)
+	  {
+	    struct main_file *fi = pf[i];
+	    clist_remove(&fi->n);
+	    clist_add_tail(&m->file_active_list, &fi->n);
+	    fi->events = p[i].revents;
+	  }
+#endif
+
+      // Process the buffered file events
+      struct main_file *fi;
+      while (fi = clist_remove_head(&m->file_active_list))
+	{
+	  clist_add_tail(&m->file_list, &fi->n);
+	  if (fi->events & (POLLIN | POLLHUP | POLLERR))
 	    {
-	      if (p->revents & (POLLIN | POLLHUP | POLLERR))
-		{
-		  do
-		    DBG("MAIN: Read event on fd %d", p->fd);
-		  while (fi->read_handler && fi->read_handler(fi) && !m->poll_table_obsolete);
-		  if (m->poll_table_obsolete)	/* File entries have been inserted or deleted => better not risk continuing to nowhere */
-		    break;
-		}
-	      if (p->revents & (POLLOUT | POLLERR))
-		{
-		  do
-		    DBG("MAIN: Write event on fd %d", p->fd);
-		  while (fi->write_handler && fi->write_handler(fi) && !m->poll_table_obsolete);
-		  if (m->poll_table_obsolete)
-		    break;
-		}
-	      p++;
+	      do
+		DBG("MAIN: Read event on fd %d", fi->fd);
+	      while (fi->read_handler && fi->read_handler(fi));
+	    }
+	  if (fi->events & (POLLOUT | POLLERR))
+	    {
+	      do
+		DBG("MAIN: Write event on fd %d", fi->fd);
+	      while (fi->write_handler && fi->write_handler(fi));
 	    }
 	}
     }
