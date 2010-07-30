@@ -212,7 +212,7 @@ file_add(struct main_file *fi)
   struct main_context *m = main_current();
 
   DBG("MAIN: Adding file %p (fd=%d)", fi, fi->fd);
-  ASSERT(!fi->n.next);
+  ASSERT(!clist_is_linked(&fi->n));
   clist_add_tail(&m->file_list, &fi->n);
   m->file_cnt++;
   m->poll_table_obsolete = 1;
@@ -240,11 +240,10 @@ file_del(struct main_file *fi)
   struct main_context *m = main_current();
 
   DBG("MAIN: Deleting file %p (fd=%d)", fi, fi->fd);
-  ASSERT(fi->n.next);
-  clist_remove(&fi->n);
+  ASSERT(clist_is_linked(&fi->n));
+  clist_unlink(&fi->n);
   m->file_cnt--;
   m->poll_table_obsolete = 1;
-  fi->n.next = fi->n.prev = NULL;
 }
 
 void
@@ -262,7 +261,7 @@ hook_add(struct main_hook *ho)
   struct main_context *m = main_current();
 
   DBG("MAIN: Adding hook %p", ho);
-  ASSERT(!ho->n.next);
+  ASSERT(!clist_is_linked(&ho->n));
   clist_add_tail(&m->hook_list, &ho->n);
 }
 
@@ -270,9 +269,8 @@ void
 hook_del(struct main_hook *ho)
 {
   DBG("MAIN: Deleting hook %p", ho);
-  ASSERT(ho->n.next);
-  clist_remove(&ho->n);
-  ho->n.next = ho->n.prev = NULL;
+  ASSERT(clist_is_linked(&ho->n));
+  clist_unlink(&ho->n);
 }
 
 static void
@@ -304,7 +302,7 @@ process_add(struct main_process *mp)
   struct main_context *m = main_current();
 
   DBG("MAIN: Adding process %p (pid=%d)", mp, mp->pid);
-  ASSERT(!mp->n.next);
+  ASSERT(!clist_is_linked(&mp->n));
   ASSERT(mp->handler);
   clist_add_tail(&m->process_list, &mp->n);
   if (!m->sigchld_handler)
@@ -321,9 +319,8 @@ void
 process_del(struct main_process *mp)
 {
   DBG("MAIN: Deleting process %p (pid=%d)", mp, mp->pid);
-  ASSERT(mp->n.next);
-  clist_remove(&mp->n);
-  mp->n.next = NULL;
+  ASSERT(clist_is_linked(&mp->n));
+  clist_unlink(&mp->n);
 }
 
 int
@@ -422,7 +419,7 @@ signal_add(struct main_signal *ms)
 
   DBG("MAIN: Adding signal %p (sig=%d)", ms, ms->signum);
 
-  ASSERT(!ms->n.next);
+  ASSERT(!clist_is_linked(&ms->n));
   clist_add_tail(&m->signal_list, &ms->n);
   if (m->sig_pipe_recv < 0)
     pipe_setup(m);
@@ -447,9 +444,8 @@ signal_del(struct main_signal *ms)
 
   DBG("MAIN: Deleting signal %p (sig=%d)", ms, ms->signum);
 
-  ASSERT(ms->n.next);
-  clist_remove(&ms->n);
-  ms->n.next = ms->n.prev = NULL;
+  ASSERT(clist_is_linked(&ms->n));
+  clist_unlink(&ms->n);
 
   int another = 0;
   CLIST_FOR_EACH(struct main_signal *, s, m->signal_list)
