@@ -82,9 +82,8 @@ main_delete(struct main_context *m)
   ASSERT(clist_empty(&m->hook_done_list));
   ASSERT(clist_empty(&m->process_list));
   ASSERT(clist_empty(&m->signal_list));
-  if (m->timer_table)
-    GARY_FREE(m->timer_table);
-  xfree(m->poll_table);
+  GARY_FREE(m->timer_table);
+  GARY_FREE(m->poll_table);
   xfree(m);
   // FIXME: Some mechanism for cleaning up after fork()
 }
@@ -506,20 +505,11 @@ main_debug_context(struct main_context *m UNUSED)
 static void
 main_rebuild_poll_table(struct main_context *m)
 {
-  struct main_file *fi;
-  if (m->poll_table_size < m->file_cnt)
-    {
-      if (m->poll_table)
-	xfree(m->poll_table);
-      else
-	m->poll_table_size = 1;
-      while (m->poll_table_size < m->file_cnt)
-	m->poll_table_size *= 2;
-      m->poll_table = xmalloc(sizeof(struct pollfd) * m->poll_table_size);
-    }
+  GARY_INIT_OR_RESIZE(m->poll_table, m->file_cnt);
+  DBG("MAIN: Rebuilding poll table: %d entries", m->file_cnt);
+
   struct pollfd *p = m->poll_table;
-  DBG("MAIN: Rebuilding poll table: %d of %d entries set", m->file_cnt, m->poll_table_size);
-  CLIST_WALK(fi, m->file_list)
+  CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
     {
       p->fd = fi->fd;
       fi->pollfd = p++;

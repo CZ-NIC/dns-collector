@@ -39,7 +39,6 @@ struct main_context {
   clist signal_list;
   uns file_cnt;
   uns poll_table_obsolete;
-  uns poll_table_size;
   struct pollfd *poll_table;
   struct main_timer **timer_table;	/* Growing array containing the heap of timers */
   sigset_t want_signals;
