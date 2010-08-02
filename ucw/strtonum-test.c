@@ -39,6 +39,9 @@ static uns str_to_flags(const char *str)
            case 'o':
              flags |= STN_OCT;
              break;
+           case 'O':
+             flags |= STN_OCT0;
+             break;
            case 'B':
              flags |= STN_BIN;
              break;
@@ -61,8 +64,8 @@ static uns str_to_flags(const char *str)
            case 's':
              flags |= STN_SIGNED;
              break;
-           case 'Z':
-             flags |= STN_ZCHAR;
+           case 'W':
+             flags |= STN_WHOLE;
              break;
          }
      }

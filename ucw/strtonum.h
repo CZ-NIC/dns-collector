@@ -19,13 +19,15 @@ enum str_to_num_flags {
   STN_HEX = 0x400,         // Support hexadecimal numbers (0x...)
   STN_BIN = 0x800,         // Support binary numbers (0b...)
   STN_OCT = 0x1000,        // Support octal numbers (0o...)
-  STN_UNDERSCORE = 0x2000, // Number can contain underscore characters to increase readability (eg. 1_000_000)
-  STN_ZCHAR = 0x4000,      // Number can be terminated only by \0 character
+  STN_OCT0 = 0x2000,       // Support octal numbers (0[0-7]...)
+  STN_UNDERSCORE = 0x4000, // Number can contain underscore characters to increase readability (eg. 1_000_000)
+  STN_WHOLE = 0x8000,      // Number can be terminated only by \0 character
 };
 
 #define STN_DBASES_MASK    0x1F
 #define STN_SIGNS          (STN_MINUS | STN_PLUS)
 #define STN_BASES          (STN_DEC | STN_HEX | STN_BIN | STN_OCT)
+#define STN_BASES0         (STN_BASES | STN_OCT0)
 #define STN_FLAGS          (STN_MINUS | STN_PLUS | STN_BASES)
 #define STN_UFLAGS         (STN_FLAGS | STN_UNDERSCORE)
 #define STN_SFLAGS         (STN_FLAGS | STN_SIGNED)

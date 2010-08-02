@@ -12,34 +12,43 @@
 #include "ucw/chartype.h"
 #include "ucw/strtonum.h"
 
-static const char err_numeric_overflow[] = "Numeric overflow";
-static const char err_no_digits[] = "Number contains no digits";
-static const char err_invalid_character[] = "Invalid character";
-static const char err_unknown_base[] = "Unknown base";
-
-static uns detect_base(const char *p, const uns flags)
+static uns detect_base(const char **pp, const uns flags)
 {
-  if ((flags & STN_BASES) && *p == '0')
+  if ((flags & STN_BASES0) && **pp == '0')
     {
-      switch (p[1] & 0xDF)
+      switch ( (*pp)[1] )
         {
+          case 'x':
           case 'X':
             if (flags & STN_HEX)
               {
+                *pp += 2;
                 return 16;
               }
             break;
 
+          case 'b':
           case 'B':
             if (flags & STN_BIN)
               {
+                *pp += 2;
                 return 2;
               }
             break;
 
+          case 'o':
           case 'O':
             if (flags & STN_OCT)
               {
+                *pp += 2;
+                return 8;
+              }
+            break;
+
+          case '0'...'7':
+            if (flags & STN_OCT0)
+              {
+                (*pp)++;
                 return 8;
               }
             break;
@@ -69,16 +78,7 @@ static const char *str_to_num_init(const char **pp, const uns flags, uns *sign, 
         p++;
     }
 
-  const uns prefix_base = detect_base(p, flags);
-  if (prefix_base)
-    {
-      p += 2;
-      *base = prefix_base;
-    }
-  else
-    {
-      *base = flags & STN_DBASES_MASK;
-    }
+  *base = detect_base(&p, flags) ? : flags & STN_DBASES_MASK;
 
   *pp = p;
   return err;
@@ -87,9 +87,7 @@ static const char *str_to_num_init(const char **pp, const uns flags, uns *sign, 
 static inline uns get_digit(const uns c)
 {
   if (c <= '9')
-    {
-      return c - '0';
-    }
+    return c - '0';
   else
     {
       const int a = c & 0xDF;
