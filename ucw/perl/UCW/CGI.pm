@@ -149,6 +149,13 @@ sub parse_raw_args($) {
 	}
 }
 
+sub parse_raw_args_ll($$) {
+	my ($arg, $s) = @_;
+	$s =~ s/\r\n/\n/g;
+	$s =~ s/\r/\n/g;
+	$raw_args{$arg} = $s;
+}
+
 sub parse_multipart_form_data();
 
 sub init_args() {
@@ -369,7 +376,7 @@ sub parse_multipart_form_data() {
 			if (defined $a->{"var"}) {
 				while (defined (my $l = get_mp_line(1))) {
 					print STDERR "VALUE $l\n" if $debug;
-					parse_raw_args("$field=$l");
+					parse_raw_args_ll($field, $l);
 				}
 				next PART;
 			} elsif (defined $a->{"file"}) {
