@@ -134,6 +134,13 @@ sub http_get($) {
 my $main_arg_table;
 my %raw_args;
 
+sub parse_raw_args_ll($$) {
+	my ($arg, $s) = @_;
+	$s =~ s/\r\n/\n/g;
+	$s =~ s/\r/\n/g;
+	push @{$raw_args{$arg}}, $s;
+}
+
 sub parse_raw_args($) {
 	my ($s) = @_;
 	$s =~ s/\s+//;
@@ -143,17 +150,8 @@ sub parse_raw_args($) {
 		$_ = $2;
 		s/\+/ /g;
 		s/%(..)/pack("H2",$1)/eg;
-		s/\r\n/\n/g;
-		s/\r/\n/g;
-		$raw_args{$arg} = $_;
+		parse_raw_args_ll($arg, $_);
 	}
-}
-
-sub parse_raw_args_ll($$) {
-	my ($arg, $s) = @_;
-	$s =~ s/\r\n/\n/g;
-	$s =~ s/\r/\n/g;
-	$raw_args{$arg} = $s;
 }
 
 sub parse_multipart_form_data();
@@ -206,20 +204,21 @@ sub parse_args($) {			# CAVEAT: attached files must be defined in the main arg t
 	for my $arg (keys %$args) {
 		my $a = $args->{$arg};
 		defined($raw_args{$arg}) or next;
-		$_ = $raw_args{$arg};
-		$a->{'multiline'} or s/(\n|\t)/ /g;
-		s/^\s+//;
-		s/\s+$//;
-		if (my $rx = $a->{'check'}) {
-			if (!/^$rx$/) { $_ = $a->{'default'}; }
-		}
+		for (@{$raw_args{$arg}}) {
+			$a->{'multiline'} or s/(\n|\t)/ /g;
+			s/^\s+//;
+			s/\s+$//;
+			if (my $rx = $a->{'check'}) {
+				if (!/^$rx$/) { $_ = $a->{'default'}; }
+			}
 
-		my $v = $a->{'var'};
-		my $r = ref($v);
-		if ($r eq 'SCALAR') {
-			$$v = $_;
-		} elsif ($r eq 'ARRAY') {
-			push @$v, $_;
+			my $v = $a->{'var'};
+			my $r = ref($v);
+			if ($r eq 'SCALAR') {
+				$$v = $_;
+			} elsif ($r eq 'ARRAY') {
+				push @$v, $_;
+			}
 		}
 	}
 }
