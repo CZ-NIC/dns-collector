@@ -85,6 +85,10 @@ $(o)/ucw/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
 $(o)/ucw/libucw-pic.a: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 $(o)/ucw/libucw.so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 
+ifdef CONFIG_STATIC_PIC
+$(o)/ucw/libucw.pc: $(o)/ucw/libucw-pic.a
+endif
+
 $(o)/ucw/hashfunc.o $(o)/ucw/hashfunc.oo: CFLAGS += -funroll-loops
 $(o)/ucw/lizard.o: CFLAGS += $(COPT2) -funroll-loops
 
@@ -170,6 +174,9 @@ install-libucw:
 	install -m 644 $(addprefix run/include/ucw/,$(LIBUCW_MAIN_INCLUDES) autoconf.h config.h) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
 	install -m 644 run/lib/pkgconfig/libucw.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 run/lib/libucw.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
+ifdef CONFIG_STATIC_PIC
+	install -m 644 run/lib/libucw-pic.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
+endif
 	install -m 644 run/$(CONFIG_DIR)/libucw $(DESTDIR)$(INSTALL_CONFIG_DIR)
 
 .PHONY: install-libucw

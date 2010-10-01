@@ -3,9 +3,12 @@
 libdir=@LIBDIR@
 incdir=.
 
+# Override if you want to use the -pic version
+picsuffix=
+
 Name: libshxml
 Description: XML parser for Sherlock project
 Version: @UCW_VERSION@
 Cflags: -I${incdir}
-Libs: -L${libdir} -lshxml
+Libs: -L${libdir} -lshxml${picsuffix}
 Requires: @DEPS@

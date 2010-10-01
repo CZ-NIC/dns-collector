@@ -10,8 +10,13 @@ LIBSHXML_INCLUDES=xml.h dtd.h
 LIBSHXML_MOD_PATHS=$(addprefix $(o)/shxml/,$(LIBSHXML_MODS))
 
 $(o)/shxml/libshxml.a: $(addsuffix .o,$(LIBSHXML_MOD_PATHS))
+$(o)/shxml/libshxml-pic.a: $(addsuffix .oo,$(LIBSHXML_MOD_PATHS))
 $(o)/shxml/libshxml.so: $(addsuffix .oo,$(LIBSHXML_MOD_PATHS))
 $(o)/shxml/libshxml.pc: $(LIBCHARSET)
+
+ifdef CONFIG_STATIC_PIC
+$(o)/shxml/libshxml.pc: $(o)/shxml/libshxml-pic.a
+endif
 
 $(o)/shxml/common.o: $(o)/shxml/unicat.h
 $(o)/shxml/common.oo: $(o)/shxml/unicat.h
@@ -42,5 +47,8 @@ install-sh-xml:
 	install -m 644 $(addprefix run/include/shxml/,$(LIBSHXML_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/shxml
 	install -m 644 run/lib/pkgconfig/libshxml.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 run/lib/libshxml.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
+ifdef CONFIG_STATIC_PIC
+	install -m 644 run/lib/libshxml-pic.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
+endif
 
 .PHONY: install-sh-xml

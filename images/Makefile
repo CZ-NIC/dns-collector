@@ -15,6 +15,10 @@ else
 LIBIMAGES_DEPS=$(LIBUCW)
 endif
 
+ifdef CONFIG_STATIC_PIC
+LIBIMAGES_DEPS+=$(o)/images/libimages-pic.a
+endif
+
 ifdef CONFIG_IMAGES_DUP
 LIBIMAGES_PROGS+=$(o)/images/image-dup-test
 LIBIMAGES_MODS+=dup-init dup-cmp
@@ -61,6 +65,7 @@ PROGS+=$(LIBIMAGES_PROGS)
 CONFIGS+=$(LIBIMAGES_CONFIGS)
 
 $(o)/images/libimages.a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
+$(o)/images/libimages-pic.a: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 $(o)/images/libimages.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 $(o)/images/libimages.pc: $(LIBIMAGES_DEPS)
 
@@ -91,5 +96,8 @@ install-libimages:
 	install -m 644 run/lib/libimages.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
 	install -m 644 run/lib/pkgconfig/libimages.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 $(addprefix run/$(CONFIG_DIR)/,$(LIBIMAGES_CONFIGS)) $(DESTDIR)$(INSTALL_CONFIG_DIR)
+ifdef CONFIG_STATIC_PIC
+	install -m 644 run/lib/libimages-pic.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
+endif
 
 .PHONY: install-libimages

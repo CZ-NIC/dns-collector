@@ -10,6 +10,10 @@ $(o)/charset/libcharset-pic.a: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCH
 $(o)/charset/libcharset.so: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
 $(o)/charset/libcharset.pc: $(LIBUCW)
 
+ifdef CONFIG_STATIC_PIC
+$(o)/charset/libcharset.pc: $(o)/charset/libcharset-pic.a
+endif
+
 API_LIBS+=libcharset
 API_INCLUDES+=$(o)/charset/.include-stamp
 $(o)/charset/.include-stamp: $(addprefix $(s)/charset/,$(LIBCHARSET_INCLUDES))
@@ -28,5 +32,8 @@ install-libcharset:
 	install -m 644 $(addprefix run/include/charset/,$(LIBCHARSET_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/charset
 	install -m 644 run/lib/libcharset.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
 	install -m 644 run/lib/pkgconfig/libcharset.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+ifdef CONFIG_STATIC_PIC
+	install -m 644 run/lib/libcharset-pic.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
+endif
 
 .PHONY: install-libcharset
