@@ -188,7 +188,7 @@ Set("CLANG" => "-std=gnu99 -fno-common");
 # C optimizations
 Set("COPT" => '-O2');
 if (Get("CPU_ARCH") ne "unknown" && Get("CPU_ARCH") ne "default") {
-	Append("COPT", '-march=$(CPU_ARCH)');
+	Append("COPT", '-march=' . Get("CPU_ARCH"));
 }
 
 # C optimizations for highly exposed code
