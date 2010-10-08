@@ -163,7 +163,10 @@ main_get_time(void)
 static inline uns
 count_timers(struct main_context *m)
 {
-  return GARY_SIZE(m->timer_table) - 1;
+  if (m->timer_table)
+    return GARY_SIZE(m->timer_table) - 1;
+  else
+    return 0;
 }
 
 void
@@ -562,7 +565,7 @@ static void
 process_timers(struct main_context *m)
 {
   struct main_timer *tm;
-  while (GARY_SIZE(m->timer_table) > 1 && (tm = m->timer_table[1])->expires <= m->now)
+  while (count_timers(m) && (tm = m->timer_table[1])->expires <= m->now)
     {
       DBG("MAIN: Timer %p expired at now-%lld", tm, (long long)(m->now - tm->expires));
       tm->handler(tm);
