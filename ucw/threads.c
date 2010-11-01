@@ -67,6 +67,12 @@ ucwlib_tid(void)
 
 /*** Thread context ***/
 
+static void CONSTRUCTOR
+ucwlib_threads_init_master(void)
+{
+  pthread_mutex_init(&ucwlib_master_mutex, NULL);
+}
+
 #ifdef CONFIG_UCW_TLS
 
 __thread struct ucwlib_context ucwlib_context;
@@ -94,7 +100,6 @@ ucwlib_threads_init(void)
 {
   if (pthread_key_create(&ucwlib_context_key, ucwlib_free_thread_context) < 0)
     die("Cannot create pthread_key: %m");
-  pthread_mutex_init(&ucwlib_master_mutex, NULL);
 }
 
 struct ucwlib_context *
