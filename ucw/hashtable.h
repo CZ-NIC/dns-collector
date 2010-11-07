@@ -79,8 +79,11 @@
  *			newly created node. Very useful for lookup operations.
  *  HASH_GIVE_ALLOC	void *alloc(unsigned int size) -- allocate space for
  *			a node. Default is xmalloc() or pooled allocation, depending
- *			on HASH_USE_POOL and HASH_AUTO_POOL switches.
- *			void free(void *) -- the converse.
+ *			on HASH_USE_POOL, HASH_AUTO_POOL, HASH_USE_ELTPOOL
+ *			and HASH_AUTO_ELTPOOL switches.	void free(void *) -- the converse.
+ * HASH_GIVE_TABLE_ALLOC void *table_alloc(unsigned int size), void *table_free(void *)
+ *			Allocate or free space for the table itself. Default is xmalloc()
+ *			or the functions defined by HASH_GIVE_ALLOC if HASH_TABLE_ALLOC is set.
  *
  *  ... and a couple of extra parameters:
  *
@@ -93,10 +96,15 @@
  *			deallocation is not supported by mempools, so delete/remove
  *			will leak pool memory.
  *  HASH_AUTO_POOL=size	Create a pool of the given block size automatically.
+ *  HASH_USE_ELTPOOL=pool Allocate all nodes from given eltpool.
+ *			Only works for nodes of limited size.
+ *  HASH_AUTO_ELTPOOL=count Create an eltpool of the given number of elements in each chunk.
+ *			Only works for fixed-sized nodes and zero HASH_GIVE_EXTRA_SIZE.
  *  HASH_ZERO_FILL	New entries should be initialized to all zeroes.
  *  HASH_TABLE_ALLOC	The hash table itself will be allocated and freed using
  *			the same allocation functions as the nodes instead of
  *			the default xmalloc().
+ *  HASH_TABLE_GROW	Never decrease the size of the hash table itself
  *  HASH_TABLE_DYNAMIC	Support multiple hash tables; the first parameter of all
  *			hash table operations is struct HASH_PREFIX(table) *.
  *  HASH_TABLE_VARS	Extra variables to be defined in table structure
@@ -159,6 +167,9 @@ struct P(table) {
   P(bucket) **ht;
 #ifdef HASH_AUTO_POOL
   struct mempool *pool;
+#endif
+#ifdef HASH_AUTO_ELTPOOL
+  struct eltpool *eltpool;
 #endif
 #ifdef HASH_TABLE_VARS
   HASH_TABLE_VARS
@@ -345,6 +356,26 @@ static inline void P(init_alloc) (TAU) { T.pool = mp_new(HASH_AUTO_POOL); }
 static inline void P(cleanup_alloc) (TAU) { mp_delete(T.pool); }
 #define HASH_USE_POOL
 
+#elif defined(HASH_USE_ELTPOOL)
+/* If the caller has requested to use his eltpool, do so */
+#include "ucw/eltpool.h"
+static inline void * P(alloc) (TAUC unsigned int size) { ASSERT(size <= (HASH_USE_ELTPOOL)->elt_size); return ep_alloc(HASH_USE_ELTPOOL); }
+static inline void P(free) (TAUC void *x) { ep_free(HASH_USE_ELTPOOL, x); }
+static inline void P(init_alloc) (TAU) { }
+static inline void P(cleanup_alloc) (TAU) { }
+
+#elif defined(HASH_AUTO_ELTPOOL)
+/* Use our own eltpools */
+#ifdef HASH_GIVE_EXTRA_SIZE
+#error HASH_AUTO_ELTPOOL not supported in combination with variable-sized nodes
+#endif
+#include "ucw/eltpool.h"
+static inline void * P(alloc) (TAUC unsigned int size UNUSED) { return ep_alloc(T.eltpool); }
+static inline void P(free) (TAUC void *x) { ep_free(T.eltpool, x); }
+static inline void P(init_alloc) (TAU) { T.eltpool = ep_new(sizeof(P(bucket)), HASH_AUTO_ELTPOOL); }
+static inline void P(cleanup_alloc) (TAU) { ep_delete(T.eltpool); }
+#define HASH_USE_ELTPOOL
+
 #else
 /* The default allocation method */
 static inline void * P(alloc) (TAUC unsigned int size) { return xmalloc(size); }
@@ -354,12 +385,21 @@ static inline void P(cleanup_alloc) (TAU) { }
 
 #endif
 
-#ifdef HASH_TABLE_ALLOC
+#ifdef HASH_GIVE_TABLE_ALLOC
+/* If the caller has requested to use his own allocation functions, do so */
+#elif defined(HASH_TABLE_ALLOC)
+#ifdef HASH_USE_ELTPOOL
+#error HASH_TABLE_ALLOC not supported in combination with eltpools
+#endif
 static inline void * P(table_alloc) (TAUC unsigned int size) { return P(alloc)(TTC size); }
 static inline void P(table_free) (TAUC void *x) { P(free)(TTC x); }
 #else
 static inline void * P(table_alloc) (TAUC unsigned int size) { return xmalloc(size); }
 static inline void P(table_free) (TAUC void *x) { xfree(x); }
+#endif
+
+#if defined(HASH_USE_POOL) && defined(HASH_TABLE_ALLOC) && !defined(HASH_TABLE_GROW)
+#define HASH_TABLE_GROW
 #endif
 
 #ifndef HASH_DEFAULT_SIZE
@@ -392,9 +432,11 @@ static void P(alloc_table) (TAU)
     T.hash_max = 2*T.hash_size;
   else
     T.hash_max = ~0U;
+#ifndef HASH_TABLE_GROW
   if (T.hash_size/2 > HASH_DEFAULT_SIZE)
     T.hash_min = T.hash_size/4;
   else
+#endif
     T.hash_min = 0;
 }
 
@@ -613,8 +655,10 @@ static int HASH_PREFIX(delete)(TAC HASH_KEY_DECL)
 	{
 	  *bb = b->next;
 	  P(free)(TTC b);
+#ifndef HASH_TABLE_GROW
 	  if (--T.hash_count < T.hash_min)
 	    P(rehash)(TTC T.hash_size/2);
+#endif
 	  return 1;
 	}
     }
@@ -642,8 +686,10 @@ static void HASH_PREFIX(remove)(TAC HASH_NODE *n)
   ASSERT(b);
   *bb = b->next;
   P(free)(TTC b);
+#ifndef HASH_TABLE_GROW
   if (--T.hash_count < T.hash_min)
     P(rehash)(TTC T.hash_size/2);
+#endif
 }
 #endif
 
@@ -683,6 +729,7 @@ do {											\
 #undef HASH_EXTRA_SIZE
 #undef HASH_FN_BITS
 #undef HASH_GIVE_ALLOC
+#undef HASH_GIVE_TABLE_ALLOC
 #undef HASH_GIVE_EQ
 #undef HASH_GIVE_EXTRA_SIZE
 #undef HASH_GIVE_HASHFN
@@ -701,6 +748,8 @@ do {											\
 #undef HASH_PREFIX
 #undef HASH_USE_POOL
 #undef HASH_AUTO_POOL
+#undef HASH_USE_ELTPOOL
+#undef HASH_AUTO_ELTPOOL
 #undef HASH_WANT_CLEANUP
 #undef HASH_WANT_DELETE
 #undef HASH_WANT_FIND
@@ -709,5 +758,7 @@ do {											\
 #undef HASH_WANT_NEW
 #undef HASH_WANT_REMOVE
 #undef HASH_TABLE_ALLOC
+#undef HASH_TABLE_GROW
 #undef HASH_TABLE_DYNAMIC
+#undef HASH_TABLE_VARS
 #undef HASH_ZERO_FILL
