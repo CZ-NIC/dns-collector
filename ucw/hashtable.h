@@ -104,7 +104,7 @@
  *  HASH_TABLE_ALLOC	The hash table itself will be allocated and freed using
  *			the same allocation functions as the nodes instead of
  *			the default xmalloc().
- *  HASH_TABLE_GROW	Never decrease the size of the hash table itself
+ *  HASH_TABLE_GROWING	Never decrease the size of the hash table itself
  *  HASH_TABLE_DYNAMIC	Support multiple hash tables; the first parameter of all
  *			hash table operations is struct HASH_PREFIX(table) *.
  *  HASH_TABLE_VARS	Extra variables to be defined in table structure
@@ -359,7 +359,7 @@ static inline void P(cleanup_alloc) (TAU) { mp_delete(T.pool); }
 #elif defined(HASH_USE_ELTPOOL)
 /* If the caller has requested to use his eltpool, do so */
 #include "ucw/eltpool.h"
-static inline void * P(alloc) (TAUC unsigned int size) { ASSERT(size <= (HASH_USE_ELTPOOL)->elt_size); return ep_alloc(HASH_USE_ELTPOOL); }
+static inline void * P(alloc) (TAUC unsigned int size UNUSED) { ASSERT(size <= (HASH_USE_ELTPOOL)->elt_size); return ep_alloc(HASH_USE_ELTPOOL); }
 static inline void P(free) (TAUC void *x) { ep_free(HASH_USE_ELTPOOL, x); }
 static inline void P(init_alloc) (TAU) { }
 static inline void P(cleanup_alloc) (TAU) { }
@@ -398,8 +398,8 @@ static inline void * P(table_alloc) (TAUC unsigned int size) { return xmalloc(si
 static inline void P(table_free) (TAUC void *x) { xfree(x); }
 #endif
 
-#if defined(HASH_USE_POOL) && defined(HASH_TABLE_ALLOC) && !defined(HASH_TABLE_GROW)
-#define HASH_TABLE_GROW
+#if defined(HASH_USE_POOL) && defined(HASH_TABLE_ALLOC) && !defined(HASH_TABLE_GROWING)
+#define HASH_TABLE_GROWING
 #endif
 
 #ifndef HASH_DEFAULT_SIZE
@@ -432,7 +432,7 @@ static void P(alloc_table) (TAU)
     T.hash_max = 2*T.hash_size;
   else
     T.hash_max = ~0U;
-#ifndef HASH_TABLE_GROW
+#ifndef HASH_TABLE_GROWING
   if (T.hash_size/2 > HASH_DEFAULT_SIZE)
     T.hash_min = T.hash_size/4;
   else
@@ -655,7 +655,7 @@ static int HASH_PREFIX(delete)(TAC HASH_KEY_DECL)
 	{
 	  *bb = b->next;
 	  P(free)(TTC b);
-#ifndef HASH_TABLE_GROW
+#ifndef HASH_TABLE_GROWING
 	  if (--T.hash_count < T.hash_min)
 	    P(rehash)(TTC T.hash_size/2);
 #endif
@@ -686,7 +686,7 @@ static void HASH_PREFIX(remove)(TAC HASH_NODE *n)
   ASSERT(b);
   *bb = b->next;
   P(free)(TTC b);
-#ifndef HASH_TABLE_GROW
+#ifndef HASH_TABLE_GROWING
   if (--T.hash_count < T.hash_min)
     P(rehash)(TTC T.hash_size/2);
 #endif
@@ -758,7 +758,7 @@ do {											\
 #undef HASH_WANT_NEW
 #undef HASH_WANT_REMOVE
 #undef HASH_TABLE_ALLOC
-#undef HASH_TABLE_GROW
+#undef HASH_TABLE_GROWING
 #undef HASH_TABLE_DYNAMIC
 #undef HASH_TABLE_VARS
 #undef HASH_ZERO_FILL
