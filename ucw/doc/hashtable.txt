@@ -80,9 +80,15 @@ to customize the behaviour. The macros are:
 - `HASH_GIVE_ALLOC` -- you need to provide `void
   \*HASH_PREFIX(alloc)(uns size` and `void HASH_PREFIX(free)(void \*)`
   to allocate and deallocate the nodes. Default uses
-  <<memory:xmalloc()>> and <<memory:xfree()>> or <<mempool:,mempool
-  routines>>, depending on <<use_pool,`HASH_USE_POOL`>> and
-  <<auto_pool,`HASH_AUTO_POOL>> switches.
+  <<memory:xmalloc()>> and <<memory:xfree()>>, <<mempool:mempool
+  routines>> or <<eltpool:eltpool routines>>, depending on
+  <<use_pool,`HASH_USE_POOL`>>, <<auto_pool,`HASH_AUTO_POOL`>>,
+  <<use_eltpool,`HASH_USE_ELTPOOL`>> and <<auto_eltpool,`HASH_AUTO_ELTPOOL`>> switches.
+- <<table_alloc:`HASH_GIVE_TABLE_ALLOC`>> -- you need to provide `void
+  \*HASH_PREFIX(table_alloc)(uns size` and `void HASH_PREFIX(table_free)(void \*)`
+  to allocate and deallocate the table itself. Default uses
+  <<memory:xmalloc()>> and <<memory:xfree()>> or the functions
+  from `HASH_GIVE_ALLOC` depending on <<table_alloc:`HASH_TABLE_ALLOC`>> switch.
 
 [[params]]
 Optional parameters
@@ -106,15 +112,27 @@ You can customize the hash table a little more by these macros:
 [[auto_pool]]
 - `HASH_AUTO_POOL` -- like above, but it creates it's own mempool.
   Define it to the block size of the pool.
+[[use_eltpool]]
+- `HASH_USE_ELTPOOL` -- tells to use <<eltpool:,eltpool allocation>> to
+  allocate the nodes. You should define it to the name of eltpool
+  variable to be used for this purpose.
+[[auto_eltpool]]
+- `HASH_AUTO_ELTPOOL` -- like above, but it creates it's own mempool.
+  Define it to the number of preallocated nodes in each chunk of memory.
 - `HASH_ZERO_FILL` -- initialize new nodes to all zeroes.
+[[table-alloc]]
 - `HASH_TABLE_ALLOC` -- allocate the table the same way as nodes. If
   not provided, <<mempory:xmalloc()>> is used.
+- `HASH_TABLE_GROWING` -- never decrease the size of allocated table of nodes.
 [[table_dynamic]]
 - `HASH_TABLE_DYNAMIC` -- By default, only one global hash table is
   used. With this macro defined, all functions gain new first
   parameter of type `HASH_PREFIX(table) *` to allow them work with
   multiple hash tables.
-- `HASH_TABLE_VARS` -- extra variables to be defined in `HASH_PREFIX(table) *`.
+- `HASH_TABLE_VARS` -- extra variables to be defined at head
+  of `HASH_PREFIX(table) *` structure. It can be useful in combination
+  with <<table_dynamic:`HASH_TABLE_DYNAMIC`>> to access per-table custom variables
+  from macros or function switches before you include the generator.
 
 [[wants]]
 Functionality switches

@@ -3,6 +3,7 @@
  *
  *	(c) 2002--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2002--2005 Robert Spalek <robert@ucw.cz>
+ *	(c) 2010 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -97,9 +98,7 @@
  *			will leak pool memory.
  *  HASH_AUTO_POOL=size	Create a pool of the given block size automatically.
  *  HASH_USE_ELTPOOL=pool Allocate all nodes from given eltpool.
- *			Only works for nodes of limited size.
  *  HASH_AUTO_ELTPOOL=count Create an eltpool of the given number of elements in each chunk.
- *			Only works for fixed-sized nodes and zero HASH_GIVE_EXTRA_SIZE.
  *  HASH_ZERO_FILL	New entries should be initialized to all zeroes.
  *  HASH_TABLE_ALLOC	The hash table itself will be allocated and freed using
  *			the same allocation functions as the nodes instead of
@@ -162,6 +161,9 @@ typedef struct P(bucket) {
 } P(bucket);
 
 struct P(table) {
+#ifdef HASH_TABLE_VARS
+  HASH_TABLE_VARS
+#endif
   uns hash_size;
   uns hash_count, hash_max, hash_min, hash_hard_max;
   P(bucket) **ht;
@@ -170,9 +172,6 @@ struct P(table) {
 #endif
 #ifdef HASH_AUTO_ELTPOOL
   struct eltpool *eltpool;
-#endif
-#ifdef HASH_TABLE_VARS
-  HASH_TABLE_VARS
 #endif
 };
 
@@ -366,9 +365,6 @@ static inline void P(cleanup_alloc) (TAU) { }
 
 #elif defined(HASH_AUTO_ELTPOOL)
 /* Use our own eltpools */
-#ifdef HASH_GIVE_EXTRA_SIZE
-#error HASH_AUTO_ELTPOOL not supported in combination with variable-sized nodes
-#endif
 #include "ucw/eltpool.h"
 static inline void * P(alloc) (TAUC unsigned int size UNUSED) { return ep_alloc(T.eltpool); }
 static inline void P(free) (TAUC void *x) { ep_free(T.eltpool, x); }
@@ -383,6 +379,10 @@ static inline void P(free) (TAUC void *x) { xfree(x); }
 static inline void P(init_alloc) (TAU) { }
 static inline void P(cleanup_alloc) (TAU) { }
 
+#endif
+
+#if defined(HASH_USE_ELTPOOL) && defined(HASH_GIVE_EXTRA_SIZE)
+#error Eltpools not supported in combination with variable-sized nodes
 #endif
 
 #ifdef HASH_GIVE_TABLE_ALLOC
