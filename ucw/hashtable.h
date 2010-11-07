@@ -655,8 +655,9 @@ static int HASH_PREFIX(delete)(TAC HASH_KEY_DECL)
 	{
 	  *bb = b->next;
 	  P(free)(TTC b);
+	  T.hash_count--;
 #ifndef HASH_TABLE_GROWING
-	  if (--T.hash_count < T.hash_min)
+	  if (T.hash_count < T.hash_min)
 	    P(rehash)(TTC T.hash_size/2);
 #endif
 	  return 1;
@@ -686,8 +687,9 @@ static void HASH_PREFIX(remove)(TAC HASH_NODE *n)
   ASSERT(b);
   *bb = b->next;
   P(free)(TTC b);
+  T.hash_count--;
 #ifndef HASH_TABLE_GROWING
-  if (--T.hash_count < T.hash_min)
+  if (T.hash_count < T.hash_min)
     P(rehash)(TTC T.hash_size/2);
 #endif
 }
