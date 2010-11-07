@@ -99,6 +99,7 @@
  *			the default xmalloc().
  *  HASH_TABLE_DYNAMIC	Support multiple hash tables; the first parameter of all
  *			hash table operations is struct HASH_PREFIX(table) *.
+ *  HASH_TABLE_VARS	Extra variables to be defined in table structure
  *
  *  You also get a iterator macro at no extra charge:
  *
@@ -158,6 +159,9 @@ struct P(table) {
   P(bucket) **ht;
 #ifdef HASH_AUTO_POOL
   struct mempool *pool;
+#endif
+#ifdef HASH_TABLE_VARS
+  HASH_TABLE_VARS
 #endif
 };
 
