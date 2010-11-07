@@ -114,6 +114,7 @@ You can customize the hash table a little more by these macros:
   used. With this macro defined, all functions gain new first
   parameter of type `HASH_PREFIX(table) *` to allow them work with
   multiple hash tables.
+- `HASH_TABLE_VARS` -- extra variables to be defined in `HASH_PREFIX(table) *`.
 
 [[wants]]
 Functionality switches
