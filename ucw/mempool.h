@@ -336,7 +336,7 @@ static inline void *mp_realloc_fast(struct mempool *pool, void *ptr, uns size)
 
 /**
  * Save the current state of a memory pool.
- * Do not call this function with an opened growing buffer. 
+ * Do not call this function with an opened growing buffer.
  **/
 static inline void mp_save(struct mempool *pool, struct mempool_state *state)
 {
@@ -384,7 +384,7 @@ void mp_pop(struct mempool *pool);
  * -----------------
  ***/
 
-char *mp_strdup(struct mempool *, const char *) LIKE_MALLOC;		/** Makes a copy of a string on a mempool. **/
+char *mp_strdup(struct mempool *, const char *) LIKE_MALLOC;		/** Makes a copy of a string on a mempool. Returns NULL for NULL string. **/
 void *mp_memdup(struct mempool *, const void *, uns) LIKE_MALLOC;	/** Makes a copy of a memory block on a mempool. **/
 /**
  * Concatenates all passed strings. The last parameter must be NULL.

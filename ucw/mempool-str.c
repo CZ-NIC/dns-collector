@@ -16,6 +16,8 @@
 char *
 mp_strdup(struct mempool *p, const char *s)
 {
+  if (!s)
+    return NULL;
   uns l = strlen(s) + 1;
   char *t = mp_alloc_fast_noalign(p, l);
   memcpy(t, s, l);

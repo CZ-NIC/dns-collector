@@ -164,7 +164,7 @@ void *xrealloc(void *, uns);			/** Reallocate memory and die() if there is none.
 void xfree(void *);				/** Free memory allocated by xmalloc() or xrealloc(). **/
 
 void *xmalloc_zero(uns) LIKE_MALLOC;		/** Allocate memory and fill it by zeroes. **/
-char *xstrdup(const char *) LIKE_MALLOC;	/** Make a xmalloc()'ed copy of a string. **/
+char *xstrdup(const char *) LIKE_MALLOC;	/** Make a xmalloc()'ed copy of a string. Returns NULL for NULL string. **/
 
 /*** === Trivial timers (timer.c) ***/
 
