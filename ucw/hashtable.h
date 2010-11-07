@@ -40,7 +40,7 @@
  *			With complex keys, HASH_GIVE_HASHFN and HASH_GIVE_EQ
  *			are mandatory.
  *  | HASH_KEY_MEMORY=f	use node->f as a raw data key, compared using
- *  			memcmp
+ *			memcmp
  *    HASH_KEY_SIZE	the length of the key block
  *
  *  Then specify what operations you request (all names are automatically
