@@ -83,6 +83,8 @@ main_new(void)
 void
 main_delete(struct main_context *m)
 {
+  struct main_context *prev = main_switch_context(m);
+
   if (m->sigchld_handler)
     signal_del(m->sigchld_handler);
   if (m->sig_pipe_file)
@@ -109,6 +111,8 @@ main_delete(struct main_context *m)
 #endif
   xfree(m);
   // FIXME: Some mechanism for cleaning up after fork()
+
+  main_switch_context((prev == m) ? NULL : prev);
 }
 
 struct main_context *
@@ -150,8 +154,7 @@ main_init(void)
 void
 main_cleanup(void)
 {
-  struct main_context *m = main_switch_context(NULL);
-  main_delete(m);
+  main_delete(main_current());
 }
 
 void
