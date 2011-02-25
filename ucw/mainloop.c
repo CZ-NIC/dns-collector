@@ -86,9 +86,15 @@ main_delete(struct main_context *m)
   struct main_context *prev = main_switch_context(m);
 
   if (m->sigchld_handler)
-    signal_del(m->sigchld_handler);
+    {
+      signal_del(m->sigchld_handler);
+      xfree(m->sigchld_handler);
+    }
   if (m->sig_pipe_file)
-    file_del(m->sig_pipe_file);
+    {
+      file_del(m->sig_pipe_file);
+      xfree(m->sig_pipe_file);
+     }
   if (m->sig_pipe_recv >= 0)
     {
       close(m->sig_pipe_recv);
