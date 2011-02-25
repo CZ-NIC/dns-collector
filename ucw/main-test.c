@@ -21,6 +21,7 @@ static struct main_block_io fin, fout;
 static struct main_hook hook;
 static struct main_timer tm;
 static struct main_signal sg;
+static int sig_counter;
 
 static byte rb[16];
 
@@ -52,6 +53,8 @@ static void dwrite(struct main_block_io *bio UNUSED)
 static int dhook(struct main_hook *ho UNUSED)
 {
   msg(L_INFO, "Hook called");
+  if (sig_counter >= 3)
+    return HOOK_SHUTDOWN;
   return 0;
 }
 
@@ -78,7 +81,8 @@ static void dexit(struct main_process *pr)
 
 static void dsignal(struct main_signal *sg UNUSED)
 {
-  msg(L_INFO, "SIGINT received (use Ctrl-\\ to really quit)");
+  msg(L_INFO, "SIGINT received (send 3 times to really quit, or use Ctrl-\\)");
+  sig_counter++;
 }
 
 int
@@ -115,6 +119,13 @@ main(void)
 
   main_loop();
   msg(L_INFO, "Finished.");
+
+  block_io_del(&fin);
+  block_io_del(&fout);
+  hook_del(&hook);
+  signal_del(&sg);
+  main_cleanup();
+  return 0;
 }
 
 #endif
