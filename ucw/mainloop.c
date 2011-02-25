@@ -535,7 +535,7 @@ main_debug_context(struct main_context *m UNUSED)
   CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
     msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, data %p)",
 	fi, fi->fd, fi->read_handler, fi->write_handler, fi->data);
-  CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
+  CLIST_FOR_EACH(struct main_file *, fi, m->file_active_list)
     msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, data %p) [pending events: %x]",
 	fi, fi->fd, fi->read_handler, fi->write_handler, fi->data, fi->events);
     // FIXME: Can we display status of block_io requests somehow?
@@ -717,23 +717,34 @@ main_loop(void)
 	  }
 #endif
 
-      // Process the buffered file events
+      /*
+       *  Process the buffered file events. This is pretty tricky, since
+       *  user callbacks can modify the file structure or even destroy it.
+       *  In such cases, we detect that the structure was relinked and stop
+       *  processing its events, leaving them for the next iteration of the
+       *  main loop.
+       */
       struct main_file *fi;
-      while (fi = clist_remove_head(&m->file_active_list))
+      while (fi = clist_head(&m->file_active_list))
 	{
-	  clist_add_tail(&m->file_list, &fi->n);
 	  if (fi->events & (POLLIN | POLLHUP | POLLERR))
 	    {
+	      fi->events &= ~(POLLIN | POLLHUP | POLLERR);
 	      do
 		DBG("MAIN: Read event on fd %d", fi->fd);
 	      while (fi->read_handler && fi->read_handler(fi));
+	      continue;
 	    }
 	  if (fi->events & (POLLOUT | POLLERR))
 	    {
+	      fi->events &= ~(POLLOUT | POLLERR);
 	      do
 		DBG("MAIN: Write event on fd %d", fi->fd);
 	      while (fi->write_handler && fi->write_handler(fi));
+	      continue;
 	    }
+	  clist_remove(&fi->n);
+	  clist_add_tail(&m->file_list, &fi->n);
 	}
     }
 }
