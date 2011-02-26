@@ -272,7 +272,7 @@ void file_del(struct main_file *fi);
  * (except that it gets added and deleted at the right places), feel free
  * to adjust it from your handler functions by @block_io_set_timeout().
  * When the timer expires, the error handler is automatically called with
- * `MFERR_TIMEOUT`.
+ * `BIO_ERR_TIMEOUT`.
  ***/
 
 /** The block I/O structure. **/
@@ -298,14 +298,14 @@ void block_io_del(struct main_block_io *bio);
 /**
  * Specifies when or why an error happened. This is passed to the error handler.
  * `errno` is still set to the original source of error. The only exception
- * is `MFERR_TIMEOUT`, in which case `errno` is not set and the only possible
+ * is `BIO_ERR_TIMEOUT`, in which case `errno` is not set and the only possible
  * cause of it is timeout of the timer associated with the block_io
  * (see @block_io_set_timeout()).
  **/
 enum block_io_err_cause {
-  MFERR_READ,
-  MFERR_WRITE,
-  MFERR_TIMEOUT
+  BIO_ERR_READ,
+  BIO_ERR_WRITE,
+  BIO_ERR_TIMEOUT
 };
 
 /**
@@ -338,7 +338,7 @@ void block_io_write(struct main_block_io *bio, void *buf, uns len);
 /**
  * Sets a timer for a file @bio. If the timer is not overwritten or disabled
  * until @expires_delta milliseconds, the file timeouts and error_handler() is called with
- * <<enum_block_io_err_cause,`MFERR_TIMEOUT`>>. A value of `0` stops the timer.
+ * <<enum_block_io_err_cause,`BIO_ERR_TIMEOUT`>>. A value of `0` stops the timer.
  *
  * Previous setting of the timeout on the same file will be overwritten.
  *
