@@ -15,18 +15,14 @@
 #include <signal.h>
 
 /***
- * [[conventions]]
- * Conventions
- * -----------
+ * [[basic]]
+ * Basic operations
+ * ----------------
  *
- * The descriptions of structures contain some fields marked with `[*]`.
- * These are the only ones that are intended to be manipulated by the user.
- * The remaining fields serve for internal use only and you must initialize them
- * to zeroes.
- *
- * FIXME: The documentation is outdated.
+ * First of all, let us take a look at the basic operations with main loop contexts.
  ***/
 
+/** The main loop context **/
 struct main_context {
   timestamp_t now;			/** [*] Current time in milliseconds since the UNIX epoch. See @main_get_time(). **/
   ucw_time_t now_seconds;		/** [*] Current time in seconds since the epoch. **/
@@ -56,18 +52,42 @@ struct main_context {
   struct main_signal *sigchld_handler;
 };
 
-struct main_context *main_new(void);
+struct main_context *main_new(void);		/** Create a new context. **/
+
+/**
+ * Delete a context, assuming it does have any event handlers attached. Does nothing if @m is NULL.
+ * It is allowed to call @main_delete() from a hook function of the same context, but you must
+ * never return to the main loop -- e.g., you can exit() the process instead.
+ **/
 void main_delete(struct main_context *m);
+
+/**
+ * Delete a context. If there are any event handlers attached, they are deactivated
+ * (but the responsibility to free the memory there were allocated from lies upon you).
+ * If there are any file handlers, the corresponding file descriptors are closed.
+ **/
 void main_destroy(struct main_context *m);
+
+/** Switch the current context of the calling thread. Returns the previous current context. **/
 struct main_context *main_switch_context(struct main_context *m);
+
+/** Return the current context. Dies if there is none or if the context has been deleted. **/
 struct main_context *main_current(void);
 
+/** Initialize the main loop module and create a top-level context. **/
 void main_init(void);
+
+/** Deinitialize the main loop module, calling @main_delete() on the top-level context. **/
 void main_cleanup(void);
+
+/**
+ * Deinitialize the main loop module, calling @main_destroy() on the top-level context.
+ * This is especially useful in a freshly forked-off child process.
+ **/
 void main_teardown(void);
 
 /**
- * Start the mainloop.
+ * Start the event loop on the current context.
  * It will watch the provided objects and call callbacks.
  * Terminates when someone sets <<var_main_shutdown,`main_shutdown`>>
  * to nonzero, when all <<hook,hooks>> return
@@ -76,6 +96,13 @@ void main_teardown(void);
  **/
 void main_loop(void);
 
+/** Ask the main loop to terminate at the nearest occasion. **/
+static inline void main_shut_down(void)
+{
+  main_current()->shutdown = 1;
+}
+
+/** Show the current state of a given context (use @main_debug() for the current context). **/
 void main_debug_context(struct main_context *m);
 
 static inline void
@@ -89,35 +116,33 @@ main_debug(void)
  * Timers
  * ------
  *
- * This part allows you to get the current time and request
- * to have your function called when the time comes.
+ * The event loop provides the current time, measured as a 64-bit number
+ * of milliseconds since the system epoch (represented in the type `timestamp_t`).
+ *
+ * You can also register timers, which call a handler function at a given moment.
+ * The handler function must either call @timer_del() to delete the timer, or call
+ * @timer_add() with a different expiration time.
  ***/
 
-static inline timestamp_t
-main_get_now(void)
+/**
+ * Get the current timestamp cached in the current context. It is refreshed in every
+ * iteration of the event loop, or explicitly by calling @main_get_time().
+ **/
+static inline timestamp_t main_get_now(void)
 {
   return main_current()->now;
 }
 
-static inline ucw_time_t
-main_get_now_seconds(void)
+/** An analog of @main_get_now() returning the number of seconds since the system epoch. **/
+static inline ucw_time_t main_get_now_seconds(void)
 {
   return main_current()->now_seconds;
 }
 
-static inline void
-main_shut_down(void)
-{
-  main_current()->shutdown = 1;
-}
-
 /**
  * This is a description of a timer.
- * You fill in a handler function, any user-defined data you wish to pass
- * to the handler, and then you invoke @timer_add().
- *
- * The handler() function must either call @timer_del() to delete the timer,
- * or call @timer_add() with a different expiration time.
+ * You define the handler function and possibly user-defined data you wish
+ * to pass to the handler, and then you invoke @timer_add().
  **/
 struct main_timer {
   cnode n;
@@ -128,28 +153,29 @@ struct main_timer {
 };
 
 /**
- * Adds a new timer into the mainloop to be watched and called
+ * Add a new timer into the main loop to be watched and called
  * when it expires. It can also be used to modify an already running
  * timer. It is permitted (and usual) to call this function from the
  * timer's handler itself if you want the timer to trigger again.
  *
- * The @expire parameter is absolute, just add <<var_main_now,`main_now`>> if you need a relative timer.
+ * The @expire parameter is absolute, use @timer_add_rel() for a relative version.
  **/
 void timer_add(struct main_timer *tm, timestamp_t expires);
 
+/** Like @timer_add(), but the expiration time is relative to the current time. **/
 void timer_add_rel(struct main_timer *tm, timestamp_t expires_delta);
 
 /**
- * Removes a timer from the active ones. It is permitted (and usual) to call
+ * Removes a timer from the active ones. It is permitted (and common) to call
  * this function from the timer's handler itself if you want to deactivate
  * the timer.
  **/
 void timer_del(struct main_timer *tm);
 
 /**
- * Forces refresh of <<var_main_now,`main_now`>>. You do not usually
- * need to call this, since it is called every time the loop polls for
- * changes. It is here if you need extra precision or some of the
+ * Forces refresh of the current timestamp cached in the active context.
+ * You usually do not need to call this, since it is called every time the
+ * loop polls for events. It is here if you need extra precision or some of the
  * hooks takes a long time.
  **/
 void main_get_time(void);
@@ -159,38 +185,35 @@ void main_get_time(void);
  * Activity on file descriptors
  * ----------------------------
  *
- * You can let the mainloop watch over a set of file descriptors
- * for a changes.
+ * You can ask the main loop to watch a set of file descriptors for activity.
+ * (This is a generalization of the select() and poll() system calls. Internally,
+ * it uses either poll() or the more efficient epoll().)
  *
- * It supports two ways of use. With the first one, you provide
- * low-level handlers for reading and writing (`read_handler` and
- * `write_handler`). They will be called every time the file descriptor
- * is ready to be read from or written to.
+ * You create a <<struct_main_file,`struct main_file`>>, fill in a file descriptor
+ * and pointers to handler functions to be called when the descriptor becomes
+ * ready for reading and/or writing, and call @file_add(). When you need to
+ * modify the handlers (e.g., to set them to NULL if you are no longer interested
+ * in a given event), you should call @file_chg() to notify the main loop about
+ * the changes.
  *
- * Return non-zero if you want to get the handler called again right now (you
- * handled a block of data and expect more). If you return `0`, the hook will
- * be called again in the next iteration, if it is still ready to be read/written.
+ * From within the handler functions, you are allowed to call @file_chg() and even
+ * @file_del().
  *
- * This way is suitable for listening sockets, interactive connections, where
- * you need to parse everything that comes right away and similar cases.
+ * The return value of a handler function should be either `HOOK_RETRY` or `HOOK_IDLE`.
+ * `HOOK_RETRY` signals that the function would like to consume more data immediately
+ * (i.e., it wants to be called again soon, but the event loop can postpone it after
+ * processing other events to avoid starvation). `HOOK_IDLE` tells that the handler
+ * wants to be called when the descriptor becomes ready again.
  *
- * The second way is to ask mainloop to read or write a buffer of data. You
- * provide a `read_done` or `write_done` handler respectively and call @file_read()
- * or @file_write(). This is handy for data connections where you need to transfer
- * data between two endpoints or for binary connections where the size of message
- * is known in advance.
+ * For backward compatibility, 0 can be used instead of `HOOK_IDLE` and 1 for `HOOK_RETRY`.
  *
- * It is possible to combine both methods, but it may be tricky to do it right.
- *
- * Both ways use `error_handler` to notify you about errors.
+ * If you want to read/write fixed-size blocks of data asynchronously, the
+ * <<blockio,Asynchronous block I/O>> interface could be more convenient.
  ***/
 
 /**
- * If you want mainloop to watch a file descriptor, fill at last `fd` into this
- * structure. To get any useful information from the mainloop, provide some handlers
- * too.
- *
- * After that, insert it into the mainloop by calling @file_add().
+ * This structure describes a file descriptor to be watched and the handlers
+ * to be called when the descriptor is ready for reading and/or writing.
  **/
 struct main_file {
   cnode n;
@@ -207,26 +230,52 @@ struct main_file {
 };
 
 /**
- * Inserts a <<struct_main_file,`main_file`>> structure into the mainloop to be
+ * Insert a <<struct_main_file,`main_file`>> structure into the main loop to be
  * watched for activity. You can call this at any time, even inside a handler
  * (of course for a different file descriptor than the one of the handler).
+ *
+ * The file descriptor is automatically set to the non-blocking mode.
  **/
 void file_add(struct main_file *fi);
 /**
- * Tells the mainloop the file has changed its state. Call it whenever you
+ * Tell the main loop that the file structure has changed. Call it whenever you
  * change any of the handlers.
  *
  * Can be called only on active files (only the ones added by @file_add()).
  **/
 void file_chg(struct main_file *fi);
 /**
- * Removes a file from the watched set. You have to call this on closed files
- * too, since the mainloop does not handle close in any way.
+ * Removes a file from the watched set. If you want to close a descriptor,
+ * please use this function first.
  *
  * Can be called from a handler.
  **/
 void file_del(struct main_file *fi);
 
+/***
+ * [[blockio]]
+ * Asynchronous block I/O
+ * ----------------------
+ *
+ * If you are reading or writing fixed-size blocks of data, you can let the
+ * block I/O interface handle the boring routine of handling partial reads
+ * and writes for you.
+ *
+ * You just create <<struct_main_block_io,`struct main_block_io`>> and call
+ * @block_io_add() on it, which sets up some `main_file`s internally.
+ * Then you can just call @block_io_read() or @block_io_write() to ask for
+ * reading or writing of a given block. When the operation is finished,
+ * your handler function is called.
+ *
+ * Additionally, the block I/O is equipped with a timer, which can be used
+ * to detect communication timeouts. The timer is not touched internally
+ * (except that it gets added and deleted at the right places), feel free
+ * to adjust it from your handler functions by @block_io_set_timeout().
+ * When the timer expires, the error handler is automatically called with
+ * `MFERR_TIMEOUT`.
+ ***/
+
+/** The block I/O structure. **/
 struct main_block_io {
   struct main_file file;
   byte *rbuf;					/* Read/write pointers for use by file_read/write */
@@ -240,14 +289,18 @@ struct main_block_io {
   void *data;					/* [*] Data for use by the handlers */
 };
 
+/** Activate a block I/O structure. **/
 void block_io_add(struct main_block_io *bio, int fd);
+
+/** Deactivate a block I/O structure. **/
 void block_io_del(struct main_block_io *bio);
 
 /**
  * Specifies when or why an error happened. This is passed to the error handler.
  * `errno` is still set to the original source of error. The only exception
  * is `MFERR_TIMEOUT`, in which case `errno` is not set and the only possible
- * cause of it is timeout on the file descriptor (see @file_set_timeout).
+ * cause of it is timeout of the timer associated with the block_io
+ * (see @block_io_set_timeout()).
  **/
 enum block_io_err_cause {
   MFERR_READ,
@@ -256,61 +309,55 @@ enum block_io_err_cause {
 };
 
 /**
- * Asks the mainloop to read @len bytes of data from @bio into @buf.
- * It cancels any previous unfinished read requested this way and overwrites
- * `read_handler`.
+ * Ask the main loop to read @len bytes of data from @bio into @buf.
+ * It cancels any previous unfinished read requested in this way.
  *
- * When the read is done, read_done() handler is called. If an EOF occurred,
+ * When the read is done, the read_done() handler is called. If an EOF occurred,
  * `rpos < rlen` (eg. not all data were read).
  *
  * Can be called from a handler.
  *
- * You can use a call with zero @len to cancel current read, but all read data
+ * You can use a call with zero @len to cancel the current read, but all read data
  * will be thrown away.
  **/
 void block_io_read(struct main_block_io *bio, void *buf, uns len);
+
 /**
- * Requests that the mainloop writes @len bytes of data from @buf to @bio.
+ * Request that the main loop writes @len bytes of data from @buf to @bio.
  * Cancels any previous unfinished write and overwrites `write_handler`.
  *
- * When it is written, write_done() handler is called.
+ * When it is written, the write_done() handler is called.
  *
  * Can be called from a handler.
  *
  * If you call it with zero @len, it will cancel the previous write, but note
- * some data may already be written.
+ * that some data may already be written.
  **/
 void block_io_write(struct main_block_io *bio, void *buf, uns len);
+
 /**
  * Sets a timer for a file @bio. If the timer is not overwritten or disabled
- * until @expires, the file timeouts and error_handler() is called with
- * <<enum_block_io_err_cause,`MFERR_TIMEOUT`>>.
+ * until @expires_delta milliseconds, the file timeouts and error_handler() is called with
+ * <<enum_block_io_err_cause,`MFERR_TIMEOUT`>>. A value of `0` stops the timer.
  *
- * The mainloop does not disable or reset it, when something happens, it just
- * bundles a timer with the file. If you want to watch for inactivity, it is
- * your task to reset it whenever your handler is called.
- *
- * The @expires parameter is absolute (add <<var_main_now,`main_now`>> if you
- * need relative). The call and overwrites previously set timeout. Value of `0`
- * disables the timeout (the <<enum_block_io_err_cause,`MFERR_TIMEOUT`>> will
- * not trigger).
+ * Previous setting of the timeout on the same file will be overwritten.
  *
  * The use-cases for this are mainly sockets or pipes, when:
  *
- * - You want to drop inactive connections (no data come or go for a given time, not
+ * - You want to drop inactive connections (no data comes in or out for a given time, not
  *   incomplete messages).
  * - You want to enforce answer in a given time (for example authentication).
- * - You give maximum time for a whole connection.
+ * - Watching maximum time for a whole connection.
  **/
-void block_io_set_timeout(struct main_block_io *bio, timestamp_t expires);
+void block_io_set_timeout(struct main_block_io *bio, timestamp_t expires_delta);
 
 /***
  * [[hooks]]
  * Loop hooks
  * ----------
  *
- * The hooks are called whenever the mainloop performs an iteration.
- * You can shutdown the mainloop from within them or request an iteration
+ * The hooks are called whenever the main loop performs an iteration.
+ * You can shutdown the main loop from within them or request an iteration
  * to happen without sleeping (just poll, no waiting for events).
  ***/
 
@@ -381,7 +428,7 @@ struct main_process {
 };
 
 /**
- * Asks the mainloop to watch this process.
+ * Asks the main loop to watch this process.
  * As it is done automatically in @process_fork(), you need this only
  * if you removed the process previously by @process_del().
  **/
