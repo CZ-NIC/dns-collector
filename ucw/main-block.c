@@ -56,7 +56,7 @@ block_io_read_handler(struct main_file *fi)
 	{
 	  if (errno != EINTR && errno != EAGAIN && bio->error_handler)
 	    bio->error_handler(bio, BIO_ERR_READ);
-	  return 0;
+	  return HOOK_IDLE;
 	}
       else if (!l)
 	break;
@@ -66,7 +66,7 @@ block_io_read_handler(struct main_file *fi)
   fi->read_handler = NULL;
   file_chg(fi);
   bio->read_done(bio);
-  return 1;
+  return HOOK_RETRY;
 }
 
 static int
@@ -82,7 +82,7 @@ block_io_write_handler(struct main_file *fi)
 	{
 	  if (errno != EINTR && errno != EAGAIN && bio->error_handler)
 	    bio->error_handler(bio, BIO_ERR_WRITE);
-	  return 0;
+	  return HOOK_IDLE;
 	}
       bio->wpos += l;
     }
@@ -90,7 +90,7 @@ block_io_write_handler(struct main_file *fi)
   fi->write_handler = NULL;
   file_chg(fi);
   bio->write_done(bio);
-  return 1;
+  return HOOK_RETRY;
 }
 
 void
