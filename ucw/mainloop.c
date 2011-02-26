@@ -43,13 +43,36 @@
 
 #define EPOLL_BUF_SIZE 256
 
+static void file_del_ctx(struct main_context *m, struct main_file *fi);
+static void signal_del_ctx(struct main_context *m, struct main_signal *ms);
+
 static void
-do_main_get_time(struct main_context *m)
+main_get_time_ctx(struct main_context *m)
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);
   m->now_seconds = tv.tv_sec;
   m->now = (timestamp_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
+static struct main_context *
+main_current_nocheck(void)
+{
+  return ucwlib_thread_context()->main_context;
+}
+
+struct main_context *
+main_current(void)
+{
+  struct main_context *m = main_current_nocheck();
+  ASSERT(m);
+  return m;
+}
+
+static int
+main_is_current(struct main_context *m)
+{
+  return (m == main_current_nocheck());
 }
 
 struct main_context *
@@ -73,7 +96,7 @@ main_new(void)
 #else
   m->poll_table_obsolete = 1;
 #endif
-  do_main_get_time(m);
+  main_get_time_ctx(m);
   sigemptyset(&m->want_signals);
   m->sig_pipe_recv = m->sig_pipe_send = -1;
 
@@ -83,16 +106,21 @@ main_new(void)
 void
 main_delete(struct main_context *m)
 {
-  struct main_context *prev = main_switch_context(m);
+  /*
+   *  If the context is current, deactivate it first. But beware,
+   *  we must not call functions that depend on the current context.
+   */
+  if (main_is_current(m))
+    main_switch_context(NULL);
 
   if (m->sigchld_handler)
     {
-      signal_del(m->sigchld_handler);
+      signal_del_ctx(m, m->sigchld_handler);
       xfree(m->sigchld_handler);
     }
   if (m->sig_pipe_file)
     {
-      file_del(m->sig_pipe_file);
+      file_del_ctx(m, m->sig_pipe_file);
       xfree(m->sig_pipe_file);
      }
   if (m->sig_pipe_recv >= 0)
@@ -116,9 +144,6 @@ main_delete(struct main_context *m)
   GARY_FREE(m->poll_file_table);
 #endif
   xfree(m);
-  // FIXME: Some mechanism for cleaning up after fork()
-
-  main_switch_context((prev == m) ? NULL : prev);
 }
 
 struct main_context *
@@ -141,15 +166,6 @@ main_switch_context(struct main_context *m)
   return m0;
 }
 
-struct main_context *
-main_current(void)
-{
-  struct ucwlib_context *c = ucwlib_thread_context();
-  struct main_context *m = c->main_context;
-  ASSERT(m);
-  return m;
-}
-
 void
 main_init(void)
 {
@@ -166,7 +182,7 @@ main_cleanup(void)
 void
 main_get_time(void)
 {
-  do_main_get_time(main_current());
+  main_get_time_ctx(main_current());
 }
 
 static inline uns
@@ -288,12 +304,12 @@ file_chg(struct main_file *fi)
 #endif
 }
 
-void
-file_del(struct main_file *fi)
+static void
+file_del_ctx(struct main_context *m, struct main_file *fi)
 {
-  struct main_context *m = main_current();
-
+  // XXX: Can be called on a non-current context
   DBG("MAIN: Deleting file %p (fd=%d)", fi, fi->fd);
+
   ASSERT(clist_is_linked(&fi->n));
   clist_unlink(&fi->n);
   m->file_cnt--;
@@ -303,6 +319,12 @@ file_del(struct main_file *fi)
 #else
   m->poll_table_obsolete = 1;
 #endif
+}
+
+void
+file_del(struct main_file *fi)
+{
+  file_del_ctx(main_current(), fi);
 }
 
 void
@@ -504,11 +526,10 @@ signal_add(struct main_signal *ms)
   sigaddset(&m->want_signals, ms->signum);
 }
 
-void
-signal_del(struct main_signal *ms)
+static void
+signal_del_ctx(struct main_context *m, struct main_signal *ms)
 {
-  struct main_context *m = main_current();
-
+  // XXX: Can be called on a non-current context
   DBG("MAIN: Deleting signal %p (sig=%d)", ms, ms->signum);
 
   ASSERT(clist_is_linked(&ms->n));
@@ -520,12 +541,21 @@ signal_del(struct main_signal *ms)
       another++;
   if (!another)
     {
-      sigset_t ss;
-      sigemptyset(&ss);
-      sigaddset(&ss, ms->signum);
-      THREAD_SIGMASK(SIG_BLOCK, &ss, NULL);
+      if (main_is_current(m))
+	{
+	  sigset_t ss;
+	  sigemptyset(&ss);
+	  sigaddset(&ss, ms->signum);
+	  THREAD_SIGMASK(SIG_BLOCK, &ss, NULL);
+	}
       sigdelset(&m->want_signals, ms->signum);
     }
+}
+
+void
+signal_del(struct main_signal *ms)
+{
+  signal_del_ctx(main_current(), ms);
 }
 
 void
@@ -663,7 +693,7 @@ main_loop(void)
   DBG("MAIN: Entering main_loop");
   struct main_context *m = main_current();
 
-  do_main_get_time(m);
+  main_get_time_ctx(m);
   for (;;)
     {
       timestamp_t wake = m->now + 1000000000;
@@ -679,7 +709,7 @@ main_loop(void)
 	}
       if (count_timers(m))
 	wake = MIN(wake, m->timer_table[1]->expires);
-      do_main_get_time(m);
+      main_get_time_ctx(m);
       int timeout = ((wake > m->now) ? wake - m->now : 0);
 
 #ifdef CONFIG_UCW_EPOLL
@@ -697,7 +727,7 @@ main_loop(void)
       if (n < 0 && errno != EAGAIN && errno != EINTR)
 	die("(e)poll failed: %m");
       timestamp_t old_now = m->now;
-      do_main_get_time(m);
+      main_get_time_ctx(m);
       m->idle_time += m->now - old_now;
 
       if (n <= 0)
