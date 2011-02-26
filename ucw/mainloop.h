@@ -58,11 +58,13 @@ struct main_context {
 
 struct main_context *main_new(void);
 void main_delete(struct main_context *m);
+void main_destroy(struct main_context *m);
 struct main_context *main_switch_context(struct main_context *m);
 struct main_context *main_current(void);
 
 void main_init(void);
 void main_cleanup(void);
+void main_teardown(void);
 
 /**
  * Start the mainloop.
@@ -224,11 +226,6 @@ void file_chg(struct main_file *fi);
  * Can be called from a handler.
  **/
 void file_del(struct main_file *fi);
-/**
- * Closes all file descriptors known to mainloop. Often used between fork()
- * and exec().
- **/
-void file_close_all(void);
 
 struct main_block_io {
   struct main_file file;

@@ -68,6 +68,7 @@ static void dtimer(struct main_timer *tm)
 static void dentry(void)
 {
   log_fork();
+  main_teardown();
   msg(L_INFO, "*** SUBPROCESS START ***");
   sleep(2);
   msg(L_INFO, "*** SUBPROCESS FINISH ***");
@@ -124,6 +125,7 @@ main(void)
   block_io_del(&fout);
   hook_del(&hook);
   signal_del(&sg);
+  timer_del(&tm);
   main_cleanup();
   return 0;
 }

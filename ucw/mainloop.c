@@ -75,6 +75,15 @@ main_is_current(struct main_context *m)
   return (m == main_current_nocheck());
 }
 
+static inline uns
+count_timers(struct main_context *m)
+{
+  if (m->timer_table)
+    return GARY_SIZE(m->timer_table) - 1;
+  else
+    return 0;
+}
+
 struct main_context *
 main_new(void)
 {
@@ -103,8 +112,8 @@ main_new(void)
   return m;
 }
 
-void
-main_delete(struct main_context *m)
+static void
+main_prepare_delete(struct main_context *m)
 {
   /*
    *  If the context is current, deactivate it first. But beware,
@@ -112,6 +121,17 @@ main_delete(struct main_context *m)
    */
   if (main_is_current(m))
     main_switch_context(NULL);
+
+  // Close epoll descriptor early enough, it might be shared after fork!
+#ifdef CONFIG_UCW_EPOLL
+  ASSERT(clist_empty(&m->file_recalc_list));
+  xfree(m->epoll_events);
+  close(m->epoll_fd);
+  m->epoll_fd = -1;
+#else
+  GARY_FREE(m->poll_table);
+  GARY_FREE(m->poll_file_table);
+#endif
 
   if (m->sigchld_handler)
     {
@@ -128,22 +148,49 @@ main_delete(struct main_context *m)
       close(m->sig_pipe_recv);
       close(m->sig_pipe_send);
     }
+}
+
+static void
+main_do_delete(struct main_context *m)
+{
+  GARY_FREE(m->timer_table);
+  xfree(m);
+}
+
+void
+main_delete(struct main_context *m)
+{
+  if (!m)
+    return;
+
+  main_prepare_delete(m);
   ASSERT(clist_empty(&m->file_list));
   ASSERT(clist_empty(&m->file_active_list));
   ASSERT(clist_empty(&m->hook_list));
   ASSERT(clist_empty(&m->hook_done_list));
   ASSERT(clist_empty(&m->process_list));
   ASSERT(clist_empty(&m->signal_list));
-  GARY_FREE(m->timer_table);
+  ASSERT(!count_timers(m));
+  main_do_delete(m);
+}
+
+void
+main_destroy(struct main_context *m)
+{
+  // FIXME: Add a doc note on calling from a running mainloop
+  if (!m)
+    return;
+  main_prepare_delete(m);
+
+  // Close all files
+  clist_insert_list_after(&m->file_active_list, m->file_list.head.prev);
 #ifdef CONFIG_UCW_EPOLL
-  ASSERT(clist_empty(&m->file_recalc_list));
-  xfree(m->epoll_events);
-  close(m->epoll_fd);
-#else
-  GARY_FREE(m->poll_table);
-  GARY_FREE(m->poll_file_table);
+  clist_insert_list_after(&m->file_recalc_list, m->file_list.head.prev);
 #endif
-  xfree(m);
+  CLIST_FOR_EACH(struct main_file *, f, m->file_list)
+    close(f->fd);
+
+  main_do_delete(m);
 }
 
 struct main_context *
@@ -176,22 +223,19 @@ main_init(void)
 void
 main_cleanup(void)
 {
-  main_delete(main_current());
+  main_delete(main_current_nocheck());
+}
+
+void
+main_teardown(void)
+{
+  main_destroy(main_current_nocheck());
 }
 
 void
 main_get_time(void)
 {
   main_get_time_ctx(main_current());
-}
-
-static inline uns
-count_timers(struct main_context *m)
-{
-  if (m->timer_table)
-    return GARY_SIZE(m->timer_table) - 1;
-  else
-    return 0;
 }
 
 void
@@ -314,7 +358,7 @@ file_del_ctx(struct main_context *m, struct main_file *fi)
   clist_unlink(&fi->n);
   m->file_cnt--;
 #ifdef CONFIG_UCW_EPOLL
-  if (epoll_ctl(m->epoll_fd, EPOLL_CTL_DEL, fi->fd, NULL) < 0)
+  if (m->epoll_fd >= 0 && epoll_ctl(m->epoll_fd, EPOLL_CTL_DEL, fi->fd, NULL) < 0)
     die("epoll_ctl() failed: %m");
 #else
   m->poll_table_obsolete = 1;
@@ -325,15 +369,6 @@ void
 file_del(struct main_file *fi)
 {
   file_del_ctx(main_current(), fi);
-}
-
-void
-file_close_all(void)
-{
-  struct main_context *m = main_current();
-
-  CLIST_FOR_EACH(struct main_file *, f, m->file_list)
-    close(f->fd);
 }
 
 void
