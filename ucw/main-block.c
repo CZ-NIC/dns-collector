@@ -132,3 +132,12 @@ block_io_write(struct main_block_io *bio, void *buf, uns len)
     }
   file_chg(&bio->file);
 }
+
+void
+block_io_set_timeout(struct main_block_io *bio, timestamp_t expires_delta)
+{
+  if (!expires_delta)
+    timer_del(&bio->timer);
+  else
+    timer_add_rel(&bio->timer, expires_delta);
+}

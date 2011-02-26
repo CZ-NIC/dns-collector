@@ -30,18 +30,21 @@ static void dread(struct main_block_io *bio)
   if (bio->rpos < bio->rlen)
     {
       msg(L_INFO, "Read EOF");
+      bio->data = NULL;	// Mark as deleted
       block_io_del(bio);
     }
   else
     {
       msg(L_INFO, "Read done");
       block_io_read(bio, rb, sizeof(rb));
+      block_io_set_timeout(&fin, 3000);
     }
 }
 
 static void derror(struct main_block_io *bio, int cause)
 {
   msg(L_INFO, "Error: %m !!! (cause %d)", cause);
+  bio->data = NULL;
   block_io_del(bio);
 }
 
@@ -94,11 +97,13 @@ main(void)
 
   fin.read_done = dread;
   fin.error_handler = derror;
+  fin.data = "";
   block_io_add(&fin, 0);
   block_io_read(&fin, rb, sizeof(rb));
 
   fout.write_done = dwrite;
   fout.error_handler = derror;
+  fout.data = "";
   block_io_add(&fout, 1);
   block_io_write(&fout, "Hello, world!\n", 14);
 
@@ -121,8 +126,10 @@ main(void)
   main_loop();
   msg(L_INFO, "Finished.");
 
-  block_io_del(&fin);
-  block_io_del(&fout);
+  if (fin.data)
+    block_io_del(&fin);
+  if (fout.data)
+    block_io_del(&fout);
   hook_del(&hook);
   signal_del(&sg);
   timer_del(&tm);
