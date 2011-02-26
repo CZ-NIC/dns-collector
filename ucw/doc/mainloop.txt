@@ -41,13 +41,13 @@ Simple programs usually employ the main loop in a straightforward way:
   handles them by calling the appropriate hook functions. These functions
   can of course add new events or modify/delete the existing ones.
 - When the program decides it wants to stop, it calls @main_shut_down(),
-  or alternatively it returns `HOOK_SHUTDOWN` from some hook callback.
+  or alternatively it returns <<enum_main_hook_return,`HOOK_SHUTDOWN`>> from some hook callback.
   Soon after that, @main_loop() returns.
 - Remove all event hooks and call @main_cleanup().
 
 The event structures (like <<struct_main_file,`struct main_file`>>) are
 always allocated by the user, but please touch only the fields marked
-in this documentation with `[*]'. The other fields are used internally;
+in this documentation with `[*]`. The other fields are used internally;
 you should initialize them to zeroes before adding the event and avoid
 accessing them afterwards.
 

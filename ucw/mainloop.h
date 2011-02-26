@@ -89,10 +89,9 @@ void main_teardown(void);
 /**
  * Start the event loop on the current context.
  * It will watch the provided objects and call callbacks.
- * Terminates when someone sets <<var_main_shutdown,`main_shutdown`>>
- * to nonzero, when all <<hook,hooks>> return
- * <<enum_main_hook_return,`HOOK_DONE`>> or at last one <<hook,hook>>
- * returns <<enum_main_hook_return,`HOOK_SHUTDOWN`>>.
+ * Terminates when someone calls @main_shut_down(),
+ * or when all <<hook,hooks>> return <<enum_main_hook_return,`HOOK_DONE`>>
+ * or at last one <<hook,hook>> returns <<enum_main_hook_return,`HOOK_SHUTDOWN`>>.
  **/
 void main_loop(void);
 
@@ -199,13 +198,15 @@ void main_get_time(void);
  * From within the handler functions, you are allowed to call @file_chg() and even
  * @file_del().
  *
- * The return value of a handler function should be either `HOOK_RETRY` or `HOOK_IDLE`.
- * `HOOK_RETRY` signals that the function would like to consume more data immediately
+ * The return value of a handler function should be either <<enum_main_hook_return,`HOOK_RETRY`>>
+ * or <<enum_main_hook_return,`HOOK_IDLE`>>. <<enum_main_hook_return,`HOOK_RETRY`>>
+ * signals that the function would like to consume more data immediately
  * (i.e., it wants to be called again soon, but the event loop can postpone it after
- * processing other events to avoid starvation). `HOOK_IDLE` tells that the handler
- * wants to be called when the descriptor becomes ready again.
+ * processing other events to avoid starvation). <<enum_main_hook_return,`HOOK_IDLE`>>
+ * tells that the handler wants to be called when the descriptor becomes ready again.
  *
- * For backward compatibility, 0 can be used instead of `HOOK_IDLE` and 1 for `HOOK_RETRY`.
+ * For backward compatibility, 0 can be used instead of <<enum_main_hook_return,`HOOK_IDLE`>>
+ * and 1 for <<enum_main_hook_return,`HOOK_RETRY`>>.
  *
  * If you want to read/write fixed-size blocks of data asynchronously, the
  * <<blockio,Asynchronous block I/O>> interface could be more convenient.
@@ -262,7 +263,7 @@ void file_del(struct main_file *fi);
  * and writes for you.
  *
  * You just create <<struct_main_block_io,`struct main_block_io`>> and call
- * @block_io_add() on it, which sets up some `main_file`s internally.
+ * @block_io_add() on it, which sets up some <<struct_main_file,`main_file`>>s internally.
  * Then you can just call @block_io_read() or @block_io_write() to ask for
  * reading or writing of a given block. When the operation is finished,
  * your handler function is called.
@@ -272,7 +273,7 @@ void file_del(struct main_file *fi);
  * (except that it gets added and deleted at the right places), feel free
  * to adjust it from your handler functions by @block_io_set_timeout().
  * When the timer expires, the error handler is automatically called with
- * `BIO_ERR_TIMEOUT`.
+ * <<enum_block_io_err_cause,`BIO_ERR_TIMEOUT`>>.
  ***/
 
 /** The block I/O structure. **/
@@ -384,6 +385,9 @@ struct main_hook {
  *   This will cause calling of all the hooks again soon.
  * - `HOOK_DONE` -- The loop will terminate if all hooks return this.
  * - `HOOK_SHUTDOWN` -- Shuts down the loop.
+ *
+ * The `HOOK_IDLE` and `HOOK_RETRY` constants are also used as return values
+ * of file handlers.
  **/
 enum main_hook_return {
   HOOK_IDLE,
