@@ -24,10 +24,10 @@
 
 /** The main loop context **/
 struct main_context {
-  timestamp_t now;			/** [*] Current time in milliseconds since the UNIX epoch. See @main_get_time(). **/
-  ucw_time_t now_seconds;		/** [*] Current time in seconds since the epoch. **/
-  timestamp_t idle_time;		/** [*] Total time in milliseconds spent by waiting for events. **/
-  uns shutdown;				/** [*] Setting this to nonzero forces the @main_loop() function to terminate. **/
+  timestamp_t now;			/* [*] Current time in milliseconds since the UNIX epoch. See @main_get_time(). */
+  ucw_time_t now_seconds;		/* [*] Current time in seconds since the epoch. */
+  timestamp_t idle_time;		/* [*] Total time in milliseconds spent by waiting for events. */
+  uns shutdown;				/* [*] Setting this to nonzero forces the @main_loop() function to terminate. */
   clist file_list;
   clist file_active_list;
   clist hook_list;
@@ -244,6 +244,7 @@ struct main_file {
  * The file descriptor is automatically set to the non-blocking mode.
  **/
 void file_add(struct main_file *fi);
+
 /**
  * Tell the main loop that the file structure has changed. Call it whenever you
  * change any of the handlers.
@@ -251,6 +252,7 @@ void file_add(struct main_file *fi);
  * Can be called only on active files (only the ones added by @file_add()).
  **/
 void file_chg(struct main_file *fi);
+
 /**
  * Removes a file from the watched set. If you want to close a descriptor,
  * please use this function first.
@@ -258,6 +260,7 @@ void file_chg(struct main_file *fi);
  * Can be called from a handler.
  **/
 void file_del(struct main_file *fi);
+
 /** Show current state of a file. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
 void file_debug(struct main_file *fi);
 
@@ -410,11 +413,13 @@ enum main_hook_return {
  * May be called from inside a hook handler too.
  **/
 void hook_add(struct main_hook *ho);
+
 /**
  * Removes an existing hook from the loop.
- * May be called from inside a hook handler (to delete itself or other hook).
+ * May be called from inside a hook handler (to delete itself or another hook).
  **/
 void hook_del(struct main_hook *ho);
+
 /** Show current state of a hook. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
 void hook_debug(struct main_hook *ho);
 
@@ -447,12 +452,14 @@ struct main_process {
  * if you removed the process previously by @process_del().
  **/
 void process_add(struct main_process *mp);
+
 /**
  * Removes the process from the watched set. This is done
  * automatically, when the process terminates, so you need it only
  * when you do not want to watch a running process any more.
  */
 void process_del(struct main_process *mp);
+
 /**
  * Forks and fills the @mp with information about the new process.
  *
@@ -472,17 +479,46 @@ int process_fork(struct main_process *mp);
 /** Show current state of a process. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
 void process_debug(struct main_process *pr);
 
-/* FIXME: Docs */
+/***
+ * [[signal]]
+ * Synchronous delivery of signals
+ * -------------------------------
+ *
+ * UNIX signals are delivered to processes in an asynchronous way: when a signal
+ * arrives (and it is not blocked), the process is interrupted and the corresponding
+ * signal handler function is called. However, most data structures and even most
+ * system library calls are not safe with respect to interrupts, so most program
+ * using signals contain subtle race conditions and may fail once in a long while.
+ *
+ * To avoid this problem, the event loop can be asked for synchronous delivery
+ * of signals. When a signal registered with @signal_add() arrives, it wakes up
+ * the loop (if it is not already awake) and it is processed in the same way
+ * as all other events.
+ *
+ * When used in a multi-threaded program, the signals are delivered to the thread
+ * which is currently using the particular main loop context. If the context is not
+ * current in any thread, the signals are blocked.
+ *
+ * As usually with UNIX signals, multiple instances of a single signal can be
+ * merged and delivered only once. (Some implementations of the main loop can even
+ * drop a signal completely during very intensive signal traffic, when an internal
+ * signal queue overflows.)
+ ***/
 
+/** Description of a signal to catch. **/
 struct main_signal {
   cnode n;
-  int signum;
-  void (*handler)(struct main_signal *ms);
-  void *data;
+  int signum;					/* [*] Signal to catch */
+  void (*handler)(struct main_signal *ms);	/* [*] Called when the signal arrives */
+  void *data;					/* [*] For use by the handler */
 };
 
+/** Request a signal to be caught and delivered synchronously. **/
 void signal_add(struct main_signal *ms);
+
+/** Cancel a request for signal catching. **/
 void signal_del(struct main_signal *ms);
+
 /** Show current state of a signal catcher. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
 void signal_debug(struct main_signal *sg);
 

@@ -12,10 +12,15 @@ example various timers telling that a train is scheduled to depart
 from some station.
 
 The mainloop module takes care of the low-level part of event-driven
-programs: it calls the OS to monitor file activity, to interrupt
-the program at the right moment to serve a timer, and so on. The
-programmer only defines hooks that should be called to handle
-the events and calls mainloop functions to schedule them.
+programs: it provides an event loop (often called a main loop), which
+watches for events requested by the rest of the program and calls
+a supplied callback when an event happens.
+
+More precisely, for each type of an event (file descriptor activity,
+timer etc.), there is a +handler structure+, which contains the description
+of the event (e.g., the time where the timer should fire), a pointer to
+a +handler function+ (the event callback) and data for use by the handler
+function. The handler is then registered with the main loop.
 
 - <<simple,Simple use>>
 - <<contexts,Using multiple contexts>>
@@ -26,7 +31,7 @@ the events and calls mainloop functions to schedule them.
 - <<blockio,Asynchronous block I/O>>
 - <<hooks,Loop hooks>>
 - <<process,Child processes>>
-- <<control,Control of the mainloop>>
+- <<signal,Synchronous delivery of signals>>
 
 [[contexts]]
 Simple use
@@ -35,13 +40,13 @@ Simple use
 Simple programs usually employ the main loop in a straightforward way:
 
 - Call @main_init() to initialize the main loop machinery.
-- Add an initial set of event hooks (@file_add(), @timer_add(), etc.).
+- Add an initial set of event handers (@file_add(), @timer_add(), etc.).
 - Enter the event loop by calling @main_loop(). This function runs for
   the rest of the lifetime of the program. It watches for events and
-  handles them by calling the appropriate hook functions. These functions
+  handles them by calling the appropriate handler functions. These functions
   can of course add new events or modify/delete the existing ones.
 - When the program decides it wants to stop, it calls @main_shut_down(),
-  or alternatively it returns <<enum_main_hook_return,`HOOK_SHUTDOWN`>> from some hook callback.
+  or alternatively it returns <<enum_main_hook_return,`HOOK_SHUTDOWN`>> from some hook functions.
   Soon after that, @main_loop() returns.
 - Remove all event hooks and call @main_cleanup().
 
