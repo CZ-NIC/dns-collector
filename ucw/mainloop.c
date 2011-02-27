@@ -124,7 +124,6 @@ main_prepare_delete(struct main_context *m)
 
   // Close epoll descriptor early enough, it might be shared after fork!
 #ifdef CONFIG_UCW_EPOLL
-  ASSERT(clist_empty(&m->file_recalc_list));
   xfree(m->epoll_events);
   close(m->epoll_fd);
   m->epoll_fd = -1;
@@ -166,6 +165,9 @@ main_delete(struct main_context *m)
   main_prepare_delete(m);
   ASSERT(clist_empty(&m->file_list));
   ASSERT(clist_empty(&m->file_active_list));
+#ifdef CONFIG_UCW_EPOLL
+  ASSERT(clist_empty(&m->file_recalc_list));
+#endif
   ASSERT(clist_empty(&m->hook_list));
   ASSERT(clist_empty(&m->hook_done_list));
   ASSERT(clist_empty(&m->process_list));
