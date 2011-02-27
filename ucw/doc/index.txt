@@ -42,6 +42,7 @@ Other features
 - <<config:,Configuration file syntax>>
 - <<docsys:,Documentation system>>
 - <<generic:,Macro-generated generics>>
+- <<relnotes:,Release notes>>
 
 Yet undocumented modules
 ------------------------
@@ -60,6 +61,7 @@ Yet undocumented modules
   * `stkstring.h`
   * `string.h`
   * `str-match.h`
+  * `strtonum.h`
   * `wildmatch.h`
 - File manipulation
   * `asio.h`
