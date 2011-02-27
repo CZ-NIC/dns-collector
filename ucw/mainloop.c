@@ -177,7 +177,6 @@ main_delete(struct main_context *m)
 void
 main_destroy(struct main_context *m)
 {
-  // FIXME: Add a doc note on calling from a running mainloop
   if (!m)
     return;
   main_prepare_delete(m);
@@ -593,47 +592,89 @@ signal_del(struct main_signal *ms)
   signal_del_ctx(main_current(), ms);
 }
 
+#ifdef CONFIG_DEBUG
+
+void
+file_debug(struct main_file *fi)
+{
+  msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, data %p)",
+    fi, fi->fd, fi->read_handler, fi->write_handler, fi->data);
+}
+
+void
+hook_debug(struct main_hook *ho)
+{
+  msg(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
+}
+
+void
+signal_debug(struct main_signal *sg)
+{
+  if (sg->signum < 0)
+    msg(L_DEBUG, "\t\t(placeholder)");
+  else
+    msg(L_DEBUG, "\t\t%p (sig %d, func %p, data %p)", sg, sg->signum, sg->handler, sg->data);
+}
+
+static void
+timer_debug_ctx(struct main_context *m, struct main_timer *tm)
+{
+  msg(L_DEBUG, "\t\t%p (expires %lld, data %p)", tm, (long long)(tm->expires - m->now), tm->data);
+}
+
+void
+timer_debug(struct main_timer *tm)
+{
+  timer_debug_ctx(main_current(), tm);
+}
+
+void
+process_debug(struct main_process *pr)
+{
+  msg(L_DEBUG, "\t\t%p (pid %d, func %p, data %p)", pr, pr->pid, pr->handler, pr->data);
+}
+
 void
 main_debug_context(struct main_context *m UNUSED)
 {
-#ifdef CONFIG_DEBUG
   msg(L_DEBUG, "### Main loop status on %lld", (long long) m->now);
   msg(L_DEBUG, "\tActive timers:");
   uns num_timers = count_timers(m);
   for (uns i = 1; i <= num_timers; i++)
-    {
-      struct main_timer *tm = m->timer_table[i];
-      msg(L_DEBUG, "\t\t%p (expires %lld, data %p)", tm, (long long)(tm->expires ? tm->expires - m->now : 999999), tm->data);
-    }
+    timer_debug(m->timer_table[i]);
   msg(L_DEBUG, "\tActive files:");
   CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
-    msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, data %p)",
-	fi, fi->fd, fi->read_handler, fi->write_handler, fi->data);
+    file_debug(fi);
   CLIST_FOR_EACH(struct main_file *, fi, m->file_active_list)
-    msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, data %p) [pending events: %x]",
-	fi, fi->fd, fi->read_handler, fi->write_handler, fi->data, fi->events);
-    // FIXME: Can we display status of block_io requests somehow?
+    file_debug(fi);
 #ifdef CONFIG_UCW_EPOLL
   CLIST_FOR_EACH(struct main_file *, fi, m->file_recalc_list)
-    msg(L_DEBUG, "\t\t%p (fd %d, rh %p, wh %p, data %p) [pending recalculation]",
-	fi, fi->fd, fi->read_handler, fi->write_handler, fi->data);
+    file_debug(fi);
 #endif
   msg(L_DEBUG, "\tActive hooks:");
   CLIST_FOR_EACH(struct main_hook *, ho, m->hook_done_list)
-    msg(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
+    hook_debug(ho);
   CLIST_FOR_EACH(struct main_hook *, ho, m->hook_list)
-    msg(L_DEBUG, "\t\t%p (func %p, data %p)", ho, ho->handler, ho->data);
+    hook_debug(ho);
   msg(L_DEBUG, "\tActive processes:");
   CLIST_FOR_EACH(struct main_process *, pr, m->process_list)
-    msg(L_DEBUG, "\t\t%p (pid %d, func %p, data %p)", pr, pr->pid, pr->handler, pr->data);
+    process_debug(pr);
   msg(L_DEBUG, "\tActive signal catchers:");
   CLIST_FOR_EACH(struct main_signal *, sg, m->signal_list)
-    if (sg->signum < 0)
-      msg(L_DEBUG, "\t\t(placeholder)");
-    else
-      msg(L_DEBUG, "\t\t%p (sig %d, func %p, data %p)", sg, sg->signum, sg->handler, sg->data);
-#endif
+    signal_debug(sg);
 }
+
+#else
+
+// Stubs
+void file_debug(struct main_file *fi UNUSED) { }
+void hook_debug(struct main_hook *ho UNUSED) { }
+void signal_debug(struct main_signal *sg UNUSED) { }
+void timer_debug(struct main_timer *tm UNUSED) { }
+void process_debug(struct main_process *pr UNUSED) { }
+void main_debug_context(struct main_context *m UNUSED) { }
+
+#endif
 
 static void
 process_timers(struct main_context *m)

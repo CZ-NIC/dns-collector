@@ -101,7 +101,10 @@ static inline void main_shut_down(void)
   main_current()->shutdown = 1;
 }
 
-/** Show the current state of a given context (use @main_debug() for the current context). **/
+/**
+ * Show the current state of a given context (use @main_debug() for the current context).
+ * Available only if LibUCW has been compiled with `CONFIG_DEBUG`.
+ **/
 void main_debug_context(struct main_context *m);
 
 static inline void
@@ -179,6 +182,9 @@ void timer_del(struct main_timer *tm);
  **/
 void main_get_time(void);
 
+/** Show current state of a timer. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
+void timer_debug(struct main_timer *tm);
+
 /***
  * [[file]]
  * Activity on file descriptors
@@ -252,6 +258,8 @@ void file_chg(struct main_file *fi);
  * Can be called from a handler.
  **/
 void file_del(struct main_file *fi);
+/** Show current state of a file. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
+void file_debug(struct main_file *fi);
 
 /***
  * [[blockio]]
@@ -407,6 +415,8 @@ void hook_add(struct main_hook *ho);
  * May be called from inside a hook handler (to delete itself or other hook).
  **/
 void hook_del(struct main_hook *ho);
+/** Show current state of a hook. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
+void hook_debug(struct main_hook *ho);
 
 /***
  * [[process]]
@@ -459,6 +469,9 @@ void process_del(struct main_process *mp);
  **/
 int process_fork(struct main_process *mp);
 
+/** Show current state of a process. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
+void process_debug(struct main_process *pr);
+
 /* FIXME: Docs */
 
 struct main_signal {
@@ -470,5 +483,7 @@ struct main_signal {
 
 void signal_add(struct main_signal *ms);
 void signal_del(struct main_signal *ms);
+/** Show current state of a signal catcher. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
+void signal_debug(struct main_signal *sg);
 
 #endif
