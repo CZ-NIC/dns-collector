@@ -1,0 +1,61 @@
+#!/bin/bash
+# A script for testing compilability of different configurations
+# (c) 2004--2010 Martin Mares <mj@ucw.cz>
+
+set -e
+
+TEST=0
+ERR=
+CC=${CC:-gcc}
+MAKEOPTS=${MAKEOPTS:--j8}
+
+function die
+{
+	echo >&3 "	$@"
+	exit 1
+}
+
+function try
+{
+	TEST=$(($TEST+1))
+	TDIR=tests/$TEST
+	mkdir $TDIR
+	echo "### Test $TEST: $@ ###" | tee $TDIR/log
+	CONFIG="$1"
+	shift
+	ARGS="$@ CC=$CC"
+
+	(
+		cd $TDIR
+		exec 3>&2 >>log 2>&1
+		case $CONFIG in
+			*)			../../configure $CONFIG $ARGS || die "CANNOT CONFIGURE"
+						;;
+		esac
+		make $MAKEOPTS || die FAILED
+		echo >&3 "	COMPILATION PASSED"
+		if [ -z "$SKIP_TESTS" ] ; then
+			make -k tests || die "TESTS FAILED"
+			echo >&3 "	TESTS PASSED"
+		fi
+	) || ERR=1
+}
+
+rm -rf tests
+mkdir tests
+if [ "$1" == DARWIN ] ; then
+	# All tests on Darwin need CONFIG_SHARED, due to libcharset collision
+	# only visible with static linking.
+	FLAGS="CONFIG_SHARED"
+	try debug/default.cfg $FLAGS CONFIG_PCRE					# `make tests' does not work with non-local builds with shared libs
+elif [ -n "$1" ] ; then
+	try "$@"
+else
+	try default.cfg CONFIG_LOCAL
+	try debug/default.cfg								# debugging configuration
+	try debug/default.cfg -CONFIG_THREADS						# non-threaded configuration
+	try debug/default.cfg -CONFIG_UCW_TLS						# threaded, but no TLS support in gcc
+	try debug/default.cfg -CONFIG_EPOLL						# without epoll
+fi
+
+[ -z "$ERR" ]

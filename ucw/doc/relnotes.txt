@@ -1,0 +1,49 @@
+Release notes
+=============
+
+4.1 (work in progress)
+----------------------
+
+* The mainloop module has been rewritten:
+** Multiple instances of the main loop are supported (to be used in different
+   threads or locally within a library function).
+** The new implementation is more efficient: it uses heaps for timers,
+   epoll() for file descriptors (when available).
+** The return value of <<mainloop:struct_main_file,`main_file`>> handlers has been
+   changed to <<mainloop:enum_main_hook_return,`HOOK_IDLE`>> and <<mainloop:enum_main_hook_return,`HOOK_RETRY`>>.
+   However, the numerical values are equal, so old code should keep working.
+** *Incompatible:* The global variables `main_now`, `main_now_seconds`,
+   and `main_idle_time` are no longer available. They have become fields
+   in the `main_context` structure, which can be accessed either directly
+   or via helper functions like <<mainloop:fun_main_get_now,`main_get_now()`>>.
+** *Incompatible:* The interface for asynchronous reading and writing
+   (file_read() and friends) has been separated from the core of the main loop.
+   Use <<mainloop:struct_main_block_io,`struct main_block_io`>> and related functions instead.
+** *Incompatible:* file_close_all() is gone. You have to call <<mainloop:fun_main_teardown,`main_teardown()`>>
+   or <<mainloop:fun_main_destroy,`main_destroy()`>> to clean up properly after fork().
+** Added support for <<mainloop:signal,synchronous delivery of signals>>.
+** Added relative timers: <<mainloop:fun_timer_add_rel,`timer_add_rel()`>>.
+** Modification of events from a running event handler should be always safe.
+
+* Added a growing array module `gary.h`, similar to `gbuf.h`, but with
+  a much more convenient interface.
+
+* The <<lists:,Circular linked lists>> can recognize unlinked nodes,
+  see <<lists:fun_clist_unlink,`clist_unlink()`>>.
+
+* Added `strtonum.h` -- a module for precise parsing of numbers.
+
+* When compiled by a recent enough GCC, `__thread` is used for thread-local variables,
+  which is more efficient than the POSIX per-thread storage.
+** *Incompatible:* `ucwlib_context->thread_id` is no longer available directly,
+  please use ucwlib_thread_id() instead.
+
+* `UCW::Configure` supports running of test programs.
+
+* `UCW::CGI` support multiple argument tables.
+
+
+4.0 (2009-04-13)
+----------------
+This was the first stand-alone release of LibUCW. Before that, LibUCW was developed
+as a part of the http://www.ucw.cz/holmes/[Sherlock Holmes project].

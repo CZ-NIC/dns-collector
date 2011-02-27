@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Circular Linked Lists
  *
- *	(c) 2003--2007 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2010 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -18,7 +18,7 @@ typedef struct cnode {
 } cnode;
 
 /**
- * Circilar linked list.
+ * Circular doubly linked list.
  **/
 typedef struct clist {
   struct cnode head;
@@ -151,7 +151,7 @@ static inline void clist_remove(cnode *n)
 }
 
 /**
- * Remove the first node in @l. The list can be empty.
+ * Remove the first node in @l, if it exists. Return the pointer to that node or NULL.
  **/
 static inline void *clist_remove_head(clist *l)
 {
@@ -162,7 +162,7 @@ static inline void *clist_remove_head(clist *l)
 }
 
 /**
- * Remove the last node in @l. The list can be empty.
+ * Remove the last node in @l, if it exists. Return the pointer to that node or NULL.
  **/
 static inline void *clist_remove_tail(clist *l)
 {
@@ -201,7 +201,7 @@ static inline void clist_move(clist *to, clist *from)
 }
 
 /**
- * Compute the number of nodes in @l. Beware linear time complexity.
+ * Compute the number of nodes in @l. Beware of linear time complexity.
  **/
 static inline uns clist_size(clist *l)
 {
@@ -209,6 +209,52 @@ static inline uns clist_size(clist *l)
   CLIST_FOR_EACH(cnode *, n, *l)
     i++;
   return i;
+}
+
+/**
+ * Remove a node @n and mark it as unlinked by setting the previous and next pointers to NULL.
+ **/
+static inline void clist_unlink(cnode *n)
+{
+  clist_remove(n);
+  n->prev = n->next = NULL;
+}
+
+/**
+ * Remove the first node on @l and mark it as unlinked.
+ * Return the pointer to that node or NULL.
+ **/
+static inline void *clist_unlink_head(clist *l)
+{
+  cnode *n = clist_head(l);
+  if (n)
+    clist_unlink(n);
+  return n;
+}
+
+/**
+ * Remove the last node on @l and mark it as unlinked.
+ * Return the pointer to that node or NULL.
+ **/
+static inline void *clist_unlink_tail(clist *l)
+{
+  cnode *n = clist_tail(l);
+  if (n)
+    clist_unlink(n);
+  return n;
+}
+
+/**
+ * Check if a node is linked a list. Unlinked nodes are recognized by having their
+ * previous and next pointers equal to NULL. Returns 0 or 1.
+ *
+ * Nodes initialized to all zeroes are unlinked, inserting a node anywhere in a list
+ * makes it linked. Normal removal functions like clist_remove() do not mark nodes
+ * as unlinked, you need to call clist_unlink() instead.
+ **/
+static inline int clist_is_linked(cnode *n)
+{
+  return !!n->next;
 }
 
 #endif

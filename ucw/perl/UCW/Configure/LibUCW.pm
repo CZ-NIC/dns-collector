@@ -54,6 +54,18 @@ if (Get("CONFIG_UCW_THREADS")) {
 	});
 }
 
+# Detect if we have the epoll() syscall
+TestBool("CONFIG_UCW_EPOLL", "Checking for epoll", sub {
+	return UCW::Configure::C::TestCompile("epoll", <<'FINIS' ) ? 1 : 0;
+#include <sys/epoll.h>
+int main(void)
+{
+	epoll_create(256);
+	return 0;
+}
+FINIS
+});
+
 PostConfig {
 	AtWrite {
 		UCW::Configure::C::ConfigHeader("ucw/autoconf.h", [
