@@ -40,6 +40,8 @@ Release notes
 
 * `UCW::Configure` supports running of test programs.
 
+* `UCW::CGI` support multiple argument tables.
+
 
 4.0 (2009-04-13)
 ----------------
