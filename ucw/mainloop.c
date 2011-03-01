@@ -787,10 +787,15 @@ main_loop(void)
 	  break;
 	default: ;
 	}
-      if (count_timers(m))
-	wake = MIN(wake, m->timer_table[1]->expires);
-      main_get_time_ctx(m);
-      int timeout = ((wake > m->now) ? wake - m->now : 0);
+
+      int timeout = 0;
+      if (!m->single_step)
+	{
+	  if (count_timers(m))
+	    wake = MIN(wake, m->timer_table[1]->expires);
+	  main_get_time_ctx(m);
+	  timeout = ((wake > m->now) ? wake - m->now : 0);
+	}
 
 #ifdef CONFIG_UCW_EPOLL
       recalc_files(m);
@@ -811,7 +816,12 @@ main_loop(void)
       m->idle_time += m->now - old_now;
 
       if (n <= 0)
-	continue;
+	{
+	  if (m->single_step)
+	    return;
+	  else
+	    continue;
+	}
 
       // Relink all files with a pending event to file_active_list
 #ifdef CONFIG_UCW_EPOLL
@@ -866,4 +876,13 @@ main_loop(void)
 	  clist_add_tail(&m->file_list, &fi->n);
 	}
     }
+}
+
+void
+main_step(void)
+{
+  struct main_context *m = main_current();
+  m->single_step = 1;
+  main_loop();
+  m->single_step = 0;
 }

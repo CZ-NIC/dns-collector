@@ -24,10 +24,10 @@
 
 /** The main loop context **/
 struct main_context {
-  timestamp_t now;			/* [*] Current time in milliseconds since the UNIX epoch. See @main_get_time(). */
+  timestamp_t now;			/* [*] Current time in milliseconds since the UNIX epoch. See main_get_time(). */
   ucw_time_t now_seconds;		/* [*] Current time in seconds since the epoch. */
   timestamp_t idle_time;		/* [*] Total time in milliseconds spent by waiting for events. */
-  uns shutdown;				/* [*] Setting this to nonzero forces the @main_loop() function to terminate. */
+  uns shutdown;				/* [*] Setting this to nonzero forces the main_loop() function to terminate. */
   clist file_list;
   clist file_active_list;
   clist hook_list;
@@ -35,6 +35,7 @@ struct main_context {
   clist process_list;
   clist signal_list;
   uns file_cnt;
+  uns single_step;
 #ifdef CONFIG_UCW_EPOLL
   int epoll_fd;				/* File descriptor used for epoll */
   struct epoll_event *epoll_events;
@@ -94,6 +95,13 @@ void main_teardown(void);
  * or at last one <<hook,hook>> returns <<enum_main_hook_return,`HOOK_SHUTDOWN`>>.
  **/
 void main_loop(void);
+
+/**
+ * Perform a single iteration of the main loop.
+ * Check if there are any events ready and process them.
+ * If there are none, do not wait.
+ **/
+void main_step(void);
 
 /** Ask the main loop to terminate at the nearest occasion. **/
 static inline void main_shut_down(void)
