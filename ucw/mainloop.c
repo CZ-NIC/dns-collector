@@ -709,7 +709,7 @@ process_hooks(struct main_context *m)
     hook_min == HOOK_DONE && hook_max == HOOK_DONE ||
     m->shutdown)
     {
-      DBG("MAIN: Shut down by %s", m->shutdown ? "main_shutdown" : "a hook");
+      DBG("MAIN: Shut down by %s", m->shutdown ? "main_shut_down" : "a hook");
       return HOOK_SHUTDOWN;
     }
   if (hook_max == HOOK_RETRY)
@@ -772,6 +772,8 @@ main_loop(void)
   struct main_context *m = main_current();
 
   main_get_time_ctx(m);
+  m->shutdown = 0;
+
   for (;;)
     {
       timestamp_t wake = m->now + 1000000000;
