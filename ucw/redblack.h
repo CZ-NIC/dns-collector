@@ -72,7 +72,7 @@
  *                      specified value, or if it does not exist, the node
  *                      with nearest smaller value.
  *  TREE_WANT_BOUNDARY	node *boundary(uns direction) -- finds smallest
- *  			(direction==0) or largest (direction==1) node.
+ *			(direction==0) or largest (direction==1) node.
  *  TREE_WANT_ADJACENT	node *adjacent(node *, uns direction) -- finds next
  *			(direction==1) or previous (direction==0) node.
  *  TREE_WANT_NEW	node *new(key) -- create new node with given key.
@@ -241,7 +241,7 @@ typedef struct P(stack_entry) {
 #		else
 			return strcmp(x,y);
 #		endif
-   	}
+	}
 #endif
 
 #elif defined(TREE_KEY_COMPLEX)
@@ -305,20 +305,20 @@ static inline void P(init_data) (P(node) *n UNUSED)
 
 #ifndef TREE_GIVE_ALLOC
 #	ifdef TREE_USE_POOL
-		static inline void * P(alloc) (unsigned int size)
+		static inline void * P(alloc) (T *t UNUSED, unsigned int size)
 		{ return mp_alloc_fast(TREE_USE_POOL, size); }
-#		define TREE_SAFE_FREE(x)
+#		define TREE_SAFE_FREE(t, x)
 #	else
-		static inline void * P(alloc) (unsigned int size)
+		static inline void * P(alloc) (T *t UNUSED, unsigned int size)
 		{ return xmalloc(size); }
 
-		static inline void P(free) (void *x)
+		static inline void P(free) (T *t UNUSED, void *x)
 		{ xfree(x); }
 #	endif
 #endif
 
 #ifndef	TREE_SAFE_FREE
-#	define TREE_SAFE_FREE(x)	P(free) (x)
+#	define TREE_SAFE_FREE(t, x)	P(free) (t, x)
 #endif
 
 #ifdef TREE_GLOBAL
@@ -359,7 +359,7 @@ static void P(cleanup_subtree) (T *t, P(bucket) *node)
 		return;
 	P(cleanup_subtree) (t, P(tree_son) (node, 0));
 	P(cleanup_subtree) (t, P(tree_son) (node, 1));
-	P(free) (node);
+	P(free) (t, node);
 	t->count--;
 }
 
@@ -639,7 +639,7 @@ STATIC P(node) * P(new) (T *t, TREE_KEY_DECL)
 #endif
 	ASSERT(!stack[depth].buck);
 	/* We are in a leaf, hence we can easily append a new leaf to it.  */
-	added = P(alloc) (sizeof(struct P(bucket)) + TREE_EXTRA_SIZE(TREE_KEY()) );
+	added = P(alloc) (t, sizeof(struct P(bucket)) + TREE_EXTRA_SIZE(TREE_KEY()) );
 	added->son[0] = added->son[1] = NULL;
 	stack[depth].buck = added;
 	if (depth > 0)
@@ -856,7 +856,7 @@ static void P(remove_by_stack) (T *t, P(stack_entry) *stack, uns depth)
 		ASSERT(!son);
 		return;
 	}
-	TREE_SAFE_FREE(node);
+	TREE_SAFE_FREE(t, node);
 	/* We have deleted a black node.  */
 	if (son)
 	{
