@@ -1,11 +1,44 @@
 Transactions and resource tracking
 ==================================
 
+LibUCW is equipped with a general system for keeping track of resources
+(allocated memory, open files, ...) and freeing them when requested to.
+
+The resource tracker can be used either separately (in the form of explicitly
+managed resource pools) or within a transactional layer, which offers
+exceptions similar to those in higher-level languages. An exception
+then rolls back the transaction, freeing all temporary resources allocated
+within the transaction.
+
+Resource pools: ucw/respool.h
+-----------------------------
+
+A resource pool contains a stack of resources. When a new resource
+is created, it is pushed onto the stack. When freeing the pool, the
+resources are freed in the opposite order, which allows a resource
+refer to data of previously created resources.
+
+A resource can be also freed separately (which unlinks it from the pool),
+or *detached* from the pool (which keeps the real resource, but forgets
+its meta-data, so the resource is no longer tracked).
+
+For each thread, LibUCW remembers the currently active resource pool.
+One pool can be used for at most one thread at a time. All functions
+which create resources do so in the active pool. All other functions
+operating on resources work on both active and in-active pools.
+
+!!ucw/respool.h
+
+Transactions: ucw/trans.h
+-------------------------
+
 Assorted notes:
 
 - A transaction is tied to a thread which has created it. A transaction
   can create a sub-transaction, so every thread keeps a stack of running
-  transactions in its per-thread data.
+  transactions in its per-thread data. Calling @trans_init() is optional,
+  but @trans_cleanup() should be used before a thread exits in order to
+  free resources used by transaction system.
 
 - Every transaction keeps a resource pool containing resources, which
   have been created during the transaction. Whenever the transaction is
@@ -82,3 +115,9 @@ Assorted notes:
   are of course destroyed during the `longjmp()`.
 
 FIXME: Interaction between exceptions, pools and other libucw modules.
+
+FIXME: Unit tests
+
+FIXME: Resourcification of more libucw objects
+
+FIXME: Do we want to allow res_alloc() when no pool is active.
