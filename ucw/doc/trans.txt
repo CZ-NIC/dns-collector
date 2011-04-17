@@ -1,0 +1,84 @@
+Transactions and resource tracking
+==================================
+
+Assorted notes:
+
+- A transaction is tied to a thread which has created it. A transaction
+  can create a sub-transaction, so every thread keeps a stack of running
+  transactions in its per-thread data.
+
+- Every transaction keeps a resource pool containing resources, which
+  have been created during the transaction. Whenever the transaction is
+  running, this pool is set as current. You are allowed to switch to
+  a different pool, but please do so carefully.
++
+  When a transaction ends, the pool is destroyed and the previous active
+  pool is popped off the transaction stack. The fate of the resources
+  inside the pool depends on the operation used to end the transaction:
+	* commit -- all resources are detached from the pool
+	* rollback -- all resources are freed
+	* fold -- instead of destroying the pool, it is added as a subpool
+	  to the parent transaction (which must exist)
+
+- Each transaction also includes a memory pool, from which all temporary
+  structures (including all resources created by the transaction) are
+  allocated. Feel free to allocate your temporary data from this pool, too;
+  they will be freed when the transaction is committed or rolled back.
+  When the transaction ends with a fold, this pool gets included inside
+  the parent transaction's pool.
++
+  (To be true, there is actually a shared transaction pool per thread
+  and the transaction logic uses @mp_push() and @mp_pop() to keep a stack
+  of per-transaction data.)
+
+- Transactions are usually used together with exceptions (which are similar
+  to how exceptions work in other languages, but they differ in subtle details,
+  so please read carefully). When a failure condition of some kind is detected,
+  an exception is raised. It involves creating an exception object and jumping
+  out of the transaction by a `longjmp()`. The exception object (`struct exception`)
+  contains an identification of the error and possibly additional data.
++
+  Usually, creation of an transaction and handling of exceptions is done
+  using helper macros (it is not strictly necessary, but highly recommended):
++
+	TRANS_TRY
+	  {
+	    // Code that runs inside the transaction.
+	  }
+	TRANS_CATCH(x)
+	  {
+	    // When an exception is raised, execution continues here.
+	  }
+	TRANS_END;
+
+  The code inside the transaction ends with an implicit @trans_commit().
+  If you want to end the transaction in a different way, you can do so,
+  but you need to use a `break` statement to skip the implicit commit.
+
+  The exception handling code gets a local variable `x` pointing to the
+  exception object. When the exception is handled (for example, an error
+  message is logged), @trans_caught() is called automatically, which rolls
+  back the transaction and frees all its resources. Again, you can use the
+  `break` statement to skip this.
+
+  Alternatively, when you are in a nested transaction, you can throw a different
+  exception or re-throw the original one. This raises an exception in the
+  context of the parent transaction. In this case, the child transaction is
+  not rolled back, but its pools are folded as sub-pools of the parent transaction
+  and kept until @trans_caught() is called finally.
+
+* When an exception is thrown outside a transaction, it is converted to
+  a plain @die().
+
+* Memory management and lifetime of various objects and pools deserve special
+  attention, as usually when non-local jumps are taking place. When an exception
+  is raised, the exception structure is allocated from the memory pool of the
+  current transaction. When the exception is propagated through the stack of
+  transactions, no transaction is ever rolled back -- all of them are folded
+  and their pools remain accessible until @trans_caught() is called at the end.
+  Therefore exceptions can carry pointers to the objects which have failed
+  without a risk of the object becoming invalid. However, you need to avoid
+  pointing to on-stack data like local variables of functions, because these
+  are of course destroyed during the `longjmp()`.
+
+FIXME: Interaction between exceptions, pools and other libucw modules.

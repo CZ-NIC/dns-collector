@@ -35,6 +35,7 @@ Modules
 - <<sort:,Sorting>>
 - <<binsearch:,Binary search>>
 - <<compress:,Compression>>
+- <<trans:,Transactions and resource tracking>>
 
 Other features
 --------------
