@@ -41,7 +41,7 @@ trans_cleanup(void)
 }
 
 struct trans *
-trans_open_rp(struct respool *rp)
+trans_open(void)
 {
   trans_init();
   struct ucwlib_context *c = ucwlib_thread_context();
@@ -51,8 +51,7 @@ trans_open_rp(struct respool *rp)
   struct trans *t = mp_alloc(mp, sizeof(*t));
   t->trans_pool_state = mst;
 
-  if (!rp)
-    rp = rp_new("trans", mp);
+  struct respool *rp = rp_new("trans", mp);
   t->rpool = rp;
   t->prev_rpool = rp_switch(rp);
 
