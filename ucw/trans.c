@@ -126,14 +126,15 @@ trans_fold(void)
 }
 
 void
-trans_caught(struct exception *x)
+trans_caught(void)
 {
   // Exception has been finally caught. Roll back the current transaction,
   // including all sub-transactions that have been folded to it during
   // propagation.
-  DBG("... exception %p caught", x);
   struct trans *t = trans_get_current();
-  ASSERT(t->thrown_exc == x);
+  struct exception *x = t->thrown_exc;
+  ASSERT(x);
+  DBG("... exception %p caught", x);
   t->thrown_exc = NULL;
   trans_rollback();
 }
@@ -170,7 +171,7 @@ trans_throw_exc(struct exception *x)
 
   // If we are already handling an exception (i.e., throw from a catch handler),
   // fold the current transaction into its parent.
-  if (t->thrown_exc)
+  while (t->thrown_exc)
     {
       if (!t->prev_trans)
 	die("%s", x->msg);
@@ -240,6 +241,18 @@ int main(void)
 	{
 	  printf("Inner catch: %s\n", x->msg);
 	  trans_dump();
+	  TRANS_TRY
+	    {
+	      res_malloc(256, NULL);
+	      trans_throw("ucw.test.nested", "nest", "Something is wrong recursively");
+	    }
+	  TRANS_CATCH(y)
+	    {
+	      printf("Yet another layer: %s\n", y->msg);
+	      trans_dump();
+	      // trans_throw_exc(y);
+	    }
+	  TRANS_END;
 	  trans_throw("ucw.test2", "out", "Error: %s", x->msg);
 	}
       TRANS_END;

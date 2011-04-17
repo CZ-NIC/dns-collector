@@ -49,7 +49,7 @@ struct exception {
 void trans_throw_exc(struct exception *x) NONRET;
 void trans_throw(const char *id, void *object, const char *fmt, ...) FORMAT_CHECK(printf,3,4) NONRET;
 void trans_vthrow(const char *id, void *object, const char *fmt, va_list args) NONRET;
-void trans_caught(struct exception *x);
+void trans_caught(void);
 
 struct exception *trans_current_exc(void);
 
@@ -66,7 +66,7 @@ struct exception *trans_current_exc(void);
       struct exception *x UNUSED = trans_current_exc();
 
 #define TRANS_END				\
-      trans_caught(x);				\
+      trans_caught();				\
     }						\
   } while(0)
 
