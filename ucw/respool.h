@@ -1,7 +1,7 @@
 /*
  *	The UCW Library -- Resource Pools
  *
- *	(c) 2008 Martin Mares <mj@ucw.cz>
+ *	(c) 2008--2011 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -63,7 +63,7 @@ rp_switch(struct respool *rp)
   return orp;
 }
 
-struct resource *res_alloc(const struct res_class *rc);	// Returns NULL if there is no pool active
+struct resource *res_alloc(const struct res_class *rc) LIKE_MALLOC;	// Returns NULL if there is no pool active
 void res_drop(struct resource *r);
 void res_detach(struct resource *r);
 void res_free(struct resource *r);
@@ -85,8 +85,8 @@ res_new(const struct res_class *rc, void *priv)
 
 struct resource *res_for_fd(int fd);			// Creates a resource that closes a given file descriptor
 
-void *res_malloc(size_t size, struct resource **ptr);	// Allocates memory and creates a resource for it
-void *res_malloc_zero(size_t size, struct resource **ptr);	// Allocates zero-initialized memory and creates a resource for it
+void *res_malloc(size_t size, struct resource **ptr) LIKE_MALLOC;	// Allocates memory and creates a resource for it
+void *res_malloc_zero(size_t size, struct resource **ptr) LIKE_MALLOC;	// Allocates zero-initialized memory and creates a resource for it
 void *res_realloc(struct resource *res, size_t size);
 
 #endif
