@@ -1,7 +1,7 @@
 /*
  *	The UCW Library -- Threading Helpers
  *
- *	(c) 2006--2010 Martin Mares <mj@ucw.cz>
+ *	(c) 2006--2011 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -22,8 +22,6 @@ struct ucwlib_context {
   struct respool *current_respool;	// Current resource pool
   struct mempool *trans_pool;		// Transaction mempool
   struct trans *current_trans;		// Currently open transaction
-  struct mempool *exc_pool;		// Exception mempool
-  struct exception *current_exc;	// Currently active exception
 };
 
 #ifdef CONFIG_UCW_THREADS

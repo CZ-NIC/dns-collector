@@ -1,13 +1,13 @@
 /*
  *	The UCW Library -- Transactions
  *
- *	(c) 2008 Martin Mares <mj@ucw.cz>
+ *	(c) 2008--2011 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  */
 
-#define LOCAL_DEBUG
+#undef LOCAL_DEBUG
 
 #include "ucw/lib.h"
 #include "ucw/trans.h"
@@ -22,8 +22,6 @@ trans_init(void)
   struct ucwlib_context *c = ucwlib_thread_context();
   if (!c->trans_pool)
     c->trans_pool = mp_new(1024);
-  if (!c->exc_pool)
-    c->exc_pool = mp_new(1024);
 }
 
 void
@@ -33,9 +31,7 @@ trans_cleanup(void)
   if (c->trans_pool)
     {
       mp_delete(c->trans_pool);
-      mp_delete(c->exc_pool);
       c->trans_pool = NULL;
-      c->exc_pool = NULL;
     }
   c->current_trans = NULL;
 }
@@ -55,6 +51,7 @@ trans_open(void)
   t->rpool = rp;
   t->prev_rpool = rp_switch(rp);
 
+  t->thrown_exc = NULL;
   t->prev_trans = c->current_trans;
   c->current_trans = t;
   DBG("Opened transaction %p", t);
@@ -71,12 +68,6 @@ struct mempool *
 trans_get_pool(void)
 {
   return ucwlib_thread_context() -> trans_pool;
-}
-
-struct mempool *
-trans_get_exc_pool(void)
-{
-  return ucwlib_thread_context() -> exc_pool;
 }
 
 static void
@@ -101,78 +92,69 @@ trans_commit(void)
   struct trans *t = c->current_trans;
   DBG("Committing transaction %p", t);
   ASSERT(t);
-  ASSERT(!c->current_exc);
+  ASSERT(!t->thrown_exc);
   rp_detach(t->rpool);
   trans_pop(t, c);
   trans_drop(t, c);
-}
-
-static void
-trans_rollback_exc(struct ucwlib_context *c)
-{
-  // In case we were processing an exception, roll back all transactions
-  // through which the exception has propagated.
-  struct exception *x = c->current_exc;
-  struct trans *t = x->trans;
-  while (t != c->current_trans)
-    {
-      DBG("Rolling back transaction %p after exception", t);
-      struct trans *tprev = t->prev_trans;
-      rp_delete(t->rpool);
-      trans_drop(t, c);
-      t = tprev;
-    }
-
-  c->current_exc = NULL;
-  mp_flush(c->exc_pool);
 }
 
 void
 trans_rollback(void)
 {
   struct ucwlib_context *c = ucwlib_thread_context();
-  if (c->current_exc)
-    {
-      trans_rollback_exc(c);
-      return;
-    }
-
   struct trans *t = c->current_trans;
-  ASSERT(t);
   DBG("Rolling back transaction %p", t);
+  ASSERT(t);
+  ASSERT(!t->thrown_exc);
   rp_delete(t->rpool);
   trans_pop(t, c);
   trans_drop(t, c);
 }
 
 void
-trans_dump(void)
+trans_fold(void)
 {
   struct ucwlib_context *c = ucwlib_thread_context();
-  struct exception *x = c->current_exc;
   struct trans *t = c->current_trans;
+  DBG("Folding transaction %p", t);
+  ASSERT(t);
+  ASSERT(!t->thrown_exc);
+  trans_pop(t, c);
+  ASSERT(c->current_trans);	// Ensure that the parent exists
+  res_subpool(t->rpool);
+  t->rpool = NULL;		// To stop people from using the trans
+}
 
-  if (x)
-    {
-      printf("Exception %s (%s) in flight\n", x->id, x->msg);
-      struct trans *tx = x->trans;
-      while (tx != t)
-	{
-	  printf("Recovering transaction %p:\n", tx);
-	  rp_dump(tx->rpool, 0);
-	  tx = tx->prev_trans;
-	}
-    }
+void
+trans_caught(struct exception *x)
+{
+  // Exception has been finally caught. Roll back the current transaction,
+  // including all sub-transactions that have been folded to it during
+  // propagation.
+  DBG("... exception %p caught", x);
+  struct trans *t = trans_get_current();
+  ASSERT(t->thrown_exc == x);
+  t->thrown_exc = NULL;
+  trans_rollback();
+}
 
+void
+trans_dump(void)
+{
+  struct trans *t = trans_get_current();
   if (!t)
     {
       puts("No transaction open.");
       return;
     }
+
   while (t)
     {
       printf("Transaction %p:\n", t);
-      rp_dump(t->rpool, 0);
+      struct exception *x = t->thrown_exc;
+      if (x)
+	printf("    Exception %s (%s) in flight\n", x->id, x->msg);
+      rp_dump(t->rpool, 4);
       t = t->prev_trans;
     }
 }
@@ -186,18 +168,20 @@ trans_throw_exc(struct exception *x)
   if (!t)
     die("%s", x->msg);
 
-  // Remember which transaction have the exceptions started to propagate from
-  if (c->current_exc)
-    x->trans = c->current_exc->trans;
-  else
-    x->trans = t;
-
-  // Pop the current transaction off the transaction stack, but do not roll it
-  // back, it will be done when the exception stops propagating.
-  trans_pop(t, c);
+  // If we are already handling an exception (i.e., throw from a catch handler),
+  // fold the current transaction into its parent.
+  if (t->thrown_exc)
+    {
+      if (!t->prev_trans)
+	die("%s", x->msg);
+      t->thrown_exc = NULL;
+      trans_fold();
+      t = c->current_trans;
+      DBG("... recursive throw propagated to parent trans %p", t);
+    }
 
   // And jump overboard.
-  c->current_exc = x;
+  t->thrown_exc = x;
   longjmp(t->jmp, 1);
 }
 
@@ -225,7 +209,7 @@ trans_vthrow(const char *id, void *object, const char *fmt, va_list args)
 struct exception *
 trans_current_exc(void)
 {
-  return ucwlib_thread_context() -> current_exc;
+  return trans_get_current() -> thrown_exc;
 }
 
 #ifdef TEST
@@ -256,13 +240,14 @@ int main(void)
 	{
 	  printf("Inner catch: %s\n", x->msg);
 	  trans_dump();
-	  //trans_throw("ucw.test2", "out", "Error: %s", x->msg);
+	  trans_throw("ucw.test2", "out", "Error: %s", x->msg);
 	}
       TRANS_END;
     }
   TRANS_CATCH(x)
     {
       printf("Outer catch: %s\n", x->msg);
+      trans_dump();
     }
   TRANS_END;
   trans_throw("ucw.test3", "glob", "Global error. Reboot globe.");
