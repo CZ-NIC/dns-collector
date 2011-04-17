@@ -20,9 +20,9 @@ fd_res_free(struct resource *r)
 }
 
 static void
-fd_res_dump(struct resource *r)
+fd_res_dump(struct resource *r, uns indent UNUSED)
 {
-  printf(" fd=%d", (int)(intptr_t) r->priv);
+  printf(" fd=%d\n", (int)(intptr_t) r->priv);
 }
 
 static const struct res_class fd_res_class = {
@@ -44,7 +44,7 @@ int main(void)
   struct respool *rp = rp_new("test", NULL);
   rp_switch(rp);
   res_for_fd(1);
-  rp_dump(rp);
+  rp_dump(rp, 0);
   rp_delete(rp);
   return 0;
 }

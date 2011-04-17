@@ -33,6 +33,8 @@ rp_new(const char *name, struct mempool *mp)
 static void
 rp_free(struct respool *rp)
 {
+  if (rp->subpool_of)
+    res_detach(rp->subpool_of);
   if (!rp->mpool)
     xfree(rp);
   if (rp_current() == rp)
@@ -64,11 +66,17 @@ rp_detach(struct respool *rp)
 }
 
 void
-rp_dump(struct respool *rp)
+rp_dump(struct respool *rp, uns indent)
 {
-  printf("Resource pool %s at %p (%s):\n", (rp->name ? : "(noname)"), rp, (rp->mpool ? "mempool-based" : "freestanding"));
+  printf("%*sResource pool %s at %p (%s)%s:\n",
+	 indent, "",
+	 (rp->name ? : "(noname)"),
+	 rp,
+	 (rp->mpool ? "mempool-based" : "freestanding"),
+	 (rp->subpool_of ? " (subpool)" : "")
+	 );
   CLIST_FOR_EACH(struct resource *, r, rp->resources)
-    res_dump(r);
+    res_dump(r, indent+4);
 }
 
 struct resource *
@@ -110,12 +118,13 @@ res_free(struct resource *r)
 }
 
 void
-res_dump(struct resource *r)
+res_dump(struct resource *r, uns indent)
 {
-  printf("\t%p %s", r, r->rclass->name);
+  printf("%*s%p %s", indent, "", r, r->rclass->name);
   if (r->rclass->dump)
-    r->rclass->dump(r);
-  putchar('\n');
+    r->rclass->dump(r, indent+4);
+  else
+    putchar('\n');
 }
 
 #ifdef TEST
@@ -128,7 +137,7 @@ int main(void)
   struct respool *rp = rp_new("test", NULL);
   rp_switch(rp);
   struct fastbuf *f = bfdopen_shared(1, 0);
-  rp_dump(rp);
+  rp_dump(rp, 0);
   bputsn(f, "Hello, all worlds!");
   bclose(f);
   rp_delete(rp);

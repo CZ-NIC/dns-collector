@@ -301,10 +301,10 @@ static void fb_res_free(struct resource *r)
   bclose(f);
 }
 
-static void fb_res_dump(struct resource *r)
+static void fb_res_dump(struct resource *r, uns indent UNUSED)
 {
   struct fastbuf *f = r->priv;
-  printf(" name=%s", f->name);
+  printf(" name=%s\n", f->name);
 }
 
 static const struct res_class fb_res_class = {

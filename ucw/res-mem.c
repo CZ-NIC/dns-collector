@@ -26,10 +26,10 @@ mem_res_free(struct resource *r)
 }
 
 static void
-mem_res_dump(struct resource *r)
+mem_res_dump(struct resource *r, uns indent UNUSED)
 {
   struct res_mem *rm = (struct res_mem *) r;
-  printf(" size=%zu", rm->size);
+  printf(" size=%zu, ptr=%p\n", rm->size, r->priv);
 }
 
 static const struct res_class mem_res_class = {
@@ -77,10 +77,10 @@ int main(void)
   struct resource *r;
   char *p = res_malloc(3, &r);
   p[0] = p[1] = p[2] = 1;
-  rp_dump(rp);
+  rp_dump(rp, 0);
   p = res_realloc(r, 5);
   p[3] = p[4] = 2;
-  rp_dump(rp);
+  rp_dump(rp, 0);
   rp_delete(rp);
   return 0;
 }

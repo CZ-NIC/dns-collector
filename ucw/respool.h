@@ -10,7 +10,6 @@
 /*
  * FIXME:
  *	- check other candidates for resourcification
- *	- respool as a resource in another respool?
  *	- unit tests
  *	- automatic freeing of trans pool on thread exit
  */
@@ -25,6 +24,7 @@ struct respool {
   clist resources;
   const char *name;
   struct mempool *mpool;				// If set, resources are allocated from the mempool, otherwise by xmalloc()
+  struct resource *subpool_of;
 };
 
 struct resource {
@@ -39,14 +39,14 @@ struct res_class {
   const char *name;
   void (*detach)(struct resource *r);
   void (*free)(struct resource *r);
-  void (*dump)(struct resource *r);
+  void (*dump)(struct resource *r, uns indent);
   uns res_size;						// Size of the resource structure (0=default)
 };
 
 struct respool *rp_new(const char *name, struct mempool *mp);
 void rp_delete(struct respool *rp);
 void rp_detach(struct respool *rp);
-void rp_dump(struct respool *rp);
+void rp_dump(struct respool *rp, uns indent);
 
 static inline struct respool *
 rp_current(void)
@@ -67,7 +67,7 @@ struct resource *res_alloc(const struct res_class *rc) LIKE_MALLOC;	// Returns N
 void res_drop(struct resource *r);
 void res_detach(struct resource *r);
 void res_free(struct resource *r);
-void res_dump(struct resource *r);
+void res_dump(struct resource *r, uns indent);
 
 static inline struct resource *				// Returns NULL if there is no pool active
 res_new(const struct res_class *rc, void *priv)
@@ -88,5 +88,7 @@ struct resource *res_for_fd(int fd);			// Creates a resource that closes a given
 void *res_malloc(size_t size, struct resource **ptr) LIKE_MALLOC;	// Allocates memory and creates a resource for it
 void *res_malloc_zero(size_t size, struct resource **ptr) LIKE_MALLOC;	// Allocates zero-initialized memory and creates a resource for it
 void *res_realloc(struct resource *res, size_t size);
+
+struct resource *res_subpool(struct respool *rp);	// Make @rp a sub-pool of the current pool
 
 #endif

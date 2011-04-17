@@ -159,7 +159,7 @@ trans_dump(void)
       while (tx != t)
 	{
 	  printf("Recovering transaction %p:\n", tx);
-	  rp_dump(tx->rpool);
+	  rp_dump(tx->rpool, 0);
 	  tx = tx->prev_trans;
 	}
     }
@@ -172,7 +172,7 @@ trans_dump(void)
   while (t)
     {
       printf("Transaction %p:\n", t);
-      rp_dump(t->rpool);
+      rp_dump(t->rpool, 0);
       t = t->prev_trans;
     }
 }
