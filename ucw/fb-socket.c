@@ -125,8 +125,7 @@ fbsock_create(struct fbsock_params *p)
   f->spout = fbs_spout;
   f->close = fbs_close;
   f->can_overwrite_buffer = 1;
-  fb_tie(f);
-  return f;
+  return fb_tie(f);
 }
 
 #ifdef TEST

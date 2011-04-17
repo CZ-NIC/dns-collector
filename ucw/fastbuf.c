@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Fast Buffered I/O
  *
- *	(c) 1997--2007 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2011 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -314,7 +314,8 @@ static const struct res_class fb_res_class = {
   .free = fb_res_free,
 };
 
-void fb_tie(struct fastbuf *f)
+struct fastbuf *fb_tie(struct fastbuf *f)
 {
   f->res = res_new(&fb_res_class, f);
+  return f;
 }

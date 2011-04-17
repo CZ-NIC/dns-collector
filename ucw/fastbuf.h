@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Fast Buffered I/O
  *
- *	(c) 1997--2008 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2011 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -101,6 +101,7 @@
  *
  *   - Initialization:
  *     * out: `buffer <= bstop <= bptr <= bufend` (flushed).
+ *     * @fb_tie() should be called on the newly created fastbuf.
  *
  *   - `refill`:
  *     * in: `buffer <= bstop <= bptr <= bufend` (reading or flushed).
@@ -143,7 +144,7 @@ struct fastbuf {
   struct resource *res;				/* The fastbuf can be tied to a resource pool */
 };
 
-void fb_tie(struct fastbuf *b);			/* Tie fastbuf to a resource if there is an active pool */
+struct fastbuf *fb_tie(struct fastbuf *b);	/* Tie fastbuf to a resource if there is an active pool */
 
 /**
  * Fastbuf flags

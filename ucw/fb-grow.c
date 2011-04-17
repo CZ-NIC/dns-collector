@@ -92,8 +92,7 @@ struct fastbuf *fbgrow_create_mp(struct mempool *mp, unsigned basic_size)
   b->spout = fbgrow_spout;
   b->seek = fbgrow_seek;
   b->can_overwrite_buffer = 1;
-  fb_tie(b);
-  return b;
+  return fb_tie(b);
 }
 
 struct fastbuf *fbgrow_create(unsigned basic_size)
