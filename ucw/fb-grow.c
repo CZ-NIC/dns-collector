@@ -111,6 +111,15 @@ void fbgrow_rewind(struct fastbuf *b)
   brewind(b);
 }
 
+uns fbgrow_read_all(struct fastbuf *b, byte **buf)
+{
+  byte *end = FB_GBUF(b)->end;
+  end = MAX(end, b->bptr);
+  if (*buf)
+    *buf = b->buffer;
+  return end - b->buffer;
+}
+
 #ifdef TEST
 
 int main(void)

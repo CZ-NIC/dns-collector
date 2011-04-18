@@ -387,6 +387,7 @@ struct fastbuf *fbgrow_create(unsigned basic_size);	/** Create the growing buffe
 struct fastbuf *fbgrow_create_mp(struct mempool *mp, unsigned basic_size); /** Create the growing buffer pre-allocated to @basic_size bytes. **/
 void fbgrow_reset(struct fastbuf *b);			/** Reset stream and prepare for writing. **/
 void fbgrow_rewind(struct fastbuf *b);			/** Prepare for reading (of already written data). **/
+uns fbgrow_read_all(struct fastbuf *b, byte **buf);	/** Read the entire content of a growing fastbuf. Can be called in any state. **/
 
 /***
  * === Fastbuf on memory pools [[fbpool]]
