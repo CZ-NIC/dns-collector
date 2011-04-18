@@ -387,9 +387,13 @@ struct fastbuf *fbgrow_create(unsigned basic_size);	/** Create the growing buffe
 struct fastbuf *fbgrow_create_mp(struct mempool *mp, unsigned basic_size); /** Create the growing buffer pre-allocated to @basic_size bytes. **/
 void fbgrow_reset(struct fastbuf *b);			/** Reset stream and prepare for writing. **/
 void fbgrow_rewind(struct fastbuf *b);			/** Prepare for reading (of already written data). **/
-uns fbgrow_get_buf(struct fastbuf *b, byte **buf);	/** Can be used in any state of @b (for example when writing or after fbgrow_rewind()) to
-							    return the pointer to internal buffer and its length in bytes. The returned buffer
-							    can be invalidated by further requests. **/
+
+/**
+ * Can be used in any state of @b (for example when writing or after
+ * @fbgrow_rewind()) to return the pointer to internal buffer and its length in
+ * bytes. The returned buffer can be invalidated by further requests.
+ **/
+uns fbgrow_get_buf(struct fastbuf *b, byte **buf);
 
 /***
  * === Fastbuf on memory pools [[fbpool]]
