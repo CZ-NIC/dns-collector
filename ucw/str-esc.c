@@ -15,8 +15,6 @@
 #include "ucw/chartype.h"
 #include <stdlib.h>
 
-/* Expands C99-like escape sequences.
- * It is safe to use the same buffer for both input and output. */
 char *
 str_unesc(char *d, const char *s)
 {

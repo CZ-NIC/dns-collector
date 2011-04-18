@@ -36,6 +36,7 @@ Modules
 - <<binsearch:,Binary search>>
 - <<compress:,Compression>>
 - <<trans:,Transactions and resource tracking>>
+- <<string:,String operations>>
 
 Other features
 --------------
@@ -60,8 +61,6 @@ Yet undocumented modules
   * `kmp-search.h`
   * `regex.h`
   * `stkstring.h`
-  * `string.h`
-  * `str-match.h`
   * `strtonum.h`
   * `wildmatch.h`
 - File manipulation
