@@ -115,7 +115,7 @@ uns fbgrow_get_buf(struct fastbuf *b, byte **buf)
 {
   byte *end = FB_GBUF(b)->end;
   end = MAX(end, b->bptr);
-  if (*buf)
+  if (buf)
     *buf = b->buffer;
   return end - b->buffer;
 }
