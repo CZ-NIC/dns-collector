@@ -30,7 +30,7 @@ LIBUCW_MODS= \
 	base64 base224 \
 	sync \
 	qache \
-	string str-esc str-split str-match str-imatch str-hex \
+	string str-esc str-split str-match str-imatch str-hex str-fix \
 	bbuf gary \
 	getopt \
 	strtonum \
@@ -130,7 +130,7 @@ $(o)/ucw/bbuf.test: $(o)/ucw/bbuf-t
 $(o)/ucw/getopt.test: $(o)/ucw/getopt-t
 $(o)/ucw/ff-unicode.test: $(o)/ucw/ff-unicode-t
 $(o)/ucw/eltpool.test: $(o)/ucw/eltpool-t
-$(o)/ucw/string.test: $(o)/ucw/str-hex-t $(o)/ucw/str-esc-t
+$(o)/ucw/string.test: $(o)/ucw/str-hex-t $(o)/ucw/str-esc-t $(o)/ucw/str-fix-t
 $(o)/ucw/sha1.test: $(o)/ucw/sha1-t $(o)/ucw/sha1-hmac-t
 $(o)/ucw/trie-test.test: $(o)/ucw/trie-test
 $(o)/ucw/asort-test.test: $(o)/ucw/asort-test

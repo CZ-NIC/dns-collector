@@ -2,7 +2,7 @@
  *	UCW Library -- String Routines
  *
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
- *	(c) 2007--2008 Martin Mares <mj@ucw.cz>
+ *	(c) 2007--2011 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -41,5 +41,27 @@ const char *hex_to_mem(byte *dest, const char *src, uns max_bytes, uns flags);
 
 // Bottom 8 bits of flags are an optional separator of bytes, the rest is:
 #define MEM_TO_HEX_UPCASE 0x100
+
+/* str-fix.c */
+
+int str_has_prefix(char *str, char *prefix);		/** Tests if @str starts with @prefix. **/
+int str_has_suffix(char *str, char *suffix);		/** Tests if @str ends with @suffix. **/
+
+/**
+ * Let @str and @prefix be hierarchical names with components separated by
+ * a character @sep. Returns true if @str starts with @prefix, respecting
+ * component boundaries.
+ *
+ * For example, when @sep is '/' and @str is "/usr/local/bin", then:
+ * - "/usr/local" is a prefix
+ * - "/usr/local/" is a prefix, too
+ * - "/usr/loc" is not,
+ * - "/usr/local/bin" is a prefix,
+ * - "/usr/local/bin/" is not,
+ * - "/" is a prefix,
+ * - "" is a prefix,
+ **/
+int str_hier_prefix(char *str, char *prefix, uns sep);
+int str_hier_suffix(char *str, char *suffix, uns sep);	/** Like @str_hier_prefix(), but for suffixes. **/
 
 #endif
