@@ -80,4 +80,5 @@ exceptions live in the `ucw.fb` subtree. The following exceptions are defined:
 `ucw.fb.read`:: Read error (e.g., the `read` syscall has failed or the stream is write-only)
 `ucw.fb.seek`:: Seek error (e.g., file not seekable, or a seek behind EOF)
 `ucw.fb.tmp`:: Creation of temporary file failed
+`ucw.fb.toolong`:: Object (typically a line) is too long
 `ucw.fb.write`:: Write error (e.g., the `write` syscall has failed or the stream is read-only)

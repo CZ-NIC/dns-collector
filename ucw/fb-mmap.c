@@ -182,7 +182,7 @@ bfmmopen_internal(int fd, const char *name, uns mode)
   F->fd = fd;
   F->file_extend = F->file_size = ucw_seek(fd, 0, SEEK_END);
   if (F->file_size < 0)
-    die("seek(%s): %m", name);
+    bthrow(f, "open", "fb-mmap: Cannot detect size of %s -- is it seekable?", name);
   if (mode & O_APPEND)
     f->pos = F->file_size;
   F->mode = mode;

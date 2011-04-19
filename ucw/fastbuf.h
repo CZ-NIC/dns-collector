@@ -153,7 +153,7 @@ enum fb_flags {
 };
 
 /** Tie a fastbuf to a resource in the current resource pool. Returns the pointer to the same fastbuf. **/
-struct fastbuf *fb_tie(struct fastbuf *b);
+struct fastbuf *fb_tie(struct fastbuf *b);	/* Tie fastbuf to a resource if there is an active pool */
 
 /***
  * === Fastbuf on files [[fbparam]]
@@ -197,7 +197,7 @@ extern struct fb_params fbpar_def;	/** The default `fb_params` **/
  * Use @params to select the fastbuf back-end and its parameters or
  * pass NULL if you are fine with defaults.
  *
- * Dies if the file does not exist.
+ * Raises `ucw.fb.open` if the file does not exist.
  **/
 struct fastbuf *bopen_file(const char *name, int mode, struct fb_params *params);
 struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *params); /** Like bopen_file(), but returns NULL on failure. **/
@@ -355,7 +355,7 @@ void fbbuf_init_read(struct fastbuf *f, byte *buffer, uns size, uns can_overwrit
 /**
  * Creates a write-only fastbuf which writes into a provided memory buffer.
  * The fastbuf structure is allocated by the caller and pointed to by @f.
- * An attempt to write behind the end of the buffer dies.
+ * An attempt to write behind the end of the buffer causes the `ucw.fb.write` exception.
  *
  * Data are written directly into the buffer, so it is not necessary to call @bflush()
  * at any moment.
@@ -578,7 +578,7 @@ static inline uns bread(struct fastbuf *f, void *b, uns l)
 /**
  * Reads exactly @l bytes of data into @b.
  * If at the end of file, it returns 0.
- * If there are data, but less than @l, it dies.
+ * If there are data, but less than @l, it raises `ucw.fb.eof`.
  */
 static inline uns breadb(struct fastbuf *f, void *b, uns l)
 {
@@ -607,7 +607,7 @@ static inline void bwrite(struct fastbuf *f, const void *b, uns l) /** Writes bu
 /**
  * Reads a line into @b and strips trailing `\n`.
  * Returns pointer to the terminating 0 or NULL on `EOF`.
- * Dies if the line is longer than @l.
+ * Raises `ucw.fb.toolong` if the line is longer than @l.
  **/
 char *bgets(struct fastbuf *f, char *b, uns l);
 char *bgets0(struct fastbuf *f, char *b, uns l);	/** The same as @bgets(), but for 0-terminated strings. **/
@@ -621,7 +621,7 @@ struct mempool;
 struct bb_t;
 /**
  * Read a string, strip the trailing `\n` and store it into growing buffer @b.
- * Dies if the line is longer than @limit.
+ * Raises `ucw.fb.toolong` if the line is longer than @limit.
  **/
 uns bgets_bb(struct fastbuf *f, struct bb_t *b, uns limit);
 /**
