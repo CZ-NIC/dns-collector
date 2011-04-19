@@ -15,8 +15,8 @@ within the transaction.
 - <<exc,Exceptions>>
 - <<excnames,Exception names>>
 
-Resource pools: ucw/respool.h [[respools]]
-------------------------------------------
+Resource pools: ucw/resource.h [[respools]]
+-------------------------------------------
 
 A resource pool contains a stack of resources. When a new resource
 is created, it is pushed onto the stack. When freeing the pool, the
@@ -40,7 +40,7 @@ One pool can be used for at most one thread at a time. All functions
 which create resources do so in the active pool. All other functions
 operating on resources work on both active and in-active pools.
 
-!!ucw/respool.h
+!!ucw/resource.h
 
 Transactions: ucw/trans.h [[trans]]
 -----------------------------------

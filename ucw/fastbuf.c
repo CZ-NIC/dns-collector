@@ -11,7 +11,7 @@
 
 #include "ucw/lib.h"
 #include "ucw/fastbuf.h"
-#include "ucw/respool.h"
+#include "ucw/resource.h"
 #include "ucw/trans.h"
 #include "ucw/stkstring.h"
 

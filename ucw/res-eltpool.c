@@ -8,7 +8,7 @@
  */
 
 #include "ucw/lib.h"
-#include "ucw/respool.h"
+#include "ucw/resource.h"
 #include "ucw/eltpool.h"
 
 #include <stdio.h>
