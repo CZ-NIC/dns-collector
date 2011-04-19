@@ -23,11 +23,7 @@ void bclose(struct fastbuf *f)
   if (f)
     {
       bflush(f);
-      if (f->res)
-	{
-	  res_drop(f->res);
-	  f->res = NULL;
-	}
+      res_detach(f->res);
       DBG("FB: closing", f);
       if (f->close)
 	f->close(f); /* Should always free all internal resources, even if it throws an exception */

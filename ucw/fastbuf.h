@@ -144,8 +144,6 @@ struct fastbuf {
   struct resource *res;				/* The fastbuf can be tied to a resource pool */
 };
 
-struct fastbuf *fb_tie(struct fastbuf *b);	/* Tie fastbuf to a resource if there is an active pool */
-
 /**
  * Fastbuf flags
  */
@@ -153,6 +151,9 @@ enum fb_flags {
   FB_DEAD = 0x1,				/* Some fastbuf's method has thrown an exception */
   FB_DIE_ON_EOF = 0x2,				/* Most of read operations throw "fb.eof" on EOF */
 };
+
+/** Tie a fastbuf to a resource in the current resource pool. Returns the pointer to the same fastbuf. **/
+struct fastbuf *fb_tie(struct fastbuf *b);
 
 /***
  * === Fastbuf on files [[fbparam]]

@@ -55,7 +55,7 @@ bopen_limited_fd(int fd, uns buflen, uns limit)
   f->refill = bfl_refill;
   f->close = bfl_close;
   f->can_overwrite_buffer = 2;
-  return fb_tie(f);
+  return f;
 }
 
 #ifdef TEST

@@ -133,7 +133,7 @@ fbatomic_open(const char *name, struct fastbuf *master, uns bufsize, int record_
   f->name = af->name;
   f->spout = fbatomic_spout;
   f->close = fbatomic_close;
-  return fb_tie(f);
+  return f;
 }
 
 #ifdef TEST

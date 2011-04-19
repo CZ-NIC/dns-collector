@@ -18,11 +18,10 @@ inbetween and remember that the file position reported by @btell() points after
 the flushed buffer, which is not necessarily the same as after the data you've
 really read.
 
-Most fastbuf back-ends also participate in the libucw resource management system.
-If you have a resource pool active, newly created fastbufs are automatically tied
-to resources in the pool, so when the pool gets cleaned up, the fastbufs are
-freed, too. The bclose() function is still available and it removes the tie
-as needed.
+Fastbufs can also participate in the libucw resource management system.
+You can tie a fastbuf to a resource in the current resource pool by @fb_tie().
+When the pool gets cleaned up, the fastbuf is automatically closed. If you call
+@bclose() explicitly, the resource is removed, too.
 
 .Back-ends:
 - <<fbparam,Files (parametrized)>>

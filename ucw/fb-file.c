@@ -238,7 +238,7 @@ bfdopen_internal(int fd, const char *name, uns buflen)
   f->close = bfd_close;
   f->config = bfd_config;
   f->can_overwrite_buffer = 2;
-  return fb_tie(f);
+  return f;
 }
 
 void
