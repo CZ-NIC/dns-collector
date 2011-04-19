@@ -121,6 +121,8 @@ res_drop(struct resource *r)
 void
 res_detach(struct resource *r)
 {
+  if (!r)
+    return;
   if (r->rclass->detach)
     r->rclass->detach(r);
   res_drop(r);
@@ -129,6 +131,8 @@ res_detach(struct resource *r)
 void
 res_free(struct resource *r)
 {
+  if (!r)
+    return;
   if (r->rclass->free)
     r->rclass->free(r);
   res_drop(r);

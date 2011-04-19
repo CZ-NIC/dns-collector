@@ -77,7 +77,18 @@ static inline struct respool *rp_switch(struct respool *rp)
 struct resource *res_alloc(const struct res_class *rc) LIKE_MALLOC;	// Returns NULL if there is no pool active
 
 void res_dump(struct resource *r, uns indent);		/** Prints out a debugging dump of the resource to stdout. **/
-void res_free(struct resource *r);			/** Frees a resource, unlinking it from its pool. **/
+
+/**
+ * Frees a resource, unlinking it from its pool.
+ * When called with a NULL pointer, it does nothing, but safely.
+ **/
+void res_free(struct resource *r);
+
+/**
+ * Unlinks a resource from a pool and releases its meta-data. However, the resource itself is kept.
+ * When called with a NULL pointer, it does nothing, but safely.
+ **/
+void res_detach(struct resource *r);
 
 /** Marks a resource as temporary (sets @RES_FLAG_TEMP). **/
 static inline void res_temporary(struct resource *r)
@@ -119,12 +130,10 @@ struct res_class {
   uns res_size;						// Size of the resource structure (0=default)
 };
 
-/** Unlinks a resource from a pool and releases its meta-data. However, the resource itself is kept. **/
-void res_detach(struct resource *r);
-
 /**
  * Unlinks a resource from a pool and releases its meta-data. Unlike @res_detach(),
- * it does not invoke any callbacks.
+ * it does not invoke any callbacks. The caller must make sure that no references to
+ * the meta-data remain, so this is generally safe only inside resource class code.
  **/
 void res_drop(struct resource *r);
 
