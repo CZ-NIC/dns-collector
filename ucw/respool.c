@@ -1,7 +1,7 @@
 /*
  *	The UCW Library -- Resource Pools
  *
- *	(c) 2008 Martin Mares <mj@ucw.cz>
+ *	(c) 2008--2011 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -27,6 +27,7 @@ rp_new(const char *name, struct mempool *mp)
     rp = xmalloc_zero(sizeof(*rp));
   clist_init(&rp->resources);
   rp->name = name;
+  rp->default_res_flags = RES_FLAG_TEMP;
   return rp;
 }
 
@@ -66,6 +67,21 @@ rp_detach(struct respool *rp)
 }
 
 void
+rp_commit(struct respool *rp)
+{
+  struct resource *r;
+  while (r = clist_head(&rp->resources))
+    {
+      ASSERT(r->rpool == rp);
+      if (r->flags & RES_FLAG_TEMP)
+	res_free(r);
+      else
+	res_detach(r);
+    }
+  rp_free(rp);
+}
+
+void
 rp_dump(struct respool *rp, uns indent)
 {
   printf("%*sResource pool %s at %p (%s)%s:\n",
@@ -90,6 +106,7 @@ res_alloc(const struct res_class *rc)
   struct resource *r = (rp->mpool ? mp_alloc_fast(rp->mpool, size) : xmalloc(size));
   r->rpool = rp;
   clist_add_tail(&rp->resources, &r->n);
+  r->flags = rp->default_res_flags;
   return r;
 }
 
@@ -120,7 +137,7 @@ res_free(struct resource *r)
 void
 res_dump(struct resource *r, uns indent)
 {
-  printf("%*s%p %s", indent, "", r, r->rclass->name);
+  printf("%*s%p %s %s", indent, "", r, ((r->flags & RES_FLAG_TEMP) ? "TEMP" : "PERM"), r->rclass->name);
   if (r->rclass->dump)
     r->rclass->dump(r, indent+4);
   else

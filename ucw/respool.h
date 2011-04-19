@@ -23,6 +23,7 @@ struct respool {
   const char *name;
   struct mempool *mpool;				// If set, resources are allocated from the mempool, otherwise by xmalloc()
   struct resource *subpool_of;
+  uns default_res_flags;				// RES_FLAG_xxx for newly allocated resources
 };
 
 /**
@@ -33,9 +34,15 @@ struct respool {
 struct resource {
   cnode n;
   struct respool *rpool;
+  uns flags;						// RES_FLAG_xxx
   const struct res_class *rclass;
   void *priv;						// Private to the class
   // More data specific for the particular class can follow
+};
+
+/** Resource flags **/
+enum resource_flags {
+  RES_FLAG_TEMP = 1,					// Resource is temporary
 };
 
 /**
@@ -46,6 +53,7 @@ struct respool *rp_new(const char *name, struct mempool *mp);
 
 void rp_delete(struct respool *rp);			/** Deletes a resource pool, freeing all resources. **/
 void rp_detach(struct respool *rp);			/** Deletes a resource pool, detaching all resources. **/
+void rp_commit(struct respool *rp);			/** Deletes a resource pool. Temporary resources are freed, stable resources are detached. **/
 void rp_dump(struct respool *rp, uns indent);		/** Prints out a debugging dump of a pool to stdout. **/
 
 /** Returns a pointer to the currently active resource pool or NULL, if none exists. **/
@@ -70,6 +78,18 @@ struct resource *res_alloc(const struct res_class *rc) LIKE_MALLOC;	// Returns N
 
 void res_dump(struct resource *r, uns indent);		/** Prints out a debugging dump of the resource to stdout. **/
 void res_free(struct resource *r);			/** Frees a resource, unlinking it from its pool. **/
+
+/** Marks a resource as temporary (sets @RES_FLAG_TEMP). **/
+static inline void res_temporary(struct resource *r)
+{
+  r->flags |= RES_FLAG_TEMP;
+}
+
+/** Marks a resource as permanent (clears @RES_FLAG_TEMP). **/
+static inline void res_permanent(struct resource *r)
+{
+  r->flags &= RES_FLAG_TEMP;
+}
 
 /***
  * === Resource classes

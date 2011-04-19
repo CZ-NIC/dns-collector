@@ -22,6 +22,14 @@ A resource can be also freed separately (which unlinks it from the pool),
 or *detached* from the pool (which keeps the real resource, but forgets
 its meta-data, so the resource is no longer tracked).
 
+In many cases, a combination of both methods is needed: some resources
+are marked as temporary, while some others are permanent. When the
+an operation is completed successfully (and @rp_commit() is called),
+all temporary resources are freed and the permanent ones detached.
+When the operation fails, @rp_delete() deletes all resources. By default,
+all resources are created as temporary. You can make a resource permanent
+by calling @res_permanent(), or change the default in `resource->default_res_flags`.
+
 For each thread, LibUCW remembers the currently active resource pool.
 One pool can be used for at most one thread at a time. All functions
 which create resources do so in the active pool. All other functions
