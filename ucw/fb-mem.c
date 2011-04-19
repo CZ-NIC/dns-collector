@@ -128,7 +128,7 @@ fbmem_seek(struct fastbuf *f, ucw_off_t pos, int whence)
       FB_MEM(f)->block = NULL;
       return 1;
     }
-  bthrow(f, "fb.seek", "fbmem_seek to invalid offset");
+  bthrow(f, "seek", "fbmem_seek to an invalid offset");
 }
 
 static void

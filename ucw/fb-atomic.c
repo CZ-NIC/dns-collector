@@ -54,9 +54,9 @@ fbatomic_internal_write(struct fastbuf *f)
       ASSERT(af->record_len < 0 || !(size % af->record_len));
       int res = write(af->fd, f->buffer, size);
       if (res < 0)
-	bthrow(f, "fb.write", "Error writing %s: %m", f->name);
+	bthrow(f, "write", "Error writing %s: %m", f->name);
       if (res != size)
-	bthrow(f, "fb.write", "Unexpected partial write to %s: written only %d bytes of %d", f->name, res, size);
+	bthrow(f, "write", "Unexpected partial write to %s: written only %d bytes of %d", f->name, res, size);
       f->bptr = f->buffer;
     }
 }
@@ -113,7 +113,7 @@ fbatomic_open(const char *name, struct fastbuf *master, uns bufsize, int record_
     {
       int fd = ucw_open(name, O_WRONLY | O_CREAT | O_TRUNC | O_APPEND, 0666);
       if (fd < 0)
-	trans_throw("fb.open", NULL, "Cannot create %s: %m", name);
+	trans_throw("ucw.fb.open", NULL, "Cannot create %s: %m", name);
       af = xmalloc_zero(sizeof(*af) + strlen(name));
       af->fd = fd;
       af->use_count = 1;

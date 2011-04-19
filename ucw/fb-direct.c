@@ -159,7 +159,7 @@ fbdir_refill(struct fastbuf *f)
   if (!r->status)
     return 0;
   if (r->status < 0)
-    bthrow(f, "fb.read", "Error reading %s: %s", f->name, strerror(r->returned_errno));
+    bthrow(f, "read", "Error reading %s: %s", f->name, strerror(r->returned_errno));
   f->bptr = f->buffer = r->buffer;
   f->bstop = f->bufend = f->buffer + r->status;
   f->pos += r->status;
@@ -193,7 +193,7 @@ fbdir_spout(struct fastbuf *f)
 	  asio_sync(F->io_queue);
 	  DBG("FB-DIRECT: Truncating at %llu", (long long)f->pos);
 	  if (ucw_ftruncate(F->fd, f->pos) < 0)
-	    bthrow(f, "fb.write", "Error truncating %s: %m", f->name);
+	    bthrow(f, "write", "Error truncating %s: %m", f->name);
 	}
       else
 	asio_submit(r);

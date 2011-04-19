@@ -32,15 +32,17 @@ void bclose(struct fastbuf *f)
 
 void NONRET bthrow(struct fastbuf *f, const char *id, const char *fmt, ...)
 {
+  DBG("FB: throwing %s", full_id);
+  char full_id[16];
+  snprintf(full_id, sizeof(full_id), "ucw.fb.%s", id);
   ASSERT(!(f->flags & FB_DEAD)); /* Only one bthrow() is allowed before bclose() */
-  DBG("FB: throwing %s", id);
   va_list args;
   va_start(args, fmt);
   if (!f->res)
     die("Fastbuf %s error: %s", f->name ? : "<fb>", stk_vprintf(fmt, args));
   f->flags |= FB_DEAD;
   f->bptr = f->bstop = f->bufend; /* Reset the buffer to guard consecutive seek/read/write */
-  trans_vthrow(id, f, fmt, args);
+  trans_vthrow(full_id, f, fmt, args);
 }
 
 int brefill(struct fastbuf *f, int allow_eof)
@@ -48,7 +50,7 @@ int brefill(struct fastbuf *f, int allow_eof)
   DBG("FB: refill");
   ASSERT(!(f->flags & FB_DEAD) && f->buffer <= f->bstop && f->bstop <= f->bptr && f->bptr <= f->bufend);
   if (!f->refill)
-    bthrow(f, "fb.read", "Stream not readable");
+    bthrow(f, "read", "Stream not readable");
   if (f->refill(f))
     {
       ASSERT(f->buffer <= f->bptr && f->bptr < f->bstop && f->bstop <= f->bufend);
@@ -58,7 +60,7 @@ int brefill(struct fastbuf *f, int allow_eof)
     {
       ASSERT(f->buffer <= f->bptr && f->bptr == f->bstop && f->bstop <= f->bufend);
       if (!allow_eof && (f->flags & FB_DIE_ON_EOF))
-	bthrow(f, "fb.eof", "Unexpected EOF");
+	bthrow(f, "eof", "Unexpected EOF");
       return 0;
     }
 }
@@ -68,7 +70,7 @@ static void do_spout(struct fastbuf *f)
   DBG("FB: spout");
   ASSERT(!(f->flags & FB_DEAD) && f->buffer <= f->bstop && f->bstop <= f->bptr && f->bptr <= f->bufend); /* Check write mode possibly with unflushed data */
   if (!f->spout)
-    bthrow(f, "fb.write", "Stream not writeable");
+    bthrow(f, "write", "Stream not writeable");
   f->spout(f);
   ASSERT(f->buffer <= f->bstop && f->bstop <= f->bptr && f->bptr <= f->bufend);
 }
@@ -97,7 +99,7 @@ static void do_seek(struct fastbuf *f, ucw_off_t pos, int whence)
   bflush(f);
   DBG("FB: seeking to pos=%lld whence=%d %p %p %p %p", (long long)pos, whence, f->buffer, f->bstop, f->bptr, f->bufend);
   if (!f->seek || !f->seek(f, pos, whence))
-    bthrow(f, "fb.seek", "Stream not seekable");
+    bthrow(f, "seek", "Stream not seekable");
   DBG("FB: seeked %p %p %p %p", f->buffer, f->bstop, f->bptr, f->bufend);
   ASSERT(f->buffer <= f->bstop && f->bstop <= f->bptr && f->bptr <= f->bufend);
   if (whence == SEEK_SET)
@@ -114,7 +116,7 @@ inline void bsetpos(struct fastbuf *f, ucw_off_t pos)
   else if (pos != btell(f))
     {
       if (pos < 0)
-	bthrow(f, "fb.seek", "Seek out of range");
+	bthrow(f, "seek", "Seek out of range");
       do_seek(f, pos, SEEK_SET);
     }
 }
@@ -131,7 +133,7 @@ void bseek(struct fastbuf *f, ucw_off_t pos, int whence)
       break;
     case SEEK_END:
       if (pos > 0)
-	bthrow(f, "fb.seek", "Seek out of range");
+	bthrow(f, "seek", "Seek out of range");
       do_seek(f, pos, SEEK_END);
       break;
     default:
@@ -192,7 +194,7 @@ uns bread_slow(struct fastbuf *f, void *b, uns l, uns check)
       total += k;
     }
   if (check && total && l)
-    bthrow(f, "fb.read", "breadb: short read");
+    bthrow(f, "eof", "breadb: short read");
   return total;
 }
 
@@ -228,7 +230,7 @@ void bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uns l)
 	{
 	  if (l == ~0U)
 	    return;
-	  bthrow(f, "fb.read", "bbcopy: source exhausted");
+	  bthrow(f, "eof", "bbcopy: source exhausted");
 	}
       tavail = bdirect_write_prepare(t, &tptr);
       n = MIN(l, favail);

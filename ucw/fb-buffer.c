@@ -29,7 +29,7 @@ fbbuf_seek(struct fastbuf *f, ucw_off_t pos, int whence)
   if (whence == SEEK_END)
     pos += len;
   if (pos < 0 || pos > len)
-    bthrow(f, "fb.seek", "Seek out of range");
+    bthrow(f, "seek", "Seek out of range");
   f->bptr = f->buffer + pos;
   f->bstop = f->buffer;
   f->pos = 0;
@@ -54,7 +54,7 @@ fbbuf_init_read(struct fastbuf *f, byte *buf, uns size, uns can_overwrite)
 static void
 fbbuf_spout(struct fastbuf *f)
 {
-  bthrow(f, "fb.write", "fbbuf: buffer overflow on write");
+  bthrow(f, "write", "fbbuf: buffer overflow on write");
 }
 
 void

@@ -56,7 +56,7 @@ static int fbgrow_seek(struct fastbuf *b, ucw_off_t pos, int whence)
   if (whence == SEEK_END)
     pos += len;
   if (pos < 0 || pos > len)
-    bthrow(b, "fb.seek", "Seek out of range");
+    bthrow(b, "seek", "Seek out of range");
   b->bptr = b->buffer + pos;
   b->bstop = b->buffer;
   b->pos = 0;

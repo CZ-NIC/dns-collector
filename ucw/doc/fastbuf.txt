@@ -40,6 +40,7 @@ When the pool gets cleaned up, the fastbuf is automatically closed. If you call
 .Other reading:
 - <<internal,Internal structure>>
 - <<bconfig,Configuring streams>>
+- <<fbexc,Exceptions>>
 
 ucw/fastbuf.h
 -------------
@@ -66,3 +67,17 @@ ucw/ff-binary.h
 ---------------
 
 !!ucw/ff-binary.h
+
+Exceptions [[fbexc]]
+--------------------
+
+All standard back-ends and front-ends raise exceptions on errors. All such
+exceptions live in the `ucw.fb` subtree. The following exceptions are defined:
+
+`ucw.fb.eof`:: Unexpected end of file (e.g., when the @FB_DIE_ON_EOF flag is set)
+`ucw.fb.mmap`:: Memory mapping failed (e.g., the `mmap` syscall has failed)
+`ucw.fb.open`:: Opening failed (file does not exist and similar problems)
+`ucw.fb.read`:: Read error (e.g., the `read` syscall has failed or the stream is write-only)
+`ucw.fb.seek`:: Seek error (e.g., file not seekable, or a seek behind EOF)
+`ucw.fb.tmp`:: Creation of temporary file failed
+`ucw.fb.write`:: Write error (e.g., the `write` syscall has failed or the stream is read-only)
