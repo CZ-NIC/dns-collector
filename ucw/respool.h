@@ -139,16 +139,13 @@ void res_drop(struct resource *r);
 
 /**
  * Creates a new resource of the specific class, setting its private data to @priv.
- * Returns NULL if there is no resource pool active.
+ * Dies if no resource pool is active.
  **/
 static inline struct resource *res_new(const struct res_class *rc, void *priv)
 {
   struct resource *r = res_alloc(rc);
-  if (r)
-    {
-      r->rclass = rc;
-      r->priv = priv;
-    }
+  r->rclass = rc;
+  r->priv = priv;
   return r;
 }
 

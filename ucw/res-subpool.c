@@ -46,7 +46,6 @@ res_subpool(struct respool *rp)
 {
   ASSERT(!rp->subpool_of);
   struct resource *r = res_new(&subpool_res_class, rp);
-  ASSERT(r);
   ASSERT(r->rpool != rp);		// Avoid simple loops
   rp->subpool_of = r;
   return r;

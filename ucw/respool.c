@@ -99,8 +99,7 @@ struct resource *
 res_alloc(const struct res_class *rc)
 {
   struct respool *rp = rp_current();
-  if (!rp)
-    return NULL;
+  ASSERT(rp);
 
   uns size = (rc->res_size ? : sizeof(struct resource));
   struct resource *r = (rp->mpool ? mp_alloc_fast(rp->mpool, size) : xmalloc(size));

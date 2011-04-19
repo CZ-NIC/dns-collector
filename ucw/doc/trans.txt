@@ -149,4 +149,3 @@ following exception types are defined:
 - Unit tests
 - Resourcification of more libucw objects.
 - More exceptions
-- Do we want to allow res_alloc() when no pool is active?
