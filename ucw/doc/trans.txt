@@ -147,5 +147,10 @@ following exception types are defined:
 == FIXME's ==
 
 - Unit tests
-- Resourcification of more libucw objects.
+- Resourcification of more libucw objects:
+	* bigalloc
+	* eltpool
+	* gary
+	* mainloop
+	* mempool
 - More exceptions
