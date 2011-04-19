@@ -34,7 +34,7 @@ LIBUCW_MODS= \
 	bbuf gary \
 	getopt \
 	strtonum \
-	respool trans res-fd res-mem res-subpool
+	respool trans res-fd res-mem res-subpool res-mempool
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h threads.h \

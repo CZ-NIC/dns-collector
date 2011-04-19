@@ -166,4 +166,7 @@ void *res_realloc(struct resource *res, size_t size);			/** Re-allocates memory 
  **/
 struct resource *res_subpool(struct respool *rp);
 
+struct mempool;
+struct resource *res_mempool(struct mempool *mp);			/** Creates a resource for the specified memory pool. **/
+
 #endif
