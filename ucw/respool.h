@@ -95,7 +95,7 @@ static inline void res_permanent(struct resource *r)
  * === Resource classes
  *
  * A resource class describes how to handle a particular type of resources.
- * Most importantly, it defines a set of callbacks for performing operations
+ * Most importantly, it defines a set of (optional) callbacks for performing operations
  * on the resources:
  *
  * * dump() should print a description of the resource used for debugging
