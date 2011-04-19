@@ -50,6 +50,8 @@ struct eltpool_free {
  * The pool will allocate chunks of at least @elts_per_chunk elements.
  * Higher numbers lead to better allocation times but also to bigger
  * unused memory blocks. Call @ep_delete() to free all pool's resources.
+ *
+ * Element pools can be treated as <<trans:respools,resources>>, see <<trans:res_eltpool()>>.
  **/
 struct eltpool *ep_new(uns elt_size, uns elts_per_chunk);
 

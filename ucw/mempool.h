@@ -54,6 +54,8 @@ struct mempool_stats {			/** Mempool statistics. See @mp_stats(). **/
  * @chunk_size must be in the interval `[1, UINT_MAX / 2]`.
  * It will allocate memory by this large chunks and take
  * memory to satisfy requests from them.
+ *
+ * Memory pools can be treated as <<trans:respools,resources>>, see <<trans:res_mempool()>>.
  **/
 void mp_init(struct mempool *pool, uns chunk_size);
 
@@ -62,6 +64,8 @@ void mp_init(struct mempool *pool, uns chunk_size);
  * See @mp_init() for @chunk_size limitations.
  *
  * The new mempool structure is allocated on the new mempool.
+ *
+ * Memory pools can be treated as <<trans:respools,resources>>, see <<trans:res_mempool()>>.
  **/
 struct mempool *mp_new(uns chunk_size);
 
