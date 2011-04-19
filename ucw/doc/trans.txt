@@ -10,8 +10,13 @@ exceptions similar to those in higher-level languages. An exception
 then rolls back the transaction, freeing all temporary resources allocated
 within the transaction.
 
-Resource pools: ucw/respool.h
------------------------------
+- <<respools,Resource pools>>
+- <<trans,Transactions>>
+- <<exc,Exceptions>>
+- <<excnames,Exception names>>
+
+Resource pools: ucw/respool.h [[respools]]
+------------------------------------------
 
 A resource pool contains a stack of resources. When a new resource
 is created, it is pushed onto the stack. When freeing the pool, the
@@ -37,8 +42,8 @@ operating on resources work on both active and in-active pools.
 
 !!ucw/respool.h
 
-Transactions: ucw/trans.h
--------------------------
+Transactions: ucw/trans.h [[trans]]
+-----------------------------------
 
 Upon the resource pools, a transactional mechanism is built. A transaction
 consists of a piece of code and a resource pool for temporary objects created
@@ -72,7 +77,7 @@ the parent transaction's pool.
 and the transaction logic uses @mp_push() and @mp_pop() to keep a stack
 of per-transaction data.)
 
-=== Exceptions ===
+=== Exceptions [[exc]] ===
 
 Transactions are commonly used together with exceptions (which are similar
 to how exceptions work in other languages, but they differ in subtle details,
@@ -129,10 +134,19 @@ are of course destroyed during the `longjmp()`.
 
 !!ucw/trans.h
 
+== Exception names [[excnames]] ==
+
+Exception identifiers form a hierarchy. Each identifier consists of dot-separated
+components with the most general component at the beginning.
+
+All exceptions raised by LibUCW reside in the `ucw` subtree. So far, the
+following exception types are defined:
+
+`ucw.fb`:: <<fastbuf:fbexc,Fastbufs>>
+
 == FIXME's ==
 
-- Interaction between exceptions, pools and other libucw modules.
 - Unit tests
 - Resourcification of more libucw objects.
+- More exceptions
 - Do we want to allow res_alloc() when no pool is active?
-- Structure of exception identifiers: rethink and document
