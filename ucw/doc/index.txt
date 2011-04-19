@@ -48,6 +48,8 @@ Other features
 
 Yet undocumented modules
 ------------------------
+- Allocators
+  * `gary.h`
 - Trie
   * `trie.h`
 - Red-black trees
