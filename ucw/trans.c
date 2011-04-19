@@ -93,7 +93,7 @@ trans_commit(void)
   DBG("Committing transaction %p", t);
   ASSERT(t);
   ASSERT(!t->thrown_exc);
-  rp_detach(t->rpool);
+  rp_commit(t->rpool);
   trans_pop(t, c);
   trans_drop(t, c);
 }

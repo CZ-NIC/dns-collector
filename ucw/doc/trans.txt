@@ -49,7 +49,8 @@ When a transaction ends, the pool is destroyed and the previous active
 pool is popped off the transaction stack. The fate of the resources
 inside the pool depends on the operation used to end the transaction:
 
-* *commit* -- all resources are detached from the pool
+* *commit* -- permanent resources are detached from the pool, temporary
+  resources are freed
 * *rollback* -- all resources are freed
 * *fold* -- instead of destroying the pool, it is added as a subpool
   to the parent transaction (which must exist)
