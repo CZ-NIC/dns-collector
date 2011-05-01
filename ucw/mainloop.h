@@ -382,21 +382,22 @@ void block_io_set_timeout(struct main_block_io *bio, timestamp_t expires_delta);
 /** The record I/O structure. **/
 struct main_rec_io {
   struct main_file file;
-  byte *read_buf;				/* Reading half */
+  byte *read_buf;
   byte *read_rec_start;				/* [*] Start of current record */
   uns read_avail;				/* [*] How much data is available */
-  uns read_prev_avail;				/* [*] How much data was available in previous read_done */
-  uns read_buf_size;				/* [*] Buffer size allocated (can set before rec_io_add()) */
-  uns read_running;				/* Reading requested */
+  uns read_prev_avail;				/* [*] How much data was available in previous read_handler */
+  uns read_buf_size;				/* [*] Read buffer size allocated (can be set before rec_io_add()) */
+  uns read_started;				/* Reading requested by user */
+  uns read_running;				/* Reading really runs (read_started && not stopped by write_throttle_read) */
   uns read_rec_max;				/* [*] Maximum record size (0=unlimited) */
   clist busy_write_buffers;
   clist idle_write_buffers;
-  uns write_buf_size;
-  uns write_watermark;
-  uns write_throttle;
-  uns (*read_handler)(struct main_rec_io *rio);	/* [*] FIXME; describe EOF */
-  // FIXME: returns...
-  int (*notify_handler)(struct main_rec_io *rio, int status);	/* [*] Handler to call on errors */
+  uns write_buf_size;				/* [*] Write buffer size allocated (can be set before rec_io_add()) */
+  uns write_watermark;				/* [*] How many data are waiting to be written */
+  uns write_throttle_read;			/* [*] If more than write_throttle_read bytes are buffered, stop reading; 0=no stopping */
+  uns (*read_handler)(struct main_rec_io *rio);	/* [*] Called whenever more bytes are read; returns 0 (want more) or number of bytes eaten */
+  int (*notify_handler)(struct main_rec_io *rio, int status);	/* [*] Called to notify about errors and other events */
+  						/* Returns either HOOK_RETRY or HOOK_IDLE. */
   struct main_timer timer;
   void *data;					/* [*] Data for use by the handlers */
 };
@@ -407,23 +408,43 @@ void rec_io_add(struct main_rec_io *rio, int fd);
 /** Deactivate a record I/O structure. **/
 void rec_io_del(struct main_rec_io *rio);
 
+/** Start reading. **/
 void rec_io_start_read(struct main_rec_io *rio);
-void rec_io_stop_read(struct main_rec_io *rio);
-void rec_io_set_timeout(struct main_rec_io *bio, timestamp_t expires_delta);
 
-uns rec_io_parse_line(struct main_rec_io *rio);
+/** Stop reading. **/
+void rec_io_stop_read(struct main_rec_io *rio);
+
+/** Analogous to @block_io_set_timeout(). **/
+void rec_io_set_timeout(struct main_rec_io *bio, timestamp_t expires_delta);
 
 void rec_io_write(struct main_rec_io *rio, void *data, uns len);
 
-// All errors except timeout are fatal
+/**
+ * An auxiliary function used for parsing of lines. When called in the @read_handler,
+ * it searches for the end of line character. When a complete line is found, the length
+ * of the line (including the end of line character) is returned. Otherwise, it returns zero.
+ **/
+uns rec_io_parse_line(struct main_rec_io *rio);
+
+/**
+ * Specifies what kind of error or other event happened, when the @notify_handler
+ * is called. In case of I/O errors, `errno` is still set.
+ *
+ * Upon @RIO_ERR_READ, @RIO_ERR_RECORD_TOO_LARGE and @RIO_EVENT_EOF, reading is stopped
+ * automatically. Upon @RIO_ERR_WRITE, writing is stopped. Upon @RIO_ERR_TIMEOUT, only the
+ * timer is deactivated.
+ *
+ * In all cases, the notification handler is allowed to call @rec_io_del(), but it
+ * must return @HOOK_IDLE in such cases.
+ **/
 enum rec_io_notify_status {
-  RIO_ERR_READ = -1,
-  RIO_ERR_WRITE = -2,
-  RIO_ERR_TIMEOUT = -3,
-  RIO_ERR_READ_RECORD_TOO_LARGE = -4,
-  RIO_ERR_READ_EOF = -5,
-  RIO_EVENT_ALL_WRITTEN = 1,
-  RIO_EVENT_PART_WRITTEN = 2,
+  RIO_ERR_READ = -1,			/* read() returned an error, errno set */
+  RIO_ERR_WRITE = -2,			/* write() returned an error, errno set */
+  RIO_ERR_TIMEOUT = -3,			/* A timeout has occurred */
+  RIO_ERR_RECORD_TOO_LARGE = -4,	/* Read: read_rec_max has been exceeded */
+  RIO_EVENT_ALL_WRITTEN = 1,		/* All buffered data has been written */
+  RIO_EVENT_PART_WRITTEN = 2,		/* Some buffered data has been written, but more remains */
+  RIO_EVENT_EOF = 3,			/* Read: EOF seen */
 };
 
 /***

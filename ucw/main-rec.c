@@ -73,7 +73,7 @@ rec_io_read_handler(struct main_file *fi)
   if (rio->read_rec_max && rio->read_avail >= rio->read_rec_max)
     {
       rec_io_stop_read(rio);
-      rio->notify_handler(rio, RIO_ERR_READ_RECORD_TOO_LARGE);
+      rio->notify_handler(rio, RIO_ERR_RECORD_TOO_LARGE);
       return HOOK_IDLE;
     }
 
@@ -120,7 +120,7 @@ restart: ;
     {
       DBG("RIO READ: Signalling EOF");
       rec_io_stop_read(rio);
-      rio->notify_handler(rio, RIO_ERR_READ_EOF);
+      rio->notify_handler(rio, RIO_EVENT_EOF);
       return HOOK_IDLE;
     }
   rio->read_prev_avail = rio->read_avail;
@@ -145,36 +145,52 @@ restart: ;
   return (rio->read_running ? HOOK_RETRY : HOOK_IDLE);
 }
 
+static void
+rec_io_recalc_read(struct main_rec_io *rio)
+{
+  uns flow = !rio->write_throttle_read || rio->write_watermark < rio->write_throttle_read;
+  uns run = rio->read_started && flow;
+  DBG("RIO: Recalc read (flow=%u, start=%u) -> %u", flow, rio->read_started, run);
+  if (run != rio->read_running)
+    {
+      if (run)
+	{
+	  if (!rio->read_buf)
+	    {
+	      if (!rio->read_buf_size)
+		rio->read_buf_size = 256;
+	      rio->read_buf = xmalloc(rio->read_buf_size);
+	      DBG("RIO: Created buffer (%u bytes)", rio->read_buf_size);
+	      rio->read_rec_start = rio->read_buf;
+	    }
+	  rio->file.read_handler = rec_io_read_handler;
+	  file_chg(&rio->file);
+	  DBG("RIO: Reading started");
+	}
+      else
+	{
+	  rio->file.read_handler = NULL;
+	  file_chg(&rio->file);
+	  DBG("RIO: Reading stopped");
+	}
+      rio->read_running = run;
+    }
+}
+
 void
 rec_io_start_read(struct main_rec_io *rio)
 {
   ASSERT(clist_is_linked(&rio->file.n));
-  if (rio->read_running)
-    return;
-  if (!rio->read_buf)
-    {
-      if (!rio->read_buf_size)
-	rio->read_buf_size = 256;
-      rio->read_buf = xmalloc(rio->read_buf_size);
-      DBG("RIO: Created buffer (%u bytes)", rio->read_buf_size);
-      rio->read_rec_start = rio->read_buf;
-    }
-  rio->file.read_handler = rec_io_read_handler;
-  file_chg(&rio->file);
-  rio->read_running = 1;
-  DBG("RIO: Reading started");
+  rio->read_started = 1;
+  rec_io_recalc_read(rio);
 }
 
 void
 rec_io_stop_read(struct main_rec_io *rio)
 {
   ASSERT(clist_is_linked(&rio->file.n));
-  if (!rio->read_running)
-    return;
-  rio->file.read_handler = NULL;
-  file_chg(&rio->file);
-  rio->read_running = 0;
-  DBG("RIO: Reading stopped");
+  rio->read_started = 0;
+  rec_io_recalc_read(rio);
 }
 
 static void
@@ -223,6 +239,7 @@ rec_io_write_handler(struct main_file *fi)
       ret = HOOK_IDLE;
       rec_io_stop_write(rio);
     }
+  rec_io_recalc_read(rio);
 
   // Call the hook, but carefully, because it can delete the RIO structure
   if (rio->notify_handler(rio, rio->write_watermark ? RIO_EVENT_PART_WRITTEN : RIO_EVENT_ALL_WRITTEN) == HOOK_IDLE)
@@ -270,6 +287,7 @@ rec_io_write(struct main_rec_io *rio, void *data, uns len)
       len -= l;
       rio->write_watermark += l;
       DBG("RIO WRITE: Buffered %u bytes of data (total %u)", l, rio->write_watermark);
+      rec_io_recalc_read(rio);
     }
 
   if (!rio->file.write_handler)
@@ -317,7 +335,7 @@ static uns rhand(struct main_rec_io *rio)
 
 static int ehand(struct main_rec_io *rio, int cause)
 {
-  if (cause < 0)
+  if (cause < 0 || cause == RIO_EVENT_EOF)
     {
       msg(L_ERROR, "Error %d", cause);
       rec_io_del(rio);
@@ -343,6 +361,7 @@ main(void)
   rio.notify_handler = ehand;
   // rio.read_rec_max = 40;
   rio.write_buf_size = 4;
+  rio.write_throttle_read = 6;
   rec_io_add(&rio, 0);
   rec_io_start_read(&rio);
   rec_io_set_timeout(&rio, 10000);
