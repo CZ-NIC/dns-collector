@@ -372,6 +372,61 @@ void block_io_write(struct main_block_io *bio, void *buf, uns len);
 void block_io_set_timeout(struct main_block_io *bio, timestamp_t expires_delta);
 
 /***
+ * [[recordio]]
+ * Asynchronous record I/O
+ * -----------------------
+ *
+ * FIXME
+ ***/
+
+/** The record I/O structure. **/
+struct main_rec_io {
+  struct main_file file;
+  byte *read_buf;				/* Reading half */
+  byte *read_rec_start;				/* [*] Start of current record */
+  uns read_avail;				/* [*] How much data is available */
+  uns read_prev_avail;				/* [*] How much data was available in previous read_done */
+  uns read_buf_size;				/* [*] Buffer size allocated (can set before rec_io_add()) */
+  uns read_running;				/* Reading requested */
+  uns read_rec_max;				/* [*] Maximum record size (0=unlimited) */
+  clist busy_write_buffers;
+  clist idle_write_buffers;
+  uns write_buf_size;
+  uns write_watermark;
+  uns write_throttle;
+  uns (*read_handler)(struct main_rec_io *rio);	/* [*] FIXME; describe EOF */
+  // FIXME: returns...
+  int (*notify_handler)(struct main_rec_io *rio, int status);	/* [*] Handler to call on errors */
+  struct main_timer timer;
+  void *data;					/* [*] Data for use by the handlers */
+};
+
+/** Activate a record I/O structure. **/
+void rec_io_add(struct main_rec_io *rio, int fd);
+
+/** Deactivate a record I/O structure. **/
+void rec_io_del(struct main_rec_io *rio);
+
+void rec_io_start_read(struct main_rec_io *rio);
+void rec_io_stop_read(struct main_rec_io *rio);
+void rec_io_set_timeout(struct main_rec_io *bio, timestamp_t expires_delta);
+
+uns rec_io_parse_line(struct main_rec_io *rio);
+
+void rec_io_write(struct main_rec_io *rio, void *data, uns len);
+
+// All errors except timeout are fatal
+enum rec_io_notify_status {
+  RIO_ERR_READ = -1,
+  RIO_ERR_WRITE = -2,
+  RIO_ERR_TIMEOUT = -3,
+  RIO_ERR_READ_RECORD_TOO_LARGE = -4,
+  RIO_ERR_READ_EOF = -5,
+  RIO_EVENT_ALL_WRITTEN = 1,
+  RIO_EVENT_PART_WRITTEN = 2,
+};
+
+/***
  * [[hooks]]
  * Loop hooks
  * ----------
