@@ -397,7 +397,7 @@ struct main_rec_io {
   uns write_throttle_read;			/* [*] If more than write_throttle_read bytes are buffered, stop reading; 0=no stopping */
   uns (*read_handler)(struct main_rec_io *rio);	/* [*] Called whenever more bytes are read; returns 0 (want more) or number of bytes eaten */
   int (*notify_handler)(struct main_rec_io *rio, int status);	/* [*] Called to notify about errors and other events */
-  						/* Returns either HOOK_RETRY or HOOK_IDLE. */
+						/* Returns either HOOK_RETRY or HOOK_IDLE. */
   struct main_timer timer;
   void *data;					/* [*] Data for use by the handlers */
 };
