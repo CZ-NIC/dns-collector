@@ -148,8 +148,6 @@ $(o)/%.test: $(s)/%.t $(BUILDSYS)/tester
 	$(M)TEST $@
 	$(Q)$(BUILDSYS)/tester --rundir=run $(TESTERFLAGS) $< && touch $@
 
-.NOTPARALLEL: $(o)/%.test
-
 # Rules for binaries
 
 BINDIR=bin
