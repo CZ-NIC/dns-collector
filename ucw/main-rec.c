@@ -131,6 +131,8 @@ restart: ;
   while (rio->read_running && (got = rio->read_handler(rio)))
     {
       DBG("RIO READ: Ate %u bytes", got);
+      if (got == ~0U)
+	return HOOK_IDLE;
       rio->read_rec_start += got;
       rio->read_avail -= got;
       rio->read_prev_avail = 0;
@@ -326,6 +328,12 @@ static uns rhand(struct main_rec_io *rio)
     {
       rio->read_rec_start[r-1] = 0;
       printf("Read <%s>\n", rio->read_rec_start);
+      if (rio->read_rec_start[0] == '!')
+	{
+	  rec_io_del(rio);
+	  main_shut_down();
+	  return ~0U;
+	}
       rec_io_set_timeout(rio, 10000);
       rio->read_rec_start[r-1] = '\n';
       rec_io_write(rio, rio->read_rec_start, r);
