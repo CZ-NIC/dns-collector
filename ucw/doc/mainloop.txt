@@ -27,10 +27,10 @@ function. The handler is then registered with the main loop.
 - <<threads,Forking and threading>>
 - <<basic,Basic operations>>
 - <<time,Time and timers>>
+- <<hooks,Loop hooks>>
 - <<file,Activity on file descriptors>>
 - <<blockio,Asynchronous block I/O>>
 - <<recordio,Asynchronous record I/O>>
-- <<hooks,Loop hooks>>
 - <<process,Child processes>>
 - <<signal,Synchronous delivery of signals>>
 

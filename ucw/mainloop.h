@@ -194,6 +194,67 @@ void main_get_time(void);
 void timer_debug(struct main_timer *tm);
 
 /***
+ * [[hooks]]
+ * Loop hooks
+ * ----------
+ *
+ * The hooks are called whenever the main loop performs an iteration.
+ * You can shutdown the main loop from within them or request an iteration
+ * to happen without sleeping (just poll, no waiting for events).
+ ***/
+
+/**
+ * A hook. It contains the function to call and some user data.
+ *
+ * The handler() must return one value from
+ * <<enum_main_hook_return,`main_hook_return`>>.
+ *
+ * Fill with the hook and data and pass it to @hook_add().
+ **/
+struct main_hook {
+  cnode n;
+  int (*handler)(struct main_hook *ho);		/* [*] Hook function; returns HOOK_xxx */
+  void *data;					/* [*] For use by the handler */
+};
+
+/**
+ * Return value of the hook handler().
+ * Specifies what should happen next.
+ *
+ * - `HOOK_IDLE` -- Let the loop sleep until something happens, call after that.
+ * - `HOOK_RETRY` -- Force the loop to perform another iteration without sleeping.
+ *   This will cause calling of all the hooks again soon.
+ * - `HOOK_DONE` -- The loop will terminate if all hooks return this.
+ * - `HOOK_SHUTDOWN` -- Shuts down the loop.
+ *
+ * The `HOOK_IDLE` and `HOOK_RETRY` constants are also used as return values
+ * of file handlers.
+ **/
+enum main_hook_return {
+  HOOK_IDLE,
+  HOOK_RETRY,
+  HOOK_DONE = -1,
+  HOOK_SHUTDOWN = -2
+};
+
+/**
+ * Inserts a new hook into the loop.
+ * The hook will be scheduled at least once before next sleep.
+ * May be called from inside a hook handler too.
+ **/
+void hook_add(struct main_hook *ho);
+
+/**
+ * Removes an existing hook from the loop.
+ * May be called from inside a hook handler (to delete itself or another hook).
+ **/
+void hook_del(struct main_hook *ho);
+
+/** Show current state of a hook. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
+void hook_debug(struct main_hook *ho);
+
+
+/***
  * [[file]]
  * Activity on file descriptors
  * ----------------------------
@@ -473,66 +534,6 @@ enum rec_io_notify_status {
   RIO_EVENT_PART_WRITTEN = 2,		/* Some buffered data has been written, but more remains */
   RIO_EVENT_EOF = 3,			/* Read: EOF seen */
 };
-
-/***
- * [[hooks]]
- * Loop hooks
- * ----------
- *
- * The hooks are called whenever the main loop performs an iteration.
- * You can shutdown the main loop from within them or request an iteration
- * to happen without sleeping (just poll, no waiting for events).
- ***/
-
-/**
- * A hook. It contains the function to call and some user data.
- *
- * The handler() must return one value from
- * <<enum_main_hook_return,`main_hook_return`>>.
- *
- * Fill with the hook and data and pass it to @hook_add().
- **/
-struct main_hook {
-  cnode n;
-  int (*handler)(struct main_hook *ho);		/* [*] Hook function; returns HOOK_xxx */
-  void *data;					/* [*] For use by the handler */
-};
-
-/**
- * Return value of the hook handler().
- * Specifies what should happen next.
- *
- * - `HOOK_IDLE` -- Let the loop sleep until something happens, call after that.
- * - `HOOK_RETRY` -- Force the loop to perform another iteration without sleeping.
- *   This will cause calling of all the hooks again soon.
- * - `HOOK_DONE` -- The loop will terminate if all hooks return this.
- * - `HOOK_SHUTDOWN` -- Shuts down the loop.
- *
- * The `HOOK_IDLE` and `HOOK_RETRY` constants are also used as return values
- * of file handlers.
- **/
-enum main_hook_return {
-  HOOK_IDLE,
-  HOOK_RETRY,
-  HOOK_DONE = -1,
-  HOOK_SHUTDOWN = -2
-};
-
-/**
- * Inserts a new hook into the loop.
- * The hook will be scheduled at least once before next sleep.
- * May be called from inside a hook handler too.
- **/
-void hook_add(struct main_hook *ho);
-
-/**
- * Removes an existing hook from the loop.
- * May be called from inside a hook handler (to delete itself or another hook).
- **/
-void hook_del(struct main_hook *ho);
-
-/** Show current state of a hook. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
-void hook_debug(struct main_hook *ho);
 
 /***
  * [[process]]
