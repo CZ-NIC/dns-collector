@@ -182,6 +182,12 @@ void timer_add_rel(struct main_timer *tm, timestamp_t expires_delta);
  **/
 void timer_del(struct main_timer *tm);
 
+/** Tells whether a timer is running. **/
+static inline int timer_is_active(struct main_timer *tm)
+{
+  return !!tm->expires;
+}
+
 /**
  * Forces refresh of the current timestamp cached in the active context.
  * You usually do not need to call this, since it is called every time the
@@ -249,6 +255,12 @@ void hook_add(struct main_hook *ho);
  * May be called from inside a hook handler (to delete itself or another hook).
  **/
 void hook_del(struct main_hook *ho);
+
+/** Tells if a hook is active (i.e., added). **/
+static inline int hook_is_active(struct main_hook *ho)
+{
+  return clist_is_linked(&ho->n);
+}
 
 /** Show current state of a hook. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
 void hook_debug(struct main_hook *ho);
@@ -329,6 +341,12 @@ void file_chg(struct main_file *fi);
  * Can be called from a handler.
  **/
 void file_del(struct main_file *fi);
+
+/** Tells if a file is active (i.e., added). **/
+static inline int file_is_active(struct main_file *fi)
+{
+  return clist_is_linked(&fi->n);
+}
 
 /** Show current state of a file. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
 void file_debug(struct main_file *fi);
@@ -431,6 +449,12 @@ void block_io_write(struct main_block_io *bio, void *buf, uns len);
  * - Watching maximum time for a whole connection.
  **/
 void block_io_set_timeout(struct main_block_io *bio, timestamp_t expires_delta);
+
+/** Tells if a @bio is active (i.e., added). **/
+static inline int block_io_is_active(struct main_block_io *bio)
+{
+  return file_is_active(&bio->file);
+}
 
 /***
  * [[recordio]]
@@ -543,6 +567,12 @@ enum rec_io_notify_status {
   RIO_EVENT_EOF = 3,			/* Read: EOF seen */
 };
 
+/** Tells if a @rio is active (i.e., added). **/
+static inline int rec_io_is_active(struct main_rec_io *rio)
+{
+  return file_is_active(&rio->file);
+}
+
 /***
  * [[process]]
  * Child processes
@@ -596,6 +626,12 @@ void process_del(struct main_process *mp);
  **/
 int process_fork(struct main_process *mp);
 
+/** Tells if a process is active (i.e., added). **/
+static inline int process_is_active(struct main_process *mp)
+{
+  return clist_is_linked(&mp->n);
+}
+
 /** Show current state of a process. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
 void process_debug(struct main_process *pr);
 
@@ -638,6 +674,12 @@ void signal_add(struct main_signal *ms);
 
 /** Cancel a request for signal catching. **/
 void signal_del(struct main_signal *ms);
+
+/** Tells if a signal catcher is active (i.e., added). **/
+static inline int signal_is_active(struct main_signal *ms)
+{
+  return clist_is_linked(&ms->n);
+}
 
 /** Show current state of a signal catcher. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
 void signal_debug(struct main_signal *sg);

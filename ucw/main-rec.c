@@ -52,7 +52,7 @@ void
 rec_io_del(struct main_rec_io *rio)
 {
   timer_del(&rio->timer);
-  if (clist_is_linked(&rio->start_read_hook.n))
+  if (hook_is_active(&rio->start_read_hook))
     hook_del(&rio->start_read_hook);
   file_del(&rio->file);
 
@@ -199,7 +199,7 @@ rec_io_recalc_read(struct main_rec_io *rio)
 	   * of the work to a main_hook, which will be called in the next iteration
 	   * of the main loop.
 	   */
-	  if (!clist_is_linked(&rio->start_read_hook.n))
+	  if (!hook_is_active(&rio->start_read_hook))
 	    {
 	      DBG("RIO: Scheduling start of reading");
 	      hook_add(&rio->start_read_hook);
@@ -207,7 +207,7 @@ rec_io_recalc_read(struct main_rec_io *rio)
 	}
       else
 	{
-	  if (clist_is_linked(&rio->start_read_hook.n))
+	  if (hook_is_active(&rio->start_read_hook))
 	    {
 	      DBG("RIO: Descheduling start of reading");
 	      hook_del(&rio->start_read_hook);
@@ -223,7 +223,7 @@ rec_io_recalc_read(struct main_rec_io *rio)
 void
 rec_io_start_read(struct main_rec_io *rio)
 {
-  ASSERT(clist_is_linked(&rio->file.n));
+  ASSERT(rec_io_is_active(rio));
   rio->read_started = 1;
   rec_io_recalc_read(rio);
 }
@@ -231,7 +231,7 @@ rec_io_start_read(struct main_rec_io *rio)
 void
 rec_io_stop_read(struct main_rec_io *rio)
 {
-  ASSERT(clist_is_linked(&rio->file.n));
+  ASSERT(rec_io_is_active(rio));
   rio->read_started = 0;
   rec_io_recalc_read(rio);
 }
@@ -311,7 +311,7 @@ void
 rec_io_write(struct main_rec_io *rio, void *data, uns len)
 {
   byte *bdata = data;
-  ASSERT(clist_is_linked(&rio->file.n));
+  ASSERT(rec_io_is_active(rio));
   if (!len)
     return;
 
@@ -420,7 +420,7 @@ main(void)
   main_loop();
   msg(L_INFO, "Finished.");
 
-  if (clist_is_linked(&rio.file.n))
+  if (file_is_active(&rio.file))
     rec_io_del(&rio);
   main_cleanup();
   return 0;
