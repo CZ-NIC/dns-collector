@@ -376,7 +376,34 @@ void block_io_set_timeout(struct main_block_io *bio, timestamp_t expires_delta);
  * Asynchronous record I/O
  * -----------------------
  *
- * FIXME
+ * Record-based I/O is another front-end to the main loop file operations.
+ * Unlike its older cousin `main_block_io`, it is able to process records
+ * of variable length.
+ *
+ * To set it up, you create <<struct_main_rec_io,`struct main_rec_io`>> and call
+ * @rec_io_add() on it, which sets up some <<struct_main_file,`main_file`>>s internally.
+ *
+ * To read data from the file, call @rec_io_start_read() first. Whenever any data
+ * arrive from the file, they are appended to an internal buffer and the `read_handler`
+ * hook is called. The hook checks if the buffer already contains a complete record.
+ * If it is so, it processes the record and returns the number of bytes consumed.
+ * Otherwise, it returns 0 to tell the buffering machinery that more data are needed.
+ * When the read handler decides to destroy the `main_rec_io`, it must return `~0U`.
+ *
+ * On the write side, `main_rec_io` maintains a buffer keeping all data that should
+ * be written to the file. The @rec_io_write() function appends data to this buffer
+ * and it is written on background. A simple flow-control mechanism can be asked
+ * for: when more than `write_throttle_read` data are buffered for writing, reading
+ * is temporarily suspended.
+ *
+ * Additionally, the record I/O is equipped with a timer, which can be used
+ * to detect communication timeouts. The timer is not touched internally
+ * (except that it gets added and deleted at the right places), feel free
+ * to adjust it from your handler functions by @rec_io_set_timeout().
+ *
+ * All important events are passed to the `notify_handler`: errors when
+ * reading or writing, timeouts, the write buffer becoming empty, ... See
+ * <<enum_rec_io_notify_status,`enum rec_io_notify_status`>> for a complete list.
  ***/
 
 /** The record I/O structure. **/
@@ -393,7 +420,7 @@ struct main_rec_io {
   clist busy_write_buffers;
   clist idle_write_buffers;
   uns write_buf_size;				/* [*] Write buffer size allocated (can be set before rec_io_add()) */
-  uns write_watermark;				/* [*] How many data are waiting to be written */
+  uns write_watermark;				/* [*] How much data are waiting to be written */
   uns write_throttle_read;			/* [*] If more than write_throttle_read bytes are buffered, stop reading; 0=no stopping */
   uns (*read_handler)(struct main_rec_io *rio);	/* [*] Called whenever more bytes are read; returns 0 (want more) or number of bytes eaten */
   int (*notify_handler)(struct main_rec_io *rio, int status);	/* [*] Called to notify about errors and other events */
