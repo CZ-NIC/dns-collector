@@ -487,6 +487,7 @@ struct main_rec_io {
   int (*notify_handler)(struct main_rec_io *rio, int status);	/* [*] Called to notify about errors and other events */
 						/* Returns either HOOK_RETRY or HOOK_IDLE. */
   struct main_timer timer;
+  struct main_hook start_read_hook;		/* Used internally to defer rec_io_start_read() */
   void *data;					/* [*] Data for use by the handlers */
 };
 
@@ -496,7 +497,14 @@ void rec_io_add(struct main_rec_io *rio, int fd);
 /** Deactivate a record I/O structure. **/
 void rec_io_del(struct main_rec_io *rio);
 
-/** Start reading. **/
+/**
+ * Start reading.
+ *
+ * When there were some data in the buffer (e.g., because @rec_io_stop_read()
+ * was called from the `read_handler`), it is processed as if it were read
+ * from the file once again. That is, `read_prev_avail` is reset to 0 and
+ * the `read_handler` is called to process all buffered data.
+ ***/
 void rec_io_start_read(struct main_rec_io *rio);
 
 /** Stop reading. **/
