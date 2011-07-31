@@ -113,7 +113,6 @@ restart: ;
   DBG("RIO READ: rec_start=%u avail=%u prev_avail=%u free=%u/%u",
     rec_start_pos, rio->read_avail, rio->read_prev_avail,
     free_space, rio->read_buf_size);
-  // FIXME: Constants?
   if (free_space <= rio->read_buf_size/8)
     {
       if (rec_start_pos && rec_start_pos >= rio->read_buf_size/2)
