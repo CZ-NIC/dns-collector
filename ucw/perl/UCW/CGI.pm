@@ -60,17 +60,23 @@ our @ISA = qw(Exporter);
 our @EXPORT = qw(&html_escape &url_escape &url_deescape &url_param_escape &url_param_deescape &self_ref &self_form &http_get);
 our @EXPORT_OK = qw();
 
+our $utf8_mode = 0;
+
 ### Escaping ###
 
 sub url_escape($) {
 	my $x = shift @_;
+	utf8::encode($x) if $utf8_mode;
 	$x =~ s/([^-\$_.!*'(),0-9A-Za-z\x80-\xff])/"%".unpack('H2',$1)/ge;
+	utf8::decode($x) if $utf8_mode;
 	return $x;
 }
 
 sub url_deescape($) {
 	my $x = shift @_;
+	utf8::encode($x) if $utf8_mode;
 	$x =~ s/%(..)/pack("H2",$1)/ge;
+	utf8::decode($x) if $utf8_mode;
 	return $x;
 }
 
@@ -138,6 +144,7 @@ sub parse_raw_args_ll($$) {
 	my ($arg, $s) = @_;
 	$s =~ s/\r\n/\n/g;
 	$s =~ s/\r/\n/g;
+	utf8::decode($s) if $utf8_mode;
 	push @{$raw_args{$arg}}, $s;
 }
 
