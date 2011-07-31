@@ -23,7 +23,7 @@ LIBUCW_MODS= \
 	prime primetable random timer randomkey \
 	bit-ffs bit-fls \
 	url \
-	mainloop main-block \
+	mainloop main-block main-rec \
 	exitstatus runcmd sighandler \
 	lizard lizard-safe adler32 \
 	md5 sha1 sha1-hmac \

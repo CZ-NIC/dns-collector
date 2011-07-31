@@ -182,6 +182,12 @@ void timer_add_rel(struct main_timer *tm, timestamp_t expires_delta);
  **/
 void timer_del(struct main_timer *tm);
 
+/** Tells whether a timer is running. **/
+static inline int timer_is_active(struct main_timer *tm)
+{
+  return !!tm->expires;
+}
+
 /**
  * Forces refresh of the current timestamp cached in the active context.
  * You usually do not need to call this, since it is called every time the
@@ -192,6 +198,73 @@ void main_get_time(void);
 
 /** Show current state of a timer. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
 void timer_debug(struct main_timer *tm);
+
+/***
+ * [[hooks]]
+ * Loop hooks
+ * ----------
+ *
+ * The hooks are called whenever the main loop performs an iteration.
+ * You can shutdown the main loop from within them or request an iteration
+ * to happen without sleeping (just poll, no waiting for events).
+ ***/
+
+/**
+ * A hook. It contains the function to call and some user data.
+ *
+ * The handler() must return one value from
+ * <<enum_main_hook_return,`main_hook_return`>>.
+ *
+ * Fill with the hook and data and pass it to @hook_add().
+ **/
+struct main_hook {
+  cnode n;
+  int (*handler)(struct main_hook *ho);		/* [*] Hook function; returns HOOK_xxx */
+  void *data;					/* [*] For use by the handler */
+};
+
+/**
+ * Return value of the hook handler().
+ * Specifies what should happen next.
+ *
+ * - `HOOK_IDLE` -- Let the loop sleep until something happens, call after that.
+ * - `HOOK_RETRY` -- Force the loop to perform another iteration without sleeping.
+ *   This will cause calling of all the hooks again soon.
+ * - `HOOK_DONE` -- The loop will terminate if all hooks return this.
+ * - `HOOK_SHUTDOWN` -- Shuts down the loop.
+ *
+ * The `HOOK_IDLE` and `HOOK_RETRY` constants are also used as return values
+ * of file handlers.
+ **/
+enum main_hook_return {
+  HOOK_IDLE,
+  HOOK_RETRY,
+  HOOK_DONE = -1,
+  HOOK_SHUTDOWN = -2
+};
+
+/**
+ * Inserts a new hook into the loop.
+ * The hook will be scheduled at least once before next sleep.
+ * May be called from inside a hook handler too.
+ **/
+void hook_add(struct main_hook *ho);
+
+/**
+ * Removes an existing hook from the loop.
+ * May be called from inside a hook handler (to delete itself or another hook).
+ **/
+void hook_del(struct main_hook *ho);
+
+/** Tells if a hook is active (i.e., added). **/
+static inline int hook_is_active(struct main_hook *ho)
+{
+  return clist_is_linked(&ho->n);
+}
+
+/** Show current state of a hook. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
+void hook_debug(struct main_hook *ho);
+
 
 /***
  * [[file]]
@@ -268,6 +341,12 @@ void file_chg(struct main_file *fi);
  * Can be called from a handler.
  **/
 void file_del(struct main_file *fi);
+
+/** Tells if a file is active (i.e., added). **/
+static inline int file_is_active(struct main_file *fi)
+{
+  return clist_is_linked(&fi->n);
+}
 
 /** Show current state of a file. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
 void file_debug(struct main_file *fi);
@@ -371,65 +450,128 @@ void block_io_write(struct main_block_io *bio, void *buf, uns len);
  **/
 void block_io_set_timeout(struct main_block_io *bio, timestamp_t expires_delta);
 
+/** Tells if a @bio is active (i.e., added). **/
+static inline int block_io_is_active(struct main_block_io *bio)
+{
+  return file_is_active(&bio->file);
+}
+
 /***
- * [[hooks]]
- * Loop hooks
- * ----------
+ * [[recordio]]
+ * Asynchronous record I/O
+ * -----------------------
  *
- * The hooks are called whenever the main loop performs an iteration.
- * You can shutdown the main loop from within them or request an iteration
- * to happen without sleeping (just poll, no waiting for events).
+ * Record-based I/O is another front-end to the main loop file operations.
+ * Unlike its older cousin `main_block_io`, it is able to process records
+ * of variable length.
+ *
+ * To set it up, you create <<struct_main_rec_io,`struct main_rec_io`>> and call
+ * @rec_io_add() on it, which sets up some <<struct_main_file,`main_file`>>s internally.
+ *
+ * To read data from the file, call @rec_io_start_read() first. Whenever any data
+ * arrive from the file, they are appended to an internal buffer and the `read_handler`
+ * hook is called. The hook checks if the buffer already contains a complete record.
+ * If it is so, it processes the record and returns the number of bytes consumed.
+ * Otherwise, it returns 0 to tell the buffering machinery that more data are needed.
+ * When the read handler decides to destroy the `main_rec_io`, it must return `~0U`.
+ *
+ * On the write side, `main_rec_io` maintains a buffer keeping all data that should
+ * be written to the file. The @rec_io_write() function appends data to this buffer
+ * and it is written on background. A simple flow-control mechanism can be asked
+ * for: when more than `write_throttle_read` data are buffered for writing, reading
+ * is temporarily suspended.
+ *
+ * Additionally, the record I/O is equipped with a timer, which can be used
+ * to detect communication timeouts. The timer is not touched internally
+ * (except that it gets added and deleted at the right places), feel free
+ * to adjust it from your handler functions by @rec_io_set_timeout().
+ *
+ * All important events are passed to the `notify_handler`: errors when
+ * reading or writing, timeouts, the write buffer becoming empty, ... See
+ * <<enum_rec_io_notify_status,`enum rec_io_notify_status`>> for a complete list.
  ***/
 
-/**
- * A hook. It contains the function to call and some user data.
- *
- * The handler() must return one value from
- * <<enum_main_hook_return,`main_hook_return`>>.
- *
- * Fill with the hook and data and pass it to @hook_add().
- **/
-struct main_hook {
-  cnode n;
-  int (*handler)(struct main_hook *ho);		/* [*] Hook function; returns HOOK_xxx */
-  void *data;					/* [*] For use by the handler */
+/** The record I/O structure. **/
+struct main_rec_io {
+  struct main_file file;
+  byte *read_buf;
+  byte *read_rec_start;				/* [*] Start of current record */
+  uns read_avail;				/* [*] How much data is available */
+  uns read_prev_avail;				/* [*] How much data was available in previous read_handler */
+  uns read_buf_size;				/* [*] Read buffer size allocated (can be set before rec_io_add()) */
+  uns read_started;				/* Reading requested by user */
+  uns read_running;				/* Reading really runs (read_started && not stopped by write_throttle_read) */
+  uns read_rec_max;				/* [*] Maximum record size (0=unlimited) */
+  clist busy_write_buffers;
+  clist idle_write_buffers;
+  uns write_buf_size;				/* [*] Write buffer size allocated (can be set before rec_io_add()) */
+  uns write_watermark;				/* [*] How much data are waiting to be written */
+  uns write_throttle_read;			/* [*] If more than write_throttle_read bytes are buffered, stop reading; 0=no stopping */
+  uns (*read_handler)(struct main_rec_io *rio);	/* [*] Called whenever more bytes are read; returns 0 (want more) or number of bytes eaten */
+  int (*notify_handler)(struct main_rec_io *rio, int status);	/* [*] Called to notify about errors and other events */
+						/* Returns either HOOK_RETRY or HOOK_IDLE. */
+  struct main_timer timer;
+  struct main_hook start_read_hook;		/* Used internally to defer rec_io_start_read() */
+  void *data;					/* [*] Data for use by the handlers */
 };
 
+/** Activate a record I/O structure. **/
+void rec_io_add(struct main_rec_io *rio, int fd);
+
+/** Deactivate a record I/O structure. **/
+void rec_io_del(struct main_rec_io *rio);
+
 /**
- * Return value of the hook handler().
- * Specifies what should happen next.
+ * Start reading.
  *
- * - `HOOK_IDLE` -- Let the loop sleep until something happens, call after that.
- * - `HOOK_RETRY` -- Force the loop to perform another iteration without sleeping.
- *   This will cause calling of all the hooks again soon.
- * - `HOOK_DONE` -- The loop will terminate if all hooks return this.
- * - `HOOK_SHUTDOWN` -- Shuts down the loop.
- *
- * The `HOOK_IDLE` and `HOOK_RETRY` constants are also used as return values
- * of file handlers.
+ * When there were some data in the buffer (e.g., because @rec_io_stop_read()
+ * was called from the `read_handler`), it is processed as if it were read
+ * from the file once again. That is, `read_prev_avail` is reset to 0 and
+ * the `read_handler` is called to process all buffered data.
+ ***/
+void rec_io_start_read(struct main_rec_io *rio);
+
+/** Stop reading. **/
+void rec_io_stop_read(struct main_rec_io *rio);
+
+/** Analogous to @block_io_set_timeout(). **/
+void rec_io_set_timeout(struct main_rec_io *bio, timestamp_t expires_delta);
+
+void rec_io_write(struct main_rec_io *rio, void *data, uns len);
+
+/**
+ * An auxiliary function used for parsing of lines. When called in the @read_handler,
+ * it searches for the end of line character. When a complete line is found, the length
+ * of the line (including the end of line character) is returned. Otherwise, it returns zero.
  **/
-enum main_hook_return {
-  HOOK_IDLE,
-  HOOK_RETRY,
-  HOOK_DONE = -1,
-  HOOK_SHUTDOWN = -2
+uns rec_io_parse_line(struct main_rec_io *rio);
+
+/**
+ * Specifies what kind of error or other event happened, when the @notify_handler
+ * is called. In case of I/O errors, `errno` is still set.
+ *
+ * Upon @RIO_ERR_READ, @RIO_ERR_RECORD_TOO_LARGE and @RIO_EVENT_EOF, reading is stopped
+ * automatically. Upon @RIO_ERR_WRITE, writing is stopped. Upon @RIO_ERR_TIMEOUT, only the
+ * timer is deactivated.
+ *
+ * In all cases, the notification handler is allowed to call @rec_io_del(), but it
+ * must return @HOOK_IDLE in such cases.
+ **/
+enum rec_io_notify_status {
+  RIO_ERR_READ = -1,			/* read() returned an error, errno set */
+  RIO_ERR_WRITE = -2,			/* write() returned an error, errno set */
+  RIO_ERR_TIMEOUT = -3,			/* A timeout has occurred */
+  RIO_ERR_RECORD_TOO_LARGE = -4,	/* Read: read_rec_max has been exceeded */
+  RIO_EVENT_ALL_WRITTEN = 1,		/* All buffered data has been written */
+  RIO_EVENT_PART_WRITTEN = 2,		/* Some buffered data has been written, but more remains */
+  RIO_EVENT_EOF = 3,			/* Read: EOF seen */
 };
 
-/**
- * Inserts a new hook into the loop.
- * The hook will be scheduled at least once before next sleep.
- * May be called from inside a hook handler too.
- **/
-void hook_add(struct main_hook *ho);
-
-/**
- * Removes an existing hook from the loop.
- * May be called from inside a hook handler (to delete itself or another hook).
- **/
-void hook_del(struct main_hook *ho);
-
-/** Show current state of a hook. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
-void hook_debug(struct main_hook *ho);
+/** Tells if a @rio is active (i.e., added). **/
+static inline int rec_io_is_active(struct main_rec_io *rio)
+{
+  return file_is_active(&rio->file);
+}
 
 /***
  * [[process]]
@@ -484,6 +626,12 @@ void process_del(struct main_process *mp);
  **/
 int process_fork(struct main_process *mp);
 
+/** Tells if a process is active (i.e., added). **/
+static inline int process_is_active(struct main_process *mp)
+{
+  return clist_is_linked(&mp->n);
+}
+
 /** Show current state of a process. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
 void process_debug(struct main_process *pr);
 
@@ -526,6 +674,12 @@ void signal_add(struct main_signal *ms);
 
 /** Cancel a request for signal catching. **/
 void signal_del(struct main_signal *ms);
+
+/** Tells if a signal catcher is active (i.e., added). **/
+static inline int signal_is_active(struct main_signal *ms)
+{
+  return clist_is_linked(&ms->n);
+}
 
 /** Show current state of a signal catcher. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
 void signal_debug(struct main_signal *sg);

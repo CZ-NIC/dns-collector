@@ -318,7 +318,7 @@ file_add(struct main_file *fi)
   struct main_context *m = main_current();
 
   DBG("MAIN: Adding file %p (fd=%d)", fi, fi->fd);
-  ASSERT(!clist_is_linked(&fi->n));
+  ASSERT(!file_is_active(fi));
   clist_add_tail(&m->file_list, &fi->n);
   m->file_cnt++;
 #ifdef CONFIG_UCW_EPOLL
@@ -355,7 +355,7 @@ file_del_ctx(struct main_context *m, struct main_file *fi)
   // XXX: Can be called on a non-current context
   DBG("MAIN: Deleting file %p (fd=%d)", fi, fi->fd);
 
-  ASSERT(clist_is_linked(&fi->n));
+  ASSERT(file_is_active(fi));
   clist_unlink(&fi->n);
   m->file_cnt--;
 #ifdef CONFIG_UCW_EPOLL
@@ -378,7 +378,7 @@ hook_add(struct main_hook *ho)
   struct main_context *m = main_current();
 
   DBG("MAIN: Adding hook %p", ho);
-  ASSERT(!clist_is_linked(&ho->n));
+  ASSERT(!hook_is_active(ho));
   clist_add_tail(&m->hook_list, &ho->n);
 }
 
@@ -386,7 +386,7 @@ void
 hook_del(struct main_hook *ho)
 {
   DBG("MAIN: Deleting hook %p", ho);
-  ASSERT(clist_is_linked(&ho->n));
+  ASSERT(hook_is_active(ho));
   clist_unlink(&ho->n);
 }
 
@@ -419,7 +419,7 @@ process_add(struct main_process *mp)
   struct main_context *m = main_current();
 
   DBG("MAIN: Adding process %p (pid=%d)", mp, mp->pid);
-  ASSERT(!clist_is_linked(&mp->n));
+  ASSERT(!process_is_active(mp));
   ASSERT(mp->handler);
   clist_add_tail(&m->process_list, &mp->n);
   if (!m->sigchld_handler)
@@ -436,7 +436,7 @@ void
 process_del(struct main_process *mp)
 {
   DBG("MAIN: Deleting process %p (pid=%d)", mp, mp->pid);
-  ASSERT(clist_is_linked(&mp->n));
+  ASSERT(process_is_active(mp));
   clist_unlink(&mp->n);
 }
 
@@ -543,7 +543,7 @@ signal_add(struct main_signal *ms)
 
   DBG("MAIN: Adding signal %p (sig=%d)", ms, ms->signum);
 
-  ASSERT(!clist_is_linked(&ms->n));
+  ASSERT(!signal_is_active(ms));
   // Adding at the head of the list is better if we are in the middle of walking the list.
   clist_add_head(&m->signal_list, &ms->n);
   if (m->sig_pipe_recv < 0)
@@ -568,7 +568,7 @@ signal_del_ctx(struct main_context *m, struct main_signal *ms)
   // XXX: Can be called on a non-current context
   DBG("MAIN: Deleting signal %p (sig=%d)", ms, ms->signum);
 
-  ASSERT(clist_is_linked(&ms->n));
+  ASSERT(signal_is_active(ms));
   clist_unlink(&ms->n);
 
   int another = 0;
