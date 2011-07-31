@@ -105,7 +105,8 @@ fbs_spout(struct fastbuf *f)
 static void
 fbs_close(struct fastbuf *f)
 {
-  close(FB_SOCK(f)->par.fd);
+  if (!FB_SOCK(f)->par.fd_is_shared)
+    close(FB_SOCK(f)->par.fd);
   xfree(f);
 }
 
