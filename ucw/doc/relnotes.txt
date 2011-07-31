@@ -24,6 +24,8 @@ Release notes
 ** Added support for <<mainloop:signal,synchronous delivery of signals>>.
 ** Added relative timers: <<mainloop:fun_timer_add_rel,`timer_add_rel()`>>.
 ** Modification of events from a running event handler should be always safe.
+** For any event type, it is possible to ask whether it is active (added to the mainloop) or not: <<mainloop:fun_hook_is_active,`hook_is_active()`>> and friends.
+** A new mainloop front-end for asynchronous <<mainloop:recordio,record-based I/O>> has been added.
 
 * Added a growing array module `gary.h`, similar to `gbuf.h`, but with
   a much more convenient interface.
@@ -40,7 +42,7 @@ Release notes
 
 * `UCW::Configure` supports running of test programs.
 
-* `UCW::CGI` support multiple argument tables.
+* `UCW::CGI` support multiple argument tables and UTF-8 mode.
 
 
 4.0 (2009-04-13)
