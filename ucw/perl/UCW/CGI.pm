@@ -333,7 +333,7 @@ sub parse_mp_header() {
 sub parse_multipart_form_data() {
 	# First of all, find the boundary string
 	my $ct = rfc822_prepare($ENV{"CONTENT_TYPE"});
-	if (!(($boundary) = ($ct =~ /^.*;boundary=([^; ]+)/))) {
+	if (!(($boundary) = ($ct =~ /^.*;\s*boundary=([^; ]+)/))) {
 		die "Multipart content with no boundary string received";
 	}
 	$boundary = rfc822_deescape($boundary);
