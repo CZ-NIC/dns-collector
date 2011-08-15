@@ -32,7 +32,7 @@ sub report_bug($)
 		if (defined($UCW::CGI::error_hook)) {
 			&$UCW::CGI::error_hook($_[0]);
 		} else {
-			print "Content-type: text/plain\n\n";
+			print "Content-Type: text/plain\n\n";
 			print "Internal bug:\n";
 			print $_[0], "\n";
 			print "Please notify $UCW::CGI::error_mail\n" if defined $UCW::CGI::error_mail;
@@ -341,7 +341,7 @@ sub parse_multipart_form_data() {
 
 	# BUG: IE 3.01 on Macintosh forgets to add the "--" at the start of the boundary string
 	# as the MIME specs preach. Workaround borrowed from CGI.pm in Perl distribution.
-	my $agent = http_get("User-agent") || "";
+	my $agent = http_get("User-Agent") || "";
 	$boundary = "--$boundary" unless $agent =~ /MSIE\s+3\.0[12];\s*Mac/;
 	$boundary = "\r\n$boundary";
 	$boundary_len = length($boundary) + 2;
