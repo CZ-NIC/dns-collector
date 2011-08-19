@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <errno.h>
 
 static char **spt_argv;
 static char *spt_start, *spt_end;
@@ -50,6 +51,15 @@ setproctitle_init(int argc, char **argv)
   for (i=0; oldenv[i]; i++)
     if (spt_end+1 == oldenv[i])
       spt_end = oldenv[i] + strlen(oldenv[i]);
+
+  /* Recalculate program_invocation_name, otherwise syslog() will be confused. */
+  char *name = xstrdup(argv[0]);
+  program_invocation_name = name;
+  char *p = strrchr(name, '/');
+  if (p)
+    program_invocation_short_name = p + 1;
+  else
+    program_invocation_short_name = name;
 #endif
 }
 
