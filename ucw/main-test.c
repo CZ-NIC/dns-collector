@@ -43,7 +43,18 @@ static void dread(struct main_block_io *bio)
 
 static void derror(struct main_block_io *bio, int cause)
 {
-  msg(L_INFO, "Error: %m !!! (cause %d)", cause);
+  switch (cause)
+    {
+    case BIO_ERR_READ:
+    case BIO_ERR_WRITE:
+      msg(L_INFO, "derror: %s error: %m", (cause == BIO_ERR_READ ? "read" : "write"));
+      break;
+    case BIO_ERR_TIMEOUT:
+      msg(L_INFO, "derror: Timeout");
+      break;
+    default:
+      ASSERT(0);
+    }
   bio->data = NULL;
   block_io_del(bio);
 }
