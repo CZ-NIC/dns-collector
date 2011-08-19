@@ -306,9 +306,9 @@ file_want_events(struct main_file *fi)
 {
   uns events = 0;
   if (fi->read_handler)
-    events |= POLLIN | POLLHUP | POLLERR;
+    events |= POLLIN;
   if (fi->write_handler)
-    events |= POLLOUT | POLLERR;
+    events |= POLLOUT;
   return events;
 }
 
@@ -856,20 +856,20 @@ main_loop(void)
       struct main_file *fi;
       while (fi = clist_head(&m->file_active_list))
 	{
-	  if (fi->events & (POLLIN | POLLHUP | POLLERR))
+	  if (fi->write_handler && (fi->events & (POLLOUT | POLLHUP | POLLERR)))
 	    {
-	      fi->events &= ~(POLLIN | POLLHUP | POLLERR);
-	      do
-		DBG("MAIN: Read event on fd %d", fi->fd);
-	      while (fi->read_handler && fi->read_handler(fi));
-	      continue;
-	    }
-	  if (fi->events & (POLLOUT | POLLERR))
-	    {
-	      fi->events &= ~(POLLOUT | POLLERR);
+	      fi->events &= ~(POLLOUT | POLLHUP | POLLERR);
 	      do
 		DBG("MAIN: Write event on fd %d", fi->fd);
 	      while (fi->write_handler && fi->write_handler(fi));
+	      continue;
+	    }
+	  if (fi->read_handler && (fi->events & (POLLIN | POLLHUP)))
+	    {
+	      fi->events &= ~(POLLIN | POLLHUP);
+	      do
+		DBG("MAIN: Read event on fd %d", fi->fd);
+	      while (fi->read_handler && fi->read_handler(fi));
 	      continue;
 	    }
 	  clist_remove(&fi->n);
