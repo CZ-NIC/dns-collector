@@ -239,7 +239,8 @@ static void
 rec_io_stop_write(struct main_rec_io *rio)
 {
   DBG("RIO WRITE: Stopping write");
-  ASSERT(!rio->write_watermark);
+  // XXX: When we are called after a write error, there might still
+  // be some data queued, but we need not care.
   rio->file.write_handler = NULL;
   file_chg(&rio->file);
 }
