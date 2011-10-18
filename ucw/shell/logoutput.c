@@ -25,15 +25,14 @@
 #include <sys/wait.h>
 #include <errno.h>
 
-uns max_line = 1024;
+static uns max_line = 1024;
 
 static struct cf_section cfsec_logoutput = {
   CF_ITEMS {
-    CF_UNS("linemax", &max_line),
+    CF_UNS("LineMax", &max_line),
     CF_END
   }
 };
-
 
 static clist filedescriptors;
 
@@ -80,7 +79,7 @@ handle_read(struct main_rec_io *r)
   }
   *eol = 0;
   byte *b = r->read_rec_start;
-  while (eol - b > max_line) {
+  while ((uns)(eol - b) > max_line) {
     char cc = b[max_line];
     b[max_line]=0;
     do_msg(r->data, b, 1);
@@ -183,7 +182,7 @@ set_cloexec_flag(int fd, int value)
   if (flags < 0)
     die("fcntl(..., F_GETFD, ...) : %m");
   flags = (value) ? flags | FD_CLOEXEC : flags & ~FD_CLOEXEC;
-  if(fcntl(fd, F_SETFD, flags) < 0)
+  if (fcntl(fd, F_SETFD, flags) < 0)
     die("fcntl(..., F_SETFD, ...) : %m");
 }
 
@@ -227,7 +226,6 @@ main(int argc, char **argv)
   char *logname = NULL;
   struct fds *stderrfd = NULL;
   int help = 0;
-
 
   log_init("logoutput");
   clist_init(&filedescriptors);
@@ -302,7 +300,7 @@ opt_done:
     }
   }
   if (help) {
-    write(2,usage,sizeof(usage));
+    write(2, usage, sizeof(usage));
     return (help == 1) ? 0 : 1;
   }
 
@@ -317,14 +315,14 @@ opt_done:
 
   if (loginput) {
     /* Just check, that we don't want open stderr for reading. */
-    CLIST_FOR_EACH(struct fds*, fd, filedescriptors) {
+    CLIST_FOR_EACH(struct fds *, fd, filedescriptors) {
       if (fd->fdnum == 2)
         die("Stderr is reserved for output");
     }
   } else {
     /* Open all filedescriptors and their duplicates. */
-    CLIST_FOR_EACH(struct fds*, fd, filedescriptors) {
-      CLIST_FOR_EACH(struct fds*, fdcheck, filedescriptors) {
+    CLIST_FOR_EACH(struct fds *, fd, filedescriptors) {
+      CLIST_FOR_EACH(struct fds *, fdcheck, filedescriptors) {
         /* We do a dummy check for collisions of filedescriptors. */
         if (fdcheck == fd)
 	  break;
@@ -355,7 +353,7 @@ opt_done:
   /* Initialize main loop. */
   main_init();
 
-  CLIST_FOR_EACH(struct fds*, fd, filedescriptors) {
+  CLIST_FOR_EACH(struct fds *, fd, filedescriptors) {
     fd->rio.read_rec_max = max_line + 1;
     rec_io_add(&fd->rio, fd->fdnum);
   }
@@ -384,7 +382,7 @@ opt_done:
     }
 
     /* Close writing filedescriptors. */
-    CLIST_FOR_EACH(struct fds*, fd, filedescriptors) {
+    CLIST_FOR_EACH(struct fds *, fd, filedescriptors) {
       close(fd->pipe[1]);
     }
   }
@@ -413,15 +411,14 @@ opt_done:
   }
 
   /* Set logname. */
-  if(logname)
+  if (logname)
     log_init(logname);
   else if (!loginput)
     log_init(argv[optind]);
 
   /* Start reading from pipes. */
-  CLIST_FOR_EACH(struct fds*, fd, filedescriptors) {
+  CLIST_FOR_EACH(struct fds *, fd, filedescriptors)
     rec_io_start_read(&fd->rio);
-  }
   main_loop();
 
   if (!loginput) {
@@ -438,11 +435,13 @@ opt_done:
     }
 
     if (format_exit_status(buf, status)) {
-      msg(L_WARN,"Child %s", buf);
+      msg(L_WARN, "Child %s", buf);
       return WIFEXITED(status) ? WEXITSTATUS(status) : 127;
     } else {
-      msg(L_INFO,"Child terminated successfully.");
+      msg(L_INFO, "Child terminated successfully.");
       return 0;
     }
   }
+
+  return 0;
 }
