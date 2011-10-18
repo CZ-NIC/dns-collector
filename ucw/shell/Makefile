@@ -1,12 +1,13 @@
 # Support routines for shell scripts
 
 DIRS+=ucw/shell
-UCW_SHELL_PROGS=$(addprefix $(o)/ucw/shell/,config logger)
+UCW_SHELL_PROGS=$(addprefix $(o)/ucw/shell/,config logger logoutput)
 PROGS+=$(UCW_SHELL_PROGS)
 DATAFILES+=$(o)/ucw/shell/libucw.sh
 
 $(o)/ucw/shell/config: $(o)/ucw/shell/config.o $(LIBUCW)
 $(o)/ucw/shell/logger: $(o)/ucw/shell/logger.o $(LIBUCW)
+$(o)/ucw/shell/logoutput: $(o)/ucw/shell/logoutput.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/ucw/shell/,config.test)
 
