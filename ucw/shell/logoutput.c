@@ -345,8 +345,6 @@ opt_done:
       DBG("---> [%i, %i] for %i", fd->pipe[0], fd->pipe[1], fd->fdnum);
       set_cloexec_flag(fd->pipe[0], 1);
       set_cloexec_flag(fd->pipe[1], 0);
-      /* Our pipe is created, let fd->fdnum be the reading end. */
-      fd->fdnum = fd->pipe[0];
     }
   }
 
@@ -354,6 +352,9 @@ opt_done:
   main_init();
 
   CLIST_FOR_EACH(struct fds *, fd, filedescriptors) {
+    /* Our pipe is created, let fd->fdnum be the reading end. */
+    if (!loginput)
+      fd->fdnum = fd->pipe[0];
     fd->rio.read_rec_max = max_line + 1;
     rec_io_add(&fd->rio, fd->fdnum);
   }
