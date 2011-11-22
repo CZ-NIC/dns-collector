@@ -6,10 +6,6 @@
 #	This software may be freely distributed and used according to the terms
 #	of the GNU Lesser General Public License.
 
-# FIXME:
-# - respond with proper HTTP error codes
-# - if we get invalid parameters, generate HTTP error or redirect
-
 package UCW::CGI;
 
 # First of all, set up error handling, so that even errors during parsing
@@ -61,6 +57,12 @@ our @EXPORT = qw(&html_escape &url_escape &url_deescape &url_param_escape &url_p
 our @EXPORT_OK = qw();
 
 our $utf8_mode = 0;
+
+sub http_error($;@) {
+	my $err = shift @_;
+	print join("\n", "Status: $err", "Content-Type: text/plain", @_, "", $err, "");
+	exit;
+}
 
 ### Escaping ###
 
@@ -174,20 +176,22 @@ sub init_args() {
 	if (my $qs = $ENV{"QUERY_STRING"}) {
 		parse_raw_args($qs);
 	}
-	if ($method eq "GET") {
+	if ($method eq "GET" || $method eq "HEAD") {
 	} elsif ($method eq "POST") {
-		if ($ENV{"CONTENT_TYPE"} =~ /^application\/x-www-form-urlencoded\b/i) {
+		my $content_type = $ENV{"CONTENT_TYPE"} // "";
+		if ($content_type =~ /^application\/x-www-form-urlencoded\b/i) {
 			while (<STDIN>) {
 				chomp;
 				parse_raw_args($_);
 			}
-		} elsif ($ENV{"CONTENT_TYPE"} =~ /^multipart\/form-data\b/i) {
+		} elsif ($content_type =~ /^multipart\/form-data\b/i) {
 			parse_multipart_form_data();
 		} else {
-			die "Unknown content type for POST data";
+			http_error "415 Unsupported Media Type";
+			exit;
 		}
 	} else {
-		die "Unknown request method";
+		http_error "405 Method Not Allowed", "Allow: GET, HEAD, PUT";
 	}
 }
 
@@ -288,13 +292,13 @@ sub get_mp_line($) {
 			return undef;
 		}
 	} else {
-		die "Premature end of multipart POST data";
+		http_error "400 Bad Request: Premature end of multipart POST data";
 	}
 }
 
 sub skip_mp_boundary() {
 	if ($mp_buffer_boundary != $mp_buffer_i) {
-		die "Premature end of multipart POST data";
+		http_error "400 Bad Request: Premature end of multipart POST data";
 	}
 	$mp_buffer_boundary = -1;
 	$mp_buffer_i += 2;
@@ -334,7 +338,7 @@ sub parse_multipart_form_data() {
 	# First of all, find the boundary string
 	my $ct = rfc822_prepare($ENV{"CONTENT_TYPE"});
 	if (!(($boundary) = ($ct =~ /^.*;\s*boundary=([^; ]+)/))) {
-		die "Multipart content with no boundary string received";
+		http_error "400 Bad Request: Multipart content with no boundary string received";
 	}
 	$boundary = rfc822_deescape($boundary);
 	print STDERR "BOUNDARY IS $boundary\n" if $debug;
@@ -353,7 +357,7 @@ sub parse_multipart_form_data() {
 			$max_allowed += $a->{"maxsize"} || 65536;
 		}
 		if ($size > $max_allowed) {
-			die "Maximum form data length exceeded";
+			http_error "413 Request Entity Too Large";
 		}
 	}
 
@@ -378,7 +382,9 @@ sub parse_multipart_form_data() {
 		    (($field) = ($cdisp =~ /;name=([^;]+)/)) &&
 		    ($a = $main_arg_table->{"$field"})) {
 			print STDERR "FIELD $field\n" if $debug;
-			if (defined $h->{"content-transfer-encoding"}) { die "Unexpected Content-Transfer-Encoding"; }
+			if (defined $h->{"content-transfer-encoding"}) {
+				http_error "400 Bad Request: Unexpected Content-Transfer-Encoding";
+			}
 			if (defined $a->{"var"}) {
 				while (defined (my $l = get_mp_line(1))) {
 					print STDERR "VALUE $l\n" if $debug;
@@ -400,7 +406,7 @@ sub parse_multipart_form_data() {
 					print $fh substr($mp_buffer, $mp_buffer_i, $i);
 					$mp_buffer_i += $i;
 					$total_size += $i;
-					if ($total_size > $max_size) { die "Uploaded file too long"; }
+					if ($total_size > $max_size) { http_error "413 Request Entity Too Large"; }
 				}
 				$fh->flush();	# Don't close the handle, the file would disappear otherwise
 				next PART;
