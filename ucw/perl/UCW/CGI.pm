@@ -134,7 +134,7 @@ sub rfc822_deescape($) {
 sub http_get($) {
 	my $h = shift @_;
 	$h =~ tr/a-z-/A-Z_/;
-	return $ENV{"HTTP_$h"} || $ENV{"$h"};
+	return $ENV{"HTTP_$h"} // $ENV{"$h"};
 }
 
 ### Parsing of Arguments ###
@@ -345,7 +345,7 @@ sub parse_multipart_form_data() {
 
 	# BUG: IE 3.01 on Macintosh forgets to add the "--" at the start of the boundary string
 	# as the MIME specs preach. Workaround borrowed from CGI.pm in Perl distribution.
-	my $agent = http_get("User-Agent") || "";
+	my $agent = http_get("User-Agent") // "";
 	$boundary = "--$boundary" unless $agent =~ /MSIE\s+3\.0[12];\s*Mac/;
 	$boundary = "\r\n$boundary";
 	$boundary_len = length($boundary) + 2;
