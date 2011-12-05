@@ -344,8 +344,7 @@ void
 mp_pop(struct mempool *pool)
 {
   ASSERT(pool->state.next);
-  struct mempool_state state = pool->state;
-  mp_restore(pool, &state);
+  mp_restore(pool, pool->state.next);
 }
 
 #ifdef TEST
