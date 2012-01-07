@@ -2,7 +2,7 @@
  *	UCW Library -- String Routines
  *
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
- *	(c) 2007--2008 Martin Mares <mj@ucw.cz>
+ *	(c) 2007--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -19,6 +19,12 @@ uns strnlen(const char *str, uns n);
 
 char *str_format_flags(char *dest, const char *fmt, uns flags);
 uns str_count_char(const char *str, uns chr);
+
+/** Returns a non-zero value if @haystack starts with @needle. **/
+int str_starts_with(const char *haystack, const char *needle);
+
+/** Returns a non-zero value if @haystack ends with @needle. **/
+int str_ends_with(const char *haystack, const char *needle);
 
 /* str-esc.c */
 
