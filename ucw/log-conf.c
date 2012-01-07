@@ -336,11 +336,7 @@ log_new_configured(const char *name)
 void
 log_configured(const char *name)
 {
-  struct log_stream *ls = log_new_configured(name);
-  struct log_stream *def = log_stream_by_flags(0);
-  log_rm_substream(def, NULL);
-  log_add_substream(def, ls);
-  log_close_stream(ls);
+  log_set_default_stream(log_new_configured(name));
 }
 
 #ifdef TEST
