@@ -2,7 +2,7 @@
  *	UCW Library -- Logging: Management of Log Streams
  *
  *	(c) 2008 Tomas Gavenciak <gavento@ucw.cz>
- *	(c) 2009 Martin Mares <mj@ucw.cz>
+ *	(c) 2009--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -168,6 +168,15 @@ log_set_format(struct log_stream *ls, uns mask, uns data)
   ls->msgfmt = (ls->msgfmt & mask) | data;
   CLIST_FOR_EACH(simp_node *, i, ls->substreams)
     log_set_format(i->p, mask, data);
+}
+
+void
+log_set_default_stream(struct log_stream *ls)
+{
+  struct log_stream *def = log_stream_by_flags(0);
+  log_rm_substream(def, NULL);
+  log_add_substream(def, ls);
+  log_close_stream(ls);
 }
 
 /*** Registry of type names ***/

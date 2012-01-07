@@ -64,9 +64,9 @@ When a log stream receives a message, it is processed as follows:
 When no stream is explicitly selected, msg() uses the default stream, which
 has registration number 0 and which is also returned by log_default_stream().
 This stream has no explicit destination, but it can have substreams. (When
-a program starts, the default stream is connected to stderr; a call to log_file()
+a program starts, the default stream is connected to stderr. A call to log_file()
 establishes a file logging stream and links it as the only substream of the
-default stream.)
+default stream. If you want to do that with any other log stream, call log_set_default_stream().)
 
 Streams are reference-counted. When a stream is created, it gets reference count 1.
 When it is linked as a substream of another stream, its reference count is incremented.

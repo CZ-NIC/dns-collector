@@ -180,6 +180,17 @@ static inline struct log_stream *log_default_stream(void)
 }
 
 /**
+ * Make the specified stream the default destination.
+ *
+ * In fact, it takes the fixed default stream and attaches @ls as its only
+ * substream. If there were any other substreams, they are removed.
+ *
+ * Log streams created by log_file() or log_configured() are made default
+ * by calling this function.
+ **/
+void log_set_default_stream(struct log_stream *ls);
+
+/**
  * Close all open streams, un-initialize the module, free all memory and
  * reset the logging mechanism to use stderr only.
  **/
