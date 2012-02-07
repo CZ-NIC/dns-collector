@@ -100,7 +100,7 @@ main_new(void)
   m->epoll_fd = epoll_create(64);
   if (m->epoll_fd < 0)
     die("epoll_create() failed: %m");
-  m->epoll_events = xmalloc(EPOLL_BUF_SIZE * sizeof(struct epoll_event *));
+  m->epoll_events = xmalloc(EPOLL_BUF_SIZE * sizeof(struct epoll_event));
   clist_init(&m->file_recalc_list);
 #else
   m->poll_table_obsolete = 1;
