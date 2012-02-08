@@ -92,8 +92,8 @@ const char *hex_to_mem(byte *dest, const char *src, uns max_bytes, uns flags);
 
 /* str-fix.c */
 
-int str_has_prefix(char *str, char *prefix);		/** Tests if @str starts with @prefix. **/
-int str_has_suffix(char *str, char *suffix);		/** Tests if @str ends with @suffix. **/
+int str_has_prefix(const char *str, const char *prefix); /** Tests if @str starts with @prefix. **/
+int str_has_suffix(const char *str, const char *suffix); /** Tests if @str ends with @suffix. **/
 
 /**
  * Let @str and @prefix be hierarchical names with components separated by
@@ -110,7 +110,7 @@ int str_has_suffix(char *str, char *suffix);		/** Tests if @str ends with @suffi
  * - "/" is a prefix,
  * - "" is a prefix.
  **/
-int str_hier_prefix(char *str, char *prefix, uns sep);
-int str_hier_suffix(char *str, char *suffix, uns sep);	/** Like @str_hier_prefix(), but for suffixes. **/
+int str_hier_prefix(const char *str, const char *prefix, uns sep);
+int str_hier_suffix(const char *str, const char *suffix, uns sep); /** Like @str_hier_prefix(), but for suffixes. **/
 
 #endif

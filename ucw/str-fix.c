@@ -13,14 +13,14 @@
 #include <string.h>
 
 int
-str_has_prefix(char *str, char *prefix)
+str_has_prefix(const char *str, const char *prefix)
 {
   size_t pxlen = strlen(prefix);
   return !strncmp(str, prefix, pxlen);
 }
 
 int
-str_has_suffix(char *str, char *suffix)
+str_has_suffix(const char *str, const char *suffix)
 {
   size_t sxlen = strlen(suffix);
   size_t len = strlen(str);
@@ -32,7 +32,7 @@ str_has_suffix(char *str, char *suffix)
 }
 
 int
-str_hier_prefix(char *str, char *prefix, uns sep)
+str_hier_prefix(const char *str, const char *prefix, uns sep)
 {
   while (*str && *prefix)
     {
@@ -54,10 +54,10 @@ str_hier_prefix(char *str, char *prefix, uns sep)
 }
 
 int
-str_hier_suffix(char *str, char *suffix, uns sep)
+str_hier_suffix(const char *str, const char *suffix, uns sep)
 {
-  char *st = str + strlen(str);
-  char *sx = suffix + strlen(suffix);
+  const char *st = str + strlen(str);
+  const char *sx = suffix + strlen(suffix);
   while (st > str && sx > suffix)
     {
       size_t sl=0, pl=0;
