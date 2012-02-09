@@ -40,7 +40,7 @@ LIBUCW_MAIN_INCLUDES= \
 	clists.h slists.h simple-lists.h \
 	string.h stkstring.h unicode.h chartype.h regex.h \
 	wildmatch.h \
-	unaligned.h prefetch.h \
+	unaligned.h \
 	bbuf.h gbuf.h gary.h bitarray.h bitsig.h \
 	hashfunc.h hashtable.h \
 	heap.h binheap.h binheap-node.h \

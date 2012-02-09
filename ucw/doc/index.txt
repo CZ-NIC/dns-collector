@@ -70,8 +70,6 @@ Yet undocumented modules
 - Address manipulation
   * `url.h`
   * `ipaccess.h`
-- Prefetching of memory
-  * `prefetch.h`
 - Caches
   * `qache.h`
 - Threads
