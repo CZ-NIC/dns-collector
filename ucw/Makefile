@@ -12,7 +12,7 @@ LIBUCW_MODS= \
 	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt eltpool \
 	partmap hashfunc \
 	slists simple-lists bitsig \
-	log log-stream log-file log-syslog log-conf proctitle tbf \
+	log log-stream log-file log-syslog log-conf tbf \
 	conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section \
 	ipaccess \
 	fastbuf ff-binary ff-string ff-printf ff-unicode ff-stkstring \
@@ -23,7 +23,7 @@ LIBUCW_MODS= \
 	bit-ffs bit-fls \
 	url \
 	mainloop main-block main-rec \
-	exitstatus runcmd sighandler \
+	proctitle exitstatus runcmd sighandler \
 	lizard lizard-safe adler32 \
 	md5 sha1 sha1-hmac \
 	base64 base224 \
@@ -51,6 +51,7 @@ LIBUCW_MAIN_INCLUDES= \
 	fastbuf.h io.h ff-unicode.h ff-binary.h \
 	url.h \
 	mainloop.h \
+	process.h \
 	lizard.h \
 	md5.h sha1.h \
 	base64.h base224.h \

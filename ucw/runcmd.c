@@ -8,6 +8,7 @@
  */
 
 #include "ucw/lib.h"
+#include "ucw/process.h"
 
 #include <stdlib.h>
 #include <string.h>

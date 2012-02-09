@@ -16,6 +16,7 @@
 #include "ucw/clists.h"
 #include "ucw/getopt.h"
 #include "ucw/conf.h"
+#include "ucw/process.h"
 
 #include <stdio.h>
 #include <string.h>

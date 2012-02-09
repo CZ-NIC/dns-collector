@@ -8,6 +8,7 @@
  */
 
 #include "ucw/lib.h"
+#include "ucw/process.h"
 
 #include <stdio.h>
 #include <sys/wait.h>

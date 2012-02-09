@@ -181,26 +181,6 @@ uns random_max(uns max);			/** Return a pseudorandom 32-bit number in range [0,@
 u64 random_u64(void);				/** Return a pseudorandom 64-bit number. **/
 u64 random_max_u64(u64 max);			/** Return a pseudorandom 64-bit number in range [0,@max). **/
 
-/* proctitle.c */
-
-void setproctitle_init(int argc, char **argv);
-void setproctitle(const char *msg, ...) FORMAT_CHECK(printf,1,2);
-char *getproctitle(void);
-
-/* exitstatus.c */
-
-#define EXIT_STATUS_MSG_SIZE 32
-int format_exit_status(char *msg, int stat);
-
-/* runcmd.c */
-
-int run_command(const char *cmd, ...);
-void NONRET exec_command(const char *cmd, ...);
-void echo_command(char *buf, int size, const char *cmd, ...);
-int run_command_v(const char *cmd, va_list args);
-void NONRET exec_command_v(const char *cmd, va_list args);
-void echo_command_v(char *buf, int size, const char *cmd, va_list args);
-
 /* sighandler.c */
 
 typedef int (*ucw_sighandler_t)(int);	// gets signum, returns nonzero if abort() should be called

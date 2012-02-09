@@ -14,6 +14,7 @@
 #include "ucw/mainloop.h"
 #include "ucw/threads.h"
 #include "ucw/gary.h"
+#include "ucw/process.h"
 
 #include <stdio.h>
 #include <string.h>
