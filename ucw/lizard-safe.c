@@ -9,6 +9,7 @@
 
 #include "ucw/lib.h"
 #include "ucw/threads.h"
+#include "ucw/sighandler.h"
 #include "ucw/lizard.h"
 
 #include <sys/mman.h>

@@ -23,8 +23,8 @@ LIBUCW_MODS= \
 	bit-ffs bit-fls \
 	url \
 	mainloop main-block main-rec \
-	proctitle exitstatus runcmd sighandler \
-	lizard lizard-safe adler32 \
+	proctitle exitstatus runcmd \
+	lizard lizard-safe adler32 sighandler \
 	md5 sha1 sha1-hmac \
 	base64 base224 \
 	io-careful io-sync io-mmap io-size \
@@ -52,7 +52,7 @@ LIBUCW_MAIN_INCLUDES= \
 	url.h \
 	mainloop.h \
 	process.h \
-	lizard.h \
+	lizard.h sighandler.h \
 	md5.h sha1.h \
 	base64.h base224.h \
 	qache.h \

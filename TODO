@@ -1,2 +1,3 @@
 - Clean up free/
 - gary: Add automatic zeroing
+- Remove sighandler.[ch]

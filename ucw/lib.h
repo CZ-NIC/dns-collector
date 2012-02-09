@@ -181,14 +181,6 @@ uns random_max(uns max);			/** Return a pseudorandom 32-bit number in range [0,@
 u64 random_u64(void);				/** Return a pseudorandom 64-bit number. **/
 u64 random_max_u64(u64 max);			/** Return a pseudorandom 64-bit number in range [0,@max). **/
 
-/* sighandler.c */
-
-typedef int (*ucw_sighandler_t)(int);	// gets signum, returns nonzero if abort() should be called
-
-void handle_signal(int signum);
-void unhandle_signal(int signum);
-ucw_sighandler_t set_signal_handler(int signum, ucw_sighandler_t newh);
-
 /* bigalloc.c */
 
 void *page_alloc(u64 len) LIKE_MALLOC; // allocates a multiple of CPU_PAGE_SIZE bytes with mmap
