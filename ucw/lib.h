@@ -166,6 +166,17 @@ void xfree(void *);				/** Free memory allocated by xmalloc() or xrealloc(). **/
 void *xmalloc_zero(size_t) LIKE_MALLOC;		/** Allocate memory and fill it by zeroes. **/
 char *xstrdup(const char *) LIKE_MALLOC;	/** Make a xmalloc()'ed copy of a string. Returns NULL for NULL string. **/
 
+/* bigalloc.c */
+
+void *page_alloc(u64 len) LIKE_MALLOC;		// Internal: allocates a multiple of CPU_PAGE_SIZE bytes with mmap
+void *page_alloc_zero(u64 len) LIKE_MALLOC;
+void page_free(void *start, u64 len);
+void *page_realloc(void *start, u64 old_len, u64 new_len);
+
+void *big_alloc(u64 len) LIKE_MALLOC;		/** Allocate a large memory block in the most efficient way available. **/
+void *big_alloc_zero(u64 len) LIKE_MALLOC;	/** Allocate and clear a large memory block. **/
+void big_free(void *start, u64 len);		/** Free block allocated by @big_alloc() or @big_alloc_zero(). **/
+
 /*** === Trivial timers (timer.c) ***/
 
 timestamp_t get_timestamp(void);		/** Get current time as a millisecond timestamp. **/
@@ -180,16 +191,5 @@ uns random_u32(void);				/** Return a pseudorandom 32-bit number. **/
 uns random_max(uns max);			/** Return a pseudorandom 32-bit number in range [0,@max). **/
 u64 random_u64(void);				/** Return a pseudorandom 64-bit number. **/
 u64 random_max_u64(u64 max);			/** Return a pseudorandom 64-bit number in range [0,@max). **/
-
-/* bigalloc.c */
-
-void *page_alloc(u64 len) LIKE_MALLOC; // allocates a multiple of CPU_PAGE_SIZE bytes with mmap
-void *page_alloc_zero(u64 len) LIKE_MALLOC;
-void page_free(void *start, u64 len);
-void *page_realloc(void *start, u64 old_len, u64 new_len);
-
-void *big_alloc(u64 len) LIKE_MALLOC; // allocate a large memory block in the most efficient way available
-void *big_alloc_zero(u64 len) LIKE_MALLOC;
-void big_free(void *start, u64 len);
 
 #endif
