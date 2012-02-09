@@ -28,7 +28,6 @@ LIBUCW_MODS= \
 	md5 sha1 sha1-hmac \
 	base64 base224 \
 	io-careful io-sync io-mmap io-size \
-	qache \
 	string str-esc str-split str-match str-imatch str-hex \
 	bbuf gary \
 	getopt \
@@ -55,7 +54,6 @@ LIBUCW_MAIN_INCLUDES= \
 	lizard.h sighandler.h \
 	md5.h sha1.h \
 	base64.h base224.h \
-	qache.h \
 	kmp.h kmp-search.h binsearch.h \
 	partmap.h \
 	strtonum.h
