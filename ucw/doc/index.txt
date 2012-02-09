@@ -76,6 +76,9 @@ Yet undocumented modules
   * `semaphore.h`
   * `threads.h`
   * `workqueue.h`
+- Miscellaneous
+  * `sighandler.h`
+  * `process.h`
 
 License
 -------
