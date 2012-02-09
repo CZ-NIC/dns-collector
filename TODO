@@ -1,3 +1,5 @@
 - Clean up free/
 - gary: Add automatic zeroing
 - Remove sighandler.[ch]
+- ipaccess: support IPv6
+- lfs-test: generalize or kill
