@@ -10,13 +10,13 @@ endif
 LIBUCW_MODS= \
 	threads \
 	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt eltpool \
-	mmap partmap hashfunc \
+	partmap hashfunc \
 	slists simple-lists bitsig \
 	log log-stream log-file log-syslog log-conf proctitle tbf \
 	conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section \
 	ipaccess \
 	fastbuf ff-binary ff-string ff-printf ff-unicode ff-stkstring \
-	fb-file carefulio fb-mem fb-temp tempfile fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param fb-socket \
+	fb-file fb-mem fb-temp tempfile fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param fb-socket \
 	char-cat char-upper char-lower unicode stkstring \
 	wildmatch regex \
 	prime primetable random timer \
@@ -27,7 +27,7 @@ LIBUCW_MODS= \
 	lizard lizard-safe adler32 \
 	md5 sha1 sha1-hmac \
 	base64 base224 \
-	sync \
+	io-careful io-sync io-mmap io-size \
 	qache \
 	string str-esc str-split str-match str-imatch str-hex \
 	bbuf gary \

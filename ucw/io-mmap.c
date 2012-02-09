@@ -1,13 +1,14 @@
 /*
  *	UCW Library -- Mapping of Files
  *
- *	(c) 1999--2002 Martin Mares <mj@ucw.cz>
+ *	(c) 1999--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  */
 
 #include "ucw/lib.h"
+#include "ucw/io.h"
 
 #include <stdio.h>
 #include <fcntl.h>

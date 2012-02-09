@@ -1,13 +1,14 @@
 /*
  *	UCW Library -- Careful Read/Write
  *
- *	(c) 2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2004--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
  */
 
 #include "ucw/lib.h"
+#include "ucw/io.h"
 
 #include <unistd.h>
 

@@ -181,11 +181,6 @@ uns random_max(uns max);			/** Return a pseudorandom 32-bit number in range [0,@
 u64 random_u64(void);				/** Return a pseudorandom 64-bit number. **/
 u64 random_max_u64(u64 max);			/** Return a pseudorandom 64-bit number in range [0,@max). **/
 
-/* mmap.c */
-
-void *mmap_file(const char *name, unsigned *len, int writeable);
-void munmap_file(void *start, unsigned len);
-
 /* proctitle.c */
 
 void setproctitle_init(int argc, char **argv);
@@ -205,15 +200,6 @@ void echo_command(char *buf, int size, const char *cmd, ...);
 int run_command_v(const char *cmd, va_list args);
 void NONRET exec_command_v(const char *cmd, va_list args);
 void echo_command_v(char *buf, int size, const char *cmd, va_list args);
-
-/* carefulio.c */
-
-int careful_read(int fd, void *buf, int len);
-int careful_write(int fd, const void *buf, int len);
-
-/* sync.c */
-
-void sync_dir(const char *name);
 
 /* sighandler.c */
 

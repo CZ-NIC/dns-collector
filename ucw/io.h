@@ -49,15 +49,22 @@ typedef struct stat ucw_stat_t;
 
 #define HAVE_PREAD
 
-static inline ucw_off_t
-ucw_file_size(const char *name)
-{
-  int fd = ucw_open(name, O_RDONLY);
-  if (fd < 0)
-    die("Cannot open %s: %m", name);
-  ucw_off_t len = ucw_seek(fd, 0, SEEK_END);
-  close(fd);
-  return len;
-}
+/* io-size.c */
+
+ucw_off_t ucw_file_size(const char *name);
+
+/* io-mmap.c */
+
+void *mmap_file(const char *name, unsigned *len, int writeable);
+void munmap_file(void *start, unsigned len);
+
+/* io-careful.c */
+
+int careful_read(int fd, void *buf, int len);
+int careful_write(int fd, const void *buf, int len);
+
+/* io-sync.c */
+
+void sync_dir(const char *name);
 
 #endif	/* !_UCW_LFS_H */
