@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _UCW_LFS_H
-#define _UCW_LFS_H
+#ifndef _UCW_IO_H
+#define _UCW_IO_H
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -67,4 +67,4 @@ int careful_write(int fd, const void *buf, int len);
 
 void sync_dir(const char *name);
 
-#endif	/* !_UCW_LFS_H */
+#endif	/* !_UCW_IO_H */
