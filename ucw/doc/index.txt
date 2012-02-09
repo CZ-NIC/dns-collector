@@ -65,7 +65,7 @@ Yet undocumented modules
   * `wildmatch.h`
 - File manipulation
   * `asio.h`
-  * `lfs.h`
+  * `io.h`
   * `partmap.h`
 - Address manipulation
   * `url.h`

@@ -27,7 +27,7 @@
 
 #include "ucw/lib.h"
 #include "ucw/fastbuf.h"
-#include "ucw/lfs.h"
+#include "ucw/io.h"
 #include "ucw/asio.h"
 #include "ucw/conf.h"
 #include "ucw/threads.h"

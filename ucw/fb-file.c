@@ -10,7 +10,7 @@
 
 #include "ucw/lib.h"
 #include "ucw/fastbuf.h"
-#include "ucw/lfs.h"
+#include "ucw/io.h"
 
 #include <stdio.h>
 #include <string.h>

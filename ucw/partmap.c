@@ -9,7 +9,7 @@
  */
 
 #include "ucw/lib.h"
-#include "ucw/lfs.h"
+#include "ucw/io.h"
 #include "ucw/partmap.h"
 
 #include <stdio.h>

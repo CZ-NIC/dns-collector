@@ -48,7 +48,7 @@ LIBUCW_MAIN_INCLUDES= \
 	prime.h \
 	bitops.h \
 	conf.h getopt.h ipaccess.h \
-	fastbuf.h lfs.h ff-unicode.h ff-binary.h \
+	fastbuf.h io.h ff-unicode.h ff-binary.h \
 	url.h \
 	mainloop.h \
 	lizard.h \

@@ -6,7 +6,7 @@
 
 #include "ucw/lib.h"
 #include "ucw/conf.h"
-#include "ucw/lfs.h"
+#include "ucw/io.h"
 #include "ucw/asio.h"
 
 #include <stdio.h>

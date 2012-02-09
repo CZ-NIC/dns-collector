@@ -11,7 +11,7 @@
 #include "ucw/lib.h"
 #include "ucw/log.h"
 #include "ucw/log-internal.h"
-#include "ucw/lfs.h"
+#include "ucw/io.h"
 #include "ucw/threads.h"
 #include "ucw/simple-lists.h"
 
