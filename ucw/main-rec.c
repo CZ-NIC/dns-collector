@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Main Loop: Record I/O
  *
- *	(c) 2011 Martin Mares <mj@ucw.cz>
+ *	(c) 2011--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -51,9 +51,11 @@ rec_io_add(struct main_rec_io *rio, int fd)
 void
 rec_io_del(struct main_rec_io *rio)
 {
+  if (!rec_io_is_active(rio))
+    return;
+
   timer_del(&rio->timer);
-  if (hook_is_active(&rio->start_read_hook))
-    hook_del(&rio->start_read_hook);
+  hook_del(&rio->start_read_hook);
   file_del(&rio->file);
 
   if (rio->read_buf)

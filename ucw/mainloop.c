@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Main Loop
  *
- *	(c) 2004--2011 Martin Mares <mj@ucw.cz>
+ *	(c) 2004--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -355,7 +355,8 @@ file_del_ctx(struct main_context *m, struct main_file *fi)
   // XXX: Can be called on a non-current context
   DBG("MAIN: Deleting file %p (fd=%d)", fi, fi->fd);
 
-  ASSERT(file_is_active(fi));
+  if (!file_is_active(fi))
+    return;
   clist_unlink(&fi->n);
   m->file_cnt--;
 #ifdef CONFIG_UCW_EPOLL
@@ -378,16 +379,16 @@ hook_add(struct main_hook *ho)
   struct main_context *m = main_current();
 
   DBG("MAIN: Adding hook %p", ho);
-  ASSERT(!hook_is_active(ho));
-  clist_add_tail(&m->hook_list, &ho->n);
+  if (!hook_is_active(ho))
+    clist_add_tail(&m->hook_list, &ho->n);
 }
 
 void
 hook_del(struct main_hook *ho)
 {
   DBG("MAIN: Deleting hook %p", ho);
-  ASSERT(hook_is_active(ho));
-  clist_unlink(&ho->n);
+  if (hook_is_active(ho))
+    clist_unlink(&ho->n);
 }
 
 static void
@@ -436,8 +437,8 @@ void
 process_del(struct main_process *mp)
 {
   DBG("MAIN: Deleting process %p (pid=%d)", mp, mp->pid);
-  ASSERT(process_is_active(mp));
-  clist_unlink(&mp->n);
+  if (process_is_active(mp))
+    clist_unlink(&mp->n);
 }
 
 int
@@ -568,7 +569,8 @@ signal_del_ctx(struct main_context *m, struct main_signal *ms)
   // XXX: Can be called on a non-current context
   DBG("MAIN: Deleting signal %p (sig=%d)", ms, ms->signum);
 
-  ASSERT(signal_is_active(ms));
+  if (!signal_is_active(ms))
+    return;
   clist_unlink(&ms->n);
 
   int another = 0;

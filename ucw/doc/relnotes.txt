@@ -23,7 +23,8 @@ Release notes
    or <<mainloop:fun_main_destroy,`main_destroy()`>> to clean up properly after fork().
 ** Added support for <<mainloop:signal,synchronous delivery of signals>>.
 ** Added relative timers: <<mainloop:fun_timer_add_rel,`timer_add_rel()`>>.
-** Modification of events from a running event handler should be always safe.
+** Modification of events from a running event handler is always safe.
+** Deleting an already deleted event is always safe.
 ** For any event type, it is possible to ask whether it is active (added to the mainloop) or not: <<mainloop:fun_hook_is_active,`hook_is_active()`>> and friends.
 ** A new mainloop front-end for asynchronous <<mainloop:recordio,record-based I/O>> has been added.
 

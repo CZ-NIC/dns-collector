@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Main Loop
  *
- *	(c) 2004--2011 Martin Mares <mj@ucw.cz>
+ *	(c) 2004--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -178,7 +178,7 @@ void timer_add_rel(struct main_timer *tm, timestamp_t expires_delta);
 /**
  * Removes a timer from the active ones. It is permitted (and common) to call
  * this function from the timer's handler itself if you want to deactivate
- * the timer.
+ * the timer. Removing an already removed timer does nothing.
  **/
 void timer_del(struct main_timer *tm);
 
@@ -247,12 +247,14 @@ enum main_hook_return {
  * Inserts a new hook into the loop.
  * The hook will be scheduled at least once before next sleep.
  * May be called from inside a hook handler too.
+ * Adding an already added hook does nothing.
  **/
 void hook_add(struct main_hook *ho);
 
 /**
  * Removes an existing hook from the loop.
  * May be called from inside a hook handler (to delete itself or another hook).
+ * Removing an already removed hook does nothing.
  **/
 void hook_del(struct main_hook *ho);
 
@@ -339,6 +341,7 @@ void file_chg(struct main_file *fi);
  * please use this function first.
  *
  * Can be called from a handler.
+ * Removing an already removed file does nothing.
  **/
 void file_del(struct main_file *fi);
 
@@ -391,7 +394,7 @@ struct main_block_io {
 /** Activate a block I/O structure. **/
 void block_io_add(struct main_block_io *bio, int fd);
 
-/** Deactivate a block I/O structure. **/
+/** Deactivate a block I/O structure. Calling twice is safe. **/
 void block_io_del(struct main_block_io *bio);
 
 /**
@@ -518,7 +521,7 @@ struct main_rec_io {
 /** Activate a record I/O structure. **/
 void rec_io_add(struct main_rec_io *rio, int fd);
 
-/** Deactivate a record I/O structure. **/
+/** Deactivate a record I/O structure. Calling twice is safe. **/
 void rec_io_del(struct main_rec_io *rio);
 
 /**
@@ -607,6 +610,7 @@ void process_add(struct main_process *mp);
  * Removes the process from the watched set. This is done
  * automatically, when the process terminates, so you need it only
  * when you do not want to watch a running process any more.
+ * Removing an already removed process does nothing.
  */
 void process_del(struct main_process *mp);
 
@@ -672,7 +676,7 @@ struct main_signal {
 /** Request a signal to be caught and delivered synchronously. **/
 void signal_add(struct main_signal *ms);
 
-/** Cancel a request for signal catching. **/
+/** Cancel a request for signal catching. Calling twice is safe. **/
 void signal_del(struct main_signal *ms);
 
 /** Tells if a signal catcher is active (i.e., added). **/
