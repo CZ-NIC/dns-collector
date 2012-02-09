@@ -19,7 +19,7 @@ LIBUCW_MODS= \
 	fb-file carefulio fb-mem fb-temp tempfile fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param fb-socket \
 	char-cat char-upper char-lower unicode stkstring \
 	wildmatch regex \
-	prime primetable random timer randomkey \
+	prime primetable random timer \
 	bit-ffs bit-fls \
 	url \
 	mainloop main-block main-rec \

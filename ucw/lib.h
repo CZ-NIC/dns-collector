@@ -192,10 +192,6 @@ void setproctitle_init(int argc, char **argv);
 void setproctitle(const char *msg, ...) FORMAT_CHECK(printf,1,2);
 char *getproctitle(void);
 
-/* randomkey.c */
-
-void randomkey(byte *buf, uns size);
-
 /* exitstatus.c */
 
 #define EXIT_STATUS_MSG_SIZE 32
