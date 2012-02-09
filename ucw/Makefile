@@ -15,7 +15,6 @@ LIBUCW_MODS= \
 	log log-stream log-file log-syslog log-conf proctitle tbf \
 	conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section \
 	ipaccess \
-	profile \
 	fastbuf ff-binary ff-string ff-printf ff-unicode ff-stkstring \
 	fb-file carefulio fb-mem fb-temp tempfile fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param fb-socket \
 	char-cat char-upper char-lower unicode stkstring \
@@ -49,7 +48,6 @@ LIBUCW_MAIN_INCLUDES= \
 	prime.h \
 	bitops.h \
 	conf.h getopt.h ipaccess.h \
-	profile.h \
 	fastbuf.h lfs.h ff-unicode.h ff-binary.h \
 	url.h \
 	mainloop.h \

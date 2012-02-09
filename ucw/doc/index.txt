@@ -78,8 +78,6 @@ Yet undocumented modules
   * `semaphore.h`
   * `threads.h`
   * `workqueue.h`
-- Profiling support
-  * `profile.h`
 
 License
 -------
