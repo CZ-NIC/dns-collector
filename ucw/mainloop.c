@@ -379,8 +379,9 @@ hook_add(struct main_hook *ho)
   struct main_context *m = main_current();
 
   DBG("MAIN: Adding hook %p", ho);
-  if (!hook_is_active(ho))
-    clist_add_tail(&m->hook_list, &ho->n);
+  if (hook_is_active(ho))
+    clist_unlink(&ho->n);
+  clist_add_tail(&m->hook_list, &ho->n);
 }
 
 void

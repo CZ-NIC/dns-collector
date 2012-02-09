@@ -247,7 +247,8 @@ enum main_hook_return {
  * Inserts a new hook into the loop.
  * The hook will be scheduled at least once before next sleep.
  * May be called from inside a hook handler too.
- * Adding an already added hook does nothing.
+ * Adding an already added hook is permitted and if the hook has been run,
+ * it will be run again before next sleep.
  **/
 void hook_add(struct main_hook *ho);
 
