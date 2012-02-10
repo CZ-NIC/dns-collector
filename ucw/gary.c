@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- A simple growing array of an arbitrary type
  *
- *	(c) 2010 Martin Mares <mj@ucw.cz>
+ *	(c) 2010--2012 Martin Mares <mj@ucw.cz>
  */
 
 #undef LOCAL_DEBUG
@@ -9,14 +9,19 @@
 #include "ucw/lib.h"
 #include "ucw/gary.h"
 
+#include <string.h>
+
 void *
-gary_init(size_t elt_size, size_t num_elts)
+gary_init(size_t elt_size, size_t num_elts, int zeroed)
 {
   DBG("GARY: Init to %zd elements", num_elts);
   struct gary_hdr *h = xmalloc(GARY_HDR_SIZE + elt_size * num_elts);
   h->num_elts = h->have_space = num_elts;
   h->elt_size = elt_size;
-  return (byte *)h + GARY_HDR_SIZE;
+  h->zeroed = zeroed;
+  if (zeroed)
+    bzero(GARY_BODY(h), elt_size * num_elts);
+  return GARY_BODY(h);
 }
 
 void
@@ -28,12 +33,16 @@ gary_free(void *array)
 static struct gary_hdr *
 gary_realloc(struct gary_hdr *h, size_t n)
 {
+  size_t old_size = h->have_space;
   if (n > 2*h->have_space)
     h->have_space = n;
   else
     h->have_space *= 2;
-  DBG("GARY: Resize to %zd elements (need %zd)", h->have_space, n);
-  return xrealloc(h, GARY_HDR_SIZE + h->have_space * h->elt_size);
+  DBG("GARY: Resize from %zd to %zd elements (need %zd)", old_size, h->have_space, n);
+  h = xrealloc(h, GARY_HDR_SIZE + h->have_space * h->elt_size);
+  if (h->zeroed)
+    bzero(GARY_BODY(h) + h->elt_size * old_size, h->elt_size * (h->have_space - old_size));
+  return h;
 }
 
 void *
@@ -76,11 +85,15 @@ gary_fix(void *array)
 int main(void)
 {
   int *a;
-  GARY_INIT(a, 5);
+  GARY_INIT_ZERO(a, 5);
 
   for (int i=0; i<5; i++)
-    a[i] = i+1;
+    {
+      ASSERT(!a[i]);
+      a[i] = i+1;
+    }
 
+  GARY_PUSH(a, 1);
   *GARY_PUSH(a, 1) = 10;
   *GARY_PUSH(a, 1) = 20;
   *GARY_PUSH(a, 1) = 30;
