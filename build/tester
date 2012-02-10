@@ -125,6 +125,7 @@ TEST: foreach $tt (@tests) {
 			$out = <X>;
 		}
 		close X;
+		$out =~ /\n$/s or $out .= "\n";
 		if ($out ne $out_checks[$i] . "\n") {
 			print "FAILED (see $ofi)\n";
 			$errors++;
