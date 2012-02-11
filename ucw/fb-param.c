@@ -34,8 +34,8 @@ fbpar_cf_commit(struct fb_params *p UNUSED)
 #ifdef CONFIG_DARWIN
       return "Direct I/O is not supported on darwin";
 #endif
-#ifndef CONFIG_DIRECT_IO
-      return "Direct I/O disabled by configure switch -CONFIG_DIRECT_IO";
+#ifndef CONFIG_UCW_DIRECT_IO
+      return "Direct I/O disabled by configure switch -CONFIG_UCW_DIRECT_IO";
 #endif
 #ifndef CONFIG_UCW_FB_DIRECT
       return "Direct I/O disabled by configure switch -CONFIG_UCW_FB_DIRECT";

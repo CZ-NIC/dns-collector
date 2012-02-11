@@ -82,12 +82,12 @@ PostConfig {
 	} if Get("CONFIG_INSTALL_API");
 
 	# Include direct FB?
-	if (!IsSet("CONFIG_UCW_THREADS") || !IsSet("CONFIG_DIRECT_IO")) {
+	if (!IsSet("CONFIG_UCW_THREADS") || !IsSet("CONFIG_UCW_DIRECT_IO")) {
 		if (IsGiven("CONFIG_UCW_FB_DIRECT") && IsSet("CONFIG_UCW_FB_DIRECT")) {
 			if (!IsSet("CONFIG_UCW_THREADS")) {
 				Fail("CONFIG_UCW_FB_DIRECT needs CONFIG_UCW_THREADS");
 			} else {
-				Fail("CONFIG_UCW_FB_DIRECT needs CONFIG_DIRECT_IO");
+				Fail("CONFIG_UCW_FB_DIRECT needs CONFIG_UCW_DIRECT_IO");
 			}
 		}
 		UnSet("CONFIG_UCW_FB_DIRECT");

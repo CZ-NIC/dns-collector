@@ -256,10 +256,10 @@ if (IsSet("CONFIG_DARWIN")) {
 	Append("COPT" => "-I/sw/include");
 	# Fill in some constants not found in the system header files
 	Set("SOL_TCP" => 6);		# missing in /usr/include/netinet/tcp.h
-	if (IsGiven("CONFIG_DIRECT_IO") && IsSet("CONFIG_DIRECT_IO")) {
+	if (IsGiven("CONFIG_UCW_DIRECT_IO") && IsSet("CONFIG_UCW_DIRECT_IO")) {
 		Fail("Direct I/O is not available on darwin");
 	} else {
-		UnSet("CONFIG_DIRECT_IO");
+		UnSet("CONFIG_UCW_DIRECT_IO");
 	}
 	if (!IsSet("CONFIG_POSIX_REGEX") && !IsSet("CONFIG_PCRE")) {
 		Set("CONFIG_POSIX_REGEX" => 1);
