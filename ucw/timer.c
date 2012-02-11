@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- A Simple Millisecond Timer
  *
- *	(c) 2007 Martin Mares <mj@ucw.cz>
+ *	(c) 2007--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -12,6 +12,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <time.h>
+
+#ifdef CONFIG_UCW_MONOTONIC_CLOCK
+
+timestamp_t
+get_timestamp(void)
+{
+  struct timespec ts;
+  if (clock_gettime(CLOCK_MONOTONIC, &ts) < 0)
+    die("clock_gettime failed: %m");
+  return (timestamp_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+}
+
+#else
 
 timestamp_t
 get_timestamp(void)
@@ -24,6 +38,8 @@ get_timestamp(void)
 #endif
 	;
 }
+
+#endif
 
 void
 init_timer(timestamp_t *timer)
@@ -45,3 +61,15 @@ switch_timer(timestamp_t *oldt, timestamp_t *newt)
   *newt = get_timestamp();
   return MIN(*newt-*oldt, ~0U);
 }
+
+#ifdef TEST
+
+#include <stdio.h>
+
+int main(void)
+{
+  printf("%ju\n", (intmax_t) get_timestamp());
+  return 0;
+}
+
+#endif

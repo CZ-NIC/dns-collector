@@ -66,6 +66,11 @@ int main(void)
 FINIS
 });
 
+# Check if we want to use monotonic clock
+TestBool("CONFIG_UCW_MONOTONIC_CLOCK", "Checking for monotonic clock", sub {
+	return Get("CONFIG_LINUX");
+});
+
 # Darwin does not support BSD regexes, fix up
 if (IsSet("CONFIG_DARWIN")) {
 	if (!IsSet("CONFIG_UCW_POSIX_REGEX") && !IsSet("CONFIG_UCW_PCRE")) {

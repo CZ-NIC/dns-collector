@@ -15,6 +15,12 @@ regex=-lpcre
 regex=
 #endif
 
+#ifdef CONFIG_UCW_MONOTONIC_CLOCK
+rt=-lrt
+#else
+rt=
+#endif
+
 # Override if you want to use the -pic version
 picsuffix=
 
@@ -26,4 +32,4 @@ Name: libucw
 Description: A library of utility functions and data structures
 Version: @UCW_VERSION@
 Cflags: -I${incdir}
-Libs: -L${libdir} -lucw${picsuffix} ${threads} ${regex}
+Libs: -L${libdir} -lucw${picsuffix} ${threads} ${regex} ${rt}
