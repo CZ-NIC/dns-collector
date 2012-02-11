@@ -69,11 +69,8 @@ FINIS
 PostConfig {
 	AtWrite {
 		UCW::Configure::C::ConfigHeader("ucw/autoconf.h", [
-			# Excluded symbols (danger of collision)
-			'^CONFIG_DEBUG$' => 0,
-
 			# Included symbols
-			'^CONFIG_' => 1,
+			'^CONFIG_UCW_' => 1,
 			'^CPU_' => 1,
 			'^(SHERLOCK|UCW)_VERSION(_|$)' => 1,
 			'^MAX_WORD_(BYTES|CHARS)$' => 1,
