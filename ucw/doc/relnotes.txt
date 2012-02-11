@@ -4,6 +4,11 @@ Release notes
 5.0 (work in progress)
 ----------------------
 
+* *Incompatible:* The `timestamp_t` type has been decoupled from wall clock time.
+  It now specifies the number of milliseconds from an unspecified origin, so that
+  it can for example refer to the system monotonic clock. The `ucw_time_t` type
+  has been removed.
+
 * The <<mainloop:,mainloop>> module has been rewritten:
 ** Multiple instances of the main loop are supported (to be used in different
    threads or locally within a library function).
@@ -12,10 +17,10 @@ Release notes
 ** The return value of <<mainloop:struct_main_file,`main_file`>> handlers has been
    changed to <<mainloop:enum_main_hook_return,`HOOK_IDLE`>> and <<mainloop:enum_main_hook_return,`HOOK_RETRY`>>.
    However, the numerical values are equal, so old code should keep working.
-** *Incompatible:* The global variables `main_now`, `main_now_seconds`,
-   and `main_idle_time` are no longer available. They have become fields
-   in the `main_context` structure, which can be accessed either directly
-   or via helper functions like <<mainloop:fun_main_get_now,`main_get_now()`>>.
+** *Incompatible:* The main loop time (`main_now`) has been decoupled from wall clock time
+   and moved to a field in the `main_context` structure. It can be accessed either directly
+   or via <<mainloop:fun_main_get_now,`main_get_now()`>>. The `main_now_seconds` variable has
+   been removed, `main_idle_time` has become a structure field.
 ** *Incompatible:* The interface for asynchronous reading and writing
    (file_read() and friends) has been separated from the core of the main loop.
    Use <<mainloop:struct_main_block_io,`struct main_block_io`>> and related functions instead.
@@ -56,6 +61,16 @@ Release notes
 * *Incompatible:* Several modules now have their own header files:
 ** `process.h` -- all functions related to processes, previously declared in `lib.h`
 ** `io.h` -- functions related to files from `lib.h` and `lfs.h`
+
+* *Incompatible:* Several configuration options were renamed or removed:
+** `CONFIG_FAKE_ELTPOOL` &rarr; `CONFIG_UCW_FAKE_ELTPOOL`
+** `CONFIG_LARGE_FILES` &rarr; `CONFIG_UCW_LARGE_FILES`
+** `CONFIG_OWN_GETOPT` &rarr; `CONFIG_UCW_OWN_GETOPT`
+** `CONFIG_DIRECT_IO` &rarr; `CONFIG_UCW_DIRECT_IO`
+** `DEFAULT_CONFIG` &rarr; `CONFIG_UCW_DEFAULT_CONFIG`
+** `ENV_VAR_CONFIG` &rarr; `CONFIG_UCW_ENV_VAR_CONFIG`
+** `CONFIG_LFS` was removed
+** `CONFIG_URL_ESCAPE_COMPAT` was removed
 
 * `UCW::Configure` supports running of test programs.
 
