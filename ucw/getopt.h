@@ -28,13 +28,13 @@ void reset_getopt(void);	/** If you want to start parsing of the arguments from 
  */
 
 /**
- * The default config (DEFAULT_CONFIG config option) or NULL if already loaded.
+ * The default config (as set by `CONFIG_UCW_DEFAULT_CONFIG`) or NULL if already loaded.
  * You can set it to something else manually.
  */
 extern char *cf_def_file;
 /**
- * Name of environment variable that can override what configuration
- * is loaded.
+ * Name of environment variable that can override what configuration is loaded.
+ * Defaults to `CONFIG_UCW_ENV_VAR_CONFIG`.
  **/
 extern char *cf_env_file;
 int cf_reload(const char *file);	/** Reload configuration from @file, replace the old one. **/

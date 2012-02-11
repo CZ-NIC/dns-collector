@@ -281,16 +281,16 @@ error:
   return "included from here";
 }
 
-#ifndef DEFAULT_CONFIG
-#define DEFAULT_CONFIG NULL
+#ifndef CONFIG_UCW_DEFAULT_CONFIG
+#define CONFIG_UCW_DEFAULT_CONFIG NULL
 #endif
-char *cf_def_file = DEFAULT_CONFIG;
+char *cf_def_file = CONFIG_UCW_DEFAULT_CONFIG;
 static int cf_def_loaded;
 
-#ifndef ENV_VAR_CONFIG
-#define ENV_VAR_CONFIG NULL
+#ifndef CONFIG_UCW_ENV_VAR_CONFIG
+#define CONFIG_UCW_ENV_VAR_CONFIG NULL
 #endif
-char *cf_env_file = ENV_VAR_CONFIG;
+char *cf_env_file = CONFIG_UCW_ENV_VAR_CONFIG;
 
 static uns postpone_commit;			// only for cf_getopt()
 static uns everything_committed;		// after the 1st load, this flag is set on
