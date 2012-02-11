@@ -1,11 +1,4 @@
 - Clean up free/
-- Remove sighandler.[ch]
 - ipaccess: support IPv6
 - lfs-test: generalize or kill
-- transactions:
-	- Unit tests
-	- Resourcification of more libucw objects:
-		* bigalloc
-		* gary
-		* mainloop
-- Finish documentation of ucw/string.h
+- transactions: Unit tests
