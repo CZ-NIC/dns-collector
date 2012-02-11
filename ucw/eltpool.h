@@ -81,7 +81,7 @@ void *ep_alloc_slow(struct eltpool *pool); /* Internal. Do not call directly. */
 static inline void *ep_alloc(struct eltpool *pool)
 {
   pool->num_allocated++;
-#ifdef CONFIG_FAKE_ELTPOOL
+#ifdef CONFIG_UCW_FAKE_ELTPOOL
   return xmalloc(pool->elt_size);
 #else
   struct eltpool_free *elt;
@@ -101,7 +101,7 @@ static inline void *ep_alloc(struct eltpool *pool)
 static inline void ep_free(struct eltpool *pool, void *p)
 {
   pool->num_allocated--;
-#ifdef CONFIG_FAKE_ELTPOOL
+#ifdef CONFIG_UCW_FAKE_ELTPOOL
   (void) pool;
   xfree(p);
 #else
