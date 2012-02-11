@@ -92,14 +92,12 @@ url_deescape(const char *s, char *d)
 	      val = NCC_AND; break;
 	    case '#':
 	      val = NCC_HASH; break;
-#ifndef CONFIG_URL_ESCAPE_COMPAT
 	    case '$':
 	      val = NCC_DOLLAR; break;
 	    case '+':
 	      val = NCC_PLUS; break;
 	    case ',':
 	      val = NCC_COMMA; break;
-#endif
 	    }
 	  *d++ = val;
 	  s += 3;
@@ -142,10 +140,7 @@ url_enescape(const char *s, char *d)
 	  c == '!' || c == '*' || c == '\'' || c == '(' || c == ')' ||	/* ... and some exceptions and reserved chars */
 	  c == '$' || c == '-' || c == '_' || c == '.' || c == '+' ||
 	  c == ',' || c == '=' || c == '&' || c == '#' || c == ';' ||
-	  c == '/' || c == '?' || c == ':' || c == '@'
-#ifndef CONFIG_URL_ESCAPE_COMPAT
-	  || c == '~'
-#endif
+	  c == '/' || c == '?' || c == ':' || c == '@' || c == '~'
 	)
 	*d++ = *s++;
       else

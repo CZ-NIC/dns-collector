@@ -24,23 +24,15 @@ enum {
   NCC_EQUAL = 6,
   NCC_AND = 7,
   NCC_HASH = 8,
-#ifdef CONFIG_URL_ESCAPE_COMPAT
-  NCC_MAX = 9
-#else
   // Avoid 9 (\t) and 10 (\n)
   NCC_DOLLAR = 11,
   NCC_PLUS = 12,
   // Avoid 13 (\r)
   NCC_COMMA = 14,
   NCC_MAX = 15
-#endif
 };
 
-#ifdef CONFIG_URL_ESCAPE_COMPAT
-#define NCC_CHARS " ;/?:@=&#"
-#else
 #define NCC_CHARS " ;/?:@=&#\t\n$+\r,"
-#endif
 
 /* Remove/Introduce '%' escapes */
 
