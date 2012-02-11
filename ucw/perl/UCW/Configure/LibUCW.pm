@@ -73,7 +73,6 @@ PostConfig {
 			'^CONFIG_UCW_' => 1,
 			'^CPU_' => 1,
 			'^(SHERLOCK|UCW)_VERSION(_|$)' => 1,
-			'^MAX_WORD_(BYTES|CHARS)$' => 1,
 
 		]);
 	} if Get("CONFIG_INSTALL_API");
