@@ -129,7 +129,6 @@
  * for how it works.
  **/
 struct fastbuf {
-  byte is_fastbuf[0];				/* Dummy field for checking of type casts */
   byte *bptr, *bstop;				/* State of the buffer */
   byte *buffer, *bufend;			/* Start and end of the buffer */
   char *name;					/* File name (used for error messages) */
@@ -445,7 +444,6 @@ struct fb_atomic {
   byte *expected_max_bptr;
   uns slack_size;
 };
-#define FB_ATOMIC(f) ((struct fb_atomic *)(f)->is_fastbuf)
 
 /**
  * Open an atomic fastbuf.

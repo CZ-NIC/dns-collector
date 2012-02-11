@@ -30,7 +30,7 @@ struct fb_mem {
   struct memstream *stream;
   struct msblock *block;
 };
-#define FB_MEM(f) ((struct fb_mem *)(f)->is_fastbuf)
+#define FB_MEM(f) ((struct fb_mem *)(f))
 
 static int
 fbmem_refill(struct fastbuf *f)

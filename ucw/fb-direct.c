@@ -57,7 +57,7 @@ struct fb_direct {
   enum fbdir_mode mode;
   byte name[0];
 };
-#define FB_DIRECT(f) ((struct fb_direct *)(f)->is_fastbuf)
+#define FB_DIRECT(f) ((struct fb_direct *)(f))
 
 #ifndef TEST
 uns fbdir_cheat;

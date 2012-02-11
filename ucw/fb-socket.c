@@ -22,7 +22,7 @@ struct fb_sock {
   byte buf[0];
 };
 
-#define FB_SOCK(f) ((struct fb_sock *)(f)->is_fastbuf)
+#define FB_SOCK(f) ((struct fb_sock *)(f))
 
 static int
 fbs_refill(struct fastbuf *f)

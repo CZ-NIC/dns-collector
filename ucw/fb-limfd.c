@@ -17,7 +17,7 @@ struct fb_limfd {
   int fd;				/* File descriptor */
   int limit;
 };
-#define FB_LIMFD(f) ((struct fb_limfd *)(f)->is_fastbuf)
+#define FB_LIMFD(f) ((struct fb_limfd *)(f))
 #define FB_BUFFER(f) (byte *)(FB_LIMFD(f) + 1)
 
 static int

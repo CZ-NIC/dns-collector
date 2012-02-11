@@ -19,7 +19,7 @@ struct fb_gbuf {
   struct mempool *mp;
   byte *end;
 };
-#define FB_GBUF(f) ((struct fb_gbuf *)(f)->is_fastbuf)
+#define FB_GBUF(f) ((struct fb_gbuf *)(f))
 
 static int fbgrow_refill(struct fastbuf *b)
 {

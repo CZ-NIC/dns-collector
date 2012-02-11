@@ -47,7 +47,7 @@ struct fb_mmap {
   uns window_size;
   int mode;
 };
-#define FB_MMAP(f) ((struct fb_mmap *)(f)->is_fastbuf)
+#define FB_MMAP(f) ((struct fb_mmap *)(f))
 
 static void
 bfmm_map_window(struct fastbuf *f)

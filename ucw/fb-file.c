@@ -25,7 +25,7 @@ struct fb_file {
   ucw_off_t wpos;			/* Real file position */
   uns wlen;				/* Window size */
 };
-#define FB_FILE(f) ((struct fb_file *)(f)->is_fastbuf)
+#define FB_FILE(f) ((struct fb_file *)(f))
 #define FB_BUFFER(f) (byte *)(FB_FILE(f) + 1)
 
 static int

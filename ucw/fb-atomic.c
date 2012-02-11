@@ -34,6 +34,7 @@ static void CONSTRUCTOR fbatomic_init_config(void)
 
 #endif
 
+#define FB_ATOMIC(f) ((struct fb_atomic *)(f))
 #define TRACE(m...) do { if(trace) msg(L_DEBUG, "FB_ATOMIC: " m); } while(0)
 
 struct fb_atomic_file {

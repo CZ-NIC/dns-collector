@@ -20,7 +20,7 @@ struct fb_charconv {
   struct conv_context ctxt;
   byte buf[BUFSIZE];
 };
-#define FB_CC(f) ((struct fb_charconv *)(f)->is_fastbuf)
+#define FB_CC(f) ((struct fb_charconv *)(f))
 
 static void
 fb_cc_spout(struct fastbuf *f)

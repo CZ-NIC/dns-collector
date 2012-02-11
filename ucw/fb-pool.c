@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define FB_POOL(f) ((struct fbpool *)(f)->is_fastbuf)
+#define FB_POOL(f) ((struct fbpool *)(f))
 
 static void
 fbpool_spout(struct fastbuf *b)
