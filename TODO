@@ -8,6 +8,4 @@
 		* bigalloc
 		* gary
 		* mainloop
-	- More exceptions
-	- Fix documentation on fastbuf tying
 - Finish documentation of ucw/string.h

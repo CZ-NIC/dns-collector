@@ -13,8 +13,6 @@
 #include "ucw/lib.h"
 #include "ucw/string.h"
 
-#include <string.h>
-
 #ifdef CONFIG_DARWIN
 uns
 strnlen(const char *str, uns n)
@@ -50,24 +48,4 @@ str_count_char(const char *str, uns chr)
     if (*s++ == chr)
       i++;
   return i;
-}
-
-int
-str_starts_with(const char *haystack, const char *needle)
-{
-  while (*needle)
-    if (*haystack++ != *needle++)
-      return 0;
-  return 1;
-}
-
-int
-str_ends_with(const char *haystack, const char *needle)
-{
-  int hlen = strlen(haystack);
-  int nlen = strlen(needle);
-  if (hlen < nlen)
-    return 0;
-  else
-    return !memcmp(haystack + hlen - nlen, needle, nlen);
 }

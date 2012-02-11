@@ -26,12 +26,6 @@ char *str_format_flags(char *dest, const char *fmt, uns flags);
 /** Counts occurrences of @chr in @str. **/
 uns str_count_char(const char *str, uns chr);
 
-/** Returns a non-zero value if @haystack starts with @needle. **/
-int str_starts_with(const char *haystack, const char *needle);
-
-/** Returns a non-zero value if @haystack ends with @needle. **/
-int str_ends_with(const char *haystack, const char *needle);
-
 /* str-esc.c */
 
 /**
