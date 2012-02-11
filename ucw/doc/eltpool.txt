@@ -1,5 +1,5 @@
-Fixed-sized alocators
-=====================
+Fixed-sized allocators
+======================
 
 You can use them for efficient allocation of large amount of small
 fixed-sized memory blocks and to free them all at once.

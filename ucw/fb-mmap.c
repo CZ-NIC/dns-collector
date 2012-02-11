@@ -70,7 +70,10 @@ bfmm_map_window(struct fastbuf *f)
   else
     f->buffer = ucw_mmap(f->buffer, ll, prot, MAP_SHARED | MAP_FIXED, F->fd, pos0);
   if (f->buffer == (byte *) MAP_FAILED)
-    die("mmap(%s): %m", f->name);
+    {
+      f->buffer = NULL;
+      bthrow(f, "mmap", "mmap(%s): %m", f->name);
+    }
 #ifdef MADV_SEQUENTIAL
   if (ll > CPU_PAGE_SIZE)
     madvise(f->buffer, ll, MADV_SEQUENTIAL);
@@ -115,7 +118,7 @@ bfmm_spout(struct fastbuf *f)
     {
       F->file_extend = ALIGN_TO(F->file_extend + mmap_extend_size, (ucw_off_t)CPU_PAGE_SIZE);
       if (ucw_ftruncate(F->fd, F->file_extend))
-	die("ftruncate(%s): %m", f->name);
+	bthrow(f, "write", "ftruncate(%s): %m", f->name);
     }
   bfmm_map_window(f);
   f->bstop = f->bptr;
@@ -140,12 +143,12 @@ static void
 bfmm_close(struct fastbuf *f)
 {
   struct fb_mmap *F = FB_MMAP(f);
-
   if (f->buffer)
     munmap(f->buffer, F->window_size);
-  if (F->file_extend > F->file_size &&
+  if (!(f->flags & FB_DEAD) &&
+      F->file_extend > F->file_size &&
       ucw_ftruncate(F->fd, F->file_size))
-    die("ftruncate(%s): %m", f->name);
+    bthrow(f, "write", "ftruncate(%s): %m", f->name);
   bclose_file_helper(f, F->fd, F->is_temp_file);
   xfree(f);
 }
@@ -179,7 +182,7 @@ bfmmopen_internal(int fd, const char *name, uns mode)
   F->fd = fd;
   F->file_extend = F->file_size = ucw_seek(fd, 0, SEEK_END);
   if (F->file_size < 0)
-    die("seek(%s): %m", name);
+    bthrow(f, "open", "fb-mmap: Cannot detect size of %s -- is it seekable?", name);
   if (mode & O_APPEND)
     f->pos = F->file_size;
   F->mode = mode;

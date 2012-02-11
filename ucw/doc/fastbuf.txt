@@ -18,6 +18,11 @@ inbetween and remember that the file position reported by @btell() points after
 the flushed buffer, which is not necessarily the same as after the data you've
 really read.
 
+Fastbufs can also participate in the libucw resource management system.
+You can tie a fastbuf to a resource in the current resource pool by @fb_tie().
+When the pool gets cleaned up, the fastbuf is automatically closed. If you call
+@bclose() explicitly, the resource is removed, too.
+
 .Back-ends:
 - <<fbparam,Files (parametrized)>>
 - <<fbfile,Regular files>>
@@ -35,6 +40,7 @@ really read.
 .Other reading:
 - <<internal,Internal structure>>
 - <<bconfig,Configuring streams>>
+- <<fbexc,Exceptions>>
 
 ucw/fastbuf.h
 -------------
@@ -61,3 +67,18 @@ ucw/ff-binary.h
 ---------------
 
 !!ucw/ff-binary.h
+
+Exceptions [[fbexc]]
+--------------------
+
+All standard back-ends and front-ends raise exceptions on errors. All such
+exceptions live in the `ucw.fb` subtree. The following exceptions are defined:
+
+`ucw.fb.eof`:: Unexpected end of file (e.g., when the @FB_DIE_ON_EOF flag is set)
+`ucw.fb.mmap`:: Memory mapping failed (e.g., the `mmap` syscall has failed)
+`ucw.fb.open`:: Opening failed (file does not exist and similar problems)
+`ucw.fb.read`:: Read error (e.g., the `read` syscall has failed or the stream is write-only)
+`ucw.fb.seek`:: Seek error (e.g., file not seekable, or a seek behind EOF)
+`ucw.fb.tmp`:: Creation of temporary file failed
+`ucw.fb.toolong`:: Object (typically a line) is too long
+`ucw.fb.write`:: Write error (e.g., the `write` syscall has failed or the stream is read-only)

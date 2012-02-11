@@ -35,7 +35,7 @@ bgets(struct fastbuf *f, char *b, uns l)
 	  *b++ = v;
 	}
       if (unlikely(cnt == l))
-        die("%s: Line too long", f->name);
+        bthrow(f, "toolong", "%s: Line too long", f->name);
       l -= cnt;
       bdirect_read_commit(f, src);
       src_len = bdirect_read_prepare(f, &src);
@@ -114,7 +114,7 @@ bgets_bb(struct fastbuf *f, struct bb_t *bb, uns limit)
       if (cnt == buf_len)
         {
 	  if (unlikely(len == limit))
-            die("%s: Line too long", f->name);
+            bthrow(f, "toolong", "%s: Line too long", f->name);
 	  bb_do_grow(bb, len + 1);
 	  buf = bb->ptr + len;
 	  buf_len = MIN(bb->len, limit) - len;
@@ -212,7 +212,7 @@ bgets0(struct fastbuf *f, char *b, uns l)
 	  b++;
 	}
       if (unlikely(cnt == l))
-        die("%s: Line too long", f->name);
+        bthrow(f, "toolong", "%s: Line too long", f->name);
       l -= cnt;
       bdirect_read_commit(f, src);
       src_len = bdirect_read_prepare(f, &src);

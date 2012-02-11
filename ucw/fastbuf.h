@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Fast Buffered I/O
  *
- *	(c) 1997--2008 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2011 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -101,6 +101,7 @@
  *
  *   - Initialization:
  *     * out: `buffer <= bstop <= bptr <= bufend` (flushed).
+ *     * @fb_tie() should be called on the newly created fastbuf.
  *
  *   - `refill`:
  *     * in: `buffer <= bstop <= bptr <= bufend` (reading or flushed).
@@ -133,19 +134,34 @@ struct fastbuf {
   byte *buffer, *bufend;			/* Start and end of the buffer */
   char *name;					/* File name (used for error messages) */
   ucw_off_t pos;				/* Position of bstop in the file */
+  uns flags;					/* See enum fb_flags */
   int (*refill)(struct fastbuf *);		/* Get a buffer with new data, returns 0 on EOF */
   void (*spout)(struct fastbuf *);		/* Write buffer data to the file */
   int (*seek)(struct fastbuf *, ucw_off_t, int);/* Slow path for @bseek(), buffer already flushed; returns success */
   void (*close)(struct fastbuf *);		/* Close the stream */
   int (*config)(struct fastbuf *, uns, int);	/* Configure the stream */
   int can_overwrite_buffer;			/* Can the buffer be altered? 0=never, 1=temporarily, 2=permanently */
+  struct resource *res;				/* The fastbuf can be tied to a resource pool */
 };
+
+/**
+ * Fastbuf flags
+ */
+enum fb_flags {
+  FB_DEAD = 0x1,				/* Some fastbuf's method has thrown an exception */
+  FB_DIE_ON_EOF = 0x2,				/* Most of read operations throw "fb.eof" on EOF */
+};
+
+/** Tie a fastbuf to a resource in the current resource pool. Returns the pointer to the same fastbuf. **/
+struct fastbuf *fb_tie(struct fastbuf *b);	/* Tie fastbuf to a resource if there is an active pool */
 
 /***
  * === Fastbuf on files [[fbparam]]
  *
  * If you want to use fastbufs to access files, you can choose one of several
  * back-ends and set their parameters.
+ *
+ * All file fastbufs are tied to resources automatically.
  ***/
 
 /**
@@ -181,7 +197,7 @@ extern struct fb_params fbpar_def;	/** The default `fb_params` **/
  * Use @params to select the fastbuf back-end and its parameters or
  * pass NULL if you are fine with defaults.
  *
- * Dies if the file does not exist.
+ * Raises `ucw.fb.open` if the file does not exist.
  **/
 struct fastbuf *bopen_file(const char *name, int mode, struct fb_params *params);
 struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *params); /** Like bopen_file(), but returns NULL on failure. **/
@@ -292,6 +308,8 @@ void bclose_file_helper(struct fastbuf *f, int fd, int is_temp_file);
  *
  * The `fblim` back-end reads from a file handle, but at most a given
  * number of bytes. This is frequently used for reading from sockets.
+ *
+ * All such fastbufs are tied to resources automatically.
  ***/
 
 struct fastbuf *bopen_limited_fd(int fd, uns bufsize, uns limit); /** Create a fastbuf which reads at most @limit bytes from @fd. **/
@@ -306,6 +324,8 @@ struct fastbuf *bopen_limited_fd(int fd, uns bufsize, uns limit); /** Create a f
  * First, you use @fbmem_create() to create the stream and the fastbuf
  * used for writing to it. Then you can call @fbmem_clone_read() to get
  * an arbitrary number of fastbuf for reading from the stream.
+ *
+ * All in-memory fastbufs are tied to resources automatically.
  ***/
 
 struct fastbuf *fbmem_create(uns blocksize);		/** Create stream and return its writing fastbuf. **/
@@ -327,19 +347,21 @@ struct fastbuf *fbmem_clone_read(struct fastbuf *f);	/** Given a writing fastbuf
  * of the buffer temporarily. In this case, set @can_overwrite as described
  * in <<internal,Internals>>. If you do not care, keep @can_overwrite zero.
  *
- * It is not possible to close this fastbuf.
+ * It is not possible to close this fastbuf. This implies that no tying to
+ * resources takes place.
  */
 void fbbuf_init_read(struct fastbuf *f, byte *buffer, uns size, uns can_overwrite);
 
 /**
  * Creates a write-only fastbuf which writes into a provided memory buffer.
  * The fastbuf structure is allocated by the caller and pointed to by @f.
- * An attempt to write behind the end of the buffer dies.
+ * An attempt to write behind the end of the buffer causes the `ucw.fb.write` exception.
  *
  * Data are written directly into the buffer, so it is not necessary to call @bflush()
  * at any moment.
  *
- * It is not possible to close this fastbuf.
+ * It is not possible to close this fastbuf. This implies that no tying to
+ * resources takes place.
  */
 void fbbuf_init_write(struct fastbuf *f, byte *buffer, uns size);
 
@@ -356,11 +378,23 @@ static inline uns fbbuf_count_written(struct fastbuf *f) /** Calculates, how man
  * size and it is expanded to accomodate all data.
  *
  * At every moment, you can use `fastbuf->buffer` to gain access to the stream.
+ *
+ * All fastbufs of this type are tied to resources automatically.
  ***/
 
+struct mempool;
+
 struct fastbuf *fbgrow_create(unsigned basic_size);	/** Create the growing buffer pre-allocated to @basic_size bytes. **/
+struct fastbuf *fbgrow_create_mp(struct mempool *mp, unsigned basic_size); /** Create the growing buffer pre-allocated to @basic_size bytes. **/
 void fbgrow_reset(struct fastbuf *b);			/** Reset stream and prepare for writing. **/
 void fbgrow_rewind(struct fastbuf *b);			/** Prepare for reading (of already written data). **/
+
+/**
+ * Can be used in any state of @b (for example when writing or after
+ * @fbgrow_rewind()) to return the pointer to internal buffer and its length in
+ * bytes. The returned buffer can be invalidated by further requests.
+ **/
+uns fbgrow_get_buf(struct fastbuf *b, byte **buf);
 
 /***
  * === Fastbuf on memory pools [[fbpool]]
@@ -369,14 +403,14 @@ void fbgrow_rewind(struct fastbuf *b);			/** Prepare for reading (of already wri
  * buffer, but this time the buffer is allocated from within a memory pool.
  ***/
 
-struct mempool;
 struct fbpool { /** Structure for fastbufs & mempools. **/
   struct fastbuf fb;
   struct mempool *mp;
 };
 
 /**
- * Initialize a new `fbpool`. The structure is allocated by the caller.
+ * Initialize a new `fbpool`. The structure is allocated by the caller,
+ * so bclose() should not be called and no resource tying takes place.
  **/
 void fbpool_init(struct fbpool *fb);	/** Initialize a new mempool fastbuf. **/
 /**
@@ -411,6 +445,8 @@ void *fbpool_end(struct fbpool *fb);
  *
  * Please note that initialization of the clones is not thread-safe,
  * so you have to serialize it yourself.
+ *
+ * The atomic fastbufs are tied to resources automatically.
  ***/
 
 struct fb_atomic {
@@ -465,6 +501,9 @@ int bconfig(struct fastbuf *f, uns type, int data); /** Configure a fastbuf. Ret
  * Can not be used for fastbufs not returned from function (initialized in a parameter, for example the one from `fbbuf_init_read`).
  */
 void bclose(struct fastbuf *f);
+void bthrow(struct fastbuf *f, const char *id, const char *fmt, ...) FORMAT_CHECK(printf,3,4) NONRET;	/** Throw exception on a given fastbuf **/
+int brefill(struct fastbuf *f, int allow_eof);
+void bspout(struct fastbuf *f);
 void bflush(struct fastbuf *f);					/** Write data (if it makes any sense, do not use for in-memory buffers). **/
 void bseek(struct fastbuf *f, ucw_off_t pos, int whence);	/** Seek in the buffer. See `man fseek` for description of @whence. Only for seekable fastbufs. **/
 void bsetpos(struct fastbuf *f, ucw_off_t pos);			/** Set position to @pos bytes from beginning. Only for seekable fastbufs. **/
@@ -486,6 +525,12 @@ int bpeekc_slow(struct fastbuf *f);
 static inline int bpeekc(struct fastbuf *f)			/** Return next character from the buffer, but keep the current position. **/
 {
   return (f->bptr < f->bstop) ? (int) *f->bptr : bpeekc_slow(f);
+}
+
+int beof_slow(struct fastbuf *f);
+static inline int beof(struct fastbuf *f)			/** Have I reached EOF? **/
+{
+  return (f->bptr < f->bstop) ? 0 : beof_slow(f);
 }
 
 static inline void bungetc(struct fastbuf *f)			/** Return last read character back. Only one back is guaranteed to work. **/
@@ -533,7 +578,7 @@ static inline uns bread(struct fastbuf *f, void *b, uns l)
 /**
  * Reads exactly @l bytes of data into @b.
  * If at the end of file, it returns 0.
- * If there are data, but less than @l, it dies.
+ * If there are data, but less than @l, it raises `ucw.fb.eof`.
  */
 static inline uns breadb(struct fastbuf *f, void *b, uns l)
 {
@@ -562,7 +607,7 @@ static inline void bwrite(struct fastbuf *f, const void *b, uns l) /** Writes bu
 /**
  * Reads a line into @b and strips trailing `\n`.
  * Returns pointer to the terminating 0 or NULL on `EOF`.
- * Dies if the line is longer than @l.
+ * Raises `ucw.fb.toolong` if the line is longer than @l.
  **/
 char *bgets(struct fastbuf *f, char *b, uns l);
 char *bgets0(struct fastbuf *f, char *b, uns l);	/** The same as @bgets(), but for 0-terminated strings. **/
@@ -576,7 +621,7 @@ struct mempool;
 struct bb_t;
 /**
  * Read a string, strip the trailing `\n` and store it into growing buffer @b.
- * Dies if the line is longer than @limit.
+ * Raises `ucw.fb.toolong` if the line is longer than @limit.
  **/
 uns bgets_bb(struct fastbuf *f, struct bb_t *b, uns limit);
 /**

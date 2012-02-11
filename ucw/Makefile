@@ -28,10 +28,11 @@ LIBUCW_MODS= \
 	md5 sha1 sha1-hmac \
 	base64 base224 \
 	io-careful io-sync io-mmap io-size \
-	string str-esc str-split str-match str-imatch str-hex \
+	string str-esc str-split str-match str-imatch str-hex str-fix \
 	bbuf gary \
 	getopt \
-	strtonum
+	strtonum \
+	resource trans res-fd res-mem res-subpool res-mempool res-eltpool
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h threads.h \
@@ -56,7 +57,8 @@ LIBUCW_MAIN_INCLUDES= \
 	base64.h base224.h \
 	kmp.h kmp-search.h binsearch.h \
 	partmap.h \
-	strtonum.h
+	strtonum.h \
+	resource.h trans.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
@@ -125,7 +127,7 @@ $(o)/ucw/bbuf.test: $(o)/ucw/bbuf-t
 $(o)/ucw/getopt.test: $(o)/ucw/getopt-t
 $(o)/ucw/ff-unicode.test: $(o)/ucw/ff-unicode-t
 $(o)/ucw/eltpool.test: $(o)/ucw/eltpool-t
-$(o)/ucw/string.test: $(o)/ucw/str-hex-t $(o)/ucw/str-esc-t
+$(o)/ucw/string.test: $(o)/ucw/str-hex-t $(o)/ucw/str-esc-t $(o)/ucw/str-fix-t
 $(o)/ucw/sha1.test: $(o)/ucw/sha1-t $(o)/ucw/sha1-hmac-t
 $(o)/ucw/trie-test.test: $(o)/ucw/trie-test
 $(o)/ucw/asort-test.test: $(o)/ucw/asort-test

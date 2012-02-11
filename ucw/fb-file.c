@@ -56,7 +56,7 @@ long_seek:
 	      int l = read(F->fd, f->buffer, MIN(skip, blen));
 	      if (unlikely(l <= 0))
 		if (l < 0)
-		  die("Error reading %s: %m", f->name);
+		  bthrow(f, "read", "Error reading %s: %m", f->name);
 		else
 		  {
 		    F->wpos -= skip;
@@ -91,7 +91,7 @@ long_seek:
 	  goto long_seek;
 	}
       /* Seek into previous window (do nothing... for example brewind) */
-      else if ((uns)diff <= F->wlen) 
+      else if ((uns)diff <= F->wlen)
         {
 	  f->bstop = f->buffer + F->wlen;
 	  f->bptr = f->bstop - diff;
@@ -114,14 +114,14 @@ seek:
       /* Do lseek() */
       F->wpos = f->pos + (f->buffer - f->bptr);
       if (ucw_seek(F->fd, F->wpos, SEEK_SET) < 0)
-	die("Error seeking %s: %m", f->name);
+	bthrow(f, "read", "Error seeking %s: %m", f->name);
     }
   /* Read (part of) buffer */
   do
     {
       int l = read(F->fd, read_ptr, read_len);
       if (unlikely(l < 0))
-	die("Error reading %s: %m", f->name);
+	bthrow(f, "read", "Error reading %s: %m", f->name);
       if (!l)
 	if (unlikely(read_ptr < f->bptr))
 	  goto eof;
@@ -149,7 +149,7 @@ bfd_spout(struct fastbuf *f)
 {
   /* Do delayed lseek() if needed */
   if (FB_FILE(f)->wpos != f->pos && ucw_seek(FB_FILE(f)->fd, f->pos, SEEK_SET) < 0)
-    die("Error seeking %s: %m", f->name);
+    bthrow(f, "write", "Error seeking %s: %m", f->name);
 
   int l = f->bptr - f->buffer;
   byte *c = f->buffer;
@@ -161,33 +161,27 @@ bfd_spout(struct fastbuf *f)
     {
       int z = write(FB_FILE(f)->fd, c, l);
       if (z <= 0)
-	die("Error writing %s: %m", f->name);
+	bthrow(f, "write", "Error writing %s: %m", f->name);
       l -= z;
       c += z;
     }
-  f->bptr = f->buffer = FB_BUFFER(f);
+  f->bptr = f->bstop = f->buffer = FB_BUFFER(f);
 }
 
 static int
 bfd_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 {
+  ASSERT(f->bptr == f->bstop);
   /* Delay the seek for the next refill() or spout() call (if whence != SEEK_END). */
-  ucw_off_t l;
   switch (whence)
     {
       case SEEK_SET:
 	f->pos = pos;
 	return 1;
-      case SEEK_CUR:
-	l = f->pos + pos;
-	if ((pos > 0) ^ (l > f->pos))
-	  return 0;
-	f->pos = l;
-	return 1;
-      case SEEK_END:
-	l = ucw_seek(FB_FILE(f)->fd, pos, SEEK_END);
+      case SEEK_END: ;
+	ucw_off_t l = ucw_seek(FB_FILE(f)->fd, pos, SEEK_END);
 	if (l < 0)
-	  return 0;
+	  bthrow(f, "seek", "Error seeking %s: %m", f->name);
 	FB_FILE(f)->wpos = f->pos = l;
 	FB_FILE(f)->wlen = 0;
 	return 1;

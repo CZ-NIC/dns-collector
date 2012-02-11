@@ -14,9 +14,11 @@
 #include <stdlib.h>
 
 static int
-fbbuf_refill(struct fastbuf *f UNUSED)
+fbbuf_refill(struct fastbuf *f)
 {
-  return 0;
+  f->bstop = f->bufend;
+  f->pos = f->bstop - f->buffer;
+  return f->bptr < f->bstop;
 }
 
 static int
@@ -26,47 +28,47 @@ fbbuf_seek(struct fastbuf *f, ucw_off_t pos, int whence)
   ucw_off_t len = f->bufend - f->buffer;
   if (whence == SEEK_END)
     pos += len;
-  ASSERT(pos >= 0 && pos <= len);
+  if (pos < 0 || pos > len)
+    bthrow(f, "seek", "Seek out of range");
   f->bptr = f->buffer + pos;
-  f->bstop = f->bufend;
-  f->pos = len;
+  f->bstop = f->buffer;
+  f->pos = 0;
   return 1;
 }
 
 void
 fbbuf_init_read(struct fastbuf *f, byte *buf, uns size, uns can_overwrite)
 {
-  f->buffer = f->bptr = buf;
-  f->bstop = f->bufend = buf + size;
-  f->name = "fbbuf-read";
-  f->pos = size;
-  f->refill = fbbuf_refill;
-  f->spout = NULL;
-  f->seek = fbbuf_seek;
-  f->close = NULL;
-  f->config = NULL;
-  f->can_overwrite_buffer = can_overwrite;
+  *f = (struct fastbuf) {
+    .buffer = buf,
+    .bptr = buf,
+    .bstop = buf + size,
+    .bufend = buf + size,
+    .name = "fbbuf-read",
+    .pos = size,
+    .refill = fbbuf_refill,
+    .seek = fbbuf_seek,
+    .can_overwrite_buffer = can_overwrite };
 }
 
 static void
-fbbuf_spout(struct fastbuf *f UNUSED)
+fbbuf_spout(struct fastbuf *f)
 {
-  die("fbbuf: buffer overflow on write");
+  bthrow(f, "write", "fbbuf: buffer overflow on write");
 }
 
 void
 fbbuf_init_write(struct fastbuf *f, byte *buf, uns size)
 {
-  f->buffer = f->bstop = f->bptr = buf;
-  f->bufend = buf + size;
-  f->name = "fbbuf-write";
-  f->pos = size;
-  f->refill = NULL;
-  f->spout = fbbuf_spout;
-  f->seek = NULL;
-  f->close = NULL;
-  f->config = NULL;
-  f->can_overwrite_buffer = 0;
+  *f = (struct fastbuf) {
+    .buffer = buf,
+    .bstop = buf,
+    .bptr = buf,
+    .bufend = buf + size,
+    .name = "fbbuf-write",
+    .pos = size,
+    .spout = fbbuf_spout,
+  };
 }
 
 #ifdef TEST

@@ -35,6 +35,8 @@ Modules
 - <<sort:,Sorting>>
 - <<binsearch:,Binary search>>
 - <<compress:,Compression>>
+- <<trans:,Transactions and resource tracking>>
+- <<string:,String operations>>
 
 Other features
 --------------
@@ -46,6 +48,8 @@ Other features
 
 Yet undocumented modules
 ------------------------
+- Allocators
+  * `gary.h`
 - Trie
   * `trie.h`
 - Red-black trees
@@ -59,8 +63,6 @@ Yet undocumented modules
   * `kmp-search.h`
   * `regex.h`
   * `stkstring.h`
-  * `string.h`
-  * `str-match.h`
   * `strtonum.h`
   * `wildmatch.h`
 - File manipulation

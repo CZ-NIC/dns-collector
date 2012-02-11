@@ -118,6 +118,7 @@ enum log_levels {			/** The available log levels to pass to msg() and friends. *
 void msg(uns flags, const char *fmt, ...) FORMAT_CHECK(printf,2,3);
 void vmsg(uns flags, const char *fmt, va_list args);		/** A vararg version of msg(). **/
 void die(const char *, ...) NONRET FORMAT_CHECK(printf,1,2);	/** Log a fatal error message and exit the program. **/
+void vdie(const char *fmt, va_list args) NONRET;		/** va_list version of die() **/
 
 extern char *log_title;			/** An optional log message title. Set to program name by log_init(). **/
 extern int log_pid;			/** An optional PID printed in each log message. Set to 0 if it shouldn't be logged. **/

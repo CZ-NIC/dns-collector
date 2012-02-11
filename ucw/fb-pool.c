@@ -19,12 +19,11 @@
 static void
 fbpool_spout(struct fastbuf *b)
 {
-  if (b->bptr >= b->bufend)
+  if (b->bptr == b->bufend)
     {
       uns len = b->bufend - b->buffer;
-      b->buffer = mp_expand(FB_POOL(b)->mp);
+      b->bstop = b->buffer = mp_expand(FB_POOL(b)->mp);
       b->bufend = b->buffer + mp_avail(FB_POOL(b)->mp);
-      b->bstop = b->buffer;
       b->bptr = b->buffer + len;
     }
 }
@@ -40,7 +39,7 @@ fbpool_start(struct fbpool *b, struct mempool *mp, uns init_size)
 void *
 fbpool_end(struct fbpool *b)
 {
-  return mp_end(b->mp, b->fb.bptr); 
+  return mp_end(b->mp, b->fb.bptr);
 }
 
 void
@@ -60,7 +59,7 @@ int main(void)
   struct fbpool fb;
   byte *p;
   uns l;
-  
+
   mp = mp_new(64);
   fbpool_init(&fb);
   fbpool_start(&fb, mp, 16);
@@ -74,7 +73,7 @@ int main(void)
     if (memcmp(p + i * 7, "<hello>", 7))
       ASSERT(0);
   mp_delete(mp);
-  
+
   return 0;
 }
 

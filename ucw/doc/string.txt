@@ -1,0 +1,11 @@
+String operations
+=================
+
+LibUCW contains a rich set of functions for manipulating strings.
+
+So far, only a small subset is documented.
+
+ucw/string.h
+------------
+
+!!ucw/string.h

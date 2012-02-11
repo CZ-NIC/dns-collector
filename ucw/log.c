@@ -342,16 +342,20 @@ do_die(void)
 }
 
 void
-die(const char *fmt, ...)
+vdie(const char *fmt, va_list args)
 {
-  va_list args;
-
-  va_start(args, fmt);
   vmsg(L_FATAL, fmt, args);
-  va_end(args);
   if (log_die_hook)
     log_die_hook();
   do_die();
+}
+
+void
+die(const char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  vdie(fmt, args);
 }
 
 void

@@ -112,10 +112,10 @@ fbmem_seek(struct fastbuf *f, ucw_off_t pos, int whence)
     {
       if (pos <= b->pos + (ucw_off_t)b->size) /* <=, because we need to be able to seek just after file end */
 	{
-	  f->buffer = b->data;
+	  f->buffer = f->bstop = b->data;
 	  f->bptr = b->data + (pos - b->pos);
-	  f->bufend = f->bstop = b->data + b->size;
-	  f->pos = b->pos + b->size;
+	  f->bufend = b->data + b->size;
+	  f->pos = b->pos;
 	  FB_MEM(f)->block = b;
 	  return 1;
 	}
@@ -123,12 +123,12 @@ fbmem_seek(struct fastbuf *f, ucw_off_t pos, int whence)
   if (!m->first && !pos)
     {
       /* Seeking to offset 0 in an empty file needs an exception */
-      f->buffer = f->bptr = f->bufend = NULL;
+      f->buffer = f->bptr = f->bstop = f->bufend = NULL;
       f->pos = 0;
       FB_MEM(f)->block = NULL;
       return 1;
     }
-  die("fbmem_seek to invalid offset");
+  bthrow(f, "seek", "fbmem_seek to an invalid offset");
 }
 
 static void
