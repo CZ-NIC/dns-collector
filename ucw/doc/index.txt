@@ -24,7 +24,7 @@ Modules
 - <<eltpool:,Fixed-sized allocators>>
 - <<mainloop:,Mainloop>>
 - <<unaligned:,Unaligned data>>
-- <<lists:,Link lists>>
+- <<lists:,Linked lists>>
 - <<heap:,Binary heaps>>
 - <<binheap:,Binomial heaps>>
 - <<hashtable:,Hash tables>>
