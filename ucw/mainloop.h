@@ -25,8 +25,7 @@
 
 /** The main loop context **/
 struct main_context {
-  timestamp_t now;			/* [*] Current time in milliseconds since the UNIX epoch. See main_get_time(). */
-  ucw_time_t now_seconds;		/* [*] Current time in seconds since the epoch. */
+  timestamp_t now;			/* [*] Current time in milliseconds since an unknown epoch. See main_get_time(). */
   timestamp_t idle_time;		/* [*] Total time in milliseconds spent by waiting for events. */
   uns shutdown;				/* [*] Setting this to nonzero forces the main_loop() function to terminate. */
   clist file_list;
@@ -144,12 +143,6 @@ static inline timestamp_t main_get_now(void)
   return main_current()->now;
 }
 
-/** An analog of @main_get_now() returning the number of seconds since the system epoch. **/
-static inline ucw_time_t main_get_now_seconds(void)
-{
-  return main_current()->now_seconds;
-}
-
 /**
  * This is a description of a timer.
  * You define the handler function and possibly user-defined data you wish
@@ -169,7 +162,8 @@ struct main_timer {
  * timer. It is permitted (and usual) to call this function from the
  * timer's handler itself if you want the timer to trigger again.
  *
- * The @expire parameter is absolute, use @timer_add_rel() for a relative version.
+ * The @expire parameter is absolute (in the same time scale as @main_get_now()),
+ * use @timer_add_rel() for a relative version.
  **/
 void timer_add(struct main_timer *tm, timestamp_t expires);
 
