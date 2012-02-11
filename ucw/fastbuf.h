@@ -160,8 +160,6 @@ struct fastbuf *fb_tie(struct fastbuf *b);	/* Tie fastbuf to a resource if there
  *
  * If you want to use fastbufs to access files, you can choose one of several
  * back-ends and set their parameters.
- *
- * All file fastbufs are tied to resources automatically.
  ***/
 
 /**
@@ -308,8 +306,6 @@ void bclose_file_helper(struct fastbuf *f, int fd, int is_temp_file);
  *
  * The `fblim` back-end reads from a file handle, but at most a given
  * number of bytes. This is frequently used for reading from sockets.
- *
- * All such fastbufs are tied to resources automatically.
  ***/
 
 struct fastbuf *bopen_limited_fd(int fd, uns bufsize, uns limit); /** Create a fastbuf which reads at most @limit bytes from @fd. **/
@@ -324,8 +320,6 @@ struct fastbuf *bopen_limited_fd(int fd, uns bufsize, uns limit); /** Create a f
  * First, you use @fbmem_create() to create the stream and the fastbuf
  * used for writing to it. Then you can call @fbmem_clone_read() to get
  * an arbitrary number of fastbuf for reading from the stream.
- *
- * All in-memory fastbufs are tied to resources automatically.
  ***/
 
 struct fastbuf *fbmem_create(uns blocksize);		/** Create stream and return its writing fastbuf. **/
@@ -378,8 +372,6 @@ static inline uns fbbuf_count_written(struct fastbuf *f) /** Calculates, how man
  * size and it is expanded to accomodate all data.
  *
  * At every moment, you can use `fastbuf->buffer` to gain access to the stream.
- *
- * All fastbufs of this type are tied to resources automatically.
  ***/
 
 struct mempool;
@@ -445,8 +437,6 @@ void *fbpool_end(struct fbpool *fb);
  *
  * Please note that initialization of the clones is not thread-safe,
  * so you have to serialize it yourself.
- *
- * The atomic fastbufs are tied to resources automatically.
  ***/
 
 struct fb_atomic {
