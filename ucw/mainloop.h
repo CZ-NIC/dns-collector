@@ -112,7 +112,7 @@ static inline void main_shut_down(void)
 
 /**
  * Show the current state of a given context (use @main_debug() for the current context).
- * Available only if LibUCW has been compiled with `CONFIG_DEBUG`.
+ * Available only if LibUCW has been compiled with `CONFIG_UCW_DEBUG`.
  **/
 void main_debug_context(struct main_context *m);
 
@@ -197,7 +197,7 @@ static inline int timer_is_active(struct main_timer *tm)
  **/
 void main_get_time(void);
 
-/** Show current state of a timer. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
+/** Show current state of a timer. Available only if LibUCW has been compiled with `CONFIG_UCW_DEBUG`. **/
 void timer_debug(struct main_timer *tm);
 
 /***
@@ -266,7 +266,7 @@ static inline int hook_is_active(struct main_hook *ho)
   return clist_is_linked(&ho->n);
 }
 
-/** Show current state of a hook. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
+/** Show current state of a hook. Available only if LibUCW has been compiled with `CONFIG_UCW_DEBUG`. **/
 void hook_debug(struct main_hook *ho);
 
 
@@ -353,7 +353,7 @@ static inline int file_is_active(struct main_file *fi)
   return clist_is_linked(&fi->n);
 }
 
-/** Show current state of a file. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
+/** Show current state of a file. Available only if LibUCW has been compiled with `CONFIG_UCW_DEBUG`. **/
 void file_debug(struct main_file *fi);
 
 /***
@@ -638,7 +638,7 @@ static inline int process_is_active(struct main_process *mp)
   return clist_is_linked(&mp->n);
 }
 
-/** Show current state of a process. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
+/** Show current state of a process. Available only if LibUCW has been compiled with `CONFIG_UCW_DEBUG`. **/
 void process_debug(struct main_process *pr);
 
 /***
@@ -687,7 +687,7 @@ static inline int signal_is_active(struct main_signal *ms)
   return clist_is_linked(&ms->n);
 }
 
-/** Show current state of a signal catcher. Available only if LibUCW has been compiled with `CONFIG_DEBUG`. **/
+/** Show current state of a signal catcher. Available only if LibUCW has been compiled with `CONFIG_UCW_DEBUG`. **/
 void signal_debug(struct main_signal *sg);
 
 #endif

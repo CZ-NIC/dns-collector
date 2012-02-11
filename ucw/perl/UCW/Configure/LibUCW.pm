@@ -9,6 +9,11 @@ use UCW::Configure;
 use strict;
 use warnings;
 
+# Turn on debugging support if CONFIG_DEBUG
+if (Get("CONFIG_DEBUG")) {
+	Set("CONFIG_UCW_DEBUG");
+}
+
 # Determine page size
 Test("CPU_PAGE_SIZE", "Determining page size", sub {
 	my $p;

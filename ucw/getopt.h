@@ -167,7 +167,7 @@ void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj)
 "-C, --config filename\t" CF_USAGE_TAB "Override the default configuration file\n\
 -S, --set sec.item=val\t" CF_USAGE_TAB "Manual setting of a configuration item\n" CF_USAGE_DEBUG
 
-#ifdef CONFIG_DEBUG
+#ifdef CONFIG_UCW_DEBUG
 #define CF_LONG_OPTS_DEBUG { "dumpconfig", 0, 0, 0x64436667 } ,
 #define CF_USAGE_DEBUG "    --dumpconfig\t" CF_USAGE_TAB "Dump program configuration\n"
 #else

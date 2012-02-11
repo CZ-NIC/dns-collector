@@ -598,7 +598,7 @@ signal_del(struct main_signal *ms)
   signal_del_ctx(main_current(), ms);
 }
 
-#ifdef CONFIG_DEBUG
+#ifdef CONFIG_UCW_DEBUG
 
 void
 file_debug(struct main_file *fi)

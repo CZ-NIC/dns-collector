@@ -487,7 +487,7 @@ cf_getopt(int argc, char * const argv[], const char *short_opts, const struct op
 	if (cf_load(optarg))
 	  die("Cannot load config file %s", optarg);
       }
-#ifdef CONFIG_DEBUG
+#ifdef CONFIG_UCW_DEBUG
       else {   /* --dumpconfig */
 	load_default();
 	final_commit();
