@@ -3,6 +3,3 @@
 - lfs-test: generalize or kill
 - transactions: Unit tests
 - libucw.pc: do not use -l if shared
-- compile cstocs
-- retros.c: sherlock.h
-- remove excess inlines

@@ -8,7 +8,7 @@
  *	of the GNU General Public License.
  */
 
-#include "sherlock/sherlock.h"
+#include <ucw/lib.h>
 #include <charset/charconv.h>
 
 #include <stdlib.h>
