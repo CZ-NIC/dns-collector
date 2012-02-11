@@ -71,11 +71,6 @@ sigsegv_handler(int signal UNUSED)
 
 byte *
 lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uns expected_length)
-  /* Decompresses in into buf, sets *ptr to the data, and returns the
-   * uncompressed length.  If an error has occured, -1 is returned and errno is
-   * set.  The buffer buf is automatically reallocated.  SIGSEGV is caught in
-   * case of buffer-overflow.  The function is not re-entrant because of a
-   * static longjmp handler.  */
 {
   uns lock_offset = ALIGN_TO(expected_length + 3, CPU_PAGE_SIZE);	// +3 due to the unaligned access
   if (lock_offset > buf->len)
