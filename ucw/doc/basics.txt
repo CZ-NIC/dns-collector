@@ -27,7 +27,6 @@ unless otherwise told. This also applies to functions acting on any kind of glob
 
 ucw/lib.h
 ---------
-*Only partially documented.*
 
 !!ucw/lib.h
 
