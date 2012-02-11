@@ -37,8 +37,7 @@ typedef uint64_t u64;			/** Exactly 64 bits, unsigned **/
 typedef int64_t s64;			/** Exactly 64 bits, signed **/
 
 typedef unsigned int uns;		/** A better pronounceable alias for `unsigned int` **/
-typedef u32 ucw_time_t;			/** Seconds since UNIX epoch **/
-typedef s64 timestamp_t;		/** Milliseconds since UNIX epoch **/
+typedef s64 timestamp_t;		/** Milliseconds since an unknown epoch **/
 
 #ifdef CONFIG_UCW_LARGE_FILES
 typedef s64 ucw_off_t;			/** File position (either 32- or 64-bit, depending on `CONFIG_UCW_LARGE_FILES`). **/
