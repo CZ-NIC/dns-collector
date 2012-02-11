@@ -18,7 +18,11 @@ get_timestamp(void)
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  return (timestamp_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
+  return (timestamp_t)tv.tv_sec * 1000 + tv.tv_usec / 1000
+#ifdef CONFIG_UCW_DEBUG
+	+ 3141592653	// So that we catch all attempts to corelate timestamp_t with wall clock
+#endif
+	;
 }
 
 void
