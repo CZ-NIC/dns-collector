@@ -51,11 +51,11 @@ if [ "$1" == DARWIN ] ; then
 elif [ -n "$1" ] ; then
 	try "$@"
 else
-	try default.cfg CONFIG_LOCAL
+	try default.cfg
 	try debug/default.cfg								# debugging configuration
 	try debug/default.cfg -CONFIG_UCW_THREADS					# non-threaded configuration
 	try debug/default.cfg -CONFIG_UCW_TLS						# threaded, but no TLS support in gcc
-	try debug/default.cfg -CONFIG_UCW_EPOLL						# without epoll
+	try debug/default.cfg -CONFIG_UCW_EPOLL -CONFIG_UCW_MONOTONIC_CLOCK		# without epoll and monotonic clock
 	try debug/default.cfg CONFIG_UCW_POSIX_REGEX					# different regex libs
 	try debug/default.cfg CONFIG_UCW_PCRE
 fi
