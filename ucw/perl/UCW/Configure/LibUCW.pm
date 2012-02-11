@@ -66,6 +66,14 @@ int main(void)
 FINIS
 });
 
+# Darwin does not support BSD regexes, fix up
+if (IsSet("CONFIG_DARWIN")) {
+	if (!IsSet("CONFIG_UCW_POSIX_REGEX") && !IsSet("CONFIG_UCW_PCRE")) {
+		Set("CONFIG_UCW_POSIX_REGEX" => 1);
+		Warn "BSD regex library on Darwin isn't compatible, using POSIX regex.\n";
+	}
+}
+
 PostConfig {
 	AtWrite {
 		UCW::Configure::C::ConfigHeader("ucw/autoconf.h", [

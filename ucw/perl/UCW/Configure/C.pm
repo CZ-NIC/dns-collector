@@ -261,10 +261,6 @@ if (IsSet("CONFIG_DARWIN")) {
 	} else {
 		UnSet("CONFIG_UCW_DIRECT_IO");
 	}
-	if (!IsSet("CONFIG_POSIX_REGEX") && !IsSet("CONFIG_PCRE")) {
-		Set("CONFIG_POSIX_REGEX" => 1);
-		Warn "BSD regex library on Darwin isn't compatible, using POSIX regex.\n";
-	}
 }
 
 ### Compiling test programs ###

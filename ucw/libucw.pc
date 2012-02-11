@@ -9,7 +9,7 @@ threads=-lpthread
 threads=
 #endif
 
-#ifdef CONFIG_PCRE
+#ifdef CONFIG_UCW_PCRE
 regex=-lpcre
 #else
 regex=

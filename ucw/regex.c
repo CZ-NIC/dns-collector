@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef CONFIG_POSIX_REGEX
+#ifdef CONFIG_UCW_POSIX_REGEX
 
 /* POSIX regular expression library */
 
@@ -104,7 +104,7 @@ rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
   return 1;
 }
 
-#elif defined(CONFIG_PCRE)
+#elif defined(CONFIG_UCW_PCRE)
 
 /* PCRE library */
 
