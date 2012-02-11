@@ -143,12 +143,3 @@ All exceptions raised by LibUCW reside in the `ucw` subtree. So far, the
 following exception types are defined:
 
 `ucw.fb`:: <<fastbuf:fbexc,Fastbufs>>
-
-== FIXME's ==
-
-- Unit tests
-- Resourcification of more libucw objects:
-	* bigalloc
-	* gary
-	* mainloop
-- More exceptions
