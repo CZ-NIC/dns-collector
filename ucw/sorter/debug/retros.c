@@ -4,7 +4,7 @@
  *  (c) 2007--2008 Martin Mares <mj@ucw.cz>
  */
 
-#include "sherlock/sherlock.h"
+#include <ucw/lib.h>
 #include <ucw/getopt.h>
 #include <ucw/md5.h>
 #include <ucw/heap.h>
@@ -719,7 +719,7 @@ int main(int argc, char **argv)
   for (uns i=0; i<n; i++)
     array0[i] = array1[i] = (struct elt) { 0 };
 
-  log(L_INFO, "Testing with %u elements", n);
+  msg(L_INFO, "Testing with %u elements", n);
 
   mk_ary();
   timestamp_t timer;
@@ -736,9 +736,9 @@ int main(int argc, char **argv)
 	ary[j] = alt[j];
 #endif
     }
-  log(L_DEBUG, "memcpy: %d", get_timer(&timer)/10);
+  msg(L_DEBUG, "memcpy: %d", get_timer(&timer)/10);
 
-#define BENCH(type, name, func) mk_##type(); init_timer(&timer); func; log(L_DEBUG, name ": %d", get_timer(&timer)); chk_##type()
+#define BENCH(type, name, func) mk_##type(); init_timer(&timer); func; msg(L_DEBUG, name ": %d", get_timer(&timer)); chk_##type()
 
   BENCH(ary, "qsort", qsort(ary, n, sizeof(struct elt), comp));
   BENCH(ary, "arraysort", as_sort(n, ary));
