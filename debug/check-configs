@@ -47,15 +47,17 @@ if [ "$1" == DARWIN ] ; then
 	# All tests on Darwin need CONFIG_SHARED, due to libcharset collision
 	# only visible with static linking.
 	FLAGS="CONFIG_SHARED"
-	try debug/default.cfg $FLAGS CONFIG_PCRE					# `make tests' does not work with non-local builds with shared libs
+	try debug/default.cfg $FLAGS CONFIG_UCW_PCRE					# `make tests' does not work with non-local builds with shared libs
 elif [ -n "$1" ] ; then
 	try "$@"
 else
 	try default.cfg CONFIG_LOCAL
 	try debug/default.cfg								# debugging configuration
-	try debug/default.cfg -CONFIG_THREADS						# non-threaded configuration
+	try debug/default.cfg -CONFIG_UCW_THREADS					# non-threaded configuration
 	try debug/default.cfg -CONFIG_UCW_TLS						# threaded, but no TLS support in gcc
-	try debug/default.cfg -CONFIG_EPOLL						# without epoll
+	try debug/default.cfg -CONFIG_UCW_EPOLL						# without epoll
+	try debug/default.cfg CONFIG_UCW_POSIX_REGEX					# different regex libs
+	try debug/default.cfg CONFIG_UCW_PCRE
 fi
 
 [ -z "$ERR" ]
