@@ -13,7 +13,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#ifdef CONFIG_LFS
+#ifdef CONFIG_UCW_LARGE_FILES
 
 #define ucw_open open64
 #define ucw_seek lseek64
@@ -27,7 +27,7 @@
 #define ucw_fstat fstat64
 typedef struct stat64 ucw_stat_t;
 
-#else	/* !CONFIG_LFS */
+#else	/* !CONFIG_UCW_LARGE_FILES */
 
 #define ucw_open open
 #define ucw_seek(f,o,w) lseek(f,o,w)
@@ -39,7 +39,7 @@ typedef struct stat64 ucw_stat_t;
 #define ucw_fstat fstat
 typedef struct stat ucw_stat_t;
 
-#endif	/* !CONFIG_LFS */
+#endif	/* !CONFIG_UCW_LARGE_FILES */
 
 #if defined(_POSIX_SYNCHRONIZED_IO) && (_POSIX_SYNCHRONIZED_IO > 0)
 #define ucw_fdatasync fdatasync

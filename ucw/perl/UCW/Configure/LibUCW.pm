@@ -23,11 +23,6 @@ Test("CPU_PAGE_SIZE", "Determining page size", sub {
 	return $p;
 });
 
-if (IsSet("CONFIG_LARGE_FILES") && IsSet("CONFIG_LINUX")) {
-	# Use 64-bit versions of file functions
-	Set("CONFIG_LFS");
-}
-
 # Decide how will ucw/partmap.c work
 Set("CONFIG_UCW_PARTMAP_IS_MMAP") if IsSet("CPU_64BIT_POINTERS");
 

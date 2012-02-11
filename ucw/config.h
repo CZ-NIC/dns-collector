@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Configuration-Dependent Definitions
  *
- *	(c) 1997--2009 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2012 Martin Mares <mj@ucw.cz>
  *	(c) 2006 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -40,8 +40,8 @@ typedef unsigned int uns;		/** A better pronounceable alias for `unsigned int` *
 typedef u32 ucw_time_t;			/** Seconds since UNIX epoch **/
 typedef s64 timestamp_t;		/** Milliseconds since UNIX epoch **/
 
-#ifdef CONFIG_LARGE_FILES
-typedef s64 ucw_off_t;			/** File position (either 32- or 64-bit, depending on `CONFIG_LARGE_FILES`). **/
+#ifdef CONFIG_UCW_LARGE_FILES
+typedef s64 ucw_off_t;			/** File position (either 32- or 64-bit, depending on `CONFIG_UCW_LARGE_FILES`). **/
 #else
 typedef s32 ucw_off_t;
 #endif
