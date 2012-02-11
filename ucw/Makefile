@@ -52,7 +52,7 @@ LIBUCW_MAIN_INCLUDES= \
 	url.h \
 	mainloop.h \
 	process.h \
-	lizard.h sighandler.h \
+	lizard.h \
 	md5.h sha1.h \
 	base64.h base224.h \
 	kmp.h kmp-search.h binsearch.h \
