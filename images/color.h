@@ -25,7 +25,7 @@
 #ifndef _IMAGES_COLOR_H
 #define _IMAGES_COLOR_H
 
-#include "images/images.h"
+#include <images/images.h>
 
 /* Basic color spaces */
 enum {

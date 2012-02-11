@@ -43,7 +43,7 @@
  *  If you do not use hashing, these parameters should be omitted.
  */
 
-#include "ucw/sorter/common.h"
+#include <ucw/sorter/common.h>
 
 #define Q(x) ASORT_PREFIX(x)
 

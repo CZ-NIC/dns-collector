@@ -9,13 +9,13 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
-#include "ucw/fastbuf.h"
-#include "images/images.h"
-#include "images/error.h"
-#include "images/color.h"
-#include "images/io-main.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
+#include <ucw/fastbuf.h>
+#include <images/images.h>
+#include <images/error.h>
+#include <images/color.h>
+#include <images/io-main.h>
 
 #include <gif_lib.h>
 
@@ -202,7 +202,7 @@ libungif_read_data(struct image_io *io)
 #	  define IMAGE_WALK_ROW_STEP 0
 #	  define IMAGE_WALK_DO_STEP do{ *walk_pos = pal[*pixels++]; }while(0)
 #	  define IMAGE_WALK_DO_ROW_END DO_ROW_END
-#	  include "images/image-walk.h"
+#	  include <images/image-walk.h>
 	  break;
 	}
       case 2:
@@ -225,7 +225,7 @@ libungif_read_data(struct image_io *io)
 #	  define IMAGE_WALK_ROW_STEP 0
 #	  define IMAGE_WALK_DO_STEP do{ *(u16 *)walk_pos = ((u16 *)pal)[*pixels++]; }while(0)
 #	  define IMAGE_WALK_DO_ROW_END DO_ROW_END
-#	  include "images/image-walk.h"
+#	  include <images/image-walk.h>
 	  break;
 	}
       case 3:
@@ -253,7 +253,7 @@ libungif_read_data(struct image_io *io)
 #	  define IMAGE_WALK_ROW_STEP 0
 #	  define IMAGE_WALK_DO_STEP do{ byte *p = pal + 4 * (*pixels++); walk_pos[0] = p[0]; walk_pos[1] = p[1]; walk_pos[2] = p[2]; }while(0)
 #	  define IMAGE_WALK_DO_ROW_END DO_ROW_END
-#	  include "images/image-walk.h"
+#	  include <images/image-walk.h>
 	  break;
 	}
       case 4:
@@ -278,7 +278,7 @@ libungif_read_data(struct image_io *io)
 #	  define IMAGE_WALK_ROW_STEP 0
 #	  define IMAGE_WALK_DO_STEP do{ *(u32 *)walk_pos = ((u32 *)pal)[*pixels++]; }while(0)
 #	  define IMAGE_WALK_DO_ROW_END DO_ROW_END
-#	  include "images/image-walk.h"
+#	  include <images/image-walk.h>
 	  break;
 	}
       default:

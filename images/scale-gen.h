@@ -37,7 +37,7 @@ IMAGE_SCALE_PREFIX(nearest_xy)(struct image *dest, struct image *src)
 # define IMAGE_WALK_COL_STEP IMAGE_SCALE_PIXEL_SIZE
 # define IMAGE_WALK_DO_ROW_START do{ row_start = src->pixels + (y_pos >> 16) * src->row_size; y_pos += y_inc; x_pos = x_start; }while(0)
 # define IMAGE_WALK_DO_STEP do{ byte *pos = row_start + (x_pos >> 16) * IMAGE_SCALE_PIXEL_SIZE; x_pos += x_inc; IMAGE_COPY_PIXEL(walk_pos, pos); }while(0)
-# include "images/image-walk.h"
+# include <images/image-walk.h>
 }
 
 #if 0 /* Experiments with rearranging pixels for SSE... */

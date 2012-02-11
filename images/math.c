@@ -7,8 +7,8 @@
  *	of the GNU General Public License.
  */
 
-#include "ucw/lib.h"
-#include "images/math.h"
+#include <ucw/lib.h>
+#include <images/math.h>
 
 const u32 fast_div_tab[] = {
           0, 4294967295U,2147483648U,1431655766, 1073741824,  858993460,  715827883,  613566757,

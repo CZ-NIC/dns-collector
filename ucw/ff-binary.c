@@ -7,9 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/fastbuf.h"
-#include "ucw/ff-binary.h"
+#include <ucw/lib.h>
+#include <ucw/fastbuf.h>
+#include <ucw/ff-binary.h>
 
 #define GEN(type, name, size, endian)				\
 type bget##name##_##endian##_slow(struct fastbuf *f)		\

@@ -8,11 +8,11 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/conf.h"
-#include "ucw/getopt.h"
-#include "ucw/conf-internal.h"
-#include "ucw/clists.h"
+#include <ucw/lib.h>
+#include <ucw/conf.h>
+#include <ucw/getopt.h>
+#include <ucw/conf-internal.h>
+#include <ucw/clists.h>
 
 #include <string.h>
 #include <stdio.h>

@@ -9,13 +9,13 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "shxml/xml.h"
-#include "shxml/dtd.h"
-#include "shxml/internals.h"
-#include "ucw/fastbuf.h"
-#include "ucw/ff-unicode.h"
-#include "ucw/unicode.h"
+#include <ucw/lib.h>
+#include <shxml/xml.h>
+#include <shxml/dtd.h>
+#include <shxml/internals.h>
+#include <ucw/fastbuf.h>
+#include <ucw/ff-unicode.h>
+#include <ucw/unicode.h>
 
 /* Notations */
 
@@ -29,7 +29,7 @@
 #define HASH_GIVE_ALLOC
 #define HASH_TABLE_ALLOC
 XML_HASH_GIVE_ALLOC
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 struct xml_dtd_notn *
 xml_dtd_find_notn(struct xml_context *ctx, char *name)
@@ -51,7 +51,7 @@ xml_dtd_find_notn(struct xml_context *ctx, char *name)
 #define HASH_GIVE_ALLOC
 #define HASH_TABLE_ALLOC
 XML_HASH_GIVE_ALLOC
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 static struct xml_dtd_entity *
 xml_dtd_declare_trivial_entity(struct xml_context *ctx, char *name, char *text)
@@ -155,7 +155,7 @@ xml_dtd_elems_init_data(struct xml_dtd_elems_table *tab UNUSED, struct xml_dtd_e
 #define HASH_GIVE_INIT_DATA
 #define HASH_TABLE_ALLOC
 XML_HASH_GIVE_ALLOC
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 struct xml_dtd_elem *
 xml_dtd_find_elem(struct xml_context *ctx, char *name)
@@ -200,7 +200,7 @@ xml_dtd_enodes_init_key(struct xml_dtd_enodes_table *tab UNUSED, struct xml_dtd_
 #define HASH_GIVE_ALLOC
 #define HASH_TABLE_ALLOC
 XML_HASH_GIVE_ALLOC
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 /* Element attributes */
 
@@ -240,7 +240,7 @@ xml_dtd_attrs_init_key(struct xml_dtd_attrs_table *tab UNUSED, struct xml_dtd_at
 #define HASH_GIVE_ALLOC
 #define HASH_TABLE_ALLOC
 XML_HASH_GIVE_ALLOC
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 struct xml_dtd_attr *
 xml_dtd_find_attr(struct xml_context *ctx, struct xml_dtd_elem *elem, char *name)
@@ -284,7 +284,7 @@ xml_dtd_evals_init_key(struct xml_dtd_evals_table *tab UNUSED, struct xml_dtd_ev
 #define HASH_GIVE_ALLOC
 #define HASH_TABLE_ALLOC
 XML_HASH_GIVE_ALLOC
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 /* Enumerated attribute notations */
 
@@ -322,7 +322,7 @@ xml_dtd_enotns_init_key(struct xml_dtd_enotns_table *tab UNUSED, struct xml_dtd_
 #define HASH_GIVE_ALLOC
 #define HASH_TABLE_ALLOC
 XML_HASH_GIVE_ALLOC
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 /* DTD initialization/cleanup */
 

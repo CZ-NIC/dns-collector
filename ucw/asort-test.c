@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
+#include <ucw/lib.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -62,7 +62,7 @@ static int qs_comp(const struct elt *X, const struct elt *Y)
 }
 
 #define ASORT_PREFIX(x) as_##x
-#include "ucw/sorter/array-simple.h"
+#include <ucw/sorter/array-simple.h>
 
 int main(void)
 {

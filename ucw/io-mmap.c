@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/io.h"
+#include <ucw/lib.h>
+#include <ucw/io.h>
 
 #include <stdio.h>
 #include <fcntl.h>

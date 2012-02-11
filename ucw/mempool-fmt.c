@@ -8,8 +8,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
 
 #include <alloca.h>
 #include <stdio.h>

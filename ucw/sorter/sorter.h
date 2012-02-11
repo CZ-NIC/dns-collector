@@ -114,8 +114,8 @@
  *  undef'd.
  */
 
-#include "ucw/sorter/common.h"
-#include "ucw/fastbuf.h"
+#include <ucw/sorter/common.h>
+#include <ucw/fastbuf.h>
 
 #include <fcntl.h>
 
@@ -205,17 +205,17 @@ static inline void P(copy_merged)(P(key) **keys, struct fastbuf **data UNUSED, u
 
 #if defined(SORT_HASH_BITS) || defined(SORT_INT)
 #define SORT_INTERNAL_RADIX
-#include "ucw/sorter/s-radix.h"
+#include <ucw/sorter/s-radix.h>
 #endif
 
 #if defined(SORT_VAR_KEY) || defined(SORT_VAR_DATA) || defined(SORT_UNIFY_WORKSPACE)
-#include "ucw/sorter/s-internal.h"
+#include <ucw/sorter/s-internal.h>
 #else
-#include "ucw/sorter/s-fixint.h"
+#include <ucw/sorter/s-fixint.h>
 #endif
 
-#include "ucw/sorter/s-twoway.h"
-#include "ucw/sorter/s-multiway.h"
+#include <ucw/sorter/s-twoway.h>
+#include <ucw/sorter/s-multiway.h>
 
 static struct fastbuf *P(sort)(
 #ifdef SORT_INPUT_FILE

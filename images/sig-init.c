@@ -9,14 +9,14 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/fastbuf.h"
-#include "ucw/conf.h"
-#include "images/images.h"
-#include "images/math.h"
-#include "images/error.h"
-#include "images/color.h"
-#include "images/signature.h"
+#include <ucw/lib.h>
+#include <ucw/fastbuf.h>
+#include <ucw/conf.h>
+#include <images/images.h>
+#include <images/math.h>
+#include <images/error.h>
+#include <images/color.h>
+#include <images/signature.h>
 
 #include <alloca.h>
 #include <math.h>

@@ -7,6 +7,6 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "charset/unicat.h"
-#include "charset/U-lower.h"
+#include <ucw/lib.h>
+#include <charset/unicat.h>
+#include <charset/U-lower.h>

@@ -8,11 +8,11 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/conf.h"
-#include "ucw/threads.h"
-#include "ucw/io.h"
-#include "ucw/fastbuf.h"
+#include <ucw/lib.h>
+#include <ucw/conf.h>
+#include <ucw/threads.h>
+#include <ucw/io.h>
+#include <ucw/fastbuf.h>
 
 #include <stdio.h>
 #include <unistd.h>
@@ -88,7 +88,7 @@ open_tmp(char *name_buf, int open_flags, int mode)
 
 #ifdef TEST
 
-#include "ucw/getopt.h"
+#include <ucw/getopt.h>
 
 int main(int argc, char **argv)
 {

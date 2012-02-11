@@ -10,9 +10,9 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/string.h"
-#include "ucw/chartype.h"
+#include <ucw/lib.h>
+#include <ucw/string.h>
+#include <ucw/chartype.h>
 #include <stdlib.h>
 
 char *

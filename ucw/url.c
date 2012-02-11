@@ -10,11 +10,11 @@
  *	XXX: The buffer handling in this module is really horrible, but it works.
  */
 
-#include "ucw/lib.h"
-#include "ucw/url.h"
-#include "ucw/chartype.h"
-#include "ucw/conf.h"
-#include "ucw/prime.h"
+#include <ucw/lib.h>
+#include <ucw/url.h>
+#include <ucw/chartype.h>
+#include <ucw/conf.h>
+#include <ucw/prime.h>
 
 #include <string.h>
 #include <stdlib.h>

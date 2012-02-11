@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/threads.h"
+#include <ucw/lib.h>
+#include <ucw/threads.h>
 
 #ifdef CONFIG_UCW_THREADS
 

@@ -10,10 +10,10 @@
 #ifndef _SHERLOCK_XML_XML_H
 #define _SHERLOCK_XML_XML_H
 
-#include "ucw/clists.h"
-#include "ucw/slists.h"
-#include "ucw/mempool.h"
-#include "ucw/fastbuf.h"
+#include <ucw/clists.h>
+#include <ucw/slists.h>
+#include <ucw/mempool.h>
+#include <ucw/fastbuf.h>
 
 struct xml_context;
 struct xml_dtd_entity;

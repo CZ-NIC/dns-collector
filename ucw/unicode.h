@@ -12,7 +12,7 @@
 #ifndef _UCW_UNICODE_H
 #define _UCW_UNICODE_H
 
-#include "ucw/unaligned.h"
+#include <ucw/unaligned.h>
 
 /* Macros for handling UTF-8 */
 

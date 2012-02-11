@@ -8,10 +8,10 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/fastbuf.h"
-#include "ucw/mempool.h"
-#include "ucw/bbuf.h"
+#include <ucw/lib.h>
+#include <ucw/fastbuf.h>
+#include <ucw/mempool.h>
+#include <ucw/bbuf.h>
 
 char *					/* Non-standard */
 bgets(struct fastbuf *f, char *b, uns l)

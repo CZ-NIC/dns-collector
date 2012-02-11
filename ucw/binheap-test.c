@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
+#include <ucw/lib.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -16,7 +16,7 @@
 #define BH_WANT_INSERT
 #define BH_WANT_FINDMIN
 #define BH_WANT_DELETEMIN
-#include "ucw/binheap-node.h"
+#include <ucw/binheap-node.h>
 
 struct item {
   struct bh_node n;
@@ -52,7 +52,7 @@ bht_dump(struct bh_heap *h)
     bht_do_dump(b, b->last_son, 1);
 }
 
-#include "ucw/binheap.h"
+#include <ucw/binheap.h>
 
 int main(void)
 {

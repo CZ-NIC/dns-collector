@@ -10,8 +10,8 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
 
 #include <string.h>
 
@@ -349,7 +349,7 @@ mp_pop(struct mempool *pool)
 
 #ifdef TEST
 
-#include "ucw/getopt.h"
+#include <ucw/getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

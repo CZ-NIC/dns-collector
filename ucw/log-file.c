@@ -8,12 +8,12 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/log.h"
-#include "ucw/log-internal.h"
-#include "ucw/io.h"
-#include "ucw/threads.h"
-#include "ucw/simple-lists.h"
+#include <ucw/lib.h>
+#include <ucw/log.h>
+#include <ucw/log-internal.h>
+#include <ucw/io.h>
+#include <ucw/threads.h>
+#include <ucw/simple-lists.h>
 
 #include <stdio.h>
 #include <string.h>

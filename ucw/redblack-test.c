@@ -4,9 +4,9 @@
  *	(c) 2002, Robert Spalek <robert@ucw.cz>
  */
 
-#include "ucw/lib.h"
-#include "ucw/getopt.h"
-#include "ucw/fastbuf.h"
+#include <ucw/lib.h>
+#include <ucw/getopt.h>
+#include <ucw/fastbuf.h>
 #include <stdio.h>
 #include <stdlib.h>
 

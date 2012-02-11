@@ -129,7 +129,7 @@
  *    }
  *  TREE_END_FOR;
  *
- *  Then include "ucw/redblack.h" and voila, you have a tree suiting all your
+ *  Then include <ucw/redblack.h> and voila, you have a tree suiting all your
  *  needs (at least those which you've revealed :) ).
  *
  *  After including this file, all parameter macros are automatically

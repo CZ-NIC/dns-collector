@@ -10,8 +10,8 @@
 #ifndef _SHERLOCK_XML_INTERNALS_H
 #define _SHERLOCK_XML_INTERNALS_H
 
-#include "shxml/xml.h"
-#include "shxml/dtd.h"
+#include <shxml/xml.h>
+#include <shxml/dtd.h>
 
 /*** Debugging ***/
 

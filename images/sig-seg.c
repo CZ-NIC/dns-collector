@@ -9,12 +9,12 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/conf.h"
-#include "ucw/heap.h"
-#include "images/images.h"
-#include "images/signature.h"
-#include "images/math.h"
+#include <ucw/lib.h>
+#include <ucw/conf.h>
+#include <ucw/heap.h>
+#include <images/images.h>
+#include <images/signature.h>
+#include <images/math.h>
 
 #include <string.h>
 
@@ -93,7 +93,7 @@ prequant_heap_cmp(struct image_sig_region *a, struct image_sig_region *b)
 
 #define ASORT_PREFIX(x) prequant_##x
 #define ASORT_KEY_TYPE uns
-#include "ucw/sorter/array-simple.h"
+#include <ucw/sorter/array-simple.h>
 
 static uns
 prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_region *regions)

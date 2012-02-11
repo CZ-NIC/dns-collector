@@ -7,11 +7,11 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/fastbuf.h"
-#include "ucw/io.h"
-#include "ucw/conf.h"
-#include "ucw/trans.h"
+#include <ucw/lib.h>
+#include <ucw/fastbuf.h>
+#include <ucw/io.h>
+#include <ucw/conf.h>
+#include <ucw/trans.h>
 
 #include <string.h>
 #include <fcntl.h>

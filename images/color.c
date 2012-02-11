@@ -9,11 +9,11 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "images/images.h"
-#include "images/color.h"
-#include "images/error.h"
-#include "images/math.h"
+#include <ucw/lib.h>
+#include <images/images.h>
+#include <images/color.h>
+#include <images/error.h>
+#include <images/math.h>
 
 #include <string.h>
 #include <math.h>
@@ -163,7 +163,7 @@ struct image_conv_options image_conv_defaults = {
 #define IMAGE_WALK_SEC_COL_STEP 1
 #define IMAGE_WALK_UNROLL 4
 #define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_pos[1] = walk_pos[2] = walk_sec_pos[0]; }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 #define IMAGE_WALK_PREFIX(x) walk_##x
 #define IMAGE_WALK_FUNC_NAME image_conv_rgb_n_to_gray_1
@@ -171,7 +171,7 @@ struct image_conv_options image_conv_defaults = {
 #define IMAGE_WALK_COL_STEP 1
 #define IMAGE_WALK_UNROLL 2
 #define IMAGE_WALK_DO_STEP do{ walk_pos[0] = rgb_to_gray_func(walk_sec_pos[0], walk_sec_pos[1], walk_sec_pos[2]); }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 /* Grayscale <-> YCbCr */
 
@@ -181,7 +181,7 @@ struct image_conv_options image_conv_defaults = {
 #define IMAGE_WALK_SEC_COL_STEP 1
 #define IMAGE_WALK_UNROLL 4
 #define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; walk_pos[1] = walk_pos[2] = 0; }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 #define IMAGE_WALK_PREFIX(x) walk_##x
 #define IMAGE_WALK_FUNC_NAME image_conv_ycbcr_n_to_gray_1
@@ -189,7 +189,7 @@ struct image_conv_options image_conv_defaults = {
 #define IMAGE_WALK_COL_STEP 1
 #define IMAGE_WALK_UNROLL 4
 #define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 /* YCbCr <-> RGB */
 
@@ -209,7 +209,7 @@ pixel_conv_ycbcr_to_rgb(byte *dest, byte *src)
 #define IMAGE_WALK_FUNC_NAME image_conv_ycbcr_n_to_rgb_n
 #define IMAGE_WALK_DOUBLE
 #define IMAGE_WALK_DO_STEP do{ pixel_conv_ycbcr_to_rgb(walk_pos, walk_sec_pos); }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 static inline void
 pixel_conv_rgb_to_ycbcr(byte *dest, byte *src)
@@ -227,7 +227,7 @@ pixel_conv_rgb_to_ycbcr(byte *dest, byte *src)
 #define IMAGE_WALK_FUNC_NAME image_conv_rgb_n_to_ycbcr_n
 #define IMAGE_WALK_DOUBLE
 #define IMAGE_WALK_DO_STEP do{ pixel_conv_rgb_to_ycbcr(walk_pos, walk_sec_pos); }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 /* CMYK <-> RGB */
 
@@ -245,7 +245,7 @@ pixel_conv_cmyk_to_rgb(byte *dest, byte *src)
 #define IMAGE_WALK_DOUBLE
 #define IMAGE_WALK_SEC_COL_STEP 4
 #define IMAGE_WALK_DO_STEP do{ pixel_conv_cmyk_to_rgb(walk_pos, walk_sec_pos); }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 static inline void
 pixel_conv_rgb_to_cmyk(byte *dest, byte *src)
@@ -264,7 +264,7 @@ pixel_conv_rgb_to_cmyk(byte *dest, byte *src)
 #define IMAGE_WALK_DOUBLE
 #define IMAGE_WALK_COL_STEP 4
 #define IMAGE_WALK_DO_STEP do{ pixel_conv_rgb_to_cmyk(walk_pos, walk_sec_pos); }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 /* CMYK <-> YCbCr */
 
@@ -273,14 +273,14 @@ pixel_conv_rgb_to_cmyk(byte *dest, byte *src)
 #define IMAGE_WALK_DOUBLE
 #define IMAGE_WALK_SEC_COL_STEP 4
 #define IMAGE_WALK_DO_STEP do{ pixel_conv_cmyk_to_rgb(walk_pos, walk_sec_pos); pixel_conv_rgb_to_ycbcr(walk_pos, walk_pos); }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 #define IMAGE_WALK_PREFIX(x) walk_##x
 #define IMAGE_WALK_FUNC_NAME image_conv_ycbcr_n_to_cmyk_4
 #define IMAGE_WALK_DOUBLE
 #define IMAGE_WALK_COL_STEP 4
 #define IMAGE_WALK_DO_STEP do{ pixel_conv_ycbcr_to_rgb(walk_pos, walk_sec_pos); pixel_conv_rgb_to_cmyk(walk_pos, walk_pos); }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 /* YCCK <-> RGB */
 
@@ -299,7 +299,7 @@ pixel_conv_ycck_to_rgb(byte *dest, byte *src)
 #define IMAGE_WALK_DOUBLE
 #define IMAGE_WALK_SEC_COL_STEP 4
 #define IMAGE_WALK_DO_STEP do{ pixel_conv_ycck_to_rgb(walk_pos, walk_sec_pos); }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 static inline void
 pixel_conv_rgb_to_ycck(byte *dest, byte *src)
@@ -321,7 +321,7 @@ pixel_conv_rgb_to_ycck(byte *dest, byte *src)
 #define IMAGE_WALK_DOUBLE
 #define IMAGE_WALK_COL_STEP 4
 #define IMAGE_WALK_DO_STEP do{ pixel_conv_rgb_to_ycck(walk_pos, walk_sec_pos); }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 /* YCCK <-> YCbCr */
 
@@ -330,14 +330,14 @@ pixel_conv_rgb_to_ycck(byte *dest, byte *src)
 #define IMAGE_WALK_DOUBLE
 #define IMAGE_WALK_SEC_COL_STEP 4
 #define IMAGE_WALK_DO_STEP do{ pixel_conv_ycck_to_rgb(walk_pos, walk_sec_pos); pixel_conv_rgb_to_ycbcr(walk_pos, walk_pos); }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 #define IMAGE_WALK_PREFIX(x) walk_##x
 #define IMAGE_WALK_FUNC_NAME image_conv_ycbcr_n_to_ycck_4
 #define IMAGE_WALK_DOUBLE
 #define IMAGE_WALK_COL_STEP 4
 #define IMAGE_WALK_DO_STEP do{ pixel_conv_ycbcr_to_rgb(walk_pos, walk_sec_pos); pixel_conv_rgb_to_ycck(walk_pos, walk_pos); }while(0)
-#include "images/image-walk.h"
+#include <images/image-walk.h>
 
 /* Main functions */
 
@@ -484,7 +484,7 @@ image_conv_copy(struct image *dest, struct image *src)
 #             define IMAGE_WALK_SEC_IMAGE src
 #	      define IMAGE_WALK_UNROLL 4
 #	      define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; }while(0)
-#	      include "images/image-walk.h"
+#	      include <images/image-walk.h>
             }
 	    return;
 	  case 2:
@@ -495,7 +495,7 @@ image_conv_copy(struct image *dest, struct image *src)
 #             define IMAGE_WALK_SEC_IMAGE src
 #	      define IMAGE_WALK_UNROLL 4
 #	      define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; walk_pos[1] = walk_sec_pos[1]; }while(0)
-#	      include "images/image-walk.h"
+#	      include <images/image-walk.h>
 	    return;
 	  case 3:
 #	      define IMAGE_WALK_PREFIX(x) walk_##x
@@ -505,7 +505,7 @@ image_conv_copy(struct image *dest, struct image *src)
 #             define IMAGE_WALK_SEC_IMAGE src
 #	      define IMAGE_WALK_UNROLL 2
 #	      define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; walk_pos[1] = walk_sec_pos[1]; walk_pos[2] = walk_sec_pos[2]; }while(0)
-#	      include "images/image-walk.h"
+#	      include <images/image-walk.h>
 	    return;
 	  case 4:
 #	      define IMAGE_WALK_PREFIX(x) walk_##x
@@ -515,7 +515,7 @@ image_conv_copy(struct image *dest, struct image *src)
 #             define IMAGE_WALK_SEC_IMAGE src
 #	      define IMAGE_WALK_UNROLL 2
 #	      define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; walk_pos[1] = walk_sec_pos[1]; walk_pos[2] = walk_sec_pos[2]; walk_pos[3] = walk_sec_pos[3]; }while(0)
-#	      include "images/image-walk.h"
+#	      include <images/image-walk.h>
 	    return;
 	  default:
 #	      define IMAGE_WALK_PREFIX(x) walk_##x
@@ -524,7 +524,7 @@ image_conv_copy(struct image *dest, struct image *src)
 #             define IMAGE_WALK_IMAGE dest
 #             define IMAGE_WALK_SEC_IMAGE src
 #	      define IMAGE_WALK_DO_STEP do{ for (uns i = 0; i < channels; i++) walk_pos[i] = walk_sec_pos[i]; }while(0)
-#             include "images/image-walk.h"
+#             include <images/image-walk.h>
 	    return;
 	}
     }
@@ -557,7 +557,7 @@ image_conv_fill_alpha(struct image *dest)
 #           define IMAGE_WALK_COL_STEP 2
 #           define IMAGE_WALK_UNROLL 4
 #           define IMAGE_WALK_DO_STEP do{ walk_pos[1] = 255; }while(0)
-#           include "images/image-walk.h"
+#           include <images/image-walk.h>
 	    return;
 	  }
 	break;
@@ -570,7 +570,7 @@ image_conv_fill_alpha(struct image *dest)
 #           define IMAGE_WALK_COL_STEP 4
 #           define IMAGE_WALK_UNROLL 4
 #           define IMAGE_WALK_DO_STEP do{ walk_pos[3] = 255; }while(0)
-#           include "images/image-walk.h"
+#           include <images/image-walk.h>
 	    return;
 	  }
 	break;
@@ -581,7 +581,7 @@ image_conv_fill_alpha(struct image *dest)
 #   define IMAGE_WALK_IMAGE dest
 #   define IMAGE_WALK_UNROLL 4
 #   define IMAGE_WALK_DO_STEP do{ walk_pos[dest->channels - 1] = 255; }while(0)
-#   include "images/image-walk.h"
+#   include <images/image-walk.h>
   }
 }
 
@@ -597,7 +597,7 @@ image_conv_copy_alpha(struct image *dest, struct image *src)
 #     define IMAGE_WALK_SEC_IMAGE src
 #     define IMAGE_WALK_UNROLL 4
 #     define IMAGE_WALK_DO_STEP do{ walk_pos[dest->channels - 1] = walk_sec_pos[src->channels - 1]; }while(0)
-#     include "images/image-walk.h"
+#     include <images/image-walk.h>
     }
 }
 
@@ -630,7 +630,7 @@ image_conv_apply_alpha_from(struct image_context *ctx, struct image *dest, struc
 #	  define IMAGE_WALK_UNROLL 2
 #         define IMAGE_WALK_DO_STEP do{ \
               walk_pos[0] = image_conv_alpha_func(walk_pos[0], walk_sec_pos[src->channels - 1], a[0], b[0]); }while(0)
-#         include "images/image-walk.h"
+#         include <images/image-walk.h>
 	}
 	return 1;
       case 3:
@@ -644,7 +644,7 @@ image_conv_apply_alpha_from(struct image_context *ctx, struct image *dest, struc
               walk_pos[0] = image_conv_alpha_func(walk_pos[0], walk_sec_pos[src->channels - 1], a[0], b[0]); \
               walk_pos[1] = image_conv_alpha_func(walk_pos[1], walk_sec_pos[src->channels - 1], a[1], b[1]); \
               walk_pos[2] = image_conv_alpha_func(walk_pos[2], walk_sec_pos[src->channels - 1], a[2], b[2]); }while(0)
-#         include "images/image-walk.h"
+#         include <images/image-walk.h>
 	}
 	return 1;
     }
@@ -656,7 +656,7 @@ image_conv_apply_alpha_from(struct image_context *ctx, struct image *dest, struc
 #   define IMAGE_WALK_DOUBLE
 #   define IMAGE_WALK_DO_STEP do{ for (uns i = 0; i < dest->channels; i++) \
         walk_pos[i] = image_conv_alpha_func(walk_pos[i], walk_sec_pos[src->channels - 1], a[i], b[i]); }while(0)
-#   include "images/image-walk.h"
+#   include <images/image-walk.h>
   }
   return 1;
 }
@@ -687,7 +687,7 @@ image_conv_apply_alpha_to(struct image_context *ctx, struct image *dest, struct 
 #	  define IMAGE_WALK_UNROLL 2
 #         define IMAGE_WALK_DO_STEP do{ \
               walk_pos[0] = image_conv_alpha_func(walk_sec_pos[0], walk_sec_pos[src->channels - 1], a[0], b[0]); }while(0)
-#         include "images/image-walk.h"
+#         include <images/image-walk.h>
 	}
 	return 1;
       case 3:
@@ -701,7 +701,7 @@ image_conv_apply_alpha_to(struct image_context *ctx, struct image *dest, struct 
               walk_pos[0] = image_conv_alpha_func(walk_sec_pos[0], walk_sec_pos[src->channels - 1], a[0], b[0]); \
               walk_pos[1] = image_conv_alpha_func(walk_sec_pos[1], walk_sec_pos[src->channels - 1], a[1], b[1]); \
               walk_pos[2] = image_conv_alpha_func(walk_sec_pos[2], walk_sec_pos[src->channels - 1], a[2], b[2]); }while(0)
-#         include "images/image-walk.h"
+#         include <images/image-walk.h>
 	}
 	return 1;
     }
@@ -713,7 +713,7 @@ image_conv_apply_alpha_to(struct image_context *ctx, struct image *dest, struct 
 #   define IMAGE_WALK_DOUBLE
 #   define IMAGE_WALK_DO_STEP do{ for (uns i = 0; i < dest->channels; i++) \
         walk_pos[i] = image_conv_alpha_func(walk_sec_pos[i], walk_sec_pos[src->channels - 1], a[i], b[i]); }while(0)
-#   include "images/image-walk.h"
+#   include <images/image-walk.h>
   }
   return 1;
 }

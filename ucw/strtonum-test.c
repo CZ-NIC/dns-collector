@@ -7,9 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/chartype.h"
-#include "ucw/strtonum.h"
+#include <ucw/lib.h>
+#include <ucw/chartype.h>
+#include <ucw/strtonum.h>
 
 #include <stdio.h>
 

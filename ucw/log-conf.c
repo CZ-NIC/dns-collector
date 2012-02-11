@@ -7,13 +7,13 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/log.h"
-#include "ucw/log-internal.h"
-#include "ucw/conf.h"
-#include "ucw/simple-lists.h"
-#include "ucw/tbf.h"
-#include "ucw/threads.h"
+#include <ucw/lib.h>
+#include <ucw/log.h>
+#include <ucw/log-internal.h>
+#include <ucw/conf.h>
+#include <ucw/simple-lists.h>
+#include <ucw/tbf.h>
+#include <ucw/threads.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -342,7 +342,7 @@ log_configured(const char *name)
 #ifdef TEST
 
 #include <unistd.h>
-#include "ucw/getopt.h"
+#include <ucw/getopt.h>
 
 int main(int argc, char **argv)
 {

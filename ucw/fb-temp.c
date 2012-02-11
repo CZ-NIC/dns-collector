@@ -8,8 +8,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/fastbuf.h"
+#include <ucw/lib.h>
+#include <ucw/fastbuf.h>
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -41,7 +41,7 @@ void bfix_tmp_file(struct fastbuf *fb, const char *name)
 
 #ifdef TEST
 
-#include "ucw/getopt.h"
+#include <ucw/getopt.h>
 
 int main(int argc, char **argv)
 {

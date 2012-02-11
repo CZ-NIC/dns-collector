@@ -1,7 +1,7 @@
 #ifndef _IMAGES_OBJECT_H
 #define _IMAGES_OBJECT_H
 
-#include "images/images.h"
+#include <images/images.h>
 
 struct image_obj_info {
   uns cols;

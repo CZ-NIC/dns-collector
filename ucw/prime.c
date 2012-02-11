@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/prime.h"
+#include <ucw/lib.h>
+#include <ucw/prime.h>
 
 static int				/* Sequential search */
 __isprime(uns x)			/* We know x != 2 && x != 3 */

@@ -10,7 +10,7 @@
 #ifndef _UCW_TRANS_H
 #define _UCW_TRANS_H
 
-#include "ucw/mempool.h"
+#include <ucw/mempool.h>
 
 #include <setjmp.h>
 

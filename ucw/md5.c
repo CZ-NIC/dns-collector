@@ -15,8 +15,8 @@
  * will fill a supplied 16-byte array with the digest.
  */
 
-#include "ucw/lib.h"
-#include "ucw/md5.h"
+#include <ucw/lib.h>
+#include <ucw/md5.h>
 
 #include <string.h>		/* for memcpy() */
 

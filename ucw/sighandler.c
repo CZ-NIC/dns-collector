@@ -5,9 +5,9 @@
  *	(c) 2006 Martin Mares <mj@ucw.cz>
  */
 
-#include "ucw/lib.h"
-#include "ucw/threads.h"
-#include "ucw/sighandler.h"
+#include <ucw/lib.h>
+#include <ucw/threads.h>
+#include <ucw/sighandler.h>
 
 #include <stdlib.h>
 #include <string.h>

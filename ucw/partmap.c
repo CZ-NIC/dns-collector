@@ -8,9 +8,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/io.h"
-#include "ucw/partmap.h"
+#include <ucw/lib.h>
+#include <ucw/io.h>
+#include <ucw/partmap.h>
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -10,7 +10,7 @@
 #ifndef _UCW_IPACCESS_H
 #define _UCW_IPACCESS_H
 
-#include "ucw/clists.h"
+#include <ucw/clists.h>
 
 extern struct cf_section ipaccess_cf;
 int ipaccess_check(clist *l, u32 ip);

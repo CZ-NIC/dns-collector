@@ -8,11 +8,11 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/unicode.h"
-#include "ucw/unaligned.h"
-#include "charset/charconv.h"
-#include "charset/chartable.h"
+#include <ucw/lib.h>
+#include <ucw/unicode.h>
+#include <ucw/unaligned.h>
+#include <charset/charconv.h>
+#include <charset/chartable.h>
 
 void
 conv_init(struct conv_context *c)
@@ -270,7 +270,7 @@ conv_std_to_utf8(struct conv_context *c)
 {
 #define CONV_READ_STD
 #define CONV_WRITE_UTF8
-#include "charset/charconv-gen.h"
+#include <charset/charconv-gen.h>
 }
 
 static int
@@ -278,7 +278,7 @@ conv_utf8_to_std(struct conv_context *c)
 {
 #define CONV_READ_UTF8
 #define CONV_WRITE_STD
-#include "charset/charconv-gen.h"
+#include <charset/charconv-gen.h>
 }
 
 static int
@@ -286,7 +286,7 @@ conv_std_to_utf16_be(struct conv_context *c)
 {
 #define CONV_READ_STD
 #define CONV_WRITE_UTF16_BE
-#include "charset/charconv-gen.h"
+#include <charset/charconv-gen.h>
 }
 
 static int
@@ -294,7 +294,7 @@ conv_utf16_be_to_std(struct conv_context *c)
 {
 #define CONV_READ_UTF16_BE
 #define CONV_WRITE_STD
-#include "charset/charconv-gen.h"
+#include <charset/charconv-gen.h>
 }
 
 static int
@@ -302,7 +302,7 @@ conv_std_to_utf16_le(struct conv_context *c)
 {
 #define CONV_READ_STD
 #define CONV_WRITE_UTF16_LE
-#include "charset/charconv-gen.h"
+#include <charset/charconv-gen.h>
 }
 
 static int
@@ -310,7 +310,7 @@ conv_utf16_le_to_std(struct conv_context *c)
 {
 #define CONV_READ_UTF16_LE
 #define CONV_WRITE_STD
-#include "charset/charconv-gen.h"
+#include <charset/charconv-gen.h>
 }
 
 static int
@@ -318,7 +318,7 @@ conv_utf8_to_utf16_be(struct conv_context *c)
 {
 #define CONV_READ_UTF8
 #define CONV_WRITE_UTF16_BE
-#include "charset/charconv-gen.h"
+#include <charset/charconv-gen.h>
 }
 
 static int
@@ -326,7 +326,7 @@ conv_utf16_be_to_utf8(struct conv_context *c)
 {
 #define CONV_READ_UTF16_BE
 #define CONV_WRITE_UTF8
-#include "charset/charconv-gen.h"
+#include <charset/charconv-gen.h>
 }
 
 static int
@@ -334,7 +334,7 @@ conv_utf8_to_utf16_le(struct conv_context *c)
 {
 #define CONV_READ_UTF8
 #define CONV_WRITE_UTF16_LE
-#include "charset/charconv-gen.h"
+#include <charset/charconv-gen.h>
 }
 
 static int
@@ -342,7 +342,7 @@ conv_utf16_le_to_utf8(struct conv_context *c)
 {
 #define CONV_READ_UTF16_LE
 #define CONV_WRITE_UTF8
-#include "charset/charconv-gen.h"
+#include <charset/charconv-gen.h>
 }
 
 static int
@@ -350,7 +350,7 @@ conv_utf16_be_to_utf16_le(struct conv_context *c)
 {
 #define CONV_READ_UTF16_BE
 #define CONV_WRITE_UTF16_LE
-#include "charset/charconv-gen.h"
+#include <charset/charconv-gen.h>
 }
 
 static int

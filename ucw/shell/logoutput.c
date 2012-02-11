@@ -10,13 +10,13 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/log.h"
-#include "ucw/mainloop.h"
-#include "ucw/clists.h"
-#include "ucw/getopt.h"
-#include "ucw/conf.h"
-#include "ucw/process.h"
+#include <ucw/lib.h>
+#include <ucw/log.h>
+#include <ucw/mainloop.h>
+#include <ucw/clists.h>
+#include <ucw/getopt.h>
+#include <ucw/conf.h>
+#include <ucw/process.h>
 
 #include <stdio.h>
 #include <string.h>

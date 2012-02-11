@@ -7,10 +7,10 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
-#include "ucw/conf.h"
-#include "ucw/simple-lists.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
+#include <ucw/conf.h>
+#include <ucw/simple-lists.h>
 
 simp_node *
 simp_append(struct mempool *mp, clist *l)

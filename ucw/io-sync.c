@@ -4,8 +4,8 @@
  *	(c) 2004--2012 Martin Mares <mj@ucw.cz>
  */
 
-#include "ucw/lib.h"
-#include "ucw/io.h"
+#include <ucw/lib.h>
+#include <ucw/io.h>
 
 #include <fcntl.h>
 #include <unistd.h>

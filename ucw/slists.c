@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/slists.h"
+#include <ucw/lib.h>
+#include <ucw/slists.h>
 
 static inline snode *
 slist_raw_prev(slist *l, snode *n)

@@ -9,10 +9,10 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "images/images.h"
-#include "images/error.h"
-#include "images/math.h"
+#include <ucw/lib.h>
+#include <images/images.h>
+#include <images/error.h>
+#include <images/math.h>
 
 #include <string.h>
 
@@ -26,19 +26,19 @@
 
 #define IMAGE_SCALE_PREFIX(x) image_scale_1_##x
 #define IMAGE_SCALE_PIXEL_SIZE 1
-#include "images/scale-gen.h"
+#include <images/scale-gen.h>
 
 #define IMAGE_SCALE_PREFIX(x) image_scale_2_##x
 #define IMAGE_SCALE_PIXEL_SIZE 2
-#include "images/scale-gen.h"
+#include <images/scale-gen.h>
 
 #define IMAGE_SCALE_PREFIX(x) image_scale_3_##x
 #define IMAGE_SCALE_PIXEL_SIZE 3
-#include "images/scale-gen.h"
+#include <images/scale-gen.h>
 
 #define IMAGE_SCALE_PREFIX(x) image_scale_4_##x
 #define IMAGE_SCALE_PIXEL_SIZE 4
-#include "images/scale-gen.h"
+#include <images/scale-gen.h>
 
 /* Simple "nearest neighbour" algorithm */
 

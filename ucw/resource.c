@@ -7,9 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/resource.h"
-#include "ucw/mempool.h"
+#include <ucw/lib.h>
+#include <ucw/resource.h>
+#include <ucw/mempool.h>
 
 #include <stdio.h>
 
@@ -149,7 +149,7 @@ res_dump(struct resource *r, uns indent)
 
 #ifdef TEST
 
-#include "ucw/fastbuf.h"
+#include <ucw/fastbuf.h>
 
 int main(void)
 {

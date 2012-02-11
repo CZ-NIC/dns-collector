@@ -7,9 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/string.h"
-#include "ucw/chartype.h"
+#include <ucw/lib.h>
+#include <ucw/string.h>
+#include <ucw/chartype.h>
 
 static uns
 hex_make(uns x)

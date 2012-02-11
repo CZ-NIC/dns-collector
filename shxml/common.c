@@ -9,12 +9,12 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "shxml/xml.h"
-#include "shxml/dtd.h"
-#include "shxml/internals.h"
-#include "ucw/stkstring.h"
-#include "ucw/ff-unicode.h"
+#include <ucw/lib.h>
+#include <shxml/xml.h>
+#include <shxml/dtd.h>
+#include <shxml/internals.h>
+#include <ucw/stkstring.h>
+#include <ucw/ff-unicode.h>
 
 #include <setjmp.h>
 

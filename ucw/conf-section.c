@@ -8,11 +8,11 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/conf.h"
-#include "ucw/conf-internal.h"
-#include "ucw/clists.h"
-#include "ucw/binsearch.h"
+#include <ucw/lib.h>
+#include <ucw/conf.h>
+#include <ucw/conf-internal.h>
+#include <ucw/clists.h>
+#include <ucw/binsearch.h>
 
 #include <string.h>
 
@@ -24,7 +24,7 @@ struct dirty_section {
 };
 #define GBUF_TYPE	struct dirty_section
 #define GBUF_PREFIX(x)	dirtsec_##x
-#include "ucw/gbuf.h"
+#include <ucw/gbuf.h>
 static dirtsec_t dirty;
 static uns dirties;
 
@@ -44,7 +44,7 @@ cf_add_dirty(struct cf_section *sec, void *ptr)
 #define ASORT_KEY_TYPE	struct dirty_section
 #define ASORT_ELT(i)	dirty.ptr[i]
 #define ASORT_LT(x,y)	x.sec < y.sec || x.sec == y.sec && x.ptr < y.ptr
-#include "ucw/sorter/array-simple.h"
+#include <ucw/sorter/array-simple.h>
 
 static void
 sort_dirty(void)

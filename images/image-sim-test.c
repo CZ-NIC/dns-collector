@@ -7,14 +7,14 @@
  *	of the GNU General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/getopt.h"
-#include "ucw/fastbuf.h"
-#include "ucw/base64.h"
-#include "ucw/base224.h"
-#include "images/images.h"
-#include "images/color.h"
-#include "images/signature.h"
+#include <ucw/lib.h>
+#include <ucw/getopt.h>
+#include <ucw/fastbuf.h>
+#include <ucw/base64.h>
+#include <ucw/base224.h>
+#include <images/images.h>
+#include <images/color.h>
+#include <images/signature.h>
 
 #include <stdlib.h>
 #include <fcntl.h>

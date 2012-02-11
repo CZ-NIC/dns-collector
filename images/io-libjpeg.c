@@ -9,13 +9,13 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
-#include "ucw/fastbuf.h"
-#include "images/images.h"
-#include "images/error.h"
-#include "images/color.h"
-#include "images/io-main.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
+#include <ucw/fastbuf.h>
+#include <images/images.h>
+#include <images/error.h>
+#include <images/color.h>
+#include <images/io-main.h>
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -446,7 +446,7 @@ libjpeg_read_data(struct image_io *io)
 #             define IMAGE_WALK_COL_STEP 2
 #             define IMAGE_WALK_DO_ROW_START do{ src = buf; jpeg_read_scanlines(&i->cinfo, (JSAMPLE **)&src, 1); }while(0)
 #             define IMAGE_WALK_DO_STEP do{ walk_pos[0] = *src++; walk_pos[1] = 255; }while(0)
-#             include "images/image-walk.h"
+#             include <images/image-walk.h>
 	    }
 	    break;
 	  case 4: /* * -> *+Alpha or aligned * */
@@ -460,7 +460,7 @@ libjpeg_read_data(struct image_io *io)
 #             define IMAGE_WALK_COL_STEP 4
 #             define IMAGE_WALK_DO_ROW_START do{ src = buf; jpeg_read_scanlines(&i->cinfo, (JSAMPLE **)&src, 1); }while(0)
 #             define IMAGE_WALK_DO_STEP do{ *(u32 *)walk_pos = *(u32 *)src; walk_pos[3] = 255; src += 3; }while(0)
-#             include "images/image-walk.h"
+#             include <images/image-walk.h>
 	    }
 	    break;
 	  default:
@@ -577,7 +577,7 @@ libjpeg_write(struct image_io *io)
 #             define IMAGE_WALK_COL_STEP 2
 #             define IMAGE_WALK_DO_ROW_END do{ dest = buf; jpeg_write_scanlines(&i.cinfo, (JSAMPLE **)&dest, 1); }while(0)
 #             define IMAGE_WALK_DO_STEP do{ *dest++ = walk_pos[0]; }while(0)
-#             include "images/image-walk.h"
+#             include <images/image-walk.h>
 	      break;
 	    }
 	  case 4: /* *+Alpha or aligned * -> * */
@@ -591,7 +591,7 @@ libjpeg_write(struct image_io *io)
 #             define IMAGE_WALK_COL_STEP 4
 #             define IMAGE_WALK_DO_ROW_END do{ dest = buf; jpeg_write_scanlines(&i.cinfo, (JSAMPLE **)&dest, 1); }while(0)
 #             define IMAGE_WALK_DO_STEP do{ *dest++ = walk_pos[0]; *dest++ = walk_pos[1]; *dest++ = walk_pos[2]; }while(0)
-#             include "images/image-walk.h"
+#             include <images/image-walk.h>
 	      break;
 	    }
 	  default:

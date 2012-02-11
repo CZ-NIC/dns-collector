@@ -10,7 +10,7 @@
 #ifndef _UCW_THREADS_H
 #define _UCW_THREADS_H
 
-#include "ucw/sighandler.h"
+#include <ucw/sighandler.h>
 
 /* This structure holds per-thread data */
 

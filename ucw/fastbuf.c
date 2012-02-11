@@ -9,11 +9,11 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/fastbuf.h"
-#include "ucw/resource.h"
-#include "ucw/trans.h"
-#include "ucw/stkstring.h"
+#include <ucw/lib.h>
+#include <ucw/fastbuf.h>
+#include <ucw/resource.h>
+#include <ucw/trans.h>
+#include <ucw/stkstring.h>
 
 #include <stdio.h>
 #include <stdlib.h>

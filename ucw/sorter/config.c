@@ -7,10 +7,10 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/conf.h"
-#include "ucw/fastbuf.h"
-#include "ucw/sorter/common.h"
+#include <ucw/lib.h>
+#include <ucw/conf.h>
+#include <ucw/fastbuf.h>
+#include <ucw/sorter/common.h>
 
 uns sorter_trace;
 uns sorter_trace_array;

@@ -9,13 +9,13 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
-#include "ucw/fastbuf.h"
-#include "images/images.h"
-#include "images/error.h"
-#include "images/color.h"
-#include "images/io-main.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
+#include <ucw/fastbuf.h>
+#include <images/images.h>
+#include <images/error.h>
+#include <images/color.h>
+#include <images/io-main.h>
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -203,7 +203,7 @@ libmagick_read_data(struct image_io *io)
 #       define IMAGE_WALK_DO_STEP do{ \
 	  walk_pos[0] = libmagick_pixel_to_gray(src); \
 	  src++; }while(0)
-#       include "images/image-walk.h"
+#       include <images/image-walk.h>
 	break;
 
       case 2:
@@ -216,7 +216,7 @@ libmagick_read_data(struct image_io *io)
 	  walk_pos[0] = libmagick_pixel_to_gray(src); \
 	  walk_pos[1] = ALPHA_TO_BYTE(src->opacity); \
 	  src++; }while(0)
-#       include "images/image-walk.h"
+#       include <images/image-walk.h>
 	break;
 
       case 3:
@@ -230,7 +230,7 @@ libmagick_read_data(struct image_io *io)
 	  walk_pos[1] = QUANTUM_TO_BYTE(src->green); \
 	  walk_pos[2] = QUANTUM_TO_BYTE(src->blue); \
 	  src++; }while(0)
-#       include "images/image-walk.h"
+#       include <images/image-walk.h>
 	break;
 
       case 4:
@@ -245,7 +245,7 @@ libmagick_read_data(struct image_io *io)
 	  walk_pos[2] = QUANTUM_TO_BYTE(src->blue); \
 	  walk_pos[3] = ALPHA_TO_BYTE(src->opacity); \
 	  src++; }while(0)
-#       include "images/image-walk.h"
+#       include <images/image-walk.h>
 	break;
 
       default:
@@ -333,7 +333,7 @@ libmagick_write(struct image_io *io)
 	  dest->blue = BYTE_TO_QUANTUM(walk_pos[0]); \
 	  dest->opacity = 0; \
 	  dest++; }while(0)
-#       include "images/image-walk.h"
+#       include <images/image-walk.h>
 	break;
 
       case 2:
@@ -348,7 +348,7 @@ libmagick_write(struct image_io *io)
 	  dest->blue = BYTE_TO_QUANTUM(walk_pos[0]); \
 	  dest->opacity = BYTE_TO_ALPHA(walk_pos[1]); \
 	  dest++; }while(0)
-#       include "images/image-walk.h"
+#       include <images/image-walk.h>
 	break;
 
       case 3:
@@ -363,7 +363,7 @@ libmagick_write(struct image_io *io)
 	  dest->blue = BYTE_TO_QUANTUM(walk_pos[2]); \
 	  dest->opacity = 0; \
 	  dest++; }while(0)
-#       include "images/image-walk.h"
+#       include <images/image-walk.h>
 	break;
 
       case 4:
@@ -378,7 +378,7 @@ libmagick_write(struct image_io *io)
 	  dest->blue = BYTE_TO_QUANTUM(walk_pos[2]); \
 	  dest->opacity = BYTE_TO_ALPHA(walk_pos[3]); \
 	  dest++; }while(0)
-#       include "images/image-walk.h"
+#       include <images/image-walk.h>
 	break;
 
       default:

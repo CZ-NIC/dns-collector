@@ -9,13 +9,13 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
-#include "ucw/fastbuf.h"
-#include "images/images.h"
-#include "images/error.h"
-#include "images/color.h"
-#include "images/io-main.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
+#include <ucw/fastbuf.h>
+#include <images/images.h>
+#include <images/error.h>
+#include <images/color.h>
+#include <images/io-main.h>
 
 #include <png.h>
 #include <setjmp.h>

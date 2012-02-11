@@ -9,12 +9,12 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/heap.h"
-#include "ucw/mainloop.h"
-#include "ucw/threads.h"
-#include "ucw/gary.h"
-#include "ucw/process.h"
+#include <ucw/lib.h>
+#include <ucw/heap.h>
+#include <ucw/mainloop.h>
+#include <ucw/threads.h>
+#include <ucw/gary.h>
+#include <ucw/process.h>
 
 #include <stdio.h>
 #include <string.h>

@@ -7,10 +7,10 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/threads.h"
-#include "ucw/workqueue.h"
-#include "ucw/heap.h"
+#include <ucw/lib.h>
+#include <ucw/threads.h>
+#include <ucw/workqueue.h>
+#include <ucw/heap.h>
 
 static void *
 worker_thread_init(void *arg)

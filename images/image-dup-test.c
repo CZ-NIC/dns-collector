@@ -7,13 +7,13 @@
  *	of the GNU General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/getopt.h"
-#include "ucw/fastbuf.h"
-#include "ucw/mempool.h"
-#include "images/images.h"
-#include "images/color.h"
-#include "images/duplicates.h"
+#include <ucw/lib.h>
+#include <ucw/getopt.h>
+#include <ucw/fastbuf.h>
+#include <ucw/mempool.h>
+#include <images/images.h>
+#include <images/color.h>
+#include <images/duplicates.h>
 
 #include <stdlib.h>
 #include <fcntl.h>

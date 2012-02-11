@@ -8,11 +8,11 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/fastbuf.h"
-#include "ucw/unicode.h"
-#include "ucw/ff-unicode.h"
-#include "ucw/ff-binary.h"
+#include <ucw/lib.h>
+#include <ucw/fastbuf.h>
+#include <ucw/unicode.h>
+#include <ucw/ff-unicode.h>
+#include <ucw/ff-binary.h>
 
 /*** UTF-8 ***/
 

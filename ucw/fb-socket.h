@@ -10,7 +10,7 @@
 #ifndef _UCW_FB_SOCKET_H
 #define _UCW_FB_SOCKET_H
 
-#include "ucw/fastbuf.h"
+#include <ucw/fastbuf.h>
 
 struct fbsock_params {	/** Configuration of socket fastbuf. **/
   int fd;

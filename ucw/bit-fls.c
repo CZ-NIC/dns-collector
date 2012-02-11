@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/bitops.h"
+#include <ucw/lib.h>
+#include <ucw/bitops.h>
 
 int
 bit_fls(u32 x)

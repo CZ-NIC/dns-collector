@@ -7,9 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "charset/unicat.h"
-#include "charset/U-ligatures.h"
+#include <ucw/lib.h>
+#include <charset/unicat.h>
+#include <charset/U-ligatures.h>
 
 const u16 *
 Uexpand_lig(uns x)

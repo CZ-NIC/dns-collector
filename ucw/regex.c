@@ -8,10 +8,10 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/chartype.h"
-#include "ucw/hashfunc.h"
-#include "ucw/regex.h"
+#include <ucw/lib.h>
+#include <ucw/chartype.h>
+#include <ucw/hashfunc.h>
+#include <ucw/regex.h>
 
 #include <stdio.h>
 #include <string.h>

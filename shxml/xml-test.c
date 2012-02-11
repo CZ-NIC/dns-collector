@@ -7,11 +7,11 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "shxml/xml.h"
-#include "shxml/dtd.h"
-#include "ucw/getopt.h"
-#include "ucw/fastbuf.h"
+#include <ucw/lib.h>
+#include <shxml/xml.h>
+#include <shxml/dtd.h>
+#include <ucw/getopt.h>
+#include <ucw/fastbuf.h>
 
 #include <stdio.h>
 #include <stdlib.h>

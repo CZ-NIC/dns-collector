@@ -12,7 +12,7 @@
 #define	_UCW_GETOPT_H
 
 #ifdef CONFIG_UCW_OWN_GETOPT
-#include "ucw/getopt/getopt-sh.h"
+#include <ucw/getopt/getopt-sh.h>
 #else
 #include <getopt.h>
 #endif

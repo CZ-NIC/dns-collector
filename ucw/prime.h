@@ -17,7 +17,7 @@
 #ifndef _UCW_PRIME_H
 #define _UCW_PRIME_H
 
-#include "ucw/lib.h"
+#include <ucw/lib.h>
 
 /* prime.c */
 

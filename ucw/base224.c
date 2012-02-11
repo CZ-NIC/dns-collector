@@ -25,8 +25,8 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/base224.h"
+#include <ucw/lib.h>
+#include <ucw/base224.h>
 
 static void
 encode_block(byte *w, u32 hi, u32 lo)

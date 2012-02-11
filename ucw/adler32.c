@@ -7,8 +7,8 @@
  * 	distribution and use, see copyright notice in zlib.h.
  */
 
-#include "ucw/lib.h"
-#include "ucw/lizard.h"
+#include <ucw/lib.h>
+#include <ucw/lizard.h>
 
 #define BASE 65521UL	/* largest prime smaller than 65536 */
 #define NMAX 5552	/* NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1 */

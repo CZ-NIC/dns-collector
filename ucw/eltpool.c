@@ -18,8 +18,8 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/eltpool.h"
+#include <ucw/lib.h>
+#include <ucw/eltpool.h>
 
 struct eltpool *
 ep_new(uns elt_size, uns elts_per_chunk)
@@ -73,7 +73,7 @@ ep_total_size(struct eltpool *pool)
 #ifdef TEST
 
 #include <stdio.h>
-#include "ucw/clists.h"
+#include <ucw/clists.h>
 
 struct argh {
   cnode n;

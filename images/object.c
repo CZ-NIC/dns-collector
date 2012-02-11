@@ -9,14 +9,14 @@
 #undef LOCAL_DEBUG
 
 #include "sherlock/sherlock.h"
-#include "ucw/base224.h"
-#include "ucw/mempool.h"
-#include "ucw/fastbuf.h"
+#include <ucw/base224.h>
+#include <ucw/mempool.h>
+#include <ucw/fastbuf.h>
 #include "sherlock/object.h"
-#include "images/images.h"
-#include "images/object.h"
-#include "images/color.h"
-#include "images/signature.h"
+#include <images/images.h>
+#include <images/object.h>
+#include <images/color.h>
+#include <images/signature.h>
 #include <stdio.h>
 #include <string.h>
 

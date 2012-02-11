@@ -13,7 +13,7 @@
 #ifndef _UCW_LIB_H
 #define _UCW_LIB_H
 
-#include "ucw/config.h"
+#include <ucw/config.h>
 #include <stdarg.h>
 
 /*** === Macros for handling structures, offsets and alignment ***/

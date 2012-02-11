@@ -4,8 +4,8 @@
  *      (c) 2006, Pavel Charvat <pchar@ucw.cz>
  */
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
 #include <string.h>
 
 #if 0
@@ -18,18 +18,18 @@
 
 #define KMP_PREFIX(x) kmp1_##x
 #define KMP_WANT_CLEANUP
-#include "ucw/kmp.h"
+#include <ucw/kmp.h>
 #define KMPS_PREFIX(x) kmp1s1_##x
 #define KMPS_KMP_PREFIX(x) kmp1_##x
 #define KMPS_WANT_BEST
 #define KMPS_EXIT(kmp,src,s) TRACE("Best match has %d characters", s->best->len)
-#include "ucw/kmp-search.h"
+#include <ucw/kmp-search.h>
 #define KMPS_PREFIX(x) kmp1s2_##x
 #define KMPS_KMP_PREFIX(x) kmp1_##x
 #define KMPS_VARS uns count;
 #define KMPS_INIT(kmp,src,s) s->u.count = 0
 #define KMPS_FOUND(kmp,src,s) s->u.count++
-#include "ucw/kmp-search.h"
+#include <ucw/kmp-search.h>
 
 static void
 test1(void)
@@ -71,7 +71,7 @@ test1(void)
 #define KMPS_MERGE_CONTROLS
 #define KMPS_FOUND(kmp,src,s) TRACE("String %s with id %d found", s->out->u.str, s->out->u.id)
 #define KMPS_STEP(kmp,src,s) TRACE("Got to state %p after reading %d", s->s, s->c)
-#include "ucw/kmp.h"
+#include <ucw/kmp.h>
 
 static void
 test2(void)
@@ -106,7 +106,7 @@ test2(void)
 #define KMP_WANT_SEARCH
 #define KMPS_VARS uns sum, *cnt;
 #define KMPS_FOUND(kmp,src,s) do{ ASSERT(s->u.cnt[s->out->u.index]); s->u.cnt[s->out->u.index]--; s->u.sum--; }while(0)
-#include "ucw/kmp.h"
+#include <ucw/kmp.h>
 
 static void
 test3(void)
@@ -185,7 +185,7 @@ kmp4_hash(struct kmp4_struct *kmp UNUSED, struct kmp4_state *s, byte *c)
 #define KMPS_FOUND(kmp,src,s) TRACE("found")
 #define KMPS_ADD_CONTROLS
 #define KMPS_MERGE_CONTROLS
-#include "ucw/kmp.h"
+#include <ucw/kmp.h>
 
 static void
 test4(void)

@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/tbf.h"
+#include <ucw/lib.h>
+#include <ucw/tbf.h>
 
 void
 tbf_init(struct token_bucket_filter *f)

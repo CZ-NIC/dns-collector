@@ -7,15 +7,15 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/getopt.h"
-#include "ucw/conf.h"
-#include "ucw/fastbuf.h"
-#include "ucw/ff-binary.h"
-#include "ucw/hashfunc.h"
-#include "ucw/md5.h"
-#include "ucw/string.h"
-#include "ucw/prime.h"
+#include <ucw/lib.h>
+#include <ucw/getopt.h>
+#include <ucw/conf.h>
+#include <ucw/fastbuf.h>
+#include <ucw/ff-binary.h>
+#include <ucw/hashfunc.h>
+#include <ucw/md5.h>
+#include <ucw/string.h>
+#include <ucw/prime.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -63,7 +63,7 @@ struct key1 {
 #define SORT_INT(k) (k).x
 #define SORT_DELETE_INPUT 0
 
-#include "ucw/sorter/sorter.h"
+#include <ucw/sorter/sorter.h>
 
 static void
 test_int(int mode, u64 size)
@@ -112,7 +112,7 @@ static inline void s2_write_merged(struct fastbuf *f, struct key2 **k, void **d 
 #define SORT_UNIFY
 #define SORT_INT(k) (k).x
 
-#include "ucw/sorter/sorter.h"
+#include <ucw/sorter/sorter.h>
 
 static void
 test_counted(int mode, u64 size)
@@ -180,7 +180,7 @@ static inline uns s3_hash(struct key3 *x)
 #define SORT_OUTPUT_FB
 #define SORT_HASH_BITS 32
 
-#include "ucw/sorter/sorter.h"
+#include <ucw/sorter/sorter.h>
 
 static void
 gen_hash_key(int mode, struct key3 *k, uns i)
@@ -288,7 +288,7 @@ static inline void s4_write_key(struct fastbuf *f, struct key4 *x)
 #define SORT_INPUT_FB
 #define SORT_OUTPUT_FB
 
-#include "ucw/sorter/sorter.h"
+#include <ucw/sorter/sorter.h>
 
 #define s4b_compare s4_compare
 #define s4b_read_key s4_read_key
@@ -306,7 +306,7 @@ static inline uns s4_data_size(struct key4 *x)
 #define SORT_INPUT_FB
 #define SORT_OUTPUT_FB
 
-#include "ucw/sorter/sorter.h"
+#include <ucw/sorter/sorter.h>
 
 static void
 gen_key4(struct key4 *k)
@@ -409,7 +409,7 @@ static int s5_gen(struct s5_pair *p)
 
 #define ASORT_PREFIX(x) s5m_##x
 #define ASORT_KEY_TYPE u32
-#include "ucw/sorter/array-simple.h"
+#include <ucw/sorter/array-simple.h>
 
 static void s5_write_merged(struct fastbuf *f, struct key5 **keys, void **data, uns n, void *buf)
 {
@@ -461,7 +461,7 @@ static inline int s5p_lt(struct s5_pair x, struct s5_pair y)
 #define ASORT_PREFIX(x) s5p_##x
 #define ASORT_KEY_TYPE struct s5_pair
 #define ASORT_LT(x,y) s5p_lt(x,y)
-#include "ucw/sorter/array.h"
+#include <ucw/sorter/array.h>
 
 static int s5_presort(struct fastbuf *dest, void *buf, size_t bufsize)
 {
@@ -496,7 +496,7 @@ static int s5_presort(struct fastbuf *dest, void *buf, size_t bufsize)
 #define SORT_OUTPUT_THIS_FB
 #define SORT_INT(k) (k).x
 
-#include "ucw/sorter/sorter.h"
+#include <ucw/sorter/sorter.h>
 
 #define SORT_KEY_REGULAR struct key5
 #define SORT_PREFIX(x) s5b_##x
@@ -509,7 +509,7 @@ static int s5_presort(struct fastbuf *dest, void *buf, size_t bufsize)
 #define s5b_write_merged s5_write_merged
 #define s5b_copy_merged s5_copy_merged
 
-#include "ucw/sorter/sorter.h"
+#include <ucw/sorter/sorter.h>
 
 static void
 test_graph(uns mode, u64 size)
@@ -578,7 +578,7 @@ struct key6 {
 #define SORT_UNIQUE
 #define SORT_INT64(k) (k).x
 
-#include "ucw/sorter/sorter.h"
+#include <ucw/sorter/sorter.h>
 
 static void
 test_int64(int mode, u64 size)

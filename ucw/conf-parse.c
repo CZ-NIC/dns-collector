@@ -8,9 +8,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/conf.h"
-#include "ucw/chartype.h"
+#include <ucw/lib.h>
+#include <ucw/conf.h>
+#include <ucw/chartype.h>
 
 #include <stdlib.h>
 #include <stdio.h>

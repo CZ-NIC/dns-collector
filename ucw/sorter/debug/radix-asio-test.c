@@ -4,10 +4,10 @@
  *  (c) 2007 Martin Mares <mj@ucw.cz>
  */
 
-#include "ucw/lib.h"
-#include "ucw/conf.h"
-#include "ucw/io.h"
-#include "ucw/asio.h"
+#include <ucw/lib.h>
+#include <ucw/conf.h>
+#include <ucw/io.h>
+#include <ucw/asio.h>
 
 #include <stdio.h>
 #include <stdlib.h>

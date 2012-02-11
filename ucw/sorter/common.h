@@ -10,7 +10,7 @@
 #ifndef _UCW_SORTER_COMMON_H
 #define _UCW_SORTER_COMMON_H
 
-#include "ucw/clists.h"
+#include <ucw/clists.h>
 
 /* Configuration variables */
 extern uns sorter_trace, sorter_trace_array, sorter_stream_bufsize;

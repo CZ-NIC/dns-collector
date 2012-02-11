@@ -11,11 +11,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "ucw/lib.h"
-#include "ucw/base64.h"
-#include "ucw/base224.h"
-#include "ucw/fastbuf.h"
-#include "ucw/getopt.h"
+#include <ucw/lib.h>
+#include <ucw/base64.h>
+#include <ucw/base224.h>
+#include <ucw/fastbuf.h>
+#include <ucw/getopt.h>
 
 static struct option opts[] = {
   { "encode64", 0, 0, 'e' },

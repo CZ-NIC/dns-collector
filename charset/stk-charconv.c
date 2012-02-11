@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "charset/stk-charconv.h"
+#include <ucw/lib.h>
+#include <charset/stk-charconv.h>
 #include <string.h>
 
 #define INITIAL_MIN_SIZE	16

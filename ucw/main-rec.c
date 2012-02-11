@@ -9,8 +9,8 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/mainloop.h"
+#include <ucw/lib.h>
+#include <ucw/mainloop.h>
 
 #include <stdio.h>
 #include <string.h>

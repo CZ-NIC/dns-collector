@@ -7,12 +7,12 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/clists.h"
-#include "ucw/conf.h"
-#include "ucw/getopt.h"
-#include "ucw/fastbuf.h"
-#include "ucw/ipaccess.h"
+#include <ucw/lib.h>
+#include <ucw/clists.h>
+#include <ucw/conf.h>
+#include <ucw/getopt.h>
+#include <ucw/fastbuf.h>
+#include <ucw/ipaccess.h>
 
 #include <string.h>
 

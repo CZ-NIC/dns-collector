@@ -1,7 +1,7 @@
 /* Test of large files */
 
-#include "ucw/lib.h"
-#include "ucw/fastbuf.h"
+#include <ucw/lib.h>
+#include <ucw/fastbuf.h>
 
 #include <stdlib.h>
 #include <time.h>

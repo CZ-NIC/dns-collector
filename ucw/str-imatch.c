@@ -7,10 +7,10 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/chartype.h"
+#include <ucw/lib.h>
+#include <ucw/chartype.h>
 
 #define Convert(x) Cupcase(x)
 #define MATCH_FUNC_NAME str_match_pattern_nocase
 
-#include "ucw/str-match.h"
+#include <ucw/str-match.h>

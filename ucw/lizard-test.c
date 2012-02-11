@@ -1,8 +1,8 @@
-#include "ucw/lib.h"
-#include "ucw/getopt.h"
-#include "ucw/fastbuf.h"
-#include "ucw/ff-binary.h"
-#include "ucw/lizard.h"
+#include <ucw/lib.h>
+#include <ucw/getopt.h>
+#include <ucw/fastbuf.h>
+#include <ucw/ff-binary.h>
+#include <ucw/lizard.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>

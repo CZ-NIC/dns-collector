@@ -9,8 +9,8 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/getopt.h"
+#include <ucw/lib.h>
+#include <ucw/getopt.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -26,7 +26,7 @@
 #ifdef LOCAL_DEBUG
 #define TRIE_TRACE
 #endif
-#include "ucw/trie.h"
+#include <ucw/trie.h>
 
 static void
 basic_test(void)
@@ -55,7 +55,7 @@ basic_test(void)
 #ifdef LOCAL_DEBUG
 #define TRIE_TRACE
 #endif
-#include "ucw/trie.h"
+#include <ucw/trie.h>
 
 static void
 dynamic_test(void)
@@ -86,7 +86,7 @@ dynamic_test(void)
 #ifdef LOCAL_DEBUG
 #define TRIE_TRACE
 #endif
-#include "ucw/trie.h"
+#include <ucw/trie.h>
 
 #define MAX_STRINGS 200
 

@@ -9,10 +9,10 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/fastbuf.h"
-#include "ucw/io.h"
-#include "ucw/conf.h"
+#include <ucw/lib.h>
+#include <ucw/fastbuf.h>
+#include <ucw/io.h>
+#include <ucw/conf.h>
 
 #include <string.h>
 #include <fcntl.h>

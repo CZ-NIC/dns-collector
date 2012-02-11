@@ -8,8 +8,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/unicode.h"
+#include <ucw/lib.h>
+#include <ucw/unicode.h>
 
 uns
 utf8_strlen(const byte *str)

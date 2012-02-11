@@ -9,6 +9,6 @@
 #define opterr ucw_opterr
 #define optopt ucw_optopt
 
-#include "ucw/getopt/getopt.h"
+#include <ucw/getopt/getopt.h>
 
 #endif

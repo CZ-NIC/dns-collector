@@ -11,7 +11,7 @@
 #ifndef _UCW_HASHFUNC_H
 #define _UCW_HASHFUNC_H
 
-#include "ucw/lib.h"
+#include <ucw/lib.h>
 
 /*** === String hashes [[strhash]] ***/
 

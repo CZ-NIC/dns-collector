@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/stkstring.h"
+#include <ucw/stkstring.h>
 
 #ifdef SORT_INTERNAL_RADIX
 /* Keep copies of the items' hashes to save cache misses */
@@ -42,7 +42,7 @@ typedef struct {
 #      define ASORT_LONG_HASH
 #    endif
 #endif
-#include "ucw/sorter/array.h"
+#include <ucw/sorter/array.h>
 
 /*
  *  The big_buf has the following layout:

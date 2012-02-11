@@ -7,10 +7,10 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/string.h"
-#include "ucw/chartype.h"
-#include "ucw/strtonum.h"
+#include <ucw/lib.h>
+#include <ucw/string.h>
+#include <ucw/chartype.h>
+#include <ucw/strtonum.h>
 
 static uns detect_base(const char **pp, const uns flags)
 {
@@ -100,8 +100,8 @@ static inline uns get_digit(const uns c)
 
 #define STN_TYPE uns
 #define STN_SUFFIX uns
-#include "ucw/strtonum-gen.h"
+#include <ucw/strtonum-gen.h>
 
 #define STN_TYPE uintmax_t
 #define STN_SUFFIX uintmax
-#include "ucw/strtonum-gen.h"
+#include <ucw/strtonum-gen.h>

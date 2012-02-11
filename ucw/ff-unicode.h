@@ -12,8 +12,8 @@
 #ifndef _UCW_FF_UNICODE_H
 #define _UCW_FF_UNICODE_H
 
-#include "ucw/fastbuf.h"
-#include "ucw/unicode.h"
+#include <ucw/fastbuf.h>
+#include <ucw/unicode.h>
 
 /* ** UTF-8 ** */
 

@@ -7,9 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/threads.h"
-#include "ucw/conf.h"
+#include <ucw/lib.h>
+#include <ucw/threads.h>
+#include <ucw/conf.h>
 
 uns ucwlib_thread_stack_size = 65556;
 

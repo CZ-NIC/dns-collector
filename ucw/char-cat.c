@@ -7,11 +7,11 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/chartype.h"
+#include <ucw/lib.h>
+#include <ucw/chartype.h>
 
 const byte _c_cat[256] = {
 #define CHAR(code,upper,lower,cat) cat,
-#include "ucw/char-map.h"
+#include <ucw/char-map.h>
 #undef CHAR
 };

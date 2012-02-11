@@ -121,7 +121,7 @@
  *
  *  (For dynamic tables, use HASH_FOR_ALL_DYNAMIC(hash_prefix, hash_table, variable) instead.)
  *
- *  Then include "ucw/hashtable.h" and voila, you have a hash table
+ *  Then include <ucw/hashtable.h> and voila, you have a hash table
  *  suiting all your needs (at least those which you've revealed :) ).
  *
  *  After including this file, all parameter macros are automatically
@@ -129,10 +129,10 @@
  */
 
 #ifndef _UCW_HASHFUNC_H
-#include "ucw/hashfunc.h"
+#include <ucw/hashfunc.h>
 #endif
 
-#include "ucw/prime.h"
+#include <ucw/prime.h>
 
 #include <string.h>
 
@@ -340,7 +340,7 @@ static inline void P(cleanup_alloc) (TAU) { }
 
 #elif defined(HASH_USE_POOL)
 /* If the caller has requested to use his mempool, do so */
-#include "ucw/mempool.h"
+#include <ucw/mempool.h>
 static inline void * P(alloc) (TAUC unsigned int size) { return mp_alloc_fast(HASH_USE_POOL, size); }
 static inline void P(free) (TAUC void *x UNUSED) { }
 static inline void P(init_alloc) (TAU) { }
@@ -348,7 +348,7 @@ static inline void P(cleanup_alloc) (TAU) { }
 
 #elif defined(HASH_AUTO_POOL)
 /* Use our own pools */
-#include "ucw/mempool.h"
+#include <ucw/mempool.h>
 static inline void * P(alloc) (TAUC unsigned int size) { return mp_alloc_fast(T.pool, size); }
 static inline void P(free) (TAUC void *x UNUSED) { }
 static inline void P(init_alloc) (TAU) { T.pool = mp_new(HASH_AUTO_POOL); }
@@ -357,7 +357,7 @@ static inline void P(cleanup_alloc) (TAU) { mp_delete(T.pool); }
 
 #elif defined(HASH_USE_ELTPOOL)
 /* If the caller has requested to use his eltpool, do so */
-#include "ucw/eltpool.h"
+#include <ucw/eltpool.h>
 static inline void * P(alloc) (TAUC unsigned int size UNUSED) { ASSERT(size <= (HASH_USE_ELTPOOL)->elt_size); return ep_alloc(HASH_USE_ELTPOOL); }
 static inline void P(free) (TAUC void *x) { ep_free(HASH_USE_ELTPOOL, x); }
 static inline void P(init_alloc) (TAU) { }
@@ -365,7 +365,7 @@ static inline void P(cleanup_alloc) (TAU) { }
 
 #elif defined(HASH_AUTO_ELTPOOL)
 /* Use our own eltpools */
-#include "ucw/eltpool.h"
+#include <ucw/eltpool.h>
 static inline void * P(alloc) (TAUC unsigned int size UNUSED) { return ep_alloc(T.eltpool); }
 static inline void P(free) (TAUC void *x) { ep_free(T.eltpool, x); }
 static inline void P(init_alloc) (TAU) { T.eltpool = ep_new(sizeof(P(bucket)), HASH_AUTO_ELTPOOL); }

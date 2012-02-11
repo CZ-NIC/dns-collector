@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/stkstring.h"
+#include <ucw/stkstring.h>
 
 #define ASORT_PREFIX(x) SORT_PREFIX(array_##x)
 #define ASORT_KEY_TYPE P(key)
@@ -18,7 +18,7 @@
 #      define ASORT_LONG_HASH
 #    endif
 #endif
-#include "ucw/sorter/array.h"
+#include <ucw/sorter/array.h>
 
 /*
  *  This is a more efficient implementation of the internal sorter,

@@ -4,11 +4,11 @@
  *	(c) 2006 Robert Spalek <robert@ucw.cz>
  */
 
-#include "ucw/lib.h"
-#include "ucw/conf.h"
-#include "ucw/getopt.h"
-#include "ucw/clists.h"
-#include "ucw/fastbuf.h"
+#include <ucw/lib.h>
+#include <ucw/conf.h>
+#include <ucw/getopt.h>
+#include <ucw/clists.h>
+#include <ucw/fastbuf.h>
 
 #include <stdlib.h>
 #include <stdio.h>

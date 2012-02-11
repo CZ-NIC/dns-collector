@@ -25,12 +25,12 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/fastbuf.h"
-#include "ucw/io.h"
-#include "ucw/asio.h"
-#include "ucw/conf.h"
-#include "ucw/threads.h"
+#include <ucw/lib.h>
+#include <ucw/fastbuf.h>
+#include <ucw/io.h>
+#include <ucw/asio.h>
+#include <ucw/conf.h>
+#include <ucw/threads.h>
 
 #include <string.h>
 #include <fcntl.h>
@@ -313,7 +313,7 @@ fbdir_open_fd_internal(int fd, const char *name, struct asio_queue *q, uns buffe
 
 #ifdef TEST
 
-#include "ucw/getopt.h"
+#include <ucw/getopt.h>
 
 int main(int argc, char **argv)
 {

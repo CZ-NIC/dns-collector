@@ -41,9 +41,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/bitsig.h"
-#include "ucw/md5.h"
+#include <ucw/lib.h>
+#include <ucw/bitsig.h>
+#include <ucw/md5.h>
 
 #include <string.h>
 

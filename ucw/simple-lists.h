@@ -10,7 +10,7 @@
 #ifndef _UCW_SIMPLE_LISTS_H
 #define _UCW_SIMPLE_LISTS_H
 
-#include "ucw/clists.h"
+#include <ucw/clists.h>
 
 /***
  * To simplify very common usage of circular linked links, whose nodes can hold only one or two trivial values,

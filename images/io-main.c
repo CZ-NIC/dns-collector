@@ -9,12 +9,12 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
-#include "images/images.h"
-#include "images/error.h"
-#include "images/io-main.h"
-#include "images/color.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
+#include <images/images.h>
+#include <images/error.h>
+#include <images/io-main.h>
+#include <images/color.h>
 
 #include <string.h>
 

@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "charset/mp-charconv.h"
+#include <ucw/lib.h>
+#include <charset/mp-charconv.h>
 #include <string.h>
 #include <alloca.h>
 

@@ -11,7 +11,7 @@
 #ifndef _UCW_LOG_H_
 #define _UCW_LOG_H_
 
-#include "ucw/clists.h"
+#include <ucw/clists.h>
 
 /*** === Messages and streams ***/
 

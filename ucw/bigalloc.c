@@ -8,7 +8,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
+#include <ucw/lib.h>
 
 #include <sys/mman.h>
 #include <string.h>

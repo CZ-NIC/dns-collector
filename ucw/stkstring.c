@@ -9,9 +9,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/stkstring.h"
-#include "ucw/string.h"
+#include <ucw/lib.h>
+#include <ucw/stkstring.h>
+#include <ucw/string.h>
 
 #include <stdio.h>
 

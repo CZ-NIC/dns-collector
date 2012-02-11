@@ -9,8 +9,8 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/sorter/common.h"
+#include <ucw/lib.h>
+#include <ucw/sorter/common.h>
 
 #include <string.h>
 #include <alloca.h>
@@ -67,9 +67,9 @@ asort_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, 
 
 #ifdef CONFIG_UCW_THREADS
 
-#include "ucw/threads.h"
-#include "ucw/workqueue.h"
-#include "ucw/eltpool.h"
+#include <ucw/threads.h>
+#include <ucw/workqueue.h>
+#include <ucw/eltpool.h>
 
 static uns asort_threads_use_count;
 static uns asort_threads_ready;

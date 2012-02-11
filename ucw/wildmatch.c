@@ -9,9 +9,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
-#include "ucw/wildmatch.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
+#include <ucw/wildmatch.h>
 
 #include <stdio.h>
 #include <string.h>

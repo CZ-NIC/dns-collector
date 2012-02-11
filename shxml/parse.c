@@ -9,15 +9,15 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "shxml/xml.h"
-#include "shxml/dtd.h"
-#include "shxml/internals.h"
-#include "ucw/fastbuf.h"
-#include "ucw/ff-unicode.h"
-#include "ucw/unicode.h"
-#include "ucw/chartype.h"
-#include "ucw/hashfunc.h"
+#include <ucw/lib.h>
+#include <shxml/xml.h>
+#include <shxml/dtd.h>
+#include <shxml/internals.h>
+#include <ucw/fastbuf.h>
+#include <ucw/ff-unicode.h>
+#include <ucw/unicode.h>
+#include <ucw/chartype.h>
+#include <ucw/hashfunc.h>
 
 #include <setjmp.h>
 
@@ -622,7 +622,7 @@ xml_attrs_init_key(struct xml_attrs_table *t UNUSED, struct xml_attr *a, struct 
 #define HASH_WANT_FIND
 #define HASH_GIVE_ALLOC
 XML_HASH_GIVE_ALLOC
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 static void
 xml_parse_attr(struct xml_context *ctx)

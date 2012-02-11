@@ -10,7 +10,7 @@
 #ifndef _CHARSET_STK_CHARCONV_H
 #define _CHARSET_STK_CHARCONV_H
 
-#include "charset/charconv.h"
+#include <charset/charconv.h>
 #include <alloca.h>
 
 /* The following macros convert strings between given charsets (CONV_CHARSET_x). */

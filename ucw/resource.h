@@ -10,8 +10,8 @@
 #ifndef _UCW_RESPOOL_H
 #define _UCW_RESPOOL_H
 
-#include "ucw/clists.h"
-#include "ucw/threads.h"
+#include <ucw/clists.h>
+#include <ucw/threads.h>
 
 /**
  * A resource pool. It contains a name of the pool (which is printed

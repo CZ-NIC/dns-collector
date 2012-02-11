@@ -25,7 +25,7 @@
  *	#define KMP_WANT_CLEANUP
  *	#define KMP_WANT_SEARCH // includes ucw/kmp-search.h automatically
  *	#define KMPS_FOUND(kmp,src,s) printf("found\n")
- *	#include "ucw/kmp.h"
+ *	#include <ucw/kmp.h>
  *
  *    [...]
  *
@@ -108,7 +108,7 @@
 #error Missing KMP_PREFIX
 #endif
 
-#include "ucw/mempool.h"
+#include <ucw/mempool.h>
 #include <alloca.h>
 #include <string.h>
 
@@ -240,7 +240,7 @@ P(hash_init_key) (struct P(hash_table) *t UNUSED, struct P(state) *s, struct P(s
 #endif
 #define HASH_CONSERVE_SPACE
 #define HASH_TABLE_DYNAMIC
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 #define P(x) KMP_PREFIX(x)
 
 struct P(struct) {
@@ -267,13 +267,13 @@ P(get_char) (struct P(struct) *kmp UNUSED, P(source_t) *src UNUSED, P(char_t) *c
 }
 #else
 #  if defined(KMP_USE_UTF8)
-#    include "ucw/unicode.h"
+#    include <ucw/unicode.h>
 #    if defined(KMP_ONLYALPHA) || defined(KMP_TOLOWER) || defined(KMP_UNACCENT)
-#      include "charset/unicat.h"
+#      include <charset/unicat.h>
 #    endif
 #  elif defined(KMP_USE_ASCII)
 #    if defined(KMP_ONLYALPHA) || defined(KMP_TOLOWER)
-#      include "ucw/chartype.h"
+#      include <ucw/chartype.h>
 #    endif
 #  endif
 static inline int
@@ -457,7 +457,7 @@ P(build) (struct P(struct) *kmp)
 #  undef KMP_WANT_SEARCH
 #  define KMPS_PREFIX(x) KMP_PREFIX(x)
 #  define KMPS_KMP_PREFIX(x) KMP_PREFIX(x)
-#  include "ucw/kmp-search.h"
+#  include <ucw/kmp-search.h>
 #endif
 
 #undef KMP_PREFIX

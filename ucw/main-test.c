@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/mainloop.h"
+#include <ucw/lib.h>
+#include <ucw/mainloop.h>
 
 #include <stdio.h>
 #include <stdlib.h>

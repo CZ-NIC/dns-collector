@@ -10,8 +10,8 @@
  *	the compression method is based on zlib.
  */
 
-#include "ucw/lib.h"
-#include "ucw/lizard.h"
+#include <ucw/lib.h>
+#include <ucw/lizard.h>
 
 #include <string.h>
 

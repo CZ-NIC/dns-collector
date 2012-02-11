@@ -8,16 +8,16 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/conf.h"
-#include "ucw/getopt.h"
-#include "ucw/conf-internal.h"
-#include "ucw/clists.h"
-#include "ucw/mempool.h"
-#include "ucw/fastbuf.h"
-#include "ucw/chartype.h"
-#include "ucw/string.h"
-#include "ucw/stkstring.h"
+#include <ucw/lib.h>
+#include <ucw/conf.h>
+#include <ucw/getopt.h>
+#include <ucw/conf-internal.h>
+#include <ucw/clists.h>
+#include <ucw/mempool.h>
+#include <ucw/fastbuf.h>
+#include <ucw/chartype.h>
+#include <ucw/string.h>
+#include <ucw/stkstring.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -33,13 +33,13 @@ static uns line_num;
 static char line_buf[MAX_LINE];
 static char *line = line_buf;
 
-#include "ucw/bbuf.h"
+#include <ucw/bbuf.h>
 static bb_t copy_buf;
 static uns copied;
 
 #define GBUF_TYPE	uns
 #define GBUF_PREFIX(x)	split_##x
-#include "ucw/gbuf.h"
+#include <ucw/gbuf.h>
 static split_t word_buf;
 static uns words;
 static uns ends_by_brace;		// the line is ended by "{"

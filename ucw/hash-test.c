@@ -1,7 +1,7 @@
 /* Tests for hash table routines */
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -30,7 +30,7 @@ static inline void test1_init_data(struct node1 *n)
 #define HASH_WANT_LOOKUP
 #define HASH_WANT_REMOVE
 
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 static void test1(void)
 {
@@ -79,7 +79,7 @@ struct node2 {
 #define HASH_WANT_FIND
 #define HASH_WANT_NEW
 
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 static void test2(void)
 {
@@ -122,7 +122,7 @@ struct node3 {
 
 #define HASH_USE_POOL pool3
 
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 static void test3(void)
 {
@@ -150,7 +150,7 @@ static void test3(void)
 
 /* TEST 4: complex keys */
 
-#include "ucw/hashfunc.h"
+#include <ucw/hashfunc.h>
 
 struct node4 {
   int port;
@@ -195,7 +195,7 @@ static inline void test4_init_key(struct node4 *n, char *host, int port)
   n->port = port;
 }
 
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 static void test4(void)
 {
@@ -266,7 +266,7 @@ static inline void test5_init_data(struct test5_table *table UNUSED, struct node
 #define HASH_WANT_NEW
 #define HASH_WANT_DELETE
 
-#include "ucw/hashtable.h"
+#include <ucw/hashtable.h>
 
 static void test5(void)
 {

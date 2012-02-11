@@ -9,11 +9,11 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
-#include "ucw/fastbuf.h"
-#include "images/images.h"
-#include "images/duplicates.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
+#include <ucw/fastbuf.h>
+#include <images/images.h>
+#include <images/duplicates.h>
 
 #include <fcntl.h>
 

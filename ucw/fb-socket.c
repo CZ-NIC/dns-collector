@@ -7,9 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/fastbuf.h"
-#include "ucw/fb-socket.h"
+#include <ucw/lib.h>
+#include <ucw/fastbuf.h>
+#include <ucw/fb-socket.h>
 
 #include <stdio.h>
 #include <unistd.h>

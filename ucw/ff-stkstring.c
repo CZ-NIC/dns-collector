@@ -12,8 +12,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/fastbuf.h"
+#include <ucw/lib.h>
+#include <ucw/fastbuf.h>
 
 void
 bgets_stk_init(struct bgets_stk_struct *s)

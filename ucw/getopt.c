@@ -1,5 +1,5 @@
-#include "ucw/lib.h"
-#include "ucw/getopt.h"
+#include <ucw/lib.h>
+#include <ucw/getopt.h>
 
 void
 reset_getopt(void)

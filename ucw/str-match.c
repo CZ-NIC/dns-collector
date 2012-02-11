@@ -7,9 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
+#include <ucw/lib.h>
 
 #define Convert(x) (x)
 #define MATCH_FUNC_NAME str_match_pattern
 
-#include "ucw/str-match.h"
+#include <ucw/str-match.h>

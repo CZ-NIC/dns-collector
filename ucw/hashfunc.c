@@ -11,9 +11,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/hashfunc.h"
-#include "ucw/chartype.h"
+#include <ucw/lib.h>
+#include <ucw/hashfunc.h>
+#include <ucw/chartype.h>
 
 /* The number of bits the hash in the function hash_*() is rotated by after
  * every pass.  It should be prime with the word size.  */

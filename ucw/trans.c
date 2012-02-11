@@ -9,10 +9,10 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/trans.h"
-#include "ucw/resource.h"
-#include "ucw/mempool.h"
+#include <ucw/lib.h>
+#include <ucw/trans.h>
+#include <ucw/resource.h>
+#include <ucw/mempool.h>
 
 #include <stdio.h>
 

@@ -43,8 +43,8 @@
 #ifndef _SHERLOCK_UCW_TRIE_H
 #define _SHERLOCK_UCW_TRIE_H
 
-#include "ucw/eltpool.h"
-#include "ucw/hashfunc.h"
+#include <ucw/eltpool.h>
+#include <ucw/hashfunc.h>
 
 #include <string.h>
 

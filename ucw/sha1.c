@@ -11,9 +11,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/sha1.h"
-#include "ucw/unaligned.h"
+#include <ucw/lib.h>
+#include <ucw/sha1.h>
+#include <ucw/unaligned.h>
 
 #include <string.h>
 
@@ -288,7 +288,7 @@ sha1_hash_buffer(byte *outbuf, const byte *buffer, uns length)
 
 #include <stdio.h>
 #include <unistd.h>
-#include "ucw/string.h"
+#include <ucw/string.h>
 
 int main(void)
 {

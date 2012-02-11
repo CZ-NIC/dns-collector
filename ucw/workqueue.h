@@ -29,8 +29,8 @@
  *  until all of them finish.
  */
 
-#include "ucw/semaphore.h"
-#include "ucw/clists.h"
+#include <ucw/semaphore.h>
+#include <ucw/clists.h>
 
 #include <pthread.h>
 

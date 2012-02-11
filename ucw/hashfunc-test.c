@@ -3,7 +3,7 @@
  *	it is faster than the classical version ;-)
  */
 
-#include "ucw/hashfunc.h"
+#include <ucw/hashfunc.h>
 
 #include <stdlib.h>
 #include <stdio.h>

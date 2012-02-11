@@ -4,10 +4,10 @@
  *	(c) 2004 Martin Mares <mj@ucw.cz>
  */
 
-#include "ucw/lib.h"
-#include "ucw/getopt.h"
-#include "ucw/url.h"
-#include "ucw/fastbuf.h"
+#include <ucw/lib.h>
+#include <ucw/getopt.h>
+#include <ucw/url.h>
+#include <ucw/fastbuf.h>
 
 #include <stdio.h>
 #include <stdlib.h>

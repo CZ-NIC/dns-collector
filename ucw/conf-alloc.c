@@ -8,9 +8,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/conf.h"
-#include "ucw/mempool.h"
+#include <ucw/lib.h>
+#include <ucw/conf.h>
+#include <ucw/mempool.h>
 
 struct mempool *cf_pool;	// current pool for loading new configuration
 

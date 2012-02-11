@@ -9,14 +9,14 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "shxml/xml.h"
-#include "shxml/dtd.h"
-#include "shxml/internals.h"
-#include "ucw/unicode.h"
-#include "ucw/ff-unicode.h"
-#include "charset/charconv.h"
-#include "charset/fb-charconv.h"
+#include <ucw/lib.h>
+#include <shxml/xml.h>
+#include <shxml/dtd.h>
+#include <shxml/internals.h>
+#include <ucw/unicode.h>
+#include <ucw/ff-unicode.h>
+#include <charset/charconv.h>
+#include <charset/fb-charconv.h>
 
 /*** Charecter categorization ***/
 

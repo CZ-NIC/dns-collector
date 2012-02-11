@@ -17,15 +17,15 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/conf.h"
-#include "ucw/getopt.h"
-#include "ucw/conf-internal.h"
-#include "ucw/clists.h"
-#include "ucw/mempool.h"
-#include "ucw/chartype.h"
-#include "ucw/bbuf.h"
-#include "ucw/string.h"
+#include <ucw/lib.h>
+#include <ucw/conf.h>
+#include <ucw/getopt.h>
+#include <ucw/conf-internal.h>
+#include <ucw/clists.h>
+#include <ucw/mempool.h>
+#include <ucw/chartype.h>
+#include <ucw/bbuf.h>
+#include <ucw/string.h>
 
 #include <stdlib.h>
 #include <stdio.h>

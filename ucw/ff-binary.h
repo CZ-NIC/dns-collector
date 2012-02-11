@@ -11,8 +11,8 @@
 #ifndef _UCW_FF_BINARY_H
 #define _UCW_FF_BINARY_H
 
-#include "ucw/fastbuf.h"
-#include "ucw/unaligned.h"
+#include <ucw/fastbuf.h>
+#include <ucw/unaligned.h>
 
 #ifdef CPU_BIG_ENDIAN
 #define FF_ENDIAN be

@@ -7,9 +7,9 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/prime.h"
-#include "ucw/binsearch.h"
+#include <ucw/lib.h>
+#include <ucw/prime.h>
+#include <ucw/binsearch.h>
 
 /* A table of odd primes, each is about 1.2 times the previous one */
 static uns prime_table[] = {

@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "ucw/fastbuf.h" // For the temp_file_name
+#include <ucw/fastbuf.h> // For the temp_file_name
 
 /* In Darwin, sem_init() is unfortunately not implemented and the guide
  * recommends emulating it using sem_open().  */

@@ -10,8 +10,8 @@
 #ifndef _UCW_MAINLOOP_H
 #define _UCW_MAINLOOP_H
 
-#include "ucw/clists.h"
-#include "ucw/process.h"
+#include <ucw/clists.h>
+#include <ucw/process.h>
 
 #include <signal.h>
 

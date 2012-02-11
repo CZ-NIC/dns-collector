@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/sha1.h"
+#include <ucw/lib.h>
+#include <ucw/sha1.h>
 
 #include <string.h>
 
@@ -72,7 +72,7 @@ sha1_hmac(byte *outbuf, const byte *key, uns keylen, const byte *data, uns datal
 #ifdef TEST
 
 #include <stdio.h>
-#include "ucw/string.h"
+#include <ucw/string.h>
 
 static uns rd(char *dest)
 {

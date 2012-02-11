@@ -7,7 +7,7 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/string.h"
+#include <ucw/string.h>
 
 int
 MATCH_FUNC_NAME(const char *p, const char *s)

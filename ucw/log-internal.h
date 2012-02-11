@@ -22,7 +22,7 @@ int log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m);
 /* Define an array (growing buffer) for pointers to log_streams. */
 #define GBUF_TYPE struct log_stream*
 #define GBUF_PREFIX(x) lsbuf_##x
-#include "ucw/gbuf.h"
+#include <ucw/gbuf.h>
 
 extern struct lsbuf_t log_streams;
 extern int log_streams_after;

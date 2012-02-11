@@ -8,8 +8,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#include "ucw/lib.h"
-#include "ucw/log.h"
+#include <ucw/lib.h>
+#include <ucw/log.h>
 
 #include <string.h>
 #include <syslog.h>

@@ -7,9 +7,9 @@
  *	of the GNU General Public License.
  */
 
-#include "ucw/lib.h"
-#include "images/images.h"
-#include "images/color.h"
+#include <ucw/lib.h>
+#include <images/images.h>
+#include <images/color.h>
 
 #include <getopt.h>
 #include <stdlib.h>

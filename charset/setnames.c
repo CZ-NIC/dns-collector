@@ -8,8 +8,8 @@
  *	of the GNU General Public License.
  */
 
-#include "ucw/lib.h"
-#include "charset/charconv.h"
+#include <ucw/lib.h>
+#include <charset/charconv.h>
 
 #include <string.h>
 

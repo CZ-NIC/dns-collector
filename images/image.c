@@ -9,11 +9,11 @@
 
 #undef LOCAL_DEBUG
 
-#include "ucw/lib.h"
-#include "ucw/mempool.h"
-#include "images/images.h"
-#include "images/error.h"
-#include "images/color.h"
+#include <ucw/lib.h>
+#include <ucw/mempool.h>
+#include <images/images.h>
+#include <images/error.h>
+#include <images/color.h>
 
 #include <string.h>
 
@@ -117,7 +117,7 @@ image_clone(struct image_context *ctx, struct image *src, uns flags, struct memp
 #	  define IMAGE_WALK_SEC_IMAGE src
 #         define IMAGE_WALK_DOUBLE
 #         define IMAGE_WALK_DO_STEP do{ walk_pos[0] = walk_sec_pos[0]; walk_pos[1] = walk_sec_pos[1]; walk_pos[2] = walk_sec_pos[2]; }while(0)
-#         include "images/image-walk.h"
+#         include <images/image-walk.h>
 	}
       else if (src->row_size != img->row_size || ((img->flags | src->flags) & IMAGE_GAPS_PROTECTED))
         {

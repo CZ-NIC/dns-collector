@@ -13,7 +13,7 @@
  *	102	not running
  */
 
-#include "ucw/lib.h"
+#include <ucw/lib.h>
 
 #include <stdlib.h>
 #include <stdio.h>
