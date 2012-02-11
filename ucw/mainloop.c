@@ -50,10 +50,7 @@ static void signal_del_ctx(struct main_context *m, struct main_signal *ms);
 static void
 main_get_time_ctx(struct main_context *m)
 {
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  m->now_seconds = tv.tv_sec;
-  m->now = (timestamp_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
+  m->now = get_timestamp();
 }
 
 static struct main_context *
