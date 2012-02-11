@@ -70,7 +70,7 @@ ifdef CONFIG_UCW_FB_DIRECT
 LIBUCW_MODS+=fb-direct
 endif
 
-ifdef CONFIG_OWN_GETOPT
+ifdef CONFIG_UCW_OWN_GETOPT
 include $(s)/ucw/getopt/Makefile
 endif
 
