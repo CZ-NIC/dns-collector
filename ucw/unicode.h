@@ -213,7 +213,7 @@ static inline uns utf8_space(uns u)
 }
 
 /**
- * Compute the length of a single UTF-8 character from it's first byte. The encoding must be valid.
+ * Compute the length of a single UTF-8 character from its first byte. The encoding must be valid.
  **/
 static inline uns utf8_encoding_len(uns c)
 {
@@ -253,7 +253,7 @@ static inline void *utf16_le_put(void *p, uns u)
 }
 
 /**
- * Encode an UTF-16BE character from the range `[0, 0xD7FF]` or `[0xE000,0x11FFFF]`;
+ * Encode a UTF-16BE character from the range `[0, 0xD7FF]` or `[0xE000,0x11FFFF]`;
  * up to 4 bytes needed.
  **/
 static inline void *utf16_be_put(void *p, uns u)
@@ -274,7 +274,7 @@ static inline void *utf16_be_put(void *p, uns u)
 }
 
 /**
- * Decode an UTF-16LE character from the range `[0, 0xD7FF]` or `[0xE000,11FFFF]`
+ * Decode a UTF-16LE character from the range `[0, 0xD7FF]` or `[0xE000,11FFFF]`
  * or return @repl if the encoding has been corrupted.
  **/
 static inline void *utf16_le_get_repl(const void *p, uns *uu, uns repl)
@@ -294,7 +294,7 @@ static inline void *utf16_le_get_repl(const void *p, uns *uu, uns repl)
 }
 
 /**
- * Decode an UTF-16BE character from the range `[0, 0xD7FF]` or `[0xE000,11FFFF]`
+ * Decode a UTF-16BE character from the range `[0, 0xD7FF]` or `[0xE000,11FFFF]`
  * or return @repl if the encoding has been corrupted.
  **/
 static inline void *utf16_be_get_repl(const void *p, uns *uu, uns repl)
@@ -314,7 +314,7 @@ static inline void *utf16_be_get_repl(const void *p, uns *uu, uns repl)
 }
 
 /**
- * Decode an UTF-16LE  character from the range `[0, 0xD7FF]` or `[0xE000,11FFFF]`
+ * Decode a UTF-16LE  character from the range `[0, 0xD7FF]` or `[0xE000,11FFFF]`
  * or return `UNI_REPLACEMENT` if the encoding has been corrupted.
  **/
 static inline void *utf16_le_get(const void *p, uns *uu)
@@ -323,7 +323,7 @@ static inline void *utf16_le_get(const void *p, uns *uu)
 }
 
 /**
- * Decode an UTF-16BE  character from the range `[0, 0xD7FF]` or `[0xE000,11FFFF]`
+ * Decode a UTF-16BE  character from the range `[0, 0xD7FF]` or `[0xE000,11FFFF]`
  * or return `UNI_REPLACEMENT` if the encoding has been corrupted.
  **/
 static inline void *utf16_be_get(const void *p, uns *uu)
@@ -332,7 +332,9 @@ static inline void *utf16_be_get(const void *p, uns *uu)
 }
 
 /**
- * Check an Unicode value and if it seems to be useless (defined by Ucwlib; it may change in future) return `UNI_REPLACEMENT` instead.
+ * Basic sanity check on Unicode characters. Return `UNI_REPLACEMENT` if the input
+ * character is a surrogate, ASCII or Latin-1 control character different from the tab,
+ * or if it lies outside the basic plane. In all other cases, it acts as an identity.
  **/
 static inline uns unicode_sanitize_char(uns u)
 {
@@ -347,7 +349,7 @@ static inline uns unicode_sanitize_char(uns u)
 /* unicode-utf8.c */
 
 /**
- * Count the number of Unicode character in a zero-terminated UTF-8 string.
+ * Count the number of Unicode characters in a zero-terminated UTF-8 string.
  * Returned value for corrupted encoding is undefined, but is never greater than strlen().
  **/
 uns utf8_strlen(const byte *str);
