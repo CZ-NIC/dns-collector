@@ -11,6 +11,7 @@
 
 #include "ucw/lib.h"
 #include "ucw/base64.h"
+#include "ucw/threads.h"
 
 #include <string.h>
 
@@ -67,16 +68,17 @@ base64_decode(byte *dest, const byte *src, uns len)
 	static uns table_built = 0;
 
 	if (table_built == 0) {
-		byte *chp;
-		table_built = 1;
+		ucwlib_lock();
 		for(ch = 0; ch < 256; ch++) {
-			chp = strchr(base64_table, ch);
+			byte *chp = strchr(base64_table, ch);
 			if(chp) {
 				reverse_table[ch] = chp - base64_table;
 			} else {
 				reverse_table[ch] = 0xff;
 			}
 		}
+		table_built = 1;
+		ucwlib_unlock();
 	}
 
 	/* run through the whole string, converting as we go */
