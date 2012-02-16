@@ -12,6 +12,8 @@ not described, so you might need to look into the source code.
 
 You can see the index of <<def_index:,documented definitions>>.
 
+For news and incompatible changes in this version, see the <<relnotes:,Release notes>>.
+
 Modules
 -------
 - <<basics:,Basics>>
@@ -45,7 +47,6 @@ Other features
 - <<config:,Configuration file syntax>>
 - <<docsys:,Documentation system>>
 - <<generic:,Macro-generated generics>>
-- <<relnotes:,Release notes>>
 
 Yet undocumented modules
 ------------------------

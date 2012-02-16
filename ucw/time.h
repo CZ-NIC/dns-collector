@@ -20,6 +20,8 @@
  * system boot if POSIX monotonic clock is used.
  ***/
 
+/* time-stamp.c */
+
 timestamp_t get_timestamp(void);		/** Get current time as a millisecond timestamp. **/
 
 /***
@@ -29,6 +31,8 @@ timestamp_t get_timestamp(void);		/** Get current time as a millisecond timestam
  * It can be initialized and then read multiple times. Each read returns
  * the number of milliseconds elapsed since the previous read or initialization.
  ***/
+
+/* time-timer.c */
 
 void init_timer(timestamp_t *timer);		/** Initialize a timer. **/
 uns get_timer(timestamp_t *timer);		/** Get the number of milliseconds since last init/get of a timer. **/

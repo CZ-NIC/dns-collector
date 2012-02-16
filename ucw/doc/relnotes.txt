@@ -61,6 +61,7 @@ Release notes
 * *Incompatible:* Several modules now have their own header files:
 ** `process.h` -- all functions related to processes, previously declared in `lib.h`
 ** `io.h` -- functions related to files from `lib.h` and `lfs.h`
+** `time.h` -- timestamps and interval timers, previously in `lib.h`
 
 * *Incompatible:* Several configuration options were renamed or removed:
 ** `CONFIG_FAKE_ELTPOOL` &rarr; `CONFIG_UCW_FAKE_ELTPOOL`
