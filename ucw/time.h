@@ -24,6 +24,16 @@
 
 timestamp_t get_timestamp(void);		/** Get current time as a millisecond timestamp. **/
 
+/* time-conf.c */
+
+/**
+ * A user type for parsing of time intervals in configuration files.
+ * It is specified as fractional seconds and internally converted to
+ * a <<basics:type_timestamp_t,`timestamp_t`>>. When conversion of
+ * a non-zero value yields zero, an error is raised.
+ **/
+extern struct cf_user_type timestamp_type;
+
 /***
  * === Timers
  *
