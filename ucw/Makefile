@@ -19,7 +19,8 @@ LIBUCW_MODS= \
 	fb-file fb-mem fb-temp tempfile fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param fb-socket \
 	char-cat char-upper char-lower unicode stkstring \
 	wildmatch regex \
-	prime primetable random timer \
+	prime primetable random \
+	time-stamp time-timer \
 	bit-ffs bit-fls \
 	url \
 	mainloop main-block main-rec \
@@ -35,7 +36,7 @@ LIBUCW_MODS= \
 	resource trans res-fd res-mem res-subpool res-mempool res-eltpool
 
 LIBUCW_MAIN_INCLUDES= \
-	lib.h log.h threads.h \
+	lib.h log.h threads.h time.h \
 	mempool.h \
 	clists.h slists.h simple-lists.h \
 	string.h stkstring.h unicode.h chartype.h regex.h \

@@ -37,6 +37,7 @@ Modules
 - <<compress:,Compression>>
 - <<trans:,Transactions and resource tracking>>
 - <<string:,String operations>>
+- <<time:,Time and timers>>
 
 Other features
 --------------

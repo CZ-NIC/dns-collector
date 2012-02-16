@@ -8,6 +8,7 @@
 #include <ucw/conf.h>
 #include <ucw/io.h>
 #include <ucw/asio.h>
+#include <ucw/time.h>
 
 #include <stdio.h>
 #include <stdlib.h>

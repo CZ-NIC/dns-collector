@@ -8,6 +8,7 @@
 #include <ucw/getopt.h>
 #include <ucw/md5.h>
 #include <ucw/heap.h>
+#include <ucw/time.h>
 
 #include <stdio.h>
 #include <stdlib.h>

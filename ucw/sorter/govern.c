@@ -11,6 +11,7 @@
 #include <ucw/fastbuf.h>
 #include <ucw/mempool.h>
 #include <ucw/stkstring.h>
+#include <ucw/time.h>
 #include <ucw/sorter/common.h>
 
 #include <string.h>

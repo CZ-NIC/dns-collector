@@ -178,14 +178,6 @@ void *big_alloc(u64 len) LIKE_MALLOC;		/** Allocate a large memory block in the 
 void *big_alloc_zero(u64 len) LIKE_MALLOC;	/** Allocate and clear a large memory block. **/
 void big_free(void *start, u64 len);		/** Free block allocated by @big_alloc() or @big_alloc_zero(). **/
 
-/*** === Trivial timers (timer.c) ***/
-
-timestamp_t get_timestamp(void);		/** Get current time as a millisecond timestamp. **/
-
-void init_timer(timestamp_t *timer);		/** Initialize a timer. **/
-uns get_timer(timestamp_t *timer);		/** Get the number of milliseconds since last init/get of a timer. **/
-uns switch_timer(timestamp_t *oldt, timestamp_t *newt);	/** Stop ticking of one timer and resume another. **/
-
 /*** === Random numbers (random.c) ***/
 
 uns random_u32(void);				/** Return a pseudorandom 32-bit number. **/

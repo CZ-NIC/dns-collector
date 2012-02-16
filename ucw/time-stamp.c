@@ -8,9 +8,8 @@
  */
 
 #include <ucw/lib.h>
+#include <ucw/time.h>
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/time.h>
 #include <time.h>
 
@@ -40,27 +39,6 @@ get_timestamp(void)
 }
 
 #endif
-
-void
-init_timer(timestamp_t *timer)
-{
-  *timer = get_timestamp();
-}
-
-uns
-get_timer(timestamp_t *timer)
-{
-  timestamp_t t = *timer;
-  *timer = get_timestamp();
-  return MIN(*timer-t, ~0U);
-}
-
-uns
-switch_timer(timestamp_t *oldt, timestamp_t *newt)
-{
-  *newt = get_timestamp();
-  return MIN(*newt-*oldt, ~0U);
-}
 
 #ifdef TEST
 

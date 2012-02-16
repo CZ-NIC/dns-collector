@@ -10,6 +10,7 @@
 #undef LOCAL_DEBUG
 
 #include <ucw/lib.h>
+#include <ucw/time.h>
 #include <images/images.h>
 #include <images/color.h>
 #include <images/error.h>

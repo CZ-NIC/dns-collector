@@ -15,6 +15,7 @@
 #include <ucw/threads.h>
 #include <ucw/gary.h>
 #include <ucw/process.h>
+#include <ucw/time.h>
 
 #include <stdio.h>
 #include <string.h>

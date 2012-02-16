@@ -8,6 +8,7 @@
  */
 
 #include <ucw/lib.h>
+#include <ucw/time.h>
 
 #include <stdlib.h>
 #include <stdio.h>
