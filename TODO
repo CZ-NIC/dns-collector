@@ -1,5 +1,3 @@
-- Clean up free/
 - ipaccess: support IPv6
-- lfs-test: generalize or kill
 - transactions: Unit tests
 - libucw.pc: do not use -l if shared
