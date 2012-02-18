@@ -29,7 +29,7 @@ function try
 		cd $TDIR
 		exec 3>&2 >>log 2>&1
 		case $CONFIG in
-			*)			../../configure $CONFIG $ARGS || die "CANNOT CONFIGURE"
+			*)			../../configure $CONFIG CONFIG_LOCAL $ARGS || die "CANNOT CONFIGURE"
 						;;
 		esac
 		make $MAKEOPTS || die FAILED
