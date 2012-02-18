@@ -1,19 +1,24 @@
-Sherlock Holmes Libraries @VERSION@
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-(c) 1997--2009 Martin Mares <mj@ucw.cz>
-(c) 2000--2009 Robert Spalek <robert@ucw.cz>
-(c) 2006--2009 Pavel Charvat <pchar@ucw.cz>
-(c) 2008--2009 Michal Vaner <vorner@ucw.cz>
-(c) 2008 Tomas Gavenciak <gavento@ucw.cz>
+################################################################################
 
-This package contains all libraries from the freely distributable version
-of the Sherlock Holmes search engine (see http://www.ucw.cz/holmes/).
+	The UCW Libraries @VERSION@
 
-See doc/using-libs for description of the libraries.
+	(c) 1997--2012 Martin Mares <mj@ucw.cz>
+	(c) 2000--2009 Robert Spalek <robert@ucw.cz>
+	(c) 2006--2012 Pavel Charvat <pchar@ucw.cz>
+	(c) 2008--2009 Michal Vaner <vorner@ucw.cz>
+	(c) 2008 Tomas Gavenciak <gavento@ucw.cz>
+	(c) 2010 Daniel Fiala <danfiala@ucw.cz>
 
-See doc/install.html for build requirements and instructions.
+################################################################################
 
-See doc/configure.html if you want to tweak build options.
+This package contains the LibUCW library and several other libraries,
+which have split off the Sherlock Holmes search engine project.
 
-After you compile the library, you can issue `make docs' to build the API
-documentation. It will appear in run/doc. (It is not complete yet, though.)
+See ucw/doc/install.txt for build requirements and instructions.
+
+See ucw/doc/relnotes.txt for release notes.
+
+For more information, take a look at http://www.ucw.cz/libucw/.
+
+If you have any suggestions or bug reports, please write to our
+mailing list libucw-devel@ucw.cz, or directly to mj@ucw.cz.
