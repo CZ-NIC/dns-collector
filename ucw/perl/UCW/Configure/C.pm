@@ -70,114 +70,23 @@ Test("ARCH", "Checking for machine architecture", sub {
 	}
 });
 
-sub parse_cpuinfo_linux() {
-	open X, "/proc/cpuinfo" || undef;
-	my %pc = ();
-	while (<X>) {
-		chomp;
-		/^$/ && last;
-		/^([^\t]+)\t+:\s*(.*)$/ and $pc{$1}=$2;
-	}
-	close X;
-	return ($pc{'vendor_id'},
-		$pc{'cpu family'},
-		$pc{'model'});
-}
-
-sub parse_cpuinfo_darwin() {
-	my @cpu = (`sysctl -n machdep.cpu.vendor`,
-		   `sysctl -n machdep.cpu.family`,
-		   `sysctl -n machdep.cpu.model`);
-	chomp @cpu;
-	return @cpu;
-}
-
-sub parse_cpuinfo() {
-	my @cpu;
-	if (IsSet("CONFIG_LINUX")) {
-		@cpu = parse_cpuinfo_linux();
-	} elsif (IsSet("CONFIG_DARWIN")) {
-		@cpu = parse_cpuinfo_darwin();
-	}
-	$cpu[0] = "" if !defined $cpu[0];
-	$cpu[1] = 0 if !defined $cpu[1];
-	$cpu[2] = 0 if !defined $cpu[2];
-	return @cpu;
-}
-
-Test("CPU_ARCH", "Checking for CPU architecture", sub {
-	my $mach = Get("ARCH");
-	my $arch = "";
-	if ($mach eq "i386") {
-		Set("CPU_I386");
-		UnSet("CPU_64BIT_POINTERS");
-		Set("CPU_LITTLE_ENDIAN");
-		UnSet("CPU_BIG_ENDIAN");
-		Set("CPU_ALLOW_UNALIGNED");
-		Set("CPU_STRUCT_ALIGN" => 4);
-		if (IsSet("CONFIG_EXACT_CPU")) {
-			my ($vendor, $family, $model) = parse_cpuinfo();
-			# Try to understand CPU vendor, family and model [inspired by MPlayer's configure script]
-			if ($vendor eq "AuthenticAMD") {
-				if ($family >= 6) {
-					if ($model >= 31 && $gccver >= 3004) { $arch = "athlon64"; }
-					elsif ($model >= 6 && $gccver >= 3003) { $arch = "athlon-xp"; }
-					else { $arch = "athlon"; }
-				}
-			} elsif ($vendor eq "GenuineIntel") {
-				if ($family >= 15 && $gccver >= 3003) {
-					if ($model >= 4) { $arch = "nocona"; }
-					elsif ($model >= 3) { $arch = "prescott"; }
-					else { $arch = "pentium4"; }
-				} elsif ($family == 6 && $gccver >= 3003) {
-					if ($model == 23) { $arch = "nocona"; }
-					elsif ($model == 15) { $arch = "prescott"; }
-					elsif (($model == 9 || $model == 13) && $gccver >= 3004) { $arch = "pentium-m"; }
-					elsif ($model >= 7) { $arch = "pentium3"; }
-					elsif ($model >= 3) { $arch = "pentium2"; }
-				}
-			}
-
-			# No match on vendor, try the family
-			if ($arch eq "") {
-				if ($family >= 6) {
-					$arch = "i686";
-				} elsif ($family >= 3) {
-					$arch = "i${family}86";
-				}
-			}
-			Log (($arch ne "") ? "(using /proc/cpuinfo) " : "(don't understand /proc/cpuinfo) ");
-			return $arch;
-		} else {
-			return "default";
-		}
-	} elsif ($mach eq "amd64") {
-		Set("CPU_AMD64");
-		Set("CPU_64BIT_POINTERS");
-		Set("CPU_LITTLE_ENDIAN");
-		UnSet("CPU_BIG_ENDIAN");
-		Set("CPU_ALLOW_UNALIGNED");
-		Set("CPU_STRUCT_ALIGN" => 8);
-		if (IsSet("CONFIG_EXACT_CPU")) {
-			# In x86-64 world, the detection is somewhat easier so far...
-			my ($vendor, $family, $model) = parse_cpuinfo();
-			if ($vendor eq "AuthenticAMD") {
-				$arch = "athlon64";
-			} elsif ($vendor eq "GenuineIntel") {
-				$arch = "nocona";
-			}
-			Log (($arch ne "") ? "(using /proc/cpuinfo) " : "(don't understand /proc/cpuinfo) ");
-			return $arch;
-		} else {
-			return "default";
-		}
-	} else {
-		return "unknown";
-	}
-});
-
-if (Get("CPU_ARCH") eq "unknown") {
-	Warn "CPU architecture not recognized, using defaults, keep fingers crossed.\n";
+my $arch = Get("ARCH");
+if ($arch eq 'i386') {
+	Set("CPU_I386");
+	UnSet("CPU_64BIT_POINTERS");
+	Set("CPU_LITTLE_ENDIAN");
+	UnSet("CPU_BIG_ENDIAN");
+	Set("CPU_ALLOW_UNALIGNED");
+	Set("CPU_STRUCT_ALIGN" => 4);
+} elsif ($arch eq "amd64") {
+	Set("CPU_AMD64");
+	Set("CPU_64BIT_POINTERS");
+	Set("CPU_LITTLE_ENDIAN");
+	UnSet("CPU_BIG_ENDIAN");
+	Set("CPU_ALLOW_UNALIGNED");
+	Set("CPU_STRUCT_ALIGN" => 8);
+} elsif (!Get("CPU_LITTLE_ENDIAN") && !Get("CPU_BIG_ENDIAN")) {
+	Fail "Architecture not recognized, please set CPU_xxx variables manually.";
 }
 
 ### Compiler and its Options ###
@@ -187,8 +96,12 @@ Set("CLANG" => "-std=gnu99 -fno-common");
 
 # C optimizations
 Set("COPT" => '-O2');
-if (Get("CPU_ARCH") ne "unknown" && Get("CPU_ARCH") ne "default") {
-	Append("COPT", '-march=' . Get("CPU_ARCH"));
+if ($arch =~ /^(i386|amd64)$/ && Get("CONFIG_EXACT_CPU")) {
+	if ($gccver >= 4002) {
+		Append('COPT', '-march=native');
+	} else {
+		Warn "CONFIG_EXACT_CPU not supported with old GCC, ignoring.\n";
+	}
 }
 
 # C optimizations for highly exposed code
