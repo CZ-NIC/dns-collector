@@ -51,7 +51,8 @@ if [ "$1" == DARWIN ] ; then
 elif [ -n "$1" ] ; then
 	try "$@"
 else
-	try default.cfg
+	try default.cfg									# default configuration
+	try default.cfg -CONFIG_DEBUG							# with no debugging code
 	try debug/default.cfg								# debugging configuration
 	try debug/default.cfg -CONFIG_UCW_THREADS					# non-threaded configuration
 	try debug/default.cfg -CONFIG_UCW_TLS						# threaded, but no TLS support in gcc
