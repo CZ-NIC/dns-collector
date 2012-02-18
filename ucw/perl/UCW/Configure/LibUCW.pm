@@ -71,11 +71,19 @@ TestBool("CONFIG_UCW_MONOTONIC_CLOCK", "Checking for monotonic clock", sub {
 	return Get("CONFIG_LINUX");
 });
 
-# Darwin does not support BSD regexes, fix up
 if (IsSet("CONFIG_DARWIN")) {
+	# Darwin does not support BSD regexes, fix up
 	if (!IsSet("CONFIG_UCW_POSIX_REGEX") && !IsSet("CONFIG_UCW_PCRE")) {
 		Set("CONFIG_UCW_POSIX_REGEX" => 1);
 		Warn "BSD regex library on Darwin isn't compatible, using POSIX regex.\n";
+	}
+
+	# Fill in some constants not found in the system header files
+	Set("SOL_TCP" => 6);		# missing in /usr/include/netinet/tcp.h
+	if (IsGiven("CONFIG_UCW_DIRECT_IO") && IsSet("CONFIG_UCW_DIRECT_IO")) {
+		Fail("Direct I/O is not available on darwin");
+	} else {
+		UnSet("CONFIG_UCW_DIRECT_IO");
 	}
 }
 

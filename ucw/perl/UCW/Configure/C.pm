@@ -167,13 +167,6 @@ if (IsSet("CONFIG_DARWIN")) {
 	# Directory hierarchy of the fink project
 	Append("LIBS" => "-L/sw/lib");
 	Append("COPT" => "-I/sw/include");
-	# Fill in some constants not found in the system header files
-	Set("SOL_TCP" => 6);		# missing in /usr/include/netinet/tcp.h
-	if (IsGiven("CONFIG_UCW_DIRECT_IO") && IsSet("CONFIG_UCW_DIRECT_IO")) {
-		Fail("Direct I/O is not available on darwin");
-	} else {
-		UnSet("CONFIG_UCW_DIRECT_IO");
-	}
 }
 
 ### Compiling test programs ###
