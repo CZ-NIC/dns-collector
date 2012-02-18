@@ -149,6 +149,20 @@ void assert_failed_noinfo(void) NONRET;
 #define DBG(x,y...) do { } while(0)
 #endif
 
+#ifdef DEBUG_ASSERTS
+/**
+ * Sometimes, we may want to check that a pointer points to a valid memory
+ * location before we start using it for anything more complicated. This
+ * macro checks pointer validity by reading the byte it points to.
+ **/
+#define ASSERT_READABLE(ptr) ({ volatile char *__p = (ptr); *__p; })
+/** Like the previous macro, but it checks writeability, too. **/
+#define ASSERT_WRITEABLE(ptr) ({ volatile char *__p = (ptr); *__p = *__p; })
+#else
+#define ASSERT_READABLE(ptr) do { } while(0)
+#define ASSERT_WRITEABLE(ptr) do { } while(0)
+#endif
+
 /*** === Memory allocation ***/
 
 /*
