@@ -1,3 +1,4 @@
 - ipaccess: support IPv6
 - transactions: Unit tests
 - libucw.pc: do not use -l if shared
+- Maint: git push --tags
