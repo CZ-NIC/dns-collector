@@ -1,5 +1,5 @@
 # UCW Library configuration system: OS and C compiler
-# (c) 2005--2010 Martin Mares <mj@ucw.cz>
+# (c) 2005--2012 Martin Mares <mj@ucw.cz>
 # (c) 2006 Robert Spalek <robert@ucw.cz>
 # (c) 2008 Michal Vaner <vorner@ucw.cz>
 
