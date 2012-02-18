@@ -95,8 +95,7 @@ PostConfig {
 			# Included symbols
 			'^CONFIG_UCW_' => 1,
 			'^CPU_' => 1,
-			'^(SHERLOCK|UCW)_VERSION(_|$)' => 1,
-
+			'^UCW_VERSION(_|$)' => 1,
 		]);
 	} if Get("CONFIG_INSTALL_API");
 
