@@ -94,7 +94,6 @@ $(o)/ucw/hashfunc.o $(o)/ucw/hashfunc.oo: CFLAGS += -funroll-loops
 $(o)/ucw/lizard.o: CFLAGS += $(COPT2) -funroll-loops
 
 $(o)/ucw/conf-test: $(o)/ucw/conf-test.o $(LIBUCW)
-$(o)/ucw/lfs-test: $(o)/ucw/lfs-test.o $(LIBUCW)
 $(o)/ucw/hash-test: $(o)/ucw/hash-test.o $(LIBUCW)
 $(o)/ucw/hashfunc-test: $(o)/ucw/hashfunc-test.o $(LIBUCW)
 $(o)/ucw/asort-test: $(o)/ucw/asort-test.o $(LIBUCW)
