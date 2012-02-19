@@ -8,6 +8,7 @@
  */
 
 #include <ucw/stkstring.h>
+#include <ucw/time.h>
 
 #ifdef SORT_INTERNAL_RADIX
 /* Keep copies of the items' hashes to save cache misses */
