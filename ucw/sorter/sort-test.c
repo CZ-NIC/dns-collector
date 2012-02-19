@@ -16,7 +16,7 @@
 #include <ucw/md5.h>
 #include <ucw/string.h>
 #include <ucw/prime.h>
-#include <ucw/timer.h>
+#include <ucw/time.h>
 
 #include <stdlib.h>
 #include <stdio.h>
