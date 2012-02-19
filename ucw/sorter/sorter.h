@@ -116,7 +116,7 @@
 
 #include <ucw/sorter/common.h>
 #include <ucw/fastbuf.h>
-#include <ucw/timer.h>
+#include <ucw/time.h>
 
 #include <fcntl.h>
 
