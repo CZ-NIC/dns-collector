@@ -78,6 +78,7 @@ fbatomic_spout(struct fastbuf *f)
       f->buffer = xrealloc(f->buffer, size);
       f->bufend = f->buffer + size;
       f->bptr = f->buffer + written;
+      f->bstop = f->buffer;
       F->expected_max_bptr = f->bufend - F->slack_size;
     }
   else
