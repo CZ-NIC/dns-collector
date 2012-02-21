@@ -27,6 +27,8 @@
 #include <errno.h>
 
 static uns max_line = 1024;
+static int launch_finish_messages = 1;
+static int nonzero_status_message = 1;
 
 static struct cf_section cfsec_logoutput = {
   CF_ITEMS {
@@ -197,26 +199,37 @@ const struct option my_long_opts[] = {
   { "logfile", 1, 0, 'f'},
   { "logname", 1, 0, 'n'},
   { "descriptor", 1, 0, 'l'},
+  { "nv", 0, 0, 'q'},
+  { "nonverbose", 0, 0, 'q'},
+  { "non-verbose", 0, 0, 'q'},
+  { "non_verbose", 0, 0, 'q'},
+  { "silent", 0, 0, 's'},
   { NULL, 0, 0, 0}
 };
 
 #undef CF_USAGE_TAB
-#define CF_USAGE_TAB "\t\t"
+#define CF_USAGE_TAB "\t   "
 static char usage[] =
   "Usage:\n"
-  "logoutput -h|--help\t\tThis help.\n"
-  "logoutput <options> -i|--input\tRead filedescriptors and log them.\n"
-  "\t\t\t\tdefault: stdin at level I.\n"
+  "logoutput -h|--help\t\t   This help.\n"
+  "logoutput <options> -i|--input\t   Read filedescriptors and log them.\n"
+  "\t\t\t\t   default: stdin at level I.\n"
   "logoutput <opts> [--] <cmd> [arguments for cmd ...]\n"
-  "\t\t\t\tOpen filedescriptors for writing for\n"
-  "\t\t\t\tcommand <cmd> and log them.\n"
-  "\t\t\t\tdefault: stdout:I, stderr:W.\n"
+  "\t\t\t\t   Open filedescriptors for writing for\n"
+  "\t\t\t\t   command <cmd> and log them.\n"
+  "\t\t\t\t   default: stdout:I, stderr:W.\n"
   "Options:\n"
   CF_USAGE
-  "-n, --logname <name>\t\t\tUse <name> as program name in logs.\n"
-  "-l, --descriptor <fdnum>:<level>\tOpen filedescriptor <fdnum> and log it\n"
-  "\t\t\t\t\tat level <level> (discards defaults).\n"
-  "-f, --logfile <logfile>\t\t\tLog to file <logfile>.\n";
+  "-n, --logname <name>\t\t   Use <name> as program name in logs.\n"
+  "-l, --descriptor <fdnum>:<level>   Open filedescriptor <fdnum> and log it\n"
+  "\t\t\t\t   at level <level> (discards defaults).\n"
+  "-f, --logfile <logfile>\t\t   Log to file <logfile>.\n"
+  "-q, --nv, --nonverbose\t\t   Suppress launching and successful\n"
+  "\t\t\t\t   finish messages.\n"
+  "-s, --silent\t\t\t   Suppress launching message and all\n"
+  "\t\t\t\t   finish messages (i.e., no warning if\n"
+  "\t\t\t\t   terminates with nonzero message or by\n"
+  "\t\t\t\t   signal.\n";
 
 int
 main(int argc, char **argv)
@@ -282,6 +295,13 @@ main(int argc, char **argv)
 
 	  add_level_fd(fdnum, level);
 	}
+	break;
+
+      case 's':
+	nonzero_status_message = 0;
+	/* fallthrough */
+      case 'q':
+	launch_finish_messages = 0;
 	break;
 
       default:
@@ -409,7 +429,8 @@ opt_done:
     }
     buf2[-1] = 0;
 
-    msg(L_INFO, "Launching command: %s", buf);
+    if (launch_finish_messages)
+      msg(L_INFO, "Launching command: %s", buf);
   }
 
   /* Set logname. */
@@ -437,10 +458,12 @@ opt_done:
     }
 
     if (format_exit_status(buf, status)) {
-      msg(L_WARN, "Child %s", buf);
+      if (nonzero_status_message)
+	msg(L_WARN, "Child %s", buf);
       return WIFEXITED(status) ? WEXITSTATUS(status) : 127;
     } else {
-      msg(L_INFO, "Child terminated successfully.");
+      if (launch_finish_messages)
+	msg(L_INFO, "Child terminated successfully.");
       return 0;
     }
   }
