@@ -78,6 +78,10 @@ Release notes
 * `UCW::CGI` support multiple argument tables and UTF-8 mode. Also, it uses the
   proper HTTP status codes when reporting errors.
 
+* Implementation details of <<fastbuf:,fastbufs>> have changed. The new code checks
+  invariants more carefully, so it is possible that custom fastbuf back-ends which
+  are buggy now fail, although they previously seemed to work.
+
 
 4.0 (2009-04-13)
 ----------------
