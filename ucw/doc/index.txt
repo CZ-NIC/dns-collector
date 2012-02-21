@@ -92,4 +92,5 @@ The UCW library is copyrighted by its authors:
 - Michal Vaner <mailto:vorner\@ucw.cz[]>
 
 It can be freely distributed and used according to the terms of
-the GNU Lesser General Public License.
+the GNU Lesser General Public License, either version 2 or any later
+version.
