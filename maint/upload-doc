@@ -1,0 +1,8 @@
+#!/bin/bash
+# Build and upload LibUCW documentation and web pages
+# (c) 2012 Martin Mares <mj@ucw.cz>
+
+set -e
+make docs
+rsync -avz --delete obj/ucw/doc/ jw:/var/www/libucw/doc/ --exclude=*.deflist --exclude=*.txt
+rsync -avz --no-times --no-perms --executability --omit-dir-times WWW/ jw:/var/www/libucw/ --exclude=doc --exclude='*.swp'
