@@ -16,12 +16,11 @@
 				<p>
 				<a href="#what">What's that?</a>
 				<a href="#features">Features</a>
-				<a href="#addlib">Additional libraries</a>
 				<a href="#license">License</a>
 				<a href="#authors">Authors</a>
 				<a href="#download">Download</a>
-				<a href="#docs">Documentation</a>
 				<a href="#bugs">Reporting bugs</a>
+				<a href="#addlib">Extra libraries</a>
 			</div>
 			<div class="icons">
 				<p>
@@ -30,76 +29,70 @@
 				<a href="http://www.anybrowser.org/campaign/"><img src="/holmes/anybrowser.png" width=88 height=31 alt="Best viewed with any browser."></a>
 
 			</div>
-			<div class="nocount">
-				<p>
-					No counters, no frames, no syntax errors.
-			</div>
 		</div>
 		<div class="main">
 			<h1>LibUCW</h1>
 			<div class="section" id="what"><h2>What's that?</h2>
 				<p>
-					<tt>LibUCW</tt> is a general-purpose C library providing both implementation of common algorithms (like sorting, heaps),
-					support for performance computing (fast buffered IO) and some generic data structures.
-					In short, it is a library of things the authors consider useful in most of programs written in C.
+					The UCW library aims to provide a set general purpose tools for programming
+					in the C language. In other words, to make writing of complex and very efficient
+					programs in plain C a pleasure.
 				<p>
-					As a bonus, there is a build system you can use in your program, documentation system and few perl modules.
-				<p>
-					It is developed as part of the <a href="/holmes/">Sherlock Holmes</a> search engine.
+					It originated as a part of the <a href="/holmes/">Sherlock Holmes</a> search engine,
+					but it is now developed separately.
 			</div>
 			<div class="section" id="features"><h2>Features</h2>
 				<ul>
 					<li>Fast buffered IO
 					<li>Memory pools
 					<li>Internal and external sorting routines
-					<li>Generic data structures (heaps, search trees, growing buffers)
-					<li>Unicode manipulation
-					<li>Main loop (watching over file descriptors, sub-processes and timers)
-					<li>Thread support
+					<li>Generic data structures (e.g., heaps, search trees, growing buffers)
+					<li>Very efficient memory allocators
+					<li>Event loop (watching over file descriptors, sub-processes, timers, and signals)
 					<li>Configuration system
 					<li>Modular system for <tt>configure</tt> scripts
 					<li>Build system
 					<li>Documentation system
-				</ul>
-			</div>
-			<div class="section" id="addlib"><h2>Additional libraries</h2>
-				<p>
-					The package contains few other libraries which you might find useful.
-					You can build &amp; install libUCW with them or without.
-					However they are not documented and are more specific.
-				<ul>
-					<li><strong>libcharset</strong> &ndash; allows manipulation with character sets.
-					<li><strong>libsh</strong> &ndash; the <a href='/holmes'>Sherlock Holmes</a> library. It contains some routines for storing large amounts of data and alike.
-					<li><strong>liblang</strong> &ndash; guessing of text language.
-					<li><strong>libimages</strong> &ndash; manipulation with images.
+					<li>&hellip; and many more
 				</ul>
 			</div>
 			<div class="section" id="license"><h2>License</h2>
 				<p>
-					The library is available under the terms of <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser Public License</a> (LGPL) with the exception of few modules, which are in public domain.
-				<p>
-					There is also a commercial version of the library, available with the <a href="/holmes/#license">commercial version of Sherlock Holmes</a>.
-					However, unlike the Sherlock Holmes, the commercial version of library does not come with additional features.
+					The library can be distributed and used under the terms of <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser Public License</a> (LGPL),
+					either version 2 or any later version. Several modules are in public domain.
 			</div>
 			<div class="section" id="authors"><h2>Authors</h2>
 				<p>
-					The library is developed together with Sherlock Holmes by the same authors. Most of it was written by <a href='http://mj.ucw.cz'>Martin Mareπ</a>, <a href="http://www.ucw.cz/~robert/index-en.html">Robert ©palek</a>, Pavel Charv·t and <a href="http://vorner.ucw.cz/en/">Michal Vaner</a>.
+					Most parts of the library were written by
+					<a href='http://mj.ucw.cz'>Martin Mare≈°</a>,
+					<a href="http://www.ucw.cz/~robert/index-en.html">Robert ≈†palek</a>,
+					Pavel Charv√°t,
+					and <a href="http://vorner.ucw.cz/en/">Michal Vaner</a>.
 			</div>
 			<div class="section" id="download"><h2>Download</h2>
 				<p>
-					Currently, version 4.0 is available.
+					The latest release of LibUCW is version 5.0 (see <a href='doc/relnotes.html'>release notes</a> and <a href='doc/'>online documentation</a>).
 				<p>
-					You can download it via <a href="download/">HTTP</a> or via <a href="ftp://ftp.ucw.cz/pub/libucw/">FTP</a>.
-			</div>
-			<div class="section" id="docs"><h2>Documentation</h2>
+					It can be downloaded via <a href="download/">HTTP</a> or <a href="ftp://ftp.ucw.cz/pub/libucw/">FTP</a>.
 				<p>
-					Although the documentation is not yet complete, you can <a href="documentation">browse</a> the part which is already written. You can compile the same documentation from the package.
+					The current development version can be checked out from our Git repository at <a href='git://git.ucw.cz/libucw.git'><code>git://git.ucw.cz/libucw.git</code></a>,
+					or you can examine the repository through <a href='http://www.ucw.cz/gitweb?p=libucw.git;a=summary'>gitweb</a>.
 			</div>
 			<div class="section" id="bugs"><h2>Reporting bugs</h2>
 				<p>
-					All reports about bugs, inconveniences or ideas for new features are welcome at <a href="mailto:holmes-bugs@ucw.cz">holmes-bugs@ucw.cz</a>. Patches implementing them are welcome even more ;-).
+					All bug reports, ideas for new features and other wishes are welcome at <a href="mailto:libucw-devel@ucw.cz">libucw-devel@ucw.cz</a>. Patches are welcome even more ;-)
 				<p>
 					If you use the library to your pleasure, the authors will be glad to hear that at the same address.
+			</div>
+			<div class="section" id="addlib"><h2>Extra libraries</h2>
+				<p>
+					The package also contains several other libraries from the Sherlock Holmes project, which you might find useful.
+					So far, they are completely optional and not much documented.
+				<ul>
+					<li><strong>libcharset</strong> &ndash; manipulation of character sets and UniCode categories
+					<li><strong>libimages</strong> &ndash; manipulation of images
+					<li><strong>libshxml</strong> &ndash; a lightning fast and flexible XML parser
+				</ul>
 			</div>
 		</div>
 	</body>
