@@ -11,6 +11,9 @@ ifdef CONFIG_DEBUG_TOOLS
 PROGS+=$(o)/ucw/sorter/sort-test
 endif
 
+TESTS+=$(o)/ucw/sorter/sort-test.test
+
+$(o)/ucw/sorter/sort-test.test: $(o)/ucw/sorter/sort-test
 $(o)/ucw/sorter/sort-test: $(o)/ucw/sorter/sort-test.o $(LIBUCW)
 
 INSTALL_TARGETS+=install-ucw-sorter
