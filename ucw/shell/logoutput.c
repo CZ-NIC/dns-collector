@@ -212,24 +212,19 @@ const struct option my_long_opts[] = {
 static char usage[] =
   "Usage:\n"
   "logoutput -h|--help\t\t   This help.\n"
-  "logoutput <options> -i|--input\t   Read filedescriptors and log them.\n"
+  "logoutput <options> -i|--input\t   Read file descriptors and log them.\n"
   "\t\t\t\t   default: stdin at level I.\n"
   "logoutput <opts> [--] <cmd> [arguments for cmd ...]\n"
-  "\t\t\t\t   Open filedescriptors for writing for\n"
-  "\t\t\t\t   command <cmd> and log them.\n"
-  "\t\t\t\t   default: stdout:I, stderr:W.\n"
+  "\t\t\t\t   Open file descriptors for writing for command <cmd> and log them.\n"
+  "\t\t\t\t   default: stdout:I, stderr:W.\n\n"
   "Options:\n"
   CF_USAGE
   "-n, --logname <name>\t\t   Use <name> as program name in logs.\n"
-  "-l, --descriptor <fdnum>:<level>   Open filedescriptor <fdnum> and log it\n"
-  "\t\t\t\t   at level <level> (discards defaults).\n"
+  "-l, --descriptor <fdnum>:<level>   Open file descriptor <fdnum> and log it at level <level> (replaces defaults).\n"
   "-f, --logfile <logfile>\t\t   Log to file <logfile>.\n"
-  "-q, --nv, --nonverbose\t\t   Suppress launching and successful\n"
-  "\t\t\t\t   finish messages.\n"
-  "-s, --silent\t\t\t   Suppress launching message and all\n"
-  "\t\t\t\t   finish messages (i.e., no warning if\n"
-  "\t\t\t\t   terminates with nonzero message or by\n"
-  "\t\t\t\t   signal.\n";
+  "-q, --nv, --nonverbose\t\t   Suppress launching and successful finish messages.\n"
+  "-s, --silent\t\t\t   Suppress launching message and all finish messages.\n"
+  "\t\t\t\t   (i.e., no warning if it terminates with a nonzero exit code or by a signal)\n";
 
 int
 main(int argc, char **argv)
