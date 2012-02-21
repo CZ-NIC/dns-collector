@@ -1,8 +1,8 @@
 Release notes
 =============
 
-5.0 (work in progress)
-----------------------
+5.0
+---
 
 * *Incompatible:* The `timestamp_t` type has been decoupled from wall clock time.
   It now specifies the number of milliseconds from an unspecified origin, so that
