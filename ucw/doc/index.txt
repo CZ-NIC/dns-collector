@@ -58,7 +58,7 @@ Yet undocumented modules
   * `redblack.h`
 - Bit manipulation
   * `bitarray.h`
-  * `bitopts.h`
+  * `bitops.h`
   * `bitsig.h`
 - String manipulation
   * `kmp.h`
