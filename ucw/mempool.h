@@ -410,6 +410,11 @@ static inline char *LIKE_MALLOC mp_strcat(struct mempool *mp, const char *x, con
  * tells how many there is of them.
  **/
 char *mp_strjoin(struct mempool *p, char **a, uns n, uns sep) LIKE_MALLOC;
+/**
+ * Convert memory block to a string. Makes a copy of the given memory block
+ * in the mempool @p, adding an extra terminating zero byte at the end.
+ **/
+char *mp_str_from_mem(struct mempool *p, const void *mem, uns len) LIKE_MALLOC;
 
 
 /***

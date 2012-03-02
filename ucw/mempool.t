@@ -9,3 +9,4 @@ Run:	../obj/ucw/mempool-str-t
 Out:	<<12345>>
 	bugs.gnats.insects
 	bugsgnatsinsects
+	23

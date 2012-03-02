@@ -85,6 +85,15 @@ mp_strjoin(struct mempool *p, char **a, uns n, uns sep)
   return dest;
 }
 
+char *
+mp_str_from_mem(struct mempool *a, const void *mem, uns len)
+{
+  char *str = mp_alloc_noalign(a, len+1);
+  memcpy(str, mem, len);
+  str[len] = 0;
+  return str;
+}
+
 #ifdef TEST
 
 #include <stdio.h>
@@ -98,6 +107,7 @@ int main(void)
   char *a[] = { "bugs", "gnats", "insects" };
   puts(mp_strjoin(p, a, 3, '.'));
   puts(mp_strjoin(p, a, 3, 0));
+  puts(mp_str_from_mem(p, s+1, 2));
   return 0;
 }
 
