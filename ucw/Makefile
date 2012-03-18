@@ -113,7 +113,7 @@ TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test
     fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test \
     redblack-test.test fb-file.test fb-grow.test fb-pool.test fb-atomic.test \
     fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test url.test strtonum-test.test \
-    gary.test time.test)
+    gary.test time.test crc.test)
 
 $(o)/ucw/regex.test: $(o)/ucw/regex-t
 $(o)/ucw/unicode.test: $(o)/ucw/unicode-t
@@ -139,6 +139,7 @@ $(addprefix $(o)/ucw/fb-,file.test grow.test pool.test socket.test atomic.test \
 $(o)/ucw/url.test: $(o)/ucw/url-t
 $(o)/ucw/gary.test: $(o)/ucw/gary-t
 $(o)/ucw/time.test: $(o)/ucw/time-conf-t
+$(o)/ucw/crc.test: $(o)/ucw/crc-t
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/ucw/,asio.test)
