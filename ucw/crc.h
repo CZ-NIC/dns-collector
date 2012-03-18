@@ -16,6 +16,9 @@
  *	Adapted for LibUCW by Martin Mares <mj@ucw.cz> in 2012.
  */
 
+#ifndef _UCW_CRC_H
+#define _UCW_CRC_H
+
 /**
  * Internal CRC calculator context.
  * You should use it just as an opaque handle only.
@@ -65,3 +68,5 @@ static inline u32 crc32_final(crc32_context *ctx)
  *  return crc32_final(&ctx);
  */
 u32 crc32_hash_buffer(const byte *buf, uns len);
+
+#endif
