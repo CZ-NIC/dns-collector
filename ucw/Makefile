@@ -26,7 +26,7 @@ LIBUCW_MODS= \
 	mainloop main-block main-rec \
 	proctitle exitstatus runcmd \
 	lizard lizard-safe adler32 sighandler \
-	md5 sha1 sha1-hmac \
+	md5 sha1 sha1-hmac crc crc-tables \
 	base64 base224 \
 	io-careful io-sync io-mmap io-size \
 	string str-esc str-split str-match str-imatch str-hex str-fix \
@@ -54,7 +54,7 @@ LIBUCW_MAIN_INCLUDES= \
 	mainloop.h \
 	process.h \
 	lizard.h \
-	md5.h sha1.h \
+	md5.h sha1.h crc.h \
 	base64.h base224.h \
 	kmp.h kmp-search.h binsearch.h \
 	partmap.h \
