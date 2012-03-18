@@ -54,3 +54,14 @@ static inline u32 crc32_final(crc32_context *ctx)
 {
   return ctx->state ^ 0xffffffff;
 }
+
+/**
+ * A convenience one-shot function for CRC.
+ * It is equivalent to this snippet of code:
+ *
+ *  crc32_context ctx;
+ *  crc32_init(&ctx, CRC_MODE_DEFAULT);
+ *  crc32_update(&ctx, buf, len);
+ *  return crc32_final(&ctx);
+ */
+u32 crc32_hash_buffer(const byte *buf, uns len);

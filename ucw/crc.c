@@ -134,6 +134,15 @@ crc32_init(crc32_context *ctx, uns crc_mode)
     }
 }
 
+u32
+crc32_hash_buffer(const byte *buf, uns len)
+{
+  crc32_context ctx;
+  crc32_init(&ctx, CRC_MODE_DEFAULT);
+  crc32_update(&ctx, buf, len);
+  return crc32_final(&ctx);
+}
+
 #ifdef TEST
 
 #include <stdio.h>
