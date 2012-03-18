@@ -1,22 +1,21 @@
 Hashing routines
 ================
 
-Libucw contains two cryptographic hash algorithms: MD5 (RFC 1321) and SHA1 (RFC
-3174). A SHA1-HMAC (RFC 2104) message authentication is available.
+LibUCW contains implementations of several hash algorithms.
 
-There are non-cryptographic hashes as well.
+<<crypto,Cryptographic hashes>>:
 
-<<crypto,Cryptographic ones>>:
-
-- <<md5,MD5>>
-- <<sha1,SHA1>>
-- <<sha1:sha1_hmac(),SHA1_HMAC>>
+- <<md5,MD5>> (RFC 1321)
+- <<sha1,SHA1>> (RFC 3174)
+- <<hash:sha1_hmac(),SHA1_HMAC message authentication>> (RFC 2104)
 - <<usage,Common usage>>
 
 <<checksum,Checksums>>:
-- <<crypto:adler,Adler-32>>
 
-<<nocrypto,Non-cryptographic ones>>:
+- <<crypto:adler,Adler-32>>
+- <<crc,CRC>>
+
+<<nocrypto,Non-cryptographic hashes>>:
 
 - <<strhash,String & block hashes>>
 - <<inthash,Integer hashes>>
@@ -73,8 +72,23 @@ Checksums
 Their purpose is checking against random data changes, hardware
 failures and alike. They are not to be used against aimed attacks.
 
+Adler-32
+~~~~~~~~
+
 The <<compress:adler,Adler-32 checksum>> is documented in the
-<<compression,compression capter>>.
+<<compress:,compression capter>>.
+
+CRC-32
+~~~~~~
+
+32-bit Cyclic Redundancy Check with the polynomial suggested by
+Castagnoli et al.: Optimization of Cyclic Redundancy-Check Codes
+with 24 and 32 Parity Bits", IEEE Trans. on Communications, Vol. 41,
+No. 6, 1993.
+
+The interface is similar to the one we use for the cryptographic hashes.
+
+!!ucw/crc.h
 
 [[nocrypto]]
 Non-cryptographic hashes

@@ -16,7 +16,7 @@
  *	Adapted for LibUCW by Martin Mares <mj@ucw.cz> in 2012.
  */
 
-/*
+/**
  * Internal CRC calculator context.
  * You should use it just as an opaque handle only.
  */
@@ -25,23 +25,32 @@ typedef struct crc32_context {
   void (*update_func)(struct crc32_context *ctx, const byte *buf, uns len);
 } crc32_context;
 
+/**
+ * Initialize new calculation of CRC in a given context.
+ * @crc_mode selects which algorithm should be used.
+ **/
 void crc32_init(crc32_context *ctx, uns crc_mode);
 
+/**
+ * Algorithm used for CRC calculation. The algorithms differ by the amount
+ * of precomputed tables they use. Bigger tables imply faster calculation
+ * at the cost of an increased cache footprint.
+ **/
 enum crc_mode {
-  CRC_MODE_DEFAULT,
-  CRC_MODE_SMALL,
-  CRC_MODE_BIG,
+  CRC_MODE_DEFAULT,		/* Default algorithm (4K table) */
+  CRC_MODE_SMALL,		/* Optimize for small data (1K table) */
+  CRC_MODE_BIG,			/* Optimize for large data (8K table) */
   CRC_MODE_MAX,
 };
 
-static inline void
-crc32_update(crc32_context *ctx, const byte *buf, uns len)
+/** Feed @len bytes starting at @buf to the CRC calculator. **/
+static inline void crc32_update(crc32_context *ctx, const byte *buf, uns len)
 {
   ctx->update_func(ctx, buf, len);
 }
 
-static inline u32
-crc32_final(crc32_context *ctx)
+/** Finish calculation and return the CRC value. **/
+static inline u32 crc32_final(crc32_context *ctx)
 {
   return ctx->state ^ 0xffffffff;
 }
