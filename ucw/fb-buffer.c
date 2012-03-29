@@ -31,8 +31,8 @@ fbbuf_seek(struct fastbuf *f, ucw_off_t pos, int whence)
   if (pos < 0 || pos > len)
     bthrow(f, "seek", "Seek out of range");
   f->bptr = f->buffer + pos;
-  f->bstop = f->buffer;
-  f->pos = 0;
+  f->bstop = f->bufend;
+  f->pos = len;
   return 1;
 }
 
