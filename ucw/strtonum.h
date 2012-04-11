@@ -10,12 +10,13 @@
 #ifndef _STRTONUM_H
 #define _STRTONUM_H
 
+// Set (flags & 0x1f) in the range 1 to 31 to denote the default base of the number
 enum str_to_num_flags {
   STN_SIGNED = 0x20,       // The resulting range is signed
   STN_MINUS = 0x40,        // Allow optional '-' sign
   STN_PLUS = 0x80,         // Allow optional '+' sign
   STN_TRUNC = 0x100,       // Allow range overflow -> truncate to the allowed range
-  STN_DEC = 0x200,         // Support decimal numbers
+  STN_DEC = 0x200,         // Support decimal numbers (currently no prefix)
   STN_HEX = 0x400,         // Support hexadecimal numbers (0x...)
   STN_BIN = 0x800,         // Support binary numbers (0b...)
   STN_OCT = 0x1000,        // Support octal numbers (0o...)
