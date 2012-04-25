@@ -71,9 +71,9 @@ fbs_spout(struct fastbuf *f)
       .events = POLLOUT,
   };
 
-  int l = f->bptr - f->buffer;
-  f->bptr = f->buffer;
-  char *buf = f->buffer;
+  int l = f->bptr - f->bstop;
+  f->bptr = f->bstop;
+  char *buf = f->bstop;
 
   while (l)
     {
