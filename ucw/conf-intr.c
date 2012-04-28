@@ -2,7 +2,7 @@
  *	UCW Library -- Configuration files: interpreter
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
- *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -378,24 +378,13 @@ record_selector(struct cf_item *item, struct cf_section *sec, u32 *mask)
   return NULL;
 }
 
-#define MAX_STACK_SIZE	10
-static struct item_stack {
-  struct cf_section *sec;	// nested section
-  void *base_ptr;		// because original pointers are often relative
-  enum cf_operation op;		// it is performed when a closing brace is encountered
-  void *list;			// list the operations should be done on
-  u32 mask;			// bit array of selectors searching in a list
-  struct cf_item *item;		// cf_item of the list
-} stack[MAX_STACK_SIZE];
-static uns level;
-
 static char *
-opening_brace(struct cf_item *item, void *ptr, enum cf_operation op)
+opening_brace(struct cf_context *cc, struct cf_item *item, void *ptr, enum cf_operation op)
 {
-  if (level >= MAX_STACK_SIZE-1)
+  if (cc->stack_level >= MAX_STACK_SIZE-1)
     return "Too many nested sections";
   enum cf_operation pure_op = op & OP_MASK;
-  stack[++level] = (struct item_stack) {
+  cc->stack[++cc->stack_level] = (struct item_stack) {
     .sec = NULL,
     .base_ptr = NULL,
     .op = pure_op,
@@ -405,27 +394,27 @@ opening_brace(struct cf_item *item, void *ptr, enum cf_operation op)
   };
   if (!item)			// unknown is ignored; we just need to trace recursion
     return NULL;
-  stack[level].sec = item->u.sec;
+  cc->stack[cc->stack_level].sec = item->u.sec;
   if (item->cls == CC_SECTION)
   {
     if (pure_op != OP_SET)
       return "Only SET operation can be used with a section";
-    stack[level].base_ptr = ptr;
-    stack[level].op = OP_EDIT | OP_2ND;	// this list operation does nothing
+    cc->stack[cc->stack_level].base_ptr = ptr;
+    cc->stack[cc->stack_level].op = OP_EDIT | OP_2ND;	// this list operation does nothing
   }
   else if (item->cls == CC_LIST)
   {
-    stack[level].base_ptr = cf_malloc(item->u.sec->size);
-    cf_init_section(item->name, item->u.sec, stack[level].base_ptr, 1);
-    stack[level].list = ptr;
-    stack[level].item = item;
+    cc->stack[cc->stack_level].base_ptr = cf_malloc(item->u.sec->size);
+    cf_init_section(item->name, item->u.sec, cc->stack[cc->stack_level].base_ptr, 1);
+    cc->stack[cc->stack_level].list = ptr;
+    cc->stack[cc->stack_level].item = item;
     if (pure_op == OP_ALL)
       return "Operation ALL cannot be applied on lists";
     else if (pure_op < OP_REMOVE) {
-      add_to_list(ptr, stack[level].base_ptr, pure_op);
-      stack[level].op |= OP_2ND;
+      add_to_list(ptr, cc->stack[cc->stack_level].base_ptr, pure_op);
+      cc->stack[cc->stack_level].op |= OP_2ND;
     } else
-      stack[level].op |= OP_1ST;
+      cc->stack[cc->stack_level].op |= OP_1ST;
   }
   else
     return "Opening brace can only be used on sections and lists";
@@ -433,13 +422,13 @@ opening_brace(struct cf_item *item, void *ptr, enum cf_operation op)
 }
 
 static char *
-closing_brace(struct item_stack *st, enum cf_operation op, int number, char **pars)
+closing_brace(struct cf_context *cc, struct item_stack *st, enum cf_operation op, int number, char **pars)
 {
   if (st->op == OP_CLOSE)	// top-level
     return "Unmatched } parenthesis";
   if (!st->sec) {		// dummy run on unknown section
     if (!(op & OP_OPEN))
-      level--;
+      cc->stack_level--;
     return NULL;
   }
   enum cf_operation pure_op = st->op & OP_MASK;
@@ -475,7 +464,7 @@ closing_brace(struct item_stack *st, enum cf_operation op, int number, char **pa
     }
     add_to_list(st->list, st->base_ptr, pure_op);
   }
-  level--;
+  cc->stack_level--;
   if (number)
     return "No parameters expected after the }";
   else if (op & OP_OPEN)
@@ -487,14 +476,15 @@ closing_brace(struct item_stack *st, enum cf_operation op, int number, char **pa
 static struct cf_item *
 find_item(struct cf_section *curr_sec, const char *name, char **msg, void **ptr)
 {
+  struct cf_context *cc = cf_get_context();
   *msg = NULL;
   if (name[0] == '^')				// absolute name instead of relative
-    name++, curr_sec = &cf_sections, *ptr = NULL;
+    name++, curr_sec = &cc->sections, *ptr = NULL;
   if (!curr_sec)				// don't even search in an unknown section
     return NULL;
   while (1)
   {
-    if (curr_sec != &cf_sections)
+    if (curr_sec != &cc->sections)
       cf_add_dirty(curr_sec, *ptr);
     char *c = strchr(name, '.');
     if (c)
@@ -535,21 +525,21 @@ interpret_add(char *name, struct cf_item *item, int number, char **pars, int *ta
 }
 
 char *
-cf_interpret_line(char *name, enum cf_operation op, int number, char **pars)
+cf_interpret_line(struct cf_context *cc, char *name, enum cf_operation op, int number, char **pars)
 {
   char *msg;
   if ((op & OP_MASK) == OP_CLOSE)
-    return closing_brace(stack+level, op, number, pars);
-  void *ptr = stack[level].base_ptr;
-  struct cf_item *item = find_item(stack[level].sec, name, &msg, &ptr);
+    return closing_brace(cc, cc->stack+cc->stack_level, op, number, pars);
+  void *ptr = cc->stack[cc->stack_level].base_ptr;
+  struct cf_item *item = find_item(cc->stack[cc->stack_level].sec, name, &msg, &ptr);
   if (msg)
     return msg;
-  if (stack[level].op & OP_1ST)
-    TRY( record_selector(item, stack[level].sec, &stack[level].mask) );
+  if (cc->stack[cc->stack_level].op & OP_1ST)
+    TRY( record_selector(item, cc->stack[cc->stack_level].sec, &cc->stack[cc->stack_level].mask) );
   if (op & OP_OPEN) {		// the operation will be performed after the closing brace
     if (number)
       return "Cannot open a block after a parameter has been passed on a line";
-    return opening_brace(item, ptr, op);
+    return opening_brace(cc, item, ptr, op);
   }
   if (!item)			// ignored item in an unknown section
     return NULL;
@@ -583,9 +573,10 @@ cf_interpret_line(char *name, enum cf_operation op, int number, char **pars)
 char *
 cf_find_item(const char *name, struct cf_item *item)
 {
+  struct cf_context *cc = cf_get_context();
   char *msg;
   void *ptr = NULL;
-  struct cf_item *ci = find_item(&cf_sections, name, &msg, &ptr);
+  struct cf_item *ci = find_item(&cc->sections, name, &msg, &ptr);
   if (msg)
     return msg;
   if (ci) {
@@ -642,17 +633,16 @@ cf_modify_item(struct cf_item *item, enum cf_operation op, int number, char **pa
 }
 
 void
-cf_init_stack(void)
+cf_init_stack(struct cf_context *cc)
 {
-  static uns initialized = 0;
-  if (!initialized++) {
-    cf_sections.flags |= SEC_FLAG_UNKNOWN;
-    cf_sections.size = 0;			// size of allocated array used to be stored here
-    cf_init_section(NULL, &cf_sections, NULL, 0);
+  if (!cc->initialized++) {
+    cc->sections.flags |= SEC_FLAG_UNKNOWN;
+    cc->sections.size = 0;			// size of allocated array used to be stored here
+    cf_init_section(NULL, &cc->sections, NULL, 0);
   }
-  level = 0;
-  stack[0] = (struct item_stack) {
-    .sec = &cf_sections,
+  cc->stack_level = 0;
+  cc->stack[0] = (struct item_stack) {
+    .sec = &cc->sections,
     .base_ptr = NULL,
     .op = OP_CLOSE,
     .list = NULL,
@@ -662,12 +652,11 @@ cf_init_stack(void)
 }
 
 int
-cf_check_stack(void)
+cf_check_stack(struct cf_context *cc)
 {
-  if (level > 0) {
+  if (cc->stack_level > 0) {
     msg(L_ERROR, "Unterminated block");
     return 1;
   }
   return 0;
 }
-

@@ -2,7 +2,7 @@
  *	UCW Library -- Configuration files
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
- *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -10,6 +10,63 @@
 
 #ifndef	_UCW_CONF_H
 #define	_UCW_CONF_H
+
+#include <ucw/clists.h>
+
+struct mempool;
+
+/***
+ * [[conf_ctxt]]
+ * Configuration contexts
+ * ~~~~~~~~~~~~~~~~~~~~~~
+ *
+ * The state of the configuration parser is stored within a configuration context.
+ * If you do not create contexts explicitly, the library will create one for you
+ * and you need not care, as long as you use a single configuration file.
+ *
+ * In whole generality, you can define as many context as you wish and switch
+ * between them. Each thread has its own pointer to the current context, which
+ * must not be shared with other threads.
+ ***/
+
+/** Create a new configuration context. **/
+struct cf_context *cf_new_context(void);
+
+/**
+ * Free a configuration context. The context must not be set as current
+ * for any thread.
+ *
+ * All configuration settings made within the context are rolled back
+ * (except when journalling is turned off). All memory allocated on behalf
+ * of the context is freed, which includes memory obtained by calls to
+ * cf_malloc().
+ **/
+void cf_free_context(struct cf_context *cc);
+
+/**
+ * Make the given configuration context current and return the previously
+ * active context. Both the new and the old context may be NULL.
+ **/
+struct cf_context *cf_switch_context(struct cf_context *cc);
+
+/**
+ * Return a pointer to the current context, or create the default context
+ * if there is no context active.
+ **/
+struct cf_context *cf_obtain_context(void);
+
+/**
+ * Set name of default configuration file. May be NULL if there should be
+ * no such default.
+ * FIXME: Explain where it is used
+ **/
+void cf_set_default_file(char *name);
+
+/**
+ * Set name of environment variable used to override the name of the default
+ * configuration file. May be NULL if there should be no such variable.
+ **/
+void cf_set_env_override(char *name);
 
 /*** === Data types [[conf_types]] ***/
 
@@ -306,18 +363,17 @@ struct cf_section {			/** A section. **/
  * Memory allocation
  * ~~~~~~~~~~~~~~~~~
  *
- * Uses <<mempool:,memory pools>> for efficiency and journal recovery.
- * You should use these routines when implementing custom parsers.
+ * Each configuration context has one or more <<mempool:,memory pools>>, where all
+ * data related to the configuration are stored.
+ *
+ * The following set of functions allocate from these pools. The allocated memory
+ * is valid as long as the current configuration (when the configuration file is
+ * reloaded or rolled back, or the context is deleted, it gets lost).
+ *
+ * Memory allocated from within custom parsers should be allocated from the pools.
  ***/
-struct mempool;
-/**
- * A <<mempool:type_mempool,memory pool>> for configuration parser needs.
- * Memory allocated from here is valid as long as the current config is loaded
- * (if you allocate some memory and rollback the transaction or you load some
- * other configuration, it gets lost).
- **/
-extern struct mempool *cf_pool;
-void *cf_malloc(uns size);	/** Returns @size bytes of memory. Allocates from <<var_cf_pool,`cf_pool`>>. **/
+struct mempool *cf_get_pool(void); /** Return a pointer to the current configuration pool. **/
+void *cf_malloc(uns size);	/** Returns @size bytes of memory allocated from the current configuration pool. **/
 void *cf_malloc_zero(uns size);	/** Like @cf_malloc(), but zeroes the memory. **/
 char *cf_strdup(const char *s);	/** Copy a string into @cf_malloc()ed memory. **/
 char *cf_printf(const char *fmt, ...) FORMAT_CHECK(printf,1,2); /** printf() into @cf_malloc()ed memory. **/

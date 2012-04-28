@@ -1,7 +1,7 @@
 /*
  *	The UCW Library -- Threading Helpers
  *
- *	(c) 2006--2011 Martin Mares <mj@ucw.cz>
+ *	(c) 2006--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -20,6 +20,7 @@ struct ucwlib_context {
   struct asio_queue *io_queue;		// Async I/O queue for fb-direct.c
   ucw_sighandler_t *signal_handlers;	// Signal handlers for sighandler.c
   struct main_context *main_context;	// Current context for mainloop.c
+  struct cf_context *cf_context;	// Current context for configuration parser
   // Resources and transactions:
   struct respool *current_respool;	// Current resource pool
   struct mempool *trans_pool;		// Transaction mempool

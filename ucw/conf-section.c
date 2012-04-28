@@ -2,7 +2,7 @@
  *	UCW Library -- Configuration files: sections
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
- *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -17,6 +17,8 @@
 #include <string.h>
 
 /* Dirty sections */
+
+// FIXME!!!
 
 struct dirty_section {
   struct cf_section *sec;
@@ -67,8 +69,6 @@ sort_dirty(void)
 
 /* Initialization */
 
-struct cf_section cf_sections;	// root section
-
 struct cf_item *
 cf_find_subitem(struct cf_section *sec, const char *name)
 {
@@ -106,12 +106,13 @@ inspect_section(struct cf_section *sec)
 void
 cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown)
 {
-  if (!cf_sections.cfg)
+  struct cf_context *cc = cf_get_context();
+  if (!cc->sections.cfg)
   {
-    cf_sections.size = 50;
-    cf_sections.cfg = xmalloc_zero(cf_sections.size * sizeof(struct cf_item));
+    cc->sections.size = 50;
+    cc->sections.cfg = xmalloc_zero(cc->sections.size * sizeof(struct cf_item));
   }
-  struct cf_item *ci = cf_find_subitem(&cf_sections, name);
+  struct cf_item *ci = cf_find_subitem(&cc->sections, name);
   if (ci->cls)
     die("Cannot register section %s twice", name);
   ci->cls = CC_SECTION;
@@ -123,11 +124,11 @@ cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown)
   if (allow_unknown)
     sec->flags |= SEC_FLAG_UNKNOWN;
   ci++;
-  if (ci - cf_sections.cfg >= (int) cf_sections.size)
+  if (ci - cc->sections.cfg >= (int) cc->sections.size)
   {
-    cf_sections.cfg = xrealloc(cf_sections.cfg, 2*cf_sections.size * sizeof(struct cf_item));
-    bzero(cf_sections.cfg + cf_sections.size, cf_sections.size * sizeof(struct cf_item));
-    cf_sections.size *= 2;
+    cc->sections.cfg = xrealloc(cc->sections.cfg, 2*cc->sections.size * sizeof(struct cf_item));
+    bzero(cc->sections.cfg + cc->sections.size, cc->sections.size * sizeof(struct cf_item));
+    cc->sections.size *= 2;
   }
 }
 
@@ -193,10 +194,11 @@ commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 int
 cf_commit_all(enum cf_commit_mode cm)
 {
+  struct cf_context *cc = cf_get_context();
   sort_dirty();
   if (cm == CF_NO_COMMIT)
     return 0;
-  if (commit_section(&cf_sections, NULL, cm == CF_COMMIT_ALL))
+  if (commit_section(&cc->sections, NULL, cm == CF_COMMIT_ALL))
     return 1;
   dirties = 0;
   return 0;

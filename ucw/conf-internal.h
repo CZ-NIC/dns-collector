@@ -2,7 +2,7 @@
  *	UCW Library -- Configuration files: only for internal use of conf-*.c
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
- *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -10,6 +10,46 @@
 
 #ifndef	_UCW_CONF_INTERNAL_H
 #define	_UCW_CONF_INTERNAL_H
+
+#include <ucw/threads.h>
+
+#define MAX_STACK_SIZE 16
+
+struct item_stack {		// used by conf-intr.c
+  struct cf_section *sec;	// nested section
+  void *base_ptr;		// because original pointers are often relative
+  int op;			// it is performed when a closing brace is encountered
+  void *list;			// list the operations should be done on
+  u32 mask;			// bit array of selectors searching in a list
+  struct cf_item *item;		// cf_item of the list
+};
+
+struct cf_context {
+  struct mempool *pool;
+  int is_active;
+  int need_journal;
+  char *def_file;
+  char *env_file;
+  int def_loaded;
+  struct cf_parser_state *parser;
+  uns everything_committed;		// after the 1st load, this flag is set on
+  uns postpone_commit;			// used internally by cf_getopt()
+  uns other_options;
+  clist conf_entries;
+  struct old_pools *pools;
+  struct cf_journal_item *journal;
+  struct item_stack stack[MAX_STACK_SIZE];
+  uns stack_level;
+  uns initialized;
+  struct cf_section sections;		// root section
+};
+
+/* conf-ctxt.c */
+static inline struct cf_context *
+cf_get_context(void)
+{
+  return ucwlib_thread_context()->cf_context;
+}
 
 /* conf-intr.c */
 #define OP_MASK 0xff		// only get the operation
@@ -21,9 +61,9 @@ extern char *cf_op_names[];
 extern char *cf_type_names[];
 
 uns cf_type_size(enum cf_type type, struct cf_user_type *utype);
-char *cf_interpret_line(char *name, enum cf_operation op, int number, char **pars);
-void cf_init_stack(void);
-int cf_check_stack(void);
+char *cf_interpret_line(struct cf_context *cc, char *name, enum cf_operation op, int number, char **pars);
+void cf_init_stack(struct cf_context *cc);
+int cf_check_stack(struct cf_context *cc);
 
 /* conf-journal.c */
 void cf_journal_swap(void);

@@ -2,7 +2,7 @@
  *	UCW Library -- Configuration files: dumping
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
- *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -118,6 +118,7 @@ dump_section(struct fastbuf *fb, struct cf_section *sec, int level, void *ptr)
 void
 cf_dump_sections(struct fastbuf *fb)
 {
-  dump_section(fb, &cf_sections, 0, NULL);
+  struct cf_context *cc = cf_get_context();
+  dump_section(fb, &cc->sections, 0, NULL);
 }
 
