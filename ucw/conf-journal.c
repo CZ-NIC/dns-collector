@@ -29,6 +29,14 @@ struct cf_journal_item {
 };
 
 void
+cf_set_journalling(int enable)
+{
+  struct cf_context *cc = cf_get_context();
+  ASSERT(!cc->journal);
+  cc->need_journal = enable;
+}
+
+void
 cf_journal_block(void *ptr, uns len)
 {
   struct cf_context *cc = cf_get_context();

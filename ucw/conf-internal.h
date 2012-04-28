@@ -42,19 +42,19 @@ struct dirty_section {
 struct cf_context {
   struct mempool *pool;
   int is_active;
-  int need_journal;
   int def_loaded;
   struct cf_parser_state *parser;
   uns everything_committed;		// after the 1st load, this flag is set on
   uns postpone_commit;			// used internally by cf_getopt()
   uns other_options;
-  clist conf_entries;
+  clist conf_entries;			// files/strings to reload
   struct old_pools *pools;
   struct cf_journal_item *journal;
-  struct item_stack stack[MAX_STACK_SIZE];
+  int need_journal;
+  struct item_stack stack[MAX_STACK_SIZE];	// interpreter stack
   uns stack_level;
-  uns initialized;
   struct cf_section sections;		// root section
+  uns sections_initialized;
   dirtsec_t dirty;			// dirty sections
   uns dirties;
 };

@@ -366,7 +366,12 @@ char *cf_printf(const char *fmt, ...) FORMAT_CHECK(printf,1,2); /** printf() int
  *
  * For error recovery when <<reload,reloading configuration>>.
  ***/
-extern uns cf_need_journal;	/** Is the journal needed? If you do not reload configuration, you set this to 0 and gain a little more performance and free memory. **/
+/**
+ * By default, the configuration mechanism remembers all changes in a journal,
+ * so that the configuration can be rolled back or reloaded. This function
+ * can be used to disable journalling, which saves some memory.
+ **/
+void cf_set_journalling(int enable);
 /**
  * When a block of memory is about to be changed, put the old value
  * into journal with this function. You need to call it from a <<hooks,commit hook>>

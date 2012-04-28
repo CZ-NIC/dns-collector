@@ -635,7 +635,7 @@ cf_modify_item(struct cf_item *item, enum cf_operation op, int number, char **pa
 void
 cf_init_stack(struct cf_context *cc)
 {
-  if (!cc->initialized++) {
+  if (!cc->sections_initialized++) {
     cc->sections.flags |= SEC_FLAG_UNKNOWN;
     cc->sections.size = 0;			// size of allocated array used to be stored here
     cf_init_section(NULL, &cc->sections, NULL, 0);
