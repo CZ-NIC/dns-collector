@@ -13,6 +13,8 @@
 
 #include <ucw/threads.h>
 
+/* Item stack used by conf-intr.c */
+
 #define MAX_STACK_SIZE 16
 
 struct item_stack {		// used by conf-intr.c
@@ -23,6 +25,19 @@ struct item_stack {		// used by conf-intr.c
   u32 mask;			// bit array of selectors searching in a list
   struct cf_item *item;		// cf_item of the list
 };
+
+/* List of dirty sections used by conf-section.c */
+
+struct dirty_section {
+  struct cf_section *sec;
+  void *ptr;
+};
+
+#define GBUF_TYPE	struct dirty_section
+#define GBUF_PREFIX(x)	dirtsec_##x
+#include <ucw/gbuf.h>
+
+/* Configuration context */
 
 struct cf_context {
   struct mempool *pool;
@@ -42,6 +57,8 @@ struct cf_context {
   uns stack_level;
   uns initialized;
   struct cf_section sections;		// root section
+  dirtsec_t dirty;			// dirty sections
+  uns dirties;
 };
 
 /* conf-ctxt.c */

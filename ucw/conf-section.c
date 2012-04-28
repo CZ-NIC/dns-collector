@@ -18,44 +18,32 @@
 
 /* Dirty sections */
 
-// FIXME!!!
-
-struct dirty_section {
-  struct cf_section *sec;
-  void *ptr;
-};
-#define GBUF_TYPE	struct dirty_section
-#define GBUF_PREFIX(x)	dirtsec_##x
-#include <ucw/gbuf.h>
-static dirtsec_t dirty;
-static uns dirties;
-
 void
 cf_add_dirty(struct cf_section *sec, void *ptr)
 {
-  dirtsec_grow(&dirty, dirties+1);
-  struct dirty_section *dest = dirty.ptr + dirties;
-  if (dirties && dest[-1].sec == sec && dest[-1].ptr == ptr)
+  struct cf_context *cc = cf_get_context();
+  dirtsec_grow(&cc->dirty, cc->dirties+1);
+  struct dirty_section *dest = cc->dirty.ptr + cc->dirties;
+  if (cc->dirties && dest[-1].sec == sec && dest[-1].ptr == ptr)
     return;
   dest->sec = sec;
   dest->ptr = ptr;
-  dirties++;
+  cc->dirties++;
 }
 
 #define ASORT_PREFIX(x)	dirtsec_##x
 #define ASORT_KEY_TYPE	struct dirty_section
-#define ASORT_ELT(i)	dirty.ptr[i]
 #define ASORT_LT(x,y)	x.sec < y.sec || x.sec == y.sec && x.ptr < y.ptr
 #include <ucw/sorter/array-simple.h>
 
 static void
-sort_dirty(void)
+sort_dirty(struct cf_context *cc)
 {
-  if (dirties <= 1)
+  if (cc->dirties <= 1)
     return;
-  dirtsec_sort(dirties);
+  dirtsec_sort(cc->dirty.ptr, cc->dirties);
   // and compress the list
-  struct dirty_section *read = dirty.ptr + 1, *write = dirty.ptr + 1, *limit = dirty.ptr + dirties;
+  struct dirty_section *read = cc->dirty.ptr + 1, *write = cc->dirty.ptr + 1, *limit = cc->dirty.ptr + cc->dirties;
   while (read < limit) {
     if (read->sec != read[-1].sec || read->ptr != read[-1].ptr) {
       if (read != write)
@@ -64,7 +52,7 @@ sort_dirty(void)
     }
     read++;
   }
-  dirties = write - dirty.ptr;
+  cc->dirties = write - cc->dirty.ptr;
 }
 
 /* Initialization */
@@ -161,7 +149,9 @@ cf_init_section(const char *name, struct cf_section *sec, void *ptr, uns do_bzer
 static char *
 commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 {
+  struct cf_context *cc = cf_get_context();
   char *err;
+
   for (struct cf_item *ci=sec->cfg; ci->cls; ci++)
     if (ci->cls == CC_SECTION) {
       if ((err = commit_section(ci->u.sec, ptr + (uintptr_t) ci->ptr, commit_all))) {
@@ -182,10 +172,10 @@ commit_section(struct cf_section *sec, void *ptr, uns commit_all)
      * hence we need to call them in a fixed order.  */
 #define ARY_LT_X(ary,i,x) ary[i].sec < x.sec || ary[i].sec == x.sec && ary[i].ptr < x.ptr
     struct dirty_section comp = { sec, ptr };
-    uns pos = BIN_SEARCH_FIRST_GE_CMP(dirty.ptr, dirties, comp, ARY_LT_X);
+    uns pos = BIN_SEARCH_FIRST_GE_CMP(cc->dirty.ptr, cc->dirties, comp, ARY_LT_X);
 
     if (commit_all
-	|| (pos < dirties && dirty.ptr[pos].sec == sec && dirty.ptr[pos].ptr == ptr))
+	|| (pos < cc->dirties && cc->dirty.ptr[pos].sec == sec && cc->dirty.ptr[pos].ptr == ptr))
       return sec->commit(ptr);
   }
   return 0;
@@ -195,11 +185,11 @@ int
 cf_commit_all(enum cf_commit_mode cm)
 {
   struct cf_context *cc = cf_get_context();
-  sort_dirty();
+  sort_dirty(cc);
   if (cm == CF_NO_COMMIT)
     return 0;
   if (commit_section(&cc->sections, NULL, cm == CF_COMMIT_ALL))
     return 1;
-  dirties = 0;
+  cc->dirties = 0;
   return 0;
 }
