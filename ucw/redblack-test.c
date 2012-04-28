@@ -127,7 +127,7 @@ main(int argc, char **argv)
 	struct my_tree t;
 	struct my2_tree t2;
 	int i;
-	cf_def_file = NULL;
+	cf_set_default_file(NULL);
 	log_init(argv[0]);
 	while ((opt = cf_getopt(argc, argv, options, CF_NO_LONG_OPTS, NULL)) >= 0)
 		switch (opt)

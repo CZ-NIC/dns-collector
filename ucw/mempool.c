@@ -374,7 +374,7 @@ int main(int argc, char **argv)
 {
   srand(time(NULL));
   log_init(argv[0]);
-  cf_def_file = NULL;
+  cf_set_default_file(NULL);
   if (cf_getopt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) >= 0 || argc != optind)
     die("Invalid usage");
 

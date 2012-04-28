@@ -114,7 +114,7 @@ configuration files.
   static int verbose;
 
   int main(int argc, char *argv[]) {
-    cf_def_file = "default.cf";
+    cf_set_default_file("default.cf");
     int opt;
     while((opt = cf_getopt(argc, argv, short_opts, long_opts, NULL)) >= 0)
       switch(opt) {
