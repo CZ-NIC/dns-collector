@@ -24,7 +24,7 @@ struct mempool;
  * One such context is automatically created during initialization of the library
  * and you need not care about more, as long as you use a single configuration file.
  *
- * In full generality, you can define as many context as you wish and switch
+ * In full generality, you can define as many contexts as you wish and switch
  * between them. Each thread has its own pointer to the current context, which
  * must not be shared with other threads.
  ***/
@@ -400,6 +400,9 @@ struct cf_section {			/** A section. **/
  * reloaded or rolled back, or the context is deleted, it gets lost).
  *
  * Memory allocated from within custom parsers should be allocated from the pools.
+ *
+ * Please note that the pool is not guaranteed to exist before you call cf_load(),
+ * cf_set(), or cf_getopt() on the particular context.
  ***/
 struct mempool *cf_get_pool(void); /** Return a pointer to the current configuration pool. **/
 void *cf_malloc(uns size);	/** Returns @size bytes of memory allocated from the current configuration pool. **/
@@ -412,16 +415,21 @@ char *cf_printf(const char *fmt, ...) FORMAT_CHECK(printf,1,2); /** printf() int
  * Undo journal
  * ~~~~~~~~~~~~
  *
- * The configuration system uses journaling to safely reload
- * configuration. It begins a transaction and tries to load the
- * configuration. If it fails, it restores the original state.
+ * The configuration system uses a simple journaling mechanism, which makes
+ * it possible to undo changes to configuration. A typical example is loading
+ * of configuration by cf_load(): internally, it creates a transaction, applies
+ * all changes specified by the configuration and if one of them fails, the whole
+ * journal is replayed to restore the whole original state. Similarly, cf_reload()
+ * uses the journal to switch between configurations.
  *
- * The behaviour of journal is described in <<reload,reloading configuration>>.
+ * In most cases, you need not care about the journal, except when you need
+ * to change some data from a <<hooks,hook>>, or if you want to call cf_modify_item() and then
+ * undo the changes.
  ***/
 /**
- * By default, the configuration mechanism remembers all changes in a journal,
- * so that the configuration can be rolled back or reloaded. This function
- * can be used to disable journalling, which saves some memory.
+ * This function can be used to disable the whole journalling mechanism.
+ * It saves some memory, but it makes undoing of configuration changes impossible,
+ * which breaks for example cf_reload().
  **/
 void cf_set_journalling(int enable);
 /**
@@ -432,7 +440,7 @@ void cf_set_journalling(int enable);
  * before them.
  **/
 void cf_journal_block(void *ptr, uns len);
-#define CF_JOURNAL_VAR(var) cf_journal_block(&(var), sizeof(var))	// Store single value into journal.
+#define CF_JOURNAL_VAR(var) cf_journal_block(&(var), sizeof(var))	// Store a single value into the journal
 
 struct cf_journal_item;		/** Opaque identifier of the journal state. **/
 /**
@@ -504,7 +512,8 @@ char *cf_parse_ip(const char *p, u32 *varp);		/** Parser for IP addresses. **/
  * ~~~~~~~~~~~~~
  *
  * Direct access to configuration items.
- * You probably should not need this.
+ * You probably should not need this, but in your do, you have to handle
+ * <<journal,journalling>> yourself.
  ***/
 
 /**
@@ -545,7 +554,7 @@ char *cf_modify_item(struct cf_item *item, enum cf_operation op, int number, cha
 
 struct fastbuf;
 /**
- * Take everything and write it into @fb.
+ * Write the current state of all configuration items into @fb.
  **/
 void cf_dump_sections(struct fastbuf *fb);
 

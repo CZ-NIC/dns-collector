@@ -32,6 +32,7 @@ cf_new_context(void)
 void
 cf_free_context(struct cf_context *cc)
 {
+  // FIXME: Roll back all transactions
   ASSERT(!cc->is_active);
   ASSERT(cc != &cf_default_context);
   xfree(cc->parser);

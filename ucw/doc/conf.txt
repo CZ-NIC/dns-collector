@@ -1,21 +1,22 @@
 Configuration and command line parser
 =====================================
 
-Libucw contains a parser for configuration files described in
-<<config:>>.
+Libucw contains a parser for configuration files. The syntax of the
+configuration files is described in <<config:>>, here we explain the
+interface of the parser.
 
-The principle is you specify the structure of the configuration file,
-the section names, variable names and types and your C variables that
-are assigned to them. Then you run the parser and it fills your
-variables with the values from the configuration file.
+Basically, you write a description of the configuration file syntax,
+which maps configuration items to variables of your program. Then
+Then you run the parser and it fills your variables with the values
+from the configuration file.
 
-It is modular. It means you do not have to write all configuration at
-the same place, you just declare the parts you need locally and do not
-care about the other parts.
+The descriptions are modular. The configuration can be split to sections,
+each section declared at a separate place. You can also define your own
+data types.
 
-The command line parser has the same interface as unix getopt_long(),
-but handles setting of configuration files and configuration values
-from command line.
+There is also a simple wrapper around getopt_long(), which processes
+options related to selection of a configuration file, overriding of
+configuration variables and loading of the default configuration.
 
 - <<example,Example>>
   * <<ex_structure,The structure>>
@@ -26,17 +27,17 @@ from command line.
   * <<custom_parser,Creating custom parsers>>
   * <<hooks,Hooks>>
 - <<conf_h,ucw/conf.h>>
+  * <<conf_ctxt,Configuration contexts>>
+  * <<conf_load,Safe configuration loading>>
   * <<conf_types,Data types>>
   * <<conf_macros,Convenience macros>>
   * <<alloc,Memory allocation>>
   * <<journal,Undo journal>>
   * <<declare,Section declaration>>
   * <<bparser,Parsers for basic types>>
-- <<getopt_h,ucw/getopt.h>>
-  * <<conf_load,Safe configuration loading>>
   * <<conf_direct,Direct access>>
   * <<conf_dump,Debug dumping>>
-  * <<conf_journal,Journaling control>>
+- <<getopt_h,ucw/getopt.h>>
   * <<conf_getopt,Loading by cf_getopt()>>
 
 [[example]]
@@ -44,12 +45,12 @@ Example
 -------
 If you want to just load simple configuration, this is the part you
 want to read. This simple example should give you the overview. Look
-into the <<conf_macros,convenience macros>> section to see list of
+at the <<conf_macros,convenience macros>> section to see list of
 supported data types, sections, etc.
 
 [[ex_cfile]]
-Let's say you have configuration file with this content and want to
-load it:
+Suppose you have configuration file with the following content and you
+want to load it:
 
   HelloWorld {
     Text	"Hello planet"
@@ -83,10 +84,10 @@ it exists.
   }
 
 The variables are used to store the loaded values. Their initial
-values work as default, if nothing else is loaded. The hw_config()
+values work as defaults, if nothing else is loaded. The hw_config()
 structure assigns the variables to configuration names. The hw_init()
 function (because of the `CONSTRUCTOR` macro) is run before main()
-is called and it plugs in the whole section to the parser (alternatively,
+is called and it tells the parser that the section exists (alternatively,
 you can call @cf_declare_section() at the start of your main()).
 
 You can plug in as many configuration sections as you like, from
@@ -97,7 +98,7 @@ Loading of the values
 ~~~~~~~~~~~~~~~~~~~~~
 Suppose you need to parse the command line arguments and load the
 configuration. Then @cf_getopt() is there for you: it works like
-the the traditional @getopt() from the C library, but it also handles
+the traditional @getopt_long() from the C library, but it also handles
 configuration files.
 
   #include <ucw/lib.h>
@@ -215,7 +216,7 @@ this variable, `A` will have a value of `10` after a successful load.
 Furthermore, if the loading of a new configuration fails, the current
 configuration is preserved.
 
-All this is done with <<journal,config journaling>>. The load of the
+All this is done with <<journal,config journalling>>. The load of the
 first config creates a journal entry. If you try to load some new
 configuration, it is partially rolled back to defaults (the rollback
 happens, but instead of removing the journal entry, another journal
@@ -234,7 +235,7 @@ If you need to parse some data type the configuration system can't
 handle, you can write your own parser. But before you start, you
 should know a few things.
 
-The parser needs to support <<journal,journaling>>. To accomplish that,
+The parser needs to support <<journal,journalling>>. To accomplish that,
 you have to use the <<alloc,configuration mempool>> for memory allocation.
 
 Now, you need a function with the same signature as
@@ -265,8 +266,8 @@ them in configuration description using <<def_CF_INIT,`CF_INIT`>> and
 
 The hooks should follow similar guidelines as custom parsers (well,
 init hooks do not need to call @cf_journal_block()) to support
-journaling. If you change nothing in the commit hook, you do not need
-to care about the journaling either.
+journalling. If you change nothing in the commit hook, you do not need
+to care about the journalling either.
 
 You may use the return value to inform about errors. Just return the
 error message, or NULL if everything went well.
@@ -281,8 +282,7 @@ the same as the one of a hook.
 ucw/conf.h
 ----------
 
-Use this file if you want define a configuration section, request
-loading of some variables or create new item type.
+This header file contains the public interface of the configuration module.
 
 !!ucw/conf.h
 
@@ -291,6 +291,6 @@ ucw/getopt.h
 ------------
 
 This header contains routines for parsing command line arguments and
-loading the configuration.
+loading the default configuration.
 
 !!ucw/getopt.h
