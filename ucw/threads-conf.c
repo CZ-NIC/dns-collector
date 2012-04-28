@@ -20,7 +20,7 @@ static struct cf_section threads_config = {
   }
 };
 
-static void CONSTRUCTOR_WITH_PRIORITY(19999)
+static void CONSTRUCTOR
 ucwlib_threads_conf_init(void)
 {
   cf_declare_section("Threads", &threads_config, 0);
