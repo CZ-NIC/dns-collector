@@ -63,8 +63,15 @@ struct cf_context {
 static inline struct cf_context *
 cf_get_context(void)
 {
-  return ucwlib_thread_context()->cf_context;
+  struct cf_context *cc = ucwlib_thread_context()->cf_context;
+  ASSERT(cc->is_active);
+  return cc;
 }
+
+// In fact, this is equivalent to cf_get_context(), but it is not inlined,
+// because we want to force the linker to include conf-context.c, which contains
+// a constructor of the whole context mechanism.
+struct cf_context *cf_obtain_context(void);
 
 /* conf-intr.c */
 #define OP_MASK 0xff		// only get the operation

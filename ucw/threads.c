@@ -67,7 +67,7 @@ ucwlib_tid(void)
 
 /*** Thread context ***/
 
-static void CONSTRUCTOR
+static void CONSTRUCTOR_WITH_PRIORITY(10000)
 ucwlib_threads_init_master(void)
 {
   pthread_mutex_init(&ucwlib_master_mutex, NULL);
@@ -95,7 +95,7 @@ ucwlib_free_thread_context(void *p)
   xfree(p);
 }
 
-static void CONSTRUCTOR
+static void CONSTRUCTOR_WITH_PRIORITY(10000)
 ucwlib_threads_init(void)
 {
   if (pthread_key_create(&ucwlib_context_key, ucwlib_free_thread_context) < 0)

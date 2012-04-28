@@ -59,6 +59,7 @@
 #define NONRET __attribute__((noreturn))				/** Function does not return **/
 #define UNUSED __attribute__((unused))					/** Variable/parameter is knowingly unused **/
 #define CONSTRUCTOR __attribute__((constructor))			/** Call function upon start of program **/
+#define CONSTRUCTOR_WITH_PRIORITY(p) __attribute__((constructor(p)))	/** Define constructor with a given priority **/
 #define PACKED __attribute__((packed))					/** Structure should be packed **/
 #define CONST __attribute__((const))					/** Function depends only on arguments **/
 #define PURE __attribute__((pure))					/** Function depends only on arguments and global vars **/

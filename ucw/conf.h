@@ -21,10 +21,10 @@ struct mempool;
  * ~~~~~~~~~~~~~~~~~~~~~~
  *
  * The state of the configuration parser is stored within a configuration context.
- * If you do not create contexts explicitly, the library will create one for you
- * and you need not care, as long as you use a single configuration file.
+ * One such context is automatically created during initialization of the library
+ * and you need not care about more, as long as you use a single configuration file.
  *
- * In whole generality, you can define as many context as you wish and switch
+ * In full generality, you can define as many context as you wish and switch
  * between them. Each thread has its own pointer to the current context, which
  * must not be shared with other threads.
  ***/
@@ -34,7 +34,7 @@ struct cf_context *cf_new_context(void);
 
 /**
  * Free a configuration context. The context must not be set as current
- * for any thread.
+ * for any thread, nor can it be the default context.
  *
  * All configuration settings made within the context are rolled back
  * (except when journalling is turned off). All memory allocated on behalf
@@ -48,12 +48,6 @@ void cf_free_context(struct cf_context *cc);
  * active context. Both the new and the old context may be NULL.
  **/
 struct cf_context *cf_switch_context(struct cf_context *cc);
-
-/**
- * Return a pointer to the current context, or create the default context
- * if there is no context active.
- **/
-struct cf_context *cf_obtain_context(void);
 
 /*** === Data types [[conf_types]] ***/
 
@@ -423,4 +417,3 @@ char *cf_parse_double(const char *str, double *ptr);	/** Parser for doubles. **/
 char *cf_parse_ip(const char *p, u32 *varp);		/** Parser for IP addresses. **/
 
 #endif
-

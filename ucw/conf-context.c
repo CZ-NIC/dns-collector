@@ -12,20 +12,20 @@
 #include <ucw/conf-internal.h>
 #include <ucw/threads.h>
 
-#ifndef CONFIG_UCW_DEFAULT_CONFIG
-#define CONFIG_UCW_DEFAULT_CONFIG NULL
-#endif
+static struct cf_context cf_default_context;
 
-#ifndef CONFIG_UCW_ENV_VAR_CONFIG
-#define CONFIG_UCW_ENV_VAR_CONFIG NULL
-#endif
+static void
+cf_init_context(struct cf_context *cc)
+{
+  cc->need_journal = 1;
+  clist_init(&cc->conf_entries);
+}
 
 struct cf_context *
 cf_new_context(void)
 {
   struct cf_context *cc = xmalloc_zero(sizeof(*cc));
-  cc->need_journal = 1;
-  clist_init(&cc->conf_entries);
+  cf_init_context(cc);
   return cc;
 }
 
@@ -33,6 +33,7 @@ void
 cf_free_context(struct cf_context *cc)
 {
   ASSERT(!cc->is_active);
+  ASSERT(cc != &cf_default_context);
   xfree(cc->parser);
   xfree(cc);
 }
@@ -53,15 +54,16 @@ cf_switch_context(struct cf_context *cc)
   return prev;
 }
 
+static void CONSTRUCTOR_WITH_PRIORITY(10100)
+cf_init_default_context(void)
+{
+  cf_init_context(&cf_default_context);
+  ucwlib_thread_context()->cf_context = &cf_default_context;
+  cf_default_context.is_active = 1;
+}
+
 struct cf_context *
 cf_obtain_context(void)
 {
-  struct ucwlib_context *uc = ucwlib_thread_context();
-  if (unlikely(!uc->cf_context))
-    {
-      struct cf_context *cc = cf_new_context();
-      uc->cf_context = cc;
-      cc->is_active = 1;
-    }
-  return uc->cf_context;
+  return cf_get_context();
 }

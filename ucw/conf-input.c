@@ -475,7 +475,7 @@ final_commit(struct cf_context *cc)
 int
 cf_getopt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index)
 {
-  struct cf_context *cc = cf_obtain_context();
+  struct cf_context *cc = cf_get_context();
   cc->postpone_commit = 1;
 
   while (1) {
