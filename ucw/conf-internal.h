@@ -42,7 +42,7 @@ struct dirty_section {
 struct cf_context {
   struct mempool *pool;
   int is_active;
-  int def_loaded;
+  int config_loaded;			// at least one config file was loaded
   struct cf_parser_state *parser;
   uns everything_committed;		// after the 1st load, this flag is set on
   uns postpone_commit;			// used internally by cf_getopt()
@@ -85,7 +85,7 @@ extern char *cf_type_names[];
 uns cf_type_size(enum cf_type type, struct cf_user_type *utype);
 char *cf_interpret_line(struct cf_context *cc, char *name, enum cf_operation op, int number, char **pars);
 void cf_init_stack(struct cf_context *cc);
-int cf_check_stack(struct cf_context *cc);
+int cf_done_stack(struct cf_context *cc);
 
 /* conf-journal.c */
 void cf_journal_swap(void);

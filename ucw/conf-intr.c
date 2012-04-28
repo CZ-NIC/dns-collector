@@ -652,11 +652,15 @@ cf_init_stack(struct cf_context *cc)
 }
 
 int
-cf_check_stack(struct cf_context *cc)
+cf_done_stack(struct cf_context *cc)
 {
   if (cc->stack_level > 0) {
     msg(L_ERROR, "Unterminated block");
     return 1;
   }
+  if (cf_commit_all(cc->postpone_commit ? CF_NO_COMMIT : cc->everything_committed ? CF_COMMIT : CF_COMMIT_ALL))
+    return 1;
+  if (!cc->postpone_commit)
+    cc->everything_committed = 1;
   return 0;
 }

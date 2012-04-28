@@ -10,7 +10,6 @@
 
 #include <ucw/lib.h>
 #include <ucw/conf.h>
-#include <ucw/getopt.h>
 #include <ucw/conf-internal.h>
 #include <ucw/clists.h>
 #include <ucw/mempool.h>
@@ -293,18 +292,6 @@ error:
 }
 
 static int
-done_stack(struct cf_context *cc)
-{
-  if (cf_check_stack(cc))
-    return 1;
-  if (cf_commit_all(cc->postpone_commit ? CF_NO_COMMIT : cc->everything_committed ? CF_COMMIT : CF_COMMIT_ALL))
-    return 1;
-  if (!cc->postpone_commit)
-    cc->everything_committed = 1;
-  return 0;
-}
-
-static int
 load_file(struct cf_context *cc, const char *file)
 {
   cf_init_stack(cc);
@@ -315,7 +302,7 @@ load_file(struct cf_context *cc, const char *file)
   }
   char *err_msg = parse_fastbuf(cc, file, fb, 0);
   bclose(fb);
-  return !!err_msg || done_stack(cc);
+  return !!err_msg || cf_done_stack(cc);
 }
 
 static int
@@ -325,7 +312,7 @@ load_string(struct cf_context *cc, const char *string)
   struct fastbuf fb;
   fbbuf_init_read(&fb, (byte *)string, strlen(string), 0);
   char *msg = parse_fastbuf(cc, NULL, &fb, 0);
-  return !!msg || done_stack(cc);
+  return !!msg || cf_done_stack(cc);
 }
 
 /* Safe loading and reloading */
@@ -381,7 +368,7 @@ cf_reload(const char *file)
 
   cc->postpone_commit = 0;
   if (!err)
-    err |= done_stack(cc);
+    err |= cf_done_stack(cc);
 
   if (!err) {
     cf_journal_delete();
@@ -404,7 +391,7 @@ cf_load(const char *file)
   if (!err) {
     cf_journal_commit_transaction(1, oldj);
     cf_remember_entry(cc, CE_FILE, file);
-    cc->def_loaded = 1;
+    cc->config_loaded = 1;
   } else
     cf_journal_rollback_transaction(1, oldj);
   return err;
@@ -422,94 +409,4 @@ cf_set(const char *string)
   } else
     cf_journal_rollback_transaction(0, oldj);
   return err;
-}
-
-/* Command-line parser */
-
-#ifndef CONFIG_UCW_DEFAULT_CONFIG
-#define CONFIG_UCW_DEFAULT_CONFIG NULL
-#endif
-char *cf_def_file = CONFIG_UCW_DEFAULT_CONFIG;
-
-#ifndef CONFIG_UCW_ENV_VAR_CONFIG
-#define CONFIG_UCW_ENV_VAR_CONFIG NULL
-#endif
-char *cf_env_file = CONFIG_UCW_ENV_VAR_CONFIG;
-
-static void
-load_default(struct cf_context *cc)
-{
-  if (cc->def_loaded++)
-    return;
-  if (cf_def_file)
-    {
-      char *env;
-      if (cf_env_file && (env = getenv(cf_env_file)))
-        {
-	  if (cf_load(env))
-	    die("Cannot load config file %s", env);
-	}
-      else if (cf_load(cf_def_file))
-        die("Cannot load default config %s", cf_def_file);
-    }
-  else
-    {
-      // We need to create an empty pool and initialize all configuration items
-      struct cf_journal_item *oldj = cf_journal_new_transaction(1);
-      cf_init_stack(cc);
-      done_stack(cc);
-      cf_journal_commit_transaction(1, oldj);
-    }
-}
-
-static void
-final_commit(struct cf_context *cc)
-{
-  if (cc->postpone_commit) {
-    cc->postpone_commit = 0;
-    if (done_stack(cc))
-      die("Cannot commit after the initialization");
-  }
-}
-
-int
-cf_getopt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index)
-{
-  struct cf_context *cc = cf_get_context();
-  cc->postpone_commit = 1;
-
-  while (1) {
-    int res = getopt_long (argc, argv, short_opts, long_opts, long_index);
-    if (res == 'S' || res == 'C' || res == 0x64436667)
-    {
-      if (cc->other_options)
-	die("The -S and -C options must precede all other arguments");
-      if (res == 'S') {
-	load_default(cc);
-	if (cf_set(optarg))
-	  die("Cannot set %s", optarg);
-      } else if (res == 'C') {
-	if (cf_load(optarg))
-	  die("Cannot load config file %s", optarg);
-      }
-#ifdef CONFIG_UCW_DEBUG
-      else {   /* --dumpconfig */
-	load_default(cc);
-	final_commit(cc);
-	struct fastbuf *b = bfdopen(1, 4096);
-	cf_dump_sections(b);
-	bclose(b);
-	exit(0);
-      }
-#endif
-    } else {
-      /* unhandled option or end of options */
-      if (res != ':' && res != '?') {
-	load_default(cc);
-	final_commit(cc);
-      }
-      cc->other_options++;
-      return res;
-    }
-  }
 }

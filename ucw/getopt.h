@@ -2,7 +2,7 @@
  *	UCW Library -- Parsing of configuration and command-line options
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
- *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2012 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -17,15 +17,11 @@
 #include <getopt.h>
 #endif
 
-void reset_getopt(void);	/** If you want to start parsing of the arguments from the first one again. **/
-
 /***
- * [[conf_load]]
- * Safe configuration loading
- * ~~~~~~~~~~~~~~~~~~~~~~~~~~
- *
- * These functions can be used to to safely load or reload configuration.
- */
+ * [[conf_getopt]]
+ * Loading by @cf_getopt()
+ * ~~~~~~~~~~~~~~~~~~~~~~~
+ ***/
 
 /**
  * The default config (as set by `CONFIG_UCW_DEFAULT_CONFIG`) or NULL if already loaded.
@@ -37,109 +33,6 @@ extern char *cf_def_file;
  * Defaults to `CONFIG_UCW_ENV_VAR_CONFIG`.
  **/
 extern char *cf_env_file;
-int cf_reload(const char *file);	/** Reload configuration from @file, replace the old one. **/
-int cf_load(const char *file);		/** Load configuration from @file. If @file is NULL, reload all loaded configuration files. **/
-/**
- * Parse some part of configuration passed in @string.
- * The syntax is the same as in the <<config:,configuration file>>.
- **/
-int cf_set(const char *string);
-
-/***
- * [[conf_direct]]
- * Direct access
- * ~~~~~~~~~~~~~
- *
- * Direct access to configuration items.
- * You probably should not need this.
- ***/
-
-/**
- * List of operations used on items.
- * This macro is used to generate internal source code,
- * but you may be interested in the list of operations it creates.
- *
- * Each operation corresponds to the same-named operation
- * described in <<config:operations,configuration syntax>>.
- **/
-#define CF_OPERATIONS T(CLOSE) T(SET) T(CLEAR) T(ALL) \
-  T(APPEND) T(PREPEND) T(REMOVE) T(EDIT) T(AFTER) T(BEFORE) T(COPY) T(RESET)
-  /* Closing brace finishes previous block.
-   * Basic attributes (static, dynamic, parsed) can be used with SET.
-   * Dynamic arrays can be used with SET, APPEND, PREPEND.
-   * Sections can be used with SET.
-   * Lists can be used with everything. */
-#define T(x) OP_##x,
-enum cf_operation { CF_OPERATIONS };	/** Allowed operations on items. See <<def_CF_OPERATIONS,`CF_OPERATIONS`>> for list (they have an `OP_` prefix -- it means you use `OP_SET` instead of just `SET`). **/
-#undef T
-
-struct cf_item;
-/**
- * Searches for a configuration item called @name.
- * If it is found, it is copied into @item and NULL is returned.
- * Otherwise, an error is returned and @item is zeroed.
- **/
-char *cf_find_item(const char *name, struct cf_item *item);
-/**
- * Performs a single operation on a given item.
- **/
-char *cf_modify_item(struct cf_item *item, enum cf_operation op, int number, char **pars);
-
-/***
- * [[conf_dump]]
- * Debug dumping
- * ~~~~~~~~~~~~~
- ***/
-
-struct fastbuf;
-/**
- * Take everything and write it into @fb.
- **/
-void cf_dump_sections(struct fastbuf *fb);
-
-/***
- * [[conf_journal]]
- * Journaling control
- * ~~~~~~~~~~~~~~~~~~
- *
- * The configuration system uses journaling to safely reload
- * configuration. It begins a transaction and tries to load the
- * configuration. If it fails, it restores the original state.
- *
- * The behaviour of journal is described in <<reload,reloading configuration>>.
- ***/
-
-struct cf_journal_item;		/** Opaque identifier of the journal state. **/
-/**
- * Starts a new transaction. It returns the current state so you can
- * get back to it. The @new_pool parameter tells if a new memory pool
- * should be created and used from now.
- **/
-struct cf_journal_item *cf_journal_new_transaction(uns new_pool);
-/**
- * Marks current state as a complete transaction. The @new_pool
- * parameter tells if the transaction was created with new memory pool
- * (the parameter must be the same as the one with
- * @cf_journal_new_transaction() was called with). The @oldj parameter
- * is the journal state returned from last
- * @cf_journal_new_transaction() call.
- **/
-void cf_journal_commit_transaction(uns new_pool, struct cf_journal_item *oldj);
-/**
- * Returns to an old journal state, reverting anything the current
- * transaction did. The @new_pool parameter must be the same as the
- * one you used when you created the transaction. The @oldj parameter
- * is the journal state you got from @cf_journal_new_transaction() --
- * it is the state to return to.
- **/
-void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj);
-
-/***
- * [[conf_getopt]]
- * Loading by @cf_getopt()
- * ~~~~~~~~~~~~~~~~~~~~~~~
- ***/
-
 /**
  * Short options for loading configuration by @cf_getopt().
  * Prepend to your own options.
@@ -188,5 +81,7 @@ void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj)
  * is already available.
  **/
 int cf_getopt(int argc, char * const argv[], const char *short_opts, const struct option *long_opts, int *long_index);
+
+void reset_getopt(void);	/** If you want to start parsing of the arguments from the first one again. **/
 
 #endif

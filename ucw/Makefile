@@ -13,7 +13,7 @@ LIBUCW_MODS= \
 	partmap hashfunc \
 	slists simple-lists bitsig \
 	log log-stream log-file log-syslog log-conf tbf \
-	conf-context conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section \
+	conf-context conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section conf-getopt \
 	ipaccess \
 	fastbuf ff-binary ff-string ff-printf ff-unicode ff-stkstring \
 	fb-file fb-mem fb-temp tempfile fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param fb-socket \
