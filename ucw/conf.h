@@ -57,13 +57,45 @@ struct cf_context *cf_switch_context(struct cf_context *cc);
  * These functions can be used to to safely load or reload configuration.
  */
 
-int cf_reload(const char *file);	/** Reload configuration from @file, replace the old one. **/
-int cf_load(const char *file);		/** Load configuration from @file. If @file is NULL, reload all loaded configuration files. **/
+/**
+ * Load configuration from @file.
+ * Returns a non-zero value upon error. In that case, all changes to the
+ * configuration specified in the file are undone.
+ **/
+int cf_load(const char *file);
+/**
+ * Reload configuration from @file, replace the old one.
+ * If @file is NULL, reload all loaded configuration files and re-apply
+ * bits of configuration passed to cf_set().
+ * Returns a non-zero value upon error. In that case, all configuration
+ * settings are rolled back to the state before calling this function.
+ **/
+int cf_reload(const char *file);
 /**
  * Parse some part of configuration passed in @string.
  * The syntax is the same as in the <<config:,configuration file>>.
+ * Returns a non-zero value upon error. In that case, all changes to the
+ * configuration specified by the already executed parts of the string
+ * are undone.
  **/
 int cf_set(const char *string);
+
+/**
+ * Sometimes, the configuration is split to multiple files and when only
+ * some of the are loaded, the settings are not consistent -- for example,
+ * they might have been rejected by a commit hook, because a mandatory setting
+ * is missing.
+ *
+ * This function opens a configuration group, in which multiple files can be
+ * loaded and all commit hooks are deferred until the group is closed.
+ **/
+void cf_open_group(void);
+
+/**
+ * Close a group opened by cf_open_group(). Returns a non-zero value upon error,
+ * which usually means that a commit hook has failed.
+ **/
+int cf_close_group(void);
 
 /*** === Data types [[conf_types]] ***/
 

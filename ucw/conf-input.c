@@ -331,8 +331,6 @@ cf_remember_entry(struct cf_context *cc, uns type, const char *arg)
 {
   if (!cc->need_journal)
     return;
-  if (!cc->postpone_commit)
-    return;
   struct conf_entry *ce = cf_malloc(sizeof(*ce));
   ce->type = type;
   ce->arg = cf_strdup(arg);
@@ -350,7 +348,7 @@ cf_reload(const char *file)
 
   clist old_entries;
   clist_move(&old_entries, &cc->conf_entries);
-  cc->postpone_commit = 1;
+  cf_open_group();
 
   int err = 0;
   if (file)
@@ -366,9 +364,7 @@ cf_reload(const char *file)
       cf_remember_entry(cc, ce->type, ce->arg);
     }
 
-  cc->postpone_commit = 0;
-  if (!err)
-    err |= cf_done_stack(cc);
+  err |= cf_close_group();
 
   if (!err) {
     cf_journal_delete();

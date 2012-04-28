@@ -44,13 +44,13 @@ struct cf_context {
   int is_active;
   int config_loaded;			// at least one config file was loaded
   struct cf_parser_state *parser;
-  uns everything_committed;		// after the 1st load, this flag is set on
-  uns postpone_commit;			// used internally by cf_getopt()
-  uns other_options;
+  uns everything_committed;		// did we already commit each section?
+  uns postpone_commit;			// counter of calls to cf_open_group()
+  uns other_options;			// used internally by cf_getopt()
   clist conf_entries;			// files/strings to reload
-  struct old_pools *pools;
-  struct cf_journal_item *journal;
+  struct cf_journal_item *journal;	// journalling
   int need_journal;
+  struct old_pools *pools;
   struct item_stack stack[MAX_STACK_SIZE];	// interpreter stack
   uns stack_level;
   struct cf_section sections;		// root section

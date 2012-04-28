@@ -655,7 +655,7 @@ int
 cf_done_stack(struct cf_context *cc)
 {
   if (cc->stack_level > 0) {
-    msg(L_ERROR, "Unterminated block");
+    msg(L_ERROR, "Unterminated block");		// FIXME: Where?
     return 1;
   }
   if (cf_commit_all(cc->postpone_commit ? CF_NO_COMMIT : cc->everything_committed ? CF_COMMIT : CF_COMMIT_ALL))
@@ -663,4 +663,22 @@ cf_done_stack(struct cf_context *cc)
   if (!cc->postpone_commit)
     cc->everything_committed = 1;
   return 0;
+}
+
+void
+cf_open_group(void)
+{
+  struct cf_context *cc = cf_get_context();
+  cc->postpone_commit++;
+}
+
+int
+cf_close_group(void)
+{
+  struct cf_context *cc = cf_get_context();
+  ASSERT(cc->postpone_commit);
+  if (!--cc->postpone_commit)
+    return cf_done_stack(cc);
+  else
+    return 0;
 }

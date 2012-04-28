@@ -53,21 +53,19 @@ load_default(struct cf_context *cc)
 }
 
 static void
-final_commit(struct cf_context *cc)
+end_of_options(struct cf_context *cc)
 {
-  if (cc->postpone_commit)
-    {
-      cc->postpone_commit = 0;
-      if (cf_done_stack(cc))
-	die("Cannot commit after the initialization");
-    }
+  load_default(cc);
+  if (cc->postpone_commit && cf_close_group())
+    die("Cannot commit after the initialization");
 }
 
 int
 cf_getopt(int argc, char *const argv[], const char *short_opts, const struct option *long_opts, int *long_index)
 {
   struct cf_context *cc = cf_get_context();
-  cc->postpone_commit = 1;
+  if (!cc->postpone_commit)
+    cf_open_group();
 
   while (1)
     {
@@ -90,8 +88,7 @@ cf_getopt(int argc, char *const argv[], const char *short_opts, const struct opt
 #ifdef CONFIG_UCW_DEBUG
 	  else
 	    {			/* --dumpconfig */
-	      load_default(cc);
-	      final_commit(cc);
+	      end_of_options(cc);
 	      struct fastbuf *b = bfdopen(1, 4096);
 	      cf_dump_sections(b);
 	      bclose(b);
@@ -103,10 +100,7 @@ cf_getopt(int argc, char *const argv[], const char *short_opts, const struct opt
 	{
 	  /* unhandled option or end of options */
 	  if (res != ':' && res != '?')
-	    {
-	      load_default(cc);
-	      final_commit(cc);
-	    }
+	    end_of_options(cc);
 	  cc->other_options++;
 	  return res;
 	}
