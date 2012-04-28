@@ -426,21 +426,31 @@ cf_set(const char *string)
 
 /* Command-line parser */
 
+#ifndef CONFIG_UCW_DEFAULT_CONFIG
+#define CONFIG_UCW_DEFAULT_CONFIG NULL
+#endif
+char *cf_def_file = CONFIG_UCW_DEFAULT_CONFIG;
+
+#ifndef CONFIG_UCW_ENV_VAR_CONFIG
+#define CONFIG_UCW_ENV_VAR_CONFIG NULL
+#endif
+char *cf_env_file = CONFIG_UCW_ENV_VAR_CONFIG;
+
 static void
 load_default(struct cf_context *cc)
 {
   if (cc->def_loaded++)
     return;
-  if (cc->def_file)
+  if (cf_def_file)
     {
       char *env;
-      if (cc->env_file && (env = getenv(cc->env_file)))
+      if (cf_env_file && (env = getenv(cf_env_file)))
         {
 	  if (cf_load(env))
 	    die("Cannot load config file %s", env);
 	}
-      else if (cf_load(cc->def_file))
-        die("Cannot load default config %s", cc->def_file);
+      else if (cf_load(cf_def_file))
+        die("Cannot load default config %s", cf_def_file);
     }
   else
     {

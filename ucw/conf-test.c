@@ -193,7 +193,7 @@ main(int argc, char *argv[])
 {
   log_init(argv[0]);
   cf_declare_section("top", &cf_top, 0);
-  cf_set_default_file("ucw/conf-test.cf");
+  cf_def_file = "ucw/conf-test.cf";
 
   int opt;
   while ((opt = cf_getopt(argc, argv, short_opts, long_opts, NULL)) >= 0)

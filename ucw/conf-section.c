@@ -94,7 +94,7 @@ inspect_section(struct cf_section *sec)
 void
 cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown)
 {
-  struct cf_context *cc = cf_get_context();
+  struct cf_context *cc = cf_obtain_context();
   if (!cc->sections.cfg)
   {
     cc->sections.size = 50;

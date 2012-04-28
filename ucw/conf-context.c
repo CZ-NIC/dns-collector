@@ -61,23 +61,7 @@ cf_obtain_context(void)
     {
       struct cf_context *cc = cf_new_context();
       uc->cf_context = cc;
-      cc->def_file = CONFIG_UCW_DEFAULT_CONFIG;
-      cc->env_file = CONFIG_UCW_ENV_VAR_CONFIG;
       cc->is_active = 1;
     }
   return uc->cf_context;
-}
-
-void
-cf_set_default_file(char *name)
-{
-  struct cf_context *cc = cf_obtain_context();
-  cc->def_file = name;
-}
-
-void
-cf_set_env_override(char *name)
-{
-  struct cf_context *cc = cf_obtain_context();
-  cc->env_file = name;
 }

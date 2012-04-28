@@ -43,8 +43,6 @@ struct cf_context {
   struct mempool *pool;
   int is_active;
   int need_journal;
-  char *def_file;
-  char *env_file;
   int def_loaded;
   struct cf_parser_state *parser;
   uns everything_committed;		// after the 1st load, this flag is set on

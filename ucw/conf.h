@@ -55,19 +55,6 @@ struct cf_context *cf_switch_context(struct cf_context *cc);
  **/
 struct cf_context *cf_obtain_context(void);
 
-/**
- * Set name of default configuration file. May be NULL if there should be
- * no such default.
- * FIXME: Explain where it is used
- **/
-void cf_set_default_file(char *name);
-
-/**
- * Set name of environment variable used to override the name of the default
- * configuration file. May be NULL if there should be no such variable.
- **/
-void cf_set_env_override(char *name);
-
 /*** === Data types [[conf_types]] ***/
 
 enum cf_class {				/** Class of the configuration item. **/
