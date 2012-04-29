@@ -488,6 +488,9 @@ void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj)
  * If @allow_unknown is set to 0 and a variable not described in @sec
  * is found in the configuration file, it produces an error.
  * If you set it to 1, all such variables are ignored.
+ *
+ * Please note that a single section definition cannot be used in multiple
+ * configuration contexts simultaneously.
  **/
 void cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown);
 /**
