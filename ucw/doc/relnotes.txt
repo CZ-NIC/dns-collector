@@ -1,6 +1,24 @@
 Release notes
 =============
 
+WIP
+---
+
+* The <<conf:,configuration file parser>> has been improved:
+** Multiple instances of the configuration parser are supported.
+** *Incompatible:* As there may be more instances, we can no longer use
+   global variables to control the configuration system. In particular,
+   `cf_need_journal` and `cf_pool` variables have been replaced by
+   functions <<conf:fun_cf_set_journalling,`cf_set_journalling()`>> and
+   <<conf:fun_cf_get_pool,`cf_get_pool()`>>.
+** *Incompatible:* Loading of configuration files has been decoupled from
+   the getopt wrapper, so you might need to include `conf.h` for functions
+   which were previously declared in `getopt.h`.
+** New functions have been added:
+   <<conf:fun_cf_open_group,`cf_open_group()`>>,
+   <<conf:fun_cf_close_group,`cf_close_group()`>>, and
+   <<conf:fun_cf_revert,`cf_revert()`>>.
+
 5.0
 ---
 
