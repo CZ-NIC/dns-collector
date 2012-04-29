@@ -236,10 +236,8 @@ main(int argc, char *argv[])
 
   if (cc) {
     cf_switch_context(prev);
-    cf_free_context(cc);
+    cf_delete_context(cc);
   }
-
-  printf("%08x\n", ip);
 
   return 0;
 }

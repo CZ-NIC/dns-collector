@@ -41,7 +41,7 @@ struct cf_context *cf_new_context(void);
  * of the context is freed, which includes memory obtained by calls to
  * cf_malloc().
  **/
-void cf_free_context(struct cf_context *cc);
+void cf_delete_context(struct cf_context *cc);
 
 /**
  * Make the given configuration context current and return the previously

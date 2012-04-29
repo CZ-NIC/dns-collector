@@ -30,7 +30,7 @@ cf_new_context(void)
 }
 
 void
-cf_free_context(struct cf_context *cc)
+cf_delete_context(struct cf_context *cc)
 {
   ASSERT(!cc->is_active);
   ASSERT(cc != &cf_default_context);
