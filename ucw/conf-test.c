@@ -15,6 +15,8 @@
 #include <time.h>
 
 static int verbose;
+static int new_context;
+static int reload;
 
 struct sub_sect_1 {
   cnode n;
@@ -162,19 +164,20 @@ static struct cf_section cf_top = {
   }
 };
 
-static char short_opts[] = CF_SHORT_OPTS "v";
+static char short_opts[] = CF_SHORT_OPTS "rv";
 static struct option long_opts[] = {
 	CF_LONG_OPTS
+	{"reload",	0, 0, 'r'},
 	{"verbose",	0, 0, 'v'},
 	{NULL,		0, 0, 0}
 };
 
 static char *help = "\
-Usage: conf-test <options>\n\
+Usage: conf-test [ctxt] <options>\n\
 \n\
-Options:\n"
-CF_USAGE
-"-v\t\t\tBe verbose\n\
+Options:\n" CF_USAGE "\
+-r, --reload\t\tReload configuration\n\
+-v, --verbose\t\tBe verbose\n\
 ";
 
 static void NONRET
@@ -192,30 +195,43 @@ int
 main(int argc, char *argv[])
 {
   log_init(argv[0]);
+
+  struct cf_context *cc = NULL, *prev = NULL;
+  if (argc > 1 && !strcmp(argv[1], "ctxt")) {
+    cc = cf_new_context();
+    prev = cf_switch_context(cc);
+    argc--, argv++;
+  }
+
   cf_declare_section("top", &cf_top, 0);
   cf_def_file = "ucw/conf-test.cf";
 
   int opt;
   while ((opt = cf_getopt(argc, argv, short_opts, long_opts, NULL)) >= 0)
     switch (opt) {
+      case 'n': new_context++; break;
+      case 'r': reload++; break;
       case 'v': verbose++; break;
       default: usage("unknown option %c\n", opt);
     }
   if (optind < argc)
     usage("too many parameters (%d more)\n", argc-optind);
 
-  /*
-  cf_load("non-existent file");
-  //cf_reload("non-existent file");
-  cf_load("non-existent file");
-  cf_set("top.d1 -1.1; top.master b");
-  cf_reload(NULL);
-  cf_reload(NULL);
-  */
+  if (reload) {
+    cf_reload(NULL);
+    cf_reload(NULL);
+  }
 
-  struct fastbuf *out = bfdopen(1, 1<<14);
-  cf_dump_sections(out);
-  bclose(out);
+  if (verbose) {
+    struct fastbuf *out = bfdopen(1, 1<<14);
+    cf_dump_sections(out);
+    bclose(out);
+  }
+
+  if (new_context) {
+    cf_switch_context(prev);
+    cf_free_context(cc);
+  }
 
   return 0;
 }
