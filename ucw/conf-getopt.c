@@ -57,7 +57,7 @@ end_of_options(struct cf_context *cc)
 {
   load_default(cc);
   if (cc->postpone_commit && cf_close_group())
-    die("Cannot commit after the initialization");
+    die("Loading of configuration failed");
 }
 
 int

@@ -202,6 +202,16 @@ split_command(struct cf_parser_state *p)
 
 /* Parsing multiple files */
 
+static int
+maybe_commit(struct cf_context *cc)
+{
+  if (cf_commit_all(cc->postpone_commit ? CF_NO_COMMIT : cc->everything_committed ? CF_COMMIT : CF_COMMIT_ALL))
+    return 1;
+  if (!cc->postpone_commit)
+    cc->everything_committed = 1;
+  return 0;
+}
+
 static char *
 parse_fastbuf(struct cf_context *cc, const char *name_fb, struct fastbuf *fb, uns depth)
 {
@@ -214,14 +224,17 @@ parse_fastbuf(struct cf_context *cc, const char *name_fb, struct fastbuf *fb, un
   p->line = p->line_buf;
   *p->line = 0;
 
-  char *err;
+  if (!depth)
+    cf_init_stack(cc);
+
+  char *err = NULL;
   while (1)
   {
     err = split_command(p);
     if (err)
       goto error;
     if (!p->words)
-      return NULL;
+      break;
     char *name = p->copy_buf.ptr + p->word_buf.ptr[0];
     char *pars[p->words-1];
     for (uns i=1; i<p->words; i++)
@@ -281,6 +294,17 @@ parse_fastbuf(struct cf_context *cc, const char *name_fb, struct fastbuf *fb, un
     if (err)
       goto error;
   }
+
+  if (!depth)
+    {
+      if (cf_done_stack(cc))
+	err = "Unterminated block";
+      else if (maybe_commit(cc))
+	err = "Commit failed";
+    }
+  if (!err)
+    return NULL;
+
 error:
   if (name_fb)
     msg(L_ERROR, "File %s, line %d: %s", name_fb, p->line_num, err);
@@ -294,25 +318,23 @@ error:
 static int
 load_file(struct cf_context *cc, const char *file)
 {
-  cf_init_stack(cc);
   struct fastbuf *fb = bopen_try(file, O_RDONLY, 1<<14);
   if (!fb) {
-    msg(L_ERROR, "Cannot open %s: %m", file);
+    msg(L_ERROR, "Cannot open configuration file %s: %m", file);
     return 1;
   }
   char *err_msg = parse_fastbuf(cc, file, fb, 0);
   bclose(fb);
-  return !!err_msg || cf_done_stack(cc);
+  return !!err_msg;
 }
 
 static int
 load_string(struct cf_context *cc, const char *string)
 {
-  cf_init_stack(cc);
   struct fastbuf fb;
   fbbuf_init_read(&fb, (byte *)string, strlen(string), 0);
   char *msg = parse_fastbuf(cc, NULL, &fb, 0);
-  return !!msg || cf_done_stack(cc);
+  return !!msg;
 }
 
 /* Safe loading and reloading */
@@ -413,4 +435,22 @@ cf_revert(void)
 {
   cf_journal_swap();
   cf_journal_delete();
+}
+
+void
+cf_open_group(void)
+{
+  struct cf_context *cc = cf_get_context();
+  cc->postpone_commit++;
+}
+
+int
+cf_close_group(void)
+{
+  struct cf_context *cc = cf_get_context();
+  ASSERT(cc->postpone_commit);
+  if (!--cc->postpone_commit)
+    return maybe_commit(cc);
+  else
+    return 0;
 }
