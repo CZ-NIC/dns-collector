@@ -49,7 +49,7 @@ struct cf_context {
   uns other_options;			// used internally by cf_getopt()
   clist conf_entries;			// files/strings to reload
   struct cf_journal_item *journal;	// journalling
-  int need_journal;
+  int enable_journal;
   struct old_pools *pools;
   struct item_stack stack[MAX_STACK_SIZE];	// interpreter stack
   uns stack_level;

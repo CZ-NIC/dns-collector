@@ -17,7 +17,7 @@ static struct cf_context cf_default_context;
 static void
 cf_init_context(struct cf_context *cc)
 {
-  cc->need_journal = 1;
+  cc->enable_journal = 1;
   clist_init(&cc->conf_entries);
 }
 
@@ -32,9 +32,11 @@ cf_new_context(void)
 void
 cf_free_context(struct cf_context *cc)
 {
-  // FIXME: Roll back all transactions
   ASSERT(!cc->is_active);
   ASSERT(cc != &cf_default_context);
+  struct cf_context *prev = cf_switch_context(cc);
+  cf_revert();
+  cf_switch_context(prev);
   xfree(cc->parser);
   xfree(cc);
 }

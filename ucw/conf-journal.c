@@ -33,14 +33,14 @@ cf_set_journalling(int enable)
 {
   struct cf_context *cc = cf_get_context();
   ASSERT(!cc->journal);
-  cc->need_journal = enable;
+  cc->enable_journal = enable;
 }
 
 void
 cf_journal_block(void *ptr, uns len)
 {
   struct cf_context *cc = cf_get_context();
-  if (!cc->need_journal)
+  if (!cc->enable_journal)
     return;
   struct cf_journal_item *ji = cf_malloc(sizeof(struct cf_journal_item) + len);
   ji->prev = cc->journal;
@@ -105,8 +105,8 @@ void
 cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj)
 {
   struct cf_context *cc = cf_get_context();
-  if (!cc->need_journal)
-    die("Cannot rollback the configuration, because the journal is disabled.");
+  if (!cc->enable_journal)
+    return;
   cf_journal_swap();
   cc->journal = oldj;
   if (new_pool)
@@ -126,5 +126,3 @@ cf_journal_delete(void)
     mp_delete(p->pool);
   }
 }
-
-/* TODO: more space efficient journal */

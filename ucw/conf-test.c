@@ -2,6 +2,7 @@
  *	Insane tester of reading configuration files
  *
  *	(c) 2006 Robert Spalek <robert@ucw.cz>
+ *	(c) 2012 Martin Mares <mj@ucw.cz>
  */
 
 #include <ucw/lib.h>
@@ -15,7 +16,6 @@
 #include <time.h>
 
 static int verbose;
-static int new_context;
 static int reload;
 
 struct sub_sect_1 {
@@ -173,7 +173,7 @@ static struct option long_opts[] = {
 };
 
 static char *help = "\
-Usage: conf-test [ctxt] <options>\n\
+Usage: conf-test [ctxt] [nojournal] <options>\n\
 \n\
 Options:\n" CF_USAGE "\
 -r, --reload\t\tReload configuration\n\
@@ -195,12 +195,19 @@ int
 main(int argc, char *argv[])
 {
   log_init(argv[0]);
-
   struct cf_context *cc = NULL, *prev = NULL;
-  if (argc > 1 && !strcmp(argv[1], "ctxt")) {
-    cc = cf_new_context();
-    prev = cf_switch_context(cc);
-    argc--, argv++;
+
+  // Special arguments which have to be parsed before cf_getopt()
+  while (argc > 1) {
+    if (!strcmp(argv[1], "ctxt")) {
+      cc = cf_new_context();
+      prev = cf_switch_context(cc);
+      argc--, argv++;
+    } else if (!strcmp(argv[1], "nojournal")) {
+      cf_set_journalling(0);
+      argc--, argv++;
+    } else
+      break;
   }
 
   cf_declare_section("top", &cf_top, 0);
@@ -209,7 +216,6 @@ main(int argc, char *argv[])
   int opt;
   while ((opt = cf_getopt(argc, argv, short_opts, long_opts, NULL)) >= 0)
     switch (opt) {
-      case 'n': new_context++; break;
       case 'r': reload++; break;
       case 'v': verbose++; break;
       default: usage("unknown option %c\n", opt);
@@ -228,10 +234,12 @@ main(int argc, char *argv[])
     bclose(out);
   }
 
-  if (new_context) {
+  if (cc) {
     cf_switch_context(prev);
     cf_free_context(cc);
   }
+
+  printf("%08x\n", ip);
 
   return 0;
 }

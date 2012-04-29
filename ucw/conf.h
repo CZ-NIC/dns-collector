@@ -63,6 +63,7 @@ struct cf_context *cf_switch_context(struct cf_context *cc);
  * configuration specified in the file are undone.
  **/
 int cf_load(const char *file);
+
 /**
  * Reload configuration from @file, replace the old one.
  * If @file is NULL, reload all loaded configuration files and re-apply
@@ -71,6 +72,7 @@ int cf_load(const char *file);
  * settings are rolled back to the state before calling this function.
  **/
 int cf_reload(const char *file);
+
 /**
  * Parse some part of configuration passed in @string.
  * The syntax is the same as in the <<config:,configuration file>>.
@@ -96,6 +98,12 @@ void cf_open_group(void);
  * which usually means that a commit hook has failed.
  **/
 int cf_close_group(void);
+
+/**
+ * Return all configuration items to their initial state before loading the
+ * configuration file. If journalling is disabled, it does nothing.
+ **/
+void cf_revert(void);
 
 /*** === Data types [[conf_types]] ***/
 

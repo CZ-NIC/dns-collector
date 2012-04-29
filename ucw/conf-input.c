@@ -329,7 +329,7 @@ struct conf_entry {	/* We remember a list of actions to apply upon reload */
 static void
 cf_remember_entry(struct cf_context *cc, uns type, const char *arg)
 {
-  if (!cc->need_journal)
+  if (!cc->enable_journal)
     return;
   struct conf_entry *ce = cf_malloc(sizeof(*ce));
   ce->type = type;
@@ -341,6 +341,7 @@ int
 cf_reload(const char *file)
 {
   struct cf_context *cc = cf_get_context();
+  ASSERT(cc->enable_journal);
   cf_journal_swap();
   struct cf_journal_item *oldj = cf_journal_new_transaction(1);
   uns ec = cc->everything_committed;
@@ -405,4 +406,11 @@ cf_set(const char *string)
   } else
     cf_journal_rollback_transaction(0, oldj);
   return err;
+}
+
+void
+cf_revert(void)
+{
+  cf_journal_swap();
+  cf_journal_delete();
 }
