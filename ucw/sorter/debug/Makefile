@@ -1,10 +1,10 @@
 # Tests related to the new sorter
 
-DIRS+=debug/sorter
-PROGS+=$(addprefix $(o)/debug/sorter/,radix-tune-bits radix-tune-thresh)
+DIRS+=ucw/sorter/debug
+PROGS+=$(addprefix $(o)/ucw/sorter/debug/,radix-tune-bits radix-tune-thresh retros)
 
-$(o)/debug/sorter/retros: $(o)/debug/sorter/retros.o $(LIBSH)
-$(o)/debug/sorter/radix-file-test: $(o)/debug/sorter/radix-file-test.o $(LIBSH)
-$(o)/debug/sorter/radix-asio-test: $(o)/debug/sorter/radix-asio-test.o $(LIBSH)
-$(o)/debug/sorter/radix-tune-bits: $(s)/debug/sorter/radix-tune-bits.sh
-$(o)/debug/sorter/radix-tune-thresh: $(s)/debug/sorter/radix-tune-thresh.sh
+$(o)/ucw/sorter/debug/retros: $(o)/ucw/sorter/debug/retros.o $(LIBUCW)
+$(o)/ucw/sorter/debug/radix-file-test: $(o)/ucw/sorter/debug/radix-file-test.o $(LIBUCW)
+$(o)/ucw/sorter/debug/radix-asio-test: $(o)/ucw/sorter/debug/radix-asio-test.o $(LIBUCW)
+$(o)/ucw/sorter/debug/radix-tune-bits: $(s)/ucw/sorter/debug/radix-tune-bits.sh
+$(o)/ucw/sorter/debug/radix-tune-thresh: $(s)/ucw/sorter/debug/radix-tune-thresh.sh

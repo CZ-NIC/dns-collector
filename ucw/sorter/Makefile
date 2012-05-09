@@ -7,8 +7,9 @@ LIBUCW_SORTER_INCLUDES=$(addprefix sorter/, array.h array-simple.h common.h s-fi
 	s-internal.h s-multiway.h s-radix.h s-twoway.h sorter.h)
 LIBUCW_INCLUDES+=$(LIBUCW_SORTER_INCLUDES)
 
-ifdef CONFIG_DEBUG_TOOLS
+ifdef CONFIG_UCW_DEBUG_TOOLS
 PROGS+=$(o)/ucw/sorter/sort-test
+include $(s)/ucw/sorter/debug/Makefile
 endif
 
 TESTS+=$(o)/ucw/sorter/sort-test.test
