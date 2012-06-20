@@ -100,20 +100,38 @@ res_alloc(const struct res_class *rc)
 {
   struct respool *rp = rp_current();
   ASSERT(rp);
-
   uns size = (rc->res_size ? : sizeof(struct resource));
-  struct resource *r = (rp->mpool ? mp_alloc_fast(rp->mpool, size) : xmalloc(size));
+  struct resource *r;
+  if (rp->mpool)
+    {
+      r = mp_alloc_fast(rp->mpool, size);
+      r->flags = 0;
+    }
+  else
+    {
+      r = xmalloc(size);
+      r->flags = RES_FLAG_XFREE;
+    }
+  res_add(r);
+  return r;
+}
+
+void
+res_add(struct resource *r)
+{
+  struct respool *rp = rp_current();
+  ASSERT(rp);
   r->rpool = rp;
   clist_add_tail(&rp->resources, &r->n);
-  r->flags = rp->default_res_flags;
-  return r;
+  r->flags &= ~RES_FLAG_TEMP;
+  r->flags |= rp->default_res_flags & RES_FLAG_TEMP;
 }
 
 void
 res_drop(struct resource *r)
 {
   clist_remove(&r->n);
-  if (!r->rpool->mpool)
+  if (r->flags & RES_FLAG_XFREE)
     xfree(r);
 }
 

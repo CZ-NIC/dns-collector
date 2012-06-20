@@ -43,6 +43,7 @@ struct resource {
 /** Resource flags **/
 enum resource_flags {
   RES_FLAG_TEMP = 1,					// Resource is temporary
+  RES_FLAG_XFREE = 2,					// Resource structure needs to be deallocated by xfree()
 };
 
 /**
@@ -129,6 +130,23 @@ struct res_class {
   void (*dump)(struct resource *r, uns indent);
   uns res_size;						// Size of the resource structure (0=default)
 };
+
+/**
+ * Initialize a pre-allocated buffer to the specific class of resource, setting its private data to @priv.
+ * This resource can be added to the current pool by @res_add().
+ **/
+static inline struct resource *res_init(struct resource *r, const struct res_class *rc, void *priv)
+{
+  r->flags = 0;
+  r->rclass = rc;
+  r->priv = priv;
+  return r;
+}
+
+/**
+ * Links a pre-initialized resource to the active pool.
+ **/
+void res_add(struct resource *r);
 
 /**
  * Unlinks a resource from a pool and releases its meta-data. Unlike @res_detach(),
