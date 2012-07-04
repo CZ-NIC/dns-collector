@@ -473,6 +473,31 @@ static inline void fbatomic_commit(struct fastbuf *b)
     fbatomic_internal_write(b);
 }
 
+/***
+ * === Fastbufs atop other fastbufs [[fbmulti]]
+ *
+ * Imagine some code which does massive string processing. It takes an input
+ * buffer, writes a part of it into an output buffer, then some other string
+ * and then the remaining part of the input buffer. Or anything else where you
+ * copy all the data at each stage of the complicated process.
+ *
+ * This backend takes multiple fastbufs and concatenates them formally into
+ * one. You may then read them consecutively as they were one fastbuf at all.
+ *
+ * This backend is read-only.
+ *
+ * This backend is seekable iff all of the supplied fastbufs are seekable.
+ *
+ * Please note that no cleanup of underlying fastbufs is provided.
+ *
+ * Also, please be aware of direct operations on the underlying buffers. The
+ * fbmulti backend doesn't expect it.
+ *
+ * The last parameter must be NULL.
+ ***/
+
+struct fastbuf* fbmulti_create(uns bufsize, ...) SENTINEL_CHECK;
+
 /*** === Configuring stream parameters [[bconfig]] ***/
 
 enum bconfig_type {			/** Parameters that could be configured. **/

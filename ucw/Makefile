@@ -16,7 +16,7 @@ LIBUCW_MODS= \
 	conf-context conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section conf-getopt \
 	ipaccess \
 	fastbuf ff-binary ff-string ff-printf ff-unicode ff-stkstring \
-	fb-file fb-mem fb-temp tempfile fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param fb-socket \
+	fb-file fb-mem fb-temp tempfile fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param fb-socket fb-multi \
 	char-cat char-upper char-lower unicode stkstring \
 	wildmatch regex \
 	prime primetable random \
@@ -116,7 +116,7 @@ TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test
     slists.test bbuf.test kmp-test.test getopt.test ff-unicode.test eltpool.test \
     fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test \
     redblack-test.test fb-file.test fb-grow.test fb-pool.test fb-atomic.test \
-    fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test url.test strtonum-test.test \
+    fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test fb-multi.test url.test strtonum-test.test \
     gary.test time.test crc.test)
 
 $(o)/ucw/regex.test: $(o)/ucw/regex-t
@@ -139,7 +139,7 @@ $(o)/ucw/binheap-test.test: $(o)/ucw/binheap-test
 $(o)/ucw/redblack-test.test: $(o)/ucw/redblack-test
 $(o)/ucw/strtonum-test.test: $(o)/ucw/strtonum-test
 $(addprefix $(o)/ucw/fb-,file.test grow.test pool.test socket.test atomic.test \
-	limfd.test temp.test mem.test buffer.test mmap.test): %.test: %-t
+	limfd.test temp.test mem.test buffer.test mmap.test multi.test): %.test: %-t
 $(o)/ucw/url.test: $(o)/ucw/url-t
 $(o)/ucw/gary.test: $(o)/ucw/gary-t
 $(o)/ucw/time.test: $(o)/ucw/time-conf-t
