@@ -47,7 +47,7 @@ fbmulti_subbuf_next(struct fastbuf *f)
     return 0;
   
   if (f->seek) {
-    bseek(FB_MULTI(f)->cur->fb, 0, SEEK_SET);
+    bseek(next->fb, 0, SEEK_SET);
     next->begin = FB_MULTI(f)->cur->end;
   }
 
@@ -109,8 +109,12 @@ fbmulti_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 	if (pos < FB_MULTI(f)->cur->end)
 	  break;
 
-	if (!fbmulti_subbuf_next(f))
-	  bthrow(f, "seek", "Seek out of range");
+	if (!fbmulti_subbuf_next(f)) {
+	  if (pos == FB_MULTI(f)->cur->end)
+	    break;
+	  else
+	    bthrow(f, "seek", "Seek out of range");
+	}
 
       } while (1);
 
@@ -122,7 +126,7 @@ fbmulti_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 
     case SEEK_END:
       fbmulti_get_len(f);
-      return fbmulti_seek(f, FB_MULTI(f)->len+pos, SEEK_CUR);
+      return fbmulti_seek(f, FB_MULTI(f)->len+pos, SEEK_SET);
       break;
 
     default:
@@ -238,6 +242,47 @@ int main(int argc, char ** argv)
 
 	  char buffer[9];
 	  while(bgets(f, buffer, 9))
+	    puts(buffer);
+
+	  bclose(f);
+	  break;
+	}
+      case 'n':
+	{
+	  char *data[] = { "Nested", "Data", "As", "In", "Real", "Usage", };
+	  struct fastbuf fb[ARRAY_SIZE(data)];
+	  for (uns i=0;i<ARRAY_SIZE(data);i++)
+	    fbbuf_init_read(&fb[i], data[i], strlen(data[i]), 0);
+
+	  struct fastbuf sp;
+	  fbbuf_init_read(&sp, " ", 1, 0);
+
+	  struct fastbuf nl;
+	  fbbuf_init_read(&nl, "\n", 1, 0);
+
+	  struct fastbuf *f = fbmulti_create(4,
+	      fbmulti_create(5,
+		&fb[0],
+		&sp,
+		&fb[1],
+		NULL),
+	      &nl,
+	      fbmulti_create(7,
+		&fb[2],
+		&sp,
+		&fb[3],
+		NULL),
+	      &nl,
+	      fbmulti_create(3,
+		&fb[4],
+		&sp,
+		&fb[5],
+		NULL),
+	      &nl,
+	      NULL);
+
+	  char buffer[20];
+	  while (bgets(f, buffer, 20))
 	    puts(buffer);
 
 	  bclose(f);

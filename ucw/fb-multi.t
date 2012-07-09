@@ -15,3 +15,9 @@ Out:	Mingle
 Name:	Read Insane
 Run:	../obj/ucw/fb-multi-t i
 Out:	Insane
+
+Name:	Read Nested
+Run:	../obj/ucw/fb-multi-t n
+Out:	Nested Data
+	As In
+	Real Usage
