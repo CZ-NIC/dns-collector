@@ -150,6 +150,14 @@ fbmulti_update_capability(struct fastbuf *f) {
   }
 }
 
+static void
+fbmulti_close(struct fastbuf *f) {
+  CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs))
+    bclose(n->fb);
+
+  mp_delete(FB_MULTI(f)->mp);
+}
+
 struct fastbuf*
 fbmulti_create(uns bufsize, ...)
 {
@@ -179,6 +187,7 @@ fbmulti_create(uns bufsize, ...)
   fb_out->name = "<multi>";
 
   fbmulti_update_capability(fb_out);
+  fb_out->close = fbmulti_close;
 
   return fb_out;
 }
