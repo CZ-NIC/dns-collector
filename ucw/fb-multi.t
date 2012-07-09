@@ -11,3 +11,7 @@ Out:	One
 Name:	Read Mingle
 Run:	../obj/ucw/fb-multi-t m
 Out:	Mingle
+
+Name:	Read Insane
+Run:	../obj/ucw/fb-multi-t i
+Out:	Insane

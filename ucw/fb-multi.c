@@ -46,8 +46,11 @@ fbmulti_subbuf_next(struct fastbuf *f)
   if (next == NULL)
     return 0;
   
-  if (f->seek)
+  if (f->seek) {
+    bseek(FB_MULTI(f)->cur->fb, 0, SEEK_SET);
     next->begin = FB_MULTI(f)->cur->end;
+  }
+
   FB_MULTI(f)->cur = next;
   return 1;
 }
@@ -218,6 +221,24 @@ int main(int argc, char ** argv)
 	    bseek(f, pos[i], SEEK_SET);
 	    putchar(bgetc(f));
 	  }
+
+	  bclose(f);
+	  break;
+	}
+      case 'i':
+	{
+	  char *data = "Insae";
+	  struct fastbuf fb[4];
+	  fbbuf_init_read(&fb[0], data, 1, 0);
+	  fbbuf_init_read(&fb[1], data + 1, 1, 0);
+	  fbbuf_init_read(&fb[2], data + 2, 2, 0);
+	  fbbuf_init_read(&fb[3], data + 4, 1, 0);
+
+	  struct fastbuf* f = fbmulti_create(8, &fb[0], &fb[1], &fb[2], &fb[1], &fb[3], NULL);
+
+	  char buffer[9];
+	  while(bgets(f, buffer, 9))
+	    puts(buffer);
 
 	  bclose(f);
 	  break;
