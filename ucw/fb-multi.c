@@ -31,9 +31,8 @@ struct subbuf {
   int allow_close;
   struct fastbuf* fb;
 };
-#define SUBBUF(f) ((struct subbuf *)(f))
 
-static inline void
+static void
 fbmulti_subbuf_get_end(struct subbuf *s)
 {
   if (s->fb->seek) {
@@ -42,7 +41,7 @@ fbmulti_subbuf_get_end(struct subbuf *s)
   }
 }
 
-static inline int
+static int
 fbmulti_subbuf_next(struct fastbuf *f)
 {
   struct subbuf* next = clist_next(FB_MULTI(f)->subbufs, &FB_MULTI(f)->cur->n);
@@ -50,7 +49,7 @@ fbmulti_subbuf_next(struct fastbuf *f)
     return 0;
   
   if (f->seek) {
-    bseek(next->fb, 0, SEEK_SET);
+    bsetpos(next->fb, 0);
     next->begin = FB_MULTI(f)->cur->end;
   }
 
@@ -83,7 +82,7 @@ fbmulti_refill(struct fastbuf *f)
 static void
 fbmulti_get_len(struct fastbuf *f)
 {
-  ASSERT (f->seek);
+  ASSERT(f->seek);
   FB_MULTI(f)->len = 0;
   
   CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs))
@@ -121,7 +120,7 @@ fbmulti_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 
       } while (1);
 
-      bseek(FB_MULTI(f)->cur->fb, (pos - FB_MULTI(f)->cur->begin), SEEK_SET);
+      bsetpos(FB_MULTI(f)->cur->fb, (pos - FB_MULTI(f)->cur->begin));
       f->pos = pos;
       f->bptr = f->bstop = f->buffer;
       return 1;
@@ -145,8 +144,7 @@ fbmulti_update_capability(struct fastbuf *f) {
   f->seek = fbmulti_seek;
 
   CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs)) {
-    if (!n->fb->refill)
-      f->refill = NULL;
+    ASSERT(n->fb->refill)
 
     if (!n->fb->seek)
       f->seek = NULL;
@@ -273,7 +271,7 @@ int main(int argc, char ** argv)
 	  int pos[] = {0, 3, 1, 4, 2, 5};
 
 	  for (uns i=0;i<ARRAY_SIZE(pos);i++) {
-	    bseek(f, pos[i], SEEK_SET);
+	    bsetpos(f, pos[i]);
 	    putchar(bgetc(f));
 	  }
 
