@@ -18,10 +18,10 @@
 
 struct fb_multi {
   struct fastbuf fb;
-  struct mempool* mp;
-  struct subbuf* cur;
+  struct mempool *mp;
+  struct subbuf *cur;
   ucw_off_t len;
-  clist* subbufs;
+  clist *subbufs;
 };
 
 #define FB_MULTI(f) ((struct fb_multi *)(f))
@@ -30,7 +30,7 @@ struct subbuf {
   cnode n;
   ucw_off_t begin, end;
   int allow_close;
-  struct fastbuf* fb;
+  struct fastbuf *fb;
 };
 
 static void
@@ -46,7 +46,7 @@ fbmulti_subbuf_get_end(struct subbuf *s)
 static int
 fbmulti_subbuf_next(struct fastbuf *f)
 {
-  struct subbuf* next = clist_next(FB_MULTI(f)->subbufs, &FB_MULTI(f)->cur->n);
+  struct subbuf *next = clist_next(FB_MULTI(f)->subbufs, &FB_MULTI(f)->cur->n);
   if (next == NULL)
     return 0;
   
@@ -171,7 +171,7 @@ fbmulti_close(struct fastbuf *f)
   mp_delete(FB_MULTI(f)->mp);
 }
 
-struct fastbuf*
+struct fastbuf *
 fbmulti_create(uns bufsize, ...)
 {
   struct mempool *mp = mp_new(bufsize);
@@ -179,7 +179,7 @@ fbmulti_create(uns bufsize, ...)
   FB_MULTI(fb_out)->mp = mp;
 
   struct fastbuf *fb_in;
-  clist* subbufs = mp_alloc(mp, sizeof(clist));
+  clist *subbufs = mp_alloc(mp, sizeof(clist));
   clist_init(subbufs);
   FB_MULTI(fb_out)->subbufs = subbufs;
 
@@ -212,7 +212,7 @@ fbmulti_append(struct fastbuf *f, struct fastbuf *fb, int allow_close)
   clist_add_tail(FB_MULTI(f)->subbufs, &(sb->n));
 }
 
-static void fbmulti_flatten_internal(struct fastbuf *f, clist* c, int allow_close)
+static void fbmulti_flatten_internal(struct fastbuf *f, clist *c, int allow_close)
 {
   CLIST_FOR_EACH(struct subbuf *, n, *c)
     {
@@ -241,7 +241,7 @@ fbmulti_flatten(struct fastbuf *f)
       return;
     }
   
-  clist* c = FB_MULTI(f)->subbufs;
+  clist *c = FB_MULTI(f)->subbufs;
   FB_MULTI(f)->subbufs = mp_alloc(FB_MULTI(f)->mp, sizeof(clist));
   clist_init(FB_MULTI(f)->subbufs);
 
@@ -253,7 +253,7 @@ fbmulti_flatten(struct fastbuf *f)
 
 #ifdef TEST
 
-int main(int argc, char ** argv)
+int main(int argc, char **argv)
 {
   if (argc < 2)
     {
@@ -269,7 +269,7 @@ int main(int argc, char ** argv)
 	  for (uns i=0;i<ARRAY_SIZE(data);i++)
 	    fbbuf_init_read(&fb[i], data[i], strlen(data[i]), 0);
 
-	  struct fastbuf* f = fbmulti_create(4, &fb[0], &fb[1], &fb[2], NULL);
+	  struct fastbuf *f = fbmulti_create(4, &fb[0], &fb[1], &fb[2], NULL);
 
 	  char buffer[9];
 	  while (bgets(f, buffer, 9))
@@ -285,7 +285,7 @@ int main(int argc, char ** argv)
 	  for (uns i=0;i<ARRAY_SIZE(data);i++)
 	    fbbuf_init_read(&fb[i], data[i], strlen(data[i]), 0);
 
-	  struct fastbuf* f = fbmulti_create(4, &fb[0], &fb[1], NULL);
+	  struct fastbuf *f = fbmulti_create(4, &fb[0], &fb[1], NULL);
 
 	  int pos[] = {0, 3, 1, 4, 2, 5};
 
@@ -307,7 +307,7 @@ int main(int argc, char ** argv)
 	  fbbuf_init_read(&fb[2], data + 2, 2, 0);
 	  fbbuf_init_read(&fb[3], data + 4, 1, 0);
 
-	  struct fastbuf* f = fbmulti_create(8, &fb[0], &fb[1], &fb[2], &fb[1], &fb[3], NULL);
+	  struct fastbuf *f = fbmulti_create(8, &fb[0], &fb[1], &fb[2], &fb[1], &fb[3], NULL);
 
 	  char buffer[9];
 	  while(bgets(f, buffer, 9))

@@ -488,8 +488,8 @@ static inline void fbatomic_commit(struct fastbuf *b)
  *
  * This backend is seekable iff all of the supplied fastbufs are seekable.
  *
- * Also, please be aware of direct operations on the underlying buffers. The
- * fbmulti backend doesn't expect you doing something directly on them.
+ * You aren't allowed to do anything with the underlying buffers while these
+ * are connected into fbmulti.
  *
  * You may init a fbmulti by @fbmulti_create(bufsize, fb1, fb2, ..., NULL).
  * This call returns a fastbuf that concatenates all the given fastbufs.
@@ -511,9 +511,10 @@ static inline void fbatomic_commit(struct fastbuf *b)
  * For performance reasons, use @fbmulti_flatten() only once, just before reading.
  ***/
 
-struct fastbuf* fbmulti_create(uns bufsize, ...) SENTINEL_CHECK;
+struct fastbuf *fbmulti_create(uns bufsize, ...) SENTINEL_CHECK;
 void fbmulti_append(struct fastbuf *f, struct fastbuf *fa, int allow_close);
 void fbmulti_flatten(struct fastbuf *f);
+
 
 /*** === Configuring stream parameters [[bconfig]] ***/
 
