@@ -23,6 +23,7 @@ struct fb_multi {
   ucw_off_t len;
   clist* subbufs;
 };
+
 #define FB_MULTI(f) ((struct fb_multi *)(f))
 
 struct subbuf {
@@ -35,10 +36,11 @@ struct subbuf {
 static void
 fbmulti_subbuf_get_end(struct subbuf *s)
 {
-  if (s->fb->seek) {
-    bseek(s->fb, 0, SEEK_END);
-    s->end = s->begin + btell(s->fb);
-  }
+  if (s->fb->seek)
+    {
+      bseek(s->fb, 0, SEEK_END);
+      s->end = s->begin + btell(s->fb);
+    }
 }
 
 static int
@@ -48,10 +50,11 @@ fbmulti_subbuf_next(struct fastbuf *f)
   if (next == NULL)
     return 0;
   
-  if (f->seek) {
-    bsetpos(next->fb, 0);
-    next->begin = FB_MULTI(f)->cur->end;
-  }
+  if (f->seek)
+    {
+      bsetpos(next->fb, 0);
+      next->begin = FB_MULTI(f)->cur->end;
+    }
 
   FB_MULTI(f)->cur = next;
   return 1;
@@ -62,6 +65,7 @@ fbmulti_refill(struct fastbuf *f)
 {
   if (f->bufend == f->bstop)
     f->bptr = f->bstop = f->buffer;
+
   uns len = bread(FB_MULTI(f)->cur->fb, f->bstop, (f->bufend - f->bstop));
   f->bstop += len;
   f->pos += len;
@@ -99,26 +103,30 @@ fbmulti_seek(struct fastbuf *f, ucw_off_t pos, int whence)
   switch(whence)
     {
     case SEEK_SET:
-      if (f->pos > pos) {
-	FB_MULTI(f)->cur = clist_head(FB_MULTI(f)->subbufs);
-	FB_MULTI(f)->cur->begin = 0;
-	f->pos = 0;
-	return fbmulti_seek(f, pos, SEEK_SET);
-      }
-
-      do {
-	fbmulti_subbuf_get_end(FB_MULTI(f)->cur);
-	if (pos < FB_MULTI(f)->cur->end)
-	  break;
-
-	if (!fbmulti_subbuf_next(f)) {
-	  if (pos == FB_MULTI(f)->cur->end)
-	    break;
-	  else
-	    bthrow(f, "seek", "Seek out of range");
+      if (f->pos > pos)
+	{
+	  FB_MULTI(f)->cur = clist_head(FB_MULTI(f)->subbufs);
+	  FB_MULTI(f)->cur->begin = 0;
+	  f->pos = 0;
+	  return fbmulti_seek(f, pos, SEEK_SET);
 	}
 
-      } while (1);
+      do
+	{
+	  fbmulti_subbuf_get_end(FB_MULTI(f)->cur);
+	  if (pos < FB_MULTI(f)->cur->end)
+	    break;
+
+	  if (!fbmulti_subbuf_next(f))
+	    {
+	      if (pos == FB_MULTI(f)->cur->end)
+		break;
+	      else
+		bthrow(f, "seek", "Seek out of range");
+	    }
+
+	}
+      while (1);
 
       bsetpos(FB_MULTI(f)->cur->fb, (pos - FB_MULTI(f)->cur->begin));
       f->pos = pos;
@@ -137,22 +145,25 @@ fbmulti_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 }
 
 static void
-fbmulti_update_capability(struct fastbuf *f) {
+fbmulti_update_capability(struct fastbuf *f)
+{
   // FB Multi is only a proxy to other fastbufs ... if any of them lacks
   // support of any feature, FB Multi also provides no support of that feature
   f->refill = fbmulti_refill;
   f->seek = fbmulti_seek;
 
-  CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs)) {
-    ASSERT(n->fb->refill)
+  CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs))
+    {
+      ASSERT(n->fb->refill)
 
-    if (!n->fb->seek)
-      f->seek = NULL;
-  }
+      if (!n->fb->seek)
+	f->seek = NULL;
+    }
 }
 
 static void
-fbmulti_close(struct fastbuf *f) {
+fbmulti_close(struct fastbuf *f)
+{
   CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs))
     if (n->allow_close)
       bclose(n->fb);
@@ -174,9 +185,9 @@ fbmulti_create(uns bufsize, ...)
 
   va_list args;
   va_start(args, bufsize);
-  while (fb_in = va_arg(args, struct fastbuf *)) {
+  while (fb_in = va_arg(args, struct fastbuf *))
     fbmulti_append(fb_out, fb_in, 1);
-  }
+  
   va_end(args);
 
   FB_MULTI(fb_out)->cur = clist_head(subbufs);
@@ -193,34 +204,42 @@ fbmulti_create(uns bufsize, ...)
 }
 
 void
-fbmulti_append(struct fastbuf *f, struct fastbuf *fb, int allow_close) {
+fbmulti_append(struct fastbuf *f, struct fastbuf *fb, int allow_close)
+{
   struct subbuf *sb = mp_alloc(FB_MULTI(f)->mp, sizeof(struct subbuf));
   sb->fb = fb;
   sb->allow_close = allow_close;
   clist_add_tail(FB_MULTI(f)->subbufs, &(sb->n));
 }
 
-static void fbmulti_flatten_internal(struct fastbuf *f, clist* c, int allow_close) {
-  CLIST_FOR_EACH(struct subbuf *, n, *c) {
-    if (strcmp(n->fb->name, FB_MULTI_NAME))
-      fbmulti_append(f, n->fb, n->allow_close && allow_close);
-    else {
-      fbmulti_flatten_internal(f, FB_MULTI(n->fb)->subbufs, allow_close && n->allow_close);
-      if (allow_close && n->allow_close) {
-	FB_MULTI(n->fb)->subbufs = mp_alloc(FB_MULTI(n->fb)->mp, sizeof(clist));
-	clist_init(FB_MULTI(n->fb)->subbufs);
-	bclose(n->fb);
-      }
+static void fbmulti_flatten_internal(struct fastbuf *f, clist* c, int allow_close)
+{
+  CLIST_FOR_EACH(struct subbuf *, n, *c)
+    {
+      if (strcmp(n->fb->name, FB_MULTI_NAME))
+	fbmulti_append(f, n->fb, n->allow_close && allow_close);
+      
+      else
+	{
+	  fbmulti_flatten_internal(f, FB_MULTI(n->fb)->subbufs, allow_close && n->allow_close);
+	  if (allow_close && n->allow_close)
+	    {
+	      FB_MULTI(n->fb)->subbufs = mp_alloc(FB_MULTI(n->fb)->mp, sizeof(clist));
+	      clist_init(FB_MULTI(n->fb)->subbufs);
+	      bclose(n->fb);
+	    }
+	}
     }
-  }
 }
 
 void
-fbmulti_flatten(struct fastbuf *f) {
-  if (strcmp(f->name, FB_MULTI_NAME)) {
-    DBG("fbmulti: given fastbuf isn't fbmulti");
-    return;
-  }
+fbmulti_flatten(struct fastbuf *f)
+{
+  if (strcmp(f->name, FB_MULTI_NAME))
+    {
+      DBG("fbmulti: given fastbuf isn't fbmulti");
+      return;
+    }
   
   clist* c = FB_MULTI(f)->subbufs;
   FB_MULTI(f)->subbufs = mp_alloc(FB_MULTI(f)->mp, sizeof(clist));
@@ -270,10 +289,11 @@ int main(int argc, char ** argv)
 
 	  int pos[] = {0, 3, 1, 4, 2, 5};
 
-	  for (uns i=0;i<ARRAY_SIZE(pos);i++) {
-	    bsetpos(f, pos[i]);
-	    putchar(bgetc(f));
-	  }
+	  for (uns i=0;i<ARRAY_SIZE(pos);i++)
+	    {
+	      bsetpos(f, pos[i]);
+	      putchar(bgetc(f));
+	    }
 
 	  bclose(f);
 	  break;
