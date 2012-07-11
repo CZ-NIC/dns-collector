@@ -14,6 +14,8 @@
 
 #include <stdio.h>
 
+#define FB_MULTI_NAME "<multi>"
+
 struct fb_multi {
   struct fastbuf fb;
   struct mempool* mp;
@@ -26,6 +28,7 @@ struct fb_multi {
 struct subbuf {
   cnode n;
   ucw_off_t begin, end;
+  int allow_close;
   struct fastbuf* fb;
 };
 #define SUBBUF(f) ((struct subbuf *)(f))
@@ -153,7 +156,8 @@ fbmulti_update_capability(struct fastbuf *f) {
 static void
 fbmulti_close(struct fastbuf *f) {
   CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs))
-    bclose(n->fb);
+    if (n->allow_close)
+      bclose(n->fb);
 
   mp_delete(FB_MULTI(f)->mp);
 }
@@ -173,9 +177,7 @@ fbmulti_create(uns bufsize, ...)
   va_list args;
   va_start(args, bufsize);
   while (fb_in = va_arg(args, struct fastbuf *)) {
-    struct subbuf *sb = mp_alloc(mp, sizeof(struct subbuf));
-    sb->fb = fb_in;
-    clist_add_tail(subbufs, &(sb->n));
+    fbmulti_append(fb_out, fb_in, 1);
   }
   va_end(args);
 
@@ -184,12 +186,52 @@ fbmulti_create(uns bufsize, ...)
   fb_out->buffer = mp_alloc(mp, bufsize);
   fb_out->bptr = fb_out->bstop = fb_out->buffer;
   fb_out->bufend = fb_out->buffer + bufsize;
-  fb_out->name = "<multi>";
+  fb_out->name = FB_MULTI_NAME;
 
   fbmulti_update_capability(fb_out);
   fb_out->close = fbmulti_close;
 
   return fb_out;
+}
+
+void
+fbmulti_append(struct fastbuf *f, struct fastbuf *fb, int allow_close) {
+  struct subbuf *sb = mp_alloc(FB_MULTI(f)->mp, sizeof(struct subbuf));
+  sb->fb = fb;
+  sb->allow_close = allow_close;
+  clist_add_tail(FB_MULTI(f)->subbufs, &(sb->n));
+}
+
+static void fbmulti_flatten_internal(struct fastbuf *f, clist* c, int allow_close) {
+  CLIST_FOR_EACH(struct subbuf *, n, *c) {
+    if (strcmp(n->fb->name, FB_MULTI_NAME))
+      fbmulti_append(f, n->fb, n->allow_close && allow_close);
+    else {
+      fbmulti_flatten_internal(f, FB_MULTI(n->fb)->subbufs, allow_close && n->allow_close);
+      if (allow_close && n->allow_close) {
+	FB_MULTI(n->fb)->subbufs = mp_alloc(FB_MULTI(n->fb)->mp, sizeof(clist));
+	clist_init(FB_MULTI(n->fb)->subbufs);
+	bclose(n->fb);
+      }
+    }
+  }
+}
+
+void
+fbmulti_flatten(struct fastbuf *f) {
+  if (strcmp(f->name, FB_MULTI_NAME)) {
+    DBG("fbmulti: given fastbuf isn't fbmulti");
+    return;
+  }
+  
+  clist* c = FB_MULTI(f)->subbufs;
+  FB_MULTI(f)->subbufs = mp_alloc(FB_MULTI(f)->mp, sizeof(clist));
+  clist_init(FB_MULTI(f)->subbufs);
+
+  fbmulti_flatten_internal(f, c, 1);
+  FB_MULTI(f)->cur = clist_head(FB_MULTI(f)->subbufs);
+  f->bptr = f->bstop = f->buffer;
+  f->pos = 0;
 }
 
 #ifdef TEST
@@ -256,6 +298,7 @@ int main(int argc, char ** argv)
 	  bclose(f);
 	  break;
 	}
+      case 'f':
       case 'n':
 	{
 	  char *data[] = { "Nested", "Data", "As", "In", "Real", "Usage", };
@@ -289,6 +332,9 @@ int main(int argc, char ** argv)
 		NULL),
 	      &nl,
 	      NULL);
+
+	  if (*argv[1] == 'f')
+	    fbmulti_flatten(f);
 
 	  char buffer[20];
 	  while (bgets(f, buffer, 20))
