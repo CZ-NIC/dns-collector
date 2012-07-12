@@ -1,0 +1,6 @@
+Daemonization helper
+====================
+
+FIXME: Add general description
+
+!!ucw/daemon.h

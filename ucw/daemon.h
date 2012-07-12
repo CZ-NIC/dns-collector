@@ -30,10 +30,24 @@ enum daemon_flags {
   DAEMON_FLAG_PRESERVE_CWD = 1,		// Skip chdir("/")
 };
 
+/**
+ * Daemon initialization. Should be run after parsing of options.
+ * It resolves the UID and GID to run with and locks the PID file.
+ * Upon error, it calls @die().
+ **/
 void daemon_init(struct daemon_params *dp);
 
+/**
+ * Run the daemon. Should be run when everything is initialized. It forks off
+ * a new process and does all necessary setup. Inside the new process, it calls
+ * @body (and when it returns, it exits the process). In the original process, it writes
+ * the PID file and returns.
+ **/
 void daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp));
 
+/**
+ * Clean up when the daemon is about to exit. It removes the PID file.
+ **/
 void daemon_exit(struct daemon_params *dp);
 
 #endif
