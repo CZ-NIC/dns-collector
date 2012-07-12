@@ -33,7 +33,8 @@ LIBUCW_MODS= \
 	bbuf gary \
 	getopt \
 	strtonum \
-	resource trans res-fd res-mem res-subpool res-mempool res-eltpool
+	resource trans res-fd res-mem res-subpool res-mempool res-eltpool \
+	daemon
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h threads.h time.h \
@@ -59,7 +60,8 @@ LIBUCW_MAIN_INCLUDES= \
 	kmp.h kmp-search.h binsearch.h \
 	partmap.h \
 	strtonum.h \
-	resource.h trans.h
+	resource.h trans.h \
+	daemon.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
