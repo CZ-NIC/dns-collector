@@ -513,6 +513,11 @@ static inline void fbatomic_commit(struct fastbuf *b)
  * If you want to remove a fastbuf from the chain, just call @fbmulti_remove
  * where the second parameter is a pointer to the removed fastbuf. If you pass
  * NULL, all the underlying fastbufs are removed.
+ *
+ * When a fastbuf is removed from the chain, the overall position may change:
+ * If bstop pointed into it, after removal it points to the boundary of the
+ * previous and next fastbufs. Length of the removed fastbuf is subtracted from
+ * the overall offset of all the fastbufs after the removed fb in the chain.
  ***/
 
 struct fastbuf *fbmulti_create(uns bufsize, ...) SENTINEL_CHECK;
