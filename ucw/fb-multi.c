@@ -154,7 +154,7 @@ fbmulti_update_capability(struct fastbuf *f)
 
   CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs))
     {
-      ASSERT(n->fb->refill)
+      ASSERT(n->fb->refill);
 
       if (!n->fb->seek)
 	f->seek = NULL;
@@ -210,6 +210,29 @@ fbmulti_append(struct fastbuf *f, struct fastbuf *fb, int allow_close)
   sb->fb = fb;
   sb->allow_close = allow_close;
   clist_add_tail(FB_MULTI(f)->subbufs, &(sb->n));
+  fbmulti_update_capability(f);
+}
+
+void
+fbmulti_remove(struct fastbuf *f, struct fastbuf *fb)
+{
+  if (fb)
+    {
+      CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs))
+	if (fb == n->fb)
+	  {
+	    // TODO: fix seek positions
+	    clist_remove(&(n->n));
+	    fbmulti_update_capability(f);
+	    return;
+	  }
+
+      die("Given fastbuf %p not in given fbmulti %p.", fb, f);
+    }
+  else
+    clist_init(FB_MULTI(f)->subbufs);
+
+  fbmulti_update_capability(f);
 }
 
 static void fbmulti_flatten_internal(struct fastbuf *f, clist *c, int allow_close)

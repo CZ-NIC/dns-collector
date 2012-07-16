@@ -509,11 +509,16 @@ static inline void fbatomic_commit(struct fastbuf *b)
  * fbmulti is seeked to the beginning, flushed and ready to read the whole buffer.
  *
  * For performance reasons, use @fbmulti_flatten() only once, just before reading.
+ *
+ * If you want to remove a fastbuf from the chain, just call @fbmulti_remove
+ * where the second parameter is a pointer to the removed fastbuf. If you pass
+ * NULL, all the underlying fastbufs are removed.
  ***/
 
 struct fastbuf *fbmulti_create(uns bufsize, ...) SENTINEL_CHECK;
 void fbmulti_append(struct fastbuf *f, struct fastbuf *fa, int allow_close);
 void fbmulti_flatten(struct fastbuf *f);
+void fbmulti_remove(struct fastbuf *f, struct fastbuf *fb);
 
 
 /*** === Configuring stream parameters [[bconfig]] ***/
