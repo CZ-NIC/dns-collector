@@ -52,4 +52,48 @@ void daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp)
  **/
 void daemon_exit(struct daemon_params *dp);
 
+#define DAEMON_ERR_LEN 256
+
+/** Parameters passed to daemon_control() **/
+struct daemon_control_params {
+  const char *pid_file;		// A path to PID file
+  const char *guard_file;	// A path to guard file
+  int action;			// Action to perform (DAEMON_CONTROL_xxx)
+  char * const *argv;		// Daemon's arguments, NULL-terminated (for DAEMON_CONTROL_START)
+  int signal;			// Signal to send (for DAEMON_CONTROL_SIGNAL)
+  char error_msg[DAEMON_ERR_LEN];	// A detailed error message returned (for DAEMON_STATUS_ERROR)
+};
+
+enum daemon_control_action {
+  DAEMON_CONTROL_CHECK,
+  DAEMON_CONTROL_START,
+  DAEMON_CONTROL_STOP,
+  DAEMON_CONTROL_SIGNAL,
+};
+
+/**
+ * Perform an action on a daemon:
+ *
+ * * `DAEMON_CONTROL_START` to start the daemon
+ * * `DAEMON_CONTROL_STOP` to stop the daemon (send `SIGTERM` or `dc->signal` if non-zero)
+ * * `DAEMON_CONTROL_CHECK` to check that the daemon is running
+ * * `DAEMON_CONTROL_SIGNAL` to send a signal to the daemon
+ *
+ * The function returns a status code:
+ *
+ * * `DAEMON_STATUS_OK` if the action has been performed successfully
+ * * `DAEMON_STATUS_ALREADY_DONE` if the daemon is already in the requested state
+ * * `DAEMON_STATUS_NOT_RUNNING` if the action failed, because the daemon is not running
+ * * `DAEMON_STATUS_ERROR` if the action failed for some other reason (in this case,
+ *   the error_msg field contains a full error message)
+ **/
+enum daemon_control_status daemon_control(struct daemon_control_params *dc);
+
+enum daemon_control_status {
+  DAEMON_STATUS_OK = 0,
+  DAEMON_STATUS_ALREADY_DONE = 100,
+  DAEMON_STATUS_NOT_RUNNING = 101,
+  DAEMON_STATUS_ERROR = 102,
+};
+
 #endif
