@@ -18,6 +18,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <errno.h>
+#include <sys/file.h>
 
 static void daemon_resolve_ugid(struct daemon_params *dp)
 {
@@ -89,12 +90,14 @@ void daemon_init(struct daemon_params *dp)
       dp->pid_fd = open(dp->pid_file, O_RDWR | O_CREAT, 0666);
       if (dp->pid_fd < 0)
 	die("Cannot open `%s': %m", dp->pid_file);
+      int fl = fcntl(dp->pid_fd, F_GETFD);
+      if (fl < 0 || fcntl(dp->pid_fd, F_SETFD, fl | FD_CLOEXEC))
+	die("Cannot set FD_CLOEXEC: %m");
 
       // Try to lock it with an exclusive lock
-      struct flock fl = { .l_type = F_WRLCK, .l_whence = SEEK_SET };
-      if (fcntl(dp->pid_fd, F_SETLK, &fl) < 0)
+      if (flock(dp->pid_fd, LOCK_EX | LOCK_NB) < 0)
 	{
-	  if (errno == EAGAIN || errno == EACCES)
+	  if (errno == EINTR || errno == EWOULDBLOCK)
 	    die("Daemon is already running (`%s' locked)", dp->pid_file);
 	  else
 	    die("Cannot lock `%s': %m", dp->pid_file);
@@ -140,13 +143,12 @@ void daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp)
     die("Cannot fork: %m");
   if (!pid)
     {
-      // The PID file is left open, so that it is kept locked
-      // FIXME: Downgrade the lock to shared
+      // We still keep the PID file open and thus locked
       body(dp);
       exit(0);
     }
-  
-  // Write PID and release the PID file
+
+  // Write PID and downgrade the lock to shared
   if (dp->pid_file)
     {
       char buf[32];
@@ -154,9 +156,11 @@ void daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp)
       ASSERT(c <= (int) sizeof(buf));
       if (lseek(dp->pid_fd, 0, SEEK_SET) < 0 ||
 	  write(dp->pid_fd, buf, c) != c ||
-	  ftruncate(dp->pid_fd, c) < 0 ||
-	  close(dp->pid_fd) < 0)
+	  ftruncate(dp->pid_fd, c))
 	die("Cannot write PID to `%s': %m", dp->pid_file);
+      if (flock(dp->pid_fd, LOCK_SH | LOCK_NB) < 0)
+	die("Cannot re-lock `%s': %m", dp->pid_file);
+      close(dp->pid_fd);
     }
 }
 
@@ -176,16 +180,34 @@ static void body(struct daemon_params *dp)
 {
   log_fork();
   msg(L_INFO, "Daemon is running");
+  msg(L_INFO, "uid=%d/%d gid=%d/%d", (int) getuid(), (int) geteuid(), (int) getgid(), (int) getegid());
   sleep(60);
   msg(L_INFO, "Daemon is shutting down");
   daemon_exit(dp);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
   struct daemon_params dp = {
     .pid_file = "/tmp/123",
   };
+
+  int opt;
+  while ((opt = getopt(argc, argv, "p:u:g:")) >= 0)
+    switch (opt)
+      {
+      case 'p':
+	dp.pid_file = optarg;
+	break;
+      case 'u':
+	dp.run_as_user = optarg;
+	break;
+      case 'g':
+	dp.run_as_group = optarg;
+	break;
+      default:
+	die("Invalid arguments");
+      }
 
   daemon_init(&dp);
   daemon_run(&dp, body);
