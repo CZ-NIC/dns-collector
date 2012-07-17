@@ -1,6 +1,20 @@
 Daemonization helper
 ====================
 
-FIXME: Add general description
+When programs run as daemons, they frequently forget to detach themselves
+from the parent environment. LibUCW therefore offers a simple daemonization
+helper which performs the necessary actions. Namely:
+
+* Establishing a new session via a call to `setsid()`.
+* Switching the user and group ID if needed. The user and group can be specified
+  by either a name or `#uid`. If only the user is given, the relevant groups are
+  set according to `/etc/passwd` and `/etc/group`.
+* Redirecting standard input and output from `/dev/null`. Standard error
+  output is left open, so that error messages can be printed before you
+  set up proper <<log:,logging>>.
+* Setting the `umask()` to a fixed value (022).
+* Switching from the current directory to `/`, so that it is not kept busy.
+* Writing a PID file. While the daemon is running, the PID file is kept locked
+  by `flock()`, so we can easily detect stale PID files.
 
 !!ucw/daemon.h
