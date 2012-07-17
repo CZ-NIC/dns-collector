@@ -12,6 +12,7 @@
 
 #include <sys/types.h>
 
+/** Parameters passed to the daemon helper. **/
 struct daemon_params {
   uns flags;				// DAEMON_FLAG_xxx
   const char *pid_file;			// A path to PID file (optional)
@@ -26,6 +27,7 @@ struct daemon_params {
   int pid_fd;
 };
 
+/** Flags passed to the daemon helper. **/
 enum daemon_flags {
   DAEMON_FLAG_PRESERVE_CWD = 1,		// Skip chdir("/")
 };

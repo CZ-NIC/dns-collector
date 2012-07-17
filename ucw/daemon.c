@@ -148,7 +148,7 @@ void daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp)
       exit(0);
     }
 
-  // Write PID and downgrade the lock to shared
+  // Write PID
   if (dp->pid_file)
     {
       char buf[32];
@@ -156,11 +156,9 @@ void daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp)
       ASSERT(c <= (int) sizeof(buf));
       if (lseek(dp->pid_fd, 0, SEEK_SET) < 0 ||
 	  write(dp->pid_fd, buf, c) != c ||
-	  ftruncate(dp->pid_fd, c))
+	  ftruncate(dp->pid_fd, c) ||
+	  close(dp->pid_fd) < 0)
 	die("Cannot write PID to `%s': %m", dp->pid_file);
-      if (flock(dp->pid_fd, LOCK_SH | LOCK_NB) < 0)
-	die("Cannot re-lock `%s': %m", dp->pid_file);
-      close(dp->pid_fd);
     }
 }
 
