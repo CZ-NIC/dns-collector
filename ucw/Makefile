@@ -34,7 +34,8 @@ LIBUCW_MODS= \
 	getopt \
 	strtonum \
 	resource trans res-fd res-mem res-subpool res-mempool res-eltpool \
-	daemon daemon-ctrl
+	daemon daemon-ctrl \
+	signames
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h threads.h time.h \
@@ -61,7 +62,8 @@ LIBUCW_MAIN_INCLUDES= \
 	partmap.h \
 	strtonum.h \
 	resource.h trans.h \
-	daemon.h
+	daemon.h \
+	signames.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
