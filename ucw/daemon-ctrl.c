@@ -32,8 +32,10 @@ daemon_control_err(struct daemon_control_params *dc, char *msg, ...)
 }
 
 static int
-daemon_read_pid(struct daemon_control_params *dc, int will_wait)
+daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *stalep)
 {
+  *stalep = 0;
+
   int pid_fd = open(dc->pid_file, O_RDONLY);
   if (pid_fd < 0)
     {
@@ -47,6 +49,7 @@ daemon_read_pid(struct daemon_control_params *dc, int will_wait)
     {
       // The lock file is stale
       close(pid_fd);
+      *stalep = 1;
       return 0;
     }
 
@@ -87,7 +90,7 @@ enum daemon_control_status
 daemon_control(struct daemon_control_params *dc)
 {
   enum daemon_control_status st = DAEMON_STATUS_ERROR;
-  int sig;
+  int sig, stale, stale2;
 
   int guard_fd = open(dc->guard_file, O_RDWR | O_CREAT, 0666);
   if (guard_fd < 0)
@@ -96,7 +99,7 @@ daemon_control(struct daemon_control_params *dc)
     return daemon_control_err(dc, "Cannot lock guard file `%s': %m", dc->guard_file);
 
   // Read the PID file
-  int pid = daemon_read_pid(dc, 0);
+  int pid = daemon_read_pid(dc, 0, &stale);
   if (pid < 0)
     goto done;
 
@@ -105,6 +108,8 @@ daemon_control(struct daemon_control_params *dc)
     case DAEMON_CONTROL_CHECK:
       if (pid)
 	st = DAEMON_STATUS_OK;
+      else if (stale)
+	st = DAEMON_STATUS_STALE;
       else
 	st = DAEMON_STATUS_NOT_RUNNING;
       break;
@@ -144,23 +149,23 @@ daemon_control(struct daemon_control_params *dc)
 	      daemon_control_err(dc, "Daemon %s %s", dc->argv[0], ecmsg);
 	      goto done;
 	    }
-	  pid = daemon_read_pid(dc, 0);
+	  pid = daemon_read_pid(dc, 0, &stale2);
 	  if (!pid)
 	    daemon_control_err(dc, "Daemon %s failed to write the PID file `%s'", dc->argv[0], dc->pid_file);
 	  else
-	    st = DAEMON_STATUS_OK;
+	    st = stale ? DAEMON_STATUS_STALE : DAEMON_STATUS_OK;
 	}
       break;
     case DAEMON_CONTROL_STOP:
       if (!pid)
-	return DAEMON_STATUS_ALREADY_DONE;
+	return stale ? DAEMON_STATUS_STALE : DAEMON_STATUS_ALREADY_DONE;
       sig = dc->signal ? : SIGTERM;
       if (kill(pid, sig) < 0)
 	{
 	  daemon_control_err(dc, "Cannot send signal %d: %m", sig);
 	  goto done;
 	}
-      pid = daemon_read_pid(dc, 1);
+      pid = daemon_read_pid(dc, 1, &stale2);
       ASSERT(pid <= 0);
       if (!pid)
 	st = DAEMON_STATUS_OK;

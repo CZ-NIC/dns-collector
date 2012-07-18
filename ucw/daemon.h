@@ -86,6 +86,8 @@ enum daemon_control_action {
  * * `DAEMON_STATUS_NOT_RUNNING` if the action failed, because the daemon is not running
  * * `DAEMON_STATUS_ERROR` if the action failed for some other reason (in this case,
  *   `dc->error_msg` contains a full error message)
+ * * `DAEMON_STATUS_STALE` if the daemon was in an undefined state (e.g., a stale PID file);
+ *   for `DAEMON_CONTROL_START`, it means success
  **/
 enum daemon_control_status daemon_control(struct daemon_control_params *dc);
 
@@ -95,6 +97,7 @@ enum daemon_control_status {
   DAEMON_STATUS_ALREADY_DONE = 100,
   DAEMON_STATUS_NOT_RUNNING = 101,
   DAEMON_STATUS_ERROR = 102,
+  DAEMON_STATUS_STALE = 103,
 };
 
 #endif

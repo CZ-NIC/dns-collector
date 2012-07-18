@@ -56,6 +56,7 @@ Exit codes:\n\
 100			The action was null (e.g., --stop on a stopped daemon)\n\
 101			The daemon was not running (on --reload or --check)\n\
 102			The action has failed (error message was printed to stderr)\n\
+103			The daemon was in an undefined state (e.g., stale PID file)\n\
 ", stderr);
   exit(1);
 }
