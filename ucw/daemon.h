@@ -65,7 +65,7 @@ struct daemon_control_params {
 };
 
 enum daemon_control_action {
-  DAEMON_CONTROL_CHECK,
+  DAEMON_CONTROL_CHECK = 1,
   DAEMON_CONTROL_START,
   DAEMON_CONTROL_STOP,
   DAEMON_CONTROL_SIGNAL,
