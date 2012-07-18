@@ -53,8 +53,12 @@ setproctitle_init(int argc, char **argv)
     if (spt_end+1 == oldenv[i])
       spt_end = oldenv[i] + strlen(oldenv[i]);
 
+  /* Copy all arguments */
+  for (i=0; i<argc; i++)
+    argv[i] = xstrdup(argv[i]);
+
   /* Recalculate program_invocation_name, otherwise syslog() will be confused. */
-  char *name = xstrdup(argv[0]);
+  char *name = argv[0];
   program_invocation_name = name;
   char *p = strrchr(name, '/');
   if (p)
