@@ -143,9 +143,6 @@ if ($gccver == 3000) {
 	Append("CWARNS" => "-Wundef -Wredundant-decls -Wno-pointer-sign -Wdisabled-optimization -Wno-missing-field-initializers");
 	Append("CWARNS_OFF" => "-Wno-pointer-sign");
 	Append("COPT" => "-finline-limit=5000 --param large-function-insns=5000 --param inline-unit-growth=200 --param large-function-growth=400");
-	if ($gccver >= 4002) {
-		Append("COPT" => "-fgnu89-inline");
-	}
 } else {
 	Warn "Don't know anything about this GCC version, using default switches.\n";
 }
