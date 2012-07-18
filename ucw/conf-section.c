@@ -92,7 +92,7 @@ inspect_section(struct cf_section *sec)
 }
 
 void
-cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown)
+cf_declare_rel_section(const char *name, struct cf_section *sec, void *ptr, uns allow_unknown)
 {
   struct cf_context *cc = cf_obtain_context();
   if (!cc->sections.cfg)
@@ -106,7 +106,7 @@ cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown)
   ci->cls = CC_SECTION;
   ci->name = name;
   ci->number = 1;
-  ci->ptr = NULL;
+  ci->ptr = ptr;
   ci->u.sec = sec;
   inspect_section(sec);
   if (allow_unknown)
@@ -118,6 +118,12 @@ cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown)
     bzero(cc->sections.cfg + cc->sections.size, cc->sections.size * sizeof(struct cf_item));
     cc->sections.size *= 2;
   }
+}
+
+void
+cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown)
+{
+  cf_declare_rel_section(name, sec, NULL, allow_unknown);
 }
 
 void

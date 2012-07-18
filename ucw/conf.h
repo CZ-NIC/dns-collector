@@ -494,6 +494,12 @@ void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj)
  **/
 void cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown);
 /**
+ * Like @cf_declare_section(), but instead of item pointers, the section
+ * contains offsets relative to @ptr. In other words, it does the same
+ * as `CF_SECTION`, but for top-level sections.
+ **/
+void cf_declare_rel_section(const char *name, struct cf_section *sec, void *ptr, uns allow_unknown);
+/**
  * If you have a section in a structure and you want to initialize it
  * (eg. if you want a copy of default values outside the configuration),
  * you can use this. It initializes it recursively.
