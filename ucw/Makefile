@@ -144,6 +144,7 @@ $(o)/ucw/url.test: $(o)/ucw/url-t
 $(o)/ucw/gary.test: $(o)/ucw/gary-t
 $(o)/ucw/time.test: $(o)/ucw/time-conf-t
 $(o)/ucw/crc.test: $(o)/ucw/crc-t
+$(o)/ucw/signames.test: $(o)/ucw/signames-t
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/ucw/,asio.test)
