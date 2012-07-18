@@ -108,7 +108,7 @@ static void do_seek(struct fastbuf *f, ucw_off_t pos, int whence)
     ASSERT(btell(f) >= 0);
 }
 
-inline void bsetpos(struct fastbuf *f, ucw_off_t pos)
+void bsetpos(struct fastbuf *f, ucw_off_t pos)
 {
   /* We can optimize seeks only when reading */
   if (f->bptr < f->bstop && pos <= f->pos && pos >= f->pos - (f->bstop - f->buffer)) /* If bptr == bstop, then [buffer, bstop] may be undefined */
