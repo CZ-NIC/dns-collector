@@ -30,6 +30,7 @@ struct daemon_params {
 /** Flags passed to the daemon helper. **/
 enum daemon_flags {
   DAEMON_FLAG_PRESERVE_CWD = 1,		// Skip chdir("/")
+  DAEMON_FLAG_SIMULATE = 2,		// Simulate daemonization (avoid fork etc.)
 };
 
 /**
@@ -44,6 +45,9 @@ void daemon_init(struct daemon_params *dp);
  * a new process and does all necessary setup. Inside the new process, it calls
  * @body (and when it returns, it exits the process). In the original process, it writes
  * the PID file and returns.
+ *
+ * When `DAEMON_FLAG_SIMULATE` is set, it justs calls @body. This is useful
+ * for running of daemons in a debugger.
  **/
 void daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp));
 

@@ -82,6 +82,9 @@ daemon_init(struct daemon_params *dp)
 {
   daemon_resolve_ugid(dp);
 
+  if (dp->flags & DAEMON_FLAG_SIMULATE)
+    return;
+
   if (dp->pid_file)
     {
       // Check that PID file path is absolute
@@ -115,6 +118,12 @@ daemon_init(struct daemon_params *dp)
 void
 daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp))
 {
+  if (dp->flags & DAEMON_FLAG_SIMULATE)
+    {
+      body(dp);
+      return;
+    }
+
   // Switch GID and UID
   if (dp->want_setgid && setresgid(dp->run_as_gid, dp->run_as_gid, dp->run_as_gid) < 0)
     die("Cannot set GID to %d: %m", (int) dp->run_as_gid);
@@ -168,6 +177,9 @@ daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp))
 void
 daemon_exit(struct daemon_params *dp)
 {
+  if (dp->flags & DAEMON_FLAG_SIMULATE)
+    return;
+
   if (dp->pid_file)
     {
       if (unlink(dp->pid_file) < 0)
