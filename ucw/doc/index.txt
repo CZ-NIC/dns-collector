@@ -40,6 +40,7 @@ Modules
 - <<trans:,Transactions and resource tracking>>
 - <<string:,String operations>>
 - <<time:,Time and timers>>
+- <<daemon:,Daemon helpers>>
 
 Other features
 --------------
