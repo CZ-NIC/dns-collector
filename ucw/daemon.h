@@ -89,6 +89,7 @@ enum daemon_control_action {
  **/
 enum daemon_control_status daemon_control(struct daemon_control_params *dc);
 
+// XXX: Also used as exit codes of the daemon-control utility.
 enum daemon_control_status {
   DAEMON_STATUS_OK = 0,
   DAEMON_STATUS_ALREADY_DONE = 100,

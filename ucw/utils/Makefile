@@ -1,11 +1,12 @@
 # Makefile for the UCW utilities (c) 2008 Michal Vaner <vorner@ucw.cz>
 
-UCW_UTILS=$(addprefix $(o)/ucw/utils/,basecode daemon-helper rotate-log urltool)
+UCW_UTILS=$(addprefix $(o)/ucw/utils/,basecode daemon-helper daemon-control rotate-log urltool)
 PROGS+=$(UCW_UTILS)
 DIRS+=ucw/utils
 
 $(o)/ucw/utils/basecode: $(o)/ucw/utils/basecode.o $(LIBUCW)
 $(o)/ucw/utils/daemon-helper: $(o)/ucw/utils/daemon-helper.o $(LIBUCW)
+$(o)/ucw/utils/daemon-control: $(o)/ucw/utils/daemon-control.o $(LIBUCW)
 $(o)/ucw/utils/urltool: $(o)/ucw/utils/urltool.o $(LIBUCW)
 
 TESTS+=$(o)/ucw/utils/basecode.test
