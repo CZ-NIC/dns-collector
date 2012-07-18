@@ -191,7 +191,7 @@ daemon_control_err(struct daemon_control_params *dc, char *msg, ...)
 }
 
 static int
-daemon_read_pid(struct daemon_control_params *dc)
+daemon_read_pid(struct daemon_control_params *dc, int will_wait)
 {
   int pid_fd = open(dc->pid_file, O_RDONLY);
   if (pid_fd < 0)
@@ -202,7 +202,7 @@ daemon_read_pid(struct daemon_control_params *dc)
       return -1;
     }
 
-  if (flock(pid_fd, LOCK_EX | LOCK_NB) >= 0)
+  if (flock(pid_fd, LOCK_EX | (will_wait ? 0 : LOCK_NB)) >= 0)
     {
       // The lock file is stale
       close(pid_fd);
@@ -254,7 +254,7 @@ daemon_control(struct daemon_control_params *dc)
     return daemon_control_err(dc, "Cannot lock guard file `%s': %m", dc->guard_file);
 
   // Read the PID file
-  int pid = daemon_read_pid(dc);
+  int pid = daemon_read_pid(dc, 0);
   if (pid < 0)
     goto done;
 
@@ -302,7 +302,7 @@ daemon_control(struct daemon_control_params *dc)
 	      daemon_control_err(dc, "Daemon %s", ecmsg);
 	      goto done;
 	    }
-	  pid = daemon_read_pid(dc);
+	  pid = daemon_read_pid(dc, 0);
 	  if (!pid)
 	    daemon_control_err(dc, "Daemon failed to write the PID file `%s'", dc->pid_file);
 	  else
@@ -318,7 +318,10 @@ daemon_control(struct daemon_control_params *dc)
 	  daemon_control_err(dc, "Cannot send signal %d: %m", dc->signal);
 	  goto done;
 	}
-      // FIXME: Wait for the daemon to exit, possibly with a timeout
+      pid = daemon_read_pid(dc, 1);
+      ASSERT(pid <= 0);
+      if (!pid)
+	st = DAEMON_STATUS_OK;
       break;
     case DAEMON_CONTROL_SIGNAL:
       if (!pid)

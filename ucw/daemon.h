@@ -85,7 +85,7 @@ enum daemon_control_action {
  * * `DAEMON_STATUS_ALREADY_DONE` if the daemon is already in the requested state
  * * `DAEMON_STATUS_NOT_RUNNING` if the action failed, because the daemon is not running
  * * `DAEMON_STATUS_ERROR` if the action failed for some other reason (in this case,
- *   the error_msg field contains a full error message)
+ *   `dc->error_msg` contains a full error message)
  **/
 enum daemon_control_status daemon_control(struct daemon_control_params *dc);
 
