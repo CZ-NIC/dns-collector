@@ -77,7 +77,7 @@ enum daemon_control_action {
  * * `DAEMON_CONTROL_START` to start the daemon
  * * `DAEMON_CONTROL_STOP` to stop the daemon (send `SIGTERM` or `dc->signal` if non-zero)
  * * `DAEMON_CONTROL_CHECK` to check that the daemon is running
- * * `DAEMON_CONTROL_SIGNAL` to send a signal to the daemon
+ * * `DAEMON_CONTROL_SIGNAL` to send a signal to the daemon (send `SIGHUP` or `dc->signal` if non-zero)
  *
  * The function returns a status code:
  *

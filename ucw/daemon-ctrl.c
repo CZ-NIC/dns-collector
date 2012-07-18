@@ -87,6 +87,7 @@ enum daemon_control_status
 daemon_control(struct daemon_control_params *dc)
 {
   enum daemon_control_status st = DAEMON_STATUS_ERROR;
+  int sig;
 
   int guard_fd = open(dc->guard_file, O_RDWR | O_CREAT, 0666);
   if (guard_fd < 0)
@@ -118,7 +119,7 @@ daemon_control(struct daemon_control_params *dc)
 	      daemon_control_err(dc, "Cannot fork: %m");
 	      goto done;
 	    }
-	  if (pp)
+	  if (!pp)
 	    {
 	      close(guard_fd);
 	      execvp(dc->argv[0], dc->argv);
@@ -140,12 +141,12 @@ daemon_control(struct daemon_control_params *dc)
 	  char ecmsg[EXIT_STATUS_MSG_SIZE];
 	  if (format_exit_status(ecmsg, stat))
 	    {
-	      daemon_control_err(dc, "Daemon %s", ecmsg);
+	      daemon_control_err(dc, "Daemon %s %s", dc->argv[0], ecmsg);
 	      goto done;
 	    }
 	  pid = daemon_read_pid(dc, 0);
 	  if (!pid)
-	    daemon_control_err(dc, "Daemon failed to write the PID file `%s'", dc->pid_file);
+	    daemon_control_err(dc, "Daemon %s failed to write the PID file `%s'", dc->argv[0], dc->pid_file);
 	  else
 	    st = DAEMON_STATUS_OK;
 	}
@@ -153,10 +154,10 @@ daemon_control(struct daemon_control_params *dc)
     case DAEMON_CONTROL_STOP:
       if (!pid)
 	return DAEMON_STATUS_ALREADY_DONE;
-      int sig = dc->signal ? : SIGTERM;
+      sig = dc->signal ? : SIGTERM;
       if (kill(pid, sig) < 0)
 	{
-	  daemon_control_err(dc, "Cannot send signal %d: %m", dc->signal);
+	  daemon_control_err(dc, "Cannot send signal %d: %m", sig);
 	  goto done;
 	}
       pid = daemon_read_pid(dc, 1);
@@ -167,8 +168,9 @@ daemon_control(struct daemon_control_params *dc)
     case DAEMON_CONTROL_SIGNAL:
       if (!pid)
 	return DAEMON_STATUS_NOT_RUNNING;
-      if (kill(pid, dc->signal) < 0)
-	daemon_control_err(dc, "Cannot send signal %d: %m", dc->signal);
+      sig = dc->signal ? : SIGHUP;
+      if (kill(pid, sig) < 0)
+	daemon_control_err(dc, "Cannot send signal %d: %m", sig);
       else
 	st = DAEMON_STATUS_OK;
       break;
