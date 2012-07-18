@@ -12,6 +12,9 @@
  * and signal numbers. They are available in LibUCW, but please
  * be aware that some signals might be missing on your system.
  * If they do, please notify LibUCW maintainers.
+ *
+ * The GNU C Library provides `strsignal()` with similar function,
+ * but it returns human-readable strings like "Segmentation fault".
  ***/
 
 /**
