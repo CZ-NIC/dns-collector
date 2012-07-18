@@ -178,12 +178,43 @@ daemon_exit(struct daemon_params *dp)
 
 #ifdef TEST
 
+#include <signal.h>
+
+static volatile sig_atomic_t terminate;
+
+static void term_handler(int sig UNUSED)
+{
+  msg(L_INFO | L_SIGHANDLER, "SIGTERM received, terminating in a while");
+  terminate = 1;
+}
+
+static void hup_handler(int sig UNUSED)
+{
+  msg(L_INFO | L_SIGHANDLER, "SIGHUP received");
+}
+
 static void body(struct daemon_params *dp)
 {
   log_fork();
   msg(L_INFO, "Daemon is running");
   msg(L_INFO, "uid=%d/%d gid=%d/%d", (int) getuid(), (int) geteuid(), (int) getgid(), (int) getegid());
-  sleep(60);
+
+  struct sigaction sa_term = { .sa_handler = term_handler };
+  struct sigaction sa_hup = { .sa_handler = hup_handler };
+  if (sigaction(SIGTERM, &sa_term, NULL) < 0 ||
+      sigaction(SIGHUP, &sa_hup, NULL) < 0)
+    ASSERT(0);
+
+  while (!terminate)
+    {
+      if (!sleep(60))
+	{
+	  msg(L_INFO, "Timeout elapsed, terminating in a while");
+	  break;
+	}
+    }
+
+  sleep(2);
   msg(L_INFO, "Daemon is shutting down");
   daemon_exit(dp);
 }
