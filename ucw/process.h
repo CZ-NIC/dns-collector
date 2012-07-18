@@ -18,7 +18,7 @@ char *getproctitle(void);
 
 /* exitstatus.c */
 
-#define EXIT_STATUS_MSG_SIZE 32
+#define EXIT_STATUS_MSG_SIZE 64
 int format_exit_status(char *msg, int stat);
 
 /* runcmd.c */
