@@ -18,6 +18,11 @@ WIP
    <<conf:fun_cf_open_group,`cf_open_group()`>>,
    <<conf:fun_cf_close_group,`cf_close_group()`>>, and
    <<conf:fun_cf_revert,`cf_revert()`>>.
+* <<daemon:,Daemon helpers>> have been added including a new `daemon-control`
+  utility. The old `daemon-helper` utility has been obsoleted and it is not
+  compiled by default.
+* <<signal:,Signal helpers>> for translation between signal names and numbers
+  have been added.
 
 5.0
 ---
