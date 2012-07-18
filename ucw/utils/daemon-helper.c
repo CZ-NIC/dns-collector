@@ -11,6 +11,9 @@
  *	Return codes:
  *	101	already running
  *	102	not running
+ *
+ *	NOTE: This utility is obsolete and has been replaced by daemon-control.
+ *	You need to enable CONFIG_UCW_OBSOLETE_DAEMON_HELPER to compile it.
  */
 
 #include <ucw/lib.h>
