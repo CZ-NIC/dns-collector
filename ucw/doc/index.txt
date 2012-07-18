@@ -41,6 +41,7 @@ Modules
 - <<string:,String operations>>
 - <<time:,Time and timers>>
 - <<daemon:,Daemon helpers>>
+- <<signal:,Signal helpers>>
 
 Other features
 --------------

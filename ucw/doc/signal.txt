@@ -1,0 +1,7 @@
+Signal helpers
+==============
+
+ucw/signames.h
+--------------
+
+!!ucw/signames.h
