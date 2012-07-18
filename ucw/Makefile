@@ -34,7 +34,7 @@ LIBUCW_MODS= \
 	getopt \
 	strtonum \
 	resource trans res-fd res-mem res-subpool res-mempool res-eltpool \
-	daemon
+	daemon daemon-ctrl
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h threads.h time.h \
