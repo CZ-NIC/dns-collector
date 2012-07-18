@@ -108,7 +108,7 @@ if ($arch =~ /^(i386|amd64)$/ && Get("CONFIG_EXACT_CPU")) {
 Set("COPT2" => '-O3');
 
 # Warnings
-Set("CWARNS" => '-Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -Winline');
+Set("CWARNS" => '-Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes');
 Set("CWARNS_OFF" => '');
 
 # Linker flags
