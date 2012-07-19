@@ -21,9 +21,3 @@ Run:	../obj/ucw/fb-multi-t n
 Out:	Nested Data
 	As In
 	Real Usage
-
-Name:	Read Nested Flatten
-Run:	../obj/ucw/fb-multi-t f
-Out:	Nested Data
-	As In
-	Real Usage

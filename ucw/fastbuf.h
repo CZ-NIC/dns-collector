@@ -495,20 +495,16 @@ static inline void fbatomic_commit(struct fastbuf *b)
  * This call returns a fastbuf that concatenates all the given fastbufs.
  * The last parameter of @fbmulti_create must be NULL.
  *
- * By default, if @bclose() is called on fbmulti, all the underlying buffers
- * get closed recursively.
+ * If @bclose() is called on fbmulti, all the underlying buffers get closed
+ * recursively.
  *
  * You may init a fbmulti by @fbmulti_create(bufsize) with no underlying buffers
- * and then append the underlying buffers one by one. If allow_close is set to 0,
- * the fastbuf doesn't get closed at @bclose() and you have to do the cleanup on
- * yourself.
+ * and then append the underlying buffers one by one.
  *
  * If used in some formatter, you'll probably have a large and deep structure
  * of nested fastbufs. Just before reading from the fbmulti, you may call
  * @fbmulti_flatten() to flatten the structure. After @fbmulti_flatten(), the
  * fbmulti is seeked to the beginning, flushed and ready to read the whole buffer.
- *
- * For performance reasons, use @fbmulti_flatten() only once, just before reading.
  *
  * If you want to remove a fastbuf from the chain, just call @fbmulti_remove
  * where the second parameter is a pointer to the removed fastbuf. If you pass
@@ -521,8 +517,7 @@ static inline void fbatomic_commit(struct fastbuf *b)
  ***/
 
 struct fastbuf *fbmulti_create(uns bufsize, ...) SENTINEL_CHECK;
-void fbmulti_append(struct fastbuf *f, struct fastbuf *fa, int allow_close);
-void fbmulti_flatten(struct fastbuf *f);
+void fbmulti_append(struct fastbuf *f, struct fastbuf *fa);
 void fbmulti_remove(struct fastbuf *f, struct fastbuf *fb);
 
 
