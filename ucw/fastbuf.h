@@ -491,9 +491,8 @@ static inline void fbatomic_commit(struct fastbuf *b)
  * You aren't allowed to do anything with the underlying buffers while these
  * are connected into fbmulti.
  *
- * You may init a fbmulti by @fbmulti_create(bufsize, fb1, fb2, ..., NULL).
- * This call returns a fastbuf that concatenates all the given fastbufs.
- * The last parameter of @fbmulti_create must be NULL.
+ * The fbmulti is inited by @fbmulti_create(). It returns an empty fbmulti.
+ * Then you call @fbmulti_append() for each fbmulti
  *
  * If @bclose() is called on fbmulti, all the underlying buffers get closed
  * recursively.
@@ -506,17 +505,16 @@ static inline void fbatomic_commit(struct fastbuf *b)
  * @fbmulti_flatten() to flatten the structure. After @fbmulti_flatten(), the
  * fbmulti is seeked to the beginning, flushed and ready to read the whole buffer.
  *
- * If you want to remove a fastbuf from the chain, just call @fbmulti_remove
- * where the second parameter is a pointer to the removed fastbuf. If you pass
- * NULL, all the underlying fastbufs are removed.
+ * If you want to keep an underlying fastbuf open after @bclose, just remove it
+ * by @fbmulti_remove where the second parameter is a pointer to the removed
+ * fastbuf. If you pass NULL, all the underlying fastbufs are removed.
  *
- * When a fastbuf is removed from the chain, the overall position may change:
- * If bstop pointed into it, after removal it points to the boundary of the
- * previous and next fastbufs. Length of the removed fastbuf is subtracted from
- * the overall offset of all the fastbufs after the removed fb in the chain.
+ * After a @fbmulti_remove, the state of fbmulti is undefined. The only allowed
+ * operation is then another @fbmulti_remove or @bclose on that fbmulti.
+ *
  ***/
 
-struct fastbuf *fbmulti_create(uns bufsize, ...) SENTINEL_CHECK;
+struct fastbuf *fbmulti_create(void);
 void fbmulti_append(struct fastbuf *f, struct fastbuf *fa);
 void fbmulti_remove(struct fastbuf *f, struct fastbuf *fb);
 

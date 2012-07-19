@@ -33,14 +33,6 @@ struct subbuf {
 };
 
 static void
-fbmulti_subbuf_get_end(struct subbuf *s)
-{
-  ASSERT(s->fb->seek);
-  bseek(s->fb, 0, SEEK_END);
-  s->end = s->begin + btell(s->fb);
-}
-
-static void
 fbmulti_get_ptrs(struct fastbuf *f)
 {
   struct subbuf *sb = FB_MULTI(f)->cur;
@@ -62,19 +54,14 @@ fbmulti_set_ptrs(struct fastbuf *f)
 static int
 fbmulti_subbuf_next(struct fastbuf *f)
 {
-  struct subbuf *next = clist_next(&FB_MULTI(f)->subbufs, &FB_MULTI(f)->cur->n);
+  struct subbuf *cur = FB_MULTI(f)->cur;
+  struct subbuf *next = clist_next(&FB_MULTI(f)->subbufs, &cur->n);
   if (!next)
     return 0;
 
-  // Check the end of current buf
-  if (f->seek)
-    {
-      FB_MULTI(f)->cur->fb->seek(FB_MULTI(f)->cur->fb, FB_MULTI(f)->cur->end - FB_MULTI(f)->cur->begin, SEEK_SET);
-      fbmulti_get_ptrs(f);
-      ASSERT(FB_MULTI(f)->cur->end == f->pos);
-    }
-  else
-    FB_MULTI(f)->cur->end = f->pos;
+  // Get the end of current buf if not known yet.
+  if (!f->seek && !next->begin)
+    next->begin = FB_MULTI(f)->cur->end = f->pos;
 
   // Set the beginning of the next buf
   if (next->fb->seek)
@@ -88,8 +75,6 @@ fbmulti_subbuf_next(struct fastbuf *f)
       next->offset = btell(next->fb);
     }
 
-  next->begin = FB_MULTI(f)->cur->end;
-
   // Set the pointers
   FB_MULTI(f)->cur = next;
   fbmulti_get_ptrs(f);
@@ -102,7 +87,7 @@ fbmulti_subbuf_prev(struct fastbuf *f)
 {
   // Called only when seeking, assuming everything seekable
   struct subbuf *prev = clist_prev(&FB_MULTI(f)->subbufs, &FB_MULTI(f)->cur->n);
-  ASSERT(prev != NULL);
+  ASSERT(prev);
 
   // Set pos to beginning, flush offset
   bsetpos(prev->fb, 0);
@@ -119,6 +104,7 @@ static int
 fbmulti_refill(struct fastbuf *f)
 {
   fbmulti_set_ptrs(f);
+
   // Refill the subbuf
   uns len = FB_MULTI(f)->cur->fb->refill(FB_MULTI(f)->cur->fb);
   if (len)
@@ -128,30 +114,11 @@ fbmulti_refill(struct fastbuf *f)
     }
 
   // Current buf returned EOF
-  // Update the information on end of this buffer
-  fbmulti_subbuf_get_end(FB_MULTI(f)->cur);
-
   // Take the next one if exists and redo
   if (fbmulti_subbuf_next(f))
     return fbmulti_refill(f);
   else
     return 0;
-}
-
-static void
-fbmulti_get_len(struct fastbuf *f)
-{
-  ucw_off_t pos = btell(f);
-  ASSERT(f->seek);
-  FB_MULTI(f)->len = 0;
-
-  CLIST_FOR_EACH(struct subbuf *, n, FB_MULTI(f)->subbufs)
-    {
-      n->begin = FB_MULTI(f)->len;
-      fbmulti_subbuf_get_end(n);
-      FB_MULTI(f)->len = n->end;
-    }
-  f->seek(f, pos, SEEK_SET); // XXX: f->seek is needed here instead of bsetpos as the FE assumptions about f's state may be completely wrong.
 }
 
 static int
@@ -198,37 +165,18 @@ fbmulti_close(struct fastbuf *f)
 struct fastbuf *
 fbmulti_create(void)
 {
-  struct mempool *mp = mp_new(bufsize);
+  struct mempool *mp = mp_new(128);
   struct fastbuf *fb_out = mp_alloc(mp, sizeof(struct fb_multi));
-  struct fbmulti *fbm = FB_MULTI(fb_out);
+  struct fb_multi *fbm = FB_MULTI(fb_out);
+
   fbm->mp = mp;
+  fbm->len = 0;
 
   clist_init(&fbm->subbufs);
 
-  va_list args;
-  va_start(args, bufsize);
-  while (fb_in = va_arg(args, struct fastbuf *))
-    fbmulti_append(fb_out, fb_in);
-  
-  va_end(args);
-
-  fbmulti_update_capability(fb_out);
-
-  fbm->cur = clist_head(&fbm->subbufs);
-  bsetpos(fbm->cur->fb, 0);
-
-  fbmulti_get_ptrs(fb_out);
-
-  // If seekable, get the length of each subbuf, the total length and boundaries
-  if (fb_out->seek)
-    {
-      fbmulti_get_len(fb_out);
-    }
-
   fb_out->name = FB_MULTI_NAME;
-  f->refill = fbmulti_refill;
-  f->seek = fbmulti_seek;
-
+  fb_out->refill = fbmulti_refill;
+  fb_out->seek = fbmulti_seek;
   fb_out->close = fbmulti_close;
 
   return fb_out;
@@ -237,47 +185,51 @@ fbmulti_create(void)
 void
 fbmulti_append(struct fastbuf *f, struct fastbuf *fb)
 {
-  ASSERT(fb->refill);
-  if (!fb->seek)
-    f->seek = NULL;
+  struct subbuf *last = clist_tail(&FB_MULTI(f)->subbufs);
 
   struct subbuf *sb = mp_alloc(FB_MULTI(f)->mp, sizeof(struct subbuf));
   sb->fb = fb;
   clist_add_tail(&FB_MULTI(f)->subbufs, &(sb->n));
+
+  ASSERT(fb->refill);
+
+  if (fb->seek)
+    {
+      if (f->seek)
+	{
+	  sb->begin = last ? last->end : 0;
+	  bseek(fb, 0, SEEK_END);
+	  FB_MULTI(f)->len = sb->end = sb->begin + btell(fb);
+	}
+
+      bsetpos(fb, 0);
+    }
+
+  else
+    {
+      f->seek = NULL;
+      sb->offset = btell(fb);
+      sb->begin = 0;
+      sb->end = 0;
+    }
+
+  if (!last)
+    {
+      FB_MULTI(f)->cur = sb;
+      fbmulti_get_ptrs(f);
+    }
 }
 
 void
 fbmulti_remove(struct fastbuf *f, struct fastbuf *fb)
 {
   bflush(f);
-  uns pos = f->pos;
   if (fb)
     {
       CLIST_FOR_EACH(struct subbuf *, n, FB_MULTI(f)->subbufs)
 	if (fb == n->fb)
 	  {
-	    // Move the pointers to another buffer if this one was the active.
-	    if (FB_MULTI(f)->cur == n)
-	      {
-		pos = n->begin;
-		if (!fbmulti_subbuf_next(f))
-		  {
-		    struct subbuf *prev = clist_prev(&FB_MULTI(f)->subbufs, &FB_MULTI(f)->cur->n);
-		    if (prev == NULL)
-		      goto cleanup;
-
-		    FB_MULTI(f)->cur = prev;
-		    fbmulti_get_ptrs(f);
-		  }
-	      }
-
-	    if (n->end < pos)
-	      pos -= (n->end - n->begin);
-
 	    clist_remove(&(n->n));
-	    fbmulti_update_capability(f);
-	    fbmulti_get_len(f);
-	    fbmulti_get_ptrs(f);
 	    return;
 	  };
 
@@ -285,13 +237,6 @@ fbmulti_remove(struct fastbuf *f, struct fastbuf *fb)
     }
   else
     clist_init(&FB_MULTI(f)->subbufs);
-
-cleanup:
-  // The fbmulti is empty now, do some cleanup
-  fbmulti_update_capability(f);
-  fbmulti_get_len(f);
-  f->buffer = f->bufend = f->bptr = f->bstop = NULL;
-  f->pos = 0;
 }
 
 #ifdef TEST
@@ -312,7 +257,10 @@ int main(int argc, char **argv)
 	  for (uns i=0;i<ARRAY_SIZE(data);i++)
 	    fbbuf_init_read(&fb[i], data[i], strlen(data[i]), 0);
 
-	  struct fastbuf *f = fbmulti_create(4, &fb[0], &fb[1], &fb[2], NULL);
+	  struct fastbuf *f = fbmulti_create();
+	  fbmulti_append(f, &fb[0]);
+	  fbmulti_append(f, &fb[1]);
+	  fbmulti_append(f, &fb[2]);
 
 	  char buffer[9];
 	  while (bgets(f, buffer, 9))
@@ -328,7 +276,9 @@ int main(int argc, char **argv)
 	  for (uns i=0;i<ARRAY_SIZE(data);i++)
 	    fbbuf_init_read(&fb[i], data[i], strlen(data[i]), 0);
 
-	  struct fastbuf *f = fbmulti_create(4, &fb[0], &fb[1], NULL);
+	  struct fastbuf *f = fbmulti_create();
+	  fbmulti_append(f, &fb[0]);
+	  fbmulti_append(f, &fb[1]);
 
 	  int pos[] = {0, 3, 1, 4, 2, 5};
 
@@ -350,7 +300,12 @@ int main(int argc, char **argv)
 	  fbbuf_init_read(&fb[2], data + 2, 2, 0);
 	  fbbuf_init_read(&fb[3], data + 4, 1, 0);
 
-	  struct fastbuf *f = fbmulti_create(8, &fb[0], &fb[1], &fb[2], &fb[1], &fb[3], NULL);
+	  struct fastbuf *f = fbmulti_create();
+	  fbmulti_append(f, &fb[0]);
+	  fbmulti_append(f, &fb[1]);
+	  fbmulti_append(f, &fb[2]);
+	  fbmulti_append(f, &fb[1]);
+	  fbmulti_append(f, &fb[3]);
 
 	  char buffer[9];
 	  while(bgets(f, buffer, 9))
@@ -372,26 +327,29 @@ int main(int argc, char **argv)
 	  struct fastbuf nl;
 	  fbbuf_init_read(&nl, "\n", 1, 0);
 
-	  struct fastbuf *f = fbmulti_create(4,
-	      fbmulti_create(5,
-		&fb[0],
-		&sp,
-		&fb[1],
-		NULL),
-	      &nl,
-	      fbmulti_create(7,
-		&fb[2],
-		&sp,
-		&fb[3],
-		NULL),
-	      &nl,
-	      fbmulti_create(3,
-		&fb[4],
-		&sp,
-		&fb[5],
-		NULL),
-	      &nl,
-	      NULL);
+	  struct fastbuf *f = fbmulti_create();
+	  struct fastbuf *ff;
+
+	  ff = fbmulti_create();
+	  fbmulti_append(ff, &fb[0]);
+	  fbmulti_append(ff, &sp);
+	  fbmulti_append(ff, &fb[1]);
+	  fbmulti_append(f, ff);
+	  fbmulti_append(f, &nl);
+
+	  ff = fbmulti_create();
+	  fbmulti_append(ff, &fb[2]);
+	  fbmulti_append(ff, &sp);
+	  fbmulti_append(ff, &fb[3]);
+	  fbmulti_append(f, ff);
+	  fbmulti_append(f, &nl);
+
+	  ff = fbmulti_create();
+	  fbmulti_append(ff, &fb[4]);
+	  fbmulti_append(ff, &sp);
+	  fbmulti_append(ff, &fb[5]);
+	  fbmulti_append(f, ff);
+	  fbmulti_append(f, &nl);
 
 	  char buffer[20];
 	  while (bgets(f, buffer, 20))
