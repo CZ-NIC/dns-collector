@@ -184,23 +184,6 @@ fbmulti_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 }
 
 static void
-fbmulti_update_capability(struct fastbuf *f)
-{
-  // FB Multi is only a proxy to other fastbufs ... if any of them lacks
-  // support of any feature, FB Multi also provides no support of that feature
-  f->refill = fbmulti_refill;
-  f->seek = fbmulti_seek;
-
-  CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs))
-    {
-      ASSERT(n->fb->refill);
-
-      if (!n->fb->seek)
-	f->seek = NULL;
-    }
-}
-
-static void
 fbmulti_close(struct fastbuf *f)
 {
   CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs))
@@ -242,6 +225,8 @@ fbmulti_create(uns bufsize, ...)
     }
 
   fb_out->name = FB_MULTI_NAME;
+  f->refill = fbmulti_refill;
+  f->seek = fbmulti_seek;
 
   fb_out->close = fbmulti_close;
 
@@ -251,6 +236,10 @@ fbmulti_create(uns bufsize, ...)
 void
 fbmulti_append(struct fastbuf *f, struct fastbuf *fb)
 {
+  ASSERT(fb->refill);
+  if (!fb->seek)
+    f->seek = NULL;
+
   struct subbuf *sb = mp_alloc(FB_MULTI(f)->mp, sizeof(struct subbuf));
   sb->fb = fb;
   clist_add_tail(FB_MULTI(f)->subbufs, &(sb->n));
