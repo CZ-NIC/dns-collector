@@ -21,7 +21,7 @@ struct fb_multi {
   struct mempool *mp;
   struct subbuf *cur;
   ucw_off_t len;
-  clist *subbufs;
+  clist subbufs;
 };
 
 #define FB_MULTI(f) ((struct fb_multi *)(f))
@@ -43,11 +43,14 @@ fbmulti_subbuf_get_end(struct subbuf *s)
 static void
 fbmulti_get_ptrs(struct fastbuf *f)
 {
-  f->buffer = FB_MULTI(f)->cur->fb->buffer;
-  f->bptr = FB_MULTI(f)->cur->fb->bptr;
-  f->bstop = FB_MULTI(f)->cur->fb->bstop;
-  f->bufend = FB_MULTI(f)->cur->fb->bufend;
-  f->pos = FB_MULTI(f)->cur->begin + FB_MULTI(f)->cur->fb->pos - FB_MULTI(f)->cur->offset;
+  struct subbuf *sb = FB_MULTI(f)->cur;
+  struct fastbuf *ff = sb->fb;
+
+  f->buffer = ff->buffer;
+  f->bptr = ff->bptr;
+  f->bstop = ff->bstop;
+  f->bufend = ff->bufend;
+  f->pos = sb->begin + (ff->pos - sb->offset);
 }
 
 static void
@@ -59,8 +62,8 @@ fbmulti_set_ptrs(struct fastbuf *f)
 static int
 fbmulti_subbuf_next(struct fastbuf *f)
 {
-  struct subbuf *next = clist_next(FB_MULTI(f)->subbufs, &FB_MULTI(f)->cur->n);
-  if (next == NULL)
+  struct subbuf *next = clist_next(&FB_MULTI(f)->subbufs, &FB_MULTI(f)->cur->n);
+  if (!next)
     return 0;
 
   // Check the end of current buf
@@ -98,7 +101,7 @@ static int
 fbmulti_subbuf_prev(struct fastbuf *f)
 {
   // Called only when seeking, assuming everything seekable
-  struct subbuf *prev = clist_prev(FB_MULTI(f)->subbufs, &FB_MULTI(f)->cur->n);
+  struct subbuf *prev = clist_prev(&FB_MULTI(f)->subbufs, &FB_MULTI(f)->cur->n);
   ASSERT(prev != NULL);
 
   // Set pos to beginning, flush offset
@@ -142,7 +145,7 @@ fbmulti_get_len(struct fastbuf *f)
   ASSERT(f->seek);
   FB_MULTI(f)->len = 0;
 
-  CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs))
+  CLIST_FOR_EACH(struct subbuf *, n, FB_MULTI(f)->subbufs)
     {
       n->begin = FB_MULTI(f)->len;
       fbmulti_subbuf_get_end(n);
@@ -186,23 +189,21 @@ fbmulti_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 static void
 fbmulti_close(struct fastbuf *f)
 {
-  CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs))
+  CLIST_FOR_EACH(struct subbuf *, n, FB_MULTI(f)->subbufs)
     bclose(n->fb);
 
   mp_delete(FB_MULTI(f)->mp);
 }
 
 struct fastbuf *
-fbmulti_create(uns bufsize, ...)
+fbmulti_create(void)
 {
   struct mempool *mp = mp_new(bufsize);
   struct fastbuf *fb_out = mp_alloc(mp, sizeof(struct fb_multi));
-  FB_MULTI(fb_out)->mp = mp;
+  struct fbmulti *fbm = FB_MULTI(fb_out);
+  fbm->mp = mp;
 
-  struct fastbuf *fb_in;
-  clist *subbufs = mp_alloc(mp, sizeof(clist));
-  clist_init(subbufs);
-  FB_MULTI(fb_out)->subbufs = subbufs;
+  clist_init(&fbm->subbufs);
 
   va_list args;
   va_start(args, bufsize);
@@ -213,8 +214,8 @@ fbmulti_create(uns bufsize, ...)
 
   fbmulti_update_capability(fb_out);
 
-  FB_MULTI(fb_out)->cur = clist_head(subbufs);
-  bsetpos(FB_MULTI(fb_out)->cur->fb, 0);
+  fbm->cur = clist_head(&fbm->subbufs);
+  bsetpos(fbm->cur->fb, 0);
 
   fbmulti_get_ptrs(fb_out);
 
@@ -242,8 +243,7 @@ fbmulti_append(struct fastbuf *f, struct fastbuf *fb)
 
   struct subbuf *sb = mp_alloc(FB_MULTI(f)->mp, sizeof(struct subbuf));
   sb->fb = fb;
-  clist_add_tail(FB_MULTI(f)->subbufs, &(sb->n));
-  fbmulti_update_capability(f);
+  clist_add_tail(&FB_MULTI(f)->subbufs, &(sb->n));
 }
 
 void
@@ -253,7 +253,7 @@ fbmulti_remove(struct fastbuf *f, struct fastbuf *fb)
   uns pos = f->pos;
   if (fb)
     {
-      CLIST_FOR_EACH(struct subbuf *, n, *(FB_MULTI(f)->subbufs))
+      CLIST_FOR_EACH(struct subbuf *, n, FB_MULTI(f)->subbufs)
 	if (fb == n->fb)
 	  {
 	    // Move the pointers to another buffer if this one was the active.
@@ -262,7 +262,7 @@ fbmulti_remove(struct fastbuf *f, struct fastbuf *fb)
 		pos = n->begin;
 		if (!fbmulti_subbuf_next(f))
 		  {
-		    struct subbuf *prev = clist_prev(FB_MULTI(f)->subbufs, &FB_MULTI(f)->cur->n);
+		    struct subbuf *prev = clist_prev(&FB_MULTI(f)->subbufs, &FB_MULTI(f)->cur->n);
 		    if (prev == NULL)
 		      goto cleanup;
 
@@ -284,7 +284,7 @@ fbmulti_remove(struct fastbuf *f, struct fastbuf *fb)
       die("Given fastbuf %p not in given fbmulti %p.", fb, f);
     }
   else
-    clist_init(FB_MULTI(f)->subbufs);
+    clist_init(&FB_MULTI(f)->subbufs);
 
 cleanup:
   // The fbmulti is empty now, do some cleanup
