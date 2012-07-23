@@ -492,32 +492,33 @@ static inline void fbatomic_commit(struct fastbuf *b)
  * are connected into fbmulti.
  *
  * The fbmulti is inited by @fbmulti_create(). It returns an empty fbmulti.
- * Then you call @fbmulti_append() for each fbmulti
+ * Then you call @fbmulti_append() for each fbmulti.
  *
  * If @bclose() is called on fbmulti, all the underlying buffers get closed
  * recursively.
- *
- * You may init a fbmulti by @fbmulti_create(bufsize) with no underlying buffers
- * and then append the underlying buffers one by one.
- *
- * If used in some formatter, you'll probably have a large and deep structure
- * of nested fastbufs. Just before reading from the fbmulti, you may call
- * @fbmulti_flatten() to flatten the structure. After @fbmulti_flatten(), the
- * fbmulti is seeked to the beginning, flushed and ready to read the whole buffer.
  *
  * If you want to keep an underlying fastbuf open after @bclose, just remove it
  * by @fbmulti_remove where the second parameter is a pointer to the removed
  * fastbuf. If you pass NULL, all the underlying fastbufs are removed.
  *
- * After a @fbmulti_remove, the state of fbmulti is undefined. The only allowed
- * operation is then another @fbmulti_remove or @bclose on that fbmulti.
- *
+ * After @fbmulti_remove, the state of the fbmulti is undefined. The only allowed
+ * operation is either another @fbmulti_remove or @bclose on the fbmulti.
  ***/
 
+/**
+ * Create an empty fbmulti
+ **/
 struct fastbuf *fbmulti_create(void);
-void fbmulti_append(struct fastbuf *f, struct fastbuf *fa);
-void fbmulti_remove(struct fastbuf *f, struct fastbuf *fb);
 
+/**
+ * Append a fb to fbmulti
+ **/
+void fbmulti_append(struct fastbuf *f, struct fastbuf *fb);
+
+/**
+ * Remove a fb from fbmulti
+ **/
+void fbmulti_remove(struct fastbuf *f, struct fastbuf *fb);
 
 /*** === Configuring stream parameters [[bconfig]] ***/
 

@@ -59,9 +59,9 @@ fbmulti_subbuf_next(struct fastbuf *f)
   if (!next)
     return 0;
 
-  // Get the end of current buf if not known yet.
+  // Get the end of current buf if not known yet
   if (!f->seek && !next->begin)
-    next->begin = FB_MULTI(f)->cur->end = f->pos;
+    next->begin = cur->end = f->pos;
 
   // Set the beginning of the next buf
   if (next->fb->seek)
@@ -132,21 +132,25 @@ fbmulti_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 	bthrow(f, "seek", "Seek out of range");
 
       while (pos > FB_MULTI(f)->cur->end) // Moving forward
-	ASSERT(fbmulti_subbuf_next(f));
+	{
+	  int r = fbmulti_subbuf_next(f);
+	  ASSERT(r);
+	}
 
       while (pos < FB_MULTI(f)->cur->begin) // Moving backwards
-	ASSERT(fbmulti_subbuf_prev(f));
+	{
+	  int r = fbmulti_subbuf_prev(f);
+	  ASSERT(r);
+	}
 
       // Now cur is the right buffer.
       FB_MULTI(f)->cur->fb->seek(FB_MULTI(f)->cur->fb, (pos - FB_MULTI(f)->cur->begin), SEEK_SET);
 
       fbmulti_get_ptrs(f);
       return 1;
-      break;
 
     case SEEK_END:
-      return fbmulti_seek(f, FB_MULTI(f)->len+pos, SEEK_SET);
-      break;
+      return fbmulti_seek(f, FB_MULTI(f)->len + pos, SEEK_SET);
 
     default:
       ASSERT(0);
@@ -165,7 +169,7 @@ fbmulti_close(struct fastbuf *f)
 struct fastbuf *
 fbmulti_create(void)
 {
-  struct mempool *mp = mp_new(128);
+  struct mempool *mp = mp_new(1024);
   struct fastbuf *fb_out = mp_alloc(mp, sizeof(struct fb_multi));
   struct fb_multi *fbm = FB_MULTI(fb_out);
 
@@ -187,7 +191,7 @@ fbmulti_append(struct fastbuf *f, struct fastbuf *fb)
 {
   struct subbuf *last = clist_tail(&FB_MULTI(f)->subbufs);
 
-  struct subbuf *sb = mp_alloc(FB_MULTI(f)->mp, sizeof(struct subbuf));
+  struct subbuf *sb = mp_alloc(FB_MULTI(f)->mp, sizeof(*sb));
   sb->fb = fb;
   clist_add_tail(&FB_MULTI(f)->subbufs, &(sb->n));
 
@@ -231,9 +235,9 @@ fbmulti_remove(struct fastbuf *f, struct fastbuf *fb)
 	  {
 	    clist_remove(&(n->n));
 	    return;
-	  };
+	  }
 
-      die("Given fastbuf %p not in given fbmulti %p.", fb, f);
+      die("Given fastbuf %p not in given fbmulti %p", fb, f);
     }
   else
     clist_init(&FB_MULTI(f)->subbufs);
@@ -245,7 +249,7 @@ int main(int argc, char **argv)
 {
   if (argc < 2)
     {
-      fprintf(stderr, "You must specify a test (r, w, o)\n");
+      fprintf(stderr, "You must specify a test (r, m, i, n)\n");
       return 1;
     }
   switch (*argv[1])
