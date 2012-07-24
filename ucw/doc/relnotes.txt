@@ -23,6 +23,8 @@ WIP
   compiled by default.
 * <<signal:,Signal helpers>> for translation between signal names and numbers
   have been added.
+* The fastbuf I/O layer received a new back-end <<fastbuf:fbmulti,fb_multi>>,
+  which concatenates several fastbuf streams to form a single virtual stream.
 
 5.0
 ---
