@@ -18,6 +18,8 @@
 #include <pwd.h>
 #include <grp.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/file.h>
 
 static void
