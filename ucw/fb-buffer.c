@@ -65,7 +65,6 @@ fbbuf_init_write(struct fastbuf *f, byte *buf, uns size)
     .bptr = buf,
     .bufend = buf + size,
     .name = "fbbuf-write",
-    .pos = size,
     .spout = fbbuf_spout,
   };
 }
