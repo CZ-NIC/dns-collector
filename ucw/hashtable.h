@@ -4,6 +4,7 @@
  *	(c) 2002--2004 Martin Mares <mj@ucw.cz>
  *	(c) 2002--2005 Robert Spalek <robert@ucw.cz>
  *	(c) 2010 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2012 Tomas Valla <tom@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -58,6 +59,10 @@
  *  HASH_WANT_LOOKUP	node *lookup(key) -- find node with given key,
  *			if it doesn't exist, create it. Defining
  *			HASH_GIVE_INIT_DATA is strongly recommended.
+ *  HASH_LOOKUP_DETECT_NEW
+ *  			the prototype for lookup is changed to node *lookup(key, int *new_item)
+ *  			new_item must not be NULL and returns 1 whether lookup
+ *  			just created a new item in the hashtable or 0 otherwise
  *  HASH_WANT_DELETE	int delete(key) -- delete and deallocate node
  *			with given key. Returns success.
  *  HASH_WANT_REMOVE	remove(node *) -- delete and deallocate given node.
@@ -601,7 +606,11 @@ static HASH_NODE * HASH_PREFIX(new)(TAC HASH_KEY_DECL)
  *
  * This one is enabled by the <<want_lookup,`HASH_WANT_LOOKUP`>> macro.
  **/
+#ifdef HASH_LOOKUP_DETECT_NEW
+static HASH_NODE* HASH_PREFIX(lookup)(TAC HASH_KEY_DECL, int *new_item)
+#else
 static HASH_NODE* HASH_PREFIX(lookup)(TAC HASH_KEY_DECL)
+#endif
 {
   uns h0 = P(hash) (TTC HASH_KEY( ));
   uns h = h0 % T.hash_size;
@@ -613,8 +622,12 @@ static HASH_NODE* HASH_PREFIX(lookup)(TAC HASH_KEY_DECL)
 #ifndef HASH_CONSERVE_SPACE
 	  b->hash == h0 &&
 #endif
-	  P(eq)(TTC HASH_KEY( ), HASH_KEY(b->n.)))
+	  P(eq)(TTC HASH_KEY( ), HASH_KEY(b->n.))) {
+#ifdef HASH_LOOKUP_DETECT_NEW
+	*new_item = 0;
+#endif
 	return &b->n;
+      }
     }
 
   b = P(new_bucket) (TTC sizeof(struct P(bucket)) + HASH_EXTRA_SIZE(HASH_KEY( )));
@@ -627,6 +640,9 @@ static HASH_NODE* HASH_PREFIX(lookup)(TAC HASH_KEY_DECL)
   P(init_data)(TTC &b->n);
   if (T.hash_count++ >= T.hash_max)
     P(rehash)(TTC 2*T.hash_size);
+#ifdef HASH_LOOKUP_DETECT_NEW
+  *new_item = 1;
+#endif
   return &b->n;
 }
 #endif
@@ -764,3 +780,4 @@ do {											\
 #undef HASH_TABLE_DYNAMIC
 #undef HASH_TABLE_VARS
 #undef HASH_ZERO_FILL
+#undef HASH_LOOKUP_DETECT_NEW
