@@ -116,9 +116,12 @@ static inline void slist_remove_after(slist *l, snode *after)
 /**
  * Remove the first node in @l. The list can be empty.
  **/
-static inline void slist_remove_head(slist *l)
+static inline void *slist_remove_head(slist *l)
 {
-  slist_remove_after(l, &l->head);
+  snode *n = slist_head(l);
+  if (n)
+    slist_remove_after(l, &l->head);
+  return n;
 }
 
 /* Loops */
