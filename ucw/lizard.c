@@ -295,7 +295,7 @@ lizard_decompress(const byte *in, byte *out)
   /* Requires out being allocated for the decompressed length must be known
    * beforehand.  It is desirable to lock the following memory page for
    * read-only access to prevent buffer overflow.  Returns the actual
-   * decompressed length or a negative number when an error has occured.  */
+   * decompressed length or a negative number when an error has occurred.  */
 {
   byte *out_start = out;
   uns expect_copy_command = 1;
