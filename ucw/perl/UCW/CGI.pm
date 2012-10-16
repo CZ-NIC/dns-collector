@@ -204,7 +204,7 @@ sub parse_args($) {			# CAVEAT: attached files must be defined in the main arg t
 
 	for my $a (values %$args) {
 		my $r = ref($a->{'var'});
-		defined($a->{'default'}) or $a->{'default'}="";
+		$a->{'default'} //= '';
 		if ($r eq 'SCALAR') {
 			${$a->{'var'}} = $a->{'default'};
 		} elsif ($r eq 'ARRAY') {
