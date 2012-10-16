@@ -191,7 +191,7 @@ sub init_args() {
 			exit;
 		}
 	} else {
-		http_error "405 Method Not Allowed", "Allow: GET, HEAD, PUT";
+		http_error "405 Method Not Allowed", "Allow: GET, HEAD, POST";
 	}
 }
 
