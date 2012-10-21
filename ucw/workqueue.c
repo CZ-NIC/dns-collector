@@ -131,8 +131,7 @@ raw_queue_put(struct raw_queue *q, struct work *w)
 	  q->pri_heap = xrealloc(old_heap, (q->heap_max + 1) * sizeof(struct work *));
 	}
       struct work **heap = q->pri_heap;
-      heap[++q->heap_cnt] = w;
-      HEAP_INSERT(struct work *, heap, q->heap_cnt, PRI_LESS, HEAP_SWAP);
+      HEAP_INSERT(struct work *, heap, q->heap_cnt, PRI_LESS, HEAP_SWAP, w);
     }
   pthread_mutex_unlock(&q->queue_mutex);
   sem_post(q->queue_sem);
@@ -153,7 +152,7 @@ raw_queue_do_get(struct raw_queue *q)
     {
       struct work **heap = q->pri_heap;
       w = heap[1];
-      HEAP_DELMIN(struct work *, heap, q->heap_cnt, PRI_LESS, HEAP_SWAP);
+      HEAP_DELETE_MIN(struct work *, heap, q->heap_cnt, PRI_LESS, HEAP_SWAP);
     }
   pthread_mutex_unlock(&q->queue_mutex);
   return w;

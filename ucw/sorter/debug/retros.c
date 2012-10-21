@@ -623,7 +623,7 @@ static void heapsort(void)
   HEAP_INIT(struct elt, heap, n, H_LESS, HEAP_SWAP);
   uns nn = n;
   while (nn)
-    HEAP_DELMIN(struct elt, heap, nn, H_LESS, HEAP_SWAP);
+    HEAP_DELETE_MIN(struct elt, heap, nn, H_LESS, HEAP_SWAP);
 #undef H_LESS
 }
 
@@ -634,7 +634,7 @@ static void heapsort_ind(void)
   HEAP_INIT(struct elt *, heap, n, H_LESS, HEAP_SWAP);
   uns nn = n;
   while (nn)
-    HEAP_DELMIN(struct elt *, heap, nn, H_LESS, HEAP_SWAP);
+    HEAP_DELETE_MIN(struct elt *, heap, nn, H_LESS, HEAP_SWAP);
 #undef H_LESS
 }
 

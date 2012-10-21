@@ -260,13 +260,13 @@ timer_add(struct main_timer *tm, timestamp_t expires)
 	{
 	  tm->expires = expires;
 	  tm->index = num_timers + 1;
-	  *GARY_PUSH(m->timer_table, 1) = tm;
-	  HEAP_INSERT(struct main_timer *, m->timer_table, tm->index, MAIN_TIMER_LESS, MAIN_TIMER_SWAP);
+	  GARY_RESIZE(m->timer_table, num_timers + 2);
+	  HEAP_INSERT(struct main_timer *, m->timer_table, tm->index, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm);
 	}
       else
 	{
 	  tm->expires = expires;
-	  HEAP_INCREASE(struct main_timer *, m->timer_table, num_timers, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
+	  HEAP_INCREASE(struct main_timer *, m->timer_table, num_timers, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index, tm);
 	}
     }
   else if (tm->expires > expires)
@@ -282,7 +282,7 @@ timer_add(struct main_timer *tm, timestamp_t expires)
       else
 	{
 	  tm->expires = expires;
-	  HEAP_DECREASE(struct main_timer *, m->timer_table, num_timers, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
+	  HEAP_DECREASE(struct main_timer *, m->timer_table, num_timers, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index, tm);
 	}
     }
 }
