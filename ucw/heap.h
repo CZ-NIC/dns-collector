@@ -1,8 +1,8 @@
 /*
  *	UCW Library -- Universal Heap Macros
  *
- *	(c) 2001 Martin Mares <mj@ucw.cz>
- *	(c) 2005 Tomas Valla <tom@ucw.cz>
+ *	(c) 2001--2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2005--2012 Tomas Valla <tom@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -41,7 +41,7 @@
  * ------
  ***/
 
-/* For internal usage. */
+/* For internal use. */
 #define HEAP_BUBBLE_DOWN_J(heap,num,less,swap)						\
   for (;;)										\
     {											\
@@ -56,7 +56,7 @@
       _j = _l;										\
     }
 
-/* For internal usage. */
+/* For internal use. */
 #define HEAP_BUBBLE_UP_J(heap,num,less,swap)						\
   while (_j > 1)									\
     {											\
@@ -68,7 +68,8 @@
     }
 
 /**
- * Shuffle the unordered array @heap of @num elements to become a valid heap. The time complexity is linear.
+ * Shuffle the items `heap[1]`, ..., `heap[num]` to get a valid heap.
+ * This operation takes linear time.
  **/
 #define HEAP_INIT(type,heap,num,less,swap)						\
   do {											\
@@ -84,10 +85,10 @@
   } while(0)
 
 /**
- * Delete the minimum element `heap[1]` in `O(log(n))` time.
+ * Delete the minimum element `heap[1]` in `O(log(n))` time. The @num variable is decremented.
  * The removed value is moved just after the resulting heap (`heap[num + 1]`).
  **/
-#define HEAP_DELMIN(type,heap,num,less,swap)						\
+#define HEAP_DELETE_MIN(type,heap,num,less,swap)					\
   do {											\
     uns _j, _l;										\
     type x;										\
@@ -98,56 +99,72 @@
   } while(0)
 
 /**
- * Insert `heap[num]` in `O(log(n))` time. The value of @num must be increased before.
+ * Insert a new element @elt to the heap. The @num variable is incremented.
+ * This operation takes `O(log(n))` time.
  **/
-#define HEAP_INSERT(type,heap,num,less,swap)						\
+#define HEAP_INSERT(type,heap,num,less,swap,elt)					\
   do {											\
     uns _j, _u;										\
     type x;										\
+    heap[++num] = elt;									\
     _j = num;										\
     HEAP_BUBBLE_UP_J(heap,num,less,swap);						\
   } while(0)
 
 /**
- * If you need to increase the value of `heap[pos]`, just do it and then call this macro to rebuild the heap.
- * Only `heap[pos]` can be changed, the rest of the array must form a valid heap.
+ * Increase `heap[pos]` to a new value @elt (greater or equal to the previous value).
  * The time complexity is `O(log(n))`.
  **/
-#define HEAP_INCREASE(type,heap,num,less,swap,pos)					\
+#define HEAP_INCREASE(type,heap,num,less,swap,pos,elt)					\
   do {											\
     uns _j, _l;										\
     type x;										\
+    heap[pos] = elt;									\
     _j = pos;										\
     HEAP_BUBBLE_DOWN_J(heap,num,less,swap);						\
   } while(0)
 
 /**
- * If you need to decrease the value of `heap[pos]`, just do it and then call this macro to rebuild the heap.
- * Only `heap[pos]` can be changed, the rest of the array must form a valid heap.
+ * Decrease `heap[pos]` to a new value @elt (less or equal to the previous value).
  * The time complexity is `O(log(n))`.
  **/
-#define HEAP_DECREASE(type,heap,num,less,swap,pos)					\
+#define HEAP_DECREASE(type,heap,num,less,swap,pos,elt)					\
   do {											\
     uns _j, _u;										\
     type x;										\
+    heap[pos] = elt;									\
     _j = pos;										\
     HEAP_BUBBLE_UP_J(heap,num,less,swap);						\
   } while(0)
 
 /**
- * Delete `heap[pos]` in `O(log(n))` time.
+ * Change `heap[pos]` to a new value @elt. The time complexity is `O(log(n))`.
+ * If you know that the new value is always smaller or always greater, it is faster
+ * to use `HEAP_DECREASE` or `HEAP_INCREASE` respectively.
+ **/
+#define HEAP_REPLACE(type,heap,num,less,swap,pos,elt)					\
+  do {											\
+    type _elt = elt;									\
+    if (less(heap[pos], _elt))								\
+      HEAP_INCREASE(type,heap,num,less,swap,pos,_elt);					\
+    else										\
+      HEAP_DECREASE(type,heap,num,less,swap,pos,_elt);					\
+  } while(0)
+
+/**
+ * Replace the minimum `heap[pos]` by a new value @elt. The time complexity is `O(log(n))`.
+ **/
+#define HEAP_REPLACE_MIN(type,heap,num,less,swap,elt)					\
+  HEAP_INCREASE(type,heap,num,less,swap,1,elt)
+
+/**
+ * Delete an arbitrary element, given by its position. The @num variable is decremented.
+ * The operation takes `O(log(n))` time.
  **/
 #define HEAP_DELETE(type,heap,num,less,swap,pos)					\
   do {											\
-    uns _j, _l, _u;									\
-    type x;										\
-    _j = pos;										\
-    swap(heap,_j,num,x);								\
     num--;										\
-    if (less(heap[_j], heap[num+1]))							\
-      HEAP_BUBBLE_UP_J(heap,num,less,swap)						\
-    else										\
-      HEAP_BUBBLE_DOWN_J(heap,num,less,swap);						\
+    HEAP_REPLACE(type,heap,num,less,swap,pos,heap[num+1]);				\
   } while(0)
 
 /**
