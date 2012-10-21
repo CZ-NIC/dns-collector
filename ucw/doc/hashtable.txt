@@ -133,6 +133,10 @@ You can customize the hash table a little more by these macros:
   of `HASH_PREFIX(table) *` structure. It can be useful in combination
   with <<table_dynamic:`HASH_TABLE_DYNAMIC`>> to access per-table custom variables
   from macros or function switches before you include the generator.
+[[lookup_detect_new]]
+- `HASH_LOOKUP_DETECT_NEW` -- the prototype for lookup is changed to `node *lookup(key, int *new_item)`,
+ `new_item` must not be NULL and returns 1 whether lookup just created a new item in the hashtable
+ or 0 otherwise.
 
 [[wants]]
 Functionality switches

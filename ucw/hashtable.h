@@ -59,10 +59,8 @@
  *  HASH_WANT_LOOKUP	node *lookup(key) -- find node with given key,
  *			if it doesn't exist, create it. Defining
  *			HASH_GIVE_INIT_DATA is strongly recommended.
- *  HASH_LOOKUP_DETECT_NEW
- *  			the prototype for lookup is changed to node *lookup(key, int *new_item)
- *  			new_item must not be NULL and returns 1 whether lookup
- *  			just created a new item in the hashtable or 0 otherwise
+ *			Use HASH_LOOKUP_DETECT_NEW if you want to know
+ *			whether the node was newly created or not.
  *  HASH_WANT_DELETE	int delete(key) -- delete and deallocate node
  *			with given key. Returns success.
  *  HASH_WANT_REMOVE	remove(node *) -- delete and deallocate given node.
@@ -87,7 +85,7 @@
  *			a node. Default is xmalloc() or pooled allocation, depending
  *			on HASH_USE_POOL, HASH_AUTO_POOL, HASH_USE_ELTPOOL
  *			and HASH_AUTO_ELTPOOL switches.	void free(void *) -- the converse.
- * HASH_GIVE_TABLE_ALLOC void *table_alloc(unsigned int size), void *table_free(void *)
+ *  HASH_GIVE_TABLE_ALLOC void *table_alloc(unsigned int size), void *table_free(void *)
  *			Allocate or free space for the table itself. Default is xmalloc()
  *			or the functions defined by HASH_GIVE_ALLOC if HASH_TABLE_ALLOC is set.
  *
@@ -112,6 +110,10 @@
  *  HASH_TABLE_DYNAMIC	Support multiple hash tables; the first parameter of all
  *			hash table operations is struct HASH_PREFIX(table) *.
  *  HASH_TABLE_VARS	Extra variables to be defined in table structure
+ *  HASH_LOOKUP_DETECT_NEW
+ *  			the prototype for lookup is changed to node *lookup(key, int *new_item)
+ *  			new_item must not be NULL and returns 1 whether lookup
+ *  			just created a new item in the hashtable or 0 otherwise.
  *
  *  You also get a iterator macro at no extra charge:
  *
@@ -600,13 +602,14 @@ static HASH_NODE * HASH_PREFIX(new)(TAC HASH_KEY_DECL)
 #endif
 
 #ifdef HASH_WANT_LOOKUP
+#ifdef HASH_LOOKUP_DETECT_NEW
 /**
  * Finds a node with a given key. If it does not exist, a new one is created.
  * It is strongly recommended to use <<give_init_data,`HASH_GIVE_INIT_DATA`>>.
  *
  * This one is enabled by the <<want_lookup,`HASH_WANT_LOOKUP`>> macro.
+ * The @new_item argument is available only if <<lookup_detect_new,`HASH_LOOKUP_DETECT_NEW`>> was given.
  **/
-#ifdef HASH_LOOKUP_DETECT_NEW
 static HASH_NODE* HASH_PREFIX(lookup)(TAC HASH_KEY_DECL, int *new_item)
 #else
 static HASH_NODE* HASH_PREFIX(lookup)(TAC HASH_KEY_DECL)
