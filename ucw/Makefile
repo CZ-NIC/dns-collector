@@ -39,7 +39,7 @@ LIBUCW_MODS= \
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h threads.h time.h \
-	mempool.h \
+	mempool.h eltpool.h \
 	clists.h slists.h simple-lists.h \
 	string.h stkstring.h unicode.h chartype.h regex.h \
 	wildmatch.h \
