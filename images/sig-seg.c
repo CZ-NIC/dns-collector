@@ -122,7 +122,7 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
       if (region->count < 2 ||
 	  region->e < image_sig_prequant_thresholds[regions_count - 1] * blocks_count)
         {
-	  HEAP_DELMIN(struct image_sig_region *, heap, heap_count, prequant_heap_cmp, HEAP_SWAP);
+	  HEAP_DELETE_MIN(struct image_sig_region *, heap, heap_count, prequant_heap_cmp, HEAP_SWAP);
 	  continue;
 	}
 
@@ -218,9 +218,8 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
 	}
       prequant_finish_region(region);
       prequant_finish_region(region2);
-      HEAP_INCREASE(struct image_sig_region *, heap, heap_count, prequant_heap_cmp, HEAP_SWAP, 1);
-      heap[++heap_count] = region2;
-      HEAP_INSERT(struct image_sig_region *, heap, heap_count, prequant_heap_cmp, HEAP_SWAP);
+      HEAP_INCREASE(struct image_sig_region *, heap, heap_count, prequant_heap_cmp, HEAP_SWAP, 1, region);
+      HEAP_INSERT(struct image_sig_region *, heap, heap_count, prequant_heap_cmp, HEAP_SWAP, region2);
     }
 
   DBG("Pre-quantized to %u regions", regions_count);
