@@ -36,6 +36,16 @@
  *
  * The first element `heap[1]` is always lower or equal to all other elements.
  *
+ * Position tracking
+ * -----------------
+ *
+ * As a heap does not support efficient lookup of an element by value, all functions
+ * acting on existing heap elements need to obtain the position of the element in the
+ * heap. This position has to be tracked by the caller, usually in the supplied swap
+ * callback.
+ *
+ * However, there are some caveats noted in the descriptions of individual functions.
+ *
  * [[macros]]
  * Macros
  * ------
@@ -70,6 +80,8 @@
 /**
  * Shuffle the items `heap[1]`, ..., `heap[num]` to get a valid heap.
  * This operation takes linear time.
+ *
+ * Position tracking: Position of `heap[i]` must be initialized to `i` before calling.
  **/
 #define HEAP_INIT(type,heap,num,less,swap)						\
   do {											\
@@ -87,6 +99,8 @@
 /**
  * Delete the minimum element `heap[1]` in `O(log(n))` time. The @num variable is decremented.
  * The removed value is moved just after the resulting heap (`heap[num + 1]`).
+ *
+ * Position tracking: Fully automatic.
  **/
 #define HEAP_DELETE_MIN(type,heap,num,less,swap)					\
   do {											\
@@ -101,6 +115,9 @@
 /**
  * Insert a new element @elt to the heap. The @num variable is incremented.
  * This operation takes `O(log(n))` time.
+ *
+ * Position tracking: The position of the new element must be initialized to @num+1
+ * before calling this macro.
  **/
 #define HEAP_INSERT(type,heap,num,less,swap,elt)					\
   do {											\
@@ -114,6 +131,8 @@
 /**
  * Increase `heap[pos]` to a new value @elt (greater or equal to the previous value).
  * The time complexity is `O(log(n))`.
+ *
+ * Position tracking: Fully automatic.
  **/
 #define HEAP_INCREASE(type,heap,num,less,swap,pos,elt)					\
   do {											\
@@ -127,6 +146,8 @@
 /**
  * Decrease `heap[pos]` to a new value @elt (less or equal to the previous value).
  * The time complexity is `O(log(n))`.
+ *
+ * Position tracking: Fully automatic.
  **/
 #define HEAP_DECREASE(type,heap,num,less,swap,pos,elt)					\
   do {											\
@@ -141,6 +162,8 @@
  * Change `heap[pos]` to a new value @elt. The time complexity is `O(log(n))`.
  * If you know that the new value is always smaller or always greater, it is faster
  * to use `HEAP_DECREASE` or `HEAP_INCREASE` respectively.
+ *
+ * Position tracking: Fully automatic.
  **/
 #define HEAP_REPLACE(type,heap,num,less,swap,pos,elt)					\
   do {											\
@@ -153,6 +176,8 @@
 
 /**
  * Replace the minimum `heap[pos]` by a new value @elt. The time complexity is `O(log(n))`.
+ *
+ * Position tracking: Fully automatic.
  **/
 #define HEAP_REPLACE_MIN(type,heap,num,less,swap,elt)					\
   HEAP_INCREASE(type,heap,num,less,swap,1,elt)
@@ -160,6 +185,8 @@
 /**
  * Delete an arbitrary element, given by its position. The @num variable is decremented.
  * The operation takes `O(log(n))` time.
+ *
+ * Position tracking: Fully automatic.
  **/
 #define HEAP_DELETE(type,heap,num,less,swap,pos)					\
   do {											\

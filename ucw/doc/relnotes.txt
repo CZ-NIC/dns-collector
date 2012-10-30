@@ -10,7 +10,8 @@ WIP
    a proper insert (previously, it was just cleanup after insertion performed
    by the caller), similarly `HEAP_INCREASE` and `HEAP_DECREASE`. The `HEAP_DELMIN`
    operation was renamed to `HEAP_DELETE_MIN`. New operations `HEAP_REPLACE` and
-   `HEAP_REPLACE_MIN` have been added.
+   `HEAP_REPLACE_MIN` have been added. If you need to track positions of elements
+   in the heap, please check the notes at individual functions.
 ** Multiple instances of the configuration parser are supported.
 ** *Incompatible:* As there may be more instances, we can no longer use
    global variables to control the configuration system. In particular,
