@@ -259,9 +259,9 @@ timer_add(struct main_timer *tm, timestamp_t expires)
       if (!tm->expires)
 	{
 	  tm->expires = expires;
-	  tm->index = num_timers;
+	  tm->index = num_timers + 1;
 	  GARY_RESIZE(m->timer_table, num_timers + 2);
-	  HEAP_INSERT(struct main_timer *, m->timer_table, tm->index, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm);
+	  HEAP_INSERT(struct main_timer *, m->timer_table, num_timers, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm);
 	}
       else
 	{
