@@ -139,9 +139,7 @@ byte *md5_final(md5_context *ctx)
   byteReverse(ctx->in, 14);
 
   /* Append length in bits and transform */
-  ((u32 *) ctx->in)[14] = ctx->bits[0];
-  ((u32 *) ctx->in)[15] = ctx->bits[1];
-
+  memcpy(ctx->in + 56, ctx->bits, 8);
   md5_transform(ctx->buf, (u32 *) ctx->in);
   byteReverse((byte *) ctx->buf, 4);
   return (byte *) ctx->buf;
