@@ -163,8 +163,15 @@
  **/
 #define HEAP_DELETE(type,heap,num,less,swap,pos)					\
   do {											\
+    uns _j, _l, _u;									\
+    type x;										\
+    _j = pos;										\
+    swap(heap,_j,num,x);								\
     num--;										\
-    HEAP_REPLACE(type,heap,num,less,swap,pos,heap[num+1]);				\
+    if (less(heap[_j], heap[num+1]))							\
+      HEAP_BUBBLE_UP_J(heap,num,less,swap)						\
+    else										\
+      HEAP_BUBBLE_DOWN_J(heap,num,less,swap);						\
   } while(0)
 
 /**
