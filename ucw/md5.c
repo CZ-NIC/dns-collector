@@ -252,3 +252,28 @@ void md5_hash_buffer(byte *outbuf, const byte *buffer, uns length)
   md5_update(&c, buffer, length);
   memcpy(outbuf, md5_final(&c), MD5_SIZE);
 }
+
+#ifdef TEST
+
+#include <stdio.h>
+#include <unistd.h>
+#include <ucw/string.h>
+
+int main(void)
+{
+  md5_context hd;
+  byte buf[3];
+  int cnt;
+
+  md5_init(&hd);
+  while ((cnt = read(0, buf, sizeof(buf))) > 0)
+    md5_update(&hd, buf, cnt);
+
+  char text[MD5_HEX_SIZE];
+  mem_to_hex(text, md5_final(&hd), MD5_SIZE, 0);
+  puts(text);
+
+  return 0;
+}
+
+#endif
