@@ -21,7 +21,7 @@ LIBUCW_MODS= \
 	wildmatch regex \
 	prime primetable random \
 	time-stamp time-timer time-conf \
-	bit-ffs bit-fls \
+	bit-ffs bit-fls bit-count \
 	url \
 	mainloop main-block main-rec \
 	proctitle exitstatus runcmd \
@@ -124,7 +124,7 @@ $(o)/ucw/unicode.test: $(o)/ucw/unicode-t
 $(o)/ucw/hash-test.test: $(o)/ucw/hash-test
 $(o)/ucw/mempool.test: $(o)/ucw/mempool-t $(o)/ucw/mempool-fmt-t $(o)/ucw/mempool-str-t
 $(o)/ucw/stkstring.test: $(o)/ucw/stkstring-t
-$(o)/ucw/bitops.test: $(o)/ucw/bit-ffs-t $(o)/ucw/bit-fls-t
+$(o)/ucw/bitops.test: $(o)/ucw/bit-ffs-t $(o)/ucw/bit-fls-t $(o)/ucw/bit-count-t
 $(o)/ucw/slists.test: $(o)/ucw/slists-t
 $(o)/ucw/kmp-test.test: $(o)/ucw/kmp-test
 $(o)/ucw/bbuf.test: $(o)/ucw/bbuf-t

@@ -2,6 +2,7 @@
  *	UCW Library -- Bit Array Operations
  *
  *	(c) 2003--2006 Martin Mares <mj@ucw.cz>
+ *	(c) 2012 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -12,7 +13,8 @@
 
 #include <string.h>
 
-typedef u32 *bitarray_t;
+typedef u32 *bitarray_t; // Must be initialized by bit_array_xmalloc(), bit_array_zero() or bit_array_set_all()
+
 #define BIT_ARRAY_WORDS(n) (((n)+31)/32)
 #define BIT_ARRAY_BYTES(n) (4*BIT_ARRAY_WORDS(n))
 #define BIT_ARRAY(name,size) u32 name[BIT_ARRAY_WORDS(size)]
@@ -38,7 +40,11 @@ bit_array_zero(bitarray_t a, uns n)
 static inline void
 bit_array_set_all(bitarray_t a, uns n)
 {
-  memset(a, 255, BIT_ARRAY_BYTES(n));
+  uns w = n / 32;
+  memset(a, 255, w * 4);
+  uns m = n & 31;
+  if (m)
+    a[w] = (1U << m) - 1;
 }
 
 static inline void
@@ -90,18 +96,19 @@ bit_array_test_and_clear(bitarray_t a, uns i)
   return t;
 }
 
-/* Iterate over all set bits, possibly destructively */
+uns bit_array_count_bits(bitarray_t a, uns n);
+
+/* Iterate over all set bits */
 #define BIT_ARRAY_FISH_BITS_BEGIN(var,ary,size)					\
   for (uns var##_hi=0; var##_hi < BIT_ARRAY_WORDS(size); var##_hi++)		\
-    for (uns var##_lo=0; ary[var##_hi]; var##_lo++)				\
-      if (ary[var##_hi] & (1 << var##_lo))					\
-        {									\
-	  uns var = 32*var##_hi + var##_lo;					\
-	  ary[var##_hi] &= ~(1 << var##_lo);					\
+    {										\
+      u32 var##_cur = ary[var##_hi];						\
+      for (uns var = 32 * var##_hi; var##_cur; var++, var##_cur >>= 1)		\
+        if (var##_cur & 1)							\
 	  do
 
 #define BIT_ARRAY_FISH_BITS_END							\
 	  while (0);								\
-	}
+    }
 
 #endif
