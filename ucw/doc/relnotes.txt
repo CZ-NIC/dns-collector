@@ -32,6 +32,9 @@ WIP
   have been added.
 * The fastbuf I/O layer received a new back-end <<fastbuf:fbmulti,fb_multi>>,
   which concatenates several fastbuf streams to form a single virtual stream.
+* *Incompatible* The `UCW::CGI` Perl module has its custom error handlers
+  (which override default Perl error handlers) split off to a separate module
+  `UCW::CGI::ErrorHandler`.
 
 5.0
 ---
