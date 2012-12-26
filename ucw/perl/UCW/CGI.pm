@@ -8,45 +8,6 @@
 
 package UCW::CGI;
 
-# First of all, set up error handling, so that even errors during parsing
-# will be reported properly.
-
-# Variables to be set by the calling module:
-#	$UCW::CGI::error_mail		mail address of the script admin (optional)
-#					(this one has to be set in the BEGIN block!)
-#	$UCW::CGI::error_hook		function to be called for reporting errors
-
-my $error_reported;
-my $exit_code;
-my $debug = 0;
-
-sub report_bug($)
-{
-	if (!defined $error_reported) {
-		$error_reported = 1;
-		print STDERR $_[0];
-		if (defined($UCW::CGI::error_hook)) {
-			&$UCW::CGI::error_hook($_[0]);
-		} else {
-			print "Content-Type: text/plain\n\n";
-			print "Internal bug:\n";
-			print $_[0], "\n";
-			print "Please notify $UCW::CGI::error_mail\n" if defined $UCW::CGI::error_mail;
-		}
-	}
-	die;
-}
-
-BEGIN {
-	$SIG{__DIE__} = sub { report_bug($_[0]); };
-	$SIG{__WARN__} = sub { report_bug("WARNING: " . $_[0]); };
-	$exit_code = 0;
-}
-
-END {
-	$? = $exit_code;
-}
-
 use strict;
 use warnings;
 
@@ -56,6 +17,8 @@ our @ISA = qw(Exporter);
 our @EXPORT = qw(&html_escape &url_escape &url_deescape &url_param_escape &url_param_deescape &self_ref &self_form &http_get);
 our @EXPORT_OK = qw();
 
+# Configuration settings
+our $debug = 0;
 our $utf8_mode = 0;
 
 sub http_error($;@) {
@@ -168,7 +131,7 @@ sub parse_multipart_form_data();
 sub init_args() {
 	if (!defined $ENV{"GATEWAY_INTERFACE"}) {
 		print STDERR "Must be called as a CGI script.\n";
-		$exit_code = 1;
+		$UCW::CGI::ErrorHandler::exit_code = 1;
 		exit;
 	}
 
