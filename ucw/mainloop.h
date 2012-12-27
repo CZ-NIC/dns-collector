@@ -534,7 +534,7 @@ void rec_io_start_read(struct main_rec_io *rio);
 void rec_io_stop_read(struct main_rec_io *rio);
 
 /** Analogous to @block_io_set_timeout(). **/
-void rec_io_set_timeout(struct main_rec_io *bio, timestamp_t expires_delta);
+void rec_io_set_timeout(struct main_rec_io *rio, timestamp_t expires_delta);
 
 void rec_io_write(struct main_rec_io *rio, void *data, uns len);
 
