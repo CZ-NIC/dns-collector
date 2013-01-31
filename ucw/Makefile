@@ -35,7 +35,8 @@ LIBUCW_MODS= \
 	strtonum \
 	resource trans res-fd res-mem res-subpool res-mempool res-eltpool \
 	daemon daemon-ctrl \
-	signames
+	signames \
+	opt
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h threads.h time.h \
@@ -63,7 +64,8 @@ LIBUCW_MAIN_INCLUDES= \
 	strtonum.h \
 	resource.h trans.h \
 	daemon.h \
-	signames.h
+	signames.h \
+	opt.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
@@ -119,7 +121,7 @@ TESTS+=$(addprefix $(o)/ucw/,varint.test regex.test unicode.test hash-test.test 
     fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test \
     redblack-test.test fb-file.test fb-grow.test fb-pool.test fb-atomic.test \
     fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test fb-multi.test url.test strtonum-test.test \
-    gary.test time.test crc.test signames.test md5.test)
+    gary.test time.test crc.test signames.test md5.test opt.test)
 
 $(o)/ucw/varint.test: $(o)/ucw/varint-t
 $(o)/ucw/regex.test: $(o)/ucw/regex-t
@@ -150,6 +152,7 @@ $(o)/ucw/time.test: $(o)/ucw/time-conf-t
 $(o)/ucw/crc.test: $(o)/ucw/crc-t
 $(o)/ucw/signames.test: $(o)/ucw/signames-t
 $(o)/ucw/md5.test: $(o)/ucw/md5-t
+$(o)/ucw/opt.test: $(o)/ucw/opt-t
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/ucw/,asio.test)
