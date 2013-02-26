@@ -96,7 +96,7 @@ to sort them by the strings.
   #define ASORT_ELT(i) ((i % 2 ? even_array : odd_array)[i / 2])
   #define ASORT_LT(x, y) (strcmp((x).string, (y).string) < 0)
   #define ASORT_EXTRA_ARGS , struct elem *odd_array, struct elem *even_array
-  #include <ucw/sorter/sorter/array-simple.h>
+  #include <ucw/sorter/array-simple.h>
 
 Now we got a complicated_sort(uns array_size, struct elem *odd_array,
 struct *even_array) function to perform our sorting.
