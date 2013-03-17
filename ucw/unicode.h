@@ -168,7 +168,7 @@ get1: UTF8_GET_NEXT;
 }
 
 /**
- * Decode a value from the range `[0, 0xFFFF]` (basic multilignual plane)
+ * Decode a value from the range `[0, 0xFFFF]` (basic multilingual plane)
  * or return `UNI_REPLACEMENT` if the encoding has been corrupted.
  **/
 static inline byte *utf8_get(const byte *p, uns *uu)
