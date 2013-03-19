@@ -21,7 +21,7 @@ LIBUCW_MODS= \
 	wildmatch regex \
 	prime primetable random \
 	time-stamp time-timer time-conf \
-	bit-ffs bit-fls bit-count \
+	bit-ffs bit-fls bit-array \
 	url \
 	mainloop main-block main-rec \
 	proctitle exitstatus runcmd \

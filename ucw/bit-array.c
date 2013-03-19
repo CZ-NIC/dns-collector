@@ -1,7 +1,8 @@
 /*
- *	UCW Library -- Counting bits in bitarray
+ *	UCW Library -- Support routines for bitarray
  *
  *	(c) 2012 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2013 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -18,6 +19,18 @@ uns bit_array_count_bits(bitarray_t a, uns n)
   while (n--)
     m += bit_count(*a++);
   return m;
+}
+
+bitarray_t bit_array_xrealloc(bitarray_t a, uns old_n, uns new_n)
+{
+  uns old_bytes = BIT_ARRAY_BYTES(old_n);
+  uns new_bytes =  BIT_ARRAY_BYTES(new_n);
+  if (old_bytes == new_bytes)
+    return a;
+  a = xrealloc(a, new_bytes);
+  if (old_bytes < new_bytes)
+    bzero(a + old_bytes, new_bytes - old_bytes);
+  return a;
 }
 
 #ifdef TEST

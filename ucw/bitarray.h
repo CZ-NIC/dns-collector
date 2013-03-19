@@ -25,6 +25,8 @@ bit_array_xmalloc(uns n)
   return xmalloc(BIT_ARRAY_BYTES(n));
 }
 
+bitarray_t bit_array_xrealloc(bitarray_t a, uns old_n, uns new_n);
+
 static inline bitarray_t
 bit_array_xmalloc_zero(uns n)
 {
