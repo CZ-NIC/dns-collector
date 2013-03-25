@@ -15,9 +15,9 @@ LIBUCW_MODS= \
 	log log-stream log-file log-syslog log-conf tbf \
 	conf-context conf-alloc conf-dump conf-input conf-intr conf-journal conf-parse conf-section conf-getopt \
 	ipaccess \
-	fastbuf ff-binary ff-string ff-printf ff-unicode ff-stkstring \
+	fastbuf ff-binary ff-string ff-printf ff-unicode ff-varint ff-stkstring \
 	fb-file fb-mem fb-temp tempfile fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param fb-socket fb-multi \
-	char-cat char-upper char-lower unicode stkstring \
+	char-cat char-upper char-lower unicode varint stkstring \
 	wildmatch regex \
 	prime primetable random \
 	time-stamp time-timer time-conf \
@@ -41,7 +41,7 @@ LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h threads.h time.h \
 	mempool.h eltpool.h \
 	clists.h slists.h simple-lists.h \
-	string.h stkstring.h unicode.h chartype.h regex.h \
+	string.h stkstring.h unicode.h varint.h chartype.h regex.h \
 	wildmatch.h \
 	unaligned.h \
 	bbuf.h gbuf.h gary.h bitarray.h bitsig.h \
@@ -51,7 +51,7 @@ LIBUCW_MAIN_INCLUDES= \
 	prime.h \
 	bitops.h \
 	conf.h getopt.h ipaccess.h \
-	fastbuf.h io.h ff-unicode.h ff-binary.h \
+	fastbuf.h io.h ff-unicode.h ff-varint.h ff-binary.h \
 	url.h \
 	mainloop.h \
 	process.h \
@@ -97,6 +97,8 @@ endif
 $(o)/ucw/hashfunc.o $(o)/ucw/hashfunc.oo: CFLAGS += -funroll-loops
 $(o)/ucw/lizard.o: CFLAGS += $(COPT2) -funroll-loops
 
+$(o)/ucw/ff-varint-t: $(LIBUCW)
+$(o)/ucw/varint-t: $(LIBUCW)
 $(o)/ucw/conf-test: $(o)/ucw/conf-test.o $(LIBUCW)
 $(o)/ucw/hash-test: $(o)/ucw/hash-test.o $(LIBUCW)
 $(o)/ucw/hashfunc-test: $(o)/ucw/hashfunc-test.o $(LIBUCW)
@@ -112,13 +114,14 @@ endif
 $(o)/ucw/ipaccess-test: $(o)/ucw/ipaccess-test.o $(LIBUCW)
 $(o)/ucw/trie-test: $(o)/ucw/trie-test.o $(LIBUCW)
 
-TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test stkstring.test \
-    slists.test bbuf.test kmp-test.test getopt.test ff-unicode.test eltpool.test \
+TESTS+=$(addprefix $(o)/ucw/,varint.test regex.test unicode.test hash-test.test mempool.test stkstring.test \
+    slists.test bbuf.test kmp-test.test getopt.test ff-unicode.test ff-varint.test eltpool.test \
     fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test \
     redblack-test.test fb-file.test fb-grow.test fb-pool.test fb-atomic.test \
     fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test fb-multi.test url.test strtonum-test.test \
     gary.test time.test crc.test signames.test md5.test)
 
+$(o)/ucw/varint.test: $(o)/ucw/varint-t
 $(o)/ucw/regex.test: $(o)/ucw/regex-t
 $(o)/ucw/unicode.test: $(o)/ucw/unicode-t
 $(o)/ucw/hash-test.test: $(o)/ucw/hash-test
@@ -130,6 +133,7 @@ $(o)/ucw/kmp-test.test: $(o)/ucw/kmp-test
 $(o)/ucw/bbuf.test: $(o)/ucw/bbuf-t
 $(o)/ucw/getopt.test: $(o)/ucw/getopt-t
 $(o)/ucw/ff-unicode.test: $(o)/ucw/ff-unicode-t
+$(o)/ucw/ff-varint.test: $(o)/ucw/ff-varint-t
 $(o)/ucw/eltpool.test: $(o)/ucw/eltpool-t
 $(o)/ucw/string.test: $(o)/ucw/str-hex-t $(o)/ucw/str-esc-t $(o)/ucw/str-fix-t
 $(o)/ucw/sha1.test: $(o)/ucw/sha1-t $(o)/ucw/sha1-hmac-t
