@@ -13,15 +13,15 @@
 /***
  * The encoding works in the following way:
  *
- * First byte			Stored values
+ *  First byte			Stored values
  *
- * 0xxxxxxx			7 bits
- * 10xxxxxx  +1 byte		14 bits, value shifted by 2^7
- * 110xxxxx  +2 bytes		21 bits, value shifted by 2^7+2^14
- * 1110xxxx  +3 bytes		28 bits, value shifted by 2^7+2^14+2^21
+ *  0xxxxxxx			7 bits
+ *  10xxxxxx  +1 byte		14 bits, value shifted by 2^7
+ *  110xxxxx  +2 bytes		21 bits, value shifted by 2^7+2^14
+ *  1110xxxx  +3 bytes		28 bits, value shifted by 2^7+2^14+2^21
  *    ....
- * 11111110  +7 bytes		56 bits, value shifted by 2^7+2^14+2^21+2^28+2^35+2^42
- * 11111111  +8 bytes		full 64 bits, value shifted by 2^7+2^14+2^21+2^28+2^35+2^42+2^56
+ *  11111110  +7 bytes		56 bits, value shifted by 2^7+2^14+2^21+2^28+2^35+2^42
+ *  11111111  +8 bytes		full 64 bits, value shifted by 2^7+2^14+2^21+2^28+2^35+2^42+2^56
  *
  * The values are stored in bigendian to allow lexicographic sorting.
  * The encoding and algorithms are aimed to be optimised for storing shorter numbers.

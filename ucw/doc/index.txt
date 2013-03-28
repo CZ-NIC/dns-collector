@@ -33,6 +33,7 @@ Modules
 - <<growbuf:,Growing buffers>>
 - <<chartype:,Single-byte characters>>
 - <<unicode:,Multi-byte characters>>
+- <<varint:,Encoding of integers>>
 - <<prime:,Prime numbers>>
 - <<sort:,Sorting>>
 - <<binsearch:,Binary search>>
