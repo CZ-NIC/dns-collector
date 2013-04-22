@@ -18,8 +18,6 @@
 
 /***
  * [[opt]]
- * Parsing of command line options
- * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  ***/
 
 enum opt_class {
@@ -60,7 +58,9 @@ struct opt_section {
 
 #define OPT_ITEMS	.opt = ( struct opt_item[] )  /** List of sub-items. **/
 
-/** Sub-items to be enclosed in OPT_ITEMS { } list
+/***
+ * Sub-items to be enclosed in OPT_ITEMS { } list
+ * ----------------------------------------------
  *
  * OPT_SHOW_HELP declares --help and prints a line about that
  * OPT_HELP prints a line into help()
@@ -76,7 +76,7 @@ struct opt_section {
  * OPT_INC declares an incremental value like -v/--verbose
  * OPT_SECTION declares a subsection
  *
- * **/
+ ***/
 
 #define OPT_SHOW_HELP OPT_CALL(0, "help", opt_show_help_internal, OPT_NO_VALUE, "Show this help")
 #define OPT_HELP(line) OPT_HELP2(line, NULL)
@@ -92,22 +92,30 @@ struct opt_section {
 #define OPT_SECTION(sec) { .cls = OPT_CL_SECTION, .u.section = &sec }
 #define OPT_END { .cls = OPT_CL_END }
 
-/** Flags for the preceeding calls **/
-#define OPT_REQUIRED	    0x1		// Argument must appear at the command line
-#define OPT_REQUIRED_VALUE  0x2		// Argument must have a value
-#define OPT_NO_VALUE	    0x4		// Argument must have no value
-#define OPT_MAYBE_VALUE	    0x8		// Argument may have a value
-#define OPT_VALUE_FLAGS	    (OPT_REQUIRED_VALUE | OPT_NO_VALUE | OPT_MAYBE_VALUE)
-#define OPT_DECREMENT	    0x10	// Reversing the effect of OPT_INC
-#define OPT_SINGLE	    0x20	// Argument must appear at most once
-#define OPT_NO_HELP	    0x40	// Omit this line from help
+/***
+ * Flags for the preceeding calls
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ ***/
 
-/** Value flags defaults:
+#define OPT_REQUIRED	    0x1		/** Argument must appear at the command line **/
+#define OPT_REQUIRED_VALUE  0x2		/** Argument must have a value **/
+#define OPT_NO_VALUE	    0x4		/** Argument must have no value **/
+#define OPT_MAYBE_VALUE	    0x8		/** Argument may have a value **/
+#define OPT_VALUE_FLAGS	    (OPT_REQUIRED_VALUE | OPT_NO_VALUE | OPT_MAYBE_VALUE)
+#define OPT_DECREMENT	    0x10	/** Reversing the effect of OPT_INC **/
+#define OPT_SINGLE	    0x20	/** Argument must appear at most once **/
+#define OPT_NO_HELP	    0x40	/** Omit this line from help **/
+
+/***
+ * Value flags defaults
+ * ~~~~~~~~~~~~~~~~~~~~
+ *
  * OPT_NO_VALUE for OPT_BOOL, OPT_SWITCH and OPT_INC
  * OPT_MAYBE_VALUE for OPT_STRING, OPT_UNS, OPT_INT
  * Some of the value flags (OPT_NO_VALUE, OPT_MAYBE_VALUE, OPT_REQUIRED_VALUE)
  * must be specified for OPT_CALL and OPT_USER.
- */
+ ***/
+
 static uns opt_default_value_flags[] = {
   [OPT_CL_BOOL] = OPT_NO_VALUE,
   [OPT_CL_STATIC] = OPT_MAYBE_VALUE,
@@ -147,13 +155,13 @@ static void opt_usage(void) {
 
 /**
  * Init the opt engine.
- */
+ **/
 void opt_init(struct opt_section * options);
 
 /**
  * Parse all the arguments.
  * Returns the number of positional arguments and an array of them in @posargs.
- */
+ **/
 int opt_parse(char ** argv, char *** posargs);
 
 /**
@@ -161,7 +169,7 @@ int opt_parse(char ** argv, char *** posargs);
  * Returns the position of that argument in argv.
  * On next call of this function, start from the next item in argv.
  * Iterate this function to get all the positional arguments.
- */
+ **/
 int opt_get(char ** argv);
 
 #endif
