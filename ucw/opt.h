@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define OPT_EXIT_BAD_ARGS 2
+
 /***
  * [[opt]]
  ***/
@@ -36,7 +38,6 @@ typedef void opt_custom_function(const char ** param);
 
 struct opt_section;
 struct opt_item {
-  const char letter;			// short-op
   const char * name;			// long-op
   void * ptr;				// where to save
   const char * help;			// description in --help
@@ -45,11 +46,12 @@ struct opt_item {
     int value;				// value for OPT_SWITCH
     const char * help2;			// second value for OPT_HELP2
     int (* call)(const char ** param);	// function to call for OPT_CALL
-    struct cf_user_type * utype;		// specification of the user-defined type
+    struct cf_user_type * utype;	// specification of the user-defined type
   } u;
-  short flags;
-  enum opt_class cls;
-  enum cf_type type;
+  const char letter;			// short-op
+  byte flags;
+  byte cls;				// enum opt_class
+  byte type;				// enum cf_type
 };
 
 struct opt_section {
@@ -62,8 +64,8 @@ struct opt_section {
  * Sub-items to be enclosed in OPT_ITEMS { } list
  * ----------------------------------------------
  *
- * OPT_SHOW_HELP declares --help and prints a line about that
- * OPT_HELP prints a line into help()
+ * OPT_HELP_OPTION declares --help and prints a line about that
+ * OPT_HELP prints a line into help
  * OPT_HELP2 prints two strings onto a line using the same tab structure as the option listing
  * OPT_BOOL declares boolean option with an auto-negation (--sth and --no-sth); may be changed by OPT_BOOL_SET_PREFIXES
  * OPT_STRING, OPT_UNS, OPT_INT declare simple string/uns/int option
@@ -78,13 +80,15 @@ struct opt_section {
  *
  ***/
 
-#define OPT_SHOW_HELP OPT_CALL(0, "help", opt_show_help_internal, OPT_NO_VALUE, "Show this help")
+#define OPT_HELP_OPTION OPT_CALL(0, "help", opt_show_help_internal, OPT_NO_VALUE, "Show this help")
 #define OPT_HELP(line) OPT_HELP2(line, NULL)
-#define OPT_HELP2(first, second) { .help = first, .cls = OPT_CL_HELP, .u.help2 = second }
+#define OPT_HELP2(first, second) { .help = first, .cls = OPT_CL_HELP, .u.help2 = second } // FIXME: remove this
 #define OPT_BOOL(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_BOOL, .type = CT_INT }
 #define OPT_STRING(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, char **), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_STRING }
-#define OPT_UNS(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, uns *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_INT }
+#define OPT_U64(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u64 *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_U64 }
 #define OPT_INT(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_INT }
+#define OPT_DOUBLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, double *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_DOUBLE }
+#define OPT_IP(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u32 *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_IP }
 #define OPT_SWITCH(shortopt, longopt, target, val, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .help = desc, .flags = fl, .cls = OPT_CL_SWITCH, .type = CT_LOOKUP, .u.value = val }
 #define OPT_CALL(shortopt, longopt, fn, fl, desc) { .letter = shortopt, .name = longopt, .ptr = NULL, .help = desc, .u.call = fn, .flags = fl, .cls = OPT_CL_CALL, .type = CT_USER }
 #define OPT_USER(shortopt, longopt, target, ttype, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .u.utype = &ttype, .flags = fl, .help = desc, .cls = OPT_CL_USER, .type = CT_USER }
@@ -159,17 +163,13 @@ static void opt_usage(void) {
 void opt_init(struct opt_section * options);
 
 /**
- * Parse all the arguments.
- * Returns the number of positional arguments and an array of them in @posargs.
+ * Positional argument handler to be given to opt_parse()
  **/
-int opt_parse(char ** argv, char *** posargs);
+typedef void opt_positional(const char * str);
 
 /**
- * Parse all the arguments until first positional argument is found.
- * Returns the position of that argument in argv.
- * On next call of this function, start from the next item in argv.
- * Iterate this function to get all the positional arguments.
+ * Parse all the arguments. Run the @callback for each of the positional argument.
  **/
-int opt_get(char ** argv);
+void opt_parse(char ** argv, opt_positional * callback);
 
 #endif
