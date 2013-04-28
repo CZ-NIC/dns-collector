@@ -112,7 +112,7 @@ static struct opt_item * opt_find_item_longopt_section(char * str, struct opt_se
       struct opt_item * out = opt_find_item_longopt_section(str, item->u.section);
       if (out) {
 	if (candidate)
-	  opt_failure("Ambiguos prefix %s: Found matching %s and %s.\n", str, candidate->name, item->name);
+	  opt_failure("Ambiguous prefix %s: Found matching %s and %s.\n", str, candidate->name, item->name);
 	else
 	  candidate = out;
       }
@@ -121,7 +121,7 @@ static struct opt_item * opt_find_item_longopt_section(char * str, struct opt_se
 	return item;
 
       if (candidate)
-	opt_failure("Ambiguos prefix %s: Found matching %s and %s.\n", str, candidate->name, item->name);
+	opt_failure("Ambiguous prefix %s: Found matching %s and %s.\n", str, candidate->name, item->name);
       else
 	candidate = item;
     }
