@@ -43,7 +43,8 @@ void opt_help_noexit_internal(struct opt_section * help) {
     
     if (item->letter) { // will write sth like "-x, --exclusive"
       linelen = strlen("-x, --") + strlen(item->name);
-    } else { // will write sth like "--exclusive"
+    }
+    else { // will write sth like "--exclusive"
       linelen = strlen("--") + strlen(item->name);
     }
 
@@ -51,7 +52,8 @@ void opt_help_noexit_internal(struct opt_section * help) {
 
     if (item->flags & OPT_REQUIRED_VALUE) {
       linelen += strlen("=value");
-    } else if (item->flags & OPT_MAYBE_VALUE) {
+    }
+    else if (item->flags & OPT_MAYBE_VALUE) {
       linelen += strlen("(=value)");
     }
 
@@ -76,77 +78,67 @@ void opt_help_noexit_internal(struct opt_section * help) {
 	fprintf(stderr, "\n");
       else
 	fprintf(stderr, "%s %s\n", spaces + strlen(item->help), item->u.help2);
-    } else if (item->cls == OPT_CL_SECTION) {
+    }
+    else if (item->cls == OPT_CL_SECTION) {
       opt_help_noexit_internal(item->u.section);
-    } else if (item->letter) {
+    }
+    else if (item->letter) {
       sprintf(buf, "-%c, --%s%s", item->letter, item->name, VAL(item));
       fprintf(stderr, "%s%s %s\n", buf, spaces + strlen(buf), item->help);
-    } else {
+    }
+    else {
       sprintf(buf, "--%s%s", item->name, VAL(item));
       fprintf(stderr, "%s%s %s\n", buf, spaces + strlen(buf), item->help);
     }
   }
 }
 
-void opt_init(struct opt_section * options) {
-  for (struct opt_item * item = options->opt; item->cls != OPT_CL_END; item++) {
-    if (item->cls == OPT_CL_SECTION)
-      opt_init(item->u.section);
-    else if (!(item->flags & OPT_VALUE_FLAGS)) {
-      if (item->cls == OPT_CL_CALL || item->cls == OPT_CL_USER) {
-	fprintf(stderr, "You MUST specify some of the value flags for the %c/%s item.\n", item->letter, item->name);
-	ASSERT(0);
-      } else
-	item->flags |= opt_default_value_flags[item->cls];
-    }
-  }
-  opt_section_root = options;
+struct opt_precomputed {
+  struct opt_precomputed_option {
+    struct opt_item * item;
+    short flags;
+    short count;
+  } ** opts;
+  struct opt_precomputed_option * shortopt[256];
+  short opt_count;
+};
+
+static struct opt_item * opt_find_item_shortopt(int chr, struct opt_precomputed * opts) {
+  return (opts->shortopt[chr] ? opts->shortopt[chr]->item : NULL);
 }
 
-static struct opt_item * opt_find_item_longopt_section(char * str, struct opt_section * options) {
+static struct opt_item * opt_find_item_longopt(char * str, struct opt_precomputed * pre) {
   uns len = strlen(str);
   struct opt_item * candidate = NULL;
 
-  for (struct opt_item * item = options->opt; item->cls != OPT_CL_END; item++) {
-    if (item->cls == OPT_CL_SECTION) {
-      struct opt_item * out = opt_find_item_longopt_section(str, item->u.section);
-      if (out) {
-	if (candidate)
-	  opt_failure("Ambiguous prefix %s: Found matching %s and %s.\n", str, candidate->name, item->name);
-	else
-	  candidate = out;
-      }
-    } else if (!strncmp(item->name, str, len)) {
-      if (strlen(item->name) == len)
-	return item;
+  for (int i=0; i<pre->opt_count; i++) {
+    if (!strncmp(pre->opts[i]->item->name, str, len)) {
+      if (strlen(pre->opts[i]->item->name) == len) {
+	if (pre->opts[i]->count++ && (pre->opts[i]->flags & OPT_SINGLE))
+	  opt_failure("Option %s appeared the second time.\n", pre->opts[i]->item->name);
 
+	return pre->opts[i]->item;
+      }
       if (candidate)
-	opt_failure("Ambiguous prefix %s: Found matching %s and %s.\n", str, candidate->name, item->name);
+	opt_failure("Ambiguous prefix %s: Found matching %s and %s.\n", str, candidate->name, pre->opts[i]->item->name);
       else
-	candidate = item;
+	candidate = pre->opts[i]->item;
     }
   }
 
   if (candidate)
     return candidate;
-  else {
-  }
-}
 
-static struct opt_item * opt_find_item_longopt(char * str) {
-  struct opt_item * out = opt_find_item_longopt_section(str, opt_section_root);
-  if (out == NULL)
-    opt_failure("Invalid argument: %s\n", str);
-  return out;
+  opt_failure("Invalid option %s.\n", str);
 }
 
 #define OPT_NAME (longopt ? stk_printf("--%s", item->name) : stk_printf("-%c", item->letter))
 static void opt_parse_value(struct opt_item * item, char * value, int longopt) {
   switch (item->cls) {
     case OPT_CL_BOOL:
-      if (!strcasecmp(value, "y") || !strcasecmp(value, "yes") || !strcasecmp(value, "true"))
+      if (!strcasecmp(value, "y") || !strcasecmp(value, "yes") || !strcasecmp(value, "true") || !strcasecmp(value, "1"))
 	*((int *) item->ptr) = 1;
-      else if (!strcasecmp(value, "n") || !strcasecmp(value, "no") || !strcasecmp(value, "false"))
+      else if (!strcasecmp(value, "n") || !strcasecmp(value, "no") || !strcasecmp(value, "false") || !strcasecmp(value, "0"))
 	*((int *) item->ptr) = 0;
       else
 	opt_failure("Boolean argument for %s has a strange value. Supported (case insensitive): y/n, yes/no, true/false.\n", OPT_NAME);
@@ -190,12 +182,13 @@ static void opt_parse_value(struct opt_item * item, char * value, int longopt) {
 	*((int *)item->ptr) = item->u.value;
       break;
     case OPT_CL_INC:
-      if (item->flags | OPT_DECREMENT)
+      if (item->flags & OPT_DECREMENT)
 	(*((int *)item->ptr))--;
       else
 	(*((int *)item->ptr))++;
     case OPT_CL_CALL:
-
+      item->u.call(item, value, item->ptr);
+      break;
     case OPT_CL_USER:
       {
 	char * e = NULL;
@@ -204,17 +197,19 @@ static void opt_parse_value(struct opt_item * item, char * value, int longopt) {
 	  opt_failure("User defined type value parsing failed for argument %s: %s\n", OPT_NAME, e);
 	break;
       }
+    default:
+      ASSERT(0);
   }
 }
 #undef OPT_NAME
 
-static int opt_longopt(char ** argv, int index) {
-  int eaten;
+static int opt_longopt(char ** argv, int index, struct opt_precomputed * pre) {
+  int eaten = 0;
   char * name_in = argv[index] + 2; // skipping the -- on the beginning
   uns pos = strchrnul(name_in, '=') - name_in;
-  struct opt_item * item = opt_find_item_longopt(strndupa(name_in, pos));
+  struct opt_item * item = opt_find_item_longopt(strndupa(name_in, pos), pre);
   char * value = NULL;
-  if (item->flags | OPT_REQUIRED_VALUE) {
+  if (item->flags & OPT_REQUIRED_VALUE) {
     if (pos < strlen(name_in))
       value = name_in + pos + 1;
     else {
@@ -222,7 +217,7 @@ static int opt_longopt(char ** argv, int index) {
       eaten++;
     }
   }
-  else if (item->flags | OPT_MAYBE_VALUE) {
+  else if (item->flags & OPT_MAYBE_VALUE) {
     if (pos < strlen(name_in))
       value = name_in + pos + 1;
   }
@@ -230,23 +225,129 @@ static int opt_longopt(char ** argv, int index) {
     if (pos < strlen(name_in))
       opt_failure("Argument %s must not have any value.", item->name);
   }
+  opt_parse_value(item, value, 1);
+  return eaten;
 }
 
-void opt_parse(char ** argv, opt_positional * callback) {
+static int opt_shortopt(char ** argv, int index, struct opt_precomputed * pre) {
+  int chr = 0;
+  struct opt_item * item;
+  while (argv[index][++chr] && (item = opt_find_item_shortopt(argv[index][chr], pre))) {
+    if (item->flags & OPT_NO_VALUE) {
+      opt_parse_value(item, NULL, 0);
+      continue;
+    }
+    if (chr == 1 && (item->flags & OPT_REQUIRED_VALUE)) {
+      if (argv[index][2]) {
+        opt_parse_value(item, argv[index] + 2, 0);
+	return 0;
+      }
+      else {
+	opt_parse_value(item, argv[index+1], 0);
+	return 1;
+      }
+    }
+    else if (chr == 1 && (item->flags & OPT_MAYBE_VALUE)) {
+      if (argv[index][2])
+        opt_parse_value(item, argv[index] + 2, 0);
+      else
+	opt_parse_value(item, NULL, 0);
+    }
+    else if (item->flags & (OPT_REQUIRED_VALUE | OPT_MAYBE_VALUE)) {
+      if (argv[index][chr+1] || (item->flags | OPT_MAYBE_VALUE))
+	opt_failure("Option -%c may or must have a value but found inside a bunch of short opts.", item->letter);
+      else {
+	opt_parse_value(item, argv[index+1], 0);
+	return 1;
+      }
+    }
+  }
+
+  if (argv[index][chr])
+    opt_failure("Unknown option -%c.", item->letter);
+  
+  return 0;
+}
+
+#define OPT_TRAVERSE_SECTIONS \
+  do { \
+    while (item->cls == OPT_CL_SECTION) { \
+      if (stk->next) \
+	stk = stk->next; \
+      else { \
+	struct opt_stack * new_stk = alloca(sizeof(*new_stk)); \
+	new_stk->prev = stk; \
+	stk->next = new_stk; \
+	stk = new_stk; \
+      } \
+      stk->this = item; \
+      item = item->u.section->opt; \
+    } \
+    if (item->cls == OPT_CL_END) { \
+      if (!stk) break; \
+      item = stk->this; \
+      stk = stk->prev; \
+      continue; \
+    } \
+  } while (0)
+
+void opt_parse(const struct opt_section * options, char ** argv, opt_positional * callback) {
+  struct opt_stack {
+    struct opt_item * this;
+    struct opt_stack * prev;
+    struct opt_stack * next;
+  } * stk = alloca(sizeof(*stk));
+  stk->this = NULL;
+  stk->prev = NULL;
+  stk->next = NULL;
+
+  struct opt_precomputed * pre = alloca(sizeof(*pre));
+
+  int count;
+
+  for (struct opt_item * item = options->opt; ; item++) {
+    OPT_TRAVERSE_SECTIONS;
+    if (item->letter || item->name)
+      count++;
+  }
+  
+  pre->opts = xmalloc(sizeof(*pre->opts) * count);
+  pre->opt_count = 0;
+
+  for (struct opt_item * item = options->opt; ; item++) {
+    OPT_TRAVERSE_SECTIONS;
+    if (item->letter || item->name) {
+      struct opt_precomputed_option * opt = xmalloc(sizeof(*opt));
+      opt->item = item;
+      opt->flags = item->flags;
+      opt->count = 0;
+      pre->opts[pre->opt_count++] = opt;
+      if (item->letter)
+	pre->shortopt[(int) item->letter] = opt;
+      if (!(opt->flags & OPT_VALUE_FLAGS) &&
+	  (item->cls == OPT_CL_CALL || item->cls == OPT_CL_USER)) {
+	fprintf(stderr, "You MUST specify some of the value flags for the %c/%s item.\n", item->letter, item->name);
+	ASSERT(0);
+      }
+      else
+	opt->flags |= opt_default_value_flags[item->cls];
+    }
+  }
 
   int force_positional = 0;
   for (int i=0;argv[i];i++) {
     if (argv[i][0] != '-' || force_positional) {
       callback(argv[i]);
-    } else {
+    }
+    else {
       if (argv[i][1] == '-') {
 	if (argv[i][2] == '\0')
 	  force_positional++;
 	else
-	  i += opt_longopt(argv, i);
+	  i += opt_longopt(argv, i, pre);
       }
       else if (argv[i][1])
-	i += opt_shortopt(argv, i);
+	i += opt_shortopt(argv, i, pre);
       else
 	callback(argv[i]);
     }
@@ -256,7 +357,7 @@ void opt_parse(char ** argv, opt_positional * callback) {
 #ifdef TEST
 #include <ucw/fastbuf.h>
 
-static int show_version(const char ** param UNUSED) {
+static void show_version(struct opt_item * opt UNUSED, const char * value UNUSED, void * data UNUSED) {
   printf("This is a simple tea boiling console v0.1.\n");
   exit(EXIT_SUCCESS);
 }
@@ -343,7 +444,7 @@ static struct opt_section help = {
     OPT_HELP(""),
     OPT_HELP("Options:"),
     OPT_HELP_OPTION,
-    OPT_CALL('V', "version", show_version, OPT_NO_VALUE, "Show the version"),
+    OPT_CALL('V', "version", show_version, NULL, OPT_NO_VALUE, "Show the version"),
     OPT_HELP(""),
     OPT_BOOL('e', "english-style", english, 0, "English style (with milk)"),
     OPT_INT('s', "sugar", sugar, OPT_REQUIRED_VALUE, "Amount of sugar (in teaspoons)"),
@@ -353,7 +454,7 @@ static struct opt_section help = {
     OPT_SWITCH('h', "hands", set, TEAPOT_HANDS, 0, "Use user's hands as a teapot (a bit dangerous)"),
     OPT_USER('t', "temperature", temperature, teapot_temperature_t, OPT_REQUIRED_VALUE,
 		  "Wanted final temperature of the tea to be served\n"
-	      "\t\tSupported scales: \tCelsius [60C], Fahrenheit [140F],"
+	      "\t\tSupported scales:\tCelsius [60C], Fahrenheit [140F],"
 	      "\t\t\tKelvin [350K], Rankine [600R] and Reaumur [50Re]"
 	      "\t\tOnly integer values allowed."),
     OPT_INC('v', "verbose", verbose, 0, "Verbose (the more -v, the more verbose)"),
@@ -367,20 +468,27 @@ static struct opt_section help = {
   }
 };
 
+#define MAX_TEA_COUNT 30
+static char * tea_list[MAX_TEA_COUNT];
+static int tea_num = 0;
+static void add_tea(const char * name) {
+  if (tea_num >= MAX_TEA_COUNT) {
+    fprintf(stderr, "Cannot boil more than %d teas.\n", MAX_TEA_COUNT);
+    exit(OPT_EXIT_BAD_ARGS);
+  }
+  tea_list[tea_num++] = strdup(name);
+}
+
 static void boil_tea(const char * name) {
   printf("Boiling a tea: %s\n", name);
 }
 
 int main(int argc, char ** argv)
 {
-  char ** teas;
-  int teas_num;
+  opt_parse(&help, argv, add_tea);
 
-  opt_init(&help);
-  opt_parse(argv, NULL);
-
-  for (int i=0; i<teas_num; i++)
-    boil_tea(teas[i]);
+  for (int i=0; i<tea_num; i++)
+    boil_tea(tea_list[i]);
 
   printf("Everything OK. Bye.\n");
 }
