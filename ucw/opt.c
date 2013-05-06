@@ -14,6 +14,7 @@
 #include <ucw/strtonum.h>
 
 #include <alloca.h>
+#include <math.h>
 
 static void opt_failure(const char * mesg, ...) FORMAT_CHECK(printf,1,2);
 static void opt_failure(const char * mesg, ...) {
@@ -159,6 +160,7 @@ void opt_help_noexit_internal(const struct opt_section * help) {
 struct opt_precomputed {
   struct opt_precomputed_option {
     struct opt_item * item;
+    const char * name;
     short flags;
     short count;
   } ** opts;
@@ -166,26 +168,41 @@ struct opt_precomputed {
   short opt_count;
 };
 
-static struct opt_item * opt_find_item_shortopt(int chr, struct opt_precomputed * opts) {
-  return (opts->shortopt[chr] ? opts->shortopt[chr]->item : NULL);
+static struct opt_precomputed_option * opt_find_item_shortopt(int chr, struct opt_precomputed * pre) {
+  struct opt_precomputed_option * candidate = pre->shortopt[chr];
+  if (candidate->count++ && (candidate->flags & OPT_SINGLE))
+    opt_failure("Option %s appeared the second time.", candidate->name);
+  return candidate;
 }
 
-static struct opt_item * opt_find_item_longopt(char * str, struct opt_precomputed * pre) {
+static struct opt_precomputed_option * opt_find_item_longopt(char * str, struct opt_precomputed * pre) {
   uns len = strlen(str);
-  struct opt_item * candidate = NULL;
+  struct opt_precomputed_option * candidate = NULL;
 
   for (int i=0; i<pre->opt_count; i++) {
-    if (!strncmp(pre->opts[i]->item->name, str, len)) {
-      if (strlen(pre->opts[i]->item->name) == len) {
+    if (!strncmp(pre->opts[i]->name, str, len)) {
+      if (strlen(pre->opts[i]->name) == len) {
 	if (pre->opts[i]->count++ && (pre->opts[i]->flags & OPT_SINGLE))
-	  opt_failure("Option %s appeared the second time.", pre->opts[i]->item->name);
+	  opt_failure("Option %s appeared the second time.", pre->opts[i]->name);
 
-	return pre->opts[i]->item;
+	return pre->opts[i];
       }
       if (candidate)
-	opt_failure("Ambiguous prefix %s: Found matching %s and %s.", str, candidate->name, pre->opts[i]->item->name);
+	opt_failure("Ambiguous prefix %s: Found matching %s and %s.", str, candidate->name, pre->opts[i]->name);
       else
-	candidate = pre->opts[i]->item;
+	candidate = pre->opts[i];
+    }
+    if (!strncmp("no-", str, 3) && !strncmp(pre->opts[i]->name, str+3, len-3)) {
+      if (strlen(pre->opts[i]->name) == len-3) {
+	if (pre->opts[i]->count++ && (pre->opts[i]->flags & OPT_SINGLE))
+	  opt_failure("Option %s appeared the second time.", pre->opts[i]->name);
+
+	return pre->opts[i];
+      }
+      if (candidate)
+	opt_failure("Ambiguous prefix %s: Found matching %s and %s.", str, candidate->name, pre->opts[i]->name);
+      else
+	candidate = pre->opts[i];
     }
   }
 
@@ -195,14 +212,15 @@ static struct opt_item * opt_find_item_longopt(char * str, struct opt_precompute
   opt_failure("Invalid option %s.", str);
 }
 
-#define OPT_NAME (longopt ? stk_printf("--%s", item->name) : stk_printf("-%c", item->letter))
-static void opt_parse_value(struct opt_item * item, char * value, int longopt) {
+#define OPT_NAME (longopt ? stk_printf("--%s", opt->name) : stk_printf("-%c", item->letter))
+static void opt_parse_value(struct opt_precomputed_option * opt, char * value, int longopt) {
+  struct opt_item * item = opt->item;
   switch (item->cls) {
     case OPT_CL_BOOL:
-      if (!strcasecmp(value, "y") || !strcasecmp(value, "yes") || !strcasecmp(value, "true") || !strcasecmp(value, "1"))
-	*((int *) item->ptr) = 1;
+      if (!value || !strcasecmp(value, "y") || !strcasecmp(value, "yes") || !strcasecmp(value, "true") || !strcasecmp(value, "1"))
+	*((int *) item->ptr) = 1 ^ (!!(opt->flags & OPT_NEGATIVE));
       else if (!strcasecmp(value, "n") || !strcasecmp(value, "no") || !strcasecmp(value, "false") || !strcasecmp(value, "0"))
-	*((int *) item->ptr) = 0;
+	*((int *) item->ptr) = 0 ^ (!!(opt->flags & OPT_NEGATIVE));
       else
 	opt_failure("Boolean argument for %s has a strange value. Supported (case insensitive): y/n, yes/no, true/false.", OPT_NAME);
       break;
@@ -211,27 +229,42 @@ static void opt_parse_value(struct opt_item * item, char * value, int longopt) {
 	char * e = NULL;
 	switch (item->type) {
 	  case CT_INT:
-	    e = cf_parse_int(value, item->ptr);
+	    if (!value)
+	      *((int*)item->ptr) = 0;
+	    else
+	      e = cf_parse_int(value, item->ptr);
 	    if (e)
 	      opt_failure("Integer value parsing failed for argument %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_U64:
-	    e = cf_parse_u64(value, item->ptr);
+	    if (!value)
+	      *((u64*)item->ptr) = 0;
+	    else
+	      e = cf_parse_u64(value, item->ptr);
 	    if (e)
 	      opt_failure("Unsigned 64-bit value parsing failed for argument %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_DOUBLE:
-	    e = cf_parse_double(value, item->ptr);
+	    if (!value)
+	      *((double*)item->ptr) = NAN;
+	    else
+	      e = cf_parse_double(value, item->ptr);
 	    if (e)
 	      opt_failure("Double value parsing failed for argument %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_IP:
-	    e = cf_parse_ip(value, item->ptr);
+	    if (!value)
+	      e = cf_parse_ip("0.0.0.0", item->ptr);
+	    else
+	      e = cf_parse_ip(value, item->ptr);
 	    if (e)
 	      opt_failure("IP parsing failed for argument %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_STRING:
-	    item->ptr = strdup(value);
+	    if (!value)
+	      item->ptr = NULL;
+	    else
+	      item->ptr = strdup(value);
 	    break;
 	  default:
 	    ASSERT(0);
@@ -245,7 +278,7 @@ static void opt_parse_value(struct opt_item * item, char * value, int longopt) {
 	*((int *)item->ptr) = item->u.value;
       break;
     case OPT_CL_INC:
-      if (item->flags & OPT_DECREMENT)
+      if (opt->flags & OPT_NEGATIVE)
 	(*((int *)item->ptr))--;
       else
 	(*((int *)item->ptr))++;
@@ -270,9 +303,12 @@ static int opt_longopt(char ** argv, int index, struct opt_precomputed * pre) {
   int eaten = 0;
   char * name_in = argv[index] + 2; // skipping the -- on the beginning
   uns pos = strchrnul(name_in, '=') - name_in;
-  struct opt_item * item = opt_find_item_longopt(strndupa(name_in, pos), pre);
+  struct opt_precomputed_option * opt = opt_find_item_longopt(strndupa(name_in, pos), pre);
   char * value = NULL;
-  if (item->flags & OPT_REQUIRED_VALUE) {
+
+  if (opt->item->cls == OPT_CL_BOOL && !strncmp(name_in, "no-", 3) && !strncmp(name_in+3, opt->item->name, pos-3))
+    value = "n";
+  else if (opt->flags & OPT_REQUIRED_VALUE) {
     if (pos < strlen(name_in))
       value = name_in + pos + 1;
     else {
@@ -280,47 +316,47 @@ static int opt_longopt(char ** argv, int index, struct opt_precomputed * pre) {
       eaten++;
     }
   }
-  else if (item->flags & OPT_MAYBE_VALUE) {
+  else if (opt->flags & OPT_MAYBE_VALUE) {
     if (pos < strlen(name_in))
       value = name_in + pos + 1;
   }
   else {
     if (pos < strlen(name_in))
-      opt_failure("Argument %s must not have any value.", item->name);
+      opt_failure("Argument %s must not have any value.", opt->name);
   }
-  opt_parse_value(item, value, 1);
+  opt_parse_value(opt, value, 1);
   return eaten;
 }
 
 static int opt_shortopt(char ** argv, int index, struct opt_precomputed * pre) {
   int chr = 0;
-  struct opt_item * item;
-  while (argv[index][++chr] && (item = opt_find_item_shortopt(argv[index][chr], pre))) {
-    if (item->flags & OPT_NO_VALUE) {
-      opt_parse_value(item, NULL, 0);
+  struct opt_precomputed_option * opt;
+  while (argv[index][++chr] && (opt = opt_find_item_shortopt(argv[index][chr], pre))) {
+    if (opt->flags & OPT_NO_VALUE) {
+      opt_parse_value(opt, NULL, 0);
       continue;
     }
-    if (chr == 1 && (item->flags & OPT_REQUIRED_VALUE)) {
+    if (chr == 1 && (opt->flags & OPT_REQUIRED_VALUE)) {
       if (argv[index][2]) {
-        opt_parse_value(item, argv[index] + 2, 0);
+        opt_parse_value(opt, argv[index] + 2, 0);
 	return 0;
       }
       else {
-	opt_parse_value(item, argv[index+1], 0);
+	opt_parse_value(opt, argv[index+1], 0);
 	return 1;
       }
     }
-    else if (chr == 1 && (item->flags & OPT_MAYBE_VALUE)) {
+    else if (chr == 1 && (opt->flags & OPT_MAYBE_VALUE)) {
       if (argv[index][2])
-        opt_parse_value(item, argv[index] + 2, 0);
+        opt_parse_value(opt, argv[index] + 2, 0);
       else
-	opt_parse_value(item, NULL, 0);
+	opt_parse_value(opt, NULL, 0);
     }
-    else if (item->flags & (OPT_REQUIRED_VALUE | OPT_MAYBE_VALUE)) {
-      if (argv[index][chr+1] || (item->flags | OPT_MAYBE_VALUE))
-	opt_failure("Option -%c may or must have a value but found inside a bunch of short opts.", item->letter);
+    else if (opt->flags & (OPT_REQUIRED_VALUE | OPT_MAYBE_VALUE)) {
+      if (argv[index][chr+1] || (opt->flags | OPT_MAYBE_VALUE))
+	opt_failure("Option -%c may or must have a value but found inside a bunch of short opts.", opt->item->letter);
       else {
-	opt_parse_value(item, argv[index+1], 0);
+	opt_parse_value(opt, argv[index+1], 0);
 	return 1;
       }
     }
@@ -373,6 +409,8 @@ void opt_parse(const struct opt_section * options, char ** argv, opt_positional 
     OPT_TRAVERSE_SECTIONS;
     if (item->letter || item->name)
       count++;
+    if (item->cls == OPT_CL_BOOL)
+      count++;
   }
   
   pre->opts = xmalloc(sizeof(*pre->opts) * count);
@@ -385,6 +423,7 @@ void opt_parse(const struct opt_section * options, char ** argv, opt_positional 
       opt->item = item;
       opt->flags = item->flags;
       opt->count = 0;
+      opt->name = item->name;
       pre->opts[pre->opt_count++] = opt;
       if (item->letter)
 	pre->shortopt[(int) item->letter] = opt;
@@ -441,6 +480,8 @@ static enum TEAPOT_TYPE {
   TEAPOT_UNDEFINED = -1
 } set = TEAPOT_UNDEFINED;
 
+static char * teapot_type_str[] = { "standard", "exclusive", "glass", "hands" };
+
 static int english = 0;
 static char * name = NULL;
 static int sugar = 0;
@@ -453,7 +494,7 @@ static int water_amount = 0;
 static const char * teapot_temperature_parser(char * in, void * ptr) {
   struct teapot_temperature * temp = ptr;
   const char * next;
-  const char * err = str_to_int(&temp->value, in, &next, 0);
+  const char * err = str_to_int(&temp->value, in, &next, 10);
   if (err)
     return err;
   if (!strcmp("C", next))
@@ -470,7 +511,7 @@ static const char * teapot_temperature_parser(char * in, void * ptr) {
     fprintf(stderr, "Unknown scale: %s\n", next);
     exit(OPT_EXIT_BAD_ARGS);
   }
-  return next + strlen(next);
+  return NULL;
 }
 
 static void teapot_temperature_dumper(struct fastbuf * fb, void * ptr) {
@@ -510,15 +551,15 @@ static struct opt_section help = {
     OPT_SWITCH('x', "exclusive-set", set, TEAPOT_EXCLUSIVE, 0, "\tExclusive teapot"),
     OPT_SWITCH('g', "glass-set", set, TEAPOT_GLASS, 0, "\tTransparent glass teapot"),
     OPT_SWITCH('h', "hands", set, TEAPOT_HANDS, 0, "\tUse user's hands as a teapot (a bit dangerous)"),
-    OPT_USER('t', "temperature", temperature, teapot_temperature_t, OPT_REQUIRED_VALUE,
+    OPT_USER('t', "temperature", temperature, teapot_temperature_t, OPT_REQUIRED_VALUE | OPT_REQUIRED,
 		  "<value>\tWanted final temperature of the tea to be served\n"
 	      "\t\tSupported scales:  Celsius [60C], Fahrenheit [140F],\n"
 	      "\t\t                   Kelvin [350K], Rankine [600R] and Reaumur [50Re]\n"
 	      "\t\tOnly integer values allowed."),
     OPT_INC('v', "verbose", verbose, 0, "\tVerbose (the more -v, the more verbose)"),
-    OPT_INC('q', "quiet", verbose, OPT_DECREMENT, "\tQuiet (the more -q, the more quiet)"),
+    OPT_INC('q', "quiet", verbose, OPT_NEGATIVE, "\tQuiet (the more -q, the more quiet)"),
     OPT_INT('b', "black-magic", black_magic, 0, "<strength>\tUse black magic to make the tea extraordinary delicious"),
-    OPT_BOOL('p', "pray", pray, 0, "\tPray before boiling"),
+    OPT_BOOL('p', "pray", pray, OPT_SINGLE, "\tPray before boiling"),
     OPT_HELP(""),
     OPT_HELP("Water options:"),
     OPT_SECTION(water_options),
@@ -543,8 +584,21 @@ static void boil_tea(const char * name) {
 
 int main(int argc, char ** argv)
 {
-  opt_parse(&help, argv, add_tea);
+  opt_parse(&help, argv+1, add_tea);
 
+  printf("Parsed values:\n");
+  printf("English style: %s\n", english ? "yes" : "no");
+  if (sugar)
+    printf("Sugar: %d teaspoons\n", sugar);
+  if (set != -1)
+    printf("Chosen teapot: %s\n", teapot_type_str[set]);
+  printf("Temperature: %d%s\n", temperature.value, temp_scale_str[temperature.scale]);
+  printf("Verbosity: %d\n", verbose);
+  if (black_magic)
+    printf("Black magic: %d\n", black_magic);
+  printf("Prayer: %s\n", pray ? "yes" : "no");
+  printf("Water amount: %d\n", water_amount);
+  printf("Gas: %s\n", with_gas ? "yes" : "no");
   for (int i=0; i<tea_num; i++)
     boil_tea(tea_list[i]);
 

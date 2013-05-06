@@ -101,7 +101,7 @@ struct opt_section {
 #define OPT_NO_VALUE	    0x4		/** Argument must have no value **/
 #define OPT_MAYBE_VALUE	    0x8		/** Argument may have a value **/
 #define OPT_VALUE_FLAGS	    (OPT_REQUIRED_VALUE | OPT_NO_VALUE | OPT_MAYBE_VALUE)
-#define OPT_DECREMENT	    0x10	/** Reversing the effect of OPT_INC **/
+#define OPT_NEGATIVE	    0x10	/** Reversing the effect of OPT_INC or saving @false into OPT_BOOL **/
 #define OPT_SINGLE	    0x20	/** Argument must appear at most once **/
 #define OPT_NO_HELP	    0x40	/** Omit this line from help **/
 #define OPT_LAST_ARG	    0x80	/** Stop processing argv after this line **/
