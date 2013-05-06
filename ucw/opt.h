@@ -42,7 +42,6 @@ struct opt_item {
   union opt_union {
     struct opt_section * section;	// subsection for OPT_SECTION
     int value;				// value for OPT_SWITCH
-    const char * help2;			// second value for OPT_HELP2
     void (* call)(struct opt_item * opt, const char * value, void * data);  // function to call for OPT_CALL
     struct cf_user_type * utype;	// specification of the user-defined type
   } u;
@@ -78,8 +77,7 @@ struct opt_section {
  ***/
 
 #define OPT_HELP_OPTION OPT_CALL(0, "help", opt_show_help_internal, NULL, OPT_NO_VALUE, "Show this help")
-#define OPT_HELP(line) OPT_HELP2(line, NULL)
-#define OPT_HELP2(first, second) { .help = first, .cls = OPT_CL_HELP, .u.help2 = second } // FIXME: remove this
+#define OPT_HELP(line) { .help = line, .cls = OPT_CL_HELP }
 #define OPT_BOOL(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_BOOL, .type = CT_INT }
 #define OPT_STRING(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, char **), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_STRING }
 #define OPT_U64(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u64 *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_U64 }
@@ -129,8 +127,8 @@ static uns opt_default_value_flags[] = {
   [OPT_CL_HELP] = 0
 };
 
-extern struct opt_section * opt_section_root;
-void opt_help_noexit_internal(struct opt_section * help);
+extern const struct opt_section * opt_section_root;
+void opt_help_noexit_internal(const struct opt_section * help);
 
 static void opt_help_noexit(void) {
   opt_help_noexit_internal(opt_section_root);

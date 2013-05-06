@@ -19,77 +19,140 @@ static void opt_failure(const char * mesg, ...) FORMAT_CHECK(printf,1,2);
 static void opt_failure(const char * mesg, ...) {
   va_list args;
   va_start(args, mesg);
-  stk_vprintf(mesg, args);
+  vfprintf(stderr, mesg, args);
+  fprintf(stderr, "\n");
   exit(OPT_EXIT_BAD_ARGS);
   va_end(args);
 }
 
-struct opt_section * opt_section_root;
+#define OPT_ADD_DEFAULT_ITEM_FLAGS(item, flags) \
+  do { \
+    if (!(flags & OPT_VALUE_FLAGS) && \
+	(item->cls == OPT_CL_CALL || item->cls == OPT_CL_USER)) { \
+      fprintf(stderr, "You MUST specify some of the value flags for the %c/%s item.\n", item->letter, item->name); \
+      ASSERT(0); \
+    } \
+    else if (!(flags & OPT_VALUE_FLAGS)) \
+      flags |= opt_default_value_flags[item->cls]; \
+  } while (0)
+#define OPT_ITEM_FLAGS(item) ((item->flags & OPT_VALUE_FLAGS) ? item->flags : item->flags | opt_default_value_flags[item->cls])
 
-void opt_help_noexit_internal(struct opt_section * help) {
-  uns first_column = 0;
+const struct opt_section * opt_section_root;
+
+#define FOREACHLINE(text) for (const char * begin = (text), * end = (text); (*end) && (end = strchrnul(begin, '\n')); begin = end+1)
+
+void opt_help_noexit_internal(const struct opt_section * help) {
+  int sections_cnt = 0;
+  int lines_cnt = 0;
 
   for (struct opt_item * item = help->opt; item->cls != OPT_CL_END; item++) {
     if (item->flags & OPT_NO_HELP) continue;
-    if (item->cls == OPT_CL_HELP && item->u.help2 == NULL) continue;
-    if (item->cls == OPT_CL_SECTION) continue;
-    
-    uns linelen = 0;
-    if (item->cls == OPT_CL_HELP) { // two-column help line
-      if (first_column < strlen(item->help))
-	first_column = strlen(item->help);
+    if (item->cls == OPT_CL_SECTION) {
+      sections_cnt++;
       continue;
     }
-    
-    if (item->letter) { // will write sth like "-x, --exclusive"
-      linelen = strlen("-x, --") + strlen(item->name);
+    if (!*(item->help)) {
+      lines_cnt++;
+      continue;
     }
-    else { // will write sth like "--exclusive"
-      linelen = strlen("--") + strlen(item->name);
-    }
-
-    ASSERT(item->flags & OPT_VALUE_FLAGS);
-
-    if (item->flags & OPT_REQUIRED_VALUE) {
-      linelen += strlen("=value");
-    }
-    else if (item->flags & OPT_MAYBE_VALUE) {
-      linelen += strlen("(=value)");
-    }
-
-    if (linelen > first_column)
-      first_column = linelen;
+    FOREACHLINE(item->help)
+      lines_cnt++;
   }
 
-  char * spaces = alloca(first_column + 1);
-  char * buf = alloca(first_column + 1);
-  for (uns i=0;i<first_column;i++)
-    spaces[i] = ' ';
+  struct opt_sectlist {
+    int pos;
+    struct opt_section * sect;
+  } sections[sections_cnt];
+  int s = 0;
 
-  spaces[first_column] = 0;
+  const char *lines[lines_cnt][3];
+  memset(lines, 0, sizeof(lines));
+  int line = 0;
 
-#define VAL(it) ((it->flags & OPT_REQUIRED_VALUE) ? "=value" : ((it->flags & OPT_NO_VALUE) ? "" : "(=value)"))
+  int linelengths[3] = { -1, -1, -1 };
+
   for (struct opt_item * item = help->opt; item->cls != OPT_CL_END; item++) {
     if (item->flags & OPT_NO_HELP) continue;
-    
+
     if (item->cls == OPT_CL_HELP) {
-      fprintf(stderr, "%s", item->help);
-      if (item->u.help2 == NULL)
-	fprintf(stderr, "\n");
-      else
-	fprintf(stderr, "%s %s\n", spaces + strlen(item->help), item->u.help2);
+      if (!*(item->help)) {
+	line++;
+	continue;
+      }
+#define SPLITLINES(text) do { \
+      FOREACHLINE(text) { \
+	int cell = 0; \
+	for (const char * b = begin, * e = begin; (e < end) && (e = strchrnul(b, '\t')) && (e > end ? (e = end) : end); b = e+1) { \
+	  lines[line][cell] = b; \
+	  if (cell >= 2) \
+	    break; \
+	  else \
+	    if (*e == '\t' && linelengths[cell] < (e - b)) \
+	      linelengths[cell] = e-b; \
+	  cell++; \
+	} \
+	line++; \
+      } } while (0)
+      SPLITLINES(item->help);
+      continue;
     }
-    else if (item->cls == OPT_CL_SECTION) {
-      opt_help_noexit_internal(item->u.section);
+
+    if (item->cls == OPT_CL_SECTION) {
+      sections[s++] = (struct opt_sectlist) { .pos = line, .sect = item->u.section };
+      continue;
     }
-    else if (item->letter) {
-      sprintf(buf, "-%c, --%s%s", item->letter, item->name, VAL(item));
-      fprintf(stderr, "%s%s %s\n", buf, spaces + strlen(buf), item->help);
+
+    uns valoff = strchrnul(item->help, '\t') - item->help;
+    uns eol = strchrnul(item->help, '\n') - item->help;
+    if (valoff > eol)
+      valoff = eol;
+#define VAL(it) ((OPT_ITEM_FLAGS(it) & OPT_REQUIRED_VALUE) ? stk_printf("=%.*s", valoff, item->help)  : ((OPT_ITEM_FLAGS(it) & OPT_NO_VALUE) ? "" : stk_printf("(=%.*s)", valoff, item->help)))
+    if (item->name) {
+      lines[line][1] = stk_printf("--%s%s", item->name, VAL(item));
+      if (linelengths[1] < (int) strlen(lines[line][1]))
+	linelengths[1] = strlen(lines[line][1]);
+      lines[line][0] = "";
+      if (linelengths[0] < 0)
+	linelengths[0] = 0;
     }
-    else {
-      sprintf(buf, "--%s%s", item->name, VAL(item));
-      fprintf(stderr, "%s%s %s\n", buf, spaces + strlen(buf), item->help);
+    if (item->letter) {
+      lines[line][0] = stk_printf("-%c,", item->letter);
+      if (linelengths[0] < (int) strlen(lines[line][0]))
+	linelengths[0] = strlen(lines[line][0]);
     }
+#undef VAL
+
+    if (eol > valoff) {
+      lines[line][2] = item->help + valoff + 1;
+    }
+
+    line++;
+
+    if (*(item->help + eol))
+      SPLITLINES(item->help + eol + 1);
+  }
+#undef SPLITLINES
+
+  s = 0;
+#define FIELD(k) linelengths[k], MIN(strchrnul(lines[i][k], '\t')-lines[i][k],strchrnul(lines[i][k], '\n')-lines[i][k]), lines[i][k]
+#define LASTFIELD(k) MIN(strchrnul(lines[i][k], '\t')-lines[i][k],strchrnul(lines[i][k], '\n')-lines[i][k]), lines[i][k]
+  for (int i=0;i<line;i++) {
+    while (s < sections_cnt && sections[s].pos == i) {
+      opt_help_noexit_internal(sections[s].sect);
+      s++;
+    }
+    if (lines[i][0] == NULL)
+      printf("\n");
+    else if (linelengths[0] == -1 || lines[i][1] == NULL)
+      printf("%.*s\n", LASTFIELD(0));
+    else if (linelengths[1] == -1 || lines[i][2] == NULL)
+      printf("%-*.*s  %.*s\n", FIELD(0), LASTFIELD(1));
+    else
+      printf("%-*.*s  %-*.*s  %.*s\n", FIELD(0), FIELD(1), LASTFIELD(2));
+  }
+  while (s < sections_cnt && sections[s].pos == line) {
+    opt_help_noexit_internal(sections[s].sect);
+    s++;
   }
 }
 
@@ -115,12 +178,12 @@ static struct opt_item * opt_find_item_longopt(char * str, struct opt_precompute
     if (!strncmp(pre->opts[i]->item->name, str, len)) {
       if (strlen(pre->opts[i]->item->name) == len) {
 	if (pre->opts[i]->count++ && (pre->opts[i]->flags & OPT_SINGLE))
-	  opt_failure("Option %s appeared the second time.\n", pre->opts[i]->item->name);
+	  opt_failure("Option %s appeared the second time.", pre->opts[i]->item->name);
 
 	return pre->opts[i]->item;
       }
       if (candidate)
-	opt_failure("Ambiguous prefix %s: Found matching %s and %s.\n", str, candidate->name, pre->opts[i]->item->name);
+	opt_failure("Ambiguous prefix %s: Found matching %s and %s.", str, candidate->name, pre->opts[i]->item->name);
       else
 	candidate = pre->opts[i]->item;
     }
@@ -129,7 +192,7 @@ static struct opt_item * opt_find_item_longopt(char * str, struct opt_precompute
   if (candidate)
     return candidate;
 
-  opt_failure("Invalid option %s.\n", str);
+  opt_failure("Invalid option %s.", str);
 }
 
 #define OPT_NAME (longopt ? stk_printf("--%s", item->name) : stk_printf("-%c", item->letter))
@@ -141,7 +204,7 @@ static void opt_parse_value(struct opt_item * item, char * value, int longopt) {
       else if (!strcasecmp(value, "n") || !strcasecmp(value, "no") || !strcasecmp(value, "false") || !strcasecmp(value, "0"))
 	*((int *) item->ptr) = 0;
       else
-	opt_failure("Boolean argument for %s has a strange value. Supported (case insensitive): y/n, yes/no, true/false.\n", OPT_NAME);
+	opt_failure("Boolean argument for %s has a strange value. Supported (case insensitive): y/n, yes/no, true/false.", OPT_NAME);
       break;
     case OPT_CL_STATIC:
       {
@@ -150,22 +213,22 @@ static void opt_parse_value(struct opt_item * item, char * value, int longopt) {
 	  case CT_INT:
 	    e = cf_parse_int(value, item->ptr);
 	    if (e)
-	      opt_failure("Integer value parsing failed for argument %s: %s\n", OPT_NAME, e);
+	      opt_failure("Integer value parsing failed for argument %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_U64:
 	    e = cf_parse_u64(value, item->ptr);
 	    if (e)
-	      opt_failure("Unsigned 64-bit value parsing failed for argument %s: %s\n", OPT_NAME, e);
+	      opt_failure("Unsigned 64-bit value parsing failed for argument %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_DOUBLE:
 	    e = cf_parse_double(value, item->ptr);
 	    if (e)
-	      opt_failure("Double value parsing failed for argument %s: %s\n", OPT_NAME, e);
+	      opt_failure("Double value parsing failed for argument %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_IP:
 	    e = cf_parse_ip(value, item->ptr);
 	    if (e)
-	      opt_failure("IP parsing failed for argument %s: %s\n", OPT_NAME, e);
+	      opt_failure("IP parsing failed for argument %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_STRING:
 	    item->ptr = strdup(value);
@@ -194,7 +257,7 @@ static void opt_parse_value(struct opt_item * item, char * value, int longopt) {
 	char * e = NULL;
 	e = item->u.utype->parser(value, item->ptr);
 	if (e)
-	  opt_failure("User defined type value parsing failed for argument %s: %s\n", OPT_NAME, e);
+	  opt_failure("User defined type value parsing failed for argument %s: %s", OPT_NAME, e);
 	break;
       }
     default:
@@ -264,13 +327,12 @@ static int opt_shortopt(char ** argv, int index, struct opt_precomputed * pre) {
   }
 
   if (argv[index][chr])
-    opt_failure("Unknown option -%c.", item->letter);
+    opt_failure("Unknown option -%c.", argv[index][chr]);
   
   return 0;
 }
 
 #define OPT_TRAVERSE_SECTIONS \
-  do { \
     while (item->cls == OPT_CL_SECTION) { \
       if (stk->next) \
 	stk = stk->next; \
@@ -284,14 +346,15 @@ static int opt_shortopt(char ** argv, int index, struct opt_precomputed * pre) {
       item = item->u.section->opt; \
     } \
     if (item->cls == OPT_CL_END) { \
-      if (!stk) break; \
+      if (!stk->prev) break; \
       item = stk->this; \
       stk = stk->prev; \
       continue; \
-    } \
-  } while (0)
+    }
 
 void opt_parse(const struct opt_section * options, char ** argv, opt_positional * callback) {
+  opt_section_root = options;
+
   struct opt_stack {
     struct opt_item * this;
     struct opt_stack * prev;
@@ -302,8 +365,9 @@ void opt_parse(const struct opt_section * options, char ** argv, opt_positional 
   stk->next = NULL;
 
   struct opt_precomputed * pre = alloca(sizeof(*pre));
+  memset(pre, 0, sizeof (*pre));
 
-  int count;
+  int count = 0;
 
   for (struct opt_item * item = options->opt; ; item++) {
     OPT_TRAVERSE_SECTIONS;
@@ -324,13 +388,7 @@ void opt_parse(const struct opt_section * options, char ** argv, opt_positional 
       pre->opts[pre->opt_count++] = opt;
       if (item->letter)
 	pre->shortopt[(int) item->letter] = opt;
-      if (!(opt->flags & OPT_VALUE_FLAGS) &&
-	  (item->cls == OPT_CL_CALL || item->cls == OPT_CL_USER)) {
-	fprintf(stderr, "You MUST specify some of the value flags for the %c/%s item.\n", item->letter, item->name);
-	ASSERT(0);
-      }
-      else
-	opt->flags |= opt_default_value_flags[item->cls];
+      OPT_ADD_DEFAULT_ITEM_FLAGS(item, opt->flags);
     }
   }
 
@@ -429,8 +487,8 @@ static struct cf_user_type teapot_temperature_t = {
 
 static struct opt_section water_options = {
   OPT_ITEMS {
-    OPT_INT('w', "water", water_amount, OPT_REQUIRED | OPT_REQUIRED_VALUE, "Amount of water (in mls)"),
-    OPT_BOOL('G', "with-gas", with_gas, OPT_NO_VALUE, "Use water with gas"),
+    OPT_INT('w', "water", water_amount, OPT_REQUIRED | OPT_REQUIRED_VALUE, "<volume>\tAmount of water (in mls)"),
+    OPT_BOOL('G', "with-gas", with_gas, OPT_NO_VALUE, "\tUse water with gas"),
     OPT_END
   }
 };
@@ -444,23 +502,23 @@ static struct opt_section help = {
     OPT_HELP(""),
     OPT_HELP("Options:"),
     OPT_HELP_OPTION,
-    OPT_CALL('V', "version", show_version, NULL, OPT_NO_VALUE, "Show the version"),
+    OPT_CALL('V', "version", show_version, NULL, OPT_NO_VALUE, "\tShow the version"),
     OPT_HELP(""),
-    OPT_BOOL('e', "english-style", english, 0, "English style (with milk)"),
-    OPT_INT('s', "sugar", sugar, OPT_REQUIRED_VALUE, "Amount of sugar (in teaspoons)"),
-    OPT_SWITCH(0, "standard-set", set, TEAPOT_STANDARD, 0, "Standard teapot"),
-    OPT_SWITCH('x', "exclusive-set", set, TEAPOT_EXCLUSIVE, 0, "Exclusive teapot"),
-    OPT_SWITCH('g', "glass-set", set, TEAPOT_GLASS, 0, "Transparent glass teapot"),
-    OPT_SWITCH('h', "hands", set, TEAPOT_HANDS, 0, "Use user's hands as a teapot (a bit dangerous)"),
+    OPT_BOOL('e', "english-style", english, 0, "\tEnglish style (with milk)"),
+    OPT_INT('s', "sugar", sugar, OPT_REQUIRED_VALUE, "<spoons>\tAmount of sugar (in teaspoons)"),
+    OPT_SWITCH(0, "standard-set", set, TEAPOT_STANDARD, 0, "\tStandard teapot"),
+    OPT_SWITCH('x', "exclusive-set", set, TEAPOT_EXCLUSIVE, 0, "\tExclusive teapot"),
+    OPT_SWITCH('g', "glass-set", set, TEAPOT_GLASS, 0, "\tTransparent glass teapot"),
+    OPT_SWITCH('h', "hands", set, TEAPOT_HANDS, 0, "\tUse user's hands as a teapot (a bit dangerous)"),
     OPT_USER('t', "temperature", temperature, teapot_temperature_t, OPT_REQUIRED_VALUE,
-		  "Wanted final temperature of the tea to be served\n"
-	      "\t\tSupported scales:\tCelsius [60C], Fahrenheit [140F],"
-	      "\t\t\tKelvin [350K], Rankine [600R] and Reaumur [50Re]"
+		  "<value>\tWanted final temperature of the tea to be served\n"
+	      "\t\tSupported scales:  Celsius [60C], Fahrenheit [140F],\n"
+	      "\t\t                   Kelvin [350K], Rankine [600R] and Reaumur [50Re]\n"
 	      "\t\tOnly integer values allowed."),
-    OPT_INC('v', "verbose", verbose, 0, "Verbose (the more -v, the more verbose)"),
-    OPT_INC('q', "quiet", verbose, OPT_DECREMENT, "Quiet (the more -q, the more quiet)"),
-    OPT_INT('b', "black-magic", black_magic, 0, "Use black magic to make the tea extraordinary delicious"),
-    OPT_BOOL('p', "pray", pray, 0, "Pray before boiling"),
+    OPT_INC('v', "verbose", verbose, 0, "\tVerbose (the more -v, the more verbose)"),
+    OPT_INC('q', "quiet", verbose, OPT_DECREMENT, "\tQuiet (the more -q, the more quiet)"),
+    OPT_INT('b', "black-magic", black_magic, 0, "<strength>\tUse black magic to make the tea extraordinary delicious"),
+    OPT_BOOL('p', "pray", pray, 0, "\tPray before boiling"),
     OPT_HELP(""),
     OPT_HELP("Water options:"),
     OPT_SECTION(water_options),
