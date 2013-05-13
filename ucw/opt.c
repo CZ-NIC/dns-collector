@@ -313,6 +313,8 @@ static int opt_longopt(char ** argv, int index, struct opt_precomputed * pre) {
       value = name_in + pos + 1;
     else {
       value = argv[index+1];
+      if (!value)
+	opt_failure("Argument --%s must have a value but nothing supplied.", opt->name);
       eaten++;
     }
   }
@@ -322,7 +324,7 @@ static int opt_longopt(char ** argv, int index, struct opt_precomputed * pre) {
   }
   else {
     if (pos < strlen(name_in))
-      opt_failure("Argument %s must not have any value.", opt->name);
+      opt_failure("Argument --%s must not have any value.", opt->name);
   }
   opt_parse_value(opt, value, 1);
   return eaten;
@@ -336,29 +338,26 @@ static int opt_shortopt(char ** argv, int index, struct opt_precomputed * pre) {
       opt_parse_value(opt, NULL, 0);
       continue;
     }
-    if (chr == 1 && (opt->flags & OPT_REQUIRED_VALUE)) {
-      if (argv[index][2]) {
+    else if (opt->flags & OPT_REQUIRED_VALUE) {
+      if (chr == 1 && argv[index][2])
         opt_parse_value(opt, argv[index] + 2, 0);
-	return 0;
-      }
+      else if (argv[index][chr+1])
+	opt_failure("Option -%c must have a value but found inside a bunch of short opts.", opt->item->letter);
+      else if (!argv[index+1])
+	opt_failure("Option -%c must have a value but nothing supplied.", opt->item->letter);
       else {
 	opt_parse_value(opt, argv[index+1], 0);
 	return 1;
       }
     }
-    else if (chr == 1 && (opt->flags & OPT_MAYBE_VALUE)) {
-      if (argv[index][2])
+    else if (opt->flags & OPT_MAYBE_VALUE) {
+      if (chr == 1 && argv[index][2])
         opt_parse_value(opt, argv[index] + 2, 0);
       else
 	opt_parse_value(opt, NULL, 0);
     }
-    else if (opt->flags & (OPT_REQUIRED_VALUE | OPT_MAYBE_VALUE)) {
-      if (argv[index][chr+1] || (opt->flags | OPT_MAYBE_VALUE))
-	opt_failure("Option -%c may or must have a value but found inside a bunch of short opts.", opt->item->letter);
-      else {
-	opt_parse_value(opt, argv[index+1], 0);
-	return 1;
-      }
+    else {
+      ASSERT(0);
     }
   }
 
