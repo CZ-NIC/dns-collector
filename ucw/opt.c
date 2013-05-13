@@ -264,7 +264,7 @@ static void opt_parse_value(struct opt_precomputed_option * opt, char * value, i
 	    if (!value)
 	      item->ptr = NULL;
 	    else
-	      item->ptr = strdup(value);
+	      item->ptr = xstrdup(value);
 	    break;
 	  default:
 	    ASSERT(0);
@@ -574,7 +574,7 @@ static void add_tea(const char * name) {
     fprintf(stderr, "Cannot boil more than %d teas.\n", MAX_TEA_COUNT);
     exit(OPT_EXIT_BAD_ARGS);
   }
-  tea_list[tea_num++] = strdup(name);
+  tea_list[tea_num++] = xstrdup(name);
 }
 
 static void boil_tea(const char * name) {
