@@ -37,6 +37,7 @@ enum opt_class {
 struct opt_section;
 struct opt_item {
   const char * name;			// long-op
+  int letter;				// short-op
   void * ptr;				// where to save
   const char * help;			// description in --help
   union opt_union {
@@ -45,8 +46,7 @@ struct opt_item {
     void (* call)(struct opt_item * opt, const char * value, void * data);  // function to call for OPT_CALL
     struct cf_user_type * utype;	// specification of the user-defined type
   } u;
-  const char letter;			// short-op
-  byte flags;
+  u16 flags;
   byte cls;				// enum opt_class
   byte type;				// enum cf_type
 };
@@ -92,6 +92,22 @@ struct opt_section {
 #define OPT_END { .cls = OPT_CL_END }
 
 /***
+ * Predefined shortopt arguments
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *
+ * for the preceeding calls if positional args wanted.
+ * Arguments are processed in the order of the numbers given to them. There must be first
+ * the args with OPT_REQUIRED (see lower) and after them the args without OPT_REQUIRED, no mixing.
+ * You may define a catch-all option as OPT_POSITIONAL_TAIL. After this, no positional arg is allowed.
+ * You may shuffle the positional arguments in any way in the opt sections but the numbering must obey
+ * the rules given here.
+ ***/
+
+#define OPT_POSITIONAL(n)   (OPT_POSITIONAL_TAIL+(n))	  
+#define OPT_POSITIONAL_TAIL 256
+
+
+/***
  * Flags for the preceeding calls
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  ***/
@@ -128,39 +144,24 @@ static uns opt_default_value_flags[] = {
 };
 
 extern const struct opt_section * opt_section_root;
-void opt_help_noexit_internal(const struct opt_section * help);
+void opt_help_internal(const struct opt_section * help);
 
-static void opt_help_noexit(void) {
-  opt_help_noexit_internal(opt_section_root);
+static void opt_help(void) {
+  opt_help_internal(opt_section_root);
 }
 
-static void opt_usage_noexit(void) {
+static void opt_usage(void) {
   fprintf(stderr, "Run with argument --help for more information.\n");
 }
 
 static void opt_show_help_internal(struct opt_item * opt UNUSED, const char * value UNUSED, void * data UNUSED) {
-  opt_help_noexit();
+  opt_help();
   exit(0);
 }
-
-static void opt_help(void) {
-  opt_help_noexit();
-  exit(1);
-}
-
-static void opt_usage(void) {
-  opt_usage_noexit();
-  exit(1);
-}
-
-/**
- * Positional argument handler to be given to opt_parse()
- **/
-typedef void opt_positional(const char * str);
 
 /**
  * Parse all the arguments. Run the @callback for each of the positional argument.
  **/
-void opt_parse(const struct opt_section * options, char ** argv, opt_positional * callback);
+void opt_parse(const struct opt_section * options, char ** argv);
 
 #endif

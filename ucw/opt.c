@@ -16,18 +16,24 @@
 #include <alloca.h>
 #include <math.h>
 
-static void opt_failure(const char * mesg, ...) FORMAT_CHECK(printf,1,2);
+static void opt_failure(const char * mesg, ...) FORMAT_CHECK(printf,1,2) NONRET;
 static void opt_failure(const char * mesg, ...) {
   va_list args;
   va_start(args, mesg);
   vfprintf(stderr, mesg, args);
   fprintf(stderr, "\n");
+  opt_usage();
   exit(OPT_EXIT_BAD_ARGS);
   va_end(args);
 }
 
 #define OPT_ADD_DEFAULT_ITEM_FLAGS(item, flags) \
   do { \
+    if (item->letter >= 256) { \
+      if (flags & OPT_VALUE_FLAGS) \
+	flags &= ~OPT_VALUE_FLAGS; \
+      flags |= OPT_REQUIRED_VALUE; \
+    } \
     if (!(flags & OPT_VALUE_FLAGS) && \
 	(item->cls == OPT_CL_CALL || item->cls == OPT_CL_USER)) { \
       fprintf(stderr, "You MUST specify some of the value flags for the %c/%s item.\n", item->letter, item->name); \
@@ -42,7 +48,7 @@ const struct opt_section * opt_section_root;
 
 #define FOREACHLINE(text) for (const char * begin = (text), * end = (text); (*end) && (end = strchrnul(begin, '\n')); begin = end+1)
 
-void opt_help_noexit_internal(const struct opt_section * help) {
+void opt_help_internal(const struct opt_section * help) {
   int sections_cnt = 0;
   int lines_cnt = 0;
 
@@ -139,7 +145,7 @@ void opt_help_noexit_internal(const struct opt_section * help) {
 #define LASTFIELD(k) MIN(strchrnul(lines[i][k], '\t')-lines[i][k],strchrnul(lines[i][k], '\n')-lines[i][k]), lines[i][k]
   for (int i=0;i<line;i++) {
     while (s < sections_cnt && sections[s].pos == i) {
-      opt_help_noexit_internal(sections[s].sect);
+      opt_help_internal(sections[s].sect);
       s++;
     }
     if (lines[i][0] == NULL)
@@ -152,10 +158,13 @@ void opt_help_noexit_internal(const struct opt_section * help) {
       printf("%-*.*s  %-*.*s  %.*s\n", FIELD(0), FIELD(1), LASTFIELD(2));
   }
   while (s < sections_cnt && sections[s].pos == line) {
-    opt_help_noexit_internal(sections[s].sect);
+    opt_help_internal(sections[s].sect);
     s++;
   }
 }
+
+static int opt_positional_max = 0;
+static int opt_positional_count = 0;
 
 struct opt_precomputed {
   struct opt_precomputed_option {
@@ -164,7 +173,7 @@ struct opt_precomputed {
     short flags;
     short count;
   } ** opts;
-  struct opt_precomputed_option * shortopt[256];
+  struct opt_precomputed_option ** shortopt;
   short opt_count;
 };
 
@@ -212,7 +221,7 @@ static struct opt_precomputed_option * opt_find_item_longopt(char * str, struct 
   opt_failure("Invalid option %s.", str);
 }
 
-#define OPT_NAME (longopt ? stk_printf("--%s", opt->name) : stk_printf("-%c", item->letter))
+#define OPT_NAME (longopt == 2 ? stk_printf("positional arg #%d", opt_positional_count) : (longopt == 1 ? stk_printf("--%s", opt->name) : stk_printf("-%c", item->letter)))
 static void opt_parse_value(struct opt_precomputed_option * opt, char * value, int longopt) {
   struct opt_item * item = opt->item;
   switch (item->cls) {
@@ -234,7 +243,7 @@ static void opt_parse_value(struct opt_precomputed_option * opt, char * value, i
 	    else
 	      e = cf_parse_int(value, item->ptr);
 	    if (e)
-	      opt_failure("Integer value parsing failed for argument %s: %s", OPT_NAME, e);
+	      opt_failure("Integer value parsing failed for %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_U64:
 	    if (!value)
@@ -242,7 +251,7 @@ static void opt_parse_value(struct opt_precomputed_option * opt, char * value, i
 	    else
 	      e = cf_parse_u64(value, item->ptr);
 	    if (e)
-	      opt_failure("Unsigned 64-bit value parsing failed for argument %s: %s", OPT_NAME, e);
+	      opt_failure("Unsigned 64-bit value parsing failed for %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_DOUBLE:
 	    if (!value)
@@ -250,7 +259,7 @@ static void opt_parse_value(struct opt_precomputed_option * opt, char * value, i
 	    else
 	      e = cf_parse_double(value, item->ptr);
 	    if (e)
-	      opt_failure("Double value parsing failed for argument %s: %s", OPT_NAME, e);
+	      opt_failure("Double value parsing failed for %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_IP:
 	    if (!value)
@@ -258,13 +267,13 @@ static void opt_parse_value(struct opt_precomputed_option * opt, char * value, i
 	    else
 	      e = cf_parse_ip(value, item->ptr);
 	    if (e)
-	      opt_failure("IP parsing failed for argument %s: %s", OPT_NAME, e);
+	      opt_failure("IP parsing failed for %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_STRING:
 	    if (!value)
 	      item->ptr = NULL;
 	    else
-	      item->ptr = xstrdup(value);
+	      *((const char **) (item->ptr)) = xstrdup(value);
 	    break;
 	  default:
 	    ASSERT(0);
@@ -290,7 +299,7 @@ static void opt_parse_value(struct opt_precomputed_option * opt, char * value, i
 	char * e = NULL;
 	e = item->u.utype->parser(value, item->ptr);
 	if (e)
-	  opt_failure("User defined type value parsing failed for argument %s: %s", OPT_NAME, e);
+	  opt_failure("User defined type value parsing failed for %s: %s", OPT_NAME, e);
 	break;
       }
     default:
@@ -367,6 +376,17 @@ static int opt_shortopt(char ** argv, int index, struct opt_precomputed * pre) {
   return 0;
 }
 
+static void opt_positional(char * value, struct opt_precomputed * pre) {
+  opt_positional_count++;
+  struct opt_precomputed_option * opt = opt_find_item_shortopt((opt_positional_count > opt_positional_max ? 256 : opt_positional_count + 256), pre);
+  if (!opt) {
+    ASSERT(opt_positional_count > opt_positional_max);
+    opt_failure("Too many positional args.");
+  }
+
+  opt_parse_value(opt, value, 2);
+}
+
 #define OPT_TRAVERSE_SECTIONS \
     while (item->cls == OPT_CL_SECTION) { \
       if (stk->next) \
@@ -387,7 +407,7 @@ static int opt_shortopt(char ** argv, int index, struct opt_precomputed * pre) {
       continue; \
     }
 
-void opt_parse(const struct opt_section * options, char ** argv, opt_positional * callback) {
+void opt_parse(const struct opt_section * options, char ** argv) {
   opt_section_root = options;
 
   struct opt_stack {
@@ -410,9 +430,14 @@ void opt_parse(const struct opt_section * options, char ** argv, opt_positional 
       count++;
     if (item->cls == OPT_CL_BOOL)
       count++;
+    if (item->letter > 256)
+      opt_positional_max++;
   }
   
-  pre->opts = xmalloc(sizeof(*pre->opts) * count);
+  pre->opts = alloca(sizeof(*pre->opts) * count);
+  pre->shortopt = alloca(sizeof(*pre->shortopt) * (opt_positional_max + 257));
+  memset(pre->shortopt, 0, sizeof(*pre->shortopt) * (opt_positional_max + 257));
+  
   pre->opt_count = 0;
 
   for (struct opt_item * item = options->opt; ; item++) {
@@ -433,7 +458,7 @@ void opt_parse(const struct opt_section * options, char ** argv, opt_positional 
   int force_positional = 0;
   for (int i=0;argv[i];i++) {
     if (argv[i][0] != '-' || force_positional) {
-      callback(argv[i]);
+      opt_positional(argv[i], pre);
     }
     else {
       if (argv[i][1] == '-') {
@@ -445,8 +470,25 @@ void opt_parse(const struct opt_section * options, char ** argv, opt_positional 
       else if (argv[i][1])
 	i += opt_shortopt(argv, i, pre);
       else
-	callback(argv[i]);
+	opt_positional(argv[i], pre);
     }
+  }
+
+  for (int i=0;i<opt_positional_max+257;i++) {
+    if (!pre->shortopt[i])
+      continue;
+    if (!pre->shortopt[i]->count && (pre->shortopt[i]->flags | OPT_REQUIRED))
+      if (i < 256)
+        opt_failure("Required option -%c not found.\n", pre->shortopt[i]->item->letter);
+      else
+	opt_failure("Required positional argument #%d not found.\n", (i > 256) ? pre->shortopt[i]->item->letter-256 : opt_positional_max+1);
+  }
+
+  for (int i=0;i<pre->opt_count;i++) {
+    if (!pre->opts[i])
+      continue;
+    if (!pre->opts[i]->count && (pre->opts[i]->flags | OPT_REQUIRED))
+      opt_failure("Required option --%s not found.\n", pre->opts[i]->item->name);
   }
 }
 
@@ -482,13 +524,25 @@ static enum TEAPOT_TYPE {
 static char * teapot_type_str[] = { "standard", "exclusive", "glass", "hands" };
 
 static int english = 0;
-static char * name = NULL;
 static int sugar = 0;
 static int verbose = 1;
 static int with_gas = 0;
 static int black_magic = 0;
 static int pray = 0;
 static int water_amount = 0;
+static char * first_tea = NULL;
+
+#define MAX_TEA_COUNT 30
+static char * tea_list[MAX_TEA_COUNT];
+static int tea_num = 0;
+static void add_tea(struct opt_item * opt UNUSED, const char * name, void * data) {
+  char ** tea_list = data;
+  if (tea_num >= MAX_TEA_COUNT) {
+    fprintf(stderr, "Cannot boil more than %d teas.\n", MAX_TEA_COUNT);
+    exit(OPT_EXIT_BAD_ARGS);
+  }
+  tea_list[tea_num++] = xstrdup(name);
+}
 
 static const char * teapot_temperature_parser(char * in, void * ptr) {
   struct teapot_temperature * temp = ptr;
@@ -559,6 +613,8 @@ static struct opt_section help = {
     OPT_INC('q', "quiet", verbose, OPT_NEGATIVE, "\tQuiet (the more -q, the more quiet)"),
     OPT_INT('b', "black-magic", black_magic, 0, "<strength>\tUse black magic to make the tea extraordinary delicious"),
     OPT_BOOL('p', "pray", pray, OPT_SINGLE, "\tPray before boiling"),
+    OPT_STRING(OPT_POSITIONAL(1), NULL, first_tea, OPT_REQUIRED | OPT_NO_HELP, ""),
+    OPT_CALL(OPT_POSITIONAL_TAIL, NULL, add_tea, &tea_list, OPT_NO_HELP, ""),
     OPT_HELP(""),
     OPT_HELP("Water options:"),
     OPT_SECTION(water_options),
@@ -566,24 +622,13 @@ static struct opt_section help = {
   }
 };
 
-#define MAX_TEA_COUNT 30
-static char * tea_list[MAX_TEA_COUNT];
-static int tea_num = 0;
-static void add_tea(const char * name) {
-  if (tea_num >= MAX_TEA_COUNT) {
-    fprintf(stderr, "Cannot boil more than %d teas.\n", MAX_TEA_COUNT);
-    exit(OPT_EXIT_BAD_ARGS);
-  }
-  tea_list[tea_num++] = xstrdup(name);
-}
-
 static void boil_tea(const char * name) {
   printf("Boiling a tea: %s\n", name);
 }
 
-int main(int argc, char ** argv)
+int main(int argc UNUSED, char ** argv)
 {
-  opt_parse(&help, argv+1, add_tea);
+  opt_parse(&help, argv+1);
 
   printf("Parsed values:\n");
   printf("English style: %s\n", english ? "yes" : "no");
@@ -598,6 +643,7 @@ int main(int argc, char ** argv)
   printf("Prayer: %s\n", pray ? "yes" : "no");
   printf("Water amount: %d\n", water_amount);
   printf("Gas: %s\n", with_gas ? "yes" : "no");
+  printf("First tea: %s\n", first_tea);
   for (int i=0; i<tea_num; i++)
     boil_tea(tea_list[i]);
 
