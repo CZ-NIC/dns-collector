@@ -179,8 +179,10 @@ struct opt_precomputed {
 
 static struct opt_precomputed_option * opt_find_item_shortopt(int chr, struct opt_precomputed * pre) {
   struct opt_precomputed_option * candidate = pre->shortopt[chr];
+  if (!candidate)
+    opt_failure("Invalid option -%c", chr);
   if (candidate->count++ && (candidate->flags & OPT_SINGLE))
-    opt_failure("Option %s appeared the second time.", candidate->name);
+    opt_failure("Option -%c appeared the second time.", candidate->item->letter);
   return candidate;
 }
 
@@ -291,6 +293,7 @@ static void opt_parse_value(struct opt_precomputed_option * opt, char * value, i
 	(*((int *)item->ptr))--;
       else
 	(*((int *)item->ptr))++;
+      break;
     case OPT_CL_CALL:
       item->u.call(item, value, item->ptr);
       break;
@@ -345,11 +348,12 @@ static int opt_shortopt(char ** argv, int index, struct opt_precomputed * pre) {
   while (argv[index][++chr] && (opt = opt_find_item_shortopt(argv[index][chr], pre))) {
     if (opt->flags & OPT_NO_VALUE) {
       opt_parse_value(opt, NULL, 0);
-      continue;
     }
     else if (opt->flags & OPT_REQUIRED_VALUE) {
-      if (chr == 1 && argv[index][2])
+      if (chr == 1 && argv[index][2]) {
         opt_parse_value(opt, argv[index] + 2, 0);
+	return 0;
+      }
       else if (argv[index][chr+1])
 	opt_failure("Option -%c must have a value but found inside a bunch of short opts.", opt->item->letter);
       else if (!argv[index+1])
@@ -360,8 +364,10 @@ static int opt_shortopt(char ** argv, int index, struct opt_precomputed * pre) {
       }
     }
     else if (opt->flags & OPT_MAYBE_VALUE) {
-      if (chr == 1 && argv[index][2])
+      if (chr == 1 && argv[index][2]) {
         opt_parse_value(opt, argv[index] + 2, 0);
+	return 0;
+      }
       else
 	opt_parse_value(opt, NULL, 0);
     }
@@ -477,7 +483,7 @@ void opt_parse(const struct opt_section * options, char ** argv) {
   for (int i=0;i<opt_positional_max+257;i++) {
     if (!pre->shortopt[i])
       continue;
-    if (!pre->shortopt[i]->count && (pre->shortopt[i]->flags | OPT_REQUIRED))
+    if (!pre->shortopt[i]->count && (pre->shortopt[i]->flags & OPT_REQUIRED))
       if (i < 256)
         opt_failure("Required option -%c not found.\n", pre->shortopt[i]->item->letter);
       else
@@ -487,7 +493,7 @@ void opt_parse(const struct opt_section * options, char ** argv) {
   for (int i=0;i<pre->opt_count;i++) {
     if (!pre->opts[i])
       continue;
-    if (!pre->opts[i]->count && (pre->opts[i]->flags | OPT_REQUIRED))
+    if (!pre->opts[i]->count && (pre->opts[i]->flags & OPT_REQUIRED))
       opt_failure("Required option --%s not found.\n", pre->opts[i]->item->name);
   }
 }
@@ -581,7 +587,7 @@ static struct cf_user_type teapot_temperature_t = {
 
 static struct opt_section water_options = {
   OPT_ITEMS {
-    OPT_INT('w', "water", water_amount, OPT_REQUIRED | OPT_REQUIRED_VALUE, "<volume>\tAmount of water (in mls)"),
+    OPT_INT('w', "water", water_amount, OPT_REQUIRED | OPT_REQUIRED_VALUE, "<volume>\tAmount of water (in mls; required)"),
     OPT_BOOL('G', "with-gas", with_gas, OPT_NO_VALUE, "\tUse water with gas"),
     OPT_END
   }
@@ -593,6 +599,7 @@ static struct opt_section help = {
     OPT_HELP("Usage: teapot [options] name-of-the-tea"),
     OPT_HELP("Black, green or white tea supported as well as fruit or herbal tea."),
     OPT_HELP("You may specify more kinds of tea, all of them will be boiled for you, in the given order."),
+    OPT_HELP("At least one kind of tea must be specified."),
     OPT_HELP(""),
     OPT_HELP("Options:"),
     OPT_HELP_OPTION,
@@ -605,7 +612,7 @@ static struct opt_section help = {
     OPT_SWITCH('g', "glass-set", set, TEAPOT_GLASS, 0, "\tTransparent glass teapot"),
     OPT_SWITCH('h', "hands", set, TEAPOT_HANDS, 0, "\tUse user's hands as a teapot (a bit dangerous)"),
     OPT_USER('t', "temperature", temperature, teapot_temperature_t, OPT_REQUIRED_VALUE | OPT_REQUIRED,
-		  "<value>\tWanted final temperature of the tea to be served\n"
+		  "<value>\tWanted final temperature of the tea to be served (required)\n"
 	      "\t\tSupported scales:  Celsius [60C], Fahrenheit [140F],\n"
 	      "\t\t                   Kelvin [350K], Rankine [600R] and Reaumur [50Re]\n"
 	      "\t\tOnly integer values allowed."),
@@ -622,30 +629,25 @@ static struct opt_section help = {
   }
 };
 
-static void boil_tea(const char * name) {
-  printf("Boiling a tea: %s\n", name);
-}
-
 int main(int argc UNUSED, char ** argv)
 {
   opt_parse(&help, argv+1);
 
-  printf("Parsed values:\n");
-  printf("English style: %s\n", english ? "yes" : "no");
+  printf("English style: %s|", english ? "yes" : "no");
   if (sugar)
-    printf("Sugar: %d teaspoons\n", sugar);
+    printf("Sugar: %d teaspoons|", sugar);
   if (set != -1)
-    printf("Chosen teapot: %s\n", teapot_type_str[set]);
-  printf("Temperature: %d%s\n", temperature.value, temp_scale_str[temperature.scale]);
-  printf("Verbosity: %d\n", verbose);
+    printf("Chosen teapot: %s|", teapot_type_str[set]);
+  printf("Temperature: %d%s|", temperature.value, temp_scale_str[temperature.scale]);
+  printf("Verbosity: %d|", verbose);
   if (black_magic)
-    printf("Black magic: %d\n", black_magic);
-  printf("Prayer: %s\n", pray ? "yes" : "no");
-  printf("Water amount: %d\n", water_amount);
-  printf("Gas: %s\n", with_gas ? "yes" : "no");
-  printf("First tea: %s\n", first_tea);
+    printf("Black magic: %d|", black_magic);
+  printf("Prayer: %s|", pray ? "yes" : "no");
+  printf("Water amount: %d|", water_amount);
+  printf("Gas: %s|", with_gas ? "yes" : "no");
+  printf("First tea: %s|", first_tea);
   for (int i=0; i<tea_num; i++)
-    boil_tea(tea_list[i]);
+    printf("Boiling a tea: %s|", tea_list[i]);
 
   printf("Everything OK. Bye.\n");
 }
