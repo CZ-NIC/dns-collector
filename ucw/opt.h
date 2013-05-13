@@ -79,12 +79,12 @@ struct opt_section {
 #define OPT_HELP_OPTION OPT_CALL(0, "help", opt_show_help_internal, NULL, OPT_NO_VALUE, "Show this help")
 #define OPT_HELP(line) { .help = line, .cls = OPT_CL_HELP }
 #define OPT_BOOL(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_BOOL, .type = CT_INT }
-#define OPT_STRING(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, char **), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_STRING }
-#define OPT_U64(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u64 *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_U64 }
-#define OPT_INT(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_INT }
-#define OPT_DOUBLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, double *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_DOUBLE }
-#define OPT_IP(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u32 *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_IP }
-#define OPT_SWITCH(shortopt, longopt, target, val, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .help = desc, .flags = fl, .cls = OPT_CL_SWITCH, .type = CT_LOOKUP, .u.value = val }
+#define OPT_STRING(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_STRING }
+#define OPT_U64(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_U64 }
+#define OPT_INT(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_INT }
+#define OPT_DOUBLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_DOUBLE }
+#define OPT_IP(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_IP }
+#define OPT_SWITCH(shortopt, longopt, target, val, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_SWITCH, .type = CT_LOOKUP, .u.value = val }
 #define OPT_CALL(shortopt, longopt, fn, data, fl, desc) { .letter = shortopt, .name = longopt, .ptr = data, .help = desc, .u.call = fn, .flags = fl, .cls = OPT_CL_CALL, .type = CT_USER }
 #define OPT_USER(shortopt, longopt, target, ttype, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .u.utype = &ttype, .flags = fl, .help = desc, .cls = OPT_CL_USER, .type = CT_USER }
 #define OPT_INC(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .flags = fl, .help = desc, .cls = OPT_CL_INC, .type = CT_INT }
@@ -118,9 +118,11 @@ struct opt_section {
 #define OPT_MAYBE_VALUE	    0x8		/** Argument may have a value **/
 #define OPT_VALUE_FLAGS	    (OPT_REQUIRED_VALUE | OPT_NO_VALUE | OPT_MAYBE_VALUE)
 #define OPT_NEGATIVE	    0x10	/** Reversing the effect of OPT_INC or saving @false into OPT_BOOL **/
-#define OPT_SINGLE	    0x20	/** Argument must appear at most once **/
-#define OPT_NO_HELP	    0x40	/** Omit this line from help **/
-#define OPT_LAST_ARG	    0x80	/** Stop processing argv after this line **/
+#define OPT_NO_HELP	    0x20	/** Omit this line from help **/
+#define OPT_LAST_ARG	    0x40	/** Stop processing argv after this line **/
+#define OPT_SINGLE	    0x100	/** Argument must appear at most once **/
+#define OPT_MULTIPLE	    0x200	/** Argument may appear any time; will save all the values into a simple list **/
+
 
 /***
  * Value flags defaults

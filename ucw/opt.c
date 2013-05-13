@@ -223,9 +223,23 @@ static struct opt_precomputed_option * opt_find_item_longopt(char * str, struct 
   opt_failure("Invalid option %s.", str);
 }
 
+#define OPT_PTR(type) ({ \
+  type * ptr; \
+  if (item->flags & OPT_MULTIPLE) { \
+    struct { \
+      cnode n; \
+      type v; \
+    } * n = xmalloc(sizeof(*n)); \
+    clist_add_tail(item->ptr, &(n->n)); \
+    ptr = &(n->v); \
+  } else \
+    ptr = item->ptr; \
+  ptr; })
+
 #define OPT_NAME (longopt == 2 ? stk_printf("positional arg #%d", opt_positional_count) : (longopt == 1 ? stk_printf("--%s", opt->name) : stk_printf("-%c", item->letter)))
 static void opt_parse_value(struct opt_precomputed_option * opt, char * value, int longopt) {
   struct opt_item * item = opt->item;
+
   switch (item->cls) {
     case OPT_CL_BOOL:
       if (!value || !strcasecmp(value, "y") || !strcasecmp(value, "yes") || !strcasecmp(value, "true") || !strcasecmp(value, "1"))
@@ -241,41 +255,41 @@ static void opt_parse_value(struct opt_precomputed_option * opt, char * value, i
 	switch (item->type) {
 	  case CT_INT:
 	    if (!value)
-	      *((int*)item->ptr) = 0;
+	      *OPT_PTR(int) = 0;
 	    else
-	      e = cf_parse_int(value, item->ptr);
+	      e = cf_parse_int(value, OPT_PTR(int));
 	    if (e)
 	      opt_failure("Integer value parsing failed for %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_U64:
 	    if (!value)
-	      *((u64*)item->ptr) = 0;
+	      *OPT_PTR(u64) = 0;
 	    else
-	      e = cf_parse_u64(value, item->ptr);
+	      e = cf_parse_u64(value, OPT_PTR(u64));
 	    if (e)
 	      opt_failure("Unsigned 64-bit value parsing failed for %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_DOUBLE:
 	    if (!value)
-	      *((double*)item->ptr) = NAN;
+	      *OPT_PTR(double) = NAN;
 	    else
-	      e = cf_parse_double(value, item->ptr);
+	      e = cf_parse_double(value, OPT_PTR(double));
 	    if (e)
 	      opt_failure("Double value parsing failed for %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_IP:
 	    if (!value)
-	      e = cf_parse_ip("0.0.0.0", item->ptr);
+	      e = cf_parse_ip("0.0.0.0", OPT_PTR(u32));
 	    else
-	      e = cf_parse_ip(value, item->ptr);
+	      e = cf_parse_ip(value, OPT_PTR(u32));
 	    if (e)
 	      opt_failure("IP parsing failed for %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_STRING:
 	    if (!value)
-	      item->ptr = NULL;
+	      *OPT_PTR(const char *) = NULL;
 	    else
-	      *((const char **) (item->ptr)) = xstrdup(value);
+	      *OPT_PTR(const char *) = xstrdup(value);
 	    break;
 	  default:
 	    ASSERT(0);
@@ -300,7 +314,7 @@ static void opt_parse_value(struct opt_precomputed_option * opt, char * value, i
     case OPT_CL_USER:
       {
 	char * e = NULL;
-	e = item->u.utype->parser(value, item->ptr);
+	e = item->u.utype->parser(value, OPT_PTR(void*));
 	if (e)
 	  opt_failure("User defined type value parsing failed for %s: %s", OPT_NAME, e);
 	break;
@@ -533,7 +547,7 @@ static int english = 0;
 static int sugar = 0;
 static int verbose = 1;
 static int with_gas = 0;
-static int black_magic = 0;
+static clist black_magic;
 static int pray = 0;
 static int water_amount = 0;
 static char * first_tea = NULL;
@@ -618,7 +632,7 @@ static struct opt_section help = {
 	      "\t\tOnly integer values allowed."),
     OPT_INC('v', "verbose", verbose, 0, "\tVerbose (the more -v, the more verbose)"),
     OPT_INC('q', "quiet", verbose, OPT_NEGATIVE, "\tQuiet (the more -q, the more quiet)"),
-    OPT_INT('b', "black-magic", black_magic, 0, "<strength>\tUse black magic to make the tea extraordinary delicious"),
+    OPT_INT('b', "black-magic", black_magic, OPT_MULTIPLE, "<strength>\tUse black magic to make the tea extraordinary delicious.\n\t\tMay be specified more than once to describe the amounts of black magic to be invoked in each step of tea boiling."),
     OPT_BOOL('p', "pray", pray, OPT_SINGLE, "\tPray before boiling"),
     OPT_STRING(OPT_POSITIONAL(1), NULL, first_tea, OPT_REQUIRED | OPT_NO_HELP, ""),
     OPT_CALL(OPT_POSITIONAL_TAIL, NULL, add_tea, &tea_list, OPT_NO_HELP, ""),
@@ -629,8 +643,14 @@ static struct opt_section help = {
   }
 };
 
+struct intnode {
+  cnode n;
+  int x;
+};
+
 int main(int argc UNUSED, char ** argv)
 {
+  clist_init(&black_magic);
   opt_parse(&help, argv+1);
 
   printf("English style: %s|", english ? "yes" : "no");
@@ -640,8 +660,8 @@ int main(int argc UNUSED, char ** argv)
     printf("Chosen teapot: %s|", teapot_type_str[set]);
   printf("Temperature: %d%s|", temperature.value, temp_scale_str[temperature.scale]);
   printf("Verbosity: %d|", verbose);
-  if (black_magic)
-    printf("Black magic: %d|", black_magic);
+  CLIST_FOR_EACH(struct intnode *, n, black_magic)
+    printf("Black magic: %d|", n->x);
   printf("Prayer: %s|", pray ? "yes" : "no");
   printf("Water amount: %d|", water_amount);
   printf("Gas: %s|", with_gas ? "yes" : "no");
