@@ -139,7 +139,11 @@ Including other files
 
 To include another file, use the command
 
-  include another/file
+  Include another/file
+
+or if the file needs not to exist
+
+  OptionalInclude another/file
 
 (Beware that this command has to be the last one on the line.)
 
