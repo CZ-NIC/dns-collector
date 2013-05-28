@@ -20,6 +20,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <fcntl.h>
 
 /* Text file parser */
@@ -239,7 +240,8 @@ parse_fastbuf(struct cf_context *cc, const char *name_fb, struct fastbuf *fb, un
     char *pars[p->words-1];
     for (uns i=1; i<p->words; i++)
       pars[i-1] = p->copy_buf.ptr + p->word_buf.ptr[i];
-    if (!strcasecmp(name, "include"))
+    int optional_include = !strcasecmp(name, "optionalinclude");
+    if (optional_include || !strcasecmp(name, "include"))
     {
       if (p->words != 2)
 	err = "Expecting one filename";
@@ -251,6 +253,8 @@ parse_fastbuf(struct cf_context *cc, const char *name_fb, struct fastbuf *fb, un
 	goto error;
       struct fastbuf *new_fb = bopen_try(pars[0], O_RDONLY, 1<<14);
       if (!new_fb) {
+	if (optional_include && errno == ENOENT)
+	  continue;
 	err = cf_printf("Cannot open file %s: %m", pars[0]);
 	goto error;
       }
