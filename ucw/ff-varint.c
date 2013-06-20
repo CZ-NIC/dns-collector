@@ -78,14 +78,14 @@ int main(int argc, char **argv)
 				if (btell(b))
 					putchar(' ');
 				r = bget_varint_slow(b, ~0LLU);
-				printf("%lx", r);
+				printf("%llx", r);
 			}
 			putchar('\n');
 			break;
 
 		case FUNC_BPUT_VARINT:
 			i = 0;
-			while (scanf("%lx", &r) == 1)
+			while (scanf("%llx", &r) == 1)
 				bput_varint_slow(b, r);
 			fbgrow_rewind(b);
 			while (bpeekc(b) >= 0) {

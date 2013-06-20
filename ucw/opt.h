@@ -32,6 +32,7 @@ enum opt_class {
   OPT_CL_USER,	  // user defined value
   OPT_CL_SECTION, // subsection
   OPT_CL_HELP,	  // help line
+  OPT_CL_HOOK,	  // hook
 };
 
 struct opt_section;
@@ -70,6 +71,10 @@ struct opt_section {
  *	       parser fails if it matches an OPT_SWITCH with OPT_SINGLE set and also target set.
  *	       Target must be of signed integer type; it is set to -1 if no switch appears at the command-line.
  *  OPT_CALL calls the given function with an argument, giving also the opt_item structure and some custom data.
+ *  OPT_HOOK is called at the specified place: before option parsing, before value parsing and after value parsing as specified in @flags;
+ *	       OPT_HOOK_BEFORE_ARG gets @opt and @value set to NULL;
+ *	       OPT_HOOK_BEFORE_VALUE gets @opt set and @value NULL;
+ *	       OPT_HOOK_AFTER_VALUE gets both @opt and @value set.
  *  OPT_USER declares a custom type of value defined by the given @cf_user_type in @ttype
  *  OPT_INC declares an incremental value like -v/--verbose
  *  OPT_SECTION declares a subsection
@@ -89,7 +94,31 @@ struct opt_section {
 #define OPT_USER(shortopt, longopt, target, ttype, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .u.utype = &ttype, .flags = fl, .help = desc, .cls = OPT_CL_USER, .type = CT_USER }
 #define OPT_INC(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .flags = fl, .help = desc, .cls = OPT_CL_INC, .type = CT_INT }
 #define OPT_SECTION(sec) { .cls = OPT_CL_SECTION, .u.section = &sec }
+#define OPT_HOOK(fn, data, fl) { .cls = OPT_CL_HOOK, .u.call = fn, .flags = OPT_NO_HELP | fl, .ptr = data }
 #define OPT_END { .cls = OPT_CL_END }
+
+/***
+ * UCW Conf options
+ * ~~~~~~~~~~~~~~~~
+ * 
+ * OPT_CONF_OPTIONS declares -C and -S as described in @getopt.h
+ ***/
+
+#ifdef CONFIG_UCW_DEBUG
+#define OPT_CONF_OPTIONS    OPT_CONF_CONFIG, OPT_CONF_SET, OPT_CONF_DUMPCONFIG, OPT_CONF_HOOK
+#else
+#define OPT_CONF_OPTIONS    OPT_CONF_CONFIG, OPT_CONF_SET, OPT_CONF_HOOK
+#endif
+
+#define OPT_CONF_CONFIG	    OPT_CALL('C', "config", opt_conf_internal, NULL, OPT_REQUIRED_VALUE, "Override the default configuration file")
+#define OPT_CONF_SET	    OPT_CALL('S', "set", opt_conf_internal, NULL, OPT_REQUIRED_VALUE, "Manual setting of a configuration item")
+#define OPT_CONF_DUMPCONFIG OPT_CALL(0, "dumpconfig", opt_conf_internal, NULL, OPT_NO_VALUE, "Dump program configuration")
+#define OPT_CONF_HOOK	    OPT_HOOK(opt_conf_hook_internal, NULL, OPT_HOOK_BEFORE_VALUE)
+
+void opt_conf_internal(struct opt_item * opt, const char * value, void * data);
+
+extern int opt_parsed_count;	    /** How many opts have been already parsed. **/
+extern int opt_conf_parsed_count;
 
 /***
  * Predefined shortopt arguments
@@ -122,6 +151,9 @@ struct opt_section {
 #define OPT_LAST_ARG	    0x40	/** Stop processing argv after this line **/
 #define OPT_SINGLE	    0x100	/** Argument must appear at most once **/
 #define OPT_MULTIPLE	    0x200	/** Argument may appear any time; will save all the values into a simple list **/
+#define OPT_HOOK_BEFORE_ARG	0x1000	/** Call before option parsing **/
+#define OPT_HOOK_BEFORE_VALUE	0x2000	/** Call before value parsing **/
+#define OPT_HOOK_AFTER_VALUE	0x4000  /** Call after value parsing **/
 
 
 /***

@@ -92,7 +92,7 @@ int main(int argc, char **argv UNUSED)
 	byte buf[16] = { 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa };
 	u64 u;
 
-	if (scanf("%lx", &u) != 1) {
+	if (scanf("%llx", &u) != 1) {
 		fprintf(stderr, "Invalid usage!\n");
 		return 1;
 	}

@@ -116,8 +116,8 @@ endif
 $(o)/ucw/ipaccess-test: $(o)/ucw/ipaccess-test.o $(LIBUCW)
 $(o)/ucw/trie-test: $(o)/ucw/trie-test.o $(LIBUCW)
 
-TESTS+=$(addprefix $(o)/ucw/,varint.test regex.test unicode.test hash-test.test mempool.test stkstring.test \
-    slists.test bbuf.test kmp-test.test getopt.test ff-unicode.test ff-varint.test eltpool.test \
+TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test stkstring.test \
+    slists.test bbuf.test kmp-test.test getopt.test ff-unicode.test eltpool.test \
     fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test \
     redblack-test.test fb-file.test fb-grow.test fb-pool.test fb-atomic.test \
     fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test fb-multi.test url.test strtonum-test.test \

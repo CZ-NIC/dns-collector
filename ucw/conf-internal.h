@@ -103,4 +103,7 @@ struct cf_item *cf_find_subitem(struct cf_section *sec, const char *name);
 int cf_commit_all(enum cf_commit_mode cm);
 void cf_add_dirty(struct cf_section *sec, void *ptr);
 
+/* conf-getopt.c */
+void cf_load_default(struct cf_context *cc);
+
 #endif

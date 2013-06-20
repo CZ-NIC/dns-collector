@@ -10,11 +10,16 @@
 #include <ucw/lib.h>
 #include <ucw/opt.h>
 #include <ucw/conf.h>
+#include <ucw/conf-internal.h>
+#include <ucw/fastbuf.h>
 #include <ucw/stkstring.h>
 #include <ucw/strtonum.h>
 
 #include <alloca.h>
 #include <math.h>
+
+int opt_parsed_count = 0;
+int opt_conf_parsed_count = 0;
 
 static void opt_failure(const char * mesg, ...) FORMAT_CHECK(printf,1,2) NONRET;
 static void opt_failure(const char * mesg, ...) {
@@ -174,7 +179,13 @@ struct opt_precomputed {
     short count;
   } ** opts;
   struct opt_precomputed_option ** shortopt;
+  struct opt_item ** hooks_before_arg;
+  struct opt_item ** hooks_before_value;
+  struct opt_item ** hooks_after_value;
   short opt_count;
+  short hooks_before_arg_count;
+  short hooks_before_value_count;
+  short hooks_after_value_count;
 };
 
 static struct opt_precomputed_option * opt_find_item_shortopt(int chr, struct opt_precomputed * pre) {
@@ -322,6 +333,7 @@ static void opt_parse_value(struct opt_precomputed_option * opt, char * value, i
     default:
       ASSERT(0);
   }
+  opt_parsed_count++;
 }
 #undef OPT_NAME
 
@@ -443,6 +455,7 @@ void opt_parse(const struct opt_section * options, char ** argv) {
   memset(pre, 0, sizeof (*pre));
 
   int count = 0;
+  int hooks = 0;
 
   for (struct opt_item * item = options->opt; ; item++) {
     OPT_TRAVERSE_SECTIONS;
@@ -452,11 +465,20 @@ void opt_parse(const struct opt_section * options, char ** argv) {
       count++;
     if (item->letter > 256)
       opt_positional_max++;
+    if (item->cls == OPT_CL_HOOK)
+      hooks++;
   }
   
   pre->opts = alloca(sizeof(*pre->opts) * count);
   pre->shortopt = alloca(sizeof(*pre->shortopt) * (opt_positional_max + 257));
   memset(pre->shortopt, 0, sizeof(*pre->shortopt) * (opt_positional_max + 257));
+  pre->hooks_before_arg = alloca(sizeof (*pre->hooks_before_arg) * hooks);
+  pre->hooks_before_value = alloca(sizeof (*pre->hooks_before_value) * hooks);
+  pre->hooks_after_value = alloca(sizeof (*pre->hooks_after_value) * hooks);
+  
+  pre->hooks_before_arg_count = 0;
+  pre->hooks_before_value_count = 0;
+  pre->hooks_after_value_count = 0;
   
   pre->opt_count = 0;
 
@@ -472,6 +494,16 @@ void opt_parse(const struct opt_section * options, char ** argv) {
       if (item->letter)
 	pre->shortopt[(int) item->letter] = opt;
       OPT_ADD_DEFAULT_ITEM_FLAGS(item, opt->flags);
+    }
+    if (item->cls == OPT_CL_HOOK) {
+      if (item->flags & OPT_HOOK_BEFORE_ARG)
+	pre->hooks_before_arg[pre->hooks_before_arg_count++] = item;
+      else if (item->flags & OPT_HOOK_BEFORE_VALUE)
+	pre->hooks_before_value[pre->hooks_before_value_count++] = item;
+      else if (item->flags & OPT_HOOK_AFTER_VALUE)
+	pre->hooks_after_value[pre->hooks_after_value_count++] = item;
+      else
+	ASSERT(0);
     }
   }
 
@@ -510,6 +542,37 @@ void opt_parse(const struct opt_section * options, char ** argv) {
     if (!pre->opts[i]->count && (pre->opts[i]->flags & OPT_REQUIRED))
       opt_failure("Required option --%s not found.\n", pre->opts[i]->item->name);
   }
+}
+
+void opt_conf_internal(struct opt_item * opt, const char * value, void * data UNUSED) {
+  if (opt_parsed_count > opt_conf_parsed_count)
+    opt_failure("Config options (-C, -S) must stand before other options.");
+
+  struct cf_context *cc = cf_get_context();
+  switch(opt->letter) {
+    case 'S':
+      cf_load_default(cc);
+      if (cf_set(value))
+	opt_failure("Cannot set %s", value);
+      break;
+    case 'C':
+      if (cf_load(value))
+	opt_failure("Cannot load config file %s", value);
+      break;
+#ifdef CONFIG_UCW_DEBUG
+    case '0':
+      cf_load_default(cc);
+      if (cc->postpone_commit && cf_close_group())
+	opt_failure("Loading of configuration failed");
+      struct fastbuf *b = bfdopen(1, 4096);
+      cf_dump_sections(b);
+      bclose(b);
+      exit(0);
+      break;
+#endif
+  }
+
+  opt_conf_parsed_count++;
 }
 
 #ifdef TEST
