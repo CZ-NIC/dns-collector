@@ -73,7 +73,7 @@ struct opt_section {
  *  OPT_CALL calls the given function with an argument, giving also the opt_item structure and some custom data.
  *  OPT_HOOK is called at the specified place: before option parsing, before value parsing and after value parsing as specified in @flags;
  *	       OPT_HOOK_BEFORE_ARG gets @opt and @value set to NULL;
- *	       OPT_HOOK_BEFORE_VALUE gets @opt set and @value NULL;
+ *	       OPT_HOOK_BEFORE_VALUE gets both @opt and @value set.
  *	       OPT_HOOK_AFTER_VALUE gets both @opt and @value set.
  *  OPT_USER declares a custom type of value defined by the given @cf_user_type in @ttype
  *  OPT_INC declares an incremental value like -v/--verbose
@@ -116,6 +116,7 @@ struct opt_section {
 #define OPT_CONF_HOOK	    OPT_HOOK(opt_conf_hook_internal, NULL, OPT_HOOK_BEFORE_VALUE)
 
 void opt_conf_internal(struct opt_item * opt, const char * value, void * data);
+void opt_conf_hook_internal(struct opt_item * opt, const char * value, void * data);
 
 extern int opt_parsed_count;	    /** How many opts have been already parsed. **/
 extern int opt_conf_parsed_count;

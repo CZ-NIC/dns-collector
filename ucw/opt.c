@@ -173,6 +173,7 @@ static int opt_positional_count = 0;
 
 struct opt_precomputed {
   struct opt_precomputed_option {
+    struct opt_precomputed *pre;
     struct opt_item * item;
     const char * name;
     short flags;
@@ -202,6 +203,8 @@ static struct opt_precomputed_option * opt_find_item_longopt(char * str, struct 
   struct opt_precomputed_option * candidate = NULL;
 
   for (int i=0; i<pre->opt_count; i++) {
+    if (!pre->opts[i]->name)
+      continue;
     if (!strncmp(pre->opts[i]->name, str, len)) {
       if (strlen(pre->opts[i]->name) == len) {
 	if (pre->opts[i]->count++ && (pre->opts[i]->flags & OPT_SINGLE))
@@ -250,6 +253,9 @@ static struct opt_precomputed_option * opt_find_item_longopt(char * str, struct 
 #define OPT_NAME (longopt == 2 ? stk_printf("positional arg #%d", opt_positional_count) : (longopt == 1 ? stk_printf("--%s", opt->name) : stk_printf("-%c", item->letter)))
 static void opt_parse_value(struct opt_precomputed_option * opt, char * value, int longopt) {
   struct opt_item * item = opt->item;
+  struct opt_precomputed * pre = opt->pre;
+  for (int i=0;i<pre->hooks_before_value_count;i++)
+    pre->hooks_before_value[i]->u.call(item, value, pre->hooks_before_value[i]->ptr);
 
   switch (item->cls) {
     case OPT_CL_BOOL:
@@ -334,6 +340,9 @@ static void opt_parse_value(struct opt_precomputed_option * opt, char * value, i
       ASSERT(0);
   }
   opt_parsed_count++;
+
+  for (int i=0;i<pre->hooks_after_value_count;i++)
+    pre->hooks_after_value[i]->u.call(item, value, pre->hooks_after_value[i]->ptr);
 }
 #undef OPT_NAME
 
@@ -486,6 +495,7 @@ void opt_parse(const struct opt_section * options, char ** argv) {
     OPT_TRAVERSE_SECTIONS;
     if (item->letter || item->name) {
       struct opt_precomputed_option * opt = xmalloc(sizeof(*opt));
+      opt->pre = pre;
       opt->item = item;
       opt->flags = item->flags;
       opt->count = 0;
@@ -509,6 +519,8 @@ void opt_parse(const struct opt_section * options, char ** argv) {
 
   int force_positional = 0;
   for (int i=0;argv[i];i++) {
+    for (int j=0;j<pre->hooks_before_arg_count;j++)
+      pre->hooks_before_arg[j]->u.call(NULL, NULL, pre->hooks_before_arg[j]->ptr);
     if (argv[i][0] != '-' || force_positional) {
       opt_positional(argv[i], pre);
     }
@@ -544,12 +556,15 @@ void opt_parse(const struct opt_section * options, char ** argv) {
   }
 }
 
-void opt_conf_internal(struct opt_item * opt, const char * value, void * data UNUSED) {
-  if (opt_parsed_count > opt_conf_parsed_count)
-    opt_failure("Config options (-C, -S) must stand before other options.");
+static void opt_conf_end_of_options(struct cf_context *cc) {
+  cf_load_default(cc);
+  if (cc->postpone_commit && cf_close_group())
+    opt_failure("Loading of configuration failed");
+}
 
+void opt_conf_internal(struct opt_item * opt, const char * value, void * data UNUSED) {
   struct cf_context *cc = cf_get_context();
-  switch(opt->letter) {
+  switch (opt->letter) {
     case 'S':
       cf_load_default(cc);
       if (cf_set(value))
@@ -561,9 +576,7 @@ void opt_conf_internal(struct opt_item * opt, const char * value, void * data UN
       break;
 #ifdef CONFIG_UCW_DEBUG
     case '0':
-      cf_load_default(cc);
-      if (cc->postpone_commit && cf_close_group())
-	opt_failure("Loading of configuration failed");
+      opt_conf_end_of_options(cc);
       struct fastbuf *b = bfdopen(1, 4096);
       cf_dump_sections(b);
       bclose(b);
@@ -573,6 +586,42 @@ void opt_conf_internal(struct opt_item * opt, const char * value, void * data UN
   }
 
   opt_conf_parsed_count++;
+}
+
+void opt_conf_hook_internal(struct opt_item * opt, const char * value UNUSED, void * data UNUSED) {
+  static enum {
+    OPT_CONF_HOOK_BEGIN,
+    OPT_CONF_HOOK_CONFIG,
+    OPT_CONF_HOOK_OTHERS
+  } state = OPT_CONF_HOOK_BEGIN;
+
+  int confopt = 0;
+
+  if (opt->letter == 'S' || opt->letter == 'C' || (opt->name && !strcmp(opt->name, "dumpconfig")))
+    confopt = 1;
+
+  switch (state) {
+    case OPT_CONF_HOOK_BEGIN:
+      if (confopt)
+	state = OPT_CONF_HOOK_CONFIG;
+      else {
+	opt_conf_end_of_options(cf_get_context());
+	state = OPT_CONF_HOOK_OTHERS;
+      }
+      break;
+    case OPT_CONF_HOOK_CONFIG:
+      if (!confopt) {
+	opt_conf_end_of_options(cf_get_context());
+	state = OPT_CONF_HOOK_OTHERS;
+      }
+      break;
+    case OPT_CONF_HOOK_OTHERS:
+      if (confopt)
+	opt_failure("Config options (-C, -S) must stand before other options.");
+      break;
+    default:
+      ASSERT(0);
+  }
 }
 
 #ifdef TEST
@@ -606,6 +655,7 @@ static enum TEAPOT_TYPE {
 
 static char * teapot_type_str[] = { "standard", "exclusive", "glass", "hands" };
 
+static int show_hooks = 0;
 static int english = 0;
 static int sugar = 0;
 static int verbose = 1;
@@ -662,6 +712,15 @@ static struct cf_user_type teapot_temperature_t = {
   .dumper = (cf_dumper1*) teapot_temperature_dumper
 };
 
+static void opt_test_hook(struct opt_item * opt, const char * value, void * data) {
+  if (!show_hooks)
+    return;
+  if (opt)
+    printf("[HOOK-%s:%c/%s=%s] ", (char *) data, opt->letter, opt->name, value);
+  else
+    printf("[HOOK-%s] ", (char *) data);
+}
+
 static struct opt_section water_options = {
   OPT_ITEMS {
     OPT_INT('w', "water", water_amount, OPT_REQUIRED | OPT_REQUIRED_VALUE, "<volume>\tAmount of water (in mls; required)"),
@@ -702,6 +761,11 @@ static struct opt_section help = {
     OPT_HELP(""),
     OPT_HELP("Water options:"),
     OPT_SECTION(water_options),
+    OPT_HOOK(opt_test_hook, "prearg", OPT_HOOK_BEFORE_ARG),
+    OPT_HOOK(opt_test_hook, "preval", OPT_HOOK_BEFORE_VALUE),
+    OPT_HOOK(opt_test_hook, "postval", OPT_HOOK_AFTER_VALUE),
+    OPT_BOOL('H', "show-hooks", show_hooks, 0, "Demonstrate the hooks."),
+    OPT_CONF_OPTIONS,
     OPT_END
   }
 };
