@@ -29,13 +29,14 @@ static void opt_failure(const char * mesg, ...) {
   fprintf(stderr, "\n");
   opt_usage();
   exit(OPT_EXIT_BAD_ARGS);
-  va_end(args);
+  va_end(args);		// FIXME: Does this make a sense after exit()?
 }
 
+// FIXME: This could be an inline function, couldn't it?
 #define OPT_ADD_DEFAULT_ITEM_FLAGS(item, flags) \
   do { \
     if (item->letter >= 256) { \
-      if (flags & OPT_VALUE_FLAGS) \
+      if (flags & OPT_VALUE_FLAGS) /* FIXME: Redundant condition */ \
 	flags &= ~OPT_VALUE_FLAGS; \
       flags |= OPT_REQUIRED_VALUE; \
     } \
@@ -44,9 +45,10 @@ static void opt_failure(const char * mesg, ...) {
       fprintf(stderr, "You MUST specify some of the value flags for the %c/%s item.\n", item->letter, item->name); \
       ASSERT(0); \
     } \
-    else if (!(flags & OPT_VALUE_FLAGS)) \
+    else if (!(flags & OPT_VALUE_FLAGS)) /* FIXME: Streamline the conditions */ \
       flags |= opt_default_value_flags[item->cls]; \
   } while (0)
+// FIXME: Is this still useful? Isn't it better to use OPT_ADD_DEFAULT_ITEM_FLAGS during init?
 #define OPT_ITEM_FLAGS(item) ((item->flags & OPT_VALUE_FLAGS) ? item->flags : item->flags | opt_default_value_flags[item->cls])
 
 const struct opt_section * opt_section_root;

@@ -85,13 +85,18 @@ struct opt_section {
 #define OPT_HELP(line) { .help = line, .cls = OPT_CL_HELP }
 #define OPT_BOOL(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_BOOL, .type = CT_INT }
 #define OPT_STRING(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_STRING }
+// FIXME: U64 and DOUBLE are not described in the comment above
 #define OPT_U64(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_U64 }
 #define OPT_INT(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_INT }
 #define OPT_DOUBLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_DOUBLE }
+// FIXME: Does IP deserve a basic type? Wouldn't a pre-defined user type be better?
+// Especially, this would provide an easy extension for IPv6.
 #define OPT_IP(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_IP }
+// FIXME: Semantics not clear from the description above
 #define OPT_SWITCH(shortopt, longopt, target, val, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_SWITCH, .type = CT_LOOKUP, .u.value = val }
 #define OPT_CALL(shortopt, longopt, fn, data, fl, desc) { .letter = shortopt, .name = longopt, .ptr = data, .help = desc, .u.call = fn, .flags = fl, .cls = OPT_CL_CALL, .type = CT_USER }
 #define OPT_USER(shortopt, longopt, target, ttype, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .u.utype = &ttype, .flags = fl, .help = desc, .cls = OPT_CL_USER, .type = CT_USER }
+// FIXME: Check that the target is of the right type (likewise in other statically typed options)
 #define OPT_INC(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .flags = fl, .help = desc, .cls = OPT_CL_INC, .type = CT_INT }
 #define OPT_SECTION(sec) { .cls = OPT_CL_SECTION, .u.section = &sec }
 #define OPT_HOOK(fn, data, fl) { .cls = OPT_CL_HOOK, .u.call = fn, .flags = OPT_NO_HELP | fl, .ptr = data }
@@ -125,21 +130,24 @@ extern int opt_conf_parsed_count;
  * Predefined shortopt arguments
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *
- * for the preceeding calls if positional args wanted.
+ * for the preceding calls if positional args wanted.
  * Arguments are processed in the order of the numbers given to them. There must be first
- * the args with OPT_REQUIRED (see lower) and after them the args without OPT_REQUIRED, no mixing.
+ * the args with OPT_REQUIRED (see below) and after them the args without OPT_REQUIRED, no mixing.
  * You may define a catch-all option as OPT_POSITIONAL_TAIL. After this, no positional arg is allowed.
  * You may shuffle the positional arguments in any way in the opt sections but the numbering must obey
  * the rules given here.
  ***/
+// FIXME: The previous paragraph is almost incomprehensible
 
-#define OPT_POSITIONAL(n)   (OPT_POSITIONAL_TAIL+(n))	  
+// FIXME: Is numbering from 1 natural here?
+// FIXME: Are there any rules for mixing of positional arguments with options?
+#define OPT_POSITIONAL(n)   (OPT_POSITIONAL_TAIL+(n))
 #define OPT_POSITIONAL_TAIL 256
 
 
 /***
- * Flags for the preceeding calls
- * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * Flags for the preceding calls
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  ***/
 
 #define OPT_REQUIRED	    0x1		/** Argument must appear at the command line **/
@@ -195,8 +203,10 @@ static void opt_show_help_internal(struct opt_item * opt UNUSED, const char * va
 }
 
 /**
- * Parse all the arguments. Run the @callback for each of the positional argument.
+ * Parse all the arguments.
  **/
 void opt_parse(const struct opt_section * options, char ** argv);
+// FIXME: When parsing finishes (possibly due to OPT_LAST_ARG), what is guaranteed
+// about the state of argv[]?
 
 #endif
