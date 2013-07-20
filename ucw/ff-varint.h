@@ -26,8 +26,8 @@ static inline u64 bget_varint_repl(struct fastbuf *b, u64 repl)
 	if (bavailr(b) >= 1) {
 		l = varint_len(*b->bptr);
 		if (bavailr(b) >= l) {
-			b->bptr += l;
 			varint_get(b->bptr, &repl);
+			b->bptr += l;
 			return repl;
 		}
 	}
@@ -38,7 +38,7 @@ static inline u64 bget_varint_repl(struct fastbuf *b, u64 repl)
  * Reads u64 encoded as varint from the fastbuf b.
  * If the read is unsuccessful, returns ~0LLU.
  **/
-static inline int bget_varint(struct fastbuf *b)
+static inline u64 bget_varint(struct fastbuf *b)
 {
 	return bget_varint_repl(b, ~0LLU);
 }
