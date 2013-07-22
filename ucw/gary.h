@@ -20,8 +20,8 @@ struct gary_hdr {
 
 #define GARY_INIT(ptr, n) (ptr) = gary_init(sizeof(*(ptr)), (n), 0)
 #define GARY_INIT_ZERO(ptr, n) (ptr) = gary_init(sizeof(*(ptr)), (n), 1)
-#define GARY_INIT_SPACE(ptr, n) do { GARY_INIT(ptr, n); (ptr)->num_elts = 0; } while (0)
-#define GARY_INIT_SPACE_ZERO(ptr, n) do { GARY_INIT_ZERO(ptr, n); (ptr)->num_elts = 0; } while (0)
+#define GARY_INIT_SPACE(ptr, n) do { GARY_INIT(ptr, n); (GARY_HDR(ptr))->num_elts = 0; } while (0)
+#define GARY_INIT_SPACE_ZERO(ptr, n) do { GARY_INIT_ZERO(ptr, n); (GARY_HDR(ptr))->num_elts = 0; } while (0)
 #define GARY_FREE(ptr) do { if (ptr) xfree(GARY_HDR(ptr)); } while (0)
 #define GARY_SIZE(ptr) (GARY_HDR(ptr)->num_elts)
 #define GARY_RESIZE(ptr, n) ((ptr) = gary_set_size((ptr), (n)))
