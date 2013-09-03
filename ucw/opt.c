@@ -357,7 +357,7 @@ static int opt_longopt(struct opt_context * oc, char ** argv, int index) {
   int eaten = 0;
   char * name_in = argv[index] + 2; // skipping the -- on the beginning
   uns pos = strchrnul(name_in, '=') - name_in;
-  struct opt_precomputed * opt = opt_find_item_longopt(oc, strndupa(name_in, pos));	// FIXME: free?
+  struct opt_precomputed * opt = opt_find_item_longopt(oc, strndupa(name_in, pos));
   char * value = NULL;
 
   if (opt->item->cls == OPT_CL_BOOL && !strncmp(name_in, "no-", 3) && !strncmp(name_in+3, opt->item->name, pos-3))
