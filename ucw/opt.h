@@ -105,7 +105,7 @@ struct opt_section {
 /***
  * UCW Conf options
  * ~~~~~~~~~~~~~~~~
- * 
+ *
  * OPT_CONF_OPTIONS declares -C and -S as described in @getopt.h
  ***/
 

@@ -415,7 +415,7 @@ static int opt_shortopt(char ** argv, int index, struct opt_precomputed * pre) {
 
   if (argv[index][chr])
     opt_failure("Unknown option -%c.", argv[index][chr]);
-  
+
   return 0;
 }
 
@@ -479,18 +479,18 @@ void opt_parse(const struct opt_section * options, char ** argv) {
     if (item->cls == OPT_CL_HOOK)
       hooks++;
   }
-  
+
   pre->opts = alloca(sizeof(*pre->opts) * count);
   pre->shortopt = alloca(sizeof(*pre->shortopt) * (opt_positional_max + 257));
   memset(pre->shortopt, 0, sizeof(*pre->shortopt) * (opt_positional_max + 257));
   pre->hooks_before_arg = alloca(sizeof (*pre->hooks_before_arg) * hooks);
   pre->hooks_before_value = alloca(sizeof (*pre->hooks_before_value) * hooks);
   pre->hooks_after_value = alloca(sizeof (*pre->hooks_after_value) * hooks);
-  
+
   pre->hooks_before_arg_count = 0;
   pre->hooks_before_value_count = 0;
   pre->hooks_after_value_count = 0;
-  
+
   pre->opt_count = 0;
 
   for (struct opt_item * item = options->opt; ; item++) {
