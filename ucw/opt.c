@@ -55,6 +55,11 @@ const struct opt_section * opt_section_root;
 
 #define FOREACHLINE(text) for (const char * begin = (text), * end = (text); (*end) && (end = strchrnul(begin, '\n')); begin = end+1)
 
+static inline uns uns_min(uns x, uns y)
+{
+  return MIN(x, y);
+}
+
 void opt_help_internal(const struct opt_section * help) {
   int sections_cnt = 0;
   int lines_cnt = 0;
@@ -148,8 +153,8 @@ void opt_help_internal(const struct opt_section * help) {
 #undef SPLITLINES
 
   s = 0;
-#define FIELD(k) linelengths[k], MIN(strchrnul(lines[i][k], '\t')-lines[i][k],strchrnul(lines[i][k], '\n')-lines[i][k]), lines[i][k]
-#define LASTFIELD(k) MIN(strchrnul(lines[i][k], '\t')-lines[i][k],strchrnul(lines[i][k], '\n')-lines[i][k]), lines[i][k]
+#define FIELD(k) linelengths[k], uns_min(strchrnul(lines[i][k], '\t') - lines[i][k], strchrnul(lines[i][k], '\n') - lines[i][k]), lines[i][k]
+#define LASTFIELD(k) uns_min(strchrnul(lines[i][k], '\t') - lines[i][k], strchrnul(lines[i][k], '\n') - lines[i][k]), lines[i][k]
   for (int i=0;i<line;i++) {
     while (s < sections_cnt && sections[s].pos == i) {
       opt_help_internal(sections[s].sect);
