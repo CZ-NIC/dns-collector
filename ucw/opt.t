@@ -1,8 +1,9 @@
 # Tests of the command line option parser
 
 Name:	Opt-1
-Run:	( ../obj/ucw/opt-test 2>&1 1>/dev/null || [ $? -eq "2" ] ) | tr -d '\n'
-Out:	Required option -t not found.Run with argument --help for more information.
+Run:	../obj/ucw/opt-test 2>&1 1>/dev/null || [ $? -eq "2" ]
+Out:	Required option -t not found.
+	Run with argument --help for more information.
 
 Name:	Opt-2
 Run:	../obj/ucw/opt-test -t95C -w640 -gG darjeeling
@@ -17,8 +18,9 @@ Run:	../obj/ucw/opt-test -t120F -w4 puerh darjeeling earl-grey
 Out:	English style: no|Temperature: 120F|Verbosity: 1|Prayer: no|Water amount: 4|Gas: no|First tea: puerh|Boiling a tea: darjeeling|Boiling a tea: earl-grey|Everything OK. Bye.
 
 Name:	Opt-5
-Run:	( ../obj/ucw/opt-test -ghx 2>&1 1>/dev/null || [ $? -eq "2" ] ) | tr -d '\n'
-Out:	Multiple switches: -hRun with argument --help for more information.
+Run:	../obj/ucw/opt-test -ghx 2>&1 1>/dev/null || [ $? -eq "2" ]
+Out:	Multiple switches: -h
+	Run with argument --help for more information.
 
 Name:	Opt-6
 Run:	../obj/ucw/opt-test -t120F -w4 -b15 -he -- --puerh darjeeling earl-grey
@@ -29,8 +31,9 @@ Run:	../obj/ucw/opt-test -t120F -w4 -b15 -b54 -he -- --puerh darjeeling earl-gre
 Out:	English style: yes|Chosen teapot: hands|Temperature: 120F|Verbosity: 1|Black magic: 15|Black magic: 54|Prayer: no|Water amount: 4|Gas: no|First tea: --puerh|Boiling a tea: darjeeling|Boiling a tea: earl-grey|Everything OK. Bye.
 
 Name:	Opt-Conf-1
-Run:	( ../obj/ucw/opt-test -h --dumpconfig 2>&1 1>/dev/null || [ $? -eq "2" ] ) | tr -d '\n'
-Out:	Config options (-C, -S) must stand before other options.Run with argument --help for more information.
+Run:	../obj/ucw/opt-test -h --dumpconfig 2>&1 1>/dev/null || [ $? -eq "2" ]
+Out:	Config options (-C, -S) must stand before other options.
+	Run with argument --help for more information.
 
 Name:	Opt-Hook-1
 Run:	../obj/ucw/opt-test -Ht 95C -w640 -gG darjeeling
