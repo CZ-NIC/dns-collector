@@ -545,16 +545,16 @@ void opt_parse(const struct opt_section * options, char ** argv) {
       continue;
     if (!pre->shortopt[i]->count && (pre->shortopt[i]->flags & OPT_REQUIRED))
       if (i < 256)
-        opt_failure("Required option -%c not found.\n", pre->shortopt[i]->item->letter);
+        opt_failure("Required option -%c not found.", pre->shortopt[i]->item->letter);
       else
-	opt_failure("Required positional argument #%d not found.\n", (i > 256) ? pre->shortopt[i]->item->letter-256 : opt_positional_max+1);
+	opt_failure("Required positional argument #%d not found.", (i > 256) ? pre->shortopt[i]->item->letter-256 : opt_positional_max+1);
   }
 
   for (int i=0;i<pre->opt_count;i++) {
     if (!pre->opts[i])
       continue;
     if (!pre->opts[i]->count && (pre->opts[i]->flags & OPT_REQUIRED))
-      opt_failure("Required option --%s not found.\n", pre->opts[i]->item->name);
+      opt_failure("Required option --%s not found.", pre->opts[i]->item->name);
   }
 }
 
