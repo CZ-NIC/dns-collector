@@ -1,0 +1,13 @@
+Option parser
+=============
+
+FIXME!
+
+[[opt_h]]
+ucw/opt.h
+----------
+
+This header file contains the public interface of the option parser module.
+
+!!ucw/opt.h
+
