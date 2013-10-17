@@ -13,6 +13,7 @@
 #		replaced by file names of In<N> or Out<N> files (see below).
 #	In:	lines to pass to the program as standard input
 #	Out:	lines to expect at the program's standard output
+#	Err:	lines to expect at the program's standard error output
 #	In<N>:	lines to pass to the program as input file <N>
 #	Out<N>:	lines to expect from the program in output file <N>
 #		Both In<N> and Out<N> can be specified simultaneously if we
@@ -108,6 +109,13 @@ TEST: foreach $tt (@tests) {
 		push @out_checks, $tt->{'Out'};
 	} else {
 		$redirs .= " >/dev/null";
+	}
+	if (defined $tt->{'Err'}) {
+		my $efi = "tmp/test$i.err";
+		unlink "$rundir/$efi";
+		$redirs .= " 2>$efi";
+		push @out_files, $efi;
+		push @out_checks, $tt->{'Err'};
 	}
 	foreach my $arg (0..9) {
 		my $f = "tmp/test$i.$arg";
