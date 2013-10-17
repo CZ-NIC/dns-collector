@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Printf on Fastbuf Streams
  *
- *	(c) 2002--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 2002--2013 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -11,50 +11,43 @@
 #include <ucw/fastbuf.h>
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <alloca.h>
 
 int
 vbprintf(struct fastbuf *b, const char *msg, va_list args)
 {
   byte *buf;
-  int len, r;
+  int remains, len;
   va_list args2;
 
-  len = bdirect_write_prepare(b, &buf);
-  if (len >= 16)
-    {
-      va_copy(args2, args);
-      r = vsnprintf(buf, len, msg, args2);
-      va_end(args2);
-      if (r < 0)
-	len = 256;
-      else if (r < len)
-	{
-	  bdirect_write_commit(b, buf+r);
-	  return r;
-	}
-      else
-	len = r+1;
-    }
-  else
-    len = 256;
+  va_copy(args2, args);
+  remains = bdirect_write_prepare(b, &buf);
+  len = vsnprintf(buf, remains, msg, args2);
+  va_end(args2);
 
-  while (1)
+  if (len <= remains)
     {
-      buf = alloca(len);
-      va_copy(args2, args);
-      r = vsnprintf(buf, len, msg, args2);
-      va_end(args2);
-      if (r < 0)
-	len += len;
-      else if (r < len)
-	{
-	  bwrite(b, buf, r);
-	  return r;
-	}
-      else
-	len = r+1;
+      bdirect_write_commit(b, buf + len);
+      return len;
     }
+
+  int bufsize = len + 1;
+  bool need_free = 0;
+  if (bufsize <= 256)
+    buf = alloca(bufsize);
+  else
+    {
+      buf = xmalloc(bufsize);
+      need_free = 1;
+    }
+
+  vsnprintf(buf, bufsize, msg, args);
+  bwrite(b, buf, len);
+
+  if (need_free)
+    xfree(buf);
+  return len;
 }
 
 int
