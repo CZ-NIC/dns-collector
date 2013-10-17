@@ -146,8 +146,14 @@ void assert_failed_noinfo(void) NONRET;
 
 #ifdef LOCAL_DEBUG
 #define DBG(x,y...) msg(L_DEBUG, x,##y)	/** If `LOCAL_DEBUG` is defined before including <ucw/lib.h>, log a debug message. Otherwise do nothing. **/
+/**
+ * If `LOCAL_DEBUG` is defined before including <ucw/lib.h>, log current
+ * file name and line number. Otherwise do nothing.
+ **/
+#define DBG_SPOT msg(L_DEBUG, "%s:%d (%s)", __FILE__, __LINE__, __func__)
 #else
 #define DBG(x,y...) do { } while(0)
+#define DBG_SPOT do { } while(0)
 #endif
 
 #ifdef DEBUG_ASSERTS
