@@ -119,7 +119,7 @@ TESTS+=$(addprefix $(o)/ucw/,varint.test regex.test unicode.test hash-test.test 
     fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test \
     redblack-test.test fb-file.test fb-grow.test fb-pool.test fb-atomic.test \
     fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test fb-multi.test url.test strtonum-test.test \
-    gary.test time.test crc.test signames.test md5.test)
+    gary.test time.test crc.test signames.test md5.test bitops.test)
 
 $(o)/ucw/varint.test: $(o)/ucw/varint-t
 $(o)/ucw/regex.test: $(o)/ucw/regex-t
@@ -127,7 +127,7 @@ $(o)/ucw/unicode.test: $(o)/ucw/unicode-t
 $(o)/ucw/hash-test.test: $(o)/ucw/hash-test
 $(o)/ucw/mempool.test: $(o)/ucw/mempool-t $(o)/ucw/mempool-fmt-t $(o)/ucw/mempool-str-t
 $(o)/ucw/stkstring.test: $(o)/ucw/stkstring-t
-$(o)/ucw/bitops.test: $(o)/ucw/bit-ffs-t $(o)/ucw/bit-fls-t $(o)/ucw/bit-count-t
+$(o)/ucw/bitops.test: $(o)/ucw/bit-ffs-t $(o)/ucw/bit-fls-t
 $(o)/ucw/slists.test: $(o)/ucw/slists-t
 $(o)/ucw/kmp-test.test: $(o)/ucw/kmp-test
 $(o)/ucw/bbuf.test: $(o)/ucw/bbuf-t
