@@ -9,6 +9,7 @@
 
 #include <ucw/lib.h>
 #include <ucw/fastbuf.h>
+#include <ucw/resource.h>
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -32,21 +33,32 @@ vbprintf(struct fastbuf *b, const char *msg, va_list args)
       return len;
     }
 
+  /*
+   *  We need a temporary buffer. If it is small, let's use stack.
+   *  Otherwise, we malloc it, but we have to be careful, since we
+   *  might be running inside a transaction and bwrite() could
+   *  throw an exception.
+   *
+   *  FIXME: This deserves a more systematic solution, the same
+   *  problem is likely to happen at other places, too.
+   */
   int bufsize = len + 1;
-  bool need_free = 0;
+  struct resource *res = NULL;
+  byte *extra_buffer = NULL;
   if (bufsize <= 256)
     buf = alloca(bufsize);
+  else if (rp_current())
+    buf = res_malloc(bufsize, &res);
   else
-    {
-      buf = xmalloc(bufsize);
-      need_free = 1;
-    }
+    buf = extra_buffer = xmalloc(bufsize);
 
   vsnprintf(buf, bufsize, msg, args);
   bwrite(b, buf, len);
 
-  if (need_free)
-    xfree(buf);
+  if (res)
+    res_free(res);
+  else if (extra_buffer)
+    xfree(extra_buffer);
   return len;
 }
 
