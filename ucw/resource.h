@@ -75,7 +75,7 @@ static inline struct respool *rp_switch(struct respool *rp)
   return orp;
 }
 
-struct resource *res_alloc(const struct res_class *rc) LIKE_MALLOC;	// Returns NULL if there is no pool active
+struct resource *res_alloc(const struct res_class *rc) LIKE_MALLOC;	// Dies if there is no pool active
 
 void res_dump(struct resource *r, uns indent);		/** Prints out a debugging dump of the resource to stdout. **/
 
