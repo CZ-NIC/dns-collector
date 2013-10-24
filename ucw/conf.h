@@ -392,7 +392,7 @@ struct cf_section {			/** A section. **/
 #define CF_ANY_NUM		-0x7fffffff
 
 #define DARY_LEN(a) ((uns*)a)[-1]	/** Length of an dynamic array. **/
-#define DARY_ALLOC(type,len,val...) ((struct { uns l; type a[len]; }) { .l = len, .a = { val } }).a
+#define DARY_ALLOC(type,len,val...) ((struct { byte pad[ALIGN_TO(sizeof(uns), CPU_STRUCT_ALIGN) - sizeof(uns)]; uns l; type a[len]; }) { .l = len, .a = { val } }).a
   // creates a static instance of a dynamic array
 
 /***
