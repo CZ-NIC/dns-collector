@@ -132,6 +132,7 @@ BH_PREFIX(insert)(BH_HEAP *heap, BH_NODE *a)
 
   sh.first_son = a;
   a->first_son = a->last_son = a->next_sibling = NULL;
+  a->order = 0;
   BH_PREFIX(merge)(&heap->root, &sh);
 }
 #endif
