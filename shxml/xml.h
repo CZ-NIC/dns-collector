@@ -150,7 +150,7 @@ struct xml_source {
   uns refill_cat2;					/* Character categories, which should be processed as newlines (possibly in some built-in
 							   sequences) */
   void (*refill)(struct xml_context *ctx);		/* Callback to decode source characters to the buffer */
-  unsigned short *refill_in_to_x;			/* Libcharset input table */
+  unsigned short *refill_in_to_x;			/* Libucw-charset input table */
   uns saved_depth;					/* Saved ctx->depth */
   uns pending_0xd;					/* The last read character is 0xD */
 };
