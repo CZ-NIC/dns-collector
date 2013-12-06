@@ -28,7 +28,7 @@ static void NONRET
 usage(void)
 {
   fputs("\
-Usage: image-sim-test [options] image1 [image2] \n\
+Usage: ucw-image-sim-test [options] image1 [image2] \n\
 \n\
 -q --quiet           no progress messages\n\
 -f --format-1        image1 format (jpeg, gif, png)\n\

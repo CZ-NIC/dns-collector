@@ -22,7 +22,7 @@ static void NONRET
 usage(void)
 {
   fputs("\
-Usage: image-tool [options] infile [outfile]\n\
+Usage: ucw-image-tool [options] infile [outfile]\n\
 \n\
 -q --quiet               no progress messages\n\
 -f --input-format        input image format (jpeg, gif, png)\n\

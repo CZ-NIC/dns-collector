@@ -21,7 +21,7 @@ static void NONRET
 usage(void)
 {
   fputs("\
-Usage: color-tool input-color-space output-color-space\n\
+Usage: ucw-color-tool input-color-space output-color-space\n\
 ", stderr);
   exit(1);
 }

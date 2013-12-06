@@ -2,7 +2,7 @@
 
 DIRS+=images
 
-LIBIMAGES_PROGS=$(o)/images/image-tool $(o)/images/color-tool
+LIBIMAGES_PROGS=$(o)/images/ucw-image-tool $(o)/images/ucw-color-tool
 LIBIMAGES_CONFIGS+=images
 LIBIMAGES_MODS=math config context image scale color io-main
 LIBIMAGES_INCLUDES=images.h error.h color.h math.h
@@ -23,12 +23,12 @@ LIBIMAGES_DEPS+=$(o)/images/libucw-images-pic.a
 endif
 
 ifdef CONFIG_IMAGES_DUP
-LIBIMAGES_PROGS+=$(o)/images/image-dup-test
+LIBIMAGES_PROGS+=$(o)/images/ucw-image-dup-test
 LIBIMAGES_MODS+=dup-init dup-cmp
 LIBIMAGES_INCLUDES+=duplicates.h
 endif
 ifdef CONFIG_IMAGES_SIM
-LIBIMAGES_PROGS+=$(o)/images/image-sim-test
+LIBIMAGES_PROGS+=$(o)/images/ucw-image-sim-test
 LIBIMAGES_MODS+=sig-cmp
 endif
 ifneq ($(CONFIG_IMAGES_DUP)$(CONFIG_IMAGES_SIM),)
@@ -73,10 +73,10 @@ $(o)/images/libucw-images.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAG
 $(o)/images/libucw-images.so: SONAME_SUFFIX=.$(UCW_ABI_VERSION)
 $(o)/images/libucw-images.pc: $(LIBIMAGES_DEPS)
 
-$(o)/images/image-tool: $(o)/images/image-tool.o $(LIBIMAGES)
-$(o)/images/color-tool: $(o)/images/color-tool.o $(LIBIMAGES)
-$(o)/images/image-dup-test: $(o)/images/image-dup-test.o $(LIBIMAGES)
-$(o)/images/image-sim-test: $(o)/images/image-sim-test.o $(LIBIMAGES)
+$(o)/images/ucw-image-tool: $(o)/images/ucw-image-tool.o $(LIBIMAGES)
+$(o)/images/ucw-color-tool: $(o)/images/ucw-color-tool.o $(LIBIMAGES)
+$(o)/images/ucw-image-dup-test: $(o)/images/ucw-image-dup-test.o $(LIBIMAGES)
+$(o)/images/ucw-image-sim-test: $(o)/images/ucw-image-sim-test.o $(LIBIMAGES)
 
 TESTS+=$(o)/images/image-test.test
 $(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES)
