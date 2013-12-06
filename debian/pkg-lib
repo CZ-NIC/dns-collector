@@ -1,0 +1,71 @@
+# A library of shell functions for building of Debian packages
+# (c) 2008--2009 Martin Mares <mj@ucw.cz>
+# (c) 2009--2013 Pavel Charvat <pchar@ucw.cz>
+
+# Expects:
+# PKG		name of the package
+# ROOT		absolute path to the root of the source tree
+# PKGVER	custom package version
+
+unset PKG ROOT SRCVER VER
+
+function pkg-git-version {
+	TREEVER=`git describe | sed 's/^v//;s/[a-f]$/&-0/'`
+	TREEHASH=`git rev-parse --verify HEAD`
+	VER=${PKGVER:-$TREEVER}
+	SRCVER=${PKGVER:-$VER}
+	cat <<EOF
+###
+### Source tree version: $TREEVER
+### Source tree hash: $TREEHASH
+### Debian binary package version: $VER
+### Debian source package version: $SRCVER
+###
+### Hey, did you commit everything? Or added it to the index?
+###
+
+EOF
+}
+
+function pkg-git-checkout {
+	BUILDDIR=debian-tmp/$PKG-$SRCVER
+	rm -rf debian-tmp
+	mkdir -p $BUILDDIR
+	git checkout-index -a --prefix=$BUILDDIR/
+}
+
+function pkg-fake-changelog {
+	echo "Creating automatic changelogs for package $PKG version $VER"
+	(
+		export EDITOR=true
+		CL=debian/changelog
+		rm -f $CL
+		dch --changelog $CL --create --package $PKG --newversion $VER "Automatic release. See /usr/share/doc/$PKG/changelog for the true story."
+		dch --changelog $CL --release
+		sed -i '/Initial release/d' $CL
+	)
+}
+
+function pkg-cleanup {
+	echo -n "Press return to delete temp files... "
+	read YES
+	rm -rf $ROOT/debian-tmp
+}
+
+function pkg-get-files {
+	echo
+	echo "Generated files:"
+	FILES=
+	unset FILES_ARY[@]
+	for F in "$@" ; do
+		if [ -f "$F" ] ; then
+			FILES="$FILES${FILES:+,}$F"
+			FILES_ARY[${#FILES_ARY[@]}]="$F"
+			echo "$F"
+		fi
+	done
+	if [ -z "$FILES" ] ; then
+		echo "No files found"
+		return 1
+	fi
+}

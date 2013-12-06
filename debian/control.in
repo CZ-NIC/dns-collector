@@ -1,0 +1,21 @@
+Source: libucw
+Section: apps
+Priority: optional
+Maintainer: Pavel Charvat <pchar@ucw.cz>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.0
+
+Package: libucw-@UCW_ABI_VERSION@
+Architecture: any
+Depends: ${shlib:Depends}, ${misc:Depends}
+Description: LibUCW library
+
+Package: libucw-dev
+Architecture: any
+Depends: libucw-@UCW_ABI_VERSION@ (= @VER@), ${shlib:Depends}, ${misc:Depends}
+Description: LibUCW development files
+
+Package: libucw-doc
+Architecture: all
+Depends: ${shlib:Depends}, ${misc:Depeneds}
+Description: LibUCW documentation

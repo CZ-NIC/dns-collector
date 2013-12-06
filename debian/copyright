@@ -1,0 +1,6 @@
+This is the UCW library, which aims to provide a set general purpose tools
+for programming in the C language.
+
+It can be freely distributed and used according to the terms of
+the GNU Lesser General Public License, either version 2 or any later
+version. Several modules are in public domain.

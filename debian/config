@@ -1,0 +1,13 @@
+# Default configuration file for debian packages
+
+Include("default.cfg");
+
+UnSet("CONFIG_LOCAL");
+Set("CONFIG_INSTALL_API");
+
+Set("CONFIG_DOC");
+Set("CONFIG_CHARSET");
+Set("CONFIG_XML");
+Set("CONFIG_IMAGES");
+
+1;
