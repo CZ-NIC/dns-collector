@@ -23,7 +23,7 @@ include $(BUILDSYS)/Makefile
 
 # Set up names of common libraries (to avoid forward references in rules)
 ifdef CONFIG_CHARSET
-LIBCHARSET=$(o)/charset/libcharset.pc
+LIBCHARSET=$(o)/charset/libucw-charset.pc
 endif
 
 # The UCW library
@@ -46,12 +46,12 @@ include $(s)/charset/Makefile
 endif
 
 ifdef CONFIG_IMAGES
-LIBIMAGES=$(o)/images/libimages.pc
+LIBIMAGES=$(o)/images/libucw-images.pc
 include $(s)/images/Makefile
 endif
 
 ifdef CONFIG_SHXML
-LIBSHXML=$(o)/shxml/libshxml.pc
+LIBSHXML=$(o)/shxml/libucw-xml.pc
 include $(s)/shxml/Makefile
 endif
 

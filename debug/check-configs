@@ -44,7 +44,7 @@ function try
 rm -rf tests
 mkdir tests
 if [ "$1" == DARWIN ] ; then
-	# All tests on Darwin need CONFIG_SHARED, due to libcharset collision
+	# All tests on Darwin need CONFIG_SHARED, due to libucw-charset collision
 	# only visible with static linking.
 	FLAGS="CONFIG_SHARED"
 	try debug/default.cfg $FLAGS CONFIG_UCW_PCRE					# `make tests' does not work with non-local builds with shared libs

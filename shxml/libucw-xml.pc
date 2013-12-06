@@ -1,4 +1,4 @@
-# pkg-config metadata for libcharset
+# pkg-config metadata for libucw-xml
 
 libdir=@LIBDIR@
 incdir=.
@@ -6,9 +6,9 @@ incdir=.
 # Override if you want to use the -pic version
 picsuffix=
 
-Name: libcharset
-Description: Character set conversion library
+Name: libucw-xml
+Description: XML parser for LibUCW project
 Version: @UCW_VERSION@
 Cflags: -I${incdir}
-Libs: -L${libdir} -lcharset${picsuffix}
+Libs: -L${libdir} -lucw-xml${picsuffix}
 Requires: @DEPS@

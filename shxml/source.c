@@ -307,7 +307,7 @@ xml_parse_encoding_name(struct xml_context *ctx)
 static void
 xml_init_charconv(struct xml_context *ctx, int cs)
 {
-  // XXX: with a direct access to libcharset tables could be faster
+  // XXX: with a direct access to libucw-charset tables could be faster
   struct xml_source *src = ctx->src;
   TRACE(ctx, "wrapping charset %s", charset_name(cs));
   src->wrapped_fb = src->fb;

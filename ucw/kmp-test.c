@@ -50,7 +50,7 @@ test1(void)
   kmp1_cleanup(&kmp);
 }
 
-#ifdef CONFIG_CHARSET		/* This one depends on libcharset */
+#ifdef CONFIG_CHARSET		/* This one depends on libucw-charset */
 
 /* TEST2 - various tracing */
 

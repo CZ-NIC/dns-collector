@@ -16,7 +16,7 @@ LIBIMAGES_DEPS=$(LIBUCW)
 endif
 
 ifdef CONFIG_STATIC_PIC
-LIBIMAGES_DEPS+=$(o)/images/libimages-pic.a
+LIBIMAGES_DEPS+=$(o)/images/libucw-images-pic.a
 endif
 
 ifdef CONFIG_IMAGES_DUP
@@ -64,10 +64,10 @@ endif
 PROGS+=$(LIBIMAGES_PROGS)
 CONFIGS+=$(LIBIMAGES_CONFIGS)
 
-$(o)/images/libimages.a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
-$(o)/images/libimages-pic.a: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
-$(o)/images/libimages.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
-$(o)/images/libimages.pc: $(LIBIMAGES_DEPS)
+$(o)/images/libucw-images.a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
+$(o)/images/libucw-images-pic.a: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
+$(o)/images/libucw-images.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
+$(o)/images/libucw-images.pc: $(LIBIMAGES_DEPS)
 
 $(o)/images/image-tool: $(o)/images/image-tool.o $(LIBIMAGES)
 $(o)/images/color-tool: $(o)/images/color-tool.o $(LIBIMAGES)
@@ -82,22 +82,22 @@ TESTS+=$(o)/images/color.test
 $(o)/images/color-t: $(LIBIMAGES)
 $(o)/images/color.test: $(o)/images/color-t
 
-API_LIBS+=libimages
+API_LIBS+=libucw-images
 API_INCLUDES+=$(o)/images/.include-stamp
 $(o)/images/.include-stamp: $(addprefix $(s)/images/,$(LIBIMAGES_INCLUDES))
 $(o)/images/.include-stamp: IDST=images
-run/lib/pkgconfig/libimages.pc: $(o)/images/libimages.pc
+run/lib/pkgconfig/libucw-images.pc: $(o)/images/libucw-images.pc
 
-INSTALL_TARGETS+=install-libimages
-install-libimages:
+INSTALL_TARGETS+=install-libucw-images
+install-libucw-images:
 	install -d -m 755 $(addprefix $(DESTDIR),$(INSTALL_BIN_DIR) $(INSTALL_INCLUDE_DIR)/images $(INSTALL_LIB_DIR) $(INSTALL_PKGCONFIG_DIR) $(INSTALL_CONFIG_DIR))
 	install -m 755 $(LIBIMAGES_PROGS) $(DESTDIR)$(INSTALL_BIN_DIR)
 	install -m 644 $(addprefix run/include/images/,$(LIBIMAGES_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/images
-	install -m 644 run/lib/libimages.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/pkgconfig/libimages.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+	install -m 644 run/lib/libucw-images.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/pkgconfig/libucw-images.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 $(addprefix run/$(CONFIG_DIR)/,$(LIBIMAGES_CONFIGS)) $(DESTDIR)$(INSTALL_CONFIG_DIR)
 ifdef CONFIG_STATIC_PIC
-	install -m 644 run/lib/libimages-pic.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/libucw-images-pic.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
 endif
 
-.PHONY: install-libimages
+.PHONY: install-libucw-images
