@@ -10,7 +10,7 @@
 #ifndef _SHERLOCK_XML_DTD_H
 #define _SHERLOCK_XML_DTD_H
 
-#include <shxml/xml.h>
+#include <xml/xml.h>
 
 struct xml_dtd {
   struct mempool *pool;			/* Memory pool where to allocate DTD */

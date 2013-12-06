@@ -10,9 +10,9 @@
 #undef LOCAL_DEBUG
 
 #include <ucw/lib.h>
-#include <shxml/xml.h>
-#include <shxml/dtd.h>
-#include <shxml/internals.h>
+#include <xml/xml.h>
+#include <xml/dtd.h>
+#include <xml/internals.h>
 #include <ucw/fastbuf.h>
 #include <ucw/ff-unicode.h>
 #include <ucw/unicode.h>

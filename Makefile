@@ -50,9 +50,9 @@ LIBIMAGES=$(o)/images/libucw-images.pc
 include $(s)/images/Makefile
 endif
 
-ifdef CONFIG_SHXML
-LIBSHXML=$(o)/shxml/libucw-xml.pc
-include $(s)/shxml/Makefile
+ifdef CONFIG_XML
+LIBXML=$(o)/xml/libucw-xml.pc
+include $(s)/xml/Makefile
 endif
 
 # Build documentation by default?
@@ -60,7 +60,7 @@ ifdef CONFIG_DOC
 all: docs
 endif
 
-libs: $(LIBUCW) $(LIBSHXML) $(LIBIMAGES) $(LIBCHARSET)
+libs: $(LIBUCW) $(LIBXML) $(LIBIMAGES) $(LIBCHARSET)
 
 # And finally the default rules of the build system
 include $(BUILDSYS)/Makebottom
