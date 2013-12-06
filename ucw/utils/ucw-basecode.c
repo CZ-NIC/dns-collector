@@ -82,7 +82,7 @@ int main(int argc, char **argv)
   if (mode == -1)
   {
     usage:
-    fprintf(stderr, "basecode mode [--prefix=prefix] [--blocks=number_of_blocks]\nMode is one of:\n\t--encode64 (-e)\n\t--decode64 (-d)\n\t--encode224 (-E)\n\t--decode224 (-D)\n");
+    fprintf(stderr, "ucw-basecode mode [--prefix=prefix] [--blocks=number_of_blocks]\nMode is one of:\n\t--encode64 (-e)\n\t--decode64 (-d)\n\t--encode224 (-E)\n\t--decode224 (-D)\n");
     return 1;
   }
   if (!blocks)

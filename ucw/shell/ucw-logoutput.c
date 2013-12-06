@@ -211,10 +211,10 @@ const struct option my_long_opts[] = {
 #define CF_USAGE_TAB "\t   "
 static char usage[] =
   "Usage:\n"
-  "logoutput -h|--help\t\t   This help.\n"
-  "logoutput <options> -i|--input\t   Read file descriptors and log them.\n"
+  "ucw-logoutput -h|--help\t\t   This help.\n"
+  "ucw-logoutput <options> -i|--input   Read file descriptors and log them.\n"
   "\t\t\t\t   default: stdin at level I.\n"
-  "logoutput <opts> [--] <cmd> [arguments for cmd ...]\n"
+  "ucw-logoutput <opts> [--] <cmd> [arguments for cmd ...]\n"
   "\t\t\t\t   Open file descriptors for writing for command <cmd> and log them.\n"
   "\t\t\t\t   default: stdout:I, stderr:W.\n\n"
   "Options:\n"
@@ -236,7 +236,7 @@ main(int argc, char **argv)
   struct fds *stderrfd = NULL;
   int help = 0;
 
-  log_init("logoutput");
+  log_init("ucw-logoutput");
   clist_init(&filedescriptors);
   cf_declare_section("LogOutput", &cfsec_logoutput, 0);
 
@@ -441,7 +441,7 @@ opt_done:
 
   if (!loginput) {
     /* Unset logname. */
-    log_init("logoutput");
+    log_init("ucw-logoutput");
 
     /* Wait for status of the child and inform about finish. */
     int status;

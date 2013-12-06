@@ -58,7 +58,7 @@ since there can be multiple instances of the daemon running simultaneously.
 
 We therefore recommend the following daemon control protocol, which prevents all such
 race conditions. Its implementation is available in form of the daemon_control() library
-function or the `daemon-control` stand-alone utility.
+function or the `ucw-daemon-control` stand-alone utility.
 
 * There exist two files:
 ** PID file (usually `/var/run/daemon.pid`), which contains the PID of the daemon

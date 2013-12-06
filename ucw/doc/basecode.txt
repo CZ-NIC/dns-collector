@@ -58,7 +58,7 @@ way as base64.
 The basecode utility
 --------------------
 You can use the encoding/decoding routines from command line, trough
-`basecode` command. You have to specify the operation by a command
+`ucw-basecode` command. You have to specify the operation by a command
 line argument and give it the data on standard input. The arguments
 are:
 

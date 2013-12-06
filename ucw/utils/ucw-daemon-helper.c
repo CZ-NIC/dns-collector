@@ -12,7 +12,7 @@
  *	101	already running
  *	102	not running
  *
- *	NOTE: This utility is obsolete and has been replaced by daemon-control.
+ *	NOTE: This utility is obsolete and has been replaced by ucw-daemon-control.
  *	You need to enable CONFIG_UCW_OBSOLETE_DAEMON_HELPER to compile it.
  */
 
@@ -54,11 +54,11 @@ static void NONRET
 usage(void)
 {
   fputs("\n\
-Usage: daemon-helper --start <options> -- <daemon> <args>\n\
-   or: daemon-helper --stop <options>\n\
-   or: daemon-helper --force-stop <options>\n\
-   or: daemon-helper --reload <options>\n\
-   or: daemon-helper --check <options>\n\
+Usage: ucw-daemon-helper --start <options> -- <daemon> <args>\n\
+   or: ucw-daemon-helper --stop <options>\n\
+   or: ucw-daemon-helper --force-stop <options>\n\
+   or: ucw-daemon-helper --reload <options>\n\
+   or: ucw-daemon-helper --check <options>\n\
 \n\
 Options:\n\
 --pid-file <name>	Name of PID file for this daemon (mandatory)\n\

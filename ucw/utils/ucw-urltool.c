@@ -73,7 +73,7 @@ static struct option longopts[] =
 };
 
 static char *help = "\
-Usage: urltool [<options>] <operations> [<URL's>]\n\
+Usage: ucw-urltool [<options>] <operations> [<URL's>]\n\
 \n\
 Options:\n"
 CF_USAGE "\

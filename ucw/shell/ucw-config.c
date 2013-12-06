@@ -36,7 +36,7 @@ static void
 help(void)
 {
   fputs("\n\
-Usage: config [-C<configfile>] [-S<section>.<option>=<value>] <sections>\n\
+Usage: ucw-config [-C<configfile>] [-S<section>.<option>=<value>] <sections>\n\
 \n\
 <sections>\t<section>[;<sections>]\n\
 <section>\t[!]<name>{[<items>]}\n\
@@ -405,7 +405,7 @@ dump_item(struct item *item, void *ptr, uns path_len)
 
 int main(int argc, char **argv)
 {
-  log_init("config");
+  log_init("ucw-config");
   if (argc < 2)
     help();
   pos = argv[argc - 1];

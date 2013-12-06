@@ -39,10 +39,10 @@ static void NONRET
 usage(void)
 {
   fputs("\n\
-Usage: daemon-control --start <options> -- <daemon> <args>\n\
-   or: daemon-control --stop <options>\n\
-   or: daemon-control --reload <options>\n\
-   or: daemon-control --check <options>\n\
+Usage: ucw-daemon-control --start <options> -- <daemon> <args>\n\
+   or: ucw-daemon-control --stop <options>\n\
+   or: ucw-daemon-control --reload <options>\n\
+   or: ucw-daemon-control --check <options>\n\
 \n\
 Options:\n\
 --pid-file <name>	Name of PID file for this daemon (mandatory)\n\

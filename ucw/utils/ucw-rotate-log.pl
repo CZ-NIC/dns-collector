@@ -5,7 +5,7 @@
 
 use File::stat;
 
-@ARGV >= 3 or die "Usage: rotate-log <days-to-compress> <date-to-delete> <logs...>";
+@ARGV >= 3 or die "Usage: ucw-rotate-log <days-to-compress> <date-to-delete> <logs...>";
 
 $now = time;
 $cps = shift @ARGV;

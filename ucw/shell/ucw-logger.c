@@ -18,9 +18,9 @@ main(int argc, char **argv)
 {
   byte buf[1024], *c;
 
-  log_init("logger");
+  log_init("ucw-logger");
   if (argc < 3 || argc > 4 || strlen(argv[2]) != 1)
-    die("Usage: logger [<logname>:]<progname> <level> [<text>]");
+    die("Usage: ucw-logger [<logname>:]<progname> <level> [<text>]");
   if (c = strchr(argv[1], ':'))
     {
       *c++ = 0;
