@@ -8,7 +8,7 @@ picsuffix=
 
 Name: libucw-images
 Description: UCW image library
-Version: @UCW_VERSION@
+Version: @UCW_ABI_VERSION@
 Cflags: -I${incdir}
 Libs: -L${libdir} -lucw-images${picsuffix} -lm -lpthread @LIBIMAGES_LIBS@
 Requires: @DEPS@

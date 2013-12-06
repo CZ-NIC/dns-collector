@@ -12,10 +12,14 @@ LIBSHXML_MOD_PATHS=$(addprefix $(o)/shxml/,$(LIBSHXML_MODS))
 $(o)/shxml/libucw-xml.a: $(addsuffix .o,$(LIBSHXML_MOD_PATHS))
 $(o)/shxml/libucw-xml-pic.a: $(addsuffix .oo,$(LIBSHXML_MOD_PATHS))
 $(o)/shxml/libucw-xml.so: $(addsuffix .oo,$(LIBSHXML_MOD_PATHS))
+$(o)/shxml/libucw-xml.so: SONAME_SUFFIX=.$(UCW_ABI_VERSION)
 $(o)/shxml/libucw-xml.pc: $(LIBCHARSET)
 
 ifdef CONFIG_STATIC_PIC
 $(o)/shxml/libucw-xml.pc: $(o)/shxml/libucw-xml-pic.a
+endif
+ifdef CONFIG_INSTALL_API
+$(o)/shxml/libucw-xml.pc: $(o)/shxml/libucw-xml.a $(o)/shxml/libucw-xml-pic.a $(o)/shxml/libucw-xml.so
 endif
 
 $(o)/shxml/common.o: $(o)/shxml/unicat.h
@@ -41,14 +45,18 @@ $(o)/shxml/.include-stamp: $(addprefix $(s)/shxml/,$(LIBSHXML_INCLUDES))
 $(o)/shxml/.include-stamp: IDST=shxml
 run/lib/pkgconfig/libucw-xml.pc: $(o)/shxml/libucw-xml.pc
 
-INSTALL_TARGETS+=install-libucw-xml
-install-sh-xml:
-	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/shxml $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
-	install -m 644 $(addprefix run/include/shxml/,$(LIBSHXML_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/shxml
-	install -m 644 run/lib/pkgconfig/libucw-xml.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
-	install -m 644 run/lib/libucw-xml.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
-ifdef CONFIG_STATIC_PIC
-	install -m 644 run/lib/libucw-xml-pic.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
-endif
+INSTALL_TARGETS+=install-libucw-xml install-libucw-xml-api
 
-.PHONY: install-libucw-xml
+install-libucw-xml:
+	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/libucw-xml.so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)
+
+install-libucw-xml-api:
+	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/shxml $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+	install -m 644 run/lib/pkgconfig/libucw-xml.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+	install -m 644 $(addprefix run/include/shxml/,$(LIBSHXML_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/shxml
+	ln -sf libucw-xml.so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-xml.so
+	install -m 644 run/lib/libucw-xml.a $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/libucw-xml-pic.a $(DESTDIR)$(INSTALL_LIB_DIR)
+
+.PHONY: install-libucw-xml install-libucw-xml-api

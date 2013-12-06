@@ -8,10 +8,14 @@ LIBCHARSET_INCLUDES=charconv.h unicat.h fb-charconv.h stk-charconv.h mp-charconv
 $(o)/charset/libucw-charset.a: $(addsuffix .o,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
 $(o)/charset/libucw-charset-pic.a: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
 $(o)/charset/libucw-charset.so: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
+$(o)/charset/libucw-charset.so: SONAME_SUFFIX=.$(UCW_ABI_VERSION)
 $(o)/charset/libucw-charset.pc: $(LIBUCW)
 
 ifdef CONFIG_STATIC_PIC
 $(o)/charset/libucw-charset.pc: $(o)/charset/libucw-charset-pic.a
+endif
+ifdef CONFIG_INSTALL_API
+$(o)/charset/libucw-charset.pc: $(o)/charset/libucw-charset.a $(o)/charset/libucw-charset-pic.a $(o)/charset/libucw-charset.so
 endif
 
 API_LIBS+=libucw-charset
@@ -32,14 +36,18 @@ build_charsets:
 clean::
 	rm -f $(s)/charset/misc/u-*
 
-INSTALL_TARGETS+=install-libucw-charset
+INSTALL_TARGETS+=install-libucw-charset install-libucw-charset-api
+
 install-libucw-charset:
+	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/libucw-charset.so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)
+
+install-libucw-charset-api:
 	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/charset $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 $(addprefix run/include/charset/,$(LIBCHARSET_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/charset
-	install -m 644 run/lib/libucw-charset.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
 	install -m 644 run/lib/pkgconfig/libucw-charset.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
-ifdef CONFIG_STATIC_PIC
-	install -m 644 run/lib/libucw-charset-pic.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
-endif
+	ln -sf libucw-charset.so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-charset.so
+	install -m 644 run/lib/libucw-charset.a $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/libucw-charset-pic.a $(DESTDIR)$(INSTALL_LIB_DIR)
 
-.PHONY: install-libucw-charset
+.PHONY: install-libucw-charset install-libucw-charset-api
