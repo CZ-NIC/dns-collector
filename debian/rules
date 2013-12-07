@@ -31,6 +31,9 @@ install: build
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-dev $(addprefix install-,$(addsuffix -api,libucw libucw-charset libucw-xml libucw-images))
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-utils install-ucw-utils install-ucw-shell install-libucw-charset-utils install-libucw-images-utils
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-doc install-libucw-docs
+	install -d -m 755 $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples
+	cp -r examples/external $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples/program
+	cp -r etc $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples/
 
 binary-indep: build install
 
@@ -52,7 +55,7 @@ binary-arch: build install
 #	dh_installman
 #	dh_link
 #	dh_strip
-	dh_compress
+	dh_compress -Xusr/share/doc/libucw/
 	dh_fixperms
 #	dh_perl
 #	dh_python
