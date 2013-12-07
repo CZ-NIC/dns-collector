@@ -19,7 +19,11 @@ EOF
 function pkg-gen-debian {(
 	cd $BUILDDIR
 	echo "Configuring"
-	./configure debian/config VER="$VER" TREEHASH="$TREEHASH" $CONF PREFIX=/ INSTALL_INCLUDE_DIR=/usr/include/libucw INSTALL_DOC_DIR=/usr/share/doc/libucw/html
+	./configure debian/config VER="$VER" TREEHASH="$TREEHASH" $CONF \
+		PREFIX=/ \
+		INSTALL_INCLUDE_DIR=/usr/include/libucw \
+		INSTALL_DOC_DIR=/usr/share/doc/libucw/html \
+		INSTALL_CONFIG_DIR=/usr/share/doc/libucw/examples/etc
 
 	echo "Creating debian/control"
 	build/genconf debian/control.in debian/control obj/config.mk
