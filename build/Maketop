@@ -74,7 +74,7 @@ clean:: dust
 	rm -rf tests run/{bin,lib,include,.tree-stamp,doc}
 
 distclean:: clean
-	rm -rf obj run
+	rm -rf obj run debian-tmp
 
 testclean::
 	rm -f `find obj -name "*.test"`

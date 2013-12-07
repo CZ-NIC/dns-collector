@@ -89,13 +89,13 @@ LIBUCW_MOD_PATHS=$(addprefix $(o)/ucw/,$(LIBUCW_MODS))
 $(o)/ucw/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
 $(o)/ucw/libucw-pic.a: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 $(o)/ucw/libucw.so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
-$(o)/ucw/libucw.so: SONAME_SUFFIX=.$(UCW_ABI_VERSION)
+$(o)/ucw/libucw.so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
 
 ifdef CONFIG_STATIC_PIC
 $(o)/ucw/libucw.pc: $(o)/ucw/libucw-pic.a
 endif
 ifdef CONFIG_INSTALL_API
-$(o)/ucw/libucw.pc: $(o)/ucw/libucw.a $(o)/ucw/libucw-pic.a $(o)/ucw/libucw.so
+$(o)/ucw/libucw.pc: $(addprefix $(o)/ucw/libucw,.a -pic.a .so)
 endif
 
 $(o)/ucw/hashfunc.o $(o)/ucw/hashfunc.oo: CFLAGS += -funroll-loops
@@ -188,7 +188,7 @@ INSTALL_TARGETS+=install-libucw install-libucw-api
 
 install-libucw:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/libucw.so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/
+	install -m 644 run/lib/libucw.so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw.so.$(UCW_ABI_VERSION)
 
 install-libucw-api:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/ $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)

@@ -15,11 +15,11 @@ else
 LIBIMAGES_DEPS=$(LIBUCW)
 endif
 
-ifdef CONFIG_INSTALL_API
-$(o)/images/libucw-images.pc: $(o)/images/libucw-images.a $(o)/images/libucw-images-pic.a $(o)/images/libucw-images.so
-endif
 ifdef CONFIG_STATIC_PIC
 LIBIMAGES_DEPS+=$(o)/images/libucw-images-pic.a
+endif
+ifdef CONFIG_INSTALL_API
+$(o)/images/libucw-images.pc: $(addprefix $(o)/images/libucw-images,.a -pic.a .so)
 endif
 
 ifdef CONFIG_IMAGES_DUP
@@ -70,7 +70,7 @@ CONFIGS+=$(LIBIMAGES_CONFIGS)
 $(o)/images/libucw-images.a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 $(o)/images/libucw-images-pic.a: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 $(o)/images/libucw-images.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
-$(o)/images/libucw-images.so: SONAME_SUFFIX=.$(UCW_ABI_VERSION)
+$(o)/images/libucw-images.so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
 $(o)/images/libucw-images.pc: $(LIBIMAGES_DEPS)
 
 $(o)/images/ucw-image-tool: $(o)/images/ucw-image-tool.o $(LIBIMAGES)
@@ -96,10 +96,10 @@ INSTALL_TARGETS+=install-libucw-images install-libucw-images-api install-libucw-
 
 install-libucw-images:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/libucw-images.so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/libucw-images.so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-images.so.$(UCW_ABI_VERSION)
 
 install-libucw-images-api:
-	install -d -m 755 $(addprefix $(DESTDIR),$(INSTALL_BIN_DIR) $(INSTALL_INCLUDE_DIR)/images $(INSTALL_LIB_DIR) $(INSTALL_PKGCONFIG_DIR))
+	install -d -m 755 $(addprefix $(DESTDIR),$(INSTALL_INCLUDE_DIR)/images $(INSTALL_LIB_DIR) $(INSTALL_PKGCONFIG_DIR))
 	install -m 644 $(addprefix run/include/images/,$(LIBIMAGES_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/images
 	install -m 644 run/lib/pkgconfig/libucw-images.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	ln -sf libucw-images.so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-images.so

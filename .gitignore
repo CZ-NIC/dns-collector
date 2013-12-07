@@ -6,3 +6,4 @@ TAGS
 _*
 *.swp
 .make.log
+debian-tmp

@@ -12,14 +12,14 @@ LIBXML_MOD_PATHS=$(addprefix $(o)/xml/,$(LIBXML_MODS))
 $(o)/xml/libucw-xml.a: $(addsuffix .o,$(LIBXML_MOD_PATHS))
 $(o)/xml/libucw-xml-pic.a: $(addsuffix .oo,$(LIBXML_MOD_PATHS))
 $(o)/xml/libucw-xml.so: $(addsuffix .oo,$(LIBXML_MOD_PATHS))
-$(o)/xml/libucw-xml.so: SONAME_SUFFIX=.$(UCW_ABI_VERSION)
+$(o)/xml/libucw-xml.so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
 $(o)/xml/libucw-xml.pc: $(LIBCHARSET)
 
 ifdef CONFIG_STATIC_PIC
 $(o)/xml/libucw-xml.pc: $(o)/xml/libucw-xml-pic.a
 endif
 ifdef CONFIG_INSTALL_API
-$(o)/xml/libucw-xml.pc: $(o)/xml/libucw-xml.a $(o)/xml/libucw-xml-pic.a $(o)/xml/libucw-xml.so
+$(o)/xml/libucw-xml.pc: $(addprefix $(o)/xml/libucw-xml,.a -pic.a .so)
 endif
 
 $(o)/xml/common.o: $(o)/xml/unicat.h
@@ -49,7 +49,7 @@ INSTALL_TARGETS+=install-libucw-xml install-libucw-xml-api
 
 install-libucw-xml:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/libucw-xml.so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/libucw-xml.so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-xml.so.$(UCW_ABI_VERSION)
 
 install-libucw-xml-api:
 	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/xml $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)

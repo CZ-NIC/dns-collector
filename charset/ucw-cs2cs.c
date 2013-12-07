@@ -29,7 +29,7 @@ main(int argc, char **argv)
   char inbuf[BUFSIZE], outbuf[BUFSIZE];
 
   if (argc != 3)
-    die("cs2cs in-charset out-charset");
+    die("ucw-cs2cs in-charset out-charset");
   conv_init(&ctxt);
   ch_from = find_charset_by_name(argv[1]);
   if (ch_from < 0)

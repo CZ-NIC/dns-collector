@@ -4,7 +4,7 @@ Maintainer: LibUCW developers <libucw-devel@ucw.cz>
 Build-Depends: debhelper (>= 7), devscripts, bash, pkg-config, libjpeg-dev, libpng-dev, libgif-dev, asciidoc
 Standards-Version: 3.8.0
 
-Package: libucw-@UCW_ABI_VERSION@
+Package: libucw-@UCW_ABI_MAJOR@
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -13,7 +13,7 @@ Description: LibUCW library
 Package: libucw-dev
 Section: libdevel
 Architecture: any
-Depends: libucw-@UCW_ABI_VERSION@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Depends: libucw-@UCW_ABI_MAJOR@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW development files
 
 Package: libucw-utils
