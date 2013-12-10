@@ -39,12 +39,13 @@ build_charsets:
 clean::
 	rm -f $(s)/charset/misc/u-*
 
-INSTALL_TARGETS+=install-libucw-charset install-libucw-charset-api install-libucw-charset-utils
-
-install-libucw-charset:
+INSTALL_LIB_TARGETS+=install-libucw-charset-lib
+install-libucw-charset-lib:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
 	install -m 644 run/lib/libucw-charset.so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-charset.so.$(UCW_ABI_VERSION)
+.PHONY: install-libucw-charset-lib
 
+INSTALL_API_TARGETS+=install-libucw-charset-api
 install-libucw-charset-api:
 	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/charset $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 $(addprefix run/include/charset/,$(LIBCHARSET_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/charset
@@ -52,9 +53,10 @@ install-libucw-charset-api:
 	ln -sf libucw-charset.so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-charset.so
 	install -m 644 run/lib/libucw-charset.a $(DESTDIR)$(INSTALL_LIB_DIR)
 	install -m 644 run/lib/libucw-charset-pic.a $(DESTDIR)$(INSTALL_LIB_DIR)
+.PHONY: install-libucw-charset-api
 
+INSTALL_UTILS_TARGETS+=install-libucw-charset-utils
 install-libucw-charset-utils:
 	install -d -m 755 $(DESTDIR)$(INSTALL_BIN_DIR)
 	install -m 755 $(LIBCHARSET_PROGS) $(DESTDIR)$(INSTALL_BIN_DIR)
-
-.PHONY: install-libucw-charset install-libucw-charset-api install-libucw-charset-utils
+.PHONY: install-libucw-charset-utils

@@ -13,9 +13,8 @@ TESTS+=$(addprefix $(o)/ucw/shell/,config.test)
 
 $(o)/ucw/shell/config.test: $(o)/ucw/shell/ucw-config
 
-INSTALL_TARGETS+=install-ucw-shell
+INSTALL_UTILS_TARGETS+=install-ucw-shell
 install-ucw-shell:
 	install -d -m 755 $(DESTDIR)$(INSTALL_BIN_DIR)
 	install -m 755 $(UCW_SHELL_PROGS) $(DESTDIR)$(INSTALL_BIN_DIR)
-
 .PHONY: install-ucw-shell

@@ -8,7 +8,7 @@ Package: libucw-@UCW_ABI_MAJOR@
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: LibUCW library
+Description: LibUCW libraries
 
 Package: libucw-dev
 Section: libdevel

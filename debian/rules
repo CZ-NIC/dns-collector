@@ -27,11 +27,11 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-$(UCW_ABI_MAJOR) $(addprefix install-,libucw libucw-charset libucw-xml libucw-images)
-	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-dev $(addprefix install-,$(addsuffix -api,libucw libucw-charset libucw-xml libucw-images))
-	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-utils install-ucw-utils install-ucw-shell install-libucw-charset-utils install-libucw-images-utils
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-$(UCW_ABI_MAJOR) install-libs
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-dev install-api
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-utils install-utils
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-doc install-libucw-docs
-	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-doc install-libucw-config install-libucw-images-config
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-doc install-configs
 	install -d -m 755 $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples
 	cp -r examples/external $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples/program
 

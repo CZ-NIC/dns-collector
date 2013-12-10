@@ -16,9 +16,8 @@ $(o)/ucw/utils/ucw-urltool: $(o)/ucw/utils/ucw-urltool.o $(LIBUCW)
 TESTS+=$(o)/ucw/utils/basecode.test
 $(o)/ucw/utils/basecode.test: $(o)/ucw/utils/ucw-basecode
 
-INSTALL_TARGETS+=install-ucw-utils
+INSTALL_UTILS_TARGETS+=install-ucw-utils
 install-ucw-utils:
 	install -d -m 755 $(DESTDIR)$(INSTALL_BIN_DIR)
 	install -m 755 $(UCW_UTILS) $(DESTDIR)$(INSTALL_BIN_DIR)
-
 .PHONY: install-ucw-utils
