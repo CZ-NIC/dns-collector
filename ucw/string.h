@@ -25,7 +25,6 @@
 #define str_sepsplit ucw_str_sepsplit
 #define str_unesc ucw_str_unesc
 #define str_wordsplit ucw_str_wordsplit
-#define strnlen ucw_strnlen
 #endif
 
 /* string.c */

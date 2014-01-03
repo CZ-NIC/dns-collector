@@ -459,7 +459,6 @@ stk_vprintf_internal
 stk_hexdump_internal
 stk_fsize_internal
 # ucw/string.h
-strnlen
 str_format_flags
 str_count_char
 str_unesc
