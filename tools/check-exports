@@ -10,7 +10,7 @@ while (<$f>) {
 	chomp;
 	next if /^\s/;
 	my ($addr, $type, $sym) = split /\s+/;
-	if ($sym =~ m{^ucw_}) {
+	if ($sym =~ m{^(ucw|ucwlib)_}) {
 		next
 	}
 	if ($type =~ m{[A-Z]}) {
