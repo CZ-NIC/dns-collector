@@ -8,7 +8,7 @@ picsuffix=
 
 Name: libucw-xml
 Description: XML parser for LibUCW project
-Version: @UCW_ABI_VERSION@
+Version: @UCW_VERSION@
 Cflags: -I${incdir}
-Libs: -L${libdir} -lucw-xml${picsuffix}
+Libs: -L${libdir} -lucw-xml@UCW_ABI_SUFFIX@${picsuffix}
 Requires: @DEPS@

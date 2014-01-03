@@ -87,16 +87,16 @@ include $(s)/ucw/doc/Makefile
 
 LIBUCW_MOD_PATHS=$(addprefix $(o)/ucw/,$(LIBUCW_MODS))
 
-$(o)/ucw/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
-$(o)/ucw/libucw-pic.a: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
-$(o)/ucw/libucw.so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
-$(o)/ucw/libucw.so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
+$(o)/ucw/libucw$(LV).a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
+$(o)/ucw/libucw$(LV)-pic.a: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
+$(o)/ucw/libucw$(LV).so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
+$(o)/ucw/libucw$(LV).so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
 
 ifdef CONFIG_STATIC_PIC
-$(o)/ucw/libucw.pc: $(o)/ucw/libucw-pic.a
+$(o)/ucw/libucw.pc: $(o)/ucw/libucw$(LV)-pic.a
 endif
 ifdef CONFIG_INSTALL_API
-$(o)/ucw/libucw.pc: $(addprefix $(o)/ucw/libucw,.a -pic.a .so)
+$(o)/ucw/libucw.pc: $(addprefix $(o)/ucw/libucw$(LV),.a -pic.a .so)
 endif
 
 $(o)/ucw/hashfunc.o $(o)/ucw/hashfunc.oo: CFLAGS += -funroll-loops
@@ -188,7 +188,7 @@ CONFIGS+=libucw
 INSTALL_TARGETS+=install-libucw-lib
 install-libucw-lib:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/libucw.so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw.so.$(UCW_ABI_VERSION)
+	install -m 644 run/lib/libucw$(LV).so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw$(LV).so.$(UCW_ABI_VERSION)
 .PHONY: install-libucw-lib
 
 INSTALL_TARGETS+=install-libucw-api
@@ -196,9 +196,9 @@ install-libucw-api:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/ $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 $(addprefix run/include/ucw/,$(LIBUCW_MAIN_INCLUDES) autoconf.h config.h) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
 	install -m 644 run/lib/pkgconfig/libucw.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
-	ln -sf libucw.so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw.so
-	install -m 644 run/lib/libucw.a $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/libucw-pic.a $(DESTDIR)$(INSTALL_LIB_DIR)
+	ln -sf libucw$(LV).so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw$(LV).so
+	install -m 644 run/lib/libucw$(LV).a $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/libucw$(LV)-pic.a $(DESTDIR)$(INSTALL_LIB_DIR)
 .PHONY: install-libucw-api
 
 INSTALL_TARGETS+=install-libucw-config

@@ -4,7 +4,7 @@ Maintainer: LibUCW developers <libucw-devel@ucw.cz>
 Build-Depends: debhelper (>= 7), devscripts, bash, pkg-config, libjpeg-dev, libpng-dev, libgif-dev, asciidoc
 Standards-Version: 3.8.0
 
-Package: libucw-@UCW_ABI_MAJOR@
+Package: libucw@UCW_ABI_SUFFIX@
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -13,7 +13,7 @@ Description: LibUCW library
 Package: libucw-dev
 Section: libdevel
 Architecture: any
-Depends: libucw-@UCW_ABI_MAJOR@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Depends: libucw@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW development files
 
 Package: libucw-utils
@@ -28,7 +28,7 @@ Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW documentation
 
-Package: libucw-charset-@UCW_ABI_MAJOR@
+Package: libucw-charset@UCW_ABI_SUFFIX@
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -37,7 +37,7 @@ Description: LibUCW charset library
 Package: libucw-charset-dev
 Section: libdevel
 Architecture: any
-Depends: libucw-charset-@UCW_ABI_MAJOR@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Depends: libucw-charset@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW charset development files
 
 Package: libucw-charset-utils
@@ -46,7 +46,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW charset utilities
 
-Package: libucw-xml-@UCW_ABI_MAJOR@
+Package: libucw-xml@UCW_ABI_SUFFIX@
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -55,10 +55,10 @@ Description: LibUCW XML parser library
 Package: libucw-xml-dev
 Section: libdevel
 Architecture: any
-Depends: libucw-xml-@UCW_ABI_MAJOR@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Depends: libucw-xml@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW XML parser development files
 
-Package: libucw-images-@UCW_ABI_MAJOR@
+Package: libucw-images@UCW_ABI_SUFFIX@
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -67,7 +67,7 @@ Description: LibUCW image library
 Package: libucw-images-dev
 Section: libdevel
 Architecture: any
-Depends: libucw-images-@UCW_ABI_MAJOR@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Depends: libucw-images@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW image development files
 
 Package: libucw-images-utils

@@ -43,6 +43,7 @@ else
 LS=a
 OS=o
 endif
+LV=$(UCW_ABI_SUFFIX)
 
 SO_RUNDIR=lib
 

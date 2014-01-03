@@ -8,7 +8,7 @@ picsuffix=
 
 Name: libucw-charset
 Description: Character set conversion library
-Version: @UCW_ABI_VERSION@
+Version: @UCW_VERSION@
 Cflags: -I${incdir}
-Libs: -L${libdir} -lucw-charset${picsuffix}
+Libs: -L${libdir} -lucw-charset@UCW_ABI_SUFFIX@${picsuffix}
 Requires: @DEPS@

@@ -16,10 +16,10 @@ LIBIMAGES_DEPS=$(LIBUCW)
 endif
 
 ifdef CONFIG_STATIC_PIC
-LIBIMAGES_DEPS+=$(o)/images/libucw-images-pic.a
+LIBIMAGES_DEPS+=$(o)/images/libucw-images$(LV)-pic.a
 endif
 ifdef CONFIG_INSTALL_API
-$(o)/images/libucw-images.pc: $(addprefix $(o)/images/libucw-images,.a -pic.a .so)
+$(o)/images/libucw-images.pc: $(addprefix $(o)/images/libucw-images$(LV),.a -pic.a .so)
 endif
 
 ifdef CONFIG_IMAGES_DUP
@@ -67,10 +67,10 @@ endif
 PROGS+=$(LIBIMAGES_PROGS)
 CONFIGS+=$(LIBIMAGES_CONFIGS)
 
-$(o)/images/libucw-images.a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
-$(o)/images/libucw-images-pic.a: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
-$(o)/images/libucw-images.so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
-$(o)/images/libucw-images.so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
+$(o)/images/libucw-images$(LV).a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
+$(o)/images/libucw-images$(LV)-pic.a: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
+$(o)/images/libucw-images$(LV).so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
+$(o)/images/libucw-images$(LV).so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
 $(o)/images/libucw-images.pc: $(LIBIMAGES_DEPS)
 
 $(o)/images/ucw-image-tool: $(o)/images/ucw-image-tool.o $(LIBIMAGES)
@@ -95,7 +95,7 @@ run/lib/pkgconfig/libucw-images.pc: $(o)/images/libucw-images.pc
 INSTALL_TARGETS+=install-libucw-images-lib
 install-libucw-images-lib:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/libucw-images.so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-images.so.$(UCW_ABI_VERSION)
+	install -m 644 run/lib/libucw-images$(LV).so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-images$(LV).so.$(UCW_ABI_VERSION)
 .PHONY: install-libucw-images-lib
 
 INSTALL_TARGETS+=install-libucw-images-api
@@ -103,9 +103,9 @@ install-libucw-images-api:
 	install -d -m 755 $(addprefix $(DESTDIR),$(INSTALL_INCLUDE_DIR)/images $(INSTALL_LIB_DIR) $(INSTALL_PKGCONFIG_DIR))
 	install -m 644 $(addprefix run/include/images/,$(LIBIMAGES_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/images
 	install -m 644 run/lib/pkgconfig/libucw-images.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
-	ln -sf libucw-images.so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-images.so
-	install -m 644 run/lib/libucw-images.a $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/libucw-images-pic.a $(DESTDIR)$(INSTALL_LIB_DIR)
+	ln -sf libucw-images$(LV).so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-images$(LV).so
+	install -m 644 run/lib/libucw-images$(LV).a $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/libucw-images$(LV)-pic.a $(DESTDIR)$(INSTALL_LIB_DIR)
 .PHONY: install-libucw-images-api
 
 INSTALL_TARGETS+=install-libucw-images-utils
