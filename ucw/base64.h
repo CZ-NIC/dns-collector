@@ -7,6 +7,11 @@
  *	of the GNU Lesser General Public License.
  */
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define base64_decode ucw_base64_decode
+#define base64_encode ucw_base64_encode
+#endif
+
 /**
  * Encodes @len bytes of data pointed to by @src by base64 encoding.
  * Stores them in @dest and returns the number of bytes the output

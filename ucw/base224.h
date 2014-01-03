@@ -7,6 +7,11 @@
  *	of the GNU Lesser General Public License.
  */
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define base224_decode ucw_base224_decode
+#define base224_encode ucw_base224_encode
+#endif
+
 /**
  * Encodes @len bytes of data pointed to by @src by base224 encoding.
  * Stores them in @dest and returns the number of bytes the output

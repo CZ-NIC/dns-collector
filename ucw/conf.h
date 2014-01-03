@@ -13,6 +13,38 @@
 
 #include <ucw/clists.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define cf_close_group ucw_cf_close_group
+#define cf_declare_rel_section ucw_cf_declare_rel_section
+#define cf_declare_section ucw_cf_declare_section
+#define cf_delete_context ucw_cf_delete_context
+#define cf_dump_sections ucw_cf_dump_sections
+#define cf_find_item ucw_cf_find_item
+#define cf_get_pool ucw_cf_get_pool
+#define cf_init_section ucw_cf_init_section
+#define cf_journal_block ucw_cf_journal_block
+#define cf_journal_commit_transaction ucw_cf_journal_commit_transaction
+#define cf_journal_new_transaction ucw_cf_journal_new_transaction
+#define cf_journal_rollback_transaction ucw_cf_journal_rollback_transaction
+#define cf_load ucw_cf_load
+#define cf_malloc ucw_cf_malloc
+#define cf_malloc_zero ucw_cf_malloc_zero
+#define cf_modify_item ucw_cf_modify_item
+#define cf_new_context ucw_cf_new_context
+#define cf_open_group ucw_cf_open_group
+#define cf_parse_double ucw_cf_parse_double
+#define cf_parse_int ucw_cf_parse_int
+#define cf_parse_ip ucw_cf_parse_ip
+#define cf_parse_u64 ucw_cf_parse_u64
+#define cf_printf ucw_cf_printf
+#define cf_reload ucw_cf_reload
+#define cf_revert ucw_cf_revert
+#define cf_set ucw_cf_set
+#define cf_set_journalling ucw_cf_set_journalling
+#define cf_strdup ucw_cf_strdup
+#define cf_switch_context ucw_cf_switch_context
+#endif
+
 struct mempool;
 
 /***

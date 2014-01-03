@@ -10,6 +10,13 @@
 #ifndef _UCW_ELTPOOL_H
 #define _UCW_ELTPOOL_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define ep_alloc_slow ucw_ep_alloc_slow
+#define ep_delete ucw_ep_delete
+#define ep_new ucw_ep_new
+#define ep_total_size ucw_ep_total_size
+#endif
+
 /***
  * [[defs]]
  * Definitions

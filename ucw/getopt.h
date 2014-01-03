@@ -11,6 +11,13 @@
 #ifndef	_UCW_GETOPT_H
 #define	_UCW_GETOPT_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define cf_def_file ucw_cf_def_file
+#define cf_env_file ucw_cf_env_file
+#define cf_getopt ucw_cf_getopt
+#define reset_getopt ucw_reset_getopt
+#endif
+
 #ifdef CONFIG_UCW_OWN_GETOPT
 #include <ucw/getopt/getopt-sh.h>
 #else

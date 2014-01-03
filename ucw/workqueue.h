@@ -10,6 +10,21 @@
 #ifndef _UCW_WORKQUEUE_H
 #define _UCW_WORKQUEUE_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define raw_queue_cleanup ucw_raw_queue_cleanup
+#define raw_queue_get ucw_raw_queue_get
+#define raw_queue_init ucw_raw_queue_init
+#define raw_queue_put ucw_raw_queue_put
+#define raw_queue_try_get ucw_raw_queue_try_get
+#define work_queue_cleanup ucw_work_queue_cleanup
+#define work_queue_init ucw_work_queue_init
+#define work_submit ucw_work_submit
+#define work_try_wait ucw_work_try_wait
+#define work_wait ucw_work_wait
+#define worker_pool_cleanup ucw_worker_pool_cleanup
+#define worker_pool_init ucw_worker_pool_init
+#endif
+
 /*
  *  A thread pool is a set of threads receiving work requests from a common queue,
  *  each work request contains a pointer to a function inside the thread.

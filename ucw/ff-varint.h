@@ -13,6 +13,11 @@
 #include <ucw/fastbuf.h>
 #include <ucw/varint.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define bget_varint_slow ucw_bget_varint_slow
+#define bput_varint_slow ucw_bput_varint_slow
+#endif
+
 u64 bget_varint_slow(struct fastbuf *b, u64 repl);
 void bput_varint_slow(struct fastbuf *b, u64 u);
 

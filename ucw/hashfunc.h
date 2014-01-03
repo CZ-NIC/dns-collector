@@ -13,6 +13,16 @@
 
 #include <ucw/lib.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define hash_block ucw_hash_block
+#define hash_block_aligned ucw_hash_block_aligned
+#define hash_string ucw_hash_string
+#define hash_string_aligned ucw_hash_string_aligned
+#define hash_string_nocase ucw_hash_string_nocase
+#define str_len ucw_str_len
+#define str_len_aligned ucw_str_len_aligned
+#endif
+
 /*** === String hashes [[strhash]] ***/
 
 /* The following functions need str to be aligned to sizeof(uns).  */

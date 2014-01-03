@@ -13,6 +13,11 @@
 
 #include <string.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define bit_array_count_bits ucw_bit_array_count_bits
+#define bit_array_xrealloc ucw_bit_array_xrealloc
+#endif
+
 typedef u32 *bitarray_t; // Must be initialized by bit_array_xmalloc(), bit_array_zero() or bit_array_set_all()
 
 #define BIT_ARRAY_WORDS(n) (((n)+31)/32)

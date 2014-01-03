@@ -10,6 +10,13 @@
 #ifndef _UCW_BBUF_H
 #define _UCW_BBUF_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define bb_printf ucw_bb_printf
+#define bb_printf_at ucw_bb_printf_at
+#define bb_vprintf ucw_bb_vprintf
+#define bb_vprintf_at ucw_bb_vprintf_at
+#endif
+
 #define	GBUF_TYPE	byte
 #define	GBUF_PREFIX(x)	bb_##x
 #include <ucw/gbuf.h>

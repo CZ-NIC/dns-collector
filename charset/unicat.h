@@ -10,6 +10,10 @@
 #ifndef _CHARSET_UNICAT_H
 #define _CHARSET_UNICAT_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define Uexpand_lig ucw_Uexpand_lig
+#endif
+
 extern const byte *_U_cat[];
 extern const u16 *_U_upper[], *_U_lower[], *_U_unaccent[];
 

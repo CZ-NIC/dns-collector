@@ -14,6 +14,75 @@
 #include <string.h>
 #include <alloca.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define bbcopy_slow ucw_bbcopy_slow
+#define bclose ucw_bclose
+#define bclose_file_helper ucw_bclose_file_helper
+#define bconfig ucw_bconfig
+#define beof_slow ucw_beof_slow
+#define bfdopen ucw_bfdopen
+#define bfdopen_internal ucw_bfdopen_internal
+#define bfdopen_shared ucw_bfdopen_shared
+#define bfilesize ucw_bfilesize
+#define bfilesync ucw_bfilesync
+#define bfix_tmp_file ucw_bfix_tmp_file
+#define bflush ucw_bflush
+#define bfmmopen_internal ucw_bfmmopen_internal
+#define bgetc_slow ucw_bgetc_slow
+#define bgets ucw_bgets
+#define bgets0 ucw_bgets0
+#define bgets_bb ucw_bgets_bb
+#define bgets_mp ucw_bgets_mp
+#define bgets_nodie ucw_bgets_nodie
+#define bgets_stk_init ucw_bgets_stk_init
+#define bgets_stk_step ucw_bgets_stk_step
+#define bopen ucw_bopen
+#define bopen_fd_name ucw_bopen_fd_name
+#define bopen_file ucw_bopen_file
+#define bopen_file_try ucw_bopen_file_try
+#define bopen_limited_fd ucw_bopen_limited_fd
+#define bopen_tmp ucw_bopen_tmp
+#define bopen_tmp_file ucw_bopen_tmp_file
+#define bopen_try ucw_bopen_try
+#define bpeekc_slow ucw_bpeekc_slow
+#define bprintf ucw_bprintf
+#define bputc_slow ucw_bputc_slow
+#define bread_slow ucw_bread_slow
+#define brefill ucw_brefill
+#define brewind ucw_brewind
+#define bseek ucw_bseek
+#define bsetpos ucw_bsetpos
+#define bskip_slow ucw_bskip_slow
+#define bspout ucw_bspout
+#define bthrow ucw_bthrow
+#define bwrite_slow ucw_bwrite_slow
+#define fb_tie ucw_fb_tie
+#define fbatomic_internal_write ucw_fbatomic_internal_write
+#define fbatomic_open ucw_fbatomic_open
+#define fbbuf_init_read ucw_fbbuf_init_read
+#define fbbuf_init_write ucw_fbbuf_init_write
+#define fbdir_cheat ucw_fbdir_cheat
+#define fbdir_open_fd_internal ucw_fbdir_open_fd_internal
+#define fbgrow_create ucw_fbgrow_create
+#define fbgrow_create_mp ucw_fbgrow_create_mp
+#define fbgrow_get_buf ucw_fbgrow_get_buf
+#define fbgrow_reset ucw_fbgrow_reset
+#define fbgrow_rewind ucw_fbgrow_rewind
+#define fbmem_clone_read ucw_fbmem_clone_read
+#define fbmem_create ucw_fbmem_create
+#define fbmulti_append ucw_fbmulti_append
+#define fbmulti_create ucw_fbmulti_create
+#define fbmulti_remove ucw_fbmulti_remove
+#define fbpar_cf ucw_fbpar_cf
+#define fbpar_def ucw_fbpar_def
+#define fbpool_end ucw_fbpool_end
+#define fbpool_init ucw_fbpool_init
+#define fbpool_start ucw_fbpool_start
+#define open_tmp ucw_open_tmp
+#define temp_file_name ucw_temp_file_name
+#define vbprintf ucw_vbprintf
+#endif
+
 /***
  * === Internal structure [[internal]]
  *

@@ -11,6 +11,13 @@
 #ifndef _UCW_REGEX_H
 #define _UCW_REGEX_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define rx_compile ucw_rx_compile
+#define rx_free ucw_rx_free
+#define rx_match ucw_rx_match
+#define rx_subst ucw_rx_subst
+#endif
+
 typedef struct regex regex;
 
 regex *rx_compile(const char *r, int icase);

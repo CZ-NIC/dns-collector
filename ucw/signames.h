@@ -7,6 +7,11 @@
 #ifndef _UCW_SIGNAMES_H
 #define _UCW_SIGNAMES_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define sig_name_to_number ucw_sig_name_to_number
+#define sig_number_to_name ucw_sig_number_to_name
+#endif
+
 /***
  * POSIX lacks facilities for conversion between signal names
  * and signal numbers. They are available in LibUCW, but please

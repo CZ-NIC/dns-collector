@@ -13,6 +13,16 @@
 #include <ucw/workqueue.h>
 #include <ucw/clists.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define asio_cleanup_queue ucw_asio_cleanup_queue
+#define asio_get ucw_asio_get
+#define asio_init_queue ucw_asio_init_queue
+#define asio_put ucw_asio_put
+#define asio_submit ucw_asio_submit
+#define asio_sync ucw_asio_sync
+#define asio_wait ucw_asio_wait
+#endif
+
 /*
  *  This module takes care of scheduling and executing asynchronous I/O requests
  *  on files opened with O_DIRECT. It is primarily used by the fb-direct fastbuf

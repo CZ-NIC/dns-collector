@@ -7,6 +7,14 @@
 #ifndef _UCW_MD5_H
 #define _UCW_MD5_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define md5_final ucw_md5_final
+#define md5_hash_buffer ucw_md5_hash_buffer
+#define md5_init ucw_md5_init
+#define md5_transform ucw_md5_transform
+#define md5_update ucw_md5_update
+#endif
+
 /**
  * Internal MD5 hash state.
  * You should use it just as an opaque handle only.

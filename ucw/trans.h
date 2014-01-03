@@ -14,6 +14,23 @@
 
 #include <setjmp.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define trans_caught ucw_trans_caught
+#define trans_cleanup ucw_trans_cleanup
+#define trans_commit ucw_trans_commit
+#define trans_current_exc ucw_trans_current_exc
+#define trans_dump ucw_trans_dump
+#define trans_fold ucw_trans_fold
+#define trans_get_current ucw_trans_get_current
+#define trans_get_pool ucw_trans_get_pool
+#define trans_init ucw_trans_init
+#define trans_open ucw_trans_open
+#define trans_rollback ucw_trans_rollback
+#define trans_throw ucw_trans_throw
+#define trans_throw_exc ucw_trans_throw_exc
+#define trans_vthrow ucw_trans_vthrow
+#endif
+
 /** A structure describing a transaction. All fields are for internal use only. **/
 struct trans {
   struct trans *prev_trans;

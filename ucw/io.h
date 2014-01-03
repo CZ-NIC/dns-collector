@@ -13,6 +13,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define careful_read ucw_careful_read
+#define careful_write ucw_careful_write
+#define mmap_file ucw_mmap_file
+#define munmap_file ucw_munmap_file
+#define sync_dir ucw_sync_dir
+#endif
+
 #ifdef CONFIG_UCW_LARGE_FILES
 
 #define ucw_open open64

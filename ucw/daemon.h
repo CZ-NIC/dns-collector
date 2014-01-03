@@ -12,6 +12,13 @@
 
 #include <sys/types.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define daemon_control ucw_daemon_control
+#define daemon_exit ucw_daemon_exit
+#define daemon_init ucw_daemon_init
+#define daemon_run ucw_daemon_run
+#endif
+
 /** Parameters passed to the daemon helper. **/
 struct daemon_params {
   uns flags;				// DAEMON_FLAG_xxx

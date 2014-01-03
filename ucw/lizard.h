@@ -10,6 +10,15 @@
 #ifndef _UCW_LIZARD_H
 #define _UCW_LIZARD_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define adler32_update ucw_adler32_update
+#define lizard_alloc ucw_lizard_alloc
+#define lizard_compress ucw_lizard_compress
+#define lizard_decompress ucw_lizard_decompress
+#define lizard_decompress_safe ucw_lizard_decompress_safe
+#define lizard_free ucw_lizard_free
+#endif
+
 /***
  * [[basic]]
  * Basic application

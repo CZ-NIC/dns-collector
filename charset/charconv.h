@@ -11,6 +11,18 @@
 #ifndef _CHARSET_CHARCONV_H
 #define _CHARSET_CHARCONV_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define charset_name ucw_charset_name
+#define conv_in_to_ucs ucw_conv_in_to_ucs
+#define conv_init ucw_conv_init
+#define conv_set_charset ucw_conv_set_charset
+#define conv_ucs_to_out ucw_conv_ucs_to_out
+#define conv_ucs_to_x ucw_conv_ucs_to_x
+#define conv_x_count ucw_conv_x_count
+#define conv_x_to_ucs ucw_conv_x_to_ucs
+#define find_charset_by_name ucw_find_charset_by_name
+#endif
+
 struct conv_context {
 
   /* Parameters supplied by the caller */

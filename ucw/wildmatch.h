@@ -7,6 +7,12 @@
  *	of the GNU Lesser General Public License.
  */
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define wp_compile ucw_wp_compile
+#define wp_match ucw_wp_match
+#define wp_min_size ucw_wp_min_size
+#endif
+
 struct wildpatt;
 struct mempool;
 

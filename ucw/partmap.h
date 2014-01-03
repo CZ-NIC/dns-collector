@@ -11,6 +11,13 @@
 #ifndef _UCW_PARTMAP_H
 #define _UCW_PARTMAP_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define partmap_close ucw_partmap_close
+#define partmap_load ucw_partmap_load
+#define partmap_open ucw_partmap_open
+#define partmap_size ucw_partmap_size
+#endif
+
 struct partmap {
   int fd;
   ucw_off_t file_size;
