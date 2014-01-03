@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Search for symbols which might need renaming
-# (c) 2013 Martin Mares <mj@ucw.cz>
+# (c) 2014 Martin Mares <mj@ucw.cz>
 
 use common::sense;
 
