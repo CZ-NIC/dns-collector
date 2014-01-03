@@ -30,7 +30,10 @@ uns str_len_aligned(const char *str) PURE; /** Get the string length (not a real
 uns hash_string_aligned(const char *str) PURE; /** Hash the string. The string must be aligned to sizeof(uns). For unaligned see @hash_string(). **/
 uns hash_block_aligned(const byte *buf, uns len) PURE; /** Hash arbitrary data. They must be aligned to sizeof(uns). For unaligned see @hash_block(). **/
 
-#ifdef	CPU_ALLOW_UNALIGNED
+#ifdef CPU_ALLOW_UNALIGNED
+#undef str_len
+#undef hash_string
+#undef hash_block
 #define	str_len(str)		str_len_aligned(str)
 #define	hash_string(str)	hash_string_aligned(str)
 #define	hash_block(str, len)	hash_block_aligned(str, len)
