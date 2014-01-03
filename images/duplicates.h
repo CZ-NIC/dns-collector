@@ -49,11 +49,9 @@ uns image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, str
 
 /* internals */
 
-static inline byte *
-image_dup_block(struct image_dup *dup, uns tab_col, uns tab_row)
+static inline byte *image_dup_block(struct image_dup *dup, uns tab_col, uns tab_row)
 {
   return dup->tab_pixels + (dup->tab_row_size << tab_row) + (3 << (tab_row + tab_col));
 }
-
 
 #endif

@@ -98,8 +98,7 @@ void image_clear(struct image_context *ctx, struct image *img);
 struct image *image_init_matrix(struct image_context *ctx, struct image *img, byte *pixels, uns cols, uns rows, uns row_size, uns flags);
 struct image *image_init_subimage(struct image_context *ctx, struct image *img, struct image *src, uns left, uns top, uns cols, uns rows);
 
-static inline int
-image_dimensions_valid(uns cols, uns rows)
+static inline int image_dimensions_valid(uns cols, uns rows)
 {
   return cols && rows && cols <= image_max_dim && rows <= image_max_dim;
 }

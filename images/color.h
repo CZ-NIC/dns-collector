@@ -57,15 +57,13 @@ uns color_space_name_to_id(byte *name);
 int color_get(struct color *color, byte *src, uns src_space);
 int color_put(struct image_context *ctx, struct color *color, byte *dest, uns dest_space);
 
-static inline void
-color_make_gray(struct color *color, uns gray)
+static inline void color_make_gray(struct color *color, uns gray)
 {
   color->c[0] = gray;
   color->color_space = COLOR_SPACE_GRAYSCALE;
 }
 
-static inline void
-color_make_rgb(struct color *color, uns r, uns g, uns b)
+static inline void color_make_rgb(struct color *color, uns r, uns g, uns b)
 {
   color->c[0] = r;
   color->c[1] = g;
@@ -133,8 +131,7 @@ void color_compute_bradford_matrix(double matrix[9], const double src[2], const 
 void color_compute_color_spaces_conversion_matrix(double matrix[9], const struct color_space_chromacity_info *src, const struct color_space_chromacity_info *dest);
 void color_invert_matrix(double dest[9], double matrix[9]);
 
-static inline uns
-rgb_to_gray_func(uns r, uns g, uns b)
+static inline uns rgb_to_gray_func(uns r, uns g, uns b)
 {
   return (r * 19660 + g * 38666 + b * 7210) >> 16;
 }
@@ -180,8 +177,7 @@ void srgb_to_luv_init(void);
 void srgb_to_luv_pixels(byte *dest, byte *src, uns count);
 
 /* L covers the interval [0..255]; u and v are centered to 128 and scaled by 1/4 in respect of L */
-static inline void
-srgb_to_luv_pixel(byte *dest, byte *src)
+static inline void srgb_to_luv_pixel(byte *dest, byte *src)
 {
   uns r = srgb_to_luv_tab1[src[0]];
   uns g = srgb_to_luv_tab1[src[1]];
@@ -236,8 +232,7 @@ void color_conv_pixels(byte *dest, byte *src, uns count, struct color_grid_node 
 
 #define COLOR_CONV_SCALE_CONST (((((1 << COLOR_CONV_SIZE) - 1) << 16) + (1 << (16 - COLOR_CONV_OFS))) / 255)
 
-static inline void
-color_conv_pixel(byte *dest, byte *src, struct color_grid_node *grid)
+static inline void color_conv_pixel(byte *dest, byte *src, struct color_grid_node *grid)
 {
   uns s0 = src[0] * COLOR_CONV_SCALE_CONST;
   uns s1 = src[1] * COLOR_CONV_SCALE_CONST;

@@ -56,8 +56,7 @@ struct image_cluster {
   };
 };
 
-static inline uns
-image_signature_size(uns len)
+static inline uns image_signature_size(uns len)
 {
   return OFFSETOF(struct image_signature, reg) + len * sizeof(struct image_region);
 }
