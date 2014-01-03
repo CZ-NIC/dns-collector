@@ -20,7 +20,6 @@ close $f;
 for my $g (sort keys %renames) {
 	my @symbols = sort @{$renames{$g}};
 	@symbols or next;
-	print "### $g\n";
 
 	open my $in, '<', $g or die;
 	open my $out, '>', "$g.new" or die;
@@ -59,5 +58,12 @@ for my $g (sort keys %renames) {
 	$mode or die;
 	close $out;
 	close $in;
-	rename "$g.new", $g or die;
+	system "cmp", "-s", $g, "$g.new";
+	if ($?) {
+		print "### $g: updated\n";
+		rename "$g.new", $g or die;
+	} else {
+		print "--- $g: not modified\n";
+		unlink "$g.new" or die;
+	}
 }
