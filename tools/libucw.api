@@ -168,6 +168,31 @@ bprintf
 vbprintf
 # ucw/fb-socket.h
 fbsock_create
+# ucw/ff-binary.h
+bgetw_slow
+bgetw_be_slow
+bgetw_le_slow
+bgetl_slow
+bgetl_be_slow
+bgetl_le_slow
+bgetq_slow
+bgetq_be_slow
+bgetq_le_slow
+bget5_slow
+bget5_be_slow
+bget5_le_slow
+bputw_slow
+bputw_be_slow
+bputw_le_slow
+bputl_slow
+bputl_be_slow
+bputl_le_slow
+bputq_slow
+bputq_be_slow
+bputq_le_slow
+bput5_slow
+bput5_be_slow
+bput5_le_slow
 # ucw/ff-unicode.h
 bget_utf8_slow
 bget_utf8_32_slow
