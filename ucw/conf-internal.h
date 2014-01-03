@@ -60,8 +60,7 @@ struct cf_context {
 };
 
 /* conf-ctxt.c */
-static inline struct cf_context *
-cf_get_context(void)
+static inline struct cf_context *cf_get_context(void)
 {
   struct cf_context *cc = ucwlib_thread_context()->cf_context;
   ASSERT(cc->is_active);

@@ -170,8 +170,7 @@ void *mp_start_internal(struct mempool *pool, uns size) LIKE_MALLOC;
 void *mp_grow_internal(struct mempool *pool, uns size);
 void *mp_spread_internal(struct mempool *pool, void *p, uns size);
 
-static inline uns
-mp_idx(struct mempool *pool, void *ptr)
+static inline uns mp_idx(struct mempool *pool, void *ptr)
 {
   return ptr == pool->last_big;
 }

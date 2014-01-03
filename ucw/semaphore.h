@@ -23,8 +23,7 @@
 /* In Darwin, sem_init() is unfortunately not implemented and the guide
  * recommends emulating it using sem_open().  */
 
-static inline sem_t *
-sem_alloc(void)
+static inline sem_t *sem_alloc(void)
 {
   char buf[TEMP_FILE_NAME_LEN];
   int mode, retry = 10;
@@ -39,16 +38,14 @@ sem_alloc(void)
   return sem;
 }
 
-static inline void
-sem_free(sem_t *sem)
+static inline void sem_free(sem_t *sem)
 {
   sem_close(sem);
 }
 
 #else
 
-static inline sem_t *
-sem_alloc(void)
+static inline sem_t *sem_alloc(void)
 {
   sem_t *sem = xmalloc(sizeof(sem_t));
   int res = sem_init(sem, 0, 0);
@@ -56,8 +53,7 @@ sem_alloc(void)
   return sem;
 }
 
-static inline void
-sem_free(sem_t *sem)
+static inline void sem_free(sem_t *sem)
 {
   sem_destroy(sem);
   xfree(sem);

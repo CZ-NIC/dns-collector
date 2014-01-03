@@ -115,8 +115,7 @@ static inline void main_shut_down(void)
  **/
 void main_debug_context(struct main_context *m);
 
-static inline void
-main_debug(void)
+static inline void main_debug(void)
 {
   main_debug_context(main_current());
 }

@@ -22,8 +22,7 @@ int bget_utf8_32_slow(struct fastbuf *b, uns repl);
 void bput_utf8_slow(struct fastbuf *b, uns u);
 void bput_utf8_32_slow(struct fastbuf *b, uns u);
 
-static inline int
-bget_utf8_repl(struct fastbuf *b, uns repl)
+static inline int bget_utf8_repl(struct fastbuf *b, uns repl)
 {
   uns u;
   if (bavailr(b) >= 3)
@@ -35,8 +34,7 @@ bget_utf8_repl(struct fastbuf *b, uns repl)
     return bget_utf8_slow(b, repl);
 }
 
-static inline int
-bget_utf8_32_repl(struct fastbuf *b, uns repl)
+static inline int bget_utf8_32_repl(struct fastbuf *b, uns repl)
 {
   uns u;
   if (bavailr(b) >= 6)
@@ -81,8 +79,7 @@ int bget_utf16_le_slow(struct fastbuf *b, uns repl);
 void bput_utf16_be_slow(struct fastbuf *b, uns u);
 void bput_utf16_le_slow(struct fastbuf *b, uns u);
 
-static inline int
-bget_utf16_be_repl(struct fastbuf *b, uns repl)
+static inline int bget_utf16_be_repl(struct fastbuf *b, uns repl)
 {
   uns u;
   if (bavailr(b) >= 4)
@@ -94,8 +91,7 @@ bget_utf16_be_repl(struct fastbuf *b, uns repl)
     return bget_utf16_be_slow(b, repl);
 }
 
-static inline int
-bget_utf16_le_repl(struct fastbuf *b, uns repl)
+static inline int bget_utf16_le_repl(struct fastbuf *b, uns repl)
 {
   uns u;
   if (bavailr(b) >= 4)
