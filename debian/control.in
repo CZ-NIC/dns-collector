@@ -8,7 +8,7 @@ Package: libucw-@UCW_ABI_MAJOR@
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: LibUCW libraries
+Description: LibUCW library
 
 Package: libucw-dev
 Section: libdevel
@@ -27,3 +27,52 @@ Section: doc
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW documentation
+
+Package: libucw-charset-@UCW_ABI_MAJOR@
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW charset library
+
+Package: libucw-charset-dev
+Section: libdevel
+Architecture: any
+Depends: libucw-charset-@UCW_ABI_MAJOR@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW charset development files
+
+Package: libucw-charset-utils
+Section: misc
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW charset utilities
+
+Package: libucw-xml-@UCW_ABI_MAJOR@
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW XML parser library
+
+Package: libucw-xml-dev
+Section: libdevel
+Architecture: any
+Depends: libucw-xml-@UCW_ABI_MAJOR@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW XML parser development files
+
+Package: libucw-images-@UCW_ABI_MAJOR@
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW image library
+
+Package: libucw-images-dev
+Section: libdevel
+Architecture: any
+Depends: libucw-images-@UCW_ABI_MAJOR@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW image development files
+
+Package: libucw-images-utils
+Section: misc
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW image utilities
+

@@ -45,13 +45,13 @@ $(o)/xml/.include-stamp: $(addprefix $(s)/xml/,$(LIBXML_INCLUDES))
 $(o)/xml/.include-stamp: IDST=xml
 run/lib/pkgconfig/libucw-xml.pc: $(o)/xml/libucw-xml.pc
 
-INSTALL_LIB_TARGETS+=install-libucw-xml-lib
+INSTALL_TARGETS+=install-libucw-xml-lib
 install-libucw-xml-lib:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
 	install -m 644 run/lib/libucw-xml.so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-xml.so.$(UCW_ABI_VERSION)
 .PHONY: install-libucw-xml-lib
 
-INSTALL_API_TARGETS+=install-libucw-xml-api
+INSTALL_TARGETS+=install-libucw-xml-api
 install-libucw-xml-api:
 	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/xml $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 run/lib/pkgconfig/libucw-xml.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)

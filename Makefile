@@ -66,14 +66,8 @@ libs: $(LIBUCW) $(LIBXML) $(LIBIMAGES) $(LIBCHARSET)
 include $(BUILDSYS)/Makebottom
 
 ifndef CONFIG_LOCAL
-install: all $(INSTALL_TARGETS) install-libs install-api install-configs install-utils
-
-install-libs: $(INSTALL_LIB_TARGETS)
-install-api: $(INSTALL_API_TARGETS)
-	/sbin/ldconfig -n $(DESTDIR)$(INSTALL_LIB_DIR)
-install-configs: $(INSTALL_CONFIG_TARGETS)
-install-utils: $(INSTALL_UTILS_TARGETS)
-.PHONY: install-libs install-api install-configs install-utils
+install: all $(INSTALL_TARGETS)
+	#/sbin/ldconfig -n $(DESTDIR)$(INSTALL_LIB_DIR)
 else
 install:
 	@echo "Nothing to install, this is a local build." && false

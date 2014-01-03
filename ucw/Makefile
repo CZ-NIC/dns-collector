@@ -185,13 +185,13 @@ endif
 
 CONFIGS+=libucw
 
-INSTALL_LIB_TARGETS+=install-libucw-lib
+INSTALL_TARGETS+=install-libucw-lib
 install-libucw-lib:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
 	install -m 644 run/lib/libucw.so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw.so.$(UCW_ABI_VERSION)
 .PHONY: install-libucw-lib
 
-INSTALL_API_TARGETS+=install-libucw-api
+INSTALL_TARGETS+=install-libucw-api
 install-libucw-api:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/ $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 $(addprefix run/include/ucw/,$(LIBUCW_MAIN_INCLUDES) autoconf.h config.h) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
@@ -201,7 +201,7 @@ install-libucw-api:
 	install -m 644 run/lib/libucw-pic.a $(DESTDIR)$(INSTALL_LIB_DIR)
 .PHONY: install-libucw-api
 
-INSTALL_CONFIG_TARGETS+=install-libucw-config
+INSTALL_TARGETS+=install-libucw-config
 install-libucw-config:
 	install -d -m 755 $(DESTDIR)$(INSTALL_CONFIG_DIR)
 	install -m 644 run/$(CONFIG_DIR)/libucw $(DESTDIR)$(INSTALL_CONFIG_DIR)
