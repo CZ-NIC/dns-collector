@@ -1,6 +1,14 @@
 #ifndef _IMAGES_DUPLICATES_H
 #define _IMAGES_DUPLICATES_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define image_dup_compare ucw_image_dup_compare
+#define image_dup_context_cleanup ucw_image_dup_context_cleanup
+#define image_dup_context_init ucw_image_dup_context_init
+#define image_dup_estimate_size ucw_image_dup_estimate_size
+#define image_dup_new ucw_image_dup_new
+#endif
+
 enum image_dup_flags {
   IMAGE_DUP_TRANS_ID =		0x0001,
   IMAGE_DUP_FLIP_X =		0x0002,

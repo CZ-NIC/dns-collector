@@ -1,6 +1,32 @@
 #ifndef _IMAGES_SIGNATURE_H
 #define _IMAGES_SIGNATURE_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define compute_image_signature ucw_compute_image_signature
+#define image_region_dump ucw_image_region_dump
+#define image_sig_border_bonus ucw_image_sig_border_bonus
+#define image_sig_border_size ucw_image_sig_border_size
+#define image_sig_cleanup ucw_image_sig_cleanup
+#define image_sig_cmp_features_weights ucw_image_sig_cmp_features_weights
+#define image_sig_compare_method ucw_image_sig_compare_method
+#define image_sig_detect_textured ucw_image_sig_detect_textured
+#define image_sig_finish ucw_image_sig_finish
+#define image_sig_inertia_scale ucw_image_sig_inertia_scale
+#define image_sig_init ucw_image_sig_init
+#define image_sig_min_height ucw_image_sig_min_height
+#define image_sig_min_width ucw_image_sig_min_width
+#define image_sig_postquant_max_steps ucw_image_sig_postquant_max_steps
+#define image_sig_postquant_min_steps ucw_image_sig_postquant_min_steps
+#define image_sig_postquant_threshold ucw_image_sig_postquant_threshold
+#define image_sig_preprocess ucw_image_sig_preprocess
+#define image_sig_prequant_thresholds ucw_image_sig_prequant_thresholds
+#define image_sig_segmentation ucw_image_sig_segmentation
+#define image_sig_textured_threshold ucw_image_sig_textured_threshold
+#define image_signatures_dist ucw_image_signatures_dist
+#define image_signatures_dist_explain ucw_image_signatures_dist_explain
+#define image_vector_dump ucw_image_vector_dump
+#endif
+
 /* Configuration */
 extern uns image_sig_min_width, image_sig_min_height;
 extern uns *image_sig_prequant_thresholds;

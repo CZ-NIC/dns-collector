@@ -63,9 +63,11 @@ my %blacklist = map { $_ => 1 } qw(
 	charset/U-lower.h
 	charset/U-unacc.h
 	charset/U-upper.h
+	images/image-walk.h
+	images/scale-gen.h
 );
 
-for my $f (<ucw/*.h>, <ucw/sorter/common.h>, <charset/*.h>) {
+for my $f (<ucw/*.h>, <ucw/sorter/common.h>, <charset/*.h>, <images/*.h>) {
 	next if $blacklist{$f};
 	parse($f);
 }

@@ -1,3 +1,8 @@
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define image_signatures_dist ucw_image_signatures_dist
+#define image_signatures_dist_explain ucw_image_signatures_dist_explain
+#endif
+
 #ifdef EXPLAIN
 #  define MSG(x...) do{ line += sprintf(line, x); }while(0)
 #  define LINE do{ line = buf; msg(line, param); }while(0)

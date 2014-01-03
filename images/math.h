@@ -1,6 +1,11 @@
 #ifndef _IMAGES_MATH_H
 #define _IMAGES_MATH_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define fast_div_tab ucw_fast_div_tab
+#define fast_sqrt_tab ucw_fast_sqrt_tab
+#endif
+
 extern const u32 fast_div_tab[];
 extern const byte fast_sqrt_tab[];
 
