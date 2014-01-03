@@ -563,4 +563,8 @@ mp_strconv
 stk_strconv_init
 stk_strconv_step
 # charset/unicat.h
+_U_cat
+_U_upper
+_U_lower
+_U_unaccent
 Uexpand_lig
