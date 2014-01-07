@@ -23,7 +23,9 @@ function pkg-gen-debian {(
 		PREFIX=/ \
 		INSTALL_INCLUDE_DIR=/usr/include/libucw \
 		INSTALL_DOC_DIR=/usr/share/doc/libucw/html \
-		INSTALL_CONFIG_DIR=/usr/share/doc/libucw/examples/etc
+		INSTALL_CONFIG_DIR=/usr/share/doc/libucw/examples/etc \
+		UCW_VERSION="$VER" \
+		UCW_ABI_SUFFIX="-$VER"
 
 	echo "Creating debian/control"
 	build/genconf debian/control.in debian/control obj/config.mk
