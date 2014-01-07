@@ -5,12 +5,13 @@ DIRS+=charset
 LIBCHARSET_PROGS=
 LIBCHARSET_MODS=toupper tolower tocat toligatures unaccent charconv setnames fb-charconv stk-charconv mp-charconv
 LIBCHARSET_INCLUDES=charconv.h unicat.h fb-charconv.h stk-charconv.h mp-charconv.h
+LIBCHARSET_DEPS=$(LIBUCW)
 
 $(o)/charset/libucw-charset$(LV).a: $(addsuffix .o,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
 $(o)/charset/libucw-charset$(LV)-pic.a: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
-$(o)/charset/libucw-charset$(LV).so: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS))) $(LIBUCW)
+$(o)/charset/libucw-charset$(LV).so: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS))) $(LIBCHARSET_DEPS)
 $(o)/charset/libucw-charset$(LV).so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
-$(o)/charset/libucw-charset.pc: $(LIBUCW)
+$(o)/charset/libucw-charset.pc: $(LIBCHARSET_DEPS)
 
 ifdef CONFIG_STATIC_PIC
 $(o)/charset/libucw-charset.pc: $(o)/charset/libucw-charset$(LV)-pic.a

@@ -5,15 +5,15 @@ DIRS+=xml
 PROGS+=$(o)/xml/xml-test
 
 LIBXML_MODS=common source parse dtd
-LIBXML_INCLUDES=xml.h dtd.h
-
 LIBXML_MOD_PATHS=$(addprefix $(o)/xml/,$(LIBXML_MODS))
+LIBXML_INCLUDES=xml.h dtd.h
+LIBXML_DEPS=$(LIBUCW) $(LIBCHARSET)
 
 $(o)/xml/libucw-xml$(LV).a: $(addsuffix .o,$(LIBXML_MOD_PATHS))
 $(o)/xml/libucw-xml$(LV)-pic.a: $(addsuffix .oo,$(LIBXML_MOD_PATHS))
-$(o)/xml/libucw-xml$(LV).so: $(addsuffix .oo,$(LIBXML_MOD_PATHS)) $(LIBCHARSET)
+$(o)/xml/libucw-xml$(LV).so: $(addsuffix .oo,$(LIBXML_MOD_PATHS)) $(LIBXML_DEPS)
 $(o)/xml/libucw-xml$(LV).so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
-$(o)/xml/libucw-xml.pc: $(LIBCHARSET)
+$(o)/xml/libucw-xml.pc: $(LIBXML_DEPS)
 
 ifdef CONFIG_STATIC_PIC
 $(o)/xml/libucw-xml.pc: $(o)/xml/libucw-xml$(LV)-pic.a
