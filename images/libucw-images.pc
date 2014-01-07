@@ -12,4 +12,4 @@ Version: @UCW_VERSION@
 Cflags: -I${incdir}
 Libs: -L${libdir} -lucw-images@UCW_ABI_SUFFIX@${picsuffix}
 Libs.private: @LIBIMAGES_LIBS@
-Requires: @DEPS@
+Requires.private: @DEPS@

@@ -11,7 +11,7 @@ LIBXML_MOD_PATHS=$(addprefix $(o)/xml/,$(LIBXML_MODS))
 
 $(o)/xml/libucw-xml$(LV).a: $(addsuffix .o,$(LIBXML_MOD_PATHS))
 $(o)/xml/libucw-xml$(LV)-pic.a: $(addsuffix .oo,$(LIBXML_MOD_PATHS))
-$(o)/xml/libucw-xml$(LV).so: $(addsuffix .oo,$(LIBXML_MOD_PATHS))
+$(o)/xml/libucw-xml$(LV).so: $(addsuffix .oo,$(LIBXML_MOD_PATHS)) $(LIBCHARSET)
 $(o)/xml/libucw-xml$(LV).so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
 $(o)/xml/libucw-xml.pc: $(LIBCHARSET)
 
@@ -36,7 +36,7 @@ $(o)/xml/unicat.h: $(s)/xml/unicat.pl
 	$(Q)touch $@
 
 TESTS+=$(o)/xml/xml-test.test
-$(o)/xml/xml-test: $(o)/xml/xml-test.o $(LIBXML)
+$(o)/xml/xml-test: $(o)/xml/xml-test.o $(LIBXML) $(LIBCHARSET) $(LIBUCW)
 $(o)/xml/xml-test.test: $(o)/xml/xml-test
 
 API_LIBS+=libucw-xml

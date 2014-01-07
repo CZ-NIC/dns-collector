@@ -11,4 +11,4 @@ Description: XML parser for LibUCW project
 Version: @UCW_VERSION@
 Cflags: -I${incdir}
 Libs: -L${libdir} -lucw-xml@UCW_ABI_SUFFIX@${picsuffix}
-Requires: @DEPS@
+Requires.private: @DEPS@

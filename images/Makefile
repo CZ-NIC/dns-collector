@@ -69,22 +69,22 @@ CONFIGS+=$(LIBIMAGES_CONFIGS)
 
 $(o)/images/libucw-images$(LV).a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 $(o)/images/libucw-images$(LV)-pic.a: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
-$(o)/images/libucw-images$(LV).so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
+$(o)/images/libucw-images$(LV).so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS))) $(LIBIMAGES_DEPS)
 $(o)/images/libucw-images$(LV).so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
 $(o)/images/libucw-images$(LV).so: LIBS+=$(LIBIMAGES_LIBS)
 $(o)/images/libucw-images.pc: $(LIBIMAGES_DEPS)
 
-$(o)/images/ucw-image-tool: $(o)/images/ucw-image-tool.o $(LIBIMAGES)
-$(o)/images/ucw-color-tool: $(o)/images/ucw-color-tool.o $(LIBIMAGES)
-$(o)/images/ucw-image-dup-test: $(o)/images/ucw-image-dup-test.o $(LIBIMAGES)
-$(o)/images/ucw-image-sim-test: $(o)/images/ucw-image-sim-test.o $(LIBIMAGES)
+$(o)/images/ucw-image-tool: $(o)/images/ucw-image-tool.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/ucw-color-tool: $(o)/images/ucw-color-tool.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/ucw-image-dup-test: $(o)/images/ucw-image-dup-test.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/ucw-image-sim-test: $(o)/images/ucw-image-sim-test.o $(LIBIMAGES) $(LIBUCW)
 
 TESTS+=$(o)/images/image-test.test
-$(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES)
+$(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBUCW)
 $(o)/images/image-test.test: $(o)/images/image-test
 
 TESTS+=$(o)/images/color.test
-$(o)/images/color-t: $(LIBIMAGES)
+$(o)/images/color-t: $(LIBIMAGES) $(LIBUCW)
 $(o)/images/color.test: $(o)/images/color-t
 
 API_LIBS+=libucw-images

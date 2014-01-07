@@ -8,7 +8,7 @@ LIBCHARSET_INCLUDES=charconv.h unicat.h fb-charconv.h stk-charconv.h mp-charconv
 
 $(o)/charset/libucw-charset$(LV).a: $(addsuffix .o,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
 $(o)/charset/libucw-charset$(LV)-pic.a: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
-$(o)/charset/libucw-charset$(LV).so: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
+$(o)/charset/libucw-charset$(LV).so: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS))) $(LIBUCW)
 $(o)/charset/libucw-charset$(LV).so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
 $(o)/charset/libucw-charset.pc: $(LIBUCW)
 
@@ -29,7 +29,7 @@ ifdef CONFIG_CHARSET_UTILS
 LIBCHARSET_PROGS+=$(o)/charset/ucw-cs2cs
 endif
 
-$(o)/charset/ucw-cs2cs: $(o)/charset/ucw-cs2cs.o $(LIBCHARSET)
+$(o)/charset/ucw-cs2cs: $(o)/charset/ucw-cs2cs.o $(LIBCHARSET) $(LIBUCW)
 
 PROGS+=$(LIBCHARSET_PROGS)
 
