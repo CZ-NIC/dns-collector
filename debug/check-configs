@@ -35,7 +35,7 @@ function try
 		make $MAKEOPTS || die FAILED
 		echo >&3 "	COMPILATION PASSED"
 		if [ -z "$SKIP_TESTS" ] ; then
-			make -k tests || die "TESTS FAILED"
+			make -k -j1 tests || die "TESTS FAILED"
 			echo >&3 "	TESTS PASSED"
 		fi
 	) || ERR=1
