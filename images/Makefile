@@ -6,7 +6,7 @@ LIBIMAGES_PROGS=$(o)/images/ucw-image-tool $(o)/images/ucw-color-tool
 LIBIMAGES_CONFIGS+=images
 LIBIMAGES_MODS=math config context image scale color io-main
 LIBIMAGES_INCLUDES=images.h error.h color.h math.h
-export LIBIMAGES_LIBS=
+export LIBIMAGES_LIBS=-lm
 
 ifdef CONFIG_SHERLOCK
 LIBIMAGES_MODS+=object
@@ -71,6 +71,7 @@ $(o)/images/libucw-images$(LV).a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBI
 $(o)/images/libucw-images$(LV)-pic.a: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 $(o)/images/libucw-images$(LV).so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 $(o)/images/libucw-images$(LV).so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
+$(o)/images/libucw-images$(LV).so: LIBS+=$(LIBIMAGES_LIBS)
 $(o)/images/libucw-images.pc: $(LIBIMAGES_DEPS)
 
 $(o)/images/ucw-image-tool: $(o)/images/ucw-image-tool.o $(LIBIMAGES)

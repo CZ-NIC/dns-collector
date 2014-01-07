@@ -87,10 +87,22 @@ include $(s)/ucw/doc/Makefile
 
 LIBUCW_MOD_PATHS=$(addprefix $(o)/ucw/,$(LIBUCW_MODS))
 
+export LIBUCW_LIBS=
+#ifdef CONFIG_UCW_THREADS
+LIBUCW_LIBS+=-lpthread
+#endif
+#ifdef CONFIG_UCW_PCRE
+LIBUCW_LIBS+=-lpcre
+#endif
+#ifdef CONFIG_UCW_MONOTONIC_CLOCK
+LIBUCW_LIBS+=-lrt
+#endif
+
 $(o)/ucw/libucw$(LV).a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
 $(o)/ucw/libucw$(LV)-pic.a: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 $(o)/ucw/libucw$(LV).so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 $(o)/ucw/libucw$(LV).so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
+$(o)/ucw/libucw$(LV).so: LIBS+=$(LIBUCW_LIBS)
 
 ifdef CONFIG_STATIC_PIC
 $(o)/ucw/libucw.pc: $(o)/ucw/libucw$(LV)-pic.a
