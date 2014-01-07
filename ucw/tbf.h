@@ -10,6 +10,11 @@
 #ifndef _UCW_TBF_H_
 #define _UCW_TBF_H_
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define tbf_init ucw_tbf_init
+#define tbf_limit ucw_tbf_limit
+#endif
+
 /** A data structure describing a single TBF. **/
 struct token_bucket_filter {
   double rate;				// Number of tokens received per second

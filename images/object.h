@@ -3,6 +3,14 @@
 
 #include <images/images.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define get_image_obj_info ucw_get_image_obj_info
+#define get_image_obj_signature ucw_get_image_obj_signature
+#define get_image_obj_thumb ucw_get_image_obj_thumb
+#define put_image_obj_signature ucw_put_image_obj_signature
+#define read_image_obj_thumb ucw_read_image_obj_thumb
+#endif
+
 struct image_obj_info {
   uns cols;
   uns rows;

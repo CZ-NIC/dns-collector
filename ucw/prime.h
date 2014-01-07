@@ -19,6 +19,13 @@
 
 #include <ucw/lib.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define isprime ucw_isprime
+#define next_table_prime ucw_next_table_prime
+#define nextprime ucw_nextprime
+#define prev_table_prime ucw_prev_table_prime
+#endif
+
 /* prime.c */
 
 /**

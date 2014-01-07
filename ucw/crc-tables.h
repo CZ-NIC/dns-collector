@@ -16,6 +16,17 @@
  *	Adapted for LibUCW by Martin Mares <mj@ucw.cz> in 2012.
  */
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define crc_tableil8_o32 ucw_crc_tableil8_o32
+#define crc_tableil8_o40 ucw_crc_tableil8_o40
+#define crc_tableil8_o48 ucw_crc_tableil8_o48
+#define crc_tableil8_o56 ucw_crc_tableil8_o56
+#define crc_tableil8_o64 ucw_crc_tableil8_o64
+#define crc_tableil8_o72 ucw_crc_tableil8_o72
+#define crc_tableil8_o80 ucw_crc_tableil8_o80
+#define crc_tableil8_o88 ucw_crc_tableil8_o88
+#endif
+
 extern u32 crc_tableil8_o32[256];
 extern u32 crc_tableil8_o40[256];
 extern u32 crc_tableil8_o48[256];

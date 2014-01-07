@@ -11,6 +11,11 @@
 #ifndef _UCW_BITOPS_H
 #define _UCW_BITOPS_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define bit_fls ucw_bit_fls
+#define ffs_table ucw_ffs_table
+#endif
+
 /* Find highest bit set (i.e., the floor of the binary logarithm) (bit-fls.c) */
 
 int bit_fls(u32 x);		/* bit_fls(0)=-1 */

@@ -14,6 +14,33 @@
 #include <ucw/fastbuf.h>
 #include <ucw/unaligned.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define bget5_be_slow ucw_bget5_be_slow
+#define bget5_le_slow ucw_bget5_le_slow
+#define bget5_slow ucw_bget5_slow
+#define bgetl_be_slow ucw_bgetl_be_slow
+#define bgetl_le_slow ucw_bgetl_le_slow
+#define bgetl_slow ucw_bgetl_slow
+#define bgetq_be_slow ucw_bgetq_be_slow
+#define bgetq_le_slow ucw_bgetq_le_slow
+#define bgetq_slow ucw_bgetq_slow
+#define bgetw_be_slow ucw_bgetw_be_slow
+#define bgetw_le_slow ucw_bgetw_le_slow
+#define bgetw_slow ucw_bgetw_slow
+#define bput5_be_slow ucw_bput5_be_slow
+#define bput5_le_slow ucw_bput5_le_slow
+#define bput5_slow ucw_bput5_slow
+#define bputl_be_slow ucw_bputl_be_slow
+#define bputl_le_slow ucw_bputl_le_slow
+#define bputl_slow ucw_bputl_slow
+#define bputq_be_slow ucw_bputq_be_slow
+#define bputq_le_slow ucw_bputq_le_slow
+#define bputq_slow ucw_bputq_slow
+#define bputw_be_slow ucw_bputw_be_slow
+#define bputw_le_slow ucw_bputw_le_slow
+#define bputw_slow ucw_bputw_slow
+#endif
+
 #ifdef CPU_BIG_ENDIAN
 #define FF_ENDIAN be
 #else

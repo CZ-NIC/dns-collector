@@ -54,6 +54,7 @@ else
 	try default.cfg									# default configuration
 	try default.cfg -CONFIG_DEBUG							# with no debugging code
 	try debug/default.cfg								# debugging configuration
+	try debug/default.cfg -CONFIG_SHARED						# statically linked
 	try debug/default.cfg -CONFIG_UCW_THREADS					# non-threaded configuration
 	try debug/default.cfg -CONFIG_UCW_TLS						# threaded, but no TLS support in gcc
 	try debug/default.cfg -CONFIG_UCW_EPOLL -CONFIG_UCW_MONOTONIC_CLOCK		# without epoll and monotonic clock

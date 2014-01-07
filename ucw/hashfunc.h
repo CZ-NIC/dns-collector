@@ -13,6 +13,16 @@
 
 #include <ucw/lib.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define hash_block ucw_hash_block
+#define hash_block_aligned ucw_hash_block_aligned
+#define hash_string ucw_hash_string
+#define hash_string_aligned ucw_hash_string_aligned
+#define hash_string_nocase ucw_hash_string_nocase
+#define str_len ucw_str_len
+#define str_len_aligned ucw_str_len_aligned
+#endif
+
 /*** === String hashes [[strhash]] ***/
 
 /* The following functions need str to be aligned to sizeof(uns).  */
@@ -20,7 +30,10 @@ uns str_len_aligned(const char *str) PURE; /** Get the string length (not a real
 uns hash_string_aligned(const char *str) PURE; /** Hash the string. The string must be aligned to sizeof(uns). For unaligned see @hash_string(). **/
 uns hash_block_aligned(const byte *buf, uns len) PURE; /** Hash arbitrary data. They must be aligned to sizeof(uns). For unaligned see @hash_block(). **/
 
-#ifdef	CPU_ALLOW_UNALIGNED
+#ifdef CPU_ALLOW_UNALIGNED
+#undef str_len
+#undef hash_string
+#undef hash_block
 #define	str_len(str)		str_len_aligned(str)
 #define	hash_string(str)	hash_string_aligned(str)
 #define	hash_block(str, len)	hash_block_aligned(str, len)

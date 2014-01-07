@@ -14,6 +14,11 @@
 
 #include <ucw/unaligned.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define utf8_strlen ucw_utf8_strlen
+#define utf8_strnlen ucw_utf8_strnlen
+#endif
+
 /* Macros for handling UTF-8 */
 
 #define UNI_REPLACEMENT 0xfffc	/** Unicode value used as a default replacement of invalid characters. **/

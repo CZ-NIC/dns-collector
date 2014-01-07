@@ -19,6 +19,11 @@
 #ifndef _UCW_CRC_H
 #define _UCW_CRC_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define crc32_hash_buffer ucw_crc32_hash_buffer
+#define crc32_init ucw_crc32_init
+#endif
+
 /**
  * Internal CRC calculator context.
  * You should use it just as an opaque handle only.

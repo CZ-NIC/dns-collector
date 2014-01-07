@@ -10,6 +10,19 @@
 #ifndef _UCW_PROCESS_H
 #define _UCW_PROCESS_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define echo_command ucw_echo_command
+#define echo_command_v ucw_echo_command_v
+#define exec_command ucw_exec_command
+#define exec_command_v ucw_exec_command_v
+#define format_exit_status ucw_format_exit_status
+#define getproctitle ucw_getproctitle
+#define run_command ucw_run_command
+#define run_command_v ucw_run_command_v
+#define setproctitle ucw_setproctitle
+#define setproctitle_init ucw_setproctitle_init
+#endif
+
 /* proctitle.c */
 
 // Must be called before parsing of arguments

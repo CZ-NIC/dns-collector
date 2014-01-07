@@ -13,6 +13,22 @@
 
 #include <ucw/threads.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define cf_add_dirty ucw_cf_add_dirty
+#define cf_commit_all ucw_cf_commit_all
+#define cf_done_stack ucw_cf_done_stack
+#define cf_find_subitem ucw_cf_find_subitem
+#define cf_init_stack ucw_cf_init_stack
+#define cf_interpret_line ucw_cf_interpret_line
+#define cf_journal_delete ucw_cf_journal_delete
+#define cf_journal_swap ucw_cf_journal_swap
+#define cf_obtain_context ucw_cf_obtain_context
+#define cf_op_names ucw_cf_op_names
+#define cf_sections ucw_cf_sections
+#define cf_type_names ucw_cf_type_names
+#define cf_type_size ucw_cf_type_size
+#endif
+
 /* Item stack used by conf-intr.c */
 
 #define MAX_STACK_SIZE 16
@@ -60,8 +76,7 @@ struct cf_context {
 };
 
 /* conf-ctxt.c */
-static inline struct cf_context *
-cf_get_context(void)
+static inline struct cf_context *cf_get_context(void)
 {
   struct cf_context *cc = ucwlib_thread_context()->cf_context;
   ASSERT(cc->is_active);

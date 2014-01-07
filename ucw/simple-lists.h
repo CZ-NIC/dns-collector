@@ -12,6 +12,13 @@
 
 #include <ucw/clists.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define cf_2string_list_config ucw_cf_2string_list_config
+#define cf_string_list_config ucw_cf_string_list_config
+#define simp2_append ucw_simp2_append
+#define simp_append ucw_simp_append
+#endif
+
 /***
  * To simplify very common usage of circular linked links, whose nodes can hold only one or two trivial values,
  * we define some generic node types, called the simple nodes.

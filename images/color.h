@@ -27,6 +27,46 @@
 
 #include <images/images.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define cmyk_to_rgb_exact ucw_cmyk_to_rgb_exact
+#define color_adobe_rgb_info ucw_color_adobe_rgb_info
+#define color_apple_rgb_info ucw_color_apple_rgb_info
+#define color_black ucw_color_black
+#define color_cie_rgb_info ucw_color_cie_rgb_info
+#define color_color_match_rgb_info ucw_color_color_match_rgb_info
+#define color_compute_bradford_matrix ucw_color_compute_bradford_matrix
+#define color_compute_color_space_to_xyz_matrix ucw_color_compute_color_space_to_xyz_matrix
+#define color_compute_color_spaces_conversion_matrix ucw_color_compute_color_spaces_conversion_matrix
+#define color_conv_init ucw_color_conv_init
+#define color_conv_pixels ucw_color_conv_pixels
+#define color_get ucw_color_get
+#define color_illuminant_d50 ucw_color_illuminant_d50
+#define color_illuminant_d65 ucw_color_illuminant_d65
+#define color_illuminant_e ucw_color_illuminant_e
+#define color_interpolation_table ucw_color_interpolation_table
+#define color_invert_matrix ucw_color_invert_matrix
+#define color_put ucw_color_put
+#define color_space_channels ucw_color_space_channels
+#define color_space_id_to_name ucw_color_space_id_to_name
+#define color_space_name ucw_color_space_name
+#define color_space_name_to_id ucw_color_space_name_to_id
+#define color_srgb_info ucw_color_srgb_info
+#define color_white ucw_color_white
+#define image_conv ucw_image_conv
+#define image_conv_defaults ucw_image_conv_defaults
+#define luv_to_xyz_exact ucw_luv_to_xyz_exact
+#define rgb_to_cmyk_exact ucw_rgb_to_cmyk_exact
+#define srgb_to_luv_grid ucw_srgb_to_luv_grid
+#define srgb_to_luv_init ucw_srgb_to_luv_init
+#define srgb_to_luv_pixels ucw_srgb_to_luv_pixels
+#define srgb_to_luv_tab1 ucw_srgb_to_luv_tab1
+#define srgb_to_luv_tab2 ucw_srgb_to_luv_tab2
+#define srgb_to_luv_tab3 ucw_srgb_to_luv_tab3
+#define srgb_to_xyz_exact ucw_srgb_to_xyz_exact
+#define xyz_to_luv_exact ucw_xyz_to_luv_exact
+#define xyz_to_srgb_exact ucw_xyz_to_srgb_exact
+#endif
+
 /* Basic color spaces */
 enum {
   COLOR_SPACE_UNKNOWN = 0,
@@ -57,15 +97,13 @@ uns color_space_name_to_id(byte *name);
 int color_get(struct color *color, byte *src, uns src_space);
 int color_put(struct image_context *ctx, struct color *color, byte *dest, uns dest_space);
 
-static inline void
-color_make_gray(struct color *color, uns gray)
+static inline void color_make_gray(struct color *color, uns gray)
 {
   color->c[0] = gray;
   color->color_space = COLOR_SPACE_GRAYSCALE;
 }
 
-static inline void
-color_make_rgb(struct color *color, uns r, uns g, uns b)
+static inline void color_make_rgb(struct color *color, uns r, uns g, uns b)
 {
   color->c[0] = r;
   color->c[1] = g;
@@ -133,8 +171,7 @@ void color_compute_bradford_matrix(double matrix[9], const double src[2], const 
 void color_compute_color_spaces_conversion_matrix(double matrix[9], const struct color_space_chromacity_info *src, const struct color_space_chromacity_info *dest);
 void color_invert_matrix(double dest[9], double matrix[9]);
 
-static inline uns
-rgb_to_gray_func(uns r, uns g, uns b)
+static inline uns rgb_to_gray_func(uns r, uns g, uns b)
 {
   return (r * 19660 + g * 38666 + b * 7210) >> 16;
 }
@@ -180,8 +217,7 @@ void srgb_to_luv_init(void);
 void srgb_to_luv_pixels(byte *dest, byte *src, uns count);
 
 /* L covers the interval [0..255]; u and v are centered to 128 and scaled by 1/4 in respect of L */
-static inline void
-srgb_to_luv_pixel(byte *dest, byte *src)
+static inline void srgb_to_luv_pixel(byte *dest, byte *src)
 {
   uns r = srgb_to_luv_tab1[src[0]];
   uns g = srgb_to_luv_tab1[src[1]];
@@ -236,8 +272,7 @@ void color_conv_pixels(byte *dest, byte *src, uns count, struct color_grid_node 
 
 #define COLOR_CONV_SCALE_CONST (((((1 << COLOR_CONV_SIZE) - 1) << 16) + (1 << (16 - COLOR_CONV_OFS))) / 255)
 
-static inline void
-color_conv_pixel(byte *dest, byte *src, struct color_grid_node *grid)
+static inline void color_conv_pixel(byte *dest, byte *src, struct color_grid_node *grid)
 {
   uns s0 = src[0] * COLOR_CONV_SCALE_CONST;
   uns s1 = src[1] * COLOR_CONV_SCALE_CONST;

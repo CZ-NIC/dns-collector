@@ -11,6 +11,14 @@
 #ifndef _UCW_LOG_INTERNAL_H_
 #define _UCW_LOG_INTERNAL_H_
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define log_pass_msg ucw_log_pass_msg
+#define log_stream_default ucw_log_stream_default
+#define log_streams ucw_log_streams
+#define log_streams_after ucw_log_streams_after
+#define log_type_names ucw_log_type_names
+#endif
+
 /*
  * Pass a message to a stream.
  * @depth prevents loops.

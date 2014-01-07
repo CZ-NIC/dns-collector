@@ -9,6 +9,7 @@
 #include <ucw/lib.h>
 #include <ucw/conf.h>
 #include <images/images.h>
+#include <images/error.h>
 #if defined(CONFIG_IMAGES_SIM) || defined(CONFIG_IMAGES_DUP)
 #include <images/signature.h>
 #endif

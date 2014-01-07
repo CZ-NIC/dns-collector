@@ -13,6 +13,30 @@
 
 #include <ucw/clists.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define log_add_substream ucw_log_add_substream
+#define log_check_configured ucw_log_check_configured
+#define log_close_all ucw_log_close_all
+#define log_close_stream ucw_log_close_stream
+#define log_configured ucw_log_configured
+#define log_find_type ucw_log_find_type
+#define log_new_configured ucw_log_new_configured
+#define log_new_fd ucw_log_new_fd
+#define log_new_file ucw_log_new_file
+#define log_new_stream ucw_log_new_stream
+#define log_new_syslog ucw_log_new_syslog
+#define log_register_type ucw_log_register_type
+#define log_rm_substream ucw_log_rm_substream
+#define log_set_default_stream ucw_log_set_default_stream
+#define log_set_format ucw_log_set_format
+#define log_stream_by_flags ucw_log_stream_by_flags
+#define log_switch ucw_log_switch
+#define log_switch_disable ucw_log_switch_disable
+#define log_switch_enable ucw_log_switch_enable
+#define log_syslog_facility_exists ucw_log_syslog_facility_exists
+#define log_type_name ucw_log_type_name
+#endif
+
 /*** === Messages and streams ***/
 
 /**
