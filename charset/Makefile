@@ -43,6 +43,7 @@ INSTALL_TARGETS+=install-libucw-charset-lib
 install-libucw-charset-lib:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
 	install -m 644 run/lib/libucw-charset$(LV).so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-charset$(LV).so.$(UCW_ABI_VERSION)
+	ln -sf libucw-charset$(LV).so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-charset$(LV).so.$(UCW_ABI_MAJOR)
 .PHONY: install-libucw-charset-lib
 
 INSTALL_TARGETS+=install-libucw-charset-api

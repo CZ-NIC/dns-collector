@@ -96,6 +96,7 @@ INSTALL_TARGETS+=install-libucw-images-lib
 install-libucw-images-lib:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
 	install -m 644 run/lib/libucw-images$(LV).so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-images$(LV).so.$(UCW_ABI_VERSION)
+	ln -sf libucw-images$(LV).so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-images$(LV).so.$(UCW_ABI_MAJOR)
 .PHONY: install-libucw-images-lib
 
 INSTALL_TARGETS+=install-libucw-images-api

@@ -67,7 +67,6 @@ include $(BUILDSYS)/Makebottom
 
 ifndef CONFIG_LOCAL
 install: all $(INSTALL_TARGETS)
-	#/sbin/ldconfig -n $(DESTDIR)$(INSTALL_LIB_DIR)
 else
 install:
 	@echo "Nothing to install, this is a local build." && false

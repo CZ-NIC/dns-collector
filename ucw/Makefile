@@ -189,6 +189,7 @@ INSTALL_TARGETS+=install-libucw-lib
 install-libucw-lib:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
 	install -m 644 run/lib/libucw$(LV).so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw$(LV).so.$(UCW_ABI_VERSION)
+	ln -sf libucw$(LV).so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw$(LV).so.$(UCW_ABI_MAJOR)
 .PHONY: install-libucw-lib
 
 INSTALL_TARGETS+=install-libucw-api
