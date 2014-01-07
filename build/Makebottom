@@ -74,7 +74,7 @@ endif
 %.dylib: %.so
 	cd $(dir $<) && ln -fs $(notdir $<) $(notdir $@)
 
-$(o)/%.pc: $(s)/%.pc $(o)/%.$(LS)
+$(o)/%.pc: $(s)/%.pc $(o)/%$(LV).$(LS)
 	$(M)PC $<
 	$(Q)DEPS="$(shell $(BUILDSYS)/lib-deps $^)" LIBDIR=$(@D) $(BUILDSYS)/genconf $< $@ $(o)/config.mk
 	$(Q)mkdir -p $(o)/pkgconfig
