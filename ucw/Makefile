@@ -96,7 +96,7 @@ ifdef CONFIG_STATIC_PIC
 $(o)/ucw/libucw.pc: $(o)/ucw/libucw$(LV)-pic.a
 endif
 ifdef CONFIG_INSTALL_API
-$(o)/ucw/libucw.pc: $(addprefix $(o)/ucw/libucw$(LV),.a -pic.a .so)
+$(o)/ucw/libucw.pc: $(addprefix $(o)/ucw/libucw$(LV),.a .so)
 endif
 
 $(o)/ucw/hashfunc.o $(o)/ucw/hashfunc.oo: CFLAGS += -funroll-loops
@@ -198,7 +198,6 @@ install-libucw-api:
 	install -m 644 run/lib/pkgconfig/libucw.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	ln -sf libucw$(LV).so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw$(LV).so
 	install -m 644 run/lib/libucw$(LV).a $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/libucw$(LV)-pic.a $(DESTDIR)$(INSTALL_LIB_DIR)
 .PHONY: install-libucw-api
 
 INSTALL_TARGETS+=install-libucw-config

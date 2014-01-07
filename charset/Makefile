@@ -16,7 +16,7 @@ ifdef CONFIG_STATIC_PIC
 $(o)/charset/libucw-charset.pc: $(o)/charset/libucw-charset$(LV)-pic.a
 endif
 ifdef CONFIG_INSTALL_API
-$(o)/charset/libucw-charset.pc: $(addprefix $(o)/charset/libucw-charset$(LV),.a -pic.a .so)
+$(o)/charset/libucw-charset.pc: $(addprefix $(o)/charset/libucw-charset$(LV),.a .so)
 endif
 
 API_LIBS+=libucw-charset
@@ -52,7 +52,6 @@ install-libucw-charset-api:
 	install -m 644 run/lib/pkgconfig/libucw-charset.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	ln -sf libucw-charset$(LV).so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-charset$(LV).so
 	install -m 644 run/lib/libucw-charset$(LV).a $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/libucw-charset$(LV)-pic.a $(DESTDIR)$(INSTALL_LIB_DIR)
 .PHONY: install-libucw-charset-api
 
 INSTALL_TARGETS+=install-libucw-charset-utils

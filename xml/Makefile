@@ -19,7 +19,7 @@ ifdef CONFIG_STATIC_PIC
 $(o)/xml/libucw-xml.pc: $(o)/xml/libucw-xml$(LV)-pic.a
 endif
 ifdef CONFIG_INSTALL_API
-$(o)/xml/libucw-xml.pc: $(addprefix $(o)/xml/libucw-xml$(LV),.a -pic.a .so)
+$(o)/xml/libucw-xml.pc: $(addprefix $(o)/xml/libucw-xml$(LV),.a .so)
 endif
 
 $(o)/xml/common.o: $(o)/xml/unicat.h
@@ -58,5 +58,4 @@ install-libucw-xml-api:
 	install -m 644 $(addprefix run/include/xml/,$(LIBXML_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/xml
 	ln -sf libucw-xml$(LV).so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-xml$(LV).so
 	install -m 644 run/lib/libucw-xml$(LV).a $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/libucw-xml$(LV)-pic.a $(DESTDIR)$(INSTALL_LIB_DIR)
 .PHONY: install-libucw-xml-api

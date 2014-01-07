@@ -19,7 +19,7 @@ ifdef CONFIG_STATIC_PIC
 LIBIMAGES_DEPS+=$(o)/images/libucw-images$(LV)-pic.a
 endif
 ifdef CONFIG_INSTALL_API
-$(o)/images/libucw-images.pc: $(addprefix $(o)/images/libucw-images$(LV),.a -pic.a .so)
+$(o)/images/libucw-images.pc: $(addprefix $(o)/images/libucw-images$(LV),.a .so)
 endif
 
 ifdef CONFIG_IMAGES_DUP
@@ -105,7 +105,6 @@ install-libucw-images-api:
 	install -m 644 run/lib/pkgconfig/libucw-images.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	ln -sf libucw-images$(LV).so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-images$(LV).so
 	install -m 644 run/lib/libucw-images$(LV).a $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/libucw-images$(LV)-pic.a $(DESTDIR)$(INSTALL_LIB_DIR)
 .PHONY: install-libucw-images-api
 
 INSTALL_TARGETS+=install-libucw-images-utils
