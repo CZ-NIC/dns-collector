@@ -89,13 +89,6 @@ if (IsSet("CONFIG_DARWIN")) {
 	}
 }
 
-if (Get("UCW_ABI_VERSION") =~ /^(\d+)\.\d+(\.\d+)?$/) {
-	Set("UCW_ABI_MAJOR", $1);
-}
-else {
-	Fail("Invalid syntax of UCW_ABI_VERSION");
-}
-
 PostConfig {
 	AtWrite {
 		UCW::Configure::C::ConfigHeader("ucw/autoconf.h", [

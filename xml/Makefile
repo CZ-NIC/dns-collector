@@ -12,7 +12,7 @@ LIBXML_DEPS=$(LIBUCW) $(LIBCHARSET)
 $(o)/xml/libucw-xml$(LV).a: $(addsuffix .o,$(LIBXML_MOD_PATHS))
 $(o)/xml/libucw-xml$(LV)-pic.a: $(addsuffix .oo,$(LIBXML_MOD_PATHS))
 $(o)/xml/libucw-xml$(LV).so: $(addsuffix .oo,$(LIBXML_MOD_PATHS)) $(LIBXML_DEPS)
-$(o)/xml/libucw-xml$(LV).so: SONAME_SUFFIX=.$(UCW_ABI_MAJOR)
+$(o)/xml/libucw-xml$(LV).so: SONAME_SUFFIX=.0
 $(o)/xml/libucw-xml.pc: $(LIBXML_DEPS)
 
 ifdef CONFIG_STATIC_PIC
@@ -48,8 +48,8 @@ run/lib/pkgconfig/libucw-xml.pc: $(o)/xml/libucw-xml.pc
 INSTALL_TARGETS+=install-libucw-xml-lib
 install-libucw-xml-lib:
 	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 run/lib/libucw-xml$(LV).so.$(UCW_ABI_MAJOR) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-xml$(LV).so.$(UCW_ABI_VERSION)
-	ln -sf libucw-xml$(LV).so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-xml$(LV).so.$(UCW_ABI_MAJOR)
+	install -m 644 run/lib/libucw-xml$(LV).so.0 $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-xml$(LV).so.0.0
+	ln -sf libucw-xml$(LV).so.0.0 $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-xml$(LV).so.0
 .PHONY: install-libucw-xml-lib
 
 INSTALL_TARGETS+=install-libucw-xml-api
@@ -57,6 +57,6 @@ install-libucw-xml-api:
 	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/xml $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 run/lib/pkgconfig/libucw-xml.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 $(addprefix run/include/xml/,$(LIBXML_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/xml
-	ln -sf libucw-xml$(LV).so.$(UCW_ABI_VERSION) $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-xml$(LV).so
+	ln -sf libucw-xml$(LV).so.0.0 $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-xml$(LV).so
 	install -m 644 run/lib/libucw-xml$(LV).a $(DESTDIR)$(INSTALL_LIB_DIR)
 .PHONY: install-libucw-xml-api
