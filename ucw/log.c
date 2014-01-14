@@ -337,6 +337,9 @@ do_die(void)
 #ifdef DEBUG_DIE_BY_ABORT
   abort();
 #else
+  const char *env = getenv("CONFIG_UCW_ENV_VAR_DIE_BY_ABORT");
+  if (env && *env)
+    abort();
   exit(1);
 #endif
 }
