@@ -12,6 +12,8 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define careful_read ucw_careful_read
