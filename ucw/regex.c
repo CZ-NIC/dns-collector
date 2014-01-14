@@ -185,7 +185,7 @@ rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
 	      uns j = *by++ - '0';
 	      if (j < r->real_matches && r->matches[2*j] >= 0)
 		{
-		  char *s = src + r->matches[2*j];
+		  const char *s = src + r->matches[2*j];
 		  uns i = r->matches[2*j+1] - r->matches[2*j];
 		  if (dest + i >= end)
 		    return -1;

@@ -30,12 +30,15 @@
  *	    TRIE_WANT_FIND_BUF		node *find_buf(byte *ptr, uns len)
  *	    TRIE_WANT_ADD		add(*node)
  *	    TRIE_WANT_REPLACE		node *replace(*node)
- * 	    TRIE_WANT_DELETE		delete(char *str)
- * 	    TRIE_WANT_DELETE_BUF	delete_buf(byte *ptr, uns len)
- * 	    TRIE_WANT_REMOVE		remove(*node)
+ *	    TRIE_WANT_DELETE		delete(char *str)
+ *	    TRIE_WANT_DELETE_BUF	delete_buf(byte *ptr, uns len)
+ *	    TRIE_WANT_REMOVE		remove(*node)
  *
  *	    TRIE_WANT_AUDIT		audit()
  *	    TRIE_WANT_STATS
+ *
+ *	Be warned that the implementation is not var-len-arrays friendly and all hell may me unleashed
+ *	if you use these routines in the same function together with var-len-arrays.
  */
 
 /*** Define once ***/
