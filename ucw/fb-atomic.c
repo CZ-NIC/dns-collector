@@ -23,7 +23,8 @@ static uns trace;
 
 static struct cf_section fbatomic_config = {
   CF_ITEMS {
-    CF_UNS("Trace", &trace)
+    CF_UNS("Trace", &trace),
+    CF_END
   }
 };
 
