@@ -18,9 +18,25 @@
 #include <alloca.h>
 #include <math.h>
 
-// FIXME: Do we need these?
-int opt_parsed_count = 0;
-int opt_conf_parsed_count = 0;
+/***
+ * Value flags defaults
+ * ~~~~~~~~~~~~~~~~~~~~
+ *
+ * OPT_NO_VALUE for OPT_BOOL, OPT_SWITCH and OPT_INC
+ * OPT_MAYBE_VALUE for OPT_STRING, OPT_UNS, OPT_INT
+ * Some of the value flags (OPT_NO_VALUE, OPT_MAYBE_VALUE, OPT_REQUIRED_VALUE)
+ * must be specified for OPT_CALL and OPT_USER.
+ ***/
+static uns opt_default_value_flags[] = {
+    [OPT_CL_BOOL] = OPT_NO_VALUE,
+    [OPT_CL_STATIC] = OPT_MAYBE_VALUE,
+    [OPT_CL_SWITCH] = OPT_NO_VALUE,
+    [OPT_CL_INC] = OPT_NO_VALUE,
+    [OPT_CL_CALL] = 0,
+    [OPT_CL_USER] = 0,
+    [OPT_CL_SECTION] = 0,
+    [OPT_CL_HELP] = 0
+};
 
 struct opt_precomputed {
   struct opt_item * item;
@@ -70,10 +86,9 @@ static void opt_failure(const char * mesg, ...) {
     else if (!(flags & OPT_VALUE_FLAGS)) /* FIXME: Streamline the conditions */ \
       flags |= opt_default_value_flags[item->cls]; \
   } while (0)
+
 // FIXME: Is this still useful? Isn't it better to use OPT_ADD_DEFAULT_ITEM_FLAGS during init?
 #define OPT_ITEM_FLAGS(item) ((item->flags & OPT_VALUE_FLAGS) ? item->flags : item->flags | opt_default_value_flags[item->cls])
-
-const struct opt_section * opt_section_root;
 
 #define FOREACHLINE(text) for (const char * begin = (text), * end = (text); (*end) && (end = strchrnul(begin, '\n')); begin = end+1)
 
@@ -82,7 +97,7 @@ static inline uns uns_min(uns x, uns y)
   return MIN(x, y);
 }
 
-void opt_help_internal(const struct opt_section * help) {
+void opt_help(const struct opt_section * help) {
   int sections_cnt = 0;
   int lines_cnt = 0;
 
@@ -179,7 +194,7 @@ void opt_help_internal(const struct opt_section * help) {
 #define LASTFIELD(k) uns_min(strchrnul(lines[i][k], '\t') - lines[i][k], strchrnul(lines[i][k], '\n') - lines[i][k]), lines[i][k]
   for (int i=0;i<line;i++) {
     while (s < sections_cnt && sections[s].pos == i) {
-      opt_help_internal(sections[s].sect);
+      opt_help(sections[s].sect);
       s++;
     }
     if (lines[i][0] == NULL)
@@ -192,7 +207,7 @@ void opt_help_internal(const struct opt_section * help) {
       printf("%-*.*s  %-*.*s  %.*s\n", FIELD(0), FIELD(1), LASTFIELD(2));
   }
   while (s < sections_cnt && sections[s].pos == line) {
-    opt_help_internal(sections[s].sect);
+    opt_help(sections[s].sect);
     s++;
   }
 }
@@ -346,7 +361,6 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
     default:
       ASSERT(0);
   }
-  opt_parsed_count++;
 
   for (int i=0;i<oc->hooks_after_value_count;i++)
     oc->hooks_after_value[i]->u.call(item, value, oc->hooks_after_value[i]->ptr);
@@ -547,7 +561,10 @@ void opt_parse(const struct opt_section * options, char ** argv) {
       continue;
     if (!oc->shortopt[i]->count && (oc->shortopt[i]->flags & OPT_REQUIRED))
       if (i < 256)
-        opt_failure("Required option -%c not found.", oc->shortopt[i]->item->letter);
+	if (oc->shortopt[i]->item->name)
+	  opt_failure("Required option -%c/--%s not found.", oc->shortopt[i]->item->letter, oc->shortopt[i]->item->name);
+	else
+	  opt_failure("Required option -%c not found.", oc->shortopt[i]->item->letter);
       else
 	opt_failure("Required positional argument #%d not found.", (i > 256) ? oc->shortopt[i]->item->letter-256 : oc->positional_max+1);
   }
@@ -588,8 +605,6 @@ void opt_conf_internal(struct opt_item * opt, const char * value, void * data UN
       break;
 #endif
   }
-
-  opt_conf_parsed_count++;
 }
 
 void opt_conf_hook_internal(struct opt_item * opt, const char * value UNUSED, void * data UNUSED) {

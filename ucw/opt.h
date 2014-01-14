@@ -19,10 +19,8 @@
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define opt_conf_hook_internal ucw_opt_conf_hook_internal
 #define opt_conf_internal ucw_opt_conf_internal
-#define opt_conf_parsed_count ucw_opt_conf_parsed_count
 #define opt_help_internal ucw_opt_help_internal
 #define opt_parse ucw_opt_parse
-#define opt_parsed_count ucw_opt_parsed_count
 #define opt_section_root ucw_opt_section_root
 #endif
 
@@ -91,7 +89,7 @@ struct opt_section {
  *
  ***/
 
-#define OPT_HELP_OPTION OPT_CALL(0, "help", opt_show_help_internal, NULL, OPT_NO_VALUE, "Show this help")
+#define OPT_HELP_OPTION(help) OPT_CALL(0, "help", opt_show_help_internal, &help, OPT_NO_VALUE, "Show this help")
 #define OPT_HELP(line) { .help = line, .cls = OPT_CL_HELP }
 #define OPT_BOOL(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_BOOL, .type = CT_INT }
 #define OPT_STRING(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_STRING }
@@ -133,9 +131,6 @@ struct opt_section {
 void opt_conf_internal(struct opt_item * opt, const char * value, void * data);
 void opt_conf_hook_internal(struct opt_item * opt, const char * value, void * data);
 
-extern int opt_parsed_count;	    /** How many opts have been already parsed. **/
-extern int opt_conf_parsed_count;
-
 /***
  * Predefined shortopt arguments
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -174,41 +169,15 @@ extern int opt_conf_parsed_count;
 #define OPT_HOOK_BEFORE_VALUE	0x2000	/** Call before value parsing **/
 #define OPT_HOOK_AFTER_VALUE	0x4000  /** Call after value parsing **/
 
-
-/***
- * Value flags defaults
- * ~~~~~~~~~~~~~~~~~~~~
- *
- * OPT_NO_VALUE for OPT_BOOL, OPT_SWITCH and OPT_INC
- * OPT_MAYBE_VALUE for OPT_STRING, OPT_UNS, OPT_INT
- * Some of the value flags (OPT_NO_VALUE, OPT_MAYBE_VALUE, OPT_REQUIRED_VALUE)
- * must be specified for OPT_CALL and OPT_USER.
- ***/
-
-static uns opt_default_value_flags[] = {
-  [OPT_CL_BOOL] = OPT_NO_VALUE,
-  [OPT_CL_STATIC] = OPT_MAYBE_VALUE,
-  [OPT_CL_SWITCH] = OPT_NO_VALUE,
-  [OPT_CL_INC] = OPT_NO_VALUE,
-  [OPT_CL_CALL] = 0,
-  [OPT_CL_USER] = 0,
-  [OPT_CL_SECTION] = 0,
-  [OPT_CL_HELP] = 0
-};
-
 extern const struct opt_section * opt_section_root;
-void opt_help_internal(const struct opt_section * help);
+void opt_help(const struct opt_section * help);
 
-static void opt_help(void) {
-  opt_help_internal(opt_section_root);
-}
-
-static void opt_usage(void) {
+static inline void opt_usage(void) {
   fprintf(stderr, "Run with argument --help for more information.\n");
 }
 
-static void opt_show_help_internal(struct opt_item * opt UNUSED, const char * value UNUSED, void * data UNUSED) {
-  opt_help();
+static inline void opt_show_help_internal(struct opt_item * opt UNUSED, const char * value UNUSED, void * data) {
+  opt_help(data);
   exit(0);
 }
 

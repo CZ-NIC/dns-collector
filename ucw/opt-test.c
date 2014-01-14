@@ -123,7 +123,7 @@ static struct opt_section help = {
     OPT_HELP("At least one kind of tea must be specified."),
     OPT_HELP(""),
     OPT_HELP("Options:"),
-    OPT_HELP_OPTION,
+    OPT_HELP_OPTION(help),
     OPT_CALL('V', "version", show_version, NULL, OPT_NO_VALUE, "\tShow the version"),
     OPT_HELP(""),
     OPT_BOOL('e', "english-style", english, 0, "\tEnglish style (with milk)"),
