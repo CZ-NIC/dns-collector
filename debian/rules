@@ -28,7 +28,7 @@ install: build
 	dh_clean -k
 	dh_installdirs
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw$(UCW_ABI_SUFFIX) install-libucw-lib
-	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-dev install-libucw-api install-ucw-sorter-api
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-dev install-libucw-api
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-utils install-ucw-shell install-ucw-utils
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-doc install-libucw-docs install-libucw-config
 	install -d -m 755 $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples
