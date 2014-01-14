@@ -16,6 +16,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define opt_conf_hook_internal ucw_opt_conf_hook_internal
+#define opt_conf_internal ucw_opt_conf_internal
+#define opt_conf_parsed_count ucw_opt_conf_parsed_count
+#define opt_help_internal ucw_opt_help_internal
+#define opt_parse ucw_opt_parse
+#define opt_parsed_count ucw_opt_parsed_count
+#define opt_section_root ucw_opt_section_root
+#endif
+
 #define OPT_EXIT_BAD_ARGS 2
 
 /***

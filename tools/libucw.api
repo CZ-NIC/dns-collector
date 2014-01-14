@@ -46,6 +46,7 @@ cf_sections
 cf_find_subitem
 cf_commit_all
 cf_add_dirty
+cf_load_default
 # ucw/conf.h
 cf_new_context
 cf_delete_context
@@ -380,6 +381,14 @@ mp_printf
 mp_vprintf
 mp_printf_append
 mp_vprintf_append
+# ucw/opt.h
+opt_conf_internal
+opt_conf_hook_internal
+opt_parsed_count
+opt_conf_parsed_count
+opt_section_root
+opt_help_internal
+opt_parse
 # ucw/partmap.h
 partmap_open
 partmap_close

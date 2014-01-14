@@ -22,6 +22,7 @@
 #define cf_interpret_line ucw_cf_interpret_line
 #define cf_journal_delete ucw_cf_journal_delete
 #define cf_journal_swap ucw_cf_journal_swap
+#define cf_load_default ucw_cf_load_default
 #define cf_obtain_context ucw_cf_obtain_context
 #define cf_op_names ucw_cf_op_names
 #define cf_sections ucw_cf_sections
