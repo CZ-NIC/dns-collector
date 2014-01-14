@@ -86,13 +86,14 @@ const byte *varint_get_big(const byte *p, u64 *r)
 
 #include <string.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 int main(int argc, char **argv UNUSED)
 {
 	byte buf[16] = { 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa };
 	u64 u;
 
-	if (scanf("%lx", &u) != 1) {
+	if (scanf("%"SCNx64, &u) != 1) {
 		fprintf(stderr, "Invalid usage!\n");
 		return 1;
 	}

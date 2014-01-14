@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 	struct fastbuf *b = fbgrow_create(8);
 	switch (func) {
 		uns u;
-		u64 r;
+		uintmax_t r;
 		int i;
 		case FUNC_BGET_VARINT:
 			while (scanf("%x", &u) == 1)
@@ -78,14 +78,14 @@ int main(int argc, char **argv)
 				if (btell(b))
 					putchar(' ');
 				r = bget_varint_slow(b, ~0LLU);
-				printf("%lx", r);
+				printf("%jx", r);
 			}
 			putchar('\n');
 			break;
 
 		case FUNC_BPUT_VARINT:
 			i = 0;
-			while (scanf("%lx", &r) == 1)
+			while (scanf("%jx", &r) == 1)
 				bput_varint_slow(b, r);
 			fbgrow_rewind(b);
 			while (bpeekc(b) >= 0) {
