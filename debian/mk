@@ -1,0 +1,70 @@
+#!/bin/bash
+# A script for building of LibUCW packages
+# (c) 2013 Pavel Charvat <pchar@ucw.cz>
+
+set -e
+. debian/pkg-lib
+
+function usage {
+	cat >&2 <<EOF
+Usage: $0 <options>
+Options:
+--archonly      Build only binary packages
+--cleanup       Cleanup temporary files when finished
+--version=<ver> Custom version number of resulting packages (default: autodetect from git-describe)
+EOF
+	exit 1
+}
+
+function pkg-gen-debian {(
+	cd $BUILDDIR
+	echo "Configuring"
+	./configure debian/config VER="$VER" TREEHASH="$TREEHASH" $CONF \
+		PREFIX=/ \
+		INSTALL_INCLUDE_DIR=/usr/include/libucw \
+		INSTALL_DOC_DIR=/usr/share/doc/libucw/html \
+		INSTALL_CONFIG_DIR=/usr/share/doc/libucw/examples/etc \
+		UCW_VERSION="$VER" \
+		UCW_ABI_SUFFIX="-$VER"
+
+	echo "Creating debian/control"
+	build/genconf debian/control.in debian/control obj/config.mk
+
+	echo "Creating debian/changelog"
+	export EDITOR=true
+	CL=debian/changelog
+	rm -f $CL
+	dch --changelog=$CL --create --package=$PKG --newversion=$VER "Automatic release."
+	dch --changelog=$CL --release
+	sed -i '/Initial release/d' $CL
+)}
+
+ROOT="`pwd`"
+PKG=libucw
+ARCHONLY=
+CLEANUP=
+CONF=
+while [ -n "$1" ] ; do
+	case "$1" in
+	--archonly)	ARCHONLY=1
+			;;
+	--cleanup)	CLEANUP=1
+			;;
+	--version=*)	PKGVER="${1:10}"
+			;;
+        *)		usage
+			;;
+	esac
+	shift
+done
+
+pkg-git-version
+pkg-git-checkout
+
+echo $TREEVER >$BUILDDIR/UCW_VERSION
+pkg-gen-debian
+(cd $BUILDDIR && dpkg-buildpackage -rfakeroot -us -uc ${ARCHONLY:+"-B"})
+[ -z "$ARCHONLY" ] || rm -f debian-tmp/*_all.deb
+pkg-get-files debian-tmp/*.{deb,dsc,changes}
+
+[ -z "$CLEANUP" ] || pkg-cleanup

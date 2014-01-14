@@ -12,6 +12,13 @@
 
 #include <sys/types.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define daemon_control ucw_daemon_control
+#define daemon_exit ucw_daemon_exit
+#define daemon_init ucw_daemon_init
+#define daemon_run ucw_daemon_run
+#endif
+
 /** Parameters passed to the daemon helper. **/
 struct daemon_params {
   uns flags;				// DAEMON_FLAG_xxx
@@ -95,7 +102,7 @@ enum daemon_control_action {
  **/
 enum daemon_control_status daemon_control(struct daemon_control_params *dc);
 
-// XXX: Also used as exit codes of the daemon-control utility.
+// XXX: Also used as exit codes of the ucw-daemon-control utility.
 enum daemon_control_status {
   DAEMON_STATUS_OK = 0,
   DAEMON_STATUS_ALREADY_DONE = 100,

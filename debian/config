@@ -1,0 +1,17 @@
+# Default configuration file for debian packages
+
+Include("default.cfg");
+
+UnSet("CONFIG_LOCAL");
+Set("CONFIG_INSTALL_API");
+
+Set("CONFIG_DOC");
+Set("CONFIG_CHARSET");
+Set("CONFIG_CHARSET_UTILS");
+Set("CONFIG_XML");
+Set("CONFIG_IMAGES");
+UnSet("CONFIG_IMAGES_LIBUNGIF");
+Set("CONFIG_IMAGES_LIBGIF");
+Set("CONFIG_UCW_OBSOLETE_DAEMON_HELPER");
+
+1;

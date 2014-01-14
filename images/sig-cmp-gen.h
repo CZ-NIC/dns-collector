@@ -1,9 +1,13 @@
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define image_signatures_dist ucw_image_signatures_dist
+#define image_signatures_dist_explain ucw_image_signatures_dist_explain
+#endif
+
 #ifdef EXPLAIN
 #  define MSG(x...) do{ line += sprintf(line, x); }while(0)
 #  define LINE do{ line = buf; msg(line, param); }while(0)
 
-static void
-explain_signature(struct image_signature *sig, void (*msg)(byte *text, void *param), void *param)
+static void explain_signature(struct image_signature *sig, void (*msg)(byte *text, void *param), void *param)
 {
   byte buf[1024], *line = buf;
   MSG("signature: flags=0x%x df=%u dh=%u f=(%u", sig->flags, sig->df, sig->dh, sig->vec.f[0]);
@@ -33,11 +37,9 @@ explain_signature(struct image_signature *sig, void (*msg)(byte *text, void *par
 #define MSGL(x...) do{ MSG(x); LINE; }while(0)
 
 #ifndef EXPLAIN
-static uns
-image_signatures_dist_integrated(struct image_signature *sig1, struct image_signature *sig2)
+static uns image_signatures_dist_integrated(struct image_signature *sig1, struct image_signature *sig2)
 #else
-static uns
-image_signatures_dist_integrated_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
+static uns image_signatures_dist_integrated_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 #endif
 {
   uns dist[IMAGE_REG_MAX * IMAGE_REG_MAX], p[IMAGE_REG_MAX], q[IMAGE_REG_MAX];
@@ -226,11 +228,9 @@ image_signatures_dist_integrated_explain(struct image_signature *sig1, struct im
 }
 
 #ifndef EXPLAIN
-static uns
-image_signatures_dist_fuzzy(struct image_signature *sig1, struct image_signature *sig2)
+static uns image_signatures_dist_fuzzy(struct image_signature *sig1, struct image_signature *sig2)
 #else
-static uns
-image_signatures_dist_fuzzy_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
+static uns image_signatures_dist_fuzzy_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 #endif
 {
 #ifdef EXPLAIN
@@ -336,11 +336,9 @@ image_signatures_dist_fuzzy_explain(struct image_signature *sig1, struct image_s
 }
 
 #ifndef EXPLAIN
-static uns
-image_signatures_dist_average(struct image_signature *sig1, struct image_signature *sig2)
+static uns image_signatures_dist_average(struct image_signature *sig1, struct image_signature *sig2)
 #else
-static uns
-image_signatures_dist_average_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
+static uns image_signatures_dist_average_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 #endif
 {
 #ifdef EXPLAIN
@@ -362,12 +360,10 @@ image_signatures_dist_average_explain(struct image_signature *sig1, struct image
 
 #ifndef EXPLAIN
 #define CALL(x) image_signatures_dist_##x(sig1, sig2)
-uns
-image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2)
+uns image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2)
 #else
 #define CALL(x) image_signatures_dist_##x##_explain(sig1, sig2, msg, param)
-uns
-image_signatures_dist_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
+uns image_signatures_dist_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 #endif
 {
   if (!sig1->len)

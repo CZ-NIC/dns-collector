@@ -10,6 +10,13 @@
 #ifndef _UCW_BITSIG_H
 #define _UCW_BITSIG_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define bitsig_free ucw_bitsig_free
+#define bitsig_init ucw_bitsig_init
+#define bitsig_insert ucw_bitsig_insert
+#define bitsig_member ucw_bitsig_member
+#endif
+
 struct bitsig;
 
 struct bitsig *bitsig_init(uns perrlog, uns maxn);

@@ -10,6 +10,14 @@
 #ifndef _UCW_TIMER_H
 #define _UCW_TIMER_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define get_timer ucw_get_timer
+#define get_timestamp ucw_get_timestamp
+#define init_timer ucw_init_timer
+#define switch_timer ucw_switch_timer
+#define timestamp_type ucw_timestamp_type
+#endif
+
 /***
  * === Timestamps
  *

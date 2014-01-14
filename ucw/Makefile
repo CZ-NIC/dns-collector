@@ -52,7 +52,7 @@ LIBUCW_MAIN_INCLUDES= \
 	prime.h \
 	bitops.h \
 	conf.h getopt.h ipaccess.h \
-	fastbuf.h io.h ff-unicode.h ff-varint.h ff-binary.h \
+	fastbuf.h io.h ff-unicode.h ff-varint.h ff-binary.h fb-socket.h \
 	url.h \
 	mainloop.h \
 	process.h \
@@ -65,6 +65,7 @@ LIBUCW_MAIN_INCLUDES= \
 	resource.h trans.h \
 	daemon.h \
 	signames.h \
+	sighandler.h \
 	opt.h
 
 ifdef CONFIG_UCW_THREADS
@@ -88,12 +89,28 @@ include $(s)/ucw/doc/Makefile
 
 LIBUCW_MOD_PATHS=$(addprefix $(o)/ucw/,$(LIBUCW_MODS))
 
-$(o)/ucw/libucw.a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
-$(o)/ucw/libucw-pic.a: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
-$(o)/ucw/libucw.so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
+export LIBUCW_LIBS=
+ifdef CONFIG_UCW_THREADS
+LIBUCW_LIBS+=-lpthread
+endif
+ifdef CONFIG_UCW_PCRE
+LIBUCW_LIBS+=-lpcre
+endif
+ifdef CONFIG_UCW_MONOTONIC_CLOCK
+LIBUCW_LIBS+=-lrt
+endif
+
+$(o)/ucw/libucw$(LV).a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
+$(o)/ucw/libucw$(LV)-pic.a: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
+$(o)/ucw/libucw$(LV).so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
+$(o)/ucw/libucw$(LV).so: SONAME_SUFFIX=.0
+$(o)/ucw/libucw$(LV).so: LIBS+=$(LIBUCW_LIBS)
 
 ifdef CONFIG_STATIC_PIC
-$(o)/ucw/libucw.pc: $(o)/ucw/libucw-pic.a
+$(o)/ucw/libucw.pc: $(o)/ucw/libucw$(LV)-pic.a
+endif
+ifdef CONFIG_INSTALL_API
+$(o)/ucw/libucw.pc: $(addprefix $(o)/ucw/libucw$(LV),.a .so)
 endif
 
 $(o)/ucw/hashfunc.o $(o)/ucw/hashfunc.oo: CFLAGS += -funroll-loops
@@ -122,7 +139,7 @@ TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test
     fb-socket.test trie-test.test string.test sha1.test asort-test.test binheap-test.test \
     redblack-test.test fb-file.test fb-grow.test fb-pool.test fb-atomic.test \
     fb-limfd.test fb-temp.test fb-mem.test fb-buffer.test fb-mmap.test fb-multi.test url.test strtonum-test.test \
-    gary.test time.test crc.test signames.test md5.test opt.test)
+    gary.test time.test crc.test signames.test md5.test bitops.test opt.test)
 
 $(o)/ucw/varint.test: $(o)/ucw/varint-t
 $(o)/ucw/regex.test: $(o)/ucw/regex-t
@@ -130,7 +147,7 @@ $(o)/ucw/unicode.test: $(o)/ucw/unicode-t
 $(o)/ucw/hash-test.test: $(o)/ucw/hash-test
 $(o)/ucw/mempool.test: $(o)/ucw/mempool-t $(o)/ucw/mempool-fmt-t $(o)/ucw/mempool-str-t
 $(o)/ucw/stkstring.test: $(o)/ucw/stkstring-t
-$(o)/ucw/bitops.test: $(o)/ucw/bit-ffs-t $(o)/ucw/bit-fls-t $(o)/ucw/bit-count-t
+$(o)/ucw/bitops.test: $(o)/ucw/bit-ffs-t $(o)/ucw/bit-fls-t
 $(o)/ucw/slists.test: $(o)/ucw/slists-t
 $(o)/ucw/kmp-test.test: $(o)/ucw/kmp-test
 $(o)/ucw/bbuf.test: $(o)/ucw/bbuf-t
@@ -184,15 +201,24 @@ endif
 
 CONFIGS+=libucw
 
-INSTALL_TARGETS+=install-libucw
-install-libucw:
-	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/ $(DESTDIR)$(INSTALL_PKGCONFIG_DIR) $(DESTDIR)$(INSTALL_CONFIG_DIR)
+INSTALL_TARGETS+=install-libucw-lib
+install-libucw-lib:
+	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -m 644 run/lib/libucw$(LV).so.0 $(DESTDIR)$(INSTALL_LIB_DIR)/libucw$(LV).so.0.0
+	ln -sf libucw$(LV).so.0.0 $(DESTDIR)$(INSTALL_LIB_DIR)/libucw$(LV).so.0
+.PHONY: install-libucw-lib
+
+INSTALL_TARGETS+=install-libucw-api
+install-libucw-api: install-ucw-sorter-api
+	install -d -m 755 $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/ $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 $(addprefix run/include/ucw/,$(LIBUCW_MAIN_INCLUDES) autoconf.h config.h) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/
 	install -m 644 run/lib/pkgconfig/libucw.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
-	install -m 644 run/lib/libucw.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
-ifdef CONFIG_STATIC_PIC
-	install -m 644 run/lib/libucw-pic.$(LS) $(DESTDIR)$(INSTALL_LIB_DIR)
-endif
-	install -m 644 run/$(CONFIG_DIR)/libucw $(DESTDIR)$(INSTALL_CONFIG_DIR)
+	ln -sf libucw$(LV).so.0.0 $(DESTDIR)$(INSTALL_LIB_DIR)/libucw$(LV).so
+	install -m 644 run/lib/libucw$(LV).a $(DESTDIR)$(INSTALL_LIB_DIR)
+.PHONY: install-libucw-api
 
-.PHONY: install-libucw
+INSTALL_TARGETS+=install-libucw-config
+install-libucw-config:
+	install -d -m 755 $(DESTDIR)$(INSTALL_CONFIG_DIR)
+	install -m 644 run/$(CONFIG_DIR)/libucw $(DESTDIR)$(INSTALL_CONFIG_DIR)
+.PHONY: install-libucw-config

@@ -1,0 +1,77 @@
+#!/usr/bin/make -f
+# debian/rules for LibUCW
+# (c) 2013 Pavel Charvat <pchar@ucw.cz>
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+include obj/config.mk
+
+build: build-stamp
+
+build-stamp:
+	dh_testdir
+	$(MAKE)
+	#$(MAKE) tests
+	touch $@
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp
+	-$(MAKE) clean
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw$(UCW_ABI_SUFFIX) install-libucw-lib
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-dev install-libucw-api
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-utils install-ucw-shell install-ucw-utils
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-doc install-libucw-docs install-libucw-config
+	install -d -m 755 $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples
+	cp -r examples/external $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples/program
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-charset$(UCW_ABI_SUFFIX) install-libucw-charset-lib
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-charset-dev install-libucw-charset-api
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-charset-utils install-libucw-charset-utils
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-xml$(UCW_ABI_SUFFIX) install-libucw-xml-lib
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-xml-dev install-libucw-xml-api
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-images$(UCW_ABI_SUFFIX) install-libucw-images-lib
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-images-dev install-libucw-images-api
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-images-utils install-libucw-images-utils
+
+binary-indep: build install
+
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs
+	dh_installdocs
+#	dh_installexamples
+#	dh_install
+#	dh_installmenu
+#	dh_installdebconf
+#	dh_installlogrotate
+#	dh_installemacsen
+#	dh_installpam
+#	dh_installmime
+#	dh_installcron
+#	dh_installinfo
+#	dh_installman
+#	dh_link
+#	dh_strip
+	dh_compress -Xusr/share/doc/libucw/
+	dh_fixperms
+#	dh_perl
+#	dh_python
+	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install

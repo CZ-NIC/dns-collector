@@ -39,10 +39,13 @@ endif
 ifdef CONFIG_SHARED
 LS=$(DYNAMIC_LIBRARIES)
 OS=oo
+PKG_CONFIG_OPTS=
 else
 LS=a
 OS=o
+PKG_CONFIG_OPTS=--static
 endif
+LV=$(UCW_ABI_SUFFIX)
 
 SO_RUNDIR=lib
 
@@ -74,7 +77,7 @@ clean:: dust
 	rm -rf tests run/{bin,lib,include,.tree-stamp,doc}
 
 distclean:: clean
-	rm -rf obj run
+	rm -rf obj run debian-tmp
 
 testclean::
 	rm -f `find obj -name "*.test"`

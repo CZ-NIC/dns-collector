@@ -16,6 +16,37 @@
 #include <ucw/config.h>
 #include <stdarg.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define assert_failed ucw_assert_failed
+#define assert_failed_noinfo ucw_assert_failed_noinfo
+#define big_alloc ucw_big_alloc
+#define big_alloc_zero ucw_big_alloc_zero
+#define big_free ucw_big_free
+#define die ucw_die
+#define log_die_hook ucw_log_die_hook
+#define log_file ucw_log_file
+#define log_fork ucw_log_fork
+#define log_init ucw_log_init
+#define log_pid ucw_log_pid
+#define log_title ucw_log_title
+#define msg ucw_msg
+#define page_alloc ucw_page_alloc
+#define page_alloc_zero ucw_page_alloc_zero
+#define page_free ucw_page_free
+#define page_realloc ucw_page_realloc
+#define random_max ucw_random_max
+#define random_max_u64 ucw_random_max_u64
+#define random_u32 ucw_random_u32
+#define random_u64 ucw_random_u64
+#define vdie ucw_vdie
+#define vmsg ucw_vmsg
+#define xfree ucw_xfree
+#define xmalloc ucw_xmalloc
+#define xmalloc_zero ucw_xmalloc_zero
+#define xrealloc ucw_xrealloc
+#define xstrdup ucw_xstrdup
+#endif
+
 /*** === Macros for handling structures, offsets and alignment ***/
 
 #define CHECK_PTR_TYPE(x, type) ((x)-(type)(x) + (type)(x))		/** Check that a pointer @x is of type @type. Fail compilation if not. **/
@@ -146,8 +177,14 @@ void assert_failed_noinfo(void) NONRET;
 
 #ifdef LOCAL_DEBUG
 #define DBG(x,y...) msg(L_DEBUG, x,##y)	/** If `LOCAL_DEBUG` is defined before including <ucw/lib.h>, log a debug message. Otherwise do nothing. **/
+/**
+ * If `LOCAL_DEBUG` is defined before including <ucw/lib.h>, log current
+ * file name and line number. Otherwise do nothing.
+ **/
+#define DBG_SPOT msg(L_DEBUG, "%s:%d (%s)", __FILE__, __LINE__, __func__)
 #else
 #define DBG(x,y...) do { } while(0)
+#define DBG_SPOT do { } while(0)
 #endif
 
 #ifdef DEBUG_ASSERTS

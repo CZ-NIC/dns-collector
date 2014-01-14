@@ -17,26 +17,26 @@ done
 
 function log # msg
 {
-	bin/logger $UCW_PROGNAME I "$1"
+	bin/ucw-logger $UCW_PROGNAME I "$1"
 }
 
 function errlog # msg
 {
-	bin/logger $UCW_PROGNAME E "$1"
+	bin/ucw-logger $UCW_PROGNAME E "$1"
 }
 
 function warnlog # msg
 {
-	bin/logger $UCW_PROGNAME E "$1"
+	bin/ucw-logger $UCW_PROGNAME E "$1"
 }
 
 function die # msg
 {
-	bin/logger $UCW_PROGNAME ! "$1"
+	bin/ucw-logger $UCW_PROGNAME ! "$1"
 	exit 1
 }
 
 function parse-config # section vars...
 {
-	eval `bin/config$UCW_CF "$@"`
+	eval `bin/ucw-config$UCW_CF "$@"`
 }

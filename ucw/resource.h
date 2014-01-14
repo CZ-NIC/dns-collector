@@ -13,6 +13,27 @@
 #include <ucw/clists.h>
 #include <ucw/threads.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define res_add ucw_res_add
+#define res_alloc ucw_res_alloc
+#define res_detach ucw_res_detach
+#define res_drop ucw_res_drop
+#define res_dump ucw_res_dump
+#define res_eltpool ucw_res_eltpool
+#define res_for_fd ucw_res_for_fd
+#define res_free ucw_res_free
+#define res_malloc ucw_res_malloc
+#define res_malloc_zero ucw_res_malloc_zero
+#define res_mempool ucw_res_mempool
+#define res_realloc ucw_res_realloc
+#define res_subpool ucw_res_subpool
+#define rp_commit ucw_rp_commit
+#define rp_delete ucw_rp_delete
+#define rp_detach ucw_rp_detach
+#define rp_dump ucw_rp_dump
+#define rp_new ucw_rp_new
+#endif
+
 /**
  * A resource pool. It contains a name of the pool (which is printed
  * in all debugging dumps, otherwise it is not used) and a bunch of
@@ -75,7 +96,7 @@ static inline struct respool *rp_switch(struct respool *rp)
   return orp;
 }
 
-struct resource *res_alloc(const struct res_class *rc) LIKE_MALLOC;	// Returns NULL if there is no pool active
+struct resource *res_alloc(const struct res_class *rc) LIKE_MALLOC;	// Dies if there is no pool active
 
 void res_dump(struct resource *r, uns indent);		/** Prints out a debugging dump of the resource to stdout. **/
 

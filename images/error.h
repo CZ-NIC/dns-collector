@@ -1,6 +1,10 @@
 #ifndef _IMAGES_ERROR_H
 #define _IMAGES_ERROR_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define image_trace ucw_image_trace
+#endif
+
 extern uns image_trace; /* ImageLib.Trace */ 
 
 /* Error codes */

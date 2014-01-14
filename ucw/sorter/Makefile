@@ -17,9 +17,8 @@ TESTS+=$(o)/ucw/sorter/sort-test.test
 $(o)/ucw/sorter/sort-test.test: $(o)/ucw/sorter/sort-test
 $(o)/ucw/sorter/sort-test: $(o)/ucw/sorter/sort-test.o $(LIBUCW)
 
-INSTALL_TARGETS+=install-ucw-sorter
-install-ucw-sorter:
+INSTALL_API_TARGETS+=install-ucw-sorter-api
+install-ucw-sorter-api:
 	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/sorter
 	install -m 644 $(addprefix run/include/ucw/,$(LIBUCW_SORTER_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw/sorter/
-
-.PHONY: install-ucw-sorter
+.PHONY: install-ucw-sorter-api

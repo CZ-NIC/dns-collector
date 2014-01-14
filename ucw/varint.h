@@ -10,6 +10,11 @@
 #ifndef _UCW_VARINT_H
 #define _UCW_VARINT_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define varint_get_big ucw_varint_get_big
+#define varint_put_big ucw_varint_put_big
+#endif
+
 /***
  * The encoding works in the following way:
  *

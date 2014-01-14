@@ -12,6 +12,42 @@
 
 #include <ucw/clists.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define asort_run ucw_asort_run
+#define asort_start_threads ucw_asort_start_threads
+#define asort_stop_threads ucw_asort_stop_threads
+#define sbuck_drop ucw_sbuck_drop
+#define sbuck_has_file ucw_sbuck_has_file
+#define sbuck_have ucw_sbuck_have
+#define sbuck_new ucw_sbuck_new
+#define sbuck_read ucw_sbuck_read
+#define sbuck_size ucw_sbuck_size
+#define sbuck_swap_out ucw_sbuck_swap_out
+#define sbuck_write ucw_sbuck_write
+#define sorter_add_radix_bits ucw_sorter_add_radix_bits
+#define sorter_alloc ucw_sorter_alloc
+#define sorter_alloc_buf ucw_sorter_alloc_buf
+#define sorter_bufsize ucw_sorter_bufsize
+#define sorter_debug ucw_sorter_debug
+#define sorter_fb_params ucw_sorter_fb_params
+#define sorter_free_buf ucw_sorter_free_buf
+#define sorter_max_multiway_bits ucw_sorter_max_multiway_bits
+#define sorter_max_radix_bits ucw_sorter_max_radix_bits
+#define sorter_min_multiway_bits ucw_sorter_min_multiway_bits
+#define sorter_min_radix_bits ucw_sorter_min_radix_bits
+#define sorter_prepare_buf ucw_sorter_prepare_buf
+#define sorter_radix_threshold ucw_sorter_radix_threshold
+#define sorter_run ucw_sorter_run
+#define sorter_small_fb_params ucw_sorter_small_fb_params
+#define sorter_small_input ucw_sorter_small_input
+#define sorter_stream_bufsize ucw_sorter_stream_bufsize
+#define sorter_thread_chunk ucw_sorter_thread_chunk
+#define sorter_thread_threshold ucw_sorter_thread_threshold
+#define sorter_threads ucw_sorter_threads
+#define sorter_trace ucw_sorter_trace
+#define sorter_trace_array ucw_sorter_trace_array
+#endif
+
 /* Configuration variables */
 extern uns sorter_trace, sorter_trace_array, sorter_stream_bufsize;
 extern uns sorter_debug, sorter_min_radix_bits, sorter_max_radix_bits, sorter_add_radix_bits;

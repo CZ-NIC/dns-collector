@@ -1,0 +1,73 @@
+#!/usr/bin/perl
+# Search for symbols which might need renaming
+# (c) 2014 Martin Mares <mj@ucw.cz>
+
+use common::sense;
+
+sub parse {
+	my ($file) = @_;
+	print "# $file\n";
+	open my $f, '<', $file or die;
+	while (<$f>) {
+		chomp;
+		# Find things which look like top-level declarations
+		s{//.*}{};
+		s{/\*.*}{};
+		/^\s/ and next;
+		/^$/ and next;
+		/^#/ and next;
+		/^{/ and next;
+		/}/ and next;
+		/^"/ and next;
+		/^-/ and next;		# Magic for ucw/getopt.h
+		/^\w+:/ and next;	# Labels in inline functions
+		/^typedef\s/ and next;
+		/^static\s/ and next;
+		/^(struct|union|enum)(\s+\w+)?(;|\s*{)/ and next;
+
+		# print "$_\n";
+
+		# Try to parse the declaration
+		s{\[[^\]]*\]}{}g;	# Delete array sizes
+		if (m{^extern [^,]*(\s+\**\w+(,\s+\**\w+)*);}) {
+			my $x = $1;
+			$x =~ s{[,*]}{}g;
+			print join("\n", grep { !/^$/ } split /\s+/, $x), "\n";
+		} elsif (m{( |\*)(\w+)\(}) {
+			print "$2\n";
+		} else {
+			print "??? $_\n";
+		}
+
+	}
+	close $f;
+}
+
+my %blacklist = map { $_ => 1 } qw(
+	ucw/binheap.h
+	ucw/char-map.h
+	ucw/ff-binary.h
+	ucw/gbuf.h
+	ucw/hashtable.h
+	ucw/kmp.h
+	ucw/kmp-search.h
+	ucw/redblack.h
+	ucw/str-match.h
+	ucw/strtonum.h
+	ucw/strtonum-gen.h
+	ucw/trie.h
+	charset/charconv-gen.h
+	charset/chartable.h
+	charset/U-cat.h
+	charset/U-ligatures.h
+	charset/U-lower.h
+	charset/U-unacc.h
+	charset/U-upper.h
+	images/image-walk.h
+	images/scale-gen.h
+);
+
+for my $f (<ucw/*.h>, <ucw/sorter/common.h>, <charset/*.h>, <images/*.h>) {
+	next if $blacklist{$f};
+	parse($f);
+}

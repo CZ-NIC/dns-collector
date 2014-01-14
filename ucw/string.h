@@ -11,6 +11,22 @@
 #ifndef _UCW_STRING_H
 #define _UCW_STRING_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define hex_to_mem ucw_hex_to_mem
+#define mem_to_hex ucw_mem_to_hex
+#define str_count_char ucw_str_count_char
+#define str_format_flags ucw_str_format_flags
+#define str_has_prefix ucw_str_has_prefix
+#define str_has_suffix ucw_str_has_suffix
+#define str_hier_prefix ucw_str_hier_prefix
+#define str_hier_suffix ucw_str_hier_suffix
+#define str_match_pattern ucw_str_match_pattern
+#define str_match_pattern_nocase ucw_str_match_pattern_nocase
+#define str_sepsplit ucw_str_sepsplit
+#define str_unesc ucw_str_unesc
+#define str_wordsplit ucw_str_wordsplit
+#endif
+
 /* string.c */
 
 #ifdef CONFIG_DARWIN

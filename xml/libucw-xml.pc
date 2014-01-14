@@ -1,0 +1,14 @@
+# pkg-config metadata for libucw-xml
+
+libdir=@LIBDIR@
+incdir=.
+
+# Override if you want to use the -pic version
+picsuffix=
+
+Name: libucw-xml
+Description: XML parser for LibUCW project
+Version: @UCW_VERSION@
+Cflags: -I${incdir}
+Libs: -L${libdir} -lucw-xml@UCW_ABI_SUFFIX@${picsuffix}
+Requires.private: @DEPS@

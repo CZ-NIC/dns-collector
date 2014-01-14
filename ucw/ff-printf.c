@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Printf on Fastbuf Streams
  *
- *	(c) 2002--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 2002--2013 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -9,52 +9,57 @@
 
 #include <ucw/lib.h>
 #include <ucw/fastbuf.h>
+#include <ucw/resource.h>
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <alloca.h>
 
 int
 vbprintf(struct fastbuf *b, const char *msg, va_list args)
 {
   byte *buf;
-  int len, r;
+  int remains, len;
   va_list args2;
 
-  len = bdirect_write_prepare(b, &buf);
-  if (len >= 16)
-    {
-      va_copy(args2, args);
-      r = vsnprintf(buf, len, msg, args2);
-      va_end(args2);
-      if (r < 0)
-	len = 256;
-      else if (r < len)
-	{
-	  bdirect_write_commit(b, buf+r);
-	  return r;
-	}
-      else
-	len = r+1;
-    }
-  else
-    len = 256;
+  va_copy(args2, args);
+  remains = bdirect_write_prepare(b, &buf);
+  len = vsnprintf(buf, remains, msg, args2);
+  va_end(args2);
 
-  while (1)
+  if (len <= remains)
     {
-      buf = alloca(len);
-      va_copy(args2, args);
-      r = vsnprintf(buf, len, msg, args2);
-      va_end(args2);
-      if (r < 0)
-	len += len;
-      else if (r < len)
-	{
-	  bwrite(b, buf, r);
-	  return r;
-	}
-      else
-	len = r+1;
+      bdirect_write_commit(b, buf + len);
+      return len;
     }
+
+  /*
+   *  We need a temporary buffer. If it is small, let's use stack.
+   *  Otherwise, we malloc it, but we have to be careful, since we
+   *  might be running inside a transaction and bwrite() could
+   *  throw an exception.
+   *
+   *  FIXME: This deserves a more systematic solution, the same
+   *  problem is likely to happen at other places, too.
+   */
+  int bufsize = len + 1;
+  struct resource *res = NULL;
+  byte *extra_buffer = NULL;
+  if (bufsize <= 256)
+    buf = alloca(bufsize);
+  else if (rp_current())
+    buf = res_malloc(bufsize, &res);
+  else
+    buf = extra_buffer = xmalloc(bufsize);
+
+  vsnprintf(buf, bufsize, msg, args);
+  bwrite(b, buf, len);
+
+  if (res)
+    res_free(res);
+  else if (extra_buffer)
+    xfree(extra_buffer);
+  return len;
 }
 
 int

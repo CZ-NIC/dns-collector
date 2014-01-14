@@ -14,6 +14,17 @@
 #ifndef _UCW_SHA1_H
 #define _UCW_SHA1_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define sha1_final ucw_sha1_final
+#define sha1_hash_buffer ucw_sha1_hash_buffer
+#define sha1_hmac ucw_sha1_hmac
+#define sha1_hmac_final ucw_sha1_hmac_final
+#define sha1_hmac_init ucw_sha1_hmac_init
+#define sha1_hmac_update ucw_sha1_hmac_update
+#define sha1_init ucw_sha1_init
+#define sha1_update ucw_sha1_update
+#endif
+
 /**
  * Internal SHA1 state.
  * You should use it just as an opaque handle only.

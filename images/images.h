@@ -12,6 +12,37 @@
 
 #include <ucw/bbuf.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define image_channels_format_to_name ucw_image_channels_format_to_name
+#define image_clear ucw_image_clear
+#define image_clone ucw_image_clone
+#define image_context_cleanup ucw_image_context_cleanup
+#define image_context_init ucw_image_context_init
+#define image_context_msg ucw_image_context_msg
+#define image_context_msg_default ucw_image_context_msg_default
+#define image_context_msg_silent ucw_image_context_msg_silent
+#define image_context_vmsg ucw_image_context_vmsg
+#define image_destroy ucw_image_destroy
+#define image_dimensions_fit_to_box ucw_image_dimensions_fit_to_box
+#define image_extension_to_format ucw_image_extension_to_format
+#define image_file_name_to_format ucw_image_file_name_to_format
+#define image_format_to_extension ucw_image_format_to_extension
+#define image_init_matrix ucw_image_init_matrix
+#define image_init_subimage ucw_image_init_subimage
+#define image_io_cleanup ucw_image_io_cleanup
+#define image_io_init ucw_image_io_init
+#define image_io_read ucw_image_io_read
+#define image_io_read_data ucw_image_io_read_data
+#define image_io_read_header ucw_image_io_read_header
+#define image_io_reset ucw_image_io_reset
+#define image_io_write ucw_image_io_write
+#define image_max_bytes ucw_image_max_bytes
+#define image_max_dim ucw_image_max_dim
+#define image_name_to_channels_format ucw_image_name_to_channels_format
+#define image_new ucw_image_new
+#define image_scale ucw_image_scale
+#endif
+
 struct mempool;
 struct fastbuf;
 
@@ -98,8 +129,7 @@ void image_clear(struct image_context *ctx, struct image *img);
 struct image *image_init_matrix(struct image_context *ctx, struct image *img, byte *pixels, uns cols, uns rows, uns row_size, uns flags);
 struct image *image_init_subimage(struct image_context *ctx, struct image *img, struct image *src, uns left, uns top, uns cols, uns rows);
 
-static inline int
-image_dimensions_valid(uns cols, uns rows)
+static inline int image_dimensions_valid(uns cols, uns rows)
 {
   return cols && rows && cols <= image_max_dim && rows <= image_max_dim;
 }

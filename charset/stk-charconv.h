@@ -13,6 +13,11 @@
 #include <charset/charconv.h>
 #include <alloca.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define stk_strconv_init ucw_stk_strconv_init
+#define stk_strconv_step ucw_stk_strconv_step
+#endif
+
 /* The following macros convert strings between given charsets (CONV_CHARSET_x). */
 
 #define stk_strconv(s, cs_in, cs_out) \

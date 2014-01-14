@@ -12,6 +12,13 @@
 
 #include <ucw/clists.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define ip_addrmask_match ucw_ip_addrmask_match
+#define ip_addrmask_type ucw_ip_addrmask_type
+#define ipaccess_cf ucw_ipaccess_cf
+#define ipaccess_check ucw_ipaccess_check
+#endif
+
 extern struct cf_section ipaccess_cf;
 int ipaccess_check(clist *l, u32 ip);
 

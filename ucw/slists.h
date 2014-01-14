@@ -10,6 +10,12 @@
 #ifndef _UCW_SLISTS_H
 #define _UCW_SLISTS_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define slist_insert_before ucw_slist_insert_before
+#define slist_prev ucw_slist_prev
+#define slist_remove ucw_slist_remove
+#endif
+
 /**
  * Common header for list nodes.
  **/

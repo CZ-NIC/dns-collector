@@ -16,19 +16,17 @@ BUILDSYS=$(s)/build
 include $(BUILDSYS)/Maketop
 
 # Set up names of common libraries (to avoid forward references in rules)
-LIBLANG=$(o)/lang/liblang.pc
-LIBCHARSET=$(o)/charset/libcharset.pc
-LIBIMAGES=$(o)/images/libimages.pc
+LIBCHARSET=$(o)/charset/libucw-charset.pc
+LIBIMAGES=$(o)/images/libucw-images.pc
 
 # Include makefiles of libraries we wish to use
 include $(s)/ucw/Makefile
 include $(s)/charset/Makefile
-include $(s)/lang/Makefile
 include $(s)/images/Makefile
 
 # Programs we want to compile
 PROGS+=$(o)/test
-$(o)/test: $(o)/test.o $(LIBUCW) $(LIBLANG) $(LIBCHARSET) $(LIBIMAGES)
+$(o)/test: $(o)/test.o $(LIBUCW) $(LIBCHARSET) $(LIBIMAGES)
 
 # All tests (%-t) get automatically linked with libucw
 TESTING_DEPS=$(LIBUCW)

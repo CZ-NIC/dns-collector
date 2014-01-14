@@ -63,7 +63,7 @@ endif
 
 %.so:
 	$(M)LD $@
-	$(Q)$(CC) $(LSHARED) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(BUILDSYS)/lib-flags $^) $(LIBS)
+	$(Q)$(CC) $(LSHARED) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" PKG_CONFIG_OPTS="$(PKG_CONFIG_OPTS)" $(BUILDSYS)/lib-flags $^) $(LIBS)
 	$(Q)$(call symlink-alias,$@,run/$(SO_RUNDIR),$(*F)$(SONAME_INFIX).so$(SONAME_SUFFIX))
 
 # On Darwin, gcc expects shared libraries in *.dylib instead of *.so.
@@ -74,7 +74,7 @@ endif
 %.dylib: %.so
 	cd $(dir $<) && ln -fs $(notdir $<) $(notdir $@)
 
-$(o)/%.pc: $(s)/%.pc $(o)/%.$(LS)
+$(o)/%.pc: $(s)/%.pc $(o)/%$(LV).$(LS)
 	$(M)PC $<
 	$(Q)DEPS="$(shell $(BUILDSYS)/lib-deps $^)" LIBDIR=$(@D) $(BUILDSYS)/genconf $< $@ $(o)/config.mk
 	$(Q)mkdir -p $(o)/pkgconfig
@@ -142,7 +142,7 @@ $(o)/%-tt.o: $(s)/%.c $(o)/autoconf.h
 
 $(o)/%-t: $(o)/%-tt.o $(TESTING_DEPS)
 	$(M)LD-TEST $@
-	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(BUILDSYS)/lib-flags $^) $(LIBS)
+	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" PKG_CONFIG_OPTS="$(PKG_CONFIG_OPTS)" $(BUILDSYS)/lib-flags $^) $(LIBS)
 
 $(o)/%.test: $(s)/%.t $(BUILDSYS)/tester
 	$(M)TEST $@
@@ -154,7 +154,7 @@ BINDIR=bin
 
 $(o)/%: $(o)/%.o
 	$(M)LD $@
-	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(BUILDSYS)/lib-flags $^) $(LIBS)
+	$(Q)$(CC) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" PKG_CONFIG_OPTS="$(PKG_CONFIG_OPTS)" $(BUILDSYS)/lib-flags $^) $(LIBS)
 	$(Q)$(call symlink,$@,run/$(BINDIR))
 
 $(o)/%: $(s)/%.sh $(o)/config.mk $(BUILDSYS)/genconf

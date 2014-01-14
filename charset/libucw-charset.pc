@@ -1,0 +1,14 @@
+# pkg-config metadata for libucw-charset
+
+libdir=@LIBDIR@
+incdir=.
+
+# Override if you want to use the -pic version
+picsuffix=
+
+Name: libucw-charset
+Description: Character set conversion library
+Version: @UCW_VERSION@
+Cflags: -I${incdir}
+Libs: -L${libdir} -lucw-charset@UCW_ABI_SUFFIX@${picsuffix}
+Requires.private: @DEPS@

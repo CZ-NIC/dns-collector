@@ -11,6 +11,22 @@
 #ifndef _UCW_URL_H
 #define _UCW_URL_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define url_auto_canonicalize_rel ucw_url_auto_canonicalize_rel
+#define url_canon_split_rel ucw_url_canon_split_rel
+#define url_canonicalize ucw_url_canonicalize
+#define url_deescape ucw_url_deescape
+#define url_enescape ucw_url_enescape
+#define url_enescape_friendly ucw_url_enescape_friendly
+#define url_error ucw_url_error
+#define url_has_repeated_component ucw_url_has_repeated_component
+#define url_identify_protocol ucw_url_identify_protocol
+#define url_normalize ucw_url_normalize
+#define url_pack ucw_url_pack
+#define url_proto_names ucw_url_proto_names
+#define url_split ucw_url_split
+#endif
+
 #define MAX_URL_SIZE 1024
 
 /* Non-control meanings of control characters */

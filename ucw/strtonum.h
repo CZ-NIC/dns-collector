@@ -10,6 +10,11 @@
 #ifndef _STRTONUM_H
 #define _STRTONUM_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define str_to_uintmax ucw_str_to_uintmax
+#define str_to_uns ucw_str_to_uns
+#endif
+
 // Set (flags & 0x1f) in the range 1 to 31 to denote the default base of the number
 enum str_to_num_flags {
   STN_SIGNED = 0x20,       // The resulting range is signed

@@ -15,6 +15,51 @@
 
 #include <signal.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define block_io_add ucw_block_io_add
+#define block_io_del ucw_block_io_del
+#define block_io_read ucw_block_io_read
+#define block_io_set_timeout ucw_block_io_set_timeout
+#define block_io_write ucw_block_io_write
+#define file_add ucw_file_add
+#define file_chg ucw_file_chg
+#define file_debug ucw_file_debug
+#define file_del ucw_file_del
+#define hook_add ucw_hook_add
+#define hook_debug ucw_hook_debug
+#define hook_del ucw_hook_del
+#define main_cleanup ucw_main_cleanup
+#define main_current ucw_main_current
+#define main_debug_context ucw_main_debug_context
+#define main_delete ucw_main_delete
+#define main_destroy ucw_main_destroy
+#define main_get_time ucw_main_get_time
+#define main_init ucw_main_init
+#define main_loop ucw_main_loop
+#define main_new ucw_main_new
+#define main_step ucw_main_step
+#define main_switch_context ucw_main_switch_context
+#define main_teardown ucw_main_teardown
+#define process_add ucw_process_add
+#define process_debug ucw_process_debug
+#define process_del ucw_process_del
+#define process_fork ucw_process_fork
+#define rec_io_add ucw_rec_io_add
+#define rec_io_del ucw_rec_io_del
+#define rec_io_parse_line ucw_rec_io_parse_line
+#define rec_io_set_timeout ucw_rec_io_set_timeout
+#define rec_io_start_read ucw_rec_io_start_read
+#define rec_io_stop_read ucw_rec_io_stop_read
+#define rec_io_write ucw_rec_io_write
+#define signal_add ucw_signal_add
+#define signal_debug ucw_signal_debug
+#define signal_del ucw_signal_del
+#define timer_add ucw_timer_add
+#define timer_add_rel ucw_timer_add_rel
+#define timer_debug ucw_timer_debug
+#define timer_del ucw_timer_del
+#endif
+
 /***
  * [[basic]]
  * Basic operations
@@ -115,8 +160,7 @@ static inline void main_shut_down(void)
  **/
 void main_debug_context(struct main_context *m);
 
-static inline void
-main_debug(void)
+static inline void main_debug(void)
 {
   main_debug_context(main_current());
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # A simple unit testing script
-# (c) 2004--2007 Martin Mares <mj@ucw.cz>
+# (c) 2004--2013 Martin Mares <mj@ucw.cz>
 # (c) 2007 Pavel Charvat <pchar@ucw.cz>
 
 # Tests in the test file have a syntax similar to mail headers,
@@ -13,11 +13,20 @@
 #		replaced by file names of In<N> or Out<N> files (see below).
 #	In:	lines to pass to the program as standard input
 #	Out:	lines to expect at the program's standard output
+#	Err:	lines to expect at the program's standard error output
 #	In<N>:	lines to pass to the program as input file <N>
 #	Out<N>:	lines to expect from the program in output file <N>
 #		Both In<N> and Out<N> can be specified simultaneously if we
 #		are testing a program which modifies some of its input files.
 #	Exit:	expected exit code of the program (default: 0)
+#
+# A value of a field can be optionally given as a shell-style here-document:
+#
+#	In <<AMEN
+#	multiple
+#	lines
+#	of input
+#	AMEN
 
 use Getopt::Long;
 
@@ -46,6 +55,20 @@ while (<>) {
 		($tt->{$n}) && die "$n already defined";
 		$tt->{$n} = $v;
 		$append_to = \($tt->{$n});
+	} elsif (my ($n,$sep) = /^(\w+)\s*<<(\w+)\s*$/) {
+		if (!$tt) {
+			$tt = {};
+			push @tests, $tt;
+		}
+		($tt->{$n}) && die "$n already defined";
+		$tt->{$n} = "";
+		$sep .= "\n";
+		while (1) {
+			my $line = <>;
+			defined $line or die "Here-document not terminated";
+			last if $line eq $sep;
+			$tt->{$n} .= $line;
+		}
 	} else {
 		die "Test script syntax error";
 	}
@@ -86,6 +109,13 @@ TEST: foreach $tt (@tests) {
 		push @out_checks, $tt->{'Out'};
 	} else {
 		$redirs .= " >/dev/null";
+	}
+	if (defined $tt->{'Err'}) {
+		my $efi = "tmp/test$i.err";
+		unlink "$rundir/$efi";
+		$redirs .= " 2>$efi";
+		push @out_files, $efi;
+		push @out_checks, $tt->{'Err'};
 	}
 	foreach my $arg (0..9) {
 		my $f = "tmp/test$i.$arg";

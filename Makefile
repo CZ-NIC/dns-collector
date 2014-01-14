@@ -23,7 +23,7 @@ include $(BUILDSYS)/Makefile
 
 # Set up names of common libraries (to avoid forward references in rules)
 ifdef CONFIG_CHARSET
-LIBCHARSET=$(o)/charset/libcharset.pc
+LIBCHARSET=$(o)/charset/libucw-charset.pc
 endif
 
 # The UCW library
@@ -46,13 +46,13 @@ include $(s)/charset/Makefile
 endif
 
 ifdef CONFIG_IMAGES
-LIBIMAGES=$(o)/images/libimages.pc
+LIBIMAGES=$(o)/images/libucw-images.pc
 include $(s)/images/Makefile
 endif
 
-ifdef CONFIG_SHXML
-LIBSHXML=$(o)/shxml/libshxml.pc
-include $(s)/shxml/Makefile
+ifdef CONFIG_XML
+LIBXML=$(o)/xml/libucw-xml.pc
+include $(s)/xml/Makefile
 endif
 
 # Build documentation by default?
@@ -60,7 +60,7 @@ ifdef CONFIG_DOC
 all: docs
 endif
 
-libs: $(LIBUCW) $(LIBSHXML) $(LIBIMAGES) $(LIBCHARSET)
+libs: $(LIBUCW) $(LIBXML) $(LIBIMAGES) $(LIBCHARSET)
 
 # And finally the default rules of the build system
 include $(BUILDSYS)/Makebottom

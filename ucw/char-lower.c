@@ -10,7 +10,7 @@
 #include <ucw/lib.h>
 #include <ucw/chartype.h>
 
-const byte _c_lower[256] = {
+const byte ucw_c_lower[256] = {
 #define CHAR(code,upper,lower,cat) lower,
 #include <ucw/char-map.h>
 #undef CHAR

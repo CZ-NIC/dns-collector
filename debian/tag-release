@@ -1,0 +1,45 @@
+#!/usr/bin/perl -w
+use strict;
+
+my $help = $ARGV[0];
+if (defined($help) && $help eq "--help") {
+  print <<EOF;
+Usage: $0 [-n] [version]
+Tag this version of libucw as <version>.
+
+If no <version> is given, a version number is computed by incrementing the last
+number in the sequence, e.g. after 5.0 goes 5.1, etc.
+
+Options:
+-n  show the version, do not create any tags
+
+EOF
+  exit 0;
+}
+
+my $dry = $ARGV[0];
+if (defined($dry) && $dry eq "-n") {
+  shift @ARGV;
+} else {
+  undef $dry;
+}
+
+my $vv = $ARGV[0];
+
+my $v = `git describe`;
+chomp $v;
+$v =~ s/^v// or die;
+$v =~ s/-.*//;
+print "Old version: $v\n";
+
+unless ($vv) {
+  my @c = split /\./, $v;
+  if (@c == 2) { push @c, 1; } else { $c[$#c]++; }
+  $vv = join(".", @c);
+}
+
+print "New version: $vv\n";
+print "Not tagging, running with -n.\n" and exit 0 if $dry;
+`git tag -a -m "Releasing version $vv" v$vv`;
+die if $?;
+print "Tagged. Do not forget to push with tags.\n";

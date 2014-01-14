@@ -12,6 +12,10 @@
 
 #include <ucw/fastbuf.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define fbsock_create ucw_fbsock_create
+#endif
+
 struct fbsock_params {	/** Configuration of socket fastbuf. **/
   int fd;
   int fd_is_shared;

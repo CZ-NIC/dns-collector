@@ -7,6 +7,14 @@
 #ifndef _UCW_GARY_H
 #define _UCW_GARY_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define gary_fix ucw_gary_fix
+#define gary_free ucw_gary_free
+#define gary_init ucw_gary_init
+#define gary_push_helper ucw_gary_push_helper
+#define gary_set_size ucw_gary_set_size
+#endif
+
 struct gary_hdr {
   size_t num_elts;
   size_t have_space;

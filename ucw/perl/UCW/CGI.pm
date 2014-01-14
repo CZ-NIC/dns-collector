@@ -31,6 +31,7 @@ sub http_error($;@) {
 
 sub url_escape($) {
 	my $x = shift @_;
+	defined $x or return;
 	utf8::encode($x) if $utf8_mode;
 	$x =~ s/([^-\$_.!*'(),0-9A-Za-z\x80-\xff])/"%".unpack('H2',$1)/ge;
 	utf8::decode($x) if $utf8_mode;
@@ -39,6 +40,7 @@ sub url_escape($) {
 
 sub url_deescape($) {
 	my $x = shift @_;
+	defined $x or return;
 	utf8::encode($x) if $utf8_mode;
 	$x =~ s/%(..)/pack("H2",$1)/ge;
 	utf8::decode($x) if $utf8_mode;
@@ -47,6 +49,7 @@ sub url_deescape($) {
 
 sub url_param_escape($) {
 	my $x = shift @_;
+	defined $x or return;
 	$x = url_escape($x);
 	$x =~ s/%20/+/g;
 	return $x;
@@ -54,12 +57,14 @@ sub url_param_escape($) {
 
 sub url_param_deescape($) {
 	my $x = shift @_;
+	defined $x or return;
 	$x =~ s/\+/ /g;
 	return url_deescape($x);
 }
 
 sub html_escape($) {
 	my $x = shift @_;
+	defined $x or return;
 	$x =~ s/&/&amp;/g;
 	$x =~ s/</&lt;/g;
 	$x =~ s/>/&gt;/g;
