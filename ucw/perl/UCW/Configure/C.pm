@@ -121,8 +121,10 @@ Set("LIBS" => "");
 Set("CSHARED" => '-fPIC');
 if (IsSet("CONFIG_LOCAL")) {
 	Set("SONAME_PREFIX" => "lib/");
+	Append("LOPT" => "-Wl,--rpath-link -Wl,run");
 } else {
 	Set("SONAME_PREFIX" => "");
+	Append("LOPT" => "-Wl,--rpath-link -Wl,run/lib");
 }
 if (IsSet("CONFIG_DARWIN")) {
 	Set("LSHARED" => '-dynamiclib -install_name $(SONAME_PREFIX)$(@F)$(SONAME_SUFFIX) -undefined dynamic_lookup');
