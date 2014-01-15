@@ -37,8 +37,9 @@
  *	    TRIE_WANT_AUDIT		audit()
  *	    TRIE_WANT_STATS
  *
- *	Be warned that the implementation is not var-len-arrays friendly and all hell may me unleashed
- *	if you use these routines in the same function together with var-len-arrays.
+ *	Be warned that the implementation uses alloca() in several macros,
+ *	so if you use automatic variable-length arrays in the same function,
+ *	all the hell may be unleashed.
  */
 
 /*** Define once ***/
