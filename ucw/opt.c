@@ -223,23 +223,26 @@ static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, c
   opt_failure("Invalid option --%s.", str);
 }
 
-#define OPT_PTR(type) ({ \
-  type * ptr; \
-  if (item->flags & OPT_MULTIPLE) { \
-    struct { \
-      cnode n; \
-      type v; \
-    } * n = xmalloc(sizeof(*n)); \
-    clist_add_tail(item->ptr, &(n->n)); \
-    ptr = &(n->v); \
-  } else \
-    ptr = item->ptr; \
+// FIXME: Use simple-lists?
+#define OPT_PTR(type) ({ 			\
+  type * ptr; 					\
+  if (item->flags & OPT_MULTIPLE) { 		\
+    struct { 					\
+      cnode n; 					\
+      type v; 					\
+    } * n = xmalloc(sizeof(*n)); 		\
+    clist_add_tail(item->ptr, &(n->n)); 	\
+    ptr = &(n->v); 				\
+  } else 					\
+    ptr = item->ptr; 				\
   ptr; })
 
 #define OPT_NAME (longopt == 2 ? stk_printf("positional arg #%d", oc->positional_count) : (longopt == 1 ? stk_printf("--%s", opt->name) : stk_printf("-%c", item->letter)))
+
 static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * opt, char * value, int longopt) {
   struct opt_item * item = opt->item;
-  for (int i=0;i<oc->hooks_before_value_count;i++)
+
+  for (int i = 0; i < oc->hooks_before_value_count; i++)
     oc->hooks_before_value[i]->u.call(item, value, oc->hooks_before_value[i]->ptr);
 
   switch (item->cls) {
@@ -249,7 +252,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
       else if (!strcasecmp(value, "n") || !strcasecmp(value, "no") || !strcasecmp(value, "false") || !strcasecmp(value, "0"))
 	*((int *) item->ptr) = 0 ^ (!!(opt->flags & OPT_NEGATIVE));
       else
-	opt_failure("Boolean argument for %s has a strange value. Supported (case insensitive): y/n, yes/no, true/false.", OPT_NAME);
+	opt_failure("Boolean argument for %s has a strange value. Supported (case insensitive): 1/0, y/n, yes/no, true/false.", OPT_NAME);
       break;
     case OPT_CL_STATIC:
       {
@@ -277,15 +280,15 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	    else
 	      e = cf_parse_double(value, OPT_PTR(double));
 	    if (e)
-	      opt_failure("Double value parsing failed for %s: %s", OPT_NAME, e);
+	      opt_failure("Floating-point value parsing failed for %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_IP:
 	    if (!value)
-	      e = cf_parse_ip("0.0.0.0", OPT_PTR(u32));
+	      *OPT_PTR(u32) = 0;
 	    else
 	      e = cf_parse_ip(value, OPT_PTR(u32));
 	    if (e)
-	      opt_failure("IP parsing failed for %s: %s", OPT_NAME, e);
+	      opt_failure("IP address parsing failed for %s: %s", OPT_NAME, e);
 	    break;
 	  case CT_STRING:
 	    if (!value)
@@ -299,6 +302,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	break;
       }
     case OPT_CL_SWITCH:
+      // FIXME: Really? And who sets the default to -1?
       if (*((int *)item->ptr) != -1)
 	opt_failure("Multiple switches: %s", OPT_NAME);
       else
@@ -318,14 +322,14 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	char * e = NULL;
 	e = item->u.utype->parser(value, OPT_PTR(void*));
 	if (e)
-	  opt_failure("User defined type value parsing failed for %s: %s", OPT_NAME, e);
+	  opt_failure("Cannot parse the value of %s: %s", OPT_NAME, e);
 	break;
       }
     default:
       ASSERT(0);
   }
 
-  for (int i=0;i<oc->hooks_after_value_count;i++)
+  for (int i = 0;i < oc->hooks_after_value_count; i++)
     oc->hooks_after_value[i]->u.call(item, value, oc->hooks_after_value[i]->ptr);
 }
 #undef OPT_NAME
