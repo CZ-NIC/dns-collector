@@ -1,13 +1,81 @@
 Option parser
 =============
 
-FIXME!
+Libucw contains a parser of command-line options, more versatile and
+easier to use than the usual `getopt()` and `getopt_long()`. It follows the
+traditional UNIX conventions of option syntax, but the options are defined in
+a declarative way, similar in spirit to our <<conf:,configuration file
+parser>>.
+
+- <<example,Example>>
+- <<anatomy,Anatomy of options>>
+- <<opt_h,ucw/opt.h>>
+  * <<classes,Option classes>>
+  * <<opt_item,Option definitions>>
+  * <<flags,Option flags>>
+  * <<macros,Macros for declaration of options>>
+  * <<positional,Positional arguments>>
+  * <<func,Functions>>
+  * <<conf,Cooperating with configuration file parser>>
+  * <<hooks,Hooks>>
+
+[[example]]
+Example
+-------
+Let us start with a simple example: a program with several options and
+one mandatory positional argument.
+
+  #include <ucw/lib.h>
+  #include <ucw/opt.h>
+  
+  int english;
+  int sugar;
+  int verbose;
+  char *tea_name;
+  
+  static struct opt_section options = {
+    OPT_ITEMS {
+      OPT_HELP("A simple tea boiling console."),
+      OPT_HELP("Usage: teapot [options] name-of-the-tea"),
+      OPT_HELP(""),
+      OPT_HELP("Options:"),
+      OPT_HELP_OPTION,
+      OPT_BOOL('e', "english-style", english, 0, "\tEnglish style (with milk)"),
+      OPT_INT('s', "sugar", sugar, OPT_REQUIRED_VALUE, "<spoons>\tAmount of sugar (in teaspoons)"),
+      OPT_INC('v', "verbose", verbose, 0, "\tVerbose (the more -v, the more verbose)"),
+      OPT_STRING(OPT_POSITIONAL(1), NULL, tea_name, OPT_REQUIRED, ""),
+      OPT_END
+    }
+  };
+  
+  int main(int argc, char **argv)
+  {
+    opt_parse(&options, argv+1);
+    return 0;
+  }
+
+[[anatomy]]
+Anatomy of options
+------------------
+Most options have the following properties:
+
+- <<classes,Option class>> defining overall behavior of the option
+- Short name: one character. Set to 0 if the option has no short form.
+  Alternatively, the short name can refer to a <<positional,positional argument>>.
+- Long name: an arbitrary string. Set to NULL if the option has no long form.
+- Variable, where the value of the option shall be stored, together with
+  its <<conf:enum_cf_type,data type>>.
+- Flags further specifying behavior of the option (whether it is mandatory,
+  whether it carries a value, whether it can be set repeatedly, etc.).
+  FIXME: Reference to flags and their defaults.
+- Help text, from which the help displayed to the user is constructed.
+  FIXME: Explain tabs and newlines.
+- Extra data specific for the particular class.
 
 [[opt_h]]
 ucw/opt.h
-----------
+---------
 
 This header file contains the public interface of the option parser module.
 
 !!ucw/opt.h
-

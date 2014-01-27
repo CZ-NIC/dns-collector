@@ -10,16 +10,19 @@ Linked lists can be used very simply. We define a structure as list's handle and
 a common header in all inserted nodes. All routines then accept and return pointers
 to this handle and node headers.
 
+[[slists]]
 Single-linked lists
 -------------------
 
 !!ucw/slists.h
 
+[[clists]]
 Circular linked lists
 ---------------------
 
 !!ucw/clists.h
 
+[[simple_lists]]
 Circular linked lists of simple items
 -------------------------------------
 

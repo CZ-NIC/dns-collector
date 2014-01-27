@@ -17,15 +17,6 @@
 #include <alloca.h>
 #include <math.h>
 
-/***
- * Value flags defaults
- * ~~~~~~~~~~~~~~~~~~~~
- *
- * OPT_NO_VALUE for OPT_BOOL, OPT_SWITCH and OPT_INC
- * OPT_MAYBE_VALUE for OPT_STRING, OPT_UNS, OPT_INT
- * Some of the value flags (OPT_NO_VALUE, OPT_MAYBE_VALUE, OPT_REQUIRED_VALUE)
- * must be specified for OPT_CALL and OPT_USER.
- ***/
 static uns opt_default_value_flags[] = {
     [OPT_CL_BOOL] = OPT_NO_VALUE,
     [OPT_CL_STATIC] = OPT_MAYBE_VALUE,

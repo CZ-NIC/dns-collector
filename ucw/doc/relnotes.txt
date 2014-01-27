@@ -4,6 +4,9 @@ Release notes
 WIP
 ---
 
+* A <<opt:,parser of command-line options>> has been added, similar in spirit to
+  our <<conf:,configuration file parser>>. The <<conf:getopt_h,getopt>> module
+  has been obsoleted
 * `<stdbool.h>` is automatically included by `<ucw/lib.h>`.
 * *Incompatible:* The interface of the <<heap:,heap>> module was cleaned up
    to remove non-systematic side-effects. The `HEAP_INSERT` operation is now

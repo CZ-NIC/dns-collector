@@ -114,7 +114,7 @@ static struct opt_section water_options = {
   }
 };
 
-static struct opt_section help = {
+static struct opt_section options = {
   OPT_ITEMS {
     OPT_HELP("A simple tea boiling console."),
     OPT_HELP("Usage: teapot [options] name-of-the-tea"),
@@ -167,7 +167,7 @@ int main(int argc UNUSED, char ** argv)
 {
   cf_def_file = "etc/libucw";
   clist_init(&black_magic);
-  opt_parse(&help, argv+1);
+  opt_parse(&options, argv+1);
 
   printf("English style: %s|", english ? "yes" : "no");
   if (sugar)
