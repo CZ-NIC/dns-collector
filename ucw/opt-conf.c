@@ -17,7 +17,6 @@
 
 #include <alloca.h>
 #include <math.h>
-#include <stdbool.h>
 
 static void opt_conf_end_of_options(struct cf_context *cc) {
   cf_load_default(cc);

@@ -1,7 +1,7 @@
 /*
  *	The UCW Library -- Miscellaneous Functions
  *
- *	(c) 1997--2009 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2014 Martin Mares <mj@ucw.cz>
  *	(c) 2005 Tomas Valla <tom@ucw.cz>
  *	(c) 2006 Robert Spalek <robert@ucw.cz>
  *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
@@ -15,6 +15,7 @@
 
 #include <ucw/config.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define assert_failed ucw_assert_failed

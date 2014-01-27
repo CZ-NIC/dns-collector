@@ -16,7 +16,6 @@
 
 #include <alloca.h>
 #include <math.h>
-#include <stdbool.h>
 
 /***
  * Value flags defaults
