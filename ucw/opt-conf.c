@@ -17,6 +17,7 @@
 
 #include <alloca.h>
 #include <math.h>
+#include <stdbool.h>
 
 static void opt_conf_end_of_options(struct cf_context *cc) {
   cf_load_default(cc);
@@ -24,28 +25,28 @@ static void opt_conf_end_of_options(struct cf_context *cc) {
     opt_failure("Loading of configuration failed");
 }
 
-void opt_conf_internal(struct opt_item * opt, const char * value, void * data UNUSED) {
+void opt_handle_config(struct opt_item * opt UNUSED, const char * value, void * data UNUSED)
+{
+  if (cf_load(value))
+    exit(1);		// Error message is already printed by cf_load()
+}
+
+void opt_handle_set(struct opt_item * opt UNUSED, const char * value, void * data UNUSED)
+{
   struct cf_context *cc = cf_get_context();
-  switch (opt->letter) {
-    case 'S':
-      cf_load_default(cc);
-      if (cf_set(value))
-	opt_failure("Cannot set %s", value);
-      break;
-    case 'C':
-      if (cf_load(value))
-	opt_failure("Cannot load config file %s", value);
-      break;
-#ifdef CONFIG_UCW_DEBUG
-    case '0':
-      opt_conf_end_of_options(cc);
-      struct fastbuf *b = bfdopen(1, 4096);
-      cf_dump_sections(b);
-      bclose(b);
-      exit(0);
-      break;
-#endif
-  }
+  cf_load_default(cc);
+  if (cf_set(value))
+    opt_failure("Cannot set %s", value);
+}
+
+void opt_handle_dumpconfig(struct opt_item * opt UNUSED, const char * value UNUSED, void * data UNUSED)
+{
+  struct cf_context *cc = cf_get_context();
+  opt_conf_end_of_options(cc);
+  struct fastbuf *b = bfdopen(1, 4096);
+  cf_dump_sections(b);
+  bclose(b);
+  exit(0);
 }
 
 void opt_conf_hook_internal(struct opt_item * opt, const char * value UNUSED, void * data UNUSED) {
@@ -55,10 +56,7 @@ void opt_conf_hook_internal(struct opt_item * opt, const char * value UNUSED, vo
     OPT_CONF_HOOK_OTHERS
   } state = OPT_CONF_HOOK_BEGIN;
 
-  int confopt = 0;
-
-  if (opt->letter == 'S' || opt->letter == 'C' || (opt->name && !strcmp(opt->name, "dumpconfig")))
-    confopt = 1;
+  bool confopt = opt->flags & OPT_BEFORE_CONFIG;
 
   switch (state) {
     case OPT_CONF_HOOK_BEGIN:
@@ -77,7 +75,7 @@ void opt_conf_hook_internal(struct opt_item * opt, const char * value UNUSED, vo
       break;
     case OPT_CONF_HOOK_OTHERS:
       if (confopt)
-	opt_failure("Config options (-C, -S) must stand before other options.");
+	opt_failure("Config options must stand before other options.");
       break;
     default:
       ASSERT(0);

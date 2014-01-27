@@ -18,11 +18,15 @@
 #include <stdio.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
+#define cf_def_file ucw_cf_def_file
+#define cf_env_file ucw_cf_env_file
 #define opt_conf_hook_internal ucw_opt_conf_hook_internal
-#define opt_conf_internal ucw_opt_conf_internal
+#define opt_handle_config ucw_opt_handle_config
+#define opt_handle_dumpconfig ucw_opt_handle_dumpconfig
+#define opt_handle_help ucw_opt_handle_help
+#define opt_handle_set ucw_opt_handle_set
 #define opt_help ucw_opt_help
 #define opt_parse ucw_opt_parse
-#define opt_section_root ucw_opt_section_root
 #endif
 
 #define OPT_EXIT_BAD_ARGS 2
@@ -89,7 +93,7 @@ struct opt_section {
  *
  ***/
 
-#define OPT_HELP_OPTION(help) OPT_CALL(0, "help", opt_show_help_internal, &help, OPT_NO_VALUE, "\tShow this help")
+#define OPT_HELP_OPTION(help) OPT_CALL(0, "help", opt_handle_help, &help, OPT_NO_VALUE, "\tShow this help")
 #define OPT_HELP(line) { .help = line, .cls = OPT_CL_HELP }
 #define OPT_BOOL(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_BOOL, .type = CT_INT }
 #define OPT_STRING(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_STRING }
@@ -123,13 +127,27 @@ struct opt_section {
 #define OPT_CONF_OPTIONS    OPT_CONF_CONFIG, OPT_CONF_SET, OPT_CONF_HOOK
 #endif
 
-#define OPT_CONF_CONFIG	    OPT_CALL('C', "config", opt_conf_internal, NULL, OPT_REQUIRED_VALUE, "\tOverride the default configuration file")
-#define OPT_CONF_SET	    OPT_CALL('S', "set", opt_conf_internal, NULL, OPT_REQUIRED_VALUE, "\tManual setting of a configuration item")
-#define OPT_CONF_DUMPCONFIG OPT_CALL(0, "dumpconfig", opt_conf_internal, NULL, OPT_NO_VALUE, "\tDump program configuration")
+#define OPT_CONF_CONFIG	    OPT_CALL('C', "config", opt_handle_config, NULL, OPT_BEFORE_CONFIG | OPT_REQUIRED_VALUE, "<file>\tOverride the default configuration file")
+#define OPT_CONF_SET	    OPT_CALL('S', "set", opt_handle_set, NULL, OPT_BEFORE_CONFIG | OPT_REQUIRED_VALUE, "<item>\tManual setting of a configuration item")
+#define OPT_CONF_DUMPCONFIG OPT_CALL(0, "dumpconfig", opt_handle_dumpconfig, NULL, OPT_NO_VALUE, "\tDump program configuration")
 #define OPT_CONF_HOOK	    OPT_HOOK(opt_conf_hook_internal, NULL, OPT_HOOK_BEFORE_VALUE)
 
-void opt_conf_internal(struct opt_item * opt, const char * value, void * data);
+void opt_handle_config(struct opt_item * opt, const char * value, void * data);
+void opt_handle_set(struct opt_item * opt, const char * value, void * data);
+void opt_handle_dumpconfig(struct opt_item * opt, const char * value, void * data);
 void opt_conf_hook_internal(struct opt_item * opt, const char * value, void * data);
+
+// XXX: This is duplicated with <ucw/getopt.h>, but that one will hopefully go away one day.
+/**
+ * The default config (as set by `CONFIG_UCW_DEFAULT_CONFIG`) or NULL if already loaded.
+ * You can set it to something else manually.
+ */
+extern char *cf_def_file;
+/**
+ * Name of environment variable that can override what configuration is loaded.
+ * Defaults to `CONFIG_UCW_ENV_VAR_CONFIG`.
+ **/
+extern char *cf_env_file;
 
 /***
  * Predefined shortopt arguments
@@ -166,20 +184,17 @@ void opt_conf_hook_internal(struct opt_item * opt, const char * value, void * da
 #define OPT_SINGLE	    0x100	/** Argument must appear at most once **/
 #define OPT_MULTIPLE	    0x200	/** Argument may appear any time; will save all the values into a simple list **/
 #define OPT_SEEN_AS_LONG    0x400	// Used internally
+#define OPT_BEFORE_CONFIG   0x800	/** Argument may appear before config file is loaded **/
 #define OPT_HOOK_BEFORE_ARG	0x1000	/** Call before option parsing **/
 #define OPT_HOOK_BEFORE_VALUE	0x2000	/** Call before value parsing **/
 #define OPT_HOOK_AFTER_VALUE	0x4000  /** Call after value parsing **/
 
-extern const struct opt_section * opt_section_root;
 void opt_help(const struct opt_section * sec);
+void opt_handle_help(struct opt_item * opt, const char * value, void * data);
 
+// FIXME: Should this be public?
 static inline void opt_usage(void) {
   fprintf(stderr, "Run with argument --help for more information.\n");
-}
-
-static inline void opt_show_help_internal(struct opt_item * opt UNUSED, const char * value UNUSED, void * data) {
-  opt_help(data);
-  exit(0);
 }
 
 /**

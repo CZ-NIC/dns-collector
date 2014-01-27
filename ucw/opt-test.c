@@ -151,6 +151,8 @@ static struct opt_section help = {
     OPT_HOOK(opt_test_hook, "preval", OPT_HOOK_BEFORE_VALUE),
     OPT_HOOK(opt_test_hook, "postval", OPT_HOOK_AFTER_VALUE),
     OPT_BOOL('H', "show-hooks", show_hooks, 0, "\tDemonstrate the hooks."),
+    OPT_HELP(""),
+    OPT_HELP("Configuration options:"),
     OPT_CONF_OPTIONS,
     OPT_END
   }
@@ -163,6 +165,7 @@ struct intnode {
 
 int main(int argc UNUSED, char ** argv)
 {
+  cf_def_file = "etc/libucw";
   clist_init(&black_magic);
   opt_parse(&help, argv+1);
 
