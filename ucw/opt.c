@@ -68,7 +68,6 @@ static void opt_failure(const char * mesg, ...) {
   fprintf(stderr, "\n");
   opt_usage();
   exit(OPT_EXIT_BAD_ARGS);
-  va_end(args);		// FIXME: Does this make a sense after exit()?
 }
 
 static char *opt_name(struct opt_context *oc, struct opt_precomputed *opt)
