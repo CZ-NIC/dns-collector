@@ -421,13 +421,14 @@ static int opt_shortopt(struct opt_context * oc, char ** argv, int index) {
 
 static void opt_positional(struct opt_context * oc, char * value) {
   oc->positional_count++;
-  struct opt_precomputed * opt = opt_find_item_shortopt(oc, (oc->positional_count > oc->positional_max ? 256 : oc->positional_count + 256));
-  if (!opt) {
+  uns id = oc->positional_count > oc->positional_max ? OPT_POSITIONAL_TAIL : OPT_POSITIONAL(oc->positional_count);
+  struct opt_precomputed * opt = opt_find_item_shortopt(oc, id);
+  if (opt)
+    opt_parse_value(oc, opt, value, 2);
+  else {
     ASSERT(oc->positional_count > oc->positional_max);
-    opt_failure("Too many positional args.");
+    opt_failure("Too many positional arguments.");
   }
-
-  opt_parse_value(oc, opt, value, 2);
 }
 
 static void opt_count_items(struct opt_context *oc, const struct opt_section *sec)
@@ -457,7 +458,7 @@ static void opt_add_default_flags(struct opt_precomputed *opt)
   struct opt_item *item = opt->item;
   uns flags = opt->flags;
 
-  if (item->letter >= 256) {
+  if (item->letter >= OPT_POSITIONAL_TAIL) {
     flags &= ~OPT_VALUE_FLAGS;
     flags |= OPT_REQUIRED_VALUE;
   }
