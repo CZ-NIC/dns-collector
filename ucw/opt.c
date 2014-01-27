@@ -197,39 +197,30 @@ static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, c
   uns len = strlen(str);
   struct opt_precomputed * candidate = NULL;
 
-  for (int i=0; i<oc->opt_count; i++) {
-    if (!oc->opts[i].name)
+  for (int i = 0; i < oc->opt_count; i++) {
+    struct opt_precomputed *opt = &oc->opts[i];
+    if (!opt->name)
       continue;
-    if (!strncmp(oc->opts[i].name, str, len)) {
-      if (strlen(oc->opts[i].name) == len) {
-	if (oc->opts[i].count++ && (oc->opts[i].flags & OPT_SINGLE))
-	  opt_failure("Option %s appeared the second time.", oc->opts[i].name);
 
-	return &oc->opts[i];
-      }
-      if (candidate)
-	opt_failure("Ambiguous prefix %s: Found matching %s and %s.", str, candidate->name, oc->opts[i].name);
-      else
-	candidate = &oc->opts[i];
-    }
-    if (!strncmp("no-", str, 3) && !strncmp(oc->opts[i].name, str+3, len-3)) {
-      if (strlen(oc->opts[i].name) == len-3) {
-	if (oc->opts[i].count++ && (oc->opts[i].flags & OPT_SINGLE))
-	  opt_failure("Option %s appeared the second time.", oc->opts[i].name);
+    if (!strncmp(opt->name, str, len)) {
+      if (strlen(opt->name) == len)
+	return opt;
+    } else if (opt->item->cls == OPT_CL_BOOL && !strncmp("no-", str, 3) && !strncmp(opt->name, str+3, len-3)) {
+      if (strlen(opt->name) == len-3)
+	return opt;
+    } else
+      continue;
 
-	return &oc->opts[i];
-      }
-      if (candidate)
-	opt_failure("Ambiguous prefix %s: Found matching %s and %s.", str, candidate->name, oc->opts[i].name);
-      else
-	candidate = &oc->opts[i];
-    }
+    if (candidate)
+      opt_failure("Ambiguous option --%s: matches both --%s and --%s.", str, candidate->name, opt->name);
+    else
+      candidate = opt;
   }
 
   if (candidate)
     return candidate;
 
-  opt_failure("Invalid option %s.", str);
+  opt_failure("Invalid option --%s.", str);
 }
 
 #define OPT_PTR(type) ({ \
@@ -346,25 +337,29 @@ static int opt_longopt(struct opt_context * oc, char ** argv, int index) {
   struct opt_precomputed * opt = opt_find_item_longopt(oc, strndupa(name_in, pos));
   char * value = NULL;
 
-  if (opt->item->cls == OPT_CL_BOOL && !strncmp(name_in, "no-", 3) && !strncmp(name_in+3, opt->item->name, pos-3))
+  // FIXME: Move to opt_parse_value()?
+  if (opt->count++ && (opt->flags & OPT_SINGLE))
+    opt_failure("Option --%s must be specified at most once.", opt->name);
+
+  if (opt->item->cls == OPT_CL_BOOL && !strncmp(name_in, "no-", 3) && !strncmp(name_in+3, opt->item->name, pos-3)) {
+    if (name_in[pos])
+      opt_failure("Option --%s must not have any value.", name_in);
     value = "n";
-  else if (opt->flags & OPT_REQUIRED_VALUE) {
-    if (pos < strlen(name_in))
+  } else if (opt->flags & OPT_REQUIRED_VALUE) {
+    if (name_in[pos])
       value = name_in + pos + 1;
     else {
       value = argv[index+1];
       if (!value)
-	opt_failure("Argument --%s must have a value but nothing supplied.", opt->name);
+	opt_failure("Option --%s must have a value, but nothing supplied.", opt->name);
       eaten++;
     }
-  }
-  else if (opt->flags & OPT_MAYBE_VALUE) {
-    if (pos < strlen(name_in))
+  } else if (opt->flags & OPT_MAYBE_VALUE) {
+    if (name_in[pos])
       value = name_in + pos + 1;
-  }
-  else {
-    if (pos < strlen(name_in))
-      opt_failure("Argument --%s must not have any value.", opt->name);
+  } else {
+    if (name_in[pos])
+      opt_failure("Option --%s must have no value.", opt->name);
   }
   opt_parse_value(oc, opt, value, 1);
   return eaten;
