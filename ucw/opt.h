@@ -61,7 +61,7 @@
  * - `OPT_CL_SECTION`: not a real option, but an instruction to insert
  *   contents of another list of options.
  * - `OPT_CL_HELP`: no option, just print a help text.
- * - `OPT_CL_HOOK`: no option, but a definition of a hook. (FIXME)
+ * - `OPT_CL_HOOK`: no option, but a definition of a <<hooks,hook>>.
  ***/
 
 enum opt_class {
