@@ -496,6 +496,26 @@ static void opt_prepare_items(struct opt_context *oc, const struct opt_section *
   }
 }
 
+static void opt_check_required(struct opt_context *oc)
+{
+  for (int i = 0; i < oc->opt_count; i++) {
+    struct opt_precomputed *opt = &oc->opts[i];
+    if (!opt->count && (opt->flags & OPT_REQUIRED)) {
+      struct opt_item *item = opt->item;
+      if (item->letter > OPT_POSITIONAL_TAIL)
+	opt_failure("Required positional argument #%d not found.", i - OPT_POSITIONAL_TAIL);
+      else if (item->letter == OPT_POSITIONAL_TAIL)
+	opt_failure("Required positional argument not found.");
+      else if (item->letter && item->name)
+	opt_failure("Required option -%c/--%s not found.", item->letter, item->name);
+      else if (item->letter)
+	opt_failure("Required option -%c not found.", item->letter);
+      else
+	opt_failure("Required option --%s not found.", item->name);
+    }
+  }
+}
+
 void opt_parse(const struct opt_section * options, char ** argv) {
   struct opt_context * oc = alloca(sizeof(*oc));
   memset(oc, 0, sizeof (*oc));
@@ -515,9 +535,9 @@ void opt_parse(const struct opt_section * options, char ** argv) {
   opt_prepare_items(oc, options);
 
   int force_positional = 0;
-  for (int i=0; argv[i]; i++) {
+  for (int i = 0; argv[i]; i++) {
     char *arg = argv[i];
-    for (int j=0; j<oc->hooks_before_arg_count; j++)
+    for (int j = 0; j < oc->hooks_before_arg_count; j++)
       oc->hooks_before_arg[j]->u.call(NULL, NULL, oc->hooks_before_arg[j]->ptr);
     if (arg[0] != '-' || force_positional)
       opt_positional(oc, arg);
@@ -534,23 +554,7 @@ void opt_parse(const struct opt_section * options, char ** argv) {
     }
   }
 
-  for (int i=0;i<oc->positional_max+257;i++) {
-    if (!oc->shortopt[i])
-      continue;
-    if (!oc->shortopt[i]->count && (oc->shortopt[i]->flags & OPT_REQUIRED))
-      if (i < 256)
-	if (oc->shortopt[i]->item->name)
-	  opt_failure("Required option -%c/--%s not found.", oc->shortopt[i]->item->letter, oc->shortopt[i]->item->name);
-	else
-	  opt_failure("Required option -%c not found.", oc->shortopt[i]->item->letter);
-      else
-	opt_failure("Required positional argument #%d not found.", (i > 256) ? oc->shortopt[i]->item->letter-256 : oc->positional_max+1);
-  }
-
-  for (int i=0;i<oc->opt_count;i++) {
-    if (!oc->opts[i].count && (oc->opts[i].flags & OPT_REQUIRED))
-      opt_failure("Required option --%s not found.", oc->opts[i].item->name);
-  }
+  opt_check_required(oc);
 }
 
 static void opt_conf_end_of_options(struct cf_context *cc) {
