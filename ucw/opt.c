@@ -16,6 +16,7 @@
 
 #include <alloca.h>
 #include <math.h>
+#include <stdbool.h>
 
 /***
  * Value flags defaults
@@ -49,6 +50,7 @@ struct opt_context {
   short hooks_after_value_count;
   int positional_max;
   int positional_count;
+  bool stop_parsing;
 };
 
 void opt_failure(const char * mesg, ...) {
@@ -143,6 +145,9 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 
   if (opt->count++ && (opt->flags & OPT_SINGLE))
     opt_failure("Option %s must be specified at most once.", THIS_OPT);
+
+  if (opt->flags & OPT_LAST_ARG)
+    oc->stop_parsing = 1;
 
   for (int i = 0; i < oc->hooks_before_value_count; i++)
     oc->hooks_before_value[i]->u.call(item, value, oc->hooks_before_value[i]->ptr);
@@ -385,7 +390,7 @@ static void opt_check_required(struct opt_context *oc)
   }
 }
 
-void opt_parse(const struct opt_section * options, char ** argv) {
+int opt_parse(const struct opt_section * options, char ** argv) {
   struct opt_context * oc = alloca(sizeof(*oc));
   memset(oc, 0, sizeof (*oc));
 
@@ -404,7 +409,8 @@ void opt_parse(const struct opt_section * options, char ** argv) {
   opt_prepare_items(oc, options);
 
   int force_positional = 0;
-  for (int i = 0; argv[i]; i++) {
+  int i;
+  for (i=0; argv[i] && !oc->stop_parsing; i++) {
     char *arg = argv[i];
     for (int j = 0; j < oc->hooks_before_arg_count; j++)
       oc->hooks_before_arg[j]->u.call(NULL, NULL, oc->hooks_before_arg[j]->ptr);
@@ -424,4 +430,5 @@ void opt_parse(const struct opt_section * options, char ** argv) {
   }
 
   opt_check_required(oc);
+  return i;
 }

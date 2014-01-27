@@ -183,10 +183,18 @@ static inline void opt_show_help_internal(struct opt_item * opt UNUSED, const ch
 }
 
 /**
- * Parse all the arguments.
+ * Parse all arguments, given in a NULL-terminated array of strings.
+ *
+ * Typically, this is called from `main(argc, argv)` as `opt_parse(options, argv+1)`,
+ * skipping the 0th argument, which contains program name.
+ *
+ * Returns the number of arguments used (which need not be all of them
+ * if `OPT_LAST_ARG` was encountered).
+ *
+ * The argument array is left untouched.
+ * However, option values are not necessarily copied, the variables
+ * set by the parser may point to the argument array.
  **/
-void opt_parse(const struct opt_section * options, char ** argv);
-// FIXME: When parsing finishes (possibly due to OPT_LAST_ARG), what is guaranteed
-// about the state of argv[]?
+int opt_parse(const struct opt_section * options, char ** argv);
 
 #endif
