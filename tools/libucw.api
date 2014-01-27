@@ -384,10 +384,8 @@ mp_vprintf_append
 # ucw/opt.h
 opt_conf_internal
 opt_conf_hook_internal
-opt_parsed_count
-opt_conf_parsed_count
 opt_section_root
-opt_help_internal
+opt_help
 opt_parse
 # ucw/partmap.h
 partmap_open

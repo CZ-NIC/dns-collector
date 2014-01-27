@@ -20,7 +20,7 @@
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define opt_conf_hook_internal ucw_opt_conf_hook_internal
 #define opt_conf_internal ucw_opt_conf_internal
-#define opt_help_internal ucw_opt_help_internal
+#define opt_help ucw_opt_help
 #define opt_parse ucw_opt_parse
 #define opt_section_root ucw_opt_section_root
 #endif
