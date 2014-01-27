@@ -390,20 +390,18 @@ static int opt_shortopt(struct opt_context * oc, char ** argv, int index) {
     if (opt->flags & OPT_NO_VALUE)
       opt_parse_value(oc, opt, NULL, 0);
     else if (opt->flags & OPT_REQUIRED_VALUE) {
-      if (chr == 1 && argv[index][2]) {
-        opt_parse_value(oc, opt, argv[index] + 2, 0);
+      if (argv[index][chr+1]) {
+        opt_parse_value(oc, opt, argv[index] + chr + 1, 0);
 	return 0;
-      } else if (argv[index][chr+1])
-	opt_failure("Option -%c must have a value, but found inside a bunch of short opts.", o);
-      else if (!argv[index+1])
+      } else if (!argv[index+1])
 	opt_failure("Option -%c must have a value, but nothing supplied.", o);
       else {
 	opt_parse_value(oc, opt, argv[index+1], 0);
 	return 1;
       }
     } else if (opt->flags & OPT_MAYBE_VALUE) {
-      if (chr == 1 && argv[index][2]) {
-        opt_parse_value(oc, opt, argv[index] + 2, 0);
+      if (argv[index][chr+1]) {
+        opt_parse_value(oc, opt, argv[index] + chr + 1, 0);
 	return 0;
       } else
 	opt_parse_value(oc, opt, NULL, 0);
