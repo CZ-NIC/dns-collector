@@ -73,7 +73,6 @@ struct opt_section {
  *
  *  OPT_HELP_OPTION declares --help and prints a line about that
  *  OPT_HELP prints a line into help
- *  OPT_HELP2 prints two strings onto a line using the same tab structure as the option listing
  *  OPT_BOOL declares boolean option with an auto-negation (--sth and --no-sth). It's also possible to write --sth=y/yes/true/1/n/no/false/0.
  *  OPT_STRING, OPT_UNS, OPT_INT declare simple string/uns/int option
  *  OPT_SWITCH declares one choice of a switch statement; these have common target and different `value`s; last wins unless OPT_SINGLE is set;
@@ -90,7 +89,7 @@ struct opt_section {
  *
  ***/
 
-#define OPT_HELP_OPTION(help) OPT_CALL(0, "help", opt_show_help_internal, &help, OPT_NO_VALUE, "Show this help")
+#define OPT_HELP_OPTION(help) OPT_CALL(0, "help", opt_show_help_internal, &help, OPT_NO_VALUE, "\tShow this help")
 #define OPT_HELP(line) { .help = line, .cls = OPT_CL_HELP }
 #define OPT_BOOL(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_BOOL, .type = CT_INT }
 #define OPT_STRING(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_STRING }
@@ -124,9 +123,9 @@ struct opt_section {
 #define OPT_CONF_OPTIONS    OPT_CONF_CONFIG, OPT_CONF_SET, OPT_CONF_HOOK
 #endif
 
-#define OPT_CONF_CONFIG	    OPT_CALL('C', "config", opt_conf_internal, NULL, OPT_REQUIRED_VALUE, "Override the default configuration file")
-#define OPT_CONF_SET	    OPT_CALL('S', "set", opt_conf_internal, NULL, OPT_REQUIRED_VALUE, "Manual setting of a configuration item")
-#define OPT_CONF_DUMPCONFIG OPT_CALL(0, "dumpconfig", opt_conf_internal, NULL, OPT_NO_VALUE, "Dump program configuration")
+#define OPT_CONF_CONFIG	    OPT_CALL('C', "config", opt_conf_internal, NULL, OPT_REQUIRED_VALUE, "\tOverride the default configuration file")
+#define OPT_CONF_SET	    OPT_CALL('S', "set", opt_conf_internal, NULL, OPT_REQUIRED_VALUE, "\tManual setting of a configuration item")
+#define OPT_CONF_DUMPCONFIG OPT_CALL(0, "dumpconfig", opt_conf_internal, NULL, OPT_NO_VALUE, "\tDump program configuration")
 #define OPT_CONF_HOOK	    OPT_HOOK(opt_conf_hook_internal, NULL, OPT_HOOK_BEFORE_VALUE)
 
 void opt_conf_internal(struct opt_item * opt, const char * value, void * data);
@@ -172,7 +171,7 @@ void opt_conf_hook_internal(struct opt_item * opt, const char * value, void * da
 #define OPT_HOOK_AFTER_VALUE	0x4000  /** Call after value parsing **/
 
 extern const struct opt_section * opt_section_root;
-void opt_help(const struct opt_section * help);
+void opt_help(const struct opt_section * sec);
 
 static inline void opt_usage(void) {
   fprintf(stderr, "Run with argument --help for more information.\n");

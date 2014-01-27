@@ -15,6 +15,8 @@
 #include <ucw/fastbuf.h>
 #include <ucw/stkstring.h>
 #include <ucw/strtonum.h>
+#include <ucw/mempool.h>
+#include <ucw/gary.h>
 
 #include <alloca.h>
 #include <math.h>
@@ -85,126 +87,165 @@ static char *opt_name(struct opt_context *oc, struct opt_precomputed *opt)
 
 #define THIS_OPT opt_name(oc, opt)
 
-#define FOREACHLINE(text) for (const char * begin = (text), * end = (text); (*end) && (end = strchrnul(begin, '\n')); begin = end+1)
-
-static inline uns uns_min(uns x, uns y)
+static void opt_precompute(struct opt_precomputed *opt, struct opt_item *item)
 {
-  return MIN(x, y);
+  opt->item = item;
+  opt->count = 0;
+  opt->name = item->name;
+  uns flags = item->flags;
+
+  if (item->letter >= OPT_POSITIONAL_TAIL) {
+    flags &= ~OPT_VALUE_FLAGS;
+    flags |= OPT_REQUIRED_VALUE;
+  }
+  if (!(flags & OPT_VALUE_FLAGS)) {
+    ASSERT(item->cls != OPT_CL_CALL && item->cls != OPT_CL_USER);
+    flags |= opt_default_value_flags[item->cls];
+  }
+
+  opt->flags = flags;
 }
 
-void opt_help(const struct opt_section * help) {
-  int sections_cnt = 0;
-  int lines_cnt = 0;
+#define FOREACHLINE(text) for (const char * begin = (text), * end = (text); (*end) && (end = strchrnul(begin, '\n')); begin = end+1)
 
-  for (struct opt_item * item = help->opt; item->cls != OPT_CL_END; item++) {
-    if (item->flags & OPT_NO_HELP) continue;
-    if (item->cls == OPT_CL_SECTION) {
-      sections_cnt++;
-      continue;
-    }
-    if (!*(item->help)) {
-      lines_cnt++;
-      continue;
-    }
-    FOREACHLINE(item->help)
-      lines_cnt++;
+struct help {
+  struct mempool *pool;
+  struct help_line *lines;			// A growing array of lines
+};
+
+struct help_line {
+  const char *extra;
+  char *fields[3];
+};
+
+static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
+{
+  struct opt_item *item = opt->item;
+
+  if (opt->flags & OPT_NO_HELP)
+    return;
+
+  if (item->cls == OPT_CL_HELP) {
+    struct help_line *l = GARY_PUSH(h->lines, 1);
+    l->extra = item->help ? : "";
+    return;
   }
 
-  struct opt_sectlist {
-    int pos;
-    struct opt_section * sect;
-  } sections[sections_cnt];
-  int s = 0;
+  if (item->letter >= OPT_POSITIONAL_TAIL)
+    return;
 
-  const char *lines[lines_cnt][3];
-  memset(lines, 0, sizeof(lines));
-  int line = 0;
+  struct help_line *first = GARY_PUSH(h->lines, 1);
+  if (item->help) {
+    char *text = mp_strdup(h->pool, item->help);
+    struct help_line *l = first;
+    while (text) {
+      char *eol = strchr(text, '\n');
+      if (eol)
+	*eol++ = 0;
 
-  int linelengths[3] = { -1, -1, -1 };
-
-  for (struct opt_item * item = help->opt; item->cls != OPT_CL_END; item++) {
-    if (item->flags & OPT_NO_HELP) continue;
-
-    if (item->cls == OPT_CL_HELP) {
-      if (!*(item->help)) {
-	line++;
-	continue;
+      int field = (l == first ? 1 : 0);
+      char *f = text;
+      while (f) {
+	char *tab = strchr(f, '\t');
+	if (tab)
+	  *tab++ = 0;
+	if (field < 3)
+	  l->fields[field++] = f;
+	f = tab;
       }
-#define SPLITLINES(text) do { \
-      FOREACHLINE(text) { \
-	int cell = 0; \
-	for (const char * b = begin, * e = begin; (e < end) && (e = strchrnul(b, '\t')) && (e > end ? (e = end) : end); b = e+1) { \
-	  lines[line][cell] = b; \
-	  if (cell >= 2) \
-	    break; \
-	  else \
-	    if (*e == '\t' && linelengths[cell] < (e - b)) \
-	      linelengths[cell] = e-b; \
-	  cell++; \
-	} \
-	line++; \
-      } } while (0)
-      SPLITLINES(item->help);
-      continue;
-    }
 
-    if (item->cls == OPT_CL_SECTION) {
-      sections[s++] = (struct opt_sectlist) { .pos = line, .sect = item->u.section };
-      continue;
+      text = eol;
+      if (text)
+	l = GARY_PUSH(h->lines, 1);
     }
-
-    uns valoff = strchrnul(item->help, '\t') - item->help;
-    uns eol = strchrnul(item->help, '\n') - item->help;
-    if (valoff > eol)
-      valoff = eol;
-#define VAL(it) ((it->flags & OPT_REQUIRED_VALUE) ? stk_printf("=%.*s", valoff, item->help)  : ((it->flags & OPT_NO_VALUE) ? "" : stk_printf("(=%.*s)", valoff, item->help)))
-    if (item->name) {
-      lines[line][1] = stk_printf("--%s%s", item->name, VAL(item));
-      if (linelengths[1] < (int) strlen(lines[line][1]))
-	linelengths[1] = strlen(lines[line][1]);
-      lines[line][0] = "";
-      if (linelengths[0] < 0)
-	linelengths[0] = 0;
-    }
-    if (item->letter) {
-      lines[line][0] = stk_printf("-%c,", item->letter);
-      if (linelengths[0] < (int) strlen(lines[line][0]))
-	linelengths[0] = strlen(lines[line][0]);
-    }
-#undef VAL
-
-    if (eol > valoff) {
-      lines[line][2] = item->help + valoff + 1;
-    }
-
-    line++;
-
-    if (*(item->help + eol))
-      SPLITLINES(item->help + eol + 1);
   }
-#undef SPLITLINES
 
-  s = 0;
-#define FIELD(k) linelengths[k], uns_min(strchrnul(lines[i][k], '\t') - lines[i][k], strchrnul(lines[i][k], '\n') - lines[i][k]), lines[i][k]
-#define LASTFIELD(k) uns_min(strchrnul(lines[i][k], '\t') - lines[i][k], strchrnul(lines[i][k], '\n') - lines[i][k]), lines[i][k]
-  for (int i=0;i<line;i++) {
-    while (s < sections_cnt && sections[s].pos == i) {
-      opt_help(sections[s].sect);
-      s++;
+  if (item->name) {
+    char *val = first->fields[1] ? : "";
+    if (opt->flags & OPT_REQUIRED_VALUE)
+      val = mp_printf(h->pool, "=%s", val);
+    else if (!(opt->flags & OPT_NO_VALUE))
+      val = mp_printf(h->pool, "[=%s]", val);
+    first->fields[1] = mp_printf(h->pool, "--%s%s", item->name, val);
+  }
+
+  if (item->letter) {
+    if (item->name)
+      first->fields[0] = mp_printf(h->pool, "-%c, ", item->letter);
+    else {
+      char *val = first->fields[1] ? : "";
+      if (!(opt->flags & OPT_REQUIRED_VALUE) && !(opt->flags & OPT_NO_VALUE))
+	val = mp_printf(h->pool, "[%s]", val);
+      first->fields[0] = mp_printf(h->pool, "-%c%s", item->letter, val);
+      first->fields[1] = NULL;
     }
-    if (lines[i][0] == NULL)
-      printf("\n");
-    else if (linelengths[0] == -1 || lines[i][1] == NULL)
-      printf("%.*s\n", LASTFIELD(0));
-    else if (linelengths[1] == -1 || lines[i][2] == NULL)
-      printf("%-*.*s  %.*s\n", FIELD(0), LASTFIELD(1));
-    else
-      printf("%-*.*s  %-*.*s  %.*s\n", FIELD(0), FIELD(1), LASTFIELD(2));
   }
-  while (s < sections_cnt && sections[s].pos == line) {
-    opt_help(sections[s].sect);
-    s++;
+}
+
+static void opt_help_scan(struct help *h, const struct opt_section *sec)
+{
+  for (struct opt_item * item = sec->opt; item->cls != OPT_CL_END; item++) {
+    if (item->cls == OPT_CL_SECTION)
+      opt_help_scan(h, item->u.section);
+    else {
+      struct opt_precomputed opt;
+      opt_precompute(&opt, item);
+      opt_help_scan_item(h, &opt);
+    }
   }
+}
+
+void opt_help(const struct opt_section * sec) {
+  // Prepare help text
+  struct help h;
+  h.pool = mp_new(4096);
+  GARY_INIT_ZERO(h.lines, 0);
+  opt_help_scan(&h, sec);
+
+  // Calculate natural width of each column
+  uns n = GARY_SIZE(h.lines);
+  uns widths[3] = { 0, 0, 0 };
+  for (uns i=0; i<n; i++) {
+    struct help_line *l = &h.lines[i];
+    for (uns f=0; f<3; f++) {
+      if (!l->fields[f])
+	l->fields[f] = "";
+      uns w = strlen(l->fields[f]);
+      widths[f] = MAX(widths[f], w);
+    }
+  }
+  if (widths[0] > 4) {
+    /*
+     *  This is tricky: if there are short options, which have an argument,
+     *  but no long variant, we are willing to let column 0 overflow to column 1.
+     */
+    widths[1] = MAX(widths[1], widths[0] - 4);
+    widths[0] = 4;
+  }
+  widths[1] += 4;
+
+  // Print columns
+  for (uns i=0; i<n; i++) {
+    struct help_line *l = &h.lines[i];
+    if (l->extra)
+      puts(l->extra);
+    else {
+      int t = 0;
+      for (uns f=0; f<3; f++) {
+	t += widths[f];
+	t -= printf("%s", l->fields[f]);
+	while (t > 0) {
+	  putchar(' ');
+	  t--;
+	}
+      }
+      putchar('\n');
+    }
+  }
+
+  // Clean up
+  GARY_FREE(h.lines);
+  mp_delete(h.pool);
 }
 
 static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, char * str) {
@@ -455,23 +496,6 @@ static void opt_count_items(struct opt_context *oc, const struct opt_section *se
   }
 }
 
-static void opt_add_default_flags(struct opt_precomputed *opt)
-{
-  struct opt_item *item = opt->item;
-  uns flags = opt->flags;
-
-  if (item->letter >= OPT_POSITIONAL_TAIL) {
-    flags &= ~OPT_VALUE_FLAGS;
-    flags |= OPT_REQUIRED_VALUE;
-  }
-  if (!(flags & OPT_VALUE_FLAGS)) {
-    ASSERT(item->cls != OPT_CL_CALL && item->cls != OPT_CL_USER);
-    flags |= opt_default_value_flags[item->cls];
-  }
-
-  opt->flags = flags;
-}
-
 static void opt_prepare_items(struct opt_context *oc, const struct opt_section *sec)
 {
   for (struct opt_item *item = sec->opt; item->cls != OPT_CL_END; item++) {
@@ -488,13 +512,9 @@ static void opt_prepare_items(struct opt_context *oc, const struct opt_section *
 	ASSERT(0);
     } else if (item->letter || item->name) {
       struct opt_precomputed * opt = &oc->opts[oc->opt_count++];
-      opt->item = item;
-      opt->flags = item->flags;
-      opt->count = 0;
-      opt->name = item->name;
+      opt_precompute(opt, item);
       if (item->letter)
 	oc->shortopt[(int) item->letter] = opt;
-      opt_add_default_flags(opt);
     }
   }
 }
