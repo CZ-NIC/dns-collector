@@ -15,6 +15,12 @@
 #define opt_precompute ucw_opt_precompute
 #endif
 
+enum opt_conf_state {
+  OPT_CONF_HOOK_BEGIN,
+  OPT_CONF_HOOK_CONFIG,
+  OPT_CONF_HOOK_OTHERS,
+};
+
 struct opt_context {
   const struct opt_section * options;
   struct opt_precomputed * opts;
@@ -25,6 +31,7 @@ struct opt_context {
   int positional_max;
   int positional_count;
   bool stop_parsing;
+  enum opt_conf_state conf_state;
 };
 
 struct opt_precomputed {

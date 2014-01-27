@@ -48,12 +48,8 @@ void opt_handle_dumpconfig(struct opt_item * opt UNUSED, const char * value UNUS
   exit(0);
 }
 
-void opt_conf_hook_internal(struct opt_item * opt, uns event, const char * value UNUSED, void * data UNUSED) {
-  static enum {
-    OPT_CONF_HOOK_BEGIN,
-    OPT_CONF_HOOK_CONFIG,
-    OPT_CONF_HOOK_OTHERS
-  } state = OPT_CONF_HOOK_BEGIN;
+void opt_conf_hook_internal(struct opt_item * opt, uns event, const char * value UNUSED, void * data) {
+  struct opt_context *oc = data;
   struct cf_context *cc = cf_get_context();
 
   if (event == OPT_HOOK_FINAL) {
@@ -65,19 +61,19 @@ void opt_conf_hook_internal(struct opt_item * opt, uns event, const char * value
 
   bool confopt = opt->flags & OPT_BEFORE_CONFIG;
 
-  switch (state) {
+  switch (oc->conf_state) {
     case OPT_CONF_HOOK_BEGIN:
       if (confopt)
-	state = OPT_CONF_HOOK_CONFIG;
+	oc->conf_state = OPT_CONF_HOOK_CONFIG;
       else {
 	opt_conf_end_of_options(cc);
-	state = OPT_CONF_HOOK_OTHERS;
+	oc->conf_state = OPT_CONF_HOOK_OTHERS;
       }
       break;
     case OPT_CONF_HOOK_CONFIG:
       if (!confopt) {
 	opt_conf_end_of_options(cc);
-	state = OPT_CONF_HOOK_OTHERS;
+	oc->conf_state = OPT_CONF_HOOK_OTHERS;
       }
       break;
     case OPT_CONF_HOOK_OTHERS:
