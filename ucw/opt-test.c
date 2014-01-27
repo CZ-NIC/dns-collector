@@ -128,10 +128,10 @@ static struct opt_section help = {
     OPT_HELP(""),
     OPT_BOOL('e', "english-style", english, 0, "\tEnglish style (with milk)"),
     OPT_INT('s', "sugar", sugar, OPT_REQUIRED_VALUE, "<spoons>\tAmount of sugar (in teaspoons)"),
-    OPT_SWITCH(0, "standard-set", set, TEAPOT_STANDARD, 0, "\tStandard teapot"),
-    OPT_SWITCH('x', "exclusive-set", set, TEAPOT_EXCLUSIVE, 0, "\tExclusive teapot"),
-    OPT_SWITCH('g', "glass-set", set, TEAPOT_GLASS, 0, "\tTransparent glass teapot"),
-    OPT_SWITCH('h', "hands", set, TEAPOT_HANDS, 0, "\tUse user's hands as a teapot (a bit dangerous)"),
+    OPT_SWITCH(0, "standard-set", set, TEAPOT_STANDARD, OPT_SINGLE, "\tStandard teapot"),
+    OPT_SWITCH('x', "exclusive-set", set, TEAPOT_EXCLUSIVE, OPT_SINGLE, "\tExclusive teapot"),
+    OPT_SWITCH('g', "glass-set", set, TEAPOT_GLASS, OPT_SINGLE, "\tTransparent glass teapot"),
+    OPT_SWITCH('h', "hands", set, TEAPOT_HANDS, OPT_SINGLE, "\tUse user's hands as a teapot (a bit dangerous)"),
     OPT_USER('t', "temperature", temperature, teapot_temperature_t, OPT_REQUIRED_VALUE | OPT_REQUIRED,
 		  "<value>\tWanted final temperature of the tea to be served (required)\n"
 	      "\t\tSupported scales:  Celsius [60C], Fahrenheit [140F],\n"

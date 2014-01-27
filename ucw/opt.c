@@ -255,6 +255,9 @@ static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, c
 static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * opt, char * value) {
   struct opt_item * item = opt->item;
 
+  if (opt->count++ && (opt->flags & OPT_SINGLE))
+    opt_failure("Option %s must be specified at most once.", THIS_OPT);
+
   for (int i = 0; i < oc->hooks_before_value_count; i++)
     oc->hooks_before_value[i]->u.call(item, value, oc->hooks_before_value[i]->ptr);
 
@@ -315,8 +318,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	break;
       }
     case OPT_CL_SWITCH:
-      // FIXME: Really? And who sets the default to -1?
-      if (*((int *)item->ptr) != -1)
+      if ((opt->flags & OPT_SINGLE) && *((int *)item->ptr) != -1)
 	opt_failure("Multiple switches: %s", THIS_OPT);
       else
 	*((int *)item->ptr) = item->u.value;
@@ -354,10 +356,6 @@ static int opt_longopt(struct opt_context * oc, char ** argv, int index) {
   char * value = NULL;
 
   opt->flags |= OPT_SEEN_AS_LONG;
-
-  // FIXME: Move to opt_parse_value()?
-  if (opt->count++ && (opt->flags & OPT_SINGLE))
-    opt_failure("Option %s must be specified at most once.", THIS_OPT);
 
   if (opt->item->cls == OPT_CL_BOOL && !strncmp(name_in, "no-", 3) && !strncmp(name_in+3, opt->item->name, pos-3)) {
     if (name_in[pos])
@@ -398,10 +396,6 @@ static int opt_shortopt(struct opt_context * oc, char ** argv, int index) {
 
     opt->flags &= ~OPT_SEEN_AS_LONG;
 
-    if (opt->count && (opt->flags & OPT_SINGLE))
-      opt_failure("Option -%c must be specified at most once.", o);
-    opt->count++;
-
     if (opt->flags & OPT_NO_VALUE)
       opt_parse_value(oc, opt, NULL);
     else if (opt->flags & OPT_REQUIRED_VALUE) {
@@ -432,11 +426,10 @@ static void opt_positional(struct opt_context * oc, char * value) {
   oc->positional_count++;
   uns id = oc->positional_count > oc->positional_max ? OPT_POSITIONAL_TAIL : OPT_POSITIONAL(oc->positional_count);
   struct opt_precomputed * opt = oc->shortopt[id];
-  if (!opt || (opt->flags & OPT_SINGLE) && opt->count)
+  if (!opt)
     opt_failure("Too many positional arguments.");
   else {
     opt->flags &= OPT_SEEN_AS_LONG;
-    opt->count++;
     opt_parse_value(oc, opt, value);
   }
 }
