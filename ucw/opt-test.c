@@ -97,7 +97,7 @@ static struct cf_user_type teapot_temperature_t = {
   .dumper = (cf_dumper1*) teapot_temperature_dumper
 };
 
-static void opt_test_hook(struct opt_item * opt, const char * value, void * data) {
+static void opt_test_hook(struct opt_item * opt, uns event UNUSED, const char * value, void * data) {
   if (!show_hooks)
     return;
   if (opt)

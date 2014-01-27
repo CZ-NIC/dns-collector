@@ -58,6 +58,7 @@ struct opt_item {
     struct opt_section * section;	// subsection for OPT_SECTION
     int value;				// value for OPT_SWITCH
     void (* call)(struct opt_item * opt, const char * value, void * data);  // function to call for OPT_CALL
+    void (* hook)(struct opt_item * opt, uns event, const char * value, void * data);  // function to call for OPT_CL_HOOK
     struct cf_user_type * utype;	// specification of the user-defined type
   } u;
   u16 flags;
@@ -93,7 +94,7 @@ struct opt_section {
  *
  ***/
 
-#define OPT_HELP_OPTION(help) OPT_CALL(0, "help", opt_handle_help, &help, OPT_NO_VALUE, "\tShow this help")
+#define OPT_HELP_OPTION(help) OPT_CALL(0, "help", opt_handle_help, &help, OPT_BEFORE_CONFIG | OPT_NO_VALUE, "\tShow this help")
 #define OPT_HELP(line) { .help = line, .cls = OPT_CL_HELP }
 #define OPT_BOOL(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_BOOL, .type = CT_INT }
 #define OPT_STRING(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_STRING }
@@ -111,7 +112,7 @@ struct opt_section {
 // FIXME: Check that the target is of the right type (likewise in other statically typed options)
 #define OPT_INC(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .flags = fl, .help = desc, .cls = OPT_CL_INC, .type = CT_INT }
 #define OPT_SECTION(sec) { .cls = OPT_CL_SECTION, .u.section = &sec }
-#define OPT_HOOK(fn, data, fl) { .cls = OPT_CL_HOOK, .u.call = fn, .flags = OPT_NO_HELP | fl, .ptr = data }
+#define OPT_HOOK(fn, data, events) { .cls = OPT_CL_HOOK, .u.hook = fn, .flags = events, .ptr = data }
 #define OPT_END { .cls = OPT_CL_END }
 
 /***
@@ -130,12 +131,12 @@ struct opt_section {
 #define OPT_CONF_CONFIG	    OPT_CALL('C', "config", opt_handle_config, NULL, OPT_BEFORE_CONFIG | OPT_REQUIRED_VALUE, "<file>\tOverride the default configuration file")
 #define OPT_CONF_SET	    OPT_CALL('S', "set", opt_handle_set, NULL, OPT_BEFORE_CONFIG | OPT_REQUIRED_VALUE, "<item>\tManual setting of a configuration item")
 #define OPT_CONF_DUMPCONFIG OPT_CALL(0, "dumpconfig", opt_handle_dumpconfig, NULL, OPT_NO_VALUE, "\tDump program configuration")
-#define OPT_CONF_HOOK	    OPT_HOOK(opt_conf_hook_internal, NULL, OPT_HOOK_BEFORE_VALUE)
+#define OPT_CONF_HOOK	    OPT_HOOK(opt_conf_hook_internal, NULL, OPT_HOOK_BEFORE_VALUE | OPT_HOOK_FINAL)
 
 void opt_handle_config(struct opt_item * opt, const char * value, void * data);
 void opt_handle_set(struct opt_item * opt, const char * value, void * data);
 void opt_handle_dumpconfig(struct opt_item * opt, const char * value, void * data);
-void opt_conf_hook_internal(struct opt_item * opt, const char * value, void * data);
+void opt_conf_hook_internal(struct opt_item * opt, uns event, const char * value, void * data);
 
 // XXX: This is duplicated with <ucw/getopt.h>, but that one will hopefully go away one day.
 /**
@@ -185,9 +186,12 @@ extern char *cf_env_file;
 #define OPT_MULTIPLE	    0x200	/** Argument may appear any time; will save all the values into a simple list **/
 #define OPT_SEEN_AS_LONG    0x400	// Used internally
 #define OPT_BEFORE_CONFIG   0x800	/** Argument may appear before config file is loaded **/
-#define OPT_HOOK_BEFORE_ARG	0x1000	/** Call before option parsing **/
-#define OPT_HOOK_BEFORE_VALUE	0x2000	/** Call before value parsing **/
-#define OPT_HOOK_AFTER_VALUE	0x4000  /** Call after value parsing **/
+
+// For hooks, the flags contain a combination of events.
+#define OPT_HOOK_BEFORE_ARG	0x1	/** Call before option parsing **/
+#define OPT_HOOK_BEFORE_VALUE	0x2	/** Call before value parsing **/
+#define OPT_HOOK_AFTER_VALUE	0x4	/** Call after value parsing **/
+#define OPT_HOOK_FINAL		0x8	/** Call just before opt_parse() returns **/
 
 void opt_help(const struct opt_section * sec);
 void opt_handle_help(struct opt_item * opt, const char * value, void * data);

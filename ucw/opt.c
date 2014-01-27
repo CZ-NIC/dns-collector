@@ -41,18 +41,15 @@ static uns opt_default_value_flags[] = {
 struct opt_context {
   struct opt_precomputed * opts;
   struct opt_precomputed ** shortopt;
-  struct opt_item ** hooks_before_arg;
-  struct opt_item ** hooks_before_value;
-  struct opt_item ** hooks_after_value;
-  short opt_count;
-  short hooks_before_arg_count;
-  short hooks_before_value_count;
-  short hooks_after_value_count;
+  struct opt_item ** hooks;
+  int opt_count;
+  int hook_count;
   int positional_max;
   int positional_count;
   bool stop_parsing;
 };
 
+// FIXME: Make public?
 void opt_failure(const char * mesg, ...) {
   va_list args;
   va_start(args, mesg);
@@ -94,6 +91,15 @@ void opt_precompute(struct opt_precomputed *opt, struct opt_item *item)
   }
 
   opt->flags = flags;
+}
+
+static void opt_invoke_hooks(struct opt_context *oc, uns event, struct opt_item *item, char *value)
+{
+  for (int i = 0; i < oc->hook_count; i++) {
+    struct opt_item *hook = oc->hooks[i];
+    if (hook->flags & event)
+      hook->u.hook(item, event, value, hook->ptr);
+  }
 }
 
 static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, char * str) {
@@ -149,8 +155,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
   if (opt->flags & OPT_LAST_ARG)
     oc->stop_parsing = 1;
 
-  for (int i = 0; i < oc->hooks_before_value_count; i++)
-    oc->hooks_before_value[i]->u.call(item, value, oc->hooks_before_value[i]->ptr);
+  opt_invoke_hooks(oc, OPT_HOOK_BEFORE_VALUE, item, value);
 
   switch (item->cls) {
     case OPT_CL_BOOL:
@@ -235,8 +240,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
       ASSERT(0);
   }
 
-  for (int i = 0;i < oc->hooks_after_value_count; i++)
-    oc->hooks_after_value[i]->u.call(item, value, oc->hooks_after_value[i]->ptr);
+  opt_invoke_hooks(oc, OPT_HOOK_AFTER_VALUE, item, value);
 }
 
 static int opt_longopt(struct opt_context * oc, char ** argv, int index) {
@@ -330,16 +334,9 @@ static void opt_count_items(struct opt_context *oc, const struct opt_section *se
   for (const struct opt_item *item = sec->opt; item->cls != OPT_CL_END; item++) {
     if (item->cls == OPT_CL_SECTION)
       opt_count_items(oc, item->u.section);
-    else if (item->cls == OPT_CL_HOOK) {
-      if (item->flags & OPT_HOOK_BEFORE_ARG)
-	oc->hooks_before_arg_count++;
-      else if (item->flags & OPT_HOOK_BEFORE_VALUE)
-	oc->hooks_before_value_count++;
-      else if (item->flags & OPT_HOOK_AFTER_VALUE)
-	oc->hooks_after_value_count++;
-      else
-	ASSERT(0);
-    } else if (item->letter || item->name) {
+    else if (item->cls == OPT_CL_HOOK)
+      oc->hook_count++;
+    else if (item->letter || item->name) {
       oc->opt_count++;
       if (item->letter > OPT_POSITIONAL_TAIL)
 	oc->positional_max++;
@@ -352,16 +349,9 @@ static void opt_prepare_items(struct opt_context *oc, const struct opt_section *
   for (struct opt_item *item = sec->opt; item->cls != OPT_CL_END; item++) {
     if (item->cls == OPT_CL_SECTION)
       opt_prepare_items(oc, item->u.section);
-    else if (item->cls == OPT_CL_HOOK) {
-      if (item->flags & OPT_HOOK_BEFORE_ARG)
-	oc->hooks_before_arg[oc->hooks_before_arg_count++] = item;
-      else if (item->flags & OPT_HOOK_BEFORE_VALUE)
-	oc->hooks_before_value[oc->hooks_before_value_count++] = item;
-      else if (item->flags & OPT_HOOK_AFTER_VALUE)
-	oc->hooks_after_value[oc->hooks_after_value_count++] = item;
-      else
-	ASSERT(0);
-    } else if (item->letter || item->name) {
+    else if (item->cls == OPT_CL_HOOK)
+      oc->hooks[oc->hook_count++] = item;
+    else if (item->letter || item->name) {
       struct opt_precomputed * opt = &oc->opts[oc->opt_count++];
       opt_precompute(opt, item);
       if (item->letter)
@@ -398,22 +388,17 @@ int opt_parse(const struct opt_section * options, char ** argv) {
   oc->opts = alloca(sizeof(*oc->opts) * oc->opt_count);
   oc->shortopt = alloca(sizeof(*oc->shortopt) * (oc->positional_max + 257));
   memset(oc->shortopt, 0, sizeof(*oc->shortopt) * (oc->positional_max + 257));
-  oc->hooks_before_arg = alloca(sizeof (*oc->hooks_before_arg) * oc->hooks_before_arg_count);
-  oc->hooks_before_value = alloca(sizeof (*oc->hooks_before_value) * oc->hooks_before_value_count);
-  oc->hooks_after_value = alloca(sizeof (*oc->hooks_after_value) * oc->hooks_after_value_count);
+  oc->hooks = alloca(sizeof (*oc->hooks) * oc->hook_count);
 
   oc->opt_count = 0;
-  oc->hooks_before_arg_count = 0;
-  oc->hooks_before_value_count = 0;
-  oc->hooks_after_value_count = 0;
+  oc->hook_count = 0;
   opt_prepare_items(oc, options);
 
   int force_positional = 0;
   int i;
   for (i=0; argv[i] && !oc->stop_parsing; i++) {
     char *arg = argv[i];
-    for (int j = 0; j < oc->hooks_before_arg_count; j++)
-      oc->hooks_before_arg[j]->u.call(NULL, NULL, oc->hooks_before_arg[j]->ptr);
+    opt_invoke_hooks(oc, OPT_HOOK_BEFORE_ARG, NULL, NULL);
     if (arg[0] != '-' || force_positional)
       opt_positional(oc, arg);
     else {
@@ -430,5 +415,6 @@ int opt_parse(const struct opt_section * options, char ** argv) {
   }
 
   opt_check_required(oc);
+  opt_invoke_hooks(oc, OPT_HOOK_FINAL, NULL, NULL);
   return i;
 }

@@ -95,6 +95,8 @@ static void opt_help_scan(struct help *h, const struct opt_section *sec)
   for (struct opt_item * item = sec->opt; item->cls != OPT_CL_END; item++) {
     if (item->cls == OPT_CL_SECTION)
       opt_help_scan(h, item->u.section);
+    else if (item->cls == OPT_CL_HOOK)
+      ;
     else {
       struct opt_precomputed opt;
       opt_precompute(&opt, item);
