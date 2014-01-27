@@ -515,23 +515,22 @@ void opt_parse(const struct opt_section * options, char ** argv) {
   opt_prepare_items(oc, options);
 
   int force_positional = 0;
-  for (int i=0;argv[i];i++) {
-    for (int j=0;j<oc->hooks_before_arg_count;j++)
+  for (int i=0; argv[i]; i++) {
+    char *arg = argv[i];
+    for (int j=0; j<oc->hooks_before_arg_count; j++)
       oc->hooks_before_arg[j]->u.call(NULL, NULL, oc->hooks_before_arg[j]->ptr);
-    if (argv[i][0] != '-' || force_positional) {
-      opt_positional(oc, argv[i]);
-    }
+    if (arg[0] != '-' || force_positional)
+      opt_positional(oc, arg);
     else {
-      if (argv[i][1] == '-') {
-	if (argv[i][2] == '\0')
+      if (arg[1] == '-') {
+	if (arg[2] == '\0')
 	  force_positional++;
 	else
 	  i += opt_longopt(oc, argv, i);
-      }
-      else if (argv[i][1])
+      } else if (arg[1])
 	i += opt_shortopt(oc, argv, i);
       else
-	opt_positional(oc, argv[i]);
+	opt_positional(oc, arg);
     }
   }
 
