@@ -21,6 +21,7 @@
 #define cf_def_file ucw_cf_def_file
 #define cf_env_file ucw_cf_env_file
 #define opt_conf_hook_internal ucw_opt_conf_hook_internal
+#define opt_failure ucw_opt_failure
 #define opt_handle_config ucw_opt_handle_config
 #define opt_handle_dumpconfig ucw_opt_handle_dumpconfig
 #define opt_handle_help ucw_opt_handle_help
@@ -193,13 +194,9 @@ extern char *cf_env_file;
 #define OPT_HOOK_AFTER_VALUE	0x4	/** Call after value parsing **/
 #define OPT_HOOK_FINAL		0x8	/** Call just before opt_parse() returns **/
 
+void opt_failure(const char * mesg, ...) FORMAT_CHECK(printf,1,2) NONRET;
 void opt_help(const struct opt_section * sec);
 void opt_handle_help(struct opt_item * opt, const char * value, void * data);
-
-// FIXME: Should this be public?
-static inline void opt_usage(void) {
-  fprintf(stderr, "Run with argument --help for more information.\n");
-}
 
 /**
  * Parse all arguments, given in a NULL-terminated array of strings.

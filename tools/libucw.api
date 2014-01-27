@@ -382,9 +382,9 @@ mp_vprintf
 mp_printf_append
 mp_vprintf_append
 # ucw/opt-internal.h
-opt_failure
 opt_precompute
 # ucw/opt.h
+opt_failure
 opt_handle_config
 opt_handle_set
 opt_handle_dumpconfig

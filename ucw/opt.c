@@ -49,13 +49,11 @@ struct opt_context {
   bool stop_parsing;
 };
 
-// FIXME: Make public?
 void opt_failure(const char * mesg, ...) {
   va_list args;
   va_start(args, mesg);
   vfprintf(stderr, mesg, args);
-  fprintf(stderr, "\n");
-  opt_usage();
+  fprintf(stderr, "\nRun with --help for more information.\n");
   exit(OPT_EXIT_BAD_ARGS);
 }
 

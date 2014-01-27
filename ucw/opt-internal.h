@@ -12,7 +12,6 @@
 #define _UCW_OPT_INTERNAL_H
 
 #ifdef CONFIG_UCW_CLEAN_ABI
-#define opt_failure ucw_opt_failure
 #define opt_precompute ucw_opt_precompute
 #endif
 
@@ -23,7 +22,6 @@ struct opt_precomputed {
   short count;
 };
 
-void opt_failure(const char * mesg, ...) FORMAT_CHECK(printf,1,2) NONRET;
 void opt_precompute(struct opt_precomputed *opt, struct opt_item *item);
 
 #endif

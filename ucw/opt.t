@@ -4,7 +4,7 @@ Name:	Opt-1
 Run:	../obj/ucw/opt-test 2>&1 1>/dev/null
 Exit:	2
 Out:	Required option -t/--temperature not found.
-	Run with argument --help for more information.
+	Run with --help for more information.
 
 Name:	Opt-2
 Run:	../obj/ucw/opt-test -t95C -w640 -gG darjeeling
@@ -22,7 +22,7 @@ Name:	Opt-5
 Run:	../obj/ucw/opt-test -ghx 2>&1 1>/dev/null
 Exit:	2
 Out:	Multiple switches: -h
-	Run with argument --help for more information.
+	Run with --help for more information.
 
 Name:	Opt-6
 Run:	../obj/ucw/opt-test -t120F -w4 -b15 -he -- --puerh darjeeling earl-grey
@@ -36,7 +36,7 @@ Name:	Opt-Conf-1
 Run:	../obj/ucw/opt-test -h -SX.Y=Z 2>&1 1>/dev/null
 Exit:	2
 Out:	Config options must stand before other options.
-	Run with argument --help for more information.
+	Run with --help for more information.
 
 Name:	Opt-Hook-1
 Run:	../obj/ucw/opt-test -Ht 95C -w640 -gG darjeeling
