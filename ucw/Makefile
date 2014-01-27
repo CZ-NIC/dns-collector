@@ -36,7 +36,7 @@ LIBUCW_MODS= \
 	resource trans res-fd res-mem res-subpool res-mempool res-eltpool \
 	daemon daemon-ctrl \
 	signames \
-	opt
+	opt opt-help opt-conf
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h threads.h time.h \

@@ -1,5 +1,5 @@
 /*
- *	UCW Library -- Parsing of command line options
+ *	UCW Library -- Parsing of command-line options
  *
  *	(c) 2013 Jan Moskyto Matejka <mq@ucw.cz>
  *	(c) 2014 Martin Mares <mj@ucw.cz>
@@ -10,13 +10,9 @@
 
 #include <ucw/lib.h>
 #include <ucw/opt.h>
-#include <ucw/conf.h>
-#include <ucw/conf-internal.h>
-#include <ucw/fastbuf.h>
+#include <ucw/opt-internal.h>
 #include <ucw/stkstring.h>
 #include <ucw/strtonum.h>
-#include <ucw/mempool.h>
-#include <ucw/gary.h>
 
 #include <alloca.h>
 #include <math.h>
@@ -41,13 +37,6 @@ static uns opt_default_value_flags[] = {
     [OPT_CL_HELP] = 0
 };
 
-struct opt_precomputed {
-  struct opt_item * item;
-  const char * name;
-  short flags;
-  short count;
-};
-
 struct opt_context {
   struct opt_precomputed * opts;
   struct opt_precomputed ** shortopt;
@@ -62,8 +51,7 @@ struct opt_context {
   int positional_count;
 };
 
-static void opt_failure(const char * mesg, ...) FORMAT_CHECK(printf,1,2) NONRET;
-static void opt_failure(const char * mesg, ...) {
+void opt_failure(const char * mesg, ...) {
   va_list args;
   va_start(args, mesg);
   vfprintf(stderr, mesg, args);
@@ -87,7 +75,7 @@ static char *opt_name(struct opt_context *oc, struct opt_precomputed *opt)
 
 #define THIS_OPT opt_name(oc, opt)
 
-static void opt_precompute(struct opt_precomputed *opt, struct opt_item *item)
+void opt_precompute(struct opt_precomputed *opt, struct opt_item *item)
 {
   opt->item = item;
   opt->count = 0;
@@ -104,148 +92,6 @@ static void opt_precompute(struct opt_precomputed *opt, struct opt_item *item)
   }
 
   opt->flags = flags;
-}
-
-#define FOREACHLINE(text) for (const char * begin = (text), * end = (text); (*end) && (end = strchrnul(begin, '\n')); begin = end+1)
-
-struct help {
-  struct mempool *pool;
-  struct help_line *lines;			// A growing array of lines
-};
-
-struct help_line {
-  const char *extra;
-  char *fields[3];
-};
-
-static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
-{
-  struct opt_item *item = opt->item;
-
-  if (opt->flags & OPT_NO_HELP)
-    return;
-
-  if (item->cls == OPT_CL_HELP) {
-    struct help_line *l = GARY_PUSH(h->lines, 1);
-    l->extra = item->help ? : "";
-    return;
-  }
-
-  if (item->letter >= OPT_POSITIONAL_TAIL)
-    return;
-
-  struct help_line *first = GARY_PUSH(h->lines, 1);
-  if (item->help) {
-    char *text = mp_strdup(h->pool, item->help);
-    struct help_line *l = first;
-    while (text) {
-      char *eol = strchr(text, '\n');
-      if (eol)
-	*eol++ = 0;
-
-      int field = (l == first ? 1 : 0);
-      char *f = text;
-      while (f) {
-	char *tab = strchr(f, '\t');
-	if (tab)
-	  *tab++ = 0;
-	if (field < 3)
-	  l->fields[field++] = f;
-	f = tab;
-      }
-
-      text = eol;
-      if (text)
-	l = GARY_PUSH(h->lines, 1);
-    }
-  }
-
-  if (item->name) {
-    char *val = first->fields[1] ? : "";
-    if (opt->flags & OPT_REQUIRED_VALUE)
-      val = mp_printf(h->pool, "=%s", val);
-    else if (!(opt->flags & OPT_NO_VALUE))
-      val = mp_printf(h->pool, "[=%s]", val);
-    first->fields[1] = mp_printf(h->pool, "--%s%s", item->name, val);
-  }
-
-  if (item->letter) {
-    if (item->name)
-      first->fields[0] = mp_printf(h->pool, "-%c, ", item->letter);
-    else {
-      char *val = first->fields[1] ? : "";
-      if (!(opt->flags & OPT_REQUIRED_VALUE) && !(opt->flags & OPT_NO_VALUE))
-	val = mp_printf(h->pool, "[%s]", val);
-      first->fields[0] = mp_printf(h->pool, "-%c%s", item->letter, val);
-      first->fields[1] = NULL;
-    }
-  }
-}
-
-static void opt_help_scan(struct help *h, const struct opt_section *sec)
-{
-  for (struct opt_item * item = sec->opt; item->cls != OPT_CL_END; item++) {
-    if (item->cls == OPT_CL_SECTION)
-      opt_help_scan(h, item->u.section);
-    else {
-      struct opt_precomputed opt;
-      opt_precompute(&opt, item);
-      opt_help_scan_item(h, &opt);
-    }
-  }
-}
-
-void opt_help(const struct opt_section * sec) {
-  // Prepare help text
-  struct help h;
-  h.pool = mp_new(4096);
-  GARY_INIT_ZERO(h.lines, 0);
-  opt_help_scan(&h, sec);
-
-  // Calculate natural width of each column
-  uns n = GARY_SIZE(h.lines);
-  uns widths[3] = { 0, 0, 0 };
-  for (uns i=0; i<n; i++) {
-    struct help_line *l = &h.lines[i];
-    for (uns f=0; f<3; f++) {
-      if (!l->fields[f])
-	l->fields[f] = "";
-      uns w = strlen(l->fields[f]);
-      widths[f] = MAX(widths[f], w);
-    }
-  }
-  if (widths[0] > 4) {
-    /*
-     *  This is tricky: if there are short options, which have an argument,
-     *  but no long variant, we are willing to let column 0 overflow to column 1.
-     */
-    widths[1] = MAX(widths[1], widths[0] - 4);
-    widths[0] = 4;
-  }
-  widths[1] += 4;
-
-  // Print columns
-  for (uns i=0; i<n; i++) {
-    struct help_line *l = &h.lines[i];
-    if (l->extra)
-      puts(l->extra);
-    else {
-      int t = 0;
-      for (uns f=0; f<3; f++) {
-	t += widths[f];
-	t -= printf("%s", l->fields[f]);
-	while (t > 0) {
-	  putchar(' ');
-	  t--;
-	}
-      }
-      putchar('\n');
-    }
-  }
-
-  // Clean up
-  GARY_FREE(h.lines);
-  mp_delete(h.pool);
 }
 
 static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, char * str) {
@@ -578,70 +424,4 @@ void opt_parse(const struct opt_section * options, char ** argv) {
   }
 
   opt_check_required(oc);
-}
-
-static void opt_conf_end_of_options(struct cf_context *cc) {
-  cf_load_default(cc);
-  if (cc->postpone_commit && cf_close_group())
-    opt_failure("Loading of configuration failed");
-}
-
-void opt_conf_internal(struct opt_item * opt, const char * value, void * data UNUSED) {
-  struct cf_context *cc = cf_get_context();
-  switch (opt->letter) {
-    case 'S':
-      cf_load_default(cc);
-      if (cf_set(value))
-	opt_failure("Cannot set %s", value);
-      break;
-    case 'C':
-      if (cf_load(value))
-	opt_failure("Cannot load config file %s", value);
-      break;
-#ifdef CONFIG_UCW_DEBUG
-    case '0':
-      opt_conf_end_of_options(cc);
-      struct fastbuf *b = bfdopen(1, 4096);
-      cf_dump_sections(b);
-      bclose(b);
-      exit(0);
-      break;
-#endif
-  }
-}
-
-void opt_conf_hook_internal(struct opt_item * opt, const char * value UNUSED, void * data UNUSED) {
-  static enum {
-    OPT_CONF_HOOK_BEGIN,
-    OPT_CONF_HOOK_CONFIG,
-    OPT_CONF_HOOK_OTHERS
-  } state = OPT_CONF_HOOK_BEGIN;
-
-  int confopt = 0;
-
-  if (opt->letter == 'S' || opt->letter == 'C' || (opt->name && !strcmp(opt->name, "dumpconfig")))
-    confopt = 1;
-
-  switch (state) {
-    case OPT_CONF_HOOK_BEGIN:
-      if (confopt)
-	state = OPT_CONF_HOOK_CONFIG;
-      else {
-	opt_conf_end_of_options(cf_get_context());
-	state = OPT_CONF_HOOK_OTHERS;
-      }
-      break;
-    case OPT_CONF_HOOK_CONFIG:
-      if (!confopt) {
-	opt_conf_end_of_options(cf_get_context());
-	state = OPT_CONF_HOOK_OTHERS;
-      }
-      break;
-    case OPT_CONF_HOOK_OTHERS:
-      if (confopt)
-	opt_failure("Config options (-C, -S) must stand before other options.");
-      break;
-    default:
-      ASSERT(0);
-  }
 }
