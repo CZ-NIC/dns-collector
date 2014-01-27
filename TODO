@@ -1,6 +1,3 @@
 - ipaccess: support IPv6
 - transactions: Unit tests
 - Maint: git push --tags
-
-Opt:
-- Odkud se alokuji hodnoty optionu?
