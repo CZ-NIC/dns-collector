@@ -22,6 +22,7 @@
 #define cf_interpret_line ucw_cf_interpret_line
 #define cf_journal_delete ucw_cf_journal_delete
 #define cf_journal_swap ucw_cf_journal_swap
+#define cf_load_default ucw_cf_load_default
 #define cf_obtain_context ucw_cf_obtain_context
 #define cf_op_names ucw_cf_op_names
 #define cf_sections ucw_cf_sections
@@ -117,5 +118,8 @@ extern struct cf_section cf_sections;
 struct cf_item *cf_find_subitem(struct cf_section *sec, const char *name);
 int cf_commit_all(enum cf_commit_mode cm);
 void cf_add_dirty(struct cf_section *sec, void *ptr);
+
+/* conf-getopt.c */
+void cf_load_default(struct cf_context *cc);
 
 #endif

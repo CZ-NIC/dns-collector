@@ -43,6 +43,7 @@ Modules
 - <<time:,Time and timers>>
 - <<daemon:,Daemon helpers>>
 - <<signal:,Signal helpers>>
+- <<opt:,Command line parser>>
 
 Other features
 --------------

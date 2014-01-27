@@ -12,7 +12,6 @@
 #include <ucw/resource.h>
 
 #include <stdio.h>
-#include <stdbool.h>
 #include <alloca.h>
 
 int

@@ -26,8 +26,8 @@ char *cf_def_file = CONFIG_UCW_DEFAULT_CONFIG;
 #endif
 char *cf_env_file = CONFIG_UCW_ENV_VAR_CONFIG;
 
-static void
-load_default(struct cf_context *cc)
+void
+cf_load_default(struct cf_context *cc)
 {
   if (cc->config_loaded++)
     return;
@@ -55,7 +55,7 @@ load_default(struct cf_context *cc)
 static void
 end_of_options(struct cf_context *cc)
 {
-  load_default(cc);
+  cf_load_default(cc);
   if (cc->postpone_commit && cf_close_group())
     die("Loading of configuration failed");
 }
@@ -76,7 +76,7 @@ cf_getopt(int argc, char *const argv[], const char *short_opts, const struct opt
 	    die("The -S and -C options must precede all other arguments");
 	  if (res == 'S')
 	    {
-	      load_default(cc);
+	      cf_load_default(cc);
 	      if (cf_set(optarg))
 		die("Cannot set %s", optarg);
 	    }

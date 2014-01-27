@@ -1,5 +1,5 @@
-Configuration and command line parser
-=====================================
+Configuration parser
+====================
 
 Libucw contains a parser for configuration files. The syntax of the
 configuration files is described in <<config:>>, here we explain the
@@ -14,13 +14,9 @@ The descriptions are modular. The configuration can be split to sections,
 each section declared at a separate place. You can also define your own
 data types.
 
-There is also a simple wrapper around getopt_long(), which processes
-options related to selection of a configuration file, overriding of
-configuration variables and loading of the default configuration.
-
 - <<example,Example>>
   * <<ex_structure,The structure>>
-  * <<ex_load,Loading>>
+  * <<ex_load,Loading configuration>>
 - <<deep,Getting deeper>>
   * <<conf_multi,Arrays and lists>>
   * <<reload,Reloading configuration>>
@@ -38,7 +34,8 @@ configuration variables and loading of the default configuration.
   * <<conf_direct,Direct access>>
   * <<conf_dump,Debug dumping>>
 - <<getopt_h,ucw/getopt.h>>
-  * <<conf_getopt,Loading by cf_getopt()>>
+  * <<conf_getopt,Loading configuration by cf_getopt()>> (obsolete)
+  * <<getopt_example,Example>> (obsolete)
 
 [[example]]
 Example
@@ -94,43 +91,34 @@ You can plug in as many configuration sections as you like, from
 various places across your code.
 
 [[ex_load]]
-Loading of the values
+Loading configuration
 ~~~~~~~~~~~~~~~~~~~~~
-Suppose you need to parse the command line arguments and load the
-configuration. Then @cf_getopt() is there for you: it works like
-the traditional @getopt_long() from the C library, but it also handles
-configuration files.
+You can load the configuration explicitly by calling @cf_load().
+That can be convenient when writing a library, but in normal programs,
+you can ask the <<opt:,option parser>> to handle it for you.
+
+A typical example follows, please see the <<opt:conf,interface between
+conf and opt>> for details.
 
   #include <ucw/lib.h>
-  #include <ucw/conf.h>
-  #include <ucw/getopt.h>
-
-  static char short_opts[] = CF_SHORT_OPTS "v";
-  static struct option long_opts[] = {
-    CF_LONG_OPTS
-    { "verbose", 0, 0, 'v' },
-    { NULL, 0, 0, 0 }
+  #include <ucw/opt.h>
+  
+  static struct opt_section options = {
+    OPT_ITEMS {
+      // More options can be specified here
+      OPT_HELP("Configuration options:"),
+      OPT_CONF_OPTIONS,
+      OPT_END
+    }
   };
-
-  static int verbose;
-
-  int main(int argc, char *argv[]) {
+  
+  int main(int argc, char **argv)
+  {
     cf_def_file = "default.cf";
-    int opt;
-    while((opt = cf_getopt(argc, argv, short_opts, long_opts, NULL)) >= 0)
-      switch(opt) {
-	case 'v': verbose = 1; break;
-	default: fprintf("Unknown option %c\n", opt); return 1;
-      }
+    opt_parse(&options, argv+1);
+    // Configuration file is already loaded here
+    return 0;
   }
-
-The `short_opts` and `long_opts` variables describe the command line
-arguments. Notice the `CF_SHORT_OPTS` and `CF_LONG_OPTS` macros. They
-add the `-S` and `-C` options for the configuration parser as described
-in <<config:>>. These options are handled internally by @cf_getopt().
-
-You can rely on the configuration files having been loaded before the
-first of your program's options is parsed.
 
 [[deep]]
 Getting deeper
@@ -181,14 +169,14 @@ If you want dynamic array of strings, you would use:
   };
 
 *Lists*::
-  Linked lists based on <<clist:>>. You provide description
+  Linked lists based on <<lists:clists,clists>>. You provide description
   of single node and pointer to the
-  <<clist:struct_clist,`struct clist`>> variable. All the nodes will
+  <<lists:struct_clist,`struct clist`>> variable. All the nodes will
   be created dynamically and put there.
 +
-First element of your structure must be <<clist:type_cnode,`cnode`>>.
+First element of your structure must be <<lists:struct_cnode,`cnode`>>.
 +
-The first example is list of strings and uses <<clist:simple,simple
+The first example is list of strings and uses <<lists:simple_lists,simple
 lists>>:
 +
   static struct clist list;
@@ -293,4 +281,45 @@ ucw/getopt.h
 This header contains routines for parsing command line arguments and
 loading the default configuration.
 
+In new programs, please consider using the new <<opt:,option parser>>
+instead. The getopt interface is already considered obsolete and may
+be removed in the future.
+
 !!ucw/getopt.h
+
+Example
+~~~~~~~
+Typically, @cf_getopt() is used as follows: it works like
+the traditional @getopt_long() from the C library, but it also handles
+configuration files.
+
+  #include <ucw/lib.h>
+  #include <ucw/conf.h>
+  #include <ucw/getopt.h>
+
+  static char short_opts[] = CF_SHORT_OPTS "v";
+  static struct option long_opts[] = {
+    CF_LONG_OPTS
+    { "verbose", 0, 0, 'v' },
+    { NULL, 0, 0, 0 }
+  };
+
+  static int verbose;
+
+  int main(int argc, char *argv[]) {
+    cf_def_file = "default.cf";
+    int opt;
+    while((opt = cf_getopt(argc, argv, short_opts, long_opts, NULL)) >= 0)
+      switch(opt) {
+	case 'v': verbose = 1; break;
+	default: fprintf("Unknown option %c\n", opt); return 1;
+      }
+  }
+
+The `short_opts` and `long_opts` variables describe the command line
+arguments. Notice the `CF_SHORT_OPTS` and `CF_LONG_OPTS` macros. They
+add the `-S` and `-C` options for the configuration parser as described
+in <<config:>>. These options are handled internally by @cf_getopt().
+
+You can rely on the configuration files having been loaded before the
+first of your program's options is parsed.
