@@ -71,26 +71,6 @@ static void opt_failure(const char * mesg, ...) {
   va_end(args);		// FIXME: Does this make a sense after exit()?
 }
 
-// FIXME: This could be an inline function, couldn't it?
-#define OPT_ADD_DEFAULT_ITEM_FLAGS(item, flags) \
-  do { \
-    if (item->letter >= 256) { \
-      if (flags & OPT_VALUE_FLAGS) /* FIXME: Redundant condition */ \
-	flags &= ~OPT_VALUE_FLAGS; \
-      flags |= OPT_REQUIRED_VALUE; \
-    } \
-    if (!(flags & OPT_VALUE_FLAGS) && \
-	(item->cls == OPT_CL_CALL || item->cls == OPT_CL_USER)) { \
-      fprintf(stderr, "You MUST specify some of the value flags for the %c/%s item.\n", item->letter, item->name); \
-      ASSERT(0); \
-    } \
-    else if (!(flags & OPT_VALUE_FLAGS)) /* FIXME: Streamline the conditions */ \
-      flags |= opt_default_value_flags[item->cls]; \
-  } while (0)
-
-// FIXME: Is this still useful? Isn't it better to use OPT_ADD_DEFAULT_ITEM_FLAGS during init?
-#define OPT_ITEM_FLAGS(item) ((item->flags & OPT_VALUE_FLAGS) ? item->flags : item->flags | opt_default_value_flags[item->cls])
-
 #define FOREACHLINE(text) for (const char * begin = (text), * end = (text); (*end) && (end = strchrnul(begin, '\n')); begin = end+1)
 
 static inline uns uns_min(uns x, uns y)
@@ -163,7 +143,7 @@ void opt_help(const struct opt_section * help) {
     uns eol = strchrnul(item->help, '\n') - item->help;
     if (valoff > eol)
       valoff = eol;
-#define VAL(it) ((OPT_ITEM_FLAGS(it) & OPT_REQUIRED_VALUE) ? stk_printf("=%.*s", valoff, item->help)  : ((OPT_ITEM_FLAGS(it) & OPT_NO_VALUE) ? "" : stk_printf("(=%.*s)", valoff, item->help)))
+#define VAL(it) ((it->flags & OPT_REQUIRED_VALUE) ? stk_printf("=%.*s", valoff, item->help)  : ((it->flags & OPT_NO_VALUE) ? "" : stk_printf("(=%.*s)", valoff, item->help)))
     if (item->name) {
       lines[line][1] = stk_printf("--%s%s", item->name, VAL(item));
       if (linelengths[1] < (int) strlen(lines[line][1]))
@@ -472,6 +452,23 @@ static void opt_count_items(struct opt_context *oc, const struct opt_section *se
   }
 }
 
+static void opt_add_default_flags(struct opt_precomputed *opt)
+{
+  struct opt_item *item = opt->item;
+  uns flags = opt->flags;
+
+  if (item->letter >= 256) {
+    flags &= ~OPT_VALUE_FLAGS;
+    flags |= OPT_REQUIRED_VALUE;
+  }
+  if (!(flags & OPT_VALUE_FLAGS)) {
+    ASSERT(item->cls != OPT_CL_CALL && item->cls != OPT_CL_USER);
+    flags |= opt_default_value_flags[item->cls];
+  }
+
+  opt->flags = flags;
+}
+
 static void opt_prepare_items(struct opt_context *oc, const struct opt_section *sec)
 {
   for (struct opt_item *item = sec->opt; item->cls != OPT_CL_END; item++) {
@@ -494,7 +491,7 @@ static void opt_prepare_items(struct opt_context *oc, const struct opt_section *
       opt->name = item->name;
       if (item->letter)
 	oc->shortopt[(int) item->letter] = opt;
-      OPT_ADD_DEFAULT_ITEM_FLAGS(item, opt->flags);
+      opt_add_default_flags(opt);
     }
   }
 }
