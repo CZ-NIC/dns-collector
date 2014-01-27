@@ -65,12 +65,16 @@ Most options have the following properties:
 - Long name: an arbitrary string. Set to NULL if the option has no long form.
 - Variable, where the value of the option shall be stored, together with
   its <<conf:enum_cf_type,data type>>.
-- Flags further specifying behavior of the option (whether it is mandatory,
+- <<flags,Flags>> further specifying behavior of the option (whether it is mandatory,
   whether it carries a value, whether it can be set repeatedly, etc.).
-  FIXME: Reference to flags and their defaults.
 - Help text, from which the help displayed to the user is constructed.
-  FIXME: Explain tabs and newlines.
 - Extra data specific for the particular class.
+
+The help is generated in a three-column format. The first column contains the
+short names, then come the long names, and finally option descriptions.
+The help text starts in column 2 (where it can describe the option's argument);
+you can use the tab character to advance to the next column. When a newline
+character appears, the text continues on the next line in column 1.
 
 [[opt_h]]
 ucw/opt.h
