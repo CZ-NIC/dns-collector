@@ -2,6 +2,7 @@
  *	UCW Library -- Parsing of command line options
  *
  *	(c) 2013 Jan Moskyto Matejka <mq@ucw.cz>
+ *	(c) 2014 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -46,7 +47,7 @@ struct opt_precomputed {
 };
 
 struct opt_context {
-  struct opt_precomputed ** opts;
+  struct opt_precomputed * opts;
   struct opt_precomputed ** shortopt;
   struct opt_item ** hooks_before_arg;
   struct opt_item ** hooks_before_value;
@@ -226,31 +227,31 @@ static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, c
   struct opt_precomputed * candidate = NULL;
 
   for (int i=0; i<oc->opt_count; i++) {
-    if (!oc->opts[i]->name)
+    if (!oc->opts[i].name)
       continue;
-    if (!strncmp(oc->opts[i]->name, str, len)) {
-      if (strlen(oc->opts[i]->name) == len) {
-	if (oc->opts[i]->count++ && (oc->opts[i]->flags & OPT_SINGLE))
-	  opt_failure("Option %s appeared the second time.", oc->opts[i]->name);
+    if (!strncmp(oc->opts[i].name, str, len)) {
+      if (strlen(oc->opts[i].name) == len) {
+	if (oc->opts[i].count++ && (oc->opts[i].flags & OPT_SINGLE))
+	  opt_failure("Option %s appeared the second time.", oc->opts[i].name);
 
-	return oc->opts[i];
+	return &oc->opts[i];
       }
       if (candidate)
-	opt_failure("Ambiguous prefix %s: Found matching %s and %s.", str, candidate->name, oc->opts[i]->name);
+	opt_failure("Ambiguous prefix %s: Found matching %s and %s.", str, candidate->name, oc->opts[i].name);
       else
-	candidate = oc->opts[i];
+	candidate = &oc->opts[i];
     }
-    if (!strncmp("no-", str, 3) && !strncmp(oc->opts[i]->name, str+3, len-3)) {
-      if (strlen(oc->opts[i]->name) == len-3) {
-	if (oc->opts[i]->count++ && (oc->opts[i]->flags & OPT_SINGLE))
-	  opt_failure("Option %s appeared the second time.", oc->opts[i]->name);
+    if (!strncmp("no-", str, 3) && !strncmp(oc->opts[i].name, str+3, len-3)) {
+      if (strlen(oc->opts[i].name) == len-3) {
+	if (oc->opts[i].count++ && (oc->opts[i].flags & OPT_SINGLE))
+	  opt_failure("Option %s appeared the second time.", oc->opts[i].name);
 
-	return oc->opts[i];
+	return &oc->opts[i];
       }
       if (candidate)
-	opt_failure("Ambiguous prefix %s: Found matching %s and %s.", str, candidate->name, oc->opts[i]->name);
+	opt_failure("Ambiguous prefix %s: Found matching %s and %s.", str, candidate->name, oc->opts[i].name);
       else
-	candidate = oc->opts[i];
+	candidate = &oc->opts[i];
     }
   }
 
@@ -449,81 +450,34 @@ static void opt_positional(struct opt_context * oc, char * value) {
   opt_parse_value(oc, opt, value, 2);
 }
 
-#define OPT_TRAVERSE_SECTIONS \
-    while (item->cls == OPT_CL_SECTION) { \
-      if (stk->next) \
-	stk = stk->next; \
-      else { \
-	struct opt_stack * new_stk = alloca(sizeof(*new_stk)); \
-	new_stk->prev = stk; \
-	stk->next = new_stk; \
-	stk = new_stk; \
-      } \
-      stk->this = item; \
-      item = item->u.section->opt; \
-    } \
-    if (item->cls == OPT_CL_END) { \
-      if (!stk->prev) break; \
-      item = stk->this; \
-      stk = stk->prev; \
-      continue; \
+static void opt_count_items(struct opt_context *oc, const struct opt_section *sec)
+{
+  for (const struct opt_item *item = sec->opt; item->cls != OPT_CL_END; item++) {
+    if (item->cls == OPT_CL_SECTION)
+      opt_count_items(oc, item->u.section);
+    else if (item->cls == OPT_CL_HOOK) {
+      if (item->flags & OPT_HOOK_BEFORE_ARG)
+	oc->hooks_before_arg_count++;
+      else if (item->flags & OPT_HOOK_BEFORE_VALUE)
+	oc->hooks_before_value_count++;
+      else if (item->flags & OPT_HOOK_AFTER_VALUE)
+	oc->hooks_after_value_count++;
+      else
+	ASSERT(0);
+    } else if (item->letter || item->name) {
+      oc->opt_count++;
+      if (item->letter > OPT_POSITIONAL_TAIL)
+	oc->positional_max++;
     }
-
-void opt_parse(const struct opt_section * options, char ** argv) {
-  struct opt_stack {
-    struct opt_item * this;
-    struct opt_stack * prev;
-    struct opt_stack * next;
-  } * stk = alloca(sizeof(*stk));
-  stk->this = NULL;
-  stk->prev = NULL;
-  stk->next = NULL;
-
-  struct opt_context * oc = alloca(sizeof(*oc));
-  memset(oc, 0, sizeof (*oc));
-
-  int count = 0;
-  int hooks = 0;
-
-  for (struct opt_item * item = options->opt; ; item++) {
-    OPT_TRAVERSE_SECTIONS;
-    if (item->letter || item->name)
-      count++;
-    if (item->cls == OPT_CL_BOOL)
-      count++;
-    if (item->letter > 256)
-      oc->positional_max++;
-    if (item->cls == OPT_CL_HOOK)
-      hooks++;
   }
+}
 
-  oc->opts = alloca(sizeof(*oc->opts) * count);
-  oc->shortopt = alloca(sizeof(*oc->shortopt) * (oc->positional_max + 257));
-  memset(oc->shortopt, 0, sizeof(*oc->shortopt) * (oc->positional_max + 257));
-  oc->hooks_before_arg = alloca(sizeof (*oc->hooks_before_arg) * hooks);
-  oc->hooks_before_value = alloca(sizeof (*oc->hooks_before_value) * hooks);
-  oc->hooks_after_value = alloca(sizeof (*oc->hooks_after_value) * hooks);
-
-  oc->hooks_before_arg_count = 0;
-  oc->hooks_before_value_count = 0;
-  oc->hooks_after_value_count = 0;
-
-  oc->opt_count = 0;
-
-  for (struct opt_item * item = options->opt; ; item++) {
-    OPT_TRAVERSE_SECTIONS;
-    if (item->letter || item->name) {
-      struct opt_precomputed * opt = xmalloc(sizeof(*opt));
-      opt->item = item;
-      opt->flags = item->flags;
-      opt->count = 0;
-      opt->name = item->name;
-      oc->opts[oc->opt_count++] = opt;
-      if (item->letter)
-	oc->shortopt[(int) item->letter] = opt;
-      OPT_ADD_DEFAULT_ITEM_FLAGS(item, opt->flags);
-    }
-    if (item->cls == OPT_CL_HOOK) {
+static void opt_prepare_items(struct opt_context *oc, const struct opt_section *sec)
+{
+  for (struct opt_item *item = sec->opt; item->cls != OPT_CL_END; item++) {
+    if (item->cls == OPT_CL_SECTION)
+      opt_prepare_items(oc, item->u.section);
+    else if (item->cls == OPT_CL_HOOK) {
       if (item->flags & OPT_HOOK_BEFORE_ARG)
 	oc->hooks_before_arg[oc->hooks_before_arg_count++] = item;
       else if (item->flags & OPT_HOOK_BEFORE_VALUE)
@@ -532,8 +486,36 @@ void opt_parse(const struct opt_section * options, char ** argv) {
 	oc->hooks_after_value[oc->hooks_after_value_count++] = item;
       else
 	ASSERT(0);
+    } else if (item->letter || item->name) {
+      struct opt_precomputed * opt = &oc->opts[oc->opt_count++];
+      opt->item = item;
+      opt->flags = item->flags;
+      opt->count = 0;
+      opt->name = item->name;
+      if (item->letter)
+	oc->shortopt[(int) item->letter] = opt;
+      OPT_ADD_DEFAULT_ITEM_FLAGS(item, opt->flags);
     }
   }
+}
+
+void opt_parse(const struct opt_section * options, char ** argv) {
+  struct opt_context * oc = alloca(sizeof(*oc));
+  memset(oc, 0, sizeof (*oc));
+
+  opt_count_items(oc, options);
+  oc->opts = alloca(sizeof(*oc->opts) * oc->opt_count);
+  oc->shortopt = alloca(sizeof(*oc->shortopt) * (oc->positional_max + 257));
+  memset(oc->shortopt, 0, sizeof(*oc->shortopt) * (oc->positional_max + 257));
+  oc->hooks_before_arg = alloca(sizeof (*oc->hooks_before_arg) * oc->hooks_before_arg_count);
+  oc->hooks_before_value = alloca(sizeof (*oc->hooks_before_value) * oc->hooks_before_value_count);
+  oc->hooks_after_value = alloca(sizeof (*oc->hooks_after_value) * oc->hooks_after_value_count);
+
+  oc->opt_count = 0;
+  oc->hooks_before_arg_count = 0;
+  oc->hooks_before_value_count = 0;
+  oc->hooks_after_value_count = 0;
+  opt_prepare_items(oc, options);
 
   int force_positional = 0;
   for (int i=0;argv[i];i++) {
@@ -570,10 +552,8 @@ void opt_parse(const struct opt_section * options, char ** argv) {
   }
 
   for (int i=0;i<oc->opt_count;i++) {
-    if (!oc->opts[i])
-      continue;
-    if (!oc->opts[i]->count && (oc->opts[i]->flags & OPT_REQUIRED))
-      opt_failure("Required option --%s not found.", oc->opts[i]->item->name);
+    if (!oc->opts[i].count && (oc->opts[i].flags & OPT_REQUIRED))
+      opt_failure("Required option --%s not found.", oc->opts[i].item->name);
   }
 }
 

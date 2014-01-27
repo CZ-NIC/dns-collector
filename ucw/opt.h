@@ -2,6 +2,7 @@
  *	UCW Library -- Parsing of command line options
  *
  *	(c) 2013 Jan Moskyto Matejka <mq@ucw.cz>
+ *	(c) 2014 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
