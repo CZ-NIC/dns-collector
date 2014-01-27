@@ -166,6 +166,7 @@ void opt_conf_hook_internal(struct opt_item * opt, const char * value, void * da
 #define OPT_LAST_ARG	    0x40	/** Stop processing argv after this line **/
 #define OPT_SINGLE	    0x100	/** Argument must appear at most once **/
 #define OPT_MULTIPLE	    0x200	/** Argument may appear any time; will save all the values into a simple list **/
+#define OPT_SEEN_AS_LONG    0x400	// Used internally
 #define OPT_HOOK_BEFORE_ARG	0x1000	/** Call before option parsing **/
 #define OPT_HOOK_BEFORE_VALUE	0x2000	/** Call before value parsing **/
 #define OPT_HOOK_AFTER_VALUE	0x4000  /** Call after value parsing **/

@@ -71,6 +71,21 @@ static void opt_failure(const char * mesg, ...) {
   va_end(args);		// FIXME: Does this make a sense after exit()?
 }
 
+static char *opt_name(struct opt_context *oc, struct opt_precomputed *opt)
+{
+  struct opt_item *item = opt->item;
+  char *res;
+  if (item->letter >= OPT_POSITIONAL_TAIL)
+    res = stk_printf("positional argument #%d", oc->positional_count);
+  else if (opt->flags & OPT_SEEN_AS_LONG)
+    res = stk_printf("--%s", opt->name);
+  else
+    res = stk_printf("-%c", item->letter);
+  return xstrdup(res);
+}
+
+#define THIS_OPT opt_name(oc, opt)
+
 #define FOREACHLINE(text) for (const char * begin = (text), * end = (text); (*end) && (end = strchrnul(begin, '\n')); begin = end+1)
 
 static inline uns uns_min(uns x, uns y)
@@ -237,9 +252,7 @@ static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, c
     ptr = item->ptr; 				\
   ptr; })
 
-#define OPT_NAME (longopt == 2 ? stk_printf("positional arg #%d", oc->positional_count) : (longopt == 1 ? stk_printf("--%s", opt->name) : stk_printf("-%c", item->letter)))
-
-static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * opt, char * value, int longopt) {
+static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * opt, char * value) {
   struct opt_item * item = opt->item;
 
   for (int i = 0; i < oc->hooks_before_value_count; i++)
@@ -252,7 +265,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
       else if (!strcasecmp(value, "n") || !strcasecmp(value, "no") || !strcasecmp(value, "false") || !strcasecmp(value, "0"))
 	*((int *) item->ptr) = 0 ^ (!!(opt->flags & OPT_NEGATIVE));
       else
-	opt_failure("Boolean argument for %s has a strange value. Supported (case insensitive): 1/0, y/n, yes/no, true/false.", OPT_NAME);
+	opt_failure("Boolean argument for %s has a strange value. Supported (case insensitive): 1/0, y/n, yes/no, true/false.", THIS_OPT);
       break;
     case OPT_CL_STATIC:
       {
@@ -264,7 +277,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	    else
 	      e = cf_parse_int(value, OPT_PTR(int));
 	    if (e)
-	      opt_failure("Integer value parsing failed for %s: %s", OPT_NAME, e);
+	      opt_failure("Integer value parsing failed for %s: %s", THIS_OPT, e);
 	    break;
 	  case CT_U64:
 	    if (!value)
@@ -272,7 +285,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	    else
 	      e = cf_parse_u64(value, OPT_PTR(u64));
 	    if (e)
-	      opt_failure("Unsigned 64-bit value parsing failed for %s: %s", OPT_NAME, e);
+	      opt_failure("Unsigned 64-bit value parsing failed for %s: %s", THIS_OPT, e);
 	    break;
 	  case CT_DOUBLE:
 	    if (!value)
@@ -280,7 +293,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	    else
 	      e = cf_parse_double(value, OPT_PTR(double));
 	    if (e)
-	      opt_failure("Floating-point value parsing failed for %s: %s", OPT_NAME, e);
+	      opt_failure("Floating-point value parsing failed for %s: %s", THIS_OPT, e);
 	    break;
 	  case CT_IP:
 	    if (!value)
@@ -288,7 +301,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	    else
 	      e = cf_parse_ip(value, OPT_PTR(u32));
 	    if (e)
-	      opt_failure("IP address parsing failed for %s: %s", OPT_NAME, e);
+	      opt_failure("IP address parsing failed for %s: %s", THIS_OPT, e);
 	    break;
 	  case CT_STRING:
 	    if (!value)
@@ -304,7 +317,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
     case OPT_CL_SWITCH:
       // FIXME: Really? And who sets the default to -1?
       if (*((int *)item->ptr) != -1)
-	opt_failure("Multiple switches: %s", OPT_NAME);
+	opt_failure("Multiple switches: %s", THIS_OPT);
       else
 	*((int *)item->ptr) = item->u.value;
       break;
@@ -322,7 +335,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	char * e = NULL;
 	e = item->u.utype->parser(value, OPT_PTR(void*));
 	if (e)
-	  opt_failure("Cannot parse the value of %s: %s", OPT_NAME, e);
+	  opt_failure("Cannot parse the value of %s: %s", THIS_OPT, e);
 	break;
       }
     default:
@@ -332,7 +345,6 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
   for (int i = 0;i < oc->hooks_after_value_count; i++)
     oc->hooks_after_value[i]->u.call(item, value, oc->hooks_after_value[i]->ptr);
 }
-#undef OPT_NAME
 
 static int opt_longopt(struct opt_context * oc, char ** argv, int index) {
   int eaten = 0;
@@ -341,9 +353,11 @@ static int opt_longopt(struct opt_context * oc, char ** argv, int index) {
   struct opt_precomputed * opt = opt_find_item_longopt(oc, strndupa(name_in, pos));
   char * value = NULL;
 
+  opt->flags |= OPT_SEEN_AS_LONG;
+
   // FIXME: Move to opt_parse_value()?
   if (opt->count++ && (opt->flags & OPT_SINGLE))
-    opt_failure("Option --%s must be specified at most once.", opt->name);
+    opt_failure("Option %s must be specified at most once.", THIS_OPT);
 
   if (opt->item->cls == OPT_CL_BOOL && !strncmp(name_in, "no-", 3) && !strncmp(name_in+3, opt->item->name, pos-3)) {
     if (name_in[pos])
@@ -355,7 +369,7 @@ static int opt_longopt(struct opt_context * oc, char ** argv, int index) {
     else {
       value = argv[index+1];
       if (!value)
-	opt_failure("Option --%s must have a value, but nothing supplied.", opt->name);
+	opt_failure("Option %s must have a value, but nothing supplied.", THIS_OPT);
       eaten++;
     }
   } else if (opt->flags & OPT_MAYBE_VALUE) {
@@ -363,9 +377,9 @@ static int opt_longopt(struct opt_context * oc, char ** argv, int index) {
       value = name_in + pos + 1;
   } else {
     if (name_in[pos])
-      opt_failure("Option --%s must have no value.", opt->name);
+      opt_failure("Option %s must have no value.", THIS_OPT);
   }
-  opt_parse_value(oc, opt, value, 1);
+  opt_parse_value(oc, opt, value);
   return eaten;
 }
 
@@ -382,28 +396,30 @@ static int opt_shortopt(struct opt_context * oc, char ** argv, int index) {
     if (!opt)
       opt_failure("Unknown option -%c.", o);
 
+    opt->flags &= ~OPT_SEEN_AS_LONG;
+
     if (opt->count && (opt->flags & OPT_SINGLE))
       opt_failure("Option -%c must be specified at most once.", o);
     opt->count++;
 
     if (opt->flags & OPT_NO_VALUE)
-      opt_parse_value(oc, opt, NULL, 0);
+      opt_parse_value(oc, opt, NULL);
     else if (opt->flags & OPT_REQUIRED_VALUE) {
       if (argv[index][chr+1]) {
-        opt_parse_value(oc, opt, argv[index] + chr + 1, 0);
+        opt_parse_value(oc, opt, argv[index] + chr + 1);
 	return 0;
       } else if (!argv[index+1])
 	opt_failure("Option -%c must have a value, but nothing supplied.", o);
       else {
-	opt_parse_value(oc, opt, argv[index+1], 0);
+	opt_parse_value(oc, opt, argv[index+1]);
 	return 1;
       }
     } else if (opt->flags & OPT_MAYBE_VALUE) {
       if (argv[index][chr+1]) {
-        opt_parse_value(oc, opt, argv[index] + chr + 1, 0);
+        opt_parse_value(oc, opt, argv[index] + chr + 1);
 	return 0;
       } else
-	opt_parse_value(oc, opt, NULL, 0);
+	opt_parse_value(oc, opt, NULL);
     } else {
       ASSERT(0);
     }
@@ -419,8 +435,9 @@ static void opt_positional(struct opt_context * oc, char * value) {
   if (!opt || (opt->flags & OPT_SINGLE) && opt->count)
     opt_failure("Too many positional arguments.");
   else {
+    opt->flags &= OPT_SEEN_AS_LONG;
     opt->count++;
-    opt_parse_value(oc, opt, value, 2);
+    opt_parse_value(oc, opt, value);
   }
 }
 
