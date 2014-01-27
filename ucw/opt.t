@@ -1,8 +1,9 @@
 # Tests of the command line option parser
 
 Name:	Opt-1
-Run:	../obj/ucw/opt-test 2>&1 1>/dev/null || [ $? -eq "2" ]
-Out:	Required option -t not found.
+Run:	../obj/ucw/opt-test 2>&1 1>/dev/null
+Exit:	2
+Out:	Required option -t/--temperature not found.
 	Run with argument --help for more information.
 
 Name:	Opt-2
