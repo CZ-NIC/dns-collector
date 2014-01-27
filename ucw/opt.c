@@ -514,7 +514,7 @@ static void opt_check_required(struct opt_context *oc)
     if (!opt->count && (opt->flags & OPT_REQUIRED)) {
       struct opt_item *item = opt->item;
       if (item->letter > OPT_POSITIONAL_TAIL)
-	opt_failure("Required positional argument #%d not found.", i - OPT_POSITIONAL_TAIL);
+	opt_failure("Required positional argument #%d not found.", item->letter - OPT_POSITIONAL_TAIL);
       else if (item->letter == OPT_POSITIONAL_TAIL)
 	opt_failure("Required positional argument not found.");
       else if (item->letter && item->name)
