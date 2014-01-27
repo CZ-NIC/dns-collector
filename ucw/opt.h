@@ -148,7 +148,7 @@ void opt_conf_hook_internal(struct opt_item * opt, const char * value, void * da
 // FIXME: Is numbering from 1 natural here?
 // FIXME: Are there any rules for mixing of positional arguments with options?
 #define OPT_POSITIONAL(n)   (OPT_POSITIONAL_TAIL+(n))
-#define OPT_POSITIONAL_TAIL 256
+#define OPT_POSITIONAL_TAIL 128
 
 
 /***

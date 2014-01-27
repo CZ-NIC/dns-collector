@@ -193,15 +193,6 @@ void opt_help(const struct opt_section * help) {
   }
 }
 
-static struct opt_precomputed * opt_find_item_shortopt(struct opt_context * oc, int chr) {
-  struct opt_precomputed * candidate = oc->shortopt[chr];
-  if (!candidate)
-    opt_failure("Invalid option -%c", chr);
-  if (candidate->count++ && (candidate->flags & OPT_SINGLE))
-    opt_failure("Option -%c appeared the second time.", candidate->item->letter);
-  return candidate;
-}
-
 static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, char * str) {
   uns len = strlen(str);
   struct opt_precomputed * candidate = NULL;
@@ -382,39 +373,44 @@ static int opt_longopt(struct opt_context * oc, char ** argv, int index) {
 static int opt_shortopt(struct opt_context * oc, char ** argv, int index) {
   int chr = 0;
   struct opt_precomputed * opt;
-  while (argv[index][++chr] && (opt = opt_find_item_shortopt(oc, argv[index][chr]))) {
-    if (opt->flags & OPT_NO_VALUE) {
+  int o;
+
+  while (o = argv[index][++chr]) {
+    if (o < 0 || o >= 128)
+      opt_failure("Invalid character 0x%02x in option name. Only ASCII is allowed.", o & 0xff);
+    opt = oc->shortopt[o];
+
+    if (!opt)
+      opt_failure("Unknown option -%c.", o);
+
+    if (opt->count && (opt->flags & OPT_SINGLE))
+      opt_failure("Option -%c must be specified at most once.", o);
+    opt->count++;
+
+    if (opt->flags & OPT_NO_VALUE)
       opt_parse_value(oc, opt, NULL, 0);
-    }
     else if (opt->flags & OPT_REQUIRED_VALUE) {
       if (chr == 1 && argv[index][2]) {
         opt_parse_value(oc, opt, argv[index] + 2, 0);
 	return 0;
-      }
-      else if (argv[index][chr+1])
-	opt_failure("Option -%c must have a value but found inside a bunch of short opts.", opt->item->letter);
+      } else if (argv[index][chr+1])
+	opt_failure("Option -%c must have a value, but found inside a bunch of short opts.", o);
       else if (!argv[index+1])
-	opt_failure("Option -%c must have a value but nothing supplied.", opt->item->letter);
+	opt_failure("Option -%c must have a value, but nothing supplied.", o);
       else {
 	opt_parse_value(oc, opt, argv[index+1], 0);
 	return 1;
       }
-    }
-    else if (opt->flags & OPT_MAYBE_VALUE) {
+    } else if (opt->flags & OPT_MAYBE_VALUE) {
       if (chr == 1 && argv[index][2]) {
         opt_parse_value(oc, opt, argv[index] + 2, 0);
 	return 0;
-      }
-      else
+      } else
 	opt_parse_value(oc, opt, NULL, 0);
-    }
-    else {
+    } else {
       ASSERT(0);
     }
   }
-
-  if (argv[index][chr])
-    opt_failure("Unknown option -%c.", argv[index][chr]);
 
   return 0;
 }
@@ -422,12 +418,12 @@ static int opt_shortopt(struct opt_context * oc, char ** argv, int index) {
 static void opt_positional(struct opt_context * oc, char * value) {
   oc->positional_count++;
   uns id = oc->positional_count > oc->positional_max ? OPT_POSITIONAL_TAIL : OPT_POSITIONAL(oc->positional_count);
-  struct opt_precomputed * opt = opt_find_item_shortopt(oc, id);
-  if (opt)
-    opt_parse_value(oc, opt, value, 2);
-  else {
-    ASSERT(oc->positional_count > oc->positional_max);
+  struct opt_precomputed * opt = oc->shortopt[id];
+  if (!opt || (opt->flags & OPT_SINGLE) && opt->count)
     opt_failure("Too many positional arguments.");
+  else {
+    opt->count++;
+    opt_parse_value(oc, opt, value, 2);
   }
 }
 
