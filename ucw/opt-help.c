@@ -160,6 +160,7 @@ void opt_help(const struct opt_section * sec) {
 
 void opt_handle_help(struct opt_item * opt UNUSED, const char * value UNUSED, void * data)
 {
-  opt_help(data);
+  struct opt_context *oc = data;
+  opt_help(oc->options);
   exit(0);
 }

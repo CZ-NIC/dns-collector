@@ -37,17 +37,6 @@ static uns opt_default_value_flags[] = {
     [OPT_CL_HELP] = 0
 };
 
-struct opt_context {
-  struct opt_precomputed * opts;
-  struct opt_precomputed ** shortopt;
-  struct opt_item ** hooks;
-  int opt_count;
-  int hook_count;
-  int positional_max;
-  int positional_count;
-  bool stop_parsing;
-};
-
 void opt_failure(const char * mesg, ...) {
   va_list args;
   va_start(args, mesg);
@@ -94,8 +83,10 @@ static void opt_invoke_hooks(struct opt_context *oc, uns event, struct opt_item 
 {
   for (int i = 0; i < oc->hook_count; i++) {
     struct opt_item *hook = oc->hooks[i];
-    if (hook->flags & event)
-      hook->u.hook(item, event, value, hook->ptr);
+    if (hook->flags & event) {
+      void *data = (hook->flags & OPT_HOOK_INTERNAL) ? oc : hook->ptr;
+      hook->u.hook(item, event, value, data);
+    }
   }
 }
 
@@ -223,8 +214,11 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	(*((int *)item->ptr))++;
       break;
     case OPT_CL_CALL:
-      item->u.call(item, value, item->ptr);
-      break;
+      {
+	void *data = (opt->flags & OPT_INTERNAL) ? oc : item->ptr;
+	item->u.call(item, value, data);
+	break;
+      }
     case OPT_CL_USER:
       {
 	char * e = NULL;
@@ -380,6 +374,7 @@ static void opt_check_required(struct opt_context *oc)
 int opt_parse(const struct opt_section * options, char ** argv) {
   struct opt_context * oc = alloca(sizeof(*oc));
   memset(oc, 0, sizeof (*oc));
+  oc->options = options;
 
   opt_count_items(oc, options);
   oc->opts = alloca(sizeof(*oc->opts) * oc->opt_count);

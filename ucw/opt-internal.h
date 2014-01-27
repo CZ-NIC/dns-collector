@@ -15,6 +15,18 @@
 #define opt_precompute ucw_opt_precompute
 #endif
 
+struct opt_context {
+  const struct opt_section * options;
+  struct opt_precomputed * opts;
+  struct opt_precomputed ** shortopt;
+  struct opt_item ** hooks;
+  int opt_count;
+  int hook_count;
+  int positional_max;
+  int positional_count;
+  bool stop_parsing;
+};
+
 struct opt_precomputed {
   struct opt_item * item;
   const char * name;
