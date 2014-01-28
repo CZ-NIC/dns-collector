@@ -77,4 +77,9 @@ static inline void gary_free(void *ptr)
     }
 }
 
+/* gary-mp.c */
+
+struct mempool;
+struct gary_allocator *gary_new_allocator_mp(struct mempool *mp);
+
 #endif

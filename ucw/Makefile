@@ -30,7 +30,7 @@ LIBUCW_MODS= \
 	base64 base224 \
 	io-careful io-sync io-mmap io-size \
 	string str-esc str-split str-match str-imatch str-hex str-fix \
-	bbuf gary \
+	bbuf gary gary-mp \
 	getopt \
 	strtonum \
 	resource trans res-fd res-mem res-subpool res-mempool res-eltpool \
@@ -165,7 +165,7 @@ $(o)/ucw/strtonum-test.test: $(o)/ucw/strtonum-test
 $(addprefix $(o)/ucw/fb-,file.test grow.test pool.test socket.test atomic.test \
 	limfd.test temp.test mem.test buffer.test mmap.test multi.test): %.test: %-t
 $(o)/ucw/url.test: $(o)/ucw/url-t
-$(o)/ucw/gary.test: $(o)/ucw/gary-t
+$(o)/ucw/gary.test: $(o)/ucw/gary-t $(o)/ucw/gary-mp-t
 $(o)/ucw/time.test: $(o)/ucw/time-conf-t
 $(o)/ucw/crc.test: $(o)/ucw/crc-t
 $(o)/ucw/signames.test: $(o)/ucw/signames-t
