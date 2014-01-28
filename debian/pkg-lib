@@ -10,7 +10,7 @@
 unset PKG ROOT SRCVER VER
 
 function pkg-git-version {
-	TREEVER=`git describe | sed 's/^v//;s/[a-f]$/&-0/'`
+	TREEVER=`git describe --tags | sed 's/^v//;s/[a-f]$/&-0/'`
 	TREEHASH=`git rev-parse --verify HEAD`
 	VER=${PKGVER:-$TREEVER}
 	SRCVER=${PKGVER:-$VER}
