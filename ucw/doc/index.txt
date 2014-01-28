@@ -88,13 +88,24 @@ Yet undocumented modules
 
 License
 -------
-The UCW library is copyrighted by its authors:
-
-- Pavel Charvát <mailto:pchar\@ucw.cz[]>
-- Martin Mareš <mailto:mj\@ucw.cz[]>
-- Robert Špalek <mailto:robert\@ucw.cz[]>
-- Michal Vaner <mailto:vorner\@ucw.cz[]>
+The UCW library is copyrighted by its authors.
 
 It can be freely distributed and used according to the terms of
 the GNU Lesser General Public License, either version 2 or any later
 version.
+
+Authors
+-------
+Primary authors and maintainers are:
+
+- Pavel Charvát <mailto:pchar\@ucw.cz[]>
+- Martin Mareš <mailto:mj\@ucw.cz[]>
+- Robert Špalek <mailto:robert\@ucw.cz[]>
+
+Several modules have been contributed by:
+
+- Daniel Fiala <mailto:danfiala\@ucw.cz[]> (strtonum)
+- Tomáš Gavenčiak <mailto:gavento\@ucw.cz[]> (logging system)
+- Jan Moskyto Matějka <mailto:mq\@ucw.cz[]> (option parser, fb-multi)
+- Tomáš Valla <mailto:tom\@ucw.cz[]> (varint)
+- Michal Vaner <mailto:vorner\@ucw.cz[]> (documentation system)
