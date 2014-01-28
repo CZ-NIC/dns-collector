@@ -5,7 +5,7 @@
 use common::sense;
 
 my %renames = ();
-open my $f, '<', 'tools/libucw.api' or die;
+open my $f, '<', 'maint/libucw.abi' or die;
 my $current;
 while (<$f>) {
 	chomp;
