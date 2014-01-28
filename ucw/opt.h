@@ -192,7 +192,8 @@ struct opt_item {
 
 /**
  * An option with user-defined syntax. @ttype is a <<conf:struct_cf_user_type,`cf_user_type`>>
- * describing the syntax, @target is a variable of the corresponding type.
+ * describing the syntax, @target is a variable of the corresponding type. If the @OPT_REQUIRED_VALUE
+ * flag is not set, the parser must be able to parse a NULL value.
  **/
 #define OPT_USER(shortopt, longopt, target, ttype, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .u.utype = &ttype, .flags = fl, .help = desc, .cls = OPT_CL_STATIC, .type = CT_USER }
 
