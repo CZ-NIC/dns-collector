@@ -40,7 +40,7 @@ LIBUCW_MODS= \
 	opt opt-help opt-conf
 
 LIBUCW_MAIN_INCLUDES= \
-	lib.h log.h threads.h time.h \
+	lib.h log.h tbf.h threads.h time.h \
 	alloc.h mempool.h eltpool.h \
 	clists.h slists.h simple-lists.h \
 	string.h stkstring.h unicode.h varint.h chartype.h regex.h \
@@ -60,7 +60,7 @@ LIBUCW_MAIN_INCLUDES= \
 	lizard.h \
 	md5.h sha1.h crc.h \
 	base64.h base224.h \
-	kmp.h kmp-search.h binsearch.h \
+	kmp.h kmp-search.h trie.h binsearch.h \
 	partmap.h \
 	strtonum.h \
 	resource.h trans.h \
