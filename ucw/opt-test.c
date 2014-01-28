@@ -2,6 +2,7 @@
  *	UCW Library -- Parsing of command line options
  *
  *	(c) 2013 Jan Moskyto Matejka <mq@ucw.cz>
+ *	(c) 2014 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -11,6 +12,7 @@
 #include <ucw/opt.h>
 #include <ucw/strtonum.h>
 #include <ucw/fastbuf.h>
+#include <ucw/gary.h>
 
 static void show_version(struct opt_item * opt UNUSED, const char * value UNUSED, void * data UNUSED) {
   printf("This is a simple tea boiling console v0.1.\n");
@@ -45,7 +47,7 @@ static int english = 0;
 static int sugar = 0;
 static int verbose = 1;
 static int with_gas = 0;
-static clist black_magic;
+static int *black_magic;
 static int pray = 0;
 static int water_amount = 0;
 static char * first_tea = NULL;
@@ -140,7 +142,7 @@ static struct opt_section options = {
 	      "\t\tOnly integer values allowed."),
     OPT_INC('v', "verbose", verbose, 0, "\tVerbose (the more -v, the more verbose)"),
     OPT_INC('q', "quiet", verbose, OPT_NEGATIVE, "\tQuiet (the more -q, the more quiet)"),
-    OPT_INT('b', NULL, black_magic, OPT_MULTIPLE, "<strength>\tUse black magic to make the tea extraordinarily delicious.\n\t\tMay be specified more than once to describe the amounts of black magic to be invoked in each step of tea boiling."),
+    OPT_INT_MULTIPLE('b', NULL, black_magic, 0, "<strength>\tUse black magic to make the tea extraordinarily delicious.\n\t\tMay be specified more than once to describe the amounts of black magic to be invoked in each step of tea boiling."),
     OPT_BOOL('p', "pray", pray, OPT_SINGLE, "\tPray before boiling"),
     OPT_STRING(OPT_POSITIONAL(1), NULL, first_tea, OPT_REQUIRED, ""),
     OPT_CALL(OPT_POSITIONAL_TAIL, NULL, add_tea, &tea_list, 0, ""),
@@ -166,7 +168,7 @@ struct intnode {
 int main(int argc UNUSED, char ** argv)
 {
   cf_def_file = "etc/libucw";
-  clist_init(&black_magic);
+  GARY_INIT(black_magic, 0);
   opt_parse(&options, argv+1);
 
   printf("English style: %s|", english ? "yes" : "no");
@@ -176,8 +178,9 @@ int main(int argc UNUSED, char ** argv)
     printf("Chosen teapot: %s|", teapot_type_str[set]);
   printf("Temperature: %d%s|", temperature.value, temp_scale_str[temperature.scale]);
   printf("Verbosity: %d|", verbose);
-  CLIST_FOR_EACH(struct intnode *, n, black_magic)
-    printf("Black magic: %d|", n->x);
+  uns magick = GARY_SIZE(black_magic);
+  for (uns i=0; i<magick; i++)
+    printf("Black magic: %d|", black_magic[i]);
   printf("Prayer: %s|", pray ? "yes" : "no");
   printf("Water amount: %d|", water_amount);
   printf("Gas: %s|", with_gas ? "yes" : "no");

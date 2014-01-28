@@ -11,6 +11,7 @@
 #include <ucw/lib.h>
 #include <ucw/opt.h>
 #include <ucw/opt-internal.h>
+#include <ucw/gary.h>
 #include <ucw/stkstring.h>
 #include <ucw/strtonum.h>
 
@@ -20,6 +21,7 @@
 static uns opt_default_value_flags[] = {
     [OPT_CL_BOOL] = OPT_NO_VALUE,
     [OPT_CL_STATIC] = OPT_MAYBE_VALUE,
+    [OPT_CL_MULTIPLE] = OPT_REQUIRED_VALUE,
     [OPT_CL_SWITCH] = OPT_NO_VALUE,
     [OPT_CL_INC] = OPT_NO_VALUE,
     [OPT_CL_CALL] = 0,
@@ -110,20 +112,6 @@ static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, c
   opt_failure("Invalid option --%s.", str);
 }
 
-// FIXME: Use simple-lists?
-#define OPT_PTR(type) ({ 			\
-  type * ptr; 					\
-  if (item->flags & OPT_MULTIPLE) { 		\
-    struct { 					\
-      cnode n; 					\
-      type v; 					\
-    } * n = xmalloc(sizeof(*n)); 		\
-    clist_add_tail(item->ptr, &(n->n)); 	\
-    ptr = &(n->v); 				\
-  } else 					\
-    ptr = item->ptr; 				\
-  ptr; })
-
 static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * opt, char * value) {
   struct opt_item * item = opt->item;
 
@@ -145,8 +133,15 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	opt_failure("Boolean argument for %s has a strange value. Supported (case insensitive): 1/0, y/n, yes/no, true/false.", THIS_OPT);
       break;
     case OPT_CL_STATIC:
+    case OPT_CL_MULTIPLE:
       {
 	char * e = NULL;
+	void * ptr;
+	if (item->cls == OPT_CL_STATIC)
+	  ptr = item->ptr;
+	else
+	  ptr = GARY_PUSH_GENERIC(*(void **)item->ptr);
+#define OPT_PTR(type) ((type *) ptr)
 	switch (item->type) {
 	  case CT_INT:
 	    if (!value)
@@ -188,7 +183,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	    break;
 	  case CT_USER:
 	      {
-		char * e = item->u.utype->parser(value, item->ptr);
+		char * e = item->u.utype->parser(value, ptr);
 		if (e)
 		  opt_failure("Cannot parse the value of %s: %s", THIS_OPT, e);
 		break;
@@ -196,6 +191,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	  default:
 	    ASSERT(0);
 	}
+#undef OPT_PTR
 	break;
       }
     case OPT_CL_SWITCH:

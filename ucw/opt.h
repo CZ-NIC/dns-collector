@@ -50,6 +50,8 @@
  *   the option is given as `--no-`'option' with no argument.
  * - `OPT_CL_STATIC`: options of this class just take a value and store
  *   it in the variable.
+ * - `OPT_CL_MULTIPLE`: collect values from all occurrences of this
+ *   option in a growing array (see `gary.h`).
  * - `OPT_CL_SWITCH`: a multiple-choice switch, which sets the variable
  *   to a fixed value provided in option definition.
  * - `OPT_CL_INC`: increments the variable (or decrements, if the
@@ -66,6 +68,7 @@ enum opt_class {
   OPT_CL_END,
   OPT_CL_BOOL,
   OPT_CL_STATIC,
+  OPT_CL_MULTIPLE,
   OPT_CL_SWITCH,
   OPT_CL_INC,
   OPT_CL_CALL,
@@ -135,6 +138,7 @@ struct opt_item {
  * according to option class:
  *
  * - `OPT_MAYBE_VALUE` for `OPT_CL_STATIC`
+ * - `OPT_REQUIRED_VALUE` for `OPT_CL_MULTIPLE`
  * - `OPT_NO_VALUE` for `OPT_CL_BOOL`, `OPT_CL_SWITCH` and `OPT_CL_INC`
  * - An error is reported in all other cases.
  **/
@@ -158,29 +162,43 @@ struct opt_item {
 #define OPT_HELP_OPTION OPT_CALL(0, "help", opt_handle_help, NULL, OPT_BEFORE_CONFIG | OPT_INTERNAL | OPT_NO_VALUE, "\tShow this help")
 
 /** Boolean option. @target should be a variable of type `int`. **/
-#define OPT_BOOL(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_BOOL, .type = CT_INT }
+#define OPT_BOOL(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .help = desc, .flags = fl, .cls = OPT_CL_BOOL, .type = CT_INT }
 
 /** String option. @target should be a variable of type `char *`. **/
-#define OPT_STRING(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_STRING }
+#define OPT_STRING(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, char **), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_STRING }
 
-// FIXME: Check that the target is of the right type (likewise in other statically typed options)
 /** Ordinary integer option. @target should be a variable of type `int`. **/
-#define OPT_INT(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_INT }
+#define OPT_INT(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_INT }
 
 /** 64-bit integer option. @target should be a variable of type `u64`. **/
-#define OPT_U64(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_U64 }
+#define OPT_U64(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u64 *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_U64 }
 
 /** Floating-point option. @target should be a variable of type `double`. **/
-#define OPT_DOUBLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_DOUBLE }
+#define OPT_DOUBLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, double *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_DOUBLE }
 
 /** IP address option, currently IPv4 only. @target should be a variable of type `u32`. **/
-#define OPT_IP(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_IP }
+#define OPT_IP(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u32 *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_IP }
+
+/** Multi-valued string option. @target should be a growing array of `int`s. **/
+#define OPT_BOOL_MULTIPLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, char ***), .help = desc, .flags = fl, .cls = OPT_CL_MULTIPLE, .type = CT_STRING }
+
+/** Multi-valued integer option. @target should be a growing array of `int`s. **/
+#define OPT_INT_MULTIPLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int **), .help = desc, .flags = fl, .cls = OPT_CL_MULTIPLE, .type = CT_INT }
+
+/** Multi-valued 64-bit integer option. @target should be a growing array of `u64`s. **/
+#define OPT_U64_MULTIPLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u64 **), .help = desc, .flags = fl, .cls = OPT_CL_MULTIPLE, .type = CT_U64 }
+
+/** Multi-valued floating-point option. @target should be a growing array of `double`s. **/
+#define OPT_DOUBLE_MULTIPLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, double **), .help = desc, .flags = fl, .cls = OPT_CL_MULTIPLE, .type = CT_DOUBLE }
+
+/** Multi-valued IPv4 address option. @target should be a growing array of `u32`s. **/
+#define OPT_IP_MULTIPLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u32 **), .help = desc, .flags = fl, .cls = OPT_CL_MULTIPLE, .type = CT_IP }
 
 /** Switch option. @target should be a variable of type `int` and it will be set to the value @val. **/
-#define OPT_SWITCH(shortopt, longopt, target, val, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .help = desc, .flags = fl, .cls = OPT_CL_SWITCH, .type = CT_LOOKUP, .u.value = val }
+#define OPT_SWITCH(shortopt, longopt, target, val, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .help = desc, .flags = fl, .cls = OPT_CL_SWITCH, .type = CT_LOOKUP, .u.value = val }
 
 /** Incrementing option. @target should be a variable of type `int`. **/
-#define OPT_INC(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .flags = fl, .help = desc, .cls = OPT_CL_INC, .type = CT_INT }
+#define OPT_INC(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .flags = fl, .help = desc, .cls = OPT_CL_INC, .type = CT_INT }
 
 /**
  * When this option appears, call the function @fn with parameters @item, @value, @data,
@@ -196,6 +214,9 @@ struct opt_item {
  * flag is not set, the parser must be able to parse a NULL value.
  **/
 #define OPT_USER(shortopt, longopt, target, ttype, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .u.utype = &ttype, .flags = fl, .help = desc, .cls = OPT_CL_STATIC, .type = CT_USER }
+
+/** Multi-valued option of user-defined type. @target should be a growing array of the right kind of items. **/
+#define OPT_USER_MULTIPLE(shortopt, longopt, target, ttype, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .u.utype = &ttype, .flags = fl, .help = desc, .cls = OPT_CL_MULTIPLE, .type = CT_USER }
 
 /** A sub-section. **/
 #define OPT_SECTION(sec) { .cls = OPT_CL_SECTION, .u.section = &sec }
