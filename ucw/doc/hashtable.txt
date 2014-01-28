@@ -80,14 +80,14 @@ to customize the behaviour. The macros are:
 - `HASH_GIVE_ALLOC` -- you need to provide `void
   \*HASH_PREFIX(alloc)(uns size` and `void HASH_PREFIX(free)(void \*)`
   to allocate and deallocate the nodes. Default uses
-  <<memory:xmalloc()>> and <<memory:xfree()>>, <<mempool:mempool
+  <<basics:xmalloc()>> and <<basics:xfree()>>, <<mempool:mempool
   routines>> or <<eltpool:eltpool routines>>, depending on
   <<use_pool,`HASH_USE_POOL`>>, <<auto_pool,`HASH_AUTO_POOL`>>,
   <<use_eltpool,`HASH_USE_ELTPOOL`>> and <<auto_eltpool,`HASH_AUTO_ELTPOOL`>> switches.
 - <<table_alloc:`HASH_GIVE_TABLE_ALLOC`>> -- you need to provide `void
   \*HASH_PREFIX(table_alloc)(uns size` and `void HASH_PREFIX(table_free)(void \*)`
   to allocate and deallocate the table itself. Default uses
-  <<memory:xmalloc()>> and <<memory:xfree()>> or the functions
+  <<basics:xmalloc()>> and <<basics:xfree()>> or the functions
   from `HASH_GIVE_ALLOC` depending on <<table_alloc:`HASH_TABLE_ALLOC`>> switch.
 
 [[params]]
@@ -122,7 +122,7 @@ You can customize the hash table a little more by these macros:
 - `HASH_ZERO_FILL` -- initialize new nodes to all zeroes.
 [[table-alloc]]
 - `HASH_TABLE_ALLOC` -- allocate the table the same way as nodes. If
-  not provided, <<mempory:xmalloc()>> is used.
+  not provided, <<basics:xmalloc()>> is used.
 - `HASH_TABLE_GROWING` -- never decrease the size of allocated table of nodes.
 [[table_dynamic]]
 - `HASH_TABLE_DYNAMIC` -- By default, only one global hash table is

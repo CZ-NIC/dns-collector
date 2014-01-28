@@ -57,7 +57,7 @@ is recycled. Checking of process name and similar tricks do not avoid the proble
 since there can be multiple instances of the daemon running simultaneously.
 
 We therefore recommend the following daemon control protocol, which prevents all such
-race conditions. Its implementation is available in form of the daemon_control() library
+race conditions. Its implementation is available in form of the @daemon_control() library
 function or the `ucw-daemon-control` stand-alone utility.
 
 * There exist two files:

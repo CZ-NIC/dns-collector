@@ -98,7 +98,7 @@ enum ls_flag {
 /***
  * === Message flags
  *
- * The @flags parameter of msg() is divided to several groups of bits (from the LSB):
+ * The @flags parameter of <<basics:msg()>> is divided to several groups of bits (from the LSB):
  * message severity level (`L_xxx`), destination stream, message type
  * and control bits (e.g., `L_SIGHANDLER`).
  ***/
@@ -209,7 +209,7 @@ static inline struct log_stream *log_default_stream(void)
  * In fact, it takes the fixed default stream and attaches @ls as its only
  * substream. If there were any other substreams, they are removed.
  *
- * Log streams created by log_file() or log_configured() are made default
+ * Log streams created by <<basics:log_file()>> or @log_configured() are made default
  * by calling this function.
  **/
 void log_set_default_stream(struct log_stream *ls);

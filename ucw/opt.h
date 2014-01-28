@@ -372,7 +372,7 @@ extern char *cf_env_file;
 #define OPT_HOOK_BEFORE_ARG	0x1	/** Call before option parsing **/
 #define OPT_HOOK_BEFORE_VALUE	0x2	/** Call before value parsing **/
 #define OPT_HOOK_AFTER_VALUE	0x4	/** Call after value parsing **/
-#define OPT_HOOK_FINAL		0x8	/** Call just before opt_parse() returns **/
+#define OPT_HOOK_FINAL		0x8	/** Call just before @opt_parse() returns **/
 #define OPT_HOOK_INTERNAL       0x4000	// Used internally to ask for passing of struct opt_context
 
 #endif

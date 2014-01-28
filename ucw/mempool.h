@@ -339,7 +339,7 @@ static inline uns mp_size(struct mempool *pool, void *ptr)
 uns mp_open(struct mempool *pool, void *ptr);
 
 /**
- * Inlined version of mp_open().
+ * Inlined version of @mp_open().
  **/
 static inline uns mp_open_fast(struct mempool *pool, void *ptr)
 {
@@ -362,7 +362,7 @@ void *mp_realloc(struct mempool *pool, void *ptr, uns size);
 void *mp_realloc_zero(struct mempool *pool, void *ptr, uns size);
 
 /**
- * Inlined version of mp_realloc().
+ * Inlined version of @mp_realloc().
  **/
 static inline void *mp_realloc_fast(struct mempool *pool, void *ptr, uns size)
 {

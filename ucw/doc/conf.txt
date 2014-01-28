@@ -212,7 +212,7 @@ journal entries are removed and a new one, for the new configuration,
 is added. If it fails, the first one is replayed and the rollback
 entry is removed.
 
-See <<cf_reload()>>.
+See @cf_reload().
 
 [[custom_parser]]
 Creating custom parsers

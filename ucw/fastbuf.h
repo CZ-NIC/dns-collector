@@ -107,7 +107,7 @@
  *    ^              ^                     ^                           ^
  *    buffer      <= bstop (BE pos)     <= bptr (FE pos)            <= bufend
  *
- *   * This schema describes a fastbuf after its initialization or bflush().
+ *   * This schema describes a fastbuf after its initialization or @bflush().
  *   * There is no cached data and we are ready for any read or write operation
  *     (well, only if the back-end supports it).
  *   * The interval `[bptr, bufend]` can be used by front-ends
@@ -266,7 +266,7 @@ extern struct fb_params fbpar_def;	/** The default `fb_params` **/
  * Raises `ucw.fb.open` if the file does not exist.
  **/
 struct fastbuf *bopen_file(const char *name, int mode, struct fb_params *params);
-struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *params); /** Like bopen_file(), but returns NULL on failure. **/
+struct fastbuf *bopen_file_try(const char *name, int mode, struct fb_params *params); /** Like @bopen_file(), but returns NULL on failure. **/
 
 /**
  * Opens a temporary file.
@@ -470,7 +470,7 @@ struct fbpool { /** Structure for fastbufs & mempools. **/
 
 /**
  * Initialize a new `fbpool`. The structure is allocated by the caller,
- * so bclose() should not be called and no resource tying takes place.
+ * so @bclose() should not be called and no resource tying takes place.
  **/
 void fbpool_init(struct fbpool *fb);	/** Initialize a new mempool fastbuf. **/
 /**

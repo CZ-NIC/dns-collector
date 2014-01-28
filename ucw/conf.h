@@ -72,7 +72,7 @@ struct cf_context *cf_new_context(void);
  * All configuration settings made within the context are rolled back
  * (except when journalling is turned off). All memory allocated on behalf
  * of the context is freed, which includes memory obtained by calls to
- * cf_malloc().
+ * @cf_malloc().
  **/
 void cf_delete_context(struct cf_context *cc);
 
@@ -100,7 +100,7 @@ int cf_load(const char *file);
 /**
  * Reload configuration from @file, replace the old one.
  * If @file is NULL, reload all loaded configuration files and re-apply
- * bits of configuration passed to cf_set().
+ * bits of configuration passed to @cf_set().
  * Returns a non-zero value upon error. In that case, all configuration
  * settings are rolled back to the state before calling this function.
  **/
@@ -127,7 +127,7 @@ int cf_set(const char *string);
 void cf_open_group(void);
 
 /**
- * Close a group opened by cf_open_group(). Returns a non-zero value upon error,
+ * Close a group opened by @cf_open_group(). Returns a non-zero value upon error,
  * which usually means that a commit hook has failed.
  **/
 int cf_close_group(void);

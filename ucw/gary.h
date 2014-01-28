@@ -31,7 +31,7 @@ struct gary_hdr {
 /**
  * Create a new growing array, initially containing @n elements,
  * and let @ptr point to its first element. The memory used by the
- * array is allocated by xmalloc().
+ * array is allocated by <<basics:xmalloc()>>.
  **/
 #define GARY_INIT(ptr, n) (ptr) = gary_init(sizeof(*(ptr)), (n), &ucw_allocator_std)
 

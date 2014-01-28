@@ -249,8 +249,8 @@ static inline void *clist_unlink_tail(clist *l)
  * previous and next pointers equal to NULL. Returns 0 or 1.
  *
  * Nodes initialized to all zeroes are unlinked, inserting a node anywhere in a list
- * makes it linked. Normal removal functions like clist_remove() do not mark nodes
- * as unlinked, you need to call clist_unlink() instead.
+ * makes it linked. Normal removal functions like @clist_remove() do not mark nodes
+ * as unlinked, you need to call @clist_unlink() instead.
  **/
 static inline int clist_is_linked(cnode *n)
 {

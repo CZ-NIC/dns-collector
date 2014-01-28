@@ -36,15 +36,12 @@ Release notes
 ** *Incompatible:* As there may be more instances, we can no longer use
    global variables to control the configuration system. In particular,
    `cf_need_journal` and `cf_pool` variables have been replaced by
-   functions <<conf:fun_cf_set_journalling,`cf_set_journalling()`>> and
-   <<conf:fun_cf_get_pool,`cf_get_pool()`>>.
+   functions <<conf:cf_set_journalling()>> and <<conf:cf_get_pool()>>.
 ** *Incompatible:* Loading of configuration files has been decoupled from
    the getopt wrapper, so you might need to include `conf.h` for functions
    which were previously declared in `getopt.h`.
 ** New functions have been added:
-   <<conf:fun_cf_open_group,`cf_open_group()`>>,
-   <<conf:fun_cf_close_group,`cf_close_group()`>>, and
-   <<conf:fun_cf_revert,`cf_revert()`>>.
+   <<conf:cf_open_group()>>, <<conf:cf_close_group()>>, and <<conf:cf_revert()>>.
 ** *Incompatible:* Dynamic configuration arrays have been re-implemented in
    terms of our generic <<gary:,growing arrays>>. This makes them easier to
    use and most of the interface has been preserved. The only exception is
@@ -80,18 +77,18 @@ Release notes
    However, the numerical values are equal, so old code should keep working.
 ** *Incompatible:* The main loop time (`main_now`) has been decoupled from wall clock time
    and moved to a field in the `main_context` structure. It can be accessed either directly
-   or via <<mainloop:fun_main_get_now,`main_get_now()`>>. The `main_now_seconds` variable has
+   or via <<mainloop:main_get_now()>>. The `main_now_seconds` variable has
    been removed, `main_idle_time` has become a structure field.
 ** *Incompatible:* The interface for asynchronous reading and writing
    (file_read() and friends) has been separated from the core of the main loop.
    Use <<mainloop:struct_main_block_io,`struct main_block_io`>> and related functions instead.
-** *Incompatible:* file_close_all() is gone. You have to call <<mainloop:fun_main_teardown,`main_teardown()`>>
-   or <<mainloop:fun_main_destroy,`main_destroy()`>> to clean up properly after fork().
+** *Incompatible:* file_close_all() is gone. You have to call <<mainloop:main_teardown()>>
+   or <<mainloop:main_destroy()>> to clean up properly after fork().
 ** Added support for <<mainloop:signal,synchronous delivery of signals>>.
-** Added relative timers: <<mainloop:fun_timer_add_rel,`timer_add_rel()`>>.
+** Added relative timers: <<mainloop:timer_add_rel()>>.
 ** Modification of events from a running event handler is always safe.
 ** Deleting an already deleted event is always safe.
-** For any event type, it is possible to ask whether it is active (added to the mainloop) or not: <<mainloop:fun_hook_is_active,`hook_is_active()`>> and friends.
+** For any event type, it is possible to ask whether it is active (added to the mainloop) or not: <<mainloop:hook_is_active()>> and friends.
 ** A new mainloop front-end for asynchronous <<mainloop:recordio,record-based I/O>> has been added.
 
 * Added support for <<trans:,resource pools and transactions>>, which is a general
@@ -102,14 +99,14 @@ Release notes
   a much more convenient interface.
 
 * The <<lists:,Circular linked lists>> can recognize unlinked nodes,
-  see <<lists:fun_clist_unlink,`clist_unlink()`>>.
+  see <<lists:clist_unlink()>>.
 
 * Added `strtonum.h` -- a module for precise parsing of numbers.
 
 * When compiled by a recent enough GCC, `__thread` is used for thread-local variables,
   which is more efficient than the POSIX per-thread storage.
 ** *Incompatible:* `ucwlib_context->thread_id` is no longer available directly,
-  please use ucwlib_thread_id() instead.
+  please use <<thread:ucwlib_thread_id()>> instead.
 
 * *Incompatible:* Several modules have been declared obsolete and removed:
 ** `sighandler` -- generic signal handling (it still exists internally)

@@ -21,14 +21,14 @@ struct ucw_allocator {
 
 /**
  * [[std]]
- * This allocator uses xmalloc(), xrealloc() and xfree(). The memory
+ * This allocator uses <<basics:xmalloc()>>, <<basics:xrealloc()>> and <<basics:xfree()>>. The memory
  * it allocates is left unitialized.
  **/
 extern struct ucw_allocator ucw_allocator_std;
 
 /**
  * [[zeroing]]
- * This allocator uses xmalloc(), xrealloc() and xfree(). All memory
+ * This allocator uses <<basics:xmalloc()>>, <<basics:xrealloc()>> and <<basics:xfree()>>. All memory
  * is zeroed upon allocation.
  **/
 extern struct ucw_allocator ucw_allocator_zeroed;

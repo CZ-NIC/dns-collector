@@ -65,7 +65,7 @@ void daemon_exit(struct daemon_params *dp);
 
 #define DAEMON_ERR_LEN 256
 
-/** Parameters passed to daemon_control() **/
+/** Parameters passed to @daemon_control() **/
 struct daemon_control_params {
   const char *pid_file;		// A path to PID file
   const char *guard_file;	// A path to guard file
