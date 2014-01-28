@@ -1,0 +1,24 @@
+Generic allocators
+==================
+
+Sometimes, we want to define data structures, whose memory allocation can be
+parametrized. If we wish to squeeze out the last bit of performance, we
+tie the structure to a certain allocator in compile time (as we do for
+  <<hashtable:,hash tables>>). If performance is not so critical, allocators
+can be swapped in run time.
+
+This module defines a generic interface to memory allocators. You can use
+the following pre-defined allocators, or define some of your own.
+
+* <<std,Standard malloc-based allocator>>
+* <<zeroing,Zeroing malloc-based allocator>>
+* <<mempool:fun_mp_get_allocator,Memory pools>>
+
+These data structures accept an allocator (more will come later):
+
+* Growing arrays
+
+ucw/alloc.h
+-----------
+
+!!ucw/alloc.h

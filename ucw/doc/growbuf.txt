@@ -1,12 +1,11 @@
 Growing buffers
 ===============
 
+*This module is obsolete. Please use <<gary:,growing arrays>> instead.*
+
 It is quite usual situation when you need an array of items and you
 don not know how large it will be in the time you allocate it. Then
 you need some kind of dynamically growing buffer.
-
-You can either use <<mempool:gbuf,mempools>>, which has similar
-functionality, or this module.
 
 - <<gbuf,Generic growing buffers>>
 - <<bbuf,Growing buffers for byte-sized items>>

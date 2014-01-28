@@ -17,7 +17,7 @@ Release notes
   our <<conf:,configuration file parser>>. The <<conf:getopt_h,getopt>> module
   has been obsoleted
 * `<stdbool.h>` is automatically included by `<ucw/lib.h>`.
-* *Incompatible:* It turned out that almost all users of the growing array
+* *Incompatible:* It turned out that almost all users of the <<gary:,growing array>>
   module push/pop individual elements. Therefore, we have removed the second
   argument (item count) of `GARY_PUSH` and `GARY_POP`. If you want to push/pop
   multiple elements at once, use `GARY_PUSH_MULTI` and `GARY_POP_MULTI`.
@@ -28,6 +28,9 @@ Release notes
   operation was renamed to `HEAP_DELETE_MIN`. New operations `HEAP_REPLACE` and
   `HEAP_REPLACE_MIN` have been added. If you need to track positions of elements
   in the heap, please check the notes at individual functions.
+* <<alloc:,Generic allocators>> have been introduced, providing an abstract
+  way of memory allocation. <<gary:,Growing arrays>> are now based on such
+  allocators, which allows for example growing arrays in memory pools.
 * The <<conf:,configuration file parser>> has been improved:
 ** Multiple instances of the configuration parser are supported.
 ** *Incompatible:* As there may be more instances, we can no longer use
@@ -42,6 +45,10 @@ Release notes
    <<conf:fun_cf_open_group,`cf_open_group()`>>,
    <<conf:fun_cf_close_group,`cf_close_group()`>>, and
    <<conf:fun_cf_revert,`cf_revert()`>>.
+** *Incompatible:* Dynamic configuration arrays have been re-implemented in
+   terms of our generic <<gary:,growing arrays>>. This makes them easier to
+   use and most of the interface has been preserved. The only exception is
+   static allocation via the DARY_ALLOC() macro, which is no longer available.
 * <<daemon:,Daemon helpers>> have been added including a new `daemon-control`
   utility. The old `daemon-helper` utility has been obsoleted and it is not
   compiled by default.
@@ -91,7 +98,7 @@ Release notes
   mechanism for tracking resources and reporting errors. It is still considered
   experimental, so the API can change in future releases.
 
-* Added a growing array module `gary.h`, similar to `gbuf.h`, but with
+* Added a <<gary:,growing array>> module `gary.h`, similar to `gbuf.h`, but with
   a much more convenient interface.
 
 * The <<lists:,Circular linked lists>> can recognize unlinked nodes,

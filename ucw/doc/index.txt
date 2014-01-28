@@ -24,13 +24,15 @@ Modules
 - <<conf:,Configuration and command line parser>>
 - <<mempool:,Memory pools>>
 - <<eltpool:,Fixed-sized allocators>>
+- <<alloc:,Generic allocators>>
 - <<mainloop:,Mainloop>>
 - <<unaligned:,Unaligned data>>
 - <<lists:,Linked lists>>
+- <<gary:,Growing arrays>>
 - <<heap:,Binary heaps>>
 - <<binheap:,Binomial heaps>>
 - <<hashtable:,Hash tables>>
-- <<growbuf:,Growing buffers>>
+- <<growbuf:,Growing buffers>> (obsolete)
 - <<chartype:,Single-byte characters>>
 - <<unicode:,Multi-byte characters>>
 - <<varint:,Encoding of integers>>
@@ -54,8 +56,6 @@ Other features
 
 Yet undocumented modules
 ------------------------
-- Allocators
-  * `gary.h`
 - Trie
   * `trie.h`
 - Red-black trees
