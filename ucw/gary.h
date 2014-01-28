@@ -77,6 +77,15 @@ static inline void gary_free(void *ptr)
     }
 }
 
+/* Type-agnostic interface. Currently it's recommended for internal use only. */
+
+#define GARY_PUSH_GENERIC(ptr) ({					\
+  struct gary_hdr *_h = GARY_HDR(ptr);					\
+  void *_c = (byte *)(ptr) + _h->num_elts++ * _h->elt_size;		\
+  if (_h->num_elts > _h->have_space)					\
+    (ptr) = gary_push_helper((ptr), 1, (byte **) &_c);			\
+  _c; })
+
 /* gary-mp.c */
 
 struct mempool;
