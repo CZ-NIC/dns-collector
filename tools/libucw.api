@@ -207,6 +207,8 @@ bput_utf16_le_slow
 bget_varint_slow
 bput_varint_slow
 # ucw/gary.h
+gary_allocator_default
+gary_allocator_zeroed
 gary_init
 gary_set_size
 gary_push_helper
@@ -383,16 +385,16 @@ mp_vprintf_append
 # ucw/opt-internal.h
 opt_precompute
 # ucw/opt.h
+opt_parse
 opt_failure
+opt_help
+opt_handle_help
 opt_handle_config
 opt_handle_set
 opt_handle_dumpconfig
 opt_conf_hook_internal
 cf_def_file
 cf_env_file
-opt_help
-opt_handle_help
-opt_parse
 # ucw/partmap.h
 partmap_open
 partmap_close

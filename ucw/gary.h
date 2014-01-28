@@ -8,6 +8,8 @@
 #define _UCW_GARY_H
 
 #ifdef CONFIG_UCW_CLEAN_ABI
+#define gary_allocator_default ucw_gary_allocator_default
+#define gary_allocator_zeroed ucw_gary_allocator_zeroed
 #define gary_fix ucw_gary_fix
 #define gary_init ucw_gary_init
 #define gary_push_helper ucw_gary_push_helper
