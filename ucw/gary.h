@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- A simple growing array of an arbitrary type
  *
- *	(c) 2010--2013 Martin Mares <mj@ucw.cz>
+ *	(c) 2010--2014 Martin Mares <mj@ucw.cz>
  */
 
 #ifndef _UCW_GARY_H
@@ -9,7 +9,6 @@
 
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define gary_fix ucw_gary_fix
-#define gary_free ucw_gary_free
 #define gary_init ucw_gary_init
 #define gary_push_helper ucw_gary_push_helper
 #define gary_set_size ucw_gary_set_size
@@ -49,7 +48,6 @@ struct gary_hdr {
 
 /* Internal functions */
 void *gary_init(size_t elt_size, size_t num_elts, int zeroed);
-void gary_free(void *array);
 void *gary_set_size(void *array, size_t n);
 void *gary_push_helper(void *array, size_t n, byte **cptr);
 void *gary_fix(void *array);

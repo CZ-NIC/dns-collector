@@ -24,12 +24,6 @@ gary_init(size_t elt_size, size_t num_elts, int zeroed)
   return GARY_BODY(h);
 }
 
-void
-gary_free(void *array)
-{
-  xfree(GARY_HDR(array));
-}
-
 static struct gary_hdr *
 gary_realloc(struct gary_hdr *h, size_t n)
 {

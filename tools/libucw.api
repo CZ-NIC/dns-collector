@@ -208,7 +208,6 @@ bget_varint_slow
 bput_varint_slow
 # ucw/gary.h
 gary_init
-gary_free
 gary_set_size
 gary_push_helper
 gary_fix
