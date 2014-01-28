@@ -87,11 +87,11 @@ int main(void)
       a[i] = i+1;
     }
 
-  GARY_PUSH(a, 1);
-  *GARY_PUSH(a, 1) = 10;
-  *GARY_PUSH(a, 1) = 20;
-  *GARY_PUSH(a, 1) = 30;
-  GARY_POP(a, 1);
+  GARY_PUSH(a);
+  *GARY_PUSH(a) = 10;
+  *GARY_PUSH(a) = 20;
+  *GARY_PUSH(a) = 30;
+  GARY_POP(a);
   GARY_FIX(a);
 
   for (int i=0; i<(int)GARY_SIZE(a); i++)

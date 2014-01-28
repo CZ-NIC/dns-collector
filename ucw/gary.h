@@ -34,7 +34,7 @@ struct gary_hdr {
 #define GARY_RESIZE(ptr, n) ((ptr) = gary_set_size((ptr), (n)))
 #define GARY_INIT_OR_RESIZE(ptr, n) (ptr) = (ptr) ? gary_set_size((ptr), (n)) : gary_init(sizeof(*(ptr)), (n), 0)
 
-#define GARY_PUSH(ptr, n) ({						\
+#define GARY_PUSH_MULTI(ptr, n) ({					\
   struct gary_hdr *_h = GARY_HDR(ptr);					\
   typeof(*(ptr)) *_c = &(ptr)[_h->num_elts];				\
   size_t _n = n;							\
@@ -42,8 +42,10 @@ struct gary_hdr {
   if (_h->num_elts > _h->have_space)					\
     (ptr) = gary_push_helper((ptr), _n, (byte **) &_c);			\
   _c; })
+#define GARY_PUSH(ptr) GARY_PUSH_MULTI(ptr, 1)
 
-#define GARY_POP(ptr, n) GARY_HDR(ptr)->num_elts -= (n)
+#define GARY_POP_MULTI(ptr, n) GARY_HDR(ptr)->num_elts -= (n)
+#define GARY_POP(ptr) GARY_POP_MULTI(ptr, 1)
 #define GARY_FIX(ptr) (ptr) = gary_fix((ptr))
 
 /* Internal functions */

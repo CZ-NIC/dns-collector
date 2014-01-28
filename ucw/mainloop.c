@@ -277,7 +277,7 @@ timer_add(struct main_timer *tm, timestamp_t expires)
 	  HEAP_DELETE(struct main_timer *, m->timer_table, num_timers, MAIN_TIMER_LESS, MAIN_TIMER_SWAP, tm->index);
 	  tm->index = 0;
 	  tm->expires = 0;
-	  GARY_POP(m->timer_table, 1);
+	  GARY_POP(m->timer_table);
 	}
       else
 	{

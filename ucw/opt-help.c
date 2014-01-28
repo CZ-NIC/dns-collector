@@ -34,7 +34,7 @@ static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
     return;
 
   if (item->cls == OPT_CL_HELP) {
-    struct help_line *l = GARY_PUSH(h->lines, 1);
+    struct help_line *l = GARY_PUSH(h->lines);
     l->extra = item->help ? : "";
     return;
   }
@@ -42,7 +42,7 @@ static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
   if (item->letter >= OPT_POSITIONAL_TAIL)
     return;
 
-  struct help_line *first = GARY_PUSH(h->lines, 1);
+  struct help_line *first = GARY_PUSH(h->lines);
   if (item->help) {
     char *text = mp_strdup(h->pool, item->help);
     struct help_line *l = first;
@@ -64,7 +64,7 @@ static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
 
       text = eol;
       if (text)
-	l = GARY_PUSH(h->lines, 1);
+	l = GARY_PUSH(h->lines);
     }
   }
 
