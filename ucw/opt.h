@@ -56,8 +56,6 @@
  *   `OPT_NEGATIVE` flag is set).
  * - `OPT_CL_CALL`: instead of setting a variable, call a function
  *   and pass the value of the option to it.
- * - `OPT_CL_USER`: like `OPT_CL_STATIC`, but with user-defined value
- *   syntax, specified as <<conf:struct_cf_user_type,`cf_user_type`>>.
  * - `OPT_CL_SECTION`: not a real option, but an instruction to insert
  *   contents of another list of options.
  * - `OPT_CL_HELP`: no option, just print a help text.
@@ -71,7 +69,6 @@ enum opt_class {
   OPT_CL_SWITCH,
   OPT_CL_INC,
   OPT_CL_CALL,
-  OPT_CL_USER,
   OPT_CL_SECTION,
   OPT_CL_HELP,
   OPT_CL_HOOK,
@@ -105,7 +102,7 @@ struct opt_item {
     int value;				// value for OPT_CL_SWITCH
     void (* call)(struct opt_item * opt, const char * value, void * data);		// function to call for OPT_CL_CALL
     void (* hook)(struct opt_item * opt, uns event, const char * value, void * data);	// function to call for OPT_CL_HOOK
-    struct cf_user_type * utype;	// specification of the user-defined type for OPT_CL_USER
+    struct cf_user_type * utype;	// specification of the user-defined type for CT_USER
   } u;
   u16 flags;				// as defined below (for hooks, event mask is stored instead)
   byte cls;				// enum opt_class
@@ -197,7 +194,7 @@ struct opt_item {
  * An option with user-defined syntax. @ttype is a <<conf:struct_cf_user_type,`cf_user_type`>>
  * describing the syntax, @target is a variable of the corresponding type.
  **/
-#define OPT_USER(shortopt, longopt, target, ttype, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .u.utype = &ttype, .flags = fl, .help = desc, .cls = OPT_CL_USER, .type = CT_USER }
+#define OPT_USER(shortopt, longopt, target, ttype, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .u.utype = &ttype, .flags = fl, .help = desc, .cls = OPT_CL_STATIC, .type = CT_USER }
 
 /** A sub-section. **/
 #define OPT_SECTION(sec) { .cls = OPT_CL_SECTION, .u.section = &sec }

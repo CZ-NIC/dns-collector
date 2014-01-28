@@ -64,7 +64,9 @@ Most options have the following properties:
   Alternatively, the short name can refer to a <<positional,positional argument>>.
 - Long name: an arbitrary string. Set to NULL if the option has no long form.
 - Variable, where the value of the option shall be stored, together with
-  its <<conf:enum_cf_type,data type>>.
+  its <<conf:enum_cf_type,data type>>. The type is either one of the conventional
+  types (`int`, `uns`, etc.), or a user-defined type providing its own parser
+  function via <<conf:struct_cf_user_type,`cf_user_type`>>.
 - <<flags,Flags>> further specifying behavior of the option (whether it is mandatory,
   whether it carries a value, whether it can be set repeatedly, etc.).
 - Help text, from which the help displayed to the user is constructed.

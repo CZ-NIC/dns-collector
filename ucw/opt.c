@@ -23,7 +23,6 @@ static uns opt_default_value_flags[] = {
     [OPT_CL_SWITCH] = OPT_NO_VALUE,
     [OPT_CL_INC] = OPT_NO_VALUE,
     [OPT_CL_CALL] = 0,
-    [OPT_CL_USER] = 0,
     [OPT_CL_SECTION] = 0,
     [OPT_CL_HELP] = 0
 };
@@ -63,7 +62,7 @@ void opt_precompute(struct opt_precomputed *opt, struct opt_item *item)
     flags |= OPT_REQUIRED_VALUE;
   }
   if (!(flags & OPT_VALUE_FLAGS)) {
-    ASSERT(item->cls != OPT_CL_CALL && item->cls != OPT_CL_USER);
+    ASSERT(item->cls != OPT_CL_CALL);
     flags |= opt_default_value_flags[item->cls];
   }
 
@@ -187,6 +186,13 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	    else
 	      *OPT_PTR(const char *) = xstrdup(value);
 	    break;
+	  case CT_USER:
+	      {
+		char * e = item->u.utype->parser(value, item->ptr);
+		if (e)
+		  opt_failure("Cannot parse the value of %s: %s", THIS_OPT, e);
+		break;
+	      }
 	  default:
 	    ASSERT(0);
 	}
@@ -208,14 +214,6 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
       {
 	void *data = (opt->flags & OPT_INTERNAL) ? oc : item->ptr;
 	item->u.call(item, value, data);
-	break;
-      }
-    case OPT_CL_USER:
-      {
-	char * e = NULL;
-	e = item->u.utype->parser(value, OPT_PTR(void*));
-	if (e)
-	  opt_failure("Cannot parse the value of %s: %s", THIS_OPT, e);
 	break;
       }
     default:
