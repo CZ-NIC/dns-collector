@@ -30,7 +30,7 @@
 /* string.c */
 
 #ifdef CONFIG_DARWIN
-uns strnlen(const char *str, uns n);
+uns strnlen(const char *str, uns n);	// NOAPI
 #endif
 
 /**

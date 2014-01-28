@@ -4,12 +4,24 @@
 
 use common::sense;
 
+sub symbol {
+	my ($sym) = @_;
+	return if $sym =~ m{^(ucw|ucwlib)_};
+	print "$sym\n";
+}
+
 sub parse {
 	my ($file) = @_;
 	print "# $file\n";
 	open my $f, '<', $file or die;
 	while (<$f>) {
 		chomp;
+		# Interpret special comments
+		m{// NOAPI} and next;
+		if (m{// API: (\w+)}) {
+			print "$1\n";
+			next;
+		}
 		# Find things which look like top-level declarations
 		s{//.*}{};
 		s{/\*.*}{};
@@ -32,9 +44,9 @@ sub parse {
 		if (m{^extern [^,]*(\s+\**\w+(,\s+\**\w+)*);}) {
 			my $x = $1;
 			$x =~ s{[,*]}{}g;
-			print join("\n", grep { !/^$/ } split /\s+/, $x), "\n";
+			symbol $_ for grep { !/^$/ } split /\s+/, $x;
 		} elsif (m{( |\*)(\w+)\(}) {
-			print "$2\n";
+			symbol($2);
 		} else {
 			print "??? $_\n";
 		}

@@ -155,7 +155,7 @@ void vdie(const char *fmt, va_list args) NONRET;		/** va_list version of die() *
 
 extern char *log_title;			/** An optional log message title. Set to program name by log_init(). **/
 extern int log_pid;			/** An optional PID printed in each log message. Set to 0 if it shouldn't be logged. **/
-extern void (*log_die_hook)(void);	/** An optional function called just before die() exists. **/
+extern void (*log_die_hook)(void);	/** An optional function called just before die() exists. **/	// API: log_die_hook
 
 void log_init(const char *argv0);	/** Set @log_title to the program name extracted from @argv[0]. **/
 void log_fork(void);			/** Call after fork() to update @log_pid. **/
