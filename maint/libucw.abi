@@ -1,3 +1,4 @@
+# ucw/alloc.h
 # ucw/asio.h
 asio_init_queue
 asio_cleanup_queue
@@ -207,12 +208,11 @@ bput_utf16_le_slow
 bget_varint_slow
 bput_varint_slow
 # ucw/gary.h
-gary_allocator_default
-gary_allocator_zeroed
 gary_init
 gary_set_size
 gary_push_helper
 gary_fix
+gary_empty_hdr
 # ucw/getopt.h
 cf_def_file
 cf_env_file
@@ -493,6 +493,7 @@ str_to_uns
 # ucw/tbf.h
 tbf_init
 tbf_limit
+# ucw/threads.h
 # ucw/time.h
 get_timestamp
 timestamp_type

@@ -10,6 +10,7 @@
 #include <ucw/alloc.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
+#define gary_empty_hdr ucw_gary_empty_hdr
 #define gary_fix ucw_gary_fix
 #define gary_init ucw_gary_init
 #define gary_push_helper ucw_gary_push_helper
