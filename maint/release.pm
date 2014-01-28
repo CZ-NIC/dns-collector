@@ -322,6 +322,7 @@ sub MakePatch($) {
 
 sub Upload($) {
 	my ($s) = @_;
+	$s->{"do_upload"} or return;
 	foreach my $u (@{$s->{"uploads"}}) {
 		my $url = $u->{"url"};
 		print "Upload to $url :\n";

@@ -20,8 +20,14 @@ $r->Test;
 $r->MakeArchive;
 $r->Upload;
 
-# my $tdir = $r->{"TESTDIR"};
-# if (defined $tdir) {
-# } else {
-# 	print "WARNING: With --notest, no documentation is published!\n";
-# }
+if ($r->{"do_upload"}) {
+	my $tdir = $r->{"TESTDIR"};
+	if (defined $tdir) {
+		print "Upload of documentation\n";
+		$r->Confirm;
+		system qw(rsync -avz --delete), "$tdir/obj/ucw/doc/", qw(jw:/var/www/libucw/doc/ --exclude=*.deflist --exclude=*.txt);
+		die if $@;
+	} else {
+		print "WARNING: With --notest, no documentation is published!\n";
+	}
+}
