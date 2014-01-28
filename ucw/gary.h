@@ -77,6 +77,11 @@ static inline void gary_free(void *ptr)
     }
 }
 
+/* A forever empty gary. Used internally. */
+
+extern struct gary_hdr gary_empty_hdr;
+#define GARY_FOREVER_EMPTY GARY_BODY(&gary_empty_hdr)
+
 /* Type-agnostic interface. Currently it's recommended for internal use only. */
 
 #define GARY_PUSH_GENERIC(ptr) ({					\

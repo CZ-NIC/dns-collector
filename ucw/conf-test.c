@@ -2,7 +2,7 @@
  *	Insane tester of reading configuration files
  *
  *	(c) 2006 Robert Spalek <robert@ucw.cz>
- *	(c) 2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2012--2014 Martin Mares <mj@ucw.cz>
  */
 
 #include <ucw/lib.h>
@@ -10,6 +10,7 @@
 #include <ucw/getopt.h>
 #include <ucw/clists.h>
 #include <ucw/fastbuf.h>
+#include <ucw/gary.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,7 +28,7 @@ struct sub_sect_1 {
   double *list;
 };
 
-static struct sub_sect_1 sec1 = { {}, "Charlie", 0, "WBAFC", { 0, -1}, DARY_ALLOC(double, 3, 1e4, -1e-4, 8) };
+static struct sub_sect_1 sec1 = { {}, "Charlie", 0, "WBAFC", { 0, -1}, NULL };
 
 static char *
 init_sec_1(struct sub_sect_1 *s)
@@ -74,16 +75,16 @@ static struct cf_section cf_sec_1 = {
 };
 
 static uns nr1 = 15;
-static int *nrs1 = DARY_ALLOC(int, 5, 5, 4, 3, 2, 1);
+static int *nrs1;
 static int nrs2[5];
 static char *str1 = "no worries";
-static char **str2 = DARY_ALLOC(char *, 2, "Alice", "Bob");
+static char **str2;
 static u64 u1 = 0xCafeBeefDeadC00ll;
 static double d1 = -1.1;
 static clist secs;
 static time_t t1, t2;
 static u32 ip;
-static int *look = DARY_ALLOC(int, 2, 2, 1);
+static int *look;
 static u16 numbers[10] = { 2, 100, 1, 5 };
 static u32 bitmap1 = 0xff;
 static u32 bitmap2 = 3;
@@ -212,6 +213,18 @@ main(int argc, char *argv[])
 
   cf_declare_section("top", &cf_top, 0);
   cf_def_file = "ucw/conf-test.cf";
+
+  // Create and initialize dynamic arrays
+  GARY_INIT(nrs1, 6);
+  memcpy(nrs1, (int []) { 5, 5, 4, 3, 2, 1 }, 6 * sizeof(int));
+  GARY_INIT(str2, 2);
+  str2[0] = "Alice";
+  str2[1] = "Bob";
+  GARY_INIT(look, 2);
+  look[0] = 2;
+  look[1] = 1;
+  GARY_INIT(sec1.list, 3);
+  memcpy(sec1.list, (double []) { 1e4, -1e-4, 8 }, 3 * sizeof(double));
 
   int opt;
   while ((opt = cf_getopt(argc, argv, short_opts, long_opts, NULL)) >= 0)

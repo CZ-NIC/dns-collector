@@ -2,7 +2,7 @@
  *	UCW Library -- Configuration files: interpreter
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
- *	(c) 2003--2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2014 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -13,6 +13,7 @@
 #include <ucw/getopt.h>
 #include <ucw/conf-internal.h>
 #include <ucw/clists.h>
+#include <ucw/gary.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -102,17 +103,15 @@ char *cf_op_names[] = { CF_OPERATIONS };
 #undef T
 char *cf_type_names[] = { "int", "u64", "double", "ip", "string", "lookup", "user" };
 
-#define DARY_HDR_SIZE ALIGN_TO(sizeof(uns), CPU_STRUCT_ALIGN)
-
 static char *
 interpret_set_dynamic(struct cf_item *item, int number, char **pars, void **ptr)
 {
   enum cf_type type = item->type;
+  uns size = cf_type_size(type, item->u.utype);
   cf_journal_block(ptr, sizeof(void*));
   // boundary checks done by the caller
-  uns size = cf_type_size(item->type, item->u.utype);
-  *ptr = cf_malloc(DARY_HDR_SIZE + number * size) + DARY_HDR_SIZE;
-  DARY_LEN(*ptr) = number;
+  struct gary_allocator *a = gary_new_allocator_mp(cf_get_pool());	// FIXME: One copy should be enough
+  *ptr = gary_init(size, number, a);
   return cf_parse_ary(number, pars, *ptr, type, &item->u);
 }
 
@@ -123,12 +122,12 @@ interpret_add_dynamic(struct cf_item *item, int number, char **pars, int *proces
   void *old_p = *ptr;
   uns size = cf_type_size(item->type, item->u.utype);
   ASSERT(size >= sizeof(uns));
-  int old_nr = old_p ? DARY_LEN(old_p) : 0;
+  int old_nr = old_p ? GARY_SIZE(old_p) : 0;
   int taken = MIN(number, ABS(item->number)-old_nr);
   *processed = taken;
   // stretch the dynamic array
-  void *new_p = cf_malloc(DARY_HDR_SIZE + (old_nr + taken) * size) + DARY_HDR_SIZE;
-  DARY_LEN(new_p) = old_nr + taken;
+  struct gary_allocator *a = gary_new_allocator_mp(cf_get_pool());	// FIXME: One copy should be enough
+  void *new_p = gary_init(size, old_nr + taken, a);
   cf_journal_block(ptr, sizeof(void*));
   *ptr = new_p;
   if (op == OP_APPEND) {
@@ -321,8 +320,7 @@ interpret_set_all(struct cf_item *item, void *ptr, enum cf_operation op)
     clist_init(ptr);
   } else if (item->cls == CC_DYNAMIC) {
     cf_journal_block(ptr, sizeof(void *));
-    static uns zero = 0;
-    * (void**) ptr = (&zero) + 1;
+    * (void**) ptr = GARY_FOREVER_EMPTY;
   } else if (item->cls == CC_STATIC && item->type == CT_STRING) {
     cf_journal_block(ptr, item->number * sizeof(char*));
     bzero(ptr, item->number * sizeof(char*));

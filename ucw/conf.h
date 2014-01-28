@@ -2,7 +2,7 @@
  *	UCW Library -- Configuration files
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
- *	(c) 2003--2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2014 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -12,6 +12,7 @@
 #define	_UCW_CONF_H
 
 #include <ucw/clists.h>
+#include <ucw/gary.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define cf_close_group ucw_cf_close_group
@@ -423,9 +424,7 @@ struct cf_section {			/** A section. **/
  **/
 #define CF_ANY_NUM		-0x7fffffff
 
-#define DARY_LEN(a) ((uns*)a)[-1]	/** Length of an dynamic array. **/
-#define DARY_ALLOC(type,len,val...) ((struct { byte pad[ALIGN_TO(sizeof(uns), CPU_STRUCT_ALIGN) - sizeof(uns)]; uns l; type a[len]; }) { .l = len, .a = { val } }).a
-  // creates a static instance of a dynamic array
+#define DARY_LEN(a) GARY_SIZE(a)		/** Length of an dynamic array. An alias for `GARY_SIZE`. **/
 
 /***
  * [[alloc]]

@@ -11,6 +11,8 @@
 
 #include <string.h>
 
+struct gary_hdr gary_empty_hdr;
+
 void *
 gary_init(size_t elt_size, size_t num_elts, struct gary_allocator *allocator)
 {

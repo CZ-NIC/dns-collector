@@ -2,7 +2,7 @@
  *	UCW Library -- Configuration files: sections
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
- *	(c) 2003--2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2003--2014 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -13,6 +13,7 @@
 #include <ucw/conf-internal.h>
 #include <ucw/clists.h>
 #include <ucw/binsearch.h>
+#include <ucw/gary.h>
 
 #include <string.h>
 
@@ -140,10 +141,8 @@ cf_init_section(const char *name, struct cf_section *sec, void *ptr, uns do_bzer
       clist_init(ptr + (uintptr_t) ci->ptr);
     else if (ci->cls == CC_DYNAMIC) {
       void **dyn = ptr + (uintptr_t) ci->ptr;
-      if (!*dyn) {			// replace NULL by an empty array
-	static uns zero = 0;
-	*dyn = (&zero) + 1;
-      }
+      if (!*dyn)			// replace NULL by an empty array
+	*dyn = GARY_FOREVER_EMPTY;
     }
   if (sec->init) {
     char *msg = sec->init(ptr);
