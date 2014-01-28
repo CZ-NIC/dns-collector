@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- A simple growing array of an arbitrary type
  *
- *	(c) 2010--2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2010--2014 Martin Mares <mj@ucw.cz>
  */
 
 #undef LOCAL_DEBUG
@@ -12,15 +12,13 @@
 #include <string.h>
 
 void *
-gary_init(size_t elt_size, size_t num_elts, int zeroed)
+gary_init(size_t elt_size, size_t num_elts, struct gary_allocator *allocator)
 {
   DBG("GARY: Init to %zd elements", num_elts);
-  struct gary_hdr *h = xmalloc(GARY_HDR_SIZE + elt_size * num_elts);
+  struct gary_hdr *h = allocator->alloc(allocator, GARY_HDR_SIZE + elt_size * num_elts);
   h->num_elts = h->have_space = num_elts;
   h->elt_size = elt_size;
-  h->zeroed = zeroed;
-  if (zeroed)
-    bzero(GARY_BODY(h), elt_size * num_elts);
+  h->allocator = allocator;
   return GARY_BODY(h);
 }
 
@@ -33,10 +31,7 @@ gary_realloc(struct gary_hdr *h, size_t n)
   else
     h->have_space *= 2;
   DBG("GARY: Resize from %zd to %zd elements (need %zd)", old_size, h->have_space, n);
-  h = xrealloc(h, GARY_HDR_SIZE + h->have_space * h->elt_size);
-  if (h->zeroed)
-    bzero(GARY_BODY(h) + h->elt_size * old_size, h->elt_size * (h->have_space - old_size));
-  return h;
+  return h->allocator->realloc(h->allocator, h, GARY_HDR_SIZE + old_size * h->elt_size, GARY_HDR_SIZE + h->have_space * h->elt_size);
 }
 
 void *
@@ -66,11 +61,55 @@ gary_fix(void *array)
   struct gary_hdr *h = GARY_HDR(array);
   if (h->num_elts != h->have_space)
     {
-      h = xrealloc(h, GARY_HDR_SIZE + h->num_elts * h->elt_size);
+      h = h->allocator->realloc(h->allocator, h, GARY_HDR_SIZE + h->have_space * h->elt_size, GARY_HDR_SIZE + h->num_elts * h->elt_size);
       h->have_space = h->num_elts;
     }
   return GARY_BODY(h);
 }
+
+/* Default allocator */
+
+static void *gary_default_alloc(struct gary_allocator *a UNUSED, size_t size)
+{
+  return xmalloc(size);
+}
+
+static void *gary_default_realloc(struct gary_allocator *a UNUSED, void *ptr, size_t old_size UNUSED, size_t new_size)
+{
+  return xrealloc(ptr, new_size);
+}
+
+static void gary_default_free(struct gary_allocator *a UNUSED, void *ptr)
+{
+  xfree(ptr);
+}
+
+struct gary_allocator gary_allocator_default = {
+  .alloc = gary_default_alloc,
+  .realloc = gary_default_realloc,
+  .free = gary_default_free,
+};
+
+/* Zeroing allocator */
+
+static void *gary_zeroed_alloc(struct gary_allocator *a UNUSED, size_t size)
+{
+  return xmalloc_zero(size);
+}
+
+static void *gary_zeroed_realloc(struct gary_allocator *a UNUSED, void *ptr, size_t old_size, size_t new_size)
+{
+  ptr = xrealloc(ptr, new_size);
+  if (old_size < new_size)
+    bzero((byte *) ptr + old_size, new_size - old_size);
+  return ptr;
+}
+
+struct gary_allocator gary_allocator_zeroed = {
+  .alloc = gary_zeroed_alloc,
+  .realloc = gary_zeroed_realloc,
+  .free = gary_default_free,
+};
 
 #ifdef TEST
 

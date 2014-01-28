@@ -18,18 +18,30 @@ struct gary_hdr {
   size_t num_elts;
   size_t have_space;
   size_t elt_size;
-  int zeroed;
+  struct gary_allocator *allocator;
 };
+
+struct gary_allocator {
+  void * (*alloc)(struct gary_allocator *alloc, size_t size);
+  void * (*realloc)(struct gary_allocator *alloc, void *ptr, size_t old_size, size_t new_size);
+  void (*free)(struct gary_allocator *alloc, void *ptr);
+  void *data;
+};
+
+extern struct gary_allocator gary_allocator_default;
+extern struct gary_allocator gary_allocator_zeroed;
 
 #define GARY_HDR_SIZE ALIGN_TO(sizeof(struct gary_hdr), CPU_STRUCT_ALIGN)
 #define GARY_HDR(ptr) ((struct gary_hdr *)((byte*)(ptr) - GARY_HDR_SIZE))
 #define GARY_BODY(ptr) ((byte *)(ptr) + GARY_HDR_SIZE)
 
-#define GARY_INIT(ptr, n) (ptr) = gary_init(sizeof(*(ptr)), (n), 0)
-#define GARY_INIT_ZERO(ptr, n) (ptr) = gary_init(sizeof(*(ptr)), (n), 1)
+#define GARY_INIT(ptr, n) (ptr) = gary_init(sizeof(*(ptr)), (n), &gary_allocator_default)
+#define GARY_INIT_ZERO(ptr, n) (ptr) = gary_init(sizeof(*(ptr)), (n), &gary_allocator_zeroed)
+#define GARY_INIT_ALLOC(ptr, n, a) (ptr) = gary_init(sizeof(*(ptr)), (n), (a))
 #define GARY_INIT_SPACE(ptr, n) do { GARY_INIT(ptr, n); (GARY_HDR(ptr))->num_elts = 0; } while (0)
 #define GARY_INIT_SPACE_ZERO(ptr, n) do { GARY_INIT_ZERO(ptr, n); (GARY_HDR(ptr))->num_elts = 0; } while (0)
-#define GARY_FREE(ptr) do { if (ptr) xfree(GARY_HDR(ptr)); } while (0)
+#define GARY_INIT_SPACE_ALLOC(ptr, n, a) do { GARY_INIT_ALLOC(ptr, n, a); (GARY_HDR(ptr))->num_elts = 0; } while (0)
+#define GARY_FREE(ptr) gary_free(ptr)
 #define GARY_SIZE(ptr) (GARY_HDR(ptr)->num_elts)
 #define GARY_RESIZE(ptr, n) ((ptr) = gary_set_size((ptr), (n)))
 #define GARY_INIT_OR_RESIZE(ptr, n) (ptr) = (ptr) ? gary_set_size((ptr), (n)) : gary_init(sizeof(*(ptr)), (n), 0)
@@ -49,9 +61,18 @@ struct gary_hdr {
 #define GARY_FIX(ptr) (ptr) = gary_fix((ptr))
 
 /* Internal functions */
-void *gary_init(size_t elt_size, size_t num_elts, int zeroed);
+void *gary_init(size_t elt_size, size_t num_elts, struct gary_allocator *allocator);
 void *gary_set_size(void *array, size_t n);
 void *gary_push_helper(void *array, size_t n, byte **cptr);
 void *gary_fix(void *array);
+
+static inline void gary_free(void *ptr)
+{
+  if (ptr)
+    {
+      struct gary_hdr *h = GARY_HDR(ptr);
+      h->allocator->free(h->allocator, h);
+    }
+}
 
 #endif
