@@ -1,8 +1,8 @@
 Release notes
 =============
 
-6.0
----
+6.0 (2014-01-28)
+----------------
 
 * Libucw finally has a clean ABI, which does not pollute namespace, risking
   collisions with other libraries. However, we did not want to abandon our
@@ -62,8 +62,8 @@ Release notes
 * Added <<varint:,varint>> module for efficient UTF-8-like encoding of 64-bit
   integers to byte sequences.
 
-5.0
----
+5.0 (2012-02-21)
+----------------
 
 * *Incompatible:* The `timestamp_t` type has been decoupled from wall clock time.
   It now specifies the number of milliseconds from an unspecified origin, so that
