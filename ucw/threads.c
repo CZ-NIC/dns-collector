@@ -119,7 +119,7 @@ ucwlib_thread_context(void)
 
 #else /* !CONFIG_UCW_THREADS */
 
-struct ucwlib_context default_ucwlib_context;
+struct ucwlib_context ucwlib_default_context;
 
 #endif
 

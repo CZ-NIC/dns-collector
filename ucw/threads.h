@@ -49,8 +49,8 @@ extern uns ucwlib_thread_stack_size;
 
 /* We have no threads, let's simulate the context and locking */
 
-extern struct ucwlib_context default_ucwlib_context;
-static inline struct ucwlib_context *ucwlib_thread_context(void) { return &default_ucwlib_context; }
+extern struct ucwlib_context ucwlib_default_context;
+static inline struct ucwlib_context *ucwlib_thread_context(void) { return &ucwlib_default_context; }
 
 static inline int ucwlib_thread_id(struct ucwlib_context *c UNUSED) { return 0; }
 
