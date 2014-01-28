@@ -14,7 +14,7 @@
 struct gary_hdr gary_empty_hdr;
 
 void *
-gary_init(size_t elt_size, size_t num_elts, struct gary_allocator *allocator)
+gary_init(size_t elt_size, size_t num_elts, struct ucw_allocator *allocator)
 {
   DBG("GARY: Init to %zd elements", num_elts);
   struct gary_hdr *h = allocator->alloc(allocator, GARY_HDR_SIZE + elt_size * num_elts);
@@ -69,62 +69,28 @@ gary_fix(void *array)
   return GARY_BODY(h);
 }
 
-/* Default allocator */
-
-static void *gary_default_alloc(struct gary_allocator *a UNUSED, size_t size)
-{
-  return xmalloc(size);
-}
-
-static void *gary_default_realloc(struct gary_allocator *a UNUSED, void *ptr, size_t old_size UNUSED, size_t new_size)
-{
-  return xrealloc(ptr, new_size);
-}
-
-static void gary_default_free(struct gary_allocator *a UNUSED, void *ptr)
-{
-  xfree(ptr);
-}
-
-struct gary_allocator gary_allocator_default = {
-  .alloc = gary_default_alloc,
-  .realloc = gary_default_realloc,
-  .free = gary_default_free,
-};
-
-/* Zeroing allocator */
-
-static void *gary_zeroed_alloc(struct gary_allocator *a UNUSED, size_t size)
-{
-  return xmalloc_zero(size);
-}
-
-static void *gary_zeroed_realloc(struct gary_allocator *a UNUSED, void *ptr, size_t old_size, size_t new_size)
-{
-  ptr = xrealloc(ptr, new_size);
-  if (old_size < new_size)
-    bzero((byte *) ptr + old_size, new_size - old_size);
-  return ptr;
-}
-
-struct gary_allocator gary_allocator_zeroed = {
-  .alloc = gary_zeroed_alloc,
-  .realloc = gary_zeroed_realloc,
-  .free = gary_default_free,
-};
-
 #ifdef TEST
+
+#include <ucw/mempool.h>
 
 #include <stdio.h>
 
-int main(void)
+int main(int argc, char **argv UNUSED)
 {
   int *a;
-  GARY_INIT_ZERO(a, 5);
+  struct mempool *mp = NULL;
+
+  if (argc < 2)
+    GARY_INIT_ZERO(a, 5);
+  else
+    {
+      mp = mp_new(4096);
+      GARY_INIT_ALLOC(a, 5, mp_get_allocator(mp));
+    }
 
   for (int i=0; i<5; i++)
     {
-      ASSERT(!a[i]);
+      ASSERT(!a[i] || mp);
       a[i] = i+1;
     }
 
@@ -139,6 +105,8 @@ int main(void)
     printf("%d\n", a[i]);
 
   GARY_FREE(a);
+  if (mp)
+    mp_delete(mp);
   return 0;
 }
 

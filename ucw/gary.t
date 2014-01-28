@@ -10,7 +10,7 @@ Out:	1
 	10
 	20
 
-Run:	../obj/ucw/gary-mp-t
+Run:	../obj/ucw/gary-t pool
 Out:	1
 	2
 	3

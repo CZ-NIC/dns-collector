@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Memory Pools
  *
- *	(c) 1997--2005 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2014 Martin Mares <mj@ucw.cz>
  *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -10,6 +10,8 @@
 
 #ifndef _UCW_POOLS_H
 #define _UCW_POOLS_H
+
+#include <ucw/alloc.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define mp_alloc ucw_mp_alloc
@@ -65,6 +67,7 @@ struct mempool_state {
  * You should use this one as an opaque handle only, the insides are internal.
  **/
 struct mempool {
+  struct ucw_allocator allocator;
   struct mempool_state state;
   void *unused, *last_big;
   uns chunk_size, threshold, idx;
@@ -184,6 +187,14 @@ static inline void *mp_alloc_fast_noalign(struct mempool *pool, uns size)
     }
   else
     return mp_alloc_internal(pool, size);
+}
+
+/**
+ * Return a generic allocator representing the given mempool.
+ **/
+static inline struct ucw_allocator *mp_get_allocator(struct mempool *mp)
+{
+  return &mp->allocator;
 }
 
 /***

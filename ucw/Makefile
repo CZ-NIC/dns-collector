@@ -1,4 +1,4 @@
-# Makefile for the UCW Library (c) 1997--2010 Martin Mares <mj@ucw.cz>
+# Makefile for the UCW Library (c) 1997--2014 Martin Mares <mj@ucw.cz>
 
 DIRS+=ucw
 LIBUCW=$(o)/ucw/libucw.pc
@@ -9,7 +9,8 @@ endif
 
 LIBUCW_MODS= \
 	threads \
-	alloc alloc_str realloc bigalloc mempool mempool-str mempool-fmt eltpool \
+	alloc alloc_str alloc-std \
+	bigalloc mempool mempool-str mempool-fmt eltpool \
 	partmap hashfunc \
 	slists simple-lists bitsig \
 	log log-stream log-file log-syslog log-conf tbf \
@@ -30,7 +31,7 @@ LIBUCW_MODS= \
 	base64 base224 \
 	io-careful io-sync io-mmap io-size \
 	string str-esc str-split str-match str-imatch str-hex str-fix \
-	bbuf gary gary-mp \
+	bbuf gary \
 	getopt \
 	strtonum \
 	resource trans res-fd res-mem res-subpool res-mempool res-eltpool \
@@ -40,7 +41,7 @@ LIBUCW_MODS= \
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h threads.h time.h \
-	mempool.h eltpool.h \
+	alloc.h mempool.h eltpool.h \
 	clists.h slists.h simple-lists.h \
 	string.h stkstring.h unicode.h varint.h chartype.h regex.h \
 	wildmatch.h \
@@ -165,7 +166,7 @@ $(o)/ucw/strtonum-test.test: $(o)/ucw/strtonum-test
 $(addprefix $(o)/ucw/fb-,file.test grow.test pool.test socket.test atomic.test \
 	limfd.test temp.test mem.test buffer.test mmap.test multi.test): %.test: %-t
 $(o)/ucw/url.test: $(o)/ucw/url-t
-$(o)/ucw/gary.test: $(o)/ucw/gary-t $(o)/ucw/gary-mp-t
+$(o)/ucw/gary.test: $(o)/ucw/gary-t
 $(o)/ucw/time.test: $(o)/ucw/time-conf-t
 $(o)/ucw/crc.test: $(o)/ucw/crc-t
 $(o)/ucw/signames.test: $(o)/ucw/signames-t

@@ -14,6 +14,7 @@
 #include <ucw/conf-internal.h>
 #include <ucw/clists.h>
 #include <ucw/gary.h>
+#include <ucw/mempool.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -110,8 +111,7 @@ interpret_set_dynamic(struct cf_item *item, int number, char **pars, void **ptr)
   uns size = cf_type_size(type, item->u.utype);
   cf_journal_block(ptr, sizeof(void*));
   // boundary checks done by the caller
-  struct gary_allocator *a = gary_new_allocator_mp(cf_get_pool());	// FIXME: One copy should be enough
-  *ptr = gary_init(size, number, a);
+  *ptr = gary_init(size, number, mp_get_allocator(cf_get_pool()));
   return cf_parse_ary(number, pars, *ptr, type, &item->u);
 }
 
@@ -126,8 +126,7 @@ interpret_add_dynamic(struct cf_item *item, int number, char **pars, int *proces
   int taken = MIN(number, ABS(item->number)-old_nr);
   *processed = taken;
   // stretch the dynamic array
-  struct gary_allocator *a = gary_new_allocator_mp(cf_get_pool());	// FIXME: One copy should be enough
-  void *new_p = gary_init(size, old_nr + taken, a);
+  void *new_p = gary_init(size, old_nr + taken, mp_get_allocator(cf_get_pool()));
   cf_journal_block(ptr, sizeof(void*));
   *ptr = new_p;
   if (op == OP_APPEND) {

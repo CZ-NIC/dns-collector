@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Memory Pools (One-Time Allocation)
  *
- *	(c) 1997--2001 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2014 Martin Mares <mj@ucw.cz>
  *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -11,6 +11,7 @@
 #undef LOCAL_DEBUG
 
 #include <ucw/lib.h>
+#include <ucw/alloc.h>
 #include <ucw/mempool.h>
 
 #include <string.h>
@@ -33,14 +34,46 @@ mp_align_size(uns size)
 #endif
 }
 
+static void *mp_allocator_alloc(struct ucw_allocator *a, size_t size)
+{
+  struct mempool *mp = (struct mempool *) a;
+  return mp_alloc_fast(mp, size);
+}
+
+static void *mp_allocator_realloc(struct ucw_allocator *a, void *ptr, size_t old_size, size_t new_size)
+{
+  if (new_size <= old_size)
+    return ptr;
+
+  /*
+   *  In the future, we might want to do something like mp_realloc(),
+   *  but we have to check that it is indeed the last block in the pool.
+   */
+  struct mempool *mp = (struct mempool *) a;
+  void *new = mp_alloc_fast(mp, new_size);
+  memcpy(new, ptr, old_size);
+  return new;
+}
+
+static void mp_allocator_free(struct ucw_allocator *a UNUSED, void *ptr UNUSED)
+{
+  // Does nothing
+}
+
 void
 mp_init(struct mempool *pool, uns chunk_size)
 {
   chunk_size = mp_align_size(MAX(sizeof(struct mempool), chunk_size));
   *pool = (struct mempool) {
+    .allocator = {
+      .alloc = mp_allocator_alloc,
+      .realloc = mp_allocator_realloc,
+      .free = mp_allocator_free,
+    },
     .chunk_size = chunk_size,
     .threshold = chunk_size >> 1,
-    .last_big = &pool->last_big };
+    .last_big = &pool->last_big
+  };
 }
 
 static void *
@@ -90,6 +123,11 @@ mp_new(uns chunk_size)
   DBG("Creating mempool %p with %u bytes long chunks", pool, chunk_size);
   chunk->next = NULL;
   *pool = (struct mempool) {
+    .allocator = {
+      .alloc = mp_allocator_alloc,
+      .realloc = mp_allocator_realloc,
+      .free = mp_allocator_free,
+    },
     .state = { .free = { chunk_size - sizeof(*pool) }, .last = { chunk } },
     .chunk_size = chunk_size,
     .threshold = chunk_size >> 1,
