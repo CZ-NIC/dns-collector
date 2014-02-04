@@ -19,13 +19,8 @@
 #define log_type_names ucw_log_type_names
 #endif
 
-/*
- * Pass a message to a stream.
- * @depth prevents loops.
- * Returns 1 in case of loop detection or other fatal error,
- *         0 otherwise
- */
-int log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m);
+/* Pass a message to a stream. */
+void log_pass_msg(struct log_stream *ls, struct log_msg *m);
 
 /* Define an array (growing buffer) for pointers to log_streams. */
 #define GBUF_TYPE struct log_stream*

@@ -243,7 +243,7 @@ log_limiter(struct log_stream *ls, struct log_msg *m)
 	  struct log_msg mm = *m;
 	  mm.flags |= L_LOGGER_ERR;
 	  mm.raw_msg = "(maximum logging rate exceeded, some messages will be suppressed)";
-	  log_pass_msg(0, ls, &mm);
+	  log_pass_msg(ls, &mm);
 	}
       return 1;
     }

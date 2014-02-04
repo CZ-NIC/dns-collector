@@ -161,10 +161,11 @@ vmsg(uns cat, const char *fmt, va_list args)
     }
 
   /* Pass the message to the log_stream */
-  if (log_pass_msg(0, ls, &m))
+  log_pass_msg(ls, &m);
+  if (m.error)
     {
       /* Error (such as infinite loop) occurred */
-      log_pass_msg(0, &log_stream_default, &m);
+      log_pass_msg(&log_stream_default, &m);
     }
 
   if (m.raw_msg != msgbuf)
@@ -194,7 +195,7 @@ log_report_err(struct log_stream *ls, struct log_msg *m, int err)
       errno = err;
       snprintf(errbuf, sizeof(errbuf), "Error logging to %s: %m", name);
     }
-  log_pass_msg(0, &log_stream_default, &errm);
+  log_pass_msg(&log_stream_default, &errm);
 
   if (ls->stream_flags & LSFLAG_ERR_IS_FATAL)
     do_die();
@@ -203,32 +204,20 @@ log_report_err(struct log_stream *ls, struct log_msg *m, int err)
 /* Maximal depth of log_pass_msg recursion */
 #define LS_MAX_DEPTH 64
 
-int
-log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
+void
+log_pass_filtered(struct log_stream *ls, struct log_msg *m)
 {
-  ASSERT(ls);
-
-  /* Check recursion depth */
-  if (depth > LS_MAX_DEPTH)
-    {
-      log_report_err(ls, m, EDEADLK);
-      return 1;
-    }
-
-  /* Filter by level, type and hook function */
-  if (!((1 << LS_GET_LEVEL(m->flags)) & ls->levels) ||
-      !((1 << LS_GET_TYPE(m->flags)) & ls->types) ||
-      ls->filter && ls->filter(ls, m))
-    return 0;
-
   /* Pass the message to substreams */
   CLIST_FOR_EACH(simp_node *, s, ls->substreams)
-    if (log_pass_msg(depth+1, s->p, m))
-      return 1;
+    {
+      log_pass_msg(s->p, m);
+      if (m->error)
+	return;
+    }
 
   /* Will pass to the handler of this stream... is there any? */
   if (!ls->handler)
-    return 0;
+    return;
 
   /* Will print a message type? */
   char *type = NULL;
@@ -316,7 +305,36 @@ log_pass_msg(int depth, struct log_stream *ls, struct log_msg *m)
 
   if (free_buf)
     xfree(free_buf);
-  return 0;
+}
+
+void
+log_pass_msg(struct log_stream *ls, struct log_msg *m)
+{
+  ASSERT(ls);
+
+  /* Check recursion depth */
+  if (m->depth > LS_MAX_DEPTH)
+    {
+      log_report_err(ls, m, EDEADLK);
+      m->error = 1;
+      return;
+    }
+
+  /* Filter by level and type */
+  if (!((1 << LS_GET_LEVEL(m->flags)) & ls->levels) ||
+      !((1 << LS_GET_TYPE(m->flags)) & ls->types))
+    return;
+
+  m->depth++;
+
+  if (ls->filter && ls->filter(ls, m))
+    {
+      // The filter might have called log_pass_filtered()
+    }
+  else
+    log_pass_filtered(ls, m);
+
+  m->depth--;
 }
 
 /*** Utility functions ***/
