@@ -9,9 +9,10 @@ function usage {
 	cat >&2 <<EOF
 Usage: $0 <options>
 Options:
---archonly      Build only binary packages
---cleanup       Cleanup temporary files when finished
---version=<ver> Custom version number of resulting packages (default: autodetect from git-describe)
+--archonly		Build only binary packages
+--cleanup		Cleanup temporary files when finished
+--version=<ver>		Custom version number of resulting packages (default: autodetect from git-describe)
+--abi-version=<ver>	Custom version number of the LibUCW's ABI (default: defined in ucw/default.cfg)
 EOF
 	exit 1
 }
@@ -23,9 +24,7 @@ function pkg-gen-debian {(
 		PREFIX=/ \
 		INSTALL_INCLUDE_DIR=/usr/include/libucw \
 		INSTALL_DOC_DIR=/usr/share/doc/libucw/html \
-		INSTALL_CONFIG_DIR=/usr/share/doc/libucw/examples/etc \
-		UCW_VERSION="$VER" \
-		UCW_ABI_SUFFIX="-$VER"
+		INSTALL_CONFIG_DIR=/usr/share/doc/libucw/examples/etc
 
 	echo "Creating debian/control"
 	build/genconf debian/control.in debian/control obj/config.mk
@@ -51,6 +50,8 @@ while [ -n "$1" ] ; do
 	--cleanup)	CLEANUP=1
 			;;
 	--version=*)	PKGVER="${1:10}"
+			;;
+	--abi-version=*)CONF="$CONF UCW_ABI_SUFFIX=-${1:14}"
 			;;
         *)		usage
 			;;
