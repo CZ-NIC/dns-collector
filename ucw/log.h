@@ -25,6 +25,7 @@
 #define log_new_file ucw_log_new_file
 #define log_new_stream ucw_log_new_stream
 #define log_new_syslog ucw_log_new_syslog
+#define log_pass_filtered ucw_log_pass_filtered
 #define log_register_type ucw_log_register_type
 #define log_rm_substream ucw_log_rm_substream
 #define log_set_default_stream ucw_log_set_default_stream
@@ -51,6 +52,8 @@ struct log_msg {
   char *raw_msg;			// Unformatted parts
   char *stime;
   char *sutime;
+  uns depth;				// Recursion depth
+  bool error;				// An error has occurred (e.g., an infinite loop in sub-streams)
 };
 
 /**
@@ -219,6 +222,15 @@ void log_set_default_stream(struct log_stream *ls);
  * reset the logging mechanism to use stderr only.
  **/
 void log_close_all(void);
+
+/**
+ * The filter function of a stream might want to modify the message
+ * before passing it to the handler and/or substreams. In this case,
+ * the filter should make a local copy of `struct log_msg`, call
+ * @log_pass_filtered() on it and return true, so that the original
+ * message will not be processed any further.
+ **/
+void log_pass_filtered(struct log_stream *ls, struct log_msg *m);
 
 /***
  * === Logging to files

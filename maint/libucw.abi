@@ -292,6 +292,7 @@ log_set_format
 log_stream_by_flags
 log_set_default_stream
 log_close_all
+log_pass_filtered
 log_new_file
 log_new_fd
 log_switch_disable
