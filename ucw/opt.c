@@ -363,8 +363,8 @@ int opt_parse(const struct opt_section * options, char ** argv) {
 
   opt_count_items(oc, options);
   oc->opts = alloca(sizeof(*oc->opts) * oc->opt_count);
-  oc->shortopt = alloca(sizeof(*oc->shortopt) * (oc->positional_max + 257));
-  memset(oc->shortopt, 0, sizeof(*oc->shortopt) * (oc->positional_max + 257));
+  oc->shortopt = alloca(sizeof(*oc->shortopt) * (oc->positional_max + OPT_POSITIONAL_TAIL + 1));
+  memset(oc->shortopt, 0, sizeof(*oc->shortopt) * (oc->positional_max + OPT_POSITIONAL_TAIL + 1));
   oc->hooks = alloca(sizeof (*oc->hooks) * oc->hook_count);
 
   oc->opt_count = 0;
