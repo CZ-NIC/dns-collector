@@ -300,7 +300,7 @@ static void opt_positional(struct opt_context * oc, char * value) {
   if (!opt)
     opt_failure("Too many positional arguments.");
   else {
-    opt->flags &= OPT_SEEN_AS_LONG;
+    opt->flags &= ~OPT_SEEN_AS_LONG;
     opt_parse_value(oc, opt, value);
   }
 }
