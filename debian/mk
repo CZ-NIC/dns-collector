@@ -10,6 +10,7 @@ function usage {
 Usage: $0 <options>
 Options:
 --archonly		Build only binary packages
+--no-source		Don't build source files
 --cleanup		Cleanup temporary files when finished
 --version=<ver>		Custom version number of resulting packages (default: autodetect from git-describe)
 --abi-version=<ver>	Custom version number of the LibUCW's ABI (default: defined in ucw/default.cfg)
@@ -47,12 +48,15 @@ function pkg-gen-debian {(
 ROOT="`pwd`"
 PKG=libucw
 ARCHONLY=
+NO_SOURCE=
 CLEANUP=
 CONF=
 GEN_SCRIPT=
 while [ -n "$1" ] ; do
 	case "$1" in
 	--archonly)	ARCHONLY=1
+			;;
+	--no-source)	NO_SOURCE=1
 			;;
 	--cleanup)	CLEANUP=1
 			;;
@@ -73,8 +77,15 @@ pkg-git-checkout
 
 echo $TREEVER >$BUILDDIR/UCW_VERSION
 pkg-gen-debian
-(cd $BUILDDIR && dpkg-buildpackage -rfakeroot -us -uc ${ARCHONLY:+"-B"})
+
+BUILDOPTS=
+if [ -n "$ARCHONLY" ] ; then
+	BUILDOPTS=-B
+elif [ -n "$NO_SOURCE" ] ; then
+	BUILDOPTS=-b
+fi
+(cd $BUILDDIR && dpkg-buildpackage -rfakeroot -us -uc $BUILDOPTS)
 [ -z "$ARCHONLY" ] || rm -f debian-tmp/*_all.deb
-pkg-get-files debian-tmp/*.{deb,dsc,changes}
+pkg-get-files debian-tmp/*.{deb,dsc,changes,tar.gz}
 
 [ -z "$CLEANUP" ] || pkg-cleanup
