@@ -1,6 +1,6 @@
 #!/bin/bash
 # A script for building of LibUCW packages
-# (c) 2013 Pavel Charvat <pchar@ucw.cz>
+# (c) 2013--2014 Pavel Charvat <pchar@ucw.cz>
 
 set -e
 . debian/pkg-lib
@@ -13,6 +13,7 @@ Options:
 --cleanup		Cleanup temporary files when finished
 --version=<ver>		Custom version number of resulting packages (default: autodetect from git-describe)
 --abi-version=<ver>	Custom version number of the LibUCW's ABI (default: defined in ucw/default.cfg)
+--gen-script=<script>	Custom script to postprocess
 EOF
 	exit 1
 }
@@ -29,6 +30,11 @@ function pkg-gen-debian {(
 	echo "Creating debian/control"
 	build/genconf debian/control.in debian/control obj/config.mk
 
+	if [ -n "$GEN_SCRIPT" ] ; then
+		echo "Executing $GEN_SCRIPT"
+		$GEN_SCRIPT
+	fi
+
 	echo "Creating debian/changelog"
 	export EDITOR=true
 	CL=debian/changelog
@@ -43,6 +49,7 @@ PKG=libucw
 ARCHONLY=
 CLEANUP=
 CONF=
+GEN_SCRIPT=
 while [ -n "$1" ] ; do
 	case "$1" in
 	--archonly)	ARCHONLY=1
@@ -52,6 +59,8 @@ while [ -n "$1" ] ; do
 	--version=*)	PKGVER="${1:10}"
 			;;
 	--abi-version=*)CONF="$CONF UCW_ABI_SUFFIX=-${1:14}"
+			;;
+	--gen-script=*)	GEN_SCRIPT="${1:13}"
 			;;
         *)		usage
 			;;
