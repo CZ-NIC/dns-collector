@@ -33,7 +33,7 @@ function pkg-gen-debian {(
 
 	if [ -n "$GEN_SCRIPT" ] ; then
 		echo "Executing $GEN_SCRIPT"
-		$GEN_SCRIPT
+		eval "$GEN_SCRIPT"
 	fi
 
 	echo "Creating debian/changelog"
