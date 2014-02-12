@@ -26,7 +26,7 @@ vbprintf(struct fastbuf *b, const char *msg, va_list args)
   len = vsnprintf(buf, remains, msg, args2);
   va_end(args2);
 
-  if (len <= remains)
+  if (len < remains)
     {
       bdirect_write_commit(b, buf + len);
       return len;
