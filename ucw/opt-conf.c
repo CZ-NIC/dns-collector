@@ -24,14 +24,32 @@ static void opt_conf_end_of_options(struct cf_context *cc) {
     opt_failure("Loading of configuration failed");
 }
 
-void opt_handle_config(struct opt_item * opt UNUSED, const char * value, void * data UNUSED)
+static void opt_conf_check(struct opt_context *oc)
 {
+  switch (oc->conf_state) {
+    case OPT_CONF_HOOK_BEGIN:
+      oc->conf_state = OPT_CONF_HOOK_CONFIG;
+      break;
+    case OPT_CONF_HOOK_CONFIG:
+      break;
+    case OPT_CONF_HOOK_OTHERS:
+      opt_failure("Config options must stand before other options.");
+      break;
+    default:
+      ASSERT(0);
+  }
+}
+
+void opt_handle_config(struct opt_item * opt UNUSED, const char * value, void * data)
+{
+  opt_conf_check(data);
   if (cf_load(value))
     exit(1);		// Error message is already printed by cf_load()
 }
 
-void opt_handle_set(struct opt_item * opt UNUSED, const char * value, void * data UNUSED)
+void opt_handle_set(struct opt_item * opt UNUSED, const char * value, void * data)
 {
+  opt_conf_check(data);
   struct cf_context *cc = cf_get_context();
   cf_load_default(cc);
   if (cf_set(value))
@@ -59,26 +77,16 @@ void opt_conf_hook_internal(struct opt_item * opt, uns event, const char * value
 
   ASSERT(event == OPT_HOOK_BEFORE_VALUE);
 
-  bool confopt = opt->flags & OPT_BEFORE_CONFIG;
+  if (opt->flags & OPT_BEFORE_CONFIG)
+    return;
 
   switch (oc->conf_state) {
     case OPT_CONF_HOOK_BEGIN:
-      if (confopt)
-	oc->conf_state = OPT_CONF_HOOK_CONFIG;
-      else {
-	opt_conf_end_of_options(cc);
-	oc->conf_state = OPT_CONF_HOOK_OTHERS;
-      }
-      break;
     case OPT_CONF_HOOK_CONFIG:
-      if (!confopt) {
-	opt_conf_end_of_options(cc);
-	oc->conf_state = OPT_CONF_HOOK_OTHERS;
-      }
+      opt_conf_end_of_options(cc);
+      oc->conf_state = OPT_CONF_HOOK_OTHERS;
       break;
     case OPT_CONF_HOOK_OTHERS:
-      if (confopt)
-	opt_failure("Config options must stand before other options.");
       break;
     default:
       ASSERT(0);
