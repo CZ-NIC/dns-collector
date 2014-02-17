@@ -50,6 +50,7 @@ static int with_gas = 0;
 static int *black_magic;
 static int pray = 0;
 static int water_amount = 0;
+static int clean_pot = 1;
 static char * first_tea = NULL;
 
 #define MAX_TEA_COUNT 30
@@ -144,6 +145,7 @@ static struct opt_section options = {
     OPT_INC('q', "quiet", verbose, OPT_NEGATIVE, "\tQuiet (the more -q, the more quiet)"),
     OPT_INT_MULTIPLE('b', NULL, black_magic, 0, "<strength>\tUse black magic to make the tea extraordinarily delicious.\n\t\tMay be specified more than once to describe the amounts of black magic to be invoked in each step of tea boiling."),
     OPT_BOOL('p', "pray", pray, OPT_SINGLE, "\tPray before boiling"),
+    OPT_BOOL(0, "no-clean", clean_pot, OPT_NEGATIVE, "\tDo not clean the teapot before boiling"),
     OPT_STRING(OPT_POSITIONAL(1), NULL, first_tea, OPT_REQUIRED, ""),
     OPT_CALL(OPT_POSITIONAL_TAIL, NULL, add_tea, &tea_list, 0, ""),
     OPT_HELP(""),
@@ -182,6 +184,7 @@ int main(int argc UNUSED, char ** argv)
   for (uns i=0; i<magick; i++)
     printf("Black magic: %d|", black_magic[i]);
   printf("Prayer: %s|", pray ? "yes" : "no");
+  printf("Clean: %s|", clean_pot ? "yes" : "no");
   printf("Water amount: %d|", water_amount);
   printf("Gas: %s|", with_gas ? "yes" : "no");
   printf("First tea: %s|", first_tea);

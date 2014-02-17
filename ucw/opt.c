@@ -94,9 +94,22 @@ static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, c
     if (!strncmp(opt->name, str, len)) {
       if (strlen(opt->name) == len)
 	return opt;
-    } else if (opt->item->cls == OPT_CL_BOOL && !strncmp("no-", str, 3) && !strncmp(opt->name, str+3, len-3)) {
-      if (strlen(opt->name) == len-3)
-	return opt;
+    } else if (opt->item->cls == OPT_CL_BOOL) {
+      if (opt->flags & OPT_NEGATIVE) {
+	// If the option is called no-X, match X as well
+	if (!strncmp("no-", opt->name, 3) && !strncmp(opt->name+3, str, len)) {
+	  if (strlen(opt->name) == len+3)
+	    return opt;
+	} else
+	  continue;
+      } else {
+	// Match no-X as well
+	if (!strncmp("no-", str, 3) && !strncmp(opt->name, str+3, len-3)) {
+	  if (strlen(opt->name) == len-3)
+	    return opt;
+	} else
+	  continue;
+      }
     } else
       continue;
 
@@ -228,7 +241,10 @@ static int opt_longopt(struct opt_context * oc, char ** argv, int index) {
 
   opt->flags |= OPT_SEEN_AS_LONG;
 
-  if (opt->item->cls == OPT_CL_BOOL && !strncmp(name_in, "no-", 3) && !strncmp(name_in+3, opt->item->name, pos-3)) {
+  if (opt->item->cls == OPT_CL_BOOL &&
+      ((opt->flags & OPT_NEGATIVE)
+         ? (!strncmp(opt->item->name, "no-", 3) && !strncmp(name_in, opt->item->name + 3, pos-3))
+         : (!strncmp(name_in, "no-", 3) && !strncmp(name_in+3, opt->item->name, pos-3)))) {
     if (name_in[pos])
       opt_failure("Option --%s must not have any value.", name_in);
     value = "n";
