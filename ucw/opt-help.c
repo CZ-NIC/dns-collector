@@ -30,12 +30,12 @@ static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
 {
   struct opt_item *item = opt->item;
 
-  if (opt->flags & OPT_NO_HELP)
+  if (!item->help)
     return;
 
   if (item->cls == OPT_CL_HELP) {
     struct help_line *l = GARY_PUSH(h->lines);
-    l->extra = item->help ? : "";
+    l->extra = item->help;
     return;
   }
 
@@ -43,29 +43,27 @@ static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
     return;
 
   struct help_line *first = GARY_PUSH(h->lines);
-  if (item->help) {
-    char *text = mp_strdup(h->pool, item->help);
-    struct help_line *l = first;
-    while (text) {
-      char *eol = strchr(text, '\n');
-      if (eol)
-	*eol++ = 0;
+  char *text = mp_strdup(h->pool, item->help);
+  struct help_line *l = first;
+  while (text) {
+    char *eol = strchr(text, '\n');
+    if (eol)
+      *eol++ = 0;
 
-      int field = (l == first ? 1 : 0);
-      char *f = text;
-      while (f) {
-	char *tab = strchr(f, '\t');
-	if (tab)
-	  *tab++ = 0;
-	if (field < 3)
-	  l->fields[field++] = f;
-	f = tab;
-      }
-
-      text = eol;
-      if (text)
-	l = GARY_PUSH(h->lines);
+    int field = (l == first ? 1 : 0);
+    char *f = text;
+    while (f) {
+      char *tab = strchr(f, '\t');
+      if (tab)
+        *tab++ = 0;
+      if (field < 3)
+        l->fields[field++] = f;
+      f = tab;
     }
+
+    text = eol;
+    if (text)
+      l = GARY_PUSH(h->lines);
   }
 
   if (item->name) {

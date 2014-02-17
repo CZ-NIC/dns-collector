@@ -100,7 +100,7 @@ struct opt_item {
   const char * name;			// long name (NULL if none)
   int letter;				// short name (0 if none)
   void * ptr;				// variable to store the value to
-  const char * help;			// description in --help
+  const char * help;			// description in --help (NULL to omit the option from the help)
   union opt_union {
     struct opt_section * section;	// subsection for OPT_CL_SECTION
     int value;				// value for OPT_CL_SWITCH
@@ -126,7 +126,6 @@ struct opt_item {
 #define OPT_NO_VALUE	    0x4		/** The option must have no value. **/
 #define OPT_MAYBE_VALUE	    0x8		/** The option may have a value. **/
 #define OPT_NEGATIVE	    0x10	/** Reversing the effect of OPT_INC or saving @false into OPT_BOOL. **/
-#define OPT_NO_HELP	    0x20	/** Exclude this option from the help. **/
 #define OPT_LAST_ARG	    0x40	/** Stop processing arguments after this line. **/
 #define OPT_SINGLE	    0x100	/** The option must appear at most once. **/
 #define OPT_MULTIPLE	    0x200	/** The option may appear multiple times; will save all the values into a simple list. **/
