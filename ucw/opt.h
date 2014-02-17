@@ -3,6 +3,7 @@
  *
  *	(c) 2013 Jan Moskyto Matejka <mq@ucw.cz>
  *	(c) 2014 Martin Mares <mj@ucw.cz>
+ *	(c) 2014 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -170,6 +171,9 @@ struct opt_item {
 /** Ordinary integer option. @target should be a variable of type `int`. **/
 #define OPT_INT(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_INT }
 
+/** Unsigned integer option. @target should be a variable of type `uint`. **/
+#define OPT_UINT(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_INT }
+
 /** 64-bit integer option. @target should be a variable of type `u64`. **/
 #define OPT_U64(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u64 *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_U64 }
 
@@ -184,6 +188,9 @@ struct opt_item {
 
 /** Multi-valued integer option. @target should be a growing array of `int`s. **/
 #define OPT_INT_MULTIPLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int **), .help = desc, .flags = fl, .cls = OPT_CL_MULTIPLE, .type = CT_INT }
+
+/** Multi-valued unsigned integer option. @target should be a growing array of `uint`s. **/
+#define OPT_UINT_MULTIPLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, uint **), .help = desc, .flags = fl, .cls = OPT_CL_MULTIPLE, .type = CT_INT }
 
 /** Multi-valued 64-bit integer option. @target should be a growing array of `u64`s. **/
 #define OPT_U64_MULTIPLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u64 **), .help = desc, .flags = fl, .cls = OPT_CL_MULTIPLE, .type = CT_U64 }
