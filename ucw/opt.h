@@ -172,7 +172,7 @@ struct opt_item {
 #define OPT_INT(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_INT }
 
 /** Unsigned integer option. @target should be a variable of type `uint`. **/
-#define OPT_UINT(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_INT }
+#define OPT_UINT(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, uint *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_INT }
 
 /** 64-bit integer option. @target should be a variable of type `u64`. **/
 #define OPT_U64(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u64 *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_U64 }
