@@ -182,8 +182,8 @@ struct opt_item {
 /** IP address option, currently IPv4 only. @target should be a variable of type `u32`. **/
 #define OPT_IP(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, u32 *), .help = desc, .flags = fl, .cls = OPT_CL_STATIC, .type = CT_IP }
 
-/** Multi-valued string option. @target should be a growing array of `int`s. **/
-#define OPT_BOOL_MULTIPLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, char ***), .help = desc, .flags = fl, .cls = OPT_CL_MULTIPLE, .type = CT_STRING }
+/** Multi-valued string option. @target should be a growing array of `char *`s. **/
+#define OPT_STRING_MULTIPLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, char ***), .help = desc, .flags = fl, .cls = OPT_CL_MULTIPLE, .type = CT_STRING }
 
 /** Multi-valued integer option. @target should be a growing array of `int`s. **/
 #define OPT_INT_MULTIPLE(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int **), .help = desc, .flags = fl, .cls = OPT_CL_MULTIPLE, .type = CT_INT }
