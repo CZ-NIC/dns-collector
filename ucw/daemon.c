@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Daemonization
  *
- *	(c) 2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2012--2014 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -22,7 +22,7 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 
-static void
+void
 daemon_resolve_ugid(struct daemon_params *dp)
 {
   // Resolve user name
@@ -79,6 +79,16 @@ daemon_resolve_ugid(struct daemon_params *dp)
     }
 }
 
+void daemon_switch_ugid(struct daemon_params *dp)
+{
+  if (dp->want_setgid && setresgid(dp->run_as_gid, dp->run_as_gid, dp->run_as_gid) < 0)
+    die("Cannot set GID to %d: %m", (int) dp->run_as_gid);
+  if (dp->want_setgid > 1 && initgroups(dp->run_as_user, dp->run_as_gid) < 0)
+    die("Cannot initialize groups: %m");
+  if (dp->want_setuid && setresuid(dp->run_as_uid, dp->run_as_uid, dp->run_as_uid) < 0)
+    die("Cannot set UID to %d: %m", (int) dp->run_as_uid);
+}
+
 void
 daemon_init(struct daemon_params *dp)
 {
@@ -127,12 +137,7 @@ daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp))
     }
 
   // Switch GID and UID
-  if (dp->want_setgid && setresgid(dp->run_as_gid, dp->run_as_gid, dp->run_as_gid) < 0)
-    die("Cannot set GID to %d: %m", (int) dp->run_as_gid);
-  if (dp->want_setgid > 1 && initgroups(dp->run_as_user, dp->run_as_gid) < 0)
-    die("Cannot initialize groups: %m");
-  if (dp->want_setuid && setresuid(dp->run_as_uid, dp->run_as_uid, dp->run_as_uid) < 0)
-    die("Cannot set UID to %d: %m", (int) dp->run_as_uid);
+  daemon_switch_ugid(dp);
 
   // Create a new session and close stdio
   setsid();

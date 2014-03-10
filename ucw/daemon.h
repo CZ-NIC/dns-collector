@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Daemonization
  *
- *	(c) 2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2012--2014 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -62,6 +62,21 @@ void daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp)
  * Clean up when the daemon is about to exit. It removes the PID file.
  **/
 void daemon_exit(struct daemon_params *dp);
+
+/**
+ * Parse `run_as_user` and `run_as_group` and remember the results in internal fields.
+ * This is called automatically by daemon_init(), but also provided as a separate
+ * function in case you want to use daemon_switch_ugid(). Upon parse error, it calls die().
+ **/
+void daemon_resolve_ugid(struct daemon_params *dp);
+
+/**
+ * Switch user and group as specified by the `run_as_user` and `run_as_group`.
+ * This is performed automatically by daemon_run(), but sometimes you might want to
+ * switch the user and group separately. In this case, you have to call daemon_resolve_ugid()
+ * beforehand.
+ **/
+void daemon_switch_ugid(struct daemon_params *dp);
 
 #define DAEMON_ERR_LEN 256
 
