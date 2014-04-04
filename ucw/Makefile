@@ -90,7 +90,7 @@ include $(s)/ucw/doc/Makefile
 
 LIBUCW_MOD_PATHS=$(addprefix $(o)/ucw/,$(LIBUCW_MODS))
 
-export LIBUCW_LIBS=
+export LIBUCW_LIBS=-lm
 ifdef CONFIG_UCW_THREADS
 LIBUCW_LIBS+=-lpthread
 endif
