@@ -50,8 +50,10 @@ sub url_deescape($) {
 sub url_param_escape($) {
 	my $x = shift @_;
 	defined $x or return;
-	$x = url_escape($x);
+	utf8::encode($x) if $utf8_mode;
+	$x =~ s/([^-\$_.!*'(),0-9A-Za-z])/"%".unpack('H2',$1)/ge;
 	$x =~ s/%20/+/g;
+	utf8::decode($x) if $utf8_mode;
 	return $x;
 }
 
