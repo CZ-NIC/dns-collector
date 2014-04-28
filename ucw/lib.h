@@ -2,7 +2,7 @@
  *	The UCW Library -- Miscellaneous Functions
  *
  *	(c) 1997--2014 Martin Mares <mj@ucw.cz>
- *	(c) 2005 Tomas Valla <tom@ucw.cz>
+ *	(c) 2005--2014 Tomas Valla <tom@ucw.cz>
  *	(c) 2006 Robert Spalek <robert@ucw.cz>
  *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
@@ -19,6 +19,7 @@
 
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define assert_failed ucw_assert_failed
+#define assert_failed_msg ucw_assert_failed_msg
 #define assert_failed_noinfo ucw_assert_failed_noinfo
 #define big_alloc ucw_big_alloc
 #define big_alloc_zero ucw_big_alloc_zero
@@ -162,6 +163,7 @@ void log_fork(void);			/** Call after fork() to update @log_pid. **/
 void log_file(const char *name);	/** Establish logging to the named file. Also redirect stderr there. **/
 
 void assert_failed(const char *assertion, const char *file, int line) NONRET;
+void assert_failed_msg(const char *assertion, const char *file, int line, const char *fmt, ...) NONRET FORMAT_CHECK(printf,4,5);
 void assert_failed_noinfo(void) NONRET;
 
 #ifdef DEBUG_ASSERTS
@@ -170,8 +172,17 @@ void assert_failed_noinfo(void) NONRET;
  * Assertion checks are compiled only when `DEBUG_ASSERTS` is defined.
  **/
 #define ASSERT(x) ({ if (unlikely(!(x))) assert_failed(#x, __FILE__, __LINE__); 1; })
+
+/**
+ * Check an assertion with a debug message. If the condition @cond is false,
+ * print the message and stop the program with fatal error.
+ * Assertion checks are compiled only when `DEBUG_ASSERTS` is defined.
+ **/
+#define ASSERT_MSG(cond,str,x...) ({ if (unlikely(!(cond))) assert_failed_msg(#cond, __FILE__, __LINE__, str,##x); 1; })
+
 #else
 #define ASSERT(x) ({ if (__builtin_constant_p(x) && !(x)) assert_failed_noinfo(); 1; })
+#define ASSERT_MSG(cond,str,x...) ASSERT(cond)
 #endif
 
 #define COMPILE_ASSERT(name,x) typedef char _COMPILE_ASSERT_##name[!!(x)-1]

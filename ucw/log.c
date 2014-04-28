@@ -3,6 +3,7 @@
  *
  *	(c) 1997--2009 Martin Mares <mj@ucw.cz>
  *	(c) 2008 Tomas Gavenciak <gavento@ucw.cz>
+ *	(c) 2014 Tomas Valla <tom@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -382,6 +383,16 @@ die(const char *fmt, ...)
 void
 assert_failed(const char *assertion, const char *file, int line)
 {
+  msg(L_FATAL, "Assertion `%s' failed at %s:%d", assertion, file, line);
+  abort();
+}
+
+void
+assert_failed_msg(const char *assertion, const char *file, int line, const char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  vmsg(L_DEBUG, fmt, args);
   msg(L_FATAL, "Assertion `%s' failed at %s:%d", assertion, file, line);
   abort();
 }
