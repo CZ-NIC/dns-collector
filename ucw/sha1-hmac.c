@@ -77,7 +77,8 @@ sha1_hmac(byte *outbuf, const byte *key, uns keylen, const byte *data, uns datal
 static uns rd(char *dest)
 {
   char buf[1024];
-  fgets(buf, sizeof(buf), stdin);
+  if (!fgets(buf, sizeof(buf), stdin))
+    die("fgets()");
   *strchr(buf, '\n') = 0;
   if (buf[0] == '0' && buf[1] == 'x')
     {

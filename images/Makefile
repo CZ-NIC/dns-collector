@@ -62,6 +62,7 @@ MAGICK_LIBS:=$(shell GraphicsMagick-config --libs)
 MAGICK_CPPFLAGS:=$(shell GraphicsMagick-config --cppflags)
 LIBIMAGES_LIBS+=$(MAGICK_LIBS)
 $(o)/images/io-libmagick.o: CFLAGS+=$(MAGICK_CPPFLAGS)
+$(o)/images/io-libmagick.o: LIBS+=-lpthread
 endif
 
 PROGS+=$(LIBIMAGES_PROGS)
@@ -81,6 +82,7 @@ $(o)/images/ucw-image-sim-test: $(o)/images/ucw-image-sim-test.o $(LIBIMAGES) $(
 
 TESTS+=$(o)/images/image-test.test
 $(o)/images/image-test: $(o)/images/image-test.o $(LIBIMAGES) $(LIBUCW)
+$(o)/images/image-test: LIBS+=-lpthread
 $(o)/images/image-test.test: $(o)/images/image-test
 
 TESTS+=$(o)/images/color.test
