@@ -34,7 +34,9 @@ static void NONRET do_die(void);
 static int default_log_handler(struct log_stream *ls UNUSED, struct log_msg *m)
 {
   // This is a completely bare version of the log-file module. Errors are ignored.
-  write(2, m->m, m->m_len);
+  if (write(2, m->m, m->m_len) < 0)
+    {
+    }
   return 0;
 }
 

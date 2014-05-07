@@ -316,7 +316,8 @@ opt_done:
     }
   }
   if (help) {
-    write(2, usage, sizeof(usage));
+    if (write(2, usage, sizeof(usage)) < 0) {
+    }
     return (help == 1) ? 0 : 1;
   }
 

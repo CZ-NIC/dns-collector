@@ -122,7 +122,7 @@ parse_name(void)
 static void
 parse_section(struct section *section)
 {
-#define TRY(x) do{byte *_err=(x); if (_err) die(_err); }while(0)
+#define TRY(x) do{ byte *_err=(x); if (_err) die("%s", _err); }while(0)
   for (uns sep = 0; ; sep = 1)
     {
       parse_white();

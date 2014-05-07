@@ -534,7 +534,9 @@ signal_handler_pipe(int signum)
 #ifdef LOCAL_DEBUG
   msg(L_DEBUG | L_SIGHANDLER, "MAIN: Sigpipe: sending signal %d down the drain", signum);
 #endif
-  write(m->sig_pipe_send, &signum, sizeof(signum));
+  if (write(m->sig_pipe_send, &signum, sizeof(signum)) < 0)
+    {
+    }
 }
 
 void

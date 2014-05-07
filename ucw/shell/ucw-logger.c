@@ -37,14 +37,14 @@ main(int argc, char **argv)
     die("Unknown logging level `%s'", argv[2]);
 
   if (argc > 3)
-    msg(level, argv[3]);
+    msg(level, "%s", argv[3]);
   else
     while (fgets(buf, sizeof(buf), stdin))
       {
 	c = strchr(buf, '\n');
 	if (c)
 	  *c = 0;
-	msg(level, buf);
+	msg(level, "%s", buf);
       }
   return 0;
 }
