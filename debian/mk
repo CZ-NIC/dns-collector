@@ -15,6 +15,7 @@ Options:
 --version=<ver>		Custom version number of resulting packages (default: autodetect from git-describe)
 --abi-version=<ver>	Custom version number of the LibUCW's ABI (default: defined in ucw/default.cfg)
 --gen-script=<script>	Custom script to postprocess
+--extra-conf=<args>	Add extra arguments to the configure script
 EOF
 	exit 1
 }
@@ -65,6 +66,8 @@ while [ -n "$1" ] ; do
 	--abi-version=*)CONF="$CONF UCW_ABI_SUFFIX=-${1:14}"
 			;;
 	--gen-script=*)	GEN_SCRIPT="${1:13}"
+			;;
+	--extra-conf=*)	CONF="$CONF ${1:13}"
 			;;
         *)		usage
 			;;
