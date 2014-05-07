@@ -61,7 +61,7 @@ LIBIMAGES_MODS+=io-libmagick
 MAGICK_LIBS:=$(shell GraphicsMagick-config --libs)
 MAGICK_CPPFLAGS:=$(shell GraphicsMagick-config --cppflags)
 LIBIMAGES_LIBS+=$(MAGICK_LIBS) -lpthread
-$(o)/images/io-libmagick.o: CFLAGS+=$(MAGICK_CPPFLAGS)
+$(addprefix $(o)/images/io-libmagick,.o .oo): CFLAGS+=$(MAGICK_CPPFLAGS) -Wno-redundant-decls -Wno-undef
 endif
 
 PROGS+=$(LIBIMAGES_PROGS)
