@@ -60,9 +60,8 @@ ifdef CONFIG_IMAGES_LIBMAGICK
 LIBIMAGES_MODS+=io-libmagick
 MAGICK_LIBS:=$(shell GraphicsMagick-config --libs)
 MAGICK_CPPFLAGS:=$(shell GraphicsMagick-config --cppflags)
-LIBIMAGES_LIBS+=$(MAGICK_LIBS)
+LIBIMAGES_LIBS+=$(MAGICK_LIBS) -lpthread
 $(o)/images/io-libmagick.o: CFLAGS+=$(MAGICK_CPPFLAGS)
-$(o)/images/io-libmagick.o: LIBS+=-lpthread
 endif
 
 PROGS+=$(LIBIMAGES_PROGS)
