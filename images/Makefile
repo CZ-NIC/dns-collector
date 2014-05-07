@@ -86,6 +86,7 @@ $(o)/images/image-test.test: $(o)/images/image-test
 
 TESTS+=$(o)/images/color.test
 $(o)/images/color-t: $(LIBIMAGES) $(LIBUCW)
+$(o)/images/color-t: LIBS+=-lm
 $(o)/images/color.test: $(o)/images/color-t
 
 API_LIBS+=libucw-images
