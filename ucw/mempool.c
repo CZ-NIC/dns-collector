@@ -2,7 +2,7 @@
  *	UCW Library -- Memory Pools (One-Time Allocation)
  *
  *	(c) 1997--2014 Martin Mares <mj@ucw.cz>
- *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2007--2014 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -20,6 +20,9 @@
 #define MP_SIZE_MAX (~0U - MP_CHUNK_TAIL - CPU_PAGE_SIZE)
 
 struct mempool_chunk {
+#ifdef CONFIG_DEBUG
+  struct mempool *pool;		// Can be useful when analysing coredump for memory leaks
+#endif
   struct mempool_chunk *next;
   uns size;
 };
@@ -122,6 +125,9 @@ mp_new(uns chunk_size)
   struct mempool *pool = (void *)chunk - chunk_size;
   DBG("Creating mempool %p with %u bytes long chunks", pool, chunk_size);
   chunk->next = NULL;
+#ifdef CONFIG_DEBUG
+  chunk->pool = pool;
+#endif
   *pool = (struct mempool) {
     .allocator = {
       .alloc = mp_allocator_alloc,
@@ -227,7 +233,12 @@ mp_alloc_internal(struct mempool *pool, uns size)
 	  pool->unused = chunk->next;
 	}
       else
-	chunk = mp_new_chunk(pool->chunk_size);
+	{
+	  chunk = mp_new_chunk(pool->chunk_size);
+#ifdef CONFIG_DEBUG
+	  chunk->pool = pool;
+#endif
+	}
       chunk->next = pool->state.last[0];
       pool->state.last[0] = chunk;
       pool->state.free[0] = pool->chunk_size - size;
@@ -239,6 +250,9 @@ mp_alloc_internal(struct mempool *pool, uns size)
       uns aligned = ALIGN_TO(size, CPU_STRUCT_ALIGN);
       chunk = mp_new_big_chunk(aligned);
       chunk->next = pool->state.last[1];
+#ifdef CONFIG_DEBUG
+      chunk->pool = pool;
+#endif
       pool->state.last[1] = chunk;
       pool->state.free[1] = aligned - size;
       return pool->last_big = (void *)chunk - aligned;
