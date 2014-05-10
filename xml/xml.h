@@ -61,7 +61,7 @@ enum xml_pull {
 };
 
 enum xml_flags {
-  /* Enable reporting of various events via SAX and/or PUSH interface */
+  /* Enable reporting of various events via SAX and/or PULL interface */
   XML_REPORT_COMMENTS =			0x00000001,	/* Report comments */
   XML_REPORT_PIS =			0x00000002,	/* Report processing instructions */
   XML_REPORT_CHARS =			0x00000004,	/* Report characters */
@@ -228,10 +228,10 @@ void xml_reset(struct xml_context *ctx);
 /* Add XML source (fastbuf will be automatically closed) */
 struct xml_source *xml_push_fastbuf(struct xml_context *ctx, struct fastbuf *fb);
 
-/* Parse without the PUSH interface, return XML_ERR_x code (zero on success) */
+/* Parse without the PULL interface, return XML_ERR_x code (zero on success) */
 uns xml_parse(struct xml_context *ctx);
 
-/* Parse with the PUSH interface, return XML_STATE_x (zero on EOF or fatal error) */
+/* Parse with the PULL interface, return XML_STATE_x (zero on EOF or fatal error) */
 uns xml_next(struct xml_context *ctx);
 
 /* Equivalent to xml_next, but with temporarily changed ctx->pull value */
