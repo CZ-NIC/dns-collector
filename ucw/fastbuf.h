@@ -79,6 +79,9 @@
 #define fbpool_end ucw_fbpool_end
 #define fbpool_init ucw_fbpool_init
 #define fbpool_start ucw_fbpool_start
+#define fbnull_open ucw_fbnull_open
+#define fbnull_start ucw_fbnull_start
+#define fbnull_test ucw_fbnull_test
 #define open_tmp ucw_open_tmp
 #define temp_file_name ucw_temp_file_name
 #define vbprintf ucw_vbprintf
