@@ -3,6 +3,7 @@
  *
  *	(c) 1997--2011 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>
+ *	(c) 2014 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -541,6 +542,25 @@ static inline void fbatomic_commit(struct fastbuf *b)
   if (b->bptr >= ((struct fb_atomic *)b)->expected_max_bptr)
     fbatomic_internal_write(b);
 }
+
+/*** === Null fastbufs ***/
+
+/**
+ * Creates a new "/dev/null"-like  fastbuf.
+ * Any read attempt returns an EOF, any write attempt is silently ignored.
+ **/
+struct fastbuf *fbnull_open(uns bufsize);
+
+/**
+ * Can be used by any back-end to switch it to the null mode.
+ * You need to provide at least one byte long buffer for writing.
+ **/
+void fbnull_start(struct fastbuf *b, byte *buf, uns bufsize);
+
+/**
+ * Checks whether a fastbuf has been switched to the null mode.
+ **/
+bool fbnull_test(struct fastbuf *b);
 
 /***
  * === Fastbufs atop other fastbufs [[fbmulti]]
