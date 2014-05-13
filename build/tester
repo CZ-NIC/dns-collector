@@ -69,6 +69,7 @@ while (<>) {
 			last if $line eq $sep;
 			$tt->{$n} .= $line;
 		}
+		chomp $tt->{$n};
 	} else {
 		die "Test script syntax error";
 	}
