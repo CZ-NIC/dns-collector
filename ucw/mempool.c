@@ -80,40 +80,46 @@ mp_init(struct mempool *pool, uns chunk_size)
 }
 
 static void *
-mp_new_big_chunk(uns size)
+mp_new_big_chunk(struct mempool *pool, uns size)
 {
   struct mempool_chunk *chunk;
   chunk = xmalloc(size + MP_CHUNK_TAIL) + size;
   chunk->size = size;
+  if (pool)
+    pool->total_size += size + MP_CHUNK_TAIL;
   return chunk;
 }
 
 static void
-mp_free_big_chunk(struct mempool_chunk *chunk)
+mp_free_big_chunk(struct mempool *pool, struct mempool_chunk *chunk)
 {
+  pool->total_size -= chunk->size + MP_CHUNK_TAIL;
   xfree((void *)chunk - chunk->size);
 }
 
 static void *
-mp_new_chunk(uns size)
+mp_new_chunk(struct mempool *pool, uns size)
 {
 #ifdef CONFIG_UCW_POOL_IS_MMAP
   struct mempool_chunk *chunk;
   chunk = page_alloc(size + MP_CHUNK_TAIL) + size;
   chunk->size = size;
+  if (pool)
+    pool->total_size += size + MP_CHUNK_TAIL;
   return chunk;
 #else
-  return mp_new_big_chunk(size);
+  return mp_new_big_chunk(pool, size);
 #endif
 }
 
 static void
-mp_free_chunk(struct mempool_chunk *chunk)
+mp_free_chunk(struct mempool *pool, struct mempool_chunk *chunk)
 {
 #ifdef CONFIG_UCW_POOL_IS_MMAP
+  pool->total_size -= chunk->size + MP_CHUNK_TAIL;
   page_free((void *)chunk - chunk->size, chunk->size + MP_CHUNK_TAIL);
 #else
-  mp_free_big_chunk(chunk);
+  mp_free_big_chunk(pool, chunk);
 #endif
 }
 
@@ -121,7 +127,7 @@ struct mempool *
 mp_new(uns chunk_size)
 {
   chunk_size = mp_align_size(MAX(sizeof(struct mempool), chunk_size));
-  struct mempool_chunk *chunk = mp_new_chunk(chunk_size);
+  struct mempool_chunk *chunk = mp_new_chunk(NULL, chunk_size);
   struct mempool *pool = (void *)chunk - chunk_size;
   DBG("Creating mempool %p with %u bytes long chunks", pool, chunk_size);
   chunk->next = NULL;
@@ -137,28 +143,30 @@ mp_new(uns chunk_size)
     .state = { .free = { chunk_size - sizeof(*pool) }, .last = { chunk } },
     .chunk_size = chunk_size,
     .threshold = chunk_size >> 1,
-    .last_big = &pool->last_big };
+    .last_big = &pool->last_big,
+    .total_size = chunk->size + MP_CHUNK_TAIL,
+  };
   return pool;
 }
 
 static void
-mp_free_chain(struct mempool_chunk *chunk)
+mp_free_chain(struct mempool *pool, struct mempool_chunk *chunk)
 {
   while (chunk)
     {
       struct mempool_chunk *next = chunk->next;
-      mp_free_chunk(chunk);
+      mp_free_chunk(pool, chunk);
       chunk = next;
     }
 }
 
 static void
-mp_free_big_chain(struct mempool_chunk *chunk)
+mp_free_big_chain(struct mempool *pool, struct mempool_chunk *chunk)
 {
   while (chunk)
     {
       struct mempool_chunk *next = chunk->next;
-      mp_free_big_chunk(chunk);
+      mp_free_big_chunk(pool, chunk);
       chunk = next;
     }
 }
@@ -167,15 +175,15 @@ void
 mp_delete(struct mempool *pool)
 {
   DBG("Deleting mempool %p", pool);
-  mp_free_big_chain(pool->state.last[1]);
-  mp_free_chain(pool->unused);
-  mp_free_chain(pool->state.last[0]); // can contain the mempool structure
+  mp_free_big_chain(pool, pool->state.last[1]);
+  mp_free_chain(pool, pool->unused);
+  mp_free_chain(pool, pool->state.last[0]); // can contain the mempool structure
 }
 
 void
 mp_flush(struct mempool *pool)
 {
-  mp_free_big_chain(pool->state.last[1]);
+  mp_free_big_chain(pool, pool->state.last[1]);
   struct mempool_chunk *chunk, *next;
   for (chunk = pool->state.last[0]; chunk && (void *)chunk - chunk->size != pool; chunk = next)
     {
@@ -196,7 +204,7 @@ mp_stats_chain(struct mempool_chunk *chunk, struct mempool_stats *stats, uns idx
 {
   while (chunk)
     {
-      stats->chain_size[idx] += chunk->size + sizeof(*chunk);
+      stats->chain_size[idx] += chunk->size + MP_CHUNK_TAIL;
       stats->chain_count[idx]++;
       chunk = chunk->next;
     }
@@ -210,14 +218,13 @@ mp_stats(struct mempool *pool, struct mempool_stats *stats)
   mp_stats_chain(pool->state.last[0], stats, 0);
   mp_stats_chain(pool->state.last[1], stats, 1);
   mp_stats_chain(pool->unused, stats, 2);
+  ASSERT(stats->total_size == pool->total_size);
 }
 
 u64
 mp_total_size(struct mempool *pool)
 {
-  struct mempool_stats stats;
-  mp_stats(pool, &stats);
-  return stats.total_size;
+  return pool->total_size;
 }
 
 void *
@@ -234,7 +241,7 @@ mp_alloc_internal(struct mempool *pool, uns size)
 	}
       else
 	{
-	  chunk = mp_new_chunk(pool->chunk_size);
+	  chunk = mp_new_chunk(pool, pool->chunk_size);
 #ifdef CONFIG_DEBUG
 	  chunk->pool = pool;
 #endif
@@ -248,7 +255,7 @@ mp_alloc_internal(struct mempool *pool, uns size)
     {
       pool->idx = 1;
       uns aligned = ALIGN_TO(size, CPU_STRUCT_ALIGN);
-      chunk = mp_new_big_chunk(aligned);
+      chunk = mp_new_big_chunk(pool, aligned);
       chunk->next = pool->state.last[1];
 #ifdef CONFIG_DEBUG
       chunk->pool = pool;
@@ -314,6 +321,7 @@ mp_grow_internal(struct mempool *pool, uns size)
       amortized = MAX(amortized, size);
       amortized = ALIGN_TO(amortized, CPU_STRUCT_ALIGN);
       struct mempool_chunk *chunk = pool->state.last[1], *next = chunk->next;
+      pool->total_size = pool->total_size - chunk->size + amortized;
       ptr = xrealloc(ptr, amortized + MP_CHUNK_TAIL);
       chunk = ptr + amortized;
       chunk->next = next;
@@ -376,7 +384,7 @@ mp_restore(struct mempool *pool, struct mempool_state *state)
   for (chunk = pool->state.last[1]; chunk != s.last[1]; chunk = next)
     {
       next = chunk->next;
-      mp_free_big_chunk(chunk);
+      mp_free_big_chunk(pool, chunk);
     }
   pool->state = s;
   pool->last_big = &pool->last_big;
@@ -541,6 +549,11 @@ grow:
 	}
       else if (can_realloc && n && (r -= 5) < 0)
         ASSERT(mp_size(mp, ptr[n - 1]) == len[n - 1]);
+      else
+	{
+	  struct mempool_stats stats;
+	  mp_stats(mp, &stats);
+	}
     }
 
   mp_delete(mp);
