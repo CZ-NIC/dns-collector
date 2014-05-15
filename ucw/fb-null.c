@@ -21,6 +21,7 @@ struct fastbuf *fbnull_open(uns bufsize)
 {
   struct fastbuf *b = xmalloc(sizeof(*b) + bufsize);
   bzero(b, sizeof(*b));
+  b->name = "<fbnull>";
   b->close = fbnull_close;
   fbnull_start(b, (byte *)(b + 1), bufsize);
   return b;
