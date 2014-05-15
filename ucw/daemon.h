@@ -16,7 +16,9 @@
 #define daemon_control ucw_daemon_control
 #define daemon_exit ucw_daemon_exit
 #define daemon_init ucw_daemon_init
+#define daemon_resolve_ugid ucw_daemon_resolve_ugid
 #define daemon_run ucw_daemon_run
+#define daemon_switch_ugid ucw_daemon_switch_ugid
 #endif
 
 /** Parameters passed to the daemon helper. **/

@@ -95,6 +95,8 @@ crc32_hash_buffer
 daemon_init
 daemon_run
 daemon_exit
+daemon_resolve_ugid
+daemon_switch_ugid
 daemon_control
 # ucw/eltpool.h
 ep_new
@@ -138,6 +140,9 @@ fbpool_start
 fbpool_end
 fbatomic_open
 fbatomic_internal_write
+fbnull_open
+fbnull_start
+fbnull_test
 fbmulti_create
 fbmulti_append
 fbmulti_remove
@@ -250,6 +255,7 @@ log_init
 log_fork
 log_file
 assert_failed
+assert_failed_msg
 assert_failed_noinfo
 xmalloc
 xrealloc
