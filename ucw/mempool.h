@@ -12,12 +12,15 @@
 #define _UCW_POOLS_H
 
 #include <ucw/alloc.h>
+#include <string.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define mp_alloc ucw_mp_alloc
 #define mp_alloc_internal ucw_mp_alloc_internal
 #define mp_alloc_noalign ucw_mp_alloc_noalign
 #define mp_alloc_zero ucw_mp_alloc_zero
+#define mp_append_printf ucw_mp_append_printf
+#define mp_append_vprintf ucw_mp_append_vprintf
 #define mp_delete ucw_mp_delete
 #define mp_flush ucw_mp_flush
 #define mp_grow_internal ucw_mp_grow_internal
@@ -28,7 +31,6 @@
 #define mp_open ucw_mp_open
 #define mp_pop ucw_mp_pop
 #define mp_printf ucw_mp_printf
-#define mp_printf_append ucw_mp_printf_append
 #define mp_push ucw_mp_push
 #define mp_realloc ucw_mp_realloc
 #define mp_realloc_zero ucw_mp_realloc_zero
@@ -43,7 +45,6 @@
 #define mp_strjoin ucw_mp_strjoin
 #define mp_total_size ucw_mp_total_size
 #define mp_vprintf ucw_mp_vprintf
-#define mp_vprintf_append ucw_mp_vprintf_append
 #endif
 
 /***
@@ -319,6 +320,40 @@ static inline void *mp_spread(struct mempool *pool, void *p, uns size)
 }
 
 /**
+ * Append a character to the growing buffer. Called with @p pointing after
+ * the last byte in the buffer, returns a pointer after the last byte
+ * of the new (possibly reallocated) buffer.
+ **/
+static inline char *mp_append_char(struct mempool *pool, char *p, uns c)
+{
+  p = mp_spread(pool, p, 1);
+  *p++ = c;
+  return p;
+}
+
+/**
+ * Append a memory block to the growing buffer. Called with @p pointing after
+ * the last byte in the buffer, returns a pointer after the last byte
+ * of the new (possibly reallocated) buffer.
+ **/
+static inline void *mp_append_block(struct mempool *pool, void *p, const void *block, uns size)
+{
+  char *q = mp_spread(pool, p, size);
+  memcpy(q, block, size);
+  return q + size;
+}
+
+/**
+ * Append a string to the growing buffer. Called with @p pointing after
+ * the last byte in the buffer, returns a pointer after the last byte
+ * of the new (possibly reallocated) buffer.
+ **/
+static inline void *mp_append_string(struct mempool *pool, void *p, const char *str)
+{
+  return mp_append_block(pool, p, str, strlen(str));
+}
+
+/**
  * Close the growing buffer. The @end must point just behind the data, you want to keep
  * allocated (so it can be in the interval `[@mp_ptr(@pool), @mp_ptr(@pool) + @mp_avail(@pool)]`).
  * Returns a pointer to the beginning of the just closed block.
@@ -328,6 +363,15 @@ static inline void *mp_end(struct mempool *pool, void *end)
   void *p = mp_ptr(pool);
   pool->state.free[pool->idx] = (byte *)pool->state.last[pool->idx] - (byte *)end;
   return p;
+}
+
+/**
+ * Close the growing buffer as a string. That is, append a zero byte and call mp_end().
+ **/
+static inline char *mp_end_string(struct mempool *pool, void *end)
+{
+  end = mp_append_char(pool, end, 0);
+  return mp_end(pool, end);
 }
 
 /**
@@ -489,11 +533,19 @@ char *mp_vprintf(struct mempool *mp, const char *fmt, va_list args) LIKE_MALLOC;
  *
  * Returns pointer to the beginning of the string (the pointer may have
  * changed due to reallocation).
+ *
+ * Alternatively, this function may be called mp_printf_append() for compatibility with
+ * previous releases of LibUCW.
  **/
-char *mp_printf_append(struct mempool *mp, char *ptr, const char *fmt, ...) FORMAT_CHECK(printf,3,4);
+char *mp_append_printf(struct mempool *mp, char *ptr, const char *fmt, ...) FORMAT_CHECK(printf,3,4);
+#define mp_printf_append mp_append_printf
 /**
- * Like @mp_printf_append(), but uses `va_list` for parameters.
+ * Like @mp_append_printf(), but uses `va_list` for parameters.
+ *
+ * Alternatively, this function may be called mp_vprintf_append() for compatibility with
+ * previous releases of LibUCW.
  **/
-char *mp_vprintf_append(struct mempool *mp, char *ptr, const char *fmt, va_list args);
+char *mp_append_vprintf(struct mempool *mp, char *ptr, const char *fmt, va_list args);
+#define mp_vprintf_append mp_append_vprintf
 
 #endif

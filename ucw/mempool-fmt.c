@@ -65,7 +65,7 @@ mp_printf(struct mempool *p, const char *fmt, ...)
 }
 
 char *
-mp_vprintf_append(struct mempool *mp, char *ptr, const char *fmt, va_list args)
+mp_append_vprintf(struct mempool *mp, char *ptr, const char *fmt, va_list args)
 {
   uns ofs = mp_open(mp, ptr);
   ASSERT(ofs && !ptr[ofs - 1]);
@@ -73,7 +73,7 @@ mp_vprintf_append(struct mempool *mp, char *ptr, const char *fmt, va_list args)
 }
 
 char *
-mp_printf_append(struct mempool *mp, char *ptr, const char *fmt, ...)
+mp_append_printf(struct mempool *mp, char *ptr, const char *fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
@@ -89,9 +89,9 @@ int main(void)
   struct mempool *mp = mp_new(64);
   char *x = mp_printf(mp, "<Hello, %s!>", "World");
   fputs(x, stdout);
-  x = mp_printf_append(mp, x, "<Appended>");
+  x = mp_append_printf(mp, x, "<Appended>");
   fputs(x, stdout);
-  x = mp_printf(mp, "<Hello, %50s!>\n", "World");
+  x = mp_append_printf(mp, "<Hello, %50s!>\n", "World");
   fputs(x, stdout);
   return 0;
 }
