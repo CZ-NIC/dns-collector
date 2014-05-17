@@ -27,7 +27,7 @@
  *  ASORT_KEY_TYPE  [*]	data type of a single array entry key
  *  ASORT_ELT(i)	returns the key of i-th element; if this macro is not
  *			defined, the function gets a pointer to an array to be sorted
- *  ASORT_LT(x,y)	x < y for ASORT_TYPE (default: "x<y")
+ *  ASORT_LT(x,y)	x < y for ASORT_KEY_TYPE (default: "x<y")
  *  ASORT_SWAP(i,j)	swap i-th and j-th element (default: assume _ELT
  *			is an l-value and swap just the keys)
  *  ASORT_THRESHOLD	threshold for switching between quicksort and insertsort
