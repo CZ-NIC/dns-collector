@@ -137,6 +137,11 @@ void mp_stats(struct mempool *pool, struct mempool_stats *stats);
  **/
 u64 mp_total_size(struct mempool *pool);
 
+/**
+ * Release unused chunks of memory reserved for further allocation
+ * requests, but stop if mp_total_size() would drop below @min_total_size.
+ **/
+void mp_shrink(struct mempool *pool, u64 min_total_size);
 
 /***
  * [[alloc]]

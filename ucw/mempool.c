@@ -230,6 +230,19 @@ mp_total_size(struct mempool *pool)
   return pool->total_size;
 }
 
+void
+mp_shrink(struct mempool *pool, u64 min_total_size)
+{
+  while (1)
+    {
+      struct mempool_chunk *chunk = pool->unused;
+      if (!chunk || pool->total_size - (chunk->size + MP_CHUNK_TAIL) < min_total_size)
+	break;
+      pool->unused = chunk->next;
+      mp_free_chunk(pool, chunk);
+    }
+}
+
 void *
 mp_alloc_internal(struct mempool *pool, uns size)
 {
