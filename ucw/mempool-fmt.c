@@ -91,7 +91,7 @@ int main(void)
   fputs(x, stdout);
   x = mp_append_printf(mp, x, "<Appended>");
   fputs(x, stdout);
-  x = mp_append_printf(mp, "<Hello, %50s!>\n", "World");
+  x = mp_printf(mp, "<Hello, %50s!>\n", "World");
   fputs(x, stdout);
   return 0;
 }
