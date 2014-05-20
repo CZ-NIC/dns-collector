@@ -219,6 +219,9 @@ mp_stats(struct mempool *pool, struct mempool_stats *stats)
   mp_stats_chain(pool->state.last[1], stats, 1);
   mp_stats_chain(pool->unused, stats, 2);
   ASSERT(stats->total_size == pool->total_size);
+  stats->used_size = stats->chain_size[0] + stats->chain_size[1]
+    - MP_CHUNK_TAIL * (stats->chain_count[0] + stats->chain_count[1])
+    - pool->state.free[0] - pool->state.free[1];
 }
 
 u64
