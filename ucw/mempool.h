@@ -79,7 +79,7 @@ struct mempool_stats {			/** Mempool statistics. See @mp_stats(). **/
   u64 total_size;			/* Real allocated size in bytes */
   u64 used_size;			/* Estimated size allocated from mempool to application */
   uns chain_count[3];			/* Number of allocated chunks in small/big/unused chains */
-  uns chain_size[3];			/* Size of allocated chunks in small/big/unused chains */
+  u64 chain_size[3];			/* Size of allocated chunks in small/big/unused chains */
 };
 
 /***
