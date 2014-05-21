@@ -170,7 +170,7 @@ struct fastbuf *
 fbmulti_create(void)
 {
   struct mempool *mp = mp_new(1024);
-  struct fastbuf *fb_out = mp_alloc(mp, sizeof(struct fb_multi));
+  struct fastbuf *fb_out = mp_alloc_zero(mp, sizeof(struct fb_multi));
   struct fb_multi *fbm = FB_MULTI(fb_out);
 
   fbm->mp = mp;
