@@ -10,5 +10,5 @@ Name: libucw-xml
 Description: XML parser for LibUCW project
 Version: @UCW_VERSION@
 Cflags: -I${incdir}
-Libs: -L${libdir} -lucw-xml@UCW_ABI_SUFFIX@${picsuffix}
+Libs: -L${libdir} @SO_LINK_PATH@ -lucw-xml@UCW_ABI_SUFFIX@${picsuffix}
 Requires.private: @DEPS@

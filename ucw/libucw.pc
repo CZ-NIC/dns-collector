@@ -14,5 +14,5 @@ Name: libucw
 Description: A library of utility functions and data structures
 Version: @UCW_VERSION@
 Cflags: -I${incdir}
-Libs: -L${libdir} -lucw@UCW_ABI_SUFFIX@${picsuffix}
+Libs: -L${libdir} @SO_LINK_PATH@ -lucw@UCW_ABI_SUFFIX@${picsuffix}
 Libs.private: @LIBUCW_LIBS@

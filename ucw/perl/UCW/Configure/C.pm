@@ -119,12 +119,23 @@ Set("LIBS" => "");
 
 # Extra flags for compiling and linking shared libraries
 Set("CSHARED" => '-fPIC');
+Set("SO_LINK_PATH" => '');
 if (IsSet("CONFIG_LOCAL")) {
 	Set("SONAME_PREFIX" => "lib/");
 	Append("LOPT" => "-Wl,--rpath-link -Wl,run");
 } else {
 	Set("SONAME_PREFIX" => "");
 	Append("LOPT" => "-Wl,--rpath-link -Wl,run/lib");
+	if (IsSet("CONFIG_SHARED") && !(Get("INSTALL_LIB_DIR") eq "/usr/lib")) {
+		Set("SO_LINK_PATH" => "-Wl,--rpath " . Get("INSTALL_LIB_DIR"));
+		AtWrite {
+			# FIXME: This is a hack. GCC would otherwise fail to link binaries.
+			my $libdir = Get("INSTALL_LIB_DIR");
+			if (!(-d $libdir)) {
+				`install -d -m 755 $libdir`; Fail("Cannot create $libdir") if $?;
+			}
+		};
+	}
 }
 if (IsSet("CONFIG_DARWIN")) {
 	Set("LSHARED" => '-dynamiclib -install_name $(SONAME_PREFIX)$(@F)$(SONAME_SUFFIX) -undefined dynamic_lookup');
