@@ -65,6 +65,7 @@ endif
 	$(M)LD $@
 	$(Q)$(CC) $(LSHARED) $(LDFLAGS) -o $@ $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" PKG_CONFIG_OPTS="$(PKG_CONFIG_OPTS)" $(BUILDSYS)/lib-flags $^) $(LIBS)
 	$(Q)$(call symlink-alias,$@,run/$(SO_RUNDIR),$(*F)$(SONAME_INFIX).so$(SONAME_SUFFIX))
+	$(Q)ln -fs $(*F)$(SONAME_INFIX).so$(SONAME_SUFFIX) run/$(SO_RUNDIR)/$(*F)$(SONAME_INFIX).so
 
 # On Darwin, gcc expects shared libraries in *.dylib instead of *.so.
 # Surprisingly, when a program is run, it suffices to have *.so files.
