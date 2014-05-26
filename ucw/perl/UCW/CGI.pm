@@ -371,6 +371,10 @@ sub parse_multipart_form_data() {
 				print STDERR "FILE UPLOAD to $fn\n" if $debug;
 				${$a->{"file"}} = $fn;
 				${$a->{"fh"}} = $fh if defined $a->{"fh"};
+				if (defined $a->{"filename"}){
+					my ($filename) = ($cdisp =~ /;filename=([^;]+)/);
+					(${$a->{"filename"}}) = rfc822_deescape($filename) if defined $filename;
+				}
 				my $total_size = 0;
 				while (my $i = refill_mp_data(4096)) {
 					print $fh substr($mp_buffer, $mp_buffer_i, $i);
