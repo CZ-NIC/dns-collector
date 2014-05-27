@@ -3,12 +3,9 @@
 libdir=@LIBDIR@
 incdir=.
 
-# Override if you want to use the -pic version
-picsuffix=
-
 Name: libucw-charset
 Description: Character set conversion library
 Version: @UCW_VERSION@
 Cflags: -I${incdir}
-Libs: -L${libdir} @SO_LINK_PATH@ -lucw-charset@UCW_ABI_SUFFIX@${picsuffix}
+Libs: -L${libdir} @SO_LINK_PATH@ -lucw-charset@UCW_ABI_SUFFIX@
 Requires.private: @DEPS@

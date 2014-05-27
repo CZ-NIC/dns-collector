@@ -15,9 +15,6 @@ else
 LIBIMAGES_DEPS=$(LIBUCW)
 endif
 
-ifdef CONFIG_STATIC_PIC
-LIBIMAGES_DEPS+=$(o)/images/libucw-images$(LV)-pic.a
-endif
 ifdef CONFIG_INSTALL_API
 $(o)/images/libucw-images.pc: $(addprefix $(o)/images/libucw-images$(LV),.a .so)
 endif
@@ -68,7 +65,6 @@ PROGS+=$(LIBIMAGES_PROGS)
 CONFIGS+=$(LIBIMAGES_CONFIGS)
 
 $(o)/images/libucw-images$(LV).a: $(addsuffix .o,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
-$(o)/images/libucw-images$(LV)-pic.a: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS)))
 $(o)/images/libucw-images$(LV).so: $(addsuffix .oo,$(addprefix $(o)/images/,$(LIBIMAGES_MODS))) $(LIBIMAGES_DEPS)
 $(o)/images/libucw-images$(LV).so: SONAME_SUFFIX=.0
 $(o)/images/libucw-images$(LV).so: LIBS+=$(LIBIMAGES_LIBS)

@@ -102,14 +102,10 @@ LIBUCW_LIBS+=-lrt
 endif
 
 $(o)/ucw/libucw$(LV).a: $(addsuffix .o,$(LIBUCW_MOD_PATHS))
-$(o)/ucw/libucw$(LV)-pic.a: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 $(o)/ucw/libucw$(LV).so: $(addsuffix .oo,$(LIBUCW_MOD_PATHS))
 $(o)/ucw/libucw$(LV).so: SONAME_SUFFIX=.0
 $(o)/ucw/libucw$(LV).so: LIBS+=$(LIBUCW_LIBS)
 
-ifdef CONFIG_STATIC_PIC
-$(o)/ucw/libucw.pc: $(o)/ucw/libucw$(LV)-pic.a
-endif
 ifdef CONFIG_INSTALL_API
 $(o)/ucw/libucw.pc: $(addprefix $(o)/ucw/libucw$(LV),.a .so)
 endif

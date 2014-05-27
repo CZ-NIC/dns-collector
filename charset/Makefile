@@ -8,14 +8,10 @@ LIBCHARSET_INCLUDES=charconv.h unicat.h fb-charconv.h stk-charconv.h mp-charconv
 LIBCHARSET_DEPS=$(LIBUCW)
 
 $(o)/charset/libucw-charset$(LV).a: $(addsuffix .o,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
-$(o)/charset/libucw-charset$(LV)-pic.a: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS)))
 $(o)/charset/libucw-charset$(LV).so: $(addsuffix .oo,$(addprefix $(o)/charset/,$(LIBCHARSET_MODS))) $(LIBCHARSET_DEPS)
 $(o)/charset/libucw-charset$(LV).so: SONAME_SUFFIX=.0
 $(o)/charset/libucw-charset.pc: $(LIBCHARSET_DEPS)
 
-ifdef CONFIG_STATIC_PIC
-$(o)/charset/libucw-charset.pc: $(o)/charset/libucw-charset$(LV)-pic.a
-endif
 ifdef CONFIG_INSTALL_API
 $(o)/charset/libucw-charset.pc: $(addprefix $(o)/charset/libucw-charset$(LV),.a .so)
 endif
