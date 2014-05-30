@@ -36,9 +36,8 @@ void table_init(struct table *tbl, struct fastbuf *out)
 
   tbl->column_count = col_count;
 
-  // FIXME: Why? Better check if tbl->callbacks is NULL.
-  if(tbl->callbacks->row_output_func == NULL && tbl->callbacks->table_start_callback == NULL && tbl->callbacks->table_end_callback == NULL) {
-    tbl->callbacks = &table_fmt_human_readable;
+  if(!tbl->formatter) {
+    tbl->formatter = &table_fmt_human_readable;
   }
 
   tbl->print_header = 1; // by default, print header
@@ -70,7 +69,7 @@ void table_start(struct table *tbl)
 
   if(tbl->column_order == NULL) table_make_default_column_order(tbl);
 
-  if(tbl->callbacks->table_start_callback != NULL) tbl->callbacks->table_start_callback(tbl);
+  if(tbl->formatter->table_start != NULL) tbl->formatter->table_start(tbl);
   if(tbl->cols_to_output == 0) {
     // FIXME: Why?
     die("Table should output at least one column.");
@@ -90,14 +89,14 @@ void table_end(struct table *tbl)
 
   mp_restore(tbl->pool, &tbl->pool_state);
 
-  if(tbl->callbacks->table_end_callback) tbl->callbacks->table_end_callback(tbl);
+  if(tbl->formatter->table_end) tbl->formatter->table_end(tbl);
 }
 
 /*** Configuration ***/
 
-void table_set_output_callbacks(struct table *tbl, struct table_output_callbacks *callbacks)
+void table_set_formatter(struct table *tbl, struct table_formatter *fmt)
 {
-  tbl->callbacks = callbacks;
+  tbl->formatter = fmt;
 }
 
 int table_get_col_idx(struct table *tbl, const char *col_name)
@@ -112,6 +111,7 @@ const char * table_get_col_list(struct table *tbl)
 {
   if(tbl->column_count == 0) return NULL;
 
+  // FIXME: This does not work! The start of the string may be reallocated later.
   char *tmp = mp_printf(tbl->pool, "%s", tbl->columns[0].name);
 
   for(int i = 1; i < tbl->column_count; i++) {
@@ -311,11 +311,8 @@ void table_append_printf(struct table *tbl, const char *fmt, ...)
 
 void table_end_row(struct table *tbl)
 {
-  if(tbl->callbacks->row_output_func) {
-    tbl->callbacks->row_output_func(tbl);
-  } else {
-    die("Tableprinter: invalid parameter, struct table does not have filled row_output_func");
-  }
+  ASSERT(tbl->formatter->row_output);
+  tbl->formatter->row_output(tbl);
   memset(tbl->col_str_ptrs, 0, sizeof(char *) * tbl->column_count);
   mp_restore(tbl->pool, &tbl->pool_state);
   tbl->last_printed_col = -1;
@@ -340,29 +337,18 @@ void table_col_fbend(struct table *tbl)
 
 /*** Option parsing ***/
 
-static int get_colon(char *str)
+const char *table_set_option_value(struct table *tbl, const char *key, const char *value)
 {
-  int l = strlen(str);
-  for(int i = 0; i < l; i++) {
-    if(str[i] == ':') return i;
-  }
-  return -1;
-}
-
-static const char *table_set_option2(struct table *tbl, const char *key, const char *value)
-{
+  // Options with no value
   if(value == NULL || (value != NULL && strlen(value) == 0)) {
     if(strcmp(key, "noheader") == 0) {
       tbl->print_header = 0;
       return NULL;
-    } else {
-      int rv = 1;
-      if(tbl->callbacks && tbl->callbacks->process_option) rv = tbl->callbacks->process_option(tbl, key, value);
-      if(rv) {
-        return mp_printf(tbl->pool, "Tableprinter: invalid option: '%s'.", key);
-      }
     }
-  } else {
+  }
+
+  // Options with a value
+  if(value) {
     if(strcmp(key, "header") == 0) {
       // FIXME: Check syntax of value.
       //tbl->print_header = strtol(value, NULL, 10); //atoi(value);
@@ -382,8 +368,8 @@ static const char *table_set_option2(struct table *tbl, const char *key, const c
       }
       return NULL;
     } else if(strcmp(key, "fmt") == 0) {
-      if(strcmp(value, "human") == 0) table_set_output_callbacks(tbl, &table_fmt_human_readable);
-      else if(strcmp(value, "machine") == 0) table_set_output_callbacks(tbl, &table_fmt_machine_readable);
+      if(strcmp(value, "human") == 0) table_set_formatter(tbl, &table_fmt_human_readable);
+      else if(strcmp(value, "machine") == 0) table_set_formatter(tbl, &table_fmt_machine_readable);
       else {
         return "Tableprinter: invalid argument to output-type option.";
       }
@@ -392,42 +378,45 @@ static const char *table_set_option2(struct table *tbl, const char *key, const c
       char * d = mp_printf(tbl->pool, "%s", value);
       tbl->col_delimiter = d;
       return NULL;
-    } else {
-      int rv = 1;
-      if(tbl->callbacks && tbl->callbacks->process_option) rv = tbl->callbacks->process_option(tbl, key, value);
-      if(rv) {
-        return mp_printf(tbl->pool, "Tableprinter: invalid option: '%s:%s'.", key, value);
-      }
     }
   }
-  return NULL;
+
+  // Formatter options
+  if(tbl->formatter && tbl->formatter->process_option) {
+    const char *err = NULL;
+    if (tbl->formatter->process_option(tbl, key, value, &err)) {
+      return err;
+    }
+  }
+
+  // Unrecognized option
+  return mp_printf(tbl->pool, "Tableprinter: invalid option: '%s%s%s'.", key, (value ? ":" : ""), (value ? : ""));
 }
 
 const char *table_set_option(struct table *tbl, const char *opt)
 {
-  char *opt_dup = stk_strdup(opt);
-  int colidx = get_colon(opt_dup);
-  if(colidx > 0) opt_dup[colidx] = 0;
-  char *key = opt_dup;
-  char *value = NULL;
-  if(colidx > 0) value = opt_dup + colidx + 1;
-  return table_set_option2(tbl, key, value);
+  char *key = stk_strdup(opt);
+  char *value = strchr(key, ':');
+  if(value) {
+    *value++ = 0;
+  }
+  return table_set_option_value(tbl, key, value);
 }
 
 const char *table_set_gary_options(struct table *tbl, char **gary_table_opts)
 {
   for (uint i = 0; i < GARY_SIZE(gary_table_opts); i++) {
     const char *rv = table_set_option(tbl, gary_table_opts[i]);
-    if (rv != NULL) {
+    if(rv != NULL) {
       return rv;
     }
   }
   return NULL;
 }
 
-/*** Default formatter for human-readble output ***/
+/*** Default formatter for human-readable output ***/
 
-static int table_oneline_human_readable(struct table *tbl)
+static void table_row_human_readable(struct table *tbl)
 {
   uint col = tbl->column_order[0];
   int col_width = tbl->columns[col].width;
@@ -440,7 +429,6 @@ static int table_oneline_human_readable(struct table *tbl)
   }
 
   bputc(tbl->out, '\n');
-  return 0;
 }
 
 static void table_write_header(struct table *tbl)
@@ -457,7 +445,7 @@ static void table_write_header(struct table *tbl)
   bputc(tbl->out, '\n');
 }
 
-static int table_start_human_readable(struct table *tbl)
+static void table_start_human_readable(struct table *tbl)
 {
   if(tbl->col_delimiter == NULL) {
     tbl->col_delimiter = " ";
@@ -471,23 +459,16 @@ static int table_start_human_readable(struct table *tbl)
     tbl->print_header = 0;
     table_write_header(tbl);
   }
-  return 0;
 }
 
-static int table_end_human_readable(struct table *tbl UNUSED)
-{
-  return 0;
-}
-
-struct table_output_callbacks table_fmt_human_readable = {
-  .row_output_func = table_oneline_human_readable,
-  .table_start_callback = table_start_human_readable,
-  .table_end_callback = table_end_human_readable,
+struct table_formatter table_fmt_human_readable = {
+  .row_output = table_row_human_readable,
+  .table_start = table_start_human_readable,
 };
 
 /*** Default formatter for machine-readable output ***/
 
-static int table_oneline_machine_readable(struct table *tbl)
+static void table_row_machine_readable(struct table *tbl)
 {
   uint col = tbl->column_order[0];
   bputs(tbl->out, tbl->col_str_ptrs[col]);
@@ -498,10 +479,9 @@ static int table_oneline_machine_readable(struct table *tbl)
   }
 
   bputc(tbl->out, '\n');
-  return 0;
 }
 
-static int table_start_machine_readable(struct table *tbl)
+static void table_start_machine_readable(struct table *tbl)
 {
   if(tbl->col_delimiter == NULL) {
     tbl->col_delimiter = ";";
@@ -525,18 +505,11 @@ static int table_start_machine_readable(struct table *tbl)
     }
     bputc(tbl->out, '\n');
   }
-  return 0;
 }
 
-static int table_end_machine_readable(struct table *tbl UNUSED)
-{
-  return 0;
-}
-
-struct table_output_callbacks table_fmt_machine_readable = {
-  .row_output_func = table_oneline_machine_readable,
-  .table_start_callback = table_start_machine_readable,
-  .table_end_callback = table_end_machine_readable,
+struct table_formatter table_fmt_machine_readable = {
+  .row_output = table_row_machine_readable,
+  .table_start = table_start_machine_readable,
 };
 
 /*** Tests ***/

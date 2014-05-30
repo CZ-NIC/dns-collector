@@ -47,8 +47,8 @@ enum column_type {
 #define TBL_COL_DELIMITER(_delimiter_) .col_delimiter = _delimiter_
 #define TBL_APPEND_DELIMITER(_delimiter_) .append_delimiter = _delimiter_
 
-#define TBL_OUTPUT_HUMAN_READABLE     .callbacks = &table_fmt_human_readable
-#define TBL_OUTPUT_MACHINE_READABLE   .callbacks = &table_fmt_machine_readable
+#define TBL_OUTPUT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
+#define TBL_OUTPUT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
 
 /***
  * [[ Usage ]]
@@ -133,15 +133,6 @@ struct table_column {
   enum column_type type;	// Type of the cells in the column
 };
 
-struct table_output_callbacks {
-  int (*row_output_func)(struct table *tbl);       // [*] Function that outputs one row
-  int (*table_start_callback)(struct table *tbl);  // [*] table_start callback
-  int (*table_end_callback)(struct table *tbl);    // [*] table_end callback
-	// FIXME: Int -> void?
-  int (*process_option)(struct table *tbl, const char *key, const char *value);
-	// FIXME: Shouldn't it be possible to return also a custom error string? For example in an optionally writeable `const char **' argument.
-};
-
 /** The definition of a table. Contains column definitions plus internal data. */
 struct table {
   struct table_column *columns;		// [*] Definition of columns
@@ -167,7 +158,7 @@ struct table {
   int col_out;				// Index of the column that is currently printed using fb_col_out
 
   // Back-end used for table formatting and its private data
-  struct table_output_callbacks *callbacks;
+  struct table_formatter *formatter;
   void *data;
 };
 
@@ -256,10 +247,22 @@ struct fastbuf *table_col_fbstart(struct table *tbl, int col);
 void table_col_fbend(struct table *tbl);
 
 /**
- * Sets the callbacks in @tbl. The callbacks are stored the arg @callbacks.
+ * Sets table formatter for @tbl.
  **/
-void table_set_output_callbacks(struct table *tbl, struct table_output_callbacks *callbacks);
+void table_set_formatter(struct table *tbl, struct table_formatter *fmt);
 
+/** Definition of a formatter back-end. **/
+struct table_formatter {
+  void (*row_output)(struct table *tbl);	// [*] Function that outputs one row
+  void (*table_start)(struct table *tbl);	// [*] table_start callback (optional)
+  void (*table_end)(struct table *tbl);		// [*] table_end callback (optional)
+  bool (*process_option)(struct table *tbl, const char *key, const char *value, const char **err);
+	// [*] Process table option and possibly return an error message (optional)
+};
+
+// Standard formatters
+extern struct table_formatter table_fmt_human_readable;
+extern struct table_formatter table_fmt_machine_readable;
 
 /**
  * Process the table one option and sets the values in @tbl according to the command-line parameters.
@@ -275,11 +278,8 @@ void table_set_output_callbacks(struct table *tbl, struct table_output_callbacks
  * Returns NULL on success or an error string otherwise.
  **/
 const char *table_set_option(struct table *tbl, const char *opt);
+const char *table_set_option_value(struct table *tbl, const char *key, const char *value);
 const char *table_set_gary_options(struct table *tbl, char **gary_table_opts);
-
-// Standard formatters
-extern struct table_output_callbacks table_fmt_human_readable;
-extern struct table_output_callbacks table_fmt_machine_readable;
 
 #define TABLE_SET_COL_PROTO(_name_, _type_) void table_set_##_name_(struct table *tbl, int col, _type_ val);\
   void table_set_##_name_##_name(struct table *tbl, const char *col_name, _type_ val);\

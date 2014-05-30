@@ -117,23 +117,23 @@ static void process_command_line_opts(char *argv[], struct table *tbl)
   GARY_FREE(cli_table_opts);
 }
 
-static int user_defined_option(struct table *tbl UNUSED, const char *key, const char *value)
+static bool user_defined_option(struct table *tbl UNUSED, const char *key, const char *value, const char **err UNUSED)
 {
   if(value == NULL && strcmp(key, "novaluekey") == 0) {
     printf("setting key: %s; value: (null)\n", key);
-    return 0;
+    return 1;
   }
   if(value != NULL && strcmp(value, "value") == 0 &&
      key != NULL && strcmp(key, "valuekey") == 0) {
     printf("setting key: %s; value: %s\n", key, value);
-    return 0;
+    return 1;
   }
-  return 1;
+  return 0;
 }
 
 static void test_option_parser(struct table *tbl)
 {
-  tbl->callbacks->process_option = user_defined_option;
+  tbl->formatter->process_option = user_defined_option;
   const char *rv = table_set_option(tbl, "invalid:option");
   if(rv) printf("Tableprinter option parser returned error: \"%s\".\n", rv);
 
