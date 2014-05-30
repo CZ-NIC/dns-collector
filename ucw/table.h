@@ -4,8 +4,8 @@
  *	(c) 2014 Robert Kessl <robert.kessl@economia.cz>
  */
 
-#ifndef _TABLEPRINTER_H
-#define _TABLEPRINTER_H
+#ifndef _UCW_TABLE_H
+#define _UCW_TABLE_H
 
 #include <ucw/fastbuf.h>
 #include <ucw/mempool.h>
