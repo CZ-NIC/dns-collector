@@ -85,7 +85,6 @@ void table_end(struct table *tbl)
 {
   tbl->last_printed_col = -1;
   tbl->row_printing_started = 0;
-  tbl->print_header = 1;
 
   mp_restore(tbl->pool, &tbl->pool_state);
 
@@ -456,7 +455,6 @@ static void table_start_human_readable(struct table *tbl)
   }
 
   if(tbl->print_header != 0) {
-    tbl->print_header = 0;
     table_write_header(tbl);
   }
 }
@@ -492,10 +490,6 @@ static void table_start_machine_readable(struct table *tbl)
   }
 
   if(tbl->print_header != 0) {
-    // FIXME: This magic is not needed, the value of print_header should be kept
-    // to the value set during table initialization (e.g., by command-line options)
-    tbl->print_header = 0;
-
     uint col_idx = tbl->column_order[0];
     bputs(tbl->out, tbl->columns[col_idx].name);
     for(uint i = 1; i < tbl->cols_to_output; i++) {
@@ -584,6 +578,7 @@ static void test_simple1(struct fastbuf *out)
   table_start(&test_tbl);
   do_print1(&test_tbl);
   table_end(&test_tbl);
+  test_tbl.print_header = 1;
 
   table_col_order_by_name(&test_tbl, "col3_bool");
   table_start(&test_tbl);
