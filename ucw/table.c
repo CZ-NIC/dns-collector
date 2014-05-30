@@ -12,29 +12,7 @@
 
 #include <stdlib.h>
 
-/**
- * Forward defintions of table callbacks. Should these routines be static/private in the
- * table.c ?  What about the return value? Is it better to have void instead of int?
- **/
-static int table_oneline_human_readable(struct table *tbl);
-static int table_start_human_readable(struct table *tbl);
-static int table_end_human_readable(struct table *tbl);
-
-static int table_oneline_machine_readable(struct table *tbl);
-static int table_start_machine_readable(struct table *tbl);
-static int table_end_machine_readable(struct table *tbl);
-
-struct table_output_callbacks table_fmt_human_readable = {
-  .row_output_func = table_oneline_human_readable,
-  .table_start_callback = table_start_human_readable,
-  .table_end_callback = table_end_human_readable,
-};
-
-struct table_output_callbacks table_fmt_machine_readable = {
-  .row_output_func = table_oneline_machine_readable,
-  .table_start_callback = table_start_machine_readable,
-  .table_end_callback = table_end_machine_readable,
-};
+/*** Management of tables ***/
 
 void table_init(struct table *tbl, struct fastbuf *out)
 {
@@ -58,6 +36,7 @@ void table_init(struct table *tbl, struct fastbuf *out)
 
   tbl->column_count = col_count;
 
+  // FIXME: Why? Better check if tbl->callbacks is NULL.
   if(tbl->callbacks->row_output_func == NULL && tbl->callbacks->table_start_callback == NULL && tbl->callbacks->table_end_callback == NULL) {
     tbl->callbacks = &table_fmt_human_readable;
   }
@@ -86,12 +65,14 @@ void table_start(struct table *tbl)
   tbl->last_printed_col = -1;
   tbl->row_printing_started = 0;
 
+  // FIXME: Memory leak
   tbl->col_str_ptrs = mp_alloc_zero(tbl->pool, sizeof(char *) * tbl->column_count);
 
   if(tbl->column_order == NULL) table_make_default_column_order(tbl);
 
   if(tbl->callbacks->table_start_callback != NULL) tbl->callbacks->table_start_callback(tbl);
   if(tbl->cols_to_output == 0) {
+    // FIXME: Why?
     die("Table should output at least one column.");
   }
 
@@ -112,18 +93,11 @@ void table_end(struct table *tbl)
   if(tbl->callbacks->table_end_callback) tbl->callbacks->table_end_callback(tbl);
 }
 
-static void table_write_header(struct table *tbl)
+/*** Configuration ***/
+
+void table_set_output_callbacks(struct table *tbl, struct table_output_callbacks *callbacks)
 {
-  uint col_idx = tbl->column_order[0];
-  bprintf(tbl->out, "%*s", tbl->columns[col_idx].width, tbl->columns[col_idx].name);
-
-  for(uint i = 1; i < tbl->cols_to_output; i++) {
-    col_idx = tbl->column_order[i];
-    bputs(tbl->out, tbl->col_delimiter);
-    bprintf(tbl->out, "%*s", tbl->columns[col_idx].width, tbl->columns[col_idx].name);
-  }
-
-  bputc(tbl->out, '\n');
+  tbl->callbacks = callbacks;
 }
 
 int table_get_col_idx(struct table *tbl, const char *col_name)
@@ -147,10 +121,11 @@ const char * table_get_col_list(struct table *tbl)
   return tmp;
 }
 
+// FIXME: Shouldn't this be table_SET_col_order() ?
 void table_col_order(struct table *tbl, int *col_order, int cols_to_output)
 {
   for(int i = 0; i < cols_to_output; i++) {
-    ASSERT_MSG(col_order[i] >= 0 && col_order[i] < tbl->column_count, "Column %d does not exists (column number should be between 0 and %d)", col_order[i], tbl->column_count);
+    ASSERT_MSG(col_order[i] >= 0 && col_order[i] < tbl->column_count, "Column %d does not exist (column number should be between 0 and %d)", col_order[i], tbl->column_count);
   }
 
   tbl->column_order = col_order;
@@ -191,7 +166,7 @@ int table_col_order_by_name(struct table *tbl, const char *col_order_str)
     int idx = table_get_col_idx(tbl, name_start);
     col_order_int[curr_col_order_int] = idx;
     if(idx == -1) {
-      //ASSERT_MSG(idx != -1, "Table column with name '%s' does not exists.", name_start);
+      //ASSERT_MSG(idx != -1, "Table column with name '%s' does not exist.", name_start);
       mp_restore(tbl->pool, &mp_tmp_state);
       return -1;
     }
@@ -205,9 +180,11 @@ int table_col_order_by_name(struct table *tbl, const char *col_order_str)
   return 0;
 }
 
+/*** Table cells ***/
+
 void table_set_printf(struct table *tbl, int col, const char *fmt, ...)
 {
-  ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exists.", col);
+  ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
   tbl->last_printed_col = col;
   tbl->row_printing_started = 1;
   va_list args;
@@ -245,7 +222,7 @@ static const char *table_set_col_default_fmts[] = {
 
 #define TABLE_SET_COL_FMT(_name_, _type_, _typeconst_) void table_set_##_name_##_fmt(struct table *tbl, int col, const char *fmt, _type_ val)\
   {\
-     ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exists.", col);\
+     ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);\
      ASSERT(tbl->columns[col].type == COL_TYPE_ANY || _typeconst_ == tbl->columns[col].type);\
      ASSERT(fmt != NULL);\
      tbl->last_printed_col = col;\
@@ -281,7 +258,7 @@ void table_set_bool_name(struct table *tbl, const char *col_name, uint val)
 
 void table_set_bool_fmt(struct table *tbl, int col, const char *fmt, uint val)
 {
-  ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exists.", col);
+  ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
   ASSERT(COL_TYPE_BOOL == tbl->columns[col].type);
 
   tbl->last_printed_col = col;
@@ -345,10 +322,8 @@ void table_end_row(struct table *tbl)
   tbl->row_printing_started = 0;
 }
 
-/*
- * construction of string in mempool using fastbuf
- *
- */
+/* Construction of a cell using a fastbuf */
+
 struct fastbuf *table_col_fbstart(struct table *tbl, int col)
 {
   fbpool_init(&tbl->fb_col_out);
@@ -363,93 +338,7 @@ void table_col_fbend(struct table *tbl)
   tbl->col_out = -1;
 }
 
-void table_set_output_callbacks(struct table *tbl, struct table_output_callbacks *callbacks)
-{
-  tbl->callbacks = callbacks;
-}
-
-// Row output routines
-static int table_oneline_human_readable(struct table *tbl)
-{
-  uint col = tbl->column_order[0];
-  int col_width = tbl->columns[col].width;
-  bprintf(tbl->out, "%*s", col_width, tbl->col_str_ptrs[col]);
-  for(uint i = 1; i < tbl->cols_to_output; i++) {
-    col = tbl->column_order[i];
-    col_width = tbl->columns[col].width;
-    bputs(tbl->out, tbl->col_delimiter);
-    bprintf(tbl->out, "%*s", col_width, tbl->col_str_ptrs[col]);
-  }
-
-  bputc(tbl->out, '\n');
-  return 0;
-}
-
-static int table_oneline_machine_readable(struct table *tbl)
-{
-  uint col = tbl->column_order[0];
-  bputs(tbl->out, tbl->col_str_ptrs[col]);
-  for(uint i = 1; i < tbl->cols_to_output; i++) {
-    col = tbl->column_order[i];
-    bputs(tbl->out, tbl->col_delimiter);
-    bputs(tbl->out, tbl->col_str_ptrs[col]);
-  }
-
-  bputc(tbl->out, '\n');
-  return 0;
-}
-
-static int table_start_human_readable(struct table *tbl)
-{
-  if(tbl->col_delimiter == NULL) {
-    tbl->col_delimiter = " ";
-  }
-
-  if(tbl->append_delimiter == NULL) {
-    tbl->append_delimiter = ",";
-  }
-
-  if(tbl->print_header != 0) {
-    tbl->print_header = 0;
-    table_write_header(tbl);
-  }
-  return 0;
-}
-
-static int table_end_human_readable(struct table *tbl UNUSED)
-{
-  return 0;
-}
-
-static int table_start_machine_readable(struct table *tbl)
-{
-  if(tbl->col_delimiter == NULL) {
-    tbl->col_delimiter = ";";
-  }
-
-  if(tbl->append_delimiter == NULL) {
-    tbl->append_delimiter = ",";
-  }
-
-  if(tbl->print_header != 0) {
-    tbl->print_header = 0;
-
-    uint col_idx = tbl->column_order[0];
-    bputs(tbl->out, tbl->columns[col_idx].name);
-    for(uint i = 1; i < tbl->cols_to_output; i++) {
-      col_idx = tbl->column_order[i];
-      bputs(tbl->out, tbl->col_delimiter);
-      bputs(tbl->out, tbl->columns[col_idx].name);
-    }
-    bputc(tbl->out, '\n');
-  }
-  return 0;
-}
-
-static int table_end_machine_readable(struct table *tbl UNUSED)
-{
-  return 0;
-}
+/*** Option parsing ***/
 
 static int get_colon(char *str)
 {
@@ -535,6 +424,122 @@ const char *table_set_gary_options(struct table *tbl, char **gary_table_opts)
   }
   return NULL;
 }
+
+/*** Default formatter for human-readble output ***/
+
+static int table_oneline_human_readable(struct table *tbl)
+{
+  uint col = tbl->column_order[0];
+  int col_width = tbl->columns[col].width;
+  bprintf(tbl->out, "%*s", col_width, tbl->col_str_ptrs[col]);
+  for(uint i = 1; i < tbl->cols_to_output; i++) {
+    col = tbl->column_order[i];
+    col_width = tbl->columns[col].width;
+    bputs(tbl->out, tbl->col_delimiter);
+    bprintf(tbl->out, "%*s", col_width, tbl->col_str_ptrs[col]);
+  }
+
+  bputc(tbl->out, '\n');
+  return 0;
+}
+
+static void table_write_header(struct table *tbl)
+{
+  uint col_idx = tbl->column_order[0];
+  bprintf(tbl->out, "%*s", tbl->columns[col_idx].width, tbl->columns[col_idx].name);
+
+  for(uint i = 1; i < tbl->cols_to_output; i++) {
+    col_idx = tbl->column_order[i];
+    bputs(tbl->out, tbl->col_delimiter);
+    bprintf(tbl->out, "%*s", tbl->columns[col_idx].width, tbl->columns[col_idx].name);
+  }
+
+  bputc(tbl->out, '\n');
+}
+
+static int table_start_human_readable(struct table *tbl)
+{
+  if(tbl->col_delimiter == NULL) {
+    tbl->col_delimiter = " ";
+  }
+
+  if(tbl->append_delimiter == NULL) {
+    tbl->append_delimiter = ",";
+  }
+
+  if(tbl->print_header != 0) {
+    tbl->print_header = 0;
+    table_write_header(tbl);
+  }
+  return 0;
+}
+
+static int table_end_human_readable(struct table *tbl UNUSED)
+{
+  return 0;
+}
+
+struct table_output_callbacks table_fmt_human_readable = {
+  .row_output_func = table_oneline_human_readable,
+  .table_start_callback = table_start_human_readable,
+  .table_end_callback = table_end_human_readable,
+};
+
+/*** Default formatter for machine-readable output ***/
+
+static int table_oneline_machine_readable(struct table *tbl)
+{
+  uint col = tbl->column_order[0];
+  bputs(tbl->out, tbl->col_str_ptrs[col]);
+  for(uint i = 1; i < tbl->cols_to_output; i++) {
+    col = tbl->column_order[i];
+    bputs(tbl->out, tbl->col_delimiter);
+    bputs(tbl->out, tbl->col_str_ptrs[col]);
+  }
+
+  bputc(tbl->out, '\n');
+  return 0;
+}
+
+static int table_start_machine_readable(struct table *tbl)
+{
+  if(tbl->col_delimiter == NULL) {
+    tbl->col_delimiter = ";";
+  }
+
+  if(tbl->append_delimiter == NULL) {
+    tbl->append_delimiter = ",";
+  }
+
+  if(tbl->print_header != 0) {
+    // FIXME: This magic is not needed, the value of print_header should be kept
+    // to the value set during table initialization (e.g., by command-line options)
+    tbl->print_header = 0;
+
+    uint col_idx = tbl->column_order[0];
+    bputs(tbl->out, tbl->columns[col_idx].name);
+    for(uint i = 1; i < tbl->cols_to_output; i++) {
+      col_idx = tbl->column_order[i];
+      bputs(tbl->out, tbl->col_delimiter);
+      bputs(tbl->out, tbl->columns[col_idx].name);
+    }
+    bputc(tbl->out, '\n');
+  }
+  return 0;
+}
+
+static int table_end_machine_readable(struct table *tbl UNUSED)
+{
+  return 0;
+}
+
+struct table_output_callbacks table_fmt_machine_readable = {
+  .row_output_func = table_oneline_machine_readable,
+  .table_start_callback = table_start_machine_readable,
+  .table_end_callback = table_end_machine_readable,
+};
+
+/*** Tests ***/
 
 #ifdef TEST
 

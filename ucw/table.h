@@ -145,7 +145,7 @@ struct table_output_callbacks {
 /** The definition of a table. Contains column definitions plus internal data. */
 struct table {
   struct table_column *columns;		// [*] Definition of columns
-  int column_count;			// [*] Number of columns
+  int column_count;			// [*] Number of columns (calculated by table_init())
   struct mempool *pool;			// Memory pool used for storing table data. Contains global state
 					// and data of the current row.
   struct mempool_state pool_state;	// State of the pool after the table is initialized, i.e., before
