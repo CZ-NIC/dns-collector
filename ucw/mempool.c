@@ -200,12 +200,18 @@ mp_flush(struct mempool *pool)
 }
 
 static void
-mp_stats_chain(struct mempool_chunk *chunk, struct mempool_stats *stats, uns idx)
+mp_stats_chain(struct mempool *pool, struct mempool_chunk *chunk, struct mempool_stats *stats, uns idx)
 {
   while (chunk)
     {
       stats->chain_size[idx] += chunk->size + MP_CHUNK_TAIL;
       stats->chain_count[idx]++;
+      if (idx < 2)
+	{
+	  stats->used_size += chunk->size;
+	  if ((byte *)pool == (byte *)chunk - chunk->size)
+	    stats->used_size -= sizeof(*pool);
+	}
       chunk = chunk->next;
     }
   stats->total_size += stats->chain_size[idx];
@@ -215,14 +221,12 @@ void
 mp_stats(struct mempool *pool, struct mempool_stats *stats)
 {
   bzero(stats, sizeof(*stats));
-  mp_stats_chain(pool->state.last[0], stats, 0);
-  mp_stats_chain(pool->state.last[1], stats, 1);
-  mp_stats_chain(pool->unused, stats, 2);
+  mp_stats_chain(pool, pool->state.last[0], stats, 0);
+  mp_stats_chain(pool, pool->state.last[1], stats, 1);
+  mp_stats_chain(pool, pool->unused, stats, 2);
+  stats->used_size -= pool->state.free[0] + pool->state.free[1];
   ASSERT(stats->total_size == pool->total_size);
-  stats->used_size = stats->chain_size[0] + stats->chain_size[1]
-    - MP_CHUNK_TAIL * (stats->chain_count[0] + stats->chain_count[1])
-    - pool->state.free[0] - pool->state.free[1] - sizeof(*pool);
-  ASSERT(stats->used_size < stats->total_size);
+  ASSERT(stats->used_size <= stats->total_size);
 }
 
 u64
