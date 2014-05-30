@@ -198,11 +198,9 @@ void table_col_order(struct table *tbl, int *col_order, int col_order_size);
 
 /**
  * Sets the order in which the columns are printed. The specification is a string with comma-separated column
- * names.
- *
- * FIXME: What does the return value mean?
+ * names. Returns NULL for success and an error message otherwise.
  **/
-int table_col_order_by_name(struct table *tbl, const char *col_order);
+const char * table_col_order_by_name(struct table *tbl, const char *col_order);
 
 /**
  * Called when all the cells have filled values. The function the prints a table row into the output stream.
@@ -228,9 +226,8 @@ void table_append_printf(struct table *tbl, const char *fmt, ...) FORMAT_CHECK(p
 int table_get_col_idx(struct table *tbl, const char *col_name);
 
 /**
- * Returns comma-separated list of column names.
- *
- * FIXME: Allocated from?
+ * Returns comma-and-space-separated list of column names, allocated from table's internal
+ * memory pool.
  **/
 const char * table_get_col_list(struct table *tbl);
 

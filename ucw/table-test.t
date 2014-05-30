@@ -67,7 +67,7 @@ EOF
 
 Run: ../obj/ucw/table-test -n
 Out <<EOF
-Tableprinter option parser returned: 'Invalid tableprinter column list: possible column names are col0_str,col1_int,col2_uint,col3_bool,col4_double.'.
+Tableprinter option parser returned: 'Unknown table column 'test_col0_str', possible column names are: col0_str, col1_int, col2_uint, col3_bool, col4_double.'.
 EOF
 
 

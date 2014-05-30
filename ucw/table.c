@@ -64,16 +64,13 @@ void table_start(struct table *tbl)
   tbl->last_printed_col = -1;
   tbl->row_printing_started = 0;
 
-  // FIXME: Memory leak
-  tbl->col_str_ptrs = mp_alloc_zero(tbl->pool, sizeof(char *) * tbl->column_count);
+  if(!tbl->col_str_ptrs) {
+    tbl->col_str_ptrs = mp_alloc_zero(tbl->pool, sizeof(char *) * tbl->column_count);
+  }
 
   if(tbl->column_order == NULL) table_make_default_column_order(tbl);
 
   if(tbl->formatter->table_start != NULL) tbl->formatter->table_start(tbl);
-  if(tbl->cols_to_output == 0) {
-    // FIXME: Why?
-    die("Table should output at least one column.");
-  }
 
   mp_save(tbl->pool, &tbl->pool_state);
 
@@ -108,13 +105,12 @@ int table_get_col_idx(struct table *tbl, const char *col_name)
 
 const char * table_get_col_list(struct table *tbl)
 {
-  if(tbl->column_count == 0) return NULL;
+  if(tbl->column_count == 0) return "";
 
-  // FIXME: This does not work! The start of the string may be reallocated later.
-  char *tmp = mp_printf(tbl->pool, "%s", tbl->columns[0].name);
+  char *tmp = mp_strdup(tbl->pool, tbl->columns[0].name);
 
   for(int i = 1; i < tbl->column_count; i++) {
-    mp_printf_append(tbl->pool, tmp, ",%s", tbl->columns[i].name);
+    tmp = mp_printf_append(tbl->pool, tmp, ", %s", tbl->columns[i].name);
   }
 
   return tmp;
@@ -124,7 +120,7 @@ const char * table_get_col_list(struct table *tbl)
 void table_col_order(struct table *tbl, int *col_order, int cols_to_output)
 {
   for(int i = 0; i < cols_to_output; i++) {
-    ASSERT_MSG(col_order[i] >= 0 && col_order[i] < tbl->column_count, "Column %d does not exist (column number should be between 0 and %d)", col_order[i], tbl->column_count);
+    ASSERT_MSG(col_order[i] >= 0 && col_order[i] < tbl->column_count, "Column %d does not exist (column number should be between 0 and %d)", col_order[i], tbl->column_count - 1);
   }
 
   tbl->column_order = col_order;
@@ -132,26 +128,25 @@ void table_col_order(struct table *tbl, int *col_order, int cols_to_output)
 }
 
 /**
- * TODO: ERROR! this function deliberately causes memory leak.  the
- * problem is that when table_col_order_by_name is called multiple-times,
- * the mp_save adds all the resulting column orders on the memory pool.
- * The memory leak is small, but it is present.
+ * TODO: This function deliberately leaks memory. When it is called multiple times,
+ * previous column orders still remain allocated in the table's memory pool.
  **/
-int table_col_order_by_name(struct table *tbl, const char *col_order_str)
+const char * table_col_order_by_name(struct table *tbl, const char *col_order_str)
 {
-  int col_order_len = strlen(col_order_str);
+  if(!col_order_str[0]) {
+    tbl->column_order = mp_alloc(tbl->pool, 0);
+    tbl->cols_to_output = 0;
+    return NULL;
+  }
 
   char *tmp_col_order = stk_strdup(col_order_str);
 
   int col_count = 1;
-  for(int i = 0; i < col_order_len; i++) {
+  for(int i = 0; col_order_str[i] != 0; i++) {
     if(col_order_str[i] == ',') {
       col_count++;
     }
   }
-
-  struct mempool_state mp_tmp_state;
-  mp_save(tbl->pool, &mp_tmp_state);
 
   int *col_order_int = mp_alloc_zero(tbl->pool, sizeof(int) * col_count);
   int curr_col_order_int = 0;
@@ -163,20 +158,17 @@ int table_col_order_by_name(struct table *tbl, const char *col_order_str)
     }
 
     int idx = table_get_col_idx(tbl, name_start);
-    col_order_int[curr_col_order_int] = idx;
     if(idx == -1) {
-      //ASSERT_MSG(idx != -1, "Table column with name '%s' does not exist.", name_start);
-      mp_restore(tbl->pool, &mp_tmp_state);
-      return -1;
+      return mp_printf(tbl->pool, "Unknown table column '%s'", name_start);
     }
-    curr_col_order_int++;
+    col_order_int[curr_col_order_int++] = idx;
 
     name_start = next;
   }
 
   tbl->column_order = col_order_int;
   tbl->cols_to_output = curr_col_order_int;
-  return 0;
+  return NULL;
 }
 
 /*** Table cells ***/
@@ -360,10 +352,9 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
       tbl->print_header = tmp;
       return NULL;
     } else if(strcmp(key, "cols") == 0) {
-      // FIXME: We should not exit/abort on errors caused from command line.
-      if(table_col_order_by_name(tbl, value) != 0) {
-        const char *tmp = table_get_col_list(tbl);
-        return mp_printf(tbl->pool, "Invalid tableprinter column list: possible column names are %s.", tmp);
+      const char *err = table_col_order_by_name(tbl, value);
+      if(err != NULL) {
+        return mp_printf(tbl->pool, "%s, possible column names are: %s.", err, table_get_col_list(tbl));
       }
       return NULL;
     } else if(strcmp(key, "fmt") == 0) {
@@ -417,30 +408,26 @@ const char *table_set_gary_options(struct table *tbl, char **gary_table_opts)
 
 static void table_row_human_readable(struct table *tbl)
 {
-  uint col = tbl->column_order[0];
-  int col_width = tbl->columns[col].width;
-  bprintf(tbl->out, "%*s", col_width, tbl->col_str_ptrs[col]);
-  for(uint i = 1; i < tbl->cols_to_output; i++) {
-    col = tbl->column_order[i];
-    col_width = tbl->columns[col].width;
-    bputs(tbl->out, tbl->col_delimiter);
-    bprintf(tbl->out, "%*s", col_width, tbl->col_str_ptrs[col]);
+  for(uint i = 0; i < tbl->cols_to_output; i++) {
+    int col_idx = tbl->column_order[i];
+    int col_width = tbl->columns[col_idx].width;
+    if(i) {
+      bputs(tbl->out, tbl->col_delimiter);
+    }
+    bprintf(tbl->out, "%*s", col_width, tbl->col_str_ptrs[col_idx]);
   }
-
   bputc(tbl->out, '\n');
 }
 
 static void table_write_header(struct table *tbl)
 {
-  uint col_idx = tbl->column_order[0];
-  bprintf(tbl->out, "%*s", tbl->columns[col_idx].width, tbl->columns[col_idx].name);
-
-  for(uint i = 1; i < tbl->cols_to_output; i++) {
-    col_idx = tbl->column_order[i];
-    bputs(tbl->out, tbl->col_delimiter);
+  for(uint i = 0; i < tbl->cols_to_output; i++) {
+    int col_idx = tbl->column_order[i];
+    if(i) {
+      bputs(tbl->out, tbl->col_delimiter);
+    }
     bprintf(tbl->out, "%*s", tbl->columns[col_idx].width, tbl->columns[col_idx].name);
   }
-
   bputc(tbl->out, '\n');
 }
 
@@ -468,14 +455,13 @@ struct table_formatter table_fmt_human_readable = {
 
 static void table_row_machine_readable(struct table *tbl)
 {
-  uint col = tbl->column_order[0];
-  bputs(tbl->out, tbl->col_str_ptrs[col]);
-  for(uint i = 1; i < tbl->cols_to_output; i++) {
-    col = tbl->column_order[i];
-    bputs(tbl->out, tbl->col_delimiter);
-    bputs(tbl->out, tbl->col_str_ptrs[col]);
+  for(uint i = 0; i < tbl->cols_to_output; i++) {
+    int col_idx = tbl->column_order[i];
+    if(i) {
+      bputs(tbl->out, tbl->col_delimiter);
+    }
+    bputs(tbl->out, tbl->col_str_ptrs[col_idx]);
   }
-
   bputc(tbl->out, '\n');
 }
 
