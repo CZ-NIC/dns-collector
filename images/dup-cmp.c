@@ -17,7 +17,7 @@
 
 #include <fcntl.h>
 
-static inline uns
+static inline uint
 err (int a, int b)
 {
   a -= b;
@@ -25,12 +25,12 @@ err (int a, int b)
 }
 
 static inline u64
-err_sum(byte *pos1, byte *pos2, uns count)
+err_sum(byte *pos1, byte *pos2, uint count)
 {
-  uns e64 = 0;
+  uint e64 = 0;
   while (count--)
     {
-      uns e = err(*pos1++, *pos2++);
+      uint e = err(*pos1++, *pos2++);
       e += err(*pos1++, *pos2++);
       e += err(*pos1++, *pos2++);
       e64 += e;
@@ -39,17 +39,17 @@ err_sum(byte *pos1, byte *pos2, uns count)
 }
 
 static inline u64
-err_sum_transformed(byte *pos1, byte *pos2, uns cols, uns rows, int row_step_1, int col_step_2, int row_step_2)
+err_sum_transformed(byte *pos1, byte *pos2, uint cols, uint rows, int row_step_1, int col_step_2, int row_step_2)
 {
   DBG("err_sum_transformed(pos1=%p pos2=%p cols=%u rows=%u row_step_1=%d col_step_2=%d row_step_2=%d)",
       pos1, pos2, cols, rows, row_step_1, col_step_2, row_step_2);
   u64 e64 = 0;
-  for (uns j = rows; j--; )
+  for (uint j = rows; j--; )
     {
       byte *p1 = pos1;
       byte *p2 = pos2;
-      uns e = 0;
-      for (uns i = cols; i--; )
+      uint e = 0;
+      for (uint i = cols; i--; )
       {
 	e += err(p1[0], p2[0]);
 	e += err(p1[1], p2[1]);
@@ -65,11 +65,11 @@ err_sum_transformed(byte *pos1, byte *pos2, uns cols, uns rows, int row_step_1, 
 }
 
 static inline int
-aspect_ratio_test(struct image_dup_context *ctx, uns cols1, uns rows1, uns cols2, uns rows2)
+aspect_ratio_test(struct image_dup_context *ctx, uint cols1, uint rows1, uint cols2, uint rows2)
 {
   DBG("aspect_ratio_test(cols1=%u rows1=%u cols2=%u rows2=%u)", cols1, rows1, cols2, rows2);
-  uns r1 = cols1 * rows2;
-  uns r2 = rows1 * cols2;
+  uint r1 = cols1 * rows2;
+  uint r2 = rows1 * cols2;
   return
     r1 <= ((r2 * ctx->ratio_threshold) >> 7) &&
     r2 <= ((r1 * ctx->ratio_threshold) >> 7);
@@ -80,7 +80,7 @@ average_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct im
 {
   byte *block1 = image_dup_block(dup1, 0, 0);
   byte *block2 = image_dup_block(dup2, 0, 0);
-  uns e =
+  uint e =
     err(block1[0], block2[0]) +
     err(block1[1], block2[1]) +
     err(block1[2], block2[2]);
@@ -88,7 +88,7 @@ average_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct im
 }
 
 static int
-blocks_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2, uns tab_col, uns tab_row, uns trans)
+blocks_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2, uint tab_col, uint tab_row, uint trans)
 {
   DBG("blocks_compare(tab_col=%d tab_row=%d trans=%d)", tab_col, tab_row, trans);
   ctx->sum_pixels += 1 << (tab_col + tab_row);
@@ -102,7 +102,7 @@ blocks_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct ima
   switch (trans)
     {
       case 0: ;
-	uns err = (err_sum(block1, block2, 1 << (tab_col + tab_row)) >> (tab_col + tab_row));
+	uint err = (err_sum(block1, block2, 1 << (tab_col + tab_row)) >> (tab_col + tab_row));
 	DBG("average error=%d", err);
 	ctx->error = err;
 	return err <= ctx->error_threshold;
@@ -143,14 +143,14 @@ blocks_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct ima
       default:
 	ASSERT(0);
     }
-  uns err = (err_sum_transformed(block1, block2, (1 << tab_col), (1 << tab_row), (3 << tab_col), col_step, row_step) >> (tab_col + tab_row));
+  uint err = (err_sum_transformed(block1, block2, (1 << tab_col), (1 << tab_row), (3 << tab_col), col_step, row_step) >> (tab_col + tab_row));
   DBG("average error=%d", err);
   ctx->error = err;
   return err <= ctx->error_threshold;
 }
 
 static int
-same_size_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2, uns trans)
+same_size_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2, uint trans)
 {
   struct image *img1 = &dup1->image;
   struct image *img2 = &dup2->image;
@@ -204,13 +204,13 @@ same_size_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct 
       default:
 	ASSERT(0);
     }
-  uns err = (err_sum_transformed(block1, block2, img1->cols, img1->rows, img1->row_size, col_step, row_step) / ((u64)img1->cols * img1->rows));
+  uint err = (err_sum_transformed(block1, block2, img1->cols, img1->rows, img1->row_size, col_step, row_step) / ((u64)img1->cols * img1->rows));
   DBG("average error=%d", err);
   ctx->error = err;
   return err <= ctx->error_threshold;
 }
 
-uns
+uint
 image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2)
 {
   DBG("image_dup_compare(%p, %p)", dup1, dup2);
@@ -218,7 +218,7 @@ image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct 
     return 0;
   struct image *img1 = &dup1->image;
   struct image *img2 = &dup2->image;
-  uns flags = ctx->flags;
+  uint flags = ctx->flags;
   if (flags & IMAGE_DUP_SCALE)
     {
       DBG("Scale support");
@@ -237,21 +237,21 @@ image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct 
     }
   if (!(flags & 0xff))
     return 0;
-  uns result = 0;
+  uint result = 0;
   if (flags & 0x0f)
     {
-      uns cols = MIN(dup1->tab_cols, dup2->tab_cols);
-      uns rows = MIN(dup1->tab_rows, dup2->tab_rows);
-      for (uns t = 0; t < 4; t++)
+      uint cols = MIN(dup1->tab_cols, dup2->tab_cols);
+      uint rows = MIN(dup1->tab_rows, dup2->tab_rows);
+      for (uint t = 0; t < 4; t++)
 	if (flags & (1 << t))
 	  {
 	    DBG("Testing trans %d", t);
-	    uns i = MAX(cols, rows), depth = 1;
+	    uint i = MAX(cols, rows), depth = 1;
             while (i--)
               {
 		depth++;
-	        uns col = MAX(0, (int)(cols - i));
-	        uns row = MAX(0, (int)(rows - i));
+	        uint col = MAX(0, (int)(cols - i));
+	        uint row = MAX(0, (int)(rows - i));
 	        if (!blocks_compare(ctx, dup1, dup2, col, row, t))
 		  break;
 		if (!i &&
@@ -270,18 +270,18 @@ image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct 
     }
   if (flags & 0xf0)
     {
-      uns cols = MIN(dup1->tab_cols, dup2->tab_rows);
-      uns rows = MIN(dup1->tab_rows, dup2->tab_cols);
-      for (uns t = 4; t < 8; t++)
+      uint cols = MIN(dup1->tab_cols, dup2->tab_rows);
+      uint rows = MIN(dup1->tab_rows, dup2->tab_cols);
+      for (uint t = 4; t < 8; t++)
 	if (flags & (1 << t))
 	  {
 	    DBG("Testing trans %d", t);
-	    uns i = MAX(cols, rows), depth = 1;
+	    uint i = MAX(cols, rows), depth = 1;
             while (i--)
               {
 		depth++;
-	        uns col = MAX(0, (int)(cols - i));
-	        uns row = MAX(0, (int)(rows - i));
+	        uint col = MAX(0, (int)(cols - i));
+	        uint row = MAX(0, (int)(rows - i));
 	        if (!blocks_compare(ctx, dup1, dup2, col, row, t))
 		  break;
 		if (!i &&

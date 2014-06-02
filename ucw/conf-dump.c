@@ -16,9 +16,9 @@
 #include <ucw/fastbuf.h>
 
 static void
-spaces(struct fastbuf *fb, uns nr)
+spaces(struct fastbuf *fb, uint nr)
 {
-  for (uns i=0; i<nr; i++)
+  for (uint i=0; i<nr; i++)
     bputs(fb, "  ");
 }
 
@@ -26,10 +26,10 @@ static void
 dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
 {
   switch (type) {
-    case CT_INT:	bprintf(fb, "%d ", *(uns*)ptr); break;
+    case CT_INT:	bprintf(fb, "%d ", *(uint*)ptr); break;
     case CT_U64:	bprintf(fb, "%llu ", (long long) *(u64*)ptr); break;
     case CT_DOUBLE:	bprintf(fb, "%lg ", *(double*)ptr); break;
-    case CT_IP:		bprintf(fb, "%08x ", *(uns*)ptr); break;
+    case CT_IP:		bprintf(fb, "%08x ", *(uint*)ptr); break;
     case CT_STRING:
       if (*(char**)ptr)
 	bprintf(fb, "'%s' ", *(char**)ptr);
@@ -55,7 +55,7 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
 {
   ptr += (uintptr_t) item->ptr;
   enum cf_type type = item->type;
-  uns size = cf_type_size(item->type, item->u.utype);
+  uint size = cf_type_size(item->type, item->u.utype);
   int i;
   spaces(fb, level);
   bprintf(fb, "%s: C%s #", item->name, class_names[item->cls]);
@@ -97,7 +97,7 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
   if (item->cls == CC_SECTION)
     dump_section(fb, item->u.sec, level+1, ptr);
   else if (item->cls == CC_LIST) {
-    uns idx = 0;
+    uint idx = 0;
     CLIST_FOR_EACH(cnode *, n, * (clist*) ptr) {
       spaces(fb, level+1);
       bprintf(fb, "item %d\n", ++idx);

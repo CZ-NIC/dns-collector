@@ -167,7 +167,7 @@ xml_dtd_find_elem(struct xml_context *ctx, char *name)
 
 struct xml_dtd_enodes_table;
 
-static inline uns
+static inline uint
 xml_dtd_enodes_hash(struct xml_dtd_enodes_table *tab UNUSED, struct xml_dtd_elem_node *parent, struct xml_dtd_elem *elem)
 {
   return hash_pointer(parent) ^ hash_pointer(elem);
@@ -206,7 +206,7 @@ XML_HASH_GIVE_ALLOC
 
 struct xml_dtd_attrs_table;
 
-static inline uns
+static inline uint
 xml_dtd_attrs_hash(struct xml_dtd_attrs_table *tab UNUSED, struct xml_dtd_elem *elem, char *name)
 {
   return hash_pointer(elem) ^ hash_string(name);
@@ -252,7 +252,7 @@ xml_dtd_find_attr(struct xml_context *ctx, struct xml_dtd_elem *elem, char *name
 
 struct xml_dtd_evals_table;
 
-static inline uns
+static inline uint
 xml_dtd_evals_hash(struct xml_dtd_evals_table *tab UNUSED, struct xml_dtd_attr *attr, char *val)
 {
   return hash_pointer(attr) ^ hash_string(val);
@@ -290,7 +290,7 @@ XML_HASH_GIVE_ALLOC
 
 struct xml_dtd_enotns_table;
 
-static inline uns
+static inline uint
 xml_dtd_enotns_hash(struct xml_dtd_enotns_table *tab UNUSED, struct xml_dtd_attr *attr, struct xml_dtd_notn *notn)
 {
   return hash_pointer(attr) ^ hash_pointer(notn);
@@ -390,8 +390,8 @@ xml_parse_pe_ref(struct xml_context *ctx)
   xml_dec(ctx);
 }
 
-static uns
-xml_parse_dtd_pe(struct xml_context *ctx, uns entity_decl)
+static uint
+xml_parse_dtd_pe(struct xml_context *ctx, uint entity_decl)
 {
   /* Already parsed: '%' */
   do
@@ -411,12 +411,12 @@ xml_parse_dtd_pe(struct xml_context *ctx, uns entity_decl)
   return 1;
 }
 
-static inline uns
-xml_parse_dtd_white(struct xml_context *ctx, uns mandatory)
+static inline uint
+xml_parse_dtd_white(struct xml_context *ctx, uint mandatory)
 {
   /* Whitespace or parameter entity,
    * mandatory==~0U has a special maening of the whitespace before the '%' character in an parameter entity declaration */
-  uns cnt = 0;
+  uint cnt = 0;
   while (xml_peek_cat(ctx) & XML_CHAR_WHITE)
     {
       xml_skip_char(ctx);
@@ -433,10 +433,10 @@ xml_parse_dtd_white(struct xml_context *ctx, uns mandatory)
 }
 
 static void
-xml_dtd_parse_external_id(struct xml_context *ctx, char **system_id, char **public_id, uns allow_public)
+xml_dtd_parse_external_id(struct xml_context *ctx, char **system_id, char **public_id, uint allow_public)
 {
   struct xml_dtd *dtd = ctx->dtd;
-  uns c = xml_peek_char(ctx);
+  uint c = xml_peek_char(ctx);
   if (c == 'S')
     {
       xml_parse_seq(ctx, "SYSTEM");
@@ -496,7 +496,7 @@ xml_parse_entity_decl(struct xml_context *ctx)
   /* Already parsed: '<!ENTITY' */
   TRACE(ctx, "parse_entity_decl");
   struct xml_dtd *dtd = ctx->dtd;
-  uns flags = ~xml_parse_dtd_white(ctx, ~0U) ? 0 : XML_DTD_ENTITY_PARAMETER;
+  uint flags = ~xml_parse_dtd_white(ctx, ~0U) ? 0 : XML_DTD_ENTITY_PARAMETER;
   if (flags)
     xml_parse_dtd_white(ctx, 1);
   struct xml_dtd_entity *ent = xml_dtd_ents_lookup(flags ? dtd->tab_pents : dtd->tab_ents, xml_parse_name(ctx, dtd->pool));
@@ -507,7 +507,7 @@ xml_parse_entity_decl(struct xml_context *ctx)
        xml_fatal(ctx, "Entity &%s; already declared, skipping not implemented", ent->name);
        // FIXME: should be only warning
     }
-  uns c, sep = xml_get_char(ctx);
+  uint c, sep = xml_get_char(ctx);
   if (sep == '\'' || sep == '"')
     {
       /* Internal entity:
@@ -535,7 +535,7 @@ xml_parse_entity_decl(struct xml_context *ctx)
 	          char *n = xml_parse_name(ctx, ctx->stack);
 	          xml_parse_char(ctx, ';');
 		  xml_dec(ctx);
-		  uns l = strlen(n);
+		  uint l = strlen(n);
 		  p = mp_spread(dtd->pool, p, 3 + l);
 		  *p++ = '&';
 		  memcpy(p, n, l);
@@ -601,7 +601,7 @@ xml_parse_element_decl(struct xml_context *ctx)
     xml_fatal(ctx, "Element <%s> already declared", name);
 
   /* contentspec ::= 'EMPTY' | 'ANY' | Mixed | children */
-  uns c = xml_peek_char(ctx);
+  uint c = xml_peek_char(ctx);
   if (c == 'E')
     {
       xml_parse_seq(ctx, "EMPTY");
@@ -662,7 +662,7 @@ xml_parse_element_decl(struct xml_context *ctx)
 
 	  elem->type = XML_DTD_ELEM_CHILDREN;
 	  parent->type = XML_DTD_ELEM_PCDATA;
-	  uns c;
+	  uint c;
 	  goto first;
 
 	  while (1)
@@ -751,7 +751,7 @@ xml_parse_attr_list_decl(struct xml_context *ctx)
     {
       char *name = xml_parse_name(ctx, dtd->pool);
       struct xml_dtd_attr *attr = xml_dtd_attrs_find(dtd->tab_attrs, elem, name);
-      uns ignored = 0;
+      uint ignored = 0;
       if (attr)
         {
 	  xml_warn(ctx, "Duplicate attribute definition");
@@ -869,7 +869,7 @@ xml_skip_internal_subset(struct xml_context *ctx)
 {
   TRACE(ctx, "skip_internal_subset");
   /* AlreadyParsed: '[' */
-  uns c;
+  uint c;
   while ((c = xml_get_char(ctx)) != ']')
     {
       if (c != '<')
@@ -896,11 +896,11 @@ xml_skip_internal_subset(struct xml_context *ctx)
 
 /*** Validation of attribute values ***/
 
-static uns
-xml_check_tokens(char *value, uns first_cat, uns next_cat, uns seq)
+static uint
+xml_check_tokens(char *value, uint first_cat, uint next_cat, uint seq)
 {
   char *p = value;
-  uns u;
+  uint u;
   while (1)
     {
       p = utf8_32_get(p, &u);
@@ -920,28 +920,28 @@ xml_check_tokens(char *value, uns first_cat, uns next_cat, uns seq)
     }
 }
 
-static uns
+static uint
 xml_is_name(struct xml_context *ctx, char *value)
 {
   /* Name ::= NameStartChar (NameChar)* */
   return xml_check_tokens(value, ctx->cat_sname, ctx->cat_name, 0);
 }
 
-static uns
+static uint
 xml_is_names(struct xml_context *ctx, char *value)
 {
   /* Names ::= Name (#x20 Name)* */
   return xml_check_tokens(value, ctx->cat_sname, ctx->cat_name, 1);
 }
 
-static uns
+static uint
 xml_is_nmtoken(struct xml_context *ctx, char *value)
 {
   /* Nmtoken ::= (NameChar)+ */
   return xml_check_tokens(value, ctx->cat_name, ctx->cat_name, 0);
 }
 
-static uns
+static uint
 xml_is_nmtokens(struct xml_context *ctx, char *value)
 {
   /* Nmtokens ::= Nmtoken (#x20 Nmtoken)* */

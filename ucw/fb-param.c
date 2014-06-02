@@ -50,10 +50,10 @@ struct cf_section fbpar_cf = {
   CF_COMMIT(fbpar_cf_commit),
   CF_ITEMS {
     CF_LOOKUP("Type", (int *)F(type), ((const char * const []){"std", "direct", "mmap", NULL})),
-    CF_UNS("BufSize", F(buffer_size)),
-    CF_UNS("KeepBackBuf", F(keep_back_buf)),
-    CF_UNS("ReadAhead", F(read_ahead)),
-    CF_UNS("WriteBack", F(write_back)),
+    CF_UINT("BufSize", F(buffer_size)),
+    CF_UINT("KeepBackBuf", F(keep_back_buf)),
+    CF_UINT("ReadAhead", F(read_ahead)),
+    CF_UINT("WriteBack", F(write_back)),
     CF_END
   }
 # undef F
@@ -73,7 +73,7 @@ fbpar_global_init(void)
 }
 
 static struct fastbuf *
-bopen_fd_internal(int fd, struct fb_params *params, uns mode, const char *name)
+bopen_fd_internal(int fd, struct fb_params *params, uint mode, const char *name)
 {
   char buf[32];
   if (!name)
@@ -170,25 +170,25 @@ bclose_file_helper(struct fastbuf *f, int fd, int is_temp_file)
 /* Compatibility wrappers */
 
 struct fastbuf *
-bopen_try(const char *name, uns mode, uns buflen)
+bopen_try(const char *name, uint mode, uint buflen)
 {
   return bopen_file_try(name, mode, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
 }
 
 struct fastbuf *
-bopen(const char *name, uns mode, uns buflen)
+bopen(const char *name, uint mode, uint buflen)
 {
   return bopen_file(name, mode, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
 }
 
 struct fastbuf *
-bfdopen(int fd, uns buflen)
+bfdopen(int fd, uint buflen)
 {
   return bopen_fd(fd, &(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
 }
 
 struct fastbuf *
-bfdopen_shared(int fd, uns buflen)
+bfdopen_shared(int fd, uint buflen)
 {
   struct fastbuf *f = bfdopen(fd, buflen);
   bconfig(f, BCONFIG_IS_TEMP_FILE, 2);

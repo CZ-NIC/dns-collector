@@ -91,10 +91,10 @@ static void my2_dump_data(struct fastbuf *fb UNUSED, struct my2_node *n UNUSED)
 #define TREE_CONSERVE_SPACE
 #include "redblack.h"
 
-static void random_string(char *txt, uns max_len)
+static void random_string(char *txt, uint max_len)
 {
-	uns len = random() % max_len;
-	uns j;
+	uint len = random() % max_len;
+	uint j;
 	for (j=0; j<len; j++)
 		txt[j] = random() % 96 + 32;
 	txt[len] = 0;

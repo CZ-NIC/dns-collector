@@ -82,7 +82,7 @@ rp_commit(struct respool *rp)
 }
 
 void
-rp_dump(struct respool *rp, uns indent)
+rp_dump(struct respool *rp, uint indent)
 {
   printf("%*sResource pool %s at %p (%s)%s:\n",
 	 indent, "",
@@ -100,7 +100,7 @@ res_alloc(const struct res_class *rc)
 {
   struct respool *rp = rp_current();
   ASSERT(rp);
-  uns size = (rc->res_size ? : sizeof(struct resource));
+  uint size = (rc->res_size ? : sizeof(struct resource));
   struct resource *r;
   if (rp->mpool)
     {
@@ -156,7 +156,7 @@ res_free(struct resource *r)
 }
 
 void
-res_dump(struct resource *r, uns indent)
+res_dump(struct resource *r, uint indent)
 {
   printf("%*s%p %s %s", indent, "", r, ((r->flags & RES_FLAG_TEMP) ? "TEMP" : "PERM"), r->rclass->name);
   if (r->rclass->dump)

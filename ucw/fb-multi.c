@@ -106,7 +106,7 @@ fbmulti_refill(struct fastbuf *f)
   fbmulti_set_ptrs(f);
 
   // Refill the subbuf
-  uns len = FB_MULTI(f)->cur->fb->refill(FB_MULTI(f)->cur->fb);
+  uint len = FB_MULTI(f)->cur->fb->refill(FB_MULTI(f)->cur->fb);
   if (len)
     {
       fbmulti_get_ptrs(f);
@@ -258,7 +258,7 @@ int main(int argc, char **argv)
         {
 	  char *data[] = { "One\nLine", "Two\nLines", "Th\nreeLi\nnes\n" };
 	  struct fastbuf fb[ARRAY_SIZE(data)];
-	  for (uns i=0;i<ARRAY_SIZE(data);i++)
+	  for (uint i=0;i<ARRAY_SIZE(data);i++)
 	    fbbuf_init_read(&fb[i], data[i], strlen(data[i]), 0);
 
 	  struct fastbuf *f = fbmulti_create();
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
 	{
 	  char *data[] = { "Mnl", "ige" };
 	  struct fastbuf fb[ARRAY_SIZE(data)];
-	  for (uns i=0;i<ARRAY_SIZE(data);i++)
+	  for (uint i=0;i<ARRAY_SIZE(data);i++)
 	    fbbuf_init_read(&fb[i], data[i], strlen(data[i]), 0);
 
 	  struct fastbuf *f = fbmulti_create();
@@ -286,7 +286,7 @@ int main(int argc, char **argv)
 
 	  int pos[] = {0, 3, 1, 4, 2, 5};
 
-	  for (uns i=0;i<ARRAY_SIZE(pos);i++)
+	  for (uint i=0;i<ARRAY_SIZE(pos);i++)
 	    {
 	      bsetpos(f, pos[i]);
 	      putchar(bgetc(f));
@@ -322,7 +322,7 @@ int main(int argc, char **argv)
 	{
 	  char *data[] = { "Nested", "Data", "As", "In", "Real", "Usage", };
 	  struct fastbuf fb[ARRAY_SIZE(data)];
-	  for (uns i=0;i<ARRAY_SIZE(data);i++)
+	  for (uint i=0;i<ARRAY_SIZE(data);i++)
 	    fbbuf_init_read(&fb[i], data[i], strlen(data[i]), 0);
 
 	  struct fastbuf sp;

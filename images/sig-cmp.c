@@ -17,7 +17,7 @@
 #include <stdio.h>
 
 #define ASORT_PREFIX(x) image_signatures_dist_integrated_##x
-#define ASORT_KEY_TYPE uns
+#define ASORT_KEY_TYPE uint
 #include <ucw/sorter/array-simple.h>
 
 #define EXPLAIN

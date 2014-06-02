@@ -52,7 +52,7 @@ commit_sec_1(struct sub_sect_1 *s)
 }
 
 static char *
-time_parser(uns number, char **pars, time_t *ptr)
+time_parser(uint number, char **pars, time_t *ptr)
 {
   *ptr = number ? atoi(pars[0]) : time(NULL);
   return NULL;
@@ -74,7 +74,7 @@ static struct cf_section cf_sec_1 = {
 #undef F
 };
 
-static uns nr1 = 15;
+static uint nr1 = 15;
 static int *nrs1;
 static int nrs2[5];
 static char *str1 = "no worries";
@@ -92,7 +92,7 @@ static u32 bitmap2 = 3;
 static char *
 parse_u16(char *string, u16 *ptr)
 {
-  uns a;
+  uint a;
   char *msg = cf_parse_int(string, &a);
   if (msg)
     return msg;
@@ -118,7 +118,7 @@ static struct cf_user_type u16_type = {
 static char *
 init_top(void *ptr UNUSED)
 {
-  for (uns i=0; i<5; i++)
+  for (uint i=0; i<5; i++)
   {
     struct sub_sect_1 *s = xmalloc(sizeof(struct sub_sect_1));	// XXX: cannot by cf_malloc(), because it's deleted when cf_reload()'ed
     cf_init_section("slaves", &cf_sec_1, s, 1);
@@ -141,7 +141,7 @@ static struct cf_section cf_top = {
   CF_INIT(init_top),
   CF_COMMIT(commit_top),
   CF_ITEMS {
-    CF_UNS("nr1", &nr1),
+    CF_UINT("nr1", &nr1),
     CF_INT_DYN("nrs1", &nrs1, 1000),
     CF_INT_ARY("nrs2", nrs2, 5),
     CF_STRING("str1", &str1),

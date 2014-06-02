@@ -17,7 +17,7 @@ image_vector_dump(byte *buf, struct image_vector *vec)
 {
   byte *p = buf;
   *p++ = '(';
-  for (uns i = 0; i < IMAGE_VEC_F; i++)
+  for (uint i = 0; i < IMAGE_VEC_F; i++)
     {
       if (i)
 	*p++ = ' ';
@@ -33,14 +33,14 @@ image_region_dump(byte *buf, struct image_region *reg)
 {
   byte *p = buf;
   p += sprintf(p, "(txt=");
-  for (uns i = 0; i < IMAGE_REG_F; i++)
+  for (uint i = 0; i < IMAGE_REG_F; i++)
     {
       if (i)
 	*p++ = ' ';
       p += sprintf(p, "%u", reg->f[i]);
     }
   p += sprintf(p, " shp=");
-  for (uns i = 0; i < IMAGE_REG_H; i++)
+  for (uint i = 0; i < IMAGE_REG_H; i++)
     {
       if (i)
 	*p++ = ' ';

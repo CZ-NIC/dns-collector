@@ -49,7 +49,7 @@
  *  Brief description of all parameters:
  *
  *    Basic parameters:
- *     	KMP_PREFIX(x)		macro to add a name prefix (used on all global names
+ *	KMP_PREFIX(x)		macro to add a name prefix (used on all global names
  *				defined by the KMP generator); mandatory;
  *				we abbreviate this to P(x) below
  *
@@ -74,14 +74,14 @@
  *	KMP_ONLYALPHA		converts non-alphas to KMP_CONTROL_CHAR (see below)
  *
  *    Parameters controlling add(kmp, src):
- * 	KMP_ADD_EXTRA_ARGS	extra arguments, should be used carefully because of possible collisions
- * 	KMP_ADD_INIT(kmp,src)	called in the beginning of add(), src is the first
+ *	KMP_ADD_EXTRA_ARGS	extra arguments, should be used carefully because of possible collisions
+ *	KMP_ADD_INIT(kmp,src)	called in the beginning of add(), src is the first
  *      KMP_INIT_STATE(kmp,s)   initialization of a new state s (called before KMP_ADD_{NEW,DUP});
- *      			null state is not included and should be handled after init() if necessary;
- *      			all user-defined data are filled by zeros before call to KMP_INIT_STATE
- * 	KMP_ADD_NEW(kmp,src,s)	initialize last state of every new key string (called after KMP_INIT_STATE);
- * 				the string must be parsed before so src is after the last string's character
- * 	KMP_ADD_DUP(kmp,src,s)  analogy of KMP_ADD_NEW called for duplicates
+ *				null state is not included and should be handled after init() if necessary;
+ *				all user-defined data are filled by zeros before call to KMP_INIT_STATE
+ *	KMP_ADD_NEW(kmp,src,s)	initialize last state of every new key string (called after KMP_INIT_STATE);
+ *				the string must be parsed before so src is after the last string's character
+ *	KMP_ADD_DUP(kmp,src,s)  analogy of KMP_ADD_NEW called for duplicates
  *
  *    Parameters to build():
  *      KMP_BUILD_STATE(kmp,s)	called for all states (including null) in order of non-decreasing tree depth
@@ -159,16 +159,16 @@ struct P(hash_table);
 
 #define HASH_GIVE_HASHFN
 #ifdef KMP_GIVE_HASHFN
-static inline uns
+static inline uint
 P(hash_hash) (struct P(hash_table) *t, struct P(state) *f, P(char_t) c)
 {
   return P(hash) ((struct P(struct) *) t, f, c);
 }
 #else
-static inline uns
+static inline uint
 P(hash_hash) (struct P(hash_table) *t UNUSED, struct P(state) *f, P(char_t) c)
 {
-  return (((uns)c) << 16) + (uns)(uintptr_t)f;
+  return (((uint)c) << 16) + (uint)(uintptr_t)f;
 }
 #endif
 
@@ -196,7 +196,7 @@ P(hash_eq) (struct P(hash_table) *t, struct P(state) *f1, P(char_t) c1, struct P
 #ifdef KMP_GIVE_ALLOC
 #define HASH_GIVE_ALLOC
 static inline void *
-P(hash_alloc) (struct P(hash_table) *t, uns size)
+P(hash_alloc) (struct P(hash_table) *t, uint size)
 {
   return P(alloc) ((struct P(struct) *) t, size);
 }
@@ -280,7 +280,7 @@ static inline int
 P(get_char) (struct P(struct) *kmp UNUSED, P(source_t) *src, P(char_t) *c)
 {
 # ifdef KMP_USE_UTF8
-  uns cc;
+  uint cc;
   *src = utf8_get(*src, &cc);
 # ifdef KMP_ONLYALPHA
   if (!cc) {}
@@ -297,7 +297,7 @@ P(get_char) (struct P(struct) *kmp UNUSED, P(source_t) *src, P(char_t) *c)
 #     endif
     }
 # else
-  uns cc = *(*src)++;
+  uint cc = *(*src)++;
 # ifdef KMP_ONLYALPHA
   if (!cc) {}
   else if (!Calpha(cc))
@@ -331,7 +331,7 @@ P(add) (struct P(struct) *kmp, P(source_t) src
   if (!P(get_char)(kmp, &src, &c))
     return NULL;
   struct P(state) *p = &kmp->null, *s;
-  uns len = 0;
+  uint len = 0;
   do
     {
       s = P(hash_find)(&kmp->hash, p, c);
@@ -395,7 +395,7 @@ P(build) (struct P(struct) *kmp)
 {
   if (P(empty)(kmp))
     return;
-  uns read = 0, write = 0;
+  uint read = 0, write = 0;
   struct P(state) *fifo[kmp->hash.hash_count], *null = &kmp->null;
   for (struct P(state) *s = null->back; s; s = s->next)
     fifo[write++] = s;

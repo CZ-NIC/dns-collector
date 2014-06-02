@@ -19,10 +19,10 @@
  * The time complexity is `O(log(N))`.
  **/
 #define BIN_SEARCH_FIRST_GE_CMP(ary,N,x,ary_lt_x)  ({		\
-  uns l = 0, r = (N);						\
+  uint l = 0, r = (N);						\
   while (l < r)							\
     {								\
-      uns m = (l+r)/2;						\
+      uint m = (l+r)/2;						\
       if (ary_lt_x(ary,m,x))					\
 	l = m+1;						\
       else							\

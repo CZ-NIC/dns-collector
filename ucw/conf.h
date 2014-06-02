@@ -167,7 +167,7 @@ struct fastbuf;
  * @cf_journal_block() on the overwritten memory block.  It returns an error
  * message or NULL if everything is all right.
  **/
-typedef char *cf_parser(uns number, char **pars, void *ptr);
+typedef char *cf_parser(uint number, char **pars, void *ptr);
 /**
  * A parser function for user-defined types gets a string and a pointer to
  * the destination variable.  It must store the value within [ptr,ptr+size),
@@ -197,7 +197,7 @@ typedef void cf_dumper1(struct fastbuf *fb, void *ptr);
 typedef char *cf_copier(void *dest, void *src);
 
 struct cf_user_type {			/** Structure to store information about user-defined variable type. **/
-  uns size;				// of the parsed attribute
+  uint size;				// of the parsed attribute
   char *name;				// name of the type (for dumping)
   cf_parser1 *parser;			// how to parse it
   cf_dumper1 *dumper;			// how to dump the type
@@ -219,12 +219,12 @@ struct cf_item {			/** Single configuration item. **/
 };
 
 struct cf_section {			/** A section. **/
-  uns size;				// 0 for a global block, sizeof(struct) for a section
+  uint size;				// 0 for a global block, sizeof(struct) for a section
   cf_hook *init;			// fills in default values (no need to bzero)
   cf_hook *commit;			// verifies parsed data (optional)
   cf_copier *copy;			// copies values from another instance (optional, no need to copy basic attributes)
   struct cf_item *cfg;			// CC_END-terminated array of items
-  uns flags;				// for internal use only
+  uint flags;				// for internal use only
 };
 
 /***
@@ -256,7 +256,7 @@ struct cf_section {			/** A section. **/
  *   struct list_node {
  *     cnode n;		// This one is for the list itself
  *     char *name;
- *     uns value;
+ *     uint value;
  *   };
  *
  *   static struct clist nodes;
@@ -265,7 +265,7 @@ struct cf_section {			/** A section. **/
  *     CF_TYPE(struct list_node),
  *     CF_ITEMS {
  *       CF_STRING("name", PTR_TO(struct list_node, name)),
- *       CF_UNS("value", PTR_TO(struct list_node, value)),
+ *       CF_UINT("value", PTR_TO(struct list_node, value)),
  *       CF_END
  *     }
  *   };
@@ -344,9 +344,9 @@ struct cf_section {			/** A section. **/
 #define CF_INT(n,p)		CF_STATIC(n,p,INT,int,1)		/** Single `int` value. **/
 #define CF_INT_ARY(n,p,c)	CF_STATIC(n,p,INT,int,c)		/** Static array of integers. **/
 #define CF_INT_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,int,c)		/** Dynamic array of integers. **/
-#define CF_UNS(n,p)		CF_STATIC(n,p,INT,uns,1)		/** Single `uns` (`unsigned`) value. **/
-#define CF_UNS_ARY(n,p,c)	CF_STATIC(n,p,INT,uns,c)		/** Static array of unsigned integers. **/
-#define CF_UNS_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,uns,c)		/** Dynamic array of unsigned integers. **/
+#define CF_UINT(n,p)		CF_STATIC(n,p,INT,uint,1)		/** Single `uint` (`unsigned`) value. **/
+#define CF_UINT_ARY(n,p,c)	CF_STATIC(n,p,INT,uint,c)		/** Static array of unsigned integers. **/
+#define CF_UINT_DYN(n,p,c)	CF_DYNAMIC(n,p,INT,uint,c)		/** Dynamic array of unsigned integers. **/
 #define CF_U64(n,p)		CF_STATIC(n,p,U64,u64,1)		/** Single unsigned 64bit integer (`u64`). **/
 #define CF_U64_ARY(n,p,c)	CF_STATIC(n,p,U64,u64,c)		/** Static array of u64s. **/
 #define CF_U64_DYN(n,p,c)	CF_DYNAMIC(n,p,U64,u64,c)		/** Dynamic array of u64s. **/
@@ -444,8 +444,8 @@ struct cf_section {			/** A section. **/
  * cf_set(), or cf_getopt() on the particular context.
  ***/
 struct mempool *cf_get_pool(void); /** Return a pointer to the current configuration pool. **/
-void *cf_malloc(uns size);	/** Returns @size bytes of memory allocated from the current configuration pool. **/
-void *cf_malloc_zero(uns size);	/** Like @cf_malloc(), but zeroes the memory. **/
+void *cf_malloc(uint size);	/** Returns @size bytes of memory allocated from the current configuration pool. **/
+void *cf_malloc_zero(uint size);	/** Like @cf_malloc(), but zeroes the memory. **/
 char *cf_strdup(const char *s);	/** Copy a string into @cf_malloc()ed memory. **/
 char *cf_printf(const char *fmt, ...) FORMAT_CHECK(printf,1,2); /** printf() into @cf_malloc()ed memory. **/
 
@@ -478,7 +478,7 @@ void cf_set_journalling(int enable);
  * <<custom_parser,Custom parsers>> do not need to call it, it is called
  * before them.
  **/
-void cf_journal_block(void *ptr, uns len);
+void cf_journal_block(void *ptr, uint len);
 #define CF_JOURNAL_VAR(var) cf_journal_block(&(var), sizeof(var))	// Store a single value into the journal
 
 struct cf_journal_item;		/** Opaque identifier of the journal state. **/
@@ -487,7 +487,7 @@ struct cf_journal_item;		/** Opaque identifier of the journal state. **/
  * get back to it. The @new_pool parameter tells if a new memory pool
  * should be created and used from now.
  **/
-struct cf_journal_item *cf_journal_new_transaction(uns new_pool);
+struct cf_journal_item *cf_journal_new_transaction(uint new_pool);
 /**
  * Marks current state as a complete transaction. The @new_pool
  * parameter tells if the transaction was created with new memory pool
@@ -496,7 +496,7 @@ struct cf_journal_item *cf_journal_new_transaction(uns new_pool);
  * is the journal state returned from last
  * @cf_journal_new_transaction() call.
  **/
-void cf_journal_commit_transaction(uns new_pool, struct cf_journal_item *oldj);
+void cf_journal_commit_transaction(uint new_pool, struct cf_journal_item *oldj);
 /**
  * Returns to an old journal state, reverting anything the current
  * transaction did. The @new_pool parameter must be the same as the
@@ -504,7 +504,7 @@ void cf_journal_commit_transaction(uns new_pool, struct cf_journal_item *oldj);
  * is the journal state you got from @cf_journal_new_transaction() --
  * it is the state to return to.
  **/
-void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj);
+void cf_journal_rollback_transaction(uint new_pool, struct cf_journal_item *oldj);
 
 /***
  * [[declare]]
@@ -523,13 +523,13 @@ void cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj)
  * Please note that a single section definition cannot be used in multiple
  * configuration contexts simultaneously.
  **/
-void cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown);
+void cf_declare_section(const char *name, struct cf_section *sec, uint allow_unknown);
 /**
  * Like @cf_declare_section(), but instead of item pointers, the section
  * contains offsets relative to @ptr. In other words, it does the same
  * as `CF_SECTION`, but for top-level sections.
  **/
-void cf_declare_rel_section(const char *name, struct cf_section *sec, void *ptr, uns allow_unknown);
+void cf_declare_rel_section(const char *name, struct cf_section *sec, void *ptr, uint allow_unknown);
 /**
  * If you have a section in a structure and you want to initialize it
  * (eg. if you want a copy of default values outside the configuration),
@@ -537,7 +537,7 @@ void cf_declare_rel_section(const char *name, struct cf_section *sec, void *ptr,
  *
  * This is used mostly internally. You probably do not need it.
  **/
-void cf_init_section(const char *name, struct cf_section *sec, void *ptr, uns do_bzero);
+void cf_init_section(const char *name, struct cf_section *sec, void *ptr, uint do_bzero);
 
 /***
  * [[bparser]]

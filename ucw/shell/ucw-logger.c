@@ -30,7 +30,7 @@ main(int argc, char **argv)
   else
     log_init(argv[1]);
 
-  uns level = 0;
+  uint level = 0;
   while (level < L_MAX && LS_LEVEL_LETTER(level) != argv[2][0])
     level++;
   if (level >= L_MAX)

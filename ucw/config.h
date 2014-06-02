@@ -37,7 +37,8 @@ typedef uint64_t u64;			/** Exactly 64 bits, unsigned **/
 typedef int64_t s64;			/** Exactly 64 bits, signed **/
 
 typedef unsigned int uint;		/** A better pronounceable alias for `unsigned int` **/
-typedef uint uns;			/** Backwards compatible alias for `uint' ***/
+// FIXME
+// typedef uint uns;			/** Backwards compatible alias for `uint' ***/
 typedef s64 timestamp_t;		/** Milliseconds since an unknown epoch **/
 
 #ifdef CONFIG_UCW_LARGE_FILES

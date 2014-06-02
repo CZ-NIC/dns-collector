@@ -69,7 +69,7 @@ int log_streams_after = 0;		/* The first never-used index in log_streams.ptr */
  */
 
 struct log_stream *
-log_stream_by_flags(uns flags)
+log_stream_by_flags(uint flags)
 {
   int n = LS_GET_STRNUM(flags);
   if (n < 0 || n >= log_streams_after || log_streams.ptr[n]->regnum == -1)
@@ -82,9 +82,9 @@ log_stream_by_flags(uns flags)
 char **log_type_names;
 
 char *
-log_type_name(uns flags)
+log_type_name(uint flags)
 {
-  uns type = LS_GET_TYPE(flags);
+  uint type = LS_GET_TYPE(flags);
 
   if (!log_type_names || !log_type_names[type])
     return "default";
@@ -95,7 +95,7 @@ log_type_name(uns flags)
 /*** Logging ***/
 
 void
-vmsg(uns cat, const char *fmt, va_list args)
+vmsg(uint cat, const char *fmt, va_list args)
 {
   struct timeval tv;
   struct tm tm;
@@ -105,7 +105,7 @@ vmsg(uns cat, const char *fmt, va_list args)
   char msgbuf[256];
   char *p;
   int len;
-  uns sighandler = cat & L_SIGHANDLER;
+  uint sighandler = cat & L_SIGHANDLER;
   struct log_stream *ls;
   struct log_msg m = { .flags = cat };
 
@@ -343,7 +343,7 @@ log_pass_msg(struct log_stream *ls, struct log_msg *m)
 /*** Utility functions ***/
 
 void
-msg(unsigned int cat, const char *fmt, ...)
+msg(uint cat, const char *fmt, ...)
 {
   va_list args;
 

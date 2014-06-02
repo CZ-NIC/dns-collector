@@ -57,7 +57,7 @@ static struct option longopts[] =
   { NULL,		0, 0, 0 }
 };
 
-static uns verbose = 1;
+static uint verbose = 1;
 static byte *file_name_1;
 static byte *file_name_2;
 static enum image_format format_1;
@@ -65,8 +65,8 @@ static enum image_format format_2;
 static struct color background_color;
 static byte *segmentation_name_1;
 static byte *segmentation_name_2;
-static uns display_base64;
-static uns display_base224;
+static uint display_base64;
+static uint display_base224;
 
 #define MSG(x...) do{ if (verbose) msg(L_INFO, ##x); }while(0)
 #define TRY(x) do{ if (!(x)) exit(1); }while(0)
@@ -83,23 +83,23 @@ dump_signature(struct image_signature *sig)
   byte buf[MAX(IMAGE_VECTOR_DUMP_MAX, IMAGE_REGION_DUMP_MAX)];
   image_vector_dump(buf, &sig->vec);
   MSG("vector: %s", buf);
-  for (uns i = 0; i < sig->len; i++)
+  for (uint i = 0; i < sig->len; i++)
     {
       image_region_dump(buf, sig->reg + i);
       MSG("region %u: %s", i, buf);
     }
-  uns sig_size = image_signature_size(sig->len);
+  uint sig_size = image_signature_size(sig->len);
   if (display_base64)
     {
       byte buf[BASE64_ENC_LENGTH(sig_size) + 1];
-      uns enc_size = base64_encode(buf, (byte *)sig, sig_size);
+      uint enc_size = base64_encode(buf, (byte *)sig, sig_size);
       buf[enc_size] = 0;
       MSG("base64 encoded: %s", buf);
     }
   if (display_base224)
     {
       byte buf[BASE224_ENC_LENGTH(sig_size) + 1];
-      uns enc_size = base224_encode(buf, (byte *)sig, sig_size);
+      uint enc_size = base224_encode(buf, (byte *)sig, sig_size);
       buf[enc_size] = 0;
       MSG("base224 encoded: %s", buf);
     }
@@ -118,7 +118,7 @@ write_segmentation(struct image_sig_data *data, byte *fn)
   TRY(img = image_new(&ctx, data->image->cols, data->image->rows, COLOR_SPACE_RGB, NULL));
   image_clear(&ctx, img);
 
-  for (uns i = 0; i < data->regions_count; i++)
+  for (uint i = 0; i < data->regions_count; i++)
     {
       byte c[3];
       double luv[3], xyz[3], srgb[3];
@@ -132,15 +132,15 @@ write_segmentation(struct image_sig_data *data, byte *fn)
       c[2] = CLAMP(srgb[2] * 255, 0, 255);
       for (struct image_sig_block *block = data->regions[i].blocks; block; block = block->next)
         {
-	  uns x1 = block->x * 4;
-	  uns y1 = block->y * 4;
-	  uns x2 = MIN(x1 + 4, img->cols);
-	  uns y2 = MIN(y1 + 4, img->rows);
+	  uint x1 = block->x * 4;
+	  uint y1 = block->y * 4;
+	  uint x2 = MIN(x1 + 4, img->cols);
+	  uint y2 = MIN(y1 + 4, img->rows);
 	  byte *p = img->pixels + x1 * 3 + y1 * img->row_size;
-	  for (uns y = y1; y < y2; y++, p += img->row_size)
+	  for (uint y = y1; y < y2; y++, p += img->row_size)
 	    {
 	      byte *p2 = p;
-	      for (uns x = x1; x < x2; x++, p2 += 3)
+	      for (uint x = x1; x < x2; x++, p2 += 3)
 	        {
 	          p2[0] = c[0];
 	          p2[1] = c[1];
@@ -299,7 +299,7 @@ main(int argc, char **argv)
 
   if (img1 && img2)
     {
-      uns dist;
+      uint dist;
       if (verbose)
         {
           struct fastbuf *fb = bfdopen(0, 4096);

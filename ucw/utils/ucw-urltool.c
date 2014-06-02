@@ -15,9 +15,9 @@
 
 static byte *base_url;
 static struct url base;
-static uns opt_split = 0, opt_normalize = 0, opt_forgive = 0;
+static uint opt_split = 0, opt_normalize = 0, opt_forgive = 0;
 static struct fastbuf *fout;
-static uns err_count;
+static uint err_count;
 
 static void
 process_url(byte *url)

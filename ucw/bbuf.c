@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 char *
-bb_vprintf_at(bb_t *bb, uns ofs, const char *fmt, va_list args)
+bb_vprintf_at(bb_t *bb, uint ofs, const char *fmt, va_list args)
 {
   bb_grow(bb, ofs + 1);
   va_list args2;
@@ -32,7 +32,7 @@ bb_vprintf_at(bb_t *bb, uns ofs, const char *fmt, va_list args)
 	}
       while (cnt < 0);
     }
-  else if ((uns)cnt >= bb->len - ofs)
+  else if ((uint)cnt >= bb->len - ofs)
     {
       bb_do_grow(bb, ofs + cnt + 1);
       va_copy(args2, args);
@@ -44,7 +44,7 @@ bb_vprintf_at(bb_t *bb, uns ofs, const char *fmt, va_list args)
 }
 
 char *
-bb_printf_at(bb_t *bb, uns ofs, const char *fmt, ...)
+bb_printf_at(bb_t *bb, uint ofs, const char *fmt, ...)
 {
   va_list args;
   va_start(args, fmt);

@@ -94,7 +94,7 @@ block_io_write_handler(struct main_file *fi)
 }
 
 void
-block_io_read(struct main_block_io *bio, void *buf, uns len)
+block_io_read(struct main_block_io *bio, void *buf, uint len)
 {
   ASSERT(bio->file.n.next);
   if (len)
@@ -114,7 +114,7 @@ block_io_read(struct main_block_io *bio, void *buf, uns len)
 }
 
 void
-block_io_write(struct main_block_io *bio, void *buf, uns len)
+block_io_write(struct main_block_io *bio, void *buf, uint len)
 {
   ASSERT(bio->file.n.next);
   if (len)

@@ -25,13 +25,13 @@
 
 #define MAX_FILE_SIZE (1 << 30)
 #define QUANTUM_SCALE (QuantumDepth - 8)
-#define QUANTUM_TO_BYTE(x) ((uns)(x) >> QUANTUM_SCALE)
-#define BYTE_TO_QUANTUM(x) ((uns)(x) << QUANTUM_SCALE)
+#define QUANTUM_TO_BYTE(x) ((uint)(x) >> QUANTUM_SCALE)
+#define BYTE_TO_QUANTUM(x) ((uint)(x) << QUANTUM_SCALE)
 #define ALPHA_TO_BYTE(x) (255 - QUANTUM_TO_BYTE(x))
 #define BYTE_TO_ALPHA(x) (BYTE_TO_QUANTUM(255 - (x)))
 
 static pthread_mutex_t libmagick_mutex = PTHREAD_MUTEX_INITIALIZER;
-static uns libmagick_counter;
+static uint libmagick_counter;
 
 struct magick_read_data {
   ExceptionInfo exception;
@@ -88,7 +88,7 @@ libmagick_read_header(struct image_io *io)
       IMAGE_ERROR(io->context, IMAGE_ERROR_READ_FAILED, "Too long stream.");
       return 0;
     }
-  uns buf_size = file_size;
+  uint buf_size = file_size;
   byte *buf = xmalloc(buf_size);
   breadb(io->fastbuf, buf, buf_size);
 
@@ -169,8 +169,8 @@ libmagick_read_data(struct image_io *io)
 
   /* Prepare the image */
   struct image_io_read_data_internals rdi;
-  uns read_flags = io->flags;
-  uns cs = read_flags & IMAGE_COLOR_SPACE;
+  uint read_flags = io->flags;
+  uint cs = read_flags & IMAGE_COLOR_SPACE;
   if (cs != COLOR_SPACE_GRAYSCALE && cs != COLOR_SPACE_RGB)
     read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_PIXEL_FORMAT) | COLOR_SPACE_RGB;
   if ((read_flags & IMAGE_IO_USE_BACKGROUND) && !(read_flags & IMAGE_ALPHA))

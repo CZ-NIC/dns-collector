@@ -20,7 +20,7 @@ fd_res_free(struct resource *r)
 }
 
 static void
-fd_res_dump(struct resource *r, uns indent UNUSED)
+fd_res_dump(struct resource *r, uint indent UNUSED)
 {
   printf(" fd=%d\n", (int)(intptr_t) r->priv);
 }

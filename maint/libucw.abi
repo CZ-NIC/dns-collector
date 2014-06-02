@@ -496,7 +496,7 @@ str_hier_prefix
 str_hier_suffix
 # ucw/strtonum.h
 str_to_uintmax
-str_to_uns
+str_to_uint
 # ucw/tbf.h
 tbf_init
 tbf_limit

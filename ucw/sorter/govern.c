@@ -27,20 +27,20 @@ sorter_start_timer(struct sort_context *ctx)
 }
 
 static void
-sorter_stop_timer(struct sort_context *ctx, uns *account_to)
+sorter_stop_timer(struct sort_context *ctx, uint *account_to)
 {
   ctx->last_pass_time = get_timer(&ctx->start_time);
   *account_to += ctx->last_pass_time;
 }
 
-static uns
+static uint
 sorter_speed(struct sort_context *ctx, u64 size)
 {
   if (!size)
     return 0;
   if (!ctx->last_pass_time)
     return 0;
-  return (uns)((double)size / (1<<20) * 1000 / ctx->last_pass_time);
+  return (uint)((double)size / (1<<20) * 1000 / ctx->last_pass_time);
 }
 
 static int
@@ -160,7 +160,7 @@ sorter_twoway(struct sort_context *ctx, struct sort_bucket *b)
     }
 
   SORT_XTRACE(3, "Main sorting");
-  uns pass = 0;
+  uint pass = 0;
   do {
     ++pass;
     sorter_start_timer(ctx);
@@ -202,13 +202,13 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
   cnode *list_pos = b->n.prev;
   ucw_off_t join_size;
   struct sort_bucket *join = sbuck_join_to(b, &join_size);
-  uns trace_level = (b->flags & SBF_SOURCE) ? 1 : 3;
+  uint trace_level = (b->flags & SBF_SOURCE) ? 1 : 3;
 
   clist_init(&parts);
   ASSERT(!(sorter_debug & SORT_DEBUG_NO_PRESORT));
   SORT_XTRACE(3, "%s", ((b->flags & SBF_CUSTOM_PRESORT) ? "Custom presorting" : "Presorting"));
-  uns cont;
-  uns part_cnt = 0;
+  uint cont;
+  uint part_cnt = 0;
   u64 total_size = 0;
   sorter_start_timer(ctx);
   do
@@ -239,12 +239,12 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 
   SORT_TRACE("Multi-way presorting pass (%d parts, %s, %dMB/s)", part_cnt, stk_fsize(total_size), sorter_speed(ctx, total_size));
 
-  uns max_ways = 1 << sorter_max_multiway_bits;
+  uint max_ways = 1 << sorter_max_multiway_bits;
   struct sort_bucket *ways[max_ways+1];
   SORT_XTRACE(3, "Starting up to %d-way merge", max_ways);
   for (;;)
     {
-      uns n = 0;
+      uint n = 0;
       struct sort_bucket *p;
       while (n < max_ways && (p = clist_head(&parts)))
 	{
@@ -263,7 +263,7 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
       ctx->multiway_merge(ctx, ways, out);
       sorter_stop_timer(ctx, &ctx->total_ext_time);
 
-      for (uns i=0; i<n; i++)
+      for (uint i=0; i<n; i++)
 	sbuck_drop(ways[i]);
 
       if (clist_empty(&parts))
@@ -282,19 +282,19 @@ sorter_multiway(struct sort_context *ctx, struct sort_bucket *b)
 }
 
 static void
-sorter_radix(struct sort_context *ctx, struct sort_bucket *b, uns bits)
+sorter_radix(struct sort_context *ctx, struct sort_bucket *b, uint bits)
 {
   // Add more bits if requested and allowed.
   bits = MIN(bits + sorter_add_radix_bits, sorter_max_radix_bits);
 
-  uns nbuck = 1 << bits;
+  uint nbuck = 1 << bits;
   SORT_XTRACE(3, "Running radix split on %s with hash %d bits of %d (expecting %s buckets)",
 	      F_BSIZE(b), bits, b->hash_bits, stk_fsize(sbuck_size(b) / nbuck));
   sorter_free_buf(ctx);
   sorter_start_timer(ctx);
 
   struct sort_bucket **outs = alloca(nbuck * sizeof(struct sort_bucket *));
-  for (uns i=nbuck; i--; )
+  for (uint i=nbuck; i--; )
     {
       outs[i] = sbuck_new(ctx);
       outs[i]->hash_bits = b->hash_bits - bits;
@@ -304,7 +304,7 @@ sorter_radix(struct sort_context *ctx, struct sort_bucket *b, uns bits)
   ctx->radix_split(ctx, b, outs, b->hash_bits - bits, bits);
 
   u64 min = ~(u64)0, max = 0, sum = 0;
-  for (uns i=0; i<nbuck; i++)
+  for (uint i=0; i<nbuck; i++)
     {
       u64 s = sbuck_size(outs[i]);
       min = MIN(min, s);
@@ -335,12 +335,12 @@ sorter_decide(struct sort_context *ctx, struct sort_bucket *b)
   // (this is insanely large if the input size is unknown, but it serves our purpose)
   u64 insize = sbuck_size(b);
   u64 mem = ctx->internal_estimate(ctx, b) * 0.8;	// Magical factor accounting for various non-uniformities
-  uns bits = 0;
+  uint bits = 0;
   while ((insize >> bits) > mem)
     bits++;
 
   // Calculate the possibilities of radix splits
-  uns radix_bits;
+  uint radix_bits;
   if (!ctx->radix_split ||
       (b->flags & SBF_CUSTOM_PRESORT) ||
       (sorter_debug & SORT_DEBUG_NO_RADIX))
@@ -354,7 +354,7 @@ sorter_decide(struct sort_context *ctx, struct sort_bucket *b)
     }
 
   // The same for multi-way merges
-  uns multiway_bits;
+  uint multiway_bits;
   if (!ctx->multiway_merge ||
       (sorter_debug & SORT_DEBUG_NO_MULTIWAY) ||
       (sorter_debug & SORT_DEBUG_NO_PRESORT))

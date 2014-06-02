@@ -14,17 +14,17 @@
 #include <ucw/bbuf.h>
 
 char *					/* Non-standard */
-bgets(struct fastbuf *f, char *b, uns l)
+bgets(struct fastbuf *f, char *b, uint l)
 {
   ASSERT(l);
   byte *src;
-  uns src_len = bdirect_read_prepare(f, &src);
+  uint src_len = bdirect_read_prepare(f, &src);
   if (!src_len)
     return NULL;
   do
     {
-      uns cnt = MIN(l, src_len);
-      for (uns i = cnt; i--;)
+      uint cnt = MIN(l, src_len);
+      for (uint i = cnt; i--;)
         {
 	  byte v = *src++;
 	  if (v == '\n')
@@ -47,17 +47,17 @@ exit:
 }
 
 int
-bgets_nodie(struct fastbuf *f, char *b, uns l)
+bgets_nodie(struct fastbuf *f, char *b, uint l)
 {
   ASSERT(l);
   byte *src, *start = b;
-  uns src_len = bdirect_read_prepare(f, &src);
+  uint src_len = bdirect_read_prepare(f, &src);
   if (!src_len)
     return 0;
   do
     {
-      uns cnt = MIN(l, src_len);
-      for (uns i = cnt; i--;)
+      uint cnt = MIN(l, src_len);
+      for (uint i = cnt; i--;)
         {
 	  byte v = *src++;
 	  if (v == '\n')
@@ -79,21 +79,21 @@ exit:
   return b - (char *)start;
 }
 
-uns
-bgets_bb(struct fastbuf *f, struct bb_t *bb, uns limit)
+uint
+bgets_bb(struct fastbuf *f, struct bb_t *bb, uint limit)
 {
   ASSERT(limit);
   byte *src;
-  uns src_len = bdirect_read_prepare(f, &src);
+  uint src_len = bdirect_read_prepare(f, &src);
   if (!src_len)
     return 0;
   bb_grow(bb, 1);
   byte *buf = bb->ptr;
-  uns len = 0, buf_len = MIN(bb->len, limit);
+  uint len = 0, buf_len = MIN(bb->len, limit);
   do
     {
-      uns cnt = MIN(src_len, buf_len);
-      for (uns i = cnt; i--;)
+      uint cnt = MIN(src_len, buf_len);
+      for (uint i = cnt; i--;)
         {
 	  byte v = *src++;
 	  if (v == '\n')
@@ -132,7 +132,7 @@ char *
 bgets_mp(struct fastbuf *f, struct mempool *mp)
 {
   byte *src;
-  uns src_len = bdirect_read_prepare(f, &src);
+  uint src_len = bdirect_read_prepare(f, &src);
   if (!src_len)
     return NULL;
 #define BLOCK_SIZE (4096 - sizeof(void *))
@@ -140,13 +140,13 @@ bgets_mp(struct fastbuf *f, struct mempool *mp)
     struct block *prev;
     byte data[BLOCK_SIZE];
   } *blocks = NULL;
-  uns sum = 0, buf_len = BLOCK_SIZE, cnt;
+  uint sum = 0, buf_len = BLOCK_SIZE, cnt;
   struct block first_block, *new_block = &first_block;
   byte *buf = new_block->data;
   do
     {
       cnt = MIN(src_len, buf_len);
-      for (uns i = cnt; i--;)
+      for (uint i = cnt; i--;)
         {
 	  byte v = *src++;
 	  if (v == '\n')
@@ -176,7 +176,7 @@ bgets_mp(struct fastbuf *f, struct mempool *mp)
     }
   while (src_len);
 exit: ;
-  uns len = buf - new_block->data;
+  uint len = buf - new_block->data;
   byte *result = mp_alloc(mp, sum + len + 1) + sum;
   result[len] = 0;
   memcpy(result, new_block->data, len);
@@ -191,17 +191,17 @@ exit: ;
 }
 
 char *
-bgets0(struct fastbuf *f, char *b, uns l)
+bgets0(struct fastbuf *f, char *b, uint l)
 {
   ASSERT(l);
   byte *src;
-  uns src_len = bdirect_read_prepare(f, &src);
+  uint src_len = bdirect_read_prepare(f, &src);
   if (!src_len)
     return NULL;
   do
     {
-      uns cnt = MIN(l, src_len);
-      for (uns i = cnt; i--;)
+      uint cnt = MIN(l, src_len);
+      for (uint i = cnt; i--;)
         {
 	  *b = *src++;
 	  if (!*b)

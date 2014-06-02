@@ -61,14 +61,14 @@ struct raw_queue {				// Generic queue with locking
   pthread_mutex_t queue_mutex;
   clist pri0_queue;				// Ordinary queue for requests with priority=0
   struct work **pri_heap;			// A heap for request with priority>0
-  uns heap_cnt, heap_max;
+  uint heap_cnt, heap_max;
   sem_t *queue_sem;				// Number of requests queued
 };
 
 struct worker_pool {
   struct raw_queue requests;
-  uns num_threads;
-  uns stack_size;				// 0 for default
+  uint num_threads;
+  uint stack_size;				// 0 for default
   struct worker_thread *(*new_thread)(void);	// default: xmalloc the struct
   void (*free_thread)(struct worker_thread *t);	// default: xfree
   void (*init_thread)(struct worker_thread *t);	// default: empty
@@ -79,13 +79,13 @@ struct worker_pool {
 
 struct work_queue {
   struct worker_pool *pool;
-  uns nr_running;				// Number of requests in service
+  uint nr_running;				// Number of requests in service
   struct raw_queue finished;			// Finished requests queue up here
 };
 
 struct work {					// A single request
   cnode n;
-  uns priority;
+  uint priority;
   struct work_queue *reply_to;			// Where to queue the request when it's finished
   void (*go)(struct worker_thread *t, struct work *w);		// Called inside the worker thread
 };

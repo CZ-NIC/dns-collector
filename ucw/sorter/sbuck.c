@@ -16,7 +16,7 @@
 #include <fcntl.h>
 
 void *
-sorter_alloc(struct sort_context *ctx, uns size)
+sorter_alloc(struct sort_context *ctx, uint size)
 {
   return mp_alloc_zero(ctx->pool, size);
 }

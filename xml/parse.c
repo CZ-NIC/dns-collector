@@ -24,7 +24,7 @@
 /*** Basic parsing ***/
 
 void NONRET
-xml_fatal_expected(struct xml_context *ctx, uns c)
+xml_fatal_expected(struct xml_context *ctx, uint c)
 {
   if (c >= 32 && c < 128)
     xml_fatal(ctx, "Expected '%c'", c);
@@ -56,7 +56,7 @@ xml_parse_eq(struct xml_context *ctx)
 /*** Names and nmtokens ***/
 
 static char *
-xml_parse_string(struct xml_context *ctx, struct mempool *pool, uns first_cat, uns next_cat, char *err)
+xml_parse_string(struct xml_context *ctx, struct mempool *pool, uint first_cat, uint next_cat, char *err)
 {
   char *p = mp_start_noalign(pool, 1);
   if (unlikely(!(xml_peek_cat(ctx) & first_cat)))
@@ -72,7 +72,7 @@ xml_parse_string(struct xml_context *ctx, struct mempool *pool, uns first_cat, u
 }
 
 static void
-xml_skip_string(struct xml_context *ctx, uns first_cat, uns next_cat, char *err)
+xml_skip_string(struct xml_context *ctx, uint first_cat, uint next_cat, char *err)
 {
   if (unlikely(!(xml_get_cat(ctx) & first_cat)))
     xml_fatal(ctx, "%s", err);
@@ -107,7 +107,7 @@ xml_parse_system_literal(struct xml_context *ctx, struct mempool *pool)
 {
   /* SystemLiteral ::= ('"' [^"]* '"') | ("'" [^']* "'") */
   char *p = mp_start_noalign(pool, 1);
-  uns q = xml_parse_quote(ctx), c;
+  uint q = xml_parse_quote(ctx), c;
   while ((c = xml_get_char(ctx)) != q)
     {
       p = mp_spread(pool, p, 5);
@@ -122,7 +122,7 @@ xml_parse_pubid_literal(struct xml_context *ctx, struct mempool *pool)
 {
   /* PubidLiteral ::= '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" */
   char *p = mp_start_noalign(pool, 1);
-  uns q = xml_parse_quote(ctx), c;
+  uint q = xml_parse_quote(ctx), c;
   while ((c = xml_get_char(ctx)) != q)
     {
       if (unlikely(!(xml_last_cat(ctx) & XML_CHAR_PUBID)))
@@ -258,13 +258,13 @@ xml_skip_pi(struct xml_context *ctx)
 
 /*** Character references ***/
 
-uns
+uint
 xml_parse_char_ref(struct xml_context *ctx)
 {
   TRACE(ctx, "parse_char_ref");
   /* CharRef ::= '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';'
    * Already parsed: '&#' */
-  uns v = 0;
+  uint v = 0;
   if (xml_get_char(ctx) == 'x')
     {
       if (!(xml_get_cat(ctx) & XML_CHAR_XDIGIT))
@@ -291,7 +291,7 @@ xml_parse_char_ref(struct xml_context *ctx)
 	}
       while (v < 0x110000 && (xml_get_cat(ctx) & XML_CHAR_DIGIT));
     }
-  uns cat = xml_char_cat(v);
+  uint cat = xml_char_cat(v);
   if (!(cat & ctx->cat_unrestricted))
     {
       xml_error(ctx, "Character reference out of range");
@@ -369,8 +369,8 @@ xml_spout_chars(struct fastbuf *fb)
   if (fb->bufend != fb->buffer)
     {
       TRACE(ctx, "growing chars");
-      uns len = fb->bufend - fb->buffer;
-      uns reported = fb->bstop - fb->buffer;
+      uint len = fb->bufend - fb->buffer;
+      uint reported = fb->bstop - fb->buffer;
       fb->buffer = mp_expand(pool);
       fb->bufend = fb->buffer + mp_avail(pool);
       fb->bptr = fb->buffer + len;
@@ -385,11 +385,11 @@ xml_spout_chars(struct fastbuf *fb)
     }
 }
 
-static inline uns
+static inline uint
 xml_end_chars(struct xml_context *ctx, char **out)
 {
   struct fastbuf *fb = &ctx->chars;
-  uns len = fb->bptr - fb->buffer;
+  uint len = fb->bptr - fb->buffer;
   if (len)
     {
       TRACE(ctx, "ending chars");
@@ -400,11 +400,11 @@ xml_end_chars(struct xml_context *ctx, char **out)
   return len;
 }
 
-static inline uns
+static inline uint
 xml_report_chars(struct xml_context *ctx, char **out)
 {
   struct fastbuf *fb = &ctx->chars;
-  uns len = fb->bptr - fb->buffer;
+  uint len = fb->bptr - fb->buffer;
   if (len)
     {
       *fb->bptr = 0;
@@ -414,11 +414,11 @@ xml_report_chars(struct xml_context *ctx, char **out)
   return len;
 }
 
-static inline uns
+static inline uint
 xml_flush_chars(struct xml_context *ctx)
 {
   char *text, *rtext;
-  uns len = xml_end_chars(ctx, &text), rlen;
+  uint len = xml_end_chars(ctx, &text), rlen;
   if (len)
     {
       if (ctx->flags & XML_NO_CHARS)
@@ -504,7 +504,7 @@ xml_append_cdata(struct xml_context *ctx)
     }
   xml_parse_seq(ctx, "CDATA[");
   struct fastbuf *out = &ctx->chars;
-  uns rlen;
+  uint rlen;
   char *rtext;
   if ((ctx->flags & XML_REPORT_CHARS) && ctx->h_block && (rlen = xml_report_chars(ctx, &rtext)))
     ctx->h_block(ctx, rtext, rlen);
@@ -535,13 +535,13 @@ xml_parse_attr_value(struct xml_context *ctx, struct xml_dtd_attr *attr UNUSED)
   /* AttValue ::= '"' ([^<&"] | Reference)* '"'	| "'" ([^<&'] | Reference)* "'" */
   /* FIXME: -- check value constrains / normalize leading/trailing WS and repeated WS */
   struct mempool_state state;
-  uns quote = xml_parse_quote(ctx);
+  uint quote = xml_parse_quote(ctx);
   mp_save(ctx->stack, &state);
   struct fastbuf *out = &ctx->chars;
   struct xml_source *src = ctx->src;
   while (1)
     {
-      uns c = xml_get_char(ctx);
+      uint c = xml_get_char(ctx);
       if (c == '&')
         {
 	  xml_inc(ctx);
@@ -561,7 +561,7 @@ xml_parse_attr_value(struct xml_context *ctx, struct xml_dtd_attr *attr UNUSED)
   return xml_end_chars(ctx, &text) ? text : "";
 }
 
-uns
+uint
 xml_normalize_white(struct xml_context *ctx UNUSED, char *text)
 {
   char *s = text, *d = text;
@@ -586,7 +586,7 @@ xml_normalize_white(struct xml_context *ctx UNUSED, char *text)
 
 struct xml_attrs_table;
 
-static inline uns
+static inline uint
 xml_attrs_hash(struct xml_attrs_table *t UNUSED, struct xml_node *e, char *n)
 {
   return hash_pointer(e) ^ hash_string(n);
@@ -680,7 +680,7 @@ xml_attrs_table_cleanup(struct xml_context *ctx)
 
 /*** Elements ***/
 
-static uns
+static uint
 xml_validate_element(struct xml_dtd_elem_node *root, struct xml_dtd_elem *elem)
 {
   if (root->elem)
@@ -734,8 +734,8 @@ xml_push_element(struct xml_context *ctx)
     }
   while (1)
     {
-      uns white = xml_parse_white(ctx, 0);
-      uns c = xml_get_char(ctx);
+      uint white = xml_parse_white(ctx, 0);
+      uint c = xml_get_char(ctx);
       if (c == '/')
         {
 	  xml_parse_char(ctx, '>');
@@ -773,7 +773,7 @@ xml_pop_element(struct xml_context *ctx)
   if ((ctx->flags & XML_REPORT_TAGS) && ctx->h_etag)
     ctx->h_etag(ctx);
   struct xml_node *e = ctx->node;
-  uns free = !(ctx->flags & XML_ALLOC_TAGS);
+  uint free = !(ctx->flags & XML_ALLOC_TAGS);
   if (free)
     {
       if (!e->parent)
@@ -807,7 +807,7 @@ xml_parse_etag(struct xml_context *ctx)
   char *n = e->name;
   while (*n)
     {
-      uns c;
+      uint c;
       n = utf8_32_get(n, &c);
       if (xml_get_char(ctx) != c)
 	goto recover;
@@ -837,7 +837,7 @@ xml_parse_doctype_decl(struct xml_context *ctx)
   xml_parse_white(ctx, 1);
   ctx->doctype = xml_parse_name(ctx, ctx->pool);
   TRACE(ctx, "doctype=%s", ctx->doctype);
-  uns c;
+  uint c;
   if (xml_parse_white(ctx, 0) && ((c = xml_peek_char(ctx)) == 'S' || c == 'P'))
     {
       if (c == 'S')
@@ -874,7 +874,7 @@ xml_parse_doctype_decl(struct xml_context *ctx)
 /* DTD: Internal subset */
 
 static void
-xml_parse_subset(struct xml_context *ctx, uns external)
+xml_parse_subset(struct xml_context *ctx, uint external)
 {
   // FIXME:
   // -- comments/pi have no parent
@@ -890,7 +890,7 @@ xml_parse_subset(struct xml_context *ctx, uns external)
   while (1)
     {
       xml_parse_white(ctx, 0);
-      uns c = xml_get_char(ctx);
+      uint c = xml_get_char(ctx);
       xml_inc(ctx);
       if (c == '<')
 	if ((c = xml_get_char(ctx)) == '!')
@@ -953,7 +953,7 @@ invalid_markup: ;
 
 /*** The State Machine ***/
 
-uns
+uint
 xml_next(struct xml_context *ctx)
 {
   /* A nasty state machine */
@@ -972,7 +972,7 @@ error:
       TRACE(ctx, "raised fatal error");
       return ctx->state = XML_STATE_EOF;
     }
-  uns c;
+  uint c;
   switch (ctx->state)
     {
       case XML_STATE_START:
@@ -1211,29 +1211,29 @@ epilog:
   ASSERT(0);
 }
 
-uns
-xml_next_state(struct xml_context *ctx, uns pull)
+uint
+xml_next_state(struct xml_context *ctx, uint pull)
 {
-  uns saved = ctx->pull;
+  uint saved = ctx->pull;
   ctx->pull = pull;
-  uns res = xml_next(ctx);
+  uint res = xml_next(ctx);
   ctx->pull = saved;
   return res;
 }
 
-uns
+uint
 xml_skip_element(struct xml_context *ctx)
 {
   ASSERT(ctx->state == XML_STATE_STAG);
   struct xml_node *node = ctx->node;
-  uns saved = ctx->pull, res;
+  uint saved = ctx->pull, res;
   ctx->pull = XML_PULL_ETAG;
   while ((res = xml_next(ctx)) && ctx->node != node);
   ctx->pull = saved;
   return res;
 }
 
-uns
+uint
 xml_parse(struct xml_context *ctx)
 {
   /* This cycle should run only once unless the user overrides the value of ctx->pull in a SAX handler */

@@ -17,31 +17,31 @@
 #include <string.h>
 
 /* ImageLib section */
-uns image_trace;
-uns image_max_dim = 0xffff;
-uns image_max_bytes = ~0U;
+uint image_trace;
+uint image_max_dim = 0xffff;
+uint image_max_bytes = ~0U;
 
 #if defined(CONFIG_IMAGES_SIM) || defined(CONFIG_IMAGES_DUP)
 /* ImageSig section */
-uns image_sig_min_width;
-uns image_sig_min_height;
-uns *image_sig_prequant_thresholds;
-uns image_sig_postquant_min_steps;
-uns image_sig_postquant_max_steps;
-uns image_sig_postquant_threshold;
+uint image_sig_min_width;
+uint image_sig_min_height;
+uint *image_sig_prequant_thresholds;
+uint image_sig_postquant_min_steps;
+uint image_sig_postquant_max_steps;
+uint image_sig_postquant_threshold;
 double image_sig_border_size;
 int image_sig_border_bonus;
 double image_sig_inertia_scale[3];
 double image_sig_textured_threshold;
 int image_sig_compare_method;
-uns image_sig_cmp_features_weights[IMAGE_REG_F + IMAGE_REG_H];
+uint image_sig_cmp_features_weights[IMAGE_REG_F + IMAGE_REG_H];
 #endif
 
 static struct cf_section image_lib_config = {
   CF_ITEMS{
-    CF_UNS("Trace", &image_trace),
-    CF_UNS("ImageMaxDim", &image_max_dim),
-    CF_UNS("ImageMaxBytes", &image_max_bytes),
+    CF_UINT("Trace", &image_trace),
+    CF_UINT("ImageMaxDim", &image_max_dim),
+    CF_UINT("ImageMaxBytes", &image_max_bytes),
     CF_END
   }
 };
@@ -49,18 +49,18 @@ static struct cf_section image_lib_config = {
 #if defined(CONFIG_IMAGES_SIM) || defined(CONFIG_IMAGES_DUP)
 static struct cf_section image_sig_config = {
   CF_ITEMS{
-    CF_UNS("MinWidth", &image_sig_min_width),
-    CF_UNS("MinHeight", &image_sig_min_height),
-    CF_UNS_DYN("PreQuantThresholds", &image_sig_prequant_thresholds, CF_ANY_NUM),
-    CF_UNS("PostQuantMinSteps", &image_sig_postquant_min_steps),
-    CF_UNS("PostQuantMaxSteps", &image_sig_postquant_max_steps),
-    CF_UNS("PostQuantThreshold", &image_sig_postquant_threshold),
+    CF_UINT("MinWidth", &image_sig_min_width),
+    CF_UINT("MinHeight", &image_sig_min_height),
+    CF_UINT_DYN("PreQuantThresholds", &image_sig_prequant_thresholds, CF_ANY_NUM),
+    CF_UINT("PostQuantMinSteps", &image_sig_postquant_min_steps),
+    CF_UINT("PostQuantMaxSteps", &image_sig_postquant_max_steps),
+    CF_UINT("PostQuantThreshold", &image_sig_postquant_threshold),
     CF_DOUBLE("BorderSize", &image_sig_border_size),
     CF_INT("BorderBonus", &image_sig_border_bonus),
     CF_DOUBLE_ARY("InertiaScale", image_sig_inertia_scale, 3),
     CF_DOUBLE("TexturedThreshold", &image_sig_textured_threshold),
     CF_LOOKUP("CompareMethod", &image_sig_compare_method, ((const char * const []){"integrated", "fuzzy", "average", NULL})),
-    CF_UNS_ARY("CompareFeaturesWeights", image_sig_cmp_features_weights, IMAGE_REG_F + IMAGE_REG_H),
+    CF_UINT_ARY("CompareFeaturesWeights", image_sig_cmp_features_weights, IMAGE_REG_F + IMAGE_REG_H),
     CF_END
   }
 };

@@ -9,10 +9,10 @@
 
 #include <string.h>
 
-static void P(radix_split)(struct sort_context *ctx UNUSED, struct sort_bucket *bin, struct sort_bucket **bouts, uns bitpos, uns numbits)
+static void P(radix_split)(struct sort_context *ctx UNUSED, struct sort_bucket *bin, struct sort_bucket **bouts, uint bitpos, uint numbits)
 {
-  uns nbucks = 1 << numbits;
-  uns mask = nbucks - 1;
+  uint nbucks = 1 << numbits;
+  uint mask = nbucks - 1;
   struct fastbuf *in = sbuck_read(bin);
   P(key) k;
 
@@ -22,7 +22,7 @@ static void P(radix_split)(struct sort_context *ctx UNUSED, struct sort_bucket *
   while (P(read_key)(in, &k))
     {
       P(hash_t) h = P(hash)(&k);
-      uns i = (h >> bitpos) & mask;
+      uint i = (h >> bitpos) & mask;
       if (unlikely(!outs[i]))
 	outs[i] = sbuck_write(bouts[i]);
       P(copy_data)(&k, in, outs[i]);

@@ -32,7 +32,7 @@ cf_parse_string(char *str, char **ptr)
 
 typedef char *cf_basic_parser(char *str, void *ptr);
 static struct {
-  uns size;
+  uint size;
   void *parser;
 } parsers[] = {
   { sizeof(int), cf_parse_int },
@@ -44,7 +44,7 @@ static struct {
   { 0, NULL },					// user-defined types are parsed extra
 };
 
-inline uns
+inline uint
 cf_type_size(enum cf_type type, struct cf_user_type *utype)
 {
   if (type < CT_USER)
@@ -57,7 +57,7 @@ static char *
 cf_parse_lookup(char *str, int *ptr, const char * const *t)
 {
   const char * const *n = t;
-  uns total_len = 0;
+  uint total_len = 0;
   while (*n && strcasecmp(*n, str)) {
     total_len += strlen(*n) + 2;
     n++;
@@ -77,12 +77,12 @@ cf_parse_lookup(char *str, int *ptr, const char * const *t)
 }
 
 static char *
-cf_parse_ary(uns number, char **pars, void *ptr, enum cf_type type, union cf_union *u)
+cf_parse_ary(uint number, char **pars, void *ptr, enum cf_type type, union cf_union *u)
 {
-  for (uns i=0; i<number; i++)
+  for (uint i=0; i<number; i++)
   {
     char *msg;
-    uns size = cf_type_size(type, u->utype);
+    uint size = cf_type_size(type, u->utype);
     if (type < CT_LOOKUP)
       msg = ((cf_basic_parser*) parsers[type].parser) (pars[i], ptr + i * size);
     else if (type == CT_LOOKUP)
@@ -108,7 +108,7 @@ static char *
 interpret_set_dynamic(struct cf_item *item, int number, char **pars, void **ptr)
 {
   enum cf_type type = item->type;
-  uns size = cf_type_size(type, item->u.utype);
+  uint size = cf_type_size(type, item->u.utype);
   cf_journal_block(ptr, sizeof(void*));
   // boundary checks done by the caller
   *ptr = gary_init(size, number, mp_get_allocator(cf_get_pool()));
@@ -120,8 +120,8 @@ interpret_add_dynamic(struct cf_item *item, int number, char **pars, int *proces
 {
   enum cf_type type = item->type;
   void *old_p = *ptr;
-  uns size = cf_type_size(item->type, item->u.utype);
-  ASSERT(size >= sizeof(uns));
+  uint size = cf_type_size(item->type, item->u.utype);
+  ASSERT(size >= sizeof(uint));
   int old_nr = old_p ? GARY_SIZE(old_p) : 0;
   int taken = MIN(number, ABS(item->number)-old_nr);
   *processed = taken;
@@ -139,10 +139,10 @@ interpret_add_dynamic(struct cf_item *item, int number, char **pars, int *proces
     return cf_printf("Dynamic arrays do not support operation %s", cf_op_names[op]);
 }
 
-static char *interpret_set_item(struct cf_item *item, int number, char **pars, int *processed, void *ptr, uns allow_dynamic);
+static char *interpret_set_item(struct cf_item *item, int number, char **pars, int *processed, void *ptr, uint allow_dynamic);
 
 static char *
-interpret_section(struct cf_section *sec, int number, char **pars, int *processed, void *ptr, uns allow_dynamic)
+interpret_section(struct cf_section *sec, int number, char **pars, int *processed, void *ptr, uint allow_dynamic)
 {
   cf_add_dirty(sec, ptr);
   *processed = 0;
@@ -201,7 +201,7 @@ interpret_add_list(struct cf_item *item, int number, char **pars, int *processed
     return "Nothing to add to the list";
   struct cf_section *sec = item->u.sec;
   *processed = 0;
-  uns index = 0;
+  uint index = 0;
   while (number > 0)
   {
     void *node = cf_malloc(sec->size);
@@ -234,7 +234,7 @@ interpret_add_bitmap(struct cf_item *item, int number, char **pars, int *process
     return cf_printf("Type %s cannot be used with bitmaps", cf_type_names[item->type]);
   cf_journal_block(ptr, sizeof(u32));
   for (int i=0; i<number; i++) {
-    uns idx;
+    uint idx;
     if (item->type == CT_INT)
       TRY( cf_parse_int(pars[i], &idx) );
     else
@@ -251,7 +251,7 @@ interpret_add_bitmap(struct cf_item *item, int number, char **pars, int *process
 }
 
 static char *
-interpret_set_item(struct cf_item *item, int number, char **pars, int *processed, void *ptr, uns allow_dynamic)
+interpret_set_item(struct cf_item *item, int number, char **pars, int *processed, void *ptr, uint allow_dynamic)
 {
   int taken;
   switch (item->cls)
@@ -261,7 +261,7 @@ interpret_set_item(struct cf_item *item, int number, char **pars, int *processed
 	return "Missing value";
       taken = MIN(number, item->number);
       *processed = taken;
-      uns size = cf_type_size(item->type, item->u.utype);
+      uint size = cf_type_size(item->type, item->u.utype);
       cf_journal_block(ptr, taken * size);
       return cf_parse_ary(taken, pars, ptr, item->type, &item->u);
     case CC_DYNAMIC:
@@ -306,7 +306,7 @@ interpret_set_all(struct cf_item *item, void *ptr, enum cf_operation op)
       if (item->type == CT_INT)
 	* (u32*) ptr = ~0u;
       else {
-	uns nr = -1;
+	uint nr = -1;
 	while (item->u.lookup[++nr]);
 	* (u32*) ptr = ~0u >> (32-nr);
       }
@@ -345,8 +345,8 @@ find_list_node(clist *list, void *query, struct cf_section *sec, u32 mask)
 {
   CLIST_FOR_EACH(cnode *, n, *list)
   {
-    uns found = 1;
-    for (uns i=0; i<32; i++)
+    uint found = 1;
+    for (uint i=0; i<32; i++)
       if (mask & (1<<i))
 	if (cmp_items(n, query, sec->cfg+i))
 	{
@@ -362,10 +362,10 @@ find_list_node(clist *list, void *query, struct cf_section *sec, u32 mask)
 static char *
 record_selector(struct cf_item *item, struct cf_section *sec, u32 *mask)
 {
-  uns nr = sec->flags & SEC_FLAG_NUMBER;
+  uint nr = sec->flags & SEC_FLAG_NUMBER;
   if (item >= sec->cfg && item < sec->cfg + nr)	// setting an attribute relative to this section
   {
-    uns i = item - sec->cfg;
+    uint i = item - sec->cfg;
     if (i >= 32)
       return "Cannot select list nodes by this attribute";
     if (sec->cfg[i].cls != CC_STATIC)

@@ -35,7 +35,7 @@ fb_cc_spout(struct fastbuf *f)
       flags = conv_run(ct);
       if (ct->dest > ct->dest_start)
 	bdirect_write_commit(FB_CC(f)->orig, ct->dest);
-      uns l = bdirect_write_prepare(FB_CC(f)->orig, &ct->dest_start);
+      uint l = bdirect_write_prepare(FB_CC(f)->orig, &ct->dest_start);
       ct->dest = ct->dest_start;
       ct->dest_end = ct->dest + l;
     }
@@ -54,7 +54,7 @@ fb_cc_refill(struct fastbuf *f)
   do
     {
       byte *src;
-      uns len = bdirect_read_prepare(FB_CC(f)->orig, &src);
+      uint len = bdirect_read_prepare(FB_CC(f)->orig, &src);
       if (!len)
 	break;
       ct->source = src;

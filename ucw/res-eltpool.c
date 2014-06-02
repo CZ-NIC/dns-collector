@@ -22,7 +22,7 @@ ep_res_free(struct resource *r)
 }
 
 static void
-ep_res_dump(struct resource *r, uns indent UNUSED)
+ep_res_dump(struct resource *r, uint indent UNUSED)
 {
   printf(" pool=%p\n", r->priv);
 }

@@ -66,7 +66,7 @@ void opt_handle_dumpconfig(struct opt_item * opt UNUSED, const char * value UNUS
   exit(0);
 }
 
-void opt_conf_hook_internal(struct opt_item * opt, uns event, const char * value UNUSED, void * data) {
+void opt_conf_hook_internal(struct opt_item * opt, uint event, const char * value UNUSED, void * data) {
   struct opt_context *oc = data;
   struct cf_context *cc = cf_get_context();
 

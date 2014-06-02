@@ -44,7 +44,7 @@ struct respool {
   const char *name;
   struct mempool *mpool;				// If set, resources are allocated from the mempool, otherwise by xmalloc()
   struct resource *subpool_of;
-  uns default_res_flags;				// RES_FLAG_xxx for newly allocated resources
+  uint default_res_flags;				// RES_FLAG_xxx for newly allocated resources
 };
 
 /**
@@ -55,7 +55,7 @@ struct respool {
 struct resource {
   cnode n;
   struct respool *rpool;
-  uns flags;						// RES_FLAG_xxx
+  uint flags;						// RES_FLAG_xxx
   const struct res_class *rclass;
   void *priv;						// Private to the class
   // More data specific for the particular class can follow
@@ -76,7 +76,7 @@ struct respool *rp_new(const char *name, struct mempool *mp);
 void rp_delete(struct respool *rp);			/** Deletes a resource pool, freeing all resources. **/
 void rp_detach(struct respool *rp);			/** Deletes a resource pool, detaching all resources. **/
 void rp_commit(struct respool *rp);			/** Deletes a resource pool. Temporary resources are freed, stable resources are detached. **/
-void rp_dump(struct respool *rp, uns indent);		/** Prints out a debugging dump of a pool to stdout. **/
+void rp_dump(struct respool *rp, uint indent);		/** Prints out a debugging dump of a pool to stdout. **/
 
 /** Returns a pointer to the currently active resource pool or NULL, if none exists. **/
 static inline struct respool *rp_current(void)
@@ -98,7 +98,7 @@ static inline struct respool *rp_switch(struct respool *rp)
 
 struct resource *res_alloc(const struct res_class *rc) LIKE_MALLOC;	// Dies if there is no pool active
 
-void res_dump(struct resource *r, uns indent);		/** Prints out a debugging dump of the resource to stdout. **/
+void res_dump(struct resource *r, uint indent);		/** Prints out a debugging dump of the resource to stdout. **/
 
 /**
  * Frees a resource, unlinking it from its pool.
@@ -148,8 +148,8 @@ struct res_class {
   const char *name;					// The name of the class (included in debugging dumps)
   void (*detach)(struct resource *r);			// The callbacks
   void (*free)(struct resource *r);
-  void (*dump)(struct resource *r, uns indent);
-  uns res_size;						// Size of the resource structure (0=default)
+  void (*dump)(struct resource *r, uint indent);
+  uint res_size;						// Size of the resource structure (0=default)
 };
 
 /**

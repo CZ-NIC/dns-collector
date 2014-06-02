@@ -164,19 +164,19 @@ int beof_slow(struct fastbuf *f)
   return f->bptr >= f->bstop && !brefill(f, 1);
 }
 
-void bputc_slow(struct fastbuf *f, uns c)
+void bputc_slow(struct fastbuf *f, uint c)
 {
   if (f->bptr >= f->bufend)
     bspout(f);
   *f->bptr++ = c;
 }
 
-uns bread_slow(struct fastbuf *f, void *b, uns l, uns check)
+uint bread_slow(struct fastbuf *f, void *b, uint l, uint check)
 {
-  uns total = 0;
+  uint total = 0;
   while (l)
     {
-      uns k = f->bstop - f->bptr;
+      uint k = f->bstop - f->bptr;
 
       if (!k)
 	{
@@ -198,11 +198,11 @@ uns bread_slow(struct fastbuf *f, void *b, uns l, uns check)
   return total;
 }
 
-void bwrite_slow(struct fastbuf *f, const void *b, uns l)
+void bwrite_slow(struct fastbuf *f, const void *b, uint l)
 {
   while (l)
     {
-      uns k = f->bufend - f->bptr;
+      uint k = f->bufend - f->bptr;
 
       if (!k)
 	{
@@ -218,12 +218,12 @@ void bwrite_slow(struct fastbuf *f, const void *b, uns l)
     }
 }
 
-void bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uns l)
+void bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uint l)
 {
   while (l)
     {
       byte *fptr, *tptr;
-      uns favail, tavail, n;
+      uint favail, tavail, n;
 
       favail = bdirect_read_prepare(f, &fptr);
       if (!favail)
@@ -243,7 +243,7 @@ void bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uns l)
     }
 }
 
-int bconfig(struct fastbuf *f, uns item, int value)
+int bconfig(struct fastbuf *f, uint item, int value)
 {
   return (f->config && !(f->flags & FB_DEAD)) ? f->config(f, item, value) : -1;
 }
@@ -254,12 +254,12 @@ void brewind(struct fastbuf *f)
   bsetpos(f, 0);
 }
 
-int bskip_slow(struct fastbuf *f, uns len)
+int bskip_slow(struct fastbuf *f, uint len)
 {
   while (len)
     {
       byte *buf;
-      uns l = bdirect_read_prepare(f, &buf);
+      uint l = bdirect_read_prepare(f, &buf);
       if (!l)
 	return 0;
       l = MIN(l, len);
@@ -299,7 +299,7 @@ static void fb_res_free(struct resource *r)
   bclose(f);
 }
 
-static void fb_res_dump(struct resource *r, uns indent UNUSED)
+static void fb_res_dump(struct resource *r, uint indent UNUSED)
 {
   struct fastbuf *f = r->priv;
   printf(" name=%s\n", f->name);

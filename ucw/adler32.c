@@ -20,11 +20,11 @@
 #define DO16(buf)   DO8(buf,0); DO8(buf,8);
 #define MOD(a) a %= BASE
 
-uns
-adler32_update(uns adler, const byte *buf, uns len)
+uint
+adler32_update(uint adler, const byte *buf, uint len)
 {
-  uns s1 = adler & 0xffff;
-  uns s2 = (adler >> 16) & 0xffff;
+  uint s1 = adler & 0xffff;
+  uint s2 = (adler >> 16) & 0xffff;
   int k;
 
   if (!buf) return 1L;

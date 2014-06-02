@@ -68,7 +68,7 @@ rx_match(regex *r, const char *s)
 }
 
 int
-rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
+rx_subst(regex *r, const char *by, const char *src, char *dest, uint destlen)
 {
   char *end = dest + destlen - 1;
 
@@ -82,11 +82,11 @@ rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
 	  by++;
 	  if (*by >= '0' && *by <= '9')	/* \0 gets replaced by entire pattern */
 	    {
-	      uns j = *by++ - '0';
+	      uint j = *by++ - '0';
 	      if (j <= r->rx.re_nsub && r->matches[j].rm_so >= 0)
 		{
 		  const char *s = src + r->matches[j].rm_so;
-		  uns i = r->matches[j].rm_eo - r->matches[j].rm_so;
+		  uint i = r->matches[j].rm_eo - r->matches[j].rm_so;
 		  if (dest + i >= end)
 		    return -1;
 		  memcpy(dest, s, i);
@@ -113,8 +113,8 @@ rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
 struct regex {
   pcre *rx;
   pcre_extra *extra;
-  uns match_array_size;
-  uns real_matches;
+  uint match_array_size;
+  uint real_matches;
   int matches[0];			/* (max_matches+1) pairs (pos,len) plus some workspace */
 };
 
@@ -168,7 +168,7 @@ rx_match(regex *r, const char *s)
 }
 
 int
-rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
+rx_subst(regex *r, const char *by, const char *src, char *dest, uint destlen)
 {
   char *end = dest + destlen - 1;
 
@@ -182,11 +182,11 @@ rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
 	  by++;
 	  if (*by >= '0' && *by <= '9')	/* \0 gets replaced by entire pattern */
 	    {
-	      uns j = *by++ - '0';
+	      uint j = *by++ - '0';
 	      if (j < r->real_matches && r->matches[2*j] >= 0)
 		{
 		  const char *s = src + r->matches[2*j];
-		  uns i = r->matches[2*j+1] - r->matches[2*j];
+		  uint i = r->matches[2*j+1] - r->matches[2*j];
 		  if (dest + i >= end)
 		    return -1;
 		  memcpy(dest, s, i);
@@ -229,7 +229,7 @@ rx_compile(const char *p, int icase)
   r->buf.allocated = INITIAL_MEM;
   if (icase)
     {
-      unsigned i;
+      uint i;
       r->buf.translate = xmalloc (CHAR_SET_SIZE);
       /* Map uppercase characters to corresponding lowercase ones.  */
       for (i = 0; i < CHAR_SET_SIZE; i++)
@@ -267,7 +267,7 @@ rx_match(regex *r, const char *s)
 }
 
 int
-rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
+rx_subst(regex *r, const char *by, const char *src, char *dest, uint destlen)
 {
   char *end = dest + destlen - 1;
 
@@ -281,11 +281,11 @@ rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen)
 	  by++;
 	  if (*by >= '0' && *by <= '9')	/* \0 gets replaced by entire pattern */
 	    {
-	      uns j = *by++ - '0';
+	      uint j = *by++ - '0';
 	      if (j < r->regs.num_regs)
 		{
 		  const char *s = src + r->regs.start[j];
-		  uns i = r->regs.end[j] - r->regs.start[j];
+		  uint i = r->regs.end[j] - r->regs.start[j];
 		  if (r->regs.start[j] > r->len_cache || r->regs.end[j] > r->len_cache)
 		    return -1;
 		  if (dest + i >= end)

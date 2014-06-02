@@ -53,7 +53,7 @@ extern struct cf_user_type timestamp_type;
 /* time-timer.c */
 
 void init_timer(timestamp_t *timer);		/** Initialize a timer. **/
-uns get_timer(timestamp_t *timer);		/** Get the number of milliseconds since last init/get of a timer. **/
-uns switch_timer(timestamp_t *oldt, timestamp_t *newt);	/** Stop ticking of one timer and resume another. **/
+uint get_timer(timestamp_t *timer);		/** Get the number of milliseconds since last init/get of a timer. **/
+uint switch_timer(timestamp_t *oldt, timestamp_t *newt);	/** Stop ticking of one timer and resume another. **/
 
 #endif

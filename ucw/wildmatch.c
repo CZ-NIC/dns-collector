@@ -42,13 +42,13 @@ struct wildpatt {
   struct nfa_state nfa[MAX_STATES];
   struct dfa_state *hash[HASH_SIZE];
   struct dfa_state *dfa_start;
-  uns nfa_states;
-  uns dfa_cache_counter;
+  uint nfa_states;
+  uint dfa_cache_counter;
   struct mempool *pool;
   struct dfa_state *free_states;
 };
 
-static inline unsigned
+static inline uint
 wp_hash(u32 set)
 {
   set ^= set >> 16;
@@ -59,9 +59,9 @@ wp_hash(u32 set)
 static struct dfa_state *
 wp_new_state(struct wildpatt *w, u32 set)
 {
-  unsigned h = wp_hash(set);
+  uint h = wp_hash(set);
   struct dfa_state *d;
-  unsigned bit;
+  uint bit;
   u32 def_set;
 
   while (d = w->hash[h])
@@ -89,7 +89,7 @@ wp_new_state(struct wildpatt *w, u32 set)
       }
   if (def_set)
     {
-      unsigned i;
+      uint i;
       def_set |= 1;
       for(i=0; i<256; i++)
 	d->edge[i] |= def_set;
@@ -102,7 +102,7 @@ struct wildpatt *
 wp_compile(const char *p, struct mempool *pool)
 {
   struct wildpatt *w;
-  uns i;
+  uint i;
 
   if (strlen(p) >= MAX_STATES)		/* Too long */
     return NULL;

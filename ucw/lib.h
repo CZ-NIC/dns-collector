@@ -53,7 +53,7 @@
 
 #define CHECK_PTR_TYPE(x, type) ((x)-(type)(x) + (type)(x))		/** Check that a pointer @x is of type @type. Fail compilation if not. **/
 #define PTR_TO(s, i) &((s*)0)->i					/** Return OFFSETOF() in form of a pointer. **/
-#define OFFSETOF(s, i) ((uns)offsetof(s, i))				/** Offset of item @i from the start of structure @s **/
+#define OFFSETOF(s, i) ((uint)offsetof(s, i))				/** Offset of item @i from the start of structure @s **/
 #define SKIP_BACK(s, i, p) ((s *)((char *)p - OFFSETOF(s, i)))		/** Given a pointer @p to item @i of structure @s, return a pointer to the start of the struct. **/
 
 /** Align an integer @s to the nearest higher multiple of @a (which should be a power of two) **/
@@ -81,8 +81,8 @@
 #define COMPARE_LT(x,y) do { if ((x)<(y)) return 1; if ((x)>(y)) return 0; } while(0)
 #define COMPARE_GT(x,y) COMPARE_LT(y,x)
 
-#define	ROL(x, bits) (((x) << (bits)) | ((uns)(x) >> (sizeof(uns)*8 - (bits))))		/** Bitwise rotation of an unsigned int to the left **/
-#define	ROR(x, bits) (((uns)(x) >> (bits)) | ((x) << (sizeof(uns)*8 - (bits))))		/** Bitwise rotation of an unsigned int to the right **/
+#define	ROL(x, bits) (((x) << (bits)) | ((uint)(x) >> (sizeof(uint)*8 - (bits))))		/** Bitwise rotation of an unsigned int to the left **/
+#define	ROR(x, bits) (((uint)(x) >> (bits)) | ((x) << (sizeof(uint)*8 - (bits))))		/** Bitwise rotation of an unsigned int to the right **/
 
 /*** === Shortcuts for GCC Extensions ***/
 
@@ -149,8 +149,8 @@ enum log_levels {			/** The available log levels to pass to msg() and friends. *
  * This is the basic printf-like function for logging a message.
  * The @flags contain the log level and possibly other flag bits (like `L_SIGHANDLER`).
  **/
-void msg(uns flags, const char *fmt, ...) FORMAT_CHECK(printf,2,3);
-void vmsg(uns flags, const char *fmt, va_list args);		/** A vararg version of msg(). **/
+void msg(uint flags, const char *fmt, ...) FORMAT_CHECK(printf,2,3);
+void vmsg(uint flags, const char *fmt, va_list args);		/** A vararg version of msg(). **/
 void die(const char *, ...) NONRET FORMAT_CHECK(printf,1,2);	/** Log a fatal error message and exit the program. **/
 void vdie(const char *fmt, va_list args) NONRET;		/** va_list version of die() **/
 
@@ -244,8 +244,8 @@ void big_free(void *start, u64 len);		/** Free block allocated by @big_alloc() o
 
 /*** === Random numbers (random.c) ***/
 
-uns random_u32(void);				/** Return a pseudorandom 32-bit number. **/
-uns random_max(uns max);			/** Return a pseudorandom 32-bit number in range [0,@max). **/
+uint random_u32(void);				/** Return a pseudorandom 32-bit number. **/
+uint random_max(uint max);			/** Return a pseudorandom 32-bit number in range [0,@max). **/
 u64 random_u64(void);				/** Return a pseudorandom 64-bit number. **/
 u64 random_max_u64(u64 max);			/** Return a pseudorandom 64-bit number in range [0,@max). **/
 

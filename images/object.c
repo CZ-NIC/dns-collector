@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
-uns
+uint
 get_image_obj_info(struct image_obj_info *ioi, struct odes *o)
 {
   byte *v = obj_find_aval(o, 'G');
@@ -30,7 +30,7 @@ get_image_obj_info(struct image_obj_info *ioi, struct odes *o)
       return 0;
     }
   byte color_space[16], thumb_format[16];
-  UNUSED uns cnt = sscanf(v, "%d%d%s%d%d%d%s", &ioi->cols, &ioi->rows, color_space,
+  UNUSED uint cnt = sscanf(v, "%d%d%s%d%d%d%s", &ioi->cols, &ioi->rows, color_space,
       &ioi->colors, &ioi->thumb_cols, &ioi->thumb_rows, thumb_format);
   ASSERT(cnt == 7);
   ioi->thumb_format = (*thumb_format == 'p') ? IMAGE_FORMAT_PNG : IMAGE_FORMAT_JPEG;
@@ -38,7 +38,7 @@ get_image_obj_info(struct image_obj_info *ioi, struct odes *o)
   return 1;
 }
 
-uns
+uint
 get_image_obj_thumb(struct image_obj_info *ioi, struct odes *o, struct mempool *pool)
 {
   struct oattr *a = obj_find_attr(o, 'N');
@@ -47,8 +47,8 @@ get_image_obj_thumb(struct image_obj_info *ioi, struct odes *o, struct mempool *
       DBG("Missing image thumbnail attribute");
       return 0;
     }
-  uns count = 0;
-  uns max_len = 0;
+  uint count = 0;
+  uint max_len = 0;
   for (struct oattr *b = a; b; b = b->same)
     {
       count++;
@@ -92,19 +92,19 @@ void
 put_image_obj_signature(struct odes *o, struct image_signature *sig)
 {
   /* signatures should be short enough to in a single attribute */
-  uns size = image_signature_size(sig->len);
+  uint size = image_signature_size(sig->len);
   byte buf[BASE224_ENC_LENGTH(size) + 1];
   buf[base224_encode(buf, (byte *)sig, size)] = 0;
   obj_set_attr(o, 'H', buf);
 }
 
-uns
+uint
 get_image_obj_signature(struct image_signature *sig, struct odes *o)
 {
   byte *a = obj_find_aval(o, 'H');
   if (!a)
     return 0;
-  UNUSED uns size = base224_decode((byte *)sig, a, strlen(a));
+  UNUSED uint size = base224_decode((byte *)sig, a, strlen(a));
   ASSERT(size == image_signature_size(sig->len));
   return 1;
 }

@@ -67,7 +67,7 @@
  *
  *  You can also supply several functions:
  *
- *  HASH_GIVE_HASHFN	unsigned int hash(key) -- calculate hash value of key.
+ *  HASH_GIVE_HASHFN	uint hash(key) -- calculate hash value of key.
  *			We have sensible default hash functions for strings
  *			and integers.
  *  HASH_GIVE_EQ	int eq(key1, key2) -- return whether keys are equal.
@@ -81,11 +81,11 @@
  *			and static strings, strcpy for end-allocated strings.
  *  HASH_GIVE_INIT_DATA	void init_data(node *) -- initialize data fields in a
  *			newly created node. Very useful for lookup operations.
- *  HASH_GIVE_ALLOC	void *alloc(unsigned int size) -- allocate space for
+ *  HASH_GIVE_ALLOC	void *alloc(uint size) -- allocate space for
  *			a node. Default is xmalloc() or pooled allocation, depending
  *			on HASH_USE_POOL, HASH_AUTO_POOL, HASH_USE_ELTPOOL
  *			and HASH_AUTO_ELTPOOL switches.	void free(void *) -- the converse.
- *  HASH_GIVE_TABLE_ALLOC void *table_alloc(unsigned int size), void *table_free(void *)
+ *  HASH_GIVE_TABLE_ALLOC void *table_alloc(uint size), void *table_free(void *)
  *			Allocate or free space for the table itself. Default is xmalloc()
  *			or the functions defined by HASH_GIVE_ALLOC if HASH_TABLE_ALLOC is set.
  *
@@ -111,9 +111,9 @@
  *			hash table operations is struct HASH_PREFIX(table) *.
  *  HASH_TABLE_VARS	Extra variables to be defined in table structure
  *  HASH_LOOKUP_DETECT_NEW
- *  			the prototype for lookup is changed to node *lookup(key, int *new_item)
- *  			new_item must not be NULL and returns 1 whether lookup
- *  			just created a new item in the hashtable or 0 otherwise.
+ *			the prototype for lookup is changed to node *lookup(key, int *new_item)
+ *			new_item must not be NULL and returns 1 whether lookup
+ *			just created a new item in the hashtable or 0 otherwise.
  *
  *  You also get a iterator macro at no extra charge:
  *
@@ -162,7 +162,7 @@ typedef HASH_NODE P(node);
 typedef struct P(bucket) {
   struct P(bucket) *next;
 #ifndef HASH_CONSERVE_SPACE
-  uns hash;
+  uint hash;
 #endif
   P(node) n;
 } P(bucket);
@@ -171,8 +171,8 @@ struct P(table) {
 #ifdef HASH_TABLE_VARS
   HASH_TABLE_VARS
 #endif
-  uns hash_size;
-  uns hash_count, hash_max, hash_min, hash_hard_max;
+  uint hash_size;
+  uint hash_count, hash_max, hash_min, hash_hard_max;
   P(bucket) **ht;
 #ifdef HASH_AUTO_POOL
   struct mempool *pool;
@@ -278,7 +278,7 @@ struct P(table) P(table);
 
 #ifndef HASH_GIVE_HASHFN
 #define HASH_GIVE_HASHFN
-  static inline uns P(hash) (TAUC char *k)
+  static inline uint P(hash) (TAUC char *k)
    {
 #    ifdef HASH_NOCASE
        return hash_string_nocase(k);
@@ -348,7 +348,7 @@ static inline void P(cleanup_alloc) (TAU) { }
 #elif defined(HASH_USE_POOL)
 /* If the caller has requested to use his mempool, do so */
 #include <ucw/mempool.h>
-static inline void * P(alloc) (TAUC unsigned int size) { return mp_alloc_fast(HASH_USE_POOL, size); }
+static inline void * P(alloc) (TAUC uint size) { return mp_alloc_fast(HASH_USE_POOL, size); }
 static inline void P(free) (TAUC void *x UNUSED) { }
 static inline void P(init_alloc) (TAU) { }
 static inline void P(cleanup_alloc) (TAU) { }
@@ -356,7 +356,7 @@ static inline void P(cleanup_alloc) (TAU) { }
 #elif defined(HASH_AUTO_POOL)
 /* Use our own pools */
 #include <ucw/mempool.h>
-static inline void * P(alloc) (TAUC unsigned int size) { return mp_alloc_fast(T.pool, size); }
+static inline void * P(alloc) (TAUC uint size) { return mp_alloc_fast(T.pool, size); }
 static inline void P(free) (TAUC void *x UNUSED) { }
 static inline void P(init_alloc) (TAU) { T.pool = mp_new(HASH_AUTO_POOL); }
 static inline void P(cleanup_alloc) (TAU) { mp_delete(T.pool); }
@@ -365,7 +365,7 @@ static inline void P(cleanup_alloc) (TAU) { mp_delete(T.pool); }
 #elif defined(HASH_USE_ELTPOOL)
 /* If the caller has requested to use his eltpool, do so */
 #include <ucw/eltpool.h>
-static inline void * P(alloc) (TAUC unsigned int size UNUSED) { ASSERT(size <= (HASH_USE_ELTPOOL)->elt_size); return ep_alloc(HASH_USE_ELTPOOL); }
+static inline void * P(alloc) (TAUC uint size UNUSED) { ASSERT(size <= (HASH_USE_ELTPOOL)->elt_size); return ep_alloc(HASH_USE_ELTPOOL); }
 static inline void P(free) (TAUC void *x) { ep_free(HASH_USE_ELTPOOL, x); }
 static inline void P(init_alloc) (TAU) { }
 static inline void P(cleanup_alloc) (TAU) { }
@@ -373,7 +373,7 @@ static inline void P(cleanup_alloc) (TAU) { }
 #elif defined(HASH_AUTO_ELTPOOL)
 /* Use our own eltpools */
 #include <ucw/eltpool.h>
-static inline void * P(alloc) (TAUC unsigned int size UNUSED) { return ep_alloc(T.eltpool); }
+static inline void * P(alloc) (TAUC uint size UNUSED) { return ep_alloc(T.eltpool); }
 static inline void P(free) (TAUC void *x) { ep_free(T.eltpool, x); }
 static inline void P(init_alloc) (TAU) { T.eltpool = ep_new(sizeof(P(bucket)), HASH_AUTO_ELTPOOL); }
 static inline void P(cleanup_alloc) (TAU) { ep_delete(T.eltpool); }
@@ -381,7 +381,7 @@ static inline void P(cleanup_alloc) (TAU) { ep_delete(T.eltpool); }
 
 #else
 /* The default allocation method */
-static inline void * P(alloc) (TAUC unsigned int size) { return xmalloc(size); }
+static inline void * P(alloc) (TAUC uint size) { return xmalloc(size); }
 static inline void P(free) (TAUC void *x) { xfree(x); }
 static inline void P(init_alloc) (TAU) { }
 static inline void P(cleanup_alloc) (TAU) { }
@@ -398,10 +398,10 @@ static inline void P(cleanup_alloc) (TAU) { }
 #ifdef HASH_USE_ELTPOOL
 #error HASH_TABLE_ALLOC not supported in combination with eltpools
 #endif
-static inline void * P(table_alloc) (TAUC unsigned int size) { return P(alloc)(TTC size); }
+static inline void * P(table_alloc) (TAUC uint size) { return P(alloc)(TTC size); }
 static inline void P(table_free) (TAUC void *x) { P(free)(TTC x); }
 #else
-static inline void * P(table_alloc) (TAUC unsigned int size) { return xmalloc(size); }
+static inline void * P(table_alloc) (TAUC uint size) { return xmalloc(size); }
 static inline void P(table_free) (TAUC void *x) { xfree(x); }
 #endif
 
@@ -418,14 +418,14 @@ static inline void P(table_free) (TAUC void *x) { xfree(x); }
 #endif
 
 #ifdef HASH_ZERO_FILL
-static inline void * P(new_bucket)(TAUC uns size)
+static inline void * P(new_bucket)(TAUC uint size)
 {
   byte *buck = P(alloc)(TTC size);
   bzero(buck, size);
   return buck;
 }
 #else
-static inline void * P(new_bucket)(TAUC uns size) { return P(alloc)(TTC size); }
+static inline void * P(new_bucket)(TAUC uint size) { return P(alloc)(TTC size); }
 #endif
 
 /* Now the operations */
@@ -472,7 +472,7 @@ static void HASH_PREFIX(init)(TA)
 static void HASH_PREFIX(cleanup)(TA)
 {
 #ifndef HASH_USE_POOL
-  uns i;
+  uint i;
   P(bucket) *b, *bb;
 
   for (i=0; i<T.hash_size; i++)
@@ -487,7 +487,7 @@ static void HASH_PREFIX(cleanup)(TA)
 }
 #endif
 
-static inline uns P(bucket_hash) (TAUC P(bucket) *b)
+static inline uint P(bucket_hash) (TAUC P(bucket) *b)
 {
 #ifdef HASH_CONSERVE_SPACE
   return P(hash)(TTC HASH_KEY(b->n.));
@@ -496,12 +496,12 @@ static inline uns P(bucket_hash) (TAUC P(bucket) *b)
 #endif
 }
 
-static void P(rehash) (TAC uns size)
+static void P(rehash) (TAC uint size)
 {
   P(bucket) *b, *nb;
   P(bucket) **oldt = T.ht, **newt;
-  uns oldsize = T.hash_size;
-  uns i, h;
+  uint oldsize = T.hash_size;
+  uint i, h;
 
   DBG("Rehashing %d->%d at count %d", oldsize, size, T.hash_count);
   T.hash_size = size;
@@ -531,8 +531,8 @@ static void P(rehash) (TAC uns size)
  **/
 static HASH_NODE* HASH_PREFIX(find)(TAC HASH_KEY_DECL)
 {
-  uns h0 = P(hash) (TTC HASH_KEY( ));
-  uns h = h0 % T.hash_size;
+  uint h0 = P(hash) (TTC HASH_KEY( ));
+  uint h = h0 % T.hash_size;
   P(bucket) *b;
 
   for (b=T.ht[h]; b; b=b->next)
@@ -557,7 +557,7 @@ static HASH_NODE* HASH_PREFIX(find)(TAC HASH_KEY_DECL)
 static HASH_NODE* HASH_PREFIX(find_next)(TAC P(node) *start)
 {
 #ifndef HASH_CONSERVE_SPACE
-  uns h0 = P(hash) (TTC HASH_KEY(start->));
+  uint h0 = P(hash) (TTC HASH_KEY(start->));
 #endif
   P(bucket) *b = SKIP_BACK(P(bucket), n, start);
 
@@ -582,7 +582,7 @@ static HASH_NODE* HASH_PREFIX(find_next)(TAC P(node) *start)
  **/
 static HASH_NODE * HASH_PREFIX(new)(TAC HASH_KEY_DECL)
 {
-  uns h0, h;
+  uint h0, h;
   P(bucket) *b;
 
   h0 = P(hash) (TTC HASH_KEY( ));
@@ -615,8 +615,8 @@ static HASH_NODE* HASH_PREFIX(lookup)(TAC HASH_KEY_DECL, int *new_item)
 static HASH_NODE* HASH_PREFIX(lookup)(TAC HASH_KEY_DECL)
 #endif
 {
-  uns h0 = P(hash) (TTC HASH_KEY( ));
-  uns h = h0 % T.hash_size;
+  uint h0 = P(hash) (TTC HASH_KEY( ));
+  uint h = h0 % T.hash_size;
   P(bucket) *b;
 
   for (b=T.ht[h]; b; b=b->next)
@@ -660,8 +660,8 @@ static HASH_NODE* HASH_PREFIX(lookup)(TAC HASH_KEY_DECL)
  **/
 static int HASH_PREFIX(delete)(TAC HASH_KEY_DECL)
 {
-  uns h0 = P(hash) (TTC HASH_KEY( ));
-  uns h = h0 % T.hash_size;
+  uint h0 = P(hash) (TTC HASH_KEY( ));
+  uint h = h0 % T.hash_size;
   P(bucket) *b, **bb;
 
   for (bb=&T.ht[h]; b=*bb; bb=&b->next)
@@ -697,8 +697,8 @@ static int HASH_PREFIX(delete)(TAC HASH_KEY_DECL)
 static void HASH_PREFIX(remove)(TAC HASH_NODE *n)
 {
   P(bucket) *x = SKIP_BACK(struct P(bucket), n, n);
-  uns h0 = P(bucket_hash)(TTC x);
-  uns h = h0 % T.hash_size;
+  uint h0 = P(bucket_hash)(TTC x);
+  uint h = h0 % T.hash_size;
   P(bucket) *b, **bb;
 
   for (bb=&T.ht[h]; (b=*bb) && b != x; bb=&b->next)
@@ -720,7 +720,7 @@ static void HASH_PREFIX(remove)(TAC HASH_NODE *n)
 
 #define HASH_FOR_ALL_DYNAMIC(h_px, h_table, h_var)					\
 do {											\
-  uns h_slot;										\
+  uint h_slot;										\
   struct GLUE_(h_px,bucket) *h_buck;							\
   for (h_slot=0; h_slot < (h_table)->hash_size; h_slot++)				\
     for (h_buck = (h_table)->ht[h_slot]; h_buck; h_buck = h_buck->next)			\

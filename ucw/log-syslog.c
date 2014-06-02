@@ -59,7 +59,7 @@ syslog_facility(const char *name)
     { "local7",		LOG_LOCAL7 },
   };
 
-  for (uns i=0; i < ARRAY_SIZE(facilities); i++)
+  for (uint i=0; i < ARRAY_SIZE(facilities); i++)
     if (!strcmp(facilities[i].name, name))
       return facilities[i].id;
   return -1;

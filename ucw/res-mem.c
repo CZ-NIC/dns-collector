@@ -26,7 +26,7 @@ mem_res_free(struct resource *r)
 }
 
 static void
-mem_res_dump(struct resource *r, uns indent UNUSED)
+mem_res_dump(struct resource *r, uint indent UNUSED)
 {
   struct res_mem *rm = (struct res_mem *) r;
   printf(" size=%zu, ptr=%p\n", rm->size, r->priv);

@@ -34,7 +34,7 @@
 /*** Time measurement ***/
 
 static timestamp_t timer;
-static uns test_id;
+static uint test_id;
 
 static void
 start(void)
@@ -69,12 +69,12 @@ struct key1 {
 static void
 test_int(int mode, u64 size)
 {
-  uns N = size ? nextprime(MIN(size/4, 0xffff0000)) : 0;
-  uns K = N/4*3;
+  uint N = size ? nextprime(MIN(size/4, 0xffff0000)) : 0;
+  uint K = N/4*3;
   msg(L_INFO, ">>> Integers (%s, N=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
 
   struct fastbuf *f = bopen_tmp(65536);
-  for (uns i=0; i<N; i++)
+  for (uint i=0; i<N; i++)
     bputl(f, (mode==0) ? i : (mode==1) ? N-1-i : ((u64)i * K + 17) % N);
   brewind(f);
 
@@ -83,9 +83,9 @@ test_int(int mode, u64 size)
   stop();
 
   SORT_XTRACE(2, "Verifying");
-  for (uns i=0; i<N; i++)
+  for (uint i=0; i<N; i++)
     {
-      uns j = bgetl(f);
+      uint j = bgetl(f);
       if (i != j)
 	die("Discrepancy: %u instead of %u", j, i);
     }
@@ -99,9 +99,9 @@ struct key2 {
   u32 cnt;
 };
 
-static inline void s2_write_merged(struct fastbuf *f, struct key2 **k, void **d UNUSED, uns n, void *buf UNUSED)
+static inline void s2_write_merged(struct fastbuf *f, struct key2 **k, void **d UNUSED, uint n, void *buf UNUSED)
 {
-  for (uns i=1; i<n; i++)
+  for (uint i=1; i<n; i++)
     k[0]->cnt += k[i]->cnt;
   bwrite(f, k[0], sizeof(struct key2));
 }
@@ -119,17 +119,17 @@ static void
 test_counted(int mode, u64 size)
 {
   u64 items = size / sizeof(struct key2);
-  uns mult = 2;
+  uint mult = 2;
   while (items/(2*mult) > 0xffff0000)
     mult++;
-  uns N = items ? nextprime(items/(2*mult)) : 0;
-  uns K = N/4*3;
+  uint N = items ? nextprime(items/(2*mult)) : 0;
+  uint K = N/4*3;
   msg(L_INFO, ">>> Counted integers (%s, N=%u, mult=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N, mult);
 
   struct fastbuf *f = bopen_tmp(65536);
-  for (uns m=0; m<mult; m++)
-    for (uns i=0; i<N; i++)
-      for (uns j=0; j<2; j++)
+  for (uint m=0; m<mult; m++)
+    for (uint i=0; i<N; i++)
+      for (uint j=0; j<2; j++)
 	{
 	  bputl(f, (mode==0) ? (i%N) : (mode==1) ? N-1-(i%N) : ((u64)i * K + 17) % N);
 	  bputl(f, 1);
@@ -141,12 +141,12 @@ test_counted(int mode, u64 size)
   stop();
 
   SORT_XTRACE(2, "Verifying");
-  for (uns i=0; i<N; i++)
+  for (uint i=0; i<N; i++)
     {
-      uns j = bgetl(f);
+      uint j = bgetl(f);
       if (i != j)
 	die("Discrepancy: %u instead of %u", j, i);
-      uns k = bgetl(f);
+      uint k = bgetl(f);
       if (k != 2*mult)
 	die("Discrepancy: %u has count %u instead of %u", j, k, 2*mult);
     }
@@ -170,7 +170,7 @@ static inline int s3_compare(struct key3 *x, struct key3 *y)
   return 0;
 }
 
-static inline uns s3_hash(struct key3 *x)
+static inline uint s3_hash(struct key3 *x)
 {
   return x->hash[0];
 }
@@ -184,7 +184,7 @@ static inline uns s3_hash(struct key3 *x)
 #include <ucw/sorter/sorter.h>
 
 static void
-gen_hash_key(int mode, struct key3 *k, uns i)
+gen_hash_key(int mode, struct key3 *k, uint i)
 {
   k->i = i;
   k->payload[0] = 7*i + 13;
@@ -213,13 +213,13 @@ gen_hash_key(int mode, struct key3 *k, uns i)
 static void
 test_hashes(int mode, u64 size)
 {
-  uns N = MIN(size / sizeof(struct key3), 0xffffffff);
+  uint N = MIN(size / sizeof(struct key3), 0xffffffff);
   msg(L_INFO, ">>> Hashes (%s, N=%u)", ((char *[]) { "increasing", "decreasing", "random" })[mode], N);
   struct key3 k, lastk;
 
   struct fastbuf *f = bopen_tmp(65536);
-  uns hash_sum = 0;
-  for (uns i=0; i<N; i++)
+  uint hash_sum = 0;
+  for (uint i=0; i<N; i++)
     {
       gen_hash_key(mode, &k, i);
       hash_sum += k.hash[3];
@@ -232,7 +232,7 @@ test_hashes(int mode, u64 size)
   stop();
 
   SORT_XTRACE(2, "Verifying");
-  for (uns i=0; i<N; i++)
+  for (uint i=0; i<N; i++)
     {
       int ok = breadb(f, &k, sizeof(k));
       ASSERT(ok);
@@ -252,13 +252,13 @@ test_hashes(int mode, u64 size)
 #define KEY4_MAX 256
 
 struct key4 {
-  uns len;
+  uint len;
   byte s[KEY4_MAX];
 };
 
 static inline int s4_compare(struct key4 *x, struct key4 *y)
 {
-  uns l = MIN(x->len, y->len);
+  uint l = MIN(x->len, y->len);
   int c = memcmp(x->s, y->s, l);
   if (c)
     return c;
@@ -295,7 +295,7 @@ static inline void s4_write_key(struct fastbuf *f, struct key4 *x)
 #define s4b_read_key s4_read_key
 #define s4b_write_key s4_write_key
 
-static inline uns s4_data_size(struct key4 *x)
+static inline uint s4_data_size(struct key4 *x)
 {
   return x->len ? (x->s[0] ^ 0xad) : 0;
 }
@@ -313,12 +313,12 @@ static void
 gen_key4(struct key4 *k)
 {
   k->len = random_max(KEY4_MAX);
-  for (uns i=0; i<k->len; i++)
+  for (uint i=0; i<k->len; i++)
     k->s[i] = random();
 }
 
 static void
-gen_data4(byte *buf, uns len, uns h)
+gen_data4(byte *buf, uint len, uint h)
 {
   while (len--)
     {
@@ -328,23 +328,23 @@ gen_data4(byte *buf, uns len, uns h)
 }
 
 static void
-test_strings(uns mode, u64 size)
+test_strings(uint mode, u64 size)
 {
-  uns avg_item_size = KEY4_MAX/2 + 4 + (mode ? 128 : 0);
-  uns N = MIN(size / avg_item_size, 0xffffffff);
+  uint avg_item_size = KEY4_MAX/2 + 4 + (mode ? 128 : 0);
+  uint N = MIN(size / avg_item_size, 0xffffffff);
   msg(L_INFO, ">>> Strings %s(N=%u)", (mode ? "with data " : ""), N);
   srand(1);
 
   struct key4 k, lastk;
   byte buf[256], buf2[256];
-  uns sum = 0;
+  uint sum = 0;
 
   struct fastbuf *f = bopen_tmp(65536);
-  for (uns i=0; i<N; i++)
+  for (uint i=0; i<N; i++)
     {
       gen_key4(&k);
       s4_write_key(f, &k);
-      uns h = hash_block(k.s, k.len);
+      uint h = hash_block(k.s, k.len);
       sum += h;
       if (mode)
 	{
@@ -359,11 +359,11 @@ test_strings(uns mode, u64 size)
   stop();
 
   SORT_XTRACE(2, "Verifying");
-  for (uns i=0; i<N; i++)
+  for (uint i=0; i<N; i++)
     {
       int ok = s4_read_key(f, &k);
       ASSERT(ok);
-      uns h = hash_block(k.s, k.len);
+      uint h = hash_block(k.s, k.len);
       if (mode && s4_data_size(&k))
 	{
 	  ok = breadb(f, buf, s4_data_size(&k));
@@ -387,10 +387,10 @@ struct key5 {
   u32 cnt;
 };
 
-static uns s5_N, s5_K, s5_L, s5_i, s5_j;
+static uint s5_N, s5_K, s5_L, s5_i, s5_j;
 
 struct s5_pair {
-  uns x, y;
+  uint x, y;
 };
 
 static int s5_gen(struct s5_pair *p)
@@ -412,11 +412,11 @@ static int s5_gen(struct s5_pair *p)
 #define ASORT_KEY_TYPE u32
 #include <ucw/sorter/array-simple.h>
 
-static void s5_write_merged(struct fastbuf *f, struct key5 **keys, void **data, uns n, void *buf)
+static void s5_write_merged(struct fastbuf *f, struct key5 **keys, void **data, uint n, void *buf)
 {
   u32 *a = buf;
-  uns m = 0;
-  for (uns i=0; i<n; i++)
+  uint m = 0;
+  for (uint i=0; i<n; i++)
     {
       memcpy(&a[m], data[i], 4*keys[i]->cnt);
       m += keys[i]->cnt;
@@ -427,11 +427,11 @@ static void s5_write_merged(struct fastbuf *f, struct key5 **keys, void **data, 
   bwrite(f, a, 4*m);
 }
 
-static void s5_copy_merged(struct key5 **keys, struct fastbuf **data, uns n, struct fastbuf *dest)
+static void s5_copy_merged(struct key5 **keys, struct fastbuf **data, uint n, struct fastbuf *dest)
 {
   u32 k[n];
-  uns m = 0;
-  for (uns i=0; i<n; i++)
+  uint m = 0;
+  for (uint i=0; i<n; i++)
     {
       k[i] = bgetl(data[i]);
       m += keys[i]->cnt;
@@ -440,8 +440,8 @@ static void s5_copy_merged(struct key5 **keys, struct fastbuf **data, uns n, str
   bwrite(dest, &key, sizeof(key));
   while (key.cnt--)
     {
-      uns b = 0;
-      for (uns i=1; i<n; i++)
+      uint b = 0;
+      for (uint i=1; i<n; i++)
 	if (k[i] < k[b])
 	  b = i;
       bputl(dest, k[b]);
@@ -466,18 +466,18 @@ static inline int s5p_lt(struct s5_pair x, struct s5_pair y)
 
 static int s5_presort(struct fastbuf *dest, void *buf, size_t bufsize)
 {
-  uns max = MIN(bufsize/sizeof(struct s5_pair), 0xffffffff);
+  uint max = MIN(bufsize/sizeof(struct s5_pair), 0xffffffff);
   struct s5_pair *a = buf;
-  uns n = 0;
+  uint n = 0;
   while (n<max && s5_gen(&a[n]))
     n++;
   if (!n)
     return 0;
   s5p_sort(a, n);
-  uns i = 0;
+  uint i = 0;
   while (i < n)
     {
-      uns j = i;
+      uint j = i;
       while (i < n && a[i].x == a[j].x)
 	i++;
       struct key5 k = { .x = a[j].x, .cnt = i-j };
@@ -513,9 +513,9 @@ static int s5_presort(struct fastbuf *dest, void *buf, size_t bufsize)
 #include <ucw/sorter/sorter.h>
 
 static void
-test_graph(uns mode, u64 size)
+test_graph(uint mode, u64 size)
 {
-  uns N = 3;
+  uint N = 3;
   while ((u64)N*(N+2)*4 < size)
     N = nextprime(N);
   if (!size)
@@ -548,18 +548,18 @@ test_graph(uns mode, u64 size)
   stop();
 
   SORT_XTRACE(2, "Verifying");
-  uns c = bgetl(f);
+  uint c = bgetl(f);
   ASSERT(c == 0xfeedcafe);
-  for (uns i=0; i<N; i++)
+  for (uint i=0; i<N; i++)
     {
       struct key5 k;
       int ok = breadb(f, &k, sizeof(k));
       ASSERT(ok);
       ASSERT(k.x == i);
       ASSERT(k.cnt == N);
-      for (uns j=0; j<N; j++)
+      for (uint j=0; j<N; j++)
 	{
-	  uns y = bgetl(f);
+	  uint y = bgetl(f);
 	  ASSERT(y == j);
 	}
     }
@@ -610,7 +610,7 @@ test_int64(int mode, u64 size)
 /*** Main ***/
 
 static void
-run_test(uns i, u64 size)
+run_test(uint i, u64 size)
 {
   test_id = i;
   switch (i)
@@ -657,7 +657,7 @@ main(int argc, char **argv)
   log_init(NULL);
   int c;
   u64 size = 10000000;
-  uns t = ~0;
+  uint t = ~0;
 
   while ((c = cf_getopt(argc, argv, CF_SHORT_OPTS "d:s:t:v", CF_NO_LONG_OPTS, NULL)) >= 0)
     switch (c)
@@ -696,7 +696,7 @@ main(int argc, char **argv)
   if (optind != argc)
     goto usage;
 
-  for (uns i=0; i<TMAX; i++)
+  for (uint i=0; i<TMAX; i++)
     if (t & (1 << i))
       run_test(i, size);
 

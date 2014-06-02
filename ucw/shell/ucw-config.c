@@ -73,17 +73,17 @@ union value {
 
 struct item {
   cnode node;
-  uns flags;
+  uint flags;
   struct cf_item cf;
   union value value;
-  uns index;
+  uint index;
 };
 
 struct section {
   struct item item;
   clist list;
-  uns count;
-  uns size;
+  uint count;
+  uint size;
 };
 
 static struct mempool *pool;
@@ -110,7 +110,7 @@ parse_name(void)
   byte *name = pos;
   while (Cword(*pos))
     pos++;
-  uns len = pos - name;
+  uint len = pos - name;
   if (!len)
     die("Expected item/section name");
   byte *buf = mp_alloc(pool, len + 1);
@@ -123,7 +123,7 @@ static void
 parse_section(struct section *section)
 {
 #define TRY(x) do{ byte *_err=(x); if (_err) die("%s", _err); }while(0)
-  for (uns sep = 0; ; sep = 1)
+  for (uint sep = 0; ; sep = 1)
     {
       parse_white();
       if (!*pos || *pos == '}')
@@ -232,7 +232,7 @@ parse_section(struct section *section)
 		    {
 		      pos++;
 		      byte *start = d;
-		      uns esc = 0;
+		      uint esc = 0;
 		      while (*pos != '"' || esc)
 		        {
 			  if (!*pos)
@@ -250,7 +250,7 @@ parse_section(struct section *section)
 		  else
 		    *d++ = *pos++;
 		}
-	      uns len = d - def;
+	      uint len = d - def;
 	      byte *buf = mp_alloc(pool, len + 1);
 	      memcpy(buf, def, len);
 	      buf[len] = 0;
@@ -289,7 +289,7 @@ parse_section(struct section *section)
 static void
 parse_outer(void)
 {
-  for (uns sep = 0; ; sep = 1)
+  for (uint sep = 0; ; sep = 1)
     {
       parse_white();
       if (!*pos)
@@ -334,7 +334,7 @@ generate_section(struct section *section)
 static bb_t path;
 
 static void
-dump_value(uns array, struct item *item, void *v)
+dump_value(uint array, struct item *item, void *v)
 {
   byte buf[128], *value = buf;
   if (!array)
@@ -372,14 +372,14 @@ dump_value(uns array, struct item *item, void *v)
 }
 
 static void
-dump_item(struct item *item, void *ptr, uns path_len)
+dump_item(struct item *item, void *ptr, uint path_len)
 {
   if (item->flags & FLAG_HIDE)
     return;
   byte *val = (byte *)((uintptr_t)ptr + (uintptr_t)item->cf.ptr);
   if (item->cf.cls == CC_LIST)
     {
-      uns len = strlen(item->cf.name);
+      uint len = strlen(item->cf.name);
       bb_grow(&path, path_len + len + 1);
       path.ptr[path_len] = '_';
       memcpy(path.ptr + path_len + 1, item->cf.name, len);
@@ -395,9 +395,9 @@ dump_item(struct item *item, void *ptr, uns path_len)
       else
         {
 	  val = *(void **)val;
-	  uns len = DARY_LEN(val);
-	  uns size = cf_type_size(item->cf.type, NULL);
-	  for (uns i = 0; i < len; i++, val += size)
+	  uint len = DARY_LEN(val);
+	  uint size = cf_type_size(item->cf.type, NULL);
+	  for (uint i = 0; i < len; i++, val += size)
 	    dump_value(1, item, val);
 	}
     }
@@ -423,7 +423,7 @@ int main(int argc, char **argv)
   bb_init(&path);
   CLIST_FOR_EACH(struct section *, section, sections)
     {
-      uns len = strlen(section->item.cf.name);
+      uint len = strlen(section->item.cf.name);
       memcpy(bb_grow(&path, len), section->item.cf.name, len);
       CLIST_FOR_EACH(struct item *, item, section->list)
         dump_item(item, NULL, len);

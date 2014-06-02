@@ -58,7 +58,7 @@
  * You should use this one as an opaque handle only, the insides are internal.
  **/
 struct mempool_state {
-  uns free[2];
+  uint free[2];
   void *last[2];
   struct mempool_state *next;
 };
@@ -71,14 +71,14 @@ struct mempool {
   struct ucw_allocator allocator;
   struct mempool_state state;
   void *unused, *last_big;
-  uns chunk_size, threshold, idx;
+  uint chunk_size, threshold, idx;
   u64 total_size;
 };
 
 struct mempool_stats {			/** Mempool statistics. See @mp_stats(). **/
   u64 total_size;			/* Real allocated size in bytes */
   u64 used_size;			/* Estimated size allocated from mempool to application */
-  uns chain_count[3];			/* Number of allocated chunks in small/big/unused chains */
+  uint chain_count[3];			/* Number of allocated chunks in small/big/unused chains */
   u64 chain_size[3];			/* Size of allocated chunks in small/big/unused chains */
 };
 
@@ -96,7 +96,7 @@ struct mempool_stats {			/** Mempool statistics. See @mp_stats(). **/
  *
  * Memory pools can be treated as <<trans:respools,resources>>, see <<trans:res_mempool()>>.
  **/
-void mp_init(struct mempool *pool, uns chunk_size);
+void mp_init(struct mempool *pool, uint chunk_size);
 
 /**
  * Allocate and initialize a new memory pool.
@@ -106,7 +106,7 @@ void mp_init(struct mempool *pool, uns chunk_size);
  *
  * Memory pools can be treated as <<trans:respools,resources>>, see <<trans:res_mempool()>>.
  **/
-struct mempool *mp_new(uns chunk_size);
+struct mempool *mp_new(uint chunk_size);
 
 /**
  * Cleanup mempool initialized by mp_init or mp_new.
@@ -150,7 +150,7 @@ void mp_shrink(struct mempool *pool, u64 min_total_size);
  ***/
 
 /* For internal use only, do not call directly */
-void *mp_alloc_internal(struct mempool *pool, uns size) LIKE_MALLOC;
+void *mp_alloc_internal(struct mempool *pool, uint size) LIKE_MALLOC;
 
 /**
  * The function allocates new @size bytes on a given memory pool.
@@ -162,24 +162,24 @@ void *mp_alloc_internal(struct mempool *pool, uns size) LIKE_MALLOC;
  * `CPU_STRUCT_ALIGN` bytes and this condition remains true also
  * after future reallocations.
  **/
-void *mp_alloc(struct mempool *pool, uns size);
+void *mp_alloc(struct mempool *pool, uint size);
 
 /**
  * The same as @mp_alloc(), but the result may be unaligned.
  **/
-void *mp_alloc_noalign(struct mempool *pool, uns size);
+void *mp_alloc_noalign(struct mempool *pool, uint size);
 
 /**
  * The same as @mp_alloc(), but fills the newly allocated memory with zeroes.
  **/
-void *mp_alloc_zero(struct mempool *pool, uns size);
+void *mp_alloc_zero(struct mempool *pool, uint size);
 
 /**
  * Inlined version of @mp_alloc().
  **/
-static inline void *mp_alloc_fast(struct mempool *pool, uns size)
+static inline void *mp_alloc_fast(struct mempool *pool, uint size)
 {
-  uns avail = pool->state.free[0] & ~(CPU_STRUCT_ALIGN - 1);
+  uint avail = pool->state.free[0] & ~(CPU_STRUCT_ALIGN - 1);
   if (size <= avail)
     {
       pool->state.free[0] = avail - size;
@@ -192,7 +192,7 @@ static inline void *mp_alloc_fast(struct mempool *pool, uns size)
 /**
  * Inlined version of @mp_alloc_noalign().
  **/
-static inline void *mp_alloc_fast_noalign(struct mempool *pool, uns size)
+static inline void *mp_alloc_fast_noalign(struct mempool *pool, uint size)
 {
   if (size <= pool->state.free[0])
     {
@@ -225,11 +225,11 @@ static inline struct ucw_allocator *mp_get_allocator(struct mempool *mp)
  ***/
 
 /* For internal use only, do not call directly */
-void *mp_start_internal(struct mempool *pool, uns size) LIKE_MALLOC;
-void *mp_grow_internal(struct mempool *pool, uns size);
-void *mp_spread_internal(struct mempool *pool, void *p, uns size);
+void *mp_start_internal(struct mempool *pool, uint size) LIKE_MALLOC;
+void *mp_grow_internal(struct mempool *pool, uint size);
+void *mp_spread_internal(struct mempool *pool, void *p, uint size);
 
-static inline uns mp_idx(struct mempool *pool, void *ptr)
+static inline uint mp_idx(struct mempool *pool, void *ptr)
 {
   return ptr == pool->last_big;
 }
@@ -247,15 +247,15 @@ static inline uns mp_idx(struct mempool *pool, void *ptr)
  * Keep in mind that you can't make any other pool allocations
  * before you "close" the growing buffer with @mp_end().
  */
-void *mp_start(struct mempool *pool, uns size);
-void *mp_start_noalign(struct mempool *pool, uns size);
+void *mp_start(struct mempool *pool, uint size);
+void *mp_start_noalign(struct mempool *pool, uint size);
 
 /**
  * Inlined version of @mp_start().
  **/
-static inline void *mp_start_fast(struct mempool *pool, uns size)
+static inline void *mp_start_fast(struct mempool *pool, uint size)
 {
-  uns avail = pool->state.free[0] & ~(CPU_STRUCT_ALIGN - 1);
+  uint avail = pool->state.free[0] & ~(CPU_STRUCT_ALIGN - 1);
   if (size <= avail)
     {
       pool->idx = 0;
@@ -269,7 +269,7 @@ static inline void *mp_start_fast(struct mempool *pool, uns size)
 /**
  * Inlined version of @mp_start_noalign().
  **/
-static inline void *mp_start_fast_noalign(struct mempool *pool, uns size)
+static inline void *mp_start_fast_noalign(struct mempool *pool, uint size)
 {
   if (size <= pool->state.free[0])
     {
@@ -292,7 +292,7 @@ static inline void *mp_ptr(struct mempool *pool)
  * Return the number of bytes available for extending the growing buffer.
  * (Before a reallocation will be needed).
  **/
-static inline uns mp_avail(struct mempool *pool)
+static inline uint mp_avail(struct mempool *pool)
 {
   return pool->state.free[pool->idx];
 }
@@ -303,7 +303,7 @@ static inline uns mp_avail(struct mempool *pool)
  * change its starting position. The content will be unchanged to the minimum
  * of the old and new sizes; newly allocated memory will be uninitialized.
  * Multiple calls to mp_grow() have amortized linear cost wrt. the maximum value of @size. */
-static inline void *mp_grow(struct mempool *pool, uns size)
+static inline void *mp_grow(struct mempool *pool, uint size)
 {
   return (size <= mp_avail(pool)) ? mp_ptr(pool) : mp_grow_internal(pool, size);
 }
@@ -320,9 +320,9 @@ static inline void *mp_expand(struct mempool *pool)
  * Ensure that there is at least @size bytes free after @p,
  * if not, reallocate and adjust @p.
  **/
-static inline void *mp_spread(struct mempool *pool, void *p, uns size)
+static inline void *mp_spread(struct mempool *pool, void *p, uint size)
 {
-  return (((uns)((byte *)pool->state.last[pool->idx] - (byte *)p) >= size) ? p : mp_spread_internal(pool, p, size));
+  return (((uint)((byte *)pool->state.last[pool->idx] - (byte *)p) >= size) ? p : mp_spread_internal(pool, p, size));
 }
 
 /**
@@ -330,7 +330,7 @@ static inline void *mp_spread(struct mempool *pool, void *p, uns size)
  * the last byte in the buffer, returns a pointer after the last byte
  * of the new (possibly reallocated) buffer.
  **/
-static inline char *mp_append_char(struct mempool *pool, char *p, uns c)
+static inline char *mp_append_char(struct mempool *pool, char *p, uint c)
 {
   p = mp_spread(pool, p, 1);
   *p++ = c;
@@ -342,7 +342,7 @@ static inline char *mp_append_char(struct mempool *pool, char *p, uns c)
  * the last byte in the buffer, returns a pointer after the last byte
  * of the new (possibly reallocated) buffer.
  **/
-static inline void *mp_append_block(struct mempool *pool, void *p, const void *block, uns size)
+static inline void *mp_append_block(struct mempool *pool, void *p, const void *block, uint size)
 {
   char *q = mp_spread(pool, p, size);
   memcpy(q, block, size);
@@ -383,9 +383,9 @@ static inline char *mp_end_string(struct mempool *pool, void *end)
 /**
  * Return size in bytes of the last allocated memory block (with @mp_alloc() or @mp_end()).
  **/
-static inline uns mp_size(struct mempool *pool, void *ptr)
+static inline uint mp_size(struct mempool *pool, void *ptr)
 {
-  uns idx = mp_idx(pool, ptr);
+  uint idx = mp_idx(pool, ptr);
   return ((byte *)pool->state.last[idx] - (byte *)ptr) - pool->state.free[idx];
 }
 
@@ -394,15 +394,15 @@ static inline uns mp_size(struct mempool *pool, void *ptr)
  * for growing and return its size in bytes. The contents and the start pointer
  * remain unchanged. Do not forget to call @mp_end() to close it.
  **/
-uns mp_open(struct mempool *pool, void *ptr);
+uint mp_open(struct mempool *pool, void *ptr);
 
 /**
  * Inlined version of @mp_open().
  **/
-static inline uns mp_open_fast(struct mempool *pool, void *ptr)
+static inline uint mp_open_fast(struct mempool *pool, void *ptr)
 {
   pool->idx = mp_idx(pool, ptr);
-  uns size = ((byte *)pool->state.last[pool->idx] - (byte *)ptr) - pool->state.free[pool->idx];
+  uint size = ((byte *)pool->state.last[pool->idx] - (byte *)ptr) - pool->state.free[pool->idx];
   pool->state.free[pool->idx] += size;
   return size;
 }
@@ -412,17 +412,17 @@ static inline uns mp_open_fast(struct mempool *pool, void *ptr)
  * to the new @size. Behavior is similar to @mp_grow(), but the resulting
  * block is closed.
  **/
-void *mp_realloc(struct mempool *pool, void *ptr, uns size);
+void *mp_realloc(struct mempool *pool, void *ptr, uint size);
 
 /**
  * The same as @mp_realloc(), but fills the additional bytes (if any) with zeroes.
  **/
-void *mp_realloc_zero(struct mempool *pool, void *ptr, uns size);
+void *mp_realloc_zero(struct mempool *pool, void *ptr, uint size);
 
 /**
  * Inlined version of @mp_realloc().
  **/
-static inline void *mp_realloc_fast(struct mempool *pool, void *ptr, uns size)
+static inline void *mp_realloc_fast(struct mempool *pool, void *ptr, uint size)
 {
   mp_open_fast(pool, ptr);
   ptr = mp_grow(pool, size);
@@ -490,7 +490,7 @@ void mp_pop(struct mempool *pool);
  ***/
 
 char *mp_strdup(struct mempool *, const char *) LIKE_MALLOC;		/** Makes a copy of a string on a mempool. Returns NULL for NULL string. **/
-void *mp_memdup(struct mempool *, const void *, uns) LIKE_MALLOC;	/** Makes a copy of a memory block on a mempool. **/
+void *mp_memdup(struct mempool *, const void *, uint) LIKE_MALLOC;	/** Makes a copy of a memory block on a mempool. **/
 /**
  * Concatenates all passed strings. The last parameter must be NULL.
  * This will concatenate two strings:
@@ -510,12 +510,12 @@ static inline char *LIKE_MALLOC mp_strcat(struct mempool *mp, const char *x, con
  * @p is the mempool to provide memory, @a is array of strings and @n
  * tells how many there is of them.
  **/
-char *mp_strjoin(struct mempool *p, char **a, uns n, uns sep) LIKE_MALLOC;
+char *mp_strjoin(struct mempool *p, char **a, uint n, uint sep) LIKE_MALLOC;
 /**
  * Convert memory block to a string. Makes a copy of the given memory block
  * in the mempool @p, adding an extra terminating zero byte at the end.
  **/
-char *mp_str_from_mem(struct mempool *p, const void *mem, uns len) LIKE_MALLOC;
+char *mp_str_from_mem(struct mempool *p, const void *mem, uint len) LIKE_MALLOC;
 
 
 /***

@@ -20,25 +20,25 @@
 
 #ifdef LOCAL_DEBUG
 static void
-dump_segmentation(struct image_sig_region *regions, uns regions_count)
+dump_segmentation(struct image_sig_region *regions, uint regions_count)
 {
-  uns cols = 0, rows = 0;
-  for (uns i = 0; i < regions_count; i++)
+  uint cols = 0, rows = 0;
+  for (uint i = 0; i < regions_count; i++)
     for (struct image_sig_block *b = regions[i].blocks; b; b = b->next)
       {
 	cols = MAX(cols, b->x + 1);
 	rows = MAX(rows, b->y + 1);
       }
-  uns size = (cols + 1) * rows;
+  uint size = (cols + 1) * rows;
   byte buf[size];
   bzero(buf, size);
-  for (uns i = 0; i < regions_count; i++)
+  for (uint i = 0; i < regions_count; i++)
     {
       byte c = (i < 10) ? '0' + i : 'A' - 10 + i;
       for (struct image_sig_block *b = regions[i].blocks; b; b = b->next)
         buf[b->x + b->y * (cols + 1)] = c;
     }
-  for (uns i = 0; i < rows; i++)
+  for (uint i = 0; i < rows; i++)
     log(L_DEBUG, "%s", &buf[i * (cols + 1)]);
 }
 #endif
@@ -57,7 +57,7 @@ prequant_add_block(struct image_sig_region *region, struct image_sig_block *bloc
   block->next = region->blocks;
   region->blocks = block;
   region->count++;
-  for (uns i = 0; i < IMAGE_VEC_F; i++)
+  for (uint i = 0; i < IMAGE_VEC_F; i++)
     {
       region->b[i] += block->v[i];
       region->c[i] += isqr(block->v[i]);
@@ -75,32 +75,32 @@ prequant_finish_region(struct image_sig_region *region)
     {
       u64 a = 0;
       region->e = 0;
-      for (uns i = 0; i < IMAGE_VEC_F; i++)
+      for (uint i = 0; i < IMAGE_VEC_F; i++)
         {
 	  region->e += region->c[i];
 	  a += (u64)region->b[i] * region->b[i];
 	}
       region->e -= a / region->count;
-      DBG("Finished region %u", (uns)region->e / region->count);
+      DBG("Finished region %u", (uint)region->e / region->count);
     }
 }
 
-static inline uns
+static inline uint
 prequant_heap_cmp(struct image_sig_region *a, struct image_sig_region *b)
 {
   return a->e > b->e;
 }
 
 #define ASORT_PREFIX(x) prequant_##x
-#define ASORT_KEY_TYPE uns
+#define ASORT_KEY_TYPE uint
 #include <ucw/sorter/array-simple.h>
 
-static uns
-prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_region *regions)
+static uint
+prequant(struct image_sig_block *blocks, uint blocks_count, struct image_sig_region *regions)
 {
   DBG("Starting pre-quantization");
 
-  uns regions_count, heap_count, axis;
+  uint regions_count, heap_count, axis;
   struct image_sig_block *blocks_end = blocks + blocks_count, *block, *block2;
   struct image_sig_region *heap[IMAGE_REG_MAX + 1], *region, *region2;
 
@@ -118,7 +118,7 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
     {
       region = heap[1];
       DBG("Step... regions_count=%u heap_count=%u region->count=%u, region->e=%u",
-	  regions_count, heap_count, region->count, (uns)region->e);
+	  regions_count, heap_count, region->count, (uint)region->e);
       if (region->count < 2 ||
 	  region->e < image_sig_prequant_thresholds[regions_count - 1] * blocks_count)
         {
@@ -129,26 +129,26 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
       /* Select axis to split - the one with maximum average quadratic error */
       axis = 0;
       u64 cov = (u64)region->count * region->c[0] - (u64)region->b[0] * region->b[0];
-      for (uns i = 1; i < 6; i++)
+      for (uint i = 1; i < 6; i++)
         {
-	  uns j = (u64)region->count * region->c[i] - (u64)region->b[i] * region->b[i];
+	  uint j = (u64)region->count * region->c[i] - (u64)region->b[i] * region->b[i];
 	  if (j > cov)
 	    {
 	      axis = i;
 	      cov = j;
 	    }
 	}
-      DBG("Splitting axis %u with average quadratic error %u", axis, (uns)(cov / (region->count * region->count)));
+      DBG("Splitting axis %u with average quadratic error %u", axis, (uint)(cov / (region->count * region->count)));
 
       /* Sort values on the split axis */
-      uns val[256], cnt[256], cval;
+      uint val[256], cnt[256], cval;
       if (region->count > 64)
         {
 	  bzero(cnt, sizeof(cnt));
 	  for (block = region->blocks; block; block = block->next)
 	    cnt[block->v[axis]]++;
 	  cval = 0;
-	  for (uns i = 0; i < 256; i++)
+	  for (uint i = 0; i < 256; i++)
 	    if (cnt[i])
 	      {
 		val[cval] = i;
@@ -159,12 +159,12 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
       else
         {
           block = region->blocks;
-          for (uns i = 0; i < region->count; i++, block = block->next)
+          for (uint i = 0; i < region->count; i++, block = block->next)
 	    val[i] = block->v[axis];
 	  prequant_sort(val, region->count);
 	  cval = 1;
 	  cnt[0] = 1;
-	  for (uns i = 1; i < region->count; i++)
+	  for (uint i = 1; i < region->count; i++)
 	    if (val[i] == val[cval - 1])
 	      cnt[cval - 1]++;
 	    else
@@ -176,17 +176,17 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
 	}
 
       /* Select split value - to minimize error */
-      uns b1 = val[0] * cnt[0];
-      uns c1 = isqr(val[0]) * cnt[0];
-      uns b2 = region->b[axis] - b1;
-      uns c2 = region->c[axis] - c1;
-      uns i = cnt[0], j = region->count - cnt[0];
+      uint b1 = val[0] * cnt[0];
+      uint c1 = isqr(val[0]) * cnt[0];
+      uint b2 = region->b[axis] - b1;
+      uint c2 = region->c[axis] - c1;
+      uint i = cnt[0], j = region->count - cnt[0];
       u64 best_err = c1 - (u64)b1 * b1 / i + c2 - (u64)b2 * b2 / j;
-      uns split_val = val[0];
-      for (uns k = 1; k < cval - 1; k++)
+      uint split_val = val[0];
+      for (uint k = 1; k < cval - 1; k++)
         {
-	  uns b0 = val[k] * cnt[k];
-	  uns c0 = isqr(val[k]) * cnt[k];
+	  uint b0 = val[k] * cnt[k];
+	  uint c0 = isqr(val[k]) * cnt[k];
 	  b1 += b0;
 	  b2 -= b0;
 	  c1 += c0;
@@ -229,20 +229,20 @@ prequant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_regi
 
 /* Post-quantization - run a few K-mean iterations to improve pre-quantized regions */
 
-static uns
-postquant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_region *regions, uns regions_count)
+static uint
+postquant(struct image_sig_block *blocks, uint blocks_count, struct image_sig_region *regions, uint regions_count)
 {
   DBG("Starting post-quantization");
 
   struct image_sig_block *blocks_end = blocks + blocks_count, *block;
   struct image_sig_region *regions_end = regions + regions_count, *region;
-  uns error = 0, last_error;
+  uint error = 0, last_error;
 
   /* Initialize regions and initial segmentation error */
   for (region = regions; region != regions_end; )
     {
-      uns inv = 0xffffffffU / region->count;
-      for (uns i = 0; i < IMAGE_VEC_F; i++)
+      uint inv = 0xffffffffU / region->count;
+      for (uint i = 0; i < IMAGE_VEC_F; i++)
         {
           region->a[i] = ((u64)region->b[i] * inv) >> 32;
           error += region->c[i] - region->a[i] * region->b[i];
@@ -251,7 +251,7 @@ postquant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_reg
     }
 
   /* Convergation cycle */
-  for (uns step = 0; step < image_sig_postquant_max_steps; step++)
+  for (uint step = 0; step < image_sig_postquant_max_steps; step++)
     {
       DBG("Step...");
 
@@ -268,10 +268,10 @@ postquant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_reg
       for (block = blocks; block != blocks_end; block++)
         {
 	  struct image_sig_region *best_region = NULL;
-	  uns best_dist = ~0U;
+	  uint best_dist = ~0U;
 	  for (region = regions; region != regions_end; region++)
 	    {
-	      uns dist =
+	      uint dist =
 		isqr(block->v[0] - region->a[0]) +
 		isqr(block->v[1] - region->a[1]) +
 		isqr(block->v[2] - region->a[2]) +
@@ -288,7 +288,7 @@ postquant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_reg
 	  region->count++;
 	  block->next = region->blocks;
 	  region->blocks = block;
-	  for (uns i = 0; i < IMAGE_VEC_F; i++)
+	  for (uint i = 0; i < IMAGE_VEC_F; i++)
 	    {
 	      region->b[i] += block->v[i];
 	      region->c[i] += isqr(block->v[i]);
@@ -301,8 +301,8 @@ postquant(struct image_sig_block *blocks, uns blocks_count, struct image_sig_reg
       for (region = regions; region != regions_end; )
 	if (region->count)
           {
-	    uns inv = 0xffffffffU / region->count;
-	    for (uns i = 0; i < IMAGE_VEC_F; i++)
+	    uint inv = 0xffffffffU / region->count;
+	    for (uint i = 0; i < IMAGE_VEC_F; i++)
 	      {
 	        region->a[i] = ((u64)region->b[i] * inv) >> 32;
 	        error += region->c[i] - region->a[i] * region->b[i];

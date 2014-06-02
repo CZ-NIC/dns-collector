@@ -18,10 +18,10 @@
 /** A data structure describing a single TBF. **/
 struct token_bucket_filter {
   double rate;				// Number of tokens received per second
-  uns burst;				// Capacity of the bucket
+  uint burst;				// Capacity of the bucket
   timestamp_t last_hit;			// Internal state...
   double bucket;
-  uns drop_count;
+  uint drop_count;
 };
 
 /** Initialize the bucket. **/

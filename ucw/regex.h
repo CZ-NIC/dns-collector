@@ -23,6 +23,6 @@ typedef struct regex regex;
 regex *rx_compile(const char *r, int icase);
 void rx_free(regex *r);
 int rx_match(regex *r, const char *s);
-int rx_subst(regex *r, const char *by, const char *src, char *dest, uns destlen);
+int rx_subst(regex *r, const char *by, const char *src, char *dest, uint destlen);
 
 #endif

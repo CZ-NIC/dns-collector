@@ -26,7 +26,7 @@ extern const byte ffs_table[256];
 
 #ifdef __pentium4		/* On other ia32 machines, the C version is faster */
 
-static inline uns bit_ffs(uns w)
+static inline uint bit_ffs(uint w)
 {
   asm("bsfl %1,%0" :"=r" (w) :"rm" (w));
   return w;
@@ -34,9 +34,9 @@ static inline uns bit_ffs(uns w)
 
 #else
 
-static inline uns bit_ffs(uns w)
+static inline uint bit_ffs(uint w)
 {
-  uns b = (w & 0xffff) ? 0 : 16;
+  uint b = (w & 0xffff) ? 0 : 16;
   b += ((w >> b) & 0xff) ? 0 : 8;
   return b + ffs_table[(w >> b) & 0xff];
 }
@@ -47,16 +47,16 @@ static inline uns bit_ffs(uns w)
 
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
 
-static inline uns bit_count(uns w)
+static inline uint bit_count(uint w)
 {
   return __builtin_popcount(w);
 }
 
 #else
 
-static inline uns bit_count(uns w)
+static inline uint bit_count(uint w)
 {
-  uns n = 0;
+  uint n = 0;
   while (w)
     {
       w &= w - 1;

@@ -28,14 +28,14 @@
 
 /* ** UTF-8 ** */
 
-int bget_utf8_slow(struct fastbuf *b, uns repl);
-int bget_utf8_32_slow(struct fastbuf *b, uns repl);
-void bput_utf8_slow(struct fastbuf *b, uns u);
-void bput_utf8_32_slow(struct fastbuf *b, uns u);
+int bget_utf8_slow(struct fastbuf *b, uint repl);
+int bget_utf8_32_slow(struct fastbuf *b, uint repl);
+void bput_utf8_slow(struct fastbuf *b, uint u);
+void bput_utf8_32_slow(struct fastbuf *b, uint u);
 
-static inline int bget_utf8_repl(struct fastbuf *b, uns repl)
+static inline int bget_utf8_repl(struct fastbuf *b, uint repl)
 {
-  uns u;
+  uint u;
   if (bavailr(b) >= 3)
     {
       b->bptr = utf8_get_repl(b->bptr, &u, repl);
@@ -45,9 +45,9 @@ static inline int bget_utf8_repl(struct fastbuf *b, uns repl)
     return bget_utf8_slow(b, repl);
 }
 
-static inline int bget_utf8_32_repl(struct fastbuf *b, uns repl)
+static inline int bget_utf8_32_repl(struct fastbuf *b, uint repl)
 {
-  uns u;
+  uint u;
   if (bavailr(b) >= 6)
     {
       b->bptr = utf8_32_get_repl(b->bptr, &u, repl);
@@ -67,7 +67,7 @@ static inline int bget_utf8_32(struct fastbuf *b) /** Read a single utf8 charact
   return bget_utf8_32_repl(b, UNI_REPLACEMENT);
 }
 
-static inline void bput_utf8(struct fastbuf *b, uns u) /** Write a single utf8 character from range [0, 0xffff]. **/
+static inline void bput_utf8(struct fastbuf *b, uint u) /** Write a single utf8 character from range [0, 0xffff]. **/
 {
   if (bavailw(b) >= 3)
     b->bptr = utf8_put(b->bptr, u);
@@ -75,7 +75,7 @@ static inline void bput_utf8(struct fastbuf *b, uns u) /** Write a single utf8 c
     bput_utf8_slow(b, u);
 }
 
-static inline void bput_utf8_32(struct fastbuf *b, uns u) /** Write a single utf8 character (from the whole unicode range). **/
+static inline void bput_utf8_32(struct fastbuf *b, uint u) /** Write a single utf8 character (from the whole unicode range). **/
 {
   if (bavailw(b) >= 6)
     b->bptr = utf8_32_put(b->bptr, u);
@@ -85,14 +85,14 @@ static inline void bput_utf8_32(struct fastbuf *b, uns u) /** Write a single utf
 
 /* ** UTF-16 ** */
 
-int bget_utf16_be_slow(struct fastbuf *b, uns repl);
-int bget_utf16_le_slow(struct fastbuf *b, uns repl);
-void bput_utf16_be_slow(struct fastbuf *b, uns u);
-void bput_utf16_le_slow(struct fastbuf *b, uns u);
+int bget_utf16_be_slow(struct fastbuf *b, uint repl);
+int bget_utf16_le_slow(struct fastbuf *b, uint repl);
+void bput_utf16_be_slow(struct fastbuf *b, uint u);
+void bput_utf16_le_slow(struct fastbuf *b, uint u);
 
-static inline int bget_utf16_be_repl(struct fastbuf *b, uns repl)
+static inline int bget_utf16_be_repl(struct fastbuf *b, uint repl)
 {
-  uns u;
+  uint u;
   if (bavailr(b) >= 4)
     {
       b->bptr = utf16_be_get_repl(b->bptr, &u, repl);
@@ -102,9 +102,9 @@ static inline int bget_utf16_be_repl(struct fastbuf *b, uns repl)
     return bget_utf16_be_slow(b, repl);
 }
 
-static inline int bget_utf16_le_repl(struct fastbuf *b, uns repl)
+static inline int bget_utf16_le_repl(struct fastbuf *b, uint repl)
 {
-  uns u;
+  uint u;
   if (bavailr(b) >= 4)
     {
       b->bptr = utf16_le_get_repl(b->bptr, &u, repl);
@@ -136,7 +136,7 @@ static inline int bget_utf16_le(struct fastbuf *b)
  * Write an utf16 character to fastbuf.
  * Big endian version.
  **/
-static inline void bput_utf16_be(struct fastbuf *b, uns u)
+static inline void bput_utf16_be(struct fastbuf *b, uint u)
 {
   if (bavailw(b) >= 4)
     b->bptr = utf16_be_put(b->bptr, u);
@@ -148,7 +148,7 @@ static inline void bput_utf16_be(struct fastbuf *b, uns u)
  * Write an utf16 character to fastbuf.
  * Little endian version.
  **/
-static inline void bput_utf16_le(struct fastbuf *b, uns u)
+static inline void bput_utf16_le(struct fastbuf *b, uint u)
 {
   if (bavailw(b) >= 4)
     b->bptr = utf16_le_put(b->bptr, u);

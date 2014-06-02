@@ -19,14 +19,14 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-static uns mmap_window_size = 16*CPU_PAGE_SIZE;
-static uns mmap_extend_size = 4*CPU_PAGE_SIZE;
+static uint mmap_window_size = 16*CPU_PAGE_SIZE;
+static uint mmap_extend_size = 4*CPU_PAGE_SIZE;
 
 #ifndef TEST
 static struct cf_section fbmm_config = {
   CF_ITEMS {
-    CF_UNS("WindowSize", &mmap_window_size),
-    CF_UNS("ExtendSize", &mmap_extend_size),
+    CF_UINT("WindowSize", &mmap_window_size),
+    CF_UINT("ExtendSize", &mmap_extend_size),
     CF_END
   }
 };
@@ -44,7 +44,7 @@ struct fb_mmap {
   ucw_off_t file_size;
   ucw_off_t file_extend;
   ucw_off_t window_pos;
-  uns window_size;
+  uint window_size;
   int mode;
 };
 #define FB_MMAP(f) ((struct fb_mmap *)(f))
@@ -55,7 +55,7 @@ bfmm_map_window(struct fastbuf *f)
   struct fb_mmap *F = FB_MMAP(f);
   ucw_off_t pos0 = f->pos & ~(ucw_off_t)(CPU_PAGE_SIZE-1);
   int l = MIN((ucw_off_t)mmap_window_size, F->file_extend - pos0);
-  uns ll = ALIGN_TO(l, CPU_PAGE_SIZE);
+  uint ll = ALIGN_TO(l, CPU_PAGE_SIZE);
   int prot = ((F->mode & O_ACCMODE) == O_RDONLY) ? PROT_READ : (PROT_READ | PROT_WRITE);
 
   DBG(" ... Mapping %x(%x)+%x(%x) len=%x extend=%x", (int)pos0, (int)f->pos, ll, l, (int)F->file_size, (int)F->file_extend);
@@ -154,7 +154,7 @@ bfmm_close(struct fastbuf *f)
 }
 
 static int
-bfmm_config(struct fastbuf *f, uns item, int value)
+bfmm_config(struct fastbuf *f, uint item, int value)
 {
   int orig;
 
@@ -170,7 +170,7 @@ bfmm_config(struct fastbuf *f, uns item, int value)
 }
 
 struct fastbuf *
-bfmmopen_internal(int fd, const char *name, uns mode)
+bfmmopen_internal(int fd, const char *name, uint mode)
 {
   int namelen = strlen(name) + 1;
   struct fb_mmap *F = xmalloc(sizeof(struct fb_mmap) + namelen);

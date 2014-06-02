@@ -88,12 +88,12 @@ libjpeg_emit_message(j_common_ptr cinfo UNUSED, int msg_level UNUSED)
 #endif
 }
 
-static inline uns
+static inline uint
 libjpeg_fastbuf_read_prepare(struct libjpeg_read_internals *i)
 {
   DBG("libjpeg_fb_read_prepare()");
   byte *start;
-  uns len = bdirect_read_prepare(i->fastbuf, &start);
+  uint len = bdirect_read_prepare(i->fastbuf, &start);
   DBG("readed %u bytes at %p", len, start);
   if (!len)
     {
@@ -168,7 +168,7 @@ static inline void
 libjpeg_fastbuf_write_prepare(struct libjpeg_write_internals *i)
 {
   byte *start;
-  uns len = bdirect_write_prepare(i->fastbuf, &start);
+  uint len = bdirect_write_prepare(i->fastbuf, &start);
   i->fastbuf_pos = start + len;
   i->dest.next_output_byte = start;
   i->dest.free_in_buffer = len;
@@ -204,7 +204,7 @@ libjpeg_empty_output_buffer(j_compress_ptr cinfo)
   return TRUE;
 }
 
-static inline uns
+static inline uint
 libjpeg_read_byte(struct libjpeg_read_internals *i)
 {
   DBG("libjpeg_read_byte()");
@@ -216,7 +216,7 @@ libjpeg_read_byte(struct libjpeg_read_internals *i)
 }
 
 static inline void
-libjpeg_read_buf(struct libjpeg_read_internals *i, byte *buf, uns len)
+libjpeg_read_buf(struct libjpeg_read_internals *i, byte *buf, uint len)
 {
   DBG("libjpeg_read_buf(len=%u)", len);
   while (len)
@@ -224,8 +224,8 @@ libjpeg_read_buf(struct libjpeg_read_internals *i, byte *buf, uns len)
       if (!i->src.bytes_in_buffer)
 	if (!libjpeg_fill_input_buffer(&i->cinfo))
 	  ERREXIT(&i->cinfo, JERR_CANT_SUSPEND);
-      uns buf_size = i->src.bytes_in_buffer;
-      uns read_size = MIN(buf_size, len);
+      uint buf_size = i->src.bytes_in_buffer;
+      uint read_size = MIN(buf_size, len);
       memcpy(buf, i->src.next_input_byte, read_size);
       i->src.bytes_in_buffer -= read_size;
       i->src.next_input_byte += read_size;
@@ -240,7 +240,7 @@ libjpeg_app1_preprocessor(j_decompress_ptr cinfo)
 {
   struct libjpeg_read_internals *i = (struct libjpeg_read_internals *)cinfo;
   struct image_io *io = i->err.io;
-  uns len = libjpeg_read_byte(i) << 8;
+  uint len = libjpeg_read_byte(i) << 8;
   len += libjpeg_read_byte(i);
   DBG("Found APP1 marker, len=%u", len);
   if (len < 2)
@@ -355,7 +355,7 @@ libjpeg_read_data(struct image_io *io)
   DBG("libjpeg_read_data()");
 
   struct libjpeg_read_internals *i = io->read_data;
-  uns read_flags = io->flags;
+  uint read_flags = io->flags;
 
   /* Select color space */
   switch (i->cinfo.jpeg_color_space)
@@ -403,7 +403,7 @@ libjpeg_read_data(struct image_io *io)
       i->cinfo.scale_denom = 2;
     }
   jpeg_calc_output_dimensions(&i->cinfo);
-  DBG("Output dimensions %ux%u", (uns)i->cinfo.output_width, (uns)i->cinfo.output_height);
+  DBG("Output dimensions %ux%u", (uint)i->cinfo.output_width, (uint)i->cinfo.output_height);
   if (unlikely(!image_io_read_data_prepare(&rdi, io, i->cinfo.output_width, i->cinfo.output_height, read_flags)))
     {
       jpeg_destroy_decompress(&i->cinfo);
@@ -425,7 +425,7 @@ libjpeg_read_data(struct image_io *io)
   if ((int)img->pixel_size == i->cinfo.output_components)
     {
       byte *pixels = img->pixels;
-      for (uns r = img->rows; r--; )
+      for (uint r = img->rows; r--; )
         {
           jpeg_read_scanlines(&i->cinfo, (JSAMPLE **)&pixels, 1);
           pixels += img->row_size;
@@ -556,7 +556,7 @@ libjpeg_write(struct image_io *io)
   if ((int)img->pixel_size == i.cinfo.input_components)
     {
       byte *pixels = img->pixels;
-      for (uns r = img->rows; r--; )
+      for (uint r = img->rows; r--; )
         {
           jpeg_write_scanlines(&i.cinfo, (JSAMPLE **)&pixels, 1);
           pixels += img->row_size;
