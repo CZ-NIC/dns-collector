@@ -206,6 +206,11 @@ struct opt_item {
 /** Incrementing option. @target should be a variable of type `int`. **/
 #define OPT_INC(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .flags = fl, .help = desc, .cls = OPT_CL_INC, .type = CT_INT }
 
+/* FIXME: Backwards compatibility only, should not be used anymore. */
+#define OPT_UNS OPT_UINT
+#define OPT_UNS_MULTIPLE OPT_UINT_MULTIPLE
+
+
 /**
  * When this option appears, call the function @fn with parameters @item, @value, @data,
  * where @item points to the <<struct_opt_item,`struct opt_item`>> of this option,

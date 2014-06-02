@@ -356,6 +356,12 @@ struct cf_section {			/** A section. **/
 #define CF_IP(n,p)		CF_STATIC(n,p,IP,u32,1)			/** Single IPv4 address. **/
 #define CF_IP_ARY(n,p,c)	CF_STATIC(n,p,IP,u32,c)			/** Static array of IP addresses. **/.
 #define CF_IP_DYN(n,p,c)	CF_DYNAMIC(n,p,IP,u32,c)		/** Dynamic array of IP addresses. **/
+
+/* FIXME: Backwards compatibility only, should not be used at is will be removed soon. */
+#define CF_UNS CF_UINT
+#define CF_UNS_ARY CF_UINT_ARY
+#define CF_UNS_DYN CF_UINT_DYN
+
 /**
  * A string.
  * You provide a pointer to a `char *` variable and it will fill it with

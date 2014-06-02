@@ -105,3 +105,8 @@ static inline uint get_digit(const uint c)
 #define STN_TYPE uintmax_t
 #define STN_SUFFIX uintmax
 #include <ucw/strtonum-gen.h>
+
+// FIXME: For backwards compatibility, will be removed soon
+#define STN_TYPE uns
+#define STN_SUFFIX uns
+#include <ucw/strtonum-gen.h>

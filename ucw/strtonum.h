@@ -13,6 +13,9 @@
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define str_to_uintmax ucw_str_to_uintmax
 #define str_to_uint ucw_str_to_uint
+
+// FIXME: For backwards compatibility, will be removed soon
+#define str_to_uns ucw_str_to_uns
 #endif
 
 // Set (flags & 0x1f) in the range 1 to 31 to denote the default base of the number
@@ -53,5 +56,8 @@ STN_SIGNED_CONVERTOR(int, int, uint)
 
 STN_DECLARE_CONVERTOR(uintmax_t, uintmax);
 STN_SIGNED_CONVERTOR(intmax_t, intmax, uintmax)
+
+// FIXME: For backwards compatibility, will be removed soon
+STN_DECLARE_CONVERTOR(uns, uns);
 
 #endif
