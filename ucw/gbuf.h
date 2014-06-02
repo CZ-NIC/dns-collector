@@ -27,7 +27,7 @@
  * length of available memory.
  **/
 typedef struct BUF_T {
-  uns len;
+  size_t len;
   GBUF_TYPE *ptr;
 } BUF_T;
 
@@ -60,16 +60,16 @@ static void UNUSED GBUF_PREFIX(done)(BUF_T *b)
  * Use <<fun__GENERIC_LINK_|GBUF_PREFIX|grow|,`GBUF_PREFIX(grow)()`>>
  * for growing.
  **/
-static void UNUSED GBUF_PREFIX(set_size)(BUF_T *b, uns len)
+static void UNUSED GBUF_PREFIX(set_size)(BUF_T *b, size_t len)
 {
   b->len = len;
   b->ptr = xrealloc(b->ptr, len * sizeof(GBUF_TYPE));
 #ifdef GBUF_TRACE
-  GBUF_TRACE(STRINGIFY_EXPANDED(BUF_T) " growing to %u items", len);
+  GBUF_TRACE(STRINGIFY_EXPANDED(BUF_T) " growing to %zu items", len);
 #endif
 }
 
-static void UNUSED GBUF_PREFIX(do_grow)(BUF_T *b, uns len)
+static void UNUSED GBUF_PREFIX(do_grow)(BUF_T *b, size_t len)
 {
   if (len < 2*b->len)			// to ensure logarithmic cost
     len = 2*b->len;
@@ -85,7 +85,7 @@ static void UNUSED GBUF_PREFIX(do_grow)(BUF_T *b, uns len)
  * any more) by
  * <<fun__GENERIC_LINK_|GBUF_PREFIX|set_size|,`GBUF_PREFIX(set_size)()`>>.
  **/
-static inline GBUF_TYPE *GBUF_PREFIX(grow)(BUF_T *b, uns len)
+static inline GBUF_TYPE *GBUF_PREFIX(grow)(BUF_T *b, size_t len)
 {
   if (unlikely(len > b->len))
     GBUF_PREFIX(do_grow)(b, len);

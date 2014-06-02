@@ -29,6 +29,7 @@
  * See @bb_printf().
  **/
 char *bb_vprintf(bb_t *bb, const char *fmt, va_list args);
+
 /**
  * printf() into a growing buffer.
  * Generates a `'\0'`-terminated string at the beginning of the buffer
@@ -37,6 +38,7 @@ char *bb_vprintf(bb_t *bb, const char *fmt, va_list args);
  * See @bb_vprintf().
  **/
 char *bb_printf(bb_t *bb, const char *fmt, ...);
+
 /**
  * Like @bb_vprintf(), but it does not start at the beginning of the
  * buffer, but @ofs bytes further.
@@ -44,10 +46,11 @@ char *bb_printf(bb_t *bb, const char *fmt, ...);
  * Returns pointer to the new string (eg. @ofs bytes after the
  * beginning of buffer).
  **/
-char *bb_vprintf_at(bb_t *bb, uns ofs, const char *fmt, va_list args);
+char *bb_vprintf_at(bb_t *bb, size_t ofs, const char *fmt, va_list args);
+
 /**
  * Like @bb_vprintf_at(), but it takes individual arguments.
  **/
-char *bb_printf_at(bb_t *bb, uns ofs, const char *fmt, ...);
+char *bb_printf_at(bb_t *bb, size_t ofs, const char *fmt, ...);
 
 #endif
