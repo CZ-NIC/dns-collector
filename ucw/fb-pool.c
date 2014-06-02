@@ -29,7 +29,7 @@ fbpool_spout(struct fastbuf *b)
 }
 
 void
-fbpool_start(struct fbpool *b, struct mempool *mp, uns init_size)
+fbpool_start(struct fbpool *b, struct mempool *mp, size_t init_size)
 {
   b->mp = mp;
   b->fb.buffer = b->fb.bstop = b->fb.bptr = mp_start(mp, init_size);

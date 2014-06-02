@@ -481,7 +481,7 @@ void fbpool_init(struct fbpool *fb);	/** Initialize a new mempool fastbuf. **/
  * Start a new continuous block and prepare for writing (see <<mempool:mp_start()>>).
  * Provide the memory pool you want to use for this block as @mp.
  **/
-void fbpool_start(struct fbpool *fb, struct mempool *mp, uns init_size);
+void fbpool_start(struct fbpool *fb, struct mempool *mp, size_t init_size);
 /**
  * Close the block and return the address of its start (see <<mempool:mp_end()>>).
  * The length can be determined by calling <<mempool:mp_size(mp, ptr)>>.
