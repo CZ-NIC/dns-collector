@@ -357,11 +357,11 @@ static inline uns unicode_sanitize_char(uns u)
  * Count the number of Unicode characters in a zero-terminated UTF-8 string.
  * Returned value for corrupted encoding is undefined, but is never greater than strlen().
  **/
-uns utf8_strlen(const byte *str);
+size_t utf8_strlen(const byte *str);
 
 /**
  * Same as @utf8_strlen(), but returns at most @n characters.
  **/
-uns utf8_strnlen(const byte *str, uns n);
+size_t utf8_strnlen(const byte *str, size_t n);
 
 #endif

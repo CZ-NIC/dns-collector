@@ -11,10 +11,10 @@
 #include <ucw/lib.h>
 #include <ucw/unicode.h>
 
-uns
+size_t
 utf8_strlen(const byte *str)
 {
-  uns len = 0;
+  size_t len = 0;
   while (*str)
     {
       UTF8_SKIP(str);
@@ -23,10 +23,10 @@ utf8_strlen(const byte *str)
   return len;
 }
 
-uns
-utf8_strnlen(const byte *str, uns n)
+size_t
+utf8_strnlen(const byte *str, size_t n)
 {
-  uns len = 0;
+  size_t len = 0;
   const byte *end = str + n;
   while (str < end)
     {
