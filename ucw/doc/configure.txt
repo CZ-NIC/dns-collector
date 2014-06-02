@@ -1,10 +1,10 @@
-How to Configure Sherlock libraries
-===================================
+How to Configure libucw libraries
+=================================
 
 What can be configured
 ----------------------
-There are two different levels of configuring/customizing program
-based on sherlock libraries:
+There are two different levels of configuring program
+based on the libucw libraries:
 
   - runtime configuration in configuration files (see <<config:>>)
 
@@ -56,13 +56,17 @@ set the `PREFIX` option:
 
 [[local_build]]
 You can create a local compilation, which does not need to be
-installed. All paths are set relative to a `run` directory and
-programs expect to have current working directory set to it. However,
-you can move the `run` directory around your filesystem as you like.
-To compile it that way, turn on the `CONFIG_LOCAL` option (and do not
-set `PREFIX`):
+installed. To compile it that way, turn on the `CONFIG_LOCAL` option
+(and do not set `PREFIX`):
 
 	./configure CONFIG_LOCAL
+
+Alternatively you can add the `CONFIG_RELATIVE_PATHS` option.
+All paths are then set relative to a `run` directory and
+programs expect to have current working directory set to it. However,
+you can move the `run` directory around your filesystem as you like:
+
+	./configure CONFIG_LOCAL CONFIG_RELATIVE_PATHS
 
 Examples
 --------
@@ -70,5 +74,5 @@ Examples
   - `./configure -CONFIG_IMAGES` avoids building the image library.
   - `./configure CONFIG_UCW_ONLY -CONFIG_UCW_UTILS` compiles only the
     libucw library without its util programs.
-  - `./configure CONFIG_XML PREFIX=$HOME/sherlock` includes a xml
+  - `./configure CONFIG_XML PREFIX=$HOME/libucw` includes a xml
     library and installs into your home directory.
