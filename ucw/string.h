@@ -30,7 +30,7 @@
 /* string.c */
 
 #ifdef CONFIG_DARWIN
-uns strnlen(const char *str, uns n);	// NOAPI
+size_t strnlen(const char *str, size_t n); // NOAPI
 #endif
 
 /**
@@ -40,7 +40,7 @@ uns strnlen(const char *str, uns n);	// NOAPI
 char *str_format_flags(char *dest, const char *fmt, uns flags);
 
 /** Counts occurrences of @chr in @str. **/
-uns str_count_char(const char *str, uns chr);
+size_t str_count_char(const char *str, uns chr);
 
 /* str-esc.c */
 
@@ -94,14 +94,14 @@ int str_match_pattern_nocase(const char *patt, const char *str);
  * not be separated), possibly OR-ed with `MEM_TO_HEX_UPCASE` when upper-case
  * characters should be used.
  **/
-void mem_to_hex(char *dest, const byte *src, uns bytes, uns flags);
+void mem_to_hex(char *dest, const byte *src, size_t bytes, uns flags);
 
 /**
  * An inverse function to @mem_to_hex(). Takes a hexdump of at most @max_bytes
  * bytes and stores the bytes to a buffer starting at @dest. Returns a pointer
  * at the first character after the dump.
  **/
-const char *hex_to_mem(byte *dest, const char *src, uns max_bytes, uns flags);
+const char *hex_to_mem(byte *dest, const char *src, size_t max_bytes, uns flags);
 
 // Bottom 8 bits of flags are an optional separator of bytes, the rest is:
 #define MEM_TO_HEX_UPCASE 0x100

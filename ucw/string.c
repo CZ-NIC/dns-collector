@@ -14,8 +14,8 @@
 #include <ucw/string.h>
 
 #ifdef CONFIG_DARWIN
-uns
-strnlen(const char *str, uns n)
+size_t
+strnlen(const char *str, size_t n)
 {
   const char *end = str + n;
   const char *c;
@@ -39,11 +39,11 @@ str_format_flags(char *dest, const char *fmt, uns flags)
   return start;
 }
 
-uns
+size_t
 str_count_char(const char *str, uns chr)
 {
   const byte *s = str;
-  uns i = 0;
+  size_t i = 0;
   while (*s)
     if (*s++ == chr)
       i++;
