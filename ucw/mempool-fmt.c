@@ -16,7 +16,7 @@
 #include <string.h>
 
 static char *
-mp_vprintf_at(struct mempool *mp, uns ofs, const char *fmt, va_list args)
+mp_vprintf_at(struct mempool *mp, size_t ofs, const char *fmt, va_list args)
 {
   char *ret = mp_grow(mp, ofs + 1) + ofs;
   va_list args2;
@@ -67,7 +67,7 @@ mp_printf(struct mempool *p, const char *fmt, ...)
 char *
 mp_append_vprintf(struct mempool *mp, char *ptr, const char *fmt, va_list args)
 {
-  uns ofs = mp_open(mp, ptr);
+  size_t ofs = mp_open(mp, ptr);
   ASSERT(ofs && !ptr[ofs - 1]);
   return mp_vprintf_at(mp, ofs - 1, fmt, args);
 }

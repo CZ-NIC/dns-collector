@@ -17,18 +17,18 @@
 #include <string.h>
 
 #define MP_CHUNK_TAIL ALIGN_TO(sizeof(struct mempool_chunk), CPU_STRUCT_ALIGN)
-#define MP_SIZE_MAX (~0U - MP_CHUNK_TAIL - CPU_PAGE_SIZE)
+#define MP_SIZE_MAX (SIZE_MAX - MP_CHUNK_TAIL - CPU_PAGE_SIZE)
 
 struct mempool_chunk {
 #ifdef CONFIG_DEBUG
   struct mempool *pool;		// Can be useful when analysing coredump for memory leaks
 #endif
   struct mempool_chunk *next;
-  uns size;
+  size_t size;
 };
 
-static uns
-mp_align_size(uns size)
+static size_t
+mp_align_size(size_t size)
 {
 #ifdef CONFIG_UCW_POOL_IS_MMAP
   return ALIGN_TO(size + MP_CHUNK_TAIL, CPU_PAGE_SIZE) - MP_CHUNK_TAIL;
@@ -64,7 +64,7 @@ static void mp_allocator_free(struct ucw_allocator *a UNUSED, void *ptr UNUSED)
 }
 
 void
-mp_init(struct mempool *pool, uns chunk_size)
+mp_init(struct mempool *pool, size_t chunk_size)
 {
   chunk_size = mp_align_size(MAX(sizeof(struct mempool), chunk_size));
   *pool = (struct mempool) {
@@ -80,7 +80,7 @@ mp_init(struct mempool *pool, uns chunk_size)
 }
 
 static void *
-mp_new_big_chunk(struct mempool *pool, uns size)
+mp_new_big_chunk(struct mempool *pool, size_t size)
 {
   struct mempool_chunk *chunk;
   chunk = xmalloc(size + MP_CHUNK_TAIL) + size;
@@ -98,7 +98,7 @@ mp_free_big_chunk(struct mempool *pool, struct mempool_chunk *chunk)
 }
 
 static void *
-mp_new_chunk(struct mempool *pool, uns size)
+mp_new_chunk(struct mempool *pool, size_t size)
 {
 #ifdef CONFIG_UCW_POOL_IS_MMAP
   struct mempool_chunk *chunk;
@@ -124,7 +124,7 @@ mp_free_chunk(struct mempool *pool, struct mempool_chunk *chunk)
 }
 
 struct mempool *
-mp_new(uns chunk_size)
+mp_new(size_t chunk_size)
 {
   chunk_size = mp_align_size(MAX(sizeof(struct mempool), chunk_size));
   struct mempool_chunk *chunk = mp_new_chunk(NULL, chunk_size);
@@ -249,7 +249,7 @@ mp_shrink(struct mempool *pool, u64 min_total_size)
 }
 
 void *
-mp_alloc_internal(struct mempool *pool, uns size)
+mp_alloc_internal(struct mempool *pool, size_t size)
 {
   struct mempool_chunk *chunk;
   if (size <= pool->threshold)
@@ -275,7 +275,7 @@ mp_alloc_internal(struct mempool *pool, uns size)
   else if (likely(size <= MP_SIZE_MAX))
     {
       pool->idx = 1;
-      uns aligned = ALIGN_TO(size, CPU_STRUCT_ALIGN);
+      size_t aligned = ALIGN_TO(size, CPU_STRUCT_ALIGN);
       chunk = mp_new_big_chunk(pool, aligned);
       chunk->next = pool->state.last[1];
 #ifdef CONFIG_DEBUG
@@ -286,23 +286,23 @@ mp_alloc_internal(struct mempool *pool, uns size)
       return pool->last_big = (void *)chunk - aligned;
     }
   else
-    die("Cannot allocate %u bytes from a mempool", size);
+    die("Cannot allocate %zu bytes from a mempool", size);
 }
 
 void *
-mp_alloc(struct mempool *pool, uns size)
+mp_alloc(struct mempool *pool, size_t size)
 {
   return mp_alloc_fast(pool, size);
 }
 
 void *
-mp_alloc_noalign(struct mempool *pool, uns size)
+mp_alloc_noalign(struct mempool *pool, size_t size)
 {
   return mp_alloc_fast_noalign(pool, size);
 }
 
 void *
-mp_alloc_zero(struct mempool *pool, uns size)
+mp_alloc_zero(struct mempool *pool, size_t size)
 {
   void *ptr = mp_alloc_fast(pool, size);
   bzero(ptr, size);
@@ -310,7 +310,7 @@ mp_alloc_zero(struct mempool *pool, uns size)
 }
 
 void *
-mp_start_internal(struct mempool *pool, uns size)
+mp_start_internal(struct mempool *pool, size_t size)
 {
   void *ptr = mp_alloc_internal(pool, size);
   pool->state.free[pool->idx] += size;
@@ -318,27 +318,27 @@ mp_start_internal(struct mempool *pool, uns size)
 }
 
 void *
-mp_start(struct mempool *pool, uns size)
+mp_start(struct mempool *pool, size_t size)
 {
   return mp_start_fast(pool, size);
 }
 
 void *
-mp_start_noalign(struct mempool *pool, uns size)
+mp_start_noalign(struct mempool *pool, size_t size)
 {
   return mp_start_fast_noalign(pool, size);
 }
 
 void *
-mp_grow_internal(struct mempool *pool, uns size)
+mp_grow_internal(struct mempool *pool, size_t size)
 {
   if (unlikely(size > MP_SIZE_MAX))
-    die("Cannot allocate %u bytes of memory", size);
-  uns avail = mp_avail(pool);
+    die("Cannot allocate %zu bytes of memory", size);
+  size_t avail = mp_avail(pool);
   void *ptr = mp_ptr(pool);
   if (pool->idx)
     {
-      uns amortized = likely(avail <= MP_SIZE_MAX / 2) ? avail * 2 : MP_SIZE_MAX;
+      size_t amortized = likely(avail <= MP_SIZE_MAX / 2) ? avail * 2 : MP_SIZE_MAX;
       amortized = MAX(amortized, size);
       amortized = ALIGN_TO(amortized, CPU_STRUCT_ALIGN);
       struct mempool_chunk *chunk = pool->state.last[1], *next = chunk->next;
@@ -360,22 +360,22 @@ mp_grow_internal(struct mempool *pool, uns size)
     }
 }
 
-uns
+size_t
 mp_open(struct mempool *pool, void *ptr)
 {
   return mp_open_fast(pool, ptr);
 }
 
 void *
-mp_realloc(struct mempool *pool, void *ptr, uns size)
+mp_realloc(struct mempool *pool, void *ptr, size_t size)
 {
   return mp_realloc_fast(pool, ptr, size);
 }
 
 void *
-mp_realloc_zero(struct mempool *pool, void *ptr, uns size)
+mp_realloc_zero(struct mempool *pool, void *ptr, size_t size)
 {
-  uns old_size = mp_open_fast(pool, ptr);
+  size_t old_size = mp_open_fast(pool, ptr);
   ptr = mp_grow(pool, size);
   if (size > old_size)
     bzero(ptr + old_size, size - old_size);
@@ -384,7 +384,7 @@ mp_realloc_zero(struct mempool *pool, void *ptr, uns size)
 }
 
 void *
-mp_spread_internal(struct mempool *pool, void *p, uns size)
+mp_spread_internal(struct mempool *pool, void *p, size_t size)
 {
   void *old = mp_ptr(pool);
   void *new = mp_grow_internal(pool, p-old+size);
