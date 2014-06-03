@@ -22,23 +22,23 @@ enum column_type {
   COL_TYPE_LAST
 };
 
-#define TBL_COL_STR(_enum_prefix, _name, _width)            [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = "%s", .type = COL_TYPE_STR }
-#define TBL_COL_INT(_enum_prefix, _name, _width)            [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = "%d", .type = COL_TYPE_INT }
-#define TBL_COL_UINT(_enum_prefix, _name, _width)           [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = "%u", .type = COL_TYPE_UINT }
-#define TBL_COL_INTMAX(_enum_prefix, _name, _width)         [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = "%jd", .type = COL_TYPE_INTMAX }
-#define TBL_COL_UINTMAX(_enum_prefix, _name, _width)        [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = "%ju", .type = COL_TYPE_UINTMAX }
-#define TBL_COL_HEXUINT(_enum_prefix, _name, _width)        [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = "0x%x", .type = COL_TYPE_UINT }
-#define TBL_COL_DOUBLE(_enum_prefix, _name, _width, _prec)  [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = "%." #_prec "lf", .type = COL_TYPE_DOUBLE }
-#define TBL_COL_BOOL(_enum_prefix, _name, _width)           [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = "%s", .type = COL_TYPE_BOOL }
-#define TBL_COL_ANY(_enum_prefix, _name, _width)            [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = 0, .type = COL_TYPE_ANY }
+#define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_STR }
+#define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = "%d", .type = COL_TYPE_INT }
+#define TBL_COL_UINT(_name, _width)           { .name = _name, .width = _width, .fmt = "%u", .type = COL_TYPE_UINT }
+#define TBL_COL_INTMAX(_name, _width)         { .name = _name, .width = _width, .fmt = "%jd", .type = COL_TYPE_INTMAX }
+#define TBL_COL_UINTMAX(_name, _width)        { .name = _name, .width = _width, .fmt = "%ju", .type = COL_TYPE_UINTMAX }
+#define TBL_COL_HEXUINT(_name, _width)        { .name = _name, .width = _width, .fmt = "0x%x", .type = COL_TYPE_UINT }
+#define TBL_COL_DOUBLE(_name, _width, _prec)  { .name = _name, .width = _width, .fmt = "%." #_prec "lf", .type = COL_TYPE_DOUBLE }
+#define TBL_COL_BOOL(_name, _width)           { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_BOOL }
+#define TBL_COL_ANY(_name, _width)            { .name = _name, .width = _width, .fmt = 0, .type = COL_TYPE_ANY }
 
-#define TBL_COL_STR_FMT(_enum_prefix, _name, _width, _fmt)            [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = _fmt, .type = COL_TYPE_STR }
-#define TBL_COL_INT_FMT(_enum_prefix, _name, _width, _fmt)            [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INT }
-#define TBL_COL_UINT_FMT(_enum_prefix, _name, _width, _fmt)           [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT }
-#define TBL_COL_INTMAX_FMT(_enum_prefix, _name, _width, _fmt)         [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INTMAX }
-#define TBL_COL_UINTMAX_FMT(_enum_prefix, _name, _width, _fmt)        [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINTMAX }
-#define TBL_COL_HEXUINT_FMT(_enum_prefix, _name, _width, _fmt)        [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT }
-#define TBL_COL_BOOL_FMT(_enum_prefix, _name, _width, _fmt)           [_enum_prefix##_##_name] = { .name = #_name, .width = _width, .fmt = _fmt, .type = COL_TYPE_BOOL }
+#define TBL_COL_STR_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_STR }
+#define TBL_COL_INT_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INT }
+#define TBL_COL_UINT_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT }
+#define TBL_COL_INTMAX_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INTMAX }
+#define TBL_COL_UINTMAX_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINTMAX }
+#define TBL_COL_HEXUINT_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT }
+#define TBL_COL_BOOL_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_BOOL }
 
 #define TBL_COL_END { .name = 0, .width = 0, .fmt = 0, .type = COL_TYPE_LAST }
 
@@ -173,7 +173,7 @@ struct table {
  * about deallocation does not make much sense, the fastbuf is definitely not copied, only
  * a pointer to it.
  **/
-void table_init(struct table *tbl, struct fastbuf *out);
+void table_init(struct table *tbl);
 void table_cleanup(struct table *tbl);
 
 /**

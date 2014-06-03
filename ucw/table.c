@@ -14,10 +14,8 @@
 
 /*** Management of tables ***/
 
-void table_init(struct table *tbl, struct fastbuf *out)
+void table_init(struct table *tbl)
 {
-  tbl->out = out;
-
   int col_count = 0; // count the number of columns in the struct table
 
   for(;;) {
@@ -63,6 +61,8 @@ void table_start(struct table *tbl)
 {
   tbl->last_printed_col = -1;
   tbl->row_printing_started = 0;
+
+  ASSERT_MSG(tbl->out, "Output fastbuf not specified.");
 
   if(!tbl->col_str_ptrs) {
     tbl->col_str_ptrs = mp_alloc_zero(tbl->pool, sizeof(char *) * tbl->column_count);
@@ -506,11 +506,11 @@ static uint test_column_order[] = {test_col3_bool, test_col4_double, test_col2_u
 
 static struct table test_tbl = {
   TBL_COLUMNS {
-    TBL_COL_STR(test, col0_str, 20),
-    TBL_COL_INT(test, col1_int, 8),
-    TBL_COL_UINT(test, col2_uint, 9),
-    TBL_COL_BOOL(test, col3_bool, 9),
-    TBL_COL_DOUBLE(test, col4_double, 11, 2),
+    [test_col0_str] = TBL_COL_STR("col0_str", 20),
+    [test_col1_int] = TBL_COL_INT("col1_int", 8),
+    [test_col2_uint] = TBL_COL_UINT("col2_uint", 9),
+    [test_col3_bool] = TBL_COL_BOOL("col3_bool", 9),
+    [test_col4_double] = TBL_COL_DOUBLE("col4_double", 11, 2),
     TBL_COL_END
   },
   TBL_COL_ORDER(test_column_order),
@@ -546,7 +546,10 @@ static void do_print1(struct table *test_tbl)
 
 static void test_simple1(struct fastbuf *out)
 {
-  table_init(&test_tbl, out);
+  table_init(&test_tbl);
+
+  test_tbl.out = out;
+
   // print table with header
   table_col_order_by_name(&test_tbl, "col3_bool");
   table_start(&test_tbl);
@@ -602,8 +605,8 @@ static uint test_any_column_order[] = { test_any_col0_int, test_any_col1_any };
 
 static struct table test_any_tbl = {
   TBL_COLUMNS {
-    TBL_COL_INT(test_any, col0_int, 8),
-    TBL_COL_ANY(test_any, col1_any, 9),
+    [test_any_col0_int] = TBL_COL_INT("col0_int", 8),
+    [test_any_col1_any] = TBL_COL_ANY("col1_any", 9),
     TBL_COL_END
   },
   TBL_COL_ORDER(test_any_column_order),
@@ -614,7 +617,9 @@ static struct table test_any_tbl = {
 
 static void test_any_type(struct fastbuf *out)
 {
-  table_init(&test_any_tbl, out);
+  table_init(&test_any_tbl);
+  test_any_tbl.out = out;
+
   table_start(&test_any_tbl);
 
   table_set_int(&test_any_tbl, test_any_col0_int, -10);

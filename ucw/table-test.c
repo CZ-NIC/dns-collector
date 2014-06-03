@@ -17,11 +17,11 @@ static uint test_column_order[] = { test_col3_bool, test_col4_double, test_col2_
 
 static struct table test_tbl = {
   TBL_COLUMNS {
-    TBL_COL_STR(test, col0_str, 20),
-    TBL_COL_INT(test, col1_int, 8),
-    TBL_COL_UINT(test, col2_uint, 9),
-    TBL_COL_BOOL(test, col3_bool, 9),
-    TBL_COL_DOUBLE(test, col4_double, 11, 2),
+    [test_col0_str] = TBL_COL_STR("col0_str", 20),
+    [test_col1_int] = TBL_COL_INT("col1_int", 8),
+    [test_col2_uint] = TBL_COL_UINT("col2_uint", 9),
+    [test_col3_bool] = TBL_COL_BOOL("col3_bool", 9),
+    [test_col4_double] = TBL_COL_DOUBLE("col4_double", 11, 2),
     TBL_COL_END
   },
   TBL_COL_ORDER(test_column_order),
@@ -35,9 +35,9 @@ enum test_default_order_cols {
 
 static struct table test_default_order_tbl = {
   TBL_COLUMNS {
-    TBL_COL_INT(test_default_order, col0_int, 8),
-    TBL_COL_INT(test_default_order, col1_int, 9),
-    TBL_COL_INT(test_default_order, col2_int, 9),
+    [test_default_order_col0_int] = TBL_COL_INT("col0_int", 8),
+    [test_default_order_col1_int] = TBL_COL_INT("col1_int", 9),
+    [test_default_order_col2_int] = TBL_COL_INT("col2_int", 9),
     TBL_COL_END
   },
   TBL_OUTPUT_HUMAN_READABLE,
@@ -46,7 +46,9 @@ static struct table test_default_order_tbl = {
 
 static void do_default_order_test(struct fastbuf *out)
 {
-  table_init(&test_default_order_tbl, out);
+  table_init(&test_default_order_tbl);
+  test_default_order_tbl.out = out;
+
   table_start(&test_default_order_tbl);
 
   table_set_int(&test_default_order_tbl, test_default_order_col0_int, 0);
@@ -152,7 +154,8 @@ int main(int argc UNUSED, char **argv)
   struct fastbuf *out;
   out = bfdopen_shared(1, 4096);
 
-  table_init(&test_tbl, out);
+  table_init(&test_tbl);
+  test_tbl.out = out;
 
   process_command_line_opts(argv, &test_tbl);
 
