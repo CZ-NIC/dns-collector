@@ -57,10 +57,11 @@ static void table_make_default_column_order(struct table *tbl)
   table_col_order(tbl, col_order_int, tbl->column_count);
 }
 
-void table_start(struct table *tbl)
+void table_start(struct table *tbl, struct fastbuf *out)
 {
   tbl->last_printed_col = -1;
   tbl->row_printing_started = 0;
+  tbl->out = out;
 
   ASSERT_MSG(tbl->out, "Output fastbuf not specified.");
 
@@ -173,7 +174,7 @@ const char * table_col_order_by_name(struct table *tbl, const char *col_order_st
 
 /*** Table cells ***/
 
-void table_set_printf(struct table *tbl, int col, const char *fmt, ...)
+void table_col_printf(struct table *tbl, int col, const char *fmt, ...)
 {
   ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
   tbl->last_printed_col = col;
@@ -184,7 +185,7 @@ void table_set_printf(struct table *tbl, int col, const char *fmt, ...)
   va_end(args);
 }
 
-static const char *table_set_col_default_fmts[] = {
+static const char *table_col_default_fmts[] = {
   [COL_TYPE_STR] = "%s",
   [COL_TYPE_INT] = "%d",
   [COL_TYPE_INTMAX] = "%jd",
@@ -196,22 +197,22 @@ static const char *table_set_col_default_fmts[] = {
   [COL_TYPE_LAST] = NULL
 };
 
-#define TABLE_SET_COL(_name_, _type_, _typeconst_) void table_set_##_name_(struct table *tbl, int col, _type_ val) \
+#define TABLE_COL(_name_, _type_, _typeconst_) void table_col_##_name_(struct table *tbl, int col, _type_ val) \
   {\
     const char *fmt = tbl->columns[col].fmt;\
     if(tbl->columns[col].type == COL_TYPE_ANY) {\
-       fmt = table_set_col_default_fmts[_typeconst_];\
+       fmt = table_col_default_fmts[_typeconst_];\
     }\
-    table_set_##_name_##_fmt(tbl, col, fmt, val);\
+    table_col_##_name_##_fmt(tbl, col, fmt, val);\
   }
 
-#define TABLE_SET_COL_STR(_name_, _type_, _typeconst_) void table_set_##_name_##_name(struct table *tbl, const char *col_name, _type_ val) \
+#define TABLE_COL_STR(_name_, _type_, _typeconst_) void table_col_##_name_##_name(struct table *tbl, const char *col_name, _type_ val) \
   {\
     int col = table_get_col_idx(tbl, col_name);\
-    table_set_##_name_(tbl, col, val);\
+    table_col_##_name_(tbl, col, val);\
   }
 
-#define TABLE_SET_COL_FMT(_name_, _type_, _typeconst_) void table_set_##_name_##_fmt(struct table *tbl, int col, const char *fmt, _type_ val)\
+#define TABLE_COL_FMT(_name_, _type_, _typeconst_) void table_col_##_name_##_fmt(struct table *tbl, int col, const char *fmt, _type_ val)\
   {\
      ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);\
      ASSERT(tbl->columns[col].type == COL_TYPE_ANY || _typeconst_ == tbl->columns[col].type);\
@@ -221,33 +222,33 @@ static const char *table_set_col_default_fmts[] = {
      tbl->col_str_ptrs[col] = mp_printf(tbl->pool, fmt, val);\
   }
 
-#define TABLE_SET(_name_, _type_, _typeconst_) TABLE_SET_COL(_name_, _type_, _typeconst_);\
-  TABLE_SET_COL_STR(_name_, _type_, _typeconst_);\
-  TABLE_SET_COL_FMT(_name_, _type_, _typeconst_);
+#define TABLE_COL_BODIES(_name_, _type_, _typeconst_) TABLE_COL(_name_, _type_, _typeconst_);\
+  TABLE_COL_STR(_name_, _type_, _typeconst_);\
+  TABLE_COL_FMT(_name_, _type_, _typeconst_);
 
-TABLE_SET(int, int, COL_TYPE_INT)
-TABLE_SET(uint, uint, COL_TYPE_UINT)
-TABLE_SET(double, double, COL_TYPE_DOUBLE)
-TABLE_SET(str, const char *, COL_TYPE_STR)
-TABLE_SET(intmax, intmax_t, COL_TYPE_INTMAX)
-TABLE_SET(uintmax, uintmax_t, COL_TYPE_UINTMAX)
-#undef TABLE_SET_COL_FMT
-#undef TABLE_SET_COL_STR
-#undef TABLE_SET_COL
-#undef TABLE_SET
+TABLE_COL_BODIES(int, int, COL_TYPE_INT)
+TABLE_COL_BODIES(uint, uint, COL_TYPE_UINT)
+TABLE_COL_BODIES(double, double, COL_TYPE_DOUBLE)
+TABLE_COL_BODIES(str, const char *, COL_TYPE_STR)
+TABLE_COL_BODIES(intmax, intmax_t, COL_TYPE_INTMAX)
+TABLE_COL_BODIES(uintmax, uintmax_t, COL_TYPE_UINTMAX)
+#undef TABLE_COL
+#undef TABLE_COL_FMT
+#undef TABLE_COL_STR
+#undef TABLE_COL_BODIES
 
-void table_set_bool(struct table *tbl, int col, uint val)
+void table_col_bool(struct table *tbl, int col, uint val)
 {
-  table_set_bool_fmt(tbl, col, tbl->columns[col].fmt, val);
+  table_col_bool_fmt(tbl, col, tbl->columns[col].fmt, val);
 }
 
-void table_set_bool_name(struct table *tbl, const char *col_name, uint val)
+void table_col_bool_name(struct table *tbl, const char *col_name, uint val)
 {
   int col = table_get_col_idx(tbl, col_name);
-  table_set_bool(tbl, col, val);
+  table_col_bool(tbl, col, val);
 }
 
-void table_set_bool_fmt(struct table *tbl, int col, const char *fmt, uint val)
+void table_col_bool_fmt(struct table *tbl, int col, const char *fmt, uint val)
 {
   ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
   ASSERT(COL_TYPE_BOOL == tbl->columns[col].type);
@@ -524,23 +525,23 @@ static struct table test_tbl = {
  **/
 static void do_print1(struct table *test_tbl)
 {
-  table_set_str(test_tbl, test_col0_str, "sdsdf");
+  table_col_str(test_tbl, test_col0_str, "sdsdf");
   table_append_str(test_tbl, "aaaaa");
-  table_set_int(test_tbl, test_col1_int, -10);
-  table_set_int(test_tbl, test_col1_int, 10000);
-  table_set_uint(test_tbl, test_col2_uint, 10);
-  table_set_printf(test_tbl, test_col2_uint, "XXX-%u", 22222);
-  table_set_bool(test_tbl, test_col3_bool, 1);
-  table_set_double(test_tbl, test_col4_double, 1.5);
-  table_set_printf(test_tbl, test_col4_double, "AAA");
+  table_col_int(test_tbl, test_col1_int, -10);
+  table_col_int(test_tbl, test_col1_int, 10000);
+  table_col_uint(test_tbl, test_col2_uint, 10);
+  table_col_printf(test_tbl, test_col2_uint, "XXX-%u", 22222);
+  table_col_bool(test_tbl, test_col3_bool, 1);
+  table_col_double(test_tbl, test_col4_double, 1.5);
+  table_col_printf(test_tbl, test_col4_double, "AAA");
   table_end_row(test_tbl);
 
-  table_set_str(test_tbl, test_col0_str, "test");
+  table_col_str(test_tbl, test_col0_str, "test");
   table_append_str(test_tbl, "bbbbb");
-  table_set_int(test_tbl, test_col1_int, -100);
-  table_set_uint(test_tbl, test_col2_uint, 100);
-  table_set_bool(test_tbl, test_col3_bool, 0);
-  table_set_printf(test_tbl, test_col4_double, "%.2lf", 1.5);
+  table_col_int(test_tbl, test_col1_int, -100);
+  table_col_uint(test_tbl, test_col2_uint, 100);
+  table_col_bool(test_tbl, test_col3_bool, 0);
+  table_col_printf(test_tbl, test_col4_double, "%.2lf", 1.5);
   table_end_row(test_tbl);
 }
 
@@ -548,49 +549,47 @@ static void test_simple1(struct fastbuf *out)
 {
   table_init(&test_tbl);
 
-  test_tbl.out = out;
-
   // print table with header
   table_col_order_by_name(&test_tbl, "col3_bool");
-  table_start(&test_tbl);
+  table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
   // print the same table as in the previous case without header
   table_col_order_by_name(&test_tbl, "col0_str,col2_uint,col1_int,col3_bool");
-  table_start(&test_tbl);
+  table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
   // this also tests whether there is need to call table_col_order_by_name after table_end was called
   test_tbl.print_header = 0;
-  table_start(&test_tbl);
+  table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
   test_tbl.print_header = 1;
 
   table_col_order_by_name(&test_tbl, "col3_bool");
-  table_start(&test_tbl);
+  table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
   table_col_order_by_name(&test_tbl, "col3_bool,col0_str");
-  table_start(&test_tbl);
+  table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
   table_col_order_by_name(&test_tbl, "col0_str,col3_bool,col2_uint");
-  table_start(&test_tbl);
+  table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
   table_col_order_by_name(&test_tbl, "col0_str,col3_bool,col2_uint,col0_str,col3_bool,col2_uint,col0_str,col3_bool,col2_uint");
-  table_start(&test_tbl);
+  table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
   table_col_order_by_name(&test_tbl, "col0_str,col1_int,col2_uint,col3_bool,col4_double");
-  table_start(&test_tbl);
+  table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
@@ -618,22 +617,21 @@ static struct table test_any_tbl = {
 static void test_any_type(struct fastbuf *out)
 {
   table_init(&test_any_tbl);
-  test_any_tbl.out = out;
 
-  table_start(&test_any_tbl);
+  table_start(&test_any_tbl, out);
 
-  table_set_int(&test_any_tbl, test_any_col0_int, -10);
-  table_set_int(&test_any_tbl, test_any_col1_any, 10000);
+  table_col_int(&test_any_tbl, test_any_col0_int, -10);
+  table_col_int(&test_any_tbl, test_any_col1_any, 10000);
   table_end_row(&test_any_tbl);
 
-  table_set_int(&test_any_tbl, test_any_col0_int, -10);
-  table_set_double(&test_any_tbl, test_any_col1_any, 1.4);
+  table_col_int(&test_any_tbl, test_any_col0_int, -10);
+  table_col_double(&test_any_tbl, test_any_col1_any, 1.4);
   table_end_row(&test_any_tbl);
 
-  table_set_printf(&test_any_tbl, test_any_col0_int, "%d", 10);
+  table_col_printf(&test_any_tbl, test_any_col0_int, "%d", 10);
   table_append_printf(&test_any_tbl, "%d", 20);
   table_append_printf(&test_any_tbl, "%d", 30);
-  table_set_double(&test_any_tbl, test_any_col1_any, 1.4);
+  table_col_double(&test_any_tbl, test_any_col1_any, 1.4);
   table_append_printf(&test_any_tbl, "%.2lf", 1.5);
   table_append_printf(&test_any_tbl, "%.2lf", 1.6);
   table_end_row(&test_any_tbl);

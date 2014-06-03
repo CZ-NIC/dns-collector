@@ -181,7 +181,7 @@ void table_cleanup(struct table *tbl);
  * call the table_set_* functions. The table_end_row function can be called after the table_start is called
  * (but before the table_end is called)
  **/
-void table_start(struct table *tbl);
+void table_start(struct table *tbl, struct fastbuf *out);
 
 /**
  * This function must be called after all the rows of the current table are printed. The table_set_*
@@ -212,7 +212,7 @@ void table_end_row(struct table *tbl);
  * Prints a string that is printf-like formated into a particular column. This function does not check the
  * type of the column, i.e., it can be used to print double into an int column
  **/
-void table_set_printf(struct table *tbl, int col, const char *fmt, ...) FORMAT_CHECK(printf, 3, 4);
+void table_col_printf(struct table *tbl, int col, const char *fmt, ...) FORMAT_CHECK(printf, 3, 4);
 
 /**
  * Appends a string that is printf-like formated to the last printed column. This function does not check the
@@ -278,25 +278,25 @@ const char *table_set_option(struct table *tbl, const char *opt);
 const char *table_set_option_value(struct table *tbl, const char *key, const char *value);
 const char *table_set_gary_options(struct table *tbl, char **gary_table_opts);
 
-#define TABLE_SET_COL_PROTO(_name_, _type_) void table_set_##_name_(struct table *tbl, int col, _type_ val);\
-  void table_set_##_name_##_name(struct table *tbl, const char *col_name, _type_ val);\
-  void table_set_##_name_##_fmt(struct table *tbl, int col, const char *fmt, _type_ val) FORMAT_CHECK(printf, 3, 0);
+#define TABLE_COL_PROTO(_name_, _type_) void table_col_##_name_(struct table *tbl, int col, _type_ val);\
+  void table_col_##_name_##_name(struct table *tbl, const char *col_name, _type_ val);\
+  void table_col_##_name_##_fmt(struct table *tbl, int col, const char *fmt, _type_ val) FORMAT_CHECK(printf, 3, 0);
 
-// table_set_<type>_fmt has one disadvantage: it is not possible to
+// table_col_<type>_fmt has one disadvantage: it is not possible to
 // check whether fmt contains format that contains formatting that is
 // compatible with _type_
 
-TABLE_SET_COL_PROTO(int, int);
-TABLE_SET_COL_PROTO(uint, uint);
-TABLE_SET_COL_PROTO(double, double);
-TABLE_SET_COL_PROTO(str, const char *);
-TABLE_SET_COL_PROTO(intmax, intmax_t);
-TABLE_SET_COL_PROTO(uintmax, uintmax_t);
+TABLE_COL_PROTO(int, int);
+TABLE_COL_PROTO(uint, uint);
+TABLE_COL_PROTO(double, double);
+TABLE_COL_PROTO(str, const char *);
+TABLE_COL_PROTO(intmax, intmax_t);
+TABLE_COL_PROTO(uintmax, uintmax_t);
 
-void table_set_bool(struct table *tbl, int col, uint val);
-void table_set_bool_name(struct table *tbl, const char *col_name, uint val);
-void table_set_bool_fmt(struct table *tbl, int col, const char *fmt, uint val);
-#undef TABLE_SET_COL_PROTO
+void table_col_bool(struct table *tbl, int col, uint val);
+void table_col_bool_name(struct table *tbl, const char *col_name, uint val);
+void table_col_bool_fmt(struct table *tbl, int col, const char *fmt, uint val);
+#undef TABLE_COL_PROTO
 
 #define TABLE_APPEND_PROTO(_name_, _type_) void table_append_##_name_(struct table *tbl, _type_ val)
 TABLE_APPEND_PROTO(int, int);
