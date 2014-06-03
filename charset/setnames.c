@@ -48,7 +48,7 @@ static const char *cs_names[] = {
 int
 find_charset_by_name(const char *c)
 {
-	unsigned int i;
+	uint i;
 
 	for(i=0; i<CONV_NUM_CHARSETS; i++)
 		if (!strcasecmp(cs_names[i], c))

@@ -12,19 +12,19 @@
 #include <ucw/bitops.h>
 #include <ucw/bitarray.h>
 
-uns bit_array_count_bits(bitarray_t a, uns n)
+uint bit_array_count_bits(bitarray_t a, uint n)
 {
-  uns m = 0;
+  uint m = 0;
   n = BIT_ARRAY_WORDS(n);
   while (n--)
     m += bit_count(*a++);
   return m;
 }
 
-bitarray_t bit_array_xrealloc(bitarray_t a, uns old_n, uns new_n)
+bitarray_t bit_array_xrealloc(bitarray_t a, uint old_n, uint new_n)
 {
-  uns old_bytes = BIT_ARRAY_BYTES(old_n);
-  uns new_bytes =  BIT_ARRAY_BYTES(new_n);
+  uint old_bytes = BIT_ARRAY_BYTES(old_n);
+  uint new_bytes =  BIT_ARRAY_BYTES(new_n);
   if (old_bytes == new_bytes)
     return a;
   a = xrealloc(a, new_bytes);
@@ -46,10 +46,10 @@ int main(void)
     {
       if (!fgets(buf, sizeof(buf), stdin))
 	return 0;
-      uns n;
+      uint n;
       for (n = 0; buf[n] == '0' || buf[n] == '1'; n++);
       bit_array_zero(a, n);
-      for (uns i = 0; i < n; i++)
+      for (uint i = 0; i < n; i++)
 	if (buf[i] == '1')
 	  bit_array_set(a, i);
       printf("%u\n", bit_array_count_bits(a, n));

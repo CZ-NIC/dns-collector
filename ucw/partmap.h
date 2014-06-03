@@ -29,9 +29,9 @@ struct partmap {
 struct partmap *partmap_open(char *name, int writeable);
 void partmap_close(struct partmap *p);
 ucw_off_t partmap_size(struct partmap *p);
-void partmap_load(struct partmap *p, ucw_off_t start, uns size);
+void partmap_load(struct partmap *p, ucw_off_t start, uint size);
 
-static inline void *partmap_map(struct partmap *p, ucw_off_t start, uns size UNUSED)
+static inline void *partmap_map(struct partmap *p, ucw_off_t start, uint size UNUSED)
 {
 #ifndef CONFIG_UCW_PARTMAP_IS_MMAP
   if (unlikely(!p->start_map || start < p->start_off || (ucw_off_t) (start+size) > p->end_off))
@@ -40,7 +40,7 @@ static inline void *partmap_map(struct partmap *p, ucw_off_t start, uns size UNU
   return p->start_map + (start - p->start_off);
 }
 
-static inline void *partmap_map_forward(struct partmap *p, ucw_off_t start, uns size UNUSED)
+static inline void *partmap_map_forward(struct partmap *p, ucw_off_t start, uint size UNUSED)
 {
 #ifndef CONFIG_UCW_PARTMAP_IS_MMAP
   if (unlikely((ucw_off_t) (start+size) > p->end_off))

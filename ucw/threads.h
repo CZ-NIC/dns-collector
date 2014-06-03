@@ -43,7 +43,7 @@ static inline int ucwlib_thread_id(struct ucwlib_context *c) { return c->_thread
 void ucwlib_lock(void);
 void ucwlib_unlock(void);
 
-extern uns ucwlib_thread_stack_size;
+extern uint ucwlib_thread_stack_size;
 
 #else
 

@@ -133,7 +133,7 @@ fbsock_create(struct fbsock_params *p)
 
 #include <stdlib.h>
 
-static void test_err(void *x UNUSED, uns flags, char *msg UNUSED)
+static void test_err(void *x UNUSED, uint flags, char *msg UNUSED)
 {
   if (flags & FBSOCK_READ)
     printf("READ");

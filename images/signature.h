@@ -28,15 +28,15 @@
 #endif
 
 /* Configuration */
-extern uns image_sig_min_width, image_sig_min_height;
-extern uns *image_sig_prequant_thresholds;
-extern uns image_sig_postquant_min_steps, image_sig_postquant_max_steps, image_sig_postquant_threshold;
+extern uint image_sig_min_width, image_sig_min_height;
+extern uint *image_sig_prequant_thresholds;
+extern uint image_sig_postquant_min_steps, image_sig_postquant_max_steps, image_sig_postquant_threshold;
 extern double image_sig_border_size;
 extern int image_sig_border_bonus;
 extern double image_sig_inertia_scale[];
 extern double image_sig_textured_threshold;
 extern int image_sig_compare_method;
-extern uns image_sig_cmp_features_weights[];
+extern uint image_sig_cmp_features_weights[];
 
 #define IMAGE_VEC_F	6
 #define IMAGE_REG_F	IMAGE_VEC_F
@@ -82,7 +82,7 @@ struct image_cluster {
   };
 };
 
-static inline uns image_signature_size(uns len)
+static inline uint image_signature_size(uint len)
 {
   return OFFSETOF(struct image_signature, reg) + len * sizeof(struct image_region);
 }
@@ -148,8 +148,8 @@ void image_sig_detect_textured(struct image_sig_data *data);
 
 /* sig-cmp.c */
 
-uns image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2);
-uns image_signatures_dist_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param);
+uint image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2);
+uint image_signatures_dist_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param);
 
 #endif
 

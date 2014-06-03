@@ -41,14 +41,14 @@ static size_t P(internal_workspace)(void)
   return workspace;
 }
 
-static uns P(internal_num_keys)(struct sort_context *ctx)
+static uint P(internal_num_keys)(struct sort_context *ctx)
 {
   size_t bufsize = ctx->big_buf_size;
   size_t workspace = P(internal_workspace)();
   if (workspace)
     bufsize -= CPU_PAGE_SIZE;
   u64 maxkeys = bufsize / (sizeof(P(key)) + workspace);
-  return MIN(maxkeys, ~0U);					// The number of records must fit in uns
+  return MIN(maxkeys, ~0U);					// The number of records must fit in uint
 }
 
 static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct sort_bucket *bout, struct sort_bucket *bout_only)
@@ -56,10 +56,10 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   sorter_alloc_buf(ctx);
   struct fastbuf *in = sbuck_read(bin);
   P(key) *buf = ctx->big_buf;
-  uns maxkeys = P(internal_num_keys)(ctx);
+  uint maxkeys = P(internal_num_keys)(ctx);
 
   SORT_XTRACE(5, "s-fixint: Reading (maxkeys=%u, hash_bits=%d)", maxkeys, bin->hash_bits);
-  uns n = 0;
+  uint n = 0;
   while (n < maxkeys && P(read_key)(in, &buf[n]))
     n++;
   if (!n)
@@ -86,14 +86,14 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
     bout = bout_only;
   struct fastbuf *out = sbuck_write(bout);
   bout->runs++;
-  uns merged UNUSED = 0;
-  for (uns i=0; i<n; i++)
+  uint merged UNUSED = 0;
+  for (uint i=0; i<n; i++)
     {
 #ifdef SORT_UNIFY
       if (i < n-1 && !P(compare)(&buf[i], &buf[i+1]))
 	{
 	  P(key) **keys = workspace;
-	  uns n = 2;
+	  uint n = 2;
 	  keys[0] = &buf[i];
 	  keys[1] = &buf[i+1];
 	  while (!P(compare)(&buf[i], &buf[i+n]))

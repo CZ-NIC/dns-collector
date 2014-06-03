@@ -17,17 +17,17 @@
 
 #include <string.h>
 
-static inline uns
-flags_to_pixel_size(uns flags)
+static inline uint
+flags_to_pixel_size(uint flags)
 {
-  uns pixel_size = color_space_channels[flags & IMAGE_COLOR_SPACE];
+  uint pixel_size = color_space_channels[flags & IMAGE_COLOR_SPACE];
   if (flags & IMAGE_ALPHA)
     pixel_size++;
   return pixel_size;
 }
 
 struct image *
-image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempool *pool)
+image_new(struct image_context *ctx, uint cols, uint rows, uint flags, struct mempool *pool)
 {
   DBG("image_new(cols=%u rows=%u flags=0x%x pool=%p)", cols, rows, flags, pool);
   flags &= IMAGE_NEW_FLAGS;
@@ -37,7 +37,7 @@ image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempo
       return NULL;
     }
   struct image *img;
-  uns channels, pixel_size, row_pixels_size, row_size, align;
+  uint channels, pixel_size, row_pixels_size, row_size, align;
   pixel_size = channels = flags_to_pixel_size(flags);
   if (!channels || channels > 4)
     {
@@ -67,7 +67,7 @@ image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempo
   row_pixels_size = cols * pixel_size;
   row_size = ALIGN_TO(row_pixels_size, align);
   u64 image_size_64 = (u64)row_size * rows;
-  u64 bytes_64 = image_size_64 + (sizeof(struct image) + IMAGE_SSE_ALIGN_SIZE - 1 + sizeof(uns));
+  u64 bytes_64 = image_size_64 + (sizeof(struct image) + IMAGE_SSE_ALIGN_SIZE - 1 + sizeof(uint));
   if (unlikely(bytes_64 > image_max_bytes))
     {
       IMAGE_ERROR(ctx, IMAGE_ERROR_INVALID_DIMENSIONS, "Image does not fit in memory");
@@ -97,7 +97,7 @@ image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempo
 }
 
 struct image *
-image_clone(struct image_context *ctx, struct image *src, uns flags, struct mempool *pool)
+image_clone(struct image_context *ctx, struct image *src, uint flags, struct mempool *pool)
 {
   DBG("image_clone(src=%p flags=0x%x pool=%p)", src, src->flags, pool);
   struct image *img;
@@ -123,7 +123,7 @@ image_clone(struct image_context *ctx, struct image *src, uns flags, struct memp
         {
           byte *s = src->pixels;
           byte *d = img->pixels;
-	  for (uns row = src->rows; row--; )
+	  for (uint row = src->rows; row--; )
             {
 	      memcpy(d, s, src->row_pixels_size);
 	      d += img->row_size;
@@ -152,8 +152,8 @@ image_clear(struct image_context *ctx UNUSED, struct image *img)
     if (img->flags & IMAGE_GAPS_PROTECTED)
       {
         byte *p = img->pixels;
-        uns bytes = img->cols * img->pixel_size;
-	for (uns row = img->rows; row--; p += img->row_size)
+        uint bytes = img->cols * img->pixel_size;
+	for (uint row = img->rows; row--; p += img->row_size)
 	  bzero(p, bytes);
       }
     else
@@ -161,7 +161,7 @@ image_clear(struct image_context *ctx UNUSED, struct image *img)
 }
 
 struct image *
-image_init_matrix(struct image_context *ctx, struct image *img, byte *pixels, uns cols, uns rows, uns row_size, uns flags)
+image_init_matrix(struct image_context *ctx, struct image *img, byte *pixels, uint cols, uint rows, uint row_size, uint flags)
 {
   DBG("image_init_matrix(img=%p pixels=%p cols=%u rows=%u row_size=%u flags=0x%x)", img, pixels, cols, rows, row_size, flags);
   if (unlikely(!image_dimensions_valid(cols, rows)))
@@ -181,7 +181,7 @@ image_init_matrix(struct image_context *ctx, struct image *img, byte *pixels, un
 }
 
 struct image *
-image_init_subimage(struct image_context *ctx UNUSED, struct image *img, struct image *src, uns left, uns top, uns cols, uns rows)
+image_init_subimage(struct image_context *ctx UNUSED, struct image *img, struct image *src, uint left, uint top, uint cols, uint rows)
 {
   DBG("image_init_subimage(img=%p src=%p left=%u top=%u cols=%u rows=%u)", img, src, left, top, cols, rows);
   ASSERT(left + cols <= src->cols && top + rows <= src->rows);
@@ -198,23 +198,23 @@ image_init_subimage(struct image_context *ctx UNUSED, struct image *img, struct 
 }
 
 byte *
-image_channels_format_to_name(uns format, byte *buf)
+image_channels_format_to_name(uint format, byte *buf)
 {
   byte *cs_name = color_space_id_to_name(format & IMAGE_COLOR_SPACE);
-  uns l = strlen(cs_name);
+  uint l = strlen(cs_name);
   memcpy(buf, cs_name, l + 1);
   if (format & IMAGE_ALPHA)
     strcpy(buf + l, "+Alpha");
   return buf;
 }
 
-uns
+uint
 image_name_to_channels_format(byte *name)
 {
-  uns i;
+  uint i;
   if (i = color_space_name_to_id(name))
     return i;
-  uns l = strlen(name);
+  uint l = strlen(name);
   if (l > 6 && !strcasecmp(name + l - 5, "+alpha"))
     {
       byte buf[l + 1];

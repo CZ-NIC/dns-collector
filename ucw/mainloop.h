@@ -72,21 +72,21 @@
 struct main_context {
   timestamp_t now;			/* [*] Current time in milliseconds since an unknown epoch. See main_get_time(). */
   timestamp_t idle_time;		/* [*] Total time in milliseconds spent by waiting for events. */
-  uns shutdown;				/* [*] Setting this to nonzero forces the main_loop() function to terminate. */
+  uint shutdown;				/* [*] Setting this to nonzero forces the main_loop() function to terminate. */
   clist file_list;
   clist file_active_list;
   clist hook_list;
   clist hook_done_list;
   clist process_list;
   clist signal_list;
-  uns file_cnt;
-  uns single_step;
+  uint file_cnt;
+  uint single_step;
 #ifdef CONFIG_UCW_EPOLL
   int epoll_fd;				/* File descriptor used for epoll */
   struct epoll_event *epoll_events;
   clist file_recalc_list;
 #else
-  uns poll_table_obsolete;
+  uint poll_table_obsolete;
   struct pollfd *poll_table;
   struct main_file **poll_file_table;
 #endif
@@ -195,7 +195,7 @@ static inline timestamp_t main_get_now(void)
 struct main_timer {
   cnode n;
   timestamp_t expires;
-  uns index;
+  uint index;
   void (*handler)(struct main_timer *tm);	/* [*] Function to be called when the timer expires. */
   void *data;					/* [*] Data for use by the handler */
 };
@@ -351,9 +351,9 @@ struct main_file {
   int (*read_handler)(struct main_file *fi);	/* [*] To be called when ready for reading/writing; must call file_chg() afterwards */
   int (*write_handler)(struct main_file *fi);
   void *data;					/* [*] Data for use by the handlers */
-  uns events;
+  uint events;
 #ifdef CONFIG_UCW_EPOLL
-  uns last_want_events;
+  uint last_want_events;
 #else
   struct pollfd *pollfd;
 #endif
@@ -421,9 +421,9 @@ void file_debug(struct main_file *fi);
 struct main_block_io {
   struct main_file file;
   byte *rbuf;					/* Read/write pointers for use by file_read/write */
-  uns rpos, rlen;
+  uint rpos, rlen;
   byte *wbuf;
-  uns wpos, wlen;
+  uint wpos, wlen;
   void (*read_done)(struct main_block_io *bio);	/* [*] Called when file_read is finished; rpos < rlen if EOF */
   void (*write_done)(struct main_block_io *bio);	/* [*] Called when file_write is finished */
   void (*error_handler)(struct main_block_io *bio, int cause);	/* [*] Handler to call on errors */
@@ -462,7 +462,7 @@ enum block_io_err_cause {
  * You can use a call with zero @len to cancel the current read, but all read data
  * will be thrown away.
  **/
-void block_io_read(struct main_block_io *bio, void *buf, uns len);
+void block_io_read(struct main_block_io *bio, void *buf, uint len);
 
 /**
  * Request that the main loop writes @len bytes of data from @buf to @bio.
@@ -475,7 +475,7 @@ void block_io_read(struct main_block_io *bio, void *buf, uns len);
  * If you call it with zero @len, it will cancel the previous write, but note
  * that some data may already be written.
  **/
-void block_io_write(struct main_block_io *bio, void *buf, uns len);
+void block_io_write(struct main_block_io *bio, void *buf, uint len);
 
 /**
  * Sets a timer for a file @bio. If the timer is not overwritten or disabled
@@ -539,18 +539,18 @@ struct main_rec_io {
   struct main_file file;
   byte *read_buf;
   byte *read_rec_start;				/* [*] Start of current record */
-  uns read_avail;				/* [*] How much data is available */
-  uns read_prev_avail;				/* [*] How much data was available in previous read_handler */
-  uns read_buf_size;				/* [*] Read buffer size allocated (can be set before rec_io_add()) */
-  uns read_started;				/* Reading requested by user */
-  uns read_running;				/* Reading really runs (read_started && not stopped by write_throttle_read) */
-  uns read_rec_max;				/* [*] Maximum record size (0=unlimited) */
+  uint read_avail;				/* [*] How much data is available */
+  uint read_prev_avail;				/* [*] How much data was available in previous read_handler */
+  uint read_buf_size;				/* [*] Read buffer size allocated (can be set before rec_io_add()) */
+  uint read_started;				/* Reading requested by user */
+  uint read_running;				/* Reading really runs (read_started && not stopped by write_throttle_read) */
+  uint read_rec_max;				/* [*] Maximum record size (0=unlimited) */
   clist busy_write_buffers;
   clist idle_write_buffers;
-  uns write_buf_size;				/* [*] Write buffer size allocated (can be set before rec_io_add()) */
-  uns write_watermark;				/* [*] How much data are waiting to be written */
-  uns write_throttle_read;			/* [*] If more than write_throttle_read bytes are buffered, stop reading; 0=no stopping */
-  uns (*read_handler)(struct main_rec_io *rio);	/* [*] Called whenever more bytes are read; returns 0 (want more) or number of bytes eaten */
+  uint write_buf_size;				/* [*] Write buffer size allocated (can be set before rec_io_add()) */
+  uint write_watermark;				/* [*] How much data are waiting to be written */
+  uint write_throttle_read;			/* [*] If more than write_throttle_read bytes are buffered, stop reading; 0=no stopping */
+  uint (*read_handler)(struct main_rec_io *rio);	/* [*] Called whenever more bytes are read; returns 0 (want more) or number of bytes eaten */
   int (*notify_handler)(struct main_rec_io *rio, int status);	/* [*] Called to notify about errors and other events */
 						/* Returns either HOOK_RETRY or HOOK_IDLE. */
   struct main_timer timer;
@@ -580,14 +580,14 @@ void rec_io_stop_read(struct main_rec_io *rio);
 /** Analogous to @block_io_set_timeout(). **/
 void rec_io_set_timeout(struct main_rec_io *rio, timestamp_t expires_delta);
 
-void rec_io_write(struct main_rec_io *rio, void *data, uns len);
+void rec_io_write(struct main_rec_io *rio, void *data, uint len);
 
 /**
  * An auxiliary function used for parsing of lines. When called in the @read_handler,
  * it searches for the end of line character. When a complete line is found, the length
  * of the line (including the end of line character) is returned. Otherwise, it returns zero.
  **/
-uns rec_io_parse_line(struct main_rec_io *rio);
+uint rec_io_parse_line(struct main_rec_io *rio);
 
 /**
  * Specifies what kind of error or other event happened, when the @notify_handler

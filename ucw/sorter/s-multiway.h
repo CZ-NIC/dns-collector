@@ -21,7 +21,7 @@ typedef struct P(mwt) {
 #endif
 } P(mwt);
 
-static inline void P(update_tree)(P(key) *keys, P(mwt) *tree, uns i)
+static inline void P(update_tree)(P(key) *keys, P(mwt) *tree, uint i)
 {
   while (i /= 2)
     {
@@ -52,7 +52,7 @@ static inline void P(update_tree)(P(key) *keys, P(mwt) *tree, uns i)
   asm volatile ("" : : : "memory");
 }
 
-static inline void P(set_tree)(P(key) *keys, P(mwt) *tree, uns i, int val)
+static inline void P(set_tree)(P(key) *keys, P(mwt) *tree, uint i, int val)
 {
   tree[i].i = val;
   P(update_tree)(keys, tree, i);
@@ -60,11 +60,11 @@ static inline void P(set_tree)(P(key) *keys, P(mwt) *tree, uns i, int val)
 
 static void P(multiway_merge)(struct sort_context *ctx UNUSED, struct sort_bucket **ins, struct sort_bucket *out)
 {
-  uns num_ins = 0;
+  uint num_ins = 0;
   while (ins[num_ins])
     num_ins++;
 
-  uns n2 = 1;
+  uint n2 = 1;
   while (n2 < num_ins)
     n2 *= 2;
 
@@ -72,10 +72,10 @@ static void P(multiway_merge)(struct sort_context *ctx UNUSED, struct sort_bucke
   struct fastbuf *fins[num_ins];
   P(key) keys[num_ins];
   P(mwt) tree[2*n2];
-  for (uns i=1; i<2*n2; i++)
+  for (uint i=1; i<2*n2; i++)
     tree[i] = (P(mwt)) { .i = -1 };
 
-  for (uns i=0; i<num_ins; i++)
+  for (uint i=0; i<num_ins; i++)
     {
       fins[i] = sbuck_read(ins[i]);
       if (P(read_key)(fins[i], &keys[i]))
@@ -84,7 +84,7 @@ static void P(multiway_merge)(struct sort_context *ctx UNUSED, struct sort_bucke
 
 #ifdef SORT_UNIFY
 
-  uns hits[num_ins];
+  uint hits[num_ins];
   P(key) *mkeys[num_ins], *key;
   struct fastbuf *mfb[num_ins];
 
@@ -101,7 +101,7 @@ static void P(multiway_merge)(struct sort_context *ctx UNUSED, struct sort_bucke
 	  continue;
 	}
 
-      uns m = 0;
+      uint m = 0;
       key = &keys[i];
       do
 	{
@@ -118,7 +118,7 @@ static void P(multiway_merge)(struct sort_context *ctx UNUSED, struct sort_bucke
 
       P(copy_merged)(mkeys, mfb, m, fout);
 
-      for (uns j=0; j<m; j++)
+      for (uint j=0; j<m; j++)
 	{
 	  i = hits[j];
 	  if (likely(P(read_key)(fins[i], &keys[i])))
@@ -131,7 +131,7 @@ static void P(multiway_merge)(struct sort_context *ctx UNUSED, struct sort_bucke
   /* Simplified version which does not support any unification */
   while (likely(tree[1].i >= 0))
     {
-      uns i = tree[1].i;
+      uint i = tree[1].i;
       P(key) UNUSED key = keys[i];
       P(copy_data)(&keys[i], fins[i], fout);
       if (unlikely(!P(read_key)(fins[i], &keys[i])))

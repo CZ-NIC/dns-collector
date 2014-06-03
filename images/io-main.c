@@ -303,7 +303,7 @@ image_file_name_to_format(byte *file_name)
 }
 
 struct image *
-image_io_read_data_prepare(struct image_io_read_data_internals *rdi, struct image_io *io, uns cols, uns rows, uns flags)
+image_io_read_data_prepare(struct image_io_read_data_internals *rdi, struct image_io *io, uint cols, uint rows, uint flags)
 {
   DBG("image_io_read_data_prepare()");
   if (rdi->need_transformations = io->cols != cols || io->rows != rows ||
@@ -323,7 +323,7 @@ image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image
       if (io->cols != rdi->image->cols || io->rows != rdi->image->rows)
         {
 	  DBG("Scaling image");
-	  uns flags = rdi->image->flags;
+	  uint flags = rdi->image->flags;
 	  if (!(rdi->need_transformations = ((io->flags ^ rdi->image->flags) & (IMAGE_NEW_FLAGS & ~IMAGE_PIXELS_ALIGNED))))
 	    flags = io->flags;
 	  struct image *img = image_new(io->context, io->cols, io->rows, flags, rdi->need_transformations ? NULL : io->pool);

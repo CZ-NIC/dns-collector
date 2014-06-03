@@ -147,8 +147,8 @@ libungif_read_data(struct image_io *io)
 
   /* Prepare image */
   struct image_io_read_data_internals rdi;
-  uns read_flags = io->flags;
-  uns cs = read_flags & IMAGE_COLOR_SPACE;
+  uint read_flags = io->flags;
+  uint cs = read_flags & IMAGE_COLOR_SPACE;
   if (cs != COLOR_SPACE_GRAYSCALE && cs != COLOR_SPACE_RGB)
     read_flags = (read_flags & ~IMAGE_COLOR_SPACE & IMAGE_CHANNELS_FORMAT) | COLOR_SPACE_RGB;
   if (unlikely(!image_io_read_data_prepare(&rdi, io, image->ImageDesc.Width, image->ImageDesc.Height, read_flags)))
@@ -164,7 +164,7 @@ libungif_read_data(struct image_io *io)
   byte *img_end = rdi.image->pixels + rdi.image->image_size;
 
   /* Handle deinterlacing */
-  uns dein_step, dein_next;
+  uint dein_step, dein_next;
   if (image->ImageDesc.Interlace)
     {
       DBG("Deinterlaced image");
@@ -179,7 +179,7 @@ libungif_read_data(struct image_io *io)
       case 1:
 	{
 	  byte pal[256], *pal_pos = pal, *pal_end = pal + 256;
-	  for (uns i = 0; i < (uns)color_map->ColorCount; i++, pal_pos++, palette++)
+	  for (uint i = 0; i < (uint)color_map->ColorCount; i++, pal_pos++, palette++)
 	    *pal_pos = rgb_to_gray_func(palette->Red, palette->Green, palette->Blue);
 	  if (pal_pos != pal_end)
 	    bzero(pal_pos, pal_end - pal_pos);
@@ -192,7 +192,7 @@ libungif_read_data(struct image_io *io)
 #	  define DO_ROW_END do{ \
 	      walk_row_start += dein_step; \
 	      while (walk_row_start >= img_end) \
-		{ uns n = dein_next >> 1; walk_row_start = rdi.image->pixels + n, dein_step = dein_next; dein_next = n; } \
+		{ uint n = dein_next >> 1; walk_row_start = rdi.image->pixels + n, dein_step = dein_next; dein_next = n; } \
 	    }while(0)
 #	  define IMAGE_WALK_PREFIX(x) walk_##x
 #	  define IMAGE_WALK_INLINE
@@ -208,7 +208,7 @@ libungif_read_data(struct image_io *io)
       case 2:
 	{
 	  byte pal[256 * 2], *pal_pos = pal, *pal_end = pal + 256 * 2;
-	  for (uns i = 0; i < (uns)color_map->ColorCount; i++, pal_pos += 2, palette++)
+	  for (uint i = 0; i < (uint)color_map->ColorCount; i++, pal_pos += 2, palette++)
 	    {
 	      pal_pos[0] = rgb_to_gray_func(palette->Red, palette->Green, palette->Blue);
 	      pal_pos[1] = 255;
@@ -231,7 +231,7 @@ libungif_read_data(struct image_io *io)
       case 3:
 	{
 	  byte pal[256 * 4], *pal_pos = pal, *pal_end = pal + 256 * 4;
-	  for (uns i = 0; i < (uns)color_map->ColorCount; i++, pal_pos += 4, palette++)
+	  for (uint i = 0; i < (uint)color_map->ColorCount; i++, pal_pos += 4, palette++)
 	    {
 	      pal_pos[0] = palette->Red;
 	      pal_pos[1] = palette->Green;
@@ -259,7 +259,7 @@ libungif_read_data(struct image_io *io)
       case 4:
 	{
 	  byte pal[256 * 4], *pal_pos = pal, *pal_end = pal + 256 * 4;
-	  for (uns i = 0; i < (uns)color_map->ColorCount; i++, pal_pos += 4, palette++)
+	  for (uint i = 0; i < (uint)color_map->ColorCount; i++, pal_pos += 4, palette++)
 	    {
 	      pal_pos[0] = palette->Red;
 	      pal_pos[1] = palette->Green;

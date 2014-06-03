@@ -29,7 +29,7 @@ tbf_limit(struct token_bucket_filter *f, timestamp_t now)
   b = MIN(b, f->burst);
   if (b >= 1)
     {
-      uns dropped = f->drop_count;
+      uint dropped = f->drop_count;
       f->bucket = b - 1;
       f->drop_count = 0;
       return dropped;
@@ -51,7 +51,7 @@ int main(void)
   for (timestamp_t now = 0; now < 3000; now += 77)
     {
       int res = tbf_limit(&t, now);
-      msg(L_DEBUG, "t=%u result=%d bucket=%f", (uns) now, res, t.bucket);
+      msg(L_DEBUG, "t=%u result=%d bucket=%f", (uint) now, res, t.bucket);
     }
   return 0;
 }

@@ -90,15 +90,15 @@ dynamic_test(void)
 
 #define MAX_STRINGS 200
 
-static uns count;
+static uint count;
 static char *str[MAX_STRINGS];
 
 static char *
 gen_string(void)
 {
-  uns l = random_max(11);
+  uint l = random_max(11);
   char *s = xmalloc(l + 1);
-  for (uns i = 0; i < l; i++)
+  for (uint i = 0; i < l; i++)
     s[i] = random_max('z' - 'a') + 'a';
   s[l] = 0;
   return s;
@@ -110,7 +110,7 @@ gen_unique_string(void)
   char *s;
 again:
   s = gen_string();
-  for (uns i = 0; i < count; i++)
+  for (uint i = 0; i < count; i++)
     if (!strcmp(s, str[i]))
       {
 	xfree(s);
@@ -136,7 +136,7 @@ delete(void)
 {
   if (!count)
     return;
-  uns i = random_max(count);
+  uint i = random_max(count);
   DBG("remove '%s'", str[i]);
   random_remove(str[i]);
   random_audit();
@@ -157,7 +157,7 @@ find(void)
     }
   else
     {
-      uns i = random_max(count);
+      uint i = random_max(count);
       DBG("positive find '%s'", str[i]);
       if (random_find(str[i]) != str[i])
 	ASSERT(0);
@@ -169,7 +169,7 @@ reset(void)
 {
   DBG("reset");
   random_cleanup();
-  for (uns i = 0; i < count; i++)
+  for (uint i = 0; i < count; i++)
     xfree(str[i]);
   count = 0;
   random_init();
@@ -180,7 +180,7 @@ static void
 random_test(void)
 {
   random_init();
-  for (uns i = 0; i < 10000; i++)
+  for (uint i = 0; i < 10000; i++)
     {
       int r = random_max(1000);
       if ((r -= 300) < 0)

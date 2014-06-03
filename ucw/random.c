@@ -14,16 +14,16 @@
 /* We expect the random generator in libc to give at least 30 bits of randomness */
 COMPILE_ASSERT(RAND_MAX_RANGE_TEST, RAND_MAX >= (1 << 30)-1);
 
-uns
+uint
 random_u32(void)
 {
   return (random() & 0xffff) | ((random() & 0xffff) << 16);
 }
 
-uns
-random_max(uns max)
+uint
+random_max(uint max)
 {
-  uns r, l;
+  uint r, l;
 
   ASSERT(max <= (1 << 30));
   l = (RAND_MAX + 1U) - ((RAND_MAX + 1U) % max);

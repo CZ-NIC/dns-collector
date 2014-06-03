@@ -11,18 +11,18 @@ static void explain_signature(struct image_signature *sig, void (*msg)(byte *tex
 {
   byte buf[1024], *line = buf;
   MSG("signature: flags=0x%x df=%u dh=%u f=(%u", sig->flags, sig->df, sig->dh, sig->vec.f[0]);
-  for (uns i = 1; i < IMAGE_VEC_F; i++)
+  for (uint i = 1; i < IMAGE_VEC_F; i++)
     MSG(" %u", sig->vec.f[i]);
   MSG(")");
   LINE;
-  for (uns j = 0; j < sig->len; j++)
+  for (uint j = 0; j < sig->len; j++)
     {
       struct image_region *reg = sig->reg + j;
       MSG("region %u: wa=%u wb=%u f=(%u", j, reg->wa, reg->wb, reg->f[0]);
-      for (uns i = 1; i < IMAGE_VEC_F; i++)
+      for (uint i = 1; i < IMAGE_VEC_F; i++)
 	MSG(" %u", reg->f[i]);
       MSG(") h=(%u", reg->h[0]);
-      for (uns i = 1; i < IMAGE_REG_H; i++)
+      for (uint i = 1; i < IMAGE_REG_H; i++)
 	MSG(" %u", reg->h[i]);
       MSG(")");
       LINE;
@@ -37,13 +37,13 @@ static void explain_signature(struct image_signature *sig, void (*msg)(byte *tex
 #define MSGL(x...) do{ MSG(x); LINE; }while(0)
 
 #ifndef EXPLAIN
-static uns image_signatures_dist_integrated(struct image_signature *sig1, struct image_signature *sig2)
+static uint image_signatures_dist_integrated(struct image_signature *sig1, struct image_signature *sig2)
 #else
-static uns image_signatures_dist_integrated_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
+static uint image_signatures_dist_integrated_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 #endif
 {
-  uns dist[IMAGE_REG_MAX * IMAGE_REG_MAX], p[IMAGE_REG_MAX], q[IMAGE_REG_MAX];
-  uns n, i, j, k, l, s, d;
+  uint dist[IMAGE_REG_MAX * IMAGE_REG_MAX], p[IMAGE_REG_MAX], q[IMAGE_REG_MAX];
+  uint n, i, j, k, l, s, d;
   struct image_region *reg1, *reg2;
 #ifdef EXPLAIN
   byte buf[1024], *line = buf;
@@ -67,12 +67,12 @@ static uns image_signatures_dist_integrated_explain(struct image_signature *sig1
     for (j = 0, reg2 = sig2->reg; j < sig2->len; j++, reg2++)
       for (i = 0, reg1 = sig1->reg; i < sig1->len; i++, reg1++)
         {
-	  uns dt = 0, ds = 0, dp = 0, d;
-	  for (uns i = 0; i < IMAGE_VEC_F; i++)
+	  uint dt = 0, ds = 0, dp = 0, d;
+	  for (uint i = 0; i < IMAGE_VEC_F; i++)
 	    dt += image_sig_cmp_features_weights[i] * isqr((int)reg1->f[i] - (int)reg2->f[i]);
-	  for (uns i = 0; i < 3; i++)
+	  for (uint i = 0; i < 3; i++)
 	    ds += image_sig_cmp_features_weights[IMAGE_VEC_F + i] * isqr((int)reg1->h[i] - (int)reg2->h[i]);
-	  for (uns i = 3; i < 5; i++)
+	  for (uint i = 3; i < 5; i++)
 	    dp += image_sig_cmp_features_weights[IMAGE_VEC_F + i] * isqr((int)reg1->h[i] - (int)reg2->h[i]);
 #if 0
 	  int x1, y1, x2, y2;
@@ -98,7 +98,7 @@ static uns image_signatures_dist_integrated_explain(struct image_signature *sig1
 	    }
 	  MSGL("%d %d %d %d", x1, y1, x2, y2);
 	  dp = image_sig_cmp_features_weights[IMAGE_VEC_F + 3] * isqr(x1 - x2) +
-    	       image_sig_cmp_features_weights[IMAGE_VEC_F + 4] * isqr(y1 - y2);
+	       image_sig_cmp_features_weights[IMAGE_VEC_F + 4] * isqr(y1 - y2);
 #endif
 #if 0
 	  d = dt * (4 + MIN(8, (ds >> 12))) * (4 + MIN(8, (dp >> 10))) + (ds >> 11) + (dp >> 10);
@@ -129,10 +129,10 @@ static uns image_signatures_dist_integrated_explain(struct image_signature *sig1
 	  dist[n++] = (d << 8) + i + (j << 4);
 	  MSG("[%u, %u] d=%u dt=%u ds=%u dp=%u df=(%d", i, j, d, dt, ds, dp, (int)reg1->f[0] - (int)reg2->f[0]);
 #ifdef EXPLAIN
-	  for (uns i = 1; i < IMAGE_VEC_F; i++)
+	  for (uint i = 1; i < IMAGE_VEC_F; i++)
 	    MSG(" %d", (int)reg1->f[i] - (int)reg2->f[i]);
 	  MSG(") dh=(%d", (int)reg1->h[0] - (int)reg2->h[0]);
-	  for (uns i = 1; i < IMAGE_REG_H; i++)
+	  for (uint i = 1; i < IMAGE_REG_H; i++)
 	    MSG(" %d", (int)reg1->h[i] - (int)reg2->h[i]);
 	  MSGL(")");
 #endif
@@ -142,13 +142,13 @@ static uns image_signatures_dist_integrated_explain(struct image_signature *sig1
     for (j = 0, reg2 = sig2->reg; j < sig2->len; j++, reg2++)
       for (i = 0, reg1 = sig1->reg; i < sig1->len; i++, reg1++)
         {
-	  uns dt = 0;
-	  for (uns i = 0; i < IMAGE_VEC_F; i++)
+	  uint dt = 0;
+	  for (uint i = 0; i < IMAGE_VEC_F; i++)
 	    dt += image_sig_cmp_features_weights[i] * isqr((int)reg1->f[i] - (int)reg2->f[i]);
 	  dist[n++] = (dt << 12) + i + (j << 4);
 #ifdef EXPLAIN
 	  MSG("[%u, %u] dt=%u df=(%d", i, j, dt, (int)reg1->f[0] - (int)reg2->f[0]);
-	  for (uns i = 1; i < IMAGE_VEC_F; i++)
+	  for (uint i = 1; i < IMAGE_VEC_F; i++)
 	    MSG(" %d", (int)reg1->f[i] - (int)reg2->f[i]);
 	  MSGL(")");
 #endif
@@ -168,7 +168,7 @@ static uns image_signatures_dist_integrated_explain(struct image_signature *sig1
   image_signatures_dist_integrated_sort(dist, n);
 
   /* Compute significance matrix and resulting distance */
-  uns sum = 0;
+  uint sum = 0;
   MSGL("Significance matrix:");
   for (k = 0, l = 128; l; k++)
     {
@@ -193,12 +193,12 @@ static uns image_signatures_dist_integrated_explain(struct image_signature *sig1
       reg1 = sig1->reg + i;
       reg2 = sig2->reg + j;
       MSG("[%u, %u] s=%u d=%u df=(%d", i, j, s, d, (int)reg1->f[0] - (int)reg2->f[0]);
-      for (uns i = 1; i < IMAGE_VEC_F; i++)
+      for (uint i = 1; i < IMAGE_VEC_F; i++)
         MSG(" %d", (int)reg1->f[i] - (int)reg2->f[i]);
       if (!((sig1->flags | sig2->flags) & IMAGE_SIG_TEXTURED))
         {
           MSG(") dh=(%d", (int)reg1->h[0] - (int)reg2->h[0]);
-          for (uns i = 1; i < IMAGE_REG_H; i++)
+          for (uint i = 1; i < IMAGE_REG_H; i++)
             MSG(" %d", (int)reg1->h[i] - (int)reg2->h[i]);
 	}
       MSGL(")");
@@ -207,8 +207,8 @@ static uns image_signatures_dist_integrated_explain(struct image_signature *sig1
 
   d = sum / 32;
 
-  uns a = sig1->cols * sig2->rows;
-  uns b = sig1->rows * sig2->cols;
+  uint a = sig1->cols * sig2->rows;
+  uint b = sig1->rows * sig2->cols;
   if (a < 2 * b && b < 2 * a)
     d = d * 2;
   else if (a < 4 * b && b < 4 * a)
@@ -228,9 +228,9 @@ static uns image_signatures_dist_integrated_explain(struct image_signature *sig1
 }
 
 #ifndef EXPLAIN
-static uns image_signatures_dist_fuzzy(struct image_signature *sig1, struct image_signature *sig2)
+static uint image_signatures_dist_fuzzy(struct image_signature *sig1, struct image_signature *sig2)
 #else
-static uns image_signatures_dist_fuzzy_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
+static uint image_signatures_dist_fuzzy_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 #endif
 {
 #ifdef EXPLAIN
@@ -247,27 +247,27 @@ static uns image_signatures_dist_fuzzy_explain(struct image_signature *sig1, str
       return ~0U;
     }
 
-  uns cnt1 = sig1->len;
-  uns cnt2 = sig2->len;
+  uint cnt1 = sig1->len;
+  uint cnt2 = sig2->len;
   struct image_region *reg1 = sig1->reg;
   struct image_region *reg2 = sig2->reg;
-  uns mf[IMAGE_REG_MAX][IMAGE_REG_MAX], mh[IMAGE_REG_MAX][IMAGE_REG_MAX];
-  uns lf[IMAGE_REG_MAX * 2], lh[IMAGE_REG_MAX * 2];
-  uns df = sig1->df + sig2->df, dh = sig1->dh + sig2->dh;
+  uint mf[IMAGE_REG_MAX][IMAGE_REG_MAX], mh[IMAGE_REG_MAX][IMAGE_REG_MAX];
+  uint lf[IMAGE_REG_MAX * 2], lh[IMAGE_REG_MAX * 2];
+  uint df = sig1->df + sig2->df, dh = sig1->dh + sig2->dh;
 
   /* Compute distance matrix */
-  for (uns i = 0; i < cnt1; i++)
-    for (uns j = 0; j < cnt2; j++)
+  for (uint i = 0; i < cnt1; i++)
+    for (uint j = 0; j < cnt2; j++)
       {
-	uns d = 0;
-	for (uns k = 0; k < IMAGE_VEC_F; k++)
+	uint d = 0;
+	for (uint k = 0; k < IMAGE_VEC_F; k++)
 	  {
 	    int dif = reg1[i].f[k] - reg2[j].f[k];
 	    d += image_sig_cmp_features_weights[k] * dif * dif;
 	  }
 	mf[i][j] = d;
 	d = 0;
-	for (uns k = 0; k < IMAGE_REG_H; k++)
+	for (uint k = 0; k < IMAGE_REG_H; k++)
 	  {
 	    int dif = reg1[i].h[k] - reg2[j].h[k];
 	    d += image_sig_cmp_features_weights[k + IMAGE_VEC_F] * dif * dif;
@@ -275,11 +275,11 @@ static uns image_signatures_dist_fuzzy_explain(struct image_signature *sig1, str
 	mh[i][j] = d;
       }
 
-  uns lfs = 0, lhs = 0;
-  for (uns i = 0; i < cnt1; i++)
+  uint lfs = 0, lhs = 0;
+  for (uint i = 0; i < cnt1; i++)
     {
-      uns f = mf[i][0], h = mh[i][0];
-      for (uns j = 1; j < cnt2; j++)
+      uint f = mf[i][0], h = mh[i][0];
+      for (uint j = 1; j < cnt2; j++)
         {
 	  f = MIN(f, mf[i][j]);
 	  h = MIN(h, mh[i][j]);
@@ -289,10 +289,10 @@ static uns image_signatures_dist_fuzzy_explain(struct image_signature *sig1, str
       lfs += lf[i] * (6 * reg1[i].wa + 2 * reg1[i].wb);
       lhs += lh[i] * reg1[i].wa;
     }
-  for (uns i = 0; i < cnt2; i++)
+  for (uint i = 0; i < cnt2; i++)
     {
-      uns f = mf[0][i], h = mh[0][i];
-      for (uns j = 1; j < cnt1; j++)
+      uint f = mf[0][i], h = mh[0][i];
+      for (uint j = 1; j < cnt1; j++)
         {
 	  f = MIN(f, mf[j][i]);
 	  h = MIN(h, mh[j][i]);
@@ -303,12 +303,12 @@ static uns image_signatures_dist_fuzzy_explain(struct image_signature *sig1, str
       lhs += lh[i] * reg2[i].wa;
     }
 
-  uns measure = lfs * 6 + lhs * 2 * 8;
+  uint measure = lfs * 6 + lhs * 2 * 8;
 
 #ifdef EXPLAIN
   /* Display similarity vectors */
   MSG("Lf=(");
-  for (uns i = 0; i < cnt1 + cnt2; i++)
+  for (uint i = 0; i < cnt1 + cnt2; i++)
     {
       if (i)
 	MSG(" ");
@@ -318,7 +318,7 @@ static uns image_signatures_dist_fuzzy_explain(struct image_signature *sig1, str
     }
   MSGL(")");
   MSG("Lh=(");
-  for (uns i = 0; i < cnt1 + cnt2; i++)
+  for (uint i = 0; i < cnt1 + cnt2; i++)
     {
       if (i)
 	MSG(" ");
@@ -336,9 +336,9 @@ static uns image_signatures_dist_fuzzy_explain(struct image_signature *sig1, str
 }
 
 #ifndef EXPLAIN
-static uns image_signatures_dist_average(struct image_signature *sig1, struct image_signature *sig2)
+static uint image_signatures_dist_average(struct image_signature *sig1, struct image_signature *sig2)
 #else
-static uns image_signatures_dist_average_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
+static uint image_signatures_dist_average_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 #endif
 {
 #ifdef EXPLAIN
@@ -346,10 +346,10 @@ static uns image_signatures_dist_average_explain(struct image_signature *sig1, s
   MSGL("Average matching");
 #endif
 
-  uns dist = 0;
-  for (uns i = 0; i < IMAGE_VEC_F; i++)
+  uint dist = 0;
+  for (uint i = 0; i < IMAGE_VEC_F; i++)
     {
-      uns d = image_sig_cmp_features_weights[0] * isqr((int)sig1->vec.f[i] - (int)sig2->vec.f[i]);
+      uint d = image_sig_cmp_features_weights[0] * isqr((int)sig1->vec.f[i] - (int)sig2->vec.f[i]);
       MSGL("feature %u: d=%u (%u %u)", i, d, sig1->vec.f[i], sig2->vec.f[i]);
       dist += d;
     }
@@ -360,10 +360,10 @@ static uns image_signatures_dist_average_explain(struct image_signature *sig1, s
 
 #ifndef EXPLAIN
 #define CALL(x) image_signatures_dist_##x(sig1, sig2)
-uns image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2)
+uint image_signatures_dist(struct image_signature *sig1, struct image_signature *sig2)
 #else
 #define CALL(x) image_signatures_dist_##x##_explain(sig1, sig2, msg, param)
-uns image_signatures_dist_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
+uint image_signatures_dist_explain(struct image_signature *sig1, struct image_signature *sig2, void (*msg)(byte *text, void *param), void *param)
 #endif
 {
   if (!sig1->len)

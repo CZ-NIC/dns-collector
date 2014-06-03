@@ -73,10 +73,10 @@ image_scale_nearest_x(struct image *dest, struct image *src)
 static void
 image_scale_nearest_y(struct image *dest, struct image *src)
 {
-  uns y_inc = (src->rows << 16) / dest->rows;
-  uns y_pos = y_inc >> 1;
+  uint y_inc = (src->rows << 16) / dest->rows;
+  uint y_pos = y_inc >> 1;
   byte *dest_pos = dest->pixels;
-  for (uns row_counter = dest->rows; row_counter--; )
+  for (uint row_counter = dest->rows; row_counter--; )
     {
       byte *src_pos = src->pixels + (y_pos >> 16) * src->row_size;
       y_pos += y_inc;
@@ -94,22 +94,22 @@ image_scale_linear_y(struct image *dest, struct image *src)
   /* Handle problematic special case */
   if (src->rows == 1)
     {
-      for (uns y_counter = dest->rows; y_counter--; dest_row += dest->row_size)
+      for (uint y_counter = dest->rows; y_counter--; dest_row += dest->row_size)
         memcpy(dest_row, src->pixels, src->row_pixels_size);
       return;
     }
   /* Initialize the main loop */
-  uns y_inc  = ((src->rows - 1) << 16) / (dest->rows - 1), y_pos = 0;
+  uint y_inc  = ((src->rows - 1) << 16) / (dest->rows - 1), y_pos = 0;
 #ifdef __SSE2__
   __m128i zero = _mm_setzero_si128();
 #endif
   /* Main loop */
-  for (uns y_counter = dest->rows; --y_counter; )
+  for (uint y_counter = dest->rows; --y_counter; )
     {
-      uns coef = y_pos & 0xffff;
+      uint coef = y_pos & 0xffff;
       byte *src_row_1 = src->pixels + (y_pos >> 16) * src->row_size;
       byte *src_row_2 = src_row_1 + src->row_size;
-      uns i = 0;
+      uint i = 0;
 #ifdef __SSE2__
       /* SSE2 */
       __m128i sse_coef = _mm_set1_epi16(coef >> 9);
@@ -241,7 +241,7 @@ image_scale(struct image_context *ctx, struct image *dest, struct image *src)
 }
 
 void
-image_dimensions_fit_to_box(uns *cols, uns *rows, uns max_cols, uns max_rows, uns upsample)
+image_dimensions_fit_to_box(uint *cols, uint *rows, uint max_cols, uint max_rows, uint upsample)
 {
   ASSERT(image_dimensions_valid(*cols, *rows));
   ASSERT(image_dimensions_valid(max_cols, max_rows));

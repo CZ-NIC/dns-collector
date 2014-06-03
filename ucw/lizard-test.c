@@ -31,8 +31,8 @@ int
 main(int argc, char **argv)
 {
   int opt;
-  uns action = 't';
-  uns crash = 0;
+  uint action = 't';
+  uint crash = 0;
   log_init(argv[0]);
   while ((opt = cf_getopt(argc, argv, options, CF_NO_LONG_OPTS, NULL)) >= 0)
     switch (opt)
@@ -54,7 +54,7 @@ main(int argc, char **argv)
 
   void *mi, *mo;
   int li, lo;
-  uns adler = 0;
+  uint adler = 0;
 
   struct stat st;
   stat(argv[optind], &st);

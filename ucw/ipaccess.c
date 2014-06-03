@@ -40,7 +40,7 @@ addrmask_parser(char *c, void *ptr)
     return err;
   if (p)
     {
-      uns len;
+      uint len;
       if (!cf_parse_int(p, &len) && len <= 32)
 	am->mask = ~(len == 32 ? 0 : ~0U >> len);
       else if (cf_parse_ip(p, &am->mask))

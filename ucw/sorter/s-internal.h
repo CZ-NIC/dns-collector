@@ -73,7 +73,7 @@ typedef struct {
 
 static inline void *P(internal_get_data)(P(key) *key)
 {
-  uns ksize = SORT_KEY_SIZE(*key);
+  uint ksize = SORT_KEY_SIZE(*key);
 #ifdef SORT_UNIFY
   ksize = ALIGN_TO(ksize, CPU_STRUCT_ALIGN);
 #endif
@@ -129,18 +129,18 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   size_t remains = bufsize - CPU_PAGE_SIZE;
   do
     {
-      uns ksize = SORT_KEY_SIZE(key);
+      uint ksize = SORT_KEY_SIZE(key);
 #ifdef SORT_UNIFY
-      uns ksize_aligned = ALIGN_TO(ksize, CPU_STRUCT_ALIGN);
+      uint ksize_aligned = ALIGN_TO(ksize, CPU_STRUCT_ALIGN);
 #else
-      uns ksize_aligned = ksize;
+      uint ksize_aligned = ksize;
 #endif
-      uns dsize = SORT_DATA_SIZE(key);
-      uns recsize = ALIGN_TO(ksize_aligned + dsize, CPU_STRUCT_ALIGN);
+      uint dsize = SORT_DATA_SIZE(key);
+      uint recsize = ALIGN_TO(ksize_aligned + dsize, CPU_STRUCT_ALIGN);
       size_t totalsize = recsize + sizeof(P(internal_item_t)) + P(internal_workspace)(&key);
       if (unlikely(totalsize > remains
 #ifdef CPU_64BIT_POINTERS
-		   || item >= item_array + ~0U		// The number of items must fit in an uns
+		   || item >= item_array + ~0U		// The number of items must fit in an uint
 #endif
 	 ))
 	{
@@ -163,7 +163,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
   while (P(read_key)(in, &key));
   last_item = item;
 
-  uns count = last_item - item_array;
+  uint count = last_item - item_array;
   void *workspace UNUSED = ALIGN_PTR(last_item, CPU_PAGE_SIZE);
   SORT_XTRACE(4, "s-internal: Read %u items (%s items, %s workspace, %s data)",
 	count,
@@ -187,7 +187,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
     bout = bout_only;
   struct fastbuf *out = sbuck_write(bout);
   bout->runs++;
-  uns merged UNUSED = 0;
+  uint merged UNUSED = 0;
   for (item = item_array; item < last_item; item++)
     {
 #ifdef SORT_UNIFY
@@ -199,7 +199,7 @@ static int P(internal)(struct sort_context *ctx, struct sort_bucket *bin, struct
 	  void **data_array = workspace;
 	  key_array[0] = item[0].key;
 	  data_array[0] = P(internal_get_data)(key_array[0]);
-	  uns cnt;
+	  uint cnt;
 	  for (cnt=1; item+cnt < last_item && !P(compare)(key_array[0], item[cnt].key); cnt++)
 	    {
 	      key_array[cnt] = item[cnt].key;
@@ -231,11 +231,11 @@ P(internal_estimate)(struct sort_context *ctx, struct sort_bucket *b UNUSED)
 {
   // Most of this is just wild guesses
 #ifdef SORT_VAR_KEY
-  uns avg = ALIGN_TO(sizeof(P(key))/4, CPU_STRUCT_ALIGN);
+  uint avg = ALIGN_TO(sizeof(P(key))/4, CPU_STRUCT_ALIGN);
 #else
-  uns avg = ALIGN_TO(sizeof(P(key)), CPU_STRUCT_ALIGN);
+  uint avg = ALIGN_TO(sizeof(P(key)), CPU_STRUCT_ALIGN);
 #endif
-  uns ws = 0;
+  uint ws = 0;
 #ifdef SORT_UNIFY
   ws += sizeof(void *);
 #endif

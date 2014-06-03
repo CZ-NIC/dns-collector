@@ -17,7 +17,7 @@
 /*** UTF-8 ***/
 
 int
-bget_utf8_slow(struct fastbuf *b, uns repl)
+bget_utf8_slow(struct fastbuf *b, uint repl)
 {
   int c = bgetc(b);
   int code;
@@ -58,7 +58,7 @@ bget_utf8_slow(struct fastbuf *b, uns repl)
 }
 
 int
-bget_utf8_32_slow(struct fastbuf *b, uns repl)
+bget_utf8_32_slow(struct fastbuf *b, uint repl)
 {
   int c = bgetc(b);
   int code;
@@ -114,7 +114,7 @@ bget_utf8_32_slow(struct fastbuf *b, uns repl)
 }
 
 void
-bput_utf8_slow(struct fastbuf *b, uns u)
+bput_utf8_slow(struct fastbuf *b, uint u)
 {
   ASSERT(u < 65536);
   if (u < 0x80)
@@ -133,7 +133,7 @@ bput_utf8_slow(struct fastbuf *b, uns u)
 }
 
 void
-bput_utf8_32_slow(struct fastbuf *b, uns u)
+bput_utf8_32_slow(struct fastbuf *b, uint u)
 {
   ASSERT(u < (1U<<31));
   if (u < 0x80)
@@ -172,11 +172,11 @@ bput_utf8_32_slow(struct fastbuf *b, uns u)
 /*** UTF-16 ***/
 
 int
-bget_utf16_be_slow(struct fastbuf *b, uns repl)
+bget_utf16_be_slow(struct fastbuf *b, uint repl)
 {
   if (bpeekc(b) < 0)
     return -1;
-  uns u = bgetw_be(b), x, y;
+  uint u = bgetw_be(b), x, y;
   if ((int)u < 0)
     return repl;
   if ((x = u - 0xd800) >= 0x800)
@@ -187,11 +187,11 @@ bget_utf16_be_slow(struct fastbuf *b, uns repl)
 }
 
 int
-bget_utf16_le_slow(struct fastbuf *b, uns repl)
+bget_utf16_le_slow(struct fastbuf *b, uint repl)
 {
   if (bpeekc(b) < 0)
     return -1;
-  uns u = bgetw_le(b), x, y;
+  uint u = bgetw_le(b), x, y;
   if ((int)u < 0)
     return repl;
   if ((x = u - 0xd800) >= 0x800)
@@ -202,7 +202,7 @@ bget_utf16_le_slow(struct fastbuf *b, uns repl)
 }
 
 void
-bput_utf16_be_slow(struct fastbuf *b, uns u)
+bput_utf16_be_slow(struct fastbuf *b, uint u)
 {
   if (u < 0xd800 || (u < 0x10000 && u >= 0xe000))
     {
@@ -221,7 +221,7 @@ bput_utf16_be_slow(struct fastbuf *b, uns u)
 }
 
 void
-bput_utf16_le_slow(struct fastbuf *b, uns u)
+bput_utf16_le_slow(struct fastbuf *b, uint u)
 {
   if (u < 0xd800 || (u < 0x10000 && u >= 0xe000))
     {
@@ -261,9 +261,9 @@ int main(int argc, char **argv)
 #undef F
   };
 
-  uns func = ~0U;
+  uint func = ~0U;
   if (argc > 1)
-    for (uns i = 0; i < ARRAY_SIZE(names); i++)
+    for (uint i = 0; i < ARRAY_SIZE(names); i++)
       if (!strcasecmp(names[i], argv[1]))
 	func = i;
   if (!~func)
@@ -275,7 +275,7 @@ int main(int argc, char **argv)
   struct fastbuf *b = fbgrow_create(8);
   if (func < FUNC_BPUT_UTF8)
     {
-      uns u;
+      uint u;
       while (scanf("%x", &u) == 1)
 	bputc(b, u);
       fbgrow_rewind(b);
@@ -306,7 +306,7 @@ int main(int argc, char **argv)
     }
   else
     {
-      uns u, i = 0;
+      uint u, i = 0;
       while (scanf("%x", &u) == 1)
         {
 	  switch (func)

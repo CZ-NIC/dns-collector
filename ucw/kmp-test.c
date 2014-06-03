@@ -26,7 +26,7 @@
 #include <ucw/kmp-search.h>
 #define KMPS_PREFIX(x) kmp1s2_##x
 #define KMPS_KMP_PREFIX(x) kmp1_##x
-#define KMPS_VARS uns count;
+#define KMPS_VARS uint count;
 #define KMPS_INIT(kmp,src,s) s->u.count = 0
 #define KMPS_FOUND(kmp,src,s) s->u.count++
 #include <ucw/kmp-search.h>
@@ -58,8 +58,8 @@ test1(void)
 #define KMP_USE_UTF8
 #define KMP_TOLOWER
 #define KMP_ONLYALPHA
-#define KMP_STATE_VARS char *str; uns id;
-#define KMP_ADD_EXTRA_ARGS uns id
+#define KMP_STATE_VARS char *str; uint id;
+#define KMP_ADD_EXTRA_ARGS uint id
 #define KMP_VARS char *start;
 #define KMP_ADD_INIT(kmp,src) kmp->u.start = src
 #define KMP_ADD_NEW(kmp,src,s) do{ TRACE("Inserting string %s with id %d", kmp->u.start, id); \
@@ -96,15 +96,15 @@ test2(void)
 /* TEST3 - random tests */
 
 #define KMP_PREFIX(x) kmp3_##x
-#define KMP_STATE_VARS uns index;
-#define KMP_ADD_EXTRA_ARGS uns index
+#define KMP_STATE_VARS uint index;
+#define KMP_ADD_EXTRA_ARGS uint index
 #define KMP_VARS char *start;
 #define KMP_ADD_INIT(kmp,src) kmp->u.start = src
 #define KMP_ADD_NEW(kmp,src,s) s->u.index = index
 #define KMP_ADD_DUP(kmp,src,s) *(kmp->u.start) = 0
 #define KMP_WANT_CLEANUP
 #define KMP_WANT_SEARCH
-#define KMPS_VARS uns sum, *cnt;
+#define KMPS_VARS uint sum, *cnt;
 #define KMPS_FOUND(kmp,src,s) do{ ASSERT(s->u.cnt[s->out->u.index]); s->u.cnt[s->out->u.index]--; s->u.sum--; }while(0)
 #include <ucw/kmp.h>
 
@@ -113,39 +113,39 @@ test3(void)
 {
   TRACE("Running test3");
   struct mempool *pool = mp_new(1024);
-  for (uns testn = 0; testn < 100; testn++)
+  for (uint testn = 0; testn < 100; testn++)
   {
     mp_flush(pool);
-    uns n = random_max(100);
+    uint n = random_max(100);
     char *s[n];
     struct kmp3_struct kmp;
     kmp3_init(&kmp);
-    for (uns i = 0; i < n; i++)
+    for (uint i = 0; i < n; i++)
       {
-        uns m = random_max(10);
+        uint m = random_max(10);
         s[i] = mp_alloc(pool, m + 1);
-        for (uns j = 0; j < m; j++)
+        for (uint j = 0; j < m; j++)
 	  s[i][j] = 'a' + random_max(3);
         s[i][m] = 0;
         kmp3_add(&kmp, s[i], i);
       }
     kmp3_build(&kmp);
-    for (uns i = 0; i < 10; i++)
+    for (uint i = 0; i < 10; i++)
       {
-        uns m = random_max(100);
+        uint m = random_max(100);
         byte b[m + 1];
-        for (uns j = 0; j < m; j++)
+        for (uint j = 0; j < m; j++)
 	  b[j] = 'a' + random_max(4);
         b[m] = 0;
-        uns cnt[n];
+        uint cnt[n];
 	struct kmp3_search search;
 	search.u.sum = 0;
 	search.u.cnt = cnt;
-        for (uns j = 0; j < n; j++)
+        for (uint j = 0; j < n; j++)
           {
 	    cnt[j] = 0;
 	    if (*s[j])
-	      for (uns k = 0; k < m; k++)
+	      for (uint k = 0; k < m; k++)
 	        if (!strncmp(b + k, s[j], strlen(s[j])))
 	          cnt[j]++, search.u.sum++;
 	  }
@@ -168,10 +168,10 @@ kmp4_eq(struct kmp4_struct *kmp UNUSED, byte *a, byte *b)
   return (a == b) || (a && b && *a == *b);
 }
 
-static inline uns
+static inline uint
 kmp4_hash(struct kmp4_struct *kmp UNUSED, struct kmp4_state *s, byte *c)
 {
-  return (c ? (*c << 16) : 0) + (uns)(uintptr_t)s;
+  return (c ? (*c << 16) : 0) + (uint)(uintptr_t)s;
 }
 
 #define KMP_PREFIX(x) kmp4_##x

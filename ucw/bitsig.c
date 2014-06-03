@@ -48,18 +48,18 @@
 #include <string.h>
 
 struct bitsig {
-  uns l, m, n, maxn, max_m_mult;
+  uint l, m, n, maxn, max_m_mult;
   u32 hash[4];
-  uns hindex;
+  uint hindex;
   byte array[0];
 };
 
 struct bitsig *
-bitsig_init(uns perrlog, uns maxn)
+bitsig_init(uint perrlog, uint maxn)
 {
   struct bitsig *b;
   u64 m;
-  uns mbytes;
+  uint mbytes;
 
   m = ((u64) maxn * perrlog * 145 + 99) / 100;
   if (m >= (u64) 1 << 32)
@@ -89,7 +89,7 @@ bitsig_hash_init(struct bitsig *b, byte *item)
   b->hindex = 0;
 }
 
-static inline uns
+static inline uint
 bitsig_hash_bit(struct bitsig *b)
 {
   u32 h;
@@ -106,7 +106,7 @@ bitsig_hash_bit(struct bitsig *b)
 int
 bitsig_member(struct bitsig *b, byte *item)
 {
-  uns i, bit;
+  uint i, bit;
 
   bitsig_hash_init(b, item);
   for (i=0; i<b->l; i++)
@@ -121,7 +121,7 @@ bitsig_member(struct bitsig *b, byte *item)
 int
 bitsig_insert(struct bitsig *b, byte *item)
 {
-  uns i, bit, was;
+  uint i, bit, was;
 
   bitsig_hash_init(b, item);
   was = 1;

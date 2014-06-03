@@ -134,10 +134,10 @@ sub gen_tabs {
   my %hash = ();
 
   print H "extern const byte xml_char_tab1[];\n";
-  print H "extern const uns xml_char_tab2[];\n";
+  print H "extern const uint xml_char_tab2[];\n";
   print H "extern const byte xml_char_tab3[];\n";
 
-  print C "const uns xml_char_tab2[] = {\n  ";
+  print C "const uint xml_char_tab2[] = {\n  ";
   for (my $t=0; $t<256; $t++) {
     my $i = $t * 256;
     my @x = ();

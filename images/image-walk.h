@@ -99,11 +99,11 @@ P(walk)
     )
 #endif
 {
-  uns P(cols) = IMAGE_WALK_COLS;
-  uns P(rows) = IMAGE_WALK_ROWS;
+  uint P(cols) = IMAGE_WALK_COLS;
+  uint P(rows) = IMAGE_WALK_ROWS;
 # if IMAGE_WALK_UNROLL > 1
-  uns P(cols_unroll_block_count) = P(cols) / IMAGE_WALK_UNROLL;
-  uns P(cols_unroll_end_count) = P(cols) % IMAGE_WALK_UNROLL;
+  uint P(cols_unroll_block_count) = P(cols) / IMAGE_WALK_UNROLL;
+  uint P(cols_unroll_end_count) = P(cols) % IMAGE_WALK_UNROLL;
 # endif
   byte *P(pos) = IMAGE_WALK_PIXELS, *P(row_start) = P(pos);
   int P(col_step) = IMAGE_WALK_COL_STEP;
@@ -118,9 +118,9 @@ P(walk)
     {
       IMAGE_WALK_DO_ROW_START;
 #     if IMAGE_WALK_UNROLL == 1
-      for (uns P(_i) = P(cols); P(_i)--; )
+      for (uint P(_i) = P(cols); P(_i)--; )
 #     else
-      for (uns P(_i) = P(cols_unroll_block_count); P(_i)--; )
+      for (uint P(_i) = P(cols_unroll_block_count); P(_i)--; )
 #     endif
         {
 #         if IMAGE_WALK_UNROLL >= 4
@@ -133,7 +133,7 @@ P(walk)
 	  IMAGE_WALK__STEP;
 	}
 #     if IMAGE_WALK_UNROLL > 1
-      for (uns P(_i) = P(cols_unroll_end_count); P(_i)--; )
+      for (uint P(_i) = P(cols_unroll_end_count); P(_i)--; )
         {
 	  IMAGE_WALK__STEP;
 	}

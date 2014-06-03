@@ -111,14 +111,14 @@ void opt_help(const struct opt_section * sec) {
   opt_help_scan(&h, sec);
 
   // Calculate natural width of each column
-  uns n = GARY_SIZE(h.lines);
-  uns widths[3] = { 0, 0, 0 };
-  for (uns i=0; i<n; i++) {
+  uint n = GARY_SIZE(h.lines);
+  uint widths[3] = { 0, 0, 0 };
+  for (uint i=0; i<n; i++) {
     struct help_line *l = &h.lines[i];
-    for (uns f=0; f<3; f++) {
+    for (uint f=0; f<3; f++) {
       if (!l->fields[f])
 	l->fields[f] = "";
-      uns w = strlen(l->fields[f]);
+      uint w = strlen(l->fields[f]);
       widths[f] = MAX(widths[f], w);
     }
   }
@@ -133,13 +133,13 @@ void opt_help(const struct opt_section * sec) {
   widths[1] += 4;
 
   // Print columns
-  for (uns i=0; i<n; i++) {
+  for (uint i=0; i<n; i++) {
     struct help_line *l = &h.lines[i];
     if (l->extra)
       puts(l->extra);
     else {
       int t = 0;
-      for (uns f=0; f<3; f++) {
+      for (uint f=0; f<3; f++) {
 	t += widths[f];
 	t -= printf("%s", l->fields[f]);
 	while (t > 0) {

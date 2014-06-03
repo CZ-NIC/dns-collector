@@ -14,7 +14,7 @@
 #define TEST_TIME	1000000
 
 /* The shift of the string according to the alignment.  */
-static uns alignment = 0;
+static uint alignment = 0;
 
 static void
 random_string(byte *str, int len)
@@ -25,11 +25,11 @@ random_string(byte *str, int len)
 	str[len] = 0;
 }
 
-static uns
+static uint
 elapsed_time(void)
 {
 	static struct timeval last_tv, tv;
-	uns elapsed;
+	uint elapsed;
 	gettimeofday(&tv, NULL);
 	elapsed = (tv.tv_sec - last_tv.tv_sec) * 1000000 + (tv.tv_usec - last_tv.tv_usec);
 	last_tv = tv;
@@ -83,7 +83,7 @@ main(int argc, char **argv)
 	printf("%d strings tested OK\n", i);
 	for (i=0; strings[i]; i++)
 	{
-		uns h1, h2;
+		uint h1, h2;
 		h1 = hash_string(strings[i]);
 		h2 = hash_string_nocase(strings[i]);
 		if (h1 != hash_block(strings[i], str_len(strings[i])))
@@ -96,10 +96,10 @@ main(int argc, char **argv)
 	for (i=0; lengths[i] >= 0; i++)
 	{
 		byte str[lengths[i] + 1 + alignment];
-		uns count = TEST_TIME / (lengths[i] + 10);
-		uns el1 = 0, el2 = 0, elh = 0, elhn = 0;
-		uns tot1 = 0, tot2 = 0, hash = 0, hashn = 0;
-		uns j;
+		uint count = TEST_TIME / (lengths[i] + 10);
+		uint el1 = 0, el2 = 0, elh = 0, elhn = 0;
+		uint tot1 = 0, tot2 = 0, hash = 0, hashn = 0;
+		uint j;
 		for (j=0; j<count; j++)
 		{
 			random_string(str + alignment, lengths[i]);

@@ -134,7 +134,7 @@ got_char:
       {
 	void *p = &c->code;
 	c->string_at = p;
-	uns code = c->code;
+	uint code = c->code;
 	c->string_at = p;
 	if (code < 0xd800 || code - 0xe000 < 0x2000)
 	  {}
@@ -159,7 +159,7 @@ got_char:
       {
 	void *p = &c->code;
 	c->string_at = p;
-	uns code = c->code;
+	uint code = c->code;
 	c->string_at = p;
 	if (code < 0xd800 || code - 0xe000 < 0x2000)
 	  {}
@@ -360,7 +360,7 @@ conv_standard(struct conv_context *c)
   unsigned short *x_to_out = c->x_to_out;
   const unsigned char *s, *se;
   unsigned char *d, *de, *k;
-  unsigned int len, e;
+  uint len, e;
 
   if (unlikely(c->state))
     goto slow;
@@ -372,7 +372,7 @@ main:
   de = c->dest_end;
   while (s < se)
     {
-      unsigned int code = x_to_out[in_to_x[*s]];
+      uint code = x_to_out[in_to_x[*s]];
       if (code < 0x100)
 	{
 	  if (unlikely(d >= de))
@@ -425,7 +425,7 @@ conv_set_charset(struct conv_context *c, int src, int dest)
     }
   else
     {
-      static uns lookup[] = {
+      static uint lookup[] = {
 	[CONV_CHARSET_UTF8] = 1,
 	[CONV_CHARSET_UTF16_BE] = 2,
 	[CONV_CHARSET_UTF16_LE] = 3,
@@ -436,8 +436,8 @@ conv_set_charset(struct conv_context *c, int src, int dest)
 	{ conv_utf16_be_to_std,	conv_utf16_be_to_utf8,	conv_none,		conv_utf16_be_to_utf16_le },
 	{ conv_utf16_le_to_std,	conv_utf16_le_to_utf8,	conv_utf16_be_to_utf16_le,	conv_none },
       };
-      uns src_idx = ((uns)src < ARRAY_SIZE(lookup)) ? lookup[src] : 0;
-      uns dest_idx = ((uns)dest < ARRAY_SIZE(lookup)) ? lookup[dest] : 0;
+      uint src_idx = ((uint)src < ARRAY_SIZE(lookup)) ? lookup[src] : 0;
+      uint dest_idx = ((uint)dest < ARRAY_SIZE(lookup)) ? lookup[dest] : 0;
       c->convert = tab[src_idx][dest_idx];
       c->in_to_x = src_idx ? NULL : input_to_x[src];
       c->x_to_out = dest_idx ? NULL : x_to_output[dest];
@@ -445,33 +445,33 @@ conv_set_charset(struct conv_context *c, int src, int dest)
   c->state = 0;
 }
 
-unsigned int
-conv_x_to_ucs(unsigned int x)
+uint
+conv_x_to_ucs(uint x)
 {
   return x_to_uni[x];
 }
 
-unsigned int
-conv_ucs_to_x(unsigned int ucs)
+uint
+conv_ucs_to_x(uint ucs)
 {
   return uni_to_x[ucs >> 8U][ucs & 0xff];
 }
 
-unsigned int
+uint
 conv_x_count(void)
 {
   return sizeof(x_to_uni) / sizeof(x_to_uni[0]);
 }
 
 int
-conv_in_to_ucs(struct conv_context *c, unsigned int y)
+conv_in_to_ucs(struct conv_context *c, uint y)
 {
   return x_to_uni[c->in_to_x[y]];
 }
 
-int conv_ucs_to_out(struct conv_context *c, unsigned int ucs)
+int conv_ucs_to_out(struct conv_context *c, uint ucs)
 {
-  uns x = uni_to_x[ucs >> 8U][ucs & 0xff];
+  uint x = uni_to_x[ucs >> 8U][ucs & 0xff];
   if (x == 256 || c->x_to_out[x] >= 256)
     return -1;
   else

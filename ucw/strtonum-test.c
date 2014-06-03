@@ -13,9 +13,9 @@
 
 #include <stdio.h>
 
-static uns str_to_flags(const char *str)
+static uint str_to_flags(const char *str)
 {
-   uns flags = 0;
+   uint flags = 0;
    for(const char *p = str; *p; ++p)
      {
        switch(*p)
@@ -75,12 +75,12 @@ static uns str_to_flags(const char *str)
 
 static void convert(const char *str_flags, const char *str_num)
 {
-  const uns flags = str_to_flags(str_flags);
- 
+  const uint flags = str_to_flags(str_flags);
+
   const char *next1, *next2;
-  uns ux = 1234567890;
+  uint ux = 1234567890;
   uintmax_t um = 1234567890;
-  const char *err1 = str_to_uns(&ux, str_num, &next1, flags);
+  const char *err1 = str_to_uint(&ux, str_num, &next1, flags);
   const char *err2 = str_to_uintmax(&um, str_num, &next2, flags);
 
   if (flags & STN_SIGNED)

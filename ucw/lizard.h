@@ -68,7 +68,7 @@
  *
  * Use @lizard_decompress() to get the original data.
  **/
-int lizard_compress(const byte *in, uns in_len, byte *out);
+int lizard_compress(const byte *in, uint in_len, byte *out);
 
 /**
  * Decompress data previously compressed by @lizard_compress().
@@ -126,7 +126,7 @@ void lizard_free(struct lizard_buffer *buf);
  * Beware this function is not thread-safe and is not even reentrant
  * (because of internal segfault handling).
  **/
-byte *lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uns expected_length);
+byte *lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uint expected_length);
 
 /* adler32.c */
 
@@ -144,12 +144,12 @@ byte *lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uns expe
  * @adler is the old value, @byte points to @len bytes of data to update with.
  * Result is returned.
  **/
-uns adler32_update(uns adler, const byte *ptr, uns len);
+uint adler32_update(uint adler, const byte *ptr, uint len);
 
 /**
  * Compute the Adler-32 checksum of a block of data.
  **/
-static inline uns adler32(const byte *buf, uns len)
+static inline uint adler32(const byte *buf, uint len)
 {
   return adler32_update(1, buf, len);
 }

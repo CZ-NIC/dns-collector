@@ -25,13 +25,13 @@ enum image_dup_flags {
 
 struct image_dup_context {
   struct image_context *ic;
-  uns flags;
-  uns ratio_threshold;
-  uns error_threshold;
-  uns qtree_limit;
+  uint flags;
+  uint ratio_threshold;
+  uint error_threshold;
+  uint qtree_limit;
   u64 sum_depth;
   u64 sum_pixels;
-  uns error;
+  uint error;
 };
 
 struct image_dup {
@@ -48,16 +48,16 @@ struct image_dup {
 void image_dup_context_init(struct image_context *ic, struct image_dup_context *ctx);
 void image_dup_context_cleanup(struct image_dup_context *ctx);
 
-uns image_dup_estimate_size(uns cols, uns rows, uns same_size_compare, uns qtree_limit);
-uns image_dup_new(struct image_dup_context *ctx, struct image *image, void *buffer, uns same_size_compare);
+uint image_dup_estimate_size(uint cols, uint rows, uint same_size_compare, uint qtree_limit);
+uint image_dup_new(struct image_dup_context *ctx, struct image *image, void *buffer, uint same_size_compare);
 
 /* dup-cmp.c */
 
-uns image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2);
+uint image_dup_compare(struct image_dup_context *ctx, struct image_dup *dup1, struct image_dup *dup2);
 
 /* internals */
 
-static inline byte *image_dup_block(struct image_dup *dup, uns tab_col, uns tab_row)
+static inline byte *image_dup_block(struct image_dup *dup, uint tab_col, uint tab_row)
 {
   return dup->tab_pixels + (dup->tab_row_size << tab_row) + (3 << (tab_row + tab_col));
 }

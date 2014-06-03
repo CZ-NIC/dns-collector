@@ -26,13 +26,13 @@
 #include <sys/wait.h>
 #include <errno.h>
 
-static uns max_line = 1024;
+static uint max_line = 1024;
 static int launch_finish_messages = 1;
 static int nonzero_status_message = 1;
 
 static struct cf_section cfsec_logoutput = {
   CF_ITEMS {
-    CF_UNS("LineMax", &max_line),
+    CF_UINT("LineMax", &max_line),
     CF_END
   }
 };
@@ -43,7 +43,7 @@ struct fds {
   cnode node;
   int pipe[2];
   int fdnum;
-  uns level;
+  uint level;
   int long_continue;
   struct main_rec_io rio;
 };
@@ -66,7 +66,7 @@ do_msg (struct fds *fd, char *l_msg, int long_continue)
   fd->long_continue = long_continue;
 }
 
-static uns
+static uint
 handle_read(struct main_rec_io *r)
 {
   char buf[max_line + 5];
@@ -82,7 +82,7 @@ handle_read(struct main_rec_io *r)
   }
   *eol = 0;
   byte *b = r->read_rec_start;
-  while ((uns)(eol - b) > max_line) {
+  while ((uint)(eol - b) > max_line) {
     char cc = b[max_line];
     b[max_line]=0;
     do_msg(r->data, b, 1);
@@ -282,7 +282,7 @@ main(int argc, char **argv)
 	    parseerror = 1;
 	  if (parseerror) die("Bad argument `%s' to -l, expects number:letter.", optarg);
 
-	  uns level = 0;
+	  uint level = 0;
 	  while (level < L_MAX && LS_LEVEL_LETTER(level) != c[0])
 	    level++;
 	  if (level >= L_MAX)

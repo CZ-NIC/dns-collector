@@ -85,8 +85,8 @@
  **/
 #define HEAP_INIT(type,heap,num,less,swap)						\
   do {											\
-    uns _i = num;									\
-    uns _j, _l;										\
+    uint _i = num;									\
+    uint _j, _l;										\
     type x;										\
     while (_i >= 1)									\
       {											\
@@ -104,7 +104,7 @@
  **/
 #define HEAP_DELETE_MIN(type,heap,num,less,swap)					\
   do {											\
-    uns _j, _l;										\
+    uint _j, _l;										\
     type x;										\
     swap(heap,1,num,x);									\
     num--;										\
@@ -121,7 +121,7 @@
  **/
 #define HEAP_INSERT(type,heap,num,less,swap,elt)					\
   do {											\
-    uns _j, _u;										\
+    uint _j, _u;										\
     type x;										\
     heap[++num] = elt;									\
     _j = num;										\
@@ -136,7 +136,7 @@
  **/
 #define HEAP_INCREASE(type,heap,num,less,swap,pos,elt)					\
   do {											\
-    uns _j, _l;										\
+    uint _j, _l;										\
     type x;										\
     heap[pos] = elt;									\
     _j = pos;										\
@@ -151,7 +151,7 @@
  **/
 #define HEAP_DECREASE(type,heap,num,less,swap,pos,elt)					\
   do {											\
-    uns _j, _u;										\
+    uint _j, _u;										\
     type x;										\
     heap[pos] = elt;									\
     _j = pos;										\
@@ -190,7 +190,7 @@
  **/
 #define HEAP_DELETE(type,heap,num,less,swap,pos)					\
   do {											\
-    uns _j, _l, _u;									\
+    uint _j, _l, _u;									\
     type x;										\
     _j = pos;										\
     swap(heap,_j,num,x);								\

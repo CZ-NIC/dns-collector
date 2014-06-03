@@ -19,7 +19,7 @@
 #include <string.h>
 #include <math.h>
 
-uns color_space_channels[COLOR_SPACE_MAX] = {
+uint color_space_channels[COLOR_SPACE_MAX] = {
   [COLOR_SPACE_UNKNOWN] = 0,
   [COLOR_SPACE_UNKNOWN_1] = 1,
   [COLOR_SPACE_UNKNOWN_2] = 2,
@@ -50,16 +50,16 @@ byte *color_space_name[COLOR_SPACE_MAX] = {
 };
 
 byte *
-color_space_id_to_name(uns id)
+color_space_id_to_name(uint id)
 {
   ASSERT(id < COLOR_SPACE_MAX);
   return color_space_name[id];
 }
 
-uns
+uint
 color_space_name_to_id(byte *name)
 {
-  for (uns i = 1; i < COLOR_SPACE_MAX; i++)
+  for (uint i = 1; i < COLOR_SPACE_MAX; i++)
     if (color_space_name[i] && !strcasecmp(name, color_space_name[i]))
       return i;
   return 0;
@@ -69,7 +69,7 @@ struct color color_black = { .color_space = COLOR_SPACE_GRAYSCALE };
 struct color color_white = { .c = { 255 }, .color_space = COLOR_SPACE_GRAYSCALE };
 
 int
-color_get(struct color *color, byte *src, uns src_space)
+color_get(struct color *color, byte *src, uint src_space)
 {
   color->color_space = src_space;
   memcpy(color->c, src, color_space_channels[src_space]);
@@ -77,7 +77,7 @@ color_get(struct color *color, byte *src, uns src_space)
 }
 
 int
-color_put(struct image_context *ctx, struct color *color, byte *dest, uns dest_space)
+color_put(struct image_context *ctx, struct color *color, byte *dest, uint dest_space)
 {
   switch (dest_space)
     {
@@ -106,10 +106,10 @@ color_put(struct image_context *ctx, struct color *color, byte *dest, uns dest_s
 	    case COLOR_SPACE_CMYK:
 	      {
 	        double rgb[3], cmyk[4];
-	        for (uns i = 0; i < 4; i++)
+	        for (uint i = 0; i < 4; i++)
 		  cmyk[i] = color->c[i] * (1.0 / 255);
 	        cmyk_to_rgb_exact(rgb, cmyk);
-	        for (uns i = 0; i < 3; i++)
+	        for (uint i = 0; i < 3; i++)
 		  dest[i] = CLAMP(rgb[i] * 255, 0, 255);
 	      }
 	      return 1;
@@ -125,10 +125,10 @@ color_put(struct image_context *ctx, struct color *color, byte *dest, uns dest_s
 	    case COLOR_SPACE_RGB:
 	      {
 	        double rgb[3], cmyk[4];
-		for (uns i = 0; i < 3; i++)
+		for (uint i = 0; i < 3; i++)
 		  rgb[i] = color->c[i] * (1.0 / 255);
 		rgb_to_cmyk_exact(cmyk, rgb);
-		for (uns i = 0; i < 4; i++)
+		for (uint i = 0; i < 4; i++)
 		  dest[i] = CLAMP(cmyk[i] * 255, 0, 255);
 	      }
 	      return 1;
@@ -218,7 +218,7 @@ pixel_conv_rgb_to_ycbcr(byte *dest, byte *src)
   /* Y  =  0.29900 * R + 0.58700 * G + 0.11400 * B
    * Cb = -0.16874 * R - 0.33126 * G + 0.50000 * B + CENTER
    * Cr =  0.50000 * R - 0.41869 * G - 0.08131 * B + CENTER */
-  uns r = src[0], g = src[1], b = src[2];
+  uint r = src[0], g = src[1], b = src[2];
   dest[0] = (19595 * r + 38470 * g + 7471 * b) / 0x10000;
   dest[1] = (0x800000 + 0x8000 * b - 11058 * r - 21710 * g) / 0x10000;
   dest[2] = (0x800000 + 0x8000 * r - 27439 * g - 5329 * b) / 0x10000;
@@ -235,7 +235,7 @@ pixel_conv_rgb_to_ycbcr(byte *dest, byte *src)
 static inline void
 pixel_conv_cmyk_to_rgb(byte *dest, byte *src)
 {
-  uns d = (255 - src[3]) * (0xffffffffU / 255 /255);
+  uint d = (255 - src[3]) * (0xffffffffU / 255 /255);
   dest[0] = d * (255 - src[0]) >> 24;
   dest[1] = d * (255 - src[1]) >> 24;
   dest[2] = d * (255 - src[2]) >> 24;
@@ -251,9 +251,9 @@ pixel_conv_cmyk_to_rgb(byte *dest, byte *src)
 static inline void
 pixel_conv_rgb_to_cmyk(byte *dest, byte *src)
 {
-  uns k = MAX(src[0], src[1]);
+  uint k = MAX(src[0], src[1]);
   k = MAX(k, src[2]);
-  uns d = fast_div_u32_u8(0x7fffffffU, k); /* == 0 for zero K */
+  uint d = fast_div_u32_u8(0x7fffffffU, k); /* == 0 for zero K */
   dest[0] = (d * (k - src[0])) >> 23;
   dest[1] = (d * (k - src[1])) >> 23;
   dest[2] = (d * (k - src[2])) >> 23;
@@ -289,7 +289,7 @@ static inline void
 pixel_conv_ycck_to_rgb(byte *dest, byte *src)
 {
   int y = src[0], cb = src[1] - 128, cr = src[2] - 128;
-  uns d = (255 - src[3]) * (0xffffffffU / 255 /255);
+  uint d = (255 - src[3]) * (0xffffffffU / 255 /255);
   dest[0] = (d * CLAMP(y + (91881 * cr) / 0x10000, 0, 255) >> 24);
   dest[1] = (d * CLAMP(y - (22553 * cb + 46801 * cr) / 0x10000, 0, 255) >> 24);
   dest[2] = (d * CLAMP(y + (116129 * cb) / 0x10000, 0, 255) >> 24);
@@ -305,12 +305,12 @@ pixel_conv_ycck_to_rgb(byte *dest, byte *src)
 static inline void
 pixel_conv_rgb_to_ycck(byte *dest, byte *src)
 {
-  uns k = MAX(src[0], src[1]);
+  uint k = MAX(src[0], src[1]);
   k = MAX(k, src[2]);
-  uns d = fast_div_u32_u8(0x7fffffffU, k); /* == 0 for zero K */
-  uns r = 255 - ((d * (k - src[0])) >> 23);
-  uns g = 255 - ((d * (k - src[1])) >> 23);
-  uns b = 255 - ((d * (k - src[2])) >> 23);
+  uint d = fast_div_u32_u8(0x7fffffffU, k); /* == 0 for zero K */
+  uint r = 255 - ((d * (k - src[0])) >> 23);
+  uint g = 255 - ((d * (k - src[1])) >> 23);
+  uint b = 255 - ((d * (k - src[2])) >> 23);
   dest[0] = (19595 * r + 38470 * g + 7471 * b) / 0x10000;
   dest[1] = (0x800000 + 0x8000 * b - 11058 * r - 21710 * g) / 0x10000;
   dest[2] = (0x800000 + 0x8000 * r - 27439 * g - 5329 * b) / 0x10000;
@@ -473,7 +473,7 @@ image_conv_copy(struct image *dest, struct image *src)
     return;
   else if (dest->pixel_size != src->pixel_size)
     {
-      uns channels = MIN(dest->channels, src->channels);
+      uint channels = MIN(dest->channels, src->channels);
       switch (channels)
         {
 	  case 1:
@@ -524,7 +524,7 @@ image_conv_copy(struct image *dest, struct image *src)
 #	      define IMAGE_WALK_DOUBLE
 #             define IMAGE_WALK_IMAGE dest
 #             define IMAGE_WALK_SEC_IMAGE src
-#	      define IMAGE_WALK_DO_STEP do{ for (uns i = 0; i < channels; i++) walk_pos[i] = walk_sec_pos[i]; }while(0)
+#	      define IMAGE_WALK_DO_STEP do{ for (uint i = 0; i < channels; i++) walk_pos[i] = walk_sec_pos[i]; }while(0)
 #             include <images/image-walk.h>
 	    return;
 	}
@@ -533,7 +533,7 @@ image_conv_copy(struct image *dest, struct image *src)
     {
       byte *s = src->pixels;
       byte *d = dest->pixels;
-      for (uns row = src->rows; row--; )
+      for (uint row = src->rows; row--; )
         {
           memcpy(d, s, src->row_pixels_size);
           d += dest->row_size;
@@ -602,10 +602,10 @@ image_conv_copy_alpha(struct image *dest, struct image *src)
     }
 }
 
-static inline uns
-image_conv_alpha_func(uns value, uns alpha, uns acoef, uns bcoef)
+static inline uint
+image_conv_alpha_func(uint value, uint alpha, uint acoef, uint bcoef)
 {
-  return ((uns)(acoef + (int)alpha * (int)(value - bcoef)) * (0xffffffffU / 255 / 255)) >> 24;
+  return ((uint)(acoef + (int)alpha * (int)(value - bcoef)) * (0xffffffffU / 255 / 255)) >> 24;
 }
 
 static int
@@ -616,8 +616,8 @@ image_conv_apply_alpha_from(struct image_context *ctx, struct image *dest, struc
   byte background[IMAGE_MAX_CHANNELS];
   if (unlikely(!color_put(ctx, &opt->background, background, dest->flags & IMAGE_COLOR_SPACE)))
     return 0;
-  uns a[IMAGE_MAX_CHANNELS], b[IMAGE_MAX_CHANNELS];
-  for (uns i = 0; i < dest->channels; i++)
+  uint a[IMAGE_MAX_CHANNELS], b[IMAGE_MAX_CHANNELS];
+  for (uint i = 0; i < dest->channels; i++)
     a[i] = 255 * (b[i] = background[i]);
   switch (dest->channels)
     {
@@ -655,7 +655,7 @@ image_conv_apply_alpha_from(struct image_context *ctx, struct image *dest, struc
 #   define IMAGE_WALK_IMAGE dest
 #   define IMAGE_WALK_SEC_IMAGE src
 #   define IMAGE_WALK_DOUBLE
-#   define IMAGE_WALK_DO_STEP do{ for (uns i = 0; i < dest->channels; i++) \
+#   define IMAGE_WALK_DO_STEP do{ for (uint i = 0; i < dest->channels; i++) \
         walk_pos[i] = image_conv_alpha_func(walk_pos[i], walk_sec_pos[src->channels - 1], a[i], b[i]); }while(0)
 #   include <images/image-walk.h>
   }
@@ -673,8 +673,8 @@ image_conv_apply_alpha_to(struct image_context *ctx, struct image *dest, struct 
   byte background[IMAGE_MAX_CHANNELS];
   if (unlikely(!color_put(ctx, &opt->background, background, dest->flags & IMAGE_COLOR_SPACE)))
     return 0;
-  uns a[IMAGE_MAX_CHANNELS], b[IMAGE_MAX_CHANNELS];
-  for (uns i = 0; i < dest->channels; i++)
+  uint a[IMAGE_MAX_CHANNELS], b[IMAGE_MAX_CHANNELS];
+  for (uint i = 0; i < dest->channels; i++)
     a[i] = 255 * (b[i] = background[i]);
   switch (dest->channels)
     {
@@ -712,7 +712,7 @@ image_conv_apply_alpha_to(struct image_context *ctx, struct image *dest, struct 
 #   define IMAGE_WALK_IMAGE dest
 #   define IMAGE_WALK_SEC_IMAGE src
 #   define IMAGE_WALK_DOUBLE
-#   define IMAGE_WALK_DO_STEP do{ for (uns i = 0; i < dest->channels; i++) \
+#   define IMAGE_WALK_DO_STEP do{ for (uint i = 0; i < dest->channels; i++) \
         walk_pos[i] = image_conv_alpha_func(walk_sec_pos[i], walk_sec_pos[src->channels - 1], a[i], b[i]); }while(0)
 #   include <images/image-walk.h>
   }
@@ -845,7 +845,7 @@ invert_gamma_simple(double dest[3], double src[3], const struct color_space_gamm
 static inline void
 correct_gamma_detailed(double dest[3], double src[3], const struct color_space_gamma_info *info)
 {
-  for (uns i = 0; i < 3; i++)
+  for (uint i = 0; i < 3; i++)
     if (src[i] > info->transition)
       dest[i] = (1 + info->offset) * pow(src[i], info->detailed_gamma) - info->offset;
     else
@@ -855,7 +855,7 @@ correct_gamma_detailed(double dest[3], double src[3], const struct color_space_g
 static inline void
 invert_gamma_detailed(double dest[3], double src[3], const struct color_space_gamma_info *info)
 {
-  for (uns i = 0; i < 3; i++)
+  for (uint i = 0; i < 3; i++)
     if (src[i] > info->transition * info->slope)
       dest[i] = pow((src[i] + info->offset) / (1 + info->offset), 1 / info->detailed_gamma);
     else
@@ -1054,7 +1054,7 @@ rgb_to_cmyk_exact(double cmyk[4], double rgb[3])
   else
     {
       double d = 1 / (1 - cmyk[3]);
-      for (uns i = 0; i < 3; i++)
+      for (uint i = 0; i < 3; i++)
         cmyk[i] = d * (cmyk[i] - cmyk[3]);
     }
 }
@@ -1064,7 +1064,7 @@ void
 cmyk_to_rgb_exact(double rgb[3], double cmyk[4])
 {
   double d = 1 - cmyk[1];
-  for (uns i = 0; i < 3; i++)
+  for (uint i = 0; i < 3; i++)
     rgb[i] = d * (1 - cmyk[i]);
 }
 
@@ -1078,7 +1078,7 @@ void
 srgb_to_luv_init(void)
 {
   DBG("Initializing sRGB -> Luv table");
-  for (uns i = 0; i < 256; i++)
+  for (uint i = 0; i < 256; i++)
     {
       double t = i / 255.;
       if (t > 0.04045)
@@ -1087,7 +1087,7 @@ srgb_to_luv_init(void)
         t = t * (1 / 12.92);
       srgb_to_luv_tab1[i] = CLAMP(t * 0xfff + 0.5, 0, 0xfff);
     }
-  for (uns i = 0; i < (9 << SRGB_TO_LUV_TAB2_SIZE); i++)
+  for (uint i = 0; i < (9 << SRGB_TO_LUV_TAB2_SIZE); i++)
     {
       double t = i / (double)((9 << SRGB_TO_LUV_TAB2_SIZE) - 1);
       if (t > 0.008856)
@@ -1098,14 +1098,14 @@ srgb_to_luv_init(void)
 	CLAMP(t * ((1 << SRGB_TO_LUV_TAB2_SCALE) - 1) + 0.5,
           0, (1 << SRGB_TO_LUV_TAB2_SCALE) - 1);
     }
-  for (uns i = 0; i < (20 << SRGB_TO_LUV_TAB3_SIZE); i++)
+  for (uint i = 0; i < (20 << SRGB_TO_LUV_TAB3_SIZE); i++)
     {
       srgb_to_luv_tab3[i] = i ? (13 << (SRGB_TO_LUV_TAB3_SCALE + SRGB_TO_LUV_TAB3_SIZE)) / i : 0;
     }
 }
 
 void
-srgb_to_luv_pixels(byte *dest, byte *src, uns count)
+srgb_to_luv_pixels(byte *dest, byte *src, uint count)
 {
   while (count--)
     {
@@ -1122,11 +1122,11 @@ struct color_grid_node *srgb_to_luv_grid;
 struct color_interpolation_node *color_interpolation_table;
 
 /* Returns volume of a given tetrahedron multiplied by 6 */
-static inline uns
-tetrahedron_volume(uns *v1, uns *v2, uns *v3, uns *v4)
+static inline uint
+tetrahedron_volume(uint *v1, uint *v2, uint *v3, uint *v4)
 {
   int a[3], b[3], c[3];
-  for (uns i = 0; i < 3; i++)
+  for (uint i = 0; i < 3; i++)
     {
       a[i] = v2[i] - v1[i];
       b[i] = v3[i] - v1[i];
@@ -1140,10 +1140,10 @@ tetrahedron_volume(uns *v1, uns *v2, uns *v3, uns *v4)
 }
 
 static void
-interpolate_tetrahedron(struct color_interpolation_node *n, uns *p, const uns *c)
+interpolate_tetrahedron(struct color_interpolation_node *n, uint *p, const uint *c)
 {
-  uns v[4][3];
-  for (uns i = 0; i < 4; i++)
+  uint v[4][3];
+  for (uint i = 0; i < 4; i++)
     {
       v[i][0] = (c[i] & 0001) ? (1 << COLOR_CONV_OFS) : 0;
       v[i][1] = (c[i] & 0010) ? (1 << COLOR_CONV_OFS) : 0;
@@ -1153,16 +1153,16 @@ interpolate_tetrahedron(struct color_interpolation_node *n, uns *p, const uns *c
 	((c[i] & 0010) ? (1 << COLOR_CONV_SIZE) : 0) +
 	((c[i] & 0100) ? (1 << (COLOR_CONV_SIZE * 2)) : 0);
     }
-  uns vol = tetrahedron_volume(v[0], v[1], v[2], v[3]);
+  uint vol = tetrahedron_volume(v[0], v[1], v[2], v[3]);
   n->mul[0] = ((tetrahedron_volume(p, v[1], v[2], v[3]) << 8) + (vol >> 1)) / vol;
   n->mul[1] = ((tetrahedron_volume(v[0], p, v[2], v[3]) << 8) + (vol >> 1)) / vol;
   n->mul[2] = ((tetrahedron_volume(v[0], v[1], p, v[3]) << 8) + (vol >> 1)) / vol;
   n->mul[3] = ((tetrahedron_volume(v[0], v[1], v[2], p) << 8) + (vol >> 1)) / vol;
-  uns j;
+  uint j;
   for (j = 0; j < 4; j++)
     if (n->mul[j])
       break;
-  for (uns i = 0; i < 4; i++)
+  for (uint i = 0; i < 4; i++)
     if (n->mul[i] == 0)
       n->ofs[i] = n->ofs[j];
 }
@@ -1173,13 +1173,13 @@ interpolation_table_init(void)
   DBG("Initializing color interpolation table");
   struct color_interpolation_node *n = color_interpolation_table =
     xmalloc(sizeof(struct color_interpolation_node) << (COLOR_CONV_OFS * 3));
-  uns p[3];
+  uint p[3];
   for (p[2] = 0; p[2] < (1 << COLOR_CONV_OFS); p[2]++)
     for (p[1] = 0; p[1] < (1 << COLOR_CONV_OFS); p[1]++)
       for (p[0] = 0; p[0] < (1 << COLOR_CONV_OFS); p[0]++)
         {
-	  uns index;
-          static const uns tetrahedra[5][4] = {
+	  uint index;
+          static const uint tetrahedra[5][4] = {
             {0000, 0001, 0010, 0100},
             {0110, 0111, 0100, 0010},
             {0101, 0100, 0111, 0001},
@@ -1209,13 +1209,13 @@ conv_grid_init(struct color_grid_node **grid, color_conv_func func)
     return;
   struct color_grid_node *g = *grid = xmalloc((sizeof(struct color_grid_node)) << (COLOR_CONV_SIZE * 3));
   double src[3], dest[3];
-  for (uns k = 0; k < (1 << COLOR_CONV_SIZE); k++)
+  for (uint k = 0; k < (1 << COLOR_CONV_SIZE); k++)
     {
       src[2] = k * (255 / (double)((1 << COLOR_CONV_SIZE) - 1));
-      for (uns j = 0; j < (1 << COLOR_CONV_SIZE); j++)
+      for (uint j = 0; j < (1 << COLOR_CONV_SIZE); j++)
         {
           src[1] = j * (255/ (double)((1 << COLOR_CONV_SIZE) - 1));
-          for (uns i = 0; i < (1 << COLOR_CONV_SIZE); i++)
+          for (uint i = 0; i < (1 << COLOR_CONV_SIZE); i++)
             {
               src[0] = i * (255 / (double)((1 << COLOR_CONV_SIZE) - 1));
 	      func(dest, src);
@@ -1250,7 +1250,7 @@ color_conv_init(void)
 }
 
 void
-color_conv_pixels(byte *dest, byte *src, uns count, struct color_grid_node *grid)
+color_conv_pixels(byte *dest, byte *src, uint count, struct color_grid_node *grid)
 {
   while (count--)
     {
@@ -1275,11 +1275,11 @@ conv_error(u32 color, struct color_grid_node *grid, color_conv_func func)
   src[2] = (color >> 16) & 255;
   color_conv_pixel(dest, src, grid);
   double src2[3], dest2[3];
-  for (uns i = 0; i < 3; i++)
+  for (uint i = 0; i < 3; i++)
     src2[i] = src[i];
   func(dest2, src2);
   double err = 0;
-  for (uns i = 0; i < 3; i++)
+  for (uint i = 0; i < 3; i++)
     err += (dest[i] - dest2[i]) * (dest[i] - dest2[i]);
   return err;
 }
@@ -1295,11 +1295,11 @@ func_error(u32 color, test_fn test, color_conv_func func)
   src[2] = (color >> 16) & 255;
   test(dest, src);
   double src2[3], dest2[3];
-  for (uns i = 0; i < 3; i++)
+  for (uint i = 0; i < 3; i++)
     src2[i] = src[i];
   func(dest2, src2);
   double err = 0;
-  for (uns i = 0; i < 3; i++)
+  for (uint i = 0; i < 3; i++)
     err += (dest[i] - dest2[i]) * (dest[i] - dest2[i]);
   return err;
 }
@@ -1308,8 +1308,8 @@ static void
 test_grid(byte *name, struct color_grid_node *grid, color_conv_func func)
 {
   double max_err = 0, sum_err = 0;
-  uns count = 100000;
-  for (uns i = 0; i < count; i++)
+  uint count = 100000;
+  for (uint i = 0; i < count; i++)
     {
       double err = conv_error(random_max(0x1000000), grid, func);
       max_err = MAX(err, max_err);
@@ -1324,8 +1324,8 @@ static void
 test_func(byte *name, test_fn test, color_conv_func func)
 {
   double max_err = 0, sum_err = 0;
-  uns count = 100000;
-  for (uns i = 0; i < count; i++)
+  uint count = 100000;
+  for (uint i = 0; i < count; i++)
     {
       double err = func_error(random_max(0x1000000), test, func);
       max_err = MAX(err, max_err);
@@ -1347,19 +1347,19 @@ main(void)
 #define CNT 1000000
 #define TESTS 10
   byte *a = xmalloc(3 * CNT), *b = xmalloc(3 * CNT);
-  for (uns i = 0; i < 3 * CNT; i++)
+  for (uint i = 0; i < 3 * CNT; i++)
     a[i] = random_max(256);
   timestamp_t timer;
   init_timer(&timer);
-  for (uns i = 0; i < TESTS; i++)
+  for (uint i = 0; i < TESTS; i++)
     memcpy(b, a, CNT * 3);
   DBG("memcpy time=%d", get_timer(&timer));
   init_timer(&timer);
-  for (uns i = 0; i < TESTS; i++)
+  for (uint i = 0; i < TESTS; i++)
     srgb_to_luv_pixels(b, a, CNT);
   DBG("direct time=%d", get_timer(&timer));
   init_timer(&timer);
-  for (uns i = 0; i < TESTS; i++)
+  for (uint i = 0; i < TESTS; i++)
     color_conv_pixels(b, a, CNT, srgb_to_luv_grid);
   DBG("grid time=%d", get_timer(&timer));
 #endif

@@ -16,7 +16,7 @@ do {
 
   const byte *s, *se;
   byte *d, *de;
-  uns code;
+  uint code;
   int e;
 
 #ifdef CONV_READ_STD
@@ -28,7 +28,7 @@ do {
 #endif
 
 #ifdef CONV_READ_UTF8
-  uns cc;
+  uint cc;
 #endif
 
   if (unlikely(c->state))
@@ -138,8 +138,8 @@ got_code:
       else
         {
 	  byte *k = string_table + code - 0x100;
-	  uns len = *k++;
-	  if (unlikely((uns)(de - d) < len))
+	  uint len = *k++;
+	  if (unlikely((uint)(de - d) < len))
 	    {
 	      c->state = SEQ_WRITE;
 	      c->string_at = k;

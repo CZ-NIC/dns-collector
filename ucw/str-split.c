@@ -15,9 +15,9 @@
 #include <string.h>
 
 int
-str_sepsplit(char *str, uns sep, char **rec, uns max)
+str_sepsplit(char *str, uint sep, char **rec, uint max)
 {
-  uns cnt = 0;
+  uint cnt = 0;
   while (1)
   {
     rec[cnt++] = str;
@@ -31,9 +31,9 @@ str_sepsplit(char *str, uns sep, char **rec, uns max)
 }
 
 int
-str_wordsplit(char *src, char **dst, uns max)
+str_wordsplit(char *src, char **dst, uint max)
 {
-  uns cnt = 0;
+  uint cnt = 0;
 
   for(;;)
     {

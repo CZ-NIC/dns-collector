@@ -37,7 +37,7 @@ const byte ffs_table[] = {
 
 int main(void)
 {
-  uns i;
+  uint i;
   while (scanf("%x", &i) == 1)
     printf("%d\n", bit_ffs(i));
   return 0;

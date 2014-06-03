@@ -123,7 +123,7 @@ static const struct sig_name sig_names[] = {
 int
 sig_name_to_number(const char *name)
 {
-  for (uns i=0; i < ARRAY_SIZE(sig_names); i++)
+  for (uint i=0; i < ARRAY_SIZE(sig_names); i++)
     if (!strcmp(sig_names[i].name, name))
       return sig_names[i].number;
   return -1;
@@ -132,7 +132,7 @@ sig_name_to_number(const char *name)
 const char *
 sig_number_to_name(int number)
 {
-  for (uns i=0; i < ARRAY_SIZE(sig_names); i++)
+  for (uint i=0; i < ARRAY_SIZE(sig_names); i++)
     if (sig_names[i].number == number)
       return sig_names[i].name;
   return NULL;

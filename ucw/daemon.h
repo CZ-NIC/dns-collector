@@ -23,7 +23,7 @@
 
 /** Parameters passed to the daemon helper. **/
 struct daemon_params {
-  uns flags;				// DAEMON_FLAG_xxx
+  uint flags;				// DAEMON_FLAG_xxx
   const char *pid_file;			// A path to PID file (optional)
   const char *run_as_user;		// User name or "#uid" (optional)
   const char *run_as_group;		// Group name or "#gid" (optional)

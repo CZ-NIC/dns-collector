@@ -22,7 +22,7 @@
 #include <ucw/eltpool.h>
 
 struct eltpool *
-ep_new(uns elt_size, uns elts_per_chunk)
+ep_new(uint elt_size, uint elts_per_chunk)
 {
   struct eltpool *pool = xmalloc_zero(sizeof(*pool));
   pool->elt_size = ALIGN_TO(MAX(elt_size, sizeof(struct eltpool_free)), CPU_STRUCT_ALIGN);
@@ -51,7 +51,7 @@ ep_alloc_slow(struct eltpool *pool)
 {
   struct eltpool_chunk *ch = page_alloc(pool->chunk_size);
   void *p = (void *)(ch+1);
-  for (uns i=1; i<pool->elts_per_chunk; i++)
+  for (uint i=1; i<pool->elts_per_chunk; i++)
     {
       struct eltpool_free *f = p;
       f->next = pool->first_free;
@@ -85,7 +85,7 @@ int main(void)
   struct eltpool *ep = ep_new(sizeof(struct argh), 64);
   clist l;
   clist_init(&l);
-  for (uns i=0; i<65536; i++)
+  for (uint i=0; i<65536; i++)
     {
       struct argh *a = ep_alloc(ep);
       if (i % 3)

@@ -38,15 +38,15 @@
  */
 
 struct asio_queue {
-  uns buffer_size;			// How large buffers do we use [user-settable]
-  uns max_writebacks;			// Maximum number of writeback requests active [user-settable]
-  uns allocated_requests;
-  uns running_requests;			// Total number of running requests
-  uns running_writebacks;		// How many of them are writebacks
+  uint buffer_size;			// How large buffers do we use [user-settable]
+  uint max_writebacks;			// Maximum number of writeback requests active [user-settable]
+  uint allocated_requests;
+  uint running_requests;		// Total number of running requests
+  uint running_writebacks;		// How many of them are writebacks
   clist idle_list;			// Recycled requests waiting for get
   clist done_list;			// Finished requests
   struct work_queue queue;
-  uns use_count;			// For use by the caller
+  uint use_count;			// For use by the caller
 };
 
 enum asio_op {
@@ -62,7 +62,7 @@ struct asio_request {
   byte *buffer;
   int fd;
   enum asio_op op;
-  uns len;
+  uint len;
   int status;
   int returned_errno;
   int submitted;

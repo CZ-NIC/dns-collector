@@ -17,7 +17,7 @@
 #include <sys/mman.h>
 
 void *
-mmap_file(const char *name, unsigned *len, int writeable)
+mmap_file(const char *name, uint *len, int writeable)
 {
   int fd = open(name, writeable ? O_RDWR : O_RDONLY);
   struct stat st;
@@ -42,7 +42,7 @@ mmap_file(const char *name, unsigned *len, int writeable)
 }
 
 void
-munmap_file(void *start, unsigned len)
+munmap_file(void *start, uint len)
 {
   munmap(start, len);
 }

@@ -12,7 +12,7 @@
 #include <ucw/binsearch.h>
 
 /* A table of odd primes, each is about 1.2 times the previous one */
-static uns prime_table[] = {
+static uint prime_table[] = {
   3,
   7,
   13,
@@ -122,8 +122,8 @@ static uns prime_table[] = {
 
 #define NPRIMES ARRAY_SIZE(prime_table)
 
-uns
-next_table_prime(uns x)
+uint
+next_table_prime(uint x)
 {
   if (x >= prime_table[NPRIMES-1])
     return 0;
@@ -131,8 +131,8 @@ next_table_prime(uns x)
     return prime_table[BIN_SEARCH_FIRST_GE(prime_table, NPRIMES, x+1)];
 }
 
-uns
-prev_table_prime(uns x)
+uint
+prev_table_prime(uint x)
 {
   int i = BIN_SEARCH_FIRST_GE(prime_table, NPRIMES, x);
   return i ? prime_table[i-1] : 0;
@@ -145,7 +145,7 @@ prev_table_prime(uns x)
 int main(void)
 {
 #if 0		/* Generate the table */
-  uns x = 3, xx;
+  uint x = 3, xx;
   do
     {
       printf("  %u,\n", x);
@@ -156,7 +156,7 @@ int main(void)
 #else
   for (int i=1; i<=100; i++)
     printf("%d\t%d\t%d\n", i, next_table_prime(i), prev_table_prime(i));
-  for (uns i=0xfffffff0; i; i++)
+  for (uint i=0xfffffff0; i; i++)
     printf("%u\t%u\t%u\n", i, next_table_prime(i), prev_table_prime(i));
   return 0;
 #endif

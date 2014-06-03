@@ -32,8 +32,8 @@ daemon_resolve_ugid(struct daemon_params *dp)
     {
       if (u[0] == '#')
 	{
-	  uns id;
-	  const char *err = str_to_uns(&id, u, NULL, 10 | STN_WHOLE);
+	  uint id;
+	  const char *err = str_to_uint(&id, u, NULL, 10 | STN_WHOLE);
 	  if (err)
 	    die("Cannot parse user `%s': %s", u, err);
 	  dp->run_as_uid = id;
@@ -56,8 +56,8 @@ daemon_resolve_ugid(struct daemon_params *dp)
     {
       if (g[0] == '#')
 	{
-	  uns id;
-	  const char *err = str_to_uns(&id, g, NULL, 10 | STN_WHOLE);
+	  uint id;
+	  const char *err = str_to_uint(&id, g, NULL, 10 | STN_WHOLE);
 	  if (err)
 	    die("Cannot parse group `%s': %s", g, err);
 	  dp->run_as_gid = id;

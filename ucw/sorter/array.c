@@ -21,12 +21,12 @@
 #define ASORT_XTRACE(level, x...) do { if (sorter_trace_array >= level) msg(L_DEBUG, x); } while(0)
 
 static void
-asort_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns hash_bits, uns swapped_output)
+asort_radix(struct asort_context *ctx, void *array, void *buffer, uint num_elts, uint hash_bits, uint swapped_output)
 {
   // swap_output == 0 if result should be returned in `array', otherwise in `buffer'
-  uns buckets = (1 << ctx->radix_bits);
-  uns shift = (hash_bits > ctx->radix_bits) ? (hash_bits - ctx->radix_bits) : 0;
-  uns cnt[buckets];
+  uint buckets = (1 << ctx->radix_bits);
+  uint shift = (hash_bits > ctx->radix_bits) ? (hash_bits - ctx->radix_bits) : 0;
+  uint cnt[buckets];
 
 #if 0
   static int reported[64];
@@ -37,10 +37,10 @@ asort_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, 
   bzero(cnt, sizeof(cnt));
   ctx->radix_count(array, num_elts, cnt, shift);
 
-  uns pos = 0;
-  for (uns i=0; i<buckets; i++)
+  uint pos = 0;
+  for (uint i=0; i<buckets; i++)
     {
-      uns j = cnt[i];
+      uint j = cnt[i];
       cnt[i] = pos;
       pos += j;
     }
@@ -48,9 +48,9 @@ asort_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, 
 
   ctx->radix_split(array, buffer, num_elts, cnt, shift);
   pos = 0;
-  for (uns i=0; i<buckets; i++)
+  for (uint i=0; i<buckets; i++)
     {
-      uns n = cnt[i] - pos;
+      uint n = cnt[i] - pos;
       if (n < ctx->radix_threshold || shift < ASORT_MIN_SHIFT)
 	{
 	  ctx->quicksort(buffer, n);
@@ -71,21 +71,21 @@ asort_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, 
 #include <ucw/workqueue.h>
 #include <ucw/eltpool.h>
 
-static uns asort_threads_use_count;
-static uns asort_threads_ready;
+static uint asort_threads_use_count;
+static uint asort_threads_ready;
 static struct worker_pool asort_thread_pool;
 
-static uns
+static uint
 rs_estimate_stack(void)
 {
   // Stack space needed by the recursive radix-sorter
-  uns ctrsize = sizeof(uns) * (1 << CONFIG_UCW_RADIX_SORTER_BITS);
-  uns maxdepth = (64 / CONFIG_UCW_RADIX_SORTER_BITS) + 1;
+  uint ctrsize = sizeof(uint) * (1 << CONFIG_UCW_RADIX_SORTER_BITS);
+  uint maxdepth = (64 / CONFIG_UCW_RADIX_SORTER_BITS) + 1;
   return ctrsize * maxdepth;
 }
 
 void
-asort_start_threads(uns run)
+asort_start_threads(uint run)
 {
   ucwlib_lock();
   asort_threads_use_count++;
@@ -119,7 +119,7 @@ struct qs_work {
   struct work w;
   struct asort_context *ctx;
   void *array;
-  uns num_elts;
+  uint num_elts;
   int left, right;
 #define LR_UNDEF -100
 };
@@ -199,10 +199,10 @@ struct rs_work {
   struct work w;
   struct asort_context *ctx;
   void *array, *buffer;		// Like asort_radix().
-  uns num_elts;
-  uns shift;
-  uns swap_output;
-  uns cnt[0];
+  uint num_elts;
+  uint shift;
+  uint swap_output;
+  uint cnt[0];
 };
 
 static void
@@ -257,12 +257,12 @@ rs_wait_small(struct asort_context *ctx)
 }
 
 static void
-rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns hash_bits, uns swapped_output)
+rs_radix(struct asort_context *ctx, void *array, void *buffer, uint num_elts, uint hash_bits, uint swapped_output)
 {
-  uns buckets = (1 << ctx->radix_bits);
-  uns shift = (hash_bits > ctx->radix_bits) ? (hash_bits - ctx->radix_bits) : 0;
-  uns cnt[buckets];
-  uns blksize = num_elts / sorter_threads;
+  uint buckets = (1 << ctx->radix_bits);
+  uint shift = (hash_bits > ctx->radix_bits) ? (hash_bits - ctx->radix_bits) : 0;
+  uint cnt[buckets];
+  uint blksize = num_elts / sorter_threads;
   DBG(">>> n=%u h=%d s=%d blk=%u sw=%d", num_elts, hash_bits, shift, blksize, swapped_output);
 
   // If there are any small chunks in progress, wait for them to finish
@@ -270,7 +270,7 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
 
   // Start parallel counting
   void *iptr = array;
-  for (uns i=0; i<sorter_threads; i++)
+  for (uint i=0; i<sorter_threads; i++)
     {
       struct rs_work *w = ctx->rs_works[i];
       w->w.priority = 0;
@@ -283,38 +283,38 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
 	w->num_elts += num_elts % sorter_threads;
       w->shift = shift;
       iptr += w->num_elts * ctx->elt_size;
-      bzero(w->cnt, sizeof(uns) * buckets);
+      bzero(w->cnt, sizeof(uint) * buckets);
       work_submit(ctx->rs_work_queue, &w->w);
     }
 
   // Get bucket sizes from the counts
   bzero(cnt, sizeof(cnt));
-  for (uns i=0; i<sorter_threads; i++)
+  for (uint i=0; i<sorter_threads; i++)
     {
       struct rs_work *w = (struct rs_work *) work_wait(ctx->rs_work_queue);
       ASSERT(w);
-      for (uns j=0; j<buckets; j++)
+      for (uint j=0; j<buckets; j++)
 	cnt[j] += w->cnt[j];
     }
 
   // Calculate bucket starts
-  uns pos = 0;
-  for (uns i=0; i<buckets; i++)
+  uint pos = 0;
+  for (uint i=0; i<buckets; i++)
     {
-      uns j = cnt[i];
+      uint j = cnt[i];
       cnt[i] = pos;
       pos += j;
     }
   ASSERT(pos == num_elts);
 
   // Start parallel splitting
-  for (uns i=0; i<sorter_threads; i++)
+  for (uint i=0; i<sorter_threads; i++)
     {
       struct rs_work *w = ctx->rs_works[i];
       w->w.go = rs_split;
-      for (uns j=0; j<buckets; j++)
+      for (uint j=0; j<buckets; j++)
 	{
-	  uns k = w->cnt[j];
+	  uint k = w->cnt[j];
 	  w->cnt[j] = cnt[j];
 	  cnt[j] += k;
 	}
@@ -328,9 +328,9 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
 
   // Recurse on buckets
   pos = 0;
-  for (uns i=0; i<buckets; i++)
+  for (uint i=0; i<buckets; i++)
     {
-      uns n = cnt[i] - pos;
+      uint n = cnt[i] - pos;
       if (!n)
 	continue;
       if (n < ctx->thread_threshold || shift < ASORT_MIN_SHIFT)
@@ -365,7 +365,7 @@ rs_radix(struct asort_context *ctx, void *array, void *buffer, uns num_elts, uns
 }
 
 static void
-threaded_radixsort(struct asort_context *ctx, uns swap)
+threaded_radixsort(struct asort_context *ctx, uint swap)
 {
   struct work_queue q;
 
@@ -376,16 +376,16 @@ threaded_radixsort(struct asort_context *ctx, uns swap)
   // We use big_alloc(), because we want to avoid cacheline aliasing between threads.
   ctx->rs_work_queue = &q;
   ctx->rs_works = alloca(sizeof(struct rs_work *) * sorter_threads);
-  for (uns i=0; i<sorter_threads; i++)
-    ctx->rs_works[i] = big_alloc(sizeof(struct rs_work) + sizeof(uns) * (1 << ctx->radix_bits));
+  for (uint i=0; i<sorter_threads; i++)
+    ctx->rs_works[i] = big_alloc(sizeof(struct rs_work) + sizeof(uint) * (1 << ctx->radix_bits));
 
   // Prepare a pool for all remaining small bits which will be sorted on background.
   ctx->eltpool = ep_new(sizeof(struct rs_work), 1000);
 
   // Do the big splitting
   rs_radix(ctx, ctx->array, ctx->buffer, ctx->num_elts, ctx->hash_bits, swap);
-  for (uns i=0; i<sorter_threads; i++)
-    big_free(ctx->rs_works[i], sizeof(struct rs_work) + sizeof(uns) * (1 << ctx->radix_bits));
+  for (uint i=0; i<sorter_threads; i++)
+    big_free(ctx->rs_works[i], sizeof(struct rs_work) + sizeof(uint) * (1 << ctx->radix_bits));
 
   // Finish the small blocks
   rs_wait_small(ctx);
@@ -398,17 +398,17 @@ threaded_radixsort(struct asort_context *ctx, uns swap)
 
 #else
 
-void asort_start_threads(uns run UNUSED) { }
+void asort_start_threads(uint run UNUSED) { }
 void asort_stop_threads(void) { }
 
 #endif
 
-static uns
+static uint
 predict_swap(struct asort_context *ctx)
 {
-  uns bits = ctx->radix_bits;
-  uns elts = ctx->num_elts;
-  uns swap = 0;
+  uint bits = ctx->radix_bits;
+  uint elts = ctx->num_elts;
+  uint swap = 0;
 
   while (elts >= ctx->radix_threshold && bits >= ASORT_MIN_SHIFT)
     {
@@ -429,8 +429,8 @@ asort_run(struct asort_context *ctx)
 
   ASORT_TRACE("Array-sorting %u items per %u bytes, hash_bits=%d", ctx->num_elts, ctx->elt_size, ctx->hash_bits);
   ASORT_XTRACE(2, "Limits: thread_threshold=%u, thread_chunk=%u, radix_threshold=%u",
-    	ctx->thread_threshold, ctx->thread_chunk, ctx->radix_threshold);
-  uns allow_threads UNUSED = (sorter_threads > 1 &&
+	ctx->thread_threshold, ctx->thread_chunk, ctx->radix_threshold);
+  uint allow_threads UNUSED = (sorter_threads > 1 &&
 			      ctx->num_elts >= ctx->thread_threshold &&
 			      !(sorter_debug & SORT_DEBUG_ASORT_NO_THREADS));
 
@@ -454,7 +454,7 @@ asort_run(struct asort_context *ctx)
     }
   else
     {
-      uns swap = predict_swap(ctx);
+      uint swap = predict_swap(ctx);
 #ifdef CONFIG_UCW_THREADS
       if (allow_threads)
 	{

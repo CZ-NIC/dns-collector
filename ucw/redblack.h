@@ -71,9 +71,9 @@
  *  TREE_WANT_SEARCH_DOWN node *search_down(key) -- find either the node with
  *                      specified value, or if it does not exist, the node
  *                      with nearest smaller value.
- *  TREE_WANT_BOUNDARY	node *boundary(uns direction) -- finds smallest
+ *  TREE_WANT_BOUNDARY	node *boundary(uint direction) -- finds smallest
  *			(direction==0) or largest (direction==1) node.
- *  TREE_WANT_ADJACENT	node *adjacent(node *, uns direction) -- finds next
+ *  TREE_WANT_ADJACENT	node *adjacent(node *, uint direction) -- finds next
  *			(direction==1) or previous (direction==0) node.
  *  TREE_WANT_NEW	node *new(key) -- create new node with given key.
  *			If it already exists, it is created as the last one.
@@ -100,7 +100,7 @@
  *			and static strings, strcpy for end-allocated strings.
  *  TREE_GIVE_INIT_DATA	void init_data(node *) -- initialize data fields in a
  *			newly created node. Very useful for lookup operations.
- *  TREE_GIVE_ALLOC	void *alloc(unsigned int size) -- allocate space for
+ *  TREE_GIVE_ALLOC	void *alloc(uint size) -- allocate space for
  *			a node. Default is either normal or pooled allocation
  *			depending on whether we want deletions.
  *			void free(void *) -- the converse.
@@ -159,23 +159,23 @@ typedef struct P(bucket) {
 	struct P(bucket) *parent;
 #endif
 #if !defined(TREE_CONSERVE_SPACE) && (defined(TREE_GIVE_EXTRA_SIZE) || defined(TREE_KEY_ENDSTRING))
-	uns red_flag:1;
+	uint red_flag:1;
 #endif
 	P(node) n;
 #if !defined(TREE_CONSERVE_SPACE) && !defined(TREE_GIVE_EXTRA_SIZE) && !defined(TREE_KEY_ENDSTRING)
-	uns red_flag:1;
+	uint red_flag:1;
 #endif
 } P(bucket);
 
 struct P(tree) {
-	uns count;
-	uns height;			/* of black nodes */
+	uint count;
+	uint height;			/* of black nodes */
 	P(bucket) *root;
 };
 
 typedef struct P(stack_entry) {
 	P(bucket) *buck;
-	uns son;
+	uint son;
 } P(stack_entry);
 
 #define T struct P(tree)
@@ -253,23 +253,23 @@ typedef struct P(stack_entry) {
 #endif
 
 #ifndef TREE_CONSERVE_SPACE
-	static inline uns P(red_flag) (P(bucket) *node)
+	static inline uint P(red_flag) (P(bucket) *node)
 	{ return node->red_flag; }
-	static inline void P(set_red_flag) (P(bucket) *node, uns flag)
+	static inline void P(set_red_flag) (P(bucket) *node, uint flag)
 	{ node->red_flag = flag; }
-	static inline P(bucket) * P(tree_son) (P(bucket) *node, uns id)
+	static inline P(bucket) * P(tree_son) (P(bucket) *node, uint id)
 	{ return node->son[id]; }
-	static inline void P(set_tree_son) (P(bucket) *node, uns id, P(bucket) *son)
+	static inline void P(set_tree_son) (P(bucket) *node, uint id, P(bucket) *son)
 	{ node->son[id] = son; }
 #else
 	/* Pointers are aligned, hence we can use lower bits.  */
-	static inline uns P(red_flag) (P(bucket) *node)
+	static inline uint P(red_flag) (P(bucket) *node)
 	{ return ((uintptr_t) node->son[0]) & 1L; }
-	static inline void P(set_red_flag) (P(bucket) *node, uns flag)
+	static inline void P(set_red_flag) (P(bucket) *node, uint flag)
 	{ node->son[0] = (void*) ( (((uintptr_t) node->son[0]) & ~1L) | (flag & 1L) ); }
-	static inline P(bucket) * P(tree_son) (P(bucket) *node, uns id)
+	static inline P(bucket) * P(tree_son) (P(bucket) *node, uint id)
 	{ return (void *) (((uintptr_t) node->son[id]) & ~1L); }
-	static inline void P(set_tree_son) (P(bucket) *node, uns id, P(bucket) *son)
+	static inline void P(set_tree_son) (P(bucket) *node, uint id, P(bucket) *son)
 	{ node->son[id] = (void *) ((uintptr_t) son | (((uintptr_t) node->son[id]) & 1L) ); }
 #endif
 
@@ -305,11 +305,11 @@ static inline void P(init_data) (P(node) *n UNUSED)
 
 #ifndef TREE_GIVE_ALLOC
 #	ifdef TREE_USE_POOL
-		static inline void * P(alloc) (T *t UNUSED, unsigned int size)
+		static inline void * P(alloc) (T *t UNUSED, uint size)
 		{ return mp_alloc_fast(TREE_USE_POOL, size); }
 #		define TREE_SAFE_FREE(t, x)
 #	else
-		static inline void * P(alloc) (T *t UNUSED, unsigned int size)
+		static inline void * P(alloc) (T *t UNUSED, uint size)
 		{ return xmalloc(size); }
 
 		static inline void P(free) (T *t UNUSED, void *x)
@@ -371,9 +371,9 @@ STATIC void P(cleanup) (T *t)
 }
 #endif
 
-static uns P(fill_stack) (P(stack_entry) *stack, uns max_depth, P(bucket) *node, TREE_KEY_DECL, uns son_id UNUSED)
+static uint P(fill_stack) (P(stack_entry) *stack, uint max_depth, P(bucket) *node, TREE_KEY_DECL, uint son_id UNUSED)
 {
-	uns i;
+	uint i;
 	stack[0].buck = node;
 	for (i=0; stack[i].buck; i++)
 	{
@@ -391,7 +391,7 @@ static uns P(fill_stack) (P(stack_entry) *stack, uns max_depth, P(bucket) *node,
 #ifdef TREE_DUPLICATES
 	if (stack[i].buck)
 	{
-		uns idx;
+		uint idx;
 		/* Find first/last of equal keys according to son_id.  */
 		idx = P(fill_stack) (stack+i+1, max_depth-i-1,
 			P(tree_son) (stack[i].buck, son_id), TREE_KEY(), son_id);
@@ -410,7 +410,7 @@ static uns P(fill_stack) (P(stack_entry) *stack, uns max_depth, P(bucket) *node,
 STATIC P(node) * P(find) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
-	uns depth;
+	uint depth;
 	depth = P(fill_stack) (stack, TREE_MAX_DEPTH, t->root, TREE_KEY(), 0);
 	return stack[depth].buck ? &stack[depth].buck->n : NULL;
 }
@@ -440,14 +440,14 @@ STATIC P(node) * P(search_down) (T *t, TREE_KEY_DECL)
 #endif
 
 #ifdef TREE_WANT_BOUNDARY
-STATIC P(node) * P(boundary) (T *t, uns direction)
+STATIC P(node) * P(boundary) (T *t, uint direction)
 {
 	P(bucket) *n = t->root, *ns;
 	if (!n)
 		return NULL;
 	else
 	{
-		uns son = !!direction;
+		uint son = !!direction;
 		while ((ns = P(tree_son) (n, son)))
 			n = ns;
 		return &n->n;
@@ -456,7 +456,7 @@ STATIC P(node) * P(boundary) (T *t, uns direction)
 #endif
 
 #ifdef TREE_STORE_PARENT
-STATIC P(node) * P(adjacent) (P(node) *start, uns direction)
+STATIC P(node) * P(adjacent) (P(node) *start, uint direction)
 {
 	P(bucket) *node = SKIP_BACK(P(bucket), n, start);
 	P(bucket) *next = P(tree_son) (node, direction);
@@ -487,9 +487,9 @@ STATIC P(node) * P(adjacent) (P(node) *start, uns direction)
 #endif
 
 #if defined(TREE_DUPLICATES) || defined(TREE_WANT_DELETE) || defined(TREE_WANT_REMOVE)
-static int P(find_next_node) (P(stack_entry) *stack, uns max_depth, uns direction)
+static int P(find_next_node) (P(stack_entry) *stack, uint max_depth, uint direction)
 {
-	uns depth = 0;
+	uint depth = 0;
 	if (stack[0].buck)
 	{
 		ASSERT(depth+1 < max_depth);
@@ -524,7 +524,7 @@ STATIC P(node) * P(find_next) (P(node) *start)
 STATIC P(node) * P(search) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
-	uns depth;
+	uint depth;
 	depth = P(fill_stack) (stack, TREE_MAX_DEPTH, t->root, TREE_KEY(), 0);
 	if (!stack[depth].buck)
 	{
@@ -543,7 +543,7 @@ STATIC P(node) * P(search) (T *t, TREE_KEY_DECL)
 #define TREE_TRACE(txt...)
 #endif
 
-static inline P(bucket) * P(rotation) (P(bucket) *node, uns son_id)
+static inline P(bucket) * P(rotation) (P(bucket) *node, uint son_id)
 {
 	/* Destroys red_flag's in node, son.  Returns new root.  */
 	P(bucket) *son = P(tree_son) (node, son_id);
@@ -559,7 +559,7 @@ static inline P(bucket) * P(rotation) (P(bucket) *node, uns son_id)
 	return son;
 }
 
-static void P(rotate_after_insert) (T *t, P(stack_entry) *stack, uns depth)
+static void P(rotate_after_insert) (T *t, P(stack_entry) *stack, uint depth)
 {
 	P(bucket) *node;
 	P(bucket) *parent, *grand, *uncle;
@@ -630,7 +630,7 @@ STATIC P(node) * P(new) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	P(bucket) *added;
-	uns depth;
+	uint depth;
 	depth = P(fill_stack) (stack, TREE_MAX_DEPTH, t->root, TREE_KEY(), 1);
 #ifdef TREE_DUPLICATES
 	/* It is the last found value, hence everything in the right subtree is
@@ -680,9 +680,9 @@ STATIC P(node) * P(lookup) (T *t, TREE_KEY_DECL)
 #if defined(TREE_WANT_REMOVE) || defined(TREE_WANT_DELETE)
 static void P(rotate_after_delete) (T *t, P(stack_entry) *stack, int depth)
 {
-	uns iteration = 0;
+	uint iteration = 0;
 	P(bucket) *parent, *sibling, *instead;
-	uns parent_red, del_son, sibl_red;
+	uint parent_red, del_son, sibl_red;
 missing_black:
 	if (depth < 0)
 	{
@@ -707,7 +707,7 @@ missing_black:
 	if (!sibl_red)
 	{
 		P(bucket) *son[2];
-		uns red[2];
+		uint red[2];
 		son[0] = P(tree_son) (sibling, 0);
 		son[1] = P(tree_son) (sibling, 1);
 		red[0] = son[0] ? P(red_flag) (son[0]) : 0;
@@ -742,7 +742,7 @@ missing_black:
 	} else /* sibl_red */
 	{
 		P(bucket) *grand[2], *son;
-		uns red[2];
+		uint red[2];
 		ASSERT(!parent_red);
 		son = P(tree_son) (sibling, del_son);
 		ASSERT(son && !P(red_flag) (son));
@@ -785,18 +785,18 @@ missing_black:
 		t->root = instead;
 }
 
-static void P(remove_by_stack) (T *t, P(stack_entry) *stack, uns depth)
+static void P(remove_by_stack) (T *t, P(stack_entry) *stack, uint depth)
 {
 	P(bucket) *node = stack[depth].buck;
 	P(bucket) *son;
-	uns i;
+	uint i;
 	for (i=0; i<depth; i++)
 		ASSERT(P(tree_son) (stack[i].buck, stack[i].son) == stack[i+1].buck);
 	if (P(tree_son) (node, 0) && P(tree_son) (node, 1))
 	{
 		P(bucket) *xchg;
-		uns flag_node, flag_xchg;
-		uns d = P(find_next_node) (stack+depth, TREE_MAX_DEPTH-depth, 1);
+		uint flag_node, flag_xchg;
+		uint d = P(find_next_node) (stack+depth, TREE_MAX_DEPTH-depth, 1);
 
 		ASSERT(d >= 2);
 		d--;
@@ -873,7 +873,7 @@ STATIC void P(remove) (T *t, P(node) *Node)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	P(bucket) *node = SKIP_BACK(P(bucket), n, Node);
-	uns depth = 0, i;
+	uint depth = 0, i;
 	stack[0].buck = node;
 	stack[0].son = 10;
 	while (node->parent)
@@ -898,7 +898,7 @@ STATIC void P(remove) (T *t, P(node) *Node)
 STATIC int P(delete) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
-	uns depth;
+	uint depth;
 	depth = P(fill_stack) (stack, TREE_MAX_DEPTH, t->root, TREE_KEY(), 1);
 	if (stack[depth].buck)
 	{
@@ -911,9 +911,9 @@ STATIC int P(delete) (T *t, TREE_KEY_DECL)
 #endif
 
 #ifdef TREE_WANT_DUMP
-static void P(dump_subtree) (struct fastbuf *fb, T *t, P(bucket) *node, P(bucket) *parent, int cmp_res, int level, uns black)
+static void P(dump_subtree) (struct fastbuf *fb, T *t, P(bucket) *node, P(bucket) *parent, int cmp_res, int level, uint black)
 {
-	uns flag;
+	uint flag;
 	int i;
 	if (!node)
 	{
@@ -969,7 +969,7 @@ STATIC void P(dump) (struct fastbuf *fb, T *t)
 /* And the iterator */
 
 #ifdef TREE_WANT_ITERATOR
-static P(node) * P(first_node) (T *t, uns direction)
+static P(node) * P(first_node) (T *t, uint direction)
 {
 	P(bucket) *node = t->root, *prev = NULL;
 	while (node)

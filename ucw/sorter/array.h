@@ -34,7 +34,7 @@
  *			radix-sorting.
  *
  *  After including this file, a function
- * 	ASORT_KEY_TYPE *ASORT_PREFIX(sort)(ASORT_KEY_TYPE *array, uns num_elts [, ASORT_KEY_TYPE *buf, uns hash_bits])
+ *	ASORT_KEY_TYPE *ASORT_PREFIX(sort)(ASORT_KEY_TYPE *array, uint num_elts [, ASORT_KEY_TYPE *buf, uint hash_bits])
  *  is declared and all parameter macros are automatically undef'd. Here `buf' is an
  *  auxiliary buffer of the same size as the input array, required whenever radix
  *  sorting should be used, and `hash_bits' is the number of significant bits returned
@@ -68,12 +68,12 @@ typedef ASORT_KEY_TYPE Q(key);
 
 /* QuickSort with optimizations a'la Sedgewick, inspired by qsort() from GNU libc. */
 
-static void Q(quicksort)(void *array_ptr, uns num_elts)
+static void Q(quicksort)(void *array_ptr, uint num_elts)
 {
   Q(key) *array = array_ptr;
-  struct stk { int l, r; } stack[8*sizeof(uns)];
+  struct stk { int l, r; } stack[8*sizeof(uint)];
   int l, r, left, right, m;
-  uns sp = 0;
+  uint sp = 0;
   Q(key) pivot;
 
   if (num_elts <= 1)
@@ -181,7 +181,7 @@ static void Q(quicksort)(void *array_ptr, uns num_elts)
 
 /* Just the splitting part of QuickSort */
 
-static void Q(quicksplit)(void *array_ptr, uns num_elts, int *leftp, int *rightp)
+static void Q(quicksplit)(void *array_ptr, uint num_elts, int *leftp, int *rightp)
 {
   Q(key) *array = array_ptr;
   int l, r, m;
@@ -224,10 +224,10 @@ static void Q(quicksplit)(void *array_ptr, uns num_elts, int *leftp, int *rightp
 
 #ifdef ASORT_HASH
 
-static void Q(radix_count)(void *src_ptr, uns num_elts, uns *cnt, uns shift)
+static void Q(radix_count)(void *src_ptr, uint num_elts, uint *cnt, uint shift)
 {
   Q(key) *src = src_ptr;
-  uns i;
+  uint i;
 
   switch (shift)
     {
@@ -253,10 +253,10 @@ static void Q(radix_count)(void *src_ptr, uns num_elts, uns *cnt, uns shift)
 #undef RC
 }
 
-static void Q(radix_split)(void *src_ptr, void *dest_ptr, uns num_elts, uns *ptrs, uns shift)
+static void Q(radix_split)(void *src_ptr, void *dest_ptr, uint num_elts, uint *ptrs, uint shift)
 {
   Q(key) *src = src_ptr, *dest = dest_ptr;
-  uns i;
+  uint i;
 
   switch (shift)
     {
@@ -285,7 +285,7 @@ static void Q(radix_split)(void *src_ptr, void *dest_ptr, uns num_elts, uns *ptr
 #endif
 
 #ifdef ASORT_HASH
-#define ASORT_HASH_ARGS , Q(key) *buffer, uns hash_bits
+#define ASORT_HASH_ARGS , Q(key) *buffer, uint hash_bits
 #else
 #define ASORT_HASH_ARGS
 #endif
@@ -296,13 +296,13 @@ static void Q(radix_split)(void *src_ptr, void *dest_ptr, uns num_elts, uns *ptr
  * the `ASORT_HASH_ARGS` is empty (there are only the two parameters in that
  * case).  When you provide it, the function gains two more parameters in the
  * `ASORT_HASH_ARGS` macro. They are `ASORT_KEY_TYPE *@buffer`, which must be a
- * memory buffer of the same size as the input array, and `uns @hash_bits`,
+ * memory buffer of the same size as the input array, and `uint @hash_bits`,
  * specifying how many significant bits the hash function returns.
  *
  * The function returns pointer to the sorted data, either the @array or the
  * @buffer argument.
  **/
-static ASORT_KEY_TYPE *ASORT_PREFIX(sort)(ASORT_KEY_TYPE *array, uns num_elts ASORT_HASH_ARGS)
+static ASORT_KEY_TYPE *ASORT_PREFIX(sort)(ASORT_KEY_TYPE *array, uint num_elts ASORT_HASH_ARGS)
 {
   struct asort_context ctx = {
     .array = array,

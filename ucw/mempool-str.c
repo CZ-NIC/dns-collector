@@ -18,14 +18,14 @@ mp_strdup(struct mempool *p, const char *s)
 {
   if (!s)
     return NULL;
-  uns l = strlen(s) + 1;
+  uint l = strlen(s) + 1;
   char *t = mp_alloc_fast_noalign(p, l);
   memcpy(t, s, l);
   return t;
 }
 
 void *
-mp_memdup(struct mempool *p, const void *s, uns len)
+mp_memdup(struct mempool *p, const void *s, uint len)
 {
   void *t = mp_alloc_fast(p, len);
   memcpy(t, s, len);
@@ -38,12 +38,12 @@ mp_multicat(struct mempool *p, ...)
   va_list args, a;
   va_start(args, p);
   char *x, *y;
-  uns cnt = 0;
+  uint cnt = 0;
   va_copy(a, args);
   while (x = va_arg(a, char *))
     cnt++;
-  uns *sizes = alloca(cnt * sizeof(uns));
-  uns len = 1;
+  uint *sizes = alloca(cnt * sizeof(uint));
+  uint len = 1;
   cnt = 0;
   va_end(a);
   va_copy(a, args);
@@ -64,17 +64,17 @@ mp_multicat(struct mempool *p, ...)
 }
 
 char *
-mp_strjoin(struct mempool *p, char **a, uns n, uns sep)
+mp_strjoin(struct mempool *p, char **a, uint n, uint sep)
 {
-  uns sizes[n];
-  uns len = 1;
-  for (uns i=0; i<n; i++)
+  uint sizes[n];
+  uint len = 1;
+  for (uint i=0; i<n; i++)
     len += sizes[i] = strlen(a[i]);
   if (sep && n)
     len += n-1;
   char *dest = mp_alloc_fast_noalign(p, len);
   char *d = dest;
-  for (uns i=0; i<n; i++)
+  for (uint i=0; i<n; i++)
     {
       if (sep && i)
 	*d++ = sep;
@@ -86,7 +86,7 @@ mp_strjoin(struct mempool *p, char **a, uns n, uns sep)
 }
 
 char *
-mp_str_from_mem(struct mempool *a, const void *mem, uns len)
+mp_str_from_mem(struct mempool *a, const void *mem, uint len)
 {
   char *str = mp_alloc_noalign(a, len+1);
   memcpy(str, mem, len);

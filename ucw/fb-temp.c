@@ -25,7 +25,7 @@ bopen_tmp_file(struct fb_params *params)
 }
 
 struct fastbuf *
-bopen_tmp(uns buflen)
+bopen_tmp(uint buflen)
 {
   return bopen_tmp_file(&(struct fb_params){ .type = FB_STD, .buffer_size = buflen });
 }

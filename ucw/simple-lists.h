@@ -35,7 +35,7 @@ typedef struct simp_node {
     char *s;
     void *p;
     int i;
-    uns u;
+    uint u;
   };
 } simp_node;
 
@@ -48,13 +48,13 @@ typedef struct simp2_node {
     char *s1;
     void *p1;
     int i1;
-    uns u1;
+    uint u1;
   };
   union {
     char *s2;
     void *p2;
     int i2;
-    uns u2;
+    uint u2;
   };
 } simp2_node;
 

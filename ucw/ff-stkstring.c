@@ -35,7 +35,7 @@ void
 bgets_stk_step(struct bgets_stk_struct *s)
 {
   byte *buf = s->cur_buf;
-  uns buf_len = s->cur_len;
+  uint buf_len = s->cur_len;
   if (s->old_buf)
     {
       memcpy( s->cur_buf, s->old_buf, s->old_len);
@@ -44,8 +44,8 @@ bgets_stk_step(struct bgets_stk_struct *s)
     }
   do
     {
-      uns cnt = MIN(s->src_len, buf_len);
-      for (uns i = cnt; i--;)
+      uint cnt = MIN(s->src_len, buf_len);
+      for (uint i = cnt; i--;)
         {
 	  byte v = *s->src++;
 	  if (v == '\n')

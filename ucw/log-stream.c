@@ -24,7 +24,7 @@ static int log_initialized = 0;
 /* The head of the list of freed log_streams indexes in log_streams.ptr (~0U if none free).
  * Freed positions in log_streams.ptr are connected into a linked list in the following way:
  * log_streams.ptr[log_streams_free].levels is the index of next freed position (or ~0U) */
-static uns log_streams_free = ~0U;
+static uint log_streams_free = ~0U;
 
 /* Initialize the logstream module.
  * It is not neccessary to call this explicitely as it is called by
@@ -163,7 +163,7 @@ log_close_stream(struct log_stream *ls)
 }
 
 void
-log_set_format(struct log_stream *ls, uns mask, uns data)
+log_set_format(struct log_stream *ls, uint mask, uint data)
 {
   ls->msgfmt = (ls->msgfmt & mask) | data;
   CLIST_FOR_EACH(simp_node *, i, ls->substreams)
@@ -188,7 +188,7 @@ int log_register_type(const char *name)
       log_type_names = xmalloc_zero(LS_NUM_TYPES * sizeof(char *));
       log_type_names[0] = "default";
     }
-  uns id;
+  uint id;
   for (id=0; id < LS_NUM_TYPES && log_type_names[id]; id++)
     if (!strcmp(log_type_names[id], name))
       return LS_SET_TYPE(id);
@@ -205,7 +205,7 @@ int log_find_type(const char *name)
   if (!log_type_names)
     return -1;
 
-  for (uns id=0; id < LS_NUM_TYPES && log_type_names[id]; id++)
+  for (uint id=0; id < LS_NUM_TYPES && log_type_names[id]; id++)
     if (!strcmp(log_type_names[id], name))
       return LS_SET_TYPE(id);
   return -1;

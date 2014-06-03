@@ -86,24 +86,24 @@ enum {
   COLOR_SPACE_MAX
 };
 
-extern uns color_space_channels[COLOR_SPACE_MAX];
+extern uint color_space_channels[COLOR_SPACE_MAX];
 extern byte *color_space_name[COLOR_SPACE_MAX];
 
 /* Color space ID <-> name conversions */
-byte *color_space_id_to_name(uns id);
-uns color_space_name_to_id(byte *name);
+byte *color_space_id_to_name(uint id);
+uint color_space_name_to_id(byte *name);
 
 /* Struct color manipulation */
-int color_get(struct color *color, byte *src, uns src_space);
-int color_put(struct image_context *ctx, struct color *color, byte *dest, uns dest_space);
+int color_get(struct color *color, byte *src, uint src_space);
+int color_put(struct image_context *ctx, struct color *color, byte *dest, uint dest_space);
 
-static inline void color_make_gray(struct color *color, uns gray)
+static inline void color_make_gray(struct color *color, uint gray)
 {
   color->c[0] = gray;
   color->color_space = COLOR_SPACE_GRAYSCALE;
 }
 
-static inline void color_make_rgb(struct color *color, uns r, uns g, uns b)
+static inline void color_make_rgb(struct color *color, uint r, uint g, uint b)
 {
   color->c[0] = r;
   color->c[1] = g;
@@ -122,7 +122,7 @@ enum {
 };
 
 struct image_conv_options {
-  uns flags;
+  uint flags;
   struct color background;
 };
 
@@ -171,7 +171,7 @@ void color_compute_bradford_matrix(double matrix[9], const double src[2], const 
 void color_compute_color_spaces_conversion_matrix(double matrix[9], const struct color_space_chromacity_info *src, const struct color_space_chromacity_info *dest);
 void color_invert_matrix(double dest[9], double matrix[9]);
 
-static inline uns rgb_to_gray_func(uns r, uns g, uns b)
+static inline uint rgb_to_gray_func(uint r, uint g, uint b)
 {
   return (r * 19660 + g * 38666 + b * 7210) >> 16;
 }
@@ -214,29 +214,29 @@ extern u16 srgb_to_luv_tab2[9 << SRGB_TO_LUV_TAB2_SIZE];
 extern u32 srgb_to_luv_tab3[20 << SRGB_TO_LUV_TAB3_SIZE];
 
 void srgb_to_luv_init(void);
-void srgb_to_luv_pixels(byte *dest, byte *src, uns count);
+void srgb_to_luv_pixels(byte *dest, byte *src, uint count);
 
 /* L covers the interval [0..255]; u and v are centered to 128 and scaled by 1/4 in respect of L */
 static inline void srgb_to_luv_pixel(byte *dest, byte *src)
 {
-  uns r = srgb_to_luv_tab1[src[0]];
-  uns g = srgb_to_luv_tab1[src[1]];
-  uns b = srgb_to_luv_tab1[src[2]];
-  uns x =
-    (uns)(4 * SRGB_XYZ_XR * 0xffff) * r +
-    (uns)(4 * SRGB_XYZ_XG * 0xffff) * g +
-    (uns)(4 * SRGB_XYZ_XB * 0xffff) * b;
-  uns y =
-    (uns)(9 * SRGB_XYZ_YR * 0xffff) * r +
-    (uns)(9 * SRGB_XYZ_YG * 0xffff) * g +
-    (uns)(9 * SRGB_XYZ_YB * 0xffff) * b;
-  uns l = srgb_to_luv_tab2[y >> (28 - SRGB_TO_LUV_TAB2_SIZE)];
+  uint r = srgb_to_luv_tab1[src[0]];
+  uint g = srgb_to_luv_tab1[src[1]];
+  uint b = srgb_to_luv_tab1[src[2]];
+  uint x =
+    (uint)(4 * SRGB_XYZ_XR * 0xffff) * r +
+    (uint)(4 * SRGB_XYZ_XG * 0xffff) * g +
+    (uint)(4 * SRGB_XYZ_XB * 0xffff) * b;
+  uint y =
+    (uint)(9 * SRGB_XYZ_YR * 0xffff) * r +
+    (uint)(9 * SRGB_XYZ_YG * 0xffff) * g +
+    (uint)(9 * SRGB_XYZ_YB * 0xffff) * b;
+  uint l = srgb_to_luv_tab2[y >> (28 - SRGB_TO_LUV_TAB2_SIZE)];
     dest[0] = l >> (SRGB_TO_LUV_TAB2_SCALE - 8);
-  uns sum =
-    (uns)((SRGB_XYZ_XR + 15 * SRGB_XYZ_YR + 3 * SRGB_XYZ_ZR) * 0x7fff) * r +
-    (uns)((SRGB_XYZ_XG + 15 * SRGB_XYZ_YG + 3 * SRGB_XYZ_ZG) * 0x7fff) * g +
-    (uns)((SRGB_XYZ_XB + 15 * SRGB_XYZ_YB + 3 * SRGB_XYZ_ZB) * 0x7fff) * b;
-  uns s = srgb_to_luv_tab3[sum >> (27 - SRGB_TO_LUV_TAB3_SIZE)];
+  uint sum =
+    (uint)((SRGB_XYZ_XR + 15 * SRGB_XYZ_YR + 3 * SRGB_XYZ_ZR) * 0x7fff) * r +
+    (uint)((SRGB_XYZ_XG + 15 * SRGB_XYZ_YG + 3 * SRGB_XYZ_ZG) * 0x7fff) * g +
+    (uint)((SRGB_XYZ_XB + 15 * SRGB_XYZ_YB + 3 * SRGB_XYZ_ZB) * 0x7fff) * b;
+  uint s = srgb_to_luv_tab3[sum >> (27 - SRGB_TO_LUV_TAB3_SIZE)];
   int xs = ((u64)x * s) >> 32;
   int ys = ((u64)y * s) >> 32;
   int xw = ((4 * 13) << (SRGB_TO_LUV_TAB3_SCALE - 4)) *
@@ -268,15 +268,15 @@ extern struct color_grid_node *srgb_to_luv_grid;
 extern struct color_interpolation_node *color_interpolation_table;
 
 void color_conv_init(void);
-void color_conv_pixels(byte *dest, byte *src, uns count, struct color_grid_node *grid);
+void color_conv_pixels(byte *dest, byte *src, uint count, struct color_grid_node *grid);
 
 #define COLOR_CONV_SCALE_CONST (((((1 << COLOR_CONV_SIZE) - 1) << 16) + (1 << (16 - COLOR_CONV_OFS))) / 255)
 
 static inline void color_conv_pixel(byte *dest, byte *src, struct color_grid_node *grid)
 {
-  uns s0 = src[0] * COLOR_CONV_SCALE_CONST;
-  uns s1 = src[1] * COLOR_CONV_SCALE_CONST;
-  uns s2 = src[2] * COLOR_CONV_SCALE_CONST;
+  uint s0 = src[0] * COLOR_CONV_SCALE_CONST;
+  uint s1 = src[1] * COLOR_CONV_SCALE_CONST;
+  uint s2 = src[2] * COLOR_CONV_SCALE_CONST;
   struct color_grid_node *g0, *g1, *g2, *g3, *g = grid +
     ((s0 >> 16) + ((s1 >> 16) << COLOR_CONV_SIZE) + ((s2 >> 16) << (2 * COLOR_CONV_SIZE)));
   struct color_interpolation_node *n = color_interpolation_table +

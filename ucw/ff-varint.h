@@ -27,7 +27,7 @@ void bput_varint_slow(struct fastbuf *b, u64 u);
  **/
 static inline u64 bget_varint_repl(struct fastbuf *b, u64 repl)
 {
-	uns l;
+	uint l;
 	if (bavailr(b) >= 1) {
 		l = varint_len(*b->bptr);
 		if (bavailr(b) >= l) {
@@ -51,7 +51,7 @@ static inline u64 bget_varint(struct fastbuf *b)
 /** Writes u64 u encoded as varint to the fastbuf b. **/
 static inline void bput_varint(struct fastbuf *b, u64 u)
 {
-	uns l = varint_space(u);
+	uint l = varint_space(u);
 	if (bavailw(b) >= l)
 		b->bptr += varint_put(b->bptr, u);
 	else

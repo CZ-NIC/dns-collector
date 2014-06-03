@@ -22,7 +22,7 @@
 #define STN_MAX ((STN_TYPE)(-1))
 static const STN_TYPE S(tops)[STN_DBASES_MASK+1] = { [2] = STN_MAX/2, [8] = STN_MAX/8, [10] = STN_MAX/10, [16] = STN_MAX/16 };
 
-static const char *S(parse_string)(const char **pp, const uns flags, const uns sign, const uns base, STN_TYPE *num)
+static const char *S(parse_string)(const char **pp, const uint flags, const uint sign, const uint base, STN_TYPE *num)
 {
   const STN_TYPE max = STN_MAX;
   const STN_TYPE top = S(tops)[base];
@@ -32,11 +32,11 @@ static const char *S(parse_string)(const char **pp, const uns flags, const uns s
   const STN_TYPE sign_max = ((flags & STN_SIGNED) || sign) ? max/2 + sign : max;
 
   STN_TYPE val = 0;
-  uns digits = 0;
+  uint digits = 0;
   int overflow = 0;
   for (;; (*pp)++)
     {
-      const uns c = (byte)**pp;
+      const uint c = (byte)**pp;
 
       if (c == '_')
         {
@@ -46,7 +46,7 @@ static const char *S(parse_string)(const char **pp, const uns flags, const uns s
             break;
         }
 
-      const uns d = get_digit(c);
+      const uint d = get_digit(c);
       if (d >= base)
         break;
 
@@ -90,7 +90,7 @@ STN_DECLARE(STN_TYPE, STN_SUFFIX)
 {
   const char *err = NULL;
 
-  uns sign, base;
+  uint sign, base;
   err = str_to_num_init(&str, flags, &sign, &base);
 
   if (!err)

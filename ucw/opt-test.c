@@ -100,7 +100,7 @@ static struct cf_user_type teapot_temperature_t = {
   .dumper = (cf_dumper1*) teapot_temperature_dumper
 };
 
-static void opt_test_hook(struct opt_item * opt, uns event UNUSED, const char * value, void * data) {
+static void opt_test_hook(struct opt_item * opt, uint event UNUSED, const char * value, void * data) {
   if (!show_hooks)
     return;
   if (opt)
@@ -180,8 +180,8 @@ int main(int argc UNUSED, char ** argv)
     printf("Chosen teapot: %s|", teapot_type_str[set]);
   printf("Temperature: %d%s|", temperature.value, temp_scale_str[temperature.scale]);
   printf("Verbosity: %d|", verbose);
-  uns magick = GARY_SIZE(black_magic);
-  for (uns i=0; i<magick; i++)
+  uint magick = GARY_SIZE(black_magic);
+  for (uint i=0; i<magick; i++)
     printf("Black magic: %d|", black_magic[i]);
   printf("Prayer: %s|", pray ? "yes" : "no");
   printf("Clean: %s|", clean_pot ? "yes" : "no");

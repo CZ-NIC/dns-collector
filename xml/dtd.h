@@ -36,7 +36,7 @@ enum xml_dtd_notn_flags {
 
 struct xml_dtd_notn {
   snode n;				/* Node in xml_dtd.notns */
-  uns flags;				/* XML_DTD_NOTN_x */
+  uint flags;				/* XML_DTD_NOTN_x */
   char *name;				/* Notation name */
   char *system_id;			/* External ID */
   char *public_id;
@@ -58,10 +58,10 @@ enum xml_dtd_entity_flags {
 
 struct xml_dtd_entity {
   snode n;				/* Node in xml_dtd.[gp]ents */
-  uns flags;				/* XML_DTD_ENT_x */
+  uint flags;				/* XML_DTD_ENT_x */
   char *name;				/* Entity name */
   char *text;				/* Replacement text / expanded replacement text (XML_DTD_ENT_TRIVIAL) */
-  uns len;				/* Text length */
+  uint len;				/* Text length */
   char *system_id;			/* External ID */
   char *public_id;
   struct xml_dtd_notn *notn;		/* Notation (XML_DTD_ENT_UNPARSED only) */
@@ -85,8 +85,8 @@ enum xml_dtd_elem_type {
 
 struct xml_dtd_elem {
   snode n;
-  uns flags;
-  uns type;
+  uint flags;
+  uint type;
   char *name;
   struct xml_dtd_elem_node *node;
   slist attrs;
@@ -98,8 +98,8 @@ struct xml_dtd_elem_node {
   struct xml_dtd_elem_node *parent;
   struct xml_dtd_elem *elem;
   slist sons;
-  uns type;
-  uns occur;
+  uint type;
+  uint occur;
   void *user;				/* User-defined */
 };
 
@@ -144,8 +144,8 @@ struct xml_dtd_attr {
   snode n;
   char *name;				/* Attribute name */
   struct xml_dtd_elem *elem;		/* Owner element */
-  uns type;				/* See enum xml_dtd_attr_type */
-  uns default_mode;			/* See enum xml_dtd_attr_default */
+  uint type;				/* See enum xml_dtd_attr_type */
+  uint default_mode;			/* See enum xml_dtd_attr_default */
   char *default_value;			/* The default value defined in DTD (or NULL) */
 };
 

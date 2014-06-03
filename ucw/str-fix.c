@@ -32,14 +32,14 @@ str_has_suffix(const char *str, const char *suffix)
 }
 
 int
-str_hier_prefix(const char *str, const char *prefix, uns sep)
+str_hier_prefix(const char *str, const char *prefix, uint sep)
 {
   while (*str && *prefix)
     {
       size_t sl=0, pl=0;
-      while (str[sl] && (uns) str[sl] != sep)
+      while (str[sl] && (uint) str[sl] != sep)
 	sl++;
-      while (prefix[pl] && (uns) prefix[pl] != sep)
+      while (prefix[pl] && (uint) prefix[pl] != sep)
 	pl++;
       if (sl != pl || memcmp(str, prefix, sl))
 	return 0;
@@ -54,16 +54,16 @@ str_hier_prefix(const char *str, const char *prefix, uns sep)
 }
 
 int
-str_hier_suffix(const char *str, const char *suffix, uns sep)
+str_hier_suffix(const char *str, const char *suffix, uint sep)
 {
   const char *st = str + strlen(str);
   const char *sx = suffix + strlen(suffix);
   while (st > str && sx > suffix)
     {
       size_t sl=0, pl=0;
-      while (st-sl > str && (uns) st[-sl-1] != sep)
+      while (st-sl > str && (uint) st[-sl-1] != sep)
 	sl++;
-      while (sx-pl > suffix && (uns) sx[-pl-1] != sep)
+      while (sx-pl > suffix && (uint) sx[-pl-1] != sep)
 	pl++;
       if (sl != pl || memcmp(st-sl, sx-pl, sl))
 	return 0;

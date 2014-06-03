@@ -33,7 +33,7 @@ void md5_init(md5_context *context); /** Initialize the MD5 hashing algorithm in
  * as if you concatenated all the data together and fed them here all at
  * once.
  */
-void md5_update(md5_context *context, const byte *buf, uns len);
+void md5_update(md5_context *context, const byte *buf, uint len);
 /**
  * Call this after the last @md5_update(). It will terminate the
  * algorithm and return a pointer to the result.
@@ -66,7 +66,7 @@ void md5_transform(u32 buf[4], const u32 in[16]);
  *  md5_update(&c, buffer, length);
  *  memcpy(outbuf, md5_final(&c), MD5_SIZE);
  */
-void md5_hash_buffer(byte *outbuf, const byte *buffer, uns length);
+void md5_hash_buffer(byte *outbuf, const byte *buffer, uint length);
 
 #define MD5_HEX_SIZE 33 /** How many bytes a string buffer for MD5 in hexadecimal format should have. **/
 #define MD5_SIZE 16 /** Number of bytes the MD5 hash takes in the binary form. **/

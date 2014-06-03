@@ -12,7 +12,7 @@
 #include <ucw/chartype.h>
 #include <ucw/strtonum.h>
 
-static uns detect_base(const char **pp, const uns flags)
+static uint detect_base(const char **pp, const uint flags)
 {
   if ((flags & STN_BASES0) && **pp == '0')
     {
@@ -58,7 +58,7 @@ static uns detect_base(const char **pp, const uns flags)
   return 0;
 }
 
-static const char *str_to_num_init(const char **pp, const uns flags, uns *sign, uns *base)
+static const char *str_to_num_init(const char **pp, const uint flags, uint *sign, uint *base)
 {
   ASSERT(*pp);
 
@@ -84,24 +84,29 @@ static const char *str_to_num_init(const char **pp, const uns flags, uns *sign, 
   return err;
 }
 
-static inline uns get_digit(const uns c)
+static inline uint get_digit(const uint c)
 {
   if (c <= '9')
     return c - '0';
   else
     {
       const int a = c & 0xDF;
-      unsigned d = a - 'A';
+      uint d = a - 'A';
       d &= 0xFF;
       d += 10;
       return d;
     }
 }
 
-#define STN_TYPE uns
-#define STN_SUFFIX uns
+#define STN_TYPE uint
+#define STN_SUFFIX uint
 #include <ucw/strtonum-gen.h>
 
 #define STN_TYPE uintmax_t
 #define STN_SUFFIX uintmax
+#include <ucw/strtonum-gen.h>
+
+// FIXME: For backwards compatibility, will be removed soon
+#define STN_TYPE uns
+#define STN_SUFFIX uns
 #include <ucw/strtonum-gen.h>

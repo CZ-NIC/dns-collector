@@ -20,7 +20,7 @@
 #include <ucw/crc.h>
 #include <ucw/crc-tables.h>
 
-static void crc32_update_by1(crc32_context *ctx, const byte *buf, uns len)
+static void crc32_update_by1(crc32_context *ctx, const byte *buf, uint len)
 {
   u32 crc = ctx->state;
   while (len--)
@@ -28,9 +28,9 @@ static void crc32_update_by1(crc32_context *ctx, const byte *buf, uns len)
   ctx->state = crc;
 }
 
-static void crc32_update_by4(crc32_context *ctx, const byte *buf, uns len)
+static void crc32_update_by4(crc32_context *ctx, const byte *buf, uint len)
 {
-  uns init_bytes, words;
+  uint init_bytes, words;
   u32 crc = ctx->state;
   u32 term1, term2, *buf32;
 
@@ -66,9 +66,9 @@ static void crc32_update_by4(crc32_context *ctx, const byte *buf, uns len)
   ctx->state = crc;
 }
 
-static void crc32_update_by8(crc32_context *ctx, const byte *buf, uns len)
+static void crc32_update_by8(crc32_context *ctx, const byte *buf, uint len)
 {
-  uns init_bytes, quads;
+  uint init_bytes, quads;
   u32 crc = ctx->state;
   u32 term1, term2, *buf32;
 
@@ -115,7 +115,7 @@ static void crc32_update_by8(crc32_context *ctx, const byte *buf, uns len)
 }
 
 void
-crc32_init(crc32_context *ctx, uns crc_mode)
+crc32_init(crc32_context *ctx, uint crc_mode)
 {
   ctx->state = 0xffffffff;
   switch (crc_mode)
@@ -135,7 +135,7 @@ crc32_init(crc32_context *ctx, uns crc_mode)
 }
 
 u32
-crc32_hash_buffer(const byte *buf, uns len)
+crc32_hash_buffer(const byte *buf, uint len)
 {
   crc32_context ctx;
   crc32_init(&ctx, CRC_MODE_DEFAULT);
@@ -152,28 +152,28 @@ int main(int argc, char **argv)
 {
   if (argc != 5)
     die("Usage: crc-t <alg> <len> <block> <iters>");
-  uns alg = atoi(argv[1]);
-  uns len = atoi(argv[2]);
-  uns block = atoi(argv[3]);
-  uns iters = atoi(argv[4]);
+  uint alg = atoi(argv[1]);
+  uint len = atoi(argv[2]);
+  uint block = atoi(argv[3]);
+  uint iters = atoi(argv[4]);
 
   byte *buf = xmalloc(len);
-  for (uns i=0; i<len; i++)
+  for (uint i=0; i<len; i++)
     buf[i] = i ^ (i >> 5) ^ (i >> 11);
 
-  for (uns i=0; i<iters; i++)
+  for (uint i=0; i<iters; i++)
     {
       crc32_context ctx;
-      uns modes[] = { CRC_MODE_DEFAULT, CRC_MODE_SMALL, CRC_MODE_BIG };
+      uint modes[] = { CRC_MODE_DEFAULT, CRC_MODE_SMALL, CRC_MODE_BIG };
       ASSERT(alg < ARRAY_SIZE(modes));
       crc32_init(&ctx, modes[alg]);
-      for (uns p=0; p<len;)
+      for (uint p=0; p<len;)
 	{
-	  uns l = MIN(len-p, block);
+	  uint l = MIN(len-p, block);
 	  crc32_update(&ctx, buf+p, l);
 	  p += l;
 	}
-      uns crc = crc32_final(&ctx);
+      uint crc = crc32_final(&ctx);
       if (!i)
 	printf("%08x\n", crc);
     }

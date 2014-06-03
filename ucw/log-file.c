@@ -25,7 +25,7 @@
 struct file_stream {
   struct log_stream ls;		// ls.name is the current name of the log file
   int fd;
-  uns flags;			// FF_xxx
+  uint flags;			// FF_xxx
   char *orig_name;		// Original name with strftime escapes
 };
 
@@ -110,7 +110,7 @@ file_handler(struct log_stream *ls, struct log_msg *m)
 }
 
 struct log_stream *
-log_new_fd(int fd, uns flags)
+log_new_fd(int fd, uint flags)
 {
   struct log_stream *ls = log_new_stream(sizeof(struct file_stream));
   struct file_stream *fs = (struct file_stream *) ls;
@@ -125,7 +125,7 @@ log_new_fd(int fd, uns flags)
 }
 
 struct log_stream *
-log_new_file(const char *path, uns flags)
+log_new_file(const char *path, uint flags)
 {
   struct log_stream *ls = log_new_stream(sizeof(struct file_stream));
   struct file_stream *fs = (struct file_stream *) ls;

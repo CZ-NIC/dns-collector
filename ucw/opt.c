@@ -18,7 +18,7 @@
 #include <alloca.h>
 #include <math.h>
 
-static uns opt_default_value_flags[] = {
+static uint opt_default_value_flags[] = {
     [OPT_CL_BOOL] = OPT_NO_VALUE,
     [OPT_CL_STATIC] = OPT_MAYBE_VALUE,
     [OPT_CL_MULTIPLE] = OPT_REQUIRED_VALUE,
@@ -57,7 +57,7 @@ void opt_precompute(struct opt_precomputed *opt, struct opt_item *item)
   opt->item = item;
   opt->count = 0;
   opt->name = item->name;
-  uns flags = item->flags;
+  uint flags = item->flags;
 
   if (item->letter >= OPT_POSITIONAL_TAIL) {
     flags &= ~OPT_VALUE_FLAGS;
@@ -71,7 +71,7 @@ void opt_precompute(struct opt_precomputed *opt, struct opt_item *item)
   opt->flags = flags;
 }
 
-static void opt_invoke_hooks(struct opt_context *oc, uns event, struct opt_item *item, char *value)
+static void opt_invoke_hooks(struct opt_context *oc, uint event, struct opt_item *item, char *value)
 {
   for (int i = 0; i < oc->hook_count; i++) {
     struct opt_item *hook = oc->hooks[i];
@@ -83,7 +83,7 @@ static void opt_invoke_hooks(struct opt_context *oc, uns event, struct opt_item 
 }
 
 static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, char * str) {
-  uns len = strlen(str);
+  uint len = strlen(str);
   struct opt_precomputed * candidate = NULL;
 
   for (int i = 0; i < oc->opt_count; i++) {
@@ -235,7 +235,7 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 static int opt_longopt(struct opt_context * oc, char ** argv, int index) {
   int eaten = 0;
   char * name_in = argv[index] + 2; // skipping the -- on the beginning
-  uns pos = strchrnul(name_in, '=') - name_in;
+  uint pos = strchrnul(name_in, '=') - name_in;
   struct opt_precomputed * opt = opt_find_item_longopt(oc, strndupa(name_in, pos));
   char * value = NULL;
 
@@ -311,7 +311,7 @@ static int opt_shortopt(struct opt_context * oc, char ** argv, int index) {
 
 static void opt_positional(struct opt_context * oc, char * value) {
   oc->positional_count++;
-  uns id = oc->positional_count > oc->positional_max ? OPT_POSITIONAL_TAIL : OPT_POSITIONAL(oc->positional_count);
+  uint id = oc->positional_count > oc->positional_max ? OPT_POSITIONAL_TAIL : OPT_POSITIONAL(oc->positional_count);
   struct opt_precomputed * opt = oc->shortopt[id];
   if (!opt)
     opt_failure("Too many positional arguments.");

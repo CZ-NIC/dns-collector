@@ -53,10 +53,10 @@ struct fastbuf;
 
 struct image_context {
   byte *msg;				/* last message */
-  uns msg_code;				/* last message code (see images/error.h for details) */
+  uint msg_code;			/* last message code (see images/error.h for details) */
   bb_t msg_buf;				/* message buffer */
   void (*msg_callback)(struct image_context *ctx); /* called for each message (in msg_{str,code}) */
-  uns tracing_level;			/* tracing level (zero to disable) */
+  uint tracing_level;			/* tracing level (zero to disable) */
 };
 
 /* initialization/cleanup */
@@ -64,8 +64,8 @@ void image_context_init(struct image_context *ctx);
 void image_context_cleanup(struct image_context *ctx);
 
 /* message handling, see images/error.h for useful macros */
-void image_context_msg(struct image_context *ctx, uns code, char *msg, ...);
-void image_context_vmsg(struct image_context *ctx, uns code, char *msg, va_list args);
+void image_context_msg(struct image_context *ctx, uint code, char *msg, ...);
+void image_context_vmsg(struct image_context *ctx, uint code, char *msg, va_list args);
 
 /* default callback, displays messages with standard libucw's log() routine */
 void image_context_msg_default(struct image_context *ctx);
@@ -79,8 +79,8 @@ void image_context_msg_silent(struct image_context *ctx);
  * - image structure is not directly connected to a single context
  *   but manipulation routines are (user must synchronize the access himself)! */
 
-extern uns image_max_dim;		/* ImageLib.ImageMaxDim */
-extern uns image_max_bytes;		/* ImageLib.ImageMaxBytes */
+extern uint image_max_dim;		/* ImageLib.ImageMaxDim */
+extern uint image_max_bytes;		/* ImageLib.ImageMaxBytes */
 
 /* SSE aligning size, see IMAGE_SSE_ALIGNED */
 #define IMAGE_SSE_ALIGN_SIZE 16
@@ -101,8 +101,8 @@ enum image_flag {
 
 #define IMAGE_MAX_CHANNELS 4
 #define IMAGE_CHANNELS_FORMAT_MAX_SIZE 128
-byte *image_channels_format_to_name(uns format, byte *buf);
-uns image_name_to_channels_format(byte *name);
+byte *image_channels_format_to_name(uint format, byte *buf);
+uint image_name_to_channels_format(byte *name);
 
 struct color {
   byte c[IMAGE_MAX_CHANNELS];
@@ -110,33 +110,33 @@ struct color {
 };
 
 struct image {
-  byte *pixels;			/* aligned top left pixel, there are at least sizeof(uns)
+  byte *pixels;			/* aligned top left pixel, there are at least sizeof(uint)
 				   unused bytes after the buffer (possible optimizations) */
-  uns cols;			/* number of columns */
-  uns rows;			/* number of rows */
-  uns channels;			/* number of color channels including the alpha channel */
-  uns pixel_size;		/* size of pixel in bytes (1, 2, 3 or 4) */
-  uns row_size;			/* scanline size in bytes */
-  uns row_pixels_size;		/* scanline size in bytes excluding rows gaps */
-  uns image_size;		/* rows * row_size */
-  uns flags;			/* enum image_flag */
+  uint cols;			/* number of columns */
+  uint rows;			/* number of rows */
+  uint channels;		/* number of color channels including the alpha channel */
+  uint pixel_size;		/* size of pixel in bytes (1, 2, 3 or 4) */
+  uint row_size;		/* scanline size in bytes */
+  uint row_pixels_size;		/* scanline size in bytes excluding rows gaps */
+  uint image_size;		/* rows * row_size */
+  uint flags;			/* enum image_flag */
 };
 
-struct image *image_new(struct image_context *ctx, uns cols, uns rows, uns flags, struct mempool *pool);
-struct image *image_clone(struct image_context *ctx, struct image *src, uns flags, struct mempool *pool);
+struct image *image_new(struct image_context *ctx, uint cols, uint rows, uint flags, struct mempool *pool);
+struct image *image_clone(struct image_context *ctx, struct image *src, uint flags, struct mempool *pool);
 void image_destroy(struct image *img);
 void image_clear(struct image_context *ctx, struct image *img);
-struct image *image_init_matrix(struct image_context *ctx, struct image *img, byte *pixels, uns cols, uns rows, uns row_size, uns flags);
-struct image *image_init_subimage(struct image_context *ctx, struct image *img, struct image *src, uns left, uns top, uns cols, uns rows);
+struct image *image_init_matrix(struct image_context *ctx, struct image *img, byte *pixels, uint cols, uint rows, uint row_size, uint flags);
+struct image *image_init_subimage(struct image_context *ctx, struct image *img, struct image *src, uint left, uint top, uint cols, uint rows);
 
-static inline int image_dimensions_valid(uns cols, uns rows)
+static inline int image_dimensions_valid(uint cols, uint rows)
 {
   return cols && rows && cols <= image_max_dim && rows <= image_max_dim;
 }
 /* scale.c */
 
 int image_scale(struct image_context *ctx, struct image *dest, struct image *src);
-void image_dimensions_fit_to_box(uns *cols, uns *rows, uns max_cols, uns max_rows, uns upsample);
+void image_dimensions_fit_to_box(uint *cols, uint *rows, uint max_cols, uint max_rows, uint upsample);
 
 /* image-io.c */
 
@@ -159,13 +159,13 @@ struct image_io {
   enum image_format format;		/* [R   W] - file format (IMAGE_FORMAT_x) */
   struct fastbuf *fastbuf;		/* [R   W] - source/destination stream */
   struct mempool *pool;			/* [  I  ] - parameter to image_new */
-  uns cols;				/* [ HI  ] - number of columns, parameter to image_new */
-  uns rows;				/* [ HI  ] - number of rows, parameter to image_new */
-  uns flags;				/* [ HI  ] - see enum image_io_flags */
-  uns jpeg_quality;			/* [    W] - JPEG compression quality (1..100) */
-  uns number_of_colors;			/* [ H   ] - number of image colors */
+  uint cols;				/* [ HI  ] - number of columns, parameter to image_new */
+  uint rows;				/* [ HI  ] - number of rows, parameter to image_new */
+  uint flags;				/* [ HI  ] - see enum image_io_flags */
+  uint jpeg_quality;			/* [    W] - JPEG compression quality (1..100) */
+  uint number_of_colors;		/* [ H   ] - number of image colors */
   struct color background_color;	/* [ HI  ] - background color, zero if undefined */
-  uns exif_size;			/* [ H  W] - EXIF size in bytes (zero if not present) */
+  uint exif_size;			/* [ H  W] - EXIF size in bytes (zero if not present) */
   byte *exif_data;			/* [ H  W] - EXIF data */
 
   /* internals */

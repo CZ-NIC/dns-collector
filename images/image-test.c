@@ -22,8 +22,8 @@
 #include <time.h>
 #include <unistd.h>
 
-static uns want_image_iface;
-static uns want_threads;
+static uint want_image_iface;
+static uint want_threads;
 
 #define TRY(x) do { if (!(x)) ASSERT(0); } while (0)
 
@@ -106,7 +106,7 @@ test_threads_thread(void *param UNUSED)
   image_context_init(&ctx);
   TRY(image_io_init(&ctx, &io));
 
-  for (uns num = 0; num < 200; num++)
+  for (uint num = 0; num < 200; num++)
     {
       int r0 = random_max(100);
 
@@ -138,7 +138,7 @@ test_threads_thread(void *param UNUSED)
 
 	  struct fastbuf *wfb = fbmem_create(10000);
 	  struct fastbuf *rfb;
-	  uns format = 0;
+	  uint format = 0;
 	  while (!format)
 	    {
 	      switch (random_max(3))
@@ -200,13 +200,13 @@ test_threads(void)
   if (pthread_attr_init(&attr) < 0 ||
       pthread_attr_setstacksize(&attr, ucwlib_thread_stack_size) < 0)
     ASSERT(0);
-  for (uns i = 0; i < TEST_THREADS_COUNT - 1; i++)
+  for (uint i = 0; i < TEST_THREADS_COUNT - 1; i++)
     {
       if (pthread_create(threads + i, &attr, test_threads_thread, NULL) < 0)
         die("Unable to create thread: %m");
     }
   test_threads_thread(NULL);
-  for (uns i = 0; i < TEST_THREADS_COUNT - 1; i++)
+  for (uint i = 0; i < TEST_THREADS_COUNT - 1; i++)
     if (pthread_join(threads[i], NULL) < 0)
       die("Cannot join thread: %m");
 #else
