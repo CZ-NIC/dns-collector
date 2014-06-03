@@ -70,8 +70,8 @@ void munmap_file(void *start, unsigned len);
 
 /* io-careful.c */
 
-int careful_read(int fd, void *buf, int len);
-int careful_write(int fd, const void *buf, int len);
+int careful_read(int fd, void *buf, size_t len);
+int careful_write(int fd, const void *buf, size_t len);
 
 /* io-sync.c */
 
