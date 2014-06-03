@@ -120,7 +120,10 @@ Set("LIBS" => "");
 # Extra flags for compiling and linking shared libraries
 Set("CSHARED" => '-fPIC');
 Append("LOPT" => "-Wl,--rpath-link,run/lib");
-if (!(Get("INSTALL_LIB_DIR") eq "/usr/lib")) {
+if ((Get("INSTALL_LIB_DIR") eq "/usr/lib")) {
+	Set("SO_LINK_PATH" => '');
+}
+else {
 	Set("SO_LINK_PATH" => "-Wl,--rpath," . Get("INSTALL_LIB_DIR"));
 	AtWrite {
 		# FIXME: This is a hack. GCC would otherwise fail to link binaries.
