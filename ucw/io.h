@@ -65,8 +65,8 @@ ucw_off_t ucw_file_size(const char *name);
 
 /* io-mmap.c */
 
-void *mmap_file(const char *name, unsigned *len, int writeable);
-void munmap_file(void *start, unsigned len);
+void *mmap_file(const char *name, size_t *len, int writeable);
+void munmap_file(void *start, size_t len);
 
 /* io-careful.c */
 
