@@ -22,6 +22,17 @@ enum column_type {
   COL_TYPE_LAST
 };
 
+#define CELL_ALIGN_LEFT     (1<<(sizeof(enum column_type)*8 - 1))
+// FIXME: an example of another flag, not implemented now
+#define CELL_ALIGN_CENTER   (1<<(sizeof(enum column_type)*8 - 2))
+#define CELL_ALIGN_FLOAT    (1<<(sizeof(enum column_type)*8 - 3))
+
+// CELL_ALIGN_MASK is a mask which has 1's on positions used by some alignment mask.
+// that is: col_width & CELL_ALIGN_MASK  gives column width (in characters).
+// the top bit is reserved for left alignment and is not demasked by CELL_ALIGN_MASK.
+// the reason is that all printf and friends are using negative number for left alignment.
+#define CELL_ALIGN_MASK     (~(CELL_ALIGN_LEFT | CELL_ALIGN_FLOAT | CELL_ALIGN_CENTER))
+
 #define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_STR }
 #define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = "%d", .type = COL_TYPE_INT }
 #define TBL_COL_UINT(_name, _width)           { .name = _name, .width = _width, .fmt = "%u", .type = COL_TYPE_UINT }
@@ -61,12 +72,12 @@ enum column_type {
  * table_cleanup. After table_cleanup is called it is not possible to further use the struct table.
  * The struct table must be reinitialized.
  *
- * Default behaviour of the table_set_col_* is replacement of already set data. To append, the user
+ * Default behaviour of the table_col_* is replacement of already set data. To append, the user
  * must use table_append_*
  *
  * To summarize:
  * 1) @table_init is called;
- * 2) @table_start is called following by table_set_xxx functions and @table_end.
+ * 2) @table_start is called following by table_col_xxx functions and @table_end.
  *    table_start/table_end forms 1-level parenthesis structure. Some of the table
  *    settings can be changed only between table_init and @table_start or after table_end
  *    is called (but before next table_start.
@@ -88,7 +99,7 @@ enum column_type {
  * that is called in table_end).
  *
  * The table is initialized by defining a table struct using the following macros:
- *  o TBL_START_COLUMNS indicates start of definition of columns
+ *  o TBL_COLUMNS    indicates start of definition of columns
  *  o TBL_COL_XXX    macros specify the column types with some default formatting the column is specified using a column
  *                   name (which should be C identifier) and a prefix.  the column name is the a string with the column
  *                   name. The prefix is used for discriminating between columns from different tables. The column index
@@ -105,21 +116,15 @@ enum column_type {
  * Features:
  * * user supplied callback functions can be used for modifying the output format.
  *
- * Non-tested features:
+ * TODO part/Planned features:
  * * computing statistics of columns via the table_start_callback/table_end_callback.
- *   TODO: is it better to have callback for each cell with the original value supplied by the caller of the table_set_* functions?
- * TODO:
  * * unsupported: (dynamic) alignment of cells which is computed in table_end
  *
  * TODO: table_set_col_fmt: this functin takes the format string and the value. But I'm not able to
  * test whether the format string and the type match !!!
  *
- * TODO: Return value of the parser should be a string allocated on the mempool of the table. But:
- * is the return value really necessary? The error should be show to the user on the terminal
- * (std. out).
- * TODO: all macros prefix TBL_ should be changed to TABLE_ ?
  * TODO: how to print column which is aligned to the left flag for alignment: 1) left; 2) right;
- *       3) decimal point alignment; 4) arbitrary separator alignment
+ *       3) decimal point alignment;
  ***/
 
 struct table;
@@ -177,9 +182,10 @@ void table_init(struct table *tbl);
 void table_cleanup(struct table *tbl);
 
 /**
- * table_start is called before the cells of the table are set. After the table_start is called, the user can
- * call the table_set_* functions. The table_end_row function can be called after the table_start is called
- * (but before the table_end is called)
+ * table_start is called before the cells of the table are set. After the table_start is called, the
+ * user can call the table_col_* or table_append_ functions and cannot call the table_set_*
+ * functions. The table_end_row function can be called after the table_start is called (but before
+ * the table_end is called)
  **/
 void table_start(struct table *tbl, struct fastbuf *out);
 

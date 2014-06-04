@@ -89,17 +89,22 @@ static void do_print1(struct table *test_tbl)
 }
 
 static char **cli_table_opts;
-static int test_default_column_order;
-static int test_invalid_option;
-static int test_invalid_order;
+
+enum test_type_t {
+  TEST_DEFAULT_COLUMN_ORDER = 1,
+  TEST_INVALID_OPTION = 2,
+  TEST_INVALID_ORDER = 3
+};
+
+static int test_to_perform = -1;
 
 static struct opt_section table_printer_opts = {
   OPT_ITEMS {
     OPT_HELP("Options:"),
     OPT_STRING_MULTIPLE('T', "table", cli_table_opts, OPT_REQUIRED_VALUE, "\tSets options for the table."),
-    OPT_BOOL('d', 0, test_default_column_order, 0, "\tRun the test that uses the default column order."),
-    OPT_BOOL('i', 0, test_invalid_option, 0, "\tTest the output for invalid option."),
-    OPT_BOOL('n', 0, test_invalid_order, 0, "\tTest the output for invalid names of columns for the 'cols' option."),
+    OPT_SWITCH('d', 0, test_to_perform, TEST_DEFAULT_COLUMN_ORDER, OPT_SINGLE, "\tRun the test that uses the default column order."),
+    OPT_SWITCH('i', 0, test_to_perform, TEST_INVALID_OPTION, OPT_SINGLE, "\tTest the output for invalid option."),
+    OPT_SWITCH('n', 0, test_to_perform, TEST_INVALID_ORDER, OPT_SINGLE, "\tTest the output for invalid names of columns for the 'cols' option."),
     OPT_END
   }
 };
@@ -109,11 +114,7 @@ static void process_command_line_opts(char *argv[], struct table *tbl)
   GARY_INIT(cli_table_opts, 0);
 
   opt_parse(&table_printer_opts, argv+1);
-
-  for(uint i = 0; i < GARY_SIZE(cli_table_opts); i++) {
-    const char *rv = table_set_option(tbl, cli_table_opts[i]);
-    ASSERT_MSG(rv == NULL, "Tableprinter option parser returned error: '%s'.", rv);
-  }
+  table_set_gary_options(tbl, cli_table_opts);
 
   GARY_FREE(cli_table_opts);
 }
@@ -157,19 +158,21 @@ int main(int argc UNUSED, char **argv)
 
   process_command_line_opts(argv, &test_tbl);
 
-  if(test_invalid_order == 1) {
-    const char *rv = table_set_option(&test_tbl, "cols:test_col0_str,test_col1_int,xxx");
+  const char *rv = NULL;
+  switch(test_to_perform) {
+  case TEST_INVALID_ORDER:
+    rv = table_set_option(&test_tbl, "cols:test_col0_str,test_col1_int,xxx");
     if(rv) printf("Tableprinter option parser returned: '%s'.\n", rv);
     return 0;
-  } else if(test_default_column_order == 1) {
+  case TEST_DEFAULT_COLUMN_ORDER:
     do_default_order_test(out);
     bclose(out);
     return 0;
-  } else if(test_invalid_option == 1) {
+  case TEST_INVALID_OPTION:
     test_option_parser(&test_tbl);
     bclose(out);
     return 0;
-  }
+  };
 
   table_start(&test_tbl, out);
   do_print1(&test_tbl);
