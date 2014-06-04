@@ -54,7 +54,7 @@ static void table_make_default_column_order(struct table *tbl)
   for(int i = 0; i < tbl->column_count; i++) {
     col_order_int[i] = i;
   }
-  table_col_order(tbl, col_order_int, tbl->column_count);
+  table_set_col_order(tbl, col_order_int, tbl->column_count);
 }
 
 void table_start(struct table *tbl, struct fastbuf *out)
@@ -118,7 +118,7 @@ const char * table_get_col_list(struct table *tbl)
 }
 
 // FIXME: Shouldn't this be table_SET_col_order() ?
-void table_col_order(struct table *tbl, int *col_order, int cols_to_output)
+void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
 {
   for(int i = 0; i < cols_to_output; i++) {
     ASSERT_MSG(col_order[i] >= 0 && col_order[i] < tbl->column_count, "Column %d does not exist (column number should be between 0 and %d)", col_order[i], tbl->column_count - 1);
@@ -132,7 +132,7 @@ void table_col_order(struct table *tbl, int *col_order, int cols_to_output)
  * TODO: This function deliberately leaks memory. When it is called multiple times,
  * previous column orders still remain allocated in the table's memory pool.
  **/
-const char * table_col_order_by_name(struct table *tbl, const char *col_order_str)
+const char * table_set_col_order_by_name(struct table *tbl, const char *col_order_str)
 {
   if(!col_order_str[0]) {
     tbl->column_order = mp_alloc(tbl->pool, 0);
@@ -353,7 +353,7 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
       tbl->print_header = tmp;
       return NULL;
     } else if(strcmp(key, "cols") == 0) {
-      const char *err = table_col_order_by_name(tbl, value);
+      const char *err = table_set_col_order_by_name(tbl, value);
       if(err != NULL) {
         return mp_printf(tbl->pool, "%s, possible column names are: %s.", err, table_get_col_list(tbl));
       }
@@ -553,45 +553,45 @@ static void test_simple1(struct fastbuf *out)
   table_init(&test_tbl);
 
   // print table with header
-  table_col_order_by_name(&test_tbl, "col3_bool");
+  table_set_col_order_by_name(&test_tbl, "col3_bool");
   table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
   // print the same table as in the previous case without header
-  table_col_order_by_name(&test_tbl, "col0_str,col2_uint,col1_int,col3_bool");
+  table_set_col_order_by_name(&test_tbl, "col0_str,col2_uint,col1_int,col3_bool");
   table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
-  // this also tests whether there is need to call table_col_order_by_name after table_end was called
+  // this also tests whether there is need to call table_set_col_order_by_name after table_end was called
   test_tbl.print_header = 0;
   table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
   test_tbl.print_header = 1;
 
-  table_col_order_by_name(&test_tbl, "col3_bool");
+  table_set_col_order_by_name(&test_tbl, "col3_bool");
   table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
-  table_col_order_by_name(&test_tbl, "col3_bool,col0_str");
+  table_set_col_order_by_name(&test_tbl, "col3_bool,col0_str");
   table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
-  table_col_order_by_name(&test_tbl, "col0_str,col3_bool,col2_uint");
+  table_set_col_order_by_name(&test_tbl, "col0_str,col3_bool,col2_uint");
   table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
-  table_col_order_by_name(&test_tbl, "col0_str,col3_bool,col2_uint,col0_str,col3_bool,col2_uint,col0_str,col3_bool,col2_uint");
+  table_set_col_order_by_name(&test_tbl, "col0_str,col3_bool,col2_uint,col0_str,col3_bool,col2_uint,col0_str,col3_bool,col2_uint");
   table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);
 
-  table_col_order_by_name(&test_tbl, "col0_str,col1_int,col2_uint,col3_bool,col4_double");
+  table_set_col_order_by_name(&test_tbl, "col0_str,col1_int,col2_uint,col3_bool,col4_double");
   table_start(&test_tbl, out);
   do_print1(&test_tbl);
   table_end(&test_tbl);

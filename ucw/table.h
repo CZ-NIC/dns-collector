@@ -200,13 +200,13 @@ void table_end(struct table *tbl);
  * table_cleanup is called. The table stores the pointer only and the memory pointed to by @col_order is
  * allocated and deallocated by the caller.
  **/
-void table_col_order(struct table *tbl, int *col_order, int col_order_size);
+void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
 
 /**
  * Sets the order in which the columns are printed. The specification is a string with comma-separated column
  * names. Returns NULL for success and an error message otherwise.
  **/
-const char * table_col_order_by_name(struct table *tbl, const char *col_order);
+const char * table_set_col_order_by_name(struct table *tbl, const char *col_order);
 
 /**
  * Called when all the cells have filled values. The function the prints a table row into the output stream.
