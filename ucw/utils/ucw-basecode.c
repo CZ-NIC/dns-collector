@@ -28,9 +28,9 @@ static struct option opts[] = {
 };
 
 static const struct {
-  uns (*function)(byte *, const byte *, uns);
-  uns in_block, out_block, num_blocks;
-  uns add_prefix;
+  uint (*function)(byte *, const byte *, uint);
+  uint in_block, out_block, num_blocks;
+  uint add_prefix;
 } actions[] = {
   {
     base64_encode,
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
   // Choose mode
   int mode = -1;
   char *prefix = NULL;
-  uns blocks = 0;
+  uint blocks = 0;
   int opt;
   while ((opt = getopt_long(argc, argv, "edEDp:b:", opts, NULL)) >= 0)
     switch (opt)
@@ -92,11 +92,11 @@ int main(int argc, char **argv)
   struct fastbuf *in = bfdopen_shared(0, 4096);
   struct fastbuf *out = bfdopen_shared(1, 4096);
   int has_offset = !actions[mode].add_prefix && prefix;
-  uns offset = has_offset ? strlen(prefix) : 0;
-  uns read_size = actions[mode].in_block * blocks + offset + has_offset;
-  uns write_size = actions[mode].out_block * blocks;
+  uint offset = has_offset ? strlen(prefix) : 0;
+  uint read_size = actions[mode].in_block * blocks + offset + has_offset;
+  uint write_size = actions[mode].out_block * blocks;
   byte in_buff[read_size], out_buff[write_size];
-  uns isize;
+  uint isize;
 
   // Recode it
   while (isize = bread(in, in_buff, read_size))
@@ -110,7 +110,7 @@ int main(int argc, char **argv)
             || (strncmp(prefix, in_buff, offset)))
           die("Invalid line syntax");
     }
-    uns osize = actions[mode].function(out_buff, in_buff + offset, isize - offset - has_offset);
+    uint osize = actions[mode].function(out_buff, in_buff + offset, isize - offset - has_offset);
     bwrite(out, out_buff, osize);
     if (actions[mode].add_prefix && prefix)
       bputc(out, '\n');

@@ -79,7 +79,7 @@ struct mempool {
 struct mempool_stats {			/** Mempool statistics. See @mp_stats(). **/
   u64 total_size;			/* Real allocated size in bytes */
   u64 used_size;			/* Estimated size allocated from mempool to application */
-  uns chain_count[3];			/* Number of allocated chunks in small/big/unused chains */
+  uint chain_count[3];			/* Number of allocated chunks in small/big/unused chains */
   u64 chain_size[3];			/* Size of allocated chunks in small/big/unused chains */
 };
 
@@ -230,7 +230,7 @@ void *mp_start_internal(struct mempool *pool, size_t size) LIKE_MALLOC;
 void *mp_grow_internal(struct mempool *pool, size_t size);
 void *mp_spread_internal(struct mempool *pool, void *p, size_t size);
 
-static inline uns mp_idx(struct mempool *pool, void *ptr)
+static inline uint mp_idx(struct mempool *pool, void *ptr)
 {
   return ptr == pool->last_big;
 }
@@ -331,7 +331,7 @@ static inline void *mp_spread(struct mempool *pool, void *p, size_t size)
  * the last byte in the buffer, returns a pointer after the last byte
  * of the new (possibly reallocated) buffer.
  **/
-static inline char *mp_append_char(struct mempool *pool, char *p, uns c)
+static inline char *mp_append_char(struct mempool *pool, char *p, uint c)
 {
   p = mp_spread(pool, p, 1);
   *p++ = c;
@@ -386,7 +386,7 @@ static inline char *mp_end_string(struct mempool *pool, void *end)
  **/
 static inline size_t mp_size(struct mempool *pool, void *ptr)
 {
-  uns idx = mp_idx(pool, ptr);
+  uint idx = mp_idx(pool, ptr);
   return ((byte *)pool->state.last[idx] - (byte *)ptr) - pool->state.free[idx];
 }
 
@@ -511,7 +511,7 @@ static inline char *LIKE_MALLOC mp_strcat(struct mempool *mp, const char *x, con
  * @p is the mempool to provide memory, @a is array of strings and @n
  * tells how many there is of them.
  **/
-char *mp_strjoin(struct mempool *p, char **a, uns n, uns sep) LIKE_MALLOC;
+char *mp_strjoin(struct mempool *p, char **a, uint n, uint sep) LIKE_MALLOC;
 /**
  * Convert memory block to a string. Makes a copy of the given memory block
  * in the mempool @p, adding an extra terminating zero byte at the end.

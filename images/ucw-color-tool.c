@@ -48,9 +48,9 @@ parse_color_space(byte *s)
 static void
 print_matrix(double m[9])
 {
-  for (uns j = 0; j < 3; j++)
+  for (uint j = 0; j < 3; j++)
     {
-      for (uns i = 0; i < 3; i++)
+      for (uint i = 0; i < 3; i++)
 	printf(" %12.8f", m[i + j * 3]);
       printf("\n");
     }

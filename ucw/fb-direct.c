@@ -60,11 +60,11 @@ struct fb_direct {
 #define FB_DIRECT(f) ((struct fb_direct *)(f))
 
 #ifndef TEST
-uns fbdir_cheat;
+uint fbdir_cheat;
 
 static struct cf_section fbdir_cf = {
   CF_ITEMS {
-    CF_UNS("Cheat", &fbdir_cheat),
+    CF_UINT("Cheat", &fbdir_cheat),
     CF_END
   }
 };
@@ -223,7 +223,7 @@ fbdir_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 }
 
 static struct asio_queue *
-fbdir_get_io_queue(uns buffer_size, uns write_back)
+fbdir_get_io_queue(uint buffer_size, uint write_back)
 {
   struct ucwlib_context *ctx = ucwlib_thread_context();
   struct asio_queue *q = ctx->io_queue;
@@ -271,7 +271,7 @@ fbdir_close(struct fastbuf *f)
 }
 
 static int
-fbdir_config(struct fastbuf *f, uns item, int value)
+fbdir_config(struct fastbuf *f, uint item, int value)
 {
   int orig;
 
@@ -287,7 +287,7 @@ fbdir_config(struct fastbuf *f, uns item, int value)
 }
 
 struct fastbuf *
-fbdir_open_fd_internal(int fd, const char *name, struct asio_queue *q, uns buffer_size, uns read_ahead UNUSED, uns write_back)
+fbdir_open_fd_internal(int fd, const char *name, struct asio_queue *q, uint buffer_size, uint read_ahead UNUSED, uint write_back)
 {
   int namelen = strlen(name) + 1;
   struct fb_direct *F = xmalloc(sizeof(struct fb_direct) + namelen);

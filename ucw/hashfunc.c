@@ -20,29 +20,29 @@
 #define	SHIFT_BITS	7
 
 /* A bit-mask which clears higher bytes than a given threshold.  */
-static uns mask_higher_bits[sizeof(uns)];
+static uint mask_higher_bits[sizeof(uint)];
 
 static void CONSTRUCTOR
 hashfunc_init(void)
 {
-	uns i, j;
+	uint i, j;
 	byte *str;
-	for (i=0; i<sizeof(uns); i++)
+	for (i=0; i<sizeof(uint); i++)
 	{
 		str = (byte *) (mask_higher_bits + i);
 		for (j=0; j<i; j++)
 			str[j] = -1;
-		for (j=i; j<sizeof(uns); j++)
+		for (j=i; j<sizeof(uint); j++)
 			str[j] = 0;
 	}
 }
 
-static inline uns CONST
-str_len_uns(uns x)
+static inline uint CONST
+str_len_uint(uint x)
 {
-	const uns sub = ~0U / 0xff;
-	const uns and = sub * 0x80;
-	uns a, i;
+	const uint sub = ~0U / 0xff;
+	const uint and = sub * 0x80;
+	uint a, i;
 	byte *bytes;
 	a = ~x & (x - sub) & and;
 	/*
@@ -57,38 +57,38 @@ str_len_uns(uns x)
 	 * no zero byte in x.
 	 */
 	if (!a)
-		return sizeof(uns);
+		return sizeof(uint);
 	bytes = (byte *) &x;
-	for (i=0; i<sizeof(uns) && bytes[i]; i++);
+	for (i=0; i<sizeof(uint) && bytes[i]; i++);
 	return i;
 }
 
-inline uns
+inline uint
 str_len_aligned(const char *str)
 {
-	const uns *u = (const uns *) str;
-	uns len = 0;
+	const uint *u = (const uint *) str;
+	uint len = 0;
 	while (1)
 	{
-		uns l = str_len_uns(*u++);
+		uint l = str_len_uint(*u++);
 		len += l;
-		if (l < sizeof(uns))
+		if (l < sizeof(uint))
 			return len;
 	}
 }
 
-inline uns
+inline uint
 hash_string_aligned(const char *str)
 {
-	const uns *u = (const uns *) str;
-	uns hash = 0;
+	const uint *u = (const uint *) str;
+	uint hash = 0;
 	while (1)
 	{
-		uns last_len = str_len_uns(*u);
+		uint last_len = str_len_uint(*u);
 		hash = ROL(hash, SHIFT_BITS);
-		if (last_len < sizeof(uns))
+		if (last_len < sizeof(uint))
 		{
-			uns tmp = *u & mask_higher_bits[last_len];
+			uint tmp = *u & mask_higher_bits[last_len];
 			hash ^= tmp;
 			return hash;
 		}
@@ -96,31 +96,31 @@ hash_string_aligned(const char *str)
 	}
 }
 
-inline uns
-hash_block_aligned(const byte *buf, uns len)
+inline uint
+hash_block_aligned(const byte *buf, uint len)
 {
-	const uns *u = (const uns *) buf;
-	uns hash = 0;
-	while (len >= sizeof(uns))
+	const uint *u = (const uint *) buf;
+	uint hash = 0;
+	while (len >= sizeof(uint))
 	{
 		hash = ROL(hash, SHIFT_BITS) ^ *u++;
-		len -= sizeof(uns);
+		len -= sizeof(uint);
 	}
 	hash = ROL(hash, SHIFT_BITS) ^ (*u & mask_higher_bits[len]);
 	return hash;
 }
 
 #ifndef	CPU_ALLOW_UNALIGNED
-uns
+uint
 str_len(const char *str)
 {
-	uns shift = UNALIGNED_PART(str, uns);
+	uint shift = UNALIGNED_PART(str, uint);
 	if (!shift)
 		return str_len_aligned(str);
 	else
 	{
-		uns i;
-		shift = sizeof(uns) - shift;
+		uint i;
+		shift = sizeof(uint) - shift;
 		for (i=0; i<shift; i++)
 			if (!str[i])
 				return i;
@@ -128,25 +128,25 @@ str_len(const char *str)
 	}
 }
 
-uns
+uint
 hash_string(const char *str)
 {
 	const byte *s = str;
-	uns shift = UNALIGNED_PART(s, uns);
+	uint shift = UNALIGNED_PART(s, uint);
 	if (!shift)
 		return hash_string_aligned(s);
 	else
 	{
-		uns hash = 0;
-		uns i;
+		uint hash = 0;
+		uint i;
 		for (i=0; ; i++)
 		{
-			uns modulo = i % sizeof(uns);
-			uns shift;
+			uint modulo = i % sizeof(uint);
+			uint shift;
 #ifdef	CPU_LITTLE_ENDIAN
 			shift = modulo;
 #else
-			shift = sizeof(uns) - 1 - modulo;
+			shift = sizeof(uint) - 1 - modulo;
 #endif
 			if (!modulo)
 				hash = ROL(hash, SHIFT_BITS);
@@ -158,24 +158,24 @@ hash_string(const char *str)
 	}
 }
 
-uns
-hash_block(const byte *buf, uns len)
+uint
+hash_block(const byte *buf, uint len)
 {
-	uns shift = UNALIGNED_PART(buf, uns);
+	uint shift = UNALIGNED_PART(buf, uint);
 	if (!shift)
 		return hash_block_aligned(buf, len);
 	else
 	{
-		uns hash = 0;
-		uns i;
+		uint hash = 0;
+		uint i;
 		for (i=0; ; i++)
 		{
-			uns modulo = i % sizeof(uns);
-			uns shift;
+			uint modulo = i % sizeof(uint);
+			uint shift;
 #ifdef	CPU_LITTLE_ENDIAN
 			shift = modulo;
 #else
-			shift = sizeof(uns) - 1 - modulo;
+			shift = sizeof(uint) - 1 - modulo;
 #endif
 			if (!modulo)
 				hash = ROL(hash, SHIFT_BITS);
@@ -188,20 +188,20 @@ hash_block(const byte *buf, uns len)
 }
 #endif
 
-uns
+uint
 hash_string_nocase(const char *str)
 {
 	const byte *s = str;
-	uns hash = 0;
-	uns i;
+	uint hash = 0;
+	uint i;
 	for (i=0; ; i++)
 	{
-		uns modulo = i % sizeof(uns);
-		uns shift;
+		uint modulo = i % sizeof(uint);
+		uint shift;
 #ifdef	CPU_LITTLE_ENDIAN
 		shift = modulo;
 #else
-		shift = sizeof(uns) - 1 - modulo;
+		shift = sizeof(uint) - 1 - modulo;
 #endif
 		if (!modulo)
 			hash = ROL(hash, SHIFT_BITS);

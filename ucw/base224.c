@@ -31,7 +31,7 @@
 static void
 encode_block(byte *w, u32 hi, u32 lo)
 {
-  uns x, y;
+  uint x, y;
 
   /*
    *   Splitting of the 39-bit block: [a-e][0-5] are the base-32 digits, *'s are used for base-7.
@@ -58,11 +58,11 @@ encode_block(byte *w, u32 hi, u32 lo)
     }
 }
 
-uns
-base224_encode(byte *dest, const byte *src, uns len)
+uint
+base224_encode(byte *dest, const byte *src, uint len)
 {
   u32 lo=0, hi=0;			/* 64-bit buffer accumulating input bits */
-  uns i=0;				/* How many source bits do we have buffered */
+  uint i=0;				/* How many source bits do we have buffered */
   u32 x;
   byte *w=dest;
 
@@ -95,14 +95,14 @@ base224_encode(byte *dest, const byte *src, uns len)
   return w - dest;
 }
 
-uns
-base224_decode(byte *dest, const byte *src, uns len)
+uint
+base224_decode(byte *dest, const byte *src, uint len)
 {
   u32 hi=0, lo=0;			/* 64-bit buffer accumulating output bits */
-  uns i=0;				/* How many bits do we have accumulated */
+  uint i=0;				/* How many bits do we have accumulated */
   u32 h, l;				/* Decoding of the current block */
-  uns x;				/* base-7 part of the current block */
-  uns len0;
+  uint x;				/* base-7 part of the current block */
+  uint len0;
   byte *start = dest;
 
   do

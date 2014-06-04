@@ -17,7 +17,7 @@ static void fbnull_close(struct fastbuf *b)
   xfree(b);
 }
 
-struct fastbuf *fbnull_open(uns bufsize)
+struct fastbuf *fbnull_open(uint bufsize)
 {
   struct fastbuf *b = xmalloc(sizeof(*b) + bufsize);
   bzero(b, sizeof(*b));
@@ -45,7 +45,7 @@ static int fbnull_seek(struct fastbuf *b, ucw_off_t pos, int whence)
   return 1;
 }
 
-void fbnull_start(struct fastbuf *b, byte *buf, uns bufsize)
+void fbnull_start(struct fastbuf *b, byte *buf, uint bufsize)
 {
   ASSERT(buf && bufsize);
   b->pos = btell(b);
@@ -66,7 +66,7 @@ bool fbnull_test(struct fastbuf *b)
 int main(void)
 {
   struct fastbuf *b = fbnull_open(7);
-  for (uns i = 0; i < 100; i++)
+  for (uint i = 0; i < 100; i++)
     {
       if (btell(b) != i * 10)
 	ASSERT(0);

@@ -12,7 +12,7 @@
 #include <charset/U-ligatures.h>
 
 const u16 *
-Uexpand_lig(uns x)
+Uexpand_lig(uint x)
 {
   return _U_lig_hash[x % LIG_HASH_SIZE];
 }

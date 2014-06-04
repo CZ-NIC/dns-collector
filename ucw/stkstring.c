@@ -15,21 +15,21 @@
 
 #include <stdio.h>
 
-uns
-stk_array_len(char **s, uns cnt)
+uint
+stk_array_len(char **s, uint cnt)
 {
-  uns l = 1;
+  uint l = 1;
   while (cnt--)
     l += strlen(*s++);
   return l;
 }
 
 void
-stk_array_join(char *x, char **s, uns cnt, uns sep)
+stk_array_join(char *x, char **s, uint cnt, uint sep)
 {
   while (cnt--)
     {
-      uns l = strlen(*s);
+      uint l = strlen(*s);
       memcpy(x, *s, l);
       x += l;
       s++;
@@ -39,10 +39,10 @@ stk_array_join(char *x, char **s, uns cnt, uns sep)
   *x = 0;
 }
 
-uns
+uint
 stk_printf_internal(const char *fmt, ...)
 {
-  uns len = 256;
+  uint len = 256;
   char *buf = alloca(len);
   va_list args, args2;
   va_start(args, fmt);
@@ -62,10 +62,10 @@ stk_printf_internal(const char *fmt, ...)
     }
 }
 
-uns
+uint
 stk_vprintf_internal(const char *fmt, va_list args)
 {
-  uns len = 256;
+  uint len = 256;
   char *buf = alloca(len);
   va_list args2;
   for (;;)
@@ -85,7 +85,7 @@ stk_vprintf_internal(const char *fmt, va_list args)
 }
 
 void
-stk_hexdump_internal(char *dst, const byte *src, uns n)
+stk_hexdump_internal(char *dst, const byte *src, uint n)
 {
   mem_to_hex(dst, src, n, ' ');
 }

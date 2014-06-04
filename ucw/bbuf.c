@@ -32,7 +32,7 @@ bb_vprintf_at(bb_t *bb, size_t ofs, const char *fmt, va_list args)
 	}
       while (cnt < 0);
     }
-  else if ((uns)cnt >= bb->len - ofs)
+  else if ((uint)cnt >= bb->len - ofs)
     {
       bb_do_grow(bb, ofs + cnt + 1);
       va_copy(args2, args);

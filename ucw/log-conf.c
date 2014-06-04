@@ -45,7 +45,7 @@ struct limit_config {
   cnode n;
   clist types;				// simple_list of names
   double rate;
-  uns burst;
+  uint burst;
 };
 
 static char *
@@ -90,7 +90,7 @@ static struct cf_section limit_config = {
 #define P(x) PTR_TO(struct limit_config, x)
     CF_LIST("Types", P(types), &cf_string_list_config),
     CF_DOUBLE("Rate", P(rate)),
-    CF_UNS("Burst", P(burst)),
+    CF_UINT("Burst", P(burst)),
 #undef P
     CF_END
   }
@@ -186,13 +186,13 @@ log_config_init(void)
 
 /*** Type sets ***/
 
-static uns
+static uint
 log_type_mask(clist *l)
 {
   if (clist_empty(l))
     return ~0U;
 
-  uns types = 0;
+  uint types = 0;
   CLIST_FOR_EACH(simp_node *, s, *l)
     if (!strcmp(s->s, "all"))
       return ~0U;
@@ -254,7 +254,7 @@ log_limiter(struct log_stream *ls, struct log_msg *m)
 static void
 log_apply_limits(struct log_stream *ls, struct limit_config *lim)
 {
-  uns mask = log_type_mask(&lim->types);
+  uint mask = log_type_mask(&lim->types);
   if (!mask)
     return;
 
@@ -269,7 +269,7 @@ log_apply_limits(struct log_stream *ls, struct limit_config *lim)
   tbf->burst = lim->burst;
   tbf_init(tbf);
 
-  for (uns i=0; i < LS_NUM_TYPES; i++)
+  for (uint i=0; i < LS_NUM_TYPES; i++)
     if (mask & (1 << i))
       limits[i] = tbf;
 }
@@ -353,7 +353,7 @@ int main(int argc, char **argv)
 
   int type = log_register_type("foo");
   struct log_stream *ls = log_new_configured("combined");
-  for (uns i=0; i<10; i++)
+  for (uint i=0; i<10; i++)
     {
       msg(L_INFO | ls->regnum | type, "Hello, universe!");
       usleep(200000);

@@ -200,7 +200,7 @@ mp_flush(struct mempool *pool)
 }
 
 static void
-mp_stats_chain(struct mempool *pool, struct mempool_chunk *chunk, struct mempool_stats *stats, uns idx)
+mp_stats_chain(struct mempool *pool, struct mempool_chunk *chunk, struct mempool_stats *stats, uint idx)
 {
   while (chunk)
     {
@@ -436,14 +436,14 @@ mp_pop(struct mempool *pool)
 #include <time.h>
 
 static void
-fill(byte *ptr, uns len, uns magic)
+fill(byte *ptr, uint len, uint magic)
 {
   while (len--)
     *ptr++ = (magic++ & 255);
 }
 
 static void
-check(byte *ptr, uns len, uns magic, uns align)
+check(byte *ptr, uint len, uint magic, uint align)
 {
   ASSERT(!((uintptr_t)ptr & (align - 1)));
   while (len--)
@@ -459,15 +459,15 @@ int main(int argc, char **argv)
   if (cf_getopt(argc, argv, CF_SHORT_OPTS, CF_NO_LONG_OPTS, NULL) >= 0 || argc != optind)
     die("Invalid usage");
 
-  uns max = 1000, n = 0, m = 0, can_realloc = 0;
+  uint max = 1000, n = 0, m = 0, can_realloc = 0;
   void *ptr[max];
   struct mempool_state *state[max];
-  uns len[max], num[max], align[max];
+  uint len[max], num[max], align[max];
   struct mempool *mp = mp_new(128), mp_static;
 
-  for (uns i = 0; i < 5000; i++)
+  for (uint i = 0; i < 5000; i++)
     {
-      for (uns j = 0; j < n; j++)
+      for (uint j = 0; j < n; j++)
 	check(ptr[j], len[j], j, align[j]);
 #if 0
       DBG("free_small=%u free_big=%u idx=%u chunk_size=%u last_big=%p", mp->state.free[0], mp->state.free[1], mp->idx, mp->chunk_size, mp->last_big);
@@ -522,10 +522,10 @@ int main(int argc, char **argv)
 	    ASSERT(0);
 grow:
 	  {
-	    uns k = n - 1;
-	    for (uns i = random_max(4); i--; )
+	    uint k = n - 1;
+	    for (uint i = random_max(4); i--; )
 	      {
-	        uns l = len[k];
+	        uint l = len[k];
 	        len[k] = random_max(0x2000);
 	        DBG("grow(%u)", len[k]);
 	        ptr[k] = mp_grow(mp, len[k]);
@@ -538,7 +538,7 @@ grow:
 	}
       else if (can_realloc && n && (r -= 20) < 0)
         {
-	  uns i = n - 1, l = len[i];
+	  uint i = n - 1, l = len[i];
 	  DBG("realloc(%p, %u)", ptr[i], len[i]);
 	  ptr[i] = mp_realloc(mp, ptr[i], len[i] = random_max(0x2000));
 	  DBG(" -> (%p, %u)", ptr[i], len[i]);
@@ -562,7 +562,7 @@ grow:
 	}
       else if (m && (r -= 1) < 0)
         {
-	  uns i = random_max(m);
+	  uint i = random_max(m);
 	  DBG("restore(%u)", i);
 	  mp_restore(mp, state[i]);
 	  n = num[m = i];

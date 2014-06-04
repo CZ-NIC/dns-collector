@@ -23,7 +23,7 @@ struct fb_file {
   int is_temp_file;
   int keep_back_buf;			/* Optimize for backwards reading */
   ucw_off_t wpos;			/* Real file position */
-  uns wlen;				/* Window size */
+  uint wlen;				/* Window size */
 };
 #define FB_FILE(f) ((struct fb_file *)(f))
 #define FB_BUFFER(f) (byte *)(FB_FILE(f) + 1)
@@ -33,7 +33,7 @@ bfd_refill(struct fastbuf *f)
 {
   struct fb_file *F = FB_FILE(f);
   byte *read_ptr = (f->buffer = FB_BUFFER(f));
-  uns blen = f->bufend - f->buffer, back = F->keep_back_buf ? blen >> 2 : 0, read_len = blen;
+  uint blen = f->bufend - f->buffer, back = F->keep_back_buf ? blen >> 2 : 0, read_len = blen;
   /* Forward or no seek */
   if (F->wpos <= f->pos)
     {
@@ -47,9 +47,9 @@ long_seek:
 	  goto seek;
 	}
       /* Short forward seek (prefer read() to skip data )*/
-      else if ((uns)diff >= back)
+      else if ((uint)diff >= back)
         {
-	  uns skip = diff - back;
+	  uint skip = diff - back;
 	  F->wpos += skip;
 	  while (skip)
 	    {
@@ -68,7 +68,7 @@ long_seek:
       /* Reuse part of the previous window and append new data (also F->wpos == f->pos) */
       else
         {
-	  uns keep = back - (uns)diff;
+	  uint keep = back - (uint)diff;
 	  if (keep >= F->wlen)
 	    back = diff + (keep = F->wlen);
 	  else
@@ -91,7 +91,7 @@ long_seek:
 	  goto long_seek;
 	}
       /* Seek into previous window (do nothing... for example brewind) */
-      else if ((uns)diff <= F->wlen)
+      else if ((uint)diff <= F->wlen)
         {
 	  f->bstop = f->buffer + F->wlen;
 	  f->bptr = f->bstop - diff;
@@ -107,7 +107,7 @@ long_seek:
       /* Reuse part of previous window */
       if (F->wlen && read_len <= back + diff && read_len > back + diff - F->wlen)
         {
-	  uns keep = read_len + F->wlen - back - diff;
+	  uint keep = read_len + F->wlen - back - diff;
 	  memmove(f->buffer + read_len - keep, f->buffer, keep);
 	}
 seek:
@@ -198,7 +198,7 @@ bfd_close(struct fastbuf *f)
 }
 
 static int
-bfd_config(struct fastbuf *f, uns item, int value)
+bfd_config(struct fastbuf *f, uint item, int value)
 {
   int orig;
 
@@ -218,7 +218,7 @@ bfd_config(struct fastbuf *f, uns item, int value)
 }
 
 struct fastbuf *
-bfdopen_internal(int fd, const char *name, uns buflen)
+bfdopen_internal(int fd, const char *name, uint buflen)
 {
   ASSERT(buflen);
   int namelen = strlen(name) + 1;
@@ -256,7 +256,7 @@ int main(void)
   struct fastbuf *f, *t;
   f = bopen_tmp(16);
   t = bfdopen_shared(1, 13);
-  for (uns i = 0; i < 16; i++)
+  for (uint i = 0; i < 16; i++)
     bwrite(f, "<hello>", 7);
   bprintf(t, "%d\n", (int)btell(f));
   brewind(f);

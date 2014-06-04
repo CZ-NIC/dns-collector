@@ -16,8 +16,8 @@
 
 u64 bget_varint_slow(struct fastbuf *b, u64 repl)
 {
-	uns h = bgetc(b);
-	uns l = varint_len(h);
+	uint h = bgetc(b);
+	uint l = varint_len(h);
 	byte buf[l];
 	buf[0] = h;
 	l--;
@@ -30,7 +30,7 @@ u64 bget_varint_slow(struct fastbuf *b, u64 repl)
 void bput_varint_slow(struct fastbuf *b, u64 u)
 {
 	byte buf[9];
-	uns l = varint_put(buf, u);
+	uint l = varint_put(buf, u);
 	bwrite(b, buf, l);
 }
 
@@ -55,9 +55,9 @@ int main(int argc, char **argv)
 		#undef F
 	};
 
-	uns func = ~0U;
+	uint func = ~0U;
 	if (argc > 1)
-		for (uns i = 0; i < ARRAY_SIZE(names); i++)
+		for (uint i = 0; i < ARRAY_SIZE(names); i++)
 			if (!strcasecmp(names[i], argv[1]))
 				func = i;
 	if (!~func) {
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 
 	struct fastbuf *b = fbgrow_create(8);
 	switch (func) {
-		uns u;
+		uint u;
 		uintmax_t r;
 		int i;
 		case FUNC_BGET_VARINT:

@@ -44,7 +44,7 @@ image_context_msg_silent(struct image_context *ctx UNUSED)
 }
 
 void
-image_context_msg(struct image_context *ctx, uns code, char *msg, ...)
+image_context_msg(struct image_context *ctx, uint code, char *msg, ...)
 {
   va_list args;
   va_start(args, msg);
@@ -53,7 +53,7 @@ image_context_msg(struct image_context *ctx, uns code, char *msg, ...)
 }
 
 void
-image_context_vmsg(struct image_context *ctx, uns code, char *msg, va_list args)
+image_context_vmsg(struct image_context *ctx, uint code, char *msg, va_list args)
 {
   ctx->msg_code = code;
   ctx->msg = bb_vprintf(&ctx->msg_buf, msg, args);

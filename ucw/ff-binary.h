@@ -59,7 +59,7 @@
  * where `NAME` together with `TYPE` can be:
  *
  * - `w` for 16-bit unsigned integers stored in sequences of 2 bytes, the `TYPE` is int
- * - `l` for 32-bit unsigned integers stored in sequences of 4 bytes, the `TYPE` is uns
+ * - `l` for 32-bit unsigned integers stored in sequences of 4 bytes, the `TYPE` is uint
  * - `5` for 40-bit unsigned integers stored in sequences of 5 bytes, the `TYPE` is u64
  * - `q` for 64-bit unsigned integers stored in sequences of 8 bytes, the `TYPE` is u64
  *
@@ -111,7 +111,7 @@
 #define FF_ALL(type, name, bits, defendian) FF_ALL_X(type, name, bits, defendian)
 
 FF_ALL(int, w, 16, FF_ENDIAN)
-FF_ALL(uns, l, 32, FF_ENDIAN)
+FF_ALL(uint, l, 32, FF_ENDIAN)
 FF_ALL(u64, q, 64, FF_ENDIAN)
 FF_ALL(u64, 5, 40, FF_ENDIAN)
 

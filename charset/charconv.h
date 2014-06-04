@@ -39,7 +39,7 @@ struct conv_context {
   int source_charset, dest_charset;
   unsigned short int *in_to_x;
   unsigned short int *x_to_out;
-  unsigned int state, code, remains;
+  uint state, code, remains;
   unsigned char *string_at;
 };
 
@@ -83,13 +83,13 @@ enum charset_id {
 };
 
 /* Conversion of a single character between current non-UTF8 charset and Unicode */
-int conv_in_to_ucs(struct conv_context *c, unsigned int y);
-int conv_ucs_to_out(struct conv_context *c, unsigned int ucs);
+int conv_in_to_ucs(struct conv_context *c, uint y);
+int conv_ucs_to_out(struct conv_context *c, uint ucs);
 
 /* For those brave ones who want to mess with charconv internals */
-unsigned int conv_x_to_ucs(unsigned int x);
-unsigned int conv_ucs_to_x(unsigned int ucs);
-unsigned int conv_x_count(void);
+uint conv_x_to_ucs(uint x);
+uint conv_ucs_to_x(uint ucs);
+uint conv_x_count(void);
 
 /* Charset names */
 

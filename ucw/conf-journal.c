@@ -24,7 +24,7 @@ struct old_pools {
 struct cf_journal_item {
   struct cf_journal_item *prev;
   byte *ptr;
-  uns len;
+  uint len;
   byte copy[0];
 };
 
@@ -37,7 +37,7 @@ cf_set_journalling(int enable)
 }
 
 void
-cf_journal_block(void *ptr, uns len)
+cf_journal_block(void *ptr, uint len)
 {
   struct cf_context *cc = cf_get_context();
   if (!cc->enable_journal)
@@ -60,7 +60,7 @@ cf_journal_swap(void)
   {
     prev = curr->prev;
     curr->prev = next;
-    for (uns i=0; i<curr->len; i++)
+    for (uint i=0; i<curr->len; i++)
     {
       byte x = curr->copy[i];
       curr->copy[i] = curr->ptr[i];
@@ -71,7 +71,7 @@ cf_journal_swap(void)
 }
 
 struct cf_journal_item *
-cf_journal_new_transaction(uns new_pool)
+cf_journal_new_transaction(uint new_pool)
 {
   struct cf_context *cc = cf_get_context();
   if (new_pool)
@@ -82,7 +82,7 @@ cf_journal_new_transaction(uns new_pool)
 }
 
 void
-cf_journal_commit_transaction(uns new_pool, struct cf_journal_item *oldj)
+cf_journal_commit_transaction(uint new_pool, struct cf_journal_item *oldj)
 {
   struct cf_context *cc = cf_get_context();
   if (new_pool)
@@ -102,7 +102,7 @@ cf_journal_commit_transaction(uns new_pool, struct cf_journal_item *oldj)
 }
 
 void
-cf_journal_rollback_transaction(uns new_pool, struct cf_journal_item *oldj)
+cf_journal_rollback_transaction(uint new_pool, struct cf_journal_item *oldj)
 {
   struct cf_context *cc = cf_get_context();
   if (!cc->enable_journal)

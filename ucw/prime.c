@@ -11,9 +11,9 @@
 #include <ucw/prime.h>
 
 static int				/* Sequential search */
-__isprime(uns x)			/* We know x != 2 && x != 3 */
+__isprime(uint x)			/* We know x != 2 && x != 3 */
 {
-  uns test = 5;
+  uint test = 5;
 
   if (x == 5)
     return 1;
@@ -33,7 +33,7 @@ __isprime(uns x)			/* We know x != 2 && x != 3 */
 }
 
 int
-isprime(uns x)
+isprime(uint x)
 {
   if (x < 5)
     return (x == 2 || x == 3);
@@ -47,8 +47,8 @@ isprime(uns x)
     }
 }
 
-uns
-nextprime(uns x)			/* Returns some prime greater than x */
+uint
+nextprime(uint x)			/* Returns some prime greater than x */
 {
   x += 5 - (x % 6);			/* x is 6k-1 */
   for(;;)
@@ -70,7 +70,7 @@ nextprime(uns x)			/* Returns some prime greater than x */
 int
 main(int argc, char **argv)
 {
-  uns k = atol(argv[1]);
+  uint k = atol(argv[1]);
   printf("%d is%s prime\n", k, isprime(k) ? "" : "n't");
   printf("Next prime is %d\n", nextprime(k));
   return 0;

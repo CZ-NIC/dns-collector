@@ -11,8 +11,8 @@
 #include <ucw/string.h>
 #include <ucw/chartype.h>
 
-static uns
-hex_make(uns x)
+static uint
+hex_make(uint x)
 {
   return (x < 10) ? (x + '0') : (x - 10 + 'a');
 }
@@ -20,7 +20,7 @@ hex_make(uns x)
 void
 mem_to_hex(char *dest, const byte *src, size_t bytes, uns flags)
 {
-  uns sep = flags & 0xff;
+  uint sep = flags & 0xff;
 
   while (bytes--)
     {
@@ -39,8 +39,8 @@ mem_to_hex(char *dest, const byte *src, size_t bytes, uns flags)
   *dest = 0;
 }
 
-static uns
-hex_parse(uns c)
+static uint
+hex_parse(uint c)
 {
   c = Cupcase(c);
   c -= '0';
@@ -50,7 +50,7 @@ hex_parse(uns c)
 const char *
 hex_to_mem(byte *dest, const char *src, size_t max_bytes, uns flags)
 {
-  uns sep = flags & 0xff;
+  uint sep = flags & 0xff;
   while (max_bytes-- && Cxdigit(src[0]) && Cxdigit(src[1]))
     {
       *dest++ = (hex_parse(src[0]) << 4) | hex_parse(src[1]);

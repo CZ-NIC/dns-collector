@@ -20,13 +20,13 @@ cf_get_pool(void)
 }
 
 void *
-cf_malloc(uns size)
+cf_malloc(uint size)
 {
   return mp_alloc(cf_get_pool(), size);
 }
 
 void *
-cf_malloc_zero(uns size)
+cf_malloc_zero(uint size)
 {
   return mp_alloc_zero(cf_get_pool(), size);
 }

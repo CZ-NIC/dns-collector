@@ -15,7 +15,7 @@
  * This way we bypass most possible problems with different compilation environments.
  *
  * All functions and macros accept any numbers and if it is necessary, they simply ignore higher bits.
- * It does not matter whether a parameter is signed or unsigned. Parameters are evaluated exactly once,
+ * It does not matter whether a parameter is signed or uintigned. Parameters are evaluated exactly once,
  * so they can have side-effects.
  ***/
 
@@ -56,9 +56,9 @@ extern const byte ucw_c_cat[256], ucw_c_upper[256], ucw_c_lower[256];
 /**
  * Compute the value of a valid hexadecimal character (ie. passed the @Cxdigit() check).
  **/
-static inline uns Cxvalue(byte x)
+static inline uint Cxvalue(byte x)
 {
-  return (x < (uns)'A') ? x - '0' : (x & 0xdf) - 'A' + 10;
+  return (x < (uint)'A') ? x - '0' : (x & 0xdf) - 'A' + 10;
 }
 
 #endif

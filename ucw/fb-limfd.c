@@ -40,7 +40,7 @@ bfl_close(struct fastbuf *f)
 }
 
 struct fastbuf *
-bopen_limited_fd(int fd, uns buflen, uns limit)
+bopen_limited_fd(int fd, uint buflen, uint limit)
 {
   struct fb_limfd *F = xmalloc(sizeof(struct fb_limfd) + buflen);
   struct fastbuf *f = &F->fb;

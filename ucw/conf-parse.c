@@ -17,8 +17,8 @@
 #include <errno.h>
 
 struct unit {
-  uns name;			// one-letter name of the unit
-  uns num, den;			// fraction
+  uint name;			// one-letter name of the unit
+  uint num, den;		// fraction
 };
 
 static const struct unit units[] = {
@@ -62,7 +62,7 @@ cf_parse_int(const char *str, int *ptr)
     const struct unit *u;
     char *end;
     errno = 0;
-    uns x = strtoul(str, &end, 0);
+    uint x = strtoul(str, &end, 0);
     if (errno == ERANGE)
       msg = cf_rngerr;
     else if (u = lookup_unit(str, end, &msg)) {
@@ -119,7 +119,7 @@ cf_parse_double(const char *str, double *ptr)
   else {
     const struct unit *u;
     double x;
-    uns read_chars;
+    uint read_chars;
     if (sscanf(str, "%lf%n", &x, &read_chars) != 1)
       msg = "Invalid number";
     else if (u = lookup_unit(str, str + read_chars, &msg))
@@ -135,7 +135,7 @@ cf_parse_ip(const char *p, u32 *varp)
 {
   if (!*p)
     return "Missing IP address";
-  uns x = 0;
+  uint x = 0;
   char *p2;
   if (*p == '0' && (p[1] | 32) == 'x' && Cxdigit(p[2])) {
     errno = 0;
@@ -145,7 +145,7 @@ cf_parse_ip(const char *p, u32 *varp)
     p = p2;
   }
   else
-    for (uns i = 0; i < 4; i++) {
+    for (uint i = 0; i < 4; i++) {
       if (i) {
 	if (*p++ != '.')
 	  goto error;
@@ -153,7 +153,7 @@ cf_parse_ip(const char *p, u32 *varp)
       if (!Cdigit(*p))
 	goto error;
       errno = 0;
-      uns y = strtoul(p, &p2, 10);
+      uint y = strtoul(p, &p2, 10);
       if (errno == ERANGE || p2 == (char*) p || y > 255)
 	goto error;
       p = p2;

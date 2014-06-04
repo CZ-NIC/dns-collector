@@ -37,7 +37,7 @@ size_t strnlen(const char *str, size_t n); // NOAPI
  * Format a set of flag bits. When the i-th bit of @flags is 1,
  * set the i-th character of @dest to @fmt[i], otherwise to '-'.
  **/
-char *str_format_flags(char *dest, const char *fmt, uns flags);
+char *str_format_flags(char *dest, const char *fmt, uint flags);
 
 /** Counts occurrences of @chr in @str. **/
 size_t str_count_char(const char *str, uns chr);
@@ -60,7 +60,7 @@ char *str_unesc(char *dest, const char *src);
  * When there are more than @max fields in @str, the first @max fields
  * are processed and -1 is returned.
  **/
-int str_sepsplit(char *str, uns sep, char **rec, uns max);
+int str_sepsplit(char *str, uint sep, char **rec, uint max);
 
 /**
  * Split @str to words separated by white-space characters. The spaces
@@ -73,7 +73,7 @@ int str_sepsplit(char *str, uns sep, char **rec, uns max);
  * Fields surrounded by double quotes are also recognized. They can contain
  * spaces, but no mechanism for escaping embedded quotes is defined.
  **/
-int str_wordsplit(char *str, char **rec, uns max);
+int str_wordsplit(char *str, char **rec, uint max);
 
 /* str-(i)match.c: Matching of shell patterns */
 
@@ -126,7 +126,7 @@ int str_has_suffix(const char *str, const char *suffix); /** Tests if @str ends 
  * - "/" is a prefix,
  * - "" is a prefix.
  **/
-int str_hier_prefix(const char *str, const char *prefix, uns sep);
-int str_hier_suffix(const char *str, const char *suffix, uns sep); /** Like @str_hier_prefix(), but for suffixes. **/
+int str_hier_prefix(const char *str, const char *prefix, uint sep);
+int str_hier_suffix(const char *str, const char *suffix, uint sep); /** Like @str_hier_prefix(), but for suffixes. **/
 
 #endif

@@ -53,14 +53,14 @@
 #define PUTB4(b)   PUTB(0,b-1) PUTB(1,b-2) PUTB(2,b-3) PUTB(3,b-4)
 
 /* for internal use only, need the length > 4 */
-uns varint_put_big(byte *p, u64 u);
+uint varint_put_big(byte *p, u64 u);
 const byte *varint_get_big(const byte *p, u64 *r);
 
 /**
  * Encode u64 value u into byte sequence p.
  * Returns the number of bytes used (at least 1 and at most 9).
  **/
-static inline uns varint_put(byte *p, u64 u)
+static inline uint varint_put(byte *p, u64 u)
 {
 	if (u < VARINT_SHIFT_L1) {
 		p[0] = (byte)u;
@@ -171,18 +171,18 @@ static inline int varint_invalid(const byte *p)
  * Store the invalid sequence.
  * Returns always 2 (2 bytes were used, to be consistent with varint_put).
  **/
-static inline uns varint_put_invalid(byte *p)
+static inline uint varint_put_invalid(byte *p)
 {
 	p[0] = p[1] = 0xff;
 	return 2;
 }
 
 /** Compute the length of encoding in bytes from the first byte hdr of the encoding. **/
-static inline uns varint_len(const byte hdr)
+static inline uint varint_len(const byte hdr)
 {
 	byte b = ~hdr;
 
-	uns l = 0;
+	uint l = 0;
 	if (!b)
 		l = -1;
 	else {
@@ -194,7 +194,7 @@ static inline uns varint_len(const byte hdr)
 }
 
 /** Compute the number of bytes needed to store the value u. **/
-static inline uns varint_space(u64 u)
+static inline uint varint_space(u64 u)
 {
 	if (u < VARINT_SHIFT_L1)
 		return 1;

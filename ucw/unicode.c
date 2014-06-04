@@ -60,9 +60,9 @@ int main(int argc, char **argv)
 #undef F
   };
 
-  uns func = ~0U;
+  uint func = ~0U;
   if (argc > 1)
-    for (uns i = 0; i < ARRAY_SIZE(names); i++)
+    for (uint i = 0; i < ARRAY_SIZE(names); i++)
       if (!strcasecmp(names[i], argv[1]))
 	func = i;
   if (!~func)
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
   if (func < FUNC_UTF8_PUT)
     {
       byte *p = buf, *q = buf, *last;
-      uns u;
+      uint u;
       bzero(buf, sizeof(buf));
       while (scanf("%x", &u) == 1)
 	*q++ = u;
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     }
   else
     {
-      uns u, i=0;
+      uint u, i=0;
       while (scanf("%x", &u) == 1)
 	{
 	  byte *p = buf, *q = buf;

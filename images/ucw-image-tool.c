@@ -56,20 +56,20 @@ static struct option longopts[] =
   { NULL,			0, 0, 0 }
 };
 
-static uns verbose = 1;
+static uint verbose = 1;
 static byte *input_file_name;
 static enum image_format input_format;
 static byte *output_file_name;
 static enum image_format output_format;
-static uns cols;
-static uns rows;
-static uns fit_to_box;
-static uns channels_format;
-static uns jpeg_quality;
+static uint cols;
+static uint rows;
+static uint fit_to_box;
+static uint channels_format;
+static uint jpeg_quality;
 static struct color background_color;
 static struct color default_background_color;
-static uns remove_alpha;
-static uns exif;
+static uint remove_alpha;
+static uint exif;
 
 static void
 parse_color(struct color *color, byte *s)
@@ -216,8 +216,8 @@ main(int argc, char **argv)
         io.flags |= IMAGE_IO_USE_BACKGROUND;
       if (jpeg_quality)
 	io.jpeg_quality = jpeg_quality;
-      uns output_fmt = output_format ? : image_file_name_to_format(output_file_name);
-      uns output_cs = io.flags & IMAGE_COLOR_SPACE;
+      uint output_fmt = output_format ? : image_file_name_to_format(output_file_name);
+      uint output_cs = io.flags & IMAGE_COLOR_SPACE;
       if (output_fmt != IMAGE_FORMAT_JPEG &&
 	  output_cs != COLOR_SPACE_GRAYSCALE &&
 	  output_cs != COLOR_SPACE_RGB)

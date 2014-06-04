@@ -49,27 +49,27 @@ image_sig_preprocess(struct image_sig_data *data)
 {
   struct image *image = data->image;
   struct image_sig_block *block = data->blocks;
-  uns sum[IMAGE_VEC_F];
+  uint sum[IMAGE_VEC_F];
   bzero(sum, sizeof(sum));
 
   /* Every block of 4x4 pixels */
   byte *row_start = image->pixels;
-  for (uns block_y = 0; block_y < data->rows; block_y++, row_start += image->row_size * 4)
+  for (uint block_y = 0; block_y < data->rows; block_y++, row_start += image->row_size * 4)
     {
       byte *p = row_start;
-      for (uns block_x = 0; block_x < data->cols; block_x++, p += 12, block++)
+      for (uint block_x = 0; block_x < data->cols; block_x++, p += 12, block++)
         {
           int t[16], s[16], *tp = t;
 	  block->x = block_x;
 	  block->y = block_y;
 
 	  /* Convert pixels to Luv color space and compute average coefficients */
-	  uns l_sum = 0, u_sum = 0, v_sum = 0;
+	  uint l_sum = 0, u_sum = 0, v_sum = 0;
 	  byte *p2 = p;
 	  if (block_x < data->full_cols && block_y < data->full_rows)
 	    {
-	      for (uns y = 0; y < 4; y++, p2 += image->row_size - 12)
-	        for (uns x = 0; x < 4; x++, p2 += 3)
+	      for (uint y = 0; y < 4; y++, p2 += image->row_size - 12)
+	        for (uint x = 0; x < 4; x++, p2 += 3)
 	          {
 	            byte luv[3];
 	            srgb_to_luv_pixel(luv, p2);
@@ -88,9 +88,9 @@ image_sig_preprocess(struct image_sig_data *data)
 	  /* Incomplete square near the edge */
 	  else
 	    {
-	      uns x, y;
-	      uns square_cols = (block_x < data->full_cols) ? 4 : image->cols & 3;
-	      uns square_rows = (block_y < data->full_rows) ? 4 : image->rows & 3;
+	      uint x, y;
+	      uint square_cols = (block_x < data->full_cols) ? 4 : image->cols & 3;
+	      uint square_rows = (block_y < data->full_rows) ? 4 : image->rows & 3;
 	      for (y = 0; y < square_rows; y++, p2 += image->row_size)
 	        {
 		  byte *p3 = p2;
@@ -115,7 +115,7 @@ image_sig_preprocess(struct image_sig_data *data)
 		    tp++;
 		  }
 	      block->area = square_cols * square_rows;
-	      uns inv = 0x10000 / block->area;
+	      uint inv = 0x10000 / block->area;
 	      sum[0] += l_sum;
 	      sum[1] += u_sum;
 	      sum[2] += v_sum;
@@ -132,7 +132,7 @@ image_sig_preprocess(struct image_sig_data *data)
 #         define DAUB_3	-8481	/* (1 - sqrt 3) / (4 * sqrt 2) * 0x10000 */
 
 	  /* ... to the rows */
-	  uns i;
+	  uint i;
           for (i = 0; i < 16; i += 4)
             {
 	      s[i + 0] = (DAUB_0 * t[i + 2] + DAUB_1 * t[i + 3] + DAUB_2 * t[i + 0] + DAUB_3 * t[i + 1]) / 0x10000;
@@ -166,8 +166,8 @@ image_sig_preprocess(struct image_sig_data *data)
     }
 
   /* Compute featrures average */
-  uns inv = 0xffffffffU / data->area;
-  for (uns i = 0; i < IMAGE_VEC_F; i++)
+  uint inv = 0xffffffffU / data->area;
+  for (uint i = 0; i < IMAGE_VEC_F; i++)
     data->f[i] = ((u64)sum[i] * inv) >> 32;
 
   if (image->cols < image_sig_min_width || image->rows < image_sig_min_height)
@@ -182,7 +182,7 @@ image_sig_preprocess(struct image_sig_data *data)
 void
 image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
 {
-  for (uns i = 0; i < IMAGE_VEC_F; i++)
+  for (uint i = 0; i < IMAGE_VEC_F; i++)
     sig->vec.f[i] = data->f[i];
   sig->len = data->regions_count;
   sig->flags = data->flags;
@@ -191,9 +191,9 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
 
   /* For each region */
   u64 w_total = 0;
-  uns w_border = MIN(data->cols, data->rows) * image_sig_border_size;
+  uint w_border = MIN(data->cols, data->rows) * image_sig_border_size;
   int w_mul = w_border ? image_sig_border_bonus * 256 / (int)w_border : 0;
-  for (uns i = 0; i < sig->len; i++)
+  for (uint i = 0; i < sig->len; i++)
     {
       struct image_sig_region *r = data->regions + i;
       DBG("Processing region %u: count=%u", i, r->count);
@@ -213,7 +213,7 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
         {
 	  x_sum += b->x;
 	  y_sum += b->y;
-	  uns d = b->x;
+	  uint d = b->x;
 	  d = MIN(d, b->y);
 	  d = MIN(d, data->cols - b->x - 1);
 	  d = MIN(d, data->rows - b->y - 1);
@@ -224,16 +224,16 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
 	}
       w_total += w_sum;
       r->w_sum = w_sum;
-      uns x_avg = x_sum / r->count;
-      uns y_avg = y_sum / r->count;
+      uint x_avg = x_sum / r->count;
+      uint y_avg = y_sum / r->count;
       DBG("  centroid=(%u %u)", x_avg, y_avg);
 
       /* Compute normalized inertia */
       u64 sum1 = 0, sum2 = 0, sum3 = 0;
       for (struct image_sig_block *b = r->blocks; b; b = b->next)
         {
-	  uns inc2 = isqr(x_avg - b->x) + isqr(y_avg - b->y);
-	  uns inc1 = fast_sqrt_u32(inc2);
+	  uint inc2 = isqr(x_avg - b->x) + isqr(y_avg - b->y);
+	  uint inc1 = fast_sqrt_u32(inc2);
 	  sum1 += inc1;
 	  sum2 += inc2;
 	  sum3 += inc1 * inc2;
@@ -241,8 +241,8 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
       sig->reg[i].h[0] = CLAMP(image_sig_inertia_scale[0] * sum1 * ((3 * M_PI * M_PI) / 2) * pow(r->count, -1.5), 0, 255);
       sig->reg[i].h[1] = CLAMP(image_sig_inertia_scale[1] * sum2 * ((4 * M_PI * M_PI * M_PI) / 2) / ((u64)r->count * r->count), 0, 255);
       sig->reg[i].h[2] = CLAMP(image_sig_inertia_scale[2] * sum3 * ((5 * M_PI * M_PI * M_PI * M_PI) / 2) * pow(r->count, -2.5), 0, 255);
-      sig->reg[i].h[3] = (uns)x_avg * 127 / data->cols;
-      sig->reg[i].h[4] = (uns)y_avg * 127 / data->rows;
+      sig->reg[i].h[3] = (uint)x_avg * 127 / data->cols;
+      sig->reg[i].h[4] = (uint)y_avg * 127 / data->rows;
     }
 
   /* Compute average differences */
@@ -255,16 +255,16 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
     }
   else
     {
-      uns cnt = 0;
-      for (uns i = 0; i < sig->len; i++)
-        for (uns j = i + 1; j < sig->len; j++)
+      uint cnt = 0;
+      for (uint i = 0; i < sig->len; i++)
+        for (uint j = i + 1; j < sig->len; j++)
           {
-	    uns d = 0;
-	    for (uns k = 0; k < IMAGE_REG_F; k++)
+	    uint d = 0;
+	    for (uint k = 0; k < IMAGE_REG_F; k++)
 	      d += image_sig_cmp_features_weights[k] * isqr(sig->reg[i].f[k] - sig->reg[j].f[k]);
 	    df += fast_sqrt_u32(d);
 	    d = 0;
-	    for (uns k = 0; k < IMAGE_REG_H; k++)
+	    for (uint k = 0; k < IMAGE_REG_H; k++)
 	      d += image_sig_cmp_features_weights[k + IMAGE_REG_F] * isqr(sig->reg[i].h[k] - sig->reg[j].h[k]);
 	    dh += fast_sqrt_u32(d);
 	    cnt++;
@@ -275,8 +275,8 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
   DBG("Average regions difs: df=%u dh=%u", sig->df, sig->dh);
 
   /* Compute normalized weights */
-  uns wa = 128, wb = 128;
-  for (uns i = sig->len; --i > 0; )
+  uint wa = 128, wb = 128;
+  for (uint i = sig->len; --i > 0; )
     {
       struct image_sig_region *r = data->regions + i;
       wa -= sig->reg[i].wa = CLAMP(r->count * 128 / data->blocks_count, 1, (int)(wa - i));
@@ -291,7 +291,7 @@ image_sig_finish(struct image_sig_data *data, struct image_signature *sig)
 
   /* Dump regions features */
 #ifdef LOCAL_DEBUG
-  for (uns i = 0; i < sig->len; i++)
+  for (uint i = 0; i < sig->len; i++)
     {
       byte buf[IMAGE_REGION_DUMP_MAX];
       image_region_dump(buf, sig->reg + i);

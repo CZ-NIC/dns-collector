@@ -28,7 +28,7 @@ subpool_res_detach(struct resource *r)
 }
 
 static void
-subpool_res_dump(struct resource *r, uns indent)
+subpool_res_dump(struct resource *r, uint indent)
 {
   printf(":\n");
   rp_dump(r->priv, indent);

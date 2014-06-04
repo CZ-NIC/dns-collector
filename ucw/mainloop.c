@@ -74,7 +74,7 @@ main_is_current(struct main_context *m)
   return (m == main_current_nocheck());
 }
 
-static inline uns
+static inline uint
 count_timers(struct main_context *m)
 {
   if (m->timer_table)
@@ -253,7 +253,7 @@ timer_add(struct main_timer *tm, timestamp_t expires)
     DBG("MAIN: Setting timer %p (expire at now+%lld)", tm, (long long)(expires - m->now));
   else
     DBG("MAIN: Clearing timer %p", tm);
-  uns num_timers = count_timers(m);
+  uint num_timers = count_timers(m);
   if (tm->expires < expires)
     {
       if (!tm->expires)
@@ -300,10 +300,10 @@ timer_del(struct main_timer *tm)
   timer_add(tm, 0);
 }
 
-static uns
+static uint
 file_want_events(struct main_file *fi)
 {
-  uns events = 0;
+  uint events = 0;
   if (fi->read_handler)
     events |= POLLIN;
   if (fi->write_handler)
@@ -645,8 +645,8 @@ main_debug_context(struct main_context *m UNUSED)
 {
   msg(L_DEBUG, "### Main loop status on %lld", (long long) m->now);
   msg(L_DEBUG, "\tActive timers:");
-  uns num_timers = count_timers(m);
-  for (uns i = 1; i <= num_timers; i++)
+  uint num_timers = count_timers(m);
+  for (uint i = 1; i <= num_timers; i++)
     timer_debug(m->timer_table[i]);
   msg(L_DEBUG, "\tActive files:");
   CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
@@ -840,7 +840,7 @@ main_loop(void)
 #else
       struct pollfd *p = m->poll_table;
       struct main_file **pf = m->poll_file_table;
-      for (uns i=0; i < m->file_cnt; i++)
+      for (uint i=0; i < m->file_cnt; i++)
 	if (p[i].revents)
 	  {
 	    struct main_file *fi = pf[i];

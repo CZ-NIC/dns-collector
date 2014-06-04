@@ -16,6 +16,6 @@ xstrdup(const char *s)
 {
   if (!s)
     return NULL;
-  uns l = strlen(s) + 1;
+  uint l = strlen(s) + 1;
   return memcpy(xmalloc(l), s, l);
 }

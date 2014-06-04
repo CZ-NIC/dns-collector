@@ -27,11 +27,11 @@
  *	    TRIE_WANT_CLEANUP		cleanup()
  *
  *	    TRIE_WANT_FIND		node *find(char *str)
- *	    TRIE_WANT_FIND_BUF		node *find_buf(byte *ptr, uns len)
+ *	    TRIE_WANT_FIND_BUF		node *find_buf(byte *ptr, uint len)
  *	    TRIE_WANT_ADD		add(*node)
  *	    TRIE_WANT_REPLACE		node *replace(*node)
  *	    TRIE_WANT_DELETE		delete(char *str)
- *	    TRIE_WANT_DELETE_BUF	delete_buf(byte *ptr, uns len)
+ *	    TRIE_WANT_DELETE_BUF	delete_buf(byte *ptr, uint len)
  *	    TRIE_WANT_REMOVE		remove(*node)
  *
  *	    TRIE_WANT_AUDIT		audit()
@@ -99,7 +99,7 @@ typedef TRIE_LEN_TYPE P(len_t);
 enum { P(bucket_rank) = TRIE_BUCKET_RANK };
 
 #define TRIE_COMPILE_ASSERT(x, y) typedef char TRIE_PREFIX(x##_compile_assert)[!!(y)-1]
-TRIE_COMPILE_ASSERT(len_type, sizeof(P(len_t)) <= sizeof(uns));
+TRIE_COMPILE_ASSERT(len_type, sizeof(P(len_t)) <= sizeof(uint));
 TRIE_COMPILE_ASSERT(hash_threshold, TRIE_HASH_THRESHOLD >= 2);
 TRIE_COMPILE_ASSERT(bucket_size, TRIE_BUCKET_RANK >= 1 && TRIE_BUCKET_MASK < sizeof(void *));
 
@@ -176,14 +176,14 @@ P(init)(TA)
 {
   TRIE_DBG("Initializing");
   bzero(&T, sizeof(T));
-  for (uns i = 0; i < ARRAY_SIZE(T.epool); i++)
+  for (uint i = 0; i < ARRAY_SIZE(T.epool); i++)
     {
-      uns size = sizeof(struct P(edge)) + i * sizeof(void *);
+      uint size = sizeof(struct P(edge)) + i * sizeof(void *);
       T.epool[i] = ep_new(size, MAX(TRIE_ELTPOOL_SIZE / size, 1));
     }
-  for (uns i = 0; i < ARRAY_SIZE(T.hpool); i++)
+  for (uint i = 0; i < ARRAY_SIZE(T.hpool); i++)
     {
-      uns size = sizeof(struct P(edge)) + ((sizeof(void *) << TRIE_BUCKET_RANK) << i);
+      uint size = sizeof(struct P(edge)) + ((sizeof(void *) << TRIE_BUCKET_RANK) << i);
       T.hpool[i] = ep_new(size, MAX(TRIE_ELTPOOL_SIZE / size, 1));
     }
 }
@@ -193,20 +193,20 @@ static void
 P(cleanup)(TA)
 {
   TRIE_DBG("Cleaning up");
-  for (uns i = 0; i < ARRAY_SIZE(T.epool); i++)
+  for (uint i = 0; i < ARRAY_SIZE(T.epool); i++)
     ep_delete(T.epool[i]);
-  for (uns i = 0; i < ARRAY_SIZE(T.hpool); i++)
+  for (uint i = 0; i < ARRAY_SIZE(T.hpool); i++)
     ep_delete(T.hpool[i]);
 }
 #endif
 
 static struct P(edge) *
-P(edge_alloc)(TAC uns flags)
+P(edge_alloc)(TAC uint flags)
 {
   struct P(edge) *edge;
   if (flags & TRIE_FLAG_HASH)
     {
-      uns rank = 0, deg = flags & TRIE_FLAG_DEG;
+      uint rank = 0, deg = flags & TRIE_FLAG_DEG;
       while ((TRIE_BUCKET_MASK << rank) < deg * 2) // 25-50% density
 	rank++;
       ASSERT(rank < ARRAY_SIZE(T.hpool));
@@ -240,14 +240,14 @@ P(str_get)(P(node_t) *node)
   return TRIE_NODE_KEY((*node));
 }
 
-static inline uns
+static inline uint
 P(str_len)(P(node_t) *node)
 {
   return TRIE_NODE_LEN((*node));
 }
 
-static inline uns
-P(str_char)(byte *ptr, uns len UNUSED, uns pos)
+static inline uint
+P(str_char)(byte *ptr, uint len UNUSED, uint pos)
 {
 #ifndef TRIE_REV
   return ptr[pos];
@@ -257,7 +257,7 @@ P(str_char)(byte *ptr, uns len UNUSED, uns pos)
 }
 
 static inline byte *
-P(str_prefix)(byte *ptr, uns len UNUSED, uns prefix UNUSED)
+P(str_prefix)(byte *ptr, uint len UNUSED, uint prefix UNUSED)
 {
 #ifndef TRIE_REV
   return ptr;
@@ -267,7 +267,7 @@ P(str_prefix)(byte *ptr, uns len UNUSED, uns prefix UNUSED)
 }
 
 static inline byte *
-P(str_suffix)(byte *ptr, uns len UNUSED, uns suffix UNUSED)
+P(str_suffix)(byte *ptr, uint len UNUSED, uint suffix UNUSED)
 {
 #ifndef TRIE_REV
   return ptr + len - suffix;
@@ -276,10 +276,10 @@ P(str_suffix)(byte *ptr, uns len UNUSED, uns suffix UNUSED)
 #endif
 }
 
-static inline uns
-P(common_prefix)(byte *ptr1, uns len1, byte *ptr2, uns len2)
+static inline uint
+P(common_prefix)(byte *ptr1, uint len1, byte *ptr2, uint len2)
 {
-  uns l = MIN(len1, len2), i;
+  uint l = MIN(len1, len2), i;
   for (i = 0; i < l; i++)
     if (P(str_char)(ptr1, len1, i) != P(str_char)(ptr2, len2, i))
       break;
@@ -288,17 +288,17 @@ P(common_prefix)(byte *ptr1, uns len1, byte *ptr2, uns len2)
 
 /*** Sons ***/
 
-static inline uns
-P(hash_func)(uns c)
+static inline uint
+P(hash_func)(uint c)
 {
   return hash_u32(c) >> 16;
 }
 
 static inline struct P(edge) **
-P(hash_find)(struct P(edge) *edge, uns c)
+P(hash_find)(struct P(edge) *edge, uint c)
 {
-  uns mask = (TRIE_BUCKET_SIZE << edge->hash_rank) - 1;
-  for (uns i = P(hash_func)(c); ; i++)
+  uint mask = (TRIE_BUCKET_SIZE << edge->hash_rank) - 1;
+  for (uint i = P(hash_func)(c); ; i++)
     if (((i &= mask) & TRIE_BUCKET_MASK) && (uintptr_t)edge->son[i] != 1)
       if (!edge->son[i])
 	return NULL;
@@ -307,10 +307,10 @@ P(hash_find)(struct P(edge) *edge, uns c)
 }
 
 static inline struct P(edge) **
-P(hash_insert)(struct P(edge) *edge, uns c)
+P(hash_insert)(struct P(edge) *edge, uint c)
 {
-  uns mask = (TRIE_BUCKET_SIZE << edge->hash_rank) - 1;
-  for (uns i = P(hash_func)(c); ; i++)
+  uint mask = (TRIE_BUCKET_SIZE << edge->hash_rank) - 1;
+  for (uint i = P(hash_func)(c); ; i++)
     if (((i &= mask) & TRIE_BUCKET_MASK) && (uintptr_t)edge->son[i] <= 1)
       {
 	edge->hash_deleted -= (uintptr_t)edge->son[i];
@@ -322,10 +322,10 @@ P(hash_insert)(struct P(edge) *edge, uns c)
 
 #ifdef TRIE_WANT_DO_DELETE
 static inline void
-P(hash_delete)(struct P(edge) *edge, uns c)
+P(hash_delete)(struct P(edge) *edge, uint c)
 {
-  uns mask = (TRIE_BUCKET_SIZE << edge->hash_rank) - 1;
-  for (uns i = P(hash_func)(c); ; i++)
+  uint mask = (TRIE_BUCKET_SIZE << edge->hash_rank) - 1;
+  for (uint i = P(hash_func)(c); ; i++)
     if (((i &= mask) & TRIE_BUCKET_MASK) && (uintptr_t)edge->son[i] > 1 &&
       ((byte *)&edge->son[i & ~TRIE_BUCKET_MASK])[i & TRIE_BUCKET_MASK] == c)
       {
@@ -338,9 +338,9 @@ P(hash_delete)(struct P(edge) *edge, uns c)
 
 #define TRIE_HASH_FOR_ALL(xedge, xtrans, xson) do { \
   struct P(edge) *_edge = (xedge); \
-  for (uns _i = (TRIE_BUCKET_SIZE << _edge->hash_rank); _i--; ) \
+  for (uint _i = (TRIE_BUCKET_SIZE << _edge->hash_rank); _i--; ) \
     if ((_i & TRIE_BUCKET_MASK) && (uintptr_t)_edge->son[_i] > 1) { \
-      UNUSED uns xtrans = ((byte *)&_edge->son[_i & ~TRIE_BUCKET_MASK])[_i & TRIE_BUCKET_MASK]; \
+      UNUSED uint xtrans = ((byte *)&_edge->son[_i & ~TRIE_BUCKET_MASK])[_i & TRIE_BUCKET_MASK]; \
       UNUSED struct P(edge) *xson = _edge->son[_i]; \
       do {
 #define TRIE_HASH_END_FOR }while(0);}}while(0)
@@ -361,22 +361,22 @@ P(hash_realloc)(TAC struct P(edge) **ref)
 /*** Finding/inserting/deleting sons ***/
 
 static struct P(edge) **
-P(son_find)(struct P(edge) *edge, uns c)
+P(son_find)(struct P(edge) *edge, uint c)
 {
   if (edge->flags & TRIE_FLAG_HASH)
     return P(hash_find)(edge, c);
   else
-    for (uns i = edge->flags & TRIE_FLAG_DEG; i--; )
+    for (uint i = edge->flags & TRIE_FLAG_DEG; i--; )
       if (edge->trans[i] == c)
 	return &edge->son[i];
   return NULL;
 }
 
 static struct P(edge) **
-P(son_insert)(TAC struct P(edge) **ref, uns c)
+P(son_insert)(TAC struct P(edge) **ref, uint c)
 {
   struct P(edge) *old = *ref, *edge;
-  uns deg = old->flags & TRIE_FLAG_DEG;
+  uint deg = old->flags & TRIE_FLAG_DEG;
   if (old->flags & TRIE_FLAG_HASH)
     {
       old->flags++;
@@ -408,7 +408,7 @@ P(son_insert)(TAC struct P(edge) **ref, uns c)
 	  edge = P(edge_alloc)(TTC (old->flags + 1) | TRIE_FLAG_HASH);
 	  edge->node = old->node;
 	  edge->len = old->len;
-	  for (uns i = 0; i < deg; i++)
+	  for (uint i = 0; i < deg; i++)
 	    *P(hash_insert)(edge, old->trans[i]) = old->son[i];
 	  P(edge_free)(TTC old);
 	}
@@ -419,10 +419,10 @@ P(son_insert)(TAC struct P(edge) **ref, uns c)
 
 #ifdef TRIE_WANT_DO_DELETE
 static void
-P(son_delete)(TAC struct P(edge) **ref, uns c)
+P(son_delete)(TAC struct P(edge) **ref, uint c)
 {
   struct P(edge) *old = *ref, *edge;
-  uns deg = old->flags & TRIE_FLAG_DEG;
+  uint deg = old->flags & TRIE_FLAG_DEG;
   ASSERT(deg);
   if (old->flags & TRIE_FLAG_HASH)
     {
@@ -433,7 +433,7 @@ P(son_delete)(TAC struct P(edge) **ref, uns c)
         {
 	  TRIE_DBG("Reducing hash table to array");
 	  edge = P(edge_alloc)(TTC old->flags & ~TRIE_FLAG_HASH);
-	  uns k = 0;
+	  uint k = 0;
 	  TRIE_HASH_FOR_ALL(old, trans, son)
 	    edge->trans[k] = trans;
 	    edge->son[k] = son;
@@ -454,8 +454,8 @@ P(son_delete)(TAC struct P(edge) **ref, uns c)
     {
       TRIE_DBG("Reducing array");
       edge = P(edge_alloc)(TTC old->flags - 1);
-      uns j = 0;
-      for (uns i = 0; i < deg; i++)
+      uint j = 0;
+      for (uint i = 0; i < deg; i++)
 	if (old->trans[i] != c)
 	  {
 	    edge->trans[j] = old->trans[i];
@@ -479,7 +479,7 @@ P(son_any)(struct P(edge) *edge)
   if (!(edge->flags & TRIE_FLAG_HASH))
     return edge->son[0];
   else
-    for (uns i = 0; ; i++)
+    for (uint i = 0; ; i++)
       if ((i & TRIE_BUCKET_MASK) && (uintptr_t)edge->son[i] > 1)
 	return edge->son[i];
 }
@@ -489,7 +489,7 @@ P(son_any)(struct P(edge) *edge)
 
 #ifdef TRIE_WANT_DO_FIND
 static struct P(edge) *
-P(do_find)(TAC byte *ptr, uns len)
+P(do_find)(TAC byte *ptr, uint len)
 {
   TRIE_DBG("do_find('%.*s')", len, ptr);
   struct P(edge) **ref = &T.root, *edge;
@@ -506,11 +506,11 @@ P(do_find)(TAC byte *ptr, uns len)
 #endif
 
 static struct P(edge) *
-P(do_lookup)(TAC byte *ptr, uns len)
+P(do_lookup)(TAC byte *ptr, uint len)
 {
   TRIE_DBG("do_lookup('%.*s')", len, ptr);
   struct P(edge) **ref, *edge, *leaf, *newleaf;
-  uns prefix, elen, trans, pos;
+  uint prefix, elen, trans, pos;
   byte *eptr;
 
   if (!(edge = T.root))
@@ -596,7 +596,7 @@ P(do_lookup)(TAC byte *ptr, uns len)
 
 #ifdef TRIE_WANT_DO_DELETE
 static P(node_t) *
-P(do_delete)(TAC byte *ptr, uns len)
+P(do_delete)(TAC byte *ptr, uint len)
 {
   TRIE_DBG("do_delete('%.*s')", len, ptr);
   struct P(edge) **ref = &T.root, **pref = NULL, *edge, *parent, *leaf, *pold = NULL;
@@ -615,7 +615,7 @@ P(do_delete)(TAC byte *ptr, uns len)
     }
 
   P(node_t) *node = edge->node;
-  uns deg = edge->flags & TRIE_FLAG_DEG;
+  uint deg = edge->flags & TRIE_FLAG_DEG;
 
   if (!deg)
     {
@@ -685,7 +685,7 @@ P(find)(TAC char *str)
 
 #ifdef TRIE_WANT_FIND_BUF
 static inline P(node_t) *
-P(find_buf)(TAC byte *ptr, uns len)
+P(find_buf)(TAC byte *ptr, uint len)
 {
   struct P(edge) *edge = P(do_find)(TTC ptr, len);
   return edge ? edge->node : NULL;
@@ -723,7 +723,7 @@ P(delete)(TAC char *str)
 
 #ifdef TRIE_WANT_DELETE_BUF
 static inline P(node_t) *
-P(delete_buf)(TAC byte *ptr, uns len)
+P(delete_buf)(TAC byte *ptr, uint len)
 {
   return P(do_delete)(TTC ptr, len);
 }
@@ -747,7 +747,7 @@ P(remove)(TAC P(node_t) *node)
   do									\
     {									\
       byte *_ptr = (xptr);						\
-      uns _len = (xlen);						\
+      uint _len = (xlen);						\
       struct px##trie *_trie = (xtrie);					\
       struct px##edge *xedge, **_ref;					\
       if (!(xedge = _trie->root))					\
@@ -756,7 +756,7 @@ P(remove)(TAC P(node_t) *node)
         xedge = *_ref;							\
       if (!(xedge->flags & TRIE_FLAG_NODE))				\
 	xedge = xedge->leaf;						\
-      uns _prefix = px##common_prefix(_ptr, _len, px##str_get(xedge->node), xedge->len);			\
+      uint _prefix = px##common_prefix(_ptr, _len, px##str_get(xedge->node), xedge->len);			\
       for (_ref = &_trie->root; _ref && ((xedge = *_ref)->len <= _prefix || _prefix == _len);			\
 	_ref = (xedge->len < _prefix) ? px##son_find(xedge, px##str_char(_ptr, _len, xedge->len)) : NULL)	\
         {
@@ -769,7 +769,7 @@ P(remove)(TAC P(node_t) *node)
 #define TRIE_FOR_SUBTREE_EDGES(px, xstart, xedge)			\
   do									\
     {									\
-      struct { struct px##edge *edge; uns pos; }			\
+      struct { struct px##edge *edge; uint pos; }			\
         *_sbuf = alloca(sizeof(*_sbuf) * 16),				\
         *_sptr = _sbuf, *_send = _sbuf + 16;				\
       struct px##edge *_next = (xstart), *xedge;			\
@@ -779,7 +779,7 @@ P(remove)(TAC P(node_t) *node)
 	    {								\
 	      if (_sptr == _send)					\
 	        {							\
-		  uns stack_size = _sptr - _sbuf;			\
+		  uint stack_size = _sptr - _sbuf;			\
 		  _sptr = alloca(sizeof(*_sptr) * (stack_size * 2));	\
 		  memcpy(_sptr, _sbuf, sizeof(*_sptr) * stack_size);	\
 		  _sbuf = _sptr;					\
@@ -799,8 +799,8 @@ P(remove)(TAC P(node_t) *node)
 		  break;						\
 		}							\
 	      _next = (--_sptr)->edge;					\
-	      uns pos = --(_sptr->pos);					\
-	      uns flags = _next->flags;					\
+	      uint pos = --(_sptr->pos);				\
+	      uint flags = _next->flags;				\
 	      _next = _next->son[pos];					\
 	      if (pos)							\
 	        _sptr++;						\
@@ -838,11 +838,11 @@ P(remove)(TAC P(node_t) *node)
 static void
 P(audit)(TA)
 {
-  uns count = 0;
+  uint count = 0;
   TRIE_FOR_ALL_EDGES(TRIE_PREFIX(), &T, edge)
     {
       ASSERT(edge);
-      uns deg = edge->flags & TRIE_FLAG_DEG;
+      uint deg = edge->flags & TRIE_FLAG_DEG;
       ASSERT(edge->node);
       struct P(edge) * leaf = (edge->flags & TRIE_FLAG_NODE) ? edge : edge->leaf;
       if (leaf != edge)
@@ -858,8 +858,8 @@ P(audit)(TA)
       if (edge->flags & TRIE_FLAG_HASH)
         {
 	  ASSERT(deg > 1 && deg <= 256);
-	  uns count = 0, deleted = 0;
-	  for (uns i = TRIE_BUCKET_SIZE << edge->hash_rank; i--; )
+	  uint count = 0, deleted = 0;
+	  for (uint i = TRIE_BUCKET_SIZE << edge->hash_rank; i--; )
 	    if (i & TRIE_BUCKET_MASK)
 	      if ((uintptr_t)edge->son[i] == 1)
 		deleted++;
@@ -874,7 +874,7 @@ P(audit)(TA)
       else
         {
 	  ASSERT(deg <= TRIE_HASH_THRESHOLD);
-	  for (uns i = 0; i < deg; i++)
+	  for (uint i = 0; i < deg; i++)
 	    ASSERT(edge->son[i]->len > edge->len);
 	}
       count++;
@@ -899,9 +899,9 @@ static void
 P(stats)(TAC struct P(stats) *stats)
 {
   bzero(stats, sizeof(*stats));
-  for (uns i = 0; i < ARRAY_SIZE(T.epool); i++)
+  for (uint i = 0; i < ARRAY_SIZE(T.epool); i++)
     stats->small_size += ep_total_size(T.epool[i]);
-  for (uns i = 0; i < ARRAY_SIZE(T.hpool); i++)
+  for (uint i = 0; i < ARRAY_SIZE(T.hpool); i++)
     stats->hash_size += ep_total_size(T.hpool[i]);
   stats->total_size = stats->small_size + stats->hash_size + sizeof(T);
 }

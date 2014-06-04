@@ -38,7 +38,7 @@ mp_multicat(struct mempool *p, ...)
   va_list args, a;
   va_start(args, p);
   char *x, *y;
-  uns cnt = 0;
+  uint cnt = 0;
   va_copy(a, args);
   while (x = va_arg(a, char *))
     cnt++;
@@ -64,17 +64,17 @@ mp_multicat(struct mempool *p, ...)
 }
 
 char *
-mp_strjoin(struct mempool *p, char **a, uns n, uns sep)
+mp_strjoin(struct mempool *p, char **a, uint n, uint sep)
 {
   size_t sizes[n];
   size_t len = 1;
-  for (uns i=0; i<n; i++)
+  for (uint i=0; i<n; i++)
     len += sizes[i] = strlen(a[i]);
   if (sep && n)
     len += n-1;
   char *dest = mp_alloc_fast_noalign(p, len);
   char *d = dest;
-  for (uns i=0; i<n; i++)
+  for (uint i=0; i<n; i++)
     {
       if (sep && i)
 	*d++ = sep;

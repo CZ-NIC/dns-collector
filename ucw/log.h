@@ -48,11 +48,11 @@ struct log_msg {
   int m_len;				// Length without the \0
   struct tm *tm;			// Current time
   struct timeval *tv;
-  uns flags;				// Category and other flags as passed to msg()
+  uint flags;				// Category and other flags as passed to msg()
   char *raw_msg;			// Unformatted parts
   char *stime;
   char *sutime;
-  uns depth;				// Recursion depth
+  uint depth;				// Recursion depth
   bool error;				// An error has occurred (e.g., an infinite loop in sub-streams)
 };
 
@@ -62,11 +62,11 @@ struct log_msg {
 struct log_stream {
   char *name;				// Optional name, allocated by the user (or constructor)
   int regnum;				// Stream number, already encoded by LS_SET_STRNUM(); -1 if closed
-  uns levels;				// Bitmask of accepted severity levels (default: all)
-  uns types;				// Bitmask of accepted message types (default: all)
-  uns msgfmt;				// Formatting flags (LSFMT_xxx)
-  uns use_count;			// Number of references to the stream
-  uns stream_flags;			// Various other flags (LSFLAG_xxx)
+  uint levels;				// Bitmask of accepted severity levels (default: all)
+  uint types;				// Bitmask of accepted message types (default: all)
+  uint msgfmt;				// Formatting flags (LSFMT_xxx)
+  uint use_count;			// Number of references to the stream
+  uint stream_flags;			// Various other flags (LSFLAG_xxx)
   int (*filter)(struct log_stream* ls, struct log_msg *m);	// Filter function, return non-zero to discard the message
   clist substreams;			// Pass the message to these streams (simple_list of pointers)
   int (*handler)(struct log_stream *ls, struct log_msg *m);	// Called to commit the message, return 0 for success, errno on error
@@ -148,7 +148,7 @@ int log_register_type(const char *name);
 int log_find_type(const char *name);
 
 /** Given a flag set, extract the message type ID and return its name. **/
-char *log_type_name(uns flags);
+char *log_type_name(uint flags);
 
 /*** === Operations on streams ***/
 
@@ -192,13 +192,13 @@ int log_rm_substream(struct log_stream *where, struct log_stream *what);
  * Set formatting flags of a given stream and all its substreams. The flags are
  * AND'ed with @mask and OR'ed with @data.
  **/
-void log_set_format(struct log_stream *ls, uns mask, uns data);
+void log_set_format(struct log_stream *ls, uint mask, uint data);
 
 /**
  * Find a stream by its registration number (in the format of logging flags).
  * Returns NULL if there is no such stream.
  **/
-struct log_stream *log_stream_by_flags(uns flags);
+struct log_stream *log_stream_by_flags(uint flags);
 
 /** Return a pointer to the default stream (stream #0). **/
 static inline struct log_stream *log_default_stream(void)
@@ -239,8 +239,8 @@ void log_pass_filtered(struct log_stream *ls, struct log_msg *m);
  * even in multi-threaded programs.
  ***/
 
-struct log_stream *log_new_file(const char *path, uns flags);	/** Create a stream bound to a log file. See `FF_xxx` for @flags. **/
-struct log_stream *log_new_fd(int fd, uns flags);		/** Create a stream bound to a file descriptor. See `FF_xxx` for @flags. **/
+struct log_stream *log_new_file(const char *path, uint flags);	/** Create a stream bound to a log file. See `FF_xxx` for @flags. **/
+struct log_stream *log_new_fd(int fd, uint flags);		/** Create a stream bound to a file descriptor. See `FF_xxx` for @flags. **/
 
 enum log_file_flag {		/** Flags used for file-based logging **/
   FF_FORMAT_NAME = 1,		// Internal: Name contains strftime escapes

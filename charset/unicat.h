@@ -21,7 +21,7 @@
 extern const byte *_U_cat[];
 extern const u16 *_U_upper[], *_U_lower[], *_U_unaccent[];
 
-static inline uns Ucategory(uns x)
+static inline uint Ucategory(uint x)
 {
   if (_U_cat[x >> 8U])
     return _U_cat[x >> 8U][x & 0xff];
@@ -29,25 +29,25 @@ static inline uns Ucategory(uns x)
     return 0;
 }
 
-static inline uns Utoupper(uns x)
+static inline uint Utoupper(uint x)
 {
-  uns w = (_U_upper[x >> 8U]) ? _U_upper[x >> 8U][x & 0xff] : 0;
+  uint w = (_U_upper[x >> 8U]) ? _U_upper[x >> 8U][x & 0xff] : 0;
   return w ? w : x;
 }
 
-static inline uns Utolower(uns x)
+static inline uint Utolower(uint x)
 {
-  uns w = (_U_lower[x >> 8U]) ? _U_lower[x >> 8U][x & 0xff] : 0;
+  uint w = (_U_lower[x >> 8U]) ? _U_lower[x >> 8U][x & 0xff] : 0;
   return w ? w : x;
 }
 
-static inline uns Uunaccent(uns x)
+static inline uint Uunaccent(uint x)
 {
-  uns w = (_U_unaccent[x >> 8U]) ? _U_unaccent[x >> 8U][x & 0xff] : 0;
+  uint w = (_U_unaccent[x >> 8U]) ? _U_unaccent[x >> 8U][x & 0xff] : 0;
   return w ? w : x;
 }
 
-extern const u16 *Uexpand_lig(uns x);
+extern const u16 *Uexpand_lig(uint x);
 
 enum unicode_char_type {
   _U_LETTER = 1,		/* Letters */

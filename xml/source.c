@@ -60,7 +60,7 @@ xml_fatal_nested(struct xml_context *ctx)
 }
 
 static inline void
-xml_add_char(u32 **bstop, uns c)
+xml_add_char(u32 **bstop, uint c)
 {
   *(*bstop)++ = c;
   *(*bstop)++ = xml_char_cat(c);
@@ -165,8 +165,8 @@ xml_push_entity(struct xml_context *ctx, struct xml_dtd_entity *ent)
   src->refill_cat2 = ctx->cat_new_line;
 }
 
-static uns
-xml_error_restricted(struct xml_context *ctx, uns c)
+static uint
+xml_error_restricted(struct xml_context *ctx, uint c)
 {
   if (c == ~1U)
     xml_error(ctx, "Corrupted encoding");
@@ -182,13 +182,13 @@ void xml_parse_decl(struct xml_context *ctx);
   struct fastbuf *fb = src->fb;								\
   if (ctx->bptr == ctx->bstop)								\
     ctx->bptr = ctx->bstop = src->buf;							\
-  uns c, t1 = src->refill_cat1, t2 = src->refill_cat2, row = src->row;		\
+  uint c, t1 = src->refill_cat1, t2 = src->refill_cat2, row = src->row;			\
   u32 *bend = src->buf + ARRAY_SIZE(src->buf), *bstop = ctx->bstop,			\
       *last_0xd = src->pending_0xd ? bstop : NULL;					\
   do											\
     {											\
       c = func(fb, ##params);								\
-      uns t = xml_char_cat(c);								\
+      uint t = xml_char_cat(c);								\
       if (t & t1)									\
         /* Typical branch */								\
 	*bstop++ = c, *bstop++ = t;							\
@@ -259,23 +259,23 @@ xml_refill(struct xml_context *ctx)
       else
         {
 	  ctx->src->refill(ctx);
-	  TRACE(ctx, "refilled %u characters", (uns)((ctx->bstop - ctx->bptr) / 2));
+	  TRACE(ctx, "refilled %u characters", (uint)((ctx->bstop - ctx->bptr) / 2));
 	}
     }
   while (ctx->bptr == ctx->bstop);
 }
 
-static uns
+static uint
 xml_source_row(struct xml_context *ctx, struct xml_source *src)
 {
-  uns row = src->row;
+  uint row = src->row;
   for (u32 *p = ctx->bstop; p != ctx->bptr; p -= 2)
     if (p[-1] & src->refill_cat2)
       row--;
   return row + 1;
 }
 
-uns
+uint
 xml_row(struct xml_context *ctx)
 {
   return ctx->src ? xml_source_row(ctx, ctx->src) : 0;
@@ -288,7 +288,7 @@ xml_parse_encoding_name(struct xml_context *ctx)
 {
   /* EncName ::= '"' [A-Za-z] ([A-Za-z0-9._] | '-')* '"' | "'" [A-Za-z] ([A-Za-z0-9._] | '-')* "'" */
   char *p = mp_start_noalign(ctx->pool, 1);
-  uns q = xml_parse_quote(ctx);
+  uint q = xml_parse_quote(ctx);
   if (unlikely(!(xml_get_cat(ctx) & XML_CHAR_ENC_SNAME)))
     xml_fatal(ctx, "Invalid character in the encoding name");
   while (1)
@@ -320,7 +320,7 @@ xml_parse_decl(struct xml_context *ctx)
   TRACE(ctx, "xml_parse_decl");
   struct xml_source *src = ctx->src;
   ctx->flags &= ~XML_SRC_EXPECTED_DECL;
-  uns doc = ctx->flags & XML_SRC_DOCUMENT;
+  uint doc = ctx->flags & XML_SRC_DOCUMENT;
 
   /* Setup valid Unicode ranges and force the reader to abort refill() after each '>', where we can switch encoding or XML version */
   if (doc)
@@ -367,7 +367,7 @@ xml_parse_decl(struct xml_context *ctx)
 	  expected_encoding = NULL;
 	}
     }
-  uns utf16 = src->refill == xml_refill_utf16_le || src->refill == xml_refill_utf16_be;
+  uint utf16 = src->refill == xml_refill_utf16_le || src->refill == xml_refill_utf16_be;
   if (utf16)
     src->fb_encoding = (src->refill == xml_refill_utf16_be) ? "UTF-16BE" : "UTF-16LE";
   if (!expected_encoding)
@@ -382,7 +382,7 @@ xml_parse_decl(struct xml_context *ctx)
   if (!(ctx->flags & XML_SRC_EOF) && ctx->bstop != src->buf + ARRAY_SIZE(src->buf))
     xml_refill(ctx);
   u32 *bptr = ctx->bptr;
-  uns have_decl = (12 <= ctx->bstop - ctx->bptr && (bptr[11] & XML_CHAR_WHITE) &&
+  uint have_decl = (12 <= ctx->bstop - ctx->bptr && (bptr[11] & XML_CHAR_WHITE) &&
     bptr[0] == '<' && bptr[2] == '?' && (bptr[4] & 0xdf) == 'X' && (bptr[6] & 0xdf) == 'M' && (bptr[8] & 0xdf) == 'L');
   if (!have_decl)
     {
@@ -402,7 +402,7 @@ xml_parse_decl(struct xml_context *ctx)
       xml_parse_eq(ctx);
       char *version = xml_parse_pubid_literal(ctx, ctx->pool);
       TRACE(ctx, "version=%s", version);
-      uns v = 0;
+      uint v = 0;
       if (!strcmp(version, "1.1"))
 	v = XML_VERSION_1_1;
       else if (strcmp(version, "1.0"))
@@ -444,7 +444,7 @@ xml_parse_decl(struct xml_context *ctx)
     {
       xml_parse_seq(ctx, "standalone");
       xml_parse_eq(ctx);
-      uns c = xml_parse_quote(ctx);
+      uint c = xml_parse_quote(ctx);
       if (ctx->standalone = (xml_peek_char(ctx) == 'y'))
 	xml_parse_seq(ctx, "yes");
       else

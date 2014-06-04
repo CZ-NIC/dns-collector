@@ -13,14 +13,14 @@
 /* Big endian format */
 
 #if defined(CPU_ALLOW_UNALIGNED) && defined(CPU_BIG_ENDIAN)
-static inline uns get_u16_be(const void *p) { return *(u16 *)p; } /** Read 16-bit integer value from an unaligned sequence of 2 bytes (big-endian version). **/
-static inline u32 get_u32_be(const void *p) { return *(u32 *)p; } /** Read 32-bit integer value from an unaligned sequence of 4 bytes (big-endian version). **/
-static inline u64 get_u64_be(const void *p) { return *(u64 *)p; } /** Read 64-bit integer value from an unaligned sequence of 8 bytes (big-endian version). **/
-static inline void put_u16_be(void *p, uns x) { *(u16 *)p = x; } /** Write 16-bit integer value to an unaligned sequence of 2 bytes (big-endian version). **/
-static inline void put_u32_be(void *p, u32 x) { *(u32 *)p = x; } /** Write 32-bit integer value to an unaligned sequence of 4 bytes (big-endian version). **/
-static inline void put_u64_be(void *p, u64 x) { *(u64 *)p = x; } /** Write 64-bit integer value to an unaligned sequence of 8 bytes (big-endian version). **/
+static inline uint get_u16_be(const void *p) { return *(u16 *)p; }	/** Read 16-bit integer value from an unaligned sequence of 2 bytes (big-endian version). **/
+static inline u32 get_u32_be(const void *p) { return *(u32 *)p; }	/** Read 32-bit integer value from an unaligned sequence of 4 bytes (big-endian version). **/
+static inline u64 get_u64_be(const void *p) { return *(u64 *)p; }	/** Read 64-bit integer value from an unaligned sequence of 8 bytes (big-endian version). **/
+static inline void put_u16_be(void *p, uint x) { *(u16 *)p = x; }	/** Write 16-bit integer value to an unaligned sequence of 2 bytes (big-endian version). **/
+static inline void put_u32_be(void *p, u32 x) { *(u32 *)p = x; }	/** Write 32-bit integer value to an unaligned sequence of 4 bytes (big-endian version). **/
+static inline void put_u64_be(void *p, u64 x) { *(u64 *)p = x; }	/** Write 64-bit integer value to an unaligned sequence of 8 bytes (big-endian version). **/
 #else
-static inline uns get_u16_be(const void *p)
+static inline uint get_u16_be(const void *p)
 {
   const byte *c = (const byte *)p;
   return (c[0] << 8) | c[1];
@@ -34,7 +34,7 @@ static inline u64 get_u64_be(const void *p)
 {
   return ((u64) get_u32_be(p) << 32) | get_u32_be((const byte *)p+4);
 }
-static inline void put_u16_be(void *p, uns x)
+static inline void put_u16_be(void *p, uint x)
 {
   byte *c = (byte *)p;
   c[0] = x >> 8;
@@ -71,14 +71,14 @@ static inline void put_u40_be(void *p, u64 x)
 /* Little-endian format */
 
 #if defined(CPU_ALLOW_UNALIGNED) && !defined(CPU_BIG_ENDIAN)
-static inline uns get_u16_le(const void *p) { return *(u16 *)p; } /** Read 16-bit integer value from an unaligned sequence of 2 bytes (little-endian version). **/
-static inline u32 get_u32_le(const void *p) { return *(u32 *)p; } /** Read 32-bit integer value from an unaligned sequence of 4 bytes (little-endian version). **/
-static inline u64 get_u64_le(const void *p) { return *(u64 *)p; } /** Read 64-bit integer value from an unaligned sequence of 8 bytes (little-endian version). **/
-static inline void put_u16_le(void *p, uns x) { *(u16 *)p = x; } /** Write 16-bit integer value to an unaligned sequence of 2 bytes (little-endian version). **/
-static inline void put_u32_le(void *p, u32 x) { *(u32 *)p = x; } /** Write 32-bit integer value to an unaligned sequence of 4 bytes (little-endian version). **/
-static inline void put_u64_le(void *p, u64 x) { *(u64 *)p = x; } /** Write 64-bit integer value to an unaligned sequence of 8 bytes (little-endian version). **/
+static inline uint get_u16_le(const void *p) { return *(u16 *)p; }	/** Read 16-bit integer value from an unaligned sequence of 2 bytes (little-endian version). **/
+static inline u32 get_u32_le(const void *p) { return *(u32 *)p; }	/** Read 32-bit integer value from an unaligned sequence of 4 bytes (little-endian version). **/
+static inline u64 get_u64_le(const void *p) { return *(u64 *)p; }	/** Read 64-bit integer value from an unaligned sequence of 8 bytes (little-endian version). **/
+static inline void put_u16_le(void *p, uint x) { *(u16 *)p = x; }	/** Write 16-bit integer value to an unaligned sequence of 2 bytes (little-endian version). **/
+static inline void put_u32_le(void *p, u32 x) { *(u32 *)p = x; }	/** Write 32-bit integer value to an unaligned sequence of 4 bytes (little-endian version). **/
+static inline void put_u64_le(void *p, u64 x) { *(u64 *)p = x; }	/** Write 64-bit integer value to an unaligned sequence of 8 bytes (little-endian version). **/
 #else
-static inline uns get_u16_le(const void *p)
+static inline uint get_u16_le(const void *p)
 {
   const byte *c = p;
   return c[0] | (c[1] << 8);
@@ -92,7 +92,7 @@ static inline u64 get_u64_le(const void *p)
 {
   return get_u32_le(p) | ((u64) get_u32_le((const byte *)p+4) << 32);
 }
-static inline void put_u16_le(void *p, uns x)
+static inline void put_u16_le(void *p, uint x)
 {
   byte *c = p;
   c[0] = x;
@@ -130,22 +130,22 @@ static inline void put_u40_le(void *p, u64 x)
 
 #ifdef CPU_BIG_ENDIAN
 
-static inline uns get_u16(const void *p) { return get_u16_be(p); } /** Read 16-bit integer value from an unaligned sequence of 2 bytes (native byte-order). **/
-static inline u32 get_u32(const void *p) { return get_u32_be(p); } /** Read 32-bit integer value from an unaligned sequence of 4 bytes (native byte-order). **/
-static inline u64 get_u64(const void *p) { return get_u64_be(p); } /** Read 64-bit integer value from an unaligned sequence of 8 bytes (native byte-order). **/
-static inline u64 get_u40(const void *p) { return get_u40_be(p); } /** Read 40-bit integer value from an unaligned sequence of 5 bytes (native byte-order). **/
-static inline void put_u16(void *p, uns x) { return put_u16_be(p, x); } /** Write 16-bit integer value to an unaligned sequence of 2 bytes (native byte-order). **/
-static inline void put_u32(void *p, u32 x) { return put_u32_be(p, x); } /** Write 32-bit integer value to an unaligned sequence of 4 bytes (native byte-order). **/
-static inline void put_u64(void *p, u64 x) { return put_u64_be(p, x); } /** Write 64-bit integer value to an unaligned sequence of 8 bytes (native byte-order). **/
-static inline void put_u40(void *p, u64 x) { return put_u40_be(p, x); } /** Write 40-bit integer value to an unaligned sequence of 5 bytes (native byte-order). **/
+static inline uint get_u16(const void *p) { return get_u16_be(p); } /** Read 16-bit integer value from an unaligned sequence of 2 bytes (native byte-order). **/
+static inline u32 get_u32(const void *p) { return get_u32_be(p); }  /** Read 32-bit integer value from an unaligned sequence of 4 bytes (native byte-order). **/
+static inline u64 get_u64(const void *p) { return get_u64_be(p); }  /** Read 64-bit integer value from an unaligned sequence of 8 bytes (native byte-order). **/
+static inline u64 get_u40(const void *p) { return get_u40_be(p); }  /** Read 40-bit integer value from an unaligned sequence of 5 bytes (native byte-order). **/
+static inline void put_u16(void *p, uint x) { return put_u16_be(p, x); } /** Write 16-bit integer value to an unaligned sequence of 2 bytes (native byte-order). **/
+static inline void put_u32(void *p, u32 x) { return put_u32_be(p, x); }  /** Write 32-bit integer value to an unaligned sequence of 4 bytes (native byte-order). **/
+static inline void put_u64(void *p, u64 x) { return put_u64_be(p, x); }  /** Write 64-bit integer value to an unaligned sequence of 8 bytes (native byte-order). **/
+static inline void put_u40(void *p, u64 x) { return put_u40_be(p, x); }  /** Write 40-bit integer value to an unaligned sequence of 5 bytes (native byte-order). **/
 
 #else
 
-static inline uns get_u16(const void *p) { return get_u16_le(p); }
+static inline uint get_u16(const void *p) { return get_u16_le(p); }
 static inline u32 get_u32(const void *p) { return get_u32_le(p); }
 static inline u64 get_u64(const void *p) { return get_u64_le(p); }
 static inline u64 get_u40(const void *p) { return get_u40_le(p); }
-static inline void put_u16(void *p, uns x) { return put_u16_le(p, x); }
+static inline void put_u16(void *p, uint x) { return put_u16_le(p, x); }
 static inline void put_u32(void *p, u32 x) { return put_u32_le(p, x); }
 static inline void put_u64(void *p, u64 x) { return put_u64_le(p, x); }
 static inline void put_u40(void *p, u64 x) { return put_u40_le(p, x); }
@@ -154,8 +154,8 @@ static inline void put_u40(void *p, u64 x) { return put_u40_le(p, x); }
 
 /* Just for completeness */
 
-static inline uns get_u8(const void *p) { return *(const byte *)p; } /** Read 8-bit integer value. **/
-static inline void put_u8(void *p, uns x) { *(byte *)p = x; } /** Write 8-bit integer value. **/
+static inline uint get_u8(const void *p) { return *(const byte *)p; } /** Read 8-bit integer value. **/
+static inline void put_u8(void *p, uint x) { *(byte *)p = x; } /** Write 8-bit integer value. **/
 
 /* Backward compatibility macros */
 

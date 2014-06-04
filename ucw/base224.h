@@ -17,13 +17,13 @@
  * Stores them in @dest and returns the number of bytes the output
  * takes.
  */
-uns base224_encode(byte *dest, const byte *src, uns len);
+uint base224_encode(byte *dest, const byte *src, uint len);
 /**
  * Decodes @len bytes of data pointed to by @src from base224 encoding.
  * All invalid characters are ignored. The result is stored into @dest
  * and length of the result is returned.
  */
-uns base224_decode(byte *dest, const byte *src, uns len);
+uint base224_decode(byte *dest, const byte *src, uint len);
 
 /**
  * Use this macro to calculate @base224_encode() output buffer size.

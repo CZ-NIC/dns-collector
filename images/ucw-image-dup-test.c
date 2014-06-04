@@ -47,13 +47,13 @@ static struct option longopts[] =
   { NULL,		0, 0, 0 }
 };
 
-static uns verbose = 1;
+static uint verbose = 1;
 static byte *file_name_1;
 static byte *file_name_2;
 static enum image_format format_1;
 static enum image_format format_2;
 static struct color background_color;
-static uns transformations = IMAGE_DUP_TRANS_ALL;
+static uint transformations = IMAGE_DUP_TRANS_ALL;
 
 #define MSG(x...) do{ if (verbose) msg(L_INFO, ##x); }while(0)
 
@@ -152,7 +152,7 @@ main(int argc, char **argv)
   struct mempool *pool = mp_new(1 << 18);
   MSG("Creating internal structures");
   dup1 = mp_start(pool, image_dup_estimate_size(img1->cols, img1->rows, 1, idc.qtree_limit));
-  uns size = image_dup_new(&idc, img1, dup1, 1);
+  uint size = image_dup_new(&idc, img1, dup1, 1);
   TRY(size);
   mp_end(pool, (void *)dup1 + size);
   dup2 = mp_start(pool, image_dup_estimate_size(img2->cols, img2->rows, 1, idc.qtree_limit));

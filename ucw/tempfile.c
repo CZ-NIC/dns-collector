@@ -52,7 +52,7 @@ temp_file_name(char *name_buf, int *open_flags)
       struct timeval tv;
       if (gettimeofday(&tv, NULL))
 	die("gettimeofday() failed: %m");
-      len = snprintf(name_buf, TEMP_FILE_NAME_LEN, "%s/%s%u", dir, temp_prefix, (uns) tv.tv_usec);
+      len = snprintf(name_buf, TEMP_FILE_NAME_LEN, "%s/%s%u", dir, temp_prefix, (uint) tv.tv_usec);
       if (open_flags)
 	*open_flags = O_EXCL;
     }

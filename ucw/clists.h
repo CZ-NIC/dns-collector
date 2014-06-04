@@ -203,9 +203,9 @@ static inline void clist_move(clist *to, clist *from)
 /**
  * Compute the number of nodes in @l. Beware of linear time complexity.
  **/
-static inline uns clist_size(clist *l)
+static inline uint clist_size(clist *l)
 {
-  uns i = 0;
+  uint i = 0;
   CLIST_FOR_EACH(cnode *, n, *l)
     i++;
   return i;

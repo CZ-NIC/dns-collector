@@ -23,22 +23,22 @@
 
 /* Configuration */
 
-static uns url_ignore_spaces;
-static uns url_ignore_underflow;
+static uint url_ignore_spaces;
+static uint url_ignore_underflow;
 static char *url_component_separators = "";
-static uns url_min_repeat_count = 0x7fffffff;
-static uns url_max_repeat_length = 0;
-static uns url_max_occurences = ~0U;
+static uint url_min_repeat_count = 0x7fffffff;
+static uint url_max_repeat_length = 0;
+static uint url_max_occurences = ~0U;
 
 #ifndef TEST
 static struct cf_section url_config = {
   CF_ITEMS {
-    CF_UNS("IgnoreSpaces", &url_ignore_spaces),
-    CF_UNS("IgnoreUnderflow", &url_ignore_underflow),
+    CF_UINT("IgnoreSpaces", &url_ignore_spaces),
+    CF_UINT("IgnoreUnderflow", &url_ignore_underflow),
     CF_STRING("ComponentSeparators", &url_component_separators),
-    CF_UNS("MinRepeatCount", &url_min_repeat_count),
-    CF_UNS("MaxRepeatLength", &url_max_repeat_length),
-    CF_UNS("MaxOccurences", &url_max_occurences),
+    CF_UINT("MinRepeatCount", &url_min_repeat_count),
+    CF_UINT("MaxRepeatLength", &url_max_repeat_length),
+    CF_UINT("MaxOccurences", &url_max_occurences),
     CF_END
   }
 };
@@ -51,8 +51,8 @@ static void CONSTRUCTOR url_init_config(void)
 
 /* Escaping and de-escaping */
 
-static uns
-enhex(uns x)
+static uint
+enhex(uint x)
 {
   return (x<10) ? (x + '0') : (x - 10 + 'A');
 }
@@ -68,7 +68,7 @@ url_deescape(const char *s, char *d)
 	return URL_ERR_TOO_LONG;
       if (*s == '%')
 	{
-	  unsigned int val;
+	  uint val;
 	  if (!Cxdigit(s[1]) || !Cxdigit(s[2]))
 	    return URL_ERR_INVALID_ESCAPE;
 	  val = Cxvalue(s[1])*16 + Cxvalue(s[2]);
@@ -130,7 +130,7 @@ int
 url_enescape(const char *s, char *d)
 {
   char *end = d + MAX_URL_SIZE - 10;
-  unsigned int c;
+  uint c;
 
   while (c = *s)
     {
@@ -145,7 +145,7 @@ url_enescape(const char *s, char *d)
 	*d++ = *s++;
       else
 	{
-	  uns val = (byte)(((byte)*s < NCC_MAX) ? NCC_CHARS[(byte)*s] : *s);
+	  uint val = (byte)(((byte)*s < NCC_MAX) ? NCC_CHARS[(byte)*s] : *s);
 	  *d++ = '%';
 	  *d++ = enhex(val >> 4);
 	  *d++ = enhex(val & 0x0f);
@@ -185,10 +185,10 @@ url_enescape_friendly(const char *src, char *dest)
 char *url_proto_names[URL_PROTO_MAX] = URL_PNAMES;
 static int url_proto_path_flags[URL_PROTO_MAX] = URL_PATH_FLAGS;
 
-uns
+uint
 url_identify_protocol(const char *p)
 {
-  uns i;
+  uint i;
 
   for(i=1; i<URL_PROTO_MAX; i++)
     if (!strcasecmp(p, url_proto_names[i]))
@@ -266,7 +266,7 @@ url_split(char *s, struct url *u, char *d)
 	  e = strchr(at, ':');
 	  if (e)			/* host:port present */
 	    {
-	      uns p;
+	      uint p;
 	      *e++ = 0;
 	      p = strtoul(e, &ep, 10);
 	      if (ep && *ep || p > 65535)
@@ -285,7 +285,7 @@ url_split(char *s, struct url *u, char *d)
 
 /* Normalization according to given base URL */
 
-static uns std_ports[] = URL_DEFPORTS;	/* Default port numbers */
+static uint std_ports[] = URL_DEFPORTS;	/* Default port numbers */
 
 static int
 relpath_merge(struct url *u, struct url *b)
@@ -562,7 +562,7 @@ static char *errmsg[] = {
 };
 
 char *
-url_error(uns err)
+url_error(uint err)
 {
   if (err >= sizeof(errmsg) / sizeof(char *))
     err = 0;
@@ -668,7 +668,7 @@ int main(int argc, char **argv)
 struct component {
 	const char *start;
 	int length;
-	uns count;
+	uint count;
 	u32 hash;
 };
 
@@ -681,14 +681,14 @@ hashf(const char *start, int length)
 	return hf;
 }
 
-static inline uns
-repeat_count(struct component *comp, uns count, uns len)
+static inline uint
+repeat_count(struct component *comp, uint count, uint len)
 {
 	struct component *orig_comp = comp;
-	uns found = 0;
+	uint found = 0;
 	while (1)
 	{
-		uns i;
+		uint i;
 		comp += len;
 		count -= len;
 		found++;
@@ -706,9 +706,9 @@ int
 url_has_repeated_component(const char *url)
 {
 	struct component *comp;
-	uns comps, comp_len, rep_prefix, hash_size, *hash, *next;
+	uint comps, comp_len, rep_prefix, hash_size, *hash, *next;
 	const char *c;
-	uns i, j, k;
+	uint i, j, k;
 
 	for (comps=0, c=url; c; comps++)
 	{

@@ -176,9 +176,9 @@ static inline void slist_remove_tail(slist *l)
 /**
  * Compute the number of nodes in @l. Beware linear time complexity.
  **/
-static inline uns slist_size(slist *l)
+static inline uint slist_size(slist *l)
 {
-  uns i = 0;
+  uint i = 0;
   SLIST_FOR_EACH(snode *, n, *l)
     i++;
   return i;

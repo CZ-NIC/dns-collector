@@ -20,21 +20,21 @@
 
 struct item {
   struct bh_node n;
-  uns key;
+  uint key;
 };
 
-static inline uns bht_key(struct bh_node *n)
+static inline uint bht_key(struct bh_node *n)
 {
   return ((struct item *)n)->key;
 }
 
-static inline uns bht_less(struct bh_node *a, struct bh_node *b)
+static inline uint bht_less(struct bh_node *a, struct bh_node *b)
 {
   return bht_key(a) < bht_key(b);
 }
 
 static void
-bht_do_dump(struct bh_node *a, struct bh_node *expected_last, uns offset)
+bht_do_dump(struct bh_node *a, struct bh_node *expected_last, uint offset)
 {
   if (!a)
     return;
@@ -56,7 +56,7 @@ bht_dump(struct bh_heap *h)
 
 int main(void)
 {
-  uns i;
+  uint i;
   struct bh_heap h;
 #define N 1048576
 #define K(i) ((259309*i+1009)%N)
@@ -73,7 +73,7 @@ int main(void)
     }
   // bht_dump(&h);
   ASSERT(bht_key(bht_findmin(&h)) == 0);
-  uns cnt = 0;
+  uint cnt = 0;
   BH_FOR_ALL(bht_, &h, a)
     {
       cnt++;

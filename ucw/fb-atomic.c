@@ -17,13 +17,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-static uns trace;
+static uint trace;
 
 #ifndef TEST
 
 static struct cf_section fbatomic_config = {
   CF_ITEMS {
-    CF_UNS("Trace", &trace),
+    CF_UINT("Trace", &trace),
     CF_END
   }
 };
@@ -42,7 +42,7 @@ struct fb_atomic_file {
   int fd;
   int use_count;
   int record_len;
-  uns locked;
+  uint locked;
   byte name[1];
 };
 
@@ -72,8 +72,8 @@ fbatomic_spout(struct fastbuf *f)
   struct fb_atomic *F = FB_ATOMIC(f);
   if (F->af->locked)
     {
-      uns written = f->bptr - f->buffer;
-      uns size = f->bufend - f->buffer + F->slack_size;
+      uint written = f->bptr - f->buffer;
+      uint size = f->bufend - f->buffer + F->slack_size;
       F->slack_size *= 2;
       TRACE("Reallocating buffer for atomic file %s with slack %d", f->name, F->slack_size);
       f->buffer = xrealloc(f->buffer, size);
@@ -101,7 +101,7 @@ fbatomic_close(struct fastbuf *f)
 }
 
 struct fastbuf *
-fbatomic_open(const char *name, struct fastbuf *master, uns bufsize, int record_len)
+fbatomic_open(const char *name, struct fastbuf *master, uint bufsize, int record_len)
 {
   struct fb_atomic *F = xmalloc_zero(sizeof(*F));
   struct fastbuf *f = &F->fb;

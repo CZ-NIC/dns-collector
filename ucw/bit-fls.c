@@ -13,7 +13,7 @@
 int
 bit_fls(u32 x)
 {
-  uns l;
+  uint l;
 
   if (!x)
 	return -1;
@@ -33,7 +33,7 @@ bit_fls(u32 x)
 
 int main(void)
 {
-  uns i;
+  uint i;
   while (scanf("%x", &i) == 1)
     printf("%d\n", bit_fls(i));
   return 0;

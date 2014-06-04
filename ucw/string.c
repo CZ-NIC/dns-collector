@@ -25,10 +25,10 @@ strnlen(const char *str, size_t n)
 #endif
 
 char *
-str_format_flags(char *dest, const char *fmt, uns flags)
+str_format_flags(char *dest, const char *fmt, uint flags)
 {
   char *start = dest;
-  for (uns i=0; fmt[i]; i++)
+  for (uint i=0; fmt[i]; i++)
     {
       if (flags & (1 << i))
 	*dest++ = fmt[i];

@@ -12,6 +12,9 @@
 
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define str_to_uintmax ucw_str_to_uintmax
+#define str_to_uint ucw_str_to_uint
+
+// FIXME: For backwards compatibility, will be removed soon
 #define str_to_uns ucw_str_to_uns
 #endif
 
@@ -40,18 +43,21 @@ enum str_to_num_flags {
 #define STN_USFLAGS        (STN_SFLAGS | STN_UNDERSCORE)
 
 #define STN_DECLARE_CONVERTOR(type, suffix)                                                               \
-const char *str_to_##suffix(type *num, const char *str, const char **next, const uns flags)
+const char *str_to_##suffix(type *num, const char *str, const char **next, const uint flags)
 
 #define STN_SIGNED_CONVERTOR(type, suffix, usuffix)                                                       \
-static inline const char *str_to_##suffix(type *num, const char *str, const char **next, const uns flags) \
+static inline const char *str_to_##suffix(type *num, const char *str, const char **next, const uint flags) \
 {                                                                                                         \
   return str_to_##usuffix((void *) num, str, next, flags | STN_SIGNED | STN_PLUS | STN_MINUS);            \
 }
 
-STN_DECLARE_CONVERTOR(uns, uns);
-STN_SIGNED_CONVERTOR(int, int, uns)
+STN_DECLARE_CONVERTOR(uint, uint);
+STN_SIGNED_CONVERTOR(int, int, uint)
 
 STN_DECLARE_CONVERTOR(uintmax_t, uintmax);
 STN_SIGNED_CONVERTOR(intmax_t, intmax, uintmax)
+
+// FIXME: For backwards compatibility, will be removed soon
+STN_DECLARE_CONVERTOR(uns, uns);
 
 #endif

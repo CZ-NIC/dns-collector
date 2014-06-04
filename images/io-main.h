@@ -48,7 +48,7 @@ struct image_io_read_data_internals {
   int need_transformations;
 };
 
-struct image *image_io_read_data_prepare(struct image_io_read_data_internals *rdi, struct image_io *io, uns cols, uns rows, uns flags);
+struct image *image_io_read_data_prepare(struct image_io_read_data_internals *rdi, struct image_io *io, uint cols, uint rows, uint flags);
 int image_io_read_data_finish(struct image_io_read_data_internals *rdi, struct image_io *io);
 void image_io_read_data_break(struct image_io_read_data_internals *rdi, struct image_io *io);
 

@@ -5,7 +5,7 @@
 #define image_trace ucw_image_trace
 #endif
 
-extern uns image_trace; /* ImageLib.Trace */ 
+extern uint image_trace; /* ImageLib.Trace */
 
 /* Error codes */
 
@@ -33,7 +33,7 @@ enum image_msg_code {
 #define IMAGE_ERROR(ctx, type, msg...) image_context_msg((ctx), IMAGE_MSG_ERROR | (type), msg)
 
 #define IMAGE_TRACE(ctx, level, msg...) do { \
-	struct image_context *_ctx = (ctx); uns _level = (level); \
+	struct image_context *_ctx = (ctx); uint _level = (level); \
 	if (_level < _ctx->tracing_level) image_context_msg(_ctx, IMAGE_MSG_TRACE | _level, msg); } while (0)
 
 #endif

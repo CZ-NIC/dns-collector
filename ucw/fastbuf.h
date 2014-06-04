@@ -206,12 +206,12 @@ struct fastbuf {
   byte *buffer, *bufend;			/* Start and end of the buffer */
   char *name;					/* File name (used for error messages) */
   ucw_off_t pos;				/* Position of bstop in the file */
-  uns flags;					/* See enum fb_flags */
+  uint flags;					/* See enum fb_flags */
   int (*refill)(struct fastbuf *);		/* Get a buffer with new data, returns 0 on EOF */
   void (*spout)(struct fastbuf *);		/* Write buffer data to the file */
   int (*seek)(struct fastbuf *, ucw_off_t, int);/* Slow path for @bseek(), buffer already flushed; returns success */
   void (*close)(struct fastbuf *);		/* Close the stream */
-  int (*config)(struct fastbuf *, uns, int);	/* Configure the stream */
+  int (*config)(struct fastbuf *, uint, int);	/* Configure the stream */
   int can_overwrite_buffer;			/* Can the buffer be altered? 0=never, 1=temporarily, 2=permanently */
   struct resource *res;				/* The fastbuf can be tied to a resource pool */
 };
@@ -251,10 +251,10 @@ enum fb_type {
  */
 struct fb_params {
   enum fb_type type;			/* The chosen back-end */
-  uns buffer_size;			/* 0 for default size */
-  uns keep_back_buf;			/* FB_STD: optimize for bi-directional access */
-  uns read_ahead;			/* FB_DIRECT options */
-  uns write_back;
+  uint buffer_size;			/* 0 for default size */
+  uint keep_back_buf;			/* FB_STD: optimize for bi-directional access */
+  uint read_ahead;			/* FB_DIRECT options */
+  uint write_back;
   struct asio_queue *asio;
 };
 
@@ -303,11 +303,11 @@ void bfilesync(struct fastbuf *b);
  * up any parameters, there is a couple of shortcuts.
  ***/
 
-struct fastbuf *bopen(const char *name, uns mode, uns buflen);		/** Equivalent to @bopen_file() with `FB_STD` back-end. **/
-struct fastbuf *bopen_try(const char *name, uns mode, uns buflen);	/** Equivalent to @bopen_file_try() with `FB_STD` back-end. **/
-struct fastbuf *bopen_tmp(uns buflen);					/** Equivalent to @bopen_tmp_file() with `FB_STD` back-end. **/
-struct fastbuf *bfdopen(int fd, uns buflen);				/** Equivalent to @bopen_fd() with `FB_STD` back-end. **/
-struct fastbuf *bfdopen_shared(int fd, uns buflen);			/** Like @bfdopen(), but it does not close the @fd on @bclose(). **/
+struct fastbuf *bopen(const char *name, uint mode, uint buflen);	/** Equivalent to @bopen_file() with `FB_STD` back-end. **/
+struct fastbuf *bopen_try(const char *name, uint mode, uint buflen);	/** Equivalent to @bopen_file_try() with `FB_STD` back-end. **/
+struct fastbuf *bopen_tmp(uint buflen);					/** Equivalent to @bopen_tmp_file() with `FB_STD` back-end. **/
+struct fastbuf *bfdopen(int fd, uint buflen);				/** Equivalent to @bopen_fd() with `FB_STD` back-end. **/
+struct fastbuf *bfdopen_shared(int fd, uint buflen);			/** Like @bfdopen(), but it does not close the @fd on @bclose(). **/
 
 /***
  * === Temporary files [[fbtemp]]
@@ -362,13 +362,13 @@ void bfix_tmp_file(struct fastbuf *fb, const char *name);
 
 /* Internal functions of some file back-ends */
 
-struct fastbuf *bfdopen_internal(int fd, const char *name, uns buflen);
-struct fastbuf *bfmmopen_internal(int fd, const char *name, uns mode);
+struct fastbuf *bfdopen_internal(int fd, const char *name, uint buflen);
+struct fastbuf *bfmmopen_internal(int fd, const char *name, uint mode);
 
 #ifdef CONFIG_UCW_FB_DIRECT
-extern uns fbdir_cheat;
+extern uint fbdir_cheat;
 struct asio_queue;
-struct fastbuf *fbdir_open_fd_internal(int fd, const char *name, struct asio_queue *io_queue, uns buffer_size, uns read_ahead, uns write_back);
+struct fastbuf *fbdir_open_fd_internal(int fd, const char *name, struct asio_queue *io_queue, uint buffer_size, uint read_ahead, uint write_back);
 #endif
 
 void bclose_file_helper(struct fastbuf *f, int fd, int is_temp_file);
@@ -380,7 +380,7 @@ void bclose_file_helper(struct fastbuf *f, int fd, int is_temp_file);
  * number of bytes. This is frequently used for reading from sockets.
  ***/
 
-struct fastbuf *bopen_limited_fd(int fd, uns bufsize, uns limit); /** Create a fastbuf which reads at most @limit bytes from @fd. **/
+struct fastbuf *bopen_limited_fd(int fd, uint bufsize, uint limit); /** Create a fastbuf which reads at most @limit bytes from @fd. **/
 
 /***
  * === Fastbufs on in-memory streams [[fbmem]]
@@ -394,7 +394,7 @@ struct fastbuf *bopen_limited_fd(int fd, uns bufsize, uns limit); /** Create a f
  * an arbitrary number of fastbuf for reading from the stream.
  ***/
 
-struct fastbuf *fbmem_create(uns blocksize);		/** Create stream and return its writing fastbuf. **/
+struct fastbuf *fbmem_create(uint blocksize);		/** Create stream and return its writing fastbuf. **/
 struct fastbuf *fbmem_clone_read(struct fastbuf *f);	/** Given a writing fastbuf, create a new reading fastbuf. **/
 
 /***
@@ -416,7 +416,7 @@ struct fastbuf *fbmem_clone_read(struct fastbuf *f);	/** Given a writing fastbuf
  * It is not possible to close this fastbuf. This implies that no tying to
  * resources takes place.
  */
-void fbbuf_init_read(struct fastbuf *f, byte *buffer, uns size, uns can_overwrite);
+void fbbuf_init_read(struct fastbuf *f, byte *buffer, uint size, uint can_overwrite);
 
 /**
  * Creates a write-only fastbuf which writes into a provided memory buffer.
@@ -429,9 +429,9 @@ void fbbuf_init_read(struct fastbuf *f, byte *buffer, uns size, uns can_overwrit
  * It is not possible to close this fastbuf. This implies that no tying to
  * resources takes place.
  */
-void fbbuf_init_write(struct fastbuf *f, byte *buffer, uns size);
+void fbbuf_init_write(struct fastbuf *f, byte *buffer, uint size);
 
-static inline uns fbbuf_count_written(struct fastbuf *f) /** Calculates, how many bytes were already written into the buffer. **/
+static inline uint fbbuf_count_written(struct fastbuf *f) /** Calculates, how many bytes were already written into the buffer. **/
 {
   return f->bptr - f->bstop;
 }
@@ -448,8 +448,8 @@ static inline uns fbbuf_count_written(struct fastbuf *f) /** Calculates, how man
 
 struct mempool;
 
-struct fastbuf *fbgrow_create(unsigned basic_size);	/** Create the growing buffer pre-allocated to @basic_size bytes. **/
-struct fastbuf *fbgrow_create_mp(struct mempool *mp, unsigned basic_size); /** Create the growing buffer pre-allocated to @basic_size bytes. **/
+struct fastbuf *fbgrow_create(uint basic_size);		/** Create the growing buffer pre-allocated to @basic_size bytes. **/
+struct fastbuf *fbgrow_create_mp(struct mempool *mp, uint basic_size); /** Create the growing buffer pre-allocated to @basic_size bytes. **/
 void fbgrow_reset(struct fastbuf *b);			/** Reset stream and prepare for writing. **/
 void fbgrow_rewind(struct fastbuf *b);			/** Prepare for reading (of already written data). **/
 
@@ -458,7 +458,7 @@ void fbgrow_rewind(struct fastbuf *b);			/** Prepare for reading (of already wri
  * @fbgrow_rewind()) to return the pointer to internal buffer and its length in
  * bytes. The returned buffer can be invalidated by further requests.
  **/
-uns fbgrow_get_buf(struct fastbuf *b, byte **buf);
+uint fbgrow_get_buf(struct fastbuf *b, byte **buf);
 
 /***
  * === Fastbuf on memory pools [[fbpool]]
@@ -515,7 +515,7 @@ struct fb_atomic {
   struct fastbuf fb;
   struct fb_atomic_file *af;
   byte *expected_max_bptr;
-  uns slack_size;
+  uint slack_size;
 };
 
 /**
@@ -533,7 +533,7 @@ struct fb_atomic {
  *
  * The file is closed when all fastbufs using it are closed.
  **/
-struct fastbuf *fbatomic_open(const char *name, struct fastbuf *master, uns bufsize, int record_len);
+struct fastbuf *fbatomic_open(const char *name, struct fastbuf *master, uint bufsize, int record_len);
 void fbatomic_internal_write(struct fastbuf *b);
 
 /**
@@ -552,13 +552,13 @@ static inline void fbatomic_commit(struct fastbuf *b)
  * Creates a new "/dev/null"-like  fastbuf.
  * Any read attempt returns an EOF, any write attempt is silently ignored.
  **/
-struct fastbuf *fbnull_open(uns bufsize);
+struct fastbuf *fbnull_open(uint bufsize);
 
 /**
  * Can be used by any back-end to switch it to the null mode.
  * You need to provide at least one byte long buffer for writing.
  **/
-void fbnull_start(struct fastbuf *b, byte *buf, uns bufsize);
+void fbnull_start(struct fastbuf *b, byte *buf, uint bufsize);
 
 /**
  * Checks whether a fastbuf has been switched to the null mode.
@@ -619,7 +619,7 @@ enum bconfig_type {			/** Parameters that could be configured. **/
   BCONFIG_KEEP_BACK_BUF,		/* Optimize for bi-directional access */
 };
 
-int bconfig(struct fastbuf *f, uns type, int data); /** Configure a fastbuf. Returns previous value. **/
+int bconfig(struct fastbuf *f, uint type, int data); /** Configure a fastbuf. Returns previous value. **/
 
 /*** === Universal functions working on all fastbuf's [[ffbasic]] ***/
 
@@ -665,8 +665,8 @@ static inline void bungetc(struct fastbuf *f)			/** Return last read character b
   f->bptr--;
 }
 
-void bputc_slow(struct fastbuf *f, uns c);
-static inline void bputc(struct fastbuf *f, uns c)		/** Write a single character. **/
+void bputc_slow(struct fastbuf *f, uint c);
+static inline void bputc(struct fastbuf *f, uint c)		/** Write a single character. **/
 {
   if (f->bptr < f->bufend)
     *f->bptr++ = c;
@@ -674,23 +674,23 @@ static inline void bputc(struct fastbuf *f, uns c)		/** Write a single character
     bputc_slow(f, c);
 }
 
-static inline uns bavailr(struct fastbuf *f)			/** Return the length of the cached data to be read. Do not use directly. **/
+static inline uint bavailr(struct fastbuf *f)			/** Return the length of the cached data to be read. Do not use directly. **/
 {
   return f->bstop - f->bptr;
 }
 
-static inline uns bavailw(struct fastbuf *f)			/** Return the length of the buffer available for writing. Do not use directly. **/
+static inline uint bavailw(struct fastbuf *f)			/** Return the length of the buffer available for writing. Do not use directly. **/
 {
   return f->bufend - f->bptr;
 }
 
-uns bread_slow(struct fastbuf *f, void *b, uns l, uns check);
+uint bread_slow(struct fastbuf *f, void *b, uint l, uint check);
 /**
  * Read at most @l bytes of data into @b.
  * Returns number of bytes read.
  * 0 means end of file.
  */
-static inline uns bread(struct fastbuf *f, void *b, uns l)
+static inline uint bread(struct fastbuf *f, void *b, uint l)
 {
   if (bavailr(f) >= l)
     {
@@ -707,7 +707,7 @@ static inline uns bread(struct fastbuf *f, void *b, uns l)
  * If at the end of file, it returns 0.
  * If there are data, but less than @l, it raises `ucw.fb.eof`.
  */
-static inline uns breadb(struct fastbuf *f, void *b, uns l)
+static inline uint breadb(struct fastbuf *f, void *b, uint l)
 {
   if (bavailr(f) >= l)
     {
@@ -719,8 +719,8 @@ static inline uns breadb(struct fastbuf *f, void *b, uns l)
     return bread_slow(f, b, l, 1);
 }
 
-void bwrite_slow(struct fastbuf *f, const void *b, uns l);
-static inline void bwrite(struct fastbuf *f, const void *b, uns l) /** Writes buffer @b of length @l into fastbuf. **/
+void bwrite_slow(struct fastbuf *f, const void *b, uint l);
+static inline void bwrite(struct fastbuf *f, const void *b, uint l) /** Writes buffer @b of length @l into fastbuf. **/
 {
   if (bavailw(f) >= l)
     {
@@ -736,13 +736,13 @@ static inline void bwrite(struct fastbuf *f, const void *b, uns l) /** Writes bu
  * Returns pointer to the terminating 0 or NULL on `EOF`.
  * Raises `ucw.fb.toolong` if the line is longer than @l.
  **/
-char *bgets(struct fastbuf *f, char *b, uns l);
-char *bgets0(struct fastbuf *f, char *b, uns l);	/** The same as @bgets(), but for 0-terminated strings. **/
+char *bgets(struct fastbuf *f, char *b, uint l);
+char *bgets0(struct fastbuf *f, char *b, uint l);	/** The same as @bgets(), but for 0-terminated strings. **/
 /**
  * Returns either length of read string (excluding the terminator) or -1 if it is too long.
  * In such cases exactly @l bytes are read.
  */
-int bgets_nodie(struct fastbuf *f, char *b, uns l);
+int bgets_nodie(struct fastbuf *f, char *b, uint l);
 
 struct mempool;
 struct bb_t;
@@ -750,7 +750,7 @@ struct bb_t;
  * Read a string, strip the trailing `\n` and store it into growing buffer @b.
  * Raises `ucw.fb.toolong` if the line is longer than @limit.
  **/
-uns bgets_bb(struct fastbuf *f, struct bb_t *b, uns limit);
+uint bgets_bb(struct fastbuf *f, struct bb_t *b, uint limit);
 /**
  * Read a string, strip the trailing `\n` and store it into buffer allocated from a memory pool.
  **/
@@ -759,7 +759,7 @@ char *bgets_mp(struct fastbuf *f, struct mempool *mp);
 struct bgets_stk_struct {
   struct fastbuf *f;
   byte *old_buf, *cur_buf, *src;
-  uns old_len, cur_len, src_len;
+  uint old_len, cur_len, src_len;
 };
 void bgets_stk_init(struct bgets_stk_struct *s);
 void bgets_stk_step(struct bgets_stk_struct *s);
@@ -795,12 +795,12 @@ static inline void bputsn(struct fastbuf *f, const char *b)
   bputc(f, '\n');
 }
 
-void bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uns l);
+void bbcopy_slow(struct fastbuf *f, struct fastbuf *t, uint l);
 /**
  * Copy @l bytes of data from fastbuf @f to fastbuf @t.
  * `UINT_MAX` (`~0U`) means all data, even if more than `UINT_MAX` bytes remain.
  **/
-static inline void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
+static inline void bbcopy(struct fastbuf *f, struct fastbuf *t, uint l)
 {
   if (bavailr(f) >= l && bavailw(t) >= l)
     {
@@ -812,8 +812,8 @@ static inline void bbcopy(struct fastbuf *f, struct fastbuf *t, uns l)
     bbcopy_slow(f, t, l);
 }
 
-int bskip_slow(struct fastbuf *f, uns len);
-static inline int bskip(struct fastbuf *f, uns len) /** Skip @len bytes without reading them. **/
+int bskip_slow(struct fastbuf *f, uint len);
+static inline int bskip(struct fastbuf *f, uint len) /** Skip @len bytes without reading them. **/
 {
   if (bavailr(f) >= len)
     {
@@ -846,7 +846,7 @@ static inline int bskip(struct fastbuf *f, uns len) /** Skip @len bytes without 
  * The reading must be ended by @bdirect_read_commit() or @bdirect_read_commit_modified(),
  * unless the user did not read or modify anything.
  **/
-static inline uns bdirect_read_prepare(struct fastbuf *f, byte **buf)
+static inline uint bdirect_read_prepare(struct fastbuf *f, byte **buf)
 {
   if (f->bptr == f->bstop && !f->refill(f))
     {
@@ -883,7 +883,7 @@ static inline void bdirect_read_commit_modified(struct fastbuf *f, byte *pos)
  * where we can write to. The operation must be ended by @bdirect_write_commit(),
  * unless nothing is written.
  **/
-static inline uns bdirect_write_prepare(struct fastbuf *f, byte **buf)
+static inline uint bdirect_write_prepare(struct fastbuf *f, byte **buf)
 {
   if (f->bptr == f->bufend)
     f->spout(f);

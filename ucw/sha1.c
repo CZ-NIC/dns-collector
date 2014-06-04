@@ -170,7 +170,7 @@ transform(sha1_context *hd, const byte *data)
  * of INBUF with length INLEN.
  */
 void
-sha1_update(sha1_context *hd, const byte *inbuf, uns inlen)
+sha1_update(sha1_context *hd, const byte *inbuf, uint inlen)
 {
   if( hd->count == 64 )  /* flush the buffer */
     {
@@ -275,7 +275,7 @@ sha1_final(sha1_context *hd)
  * into outbuf which must have a size of 20 bytes.
  */
 void
-sha1_hash_buffer(byte *outbuf, const byte *buffer, uns length)
+sha1_hash_buffer(byte *outbuf, const byte *buffer, uint length)
 {
   sha1_context hd;
 
