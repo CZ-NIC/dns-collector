@@ -36,7 +36,7 @@ fbbuf_seek(struct fastbuf *f, ucw_off_t pos, int whence)
 }
 
 void
-fbbuf_init_read(struct fastbuf *f, byte *buf, uns size, uns can_overwrite)
+fbbuf_init_read(struct fastbuf *f, byte *buf, uint size, uint can_overwrite)
 {
   *f = (struct fastbuf) {
     .buffer = buf,
@@ -57,7 +57,7 @@ fbbuf_spout(struct fastbuf *f)
 }
 
 void
-fbbuf_init_write(struct fastbuf *f, byte *buf, uns size)
+fbbuf_init_write(struct fastbuf *f, byte *buf, uint size)
 {
   *f = (struct fastbuf) {
     .buffer = buf,

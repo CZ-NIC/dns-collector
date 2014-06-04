@@ -62,7 +62,7 @@ partmap_close(struct partmap *p)
 }
 
 void
-partmap_load(struct partmap *p, ucw_off_t start, uns size)
+partmap_load(struct partmap *p, ucw_off_t start, uint size)
 {
   if (p->start_map)
     munmap(p->start_map, p->end_off - p->start_off);
@@ -90,8 +90,8 @@ partmap_load(struct partmap *p, ucw_off_t start, uns size)
 int main(int argc, char **argv)
 {
   struct partmap *p = partmap_open(argv[1], 0);
-  uns l = partmap_size(p);
-  uns i;
+  uint l = partmap_size(p);
+  uint i;
   for (i=0; i<l; i++)
     putchar(*(char *)partmap_map(p, i, 1));
   partmap_close(p);

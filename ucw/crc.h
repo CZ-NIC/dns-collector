@@ -30,14 +30,14 @@
  */
 typedef struct crc32_context {
   u32 state;
-  void (*update_func)(struct crc32_context *ctx, const byte *buf, uns len);
+  void (*update_func)(struct crc32_context *ctx, const byte *buf, uint len);
 } crc32_context;
 
 /**
  * Initialize new calculation of CRC in a given context.
  * @crc_mode selects which algorithm should be used.
  **/
-void crc32_init(crc32_context *ctx, uns crc_mode);
+void crc32_init(crc32_context *ctx, uint crc_mode);
 
 /**
  * Algorithm used for CRC calculation. The algorithms differ by the amount
@@ -52,7 +52,7 @@ enum crc_mode {
 };
 
 /** Feed @len bytes starting at @buf to the CRC calculator. **/
-static inline void crc32_update(crc32_context *ctx, const byte *buf, uns len)
+static inline void crc32_update(crc32_context *ctx, const byte *buf, uint len)
 {
   ctx->update_func(ctx, buf, len);
 }
@@ -72,6 +72,6 @@ static inline u32 crc32_final(crc32_context *ctx)
  *  crc32_update(&ctx, buf, len);
  *  return crc32_final(&ctx);
  */
-u32 crc32_hash_buffer(const byte *buf, uns len);
+u32 crc32_hash_buffer(const byte *buf, uint len);
 
 #endif

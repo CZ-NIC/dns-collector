@@ -33,7 +33,7 @@ struct libpng_read_data {
 static png_voidp
 libpng_malloc(png_structp png_ptr, png_size_t size)
 {
-  DBG("libpng_malloc(size=%u)", (uns)size);
+  DBG("libpng_malloc(size=%u)", (uint)size);
   return mp_alloc(png_get_mem_ptr(png_ptr), size);
 }
 
@@ -68,7 +68,7 @@ libpng_warning(png_structp png_ptr UNUSED, png_const_charp msg UNUSED)
 static void
 libpng_read_fn(png_structp png_ptr, png_bytep data, png_size_t length)
 {
-  DBG("libpng_read_fn(len=%u)", (uns)length);
+  DBG("libpng_read_fn(len=%u)", (uint)length);
   if (unlikely(bread((struct fastbuf *)png_get_io_ptr(png_ptr), (byte *)data, length) < length))
     png_error(png_ptr, "Incomplete data");
 }
@@ -76,7 +76,7 @@ libpng_read_fn(png_structp png_ptr, png_bytep data, png_size_t length)
 static void
 libpng_write_fn(png_structp png_ptr, png_bytep data, png_size_t length)
 {
-  DBG("libpng_write_fn(len=%u)", (uns)length);
+  DBG("libpng_write_fn(len=%u)", (uint)length);
   bwrite((struct fastbuf *)png_get_io_ptr(png_ptr), (byte *)data, length);
 }
 
@@ -200,7 +200,7 @@ libpng_read_data(struct image_io *io)
       return 0;
     }
 
-  uns read_flags = io->flags;
+  uint read_flags = io->flags;
 
   /* Apply transformations */
   if (rd->bit_depth == 16)
@@ -291,7 +291,7 @@ libpng_read_data(struct image_io *io)
   struct image *img = rdi.image;
   byte *pixels = img->pixels;
   png_bytep rows[img->rows];
-  for (uns r = 0; r < img->rows; r++, pixels += img->row_size)
+  for (uint r = 0; r < img->rows; r++, pixels += img->row_size)
     rows[r] = (png_bytep)pixels;
   png_read_image(rd->png_ptr, rows);
   png_read_end(rd->png_ptr, rd->end_ptr);
@@ -371,7 +371,7 @@ libpng_write(struct image_io *io)
   /* Write pixels */
   byte *pixels = img->pixels;
   png_bytep rows[img->rows];
-  for (uns r = 0; r < img->rows; r++, pixels += img->row_size)
+  for (uint r = 0; r < img->rows; r++, pixels += img->row_size)
     rows[r] = (png_bytep)pixels;
   png_write_image(png_ptr, rows);
   png_write_end(png_ptr, info_ptr);

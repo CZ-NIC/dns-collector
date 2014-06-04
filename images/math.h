@@ -9,19 +9,19 @@
 extern const u32 fast_div_tab[];
 extern const byte fast_sqrt_tab[];
 
-static inline uns isqr(int x)
+static inline uint isqr(int x)
 {
   return x * x;
 }
 
-static inline uns fast_div_u32_u8(uns x, uns y)
+static inline uint fast_div_u32_u8(uint x, uint y)
 {
   return ((u64)(x) * fast_div_tab[y]) >> 32;
 }
 
-static inline uns fast_sqrt_u16(uns x)
+static inline uint fast_sqrt_u16(uint x)
 {
-  uns y;
+  uint y;
   if (x < (1 << 10) - 3)
     y = fast_sqrt_tab[(x + 3) >> 2] >> 3;
   else if (x < (1 << 14) - 28)
@@ -31,9 +31,9 @@ static inline uns fast_sqrt_u16(uns x)
   return (x < y * y) ? y - 1 : y;
 }
 
-static inline uns fast_sqrt_u32(uns x)
+static inline uint fast_sqrt_u32(uint x)
 {
-  uns y;
+  uint y;
   if (x < (1 << 16))
     {
       if (x < (1 << 10) - 3)

@@ -24,11 +24,11 @@ static const byte base64_table[] =
 	};
 static const byte base64_pad = '=';
 
-uns
-base64_encode(byte *dest, const byte *src, uns len)
+uint
+base64_encode(byte *dest, const byte *src, uint len)
 {
 	const byte *current = src;
-	uns i = 0;
+	uint i = 0;
 
 	while (len > 2) { /* keep going until we have less than 24 bits */
 		dest[i++] = base64_table[current[0] >> 2];
@@ -58,14 +58,14 @@ base64_encode(byte *dest, const byte *src, uns len)
 }
 
 /* as above, but backwards. :) */
-uns
-base64_decode(byte *dest, const byte *src, uns len)
+uint
+base64_decode(byte *dest, const byte *src, uint len)
 {
 	const byte *current = src;
-	uns ch;
-	uns i = 0, j = 0;
+	uint ch;
+	uint i = 0, j = 0;
 	static byte reverse_table[256];
-	static uns table_built = 0;
+	static uint table_built = 0;
 
 	if (table_built == 0) {
 		ucwlib_lock();

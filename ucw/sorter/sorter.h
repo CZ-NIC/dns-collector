@@ -62,17 +62,17 @@
  *			bits is available. A monotone hash is a function f from keys to integers
  *			such that f(x) < f(y) implies x < y, which is approximately uniformly
  *			distributed. It should be declared as:
- *  uns PREFIX_hash(SORT_KEY *a)
+ *  uint PREFIX_hash(SORT_KEY *a)
  *
  *  Unification:
  *
  *  SORT_UNIFY		merge items with identical keys. It requires the following functions:
- *  void PREFIX_write_merged(struct fastbuf *f, SORT_KEY **keys, void **data, uns n, void *buf)
+ *  void PREFIX_write_merged(struct fastbuf *f, SORT_KEY **keys, void **data, uint n, void *buf)
  *			takes n records in memory with keys which compare equal and writes
  *			a single record to the given fastbuf. `buf' points to a buffer which
  *			is guaranteed to hold the sum of workspace requirements (see below)
  *			over all given records. The function is allowed to modify all its inputs.
- *  void PREFIX_copy_merged(SORT_KEY **keys, struct fastbuf **data, uns n, struct fastbuf *dest)
+ *  void PREFIX_copy_merged(SORT_KEY **keys, struct fastbuf **data, uint n, struct fastbuf *dest)
  *			takes n records with keys in memory and data in fastbufs and writes
  *			a single record. Used only if SORT_DATA_SIZE or SORT_UNIFY_WORKSPACE
  *			is defined.
@@ -143,7 +143,7 @@ typedef u64 P(hash_t);
 #define SORT_INT SORT_INT64
 #define SORT_LONG_HASH
 #else
-typedef uns P(hash_t);
+typedef uint P(hash_t);
 #endif
 
 #ifdef SORT_INT
@@ -198,7 +198,7 @@ static inline void P(copy_data)(P(key) *key, struct fastbuf *in, struct fastbuf 
 }
 
 #if defined(SORT_UNIFY) && !defined(SORT_VAR_DATA) && !defined(SORT_UNIFY_WORKSPACE)
-static inline void P(copy_merged)(P(key) **keys, struct fastbuf **data UNUSED, uns n, struct fastbuf *dest)
+static inline void P(copy_merged)(P(key) **keys, struct fastbuf **data UNUSED, uint n, struct fastbuf *dest)
 {
   P(write_merged)(dest, keys, NULL, n, NULL);
 }

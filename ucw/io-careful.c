@@ -18,12 +18,12 @@
  */
 
 int
-careful_read(int fd, void *buf, int len)
+careful_read(int fd, void *buf, size_t len)
 {
   byte *pos = buf;
   while (len)
     {
-      int l = read(fd, pos, len);
+      ssize_t l = read(fd, pos, len);
       if (l < 0)
 	return -1;
       if (!l)
@@ -35,12 +35,12 @@ careful_read(int fd, void *buf, int len)
 }
 
 int
-careful_write(int fd, const void *buf, int len)
+careful_write(int fd, const void *buf, size_t len)
 {
   const byte *pos = buf;
   while (len)
     {
-      int l = write(fd, pos, len);
+      ssize_t l = write(fd, pos, len);
       if (l < 0)
 	return -1;
       if (!l)

@@ -13,15 +13,15 @@
 #include <alloca.h>
 
 byte *
-mp_strconv(struct mempool *mp, const byte *s, uns in_cs, uns out_cs)
+mp_strconv(struct mempool *mp, const byte *s, uint in_cs, uint out_cs)
 {
   if (in_cs == out_cs)
     return mp_strdup(mp, s);
 
   struct conv_context c;
   char *b[32];
-  uns bs[32], n = 0, sum = 0;
-  uns l = strlen(s) + 1;
+  uint bs[32], n = 0, sum = 0;
+  uint l = strlen(s) + 1;
 
   conv_init(&c);
   conv_set_charset(&c, in_cs, out_cs);
@@ -33,12 +33,12 @@ mp_strconv(struct mempool *mp, const byte *s, uns in_cs, uns out_cs)
       l <<= 1;
       c.dest_start = c.dest = b[n] = alloca(l);
       c.dest_end = c.dest_start+ l;
-      uns r = conv_run(&c);
+      uint r = conv_run(&c);
       sum += bs[n++] = c.dest - c.dest_start;
       if (r & CONV_SOURCE_END)
         {
           c.dest_start = c.dest = mp_alloc(mp, sum);
-          for (uns i = 0; i < n; i++)
+          for (uint i = 0; i < n; i++)
             {
               memcpy(c.dest, b[i], bs[i]);
               c.dest += bs[i];

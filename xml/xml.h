@@ -107,14 +107,14 @@ enum xml_node_type {
 
 struct xml_node {
   cnode n;						/* Node for list of parent's sons */
-  uns type;						/* XML_NODE_x */
+  uint type;						/* XML_NODE_x */
   struct xml_node *parent;				/* Parent node */
   char *name;						/* Element name / PI target */
   clist sons;						/* Children nodes */
   union {
     struct {
       char *text;					/* PI text / Comment / CDATA */
-      uns len;						/* Text length in bytes */
+      uint len;						/* Text length in bytes */
     };
     struct {
       struct xml_dtd_elem *dtd;				/* Element DTD */
@@ -142,17 +142,17 @@ struct xml_source {
   struct fastbuf wrap_fb;				/* Fbmem wrapper */
   u32 buf[2 * XML_BUF_SIZE];				/* Read buffer with Unicode values and categories */
   u32 *bptr, *bstop;					/* Current state of the buffer */
-  uns row;						/* File position */
+  uint row;						/* File position */
   char *expected_encoding;				/* Initial encoding before any transformation has been made (expected in XMLDecl/TextDecl) */
   char *fb_encoding;					/* Encoding of the source fastbuf */
   char *decl_encoding;					/* Encoding read from the XMLDecl/TextDecl */
-  uns refill_cat1;					/* Character categories, which should be directly passed to the buffer */
-  uns refill_cat2;					/* Character categories, which should be processed as newlines (possibly in some built-in
+  uint refill_cat1;					/* Character categories, which should be directly passed to the buffer */
+  uint refill_cat2;					/* Character categories, which should be processed as newlines (possibly in some built-in
 							   sequences) */
   void (*refill)(struct xml_context *ctx);		/* Callback to decode source characters to the buffer */
   unsigned short *refill_in_to_x;			/* Libucw-charset input table */
-  uns saved_depth;					/* Saved ctx->depth */
-  uns pending_0xd;					/* The last read character is 0xD */
+  uint saved_depth;					/* Saved ctx->depth */
+  uint pending_0xd;					/* The last read character is 0xD */
 };
 
 struct xml_context {
@@ -168,8 +168,8 @@ struct xml_context {
   struct mempool *pool;					/* DOM pool */
   struct mempool *stack;				/* Stack pool (freed as soon as possible) */
   struct xml_stack *stack_list;				/* See xml_push(), xml_pop() */
-  uns flags;						/* XML_FLAG_x (restored on xml_pop()) */
-  uns depth;						/* Nesting level (for checking of valid source nesting -> valid pushes/pops on memory pools) */
+  uint flags;						/* XML_FLAG_x (restored on xml_pop()) */
+  uint depth;						/* Nesting level (for checking of valid source nesting -> valid pushes/pops on memory pools) */
   struct fastbuf chars;					/* Character data / attribute value */
   struct mempool_state chars_state;			/* Mempool state before the current character block has started */
   char *chars_trivial;					/* If not empty, it will be appended to chars */
@@ -178,11 +178,11 @@ struct xml_context {
   /* Input */
   struct xml_source *src;				/* Current source */
   u32 *bptr, *bstop;					/* Buffer with preprocessed characters (validated UCS-4 + category flags) */
-  uns cat_chars;					/* Unicode range of supported characters (cdata, attribute values, ...) */
-  uns cat_unrestricted;					/* Unrestricted characters (may appear in document/external entities) */
-  uns cat_new_line;					/* New line characters */
-  uns cat_name;						/* Characters that may appear in names */
-  uns cat_sname;					/* Characters that may begin a name */
+  uint cat_chars;					/* Unicode range of supported characters (cdata, attribute values, ...) */
+  uint cat_unrestricted;				/* Unrestricted characters (may appear in document/external entities) */
+  uint cat_new_line;					/* New line characters */
+  uint cat_name;					/* Characters that may appear in names */
+  uint cat_sname;					/* Characters that may begin a name */
 
   /* SAX-like interface */
   void (*h_document_start)(struct xml_context *ctx);	/* Called before entering prolog */
@@ -194,9 +194,9 @@ struct xml_context {
   void (*h_stag)(struct xml_context *ctx);		/* Called after STag or EmptyElemTag (only with XML_REPORT_TAGS) */
   void (*h_etag)(struct xml_context *ctx);		/* Called before ETag or after EmptyElemTag (only with XML_REPORT_TAGS) */
   void (*h_chars)(struct xml_context *ctx);		/* Called after some characters (only with XML_REPORT_CHARS) */
-  void (*h_block)(struct xml_context *ctx, char *text, uns len);	/* Called for each continuous block of characters not reported by h_cdata() (only with XML_REPORT_CHARS) */
-  void (*h_cdata)(struct xml_context *ctx, char *text, uns len);	/* Called for each CDATA section (only with XML_REPORT_CHARS) */
-  void (*h_ignorable)(struct xml_context *ctx, char *text, uns len);	/* Called for ignorable whitespace (content in tags without #PCDATA) */
+  void (*h_block)(struct xml_context *ctx, char *text, uint len);	/* Called for each continuous block of characters not reported by h_cdata() (only with XML_REPORT_CHARS) */
+  void (*h_cdata)(struct xml_context *ctx, char *text, uint len);	/* Called for each CDATA section (only with XML_REPORT_CHARS) */
+  void (*h_ignorable)(struct xml_context *ctx, char *text, uint len);	/* Called for ignorable whitespace (content in tags without #PCDATA) */
   void (*h_dtd_start)(struct xml_context *ctx);		/* Called just after the DTD structure is initialized */
   void (*h_dtd_end)(struct xml_context *ctx);		/* Called after DTD subsets subsets */
   struct xml_dtd_entity *(*h_find_entity)(struct xml_context *ctx, char *name);		/* Called when needed to resolve a general entity */
@@ -207,13 +207,13 @@ struct xml_context {
   struct xml_node *node;				/* Current DOM node */
 
   char *version_str;
-  uns standalone;
+  uint standalone;
   char *doctype;					/* The document type (or NULL if unknown) */
   char *system_id;					/* DTD external id */
   char *public_id;					/* DTD public id */
   struct xml_dtd *dtd;					/* The DTD structure (or NULL) */
-  uns state;						/* Current state for the PULL interface (XML_STATE_x) */
-  uns pull;						/* Parameters for the PULL interface (XML_PULL_x) */
+  uint state;						/* Current state for the PULL interface (XML_STATE_x) */
+  uint pull;						/* Parameters for the PULL interface (XML_PULL_x) */
 };
 
 /* Initialize XML context */
@@ -229,19 +229,19 @@ void xml_reset(struct xml_context *ctx);
 struct xml_source *xml_push_fastbuf(struct xml_context *ctx, struct fastbuf *fb);
 
 /* Parse without the PULL interface, return XML_ERR_x code (zero on success) */
-uns xml_parse(struct xml_context *ctx);
+uint xml_parse(struct xml_context *ctx);
 
 /* Parse with the PULL interface, return XML_STATE_x (zero on EOF or fatal error) */
-uns xml_next(struct xml_context *ctx);
+uint xml_next(struct xml_context *ctx);
 
 /* Equivalent to xml_next, but with temporarily changed ctx->pull value */
-uns xml_next_state(struct xml_context *ctx, uns pull);
+uint xml_next_state(struct xml_context *ctx, uint pull);
 
 /* May be called on XML_STATE_STAG to skip it's content; can return XML_STATE_ETAG or XML_STATE_EOF on fatal error */
-uns xml_skip_element(struct xml_context *ctx);
+uint xml_skip_element(struct xml_context *ctx);
 
 /* Returns the current row number in the document entity */
-uns xml_row(struct xml_context *ctx);
+uint xml_row(struct xml_context *ctx);
 
 /* Finds a given attribute value in a XML_NODE_ELEM node */
 struct xml_attr *xml_attr_find(struct xml_context *ctx, struct xml_node *node, char *name);
@@ -256,7 +256,7 @@ struct xml_dtd_entity *xml_def_find_entity(struct xml_context *ctx, char *name);
 void xml_def_resolve_entity(struct xml_context *ctx, struct xml_dtd_entity *ent);
 
 /* Remove leading/trailing spaces and replaces sequences of spaces to a single space character (non-CDATA attribute normalization) */
-uns xml_normalize_white(struct xml_context *ctx, char *value);
+uint xml_normalize_white(struct xml_context *ctx, char *value);
 
 /* Merge character contents of a given element to a single string (not recursive) */
 char *xml_merge_chars(struct xml_context *ctx, struct xml_node *node, struct mempool *pool);

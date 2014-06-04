@@ -60,11 +60,11 @@ int url_enescape_friendly(const char *src, char *dest);
 
 struct url {
   char *protocol;
-  uns protoid;
+  uint protoid;
   char *user;
   char *pass;
   char *host;
-  uns port;				/* ~0 if unspec */
+  uint port;				/* ~0 if unspec */
   char *rest;
   char *buf, *bufend;
 };
@@ -75,7 +75,7 @@ int url_canonicalize(struct url *u);
 int url_pack(struct url *u, char *d);
 int url_canon_split_rel(const char *url, char *buf1, char *buf2, struct url *u, struct url *base);
 int url_auto_canonicalize_rel(const char *src, char *dst, struct url *base);
-uns url_identify_protocol(const char *p);
+uint url_identify_protocol(const char *p);
 int url_has_repeated_component(const char *url);
 
 static inline int url_canon_split(const char *url, char *buf1, char *buf2, struct url *u)
@@ -86,7 +86,7 @@ static inline int url_auto_canonicalize(const char *src, char *dst)
 
 /* Error codes */
 
-char *url_error(uns);
+char *url_error(uint);
 
 #define URL_ERR_TOO_LONG 1
 #define URL_ERR_INVALID_CHAR 2

@@ -19,9 +19,9 @@
 struct fbsock_params {	/** Configuration of socket fastbuf. **/
   int fd;
   int fd_is_shared;
-  uns bufsize;
-  uns timeout_ms;
-  void (*err)(void *data, uns flags, char *msg);
+  uint bufsize;
+  uint timeout_ms;
+  void (*err)(void *data, uint flags, char *msg);
   void *data;			// Passed to the err callback
 };
 

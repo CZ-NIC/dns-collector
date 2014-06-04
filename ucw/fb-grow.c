@@ -32,7 +32,7 @@ static void fbgrow_spout(struct fastbuf *b)
 {
   if (b->bptr == b->bufend)
     {
-      uns len = b->bufend - b->buffer;
+      uint len = b->bufend - b->buffer;
       if (FB_GBUF(b)->mp)
 	{
 	  byte *old = b->buffer;
@@ -69,7 +69,7 @@ static void fbgrow_close(struct fastbuf *b)
   xfree(b);
 }
 
-struct fastbuf *fbgrow_create_mp(struct mempool *mp, unsigned basic_size)
+struct fastbuf *fbgrow_create_mp(struct mempool *mp, uint basic_size)
 {
   ASSERT(basic_size);
   struct fastbuf *b;
@@ -95,7 +95,7 @@ struct fastbuf *fbgrow_create_mp(struct mempool *mp, unsigned basic_size)
   return b;
 }
 
-struct fastbuf *fbgrow_create(unsigned basic_size)
+struct fastbuf *fbgrow_create(uint basic_size)
 {
   return fbgrow_create_mp(NULL, basic_size);
 }
@@ -111,7 +111,7 @@ void fbgrow_rewind(struct fastbuf *b)
   brewind(b);
 }
 
-uns fbgrow_get_buf(struct fastbuf *b, byte **buf)
+uint fbgrow_get_buf(struct fastbuf *b, byte **buf)
 {
   byte *end = FB_GBUF(b)->end;
   end = MAX(end, b->bptr);
@@ -125,10 +125,10 @@ uns fbgrow_get_buf(struct fastbuf *b, byte **buf)
 int main(void)
 {
   struct fastbuf *f;
-  uns t;
+  uint t;
 
   f = fbgrow_create(3);
-  for (uns i=0; i<5; i++)
+  for (uint i=0; i<5; i++)
     {
       fbgrow_reset(f);
       bwrite(f, "12345", 5);

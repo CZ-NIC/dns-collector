@@ -20,8 +20,8 @@
 
 struct rio_buffer {
   cnode n;
-  uns full;
-  uns written;
+  uint full;
+  uint written;
   byte buf[];
 };
 
@@ -76,7 +76,7 @@ rec_io_del(struct main_rec_io *rio)
 static int
 rec_io_process_read_buf(struct main_rec_io *rio)
 {
-  uns got;
+  uint got;
   while (rio->read_running && (got = rio->read_handler(rio)))
     {
       DBG("RIO READ: Ate %u bytes", got);
@@ -109,9 +109,9 @@ rec_io_read_handler(struct main_file *fi)
     }
 
 restart: ;
-  uns rec_start_pos = rio->read_rec_start - rio->read_buf;
-  uns rec_end_pos = rec_start_pos + rio->read_avail;
-  uns free_space = rio->read_buf_size - rec_end_pos;
+  uint rec_start_pos = rio->read_rec_start - rio->read_buf;
+  uint rec_end_pos = rec_start_pos + rio->read_avail;
+  uint free_space = rio->read_buf_size - rec_end_pos;
   DBG("RIO READ: rec_start=%u avail=%u prev_avail=%u free=%u/%u",
     rec_start_pos, rio->read_avail, rio->read_prev_avail,
     free_space, rio->read_buf_size);
@@ -187,8 +187,8 @@ rec_io_deferred_start_read(struct main_hook *ho)
 static void
 rec_io_recalc_read(struct main_rec_io *rio)
 {
-  uns flow = !rio->write_throttle_read || rio->write_watermark < rio->write_throttle_read;
-  uns run = rio->read_started && flow;
+  uint flow = !rio->write_throttle_read || rio->write_watermark < rio->write_throttle_read;
+  uint run = rio->read_started && flow;
   DBG("RIO: Recalc read (flow=%u, start=%u) -> %u", flow, rio->read_started, run);
   if (run != rio->read_running)
     {
@@ -310,7 +310,7 @@ rec_io_get_buffer(struct main_rec_io *rio)
 }
 
 void
-rec_io_write(struct main_rec_io *rio, void *data, uns len)
+rec_io_write(struct main_rec_io *rio, void *data, uint len)
 {
   byte *bdata = data;
   ASSERT(rec_io_is_active(rio));
@@ -325,7 +325,7 @@ rec_io_write(struct main_rec_io *rio, void *data, uns len)
 	  b = rec_io_get_buffer(rio);
 	  clist_add_tail(&rio->busy_write_buffers, &b->n);
 	}
-      uns l = MIN(len, rio->write_buf_size - b->full);
+      uint l = MIN(len, rio->write_buf_size - b->full);
       memcpy(b->buf + b->full, bdata, l);
       b->full += l;
       bdata += l;
@@ -346,17 +346,17 @@ rec_io_write(struct main_rec_io *rio, void *data, uns len)
 void
 rec_io_set_timeout(struct main_rec_io *rio, timestamp_t expires_delta)
 {
-  DBG("RIO: Setting timeout %u", (uns) expires_delta);
+  DBG("RIO: Setting timeout %u", (uint) expires_delta);
   if (!expires_delta)
     timer_del(&rio->timer);
   else
     timer_add_rel(&rio->timer, expires_delta);
 }
 
-uns
+uint
 rec_io_parse_line(struct main_rec_io *rio)
 {
-  for (uns i = rio->read_prev_avail; i < rio->read_avail; i++)
+  for (uint i = rio->read_prev_avail; i < rio->read_avail; i++)
     if (rio->read_rec_start[i] == '\n')
       return i+1;
   return 0;
@@ -364,9 +364,9 @@ rec_io_parse_line(struct main_rec_io *rio)
 
 #ifdef TEST
 
-static uns rhand(struct main_rec_io *rio)
+static uint rhand(struct main_rec_io *rio)
 {
-  uns r = rec_io_parse_line(rio);
+  uint r = rec_io_parse_line(rio);
   if (r)
     {
       rio->read_rec_start[r-1] = 0;

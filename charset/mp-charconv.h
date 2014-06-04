@@ -17,12 +17,12 @@
 #define mp_strconv ucw_mp_strconv
 #endif
 
-byte *mp_strconv(struct mempool *mp, const byte *s, uns cs_in, uns cs_out);
+byte *mp_strconv(struct mempool *mp, const byte *s, uint cs_in, uint cs_out);
 
-static inline byte *mp_strconv_to_utf8(struct mempool *mp, const byte *s, uns cs_in)
+static inline byte *mp_strconv_to_utf8(struct mempool *mp, const byte *s, uint cs_in)
 { return mp_strconv(mp, s, cs_in, CONV_CHARSET_UTF8); }
 
-static inline byte *mp_strconv_from_utf8(struct mempool *mp, const byte *s, uns cs_out)
+static inline byte *mp_strconv_from_utf8(struct mempool *mp, const byte *s, uint cs_out)
 { return mp_strconv(mp, s, CONV_CHARSET_UTF8, cs_out); }
 
 #endif

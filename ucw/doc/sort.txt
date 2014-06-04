@@ -77,7 +77,7 @@ Let's sort an array of integers, in the usual way.
   #define ASORT_KEY_TYPE int
   #include <ucw/sorter/array-simple.h>
 
-This generates an intarr_sort(int *array, uns array_size) function that
+This generates an intarr_sort(int *array, uint array_size) function that
 can be used the obvious way.
 
 A more complicated example could be sorting a structure, where items
@@ -98,7 +98,7 @@ to sort them by the strings.
   #define ASORT_EXTRA_ARGS , struct elem *odd_array, struct elem *even_array
   #include <ucw/sorter/array-simple.h>
 
-Now we got a complicated_sort(uns array_size, struct elem *odd_array,
+Now we got a complicated_sort(uint array_size, struct elem *odd_array,
 struct *even_array) function to perform our sorting.
 
 [[array]]
@@ -135,7 +135,7 @@ Optional macros
 - `ASORT_LT(x,y)` -- Comparing macro. Uses the `<` operator if not
   provided.
 - `ASORT_HASH(x)` -- A monotone hash function (or macro). Should
-  return `uns`.
+  return `uint`.
 - `ASORT_LONG_HASH(x)` -- Like `ASORT_HASH(x)`, but returns 64-bit
   number instead of 32-bit.
 - `ASORT_THRESHOLD` -- How small should a chunk of data be to be sorted
@@ -230,7 +230,7 @@ uniformly distributed.
 
 When you want to use it, define `SORT_HASH_BITS` and set it to the
 number of significant bits the hashing function provides. Then provide
-a callback function `uns SORT_PREFIX(hash)(SORT_KEY *key)`.
+a callback function `uint SORT_PREFIX(hash)(SORT_KEY *key)`.
 
 [[merge-external]]
 Merging items with identical keys
@@ -241,7 +241,7 @@ function returns `0` for them). To use it, define `SORT_UNIFY` macro
 and provide these functions:
 
 - `void SORT_PREFIX(write_merged)(struct fastbuf \*dest, SORT_KEY
-  \*\*keys, void \*\*data, uns n, void *buf)`
+  \*\*keys, void \*\*data, uint n, void *buf)`
   -- This function takes @n records in memory and writes a single
   record into the @dest <<fastbuf:,fastbuf>>. The @keys and @data are
   just the records. The @buf parameter points to a workspace memory.
@@ -249,7 +249,7 @@ and provide these functions:
   macro over all the keys. The function is allowed to modify all its
   parameters.
 - `void SORT_PREFIX(copy_merged)(SORT_KEY \*\*keys, struct fastbuf
-\*\*data, uns n, struct fastbuf \*dest)`
+\*\*data, uint n, struct fastbuf \*dest)`
   -- This one is similar to the above one, but the data are still in
   the <<fastbuf:,fastbufs>> @data and no workspace is provided. This
   is only used when `SORT_DATA_SIZE` or `SORT_UNIFY_WORKSPACE` is

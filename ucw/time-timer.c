@@ -16,7 +16,7 @@ init_timer(timestamp_t *timer)
   *timer = get_timestamp();
 }
 
-uns
+uint
 get_timer(timestamp_t *timer)
 {
   timestamp_t t = *timer;
@@ -24,7 +24,7 @@ get_timer(timestamp_t *timer)
   return MIN(*timer-t, ~0U);
 }
 
-uns
+uint
 switch_timer(timestamp_t *oldt, timestamp_t *newt)
 {
   *newt = get_timestamp();

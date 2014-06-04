@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-static uns asio_num_users;
+static uint asio_num_users;
 static struct worker_pool asio_wpool;
 
 static void
@@ -259,7 +259,7 @@ int main(void)
   ASSERT(r);
   asio_put(r);
 
-  for (uns i=0; i<10; i++)
+  for (uint i=0; i<10; i++)
     {
       r = asio_get(&q);
       r->op = ASIO_WRITE_BACK;

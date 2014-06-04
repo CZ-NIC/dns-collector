@@ -1,6 +1,6 @@
 # Test for the strtonum module
 
-## Testing str_to_uns(.) (It is supoposed that uns is 4 bytes integer)
+## Testing str_to_uint(.) (It is supoposed that uint is 4 bytes integer)
 
 # 1
 Run:	../obj/ucw/strtonum-test '0o+-_' '0o100_000xc' | grep '^i'

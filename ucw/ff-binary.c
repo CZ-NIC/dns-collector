@@ -29,6 +29,6 @@ void bput##name##_##endian##_##slow(struct fastbuf *f, type x)	\
 #define FF_ALL(type, name, size) GEN(type,name,size,be) GEN(type,name,size,le)
 
 FF_ALL(int, w, 16)
-FF_ALL(uns, l, 32)
+FF_ALL(uint, l, 32)
 FF_ALL(u64, q, 64)
 FF_ALL(u64, 5, 40)

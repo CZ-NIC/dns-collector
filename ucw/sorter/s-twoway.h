@@ -15,7 +15,7 @@ static void P(twoway_merge)(struct sort_context *ctx UNUSED, struct sort_bucket 
   P(key) *kout = NULL, *ktmp;
   int next1, next2, run1, run2;
   int comp;
-  uns run_count = 0;
+  uint run_count = 0;
 
   fin1 = sbuck_read(ins[0]);
   next1 = P(read_key)(fin1, kin1);

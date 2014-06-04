@@ -28,7 +28,7 @@ static struct elt array[N];
 
 static void generate(void)
 {
-  uns i;
+  uint i;
   for (i=0; i<N; i++)
 #if 0
     ASORT_ELT(i) = N-i-1;
@@ -43,7 +43,7 @@ static int errors = 0;
 
 static void check(void)
 {
-  uns i;
+  uint i;
   for (i=0; i<N; i++)
     if (ASORT_ELT(i) != i)
     {

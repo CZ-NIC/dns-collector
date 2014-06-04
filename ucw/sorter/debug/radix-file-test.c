@@ -31,7 +31,7 @@ static timestamp_t timer;
 
 int main(int argc, char **argv)
 {
-  uns files, bufsize;
+  uint files, bufsize;
   u64 total_size;
   if (argc != 4 ||
       cf_parse_int(argv[1], (int*) &files) ||
@@ -42,10 +42,10 @@ int main(int argc, char **argv)
       return 1;
     }
   u64 cnt, cnt_rep;
-  uns cnt_ms;
+  uint cnt_ms;
   int fd[files];
   byte *buf[files], name[files][16];
-  uns xbufsize = bufsize;					// Used for single-file I/O
+  uint xbufsize = bufsize;					// Used for single-file I/O
   byte *xbuf = big_alloc(xbufsize);
 
   init_timer(&timer);
@@ -56,11 +56,11 @@ int main(int argc, char **argv)
   ASSERT(in_fd >= 0);
   ASSERT(!(total_size % xbufsize));
   P_INIT;
-  for (uns i=0; i<total_size/xbufsize; i++)
+  for (uint i=0; i<total_size/xbufsize; i++)
     {
-      for (uns j=0; j<xbufsize; j++)
+      for (uint j=0; j<xbufsize; j++)
 	xbuf[j] = i+j;
-      uns c = write(in_fd, xbuf, xbufsize);
+      uint c = write(in_fd, xbuf, xbufsize);
       ASSERT(c == xbufsize);
       P_UPDATE(c);
     }
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 #endif
 
   msg(L_INFO, "Initializing output files");
-  for (uns i=0; i<files; i++)
+  for (uint i=0; i<files; i++)
     {
       sprintf(name[i], "tmp/ft-%d", i);
       fd[i] = ucw_open(name[i], O_RDWR | O_CREAT | O_TRUNC | DIRECT, 0666);
@@ -83,18 +83,18 @@ int main(int argc, char **argv)
 
   msg(L_INFO, "Writing %d MB to %d files in parallel with %d byte buffers", (int)(total_size >> 20), files, bufsize);
   P_INIT;
-  for (uns r=0; r<total_size/bufsize/files; r++)
+  for (uint r=0; r<total_size/bufsize/files; r++)
     {
-      for (uns i=0; i<files; i++)
+      for (uint i=0; i<files; i++)
 	{
 #ifdef COPY
-	  uns ci = read(in_fd, buf[i], bufsize);
+	  uint ci = read(in_fd, buf[i], bufsize);
 	  ASSERT(ci == bufsize);
 #else
-	  for (uns j=0; j<bufsize; j++)
+	  for (uint j=0; j<bufsize; j++)
 	    buf[i][j] = r+i+j;
 #endif
-	  uns c = write(fd[i], buf[i], bufsize);
+	  uint c = write(fd[i], buf[i], bufsize);
 	  ASSERT(c == bufsize);
 	  P_UPDATE(c);
 	}
@@ -108,12 +108,12 @@ int main(int argc, char **argv)
 
   msg(L_INFO, "Reading the files sequentially");
   P_INIT;
-  for (uns i=0; i<files; i++)
+  for (uint i=0; i<files; i++)
     {
       lseek(fd[i], 0, SEEK_SET);
-      for (uns r=0; r<total_size/xbufsize/files; r++)
+      for (uint r=0; r<total_size/xbufsize/files; r++)
 	{
-	  uns c = read(fd[i], xbuf, xbufsize);
+	  uint c = read(fd[i], xbuf, xbufsize);
 	  ASSERT(c == xbufsize);
 	  P_UPDATE(c);
 	}
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
     }
   P_FINAL;
 
-  for (uns i=0; i<files; i++)
+  for (uint i=0; i<files; i++)
     unlink(name[i]);
 #ifdef COPY
   unlink("tmp/ft-in");

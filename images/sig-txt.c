@@ -28,13 +28,13 @@ image_sig_detect_textured(struct image_sig_data *data)
       return;
     }
 
-  uns cols = data->cols;
-  uns rows = data->rows;
-  uns cell_cols = MIN((cols + 1) / 2, MAX_CELLS_COLS);
-  uns cell_rows = MIN((rows + 1) / 2, MAX_CELLS_ROWS);
-  uns cell_x[MAX_CELLS_COLS + 1];
-  uns cell_y[MAX_CELLS_ROWS + 1];
-  uns i, j;
+  uint cols = data->cols;
+  uint rows = data->rows;
+  uint cell_cols = MIN((cols + 1) / 2, MAX_CELLS_COLS);
+  uint cell_rows = MIN((rows + 1) / 2, MAX_CELLS_ROWS);
+  uint cell_x[MAX_CELLS_COLS + 1];
+  uint cell_y[MAX_CELLS_ROWS + 1];
+  uint i, j;
   u32 cnt[IMAGE_REG_MAX];
 
   if (cell_cols * cell_rows < 4)
@@ -56,28 +56,28 @@ image_sig_detect_textured(struct image_sig_data *data)
   cell_y[cell_rows] = rows;
 
   /* Preprocess blocks */
-  for (uns i = 0; i < data->regions_count; i++)
+  for (uint i = 0; i < data->regions_count; i++)
     for (struct image_sig_block *block = data->regions[i].blocks; block; block = block->next)
       block->region = i;
 
   /* Process cells */
   double e = 0;
-  for (uns j = 0; j < cell_rows; j++)
-    for (uns i = 0; i < cell_cols; i++)
+  for (uint j = 0; j < cell_rows; j++)
+    for (uint i = 0; i < cell_cols; i++)
       {
-	uns cell_area = 0;
+	uint cell_area = 0;
         bzero(cnt, data->regions_count * sizeof(u32));
 	struct image_sig_block *b1 = data->blocks + cell_x[i] + cell_y[j] * cols, *b2;
-        for (uns y = cell_y[j]; y < cell_y[j + 1]; y++, b1 += cols)
+        for (uint y = cell_y[j]; y < cell_y[j + 1]; y++, b1 += cols)
 	  {
 	    b2 = b1;
-            for (uns x = cell_x[i]; x < cell_x[i + 1]; x++, b2++)
+            for (uint x = cell_x[i]; x < cell_x[i + 1]; x++, b2++)
 	      {
 	        cnt[b2->region]++;
 		cell_area++;
 	      }
 	  }
-	for (uns k = 0; k < data->regions_count; k++)
+	for (uint k = 0; k < data->regions_count; k++)
 	  {
 	    int a = data->blocks_count * cnt[k] - cell_area * data->regions[k].count;
 	    e += (double)a * a / ((double)isqr(data->regions[k].count) * cell_area);

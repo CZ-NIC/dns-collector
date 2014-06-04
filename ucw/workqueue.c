@@ -53,7 +53,7 @@ worker_pool_init(struct worker_pool *p)
       pthread_attr_setstacksize(&attr, p->stack_size ? : ucwlib_thread_stack_size) < 0)
     ASSERT(0);
 
-  for (uns i=0; i < p->num_threads; i++)
+  for (uint i=0; i < p->num_threads; i++)
     {
       struct worker_thread *t = (p->new_thread ? p->new_thread() : xmalloc(sizeof(*t)));
       t->pool = p;
@@ -71,7 +71,7 @@ worker_pool_init(struct worker_pool *p)
 void
 worker_pool_cleanup(struct worker_pool *p)
 {
-  for (uns i=0; i < p->num_threads; i++)
+  for (uint i=0; i < p->num_threads; i++)
     {
       struct work w = {
 	.go = worker_thread_signal_finish
@@ -238,7 +238,7 @@ static void wt_cleanup(struct worker_thread *t)
 
 struct w {
   struct work w;
-  uns id;
+  uint id;
 };
 
 static void go(struct worker_thread *t, struct work *w)
@@ -259,7 +259,7 @@ int main(void)
 
   struct work_queue q;
   work_queue_init(&pool, &q);
-  for (uns i=0; i<500; i++)
+  for (uint i=0; i<500; i++)
     {
       struct w *w = xmalloc_zero(sizeof(*w));
       w->w.go = go;

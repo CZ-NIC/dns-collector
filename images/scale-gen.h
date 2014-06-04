@@ -25,10 +25,10 @@
 static void
 IMAGE_SCALE_PREFIX(nearest_xy)(struct image *dest, struct image *src)
 {
-  uns x_inc = (src->cols << 16) / dest->cols;
-  uns y_inc = (src->rows << 16) / dest->rows;
-  uns x_start = x_inc >> 1, x_pos;
-  uns y_pos = y_inc >> 1;
+  uint x_inc = (src->cols << 16) / dest->cols;
+  uint y_inc = (src->rows << 16) / dest->rows;
+  uint x_start = x_inc >> 1, x_pos;
+  uint y_pos = y_inc >> 1;
   byte *row_start;
 # define IMAGE_WALK_PREFIX(x) walk_##x
 # define IMAGE_WALK_INLINE
@@ -49,7 +49,7 @@ IMAGE_SCALE_PREFIX(linear_x)(struct image *dest, struct image *src)
   byte *dest_row = dest->pixels;
   if (src->cols == 1)
     {
-      for (uns y_counter = dest->rows; y_counter--; )
+      for (uint y_counter = dest->rows; y_counter--; )
         {
           // FIXME
           ASSERT(0);
@@ -59,27 +59,27 @@ IMAGE_SCALE_PREFIX(linear_x)(struct image *dest, struct image *src)
       return;
     }
   /* Initialize the main loop */
-  uns x_inc = ((src->cols - 1) << 16) / (dest->cols - 1);
+  uint x_inc = ((src->cols - 1) << 16) / (dest->cols - 1);
 # define COLS_AT_ONCE 256
   byte pixel_buf[COLS_AT_ONCE * 2 * IMAGE_SCALE_PIXEL_SIZE]; /* Buffers should fit in cache */
   u16 coef_buf[COLS_AT_ONCE * IMAGE_SCALE_PIXEL_SIZE];
   /* Main loop */
-  for (uns y_counter = dest->rows; y_counter--; )
+  for (uint y_counter = dest->rows; y_counter--; )
     {
-      uns x_pos = 0;
+      uint x_pos = 0;
       byte *dest_pos = dest_row;
-      for (uns x_counter = dest->cols; --x_counter; )
-      for (uns x_counter = dest->cols; x_counter > COLS_AT_ONCE; x_counter -= COLS_AT_ONCE)
+      for (uint x_counter = dest->cols; --x_counter; )
+      for (uint x_counter = dest->cols; x_counter > COLS_AT_ONCE; x_counter -= COLS_AT_ONCE)
         {
 	  byte *pixel_buf_pos = pixel_buf;
 	  u16 *coef_buf_pos = coef_buf;
-	  for (uns i = 0; i < COLS_AT_ONCE / 2; i++)
+	  for (uint i = 0; i < COLS_AT_ONCE / 2; i++)
 	    {
 	      byte *src_pos = src_row + (x_pos >> 16) * IMAGE_SCALE_PIXEL_SIZE;
-	      uns ofs = x_pos & 0xffff;
+	      uint ofs = x_pos & 0xffff;
 	      x_pos += x_inc;
 	      byte *src_pos_2 = src_row + (x_pos >> 16) * IMAGE_SCALE_PIXEL_SIZE;
-	      uns ofs_2 = x_pos & 0xffff;
+	      uint ofs_2 = x_pos & 0xffff;
 	      x_pos += x_inc;
 	      *coef_buf_pos++ = ofs;
 	      byte *pixel_buf_pos_2 = pixel_buf_pos + IMAGE_SCALE_PIXEL_SIZE;
@@ -94,7 +94,7 @@ IMAGE_SCALE_PREFIX(linear_x)(struct image *dest, struct image *src)
 	    }
 /*
 	  byte *src_pos = src_row + (x_pos >> 16) * IMAGE_SCALE_PIXEL_SIZE;
-	  uns ofs = x_pos & 0xffff;
+	  uint ofs = x_pos & 0xffff;
 	  x_pos += x_inc;
 	  dest_pos[0] = LINEAR_INTERPOLATE(src_pos[0], src_pos[0 + IMAGE_SCALE_PIXEL_SIZE], ofs);
 #	  if IMAGE_SCALE_CHANNELS >= 2
@@ -121,25 +121,25 @@ IMAGE_SCALE_PREFIX(linear_x)(struct image *dest, struct image *src)
 static void
 IMAGE_SCALE_PREFIX(bilinear_xy)(struct image *dest, struct image *src)
 {
-  uns x_inc = (((src->cols - 1) << 16) - 1) / (dest->cols);
-  uns y_inc = (((src->rows - 1) << 16) - 1) / (dest->rows);
-  uns y_pos = 0x10000;
+  uint x_inc = (((src->cols - 1) << 16) - 1) / (dest->cols);
+  uint y_inc = (((src->rows - 1) << 16) - 1) / (dest->rows);
+  uint y_pos = 0x10000;
   byte *cache[2], buf1[dest->row_pixels_size + 16], buf2[dest->row_pixels_size + 16], *pbuf[2];
   byte *dest_row = dest->pixels, *dest_pos;
-  uns cache_index = ~0U, cache_i = 0;
+  uint cache_index = ~0U, cache_i = 0;
   pbuf[0] = cache[0] = ALIGN_PTR((void *)buf1, 16);
   pbuf[1] = cache[1] = ALIGN_PTR((void *)buf2, 16);
 #ifdef __SSE2__
   __m128i zero = _mm_setzero_si128();
 #endif
-  for (uns row_counter = dest->rows; row_counter--; )
+  for (uint row_counter = dest->rows; row_counter--; )
     {
       dest_pos = dest_row;
-      uns y_index = y_pos >> 16;
-      uns y_ofs = y_pos & 0xffff;
+      uint y_index = y_pos >> 16;
+      uint y_ofs = y_pos & 0xffff;
       y_pos += y_inc;
-      uns x_pos = 0;
-      if (y_index > (uns)(cache_index + 1))
+      uint x_pos = 0;
+      if (y_index > (uint)(cache_index + 1))
 	cache_index = y_index - 1;
       while (y_index > cache_index)
         {
@@ -148,11 +148,11 @@ IMAGE_SCALE_PREFIX(bilinear_xy)(struct image *dest, struct image *src)
 	  cache_index++;
 	  byte *src_row = src->pixels + cache_index * src->row_size;
 	  byte *cache_pos = cache[1];
-	  for (uns col_counter = dest->cols; --col_counter; )
+	  for (uint col_counter = dest->cols; --col_counter; )
 	    {
 	      byte *c1 = src_row + (x_pos >> 16) * IMAGE_SCALE_PIXEL_SIZE;
 	      byte *c2 = c1 + IMAGE_SCALE_PIXEL_SIZE;
-	      uns ofs = x_pos & 0xffff;
+	      uint ofs = x_pos & 0xffff;
 	      cache_pos[0] = LINEAR_INTERPOLATE(c1[0], c2[0], ofs);
 #	      if IMAGE_SCALE_CHANNELS >= 2
 	      cache_pos[1] = LINEAR_INTERPOLATE(c1[1], c2[1], ofs);
@@ -168,7 +168,7 @@ IMAGE_SCALE_PREFIX(bilinear_xy)(struct image *dest, struct image *src)
 	    }
 	  IMAGE_COPY_PIXEL(cache_pos, src_row + src->row_pixels_size - IMAGE_SCALE_PIXEL_SIZE);
 	}
-      uns i = 0;
+      uint i = 0;
 #ifdef __SSE2__
       __m128i coef = _mm_set1_epi16(y_ofs >> 9);
       for (; (int)i < (int)dest->row_pixels_size - 15; i += 16)
@@ -216,14 +216,14 @@ IMAGE_SCALE_PREFIX(downsample_xy)(struct image *dest, struct image *src)
   byte *rdest = dest->pixels, *pdest;
   u64 x_inc = ((u64)dest->cols << 32) / src->cols, x_pos;
   u64 y_inc = ((u64)dest->rows << 32) / src->rows, y_pos = 0;
-  uns x_inc_frac = (u64)0xffffffffff / x_inc;
-  uns y_inc_frac = (u64)0xffffffffff / y_inc;
-  uns final_mul = ((u64)(x_inc >> 16) * (y_inc >> 16)) >> 16;
-  uns buf_size = dest->cols * IMAGE_SCALE_CHANNELS;
+  uint x_inc_frac = (u64)0xffffffffff / x_inc;
+  uint y_inc_frac = (u64)0xffffffffff / y_inc;
+  uint final_mul = ((u64)(x_inc >> 16) * (y_inc >> 16)) >> 16;
+  uint buf_size = dest->cols * IMAGE_SCALE_CHANNELS;
   u32 buf[buf_size], *pbuf;
   buf_size *= sizeof(u32);
   bzero(buf, buf_size);
-  for (uns rows_counter = src->rows; rows_counter--; )
+  for (uint rows_counter = src->rows; rows_counter--; )
     {
       pbuf = buf;
       psrc = rsrc;
@@ -232,7 +232,7 @@ IMAGE_SCALE_PREFIX(downsample_xy)(struct image *dest, struct image *src)
       y_pos += y_inc;
       if (y_pos <= 0x100000000)
         {
-          for (uns cols_counter = src->cols; cols_counter--; )
+          for (uint cols_counter = src->cols; cols_counter--; )
             {
 	      x_pos += x_inc;
 	      if (x_pos <= 0x100000000)
@@ -251,8 +251,8 @@ IMAGE_SCALE_PREFIX(downsample_xy)(struct image *dest, struct image *src)
 	      else
 	        {
 	          x_pos -= 0x100000000;
-	          uns mul2 = (uns)(x_pos >> 16) * x_inc_frac;
-	          uns mul1 = 0xffffff - mul2;
+	          uint mul2 = (uint)(x_pos >> 16) * x_inc_frac;
+	          uint mul1 = 0xffffff - mul2;
 	          pbuf[0] += (psrc[0] * mul1) >> 24;
 	          pbuf[0 + IMAGE_SCALE_CHANNELS] += (psrc[0] * mul2) >> 24;
 #		  if IMAGE_SCALE_CHANNELS >= 2
@@ -277,19 +277,19 @@ IMAGE_SCALE_PREFIX(downsample_xy)(struct image *dest, struct image *src)
 	  y_pos -= 0x100000000;
           pdest = rdest;
           rdest += dest->row_size;
-	  uns mul2 = (uns)(y_pos >> 16) * y_inc_frac;
-	  uns mul1 = 0xffffff - mul2;
-	  uns a0 = 0;
+	  uint mul2 = (uint)(y_pos >> 16) * y_inc_frac;
+	  uint mul1 = 0xffffff - mul2;
+	  uint a0 = 0;
 #	  if IMAGE_SCALE_CHANNELS >= 2
-	  uns a1 = 0;
+	  uint a1 = 0;
 #	  endif
 #	  if IMAGE_SCALE_CHANNELS >= 3
-	  uns a2 = 0;
+	  uint a2 = 0;
 #	  endif
 #	  if IMAGE_SCALE_CHANNELS >= 4
-	  uns a3 = 0;
+	  uint a3 = 0;
 #	  endif
-          for (uns cols_counter = src->cols; cols_counter--; )
+          for (uint cols_counter = src->cols; cols_counter--; )
             {
 	      x_pos += x_inc;
 	      if (x_pos <= 0x100000000)
@@ -312,12 +312,12 @@ IMAGE_SCALE_PREFIX(downsample_xy)(struct image *dest, struct image *src)
 	      else
 	        {
 	          x_pos -= 0x100000000;
-		  uns mul4 = (uns)(x_pos >> 16) * x_inc_frac;
-		  uns mul3 = 0xffffff - mul4;
-		  uns mul13 = ((u64)mul1 * mul3) >> 24;
-		  uns mul23 = ((u64)mul2 * mul3) >> 24;
-		  uns mul14 = ((u64)mul1 * mul4) >> 24;
-		  uns mul24 = ((u64)mul2 * mul4) >> 24;
+		  uint mul4 = (uint)(x_pos >> 16) * x_inc_frac;
+		  uint mul3 = 0xffffff - mul4;
+		  uint mul13 = ((u64)mul1 * mul3) >> 24;
+		  uint mul23 = ((u64)mul2 * mul3) >> 24;
+		  uint mul14 = ((u64)mul1 * mul4) >> 24;
+		  uint mul24 = ((u64)mul2 * mul4) >> 24;
 		  pdest[0] = ((((psrc[0] * mul13) >> 24) + pbuf[0]) * final_mul) >> 16;
 		  pbuf[0] = ((psrc[0] * mul23) >> 24) + a0;
 		  pbuf[0 + IMAGE_SCALE_CHANNELS] += ((psrc[0 + IMAGE_SCALE_PIXEL_SIZE] * mul14) >> 24);
@@ -363,7 +363,7 @@ IMAGE_SCALE_PREFIX(downsample_xy)(struct image *dest, struct image *src)
     }
   pdest = rdest;
   pbuf = buf;
-  for (uns cols_counter = dest->cols; cols_counter--; )
+  for (uint cols_counter = dest->cols; cols_counter--; )
     {
       pdest[0] = (pbuf[0] * final_mul) >> 16;
 #     if IMAGE_SCALE_CHANNELS >= 2

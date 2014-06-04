@@ -105,7 +105,7 @@ struct opt_item {
     struct opt_section * section;	// subsection for OPT_CL_SECTION
     int value;				// value for OPT_CL_SWITCH
     void (* call)(struct opt_item * opt, const char * value, void * data);		// function to call for OPT_CL_CALL
-    void (* hook)(struct opt_item * opt, uns event, const char * value, void * data);	// function to call for OPT_CL_HOOK
+    void (* hook)(struct opt_item * opt, uint event, const char * value, void * data);	// function to call for OPT_CL_HOOK
     struct cf_user_type * utype;	// specification of the user-defined type for CT_USER
   } u;
   u16 flags;				// as defined below (for hooks, event mask is stored instead)
@@ -205,6 +205,11 @@ struct opt_item {
 
 /** Incrementing option. @target should be a variable of type `int`. **/
 #define OPT_INC(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .flags = fl, .help = desc, .cls = OPT_CL_INC, .type = CT_INT }
+
+/* FIXME: Backwards compatibility only, should not be used anymore. */
+#define OPT_UNS OPT_UINT
+#define OPT_UNS_MULTIPLE OPT_UINT_MULTIPLE
+
 
 /**
  * When this option appears, call the function @fn with parameters @item, @value, @data,
@@ -345,7 +350,7 @@ void opt_handle_help(struct opt_item * opt, const char * value, void * data);
 void opt_handle_config(struct opt_item * opt, const char * value, void * data);
 void opt_handle_set(struct opt_item * opt, const char * value, void * data);
 void opt_handle_dumpconfig(struct opt_item * opt, const char * value, void * data);
-void opt_conf_hook_internal(struct opt_item * opt, uns event, const char * value, void * data);
+void opt_conf_hook_internal(struct opt_item * opt, uint event, const char * value, void * data);
 
 // XXX: This is duplicated with <ucw/getopt.h>, but that one will hopefully go away one day.
 /**

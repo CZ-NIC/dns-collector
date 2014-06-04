@@ -61,19 +61,19 @@ struct cf_context {
   int is_active;
   int config_loaded;			// at least one config file was loaded
   struct cf_parser_state *parser;
-  uns everything_committed;		// did we already commit each section?
-  uns postpone_commit;			// counter of calls to cf_open_group()
-  uns other_options;			// used internally by cf_getopt()
+  uint everything_committed;		// did we already commit each section?
+  uint postpone_commit;			// counter of calls to cf_open_group()
+  uint other_options;			// used internally by cf_getopt()
   clist conf_entries;			// files/strings to reload
   struct cf_journal_item *journal;	// journalling
   int enable_journal;
   struct old_pools *pools;
   struct item_stack stack[MAX_STACK_SIZE];	// interpreter stack
-  uns stack_level;
+  uint stack_level;
   struct cf_section sections;		// root section
-  uns sections_initialized;
+  uint sections_initialized;
   dirtsec_t dirty;			// dirty sections
-  uns dirties;
+  uint dirties;
 };
 
 /* conf-ctxt.c */
@@ -98,7 +98,7 @@ enum cf_operation;
 extern char *cf_op_names[];
 extern char *cf_type_names[];
 
-uns cf_type_size(enum cf_type type, struct cf_user_type *utype);
+uint cf_type_size(enum cf_type type, struct cf_user_type *utype);
 char *cf_interpret_line(struct cf_context *cc, char *name, enum cf_operation op, int number, char **pars);
 void cf_init_stack(struct cf_context *cc);
 int cf_done_stack(struct cf_context *cc);

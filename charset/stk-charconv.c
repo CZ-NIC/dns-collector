@@ -14,10 +14,10 @@
 #define INITIAL_MIN_SIZE	16
 #define INITIAL_SCALE		2
 
-uns
-stk_strconv_init(struct conv_context *c, const byte *s, uns in_cs, uns out_cs)
+uint
+stk_strconv_init(struct conv_context *c, const byte *s, uint in_cs, uint out_cs)
 {
-  uns l = strlen(s);
+  uint l = strlen(s);
   if (in_cs == out_cs)
   {
     c->source = s;
@@ -34,8 +34,8 @@ stk_strconv_init(struct conv_context *c, const byte *s, uns in_cs, uns out_cs)
     return l * INITIAL_SCALE + 1;
 }
 
-uns
-stk_strconv_step(struct conv_context *c, byte *buf, uns len)
+uint
+stk_strconv_step(struct conv_context *c, byte *buf, uint len)
 {
   if (!c->source_end)
   {
@@ -45,7 +45,7 @@ stk_strconv_step(struct conv_context *c, byte *buf, uns len)
   }
   if (c->dest_start)
   {
-    uns l = c->dest_end - c->dest_start;
+    uint l = c->dest_end - c->dest_start;
     memcpy(buf, c->dest_start, l);
     c->dest = buf + l;
   }

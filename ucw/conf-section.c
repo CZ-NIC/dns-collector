@@ -93,7 +93,7 @@ inspect_section(struct cf_section *sec)
 }
 
 void
-cf_declare_rel_section(const char *name, struct cf_section *sec, void *ptr, uns allow_unknown)
+cf_declare_rel_section(const char *name, struct cf_section *sec, void *ptr, uint allow_unknown)
 {
   struct cf_context *cc = cf_obtain_context();
   if (!cc->sections.cfg)
@@ -122,13 +122,13 @@ cf_declare_rel_section(const char *name, struct cf_section *sec, void *ptr, uns 
 }
 
 void
-cf_declare_section(const char *name, struct cf_section *sec, uns allow_unknown)
+cf_declare_section(const char *name, struct cf_section *sec, uint allow_unknown)
 {
   cf_declare_rel_section(name, sec, NULL, allow_unknown);
 }
 
 void
-cf_init_section(const char *name, struct cf_section *sec, void *ptr, uns do_bzero)
+cf_init_section(const char *name, struct cf_section *sec, void *ptr, uint do_bzero)
 {
   if (do_bzero) {
     ASSERT(sec->size);
@@ -152,7 +152,7 @@ cf_init_section(const char *name, struct cf_section *sec, void *ptr, uns do_bzer
 }
 
 static char *
-commit_section(struct cf_section *sec, void *ptr, uns commit_all)
+commit_section(struct cf_section *sec, void *ptr, uint commit_all)
 {
   struct cf_context *cc = cf_get_context();
   char *err;
@@ -164,7 +164,7 @@ commit_section(struct cf_section *sec, void *ptr, uns commit_all)
 	return "commit of a subsection failed";
       }
     } else if (ci->cls == CC_LIST) {
-      uns idx = 0;
+      uint idx = 0;
       CLIST_FOR_EACH(cnode *, n, * (clist*) (ptr + (uintptr_t) ci->ptr))
 	if (idx++, err = commit_section(ci->u.sec, n, commit_all)) {
 	  msg(L_ERROR, "Cannot commit node #%d of list %s: %s", idx, ci->name, err);
@@ -177,7 +177,7 @@ commit_section(struct cf_section *sec, void *ptr, uns commit_all)
      * hence we need to call them in a fixed order.  */
 #define ARY_LT_X(ary,i,x) ary[i].sec < x.sec || ary[i].sec == x.sec && ary[i].ptr < x.ptr
     struct dirty_section comp = { sec, ptr };
-    uns pos = BIN_SEARCH_FIRST_GE_CMP(cc->dirty.ptr, cc->dirties, comp, ARY_LT_X);
+    uint pos = BIN_SEARCH_FIRST_GE_CMP(cc->dirty.ptr, cc->dirties, comp, ARY_LT_X);
 
     if (commit_all
 	|| (pos < cc->dirties && cc->dirty.ptr[pos].sec == sec && cc->dirty.ptr[pos].ptr == ptr))

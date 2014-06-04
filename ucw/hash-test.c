@@ -171,7 +171,7 @@ struct node4 {
 #define HASH_WANT_REMOVE
 
 #define HASH_GIVE_HASHFN
-static uns test4_hash(char *host, int port)
+static uint test4_hash(char *host, int port)
 {
   return hash_string_nocase(host) ^ hash_u32(port);
 }
@@ -183,7 +183,7 @@ static inline int test4_eq(char *host1, int port1, char *host2, int port2)
 }
 
 #define HASH_GIVE_EXTRA_SIZE
-static inline uns test4_extra_size(char *host, int port UNUSED)
+static inline uint test4_extra_size(char *host, int port UNUSED)
 {
   return strlen(host);
 }
@@ -298,7 +298,7 @@ static void test5(void)
 int
 main(int argc, char **argv)
 {
-  uns m = ~0U;
+  uint m = ~0U;
   if (argc > 1)
     {
       m = 0;

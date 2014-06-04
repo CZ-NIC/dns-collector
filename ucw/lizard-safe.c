@@ -19,7 +19,7 @@
 #include <errno.h>
 
 struct lizard_buffer {
-  uns len;
+  uint len;
   void *ptr;
 };
 
@@ -43,7 +43,7 @@ lizard_free(struct lizard_buffer *buf)
 }
 
 static void
-lizard_realloc(struct lizard_buffer *buf, uns max_len)
+lizard_realloc(struct lizard_buffer *buf, uint max_len)
   /* max_len needs to be aligned to CPU_PAGE_SIZE */
 {
   if (max_len <= buf->len)
@@ -56,7 +56,7 @@ lizard_realloc(struct lizard_buffer *buf, uns max_len)
   buf->len = max_len;
   buf->ptr = mmap(NULL, buf->len + CPU_PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   if (buf->ptr == MAP_FAILED)
-    die("mmap(anonymous, %d bytes): %m", (uns)(buf->len + CPU_PAGE_SIZE));
+    die("mmap(anonymous, %d bytes): %m", (uint)(buf->len + CPU_PAGE_SIZE));
   if (mprotect(buf->ptr + buf->len, CPU_PAGE_SIZE, PROT_NONE) < 0)
     die("mprotect: %m");
 }
@@ -70,9 +70,9 @@ sigsegv_handler(int signal UNUSED)
 }
 
 byte *
-lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uns expected_length)
+lizard_decompress_safe(const byte *in, struct lizard_buffer *buf, uint expected_length)
 {
-  uns lock_offset = ALIGN_TO(expected_length + 3, CPU_PAGE_SIZE);	// +3 due to the unaligned access
+  uint lock_offset = ALIGN_TO(expected_length + 3, CPU_PAGE_SIZE);	// +3 due to the unaligned access
   if (lock_offset > buf->len)
     lizard_realloc(buf, lock_offset);
   volatile ucw_sighandler_t old_handler = set_signal_handler(SIGSEGV, sigsegv_handler);

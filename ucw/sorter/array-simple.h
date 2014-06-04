@@ -34,8 +34,8 @@
  *  ASORT_EXTRA_ARGS	extra arguments for the sort function (they are always
  *			visible in all the macros supplied above), starts with comma
  *
- *  After including this file, a function ASORT_PREFIX(sort)(uns array_size)
- *  or ASORT_PREFIX(sort)(ASORT_KEY_TYPE *array, uns array_size) [if ASORT_ELT
+ *  After including this file, a function ASORT_PREFIX(sort)(uint array_size)
+ *  or ASORT_PREFIX(sort)(ASORT_KEY_TYPE *array, uint array_size) [if ASORT_ELT
  *  is not defined] is declared and all parameter macros are automatically
  *  undef'd.
  */
@@ -69,11 +69,11 @@
  * sorted. If the macro is provided, this parameter is omitted. In that case,
  * you can sort global variables or pass your structure by @ASORT_EXTRA_ARGS.
  **/
-static void ASORT_PREFIX(sort)(ASORT_ARRAY_ARG uns array_size ASORT_EXTRA_ARGS)
+static void ASORT_PREFIX(sort)(ASORT_ARRAY_ARG uint array_size ASORT_EXTRA_ARGS)
 {
-  struct stk { int l, r; } stack[8*sizeof(uns)];
+  struct stk { int l, r; } stack[8*sizeof(uint)];
   int l, r, left, right, m;
-  uns sp = 0;
+  uint sp = 0;
   ASORT_KEY_TYPE pivot;
 
   if (array_size <= 1)

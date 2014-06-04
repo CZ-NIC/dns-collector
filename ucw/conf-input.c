@@ -29,20 +29,20 @@
 
 #include <ucw/bbuf.h>
 
-#define GBUF_TYPE	uns
+#define GBUF_TYPE	uint
 #define GBUF_PREFIX(x)	split_##x
 #include <ucw/gbuf.h>
 
 struct cf_parser_state {
   const char *name_parse_fb;
   struct fastbuf *parse_fb;
-  uns line_num;
+  uint line_num;
   char *line;
   split_t word_buf;
-  uns words;
-  uns ends_by_brace;		// the line is ended by "{"
+  uint words;
+  uint ends_by_brace;		// the line is ended by "{"
   bb_t copy_buf;
-  uns copied;
+  uint copied;
   char line_buf[];
 };
 
@@ -64,7 +64,7 @@ get_line(struct cf_parser_state *p, char **msg)
 static void
 append(struct cf_parser_state *p, char *start, char *end)
 {
-  uns len = end - start;
+  uint len = end - start;
   bb_grow(&p->copy_buf, p->copied + len + 1);
   memcpy(p->copy_buf.ptr + p->copied, start, len);
   p->copied += len + 1;
@@ -72,7 +72,7 @@ append(struct cf_parser_state *p, char *start, char *end)
 }
 
 static char *
-get_word(struct cf_parser_state *p, uns is_command_name)
+get_word(struct cf_parser_state *p, uint is_command_name)
 {
   char *msg;
   char *line = p->line;
@@ -95,10 +95,10 @@ get_word(struct cf_parser_state *p, uns is_command_name)
 
   } else if (*line == '"') {
     line++;
-    uns start_copy = p->copied;
+    uint start_copy = p->copied;
     while (1) {
       char *start = line;
-      uns escape = 0;
+      uint escape = 0;
       while (*line) {
 	if (*line == '"' && !escape)
 	  break;
@@ -122,7 +122,7 @@ get_word(struct cf_parser_state *p, uns is_command_name)
     line++;
 
     char *tmp = stk_str_unesc(p->copy_buf.ptr + start_copy);
-    uns l = strlen(tmp);
+    uint l = strlen(tmp);
     bb_grow(&p->copy_buf, start_copy + l + 1);
     strcpy(p->copy_buf.ptr + start_copy, tmp);
     p->copied = start_copy + l + 1;
@@ -150,7 +150,7 @@ get_word(struct cf_parser_state *p, uns is_command_name)
 }
 
 static char *
-get_token(struct cf_parser_state *p, uns is_command_name, char **err)
+get_token(struct cf_parser_state *p, uint is_command_name, char **err)
 {
   *err = NULL;
   while (1) {
@@ -171,7 +171,7 @@ get_token(struct cf_parser_state *p, uns is_command_name, char **err)
 	msg(L_WARN, "The line %s:%d following a backslash is empty", p->name_parse_fb ? : "", p->line_num);
     } else {
       split_grow(&p->word_buf, p->words+1);
-      uns start = p->copied;
+      uint start = p->copied;
       p->word_buf.ptr[p->words++] = p->copied;
       *err = get_word(p, is_command_name);
       return *err ? NULL : p->copy_buf.ptr + start;
@@ -214,7 +214,7 @@ maybe_commit(struct cf_context *cc)
 }
 
 static char *
-parse_fastbuf(struct cf_context *cc, const char *name_fb, struct fastbuf *fb, uns depth)
+parse_fastbuf(struct cf_context *cc, const char *name_fb, struct fastbuf *fb, uint depth)
 {
   struct cf_parser_state *p = cc->parser;
   if (!p)
@@ -238,7 +238,7 @@ parse_fastbuf(struct cf_context *cc, const char *name_fb, struct fastbuf *fb, un
       break;
     char *name = p->copy_buf.ptr + p->word_buf.ptr[0];
     char *pars[p->words-1];
-    for (uns i=1; i<p->words; i++)
+    for (uint i=1; i<p->words; i++)
       pars[i-1] = p->copy_buf.ptr + p->word_buf.ptr[i];
     int optional_include = !strcasecmp(name, "optionalinclude");
     if (optional_include || !strcasecmp(name, "include"))
@@ -258,7 +258,7 @@ parse_fastbuf(struct cf_context *cc, const char *name_fb, struct fastbuf *fb, un
 	err = cf_printf("Cannot open file %s: %m", pars[0]);
 	goto error;
       }
-      uns ll = p->line_num;
+      uint ll = p->line_num;
       err = parse_fastbuf(cc, stk_strdup(pars[0]), new_fb, depth+1);
       p->line_num = ll;
       bclose(new_fb);
@@ -353,7 +353,7 @@ struct conf_entry {	/* We remember a list of actions to apply upon reload */
 };
 
 static void
-cf_remember_entry(struct cf_context *cc, uns type, const char *arg)
+cf_remember_entry(struct cf_context *cc, uint type, const char *arg)
 {
   if (!cc->enable_journal)
     return;
@@ -370,7 +370,7 @@ cf_reload(const char *file)
   ASSERT(cc->enable_journal);
   cf_journal_swap();
   struct cf_journal_item *oldj = cf_journal_new_transaction(1);
-  uns ec = cc->everything_committed;
+  uint ec = cc->everything_committed;
   cc->everything_committed = 0;
 
   clist old_entries;

@@ -17,16 +17,18 @@
 #include <sys/mman.h>
 
 void *
-mmap_file(const char *name, unsigned *len, int writeable)
+mmap_file(const char *name, size_t *len, int writeable)
 {
-  int fd = open(name, writeable ? O_RDWR : O_RDONLY);
-  struct stat st;
+  int fd = ucw_open(name, writeable ? O_RDWR : O_RDONLY);
+  ucw_stat_t st;
   void *x;
 
   if (fd < 0)
     die("open(%s): %m", name);
-  if (fstat(fd, &st) < 0)
+  if (ucw_fstat(fd, &st) < 0)
     die("fstat(%s): %m", name);
+  if ((uintmax_t)st.st_size > SIZE_MAX)
+    die("mmap(%s): File too large", name);
   if (len)
     *len = st.st_size;
   if (st.st_size)
@@ -42,7 +44,7 @@ mmap_file(const char *name, unsigned *len, int writeable)
 }
 
 void
-munmap_file(void *start, unsigned len)
+munmap_file(void *start, size_t len)
 {
   munmap(start, len);
 }

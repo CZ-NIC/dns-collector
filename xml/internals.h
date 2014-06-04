@@ -30,11 +30,11 @@ void NONRET xml_throw(struct xml_context *ctx);
 struct xml_stack {
   struct xml_stack *next;
   struct mempool_state state;
-  uns flags;
+  uint flags;
 };
 
 static inline void *
-xml_do_push(struct xml_context *ctx, uns size)
+xml_do_push(struct xml_context *ctx, uint size)
 {
   /* Saves ctx->stack and ctx->flags state */
   struct mempool_state state;
@@ -94,7 +94,7 @@ xml_push_dom(struct xml_context *ctx, struct mempool_state *state)
 }
 
 static inline void
-xml_pop_dom(struct xml_context *ctx, uns free)
+xml_pop_dom(struct xml_context *ctx, uint free)
 {
   /* Leave DOM subtree */
   TRACE(ctx, "pop_dom");
@@ -114,11 +114,11 @@ xml_pop_dom(struct xml_context *ctx, uns free)
 
 #define XML_HASH_HDR_SIZE ALIGN_TO(sizeof(void *), CPU_STRUCT_ALIGN)
 #define XML_HASH_GIVE_ALLOC struct HASH_PREFIX(table); \
-  static inline void *HASH_PREFIX(alloc)(struct HASH_PREFIX(table) *t, uns size) \
+  static inline void *HASH_PREFIX(alloc)(struct HASH_PREFIX(table) *t, uint size) \
   { return mp_alloc(*(void **)((void *)t - XML_HASH_HDR_SIZE), size); } \
   static inline void HASH_PREFIX(free)(struct HASH_PREFIX(table) *t UNUSED, void *p UNUSED) {}
 
-void *xml_hash_new(struct mempool *pool, uns size);
+void *xml_hash_new(struct mempool *pool, uint size);
 
 void xml_spout_chars(struct fastbuf *fb);
 
@@ -145,8 +145,8 @@ xml_dec(struct xml_context *ctx)
 
 #include "obj/xml/unicat.h"
 
-static inline uns
-xml_char_cat(uns c)
+static inline uint
+xml_char_cat(uint c)
 {
   if (c < 0x10000)
     return 1U << xml_char_tab1[(c & 0xff) + xml_char_tab2[c >> 8]];
@@ -156,8 +156,8 @@ xml_char_cat(uns c)
     return 1;
 }
 
-static inline uns
-xml_ascii_cat(uns c)
+static inline uint
+xml_ascii_cat(uint c)
 {
   return xml_char_tab1[c];
 }
@@ -167,7 +167,7 @@ void xml_push_entity(struct xml_context *ctx, struct xml_dtd_entity *ent);
 
 void xml_refill(struct xml_context *ctx);
 
-static inline uns
+static inline uint
 xml_peek_char(struct xml_context *ctx)
 {
   if (ctx->bptr == ctx->bstop)
@@ -175,7 +175,7 @@ xml_peek_char(struct xml_context *ctx)
   return ctx->bptr[0];
 }
 
-static inline uns
+static inline uint
 xml_peek_cat(struct xml_context *ctx)
 {
   if (ctx->bptr == ctx->bstop)
@@ -183,43 +183,43 @@ xml_peek_cat(struct xml_context *ctx)
   return ctx->bptr[1];
 }
 
-static inline uns
+static inline uint
 xml_get_char(struct xml_context *ctx)
 {
-  uns c = xml_peek_char(ctx);
+  uint c = xml_peek_char(ctx);
   ctx->bptr += 2;
   return c;
 }
 
-static inline uns
+static inline uint
 xml_get_cat(struct xml_context *ctx)
 {
-  uns c = xml_peek_cat(ctx);
+  uint c = xml_peek_cat(ctx);
   ctx->bptr += 2;
   return c;
 }
 
-static inline uns
+static inline uint
 xml_last_char(struct xml_context *ctx)
 {
   return ctx->bptr[-2];
 }
 
-static inline uns
+static inline uint
 xml_last_cat(struct xml_context *ctx)
 {
   return ctx->bptr[-1];
 }
 
-static inline uns
+static inline uint
 xml_skip_char(struct xml_context *ctx)
 {
-  uns c = ctx->bptr[0];
+  uint c = ctx->bptr[0];
   ctx->bptr += 2;
   return c;
 }
 
-static inline uns
+static inline uint
 xml_unget_char(struct xml_context *ctx)
 {
   return *(ctx->bptr -= 2);
@@ -229,16 +229,16 @@ void xml_sources_cleanup(struct xml_context *ctx);
 
 /*** Parsing ***/
 
-void NONRET xml_fatal_expected(struct xml_context *ctx, uns c);
+void NONRET xml_fatal_expected(struct xml_context *ctx, uint c);
 void NONRET xml_fatal_expected_white(struct xml_context *ctx);
 void NONRET xml_fatal_expected_quot(struct xml_context *ctx);
 
-static inline uns
-xml_parse_white(struct xml_context *ctx, uns mandatory)
+static inline uint
+xml_parse_white(struct xml_context *ctx, uint mandatory)
 {
   /* mandatory=1 -> S ::= (#x20 | #x9 | #xD | #xA)+
    * mandatory=0 -> S? */
-  uns cnt = 0;
+  uint cnt = 0;
   while (xml_peek_cat(ctx) & XML_CHAR_WHITE)
     {
       xml_skip_char(ctx);
@@ -250,7 +250,7 @@ xml_parse_white(struct xml_context *ctx, uns mandatory)
 }
 
 static inline void
-xml_parse_char(struct xml_context *ctx, uns c)
+xml_parse_char(struct xml_context *ctx, uint c)
 {
   /* Consumes a given Unicode character */
   if (unlikely(c != xml_get_char(ctx)))
@@ -267,11 +267,11 @@ xml_parse_seq(struct xml_context *ctx, const char *seq)
 
 void xml_parse_eq(struct xml_context *ctx);
 
-static inline uns
+static inline uint
 xml_parse_quote(struct xml_context *ctx)
 {
   /* "'" | '"' */
-  uns c = xml_get_char(ctx);
+  uint c = xml_get_char(ctx);
   if (unlikely(c != '\'' && c != '\"'))
     xml_fatal_expected_quot(ctx);
   return c;
@@ -284,7 +284,7 @@ char *xml_parse_nmtoken(struct xml_context *ctx, struct mempool *pool);
 char *xml_parse_system_literal(struct xml_context *ctx, struct mempool *pool);
 char *xml_parse_pubid_literal(struct xml_context *ctx, struct mempool *pool);
 
-uns xml_parse_char_ref(struct xml_context *ctx);
+uint xml_parse_char_ref(struct xml_context *ctx);
 void xml_parse_pe_ref(struct xml_context *ctx);
 
 char *xml_parse_attr_value(struct xml_context *ctx, struct xml_dtd_attr *attr);

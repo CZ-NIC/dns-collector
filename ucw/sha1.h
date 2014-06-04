@@ -44,7 +44,7 @@ void sha1_init(sha1_context *hd); /** Initialize new algorithm run in the @hd co
  * @sha1_init()). It has the same effect as concatenating all the data
  * together and passing them at once.
  */
-void sha1_update(sha1_context *hd, const byte *inbuf, uns inlen);
+void sha1_update(sha1_context *hd, const byte *inbuf, uint inlen);
 /**
  * No more @sha1_update() calls will be done. This terminates the hash
  * and returns a pointer to it.
@@ -66,13 +66,13 @@ byte *sha1_final(sha1_context *hd);
  *  sha1_update(&hd, buffer, length);
  *  memcpy(outbuf, sha1_final(&hd), SHA1_SIZE);
  */
-void sha1_hash_buffer(byte *outbuf, const byte *buffer, uns length);
+void sha1_hash_buffer(byte *outbuf, const byte *buffer, uint length);
 
 /**
  * SHA1 HMAC message authentication. If you provide @key and @data,
  * the result will be stored in @outbuf.
  */
-void sha1_hmac(byte *outbuf, const byte *key, uns keylen, const byte *data, uns datalen);
+void sha1_hmac(byte *outbuf, const byte *key, uint keylen, const byte *data, uint datalen);
 
 /**
  * The HMAC also exists in a stream version in a way analogous to the
@@ -83,8 +83,8 @@ typedef struct {
   sha1_context octx;
 } sha1_hmac_context;
 
-void sha1_hmac_init(sha1_hmac_context *hd, const byte *key, uns keylen);	/** Initialize HMAC with context @hd and the given key. See sha1_init(). */
-void sha1_hmac_update(sha1_hmac_context *hd, const byte *data, uns datalen);	/** Hash another @datalen bytes of data. See sha1_update(). */
+void sha1_hmac_init(sha1_hmac_context *hd, const byte *key, uint keylen);	/** Initialize HMAC with context @hd and the given key. See sha1_init(). */
+void sha1_hmac_update(sha1_hmac_context *hd, const byte *data, uint datalen);	/** Hash another @datalen bytes of data. See sha1_update(). */
 byte *sha1_hmac_final(sha1_hmac_context *hd);					/** Terminate the HMAC and return a pointer to the allocated hash. See sha1_final(). */
 
 #define SHA1_SIZE 20 /** Size of the SHA1 hash in its binary representation **/

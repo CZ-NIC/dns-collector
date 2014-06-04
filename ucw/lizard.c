@@ -27,7 +27,7 @@ struct hash_record {
 #define	CHAIN_MAX_TESTS		8	// crop longer collision chains
 #define	CHAIN_GOOD_MATCH	32	// we already have a good match => end
 
-static inline uns
+static inline uint
 hashf(const byte *string)
   /* 0..HASH_SIZE-1 */
 {
@@ -45,16 +45,16 @@ locate_string(const byte *string, int record_id, int head)
   return (byte *)string;
 }
 
-static inline uns
-find_match(uns record_id, struct hash_record *hash_rec, const byte *string, const byte *string_end, byte **best_ptr, uns head)
+static inline uint
+find_match(uint record_id, struct hash_record *hash_rec, const byte *string, const byte *string_end, byte **best_ptr, uint head)
   /* hash_tab[hash] == record_id points to the head of the double-linked
    * link-list of strings with the same hash.  The records are statically
    * stored in circular array hash_rec (with the 1st entry unused), and the
    * pointers are just 16-bit indices.  The strings in every collision chain
    * are ordered by age.  */
 {
-  uns count = CHAIN_MAX_TESTS;
-  uns best_len = 0;
+  uint count = CHAIN_MAX_TESTS;
+  uint best_len = 0;
   while (record_id && count-- > 0)
   {
     byte *record_string = locate_string(string, record_id, head);
@@ -74,7 +74,7 @@ find_match(uns record_id, struct hash_record *hash_rec, const byte *string, cons
       }
       else
 	cmp += 4;
-      uns len = cmp - record_string - 1;	/* cmp points 2 characters after the last match */
+      uint len = cmp - record_string - 1;	/* cmp points 2 characters after the last match */
       if (len > best_len)
       {
 	best_len = len;
@@ -88,15 +88,15 @@ find_match(uns record_id, struct hash_record *hash_rec, const byte *string, cons
   return best_len;
 }
 
-static uns
-hash_string(hash_ptr_t *hash_tab, uns hash, struct hash_record *hash_rec, /*byte *string,*/ uns head, uns *to_delete)
+static uint
+hash_string(hash_ptr_t *hash_tab, uint hash, struct hash_record *hash_rec, /*byte *string,*/ uint head, uint *to_delete)
   /* We reuse hash-records stored in a circular array.  First, delete the old
    * one and then add the new one in front of the link-list.  */
 {
   struct hash_record *rec = hash_rec + head;
   if (*to_delete)				/* unlink the original record */
   {
-    uns prev_id = rec->prev & ((1<<15)-1);
+    uint prev_id = rec->prev & ((1<<15)-1);
     if (rec->prev & (1<<15))			/* was a head */
       hash_tab[prev_id] = 0;
     else					/* thanks to the ordering, this was a tail */
@@ -116,7 +116,7 @@ hash_string(hash_ptr_t *hash_tab, uns hash, struct hash_record *hash_rec, /*byte
 }
 
 static inline byte *
-dump_unary_value(byte *out, uns l)
+dump_unary_value(byte *out, uint l)
 {
   while (l > 255)
   {
@@ -128,7 +128,7 @@ dump_unary_value(byte *out, uns l)
 }
 
 static byte *
-flush_copy_command(uns bof, byte *out, const byte *start, uns len)
+flush_copy_command(uint bof, byte *out, const byte *start, uint len)
 {
   if (bof && len <= 238)
     *out++ = len + 17;
@@ -161,7 +161,7 @@ flush_copy_command(uns bof, byte *out, const byte *start, uns len)
 }
 
 int
-lizard_compress(const byte *in, uns in_len, byte *out)
+lizard_compress(const byte *in, uint in_len, byte *out)
   /* Requires out being allocated for at least in_len * LIZARD_MAX_MULTIPLY +
    * LIZARD_MAX_ADD.  There must be at least LIZARD_NEEDS_CHARS characters
    * allocated after in.  Returns the actual compressed length. */
@@ -171,14 +171,14 @@ lizard_compress(const byte *in, uns in_len, byte *out)
   const byte *in_end = in + in_len;
   byte *out_start = out;
   const byte *copy_start = in;
-  uns head = 1;					/* 0 in unused */
-  uns to_delete = 0, bof = 1;
+  uint head = 1;					/* 0 in unused */
+  uint to_delete = 0, bof = 1;
   bzero(hash_tab, sizeof(hash_tab));		/* init the hash-table */
   while (in < in_end)
   {
-    uns hash = hashf(in);
+    uint hash = hashf(in);
     byte *best = NULL;
-    uns len = find_match(hash_tab[hash], hash_rec, in, in_end, &best, head);
+    uint len = find_match(hash_tab[hash], hash_rec, in, in_end, &best, head);
     if (len < 3)
 #if 0			// TODO: now, our routine does not detect matches of length 2
       if (len == 2 && (in - best->string - 1) < (1<<10))
@@ -199,9 +199,9 @@ literal:
 	goto literal;
     }
     /* Record the match.  */
-    uns copy_len = in - copy_start;
-    uns is_in_copy_mode = bof || copy_len >= 4;
-    uns shift = in - best - 1;
+    uint copy_len = in - copy_start;
+    uint is_in_copy_mode = bof || copy_len >= 4;
+    uint shift = in - best - 1;
     /* Try to use a 2-byte sequence.  */
 #if 0
     if (len == 2)
@@ -264,13 +264,13 @@ dump_2sequence:
     }
     /* Update the hash-table.  */
     head = hash_string(hash_tab, hash, hash_rec, head, &to_delete);
-    for (uns i=1; i<len; i++)
+    for (uint i=1; i<len; i++)
       head = hash_string(hash_tab, hashf(in+i), hash_rec, head, &to_delete);
     in += len;
     copy_start = in;
     bof = 0;
   }
-  uns copy_len = in - copy_start;
+  uint copy_len = in - copy_start;
   if (copy_len)
     out = flush_copy_command(bof, out, copy_start, copy_len);
   *out++ = 17;					/* add EOF */
@@ -280,9 +280,9 @@ dump_2sequence:
 }
 
 static inline byte *
-read_unary_value(const byte *in, uns *val)
+read_unary_value(const byte *in, uint *val)
 {
-  uns l = 0;
+  uint l = 0;
   while (!*in++)
     l += 255;
   l += in[-1];
@@ -298,8 +298,8 @@ lizard_decompress(const byte *in, byte *out)
    * decompressed length or a negative number when an error has occurred.  */
 {
   byte *out_start = out;
-  uns expect_copy_command = 1;
-  uns len;
+  uint expect_copy_command = 1;
+  uint len;
   if (*in > 17)					/* short copy command at BOF */
   {
     len = *in++ - 17;
@@ -307,8 +307,8 @@ lizard_decompress(const byte *in, byte *out)
   }
   while (1)
   {
-    uns c = *in++;
-    uns pos;
+    uint c = *in++;
+    uint pos;
     if (c < 0x10)
       if (expect_copy_command == 1)
       {

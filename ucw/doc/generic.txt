@@ -49,19 +49,19 @@ integers, so we will do the same:
   #define ARRAY_PREFIX(name) intarray_##name
   #include <array.h>
 
-  #define ARRAY_TYPE uns
-  #define ARRAY_PREFIX(name) unsarray_##name
+  #define ARRAY_TYPE uint
+  #define ARRAY_PREFIX(name) uintarray_##name
   #include <array.h>
 
 This will generate the data types (presumably `intarray_t` and
-`unsarray_t`) and the index functions (`intarray_index` and
-`unsarray_index`). We can use them like anything else.
+`uintarray_t`) and the index functions (`intarray_index` and
+`uintarray_index`). We can use them like anything else.
 
 Maybe the `ARRAY_PREFIX` deserves some attention. When the header file
 wants to generate an identifier, it uses this macro with
 some name. Then the macro takes the name, adds a prefix to it and
 returns the new identifier, so `ARRAY_PREFIX(t)` will generate
-`intarray_t` in the first case and `unsarray_t` in the second. This
+`intarray_t` in the first case and `uintarray_t` in the second. This
 allows having more than one instance of the same data structure or
 algorithm, because it generates different identifiers for them.
 
@@ -77,7 +77,7 @@ works, here is the `array.h` header and some description to it.
   #define ARRAY_A_TYPE ARRAY_PREFIX(t)
   typedef ARRAY_TYPE *ARRAY_A_TYPE
 
-  static ARRAY_TYPE *ARRAY_PREFIX(index)(ARRAY_A_TYPE array, uns index)
+  static ARRAY_TYPE *ARRAY_PREFIX(index)(ARRAY_A_TYPE array, uint index)
   {
     return array + index;
   }

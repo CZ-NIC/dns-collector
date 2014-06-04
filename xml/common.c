@@ -76,7 +76,7 @@ xml_fatal(struct xml_context *ctx, const char *format, ...)
 /*** Memory management ***/
 
 void *
-xml_hash_new(struct mempool *pool, uns size)
+xml_hash_new(struct mempool *pool, uint size)
 {
   void *tab = mp_alloc_zero(pool, size + XML_HASH_HDR_SIZE);
   *(void **)tab = pool;

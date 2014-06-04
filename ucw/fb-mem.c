@@ -13,15 +13,15 @@
 #include <stdio.h>
 
 struct memstream {
-  unsigned blocksize;
-  unsigned uc;
+  uint blocksize;
+  uint uc;
   struct msblock *first;
 };
 
 struct msblock {
   struct msblock *next;
   ucw_off_t pos;
-  unsigned size;
+  uint size;
   byte data[0];
 };
 
@@ -150,7 +150,7 @@ fbmem_close(struct fastbuf *f)
 }
 
 struct fastbuf *
-fbmem_create(unsigned blocksize)
+fbmem_create(uint blocksize)
 {
   struct fastbuf *f = xmalloc_zero(sizeof(struct fb_mem));
   struct memstream *s = xmalloc_zero(sizeof(struct memstream));

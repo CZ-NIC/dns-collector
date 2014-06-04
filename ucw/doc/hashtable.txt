@@ -52,7 +52,7 @@ You can define any of these macros and provide corresponding functions
 to customize the behaviour. The macros are:
 
 [[give_hashfn]]
-- `HASH_GIVE_HASHFN` -- the table will use `uns
+- `HASH_GIVE_HASHFN` -- the table will use `uint
   HASH_PREFIX(hash)(key)` to calculate hash of `key`.
   There is a sensible default for integers and strings.
   In the case of <<key_complex,`HASH_KEY_COMPLEX`>>, it is mandatory
@@ -78,14 +78,14 @@ to customize the behaviour. The macros are:
   *)` is used to initialize the rest of node. Useful if you use
   <<fun_HASH_PREFIX_OPEN_PAREN_lookup_CLOSE_PAREN_,`HASH_PREFIX(lookup())`>>
 - `HASH_GIVE_ALLOC` -- you need to provide `void
-  \*HASH_PREFIX(alloc)(uns size` and `void HASH_PREFIX(free)(void \*)`
+  \*HASH_PREFIX(alloc)(uint size` and `void HASH_PREFIX(free)(void \*)`
   to allocate and deallocate the nodes. Default uses
   <<basics:xmalloc()>> and <<basics:xfree()>>, <<mempool:mempool
   routines>> or <<eltpool:eltpool routines>>, depending on
   <<use_pool,`HASH_USE_POOL`>>, <<auto_pool,`HASH_AUTO_POOL`>>,
   <<use_eltpool,`HASH_USE_ELTPOOL`>> and <<auto_eltpool,`HASH_AUTO_ELTPOOL`>> switches.
 - <<table_alloc:`HASH_GIVE_TABLE_ALLOC`>> -- you need to provide `void
-  \*HASH_PREFIX(table_alloc)(uns size` and `void HASH_PREFIX(table_free)(void \*)`
+  \*HASH_PREFIX(table_alloc)(uint size` and `void HASH_PREFIX(table_free)(void \*)`
   to allocate and deallocate the table itself. Default uses
   <<basics:xmalloc()>> and <<basics:xfree()>> or the functions
   from `HASH_GIVE_ALLOC` depending on <<table_alloc:`HASH_TABLE_ALLOC`>> switch.

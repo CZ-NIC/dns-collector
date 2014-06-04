@@ -17,13 +17,13 @@
  * Stores them in @dest and returns the number of bytes the output
  * takes.
  */
-uns base64_encode(byte *dest, const byte *src, uns len);
+uint base64_encode(byte *dest, const byte *src, uint len);
 /**
  * Decodes @len bytes of data pointed to by @src from base64 encoding.
  * All invalid characters are ignored. The result is stored into @dest
  * and length of the result is returned.
  */
-uns base64_decode(byte *dest, const byte *src, uns len);
+uint base64_decode(byte *dest, const byte *src, uint len);
 
 /**
  * Use this macro to calculate @base64_encode() output buffer size.

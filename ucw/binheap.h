@@ -182,7 +182,7 @@ BH_PREFIX(init)(BH_HEAP *heap)
 #define BH_FOR_ALL(bh_px, bh_heap, bh_var)	\
 do {						\
   struct bh_node *bh_stack[32];			\
-  uns bh_sp = 0;				\
+  uint bh_sp = 0;				\
   if (bh_stack[0] = (bh_heap)->root.first_son)  \
     bh_sp++;					\
   while (bh_sp) {				\

@@ -30,11 +30,11 @@
 struct eltpool {
   struct eltpool_chunk *first_chunk;
   struct eltpool_free *first_free;
-  uns elt_size;
-  uns chunk_size;
-  uns elts_per_chunk;
-  uns num_allocated;		// Just for debugging
-  uns num_chunks;
+  uint elt_size;
+  uint chunk_size;
+  uint elts_per_chunk;
+  uint num_allocated;		// Just for debugging
+  uint num_chunks;
 };
 
 struct eltpool_chunk {
@@ -60,7 +60,7 @@ struct eltpool_free {
  *
  * Element pools can be treated as <<trans:respools,resources>>, see <<trans:res_eltpool()>>.
  **/
-struct eltpool *ep_new(uns elt_size, uns elts_per_chunk);
+struct eltpool *ep_new(uint elt_size, uint elts_per_chunk);
 
 /**
  * Release a memory pool created by @ep_new() including all

@@ -13,7 +13,7 @@ To build and run, you need:
   -  Libjpeg, libpng and libungif to support all image formats
      (jpeg, png and gif). These libraries can be replaced by libgif (gif)
      and GraphicsMagick >= 1.1 (jpeg, png, gif and possible more formats).
-     See sherlock/default.cfg for related configuration switches.
+     See default.cfg for related configuration switches.
 
 Compiling
 ---------

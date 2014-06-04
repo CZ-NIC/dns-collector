@@ -112,7 +112,7 @@ This example uses libucw's own IO system, <<fastbuf:,fastbufs>>.
 
   void *stdin_data(struct mempool *pool) {
     struct fastbuf *fb = bopen_fd(0, NULL);     // Read from stdin
-    uns amount;
+    size_t amount;
     char *ptr = mp_start(pool, 1024);
     while(amount = bread(fb, ptr, 1024)) {      // Read a block
       ptr += amount;                            // Move after it

@@ -11,10 +11,18 @@ use warnings;
 
 Log "Determining installation prefix ... ";
 if (IsSet("CONFIG_LOCAL")) {
-	Log("local build\n");
-	Set("INSTALL_PREFIX", "");
-	Set("INSTALL_USR_PREFIX", "");
-	Set("INSTALL_VAR_PREFIX", "");
+	if (IsSet("CONFIG_RELATIVE_PATHS")) {
+		Log("local build with relative paths\n");
+		Set("INSTALL_PREFIX", "");
+	}
+	else {
+		Log("local build with absolute paths\n");
+		my $cwd = `pwd`; Fail("Cannot get current working directory") if $?;
+		chomp $cwd;
+		Set("INSTALL_PREFIX", "$cwd/run/");
+	}
+	Set("INSTALL_USR_PREFIX", Get("INSTALL_PREFIX"));
+	Set("INSTALL_VAR_PREFIX", Get("INSTALL_PREFIX"));
 } else {
 	Set("PREFIX", "/usr/local") unless IsSet("PREFIX");
 	my $ipx = Get("PREFIX");

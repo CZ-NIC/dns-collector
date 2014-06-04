@@ -66,16 +66,16 @@ CF_USAGE
   exit(1);
 }
 
-static uns want_sax;
-static uns want_pull;
-static uns want_dom;
-static uns want_parse_dtd;
-static uns want_hide_errors;
-static uns want_ignore_comments;
-static uns want_ignore_pis;
-static uns want_report_blocks;
-static uns want_report_ignorable;
-static uns want_file_entities;
+static uint want_sax;
+static uint want_pull;
+static uint want_dom;
+static uint want_parse_dtd;
+static uint want_hide_errors;
+static uint want_ignore_comments;
+static uint want_ignore_pis;
+static uint want_report_blocks;
+static uint want_report_ignorable;
+static uint want_file_entities;
 
 static struct fastbuf *out;
 
@@ -118,12 +118,12 @@ show_node(struct xml_node *node)
 }
 
 static void
-show_tree(struct xml_node *node, uns level)
+show_tree(struct xml_node *node, uint level)
 {
   if (!node)
     return;
   bputs(out, "DOM:  ");
-  for (uns i = 0; i < level; i++)
+  for (uint i = 0; i < level; i++)
     bputs(out, "    ");
   bputs(out, node_type(node));
   show_node(node);
@@ -199,19 +199,19 @@ h_chars(struct xml_context *ctx)
 }
 
 static void
-h_block(struct xml_context *ctx UNUSED, char *text, uns len UNUSED)
+h_block(struct xml_context *ctx UNUSED, char *text, uint len UNUSED)
 {
   bprintf(out, "SAX:  block text='%s'\n", text);
 }
 
 static void
-h_cdata(struct xml_context *ctx UNUSED, char *text, uns len UNUSED)
+h_cdata(struct xml_context *ctx UNUSED, char *text, uint len UNUSED)
 {
   bprintf(out, "SAX:  cdata text='%s'\n", text);
 }
 
 static void
-h_ignorable(struct xml_context *ctx UNUSED, char *text, uns len UNUSED)
+h_ignorable(struct xml_context *ctx UNUSED, char *text, uint len UNUSED)
 {
   bprintf(out, "SAX:  ignorable text='%s'\n", text);
 }
@@ -320,7 +320,7 @@ main(int argc, char **argv)
   if (want_pull)
     {
       ctx.pull = XML_PULL_CHARS | XML_PULL_STAG | XML_PULL_ETAG | XML_PULL_COMMENT | XML_PULL_PI;
-      uns state;
+      uint state;
       while (state = xml_next(&ctx))
 	switch (state)
 	  {

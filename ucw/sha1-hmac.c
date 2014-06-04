@@ -13,7 +13,7 @@
 #include <string.h>
 
 void
-sha1_hmac_init(sha1_hmac_context *hd, const byte *key, uns keylen)
+sha1_hmac_init(sha1_hmac_context *hd, const byte *key, uint keylen)
 {
   byte keybuf[SHA1_BLOCK_SIZE], buf[SHA1_BLOCK_SIZE];
 
@@ -43,7 +43,7 @@ sha1_hmac_init(sha1_hmac_context *hd, const byte *key, uns keylen)
 }
 
 void
-sha1_hmac_update(sha1_hmac_context *hd, const byte *data, uns datalen)
+sha1_hmac_update(sha1_hmac_context *hd, const byte *data, uint datalen)
 {
   // Just update the inner digest
   sha1_update(&hd->ictx, data, datalen);
@@ -60,7 +60,7 @@ byte *sha1_hmac_final(sha1_hmac_context *hd)
 }
 
 void
-sha1_hmac(byte *outbuf, const byte *key, uns keylen, const byte *data, uns datalen)
+sha1_hmac(byte *outbuf, const byte *key, uint keylen, const byte *data, uint datalen)
 {
   sha1_hmac_context hd;
   sha1_hmac_init(&hd, key, keylen);
@@ -74,7 +74,7 @@ sha1_hmac(byte *outbuf, const byte *key, uns keylen, const byte *data, uns datal
 #include <stdio.h>
 #include <ucw/string.h>
 
-static uns rd(char *dest)
+static uint rd(char *dest)
 {
   char buf[1024];
   if (!fgets(buf, sizeof(buf), stdin))
@@ -97,8 +97,8 @@ int main(void)
 {
   char key[1024], data[1024];
   byte hmac[SHA1_SIZE];
-  uns kl = rd(key);
-  uns dl = rd(data);
+  uint kl = rd(key);
+  uint dl = rd(data);
   sha1_hmac(hmac, key, kl, data, dl);
   mem_to_hex(data, hmac, SHA1_SIZE, 0);
   puts(data);

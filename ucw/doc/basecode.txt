@@ -29,7 +29,7 @@ Usage
   output buffer and feed the data to the function.
 
   byte output[BASE64_ENC_LENGTH(input_size)];
-  uns output_size = base64_encode(output, input, input_size);
+  uint output_size = base64_encode(output, input, input_size);
 
 - Decoding can be done in similar way. It is enough to have output
   buffer of the same size as the input one.
@@ -38,11 +38,11 @@ Usage
   chunks. The input chunk size must be multiple of `BASE64_IN_CHUNK`.
   The output will be corresponding multiple of `BASE64_OUT_CHUNK`.
 
-  uns input_size;
+  uint input_size;
   byte input[BASE64_IN_CHUNK * 10];
   while(input_size = read_chunk(input, BASE64_IN_CHUNK * 10)) {
     byte output[BASE64_OUT_CHUNK * 10];
-    uns output_size = base64_encode(output, input, input_size);
+    uint output_size = base64_encode(output, input, input_size);
     use_chunk(output, output_size);
   }
 

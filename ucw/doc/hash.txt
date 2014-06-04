@@ -52,7 +52,7 @@ There are two ways you can use the hashing routines.
   parts together.
 
   byte buffer[MAX_BUFFER];
-  uns buffer_len;
+  uint buffer_len;
   md5_context c;
   md5_init(&c);
   while(buffer_len = get_chunk(buffer, MAX_BUFFER)) {

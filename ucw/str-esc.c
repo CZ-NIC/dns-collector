@@ -43,7 +43,7 @@ str_unesc(char *d, const char *s)
 	      else
 	        {
 		  char *p;
-		  uns v = strtoul(s + 2, &p, 16);
+		  uint v = strtoul(s + 2, &p, 16);
 		  if (v <= 255)
 		    *d++ = v;
 		  else
@@ -54,9 +54,9 @@ str_unesc(char *d, const char *s)
             default:
 	      if (s[1] >= '0' && s[1] <= '7')
 	        {
-		  uns v = s[1] - '0';
+		  uint v = s[1] - '0';
 		  s += 2;
-		  for (uns i = 0; i < 2 && *s >= '0' && *s <= '7'; s++, i++)
+		  for (uint i = 0; i < 2 && *s >= '0' && *s <= '7'; s++, i++)
 		    v = (v << 3) + *s - '0';
 		  if (v <= 255)
 		    *d++ = v;

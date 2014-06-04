@@ -12,7 +12,7 @@
 
 #define PUTB(j,i)  p[j] = (byte)((u >> (8*(i))));
 #define PUTB4(b)   PUTB(0,b-1) PUTB(1,b-2) PUTB(2,b-3) PUTB(3,b-4)
-uns varint_put_big(byte *p, u64 u)
+uint varint_put_big(byte *p, u64 u)
 {
 	ASSERT(u >= VARINT_SHIFT_L4);
 
