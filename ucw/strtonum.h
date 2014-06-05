@@ -57,7 +57,7 @@ STN_SIGNED_CONVERTOR(int, int, uint)
 STN_DECLARE_CONVERTOR(uintmax_t, uintmax);
 STN_SIGNED_CONVERTOR(intmax_t, intmax, uintmax)
 
-// FIXME: For backwards compatibility, will be removed soon
+// FIXME: For backward compatibility, will be removed soon
 STN_DECLARE_CONVERTOR(uns, uns);
 
 #endif

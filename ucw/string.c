@@ -40,7 +40,7 @@ str_format_flags(char *dest, const char *fmt, uint flags)
 }
 
 size_t
-str_count_char(const char *str, uns chr)
+str_count_char(const char *str, uint chr)
 {
   const byte *s = str;
   size_t i = 0;
