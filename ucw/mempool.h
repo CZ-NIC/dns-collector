@@ -72,7 +72,7 @@ struct mempool {
   struct mempool_state state;
   void *unused, *last_big;
   size_t chunk_size, threshold;
-  uns idx;
+  uint idx;
   u64 total_size;
 };
 

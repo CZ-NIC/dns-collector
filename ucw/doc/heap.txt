@@ -11,7 +11,7 @@ Binary heaps
 Example
 -------
 
-  static uns n;
+  static uint n;
   static int heap[4];
 
   // Create an empty heap

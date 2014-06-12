@@ -18,7 +18,7 @@ hex_make(uint x)
 }
 
 void
-mem_to_hex(char *dest, const byte *src, size_t bytes, uns flags)
+mem_to_hex(char *dest, const byte *src, size_t bytes, uint flags)
 {
   uint sep = flags & 0xff;
 
@@ -48,7 +48,7 @@ hex_parse(uint c)
 }
 
 const char *
-hex_to_mem(byte *dest, const char *src, size_t max_bytes, uns flags)
+hex_to_mem(byte *dest, const char *src, size_t max_bytes, uint flags)
 {
   uint sep = flags & 0xff;
   while (max_bytes-- && Cxdigit(src[0]) && Cxdigit(src[1]))
