@@ -13,8 +13,10 @@
 enum column_type {
   COL_TYPE_STR,
   COL_TYPE_INT,
+  COL_TYPE_INT64,
   COL_TYPE_INTMAX,
   COL_TYPE_UINT,
+  COL_TYPE_U64,
   COL_TYPE_UINTMAX,
   COL_TYPE_BOOL,
   COL_TYPE_DOUBLE,
@@ -27,6 +29,8 @@ enum column_type {
 #define CELL_ALIGN_CENTER   (1<<(sizeof(enum column_type)*8 - 2))
 #define CELL_ALIGN_FLOAT    (1<<(sizeof(enum column_type)*8 - 3))
 
+#define CELL_TRUNC_RIGHT    (1<<(sizeof(enum column_type)*8 - 4))
+
 // CELL_ALIGN_MASK is a mask which has 1's on positions used by some alignment mask.
 // that is: col_width & CELL_ALIGN_MASK  gives column width (in characters).
 // the top bit is reserved for left alignment and is not demasked by CELL_ALIGN_MASK.
@@ -35,7 +39,9 @@ enum column_type {
 
 #define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_STR }
 #define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = "%d", .type = COL_TYPE_INT }
+#define TBL_COL_INT64(_name, _width)          { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_INT64 }
 #define TBL_COL_UINT(_name, _width)           { .name = _name, .width = _width, .fmt = "%u", .type = COL_TYPE_UINT }
+#define TBL_COL_U64(_name, _width)            { .name = _name, .width = _width, .fmt = "%llu", .type = COL_TYPE_U64 }
 #define TBL_COL_INTMAX(_name, _width)         { .name = _name, .width = _width, .fmt = "%jd", .type = COL_TYPE_INTMAX }
 #define TBL_COL_UINTMAX(_name, _width)        { .name = _name, .width = _width, .fmt = "%ju", .type = COL_TYPE_UINTMAX }
 #define TBL_COL_HEXUINT(_name, _width)        { .name = _name, .width = _width, .fmt = "0x%x", .type = COL_TYPE_UINT }
@@ -45,7 +51,9 @@ enum column_type {
 
 #define TBL_COL_STR_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_STR }
 #define TBL_COL_INT_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INT }
+#define TBL_COL_INT64_FMT(_name, _width, _fmt)          { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INT64 }
 #define TBL_COL_UINT_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT }
+#define TBL_COL_U64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_U64 }
 #define TBL_COL_INTMAX_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INTMAX }
 #define TBL_COL_UINTMAX_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINTMAX }
 #define TBL_COL_HEXUINT_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT }
@@ -155,7 +163,7 @@ struct table {
   const char *append_delimiter;		// [*] Separator of multiple values in a single cell (see table_append_...())
   uint print_header;			// [*] 0 indicates that table header should not be printed
 
-  struct fastbuf *out;			// Fastbuffer to which the table is printed
+  struct fastbuf *out;			// [*] Fastbuffer to which the table is printed
   int last_printed_col;			// Index of the last column which was set. -1 indicates start of row.
 					// Used for example for appending to the current column.
   int row_printing_started;		// Indicates that a row has been started. Duplicates last_printed_col, but harmlessly.
@@ -169,21 +177,15 @@ struct table {
 
 
 /**
- * table_init serves for initialization of the table. The @tbl parameter should have set the columns member of
- * the table structure. The @out parameter is supplied by the caller and can be deallocated after table_deinit
- * is called.
- *
- * FIXME: Why the fastbuf is set there? It would make sense to pass it to table_start(), so that
- * different instances of the table can be printed to different destinations. Also, the remark
- * about deallocation does not make much sense, the fastbuf is definitely not copied, only
- * a pointer to it.
+ * @table_init serves for initialization of the table. The @tbl parameter should have set the columns member of
+ * the table structure.
  **/
 void table_init(struct table *tbl);
 void table_cleanup(struct table *tbl);
 
 /**
  * table_start is called before the cells of the table are set. After the table_start is called, the
- * user can call the table_col_* or table_append_ functions and cannot call the table_set_*
+ * user can call the table_col_* or table_append_ functions, but cannot call the table_set_*
  * functions. The table_end_row function can be called after the table_start is called (but before
  * the table_end is called)
  **/
@@ -206,7 +208,7 @@ void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
  * Sets the order in which the columns are printed. The specification is a string with comma-separated column
  * names. Returns NULL for success and an error message otherwise.
  **/
-const char * table_set_col_order_by_name(struct table *tbl, const char *col_order);
+const char *table_set_col_order_by_name(struct table *tbl, const char *col_order);
 
 /**
  * Called when all the cells have filled values. The function the prints a table row into the output stream.
@@ -235,14 +237,13 @@ int table_get_col_idx(struct table *tbl, const char *col_name);
  * Returns comma-and-space-separated list of column names, allocated from table's internal
  * memory pool.
  **/
-const char * table_get_col_list(struct table *tbl);
+const char *table_get_col_list(struct table *tbl);
 
 /**
  * Opens a fastbuf stream that can be used for creating a cell content. The @sz parameter is the initial size
  * allocated on the memory pool.
  **/
 struct fastbuf *table_col_fbstart(struct table *tbl, int col);
-// FIXME: test table_col_fbstart/table_col_fbend
 
 /**
  * Closes the stream that is used for printing of the last column.
@@ -298,6 +299,7 @@ TABLE_COL_PROTO(double, double);
 TABLE_COL_PROTO(str, const char *);
 TABLE_COL_PROTO(intmax, intmax_t);
 TABLE_COL_PROTO(uintmax, uintmax_t);
+TABLE_COL_PROTO(u64, u64);
 
 void table_col_bool(struct table *tbl, int col, uint val);
 void table_col_bool_name(struct table *tbl, const char *col_name, uint val);
@@ -311,6 +313,7 @@ TABLE_APPEND_PROTO(double, double);
 TABLE_APPEND_PROTO(str, const char *);
 TABLE_APPEND_PROTO(intmax, intmax_t);
 TABLE_APPEND_PROTO(uintmax, uintmax_t);
+TABLE_APPEND_PROTO(u64, u64);
 void table_append_bool(struct table *tbl, int val);
 #undef TABLE_APPEND_PROTO
 

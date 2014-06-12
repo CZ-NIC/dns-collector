@@ -117,7 +117,6 @@ const char * table_get_col_list(struct table *tbl)
   return tmp;
 }
 
-// FIXME: Shouldn't this be table_SET_col_order() ?
 void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
 {
   for(int i = 0; i < cols_to_output; i++) {
@@ -232,6 +231,7 @@ TABLE_COL_BODIES(double, double, COL_TYPE_DOUBLE)
 TABLE_COL_BODIES(str, const char *, COL_TYPE_STR)
 TABLE_COL_BODIES(intmax, intmax_t, COL_TYPE_INTMAX)
 TABLE_COL_BODIES(uintmax, uintmax_t, COL_TYPE_UINTMAX)
+TABLE_COL_BODIES(u64, u64, COL_TYPE_U64)
 #undef TABLE_COL
 #undef TABLE_COL_FMT
 #undef TABLE_COL_STR
@@ -273,6 +273,7 @@ TABLE_APPEND(double, double, COL_TYPE_DOUBLE)
 TABLE_APPEND(str, const char *, COL_TYPE_STR)
 TABLE_APPEND(intmax, intmax_t, COL_TYPE_INTMAX)
 TABLE_APPEND(uintmax, uintmax_t, COL_TYPE_UINTMAX)
+TABLE_APPEND(u64, u64, COL_TYPE_U64)
 #undef TABLE_APPEND
 
 void table_append_bool(struct table *tbl, int val)
@@ -342,9 +343,6 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
   // Options with a value
   if(value) {
     if(strcmp(key, "header") == 0) {
-      // FIXME: Check syntax of value.
-      //tbl->print_header = strtol(value, NULL, 10); //atoi(value);
-      //if(errno != 0) tbl->print_header
       if(value[1] != 0)
         return mp_printf(tbl->pool, "Tableprinter: invalid option: '%s' has invalid value: '%s'.", key, value);
       uint tmp = value[0] - '0';
