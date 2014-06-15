@@ -10,6 +10,46 @@
 #include <ucw/fastbuf.h>
 #include <ucw/mempool.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define table_append_bool ucw_table_append_bool
+#define table_append_double ucw_table_append_double
+#define table_append_int ucw_table_append_int
+#define table_append_intmax ucw_table_append_intmax
+#define table_append_printf ucw_table_append_printf
+#define table_append_str ucw_table_append_str
+#define table_append_u64 ucw_table_append_u64
+#define table_append_uint ucw_table_append_uint
+#define table_append_uintmax ucw_table_append_uintmax
+#define table_cleanup ucw_table_cleanup
+#define table_col_bool ucw_table_col_bool
+#define table_col_bool_fmt ucw_table_col_bool_fmt
+#define table_col_bool_name ucw_table_col_bool_name
+#define table_col_double ucw_table_col_double
+#define table_col_fbend ucw_table_col_fbend
+#define table_col_fbstart ucw_table_col_fbstart
+#define table_col_int ucw_table_col_int
+#define table_col_intmax ucw_table_col_intmax
+#define table_col_printf ucw_table_col_printf
+#define table_col_str ucw_table_col_str
+#define table_col_u64 ucw_table_col_u64
+#define table_col_uint ucw_table_col_uint
+#define table_col_uintmax ucw_table_col_uintmax
+#define table_end ucw_table_end
+#define table_end_row ucw_table_end_row
+#define table_fmt_human_readable ucw_table_fmt_human_readable
+#define table_fmt_machine_readable ucw_table_fmt_machine_readable
+#define table_get_col_idx ucw_table_get_col_idx
+#define table_get_col_list ucw_table_get_col_list
+#define table_init ucw_table_init
+#define table_set_col_order ucw_table_set_col_order
+#define table_set_col_order_by_name ucw_table_set_col_order_by_name
+#define table_set_formatter ucw_table_set_formatter
+#define table_set_gary_options ucw_table_set_gary_options
+#define table_set_option ucw_table_set_option
+#define table_set_option_value ucw_table_set_option_value
+#define table_start ucw_table_start
+#endif
+
 enum column_type {
   COL_TYPE_STR,
   COL_TYPE_INT,

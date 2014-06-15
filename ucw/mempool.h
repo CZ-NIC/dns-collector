@@ -35,6 +35,7 @@
 #define mp_realloc ucw_mp_realloc
 #define mp_realloc_zero ucw_mp_realloc_zero
 #define mp_restore ucw_mp_restore
+#define mp_shrink ucw_mp_shrink
 #define mp_spread_internal ucw_mp_spread_internal
 #define mp_start ucw_mp_start
 #define mp_start_internal ucw_mp_start_internal
