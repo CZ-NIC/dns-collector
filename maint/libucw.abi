@@ -365,6 +365,7 @@ mp_delete
 mp_flush
 mp_stats
 mp_total_size
+mp_shrink
 mp_alloc_internal
 mp_alloc
 mp_alloc_noalign
@@ -497,8 +498,45 @@ str_hier_suffix
 # ucw/strtonum.h
 str_to_uintmax
 str_to_uint
-# FIXME
 str_to_uns
+# ucw/table.h
+table_init
+table_cleanup
+table_start
+table_end
+table_set_col_order
+table_set_col_order_by_name
+table_end_row
+table_col_printf
+table_append_printf
+table_get_col_idx
+table_get_col_list
+table_col_fbstart
+table_col_fbend
+table_set_formatter
+table_fmt_human_readable
+table_fmt_machine_readable
+table_set_option
+table_set_option_value
+table_set_gary_options
+table_col_int
+table_col_uint
+table_col_double
+table_col_str
+table_col_intmax
+table_col_uintmax
+table_col_u64
+table_col_bool
+table_col_bool_name
+table_col_bool_fmt
+table_append_int
+table_append_uint
+table_append_double
+table_append_str
+table_append_intmax
+table_append_uintmax
+table_append_u64
+table_append_bool
 # ucw/tbf.h
 tbf_init
 tbf_limit

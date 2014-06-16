@@ -11,10 +11,8 @@
 #define _STRTONUM_H
 
 #ifdef CONFIG_UCW_CLEAN_ABI
-#define str_to_uintmax ucw_str_to_uintmax
 #define str_to_uint ucw_str_to_uint
-
-// FIXME: For backwards compatibility, will be removed soon
+#define str_to_uintmax ucw_str_to_uintmax
 #define str_to_uns ucw_str_to_uns
 #endif
 
