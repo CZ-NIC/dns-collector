@@ -13,7 +13,7 @@
 enum column_type {
   COL_TYPE_STR,
   COL_TYPE_INT,
-  COL_TYPE_INT64,
+  COL_TYPE_S64,
   COL_TYPE_INTMAX,
   COL_TYPE_UINT,
   COL_TYPE_U64,
@@ -39,7 +39,7 @@ enum column_type {
 
 #define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_STR }
 #define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = "%d", .type = COL_TYPE_INT }
-#define TBL_COL_INT64(_name, _width)          { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_INT64 }
+#define TBL_COL_S64(_name, _width)            { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_S64 }
 #define TBL_COL_UINT(_name, _width)           { .name = _name, .width = _width, .fmt = "%u", .type = COL_TYPE_UINT }
 #define TBL_COL_U64(_name, _width)            { .name = _name, .width = _width, .fmt = "%llu", .type = COL_TYPE_U64 }
 #define TBL_COL_INTMAX(_name, _width)         { .name = _name, .width = _width, .fmt = "%jd", .type = COL_TYPE_INTMAX }
@@ -51,7 +51,7 @@ enum column_type {
 
 #define TBL_COL_STR_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_STR }
 #define TBL_COL_INT_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INT }
-#define TBL_COL_INT64_FMT(_name, _width, _fmt)          { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INT64 }
+#define TBL_COL_S64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_S64 }
 #define TBL_COL_UINT_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT }
 #define TBL_COL_U64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_U64 }
 #define TBL_COL_INTMAX_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INTMAX }
@@ -299,6 +299,7 @@ TABLE_COL_PROTO(double, double);
 TABLE_COL_PROTO(str, const char *);
 TABLE_COL_PROTO(intmax, intmax_t);
 TABLE_COL_PROTO(uintmax, uintmax_t);
+TABLE_COL_PROTO(s64, s64);
 TABLE_COL_PROTO(u64, u64);
 
 void table_col_bool(struct table *tbl, int col, uint val);
@@ -313,6 +314,7 @@ TABLE_APPEND_PROTO(double, double);
 TABLE_APPEND_PROTO(str, const char *);
 TABLE_APPEND_PROTO(intmax, intmax_t);
 TABLE_APPEND_PROTO(uintmax, uintmax_t);
+TABLE_APPEND_PROTO(s64, s64);
 TABLE_APPEND_PROTO(u64, u64);
 void table_append_bool(struct table *tbl, int val);
 #undef TABLE_APPEND_PROTO
