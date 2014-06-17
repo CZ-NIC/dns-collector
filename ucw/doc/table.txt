@@ -1,0 +1,83 @@
+Tableprinter
+============
+
+The table.h provides table printing facility. We need to print table
+with arbitrary column types (e.g. int, uint, u64, etc.). The table
+columns have names and the order of the columns is configurable. The
+table checks that the user writes correct type into a cell of the
+table. Additionally, the table allows to print string to an arbitrary
+cell (in order to make the table slightly more flexible).
+
+We should be able to print the table in various formats. Currently
+there is a human readable format
+
+We demonstrate the table on a table that contains music recordings:
+
+The following enum defines the column indices (the enum is indexed
+starting from 0):
+
+// definition of columns
+enum table_columns {
+   TBL_REC_ID,
+   TBL_REC_ALBUM_NAME,
+   TBL_REC_ARTIST,
+   TBL_REC_YEAR
+};
+
+The following structure contains definition of the table. The table
+columns are defined using the TBL_COL_xxx and TBL_COL_xxx_FMT
+macros. The TBL_COL_xxx macro has two arguments: (1) column name; (2)
+width of the table column. The TBL_COL_xxx_FMT has an additional
+format argument. There exists flags that causes the column to be
+left-aligned (see TBL_REC_ALBUM_NAME for a reference). An example of
+the table follows:
+
+struct table recording_table = {
+  TBL_COLUMNS {
+     [TBL_REC_ID] = TBL_COL_UINT("id", 16),
+     [TBL_REC_ALBUM_NAME] = TBL_COL_STR_FMT("album-name", 20 | CELL_ALIGN_LEFT, "%s"),
+     [TBL_REC_ARTIST] = TBL_COL_STR("artist", 20),
+     [TBL_REC_YEAR] = TBL_COL_UINT("year", 10),
+     TBL_COL_END
+  }
+};
+
+The table struct can be reused for printing of multiple tables.  The
+usage of the table is used as follows. After the table init is called:
+
+table_init(&recording_table);
+
+the table is initialized and ready to use. To start printing of the
+table, the user has to initialize the fastbuf (which is used for
+output) and call table_start:
+
+struct fastbuf *out = bfdopen_shared(1, 4096);
+
+table_start(&recording_table, out);
+
+after the table_start is called, we can start filling the rows. Each
+row is ended by table_end_row:
+
+table_col_uint(&recording_table, TBL_REC_ID, 0);
+table_col_str(&recording_table, TBL_REC_ALBUM_NAME, "The Wall");
+table_col_str(&recording_table, TBL_REC_ARTIST, "Pink Floyd");
+table_col_uint(&recording_table, TBL_REC_YEAR, 1979);
+table_end_row(&recording_table);
+
+table_col_uint(&recording_table, TBL_REC_ID, 1);
+table_col_str(&recording_table, TBL_REC_ALBUM_NAME, "Rio Grande Mud");
+table_col_str(&recording_table, TBL_REC_ARTIST, "ZZ Top");
+table_col_uint(&recording_table, TBL_REC_YEAR, 1972);
+table_end_row(&recording_table);
+
+Printing of the whole table is endded by calling of the table_end():
+
+table_end(&recording_table);
+
+
+To reuse the recording_table, we just call table_start followed by
+table_end once again.
+
+At the end of the lifetime of the struct recording_table we call:
+table_cleanup(&recording_table);
+
