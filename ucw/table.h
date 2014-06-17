@@ -32,6 +32,7 @@
 #define table_col_printf ucw_table_col_printf
 #define table_col_str ucw_table_col_str
 #define table_col_u64 ucw_table_col_u64
+#define table_col_s64 ucw_table_col_s64
 #define table_col_uint ucw_table_col_uint
 #define table_col_uintmax ucw_table_col_uintmax
 #define table_end ucw_table_end
@@ -162,17 +163,7 @@ enum column_type {
  * It is also possible to print string to an arbitrary cell.
  *
  * Features:
- * * user supplied callback functions can be used for modifying the output format.
- *
- * TODO part/Planned features:
- * * computing statistics of columns via the table_start_callback/table_end_callback.
- * * unsupported: (dynamic) alignment of cells which is computed in table_end
- *
- * TODO: table_set_col_fmt: this functin takes the format string and the value. But I'm not able to
- * test whether the format string and the type match !!!
- *
- * TODO: how to print column which is aligned to the left flag for alignment: 1) left; 2) right;
- *       3) decimal point alignment;
+ * - user supplied callback functions can be used for modifying the output format.
  ***/
 
 struct table;
