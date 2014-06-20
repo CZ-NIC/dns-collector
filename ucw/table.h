@@ -165,6 +165,15 @@ enum column_type {
  *
  * Features:
  * - user supplied callback functions can be used for modifying the output format.
+ *
+ * Command-line options (provided through table_set_option and friends):
+ *   key      value                       explanation
+ *  header    [0|1]                       0=do not print the header
+ *  cols      <col-name>[,<col-name>]*    list of column names delimited by comma ','
+ *            '*'                         or star '*' meaning all columns
+ *   fmt      [human|machine|blockline]   output format
+ * col-delim  <string>                    string used as a column delimiter
+ *
  ***/
 
 struct table;
