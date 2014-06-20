@@ -64,6 +64,21 @@ trueAHOJsdsdf,aaaaaAHOJ1.50
 falseAHOJtest,bbbbbAHOJ1.50
 EOF
 
+Run: ../obj/ucw/table-test -T 'cols:*' -T fmt:blockline
+Out <<EOF
+col0_str: sdsdf,aaaaa
+col1_int: 10000
+col2_uint: XXX-22222
+col3_bool: true
+col4_double: 1.50
+
+col0_str: test,bbbbb
+col1_int: -100
+col2_uint: 100
+col3_bool: false
+col4_double: 1.50
+
+EOF
 
 Run: ../obj/ucw/table-test -n
 Out <<EOF

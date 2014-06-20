@@ -133,6 +133,14 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
  **/
 const char * table_set_col_order_by_name(struct table *tbl, const char *col_order_str)
 {
+  if(col_order_str[0] == '*') {
+    tbl->column_order = mp_alloc(tbl->pool, sizeof(int) * tbl->column_count);
+    tbl->cols_to_output = tbl->column_count;
+    for(uint i = 0; i < tbl->cols_to_output; i++) tbl->column_order[i] = i;
+
+    return NULL;
+  }
+
   if(!col_order_str[0]) {
     tbl->column_order = mp_alloc(tbl->pool, 0);
     tbl->cols_to_output = 0;
@@ -360,6 +368,7 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
     } else if(strcmp(key, "fmt") == 0) {
       if(strcmp(value, "human") == 0) table_set_formatter(tbl, &table_fmt_human_readable);
       else if(strcmp(value, "machine") == 0) table_set_formatter(tbl, &table_fmt_machine_readable);
+      else if(strcmp(value, "blockline") == 0) table_set_formatter(tbl, &table_fmt_blockline);
       else {
         return "Tableprinter: invalid argument to output-type option.";
       }
@@ -494,6 +503,36 @@ struct table_formatter table_fmt_machine_readable = {
   .row_output = table_row_machine_readable,
   .table_start = table_start_machine_readable,
 };
+
+
+/*** Blockline formatter ***/
+
+static void table_row_blockline_output(struct table *tbl)
+{
+  for(uint i = 0; i < tbl->cols_to_output; i++) {
+    int col_idx = tbl->column_order[i];
+    bprintf(tbl->out, "%s: %s\n", tbl->columns[col_idx].name, tbl->col_str_ptrs[col_idx]);
+  }
+  bputc(tbl->out, '\n');
+}
+
+static void table_start_blockline(struct table *tbl)
+{
+  if(tbl->col_delimiter == NULL) {
+    tbl->col_delimiter = " ";
+  }
+
+  if(tbl->append_delimiter == NULL) {
+    tbl->append_delimiter = ",";
+  }
+}
+
+struct table_formatter table_fmt_blockline = {
+  .row_output = table_row_blockline_output,
+  .table_start = table_start_blockline
+};
+
+
 
 /*** Tests ***/
 

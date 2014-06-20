@@ -108,6 +108,7 @@ enum column_type {
 #define TBL_APPEND_DELIMITER(_delimiter_) .append_delimiter = _delimiter_
 
 #define TBL_OUTPUT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
+#define TBL_OUTPUT_BLOCKLINE          .formatter = &table_fmt_blockline
 #define TBL_OUTPUT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
 
 /***
@@ -298,6 +299,7 @@ struct table_formatter {
 // Standard formatters
 extern struct table_formatter table_fmt_human_readable;
 extern struct table_formatter table_fmt_machine_readable;
+extern struct table_formatter table_fmt_blockline;
 
 /**
  * Process the table one option and sets the values in @tbl according to the command-line parameters.
