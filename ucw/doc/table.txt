@@ -24,7 +24,6 @@ Let us construct a simple table of music recordings:
 First, we define an enum with column indices (the values are automatically
 numbered starting from 0):
 
-  // Definition of columns
   enum table_columns {
      TBL_REC_ID,
      TBL_REC_ALBUM_NAME,
@@ -33,9 +32,9 @@ numbered starting from 0):
   };
 
 Then we create a structure with the definition of our table.
-The table columns are defined using the `TBL_COL_xxx` and `TBL_COL_xxx_FMT`
+The table columns are defined using the `TBL_COL_`'type' and `TBL_COL_`'type'`_FMT`
 macros. Each macro gets the name of the column and its default width
-in character. The `_FMT` version has an additional argument: the format
+in characters. The `_FMT` version adds an explicit format
 string for `printf` used for this column. Moreover, various flags can
 be OR-ed to the width of the column, for example `CELL_ALIGN_LEFT` prescribes
 that the cell should be aligned to the left.
@@ -50,19 +49,19 @@ that the cell should be aligned to the left.
     }
   };
 
-Before you use the table definition, you need to initialize it:
+Each table definition has to be initialized before use by @table_init():
 
   table_init(&recording_table);
 
-With a single definition, you can print multiple tables. At the start
-of each table, you should obtain a <<fastbuf:,fastbuf>> where the output
-should be sent, store it in the table structure and call table_start():
+Once it is initialized, we can use it for printing multiple tables.
+At the start of each table, we should obtain a <<fastbuf:,fastbuf>> where the output
+should be sent, store it in the table structure and call @table_start():
 
   struct fastbuf *out = bfdopen_shared(1, 4096);
   table_start(&recording_table, out);
 
-Then you can fill the rows one after another. Each row is ended by
-table_end_row():
+Then we can fill the rows one after another. Each row is ended by
+@table_end_row():
 
   table_col_uint(&recording_table, TBL_REC_ID, 0);
   table_col_str(&recording_table, TBL_REC_ALBUM_NAME, "The Wall");
@@ -76,12 +75,12 @@ table_end_row():
   table_col_uint(&recording_table, TBL_REC_YEAR, 1972);
   table_end_row(&recording_table);
 
-Finally, you should close the table by calling table_end():
+Finally, we should close the table by calling @table_end():
 
   table_end(&recording_table);
 
 At this moment, the table structure is ready to be used again. When
-you do not need it any longer, you can dispose of it by table_cleanup():
+you do not need it any longer, you can dispose of it by @table_cleanup():
 
   table_cleanup(&recording_table);
 
