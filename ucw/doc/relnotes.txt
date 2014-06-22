@@ -66,7 +66,7 @@ Cleanups
 * All helper utilities are now installed with names starting with `ucw-` to
   prevent collisions.
 * The auxiliary libraries have been renamed to `libucw-charset`, `libucw-images`,
-  `libucw-xml`.
+  `libucw-xml`. The clean ABI promise does not extend to them yet.
 * The alias `uns` for `unsigned int` has been replaced by a more common `uint`.
   The old name is still maintained for backward compatibility.
 * Several functions now accept `size_t` instead of `unsigned int` for size arguments.
