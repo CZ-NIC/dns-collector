@@ -311,7 +311,7 @@ void table_append_printf(struct table *tbl, const char *fmt, ...)
   va_end(args);
 }
 
-void table_clean_row(struct table *tbl)
+void table_reset_row(struct table *tbl)
 {
   memset(tbl->col_str_ptrs, 0, sizeof(char *) * tbl->column_count);
   mp_restore(tbl->pool, &tbl->pool_state);
@@ -324,7 +324,7 @@ void table_end_row(struct table *tbl)
   ASSERT(tbl->formatter->row_output);
   if(tbl->row_printing_started == 0) return;
   tbl->formatter->row_output(tbl);
-  table_clean_row(tbl);
+  table_reset_row(tbl);
 }
 
 /* Construction of a cell using a fastbuf */

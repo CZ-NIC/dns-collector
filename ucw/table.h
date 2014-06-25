@@ -295,9 +295,9 @@ void table_col_fbend(struct table *tbl);
 void table_end_row(struct table *tbl);
 
 /**
- * Cleans current row, When called.
+ * Resets data in current row.
  **/
-void table_clean_row(struct table *tbl);
+void table_reset_row(struct table *tbl);
 
 /***
  * Configuration functions
