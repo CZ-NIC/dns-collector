@@ -52,6 +52,9 @@ static inline const char *str_to_##suffix(type *num, const char *str, const char
 STN_DECLARE_CONVERTOR(uint, uint);
 STN_SIGNED_CONVERTOR(int, int, uint)
 
+STN_DECLARE_CONVERTOR(u64, u64);
+STN_SIGNED_CONVERTOR(s64, s64, u64)
+
 STN_DECLARE_CONVERTOR(uintmax_t, uintmax);
 STN_SIGNED_CONVERTOR(intmax_t, intmax, uintmax)
 
