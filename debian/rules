@@ -30,17 +30,25 @@ install: build
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw$(UCW_ABI_SUFFIX) install-libucw-lib
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-dev install-libucw-api
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-utils install-ucw-shell install-ucw-utils
+ifdef CONFIG_DOC
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-doc install-libucw-docs install-libucw-config
 	install -d -m 755 $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples
 	cp -r examples/external $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples/program
+endif
+ifdef CONFIG_CHARSET
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-charset$(UCW_ABI_SUFFIX) install-libucw-charset-lib
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-charset-dev install-libucw-charset-api
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-charset-utils install-libucw-charset-utils
+endif
+ifdef CONFIG_XML
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-xml$(UCW_ABI_SUFFIX) install-libucw-xml-lib
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-xml-dev install-libucw-xml-api
+endif
+ifdef CONFIG_IMAGES
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-images$(UCW_ABI_SUFFIX) install-libucw-images-lib
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-images-dev install-libucw-images-api
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-images-utils install-libucw-images-utils
+endif
 
 binary-indep: build install
 

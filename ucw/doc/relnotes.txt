@@ -1,22 +1,11 @@
 Release notes
 =============
 
-6.0 (2014-01-28)
+6.0 (2014-06-20)
 ----------------
 
-* Libucw finally has a clean ABI, which does not pollute namespace, risking
-  collisions with other libraries. However, we did not want to abandon our
-  nicely and simply named functions, so the header files define macros,
-  which translate names of all externally visible symbols to start with `ucw_`.
-  If you don't like this, configure libucw with `CONFIG_UCW_CLEAN_ABI` turned off.
-* All helper utilities are now installed with names starting with `ucw-` to
-  prevent collisions.
-* The auxiliary libraries have been renamed to `libucw-charset`, `libucw-images`,
-  `libucw-xml`.
-* A <<opt:,parser of command-line options>> has been added, similar in spirit to
-  our <<conf:,configuration file parser>>. The <<conf:getopt_h,getopt>> module
-  has been obsoleted
-* `<stdbool.h>` is automatically included by `<ucw/lib.h>`.
+Incompatible changes
+~~~~~~~~~~~~~~~~~~~~
 * *Incompatible:* It turned out that almost all users of the <<gary:,growing array>>
   module push/pop individual elements. Therefore, we have removed the second
   argument (item count) of `GARY_PUSH` and `GARY_POP`. If you want to push/pop
@@ -28,9 +17,6 @@ Release notes
   operation was renamed to `HEAP_DELETE_MIN`. New operations `HEAP_REPLACE` and
   `HEAP_REPLACE_MIN` have been added. If you need to track positions of elements
   in the heap, please check the notes at individual functions.
-* <<alloc:,Generic allocators>> have been introduced, providing an abstract
-  way of memory allocation. <<gary:,Growing arrays>> are now based on such
-  allocators, which allows for example growing arrays in memory pools.
 * The <<conf:,configuration file parser>> has been improved:
 ** Multiple instances of the configuration parser are supported.
 ** *Incompatible:* As there may be more instances, we can no longer use
@@ -46,6 +32,12 @@ Release notes
    terms of our generic <<gary:,growing arrays>>. This makes them easier to
    use and most of the interface has been preserved. The only exception is
    static allocation via the DARY_ALLOC() macro, which is no longer available.
+* *Incompatible:* The `UCW::CGI` Perl module has its custom error handlers
+  (which override default Perl error handlers) split off to a separate module
+  `UCW::CGI::ErrorHandler`.
+
+New modules
+~~~~~~~~~~~
 * <<daemon:,Daemon helpers>> have been added including a new `daemon-control`
   utility. The old `daemon-helper` utility has been obsoleted and it is not
   compiled by default.
@@ -53,11 +45,35 @@ Release notes
   have been added.
 * The fastbuf I/O layer received a new back-end <<fastbuf:fbmulti,fb_multi>>,
   which concatenates several fastbuf streams to form a single virtual stream.
-* *Incompatible:* The `UCW::CGI` Perl module has its custom error handlers
-  (which override default Perl error handlers) split off to a separate module
-  `UCW::CGI::ErrorHandler`.
 * Added <<varint:,varint>> module for efficient UTF-8-like encoding of 64-bit
   integers to byte sequences.
+* Added <<table:,table printer>> module for configurable formatting of
+  2-dimensional tables in both user-friendly and machine-friendly ways.
+* A <<opt:,parser of command-line options>> has been added, similar in spirit to
+  our <<conf:,configuration file parser>>. The <<conf:getopt_h,getopt>> module
+  has been obsoleted
+* <<alloc:,Generic allocators>> have been introduced, providing an abstract
+  way of memory allocation. <<gary:,Growing arrays>> are now based on such
+  allocators, which allows for example growing arrays in memory pools.
+
+Cleanups
+~~~~~~~~
+* Libucw finally has a clean ABI, which does not pollute namespace, risking
+  collisions with other libraries. However, we did not want to abandon our
+  nicely and simply named functions, so the header files define macros,
+  which translate names of all externally visible symbols to start with `ucw_`.
+  If you don't like this, configure libucw with `CONFIG_UCW_CLEAN_ABI` turned off.
+* All helper utilities are now installed with names starting with `ucw-` to
+  prevent collisions.
+* The auxiliary libraries have been renamed to `libucw-charset`, `libucw-images`,
+  `libucw-xml`. The clean ABI promise does not extend to them yet.
+* The alias `uns` for `unsigned int` has been replaced by a more common `uint`.
+  The old name is still maintained for backward compatibility.
+* Several functions now accept `size_t` instead of `unsigned int` for size arguments.
+
+Minor changes
+~~~~~~~~~~~~~
+* `<stdbool.h>` is automatically included by `<ucw/lib.h>`.
 
 5.0 (2012-02-21)
 ----------------

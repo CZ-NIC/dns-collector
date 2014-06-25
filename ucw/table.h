@@ -25,18 +25,35 @@
 #define table_col_bool_fmt ucw_table_col_bool_fmt
 #define table_col_bool_name ucw_table_col_bool_name
 #define table_col_double ucw_table_col_double
+#define table_col_double_fmt ucw_table_col_double_fmt
+#define table_col_double_name ucw_table_col_double_name
 #define table_col_fbend ucw_table_col_fbend
 #define table_col_fbstart ucw_table_col_fbstart
 #define table_col_int ucw_table_col_int
+#define table_col_int_fmt ucw_table_col_int_fmt
+#define table_col_int_name ucw_table_col_int_name
 #define table_col_intmax ucw_table_col_intmax
+#define table_col_intmax_fmt ucw_table_col_intmax_fmt
+#define table_col_intmax_name ucw_table_col_intmax_name
 #define table_col_printf ucw_table_col_printf
-#define table_col_str ucw_table_col_str
-#define table_col_u64 ucw_table_col_u64
 #define table_col_s64 ucw_table_col_s64
+#define table_col_s64_fmt ucw_table_col_s64_fmt
+#define table_col_s64_name ucw_table_col_s64_name
+#define table_col_str ucw_table_col_str
+#define table_col_str_fmt ucw_table_col_str_fmt
+#define table_col_str_name ucw_table_col_str_name
+#define table_col_u64 ucw_table_col_u64
+#define table_col_u64_fmt ucw_table_col_u64_fmt
+#define table_col_u64_name ucw_table_col_u64_name
 #define table_col_uint ucw_table_col_uint
+#define table_col_uint_fmt ucw_table_col_uint_fmt
+#define table_col_uint_name ucw_table_col_uint_name
 #define table_col_uintmax ucw_table_col_uintmax
+#define table_col_uintmax_fmt ucw_table_col_uintmax_fmt
+#define table_col_uintmax_name ucw_table_col_uintmax_name
 #define table_end ucw_table_end
 #define table_end_row ucw_table_end_row
+#define table_fmt_blockline ucw_table_fmt_blockline
 #define table_fmt_human_readable ucw_table_fmt_human_readable
 #define table_fmt_machine_readable ucw_table_fmt_machine_readable
 #define table_get_col_idx ucw_table_get_col_idx
@@ -51,32 +68,93 @@
 #define table_start ucw_table_start
 #endif
 
+/***
+ * Table definitions
+ * -----------------
+ ***/
+
+/** Types of columns. These are seldom used explicitly, using a column definition macro is preferred. **/
 enum column_type {
-  COL_TYPE_STR,
-  COL_TYPE_INT,
-  COL_TYPE_S64,
-  COL_TYPE_INTMAX,
-  COL_TYPE_UINT,
-  COL_TYPE_U64,
-  COL_TYPE_UINTMAX,
-  COL_TYPE_BOOL,
-  COL_TYPE_DOUBLE,
-  COL_TYPE_ANY,
+  COL_TYPE_STR,		// String
+  COL_TYPE_INT,		// int
+  COL_TYPE_S64,		// Signed 64-bit integer
+  COL_TYPE_INTMAX,	// intmax_t
+  COL_TYPE_UINT,	// unsigned int
+  COL_TYPE_U64,		// Unsigned 64-bit integer
+  COL_TYPE_UINTMAX,	// uintmax_t
+  COL_TYPE_BOOL,	// bool
+  COL_TYPE_DOUBLE,	// double
+  COL_TYPE_ANY,		// Any type
   COL_TYPE_LAST
 };
 
-#define CELL_ALIGN_LEFT     (1<<(sizeof(enum column_type)*8 - 1))
-// FIXME: an example of another flag, not implemented now
-#define CELL_ALIGN_CENTER   (1<<(sizeof(enum column_type)*8 - 2))
-#define CELL_ALIGN_FLOAT    (1<<(sizeof(enum column_type)*8 - 3))
+/** Justify cell contents to the left. **/
+#define CELL_ALIGN_LEFT     (1U << 31)
 
-#define CELL_TRUNC_RIGHT    (1<<(sizeof(enum column_type)*8 - 4))
+// CELL_FLAG_MASK has 1's in bits used for column flags,
+// CELL_WIDTH_MASK has 1's in bits used for column width.
+#define CELL_FLAG_MASK	(CELL_ALIGN_LEFT)
+#define CELL_WIDTH_MASK	(~CELL_FLAG_MASK)
 
-// CELL_ALIGN_MASK is a mask which has 1's on positions used by some alignment mask.
-// that is: col_width & CELL_ALIGN_MASK  gives column width (in characters).
-// the top bit is reserved for left alignment and is not demasked by CELL_ALIGN_MASK.
-// the reason is that all printf and friends are using negative number for left alignment.
-#define CELL_ALIGN_MASK     (~(CELL_ALIGN_LEFT | CELL_ALIGN_FLOAT | CELL_ALIGN_CENTER))
+/**
+ * Definition of a single table column.
+ * Usually, this is generated using the `TABLE_COL_`'type' macros.
+ * Fields marked with `[*]` are user-accessible.
+ **/
+struct table_column {
+  const char *name;		// [*] Name of the column displayed in table header
+  int width;			// [*] Width of the column (in characters) OR'ed with column flags
+  const char *fmt;		// [*] Default format of each cell in the column
+  enum column_type type;	// [*] Type of the cells in the column
+};
+
+/**
+ * Definition of a table. Contains column definitions, per-table settings
+ * and internal data. Please use only fields marked with `[*]`.
+ **/
+struct table {
+  struct table_column *columns;		// [*] Definition of columns
+  int column_count;			// [*] Number of columns (calculated by table_init())
+  struct mempool *pool;			// Memory pool used for storing table data. Contains global state
+					// and data of the current row.
+  struct mempool_state pool_state;	// State of the pool after the table is initialized, i.e., before
+					// per-row data have been allocated.
+
+  char **col_str_ptrs;			// Values of cells in the current row (allocated from the pool)
+
+  uint *column_order;			// [*] Order of the columns in the print-out of the table
+  uint cols_to_output;			// [*] Number of columns that are printed
+  const char *col_delimiter;		// [*] Delimiter that is placed between columns
+  const char *append_delimiter;		// [*] Separator of multiple values in a single cell (see table_append_...())
+  uint print_header;			// [*] 0 indicates that table header should not be printed
+
+  struct fastbuf *out;			// [*] Fastbuffer to which the table is printed
+  int last_printed_col;			// Index of the last column which was set. -1 indicates start of row.
+					// Used for example for appending to the current column.
+  int row_printing_started;		// Indicates that a row has been started. Duplicates last_printed_col, but harmlessly.
+  struct fbpool fb_col_out;		// Per-cell fastbuf, see table_col_fbstart()
+  int col_out;				// Index of the column that is currently printed using fb_col_out
+
+  // Back-end used for table formatting and its private data
+  struct table_formatter *formatter;
+  void *data;
+};
+
+/****
+ * In most cases, table descriptions are constructed using the following macros.
+ * See the examples above for more details.
+ *
+ *  * `TBL_COLUMNS` indicates the start of definition of columns
+ *  * `TBL_COL_`'type'`(name, width)` defines a column of a given type
+ *  * `TBL_COL_`'type'`_FMT(name, width, fmt)` defines a column with a custom format string
+ *  * `TBL_COL_END` ends the column definitions
+ *  * `TBL_COL_ORDER` specifies custom ordering of columns in the output
+ *  * `TBL_COL_DELIMITER` and `TBL_APPEND_DELIMITER` override default delimiters
+ *  * `TBL_OUTPUT_HUMAN_READABLE` requests human-readable formatting (this is the default)
+ *  * `TBL_OUTPUT_MACHINE_READABLE` requests machine-readable TSV output
+ *  * `TBL_OUTPUT_BLOCKLINE` requests block formatting (each cell printed a pair of a key and value on its own line)
+ *
+ ***/
 
 #define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_STR }
 #define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = "%d", .type = COL_TYPE_INT }
@@ -111,226 +189,45 @@ enum column_type {
 #define TBL_OUTPUT_BLOCKLINE          .formatter = &table_fmt_blockline
 #define TBL_OUTPUT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
 
-/***
- * [[ Usage ]]
- * The table works as follows:
- * The table can be used after table_init is called. Then at the beginning of each printing, the
- * table_start function must be called. After printing, the table_end must be called. The
- * table_start MUST be paired with table_end. Inbetween table_start/table_end the user can set the
- * cells of one row and one row is finished and printed using table_end_row. The pairs
- * table_start/table_end can be used multiple-times for one table. The table is deallocated using
- * table_cleanup. After table_cleanup is called it is not possible to further use the struct table.
- * The struct table must be reinitialized.
- *
- * Default behaviour of the table_col_* is replacement of already set data. To append, the user
- * must use table_append_*
- *
- * To summarize:
- * 1) @table_init is called;
- * 2) @table_start is called following by table_col_xxx functions and @table_end.
- *    table_start/table_end forms 1-level parenthesis structure. Some of the table
- *    settings can be changed only between table_init and @table_start or after table_end
- *    is called (but before next table_start.
- * 3) the table is deallocated using @table_cleanup. After the cleanup
- *    is done, the struct table is unusable and must be initialized.
- *
- *
- * An example of the procedure is following sequence of calls:
- *  table_init
- *
- *  table_start
- *  table_end
- *  table_start
- *  table_end
- *
- *  table_cleanup
- *
- * The tableprinter supports user-specified callback for each row and table-print (i.e., a callback
- * that is called in table_end).
- *
- * The table is initialized by defining a table struct using the following macros:
- *  o TBL_COLUMNS    indicates start of definition of columns
- *  o TBL_COL_XXX    macros specify the column types with some default formatting the column is specified using a column
- *                   name (which should be C identifier) and a prefix.  the column name is the a string with the column
- *                   name. The prefix is used for discriminating between columns from different tables. The column index
- *                   should be taken from an enum. The enum identifier is prefix concatenated with the column name identifier.
- *  o TBL_COL_XXX_F  macros specify column types with user supplied formatting
- *  o TBL_COL_END    indicates end of column definitions
- *  o TBL_COL_ORDER  specify the column order
- *  o TBL_COL_DELIMITER specify the in-between cell delimiter
- *
- * The table cells have strict type control, with the exception of type TBL_COL_ANY. In the case of
- * TBL_COL_ANY, the type is not tested and an arbitrary value can be printed into the cell.
- * It is also possible to print string to an arbitrary cell.
- *
- * Features:
- * - user supplied callback functions can be used for modifying the output format.
- *
- * Command-line options (provided through table_set_option and friends):
- *   key      value                       explanation
- *  header    [0|1]                       0=do not print the header
- *  cols      <col-name>[,<col-name>]*    list of column names delimited by comma ','
- *            '*'                         or star '*' meaning all columns
- *   fmt      [human|machine|blockline]   output format
- * col-delim  <string>                    string used as a column delimiter
- *
- ***/
-
-struct table;
-
-/** Specification of a single table column */
-struct table_column {
-  const char *name;		// [*] Name of the column displayed in table header
-  int width;			// [*] Width of the column (in characters). Negative number indicates alignment to left.
-				// FIXME: Request left alignment by a flag.
-  const char *fmt;		// [*] Default format of each cell in the column
-  enum column_type type;	// Type of the cells in the column
-};
-
-/** The definition of a table. Contains column definitions plus internal data. */
-struct table {
-  struct table_column *columns;		// [*] Definition of columns
-  int column_count;			// [*] Number of columns (calculated by table_init())
-  struct mempool *pool;			// Memory pool used for storing table data. Contains global state
-					// and data of the current row.
-  struct mempool_state pool_state;	// State of the pool after the table is initialized, i.e., before
-					// per-row data have been allocated.
-
-  char **col_str_ptrs;			// Values of cells in the current row (allocated from the pool)
-
-  uint *column_order;			// [*] Order of the columns in the print-out of the table
-  uint cols_to_output;			// [*] Number of columns that are printed
-  const char *col_delimiter;		// [*] Delimiter that is placed between columns
-  const char *append_delimiter;		// [*] Separator of multiple values in a single cell (see table_append_...())
-  uint print_header;			// [*] 0 indicates that table header should not be printed
-
-  struct fastbuf *out;			// [*] Fastbuffer to which the table is printed
-  int last_printed_col;			// Index of the last column which was set. -1 indicates start of row.
-					// Used for example for appending to the current column.
-  int row_printing_started;		// Indicates that a row has been started. Duplicates last_printed_col, but harmlessly.
-  struct fbpool fb_col_out;		// Per-cell fastbuf, see table_col_fbstart()
-  int col_out;				// Index of the column that is currently printed using fb_col_out
-
-  // Back-end used for table formatting and its private data
-  struct table_formatter *formatter;
-  void *data;
-};
-
-
 /**
- * @table_init serves for initialization of the table. The @tbl parameter should have set the columns member of
- * the table structure.
+ * Initialize a table definition. The structure should already contain
+ * the definitions of columns.
  **/
 void table_init(struct table *tbl);
+
+/** Destroy a table definition, freeing all memory used by it. **/
 void table_cleanup(struct table *tbl);
 
 /**
- * table_start is called before the cells of the table are set. After the table_start is called, the
- * user can call the table_col_* or table_append_ functions, but cannot call the table_set_*
- * functions. The table_end_row function can be called after the table_start is called (but before
- * the table_end is called)
+ * Start printing of a table. This is a prerequisite to setting of column values.
+ * After @table_start() is called, it is no longer possible to change parameters
+ * of the table by `table_set_`'something' nor by direct access to the table structure.
  **/
 void table_start(struct table *tbl, struct fastbuf *out);
 
 /**
- * This function must be called after all the rows of the current table are printed. The table_set_*
- * functions can be called in between table_start and table_end calls.
+ * This function must be called after all the rows of the current table are printed,
+ * making the table structure ready for the next table. You can call `table_set_`'something'
+ * between @table_end() and @table_start().
  **/
 void table_end(struct table *tbl);
 
-/**
- * Sets the order in which the columns are printed. The @col_order parameter is used until the table_end or
- * table_cleanup is called. The table stores the pointer only and the memory pointed to by @col_order is
- * allocated and deallocated by the caller.
- **/
-void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
-
-/**
- * Sets the order in which the columns are printed. The specification is a string with comma-separated column
- * names. Returns NULL for success and an error message otherwise.
- **/
-const char *table_set_col_order_by_name(struct table *tbl, const char *col_order);
-
-/**
- * Called when all the cells have filled values. The function the prints a table row into the output stream.
- * The table row has newline at the end.
- **/
-void table_end_row(struct table *tbl);
-
-/**
- * Cleans current row, When called.
- **/
-void table_clean_row(struct table *tbl);
-
-/**
- * Prints a string that is printf-like formated into a particular column. This function does not check the
- * type of the column, i.e., it can be used to print double into an int column
- **/
-void table_col_printf(struct table *tbl, int col, const char *fmt, ...) FORMAT_CHECK(printf, 3, 4);
-
-/**
- * Appends a string that is printf-like formated to the last printed column. This function does not check the
- * type of the column, i.e., it can be used to print double into an int column.
- **/
-void table_append_printf(struct table *tbl, const char *fmt, ...) FORMAT_CHECK(printf, 2, 3);
-
-/**
- * Find the index of a column with name @col_name and returns it. Returns -1 if the column was not found.
- **/
-int table_get_col_idx(struct table *tbl, const char *col_name);
-
-/**
- * Returns comma-and-space-separated list of column names, allocated from table's internal
- * memory pool.
- **/
-const char *table_get_col_list(struct table *tbl);
-
-/**
- * Opens a fastbuf stream that can be used for creating a cell content. The @sz parameter is the initial size
- * allocated on the memory pool.
- **/
-struct fastbuf *table_col_fbstart(struct table *tbl, int col);
-
-/**
- * Closes the stream that is used for printing of the last column.
- **/
-void table_col_fbend(struct table *tbl);
-
-/**
- * Sets table formatter for @tbl.
- **/
-void table_set_formatter(struct table *tbl, struct table_formatter *fmt);
-
-/** Definition of a formatter back-end. **/
-struct table_formatter {
-  void (*row_output)(struct table *tbl);	// [*] Function that outputs one row
-  void (*table_start)(struct table *tbl);	// [*] table_start callback (optional)
-  void (*table_end)(struct table *tbl);		// [*] table_end callback (optional)
-  bool (*process_option)(struct table *tbl, const char *key, const char *value, const char **err);
-	// [*] Process table option and possibly return an error message (optional)
-};
-
-// Standard formatters
-extern struct table_formatter table_fmt_human_readable;
-extern struct table_formatter table_fmt_machine_readable;
-extern struct table_formatter table_fmt_blockline;
-
-/**
- * Process the table one option and sets the values in @tbl according to the command-line parameters.
- * The option has the following format: a) "<key>:<value>"; b) "<key>" (currently not used).
+/***
+ * Filling tables with data
+ * ------------------------
  *
- * Possible key-value pairs:
- * header:[0|1]                     - 1 indicates that the header should be printed, 0 otherwise
- * noheader                         - equivalent to header:0
- * cols:<string-with-col-names>     - comma-separated list of columns that will be printed (in the order specified on the cmd-line)
- * fmt:[human|machine|...]          - output type
- * col-delim:<char>                 - column delimiter
+ * For each column type, there are functions for filling of cells
+ * of the particular type:
  *
- * Returns NULL on success or an error string otherwise.
- **/
-const char *table_set_option(struct table *tbl, const char *opt);
-const char *table_set_option_value(struct table *tbl, const char *key, const char *value);
-const char *table_set_gary_options(struct table *tbl, char **gary_table_opts);
+ *   * `table_col_`'type'`(table, idx, value)` sets the cell in column `idx`
+ *     to the `value`
+ *   * `table_col_`'type'`_fmt(table, idx, fmt, ...)` does the same with
+ *     a custom printf-like format string
+ *   * `table_col_`'type'`_name(table, name, value)` refers to the column
+ *     by its name instead of its index.
+ *   * `table_append_`'type'`(table, value)` appends a value to the most
+ *     recently accessed cell.
+ ***/
 
 #define TABLE_COL_PROTO(_name_, _type_) void table_col_##_name_(struct table *tbl, int col, _type_ val);\
   void table_col_##_name_##_name(struct table *tbl, const char *col_name, _type_ val);\
@@ -365,5 +262,143 @@ TABLE_APPEND_PROTO(s64, s64);
 TABLE_APPEND_PROTO(u64, u64);
 void table_append_bool(struct table *tbl, int val);
 #undef TABLE_APPEND_PROTO
+
+/**
+ * Set a particular cell of the current row to a string formatted
+ * by sprintf(). This function can set a column of an arbitrary type.
+ **/
+void table_col_printf(struct table *tbl, int col, const char *fmt, ...) FORMAT_CHECK(printf, 3, 4);
+
+/**
+ * Append a string formatted by sprintf() to the most recently filled cell.
+ * This function can work with columns of an arbitrary type.
+ **/
+void table_append_printf(struct table *tbl, const char *fmt, ...) FORMAT_CHECK(printf, 2, 3);
+
+/**
+ * Alternatively, a string cell can be constructed as a stream.
+ * This function creates a fastbuf stream connected to the contents
+ * of the particular cell. Before you close the stream by @table_col_fbend(),
+ * no other operations with cells are allowed.
+ **/
+struct fastbuf *table_col_fbstart(struct table *tbl, int col);
+
+/**
+ * Close the stream that is used for printing of the current column.
+ **/
+void table_col_fbend(struct table *tbl);
+
+/**
+ * Called when all cells of the current row have their values filled in.
+ * It sends the completed row to the output stream.
+ **/
+void table_end_row(struct table *tbl);
+
+/**
+ * Cleans current row, When called.
+ **/
+void table_clean_row(struct table *tbl);
+
+/***
+ * Configuration functions
+ * -----------------------
+ ***/
+
+/**
+ * Find the index of a column with name @col_name. Returns -1 if there is no such column.
+ **/
+int table_get_col_idx(struct table *tbl, const char *col_name);
+
+/**
+ * Returns a comma-and-space-separated list of column names, allocated from table's internal
+ * memory pool.
+ **/
+const char *table_get_col_list(struct table *tbl);
+
+/**
+ * Sets the order in which the columns are printed. The @col_order parameter is used until @table_end() or
+ * @table_cleanup() is called. The table stores only the pointer and the memory pointed to by @col_order is
+ * allocated and deallocated by the caller.
+ **/
+void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
+
+/**
+ * Sets the order in which the columns are printed. The specification is a string with comma-separated column
+ * names. Returns NULL for success and an error message otherwise. The string is not referenced after
+ * this function returns.
+ **/
+const char *table_set_col_order_by_name(struct table *tbl, const char *col_order);
+
+/**
+ * Sets table formatter. See below for the list of formatters.
+ **/
+void table_set_formatter(struct table *tbl, struct table_formatter *fmt);
+
+/**
+ * Set a table option. All options have a key and a value. Currently,
+ * the following keys are defined (other keys can be accepted by formatters):
+ *
+ * [options="header"]
+ * |===================================================================================================
+ * | key	| value				| meaning
+ * | `header`	| 0 or 1			| set whether a table header should be printed
+ * | `noheader`	| 'none'			| equivalent to `header`=0
+ * | `cols`	| comma-separated column list	| set order of columns
+ * | `fmt`	| `human`/`machine`/`block`	| set table formatter to one of the built-in formatters
+ * | `col-delim`| string			| set column delimiter
+ * |===================================================================================================
+ **/
+const char *table_set_option_value(struct table *tbl, const char *key, const char *value);
+
+/**
+ * Sets a table option given as 'key'`:`'value' or 'key' (with no value).
+ **/
+const char *table_set_option(struct table *tbl, const char *opt);
+
+/**
+ * Sets several table option in 'key'`:`'value' form, stored in a growing array.
+ * This is frequently used for options given on the command line.
+ **/
+const char *table_set_gary_options(struct table *tbl, char **gary_table_opts);
+
+/***
+ * Formatters
+ * ----------
+ *
+ * Transformation of abstract cell data to the characters in the output stream
+ * is under control of a formatter (which serves as a back-end of the table printer).
+ * There are several built-in formatters, but you can define your own.
+ *
+ * A formatter is described by a structure, which contains pointers to several
+ * call-back functions, which are called by the table printer at specific occasions.
+ 
+ * The formatter can keep its internal state in the `data` field of `struct table`
+ * and allocate temporary data from the table's memory pool. Memory allocated in
+ * the `row_output` call-back is freed before the next row begins. Memory allocated
+ * between the beginning of `table_start` and the end of `table_end` is freed after
+ * `table_end`. Memory allocated by `process_option` when no table is started
+ * is kept until @table_cleanup().
+ ***/
+
+/** Definition of a formatter back-end. **/
+struct table_formatter {
+  void (*row_output)(struct table *tbl);	// [*] Function that outputs one row
+  void (*table_start)(struct table *tbl);	// [*] table_start callback (optional)
+  void (*table_end)(struct table *tbl);		// [*] table_end callback (optional)
+  bool (*process_option)(struct table *tbl, const char *key, const char *value, const char **err);
+	// [*] Process table option and possibly return an error message (optional)
+};
+
+/** Standard formatter for human-readable output. **/
+extern struct table_formatter table_fmt_human_readable;
+
+/** Standard formatter for machine-readable output (tab-separated values). **/
+extern struct table_formatter table_fmt_machine_readable;
+
+/**
+ * Standard formatter for block output. Each cell is output on its own line
+ * of the form `column_name: value`. Rows are separated by blank lines.
+ **/
+extern struct table_formatter table_fmt_blockline;
 
 #endif

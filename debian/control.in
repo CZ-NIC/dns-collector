@@ -22,12 +22,15 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW utilities
 
+#ifdef CONFIG_DOC
 Package: libucw-doc
 Section: doc
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW documentation
 
+#endif
+#ifdef CONFIG_CHARSET
 Package: libucw-charset@UCW_ABI_SUFFIX@
 Section: libs
 Architecture: any
@@ -46,6 +49,8 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW charset utilities
 
+#endif
+#ifdef CONFIG_XML
 Package: libucw-xml@UCW_ABI_SUFFIX@
 Section: libs
 Architecture: any
@@ -58,6 +63,8 @@ Architecture: any
 Depends: libucw-xml@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW XML parser development files
 
+#endif
+#ifdef CONFIG_IMAGES
 Package: libucw-images@UCW_ABI_SUFFIX@
 Section: libs
 Architecture: any
@@ -76,3 +83,4 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: LibUCW image utilities
 
+#endif

@@ -430,7 +430,7 @@ static void table_row_human_readable(struct table *tbl)
     if(i) {
       bputs(tbl->out, tbl->col_delimiter);
     }
-    int col_width = tbl->columns[col_idx].width & CELL_ALIGN_MASK;
+    int col_width = tbl->columns[col_idx].width & CELL_WIDTH_MASK;
     if(tbl->columns[col_idx].width & CELL_ALIGN_LEFT) col_width = -1 * col_width;
     bprintf(tbl->out, "%*s", col_width, tbl->col_str_ptrs[col_idx]);
   }
@@ -444,7 +444,7 @@ static void table_write_header(struct table *tbl)
     if(i) {
       bputs(tbl->out, tbl->col_delimiter);
     }
-    int col_width = tbl->columns[col_idx].width & CELL_ALIGN_MASK;
+    int col_width = tbl->columns[col_idx].width & CELL_WIDTH_MASK;
     if(tbl->columns[col_idx].width & CELL_ALIGN_LEFT) col_width = -1 * col_width;
     bprintf(tbl->out, "%*s", col_width, tbl->columns[col_idx].name);
   }

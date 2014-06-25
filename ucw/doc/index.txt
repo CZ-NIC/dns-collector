@@ -46,6 +46,7 @@ Modules
 - <<daemon:,Daemon helpers>>
 - <<signal:,Signal helpers>>
 - <<opt:,Command line parser>>
+- <<table:,Table printer>>
 
 Other features
 --------------
@@ -106,6 +107,7 @@ Several modules have been contributed by:
 
 - Daniel Fiala <mailto:danfiala\@ucw.cz[]> (strtonum)
 - Tomáš Gavenčiak <mailto:gavento\@ucw.cz[]> (logging system)
+- Robert Kessl <mailto:robert.kessl\@economia.cz[]> (table printer)
 - Jan Moskyto Matějka <mailto:mq\@ucw.cz[]> (option parser, fb-multi)
 - Tomáš Valla <mailto:tom\@ucw.cz[]> (varint)
 - Michal Vaner <mailto:vorner\@ucw.cz[]> (documentation system)

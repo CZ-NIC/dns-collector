@@ -1,83 +1,90 @@
-Tableprinter
-============
+Table printer
+=============
 
-The table.h provides table printing facility. We need to print table
-with arbitrary column types (e.g. int, uint, u64, etc.). The table
-columns have names and the order of the columns is configurable. The
-table checks that the user writes correct type into a cell of the
-table. Additionally, the table allows to print string to an arbitrary
-cell (in order to make the table slightly more flexible).
+The table printer module provides formatting of 2-dimensional tables
+in various ways.
 
-We should be able to print the table in various formats. Currently
-there is a human readable format
+Each table consists of a number of rows, which are processed one
+after another. All rows have the same number of columns. Internally,
+the columns have a fixed order, each column has its name and a data
+type (e.g., int, uint, u64, etc.). The table printer checks that
+each cell is filled by a value of the appropriate type, except that
+a string value is allowed in any cell (for example, this allows
+a numeric cell to be set to "--" or "unknown").
 
-We demonstrate the table on a table that contains music recordings:
+Once a table is defined, it can be printed using a variety of formatters
+(human-readable, tab-separated values, etc.). Also, a subset of columns
+can be selected and their order changed.
 
-The following enum defines the column indices (the enum is indexed
-starting from 0):
+Example
+-------
 
-// definition of columns
-enum table_columns {
-   TBL_REC_ID,
-   TBL_REC_ALBUM_NAME,
-   TBL_REC_ARTIST,
-   TBL_REC_YEAR
-};
+Let us construct a simple table of music recordings:
 
-The following structure contains definition of the table. The table
-columns are defined using the TBL_COL_xxx and TBL_COL_xxx_FMT
-macros. The TBL_COL_xxx macro has two arguments: (1) column name; (2)
-width of the table column. The TBL_COL_xxx_FMT has an additional
-format argument. There exists flags that causes the column to be
-left-aligned (see TBL_REC_ALBUM_NAME for a reference). An example of
-the table follows:
+First, we define an enum with column indices (the values are automatically
+numbered starting from 0):
 
-struct table recording_table = {
-  TBL_COLUMNS {
-     [TBL_REC_ID] = TBL_COL_UINT("id", 16),
-     [TBL_REC_ALBUM_NAME] = TBL_COL_STR_FMT("album-name", 20 | CELL_ALIGN_LEFT, "%s"),
-     [TBL_REC_ARTIST] = TBL_COL_STR("artist", 20),
-     [TBL_REC_YEAR] = TBL_COL_UINT("year", 10),
-     TBL_COL_END
-  }
-};
+  enum table_columns {
+     TBL_REC_ID,
+     TBL_REC_ALBUM_NAME,
+     TBL_REC_ARTIST,
+     TBL_REC_YEAR
+  };
 
-The table struct can be reused for printing of multiple tables.  The
-usage of the table is used as follows. After the table init is called:
+Then we create a structure with the definition of our table.
+The table columns are defined using the `TBL_COL_`'type' and `TBL_COL_`'type'`_FMT`
+macros. Each macro gets the name of the column and its default width
+in characters. The `_FMT` version adds an explicit format
+string for `printf` used for this column. Moreover, various flags can
+be OR-ed to the width of the column, for example `CELL_ALIGN_LEFT` prescribes
+that the cell should be aligned to the left.
 
-table_init(&recording_table);
+  struct table recording_table = {
+    TBL_COLUMNS {
+       [TBL_REC_ID] = TBL_COL_UINT("id", 16),
+       [TBL_REC_ALBUM_NAME] = TBL_COL_STR_FMT("album-name", 20 | CELL_ALIGN_LEFT, "%s"),
+       [TBL_REC_ARTIST] = TBL_COL_STR("artist", 20),
+       [TBL_REC_YEAR] = TBL_COL_UINT("year", 10),
+       TBL_COL_END
+    }
+  };
 
-the table is initialized and ready to use. To start printing of the
-table, the user has to initialize the fastbuf (which is used for
-output) and call table_start:
+Each table definition has to be initialized before use by @table_init():
 
-struct fastbuf *out = bfdopen_shared(1, 4096);
+  table_init(&recording_table);
 
-table_start(&recording_table, out);
+Once it is initialized, we can use it for printing multiple tables.
+At the start of each table, we should obtain a <<fastbuf:,fastbuf>> where the output
+should be sent, store it in the table structure and call @table_start():
 
-after the table_start is called, we can start filling the rows. Each
-row is ended by table_end_row:
+  struct fastbuf *out = bfdopen_shared(1, 4096);
+  table_start(&recording_table, out);
 
-table_col_uint(&recording_table, TBL_REC_ID, 0);
-table_col_str(&recording_table, TBL_REC_ALBUM_NAME, "The Wall");
-table_col_str(&recording_table, TBL_REC_ARTIST, "Pink Floyd");
-table_col_uint(&recording_table, TBL_REC_YEAR, 1979);
-table_end_row(&recording_table);
+Then we can fill the rows one after another. Each row is ended by
+@table_end_row():
 
-table_col_uint(&recording_table, TBL_REC_ID, 1);
-table_col_str(&recording_table, TBL_REC_ALBUM_NAME, "Rio Grande Mud");
-table_col_str(&recording_table, TBL_REC_ARTIST, "ZZ Top");
-table_col_uint(&recording_table, TBL_REC_YEAR, 1972);
-table_end_row(&recording_table);
+  table_col_uint(&recording_table, TBL_REC_ID, 0);
+  table_col_str(&recording_table, TBL_REC_ALBUM_NAME, "The Wall");
+  table_col_str(&recording_table, TBL_REC_ARTIST, "Pink Floyd");
+  table_col_uint(&recording_table, TBL_REC_YEAR, 1979);
+  table_end_row(&recording_table);
 
-Printing of the whole table is endded by calling of the table_end():
+  table_col_uint(&recording_table, TBL_REC_ID, 1);
+  table_col_str(&recording_table, TBL_REC_ALBUM_NAME, "Rio Grande Mud");
+  table_col_str(&recording_table, TBL_REC_ARTIST, "ZZ Top");
+  table_col_uint(&recording_table, TBL_REC_YEAR, 1972);
+  table_end_row(&recording_table);
 
-table_end(&recording_table);
+Finally, we should close the table by calling @table_end():
 
+  table_end(&recording_table);
 
-To reuse the recording_table, we just call table_start followed by
-table_end once again.
+At this moment, the table structure is ready to be used again. When
+you do not need it any longer, you can dispose of it by @table_cleanup():
 
-At the end of the lifetime of the struct recording_table we call:
-table_cleanup(&recording_table);
+  table_cleanup(&recording_table);
 
+ucw/table.h
+-----------
+
+!!ucw/table.h
