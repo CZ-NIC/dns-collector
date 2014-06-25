@@ -258,6 +258,11 @@ const char *table_set_col_order_by_name(struct table *tbl, const char *col_order
 void table_end_row(struct table *tbl);
 
 /**
+ * Cleans current row, When called.
+ **/
+void table_clean_row(struct table *tbl);
+
+/**
  * Prints a string that is printf-like formated into a particular column. This function does not check the
  * type of the column, i.e., it can be used to print double into an int column
  **/

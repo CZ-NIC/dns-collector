@@ -321,6 +321,14 @@ void table_end_row(struct table *tbl)
   tbl->row_printing_started = 0;
 }
 
+void table_clean_row(struct table *tbl)
+{
+  memset(tbl->col_str_ptrs, 0, sizeof(char *) * tbl->column_count);
+  mp_restore(tbl->pool, &tbl->pool_state);
+  tbl->last_printed_col = -1;
+  tbl->row_printing_started = 0;
+}
+
 /* Construction of a cell using a fastbuf */
 
 struct fastbuf *table_col_fbstart(struct table *tbl, int col)
