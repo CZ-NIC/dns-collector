@@ -205,8 +205,10 @@ void table_col_printf(struct table *tbl, int col, const char *fmt, ...)
 static const char *table_col_default_fmts[] = {
   [COL_TYPE_STR] = "%s",
   [COL_TYPE_INT] = "%d",
+  [COL_TYPE_S64] = "%lld",
   [COL_TYPE_INTMAX] = "%jd",
   [COL_TYPE_UINT] = "%u",
+  [COL_TYPE_U64] = "%llu",
   [COL_TYPE_UINTMAX] = "%ju",
   [COL_TYPE_BOOL] = "%d",
   [COL_TYPE_DOUBLE] = "%.2lf",
