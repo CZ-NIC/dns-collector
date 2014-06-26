@@ -325,7 +325,7 @@ void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
 /**
  * Returns 1 if col_idx will be printed, 0 otherwise.
  **/
-int table_col_is_printed(struct table *tbl, uint col_idx);
+bool table_col_is_printed(struct table *tbl, uint col_idx);
 
 /**
  * Sets the order in which the columns are printed. The specification is a string with comma-separated column

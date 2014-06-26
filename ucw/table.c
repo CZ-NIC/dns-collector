@@ -128,7 +128,7 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
 }
 
 
-int table_col_is_printed(struct table *tbl, uint col_idx)
+bool table_col_is_printed(struct table *tbl, uint col_idx)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
     if(tbl->column_order[i] == col_idx) return 1;
