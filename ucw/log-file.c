@@ -130,10 +130,10 @@ log_new_file(const char *path, uint flags)
   struct log_stream *ls = log_new_stream(sizeof(struct file_stream));
   struct file_stream *fs = (struct file_stream *) ls;
   fs->fd = -1;
+  fs->flags = FF_CLOSE_FD | flags;
   fs->orig_name = xstrdup(path);
   if (strchr(path, '%'))
-    fs->flags = FF_FORMAT_NAME;
-  fs->flags |= FF_CLOSE_FD | flags;
+    fs->flags |= FF_FORMAT_NAME;
   ls->msgfmt = LSFMT_DEFAULT;
   ls->handler = file_handler;
   ls->close = file_close;
