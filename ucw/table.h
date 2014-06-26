@@ -323,6 +323,11 @@ const char *table_get_col_list(struct table *tbl);
 void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
 
 /**
+ * Returns 1 if col_idx will be printed, 0 otherwise.
+ **/
+int table_col_is_printed(struct table *tbl, uint col_idx);
+
+/**
  * Sets the order in which the columns are printed. The specification is a string with comma-separated column
  * names. Returns NULL for success and an error message otherwise. The string is not referenced after
  * this function returns.
@@ -371,7 +376,7 @@ const char *table_set_gary_options(struct table *tbl, char **gary_table_opts);
  *
  * A formatter is described by a structure, which contains pointers to several
  * call-back functions, which are called by the table printer at specific occasions.
- 
+ *
  * The formatter can keep its internal state in the `data` field of `struct table`
  * and allocate temporary data from the table's memory pool. Memory allocated in
  * the `row_output` call-back is freed before the next row begins. Memory allocated

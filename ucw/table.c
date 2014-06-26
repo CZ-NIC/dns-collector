@@ -127,6 +127,16 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
   tbl->cols_to_output = cols_to_output;
 }
 
+
+int table_col_is_printed(struct table *tbl, uint col_idx)
+{
+  for(uint i = 0; i < tbl->cols_to_output; i++) {
+    if(tbl->column_order[i] == col_idx) return 1;
+  }
+
+  return 0;
+}
+
 /**
  * TODO: This function deliberately leaks memory. When it is called multiple times,
  * previous column orders still remain allocated in the table's memory pool.
