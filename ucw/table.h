@@ -88,6 +88,9 @@ enum column_type {
   COL_TYPE_LAST
 };
 
+#define COL_TYPE_UCW           0x100
+#define COL_TYPE_CUSTOM        0x1000
+
 /** Justify cell contents to the left. **/
 #define CELL_ALIGN_LEFT     (1U << 31)
 
@@ -108,6 +111,11 @@ struct table_column {
   enum column_type type;	// [*] Type of the cells in the column
 };
 
+struct table_col_info {
+  uint idx;
+  uint output_type;
+};
+
 /**
  * Definition of a table. Contains column definitions, per-table settings
  * and internal data. Please use only fields marked with `[*]`.
@@ -122,7 +130,7 @@ struct table {
 
   char **col_str_ptrs;			// Values of cells in the current row (allocated from the pool)
 
-  uint *column_order;			// [*] Order of the columns in the print-out of the table
+  struct table_col_info *column_order;  // [*] Order of the columns in the print-out of the table
   uint cols_to_output;			// [*] Number of columns that are printed
   const char *col_delimiter;		// [*] Delimiter that is placed between columns
   const char *append_delimiter;		// [*] Separator of multiple values in a single cell (see table_append_...())
@@ -181,9 +189,10 @@ struct table {
 #define TBL_COL_END { .name = 0, .width = 0, .fmt = 0, .type = COL_TYPE_LAST }
 
 #define TBL_COLUMNS  .columns = (struct table_column [])
-#define TBL_COL_ORDER(order) .column_order = (int *) order, .cols_to_output = ARRAY_SIZE(order)
+#define TBL_COL_ORDER(order) .column_order = (struct table_col_info *) order, .cols_to_output = ARRAY_SIZE(order)
 #define TBL_COL_DELIMITER(_delimiter_) .col_delimiter = _delimiter_
 #define TBL_APPEND_DELIMITER(_delimiter_) .append_delimiter = _delimiter_
+#define TBL_COL(_idx) { .idx = _idx, .output_type = 0 }
 
 #define TBL_OUTPUT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
 #define TBL_OUTPUT_BLOCKLINE          .formatter = &table_fmt_blockline

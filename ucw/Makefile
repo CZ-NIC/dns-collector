@@ -38,7 +38,7 @@ LIBUCW_MODS= \
 	daemon daemon-ctrl \
 	signames \
 	opt opt-help opt-conf \
-	table
+	table table-types
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h tbf.h threads.h time.h \
@@ -69,7 +69,7 @@ LIBUCW_MAIN_INCLUDES= \
 	signames.h \
 	sighandler.h \
 	opt.h \
-	table.h
+	table.h table-types.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading
@@ -133,6 +133,7 @@ $(o)/ucw/ipaccess-test: $(o)/ucw/ipaccess-test.o $(LIBUCW)
 $(o)/ucw/trie-test: $(o)/ucw/trie-test.o $(LIBUCW)
 $(o)/ucw/opt-test: $(o)/ucw/opt-test.o $(LIBUCW)
 $(o)/ucw/table-test: $(o)/ucw/table-test.o $(LIBUCW)
+$(o)/ucw/table-test-2: $(o)/ucw/table-test-2.o $(LIBUCW)
 $(o)/ucw/table-test-align: $(o)/ucw/table-test-align.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test stkstring.test \
@@ -142,7 +143,7 @@ TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test
     fb-mem.test fb-buffer.test fb-mmap.test fb-multi.test fb-null.test \
     redblack-test.test url.test strtonum-test.test \
     gary.test time.test crc.test signames.test md5.test bitops.test opt.test \
-    table.test table-test.test table-test-align.test)
+    table.test table-test.test table-test-2.test table-test-align.test)
 
 $(o)/ucw/varint.test: $(o)/ucw/varint-t
 $(o)/ucw/regex.test: $(o)/ucw/regex-t
@@ -176,6 +177,7 @@ $(o)/ucw/md5.test: $(o)/ucw/md5-t
 $(o)/ucw/opt.test: $(o)/ucw/opt-test
 $(o)/ucw/table.test: $(o)/ucw/table-t
 $(o)/ucw/table-test.test: $(o)/ucw/table-test
+$(o)/ucw/table-test-2.test: $(o)/ucw/table-test-2
 $(o)/ucw/table-test-align.test: $(o)/ucw/table-test-align
 
 ifdef CONFIG_UCW_THREADS

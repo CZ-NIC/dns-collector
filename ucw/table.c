@@ -27,7 +27,6 @@ void table_init(struct table *tbl)
     ASSERT(tbl->columns[col_count].name != NULL);
     ASSERT(tbl->columns[col_count].type == COL_TYPE_ANY || tbl->columns[col_count].fmt != NULL);
     ASSERT(tbl->columns[col_count].width != 0);
-    ASSERT(tbl->columns[col_count].type < COL_TYPE_LAST);
     col_count++;
   }
   tbl->pool = mp_new(4096);
@@ -123,15 +122,18 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
     ASSERT_MSG(col_order[i] >= 0 && col_order[i] < tbl->column_count, "Column %d does not exist (column number should be between 0 and %d)", col_order[i], tbl->column_count - 1);
   }
 
-  tbl->column_order = col_order;
   tbl->cols_to_output = cols_to_output;
+  tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_info) * cols_to_output);
+  for(int i = 0; i < cols_to_output; i++) {
+    tbl->column_order[i].idx = col_order[i];
+  }
 }
 
 
 bool table_col_is_printed(struct table *tbl, uint col_idx)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    if(tbl->column_order[i] == col_idx) return 1;
+    if(tbl->column_order[i].idx == col_idx) return 1;
   }
 
   return 0;
@@ -144,9 +146,12 @@ bool table_col_is_printed(struct table *tbl, uint col_idx)
 const char * table_set_col_order_by_name(struct table *tbl, const char *col_order_str)
 {
   if(col_order_str[0] == '*') {
-    tbl->column_order = mp_alloc(tbl->pool, sizeof(int) * tbl->column_count);
+    tbl->column_order = mp_alloc(tbl->pool, sizeof(struct table_col_info) * tbl->column_count);
     tbl->cols_to_output = tbl->column_count;
-    for(uint i = 0; i < tbl->cols_to_output; i++) tbl->column_order[i] = i;
+    for(uint i = 0; i < tbl->cols_to_output; i++) {
+      tbl->column_order[i].idx = i;
+      tbl->column_order[i].output_type = 0;
+    }
 
     return NULL;
   }
@@ -166,7 +171,7 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     }
   }
 
-  int *col_order_int = mp_alloc_zero(tbl->pool, sizeof(int) * col_count);
+  int *col_order_int = alloca(sizeof(int) * col_count); //mp_alloc_zero(tbl->pool, sizeof(int) * col_count);
   int curr_col_order_int = 0;
   const char *name_start = tmp_col_order;
   while(name_start) {
@@ -184,8 +189,9 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     name_start = next;
   }
 
-  tbl->column_order = col_order_int;
-  tbl->cols_to_output = curr_col_order_int;
+  //tbl->column_order = col_order_int;
+  //tbl->cols_to_output = curr_col_order_int;
+  table_set_col_order(tbl, col_order_int, curr_col_order_int);
   return NULL;
 }
 
@@ -436,7 +442,7 @@ const char *table_set_gary_options(struct table *tbl, char **gary_table_opts)
 static void table_row_human_readable(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    int col_idx = tbl->column_order[i];
+    int col_idx = tbl->column_order[i].idx;
     if(i) {
       bputs(tbl->out, tbl->col_delimiter);
     }
@@ -450,7 +456,7 @@ static void table_row_human_readable(struct table *tbl)
 static void table_write_header(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    int col_idx = tbl->column_order[i];
+    int col_idx = tbl->column_order[i].idx;
     if(i) {
       bputs(tbl->out, tbl->col_delimiter);
     }
@@ -486,7 +492,7 @@ struct table_formatter table_fmt_human_readable = {
 static void table_row_machine_readable(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    int col_idx = tbl->column_order[i];
+    int col_idx = tbl->column_order[i].idx;
     if(i) {
       bputs(tbl->out, tbl->col_delimiter);
     }
@@ -506,10 +512,10 @@ static void table_start_machine_readable(struct table *tbl)
   }
 
   if(tbl->print_header != 0) {
-    uint col_idx = tbl->column_order[0];
+    uint col_idx = tbl->column_order[0].idx;
     bputs(tbl->out, tbl->columns[col_idx].name);
     for(uint i = 1; i < tbl->cols_to_output; i++) {
-      col_idx = tbl->column_order[i];
+      col_idx = tbl->column_order[i].idx;
       bputs(tbl->out, tbl->col_delimiter);
       bputs(tbl->out, tbl->columns[col_idx].name);
     }
@@ -528,7 +534,7 @@ struct table_formatter table_fmt_machine_readable = {
 static void table_row_blockline_output(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    int col_idx = tbl->column_order[i];
+    int col_idx = tbl->column_order[i].idx;
     bprintf(tbl->out, "%s: %s\n", tbl->columns[col_idx].name, tbl->col_str_ptrs[col_idx]);
   }
   bputc(tbl->out, '\n');
@@ -562,7 +568,7 @@ enum test_table_cols {
   test_col0_str, test_col1_int, test_col2_uint, test_col3_bool, test_col4_double
 };
 
-static uint test_column_order[] = {test_col3_bool, test_col4_double, test_col2_uint,test_col1_int, test_col0_str};
+static struct table_col_info test_column_order[] = { TBL_COL(test_col3_bool), TBL_COL(test_col4_double), TBL_COL(test_col2_uint), TBL_COL(test_col1_int), TBL_COL(test_col0_str) };
 
 static struct table test_tbl = {
   TBL_COLUMNS {
@@ -659,7 +665,7 @@ enum test_any_table_cols {
   test_any_col0_int, test_any_col1_any
 };
 
-static uint test_any_column_order[] = { test_any_col0_int, test_any_col1_any };
+static struct table_col_info test_any_column_order[] = { TBL_COL(test_any_col0_int), TBL_COL(test_any_col1_any) };
 
 static struct table test_any_tbl = {
   TBL_COLUMNS {
