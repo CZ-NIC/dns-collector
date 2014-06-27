@@ -30,7 +30,7 @@ struct opt_context {
   int hook_count;
   int positional_max;
   int positional_count;
-  bool stop_parsing;
+  int stop_parsing;
   enum opt_conf_state conf_state;
 };
 

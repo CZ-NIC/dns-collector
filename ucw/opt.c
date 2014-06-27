@@ -225,6 +225,9 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	item->u.call(item, value, data);
 	break;
       }
+    case OPT_CL_BREAK:
+      oc->stop_parsing = 2;
+      break;
     default:
       ASSERT(0);
   }
@@ -388,8 +391,9 @@ int opt_parse(const struct opt_section * options, char ** argv) {
   opt_prepare_items(oc, options);
 
   int force_positional = 0;
-  int i;
+  int i, start_i = 0;
   for (i=0; argv[i] && !oc->stop_parsing; i++) {
+    start_i = i;
     char *arg = argv[i];
     opt_invoke_hooks(oc, OPT_HOOK_BEFORE_ARG, NULL, NULL);
     if (arg[0] != '-' || force_positional)
@@ -409,5 +413,5 @@ int opt_parse(const struct opt_section * options, char ** argv) {
 
   opt_check_required(oc);
   opt_invoke_hooks(oc, OPT_HOOK_FINAL, NULL, NULL);
-  return i;
+  return (oc->stop_parsing < 2 ? i : start_i);
 }

@@ -63,6 +63,8 @@
  *   contents of another list of options.
  * - `OPT_CL_HELP`: no option, just print a help text.
  * - `OPT_CL_HOOK`: no option, but a definition of a <<hooks,hook>>.
+ * - `OPT_CL_BREAK`: when a given option occurs, stop parsing and keep
+ *   the option in the argument list.
  ***/
 
 enum opt_class {
@@ -76,6 +78,7 @@ enum opt_class {
   OPT_CL_SECTION,
   OPT_CL_HELP,
   OPT_CL_HOOK,
+  OPT_CL_BREAK,
 };
 
 /***
@@ -205,6 +208,9 @@ struct opt_item {
 
 /** Incrementing option. @target should be a variable of type `int`. **/
 #define OPT_INC(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .flags = fl, .help = desc, .cls = OPT_CL_INC, .type = CT_INT }
+
+/** Breakpoint option. When this option occurs, parsing is terminated and the option is kept in the argument array. **/
+#define OPT_BREAK(shortopt, longopt, fl) { .letter = shortopt, .name = longopt, .flags = fl, .cls = OPT_CL_BREAK }
 
 /* FIXME: Backwards compatibility only, should not be used anymore. */
 #define OPT_UNS OPT_UINT
