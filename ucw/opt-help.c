@@ -156,7 +156,7 @@ void opt_help(const struct opt_section * sec) {
   mp_delete(h.pool);
 }
 
-void opt_handle_help(struct opt_item * opt UNUSED, const char * value UNUSED, void * data)
+void opt_handle_help(const struct opt_item * opt UNUSED, const char * value UNUSED, void * data)
 {
   struct opt_context *oc = data;
   opt_help(oc->options);

@@ -298,7 +298,7 @@ int opt_parse(const struct opt_section * options, char ** argv);
 void opt_failure(const char * mesg, ...) FORMAT_CHECK(printf,1,2) NONRET;
 
 void opt_help(const struct opt_section * sec);
-void opt_handle_help(struct opt_item * opt, const char * value, void * data);
+void opt_handle_help(const struct opt_item * opt, const char * value, void * data);
 
 /***
  * [[conf]]
@@ -347,10 +347,10 @@ void opt_handle_help(struct opt_item * opt, const char * value, void * data);
 #define OPT_CONF_DUMPCONFIG OPT_CALL(0, "dumpconfig", opt_handle_dumpconfig, NULL, OPT_INTERNAL | OPT_NO_VALUE, "\tDump program configuration")
 #define OPT_CONF_HOOK	    OPT_HOOK(opt_conf_hook_internal, NULL, OPT_HOOK_BEFORE_VALUE | OPT_HOOK_FINAL | OPT_HOOK_INTERNAL)
 
-void opt_handle_config(struct opt_item * opt, const char * value, void * data);
-void opt_handle_set(struct opt_item * opt, const char * value, void * data);
-void opt_handle_dumpconfig(struct opt_item * opt, const char * value, void * data);
-void opt_conf_hook_internal(struct opt_item * opt, uint event, const char * value, void * data);
+void opt_handle_config(const struct opt_item * opt, const char * value, void * data);
+void opt_handle_set(const struct opt_item * opt, const char * value, void * data);
+void opt_handle_dumpconfig(const struct opt_item * opt, const char * value, void * data);
+void opt_conf_hook_internal(const struct opt_item * opt, uint event, const char * value, void * data);
 
 // XXX: This is duplicated with <ucw/getopt.h>, but that one will hopefully go away one day.
 /**

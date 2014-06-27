@@ -40,14 +40,14 @@ static void opt_conf_check(struct opt_context *oc)
   }
 }
 
-void opt_handle_config(struct opt_item * opt UNUSED, const char * value, void * data)
+void opt_handle_config(const struct opt_item * opt UNUSED, const char * value, void * data)
 {
   opt_conf_check(data);
   if (cf_load(value))
     exit(1);		// Error message is already printed by cf_load()
 }
 
-void opt_handle_set(struct opt_item * opt UNUSED, const char * value, void * data)
+void opt_handle_set(const struct opt_item * opt UNUSED, const char * value, void * data)
 {
   opt_conf_check(data);
   struct cf_context *cc = cf_get_context();
@@ -56,7 +56,7 @@ void opt_handle_set(struct opt_item * opt UNUSED, const char * value, void * dat
     opt_failure("Cannot set %s", value);
 }
 
-void opt_handle_dumpconfig(struct opt_item * opt UNUSED, const char * value UNUSED, void * data UNUSED)
+void opt_handle_dumpconfig(const struct opt_item * opt UNUSED, const char * value UNUSED, void * data UNUSED)
 {
   struct cf_context *cc = cf_get_context();
   opt_conf_end_of_options(cc);
@@ -66,7 +66,7 @@ void opt_handle_dumpconfig(struct opt_item * opt UNUSED, const char * value UNUS
   exit(0);
 }
 
-void opt_conf_hook_internal(struct opt_item * opt, uint event, const char * value UNUSED, void * data) {
+void opt_conf_hook_internal(const struct opt_item * opt, uint event, const char * value UNUSED, void * data) {
   struct opt_context *oc = data;
   struct cf_context *cc = cf_get_context();
 
