@@ -134,6 +134,7 @@ struct opt_item {
 #define OPT_MULTIPLE	    0x200	/** The option may appear multiple times; will save all the values into a simple list. **/
 #define OPT_SEEN_AS_LONG    0x400	// Used internally to signal that we currently process the long form of the option
 #define OPT_BEFORE_CONFIG   0x800	/** The option may appear before a config file is loaded. **/
+#define OPT_HELP_COL        0x1000	/** Used for OPT_CL_HELP to signal that tabs switch columns. **/
 #define OPT_INTERNAL        0x4000	// Used internally to ask for passing of struct opt_context to OPT_CALL
 
 /**
@@ -160,6 +161,9 @@ struct opt_item {
 
 /** No option, just a piece of help text. **/
 #define OPT_HELP(line) { .help = line, .cls = OPT_CL_HELP }
+
+/** Like OPT_HELP, but the help text uses tab characters to switch columns like help text for ordinary options does. **/
+#define OPT_HELP_COLUMNS(line) { .help = line, .flags = OPT_HELP_COL, .cls = OPT_CL_HELP }
 
 /** Standard `--help` option. **/
 #define OPT_HELP_OPTION OPT_CALL(0, "help", opt_handle_help, NULL, OPT_BEFORE_CONFIG | OPT_INTERNAL | OPT_NO_VALUE, "\tShow this help")

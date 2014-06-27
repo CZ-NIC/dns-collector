@@ -33,10 +33,15 @@ static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
   if (!item->help)
     return;
 
+  bool force_col1 = 0;
   if (item->cls == OPT_CL_HELP) {
-    struct help_line *l = GARY_PUSH(h->lines);
-    l->extra = item->help;
-    return;
+    if (item->flags & OPT_HELP_COL) {
+      force_col1 = 1;
+    } else {
+      struct help_line *l = GARY_PUSH(h->lines);
+      l->extra = item->help;
+      return;
+    }
   }
 
   if (item->letter >= OPT_POSITIONAL_TAIL)
@@ -50,7 +55,7 @@ static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
     if (eol)
       *eol++ = 0;
 
-    int field = (l == first ? 1 : 0);
+    int field = (l == first && !force_col1 ? 1 : 0);
     char *f = text;
     while (f) {
       char *tab = strchr(f, '\t');
