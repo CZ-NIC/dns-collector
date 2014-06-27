@@ -7,6 +7,8 @@
 #ifndef _UCW_TABLE_H
 #define _UCW_TABLE_H
 
+#include <inttypes.h>
+
 #include <ucw/fastbuf.h>
 #include <ucw/mempool.h>
 
@@ -158,9 +160,9 @@ struct table {
 
 #define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_STR }
 #define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = "%d", .type = COL_TYPE_INT }
-#define TBL_COL_S64(_name, _width)            { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_S64 }
+#define TBL_COL_S64(_name, _width)            { .name = _name, .width = _width, .fmt = "%" PRId64, .type = COL_TYPE_S64 }
 #define TBL_COL_UINT(_name, _width)           { .name = _name, .width = _width, .fmt = "%u", .type = COL_TYPE_UINT }
-#define TBL_COL_U64(_name, _width)            { .name = _name, .width = _width, .fmt = "%llu", .type = COL_TYPE_U64 }
+#define TBL_COL_U64(_name, _width)            { .name = _name, .width = _width, .fmt = "%" PRIu64, .type = COL_TYPE_U64 }
 #define TBL_COL_INTMAX(_name, _width)         { .name = _name, .width = _width, .fmt = "%jd", .type = COL_TYPE_INTMAX }
 #define TBL_COL_UINTMAX(_name, _width)        { .name = _name, .width = _width, .fmt = "%ju", .type = COL_TYPE_UINTMAX }
 #define TBL_COL_HEXUINT(_name, _width)        { .name = _name, .width = _width, .fmt = "0x%x", .type = COL_TYPE_UINT }
