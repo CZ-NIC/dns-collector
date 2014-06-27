@@ -39,7 +39,7 @@ void opt_failure(const char * mesg, ...) {
 
 static char *opt_name(struct opt_context *oc, struct opt_precomputed *opt)
 {
-  struct opt_item *item = opt->item;
+  const struct opt_item *item = opt->item;
   char *res;
   if (item->letter >= OPT_POSITIONAL_TAIL)
     res = stk_printf("positional argument #%d", oc->positional_count);
@@ -52,7 +52,7 @@ static char *opt_name(struct opt_context *oc, struct opt_precomputed *opt)
 
 #define THIS_OPT opt_name(oc, opt)
 
-void opt_precompute(struct opt_precomputed *opt, struct opt_item *item)
+void opt_precompute(struct opt_precomputed *opt, const struct opt_item *item)
 {
   opt->item = item;
   opt->count = 0;
@@ -71,10 +71,10 @@ void opt_precompute(struct opt_precomputed *opt, struct opt_item *item)
   opt->flags = flags;
 }
 
-static void opt_invoke_hooks(struct opt_context *oc, uint event, struct opt_item *item, char *value)
+static void opt_invoke_hooks(struct opt_context *oc, uint event, const struct opt_item *item, char *value)
 {
   for (int i = 0; i < oc->hook_count; i++) {
-    struct opt_item *hook = oc->hooks[i];
+    const struct opt_item *hook = oc->hooks[i];
     if (hook->flags & event) {
       void *data = (hook->flags & OPT_HOOK_INTERNAL) ? oc : hook->ptr;
       hook->u.hook(item, event, value, data);
@@ -126,7 +126,7 @@ static struct opt_precomputed * opt_find_item_longopt(struct opt_context * oc, c
 }
 
 static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * opt, char * value) {
-  struct opt_item * item = opt->item;
+  const struct opt_item * item = opt->item;
 
   if (opt->count++ && (opt->flags & OPT_SINGLE))
     opt_failure("Option %s must be specified at most once.", THIS_OPT);
@@ -338,7 +338,7 @@ static void opt_count_items(struct opt_context *oc, const struct opt_section *se
 
 static void opt_prepare_items(struct opt_context *oc, const struct opt_section *sec)
 {
-  for (struct opt_item *item = sec->opt; item->cls != OPT_CL_END; item++) {
+  for (const struct opt_item *item = sec->opt; item->cls != OPT_CL_END; item++) {
     if (item->cls == OPT_CL_SECTION)
       opt_prepare_items(oc, item->u.section);
     else if (item->cls == OPT_CL_HOOK)
@@ -357,7 +357,7 @@ static void opt_check_required(struct opt_context *oc)
   for (int i = 0; i < oc->opt_count; i++) {
     struct opt_precomputed *opt = &oc->opts[i];
     if (!opt->count && (opt->flags & OPT_REQUIRED)) {
-      struct opt_item *item = opt->item;
+      const struct opt_item *item = opt->item;
       if (item->letter > OPT_POSITIONAL_TAIL)
 	opt_failure("Required positional argument #%d not found.", item->letter - OPT_POSITIONAL_TAIL);
       else if (item->letter == OPT_POSITIONAL_TAIL)

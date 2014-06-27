@@ -25,7 +25,7 @@ struct opt_context {
   const struct opt_section * options;
   struct opt_precomputed * opts;
   struct opt_precomputed ** shortopt;
-  struct opt_item ** hooks;
+  const struct opt_item ** hooks;
   int opt_count;
   int hook_count;
   int positional_max;
@@ -35,12 +35,12 @@ struct opt_context {
 };
 
 struct opt_precomputed {
-  struct opt_item * item;
+  const struct opt_item * item;
   const char * name;
   short flags;
   short count;
 };
 
-void opt_precompute(struct opt_precomputed *opt, struct opt_item *item);
+void opt_precompute(struct opt_precomputed *opt, const struct opt_item *item);
 
 #endif

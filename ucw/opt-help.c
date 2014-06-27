@@ -28,7 +28,7 @@ struct help_line {
 
 static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
 {
-  struct opt_item *item = opt->item;
+  const struct opt_item *item = opt->item;
 
   if (!item->help)
     return;
@@ -90,7 +90,7 @@ static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
 
 static void opt_help_scan(struct help *h, const struct opt_section *sec)
 {
-  for (struct opt_item * item = sec->opt; item->cls != OPT_CL_END; item++) {
+  for (const struct opt_item * item = sec->opt; item->cls != OPT_CL_END; item++) {
     if (item->cls == OPT_CL_SECTION)
       opt_help_scan(h, item->u.section);
     else if (item->cls == OPT_CL_HOOK)

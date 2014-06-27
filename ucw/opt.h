@@ -92,7 +92,7 @@ enum opt_class {
 
 /** A section of option list. **/
 struct opt_section {
-  struct opt_item * opt;
+  const struct opt_item * opt;
 };
 
 /** A definition of a single option item. **/
@@ -102,10 +102,10 @@ struct opt_item {
   void * ptr;				// variable to store the value to
   const char * help;			// description in --help (NULL to omit the option from the help)
   union opt_union {
-    struct opt_section * section;	// subsection for OPT_CL_SECTION
+    const struct opt_section * section;	// subsection for OPT_CL_SECTION
     int value;				// value for OPT_CL_SWITCH
-    void (* call)(struct opt_item * opt, const char * value, void * data);		// function to call for OPT_CL_CALL
-    void (* hook)(struct opt_item * opt, uint event, const char * value, void * data);	// function to call for OPT_CL_HOOK
+    void (* call)(const struct opt_item * opt, const char * value, void * data);		// function to call for OPT_CL_CALL
+    void (* hook)(const struct opt_item * opt, uint event, const char * value, void * data);	// function to call for OPT_CL_HOOK
     struct cf_user_type * utype;	// specification of the user-defined type for CT_USER
   } u;
   u16 flags;				// as defined below (for hooks, event mask is stored instead)
