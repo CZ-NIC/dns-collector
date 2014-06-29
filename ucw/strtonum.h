@@ -11,6 +11,8 @@
 #define _STRTONUM_H
 
 #ifdef CONFIG_UCW_CLEAN_ABI
+#define str_to_u32 ucw_str_to_u32
+#define str_to_u64 ucw_str_to_u64
 #define str_to_uint ucw_str_to_uint
 #define str_to_uintmax ucw_str_to_uintmax
 #define str_to_uns ucw_str_to_uns
@@ -51,6 +53,9 @@ static inline const char *str_to_##suffix(type *num, const char *str, const char
 
 STN_DECLARE_CONVERTOR(uint, uint);
 STN_SIGNED_CONVERTOR(int, int, uint)
+
+STN_DECLARE_CONVERTOR(u32, u32);
+STN_SIGNED_CONVERTOR(s32, s32, u32)
 
 STN_DECLARE_CONVERTOR(u64, u64);
 STN_SIGNED_CONVERTOR(s64, s64, u64)

@@ -102,6 +102,10 @@ static inline uint get_digit(const uint c)
 #define STN_SUFFIX uint
 #include <ucw/strtonum-gen.h>
 
+#define STN_TYPE u32
+#define STN_SUFFIX u32
+#include <ucw/strtonum-gen.h>
+
 #define STN_TYPE u64
 #define STN_SUFFIX u64
 #include <ucw/strtonum-gen.h>
