@@ -101,16 +101,20 @@
  *  TREE_GIVE_INIT_DATA	void init_data(node *) -- initialize data fields in a
  *			newly created node. Very useful for lookup operations.
  *  TREE_GIVE_ALLOC	void *alloc(uint size) -- allocate space for
- *			a node. Default is either normal or pooled allocation
- *			depending on whether we want deletions.
+ *			a node. By default, xmalloc() is used unless overridden
+ *			by TREE_AUTO_POOL.
  *			void free(void *) -- the converse.
  *
  *  ... and a couple of extra parameters:
  *
  *  TREE_NOCASE		string comparisons should be case-insensitive.
  *  TREE_ATOMIC_TYPE=t	Atomic values are of type `t' instead of int.
- *  TREE_USE_POOL=pool	Allocate all nodes from given mempool.
- *			Collides with delete/remove functions.
+ *  TREE_USE_POOL=pool	Allocate all nodes from given mempool. Please keep
+ *			in mind that deleted/removed nodes cannot be freed.
+ *  TREE_AUTO_POOL=size	Automatically allocate nodes from an internal memory
+ *			pool of a given block size. This is either an eltpool
+ *			(for fixed-size nodes), or a mempool for variable-sized
+ *			ones (in this case, deletes/removes are not deallocated).
  *  TREE_GLOBAL		Functions are exported (i.e., not static).
  *  TREE_CONSERVE_SPACE	Use as little space as possible at the price of a
  *			little slowdown.
@@ -153,6 +157,16 @@ typedef TREE_NODE P(node);
 #	define TREE_STORE_PARENT
 #endif
 
+#ifdef TREE_AUTO_POOL
+#	if defined(TREE_GIVE_EXTRA_SIZE) || defined(TREE_KEY_ENDSTRING)
+#		define TREE_AUTO_MEMPOOL
+#		include <ucw/mempool.h>
+#	else
+#		define TREE_AUTO_ELTPOOL
+#		include <ucw/eltpool.h>
+#	endif
+#endif
+
 typedef struct P(bucket) {
 	struct P(bucket) *son[2];
 #ifdef TREE_STORE_PARENT
@@ -171,6 +185,12 @@ struct P(tree) {
 	uint count;
 	uint height;			/* of black nodes */
 	P(bucket) *root;
+#ifdef TREE_AUTO_MEMPOOL
+	struct mempool *mp;
+#endif
+#ifdef TREE_AUTO_ELTPOOL
+	struct eltpool *ep;
+#endif
 };
 
 typedef struct P(stack_entry) {
@@ -307,7 +327,18 @@ static inline void P(init_data) (P(node) *n UNUSED)
 #	ifdef TREE_USE_POOL
 		static inline void * P(alloc) (T *t UNUSED, uint size)
 		{ return mp_alloc_fast(TREE_USE_POOL, size); }
-#		define TREE_SAFE_FREE(t, x)
+		static inline void P(free) (T *t UNUSED, void *x UNUSED)
+		{ }
+#	elif defined(TREE_AUTO_MEMPOOL)
+		static inline void * P(alloc) (T *t, uint size)
+		{ return mp_alloc_fast(t->mp, size); }
+		static inline void P(free) (T *t UNUSED, void *x UNUSED)
+		{ }
+#	elif defined(TREE_AUTO_ELTPOOL)
+		static inline void * P(alloc) (T *t, uint size)
+		{ ASSERT(size == sizeof(P(bucket))); return ep_alloc(t->ep); }
+		static inline void P(free) (T *t, void *x)
+		{ ep_free(t->ep, x); }
 #	else
 		static inline void * P(alloc) (T *t UNUSED, uint size)
 		{ return xmalloc(size); }
@@ -315,10 +346,6 @@ static inline void P(init_data) (P(node) *n UNUSED)
 		static inline void P(free) (T *t UNUSED, void *x)
 		{ xfree(x); }
 #	endif
-#endif
-
-#ifndef	TREE_SAFE_FREE
-#	define TREE_SAFE_FREE(t, x)	P(free) (t, x)
 #endif
 
 #ifdef TREE_GLOBAL
@@ -350,6 +377,12 @@ TREE_STATIC void P(init) (T *t)
 {
 	t->count = t->height = 0;
 	t->root = NULL;
+#ifdef TREE_AUTO_MEMPOOL
+	t->mp = mp_new(TREE_AUTO_POOL);
+#endif
+#ifdef TREE_AUTO_ELTPOOL
+	t->ep = ep_new(sizeof(P(bucket)), (TREE_AUTO_POOL + sizeof(P(bucket)) - 1) / sizeof(P(bucket)));
+#endif
 }
 
 #ifdef TREE_WANT_CLEANUP
@@ -368,6 +401,14 @@ TREE_STATIC void P(cleanup) (T *t)
 	P(cleanup_subtree) (t, t->root);
 	ASSERT(!t->count);
 	t->height = 0;
+#ifdef TREE_AUTO_MEMPOOL
+	mp_delete(t->mp);
+	t->mp = NULL;
+#endif
+#ifdef TREE_AUTO_ELTPOOL
+	ep_delete(t->ep);
+	t->ep = NULL;
+#endif
 }
 #endif
 
@@ -856,7 +897,7 @@ static void P(remove_by_stack) (T *t, P(stack_entry) *stack, uint depth)
 		ASSERT(!son);
 		return;
 	}
-	TREE_SAFE_FREE(t, node);
+	P(free)(t, node);
 	/* We have deleted a black node.  */
 	if (son)
 	{
@@ -1035,5 +1076,7 @@ do											\
 #undef TREE_STORE_PARENT
 #undef TREE_KEY
 #undef TREE_EXTRA_SIZE
-#undef TREE_SAFE_FREE
 #undef TREE_TRACE
+#undef TREE_AUTO_POOL
+#undef TREE_AUTO_MEMPOOL
+#undef TREE_AUTO_ELTPOOL
