@@ -71,6 +71,9 @@
  *  TREE_WANT_SEARCH_DOWN node *search_down(key) -- find either the node with
  *                      specified value, or if it does not exist, the node
  *                      with nearest smaller value.
+ *  TREE_WANT_SEARCH_UP	node *search_up(key) -- find either the node with
+ *                      specified value, or if it does not exist, the node
+ *                      with nearest greater value.
  *  TREE_WANT_BOUNDARY	node *boundary(uint direction) -- finds smallest
  *			(direction==0) or largest (direction==1) node.
  *  TREE_WANT_ADJACENT	node *adjacent(node *, uint direction) -- finds next
@@ -477,6 +480,29 @@ TREE_STATIC P(node) * P(search_down) (T *t, TREE_KEY_DECL)
 		}
 	}
 	return last_right;
+}
+#endif
+
+#ifdef TREE_WANT_SEARCH_UP
+TREE_STATIC P(node) * P(search_up) (T *t, TREE_KEY_DECL)
+{
+	P(node) *last_left=NULL;
+	P(bucket) *node=t->root;
+	while(node)
+	{
+		int cmp;
+		cmp = P(cmp) (TREE_KEY(), TREE_KEY(node->n.));
+		if (cmp == 0)
+			return &node->n;
+		else if (cmp > 0)
+			node=P(tree_son) (node, 1);
+		else
+		{
+			last_left=&node->n;
+			node=P(tree_son) (node, 0);
+		}
+	}
+	return last_left;
 }
 #endif
 
@@ -1053,6 +1079,7 @@ do											\
 #undef TREE_WANT_FIND_NEXT
 #undef TREE_WANT_SEARCH
 #undef TREE_WANT_SEARCH_DOWN
+#undef TREE_WANT_SEARCH_UP
 #undef TREE_WANT_BOUNDARY
 #undef TREE_WANT_ADJACENT
 #undef TREE_WANT_NEW
