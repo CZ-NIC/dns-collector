@@ -131,10 +131,7 @@ static void table_update_ll(struct table *tbl)
   }
 
   for(int i = 0; i < cols_to_output; i++) {
-    //int col_idx = col_order[i];
-    //tbl->column_order[i].idx = col_idx;
-    //tbl->column_order[i].cell_content = NULL;
-    int col_idx = tbl->column_order[i].idx;//col_order[i];
+    int col_idx = tbl->column_order[i].idx;
     int last = tbl->columns[col_idx].last_column;
     if(last != -1) {
       tbl->columns[col_idx].last_column = i;
@@ -229,8 +226,6 @@ static void table_set_all_cols_content(struct table *tbl, int col, char *col_con
 {
   int curr_col = tbl->columns[col].first_column;
   while(curr_col != -1) {
-    //fprintf(stdout, "curr_col: %d\n", curr_col);
-    //fflush(stdout);
     if(override == 0 && tbl->column_order[curr_col].output_type != 0) {
       die("Error while setting content of all cells of a single type column, cell format should not be overriden.");
     }
@@ -508,7 +503,6 @@ struct table_formatter table_fmt_human_readable = {
 static void table_row_machine_readable(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    //int col_idx = tbl->column_order[i].idx;
     if(i) {
       bputs(tbl->out, tbl->col_delimiter);
     }
