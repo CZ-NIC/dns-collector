@@ -322,9 +322,9 @@ static inline void P(init_data) (P(node) *n UNUSED)
 #endif
 
 #ifdef TREE_GLOBAL
-#	define STATIC
+#	define TREE_STATIC
 #else
-#	define STATIC static
+#	define TREE_STATIC static
 #endif
 
 #ifndef TREE_MAX_DEPTH
@@ -346,7 +346,7 @@ static inline void P(init_data) (P(node) *n UNUSED)
 
 /* Now the operations */
 
-STATIC void P(init) (T *t)
+TREE_STATIC void P(init) (T *t)
 {
 	t->count = t->height = 0;
 	t->root = NULL;
@@ -363,7 +363,7 @@ static void P(cleanup_subtree) (T *t, P(bucket) *node)
 	t->count--;
 }
 
-STATIC void P(cleanup) (T *t)
+TREE_STATIC void P(cleanup) (T *t)
 {
 	P(cleanup_subtree) (t, t->root);
 	ASSERT(!t->count);
@@ -407,7 +407,7 @@ static uint P(fill_stack) (P(stack_entry) *stack, uint max_depth, P(bucket) *nod
 }
 
 #ifdef TREE_WANT_FIND
-STATIC P(node) * P(find) (T *t, TREE_KEY_DECL)
+TREE_STATIC P(node) * P(find) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	uint depth;
@@ -417,7 +417,7 @@ STATIC P(node) * P(find) (T *t, TREE_KEY_DECL)
 #endif
 
 #ifdef TREE_WANT_SEARCH_DOWN
-STATIC P(node) * P(search_down) (T *t, TREE_KEY_DECL)
+TREE_STATIC P(node) * P(search_down) (T *t, TREE_KEY_DECL)
 {
 	P(node) *last_right=NULL;
 	P(bucket) *node=t->root;
@@ -440,7 +440,7 @@ STATIC P(node) * P(search_down) (T *t, TREE_KEY_DECL)
 #endif
 
 #ifdef TREE_WANT_BOUNDARY
-STATIC P(node) * P(boundary) (T *t, uint direction)
+TREE_STATIC P(node) * P(boundary) (T *t, uint direction)
 {
 	P(bucket) *n = t->root, *ns;
 	if (!n)
@@ -456,7 +456,7 @@ STATIC P(node) * P(boundary) (T *t, uint direction)
 #endif
 
 #ifdef TREE_STORE_PARENT
-STATIC P(node) * P(adjacent) (P(node) *start, uint direction)
+TREE_STATIC P(node) * P(adjacent) (P(node) *start, uint direction)
 {
 	P(bucket) *node = SKIP_BACK(P(bucket), n, start);
 	P(bucket) *next = P(tree_son) (node, direction);
@@ -509,7 +509,7 @@ static int P(find_next_node) (P(stack_entry) *stack, uint max_depth, uint direct
 #endif
 
 #ifdef TREE_WANT_FIND_NEXT
-STATIC P(node) * P(find_next) (P(node) *start)
+TREE_STATIC P(node) * P(find_next) (P(node) *start)
 {
 	P(node) *next = P(adjacent) (start, 1);
 	if (next && P(cmp) (TREE_KEY(start->), TREE_KEY(next->)) == 0)
@@ -521,7 +521,7 @@ STATIC P(node) * P(find_next) (P(node) *start)
 #endif
 
 #ifdef TREE_WANT_SEARCH
-STATIC P(node) * P(search) (T *t, TREE_KEY_DECL)
+TREE_STATIC P(node) * P(search) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	uint depth;
@@ -626,7 +626,7 @@ try_it_again:
 }
 
 #ifdef TREE_WANT_NEW
-STATIC P(node) * P(new) (T *t, TREE_KEY_DECL)
+TREE_STATIC P(node) * P(new) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	P(bucket) *added;
@@ -667,7 +667,7 @@ STATIC P(node) * P(new) (T *t, TREE_KEY_DECL)
 #endif
 
 #ifdef TREE_WANT_LOOKUP
-STATIC P(node) * P(lookup) (T *t, TREE_KEY_DECL)
+TREE_STATIC P(node) * P(lookup) (T *t, TREE_KEY_DECL)
 {
 	P(node) *node;
 	node = P(find) (t, TREE_KEY());
@@ -869,7 +869,7 @@ static void P(remove_by_stack) (T *t, P(stack_entry) *stack, uint depth)
 #endif
 
 #ifdef TREE_WANT_REMOVE
-STATIC void P(remove) (T *t, P(node) *Node)
+TREE_STATIC void P(remove) (T *t, P(node) *Node)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	P(bucket) *node = SKIP_BACK(P(bucket), n, Node);
@@ -895,7 +895,7 @@ STATIC void P(remove) (T *t, P(node) *Node)
 #endif
 
 #ifdef TREE_WANT_DELETE
-STATIC int P(delete) (T *t, TREE_KEY_DECL)
+TREE_STATIC int P(delete) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	uint depth;
@@ -949,7 +949,7 @@ static void P(dump_subtree) (struct fastbuf *fb, T *t, P(bucket) *node, P(bucket
 	P(dump_subtree) (fb, t, P(tree_son) (node, 1), node, +1, level+1, black + (1-flag));
 }
 
-STATIC void P(dump) (struct fastbuf *fb, T *t)
+TREE_STATIC void P(dump) (struct fastbuf *fb, T *t)
 {
 	if (fb)
 	{
@@ -1037,4 +1037,3 @@ do											\
 #undef TREE_EXTRA_SIZE
 #undef TREE_SAFE_FREE
 #undef TREE_TRACE
-#undef STATIC

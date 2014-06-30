@@ -87,7 +87,6 @@ static void my2_dump_data(struct fastbuf *fb UNUSED, struct my2_node *n UNUSED)
 #define TREE_WANT_FIND_NEXT
 #define TREE_WANT_ITERATOR
 #define TREE_WANT_DUMP
-#define TREE_STATIC
 #define TREE_CONSERVE_SPACE
 #include "redblack.h"
 
