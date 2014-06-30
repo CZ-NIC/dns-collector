@@ -99,6 +99,9 @@ enum column_type {
 #define CELL_FLAG_MASK	(CELL_ALIGN_LEFT)
 #define CELL_WIDTH_MASK	(~CELL_FLAG_MASK)
 
+#define CELL_OUT_HUMAN_READABLE     0
+#define CELL_OUT_MACHINE_READABLE   1
+
 /**
  * Definition of a single table column.
  * Usually, this is generated using the `TABLE_COL_`'type' macros.
@@ -109,11 +112,15 @@ struct table_column {
   int width;			// [*] Width of the column (in characters) OR'ed with column flags
   const char *fmt;		// [*] Default format of each cell in the column
   enum column_type type;	// [*] Type of the cells in the column
+  int first_column;
+  int last_column;
 };
 
 struct table_col_info {
   uint idx;
-  uint output_type;
+  char *cell_content;
+  int next_column;
+  int output_type;
 };
 
 /**
@@ -128,12 +135,10 @@ struct table {
   struct mempool_state pool_state;	// State of the pool after the table is initialized, i.e., before
 					// per-row data have been allocated.
 
-  char **col_str_ptrs;			// Values of cells in the current row (allocated from the pool)
-
   struct table_col_info *column_order;  // [*] Order of the columns in the print-out of the table
   uint cols_to_output;			// [*] Number of columns that are printed
   const char *col_delimiter;		// [*] Delimiter that is placed between columns
-  const char *append_delimiter;		// [*] Separator of multiple values in a single cell (see table_append_...())
+  //const char *append_delimiter;		// [*] Separator of multiple values in a single cell (see table_append_...())
   uint print_header;			// [*] 0 indicates that table header should not be printed
 
   struct fastbuf *out;			// [*] Fastbuffer to which the table is printed
@@ -164,35 +169,38 @@ struct table {
  *
  ***/
 
-#define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_STR }
-#define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = "%d", .type = COL_TYPE_INT }
-#define TBL_COL_S64(_name, _width)            { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_S64 }
-#define TBL_COL_UINT(_name, _width)           { .name = _name, .width = _width, .fmt = "%u", .type = COL_TYPE_UINT }
-#define TBL_COL_U64(_name, _width)            { .name = _name, .width = _width, .fmt = "%llu", .type = COL_TYPE_U64 }
-#define TBL_COL_INTMAX(_name, _width)         { .name = _name, .width = _width, .fmt = "%jd", .type = COL_TYPE_INTMAX }
-#define TBL_COL_UINTMAX(_name, _width)        { .name = _name, .width = _width, .fmt = "%ju", .type = COL_TYPE_UINTMAX }
-#define TBL_COL_HEXUINT(_name, _width)        { .name = _name, .width = _width, .fmt = "0x%x", .type = COL_TYPE_UINT }
-#define TBL_COL_DOUBLE(_name, _width, _prec)  { .name = _name, .width = _width, .fmt = "%." #_prec "lf", .type = COL_TYPE_DOUBLE }
-#define TBL_COL_BOOL(_name, _width)           { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_BOOL }
-#define TBL_COL_ANY(_name, _width)            { .name = _name, .width = _width, .fmt = 0, .type = COL_TYPE_ANY }
+#define TBL_COL_LIST_INIT     .first_column = -1, .last_column = -1
+#define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_STR,  TBL_COL_LIST_INIT }
+#define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = "%d", .type = COL_TYPE_INT,  TBL_COL_LIST_INIT }
+#define TBL_COL_S64(_name, _width)            { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_S64,  TBL_COL_LIST_INIT }
+#define TBL_COL_UINT(_name, _width)           { .name = _name, .width = _width, .fmt = "%u", .type = COL_TYPE_UINT,  TBL_COL_LIST_INIT }
+#define TBL_COL_U64(_name, _width)            { .name = _name, .width = _width, .fmt = "%llu", .type = COL_TYPE_U64,  TBL_COL_LIST_INIT }
+#define TBL_COL_INTMAX(_name, _width)         { .name = _name, .width = _width, .fmt = "%jd", .type = COL_TYPE_INTMAX,  TBL_COL_LIST_INIT }
+#define TBL_COL_UINTMAX(_name, _width)        { .name = _name, .width = _width, .fmt = "%ju", .type = COL_TYPE_UINTMAX,  TBL_COL_LIST_INIT }
+#define TBL_COL_HEXUINT(_name, _width)        { .name = _name, .width = _width, .fmt = "0x%x", .type = COL_TYPE_UINT,  TBL_COL_LIST_INIT }
+#define TBL_COL_DOUBLE(_name, _width, _prec)  { .name = _name, .width = _width, .fmt = "%." #_prec "lf", .type = COL_TYPE_DOUBLE,  TBL_COL_LIST_INIT }
+#define TBL_COL_BOOL(_name, _width)           { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_BOOL,  TBL_COL_LIST_INIT }
+#define TBL_COL_ANY(_name, _width)            { .name = _name, .width = _width, .fmt = 0, .type = COL_TYPE_ANY,  TBL_COL_LIST_INIT }
 
-#define TBL_COL_STR_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_STR }
-#define TBL_COL_INT_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INT }
-#define TBL_COL_S64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_S64 }
-#define TBL_COL_UINT_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT }
-#define TBL_COL_U64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_U64 }
-#define TBL_COL_INTMAX_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INTMAX }
-#define TBL_COL_UINTMAX_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINTMAX }
-#define TBL_COL_HEXUINT_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT }
-#define TBL_COL_BOOL_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_BOOL }
+#define TBL_COL_STR_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_STR,  TBL_COL_LIST_INIT }
+#define TBL_COL_INT_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INT,  TBL_COL_LIST_INIT }
+#define TBL_COL_S64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_S64,  TBL_COL_LIST_INIT }
+#define TBL_COL_UINT_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT,  TBL_COL_LIST_INIT }
+#define TBL_COL_U64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_U64,  TBL_COL_LIST_INIT }
+#define TBL_COL_INTMAX_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INTMAX,  TBL_COL_LIST_INIT }
+#define TBL_COL_UINTMAX_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINTMAX,  TBL_COL_LIST_INIT }
+#define TBL_COL_HEXUINT_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT,  TBL_COL_LIST_INIT }
+#define TBL_COL_BOOL_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_BOOL,  TBL_COL_LIST_INIT }
 
 #define TBL_COL_END { .name = 0, .width = 0, .fmt = 0, .type = COL_TYPE_LAST }
 
 #define TBL_COLUMNS  .columns = (struct table_column [])
 #define TBL_COL_ORDER(order) .column_order = (struct table_col_info *) order, .cols_to_output = ARRAY_SIZE(order)
 #define TBL_COL_DELIMITER(_delimiter_) .col_delimiter = _delimiter_
-#define TBL_APPEND_DELIMITER(_delimiter_) .append_delimiter = _delimiter_
-#define TBL_COL(_idx) { .idx = _idx, .output_type = 0 }
+#define TBL_COL(_idx) { .idx = _idx, .output_type = 0, .next_column = -1 }
+#define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .output_type = 0, .next_column = -1, .fmt = _fmt }
+#define TBL_COL_TYPE(_idx, _type) { .idx = _idx, .output_type = _type, .next_column = -1 }
+
 
 #define TBL_OUTPUT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
 #define TBL_OUTPUT_BLOCKLINE          .formatter = &table_fmt_blockline
@@ -260,29 +268,11 @@ void table_col_bool_name(struct table *tbl, const char *col_name, uint val);
 void table_col_bool_fmt(struct table *tbl, int col, const char *fmt, uint val);
 #undef TABLE_COL_PROTO
 
-#define TABLE_APPEND_PROTO(_name_, _type_) void table_append_##_name_(struct table *tbl, _type_ val)
-TABLE_APPEND_PROTO(int, int);
-TABLE_APPEND_PROTO(uint, uint);
-TABLE_APPEND_PROTO(double, double);
-TABLE_APPEND_PROTO(str, const char *);
-TABLE_APPEND_PROTO(intmax, intmax_t);
-TABLE_APPEND_PROTO(uintmax, uintmax_t);
-TABLE_APPEND_PROTO(s64, s64);
-TABLE_APPEND_PROTO(u64, u64);
-void table_append_bool(struct table *tbl, int val);
-#undef TABLE_APPEND_PROTO
-
 /**
  * Set a particular cell of the current row to a string formatted
  * by sprintf(). This function can set a column of an arbitrary type.
  **/
 void table_col_printf(struct table *tbl, int col, const char *fmt, ...) FORMAT_CHECK(printf, 3, 4);
-
-/**
- * Append a string formatted by sprintf() to the most recently filled cell.
- * This function can work with columns of an arbitrary type.
- **/
-void table_append_printf(struct table *tbl, const char *fmt, ...) FORMAT_CHECK(printf, 2, 3);
 
 /**
  * Alternatively, a string cell can be constructed as a stream.
@@ -401,6 +391,7 @@ struct table_formatter {
   void (*table_end)(struct table *tbl);		// [*] table_end callback (optional)
   bool (*process_option)(struct table *tbl, const char *key, const char *value, const char **err);
 	// [*] Process table option and possibly return an error message (optional)
+  const char *formats[];
 };
 
 /** Standard formatter for human-readable output. **/

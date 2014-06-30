@@ -7,8 +7,10 @@
 #include <time.h>
 #include <stdio.h>
 
-void table_col_name(struct table *tbl, const char *col_name, u64 val)
+void table_col_size_name(struct table *tbl, const char *col_name, u64 val)
 {
+  int col = table_get_col_idx(tbl, col_name);
+  table_col_size(tbl, col, val);
 }
 
 void table_col_size(struct table *tbl, int col, u64 val)
@@ -38,10 +40,17 @@ void table_col_size(struct table *tbl, int col, u64 val)
   // FIXME: do some rounding?
   val = val / unit_div[tbl->column_order[col].output_type];
 
-  tbl->col_str_ptrs[col] = mp_printf(tbl->pool, "%lu%s", val, unit_suffix[tbl->column_order[col].output_type]);
+  //tbl->col_str_ptrs[col] = mp_printf(tbl->pool, "%lu%s", val, unit_suffix[tbl->column_order[col].output_type]);
+  table_col_printf(tbl, col, "%lu%s", val, unit_suffix[tbl->column_order[col].output_type]);
 }
 
 #define FORMAT_TIME_SIZE 20	// Minimum buffer size
+
+void table_col_timestamp_name(struct table *tbl, const char * col_name, u64 val)
+{
+  int col = table_get_col_idx(tbl, col_name);
+  table_col_size(tbl, col, val);
+}
 
 void table_col_timestamp(struct table *tbl, int col, u64 val)
 {
@@ -64,6 +73,7 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
     break;
   }
 
-  tbl->col_str_ptrs[col] = mp_printf(tbl->pool, "%s", formatted_time_buf);
+  //tbl->col_str_ptrs[col] = mp_printf(tbl->pool, "%s", formatted_time_buf);
+  table_col_printf(tbl, col, "%s", formatted_time_buf);
 }
 

@@ -48,6 +48,9 @@ enum timestamp_format {
 #undef TABLE_COL_PROTO
 */
 
+void table_col_size_name(struct table *tbl, const char *col_name, u64 val);
+void table_col_timestamp_name(struct table *tbl, const char * col_name, u64 val);
+
 void table_col_size(struct table *tbl, int col, u64 val);
 void table_col_timestamp(struct table *tbl, int col, u64 val);
 

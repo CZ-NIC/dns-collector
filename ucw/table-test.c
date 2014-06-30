@@ -70,7 +70,6 @@ static void do_default_order_test(struct fastbuf *out)
 static void do_print1(struct table *test_tbl)
 {
   table_col_str(test_tbl, test_col0_str, "sdsdf");
-  table_append_str(test_tbl, "aaaaa");
   table_col_int(test_tbl, test_col1_int, -10);
   table_col_int(test_tbl, test_col1_int, 10000);
   table_col_uint(test_tbl, test_col2_uint, 10);
@@ -80,7 +79,6 @@ static void do_print1(struct table *test_tbl)
   table_end_row(test_tbl);
 
   table_col_str(test_tbl, test_col0_str, "test");
-  table_append_str(test_tbl, "bbbbb");
   table_col_int(test_tbl, test_col1_int, -100);
   table_col_uint(test_tbl, test_col2_uint, 100);
   table_col_bool(test_tbl, test_col3_bool, 0);
