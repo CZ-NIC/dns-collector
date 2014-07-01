@@ -8,6 +8,51 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+bool table_set_col_opt_ucw_types(struct table *tbl, int col_copy_idx, const char *col_arg, char **err)
+{
+  fprintf(stdout, "col_copy_idx: %d, col_arg: %s\n", col_copy_idx, col_arg);
+  fflush(stdout);
+
+  int col_type_idx = tbl->column_order[col_copy_idx].idx;
+  if(tbl->columns[col_type_idx].type == COL_TYPE_SIZE) {
+    if(strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
+      tbl->column_order[col_copy_idx].output_type = UNIT_BYTE;
+    } else if(strcasecmp(col_arg, "kb") == 0) {
+      tbl->column_order[col_copy_idx].output_type = UNIT_KILOBYTE;
+    } else if(strcasecmp(col_arg, "mb") == 0) {
+      tbl->column_order[col_copy_idx].output_type = UNIT_MEGABYTE;
+    } else if(strcasecmp(col_arg, "gb") == 0) {
+      tbl->column_order[col_copy_idx].output_type = UNIT_GIGABYTE;
+    } else if(strcasecmp(col_arg, "tb") == 0) {
+      tbl->column_order[col_copy_idx].output_type = UNIT_TERABYTE;
+    } else {
+      *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d.", col_arg, col_copy_idx);
+      return true;
+    }
+    *err = NULL;
+    return true;
+  }
+
+  if(tbl->columns[col_type_idx].type == COL_TYPE_TIMESTAMP) {
+    fprintf(stdout, "setting timestamp format, col_arg: '%s'\n", col_arg);
+    fflush(stdout);
+    if(strcasecmp(col_arg, "timestamp") == 0 || strcasecmp(col_arg, "epoch") == 0) {
+      tbl->column_order[col_copy_idx].output_type = TIMESTAMP_EPOCH;
+    } else if(strcasecmp(col_arg, "datetime") == 0) {
+      tbl->column_order[col_copy_idx].output_type = TIMESTAMP_DATETIME;
+    } else {
+      *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d.", col_arg, col_copy_idx);
+      return true;
+    }
+    *err = NULL;
+    return true;
+  }
+
+  *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d.", col_arg, col_copy_idx);
+  return false;
+}
+
+
 void table_col_size_name(struct table *tbl, const char *col_name, u64 val)
 {
   int col = table_get_col_idx(tbl, col_name);
@@ -38,17 +83,23 @@ void table_col_size(struct table *tbl, int col, u64 val)
     [UNIT_TERABYTE] = "TB"
   };
 
-  // FIXME: do some rounding?
-  uint out_type = 0;
-  if(tbl->column_order[col].output_type == CELL_OUT_UNINITIALIZED) {
-    val = val / unit_div[UNIT_BYTE];
-    out_type = 0;
-  } else {
-    val = val / unit_div[tbl->column_order[col].output_type];
-    out_type = tbl->column_order[col].output_type;
+  int curr_col = tbl->columns[col].first_column;
+  while(curr_col != -1) {
+
+    // FIXME: do some rounding?
+    uint out_type = 0;
+    if(tbl->column_order[curr_col].output_type == CELL_OUT_UNINITIALIZED) {
+      val = val / unit_div[UNIT_BYTE];
+      out_type = 0;
+    } else {
+      val = val / unit_div[tbl->column_order[curr_col].output_type];
+      out_type = tbl->column_order[curr_col].output_type;
+    }
+
+    tbl->column_order[curr_col].cell_content = mp_printf(tbl->pool, "%lu%s", val, unit_suffix[out_type]);
+    curr_col = tbl->column_order[curr_col].next_column;
   }
 
-  table_col_printf(tbl, col, "%lu%s", val, unit_suffix[out_type]);
 }
 
 #define FORMAT_TIME_SIZE 20	// Minimum buffer size
@@ -69,19 +120,24 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
   time_t tmp_time = (time_t)val;
   struct tm t = *gmtime(&tmp_time);
 
-  switch (tbl->column_order[col].output_type) {
-  case TIMESTAMP_EPOCH:
-  case CELL_OUT_UNINITIALIZED:
-    sprintf(formatted_time_buf, "%lu", val);
+  int curr_col = tbl->columns[col].first_column;
+  while(curr_col != -1) {
+    switch (tbl->column_order[curr_col].output_type) {
+    case TIMESTAMP_EPOCH:
+    case CELL_OUT_UNINITIALIZED:
+      sprintf(formatted_time_buf, "%lu", val);
+      break;
+    case TIMESTAMP_DATETIME:
+      strftime(formatted_time_buf, FORMAT_TIME_SIZE, "%F %T", &t);
     break;
-  case TIMESTAMP_DATETIME:
-    strftime(formatted_time_buf, FORMAT_TIME_SIZE, "%F %T", &t);
-    break;
-  default:
-    abort();
-    break;
-  }
+    default:
+      abort();
+      break;
+    }
 
-  table_col_printf(tbl, col, "%s", formatted_time_buf);
+    //table_col_printf(tbl, col, "%s", formatted_time_buf);
+    tbl->column_order[curr_col].cell_content = mp_printf(tbl->pool, "%s", formatted_time_buf);
+    curr_col = tbl->column_order[curr_col].next_column;
+  }
 }
 

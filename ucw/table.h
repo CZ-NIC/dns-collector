@@ -307,6 +307,12 @@ void table_reset_row(struct table *tbl);
  **/
 int table_get_col_idx(struct table *tbl, const char *col_name);
 
+
+/**
+ * Sets a string argument to a column realization
+ **/
+bool table_set_col_opt_default(struct table *tbl, int col_copy_idx, const char *col_arg, char ** err);
+
 /**
  * Returns a comma-and-space-separated list of column names, allocated from table's internal
  * memory pool.
@@ -390,6 +396,8 @@ struct table_formatter {
   void (*table_end)(struct table *tbl);		// [*] table_end callback (optional)
   bool (*process_option)(struct table *tbl, const char *key, const char *value, const char **err);
 	// [*] Process table option and possibly return an error message (optional)
+  bool (*set_col_instance_option)(struct table *tbl, uint col, const char *value, char **err);
+        // [*] process table option for a column instance
   const char *formats[];
 };
 

@@ -54,6 +54,8 @@ void table_col_timestamp_name(struct table *tbl, const char * col_name, u64 val)
 void table_col_size(struct table *tbl, int col, u64 val);
 void table_col_timestamp(struct table *tbl, int col, u64 val);
 
+bool table_set_col_opt_ucw_types(struct table *tbl, int col_copy_idx, const char *col_arg, char **err);
+
 //TABLE_COL(size, u64, COL_TYPE_SIZE)
 //TABLE_COL_STR(size, u64, COL_TYPE_SIZE)
 

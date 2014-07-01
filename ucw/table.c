@@ -9,6 +9,7 @@
 #include <ucw/stkstring.h>
 #include <ucw/gary.h>
 #include <ucw/table.h>
+#include <ucw/strtonum.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -72,7 +73,7 @@ void table_start(struct table *tbl, struct fastbuf *out)
 
   if(tbl->column_order == NULL) table_make_default_column_order(tbl);
   else {
-    // update linked lists in case that the lists were initialized in static parts
+    // update linked lists
     table_update_ll(tbl);
   }
   if(tbl->formatter->table_start != NULL) tbl->formatter->table_start(tbl);
@@ -168,6 +169,37 @@ bool table_col_is_printed(struct table *tbl, uint col_idx)
   return 1;
 }
 
+static char * table_parse_col_arg(char *col_def)
+{
+  // FIXME: should be switched to str_sepsplit
+  char * left_br = strchr(col_def, '[');
+  if(left_br == NULL) return NULL;
+  *left_br = 0;
+  left_br++;
+  char *right_br = strchr(left_br, ']');
+  *right_br = 0;
+  //*left_br = 0;
+  return left_br;
+}
+
+/**
+ *
+ **/
+bool table_set_col_opt_default(struct table *tbl, int col_copy_idx, const char *col_arg, char **err)
+{
+  int col_type_idx = tbl->column_order[col_copy_idx].idx;
+
+  if(tbl->columns[col_type_idx].type == COL_TYPE_DOUBLE) {
+    uint precision = 0;
+    str_to_uint(&precision, col_arg, NULL, 0);
+    tbl->column_order[col_type_idx].output_type = precision;
+    return true;
+  }
+
+  *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d.", col_arg, col_copy_idx);
+  return false;
+}
+
 /**
  * TODO: This function deliberately leaks memory. When it is called multiple times,
  * previous column orders still remain allocated in the table's memory pool.
@@ -199,25 +231,50 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     }
   }
 
-  int *col_order_int = alloca(sizeof(int) * col_count);
-  int curr_col_order_int = 0;
-  const char *name_start = tmp_col_order;
+  tbl->cols_to_output = col_count;
+  tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_info) * col_count);
+
+  //int *col_order_int = alloca(sizeof(int) * col_count);
+  int curr_col_idx = 0;
+  char *name_start = tmp_col_order;
+  //int curr_col_instance = 0;
   while(name_start) {
     char *next = strchr(name_start, ',');
     if(next) {
       *next++ = 0;
     }
 
-    int idx = table_get_col_idx(tbl, name_start);
-    if(idx == -1) {
+    char *arg = table_parse_col_arg(name_start); // this sets 0 on the '['
+    int col_idx = table_get_col_idx(tbl, name_start);
+    if(col_idx == -1) {
       return mp_printf(tbl->pool, "Unknown table column '%s'", name_start);
     }
-    col_order_int[curr_col_order_int++] = idx;
+    tbl->column_order[curr_col_idx].idx = col_idx;
+    tbl->column_order[curr_col_idx].cell_content = NULL;
+    tbl->column_order[curr_col_idx].output_type = CELL_OUT_UNINITIALIZED;
+    fprintf(stdout, "formatter: %p, set_col_instance_option: %p\n", tbl->formatter, tbl->formatter->set_col_instance_option);
+    if(tbl->formatter && tbl->formatter->set_col_instance_option) {
+      char *err = NULL;
+      fprintf(stdout, "calling: %p\n", tbl->formatter->set_col_instance_option);
+      tbl->formatter->set_col_instance_option(tbl, curr_col_idx, arg, &err);
+      if(err) return err;
+    }
 
     name_start = next;
+    curr_col_idx++;
   }
 
-  table_set_col_order(tbl, col_order_int, curr_col_order_int);
+  //table_set_col_order(tbl, col_order_int, curr_col_order_int);
+  //tbl->cols_to_output = cols_to_output;
+  //tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_info) * cols_to_output);
+  //for(int i = 0; i < cols_to_output; i++) {
+  //int col_idx = col_order[i];
+  //tbl->column_order[i].idx = col_idx;
+  //tbl->column_order[i].cell_content = NULL;
+  //tbl->column_order[i].output_type = CELL_OUT_UNINITIALIZED;
+  //}
+  table_update_ll(tbl);
+
   return NULL;
 }
 
@@ -448,7 +505,7 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
   // Formatter options
   if(tbl->formatter && tbl->formatter->process_option) {
     const char *err = NULL;
-    if (tbl->formatter->process_option(tbl, key, value, &err)) {
+    if(tbl->formatter->process_option(tbl, key, value, &err)) {
       return err;
     }
   }
