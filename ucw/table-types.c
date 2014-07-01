@@ -6,6 +6,7 @@
 #include <ucw/table.h>
 #include <time.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 void table_col_size_name(struct table *tbl, const char *col_name, u64 val)
 {
@@ -38,10 +39,16 @@ void table_col_size(struct table *tbl, int col, u64 val)
   };
 
   // FIXME: do some rounding?
-  val = val / unit_div[tbl->column_order[col].output_type];
+  uint out_type = 0;
+  if(tbl->column_order[col].output_type == CELL_OUT_UNINITIALIZED) {
+    val = val / unit_div[UNIT_BYTE];
+    out_type = 0;
+  } else {
+    val = val / unit_div[tbl->column_order[col].output_type];
+    out_type = tbl->column_order[col].output_type;
+  }
 
-  //tbl->col_str_ptrs[col] = mp_printf(tbl->pool, "%lu%s", val, unit_suffix[tbl->column_order[col].output_type]);
-  table_col_printf(tbl, col, "%lu%s", val, unit_suffix[tbl->column_order[col].output_type]);
+  table_col_printf(tbl, col, "%lu%s", val, unit_suffix[out_type]);
 }
 
 #define FORMAT_TIME_SIZE 20	// Minimum buffer size
@@ -56,24 +63,25 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
 {
   ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
   ASSERT(tbl->columns[col].type == COL_TYPE_ANY || COL_TYPE_TIMESTAMP == tbl->columns[col].type);
-  //ASSERT(fmt != NULL);
 
-  char formatted_time_buf[FORMAT_TIME_SIZE];
+  char formatted_time_buf[FORMAT_TIME_SIZE] = { 0 };
 
   time_t tmp_time = (time_t)val;
   struct tm t = *gmtime(&tmp_time);
 
   switch (tbl->column_order[col].output_type) {
   case TIMESTAMP_EPOCH:
-    sprintf(formatted_time_buf, "%u", (uint) val);
+  case CELL_OUT_UNINITIALIZED:
+    sprintf(formatted_time_buf, "%lu", val);
     break;
   case TIMESTAMP_DATETIME:
     strftime(formatted_time_buf, FORMAT_TIME_SIZE, "%F %T", &t);
+    break;
   default:
+    abort();
     break;
   }
 
-  //tbl->col_str_ptrs[col] = mp_printf(tbl->pool, "%s", formatted_time_buf);
   table_col_printf(tbl, col, "%s", formatted_time_buf);
 }
 

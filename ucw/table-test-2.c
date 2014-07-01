@@ -53,6 +53,13 @@ static void do_test(void)
   table_col_timestamp(&test_tbl, TEST_COL1_TS, test_time);
   table_end_row(&test_tbl);
 
+  test_size = test_size * 1024LU;
+  test_tbl.column_order[TEST_COL0_SIZE].output_type = UNIT_TERABYTE;
+  test_tbl.column_order[TEST_COL1_TS].output_type = TIMESTAMP_DATETIME;
+  table_col_size(&test_tbl, TEST_COL0_SIZE, test_size);
+  table_col_timestamp(&test_tbl, TEST_COL1_TS, test_time);
+  table_end_row(&test_tbl);
+
   table_end(&test_tbl);
   table_cleanup(&test_tbl);
 

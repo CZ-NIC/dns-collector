@@ -156,6 +156,7 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
     int col_idx = col_order[i];
     tbl->column_order[i].idx = col_idx;
     tbl->column_order[i].cell_content = NULL;
+    tbl->column_order[i].output_type = CELL_OUT_UNINITIALIZED;
   }
   table_update_ll(tbl);
 }
@@ -226,7 +227,9 @@ static void table_set_all_cols_content(struct table *tbl, int col, char *col_con
 {
   int curr_col = tbl->columns[col].first_column;
   while(curr_col != -1) {
-    if(override == 0 && tbl->column_order[curr_col].output_type != 0) {
+    if(override == 0 && tbl->column_order[curr_col].output_type != CELL_OUT_UNINITIALIZED ) {
+      fprintf(stdout, "curr_col: %d\n", curr_col);
+      fflush(stdout);
       die("Error while setting content of all cells of a single type column, cell format should not be overriden.");
     }
     tbl->column_order[curr_col].cell_content = col_content;
@@ -275,7 +278,7 @@ static const char *table_col_default_fmts[] = {
     table_col_##_name_(tbl, col, val);\
   }
 
-#define TABLE_COL_FMT(_name_, _type_, _typeconst_) void table_col_##_name_##_fmt(struct table *tbl, int col, const char *fmt, _type_ val UNUSED)\
+#define TABLE_COL_FMT(_name_, _type_, _typeconst_) void table_col_##_name_##_fmt(struct table *tbl, int col, const char *fmt, _type_ val)\
   {\
      ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);\
      ASSERT(tbl->columns[col].type == COL_TYPE_ANY || _typeconst_ == tbl->columns[col].type);\
@@ -292,16 +295,38 @@ static const char *table_col_default_fmts[] = {
 
 TABLE_COL_BODIES(int, int, COL_TYPE_INT)
 TABLE_COL_BODIES(uint, uint, COL_TYPE_UINT)
-TABLE_COL_BODIES(double, double, COL_TYPE_DOUBLE)
 TABLE_COL_BODIES(str, const char *, COL_TYPE_STR)
 TABLE_COL_BODIES(intmax, intmax_t, COL_TYPE_INTMAX)
 TABLE_COL_BODIES(uintmax, uintmax_t, COL_TYPE_UINTMAX)
 TABLE_COL_BODIES(s64, s64, COL_TYPE_S64)
 TABLE_COL_BODIES(u64, u64, COL_TYPE_U64)
+
+// column type double is a special case
+TABLE_COL(double, double, COL_TYPE_DOUBLE);
+TABLE_COL_STR(double, double, COL_TYPE_DOUBLE);
 #undef TABLE_COL
 #undef TABLE_COL_FMT
 #undef TABLE_COL_STR
 #undef TABLE_COL_BODIES
+
+void table_col_double_fmt(struct table *tbl, int col, const char *fmt, double val)
+{
+  ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
+  ASSERT(tbl->columns[col].type == COL_TYPE_ANY || COL_TYPE_DOUBLE == tbl->columns[col].type);
+  ASSERT(fmt != NULL);
+  tbl->last_printed_col = col;
+  tbl->row_printing_started = 1;
+  char *cell_content = mp_printf(tbl->pool, fmt, val);
+  int curr_col = tbl->columns[col].first_column;
+  while(curr_col != -1) {
+    if(tbl->column_order[curr_col].output_type < 0) tbl->column_order[curr_col].cell_content = cell_content;
+    else {
+      char *cell_content_tmp = mp_printf(tbl->pool, "%.*lf", tbl->column_order[curr_col].output_type, val);
+      tbl->column_order[curr_col].cell_content = cell_content_tmp;
+    }
+    curr_col = tbl->column_order[curr_col].next_column;
+  }
+}
 
 void table_col_bool(struct table *tbl, int col, uint val)
 {
@@ -326,6 +351,7 @@ void table_col_bool_fmt(struct table *tbl, int col, const char *fmt, uint val)
   while(curr_col != -1) {
     switch(tbl->column_order[curr_col].output_type) {
     case CELL_OUT_HUMAN_READABLE:
+    case CELL_OUT_UNINITIALIZED:
       tbl->column_order[curr_col].cell_content = mp_printf(tbl->pool, fmt, val ? "true" : "false");
       break;
     case CELL_OUT_MACHINE_READABLE:

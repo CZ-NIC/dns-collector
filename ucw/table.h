@@ -99,6 +99,7 @@ enum column_type {
 #define CELL_FLAG_MASK	(CELL_ALIGN_LEFT)
 #define CELL_WIDTH_MASK	(~CELL_FLAG_MASK)
 
+#define CELL_OUT_UNINITIALIZED      -1
 #define CELL_OUT_HUMAN_READABLE     0
 #define CELL_OUT_MACHINE_READABLE   1
 
@@ -196,8 +197,8 @@ struct table {
 #define TBL_COLUMNS  .columns = (struct table_column [])
 #define TBL_COL_ORDER(order) .column_order = (struct table_col_info *) order, .cols_to_output = ARRAY_SIZE(order)
 #define TBL_COL_DELIMITER(_delimiter_) .col_delimiter = _delimiter_
-#define TBL_COL(_idx) { .idx = _idx, .output_type = 0, .next_column = -1 }
-#define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .output_type = 0, .next_column = -1, .fmt = _fmt }
+#define TBL_COL(_idx) { .idx = _idx, .output_type = -1, .next_column = -1 }
+#define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .output_type = -1, .next_column = -1, .fmt = _fmt }
 #define TBL_COL_TYPE(_idx, _type) { .idx = _idx, .output_type = _type, .next_column = -1 }
 
 #define TBL_OUTPUT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
