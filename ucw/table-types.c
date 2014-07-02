@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-bool table_set_col_opt_ucw_types(struct table *tbl, int col_copy_idx, const char *col_arg, char **err)
+static bool table_set_col_opt_size(struct table *tbl, uint col_copy_idx, const char *col_arg, char **err)
 {
   int col_type_idx = tbl->column_order[col_copy_idx].idx;
   if(tbl->columns[col_type_idx].type == COL_TYPE_SIZE) {
@@ -23,13 +23,25 @@ bool table_set_col_opt_ucw_types(struct table *tbl, int col_copy_idx, const char
     } else if(strcasecmp(col_arg, "tb") == 0) {
       tbl->column_order[col_copy_idx].output_type = UNIT_TERABYTE;
     } else {
-      *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d.", col_arg, col_copy_idx);
+      *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d (counted from 0)", col_arg, col_copy_idx);
       return true;
     }
     *err = NULL;
     return true;
   }
 
+  *err = NULL;
+  return false;
+}
+
+struct table_user_type table_type_size = {
+  .set_col_instance_option = table_set_col_opt_size,
+  .type = COL_TYPE_SIZE,
+};
+
+static bool table_set_col_opt_timestamp(struct table *tbl, uint col_copy_idx, const char *col_arg, char **err)
+{
+  int col_type_idx = tbl->column_order[col_copy_idx].idx;
   if(tbl->columns[col_type_idx].type == COL_TYPE_TIMESTAMP) {
     if(strcasecmp(col_arg, "timestamp") == 0 || strcasecmp(col_arg, "epoch") == 0) {
       tbl->column_order[col_copy_idx].output_type = TIMESTAMP_EPOCH;
@@ -43,8 +55,14 @@ bool table_set_col_opt_ucw_types(struct table *tbl, int col_copy_idx, const char
     return true;
   }
 
-  return table_set_col_opt_default(tbl, col_copy_idx, col_arg, err);
+  *err = NULL;
+  return false;
 }
+
+struct table_user_type table_type_timestamp = {
+  .set_col_instance_option = table_set_col_opt_timestamp,
+  .type = COL_TYPE_TIMESTAMP,
+};
 
 void table_col_size_name(struct table *tbl, const char *col_name, u64 val)
 {

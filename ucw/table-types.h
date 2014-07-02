@@ -21,8 +21,11 @@ enum timestamp_format {
 #define COL_TYPE_SIZE       COL_TYPE_CUSTOM
 #define COL_TYPE_TIMESTAMP  (COL_TYPE_CUSTOM+1)
 
-#define TBL_COL_SIZE(_name, _width)           { .name = _name, .width = _width, .fmt = "%llu", .type = COL_TYPE_SIZE }
-#define TBL_COL_TIMESTAMP(_name, _width)      { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_TIMESTAMP }
+extern struct table_user_type table_type_timestamp;
+extern struct table_user_type table_type_size;
+
+#define TBL_COL_SIZE(_name, _width)           { .name = _name, .width = _width, .fmt = "%llu", .type = COL_TYPE_SIZE, .type_def = &table_type_size }
+#define TBL_COL_TIMESTAMP(_name, _width)      { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_TIMESTAMP, .type_def = &table_type_timestamp }
 
 #define TBL_COL_SIZE_FMT(_name, _width, _units)         { .name = _name, .width = _width, .fmt = "%llu", .type = COL_TYPE_SIZE }
 #define TBL_COL_TIMESTAMP_FMT(_name, _width, _fmt)      { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_TIMESTAMP }
@@ -53,8 +56,6 @@ void table_col_timestamp_name(struct table *tbl, const char * col_name, u64 val)
 
 void table_col_size(struct table *tbl, int col, u64 val);
 void table_col_timestamp(struct table *tbl, int col, u64 val);
-
-bool table_set_col_opt_ucw_types(struct table *tbl, int col_copy_idx, const char *col_arg, char **err);
 
 //TABLE_COL(size, u64, COL_TYPE_SIZE)
 //TABLE_COL_STR(size, u64, COL_TYPE_SIZE)

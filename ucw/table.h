@@ -103,6 +103,15 @@ enum column_type {
 #define CELL_OUT_HUMAN_READABLE     0
 #define CELL_OUT_MACHINE_READABLE   1
 
+struct table;
+
+struct table_user_type {
+  bool (*set_col_instance_option)(struct table *tbl, uint col, const char *value, char **err);
+       // [*] process table option for a column instance
+  uint type;               // [*] type identifier, should be a number shifted by COL_TYPE_CUSTOM
+  const char *default_fmt; // [*] default format used for printing
+};
+
 /**
  * Definition of a single table column.
  * Usually, this is generated using the `TABLE_COL_`'type' macros.
@@ -115,6 +124,7 @@ struct table_column {
   enum column_type type;	// [*] Type of the cells in the column
   int first_column;
   int last_column;
+  struct table_user_type *type_def;
 };
 
 struct table_col_info {
@@ -405,8 +415,6 @@ struct table_formatter {
   void (*table_end)(struct table *tbl);		// [*] table_end callback (optional)
   bool (*process_option)(struct table *tbl, const char *key, const char *value, const char **err);
 	// [*] Process table option and possibly return an error message (optional)
-  bool (*set_col_instance_option)(struct table *tbl, uint col, const char *value, char **err);
-        // [*] process table option for a column instance
   const char *formats[];
 };
 

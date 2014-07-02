@@ -249,10 +249,10 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     tbl->column_order[curr_col_idx].idx = col_idx;
     tbl->column_order[curr_col_idx].cell_content = NULL;
     tbl->column_order[curr_col_idx].output_type = CELL_OUT_UNINITIALIZED;
-    if(tbl->formatter && tbl->formatter->set_col_instance_option) {
+    if(tbl->columns[col_idx].type_def && tbl->columns[col_idx].type_def->set_col_instance_option) {
       char *err = NULL;
-      tbl->formatter->set_col_instance_option(tbl, curr_col_idx, arg, &err);
-      if(err) return err;
+      tbl->columns[col_idx].type_def->set_col_instance_option(tbl, curr_col_idx, arg, &err);
+      if(err) return mp_printf(tbl->pool, "Error occured while setting column option: %s.", err);
     }
 
     name_start = next;
