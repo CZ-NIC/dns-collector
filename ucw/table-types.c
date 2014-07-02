@@ -80,10 +80,10 @@ void table_col_size(struct table *tbl, int col, u64 val)
 
   static u64 unit_div[] = {
     [UNIT_BYTE] = (u64) 1,
-    [UNIT_KILOBYTE] = (u64) 1024LU,
-    [UNIT_MEGABYTE] = (u64) (1024LU * 1024LU),
-    [UNIT_GIGABYTE] = (u64) (1024LU * 1024LU * 1024LU),
-    [UNIT_TERABYTE] = (u64) (1024LU * 1024LU * 1024LU * 1024LU)
+    [UNIT_KILOBYTE] = (u64) 1024LLU,
+    [UNIT_MEGABYTE] = (u64) (1024LLU * 1024LLU),
+    [UNIT_GIGABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU),
+    [UNIT_TERABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU * 1024LLU)
   };
 
   static const char *unit_suffix[] = {

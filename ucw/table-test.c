@@ -79,7 +79,7 @@ static void do_print1(struct table *test_tbl)
   table_col_printf(test_tbl, test_col2_uint, "XXX-%u", 22222);
   table_col_bool(test_tbl, test_col3_bool, 1);
   table_col_double(test_tbl, test_col4_double, 1.5);
-  table_col_size(test_tbl, test_col5_size, (1024LU*1024LU*1024LU*5LU));
+  table_col_size(test_tbl, test_col5_size, (1024LLU*1024LLU*1024LLU*5LLU));
   table_col_timestamp(test_tbl, test_col6_time, 1404305876);
   table_end_row(test_tbl);
 
@@ -88,7 +88,7 @@ static void do_print1(struct table *test_tbl)
   table_col_uint(test_tbl, test_col2_uint, 100);
   table_col_bool(test_tbl, test_col3_bool, 0);
   table_col_double(test_tbl, test_col4_double, 1.5);
-  table_col_size(test_tbl, test_col5_size, (1024LU*1024LU*1024LU*2LU));
+  table_col_size(test_tbl, test_col5_size, (1024LLU*1024LLU*1024LLU*2LLU));
   table_col_timestamp(test_tbl, test_col6_time, 1404305909);
   table_end_row(test_tbl);
 }
