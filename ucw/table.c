@@ -121,7 +121,6 @@ const char * table_get_col_list(struct table *tbl)
   return tmp;
 }
 
-
 static void table_update_ll(struct table *tbl)
 {
   int cols_to_output = tbl->cols_to_output;
@@ -183,7 +182,7 @@ static char * table_parse_col_arg(char *col_def)
 }
 
 /**
- *
+ * Setting options for basic table types (as defined in table.h)
  **/
 bool table_set_col_opt_default(struct table *tbl, int col_copy_idx, const char *col_arg, char **err)
 {
@@ -234,10 +233,8 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
   tbl->cols_to_output = col_count;
   tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_info) * col_count);
 
-  //int *col_order_int = alloca(sizeof(int) * col_count);
   int curr_col_idx = 0;
   char *name_start = tmp_col_order;
-  //int curr_col_instance = 0;
   while(name_start) {
     char *next = strchr(name_start, ',');
     if(next) {
@@ -247,15 +244,13 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     char *arg = table_parse_col_arg(name_start); // this sets 0 on the '['
     int col_idx = table_get_col_idx(tbl, name_start);
     if(col_idx == -1) {
-      return mp_printf(tbl->pool, "Unknown table column '%s'", name_start);
+      return mp_printf(tbl->pool, "Unknown table column '%s', possible column names are: %s.", name_start, table_get_col_list(tbl));
     }
     tbl->column_order[curr_col_idx].idx = col_idx;
     tbl->column_order[curr_col_idx].cell_content = NULL;
     tbl->column_order[curr_col_idx].output_type = CELL_OUT_UNINITIALIZED;
-    fprintf(stdout, "formatter: %p, set_col_instance_option: %p\n", tbl->formatter, tbl->formatter->set_col_instance_option);
     if(tbl->formatter && tbl->formatter->set_col_instance_option) {
       char *err = NULL;
-      fprintf(stdout, "calling: %p\n", tbl->formatter->set_col_instance_option);
       tbl->formatter->set_col_instance_option(tbl, curr_col_idx, arg, &err);
       if(err) return err;
     }
@@ -264,15 +259,6 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     curr_col_idx++;
   }
 
-  //table_set_col_order(tbl, col_order_int, curr_col_order_int);
-  //tbl->cols_to_output = cols_to_output;
-  //tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_info) * cols_to_output);
-  //for(int i = 0; i < cols_to_output; i++) {
-  //int col_idx = col_order[i];
-  //tbl->column_order[i].idx = col_idx;
-  //tbl->column_order[i].cell_content = NULL;
-  //tbl->column_order[i].output_type = CELL_OUT_UNINITIALIZED;
-  //}
   table_update_ll(tbl);
 
   return NULL;
@@ -285,8 +271,6 @@ static void table_set_all_cols_content(struct table *tbl, int col, char *col_con
   int curr_col = tbl->columns[col].first_column;
   while(curr_col != -1) {
     if(override == 0 && tbl->column_order[curr_col].output_type != CELL_OUT_UNINITIALIZED ) {
-      fprintf(stdout, "curr_col: %d\n", curr_col);
-      fflush(stdout);
       die("Error while setting content of all cells of a single type column, cell format should not be overriden.");
     }
     tbl->column_order[curr_col].cell_content = col_content;
@@ -484,7 +468,7 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
     } else if(strcmp(key, "cols") == 0) {
       const char *err = table_set_col_order_by_name(tbl, value);
       if(err != NULL) {
-        return mp_printf(tbl->pool, "%s, possible column names are: %s.", err, table_get_col_list(tbl));
+        return err;
       }
       return NULL;
     } else if(strcmp(key, "fmt") == 0) {

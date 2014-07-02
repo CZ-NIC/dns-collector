@@ -335,6 +335,15 @@ bool table_col_is_printed(struct table *tbl, uint col_idx);
  * Sets the order in which the columns are printed. The specification is a string with comma-separated column
  * names. Returns NULL for success and an error message otherwise. The string is not referenced after
  * this function returns.
+ *
+ * The format of the col_order string is the following:
+ * <col-order-string> := <col-def>[,<col-def>]*
+ *
+ * <col-def> := <col-name> '[' <col-opt> ']'
+ * <col-name> is a string that does not contain comma ',' or '[',']' brackets
+ * <col-opt> is currently only one string.
+ *
+ * FIXME In the future, we should allow <col-opt> to be a comma(,) separated list of identifiers
  **/
 const char *table_set_col_order_by_name(struct table *tbl, const char *col_order);
 

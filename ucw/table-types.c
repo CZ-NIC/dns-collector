@@ -10,9 +10,6 @@
 
 bool table_set_col_opt_ucw_types(struct table *tbl, int col_copy_idx, const char *col_arg, char **err)
 {
-  fprintf(stdout, "col_copy_idx: %d, col_arg: %s\n", col_copy_idx, col_arg);
-  fflush(stdout);
-
   int col_type_idx = tbl->column_order[col_copy_idx].idx;
   if(tbl->columns[col_type_idx].type == COL_TYPE_SIZE) {
     if(strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
@@ -34,8 +31,6 @@ bool table_set_col_opt_ucw_types(struct table *tbl, int col_copy_idx, const char
   }
 
   if(tbl->columns[col_type_idx].type == COL_TYPE_TIMESTAMP) {
-    fprintf(stdout, "setting timestamp format, col_arg: '%s'\n", col_arg);
-    fflush(stdout);
     if(strcasecmp(col_arg, "timestamp") == 0 || strcasecmp(col_arg, "epoch") == 0) {
       tbl->column_order[col_copy_idx].output_type = TIMESTAMP_EPOCH;
     } else if(strcasecmp(col_arg, "datetime") == 0) {
@@ -48,10 +43,8 @@ bool table_set_col_opt_ucw_types(struct table *tbl, int col_copy_idx, const char
     return true;
   }
 
-  *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d.", col_arg, col_copy_idx);
-  return false;
+  return table_set_col_opt_default(tbl, col_copy_idx, col_arg, err);
 }
-
 
 void table_col_size_name(struct table *tbl, const char *col_name, u64 val)
 {
@@ -135,9 +128,7 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
       break;
     }
 
-    //table_col_printf(tbl, col, "%s", formatted_time_buf);
     tbl->column_order[curr_col].cell_content = mp_printf(tbl->pool, "%s", formatted_time_buf);
     curr_col = tbl->column_order[curr_col].next_column;
   }
 }
-
