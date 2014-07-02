@@ -243,6 +243,7 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
 
     char *arg = table_parse_col_arg(name_start); // this sets 0 on the '['
     int col_idx = table_get_col_idx(tbl, name_start);
+
     if(col_idx == -1) {
       return mp_printf(tbl->pool, "Unknown table column '%s', possible column names are: %s.", name_start, table_get_col_list(tbl));
     }
@@ -319,7 +320,7 @@ static const char *table_col_default_fmts[] = {
     table_col_##_name_(tbl, col, val);\
   }
 
-#define TABLE_COL_FMT(_name_, _type_, _typeconst_) void table_col_##_name_##_fmt(struct table *tbl, int col, const char *fmt, _type_ val)\
+#define TABLE_COL_FMT(_name_, _type_, _typeconst_, _override) void table_col_##_name_##_fmt(struct table *tbl, int col, const char *fmt, _type_ val) \
   {\
      ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);\
      ASSERT(tbl->columns[col].type == COL_TYPE_ANY || _typeconst_ == tbl->columns[col].type);\
@@ -327,20 +328,20 @@ static const char *table_col_default_fmts[] = {
      tbl->last_printed_col = col;\
      tbl->row_printing_started = 1;\
      char *cell_content = mp_printf(tbl->pool, fmt, val);\
-     table_set_all_cols_content(tbl, col, cell_content, 0);\
+     table_set_all_cols_content(tbl, col, cell_content, _override);\
   }
 
-#define TABLE_COL_BODIES(_name_, _type_, _typeconst_) TABLE_COL(_name_, _type_, _typeconst_);\
+#define TABLE_COL_BODIES(_name_, _type_, _typeconst_, _override) TABLE_COL(_name_, _type_, _typeconst_); \
   TABLE_COL_STR(_name_, _type_, _typeconst_);\
-  TABLE_COL_FMT(_name_, _type_, _typeconst_);
+  TABLE_COL_FMT(_name_, _type_, _typeconst_, _override);
 
-TABLE_COL_BODIES(int, int, COL_TYPE_INT)
-TABLE_COL_BODIES(uint, uint, COL_TYPE_UINT)
-TABLE_COL_BODIES(str, const char *, COL_TYPE_STR)
-TABLE_COL_BODIES(intmax, intmax_t, COL_TYPE_INTMAX)
-TABLE_COL_BODIES(uintmax, uintmax_t, COL_TYPE_UINTMAX)
-TABLE_COL_BODIES(s64, s64, COL_TYPE_S64)
-TABLE_COL_BODIES(u64, u64, COL_TYPE_U64)
+TABLE_COL_BODIES(int, int, COL_TYPE_INT, 0)
+TABLE_COL_BODIES(uint, uint, COL_TYPE_UINT, 0)
+TABLE_COL_BODIES(str, const char *, COL_TYPE_STR, 1)
+TABLE_COL_BODIES(intmax, intmax_t, COL_TYPE_INTMAX, 0)
+TABLE_COL_BODIES(uintmax, uintmax_t, COL_TYPE_UINTMAX, 0)
+TABLE_COL_BODIES(s64, s64, COL_TYPE_S64, 0)
+TABLE_COL_BODIES(u64, u64, COL_TYPE_U64, 0)
 
 // column type double is a special case
 TABLE_COL(double, double, COL_TYPE_DOUBLE);
@@ -467,10 +468,7 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
       return NULL;
     } else if(strcmp(key, "cols") == 0) {
       const char *err = table_set_col_order_by_name(tbl, value);
-      if(err != NULL) {
-        return err;
-      }
-      return NULL;
+      return err;
     } else if(strcmp(key, "fmt") == 0) {
       if(strcmp(value, "human") == 0) table_set_formatter(tbl, &table_fmt_human_readable);
       else if(strcmp(value, "machine") == 0) table_set_formatter(tbl, &table_fmt_machine_readable);
