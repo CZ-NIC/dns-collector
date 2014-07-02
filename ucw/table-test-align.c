@@ -102,9 +102,6 @@ int main(int argc UNUSED, char **argv)
   table_init(&test_tbl);
   process_command_line_opts(argv, &test_tbl);
 
-  //bprintf(out, "width: %X; masked: %d; mask: %X\n", test_tbl.columns[0].width, test_tbl.columns[0].width & CELL_ALIGN_MASK, CELL_ALIGN_MASK);
-  //bflush(out);
-
   print_table(&test_tbl, out);
   table_cleanup(&test_tbl);
   bclose(out);

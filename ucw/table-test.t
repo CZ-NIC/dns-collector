@@ -71,18 +71,22 @@ col1_int: 10000
 col2_uint: XXX-22222
 col3_bool: true
 col4_double: 1.50
+col5_size: 5368709120
+col6_timestamp: 1404305876
 
 col0_str: test
 col1_int: -100
 col2_uint: 100
 col3_bool: false
 col4_double: 1.50
+col5_size: 2147483648
+col6_timestamp: 1404305909
 
 EOF
 
 Run: ../obj/ucw/table-test -n
 Out <<EOF
-Tableprinter option parser returned: 'Unknown table column 'test_col0_str', possible column names are: col0_str, col1_int, col2_uint, col3_bool, col4_double.'.
+Tableprinter option parser returned: 'Unknown table column 'test_col0_str', possible column names are: col0_str, col1_int, col2_uint, col3_bool, col4_double, col5_size, col6_timestamp.'.
 EOF
 
 

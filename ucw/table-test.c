@@ -6,11 +6,12 @@
 
 #include <ucw/lib.h>
 #include <ucw/table.h>
+#include <ucw/table-types.h>
 #include <ucw/opt.h>
 #include <stdio.h>
 
 enum test_table_cols {
-  test_col0_str, test_col1_int, test_col2_uint, test_col3_bool, test_col4_double
+  test_col0_str, test_col1_int, test_col2_uint, test_col3_bool, test_col4_double, test_col5_size, test_col6_time
 };
 
 static struct table_col_info test_column_order[] = { TBL_COL(test_col3_bool), TBL_COL(test_col4_double), TBL_COL(test_col2_uint), TBL_COL(test_col1_int), TBL_COL(test_col0_str) };
@@ -22,6 +23,8 @@ static struct table test_tbl = {
     [test_col2_uint] = TBL_COL_UINT("col2_uint", 9),
     [test_col3_bool] = TBL_COL_BOOL("col3_bool", 9),
     [test_col4_double] = TBL_COL_DOUBLE("col4_double", 11, 2),
+    [test_col5_size] = TBL_COL_SIZE("col5_size", 11),
+    [test_col6_time] = TBL_COL_TIMESTAMP("col6_timestamp", 20),
     TBL_COL_END
   },
   TBL_COL_ORDER(test_column_order),
@@ -76,6 +79,8 @@ static void do_print1(struct table *test_tbl)
   table_col_printf(test_tbl, test_col2_uint, "XXX-%u", 22222);
   table_col_bool(test_tbl, test_col3_bool, 1);
   table_col_double(test_tbl, test_col4_double, 1.5);
+  table_col_size(test_tbl, test_col5_size, (1024LU*1024LU*1024LU*5LU));
+  table_col_timestamp(test_tbl, test_col6_time, 1404305876);
   table_end_row(test_tbl);
 
   table_col_str(test_tbl, test_col0_str, "test");
@@ -83,6 +88,8 @@ static void do_print1(struct table *test_tbl)
   table_col_uint(test_tbl, test_col2_uint, 100);
   table_col_bool(test_tbl, test_col3_bool, 0);
   table_col_double(test_tbl, test_col4_double, 1.5);
+  table_col_size(test_tbl, test_col5_size, (1024LU*1024LU*1024LU*2LU));
+  table_col_timestamp(test_tbl, test_col6_time, 1404305909);
   table_end_row(test_tbl);
 }
 
@@ -112,7 +119,10 @@ static void process_command_line_opts(char *argv[], struct table *tbl)
   GARY_INIT(cli_table_opts, 0);
 
   opt_parse(&table_printer_opts, argv+1);
-  table_set_gary_options(tbl, cli_table_opts);
+  const char *err = table_set_gary_options(tbl, cli_table_opts);
+  if(err) {
+    opt_failure("error while setting cmd line options: %s", err);
+  }
 
   GARY_FREE(cli_table_opts);
 }
