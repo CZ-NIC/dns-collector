@@ -26,8 +26,8 @@ extern struct table_user_type table_type_size;
 #define TBL_COL_SIZE(_name, _width)           { .name = _name, .width = _width, .fmt = "%llu", .type = COL_TYPE_SIZE, .type_def = &table_type_size }
 #define TBL_COL_TIMESTAMP(_name, _width)      { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_TIMESTAMP, .type_def = &table_type_timestamp }
 
-#define TBL_COL_SIZE_FMT(_name, _width, _units)         { .name = _name, .width = _width, .fmt = "%llu", .type = COL_TYPE_SIZE }
-#define TBL_COL_TIMESTAMP_FMT(_name, _width, _fmt)      { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_TIMESTAMP }
+#define TBL_COL_SIZE_FMT(_name, _width, _units)         { .name = _name, .width = _width, .fmt = "%llu", .type = COL_TYPE_SIZE, .type_def = &table_type_size }
+#define TBL_COL_TIMESTAMP_FMT(_name, _width, _fmt)      { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_TIMESTAMP, .type_def = &table_type_timestamp }
 
 void table_col_size_name(struct table *tbl, const char *col_name, u64 val);
 void table_col_timestamp_name(struct table *tbl, const char * col_name, u64 val);
