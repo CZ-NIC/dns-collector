@@ -122,16 +122,18 @@ struct table_column {
   int width;			// [*] Width of the column (in characters) OR'ed with column flags
   const char *fmt;		// [*] Default format of each cell in the column
   enum column_type type;	// [*] Type of the cells in the column
-  int first_column;
-  int last_column;
+  int first_column;             // head of linked list of columns of this type
+  int last_column;              // tail of linked list of columns of this type
   struct table_user_type *type_def;
 };
 
+// FIXME: is it correct to have idx and col_def? idx is sufficient and in fact a duplicity of idx
 struct table_col_info {
-  uint idx;
-  char *cell_content;
-  int next_column;
-  int output_type;
+  uint idx;                      // idx is a pointer to struct table::columns
+  struct table_column *col_def;  // this is pointer to the column definition, located in the array struct table::columns
+  char *cell_content;            // content of the cell of the current row
+  int next_column;               // index of next column in linked list of columns of the same type
+  int output_type;               // format of this column
 };
 
 /**

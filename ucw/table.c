@@ -131,14 +131,18 @@ static void table_update_ll(struct table *tbl)
   }
 
   for(int i = 0; i < cols_to_output; i++) {
-    int col_idx = tbl->column_order[i].idx;
-    int last = tbl->columns[col_idx].last_column;
+    int idx = tbl->column_order[i].idx;
+    tbl->column_order[i].col_def = tbl->columns + idx;
+  }
+
+  for(int i = 0; i < cols_to_output; i++) {
+    int last = tbl->column_order[i].col_def->last_column;
     if(last != -1) {
-      tbl->columns[col_idx].last_column = i;
+      tbl->column_order[i].col_def->last_column = i;
       tbl->column_order[last].next_column = i;
     } else {
-      tbl->columns[col_idx].last_column = i;
-      tbl->columns[col_idx].first_column = i;
+      tbl->column_order[i].col_def->last_column = i;
+      tbl->column_order[i].col_def->first_column = i;
     }
     tbl->column_order[i].next_column = -1;
   }
@@ -155,6 +159,7 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
   for(int i = 0; i < cols_to_output; i++) {
     int col_idx = col_order[i];
     tbl->column_order[i].idx = col_idx;
+    tbl->column_order[i].col_def = tbl->columns + col_idx;
     tbl->column_order[i].cell_content = NULL;
     tbl->column_order[i].output_type = CELL_OUT_UNINITIALIZED;
   }
@@ -186,9 +191,10 @@ static char * table_parse_col_arg(char *col_def)
  **/
 bool table_set_col_opt_default(struct table *tbl, int col_copy_idx, const char *col_arg, char **err)
 {
+  struct table_column *tmp_col = tbl->column_order[col_copy_idx].col_def;
   int col_type_idx = tbl->column_order[col_copy_idx].idx;
 
-  if(tbl->columns[col_type_idx].type == COL_TYPE_DOUBLE) {
+  if(tmp_col->type == COL_TYPE_DOUBLE) {
     uint precision = 0;
     str_to_uint(&precision, col_arg, NULL, 0);
     tbl->column_order[col_type_idx].output_type = precision;
@@ -247,6 +253,7 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     if(col_idx == -1) {
       return mp_printf(tbl->pool, "Unknown table column '%s', possible column names are: %s.", name_start, table_get_col_list(tbl));
     }
+    tbl->column_order[curr_col_idx].col_def = tbl->columns + col_idx;
     tbl->column_order[curr_col_idx].idx = col_idx;
     tbl->column_order[curr_col_idx].cell_content = NULL;
     tbl->column_order[curr_col_idx].output_type = CELL_OUT_UNINITIALIZED;
@@ -536,7 +543,7 @@ static void table_row_human_readable(struct table *tbl)
 static void table_write_header(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    int col_idx = tbl->column_order[i].idx;
+    int col_idx = tbl->column_order[i].col_def - tbl->columns;
     if(i) {
       bputs(tbl->out, tbl->col_delimiter);
     }
@@ -583,10 +590,10 @@ static void table_start_machine_readable(struct table *tbl)
   }
 
   if(tbl->print_header != 0) {
-    uint col_idx = tbl->column_order[0].idx;
+    uint col_idx = tbl->column_order[0].col_def - tbl->columns;
     bputs(tbl->out, tbl->columns[col_idx].name);
     for(uint i = 1; i < tbl->cols_to_output; i++) {
-      col_idx = tbl->column_order[i].idx;
+      col_idx = tbl->column_order[i].col_def - tbl->columns;
       bputs(tbl->out, tbl->col_delimiter);
       bputs(tbl->out, tbl->columns[col_idx].name);
     }
