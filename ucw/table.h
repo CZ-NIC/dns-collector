@@ -217,8 +217,7 @@ struct table {
 #define TBL_OUTPUT_BLOCKLINE          .formatter = &table_fmt_blockline
 #define TBL_OUTPUT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
 
-#define TBL_COL_ITER_START(_tbl, _colidx, _var) int _var = _tbl->columns[_colidx].first_column; while(_var != -1) {
-#define TBL_COL_ITER_END(_tbl, _var) _var = _tbl->column_order[_var].next_column; }
+#define TBL_COL_ITER(_tbl, _colidx, _var) for(int _var = _tbl->columns[_colidx].first_column; _var != -1; _var = _tbl->column_order[_var].next_column)
 
 /**
  * Initialize a table definition. The structure should already contain

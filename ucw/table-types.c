@@ -8,30 +8,39 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static const char *unit_suffix[] = {
+  [UNIT_BYTE] = "",
+  [UNIT_KILOBYTE] = "KB",
+  [UNIT_MEGABYTE] = "MB",
+  [UNIT_GIGABYTE] = "GB",
+  [UNIT_TERABYTE] = "TB"
+};
+
 static bool table_set_col_opt_size(struct table *tbl, uint col_copy_idx, const char *col_arg, char **err)
 {
   int col_type_idx = tbl->column_order[col_copy_idx].idx;
-  if(tbl->columns[col_type_idx].type == COL_TYPE_SIZE) {
-    if(strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
-      tbl->column_order[col_copy_idx].output_type = UNIT_BYTE;
-    } else if(strcasecmp(col_arg, "kb") == 0) {
-      tbl->column_order[col_copy_idx].output_type = UNIT_KILOBYTE;
-    } else if(strcasecmp(col_arg, "mb") == 0) {
-      tbl->column_order[col_copy_idx].output_type = UNIT_MEGABYTE;
-    } else if(strcasecmp(col_arg, "gb") == 0) {
-      tbl->column_order[col_copy_idx].output_type = UNIT_GIGABYTE;
-    } else if(strcasecmp(col_arg, "tb") == 0) {
-      tbl->column_order[col_copy_idx].output_type = UNIT_TERABYTE;
-    } else {
-      *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d (counted from 0)", col_arg, col_copy_idx);
-      return true;
-    }
+  if(tbl->columns[col_type_idx].type != COL_TYPE_SIZE) {
     *err = NULL;
+    return false;
+  }
+
+  if(strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
+    tbl->column_order[col_copy_idx].output_type = UNIT_BYTE;
+  }
+
+  tbl->column_order[col_copy_idx].output_type = CELL_OUT_UNINITIALIZED;
+  for(int i = 0; i < ARRAY_SIZE(unit_suffix); i++) {
+    if(strcasecmp(col_arg, unit_suffix[i]) == 0) {
+      tbl->column_order[col_copy_idx].output_type = i;
+    }
+  }
+  if(tbl->column_order[col_copy_idx].output_type == CELL_OUT_UNINITIALIZED) {
+    *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d (counted from 0)", col_arg, col_copy_idx);
     return true;
   }
 
   *err = NULL;
-  return false;
+  return true;
 }
 
 struct table_user_type table_type_size = {
@@ -86,15 +95,7 @@ void table_col_size(struct table *tbl, int col, u64 val)
     [UNIT_TERABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU * 1024LLU)
   };
 
-  static const char *unit_suffix[] = {
-    [UNIT_BYTE] = "",
-    [UNIT_KILOBYTE] = "KB",
-    [UNIT_MEGABYTE] = "MB",
-    [UNIT_GIGABYTE] = "GB",
-    [UNIT_TERABYTE] = "TB"
-  };
-
-  TBL_COL_ITER_START(tbl, col, curr_col) {
+  TBL_COL_ITER(tbl, col, curr_col) {
     // FIXME: do some rounding?
     uint out_type = 0;
     if(tbl->column_order[curr_col].output_type == CELL_OUT_UNINITIALIZED) {
@@ -106,8 +107,7 @@ void table_col_size(struct table *tbl, int col, u64 val)
     }
 
     tbl->column_order[curr_col].cell_content = mp_printf(tbl->pool, "%lu%s", val, unit_suffix[out_type]);
-  } TBL_COL_ITER_END(tbl, curr_col)
-
+  }
 }
 
 #define FORMAT_TIME_SIZE 20	// Minimum buffer size
@@ -128,7 +128,7 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
   time_t tmp_time = (time_t)val;
   struct tm t = *gmtime(&tmp_time);
 
-  TBL_COL_ITER_START(tbl, col, curr_col) {
+  TBL_COL_ITER(tbl, col, curr_col) {
     switch (tbl->column_order[curr_col].output_type) {
     case TIMESTAMP_EPOCH:
     case CELL_OUT_UNINITIALIZED:
@@ -143,5 +143,5 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
     }
 
     tbl->column_order[curr_col].cell_content = mp_printf(tbl->pool, "%s", formatted_time_buf);
-  } TBL_COL_ITER_END(tbl, curr_col)
+  }
 }
