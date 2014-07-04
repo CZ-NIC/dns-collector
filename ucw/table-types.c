@@ -24,13 +24,10 @@ static bool table_set_col_opt_size(struct table *tbl, uint col_copy_idx, const c
     return false;
   }
 
-  if(col_arg == NULL) {
+  if(col_arg == NULL || strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
+    tbl->column_order[col_copy_idx].output_type = UNIT_BYTE;
     *err = NULL;
     return true;
-  }
-
-  if(strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
-    tbl->column_order[col_copy_idx].output_type = UNIT_BYTE;
   }
 
   tbl->column_order[col_copy_idx].output_type = CELL_OUT_UNINITIALIZED;
@@ -110,15 +107,16 @@ void table_col_size(struct table *tbl, int col, u64 val)
   TBL_COL_ITER(tbl, col, curr_col, curr_col_idx) {
     // FIXME: do some rounding?
     uint out_type = 0;
+    u64 curr_val = val;
     if(curr_col->output_type == CELL_OUT_UNINITIALIZED) {
-      val = val / unit_div[UNIT_BYTE];
+      curr_val = curr_val / unit_div[UNIT_BYTE];
       out_type = 0;
     } else {
-      val = val / unit_div[curr_col->output_type];
+      curr_val = curr_val / unit_div[curr_col->output_type];
       out_type = curr_col->output_type;
     }
 
-    curr_col->cell_content = mp_printf(tbl->pool, "%lu%s", val, unit_suffix[out_type]);
+    curr_col->cell_content = mp_printf(tbl->pool, "%lu%s", curr_val, unit_suffix[out_type]);
   }
 }
 
