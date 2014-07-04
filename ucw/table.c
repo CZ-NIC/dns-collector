@@ -182,7 +182,6 @@ static char * table_parse_col_arg(char *col_def)
   left_br++;
   char *right_br = strchr(left_br, ']');
   *right_br = 0;
-  //*left_br = 0;
   return left_br;
 }
 

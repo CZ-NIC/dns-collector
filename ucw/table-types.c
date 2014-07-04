@@ -24,16 +24,22 @@ static bool table_set_col_opt_size(struct table *tbl, uint col_copy_idx, const c
     return false;
   }
 
+  if(col_arg == NULL) {
+    *err = NULL;
+    return true;
+  }
+
   if(strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
     tbl->column_order[col_copy_idx].output_type = UNIT_BYTE;
   }
 
   tbl->column_order[col_copy_idx].output_type = CELL_OUT_UNINITIALIZED;
-  for(int i = 0; i < ARRAY_SIZE(unit_suffix); i++) {
+  for(uint i = 0; i < ARRAY_SIZE(unit_suffix); i++) {
     if(strcasecmp(col_arg, unit_suffix[i]) == 0) {
       tbl->column_order[col_copy_idx].output_type = i;
     }
   }
+
   if(tbl->column_order[col_copy_idx].output_type == CELL_OUT_UNINITIALIZED) {
     *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d (counted from 0)", col_arg, col_copy_idx);
     return true;
@@ -51,21 +57,27 @@ struct table_user_type table_type_size = {
 static bool table_set_col_opt_timestamp(struct table *tbl, uint col_copy_idx, const char *col_arg, char **err)
 {
   int col_type_idx = tbl->column_order[col_copy_idx].idx;
-  if(tbl->columns[col_type_idx].type == COL_TYPE_TIMESTAMP) {
-    if(strcasecmp(col_arg, "timestamp") == 0 || strcasecmp(col_arg, "epoch") == 0) {
-      tbl->column_order[col_copy_idx].output_type = TIMESTAMP_EPOCH;
-    } else if(strcasecmp(col_arg, "datetime") == 0) {
-      tbl->column_order[col_copy_idx].output_type = TIMESTAMP_DATETIME;
-    } else {
-      *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d.", col_arg, col_copy_idx);
-      return true;
-    }
+  if(tbl->columns[col_type_idx].type != COL_TYPE_TIMESTAMP) {
+    *err = NULL;
+    return false;
+  }
+
+  if(col_arg == NULL) {
     *err = NULL;
     return true;
   }
 
+  if(strcasecmp(col_arg, "timestamp") == 0 || strcasecmp(col_arg, "epoch") == 0) {
+    tbl->column_order[col_copy_idx].output_type = TIMESTAMP_EPOCH;
+  } else if(strcasecmp(col_arg, "datetime") == 0) {
+    tbl->column_order[col_copy_idx].output_type = TIMESTAMP_DATETIME;
+  } else {
+    *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d.", col_arg, col_copy_idx);
+    return true;
+  }
+
   *err = NULL;
-  return false;
+  return true;
 }
 
 struct table_user_type table_type_timestamp = {
@@ -95,18 +107,18 @@ void table_col_size(struct table *tbl, int col, u64 val)
     [UNIT_TERABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU * 1024LLU)
   };
 
-  TBL_COL_ITER(tbl, col, curr_col) {
+  TBL_COL_ITER(tbl, col, curr_col, curr_col_idx) {
     // FIXME: do some rounding?
     uint out_type = 0;
-    if(tbl->column_order[curr_col].output_type == CELL_OUT_UNINITIALIZED) {
+    if(curr_col->output_type == CELL_OUT_UNINITIALIZED) {
       val = val / unit_div[UNIT_BYTE];
       out_type = 0;
     } else {
-      val = val / unit_div[tbl->column_order[curr_col].output_type];
-      out_type = tbl->column_order[curr_col].output_type;
+      val = val / unit_div[curr_col->output_type];
+      out_type = curr_col->output_type;
     }
 
-    tbl->column_order[curr_col].cell_content = mp_printf(tbl->pool, "%lu%s", val, unit_suffix[out_type]);
+    curr_col->cell_content = mp_printf(tbl->pool, "%lu%s", val, unit_suffix[out_type]);
   }
 }
 
@@ -127,9 +139,8 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
 
   time_t tmp_time = (time_t)val;
   struct tm t = *gmtime(&tmp_time);
-
-  TBL_COL_ITER(tbl, col, curr_col) {
-    switch (tbl->column_order[curr_col].output_type) {
+  TBL_COL_ITER(tbl, col, curr_col, curr_col_idx) {
+    switch (curr_col->output_type) {
     case TIMESTAMP_EPOCH:
     case CELL_OUT_UNINITIALIZED:
       sprintf(formatted_time_buf, "%lu", val);
@@ -142,6 +153,6 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
       break;
     }
 
-    tbl->column_order[curr_col].cell_content = mp_printf(tbl->pool, "%s", formatted_time_buf);
+    curr_col->cell_content = mp_printf(tbl->pool, "%s", formatted_time_buf);
   }
 }
