@@ -94,9 +94,7 @@ void table_col_size(struct table *tbl, int col, u64 val)
     [UNIT_TERABYTE] = "TB"
   };
 
-  int curr_col = tbl->columns[col].first_column;
-  while(curr_col != -1) {
-
+  TBL_COL_ITER_START(tbl, col, curr_col) {
     // FIXME: do some rounding?
     uint out_type = 0;
     if(tbl->column_order[curr_col].output_type == CELL_OUT_UNINITIALIZED) {
@@ -108,8 +106,7 @@ void table_col_size(struct table *tbl, int col, u64 val)
     }
 
     tbl->column_order[curr_col].cell_content = mp_printf(tbl->pool, "%lu%s", val, unit_suffix[out_type]);
-    curr_col = tbl->column_order[curr_col].next_column;
-  }
+  } TBL_COL_ITER_END(tbl, curr_col)
 
 }
 
@@ -131,8 +128,7 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
   time_t tmp_time = (time_t)val;
   struct tm t = *gmtime(&tmp_time);
 
-  int curr_col = tbl->columns[col].first_column;
-  while(curr_col != -1) {
+  TBL_COL_ITER_START(tbl, col, curr_col) {
     switch (tbl->column_order[curr_col].output_type) {
     case TIMESTAMP_EPOCH:
     case CELL_OUT_UNINITIALIZED:
@@ -147,6 +143,5 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
     }
 
     tbl->column_order[curr_col].cell_content = mp_printf(tbl->pool, "%s", formatted_time_buf);
-    curr_col = tbl->column_order[curr_col].next_column;
-  }
+  } TBL_COL_ITER_END(tbl, curr_col)
 }
