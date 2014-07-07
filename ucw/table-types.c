@@ -105,7 +105,7 @@ void table_col_size(struct table *tbl, int col, u64 val)
   };
 
   TBL_COL_ITER(tbl, col, curr_col, curr_col_idx) {
-    // FIXME: do some rounding?
+    // FIXME: do some rounding? Or maybe use double and floating-point printing?
     uint out_type = 0;
     u64 curr_val = val;
     if(curr_col->output_type == CELL_OUT_UNINITIALIZED) {

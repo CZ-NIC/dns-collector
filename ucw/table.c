@@ -411,8 +411,6 @@ void table_col_bool_fmt(struct table *tbl, int col, const char *fmt, uint val)
     }
     curr_col = tbl->column_order[curr_col].next_column;
   }
-
-  // FIXME: add to printing of all columns
 }
 
 void table_reset_row(struct table *tbl)
