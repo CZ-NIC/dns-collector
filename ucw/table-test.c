@@ -49,22 +49,22 @@ static struct table test_default_order_tbl = {
 
 static void do_default_order_test(struct fastbuf *out)
 {
-  table_init(&test_default_order_tbl);
+  struct table *tbl = table_init(&test_default_order_tbl);
 
-  table_start(&test_default_order_tbl, out);
+  table_start(tbl, out);
 
-  table_col_int(&test_default_order_tbl, test_default_order_col0_int, 0);
-  table_col_int(&test_default_order_tbl, test_default_order_col1_int, 1);
-  table_col_int(&test_default_order_tbl, test_default_order_col2_int, 2);
-  table_end_row(&test_default_order_tbl);
+  table_col_int(tbl, test_default_order_col0_int, 0);
+  table_col_int(tbl, test_default_order_col1_int, 1);
+  table_col_int(tbl, test_default_order_col2_int, 2);
+  table_end_row(tbl);
 
-  table_col_int(&test_default_order_tbl, test_default_order_col0_int, 10);
-  table_col_int(&test_default_order_tbl, test_default_order_col1_int, 11);
-  table_col_int(&test_default_order_tbl, test_default_order_col2_int, 12);
-  table_end_row(&test_default_order_tbl);
+  table_col_int(tbl, test_default_order_col0_int, 10);
+  table_col_int(tbl, test_default_order_col1_int, 11);
+  table_col_int(tbl, test_default_order_col2_int, 12);
+  table_end_row(tbl);
 
-  table_end(&test_default_order_tbl);
-  table_cleanup(&test_default_order_tbl);
+  table_end(tbl);
+  table_cleanup(tbl);
 }
 
 /**
@@ -162,14 +162,14 @@ int main(int argc UNUSED, char **argv)
   struct fastbuf *out;
   out = bfdopen_shared(1, 4096);
 
-  table_init(&test_tbl);
+  struct table *tbl = table_init(&test_tbl);
 
-  process_command_line_opts(argv, &test_tbl);
+  process_command_line_opts(argv, tbl);
 
   const char *rv = NULL;
   switch(test_to_perform) {
   case TEST_INVALID_ORDER:
-    rv = table_set_option(&test_tbl, "cols:test_col0_str,test_col1_int,xxx");
+    rv = table_set_option(tbl, "cols:test_col0_str,test_col1_int,xxx");
     if(rv) printf("Tableprinter option parser returned: '%s'.\n", rv);
     return 0;
   case TEST_DEFAULT_COLUMN_ORDER:
@@ -177,15 +177,15 @@ int main(int argc UNUSED, char **argv)
     bclose(out);
     return 0;
   case TEST_INVALID_OPTION:
-    test_option_parser(&test_tbl);
+    test_option_parser(tbl);
     bclose(out);
     return 0;
   };
 
-  table_start(&test_tbl, out);
-  do_print1(&test_tbl);
-  table_end(&test_tbl);
-  table_cleanup(&test_tbl);
+  table_start(tbl, out);
+  do_print1(tbl);
+  table_end(tbl);
+  table_cleanup(tbl);
 
   bclose(out);
 

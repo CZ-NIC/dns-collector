@@ -20,9 +20,51 @@ static void table_update_ll(struct table *tbl);
 
 /*** Management of tables ***/
 
-void table_init(struct table *tbl)
+static void table_template_init(struct table *tbl_template)
+{
+  if(!tbl_template->pool) {
+    tbl_template->pool = mp_new(4096);
+  }
+}
+
+static struct table *table_template_copy(struct table *tbl_template)
+{
+  struct table *copy = mp_alloc_zero(tbl_template->pool, sizeof(struct table));
+
+  copy->column_count = tbl_template->column_count;
+  copy->pool = mp_new(4096);
+  if(tbl_template->column_order) {
+    copy->column_order = mp_alloc_zero(copy->pool, sizeof(struct table_col_info) * tbl_template->cols_to_output); //tbl_template->; // FIXME: more complicated copying
+    memcpy(copy->column_order, tbl_template->column_order, sizeof(struct table_col_info) * tbl_template->cols_to_output);
+    for(uint i = 0; i < copy->cols_to_output; i++) {
+      copy->column_order[i].cell_content = NULL;
+      copy->column_order[i].col_def = NULL;
+      copy->column_order[i].output_type = tbl_template->column_order[i].output_type;
+    }
+
+    copy->cols_to_output = tbl_template->cols_to_output;
+  }
+
+  copy->columns = tbl_template->columns;
+
+  copy->col_delimiter = tbl_template->col_delimiter;
+  copy->print_header = tbl_template->print_header;
+  copy->out = 0;
+  copy->last_printed_col = -1;
+  copy->row_printing_started = 0;
+  copy->col_out = -1;
+  copy->formatter = tbl_template->formatter;
+  copy->data = NULL;
+  return copy;
+}
+
+struct table *table_init(struct table *tbl_template)
 {
   int col_count = 0; // count the number of columns in the struct table
+
+  table_template_init(tbl_template);
+
+  struct table *tbl = table_template_copy(tbl_template);
 
   for(;;) {
     if(tbl->columns[col_count].name == NULL &&
@@ -31,12 +73,11 @@ void table_init(struct table *tbl)
        tbl->columns[col_count].type == COL_TYPE_LAST)
       break;
     ASSERT(tbl->columns[col_count].name != NULL);
-    ASSERT(tbl->columns[col_count].type == COL_TYPE_ANY || tbl->columns[col_count].fmt != NULL);
+    ASSERT(tbl->columns[col_count].type == COL_TYPE_ANY || tbl_template->columns[col_count].fmt != NULL);
     ASSERT(tbl->columns[col_count].width != 0);
 
     col_count++;
   }
-  tbl->pool = mp_new(4096);
 
   tbl->column_count = col_count;
 
@@ -45,6 +86,7 @@ void table_init(struct table *tbl)
   }
 
   tbl->print_header = 1; // by default, print header
+  return tbl;
 }
 
 void table_cleanup(struct table *tbl)
@@ -56,7 +98,7 @@ void table_cleanup(struct table *tbl)
 // TODO: test default column order
 static void table_make_default_column_order(struct table *tbl)
 {
-  int *col_order_int = mp_alloc_zero(tbl->pool, sizeof(int) * tbl->column_count);
+  int *col_order_int = mp_alloc_zero(tbl->pool, sizeof(int) * tbl->column_count); // FIXME: use stack instead of memory pool
   for(int i = 0; i < tbl->column_count; i++) {
     col_order_int[i] = i;
   }
@@ -680,53 +722,53 @@ static void do_print1(struct table *test_tbl)
 
 static void test_simple1(struct fastbuf *out)
 {
-  table_init(&test_tbl);
+  struct table *tbl = table_init(&test_tbl);
 
   // print table with header
-  table_set_col_order_by_name(&test_tbl, "col3_bool");
-  table_start(&test_tbl, out);
-  do_print1(&test_tbl);
-  table_end(&test_tbl);
+  table_set_col_order_by_name(tbl, "col3_bool");
+  table_start(tbl, out);
+  do_print1(tbl);
+  table_end(tbl);
 
   // print the same table as in the previous case without header
-  table_set_col_order_by_name(&test_tbl, "col0_str,col2_uint,col1_int,col3_bool");
-  table_start(&test_tbl, out);
-  do_print1(&test_tbl);
-  table_end(&test_tbl);
+  table_set_col_order_by_name(tbl, "col0_str,col2_uint,col1_int,col3_bool");
+  table_start(tbl, out);
+  do_print1(tbl);
+  table_end(tbl);
 
   // this also tests whether there is need to call table_set_col_order_by_name after table_end was called
-  test_tbl.print_header = 0;
-  table_start(&test_tbl, out);
-  do_print1(&test_tbl);
-  table_end(&test_tbl);
-  test_tbl.print_header = 1;
+  tbl->print_header = 0;
+  table_start(tbl, out);
+  do_print1(tbl);
+  table_end(tbl);
+  tbl->print_header = 1;
 
-  table_set_col_order_by_name(&test_tbl, "col3_bool");
-  table_start(&test_tbl, out);
-  do_print1(&test_tbl);
-  table_end(&test_tbl);
+  table_set_col_order_by_name(tbl, "col3_bool");
+  table_start(tbl, out);
+  do_print1(tbl);
+  table_end(tbl);
 
-  table_set_col_order_by_name(&test_tbl, "col3_bool,col0_str");
-  table_start(&test_tbl, out);
-  do_print1(&test_tbl);
-  table_end(&test_tbl);
+  table_set_col_order_by_name(tbl, "col3_bool,col0_str");
+  table_start(tbl, out);
+  do_print1(tbl);
+  table_end(tbl);
 
-  table_set_col_order_by_name(&test_tbl, "col0_str,col3_bool,col2_uint");
-  table_start(&test_tbl, out);
-  do_print1(&test_tbl);
-  table_end(&test_tbl);
+  table_set_col_order_by_name(tbl, "col0_str,col3_bool,col2_uint");
+  table_start(tbl, out);
+  do_print1(tbl);
+  table_end(tbl);
 
-  table_set_col_order_by_name(&test_tbl, "col0_str,col3_bool,col2_uint,col0_str,col3_bool,col2_uint,col0_str,col3_bool,col2_uint");
-  table_start(&test_tbl, out);
-  do_print1(&test_tbl);
-  table_end(&test_tbl);
+  table_set_col_order_by_name(tbl, "col0_str,col3_bool,col2_uint,col0_str,col3_bool,col2_uint,col0_str,col3_bool,col2_uint");
+  table_start(tbl, out);
+  do_print1(tbl);
+  table_end(tbl);
 
-  table_set_col_order_by_name(&test_tbl, "col0_str,col1_int,col2_uint,col3_bool,col4_double");
-  table_start(&test_tbl, out);
-  do_print1(&test_tbl);
-  table_end(&test_tbl);
+  table_set_col_order_by_name(tbl, "col0_str,col1_int,col2_uint,col3_bool,col4_double");
+  table_start(tbl, out);
+  do_print1(tbl);
+  table_end(tbl);
 
-  table_cleanup(&test_tbl);
+  table_cleanup(tbl);
 }
 
 enum test_any_table_cols {
@@ -748,24 +790,24 @@ static struct table test_any_tbl = {
 
 static void test_any_type(struct fastbuf *out)
 {
-  table_init(&test_any_tbl);
+  struct table *tbl = table_init(&test_any_tbl);
 
-  table_start(&test_any_tbl, out);
+  table_start(tbl, out);
 
-  table_col_int(&test_any_tbl, test_any_col0_int, -10);
-  table_col_int(&test_any_tbl, test_any_col1_any, 10000);
-  table_end_row(&test_any_tbl);
+  table_col_int(tbl, test_any_col0_int, -10);
+  table_col_int(tbl, test_any_col1_any, 10000);
+  table_end_row(tbl);
 
-  table_col_int(&test_any_tbl, test_any_col0_int, -10);
-  table_col_double(&test_any_tbl, test_any_col1_any, 1.4);
-  table_end_row(&test_any_tbl);
+  table_col_int(tbl, test_any_col0_int, -10);
+  table_col_double(tbl, test_any_col1_any, 1.4);
+  table_end_row(tbl);
 
-  table_col_printf(&test_any_tbl, test_any_col0_int, "%d", 10);
-  table_col_double(&test_any_tbl, test_any_col1_any, 1.4);
-  table_end_row(&test_any_tbl);
+  table_col_printf(tbl, test_any_col0_int, "%d", 10);
+  table_col_double(tbl, test_any_col1_any, 1.4);
+  table_end_row(tbl);
 
-  table_end(&test_any_tbl);
-  table_cleanup(&test_any_tbl);
+  table_end(tbl);
+  table_cleanup(tbl);
 }
 
 int main(int argc UNUSED, char **argv UNUSED)

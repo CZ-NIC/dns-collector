@@ -27,41 +27,41 @@ static void do_test(void)
 {
   struct fastbuf *out;
   out = bfdopen_shared(1, 4096);
-  table_init(&test_tbl);
-  table_start(&test_tbl, out);
+  struct table *tbl = table_init(&test_tbl);
+  table_start(tbl, out);
 
   u64 test_time = 1403685533;
   s64 test_size = 4LU*(1024LU * 1024LU * 1024LU);
 
-  table_col_size(&test_tbl, TEST_COL0_SIZE, test_size);
-  table_col_timestamp(&test_tbl, TEST_COL1_TS, test_time);
-  table_end_row(&test_tbl);
+  table_col_size(tbl, TEST_COL0_SIZE, test_size);
+  table_col_timestamp(tbl, TEST_COL1_TS, test_time);
+  table_end_row(tbl);
 
-  test_tbl.column_order[TEST_COL0_SIZE].output_type = UNIT_KILOBYTE;
-  table_col_size(&test_tbl, TEST_COL0_SIZE, test_size);
-  table_col_timestamp(&test_tbl, TEST_COL1_TS, test_time);
-  table_end_row(&test_tbl);
+  tbl->column_order[TEST_COL0_SIZE].output_type = UNIT_KILOBYTE;
+  table_col_size(tbl, TEST_COL0_SIZE, test_size);
+  table_col_timestamp(tbl, TEST_COL1_TS, test_time);
+  table_end_row(tbl);
 
-  test_tbl.column_order[TEST_COL0_SIZE].output_type = UNIT_MEGABYTE;
-  table_col_size(&test_tbl, TEST_COL0_SIZE, test_size);
-  table_col_timestamp(&test_tbl, TEST_COL1_TS, test_time);
-  table_end_row(&test_tbl);
+  tbl->column_order[TEST_COL0_SIZE].output_type = UNIT_MEGABYTE;
+  table_col_size(tbl, TEST_COL0_SIZE, test_size);
+  table_col_timestamp(tbl, TEST_COL1_TS, test_time);
+  table_end_row(tbl);
 
-  test_tbl.column_order[TEST_COL0_SIZE].output_type = UNIT_GIGABYTE;
-  test_tbl.column_order[TEST_COL1_TS].output_type = TIMESTAMP_DATETIME;
-  table_col_size(&test_tbl, TEST_COL0_SIZE, test_size);
-  table_col_timestamp(&test_tbl, TEST_COL1_TS, test_time);
-  table_end_row(&test_tbl);
+  tbl->column_order[TEST_COL0_SIZE].output_type = UNIT_GIGABYTE;
+  tbl->column_order[TEST_COL1_TS].output_type = TIMESTAMP_DATETIME;
+  table_col_size(tbl, TEST_COL0_SIZE, test_size);
+  table_col_timestamp(tbl, TEST_COL1_TS, test_time);
+  table_end_row(tbl);
 
   test_size = test_size * 1024LU;
-  test_tbl.column_order[TEST_COL0_SIZE].output_type = UNIT_TERABYTE;
-  test_tbl.column_order[TEST_COL1_TS].output_type = TIMESTAMP_DATETIME;
-  table_col_size(&test_tbl, TEST_COL0_SIZE, test_size);
-  table_col_timestamp(&test_tbl, TEST_COL1_TS, test_time);
-  table_end_row(&test_tbl);
+  tbl->column_order[TEST_COL0_SIZE].output_type = UNIT_TERABYTE;
+  tbl->column_order[TEST_COL1_TS].output_type = TIMESTAMP_DATETIME;
+  table_col_size(tbl, TEST_COL0_SIZE, test_size);
+  table_col_timestamp(tbl, TEST_COL1_TS, test_time);
+  table_end_row(tbl);
 
-  table_end(&test_tbl);
-  table_cleanup(&test_tbl);
+  table_end(tbl);
+  table_cleanup(tbl);
 
   bclose(out);
 }
@@ -81,34 +81,34 @@ static void do_test2(void)
 {
   struct fastbuf *out;
   out = bfdopen_shared(1, 4096);
-  table_init(&test_tbl2);
-  table_set_col_order_by_name(&test_tbl2, "");
-  const char *err = table_set_option_value(&test_tbl2, "cols", "size[kb],size[mb],size[gb],size[tb],ts[datetime],ts[timestamp]");
+  struct table *tbl = table_init(&test_tbl2);
+  table_set_col_order_by_name(tbl, "");
+  const char *err = table_set_option_value(tbl, "cols", "size[kb],size[mb],size[gb],size[tb],ts[datetime],ts[timestamp]");
   if(err) {
     opt_failure("err in table_set_option_value: '%s'.", err);
     abort();
   }
-  table_start(&test_tbl2, out);
+  table_start(tbl, out);
 
   u64 test_time = 1403685533;
   s64 test_size = 4LU*(1024LU * 1024LU * 1024LU);
 
-  table_col_size(&test_tbl2, TEST_COL0_SIZE, test_size);
-  table_col_timestamp(&test_tbl2, TEST_COL1_TS, test_time);
-  table_end_row(&test_tbl2);
+  table_col_size(tbl, TEST_COL0_SIZE, test_size);
+  table_col_timestamp(tbl, TEST_COL1_TS, test_time);
+  table_end_row(tbl);
 
-  table_col_size(&test_tbl2, TEST_COL0_SIZE, test_size);
-  table_col_timestamp(&test_tbl2, TEST_COL1_TS, test_time);
-  table_end_row(&test_tbl2);
+  table_col_size(tbl, TEST_COL0_SIZE, test_size);
+  table_col_timestamp(tbl, TEST_COL1_TS, test_time);
+  table_end_row(tbl);
 
   test_size = test_size * 1024LU;
 
-  table_col_size(&test_tbl2, TEST_COL0_SIZE, test_size);
-  table_col_timestamp(&test_tbl2, TEST_COL1_TS, test_time);
-  table_end_row(&test_tbl2);
+  table_col_size(tbl, TEST_COL0_SIZE, test_size);
+  table_col_timestamp(tbl, TEST_COL1_TS, test_time);
+  table_end_row(tbl);
 
-  table_end(&test_tbl2);
-  table_cleanup(&test_tbl2);
+  table_end(tbl);
+  table_cleanup(tbl);
 
   bclose(out);
 }

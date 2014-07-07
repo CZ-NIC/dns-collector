@@ -73,6 +73,8 @@
  * -----------------
  ***/
 
+// FIXME: update documentation according to the changes made in recent comments!
+
 /** Types of columns. These are seldom used explicitly, using a column definition macro is preferred. **/
 enum column_type {
   COL_TYPE_STR,		// String
@@ -224,7 +226,7 @@ struct table {
  * Initialize a table definition. The structure should already contain
  * the definitions of columns.
  **/
-void table_init(struct table *tbl);
+struct table *table_init(struct table *tbl_template);
 
 /** Destroy a table definition, freeing all memory used by it. **/
 void table_cleanup(struct table *tbl);

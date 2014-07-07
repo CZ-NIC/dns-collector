@@ -99,11 +99,11 @@ int main(int argc UNUSED, char **argv)
   struct fastbuf *out;
   out = bfdopen_shared(1, 4096);
 
-  table_init(&test_tbl);
-  process_command_line_opts(argv, &test_tbl);
+  struct table *tbl = table_init(&test_tbl);
+  process_command_line_opts(argv, tbl);
 
-  print_table(&test_tbl, out);
-  table_cleanup(&test_tbl);
+  print_table(tbl, out);
+  table_cleanup(tbl);
   bclose(out);
 
   return 0;
