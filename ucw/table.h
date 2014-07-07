@@ -223,7 +223,7 @@ struct table {
   for(_idxval = _tbl->columns[_colidx].first_column, _var = _tbl->column_order + _idxval; _idxval != -1; _idxval = _tbl->column_order[_idxval].next_column, _var = _tbl->column_order + _idxval)
 
 /**
- * Initialize a table definition. The structure should already contain
+ * Creates a new table from a table template. The template should already contain
  * the definitions of columns.
  **/
 struct table *table_init(struct table *tbl_template);

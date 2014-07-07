@@ -34,7 +34,7 @@ static struct table *table_template_copy(struct table *tbl_template)
   copy->column_count = tbl_template->column_count;
   copy->pool = mp_new(4096);
   if(tbl_template->column_order) {
-    copy->column_order = mp_alloc_zero(copy->pool, sizeof(struct table_col_info) * tbl_template->cols_to_output); //tbl_template->; // FIXME: more complicated copying
+    copy->column_order = mp_alloc_zero(copy->pool, sizeof(struct table_col_info) * tbl_template->cols_to_output);
     memcpy(copy->column_order, tbl_template->column_order, sizeof(struct table_col_info) * tbl_template->cols_to_output);
     for(uint i = 0; i < copy->cols_to_output; i++) {
       copy->column_order[i].cell_content = NULL;
