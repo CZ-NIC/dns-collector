@@ -14,7 +14,7 @@ enum test_table_cols {
   test_col0_str, test_col1_int, test_col2_uint, test_col3_bool, test_col4_double
 };
 
-static struct table test_tbl = {
+static struct table_template test_tbl = {
   TBL_COLUMNS {
     [test_col0_str] = TBL_COL_STR("col0_str", 30 | CELL_ALIGN_LEFT),
     [test_col1_int] = TBL_COL_INT("col1_int", 8),
@@ -27,7 +27,6 @@ static struct table test_tbl = {
   TBL_COL_DELIMITER("\t"),
 };
 
-static int test_to_perform = -1;
 static char **cli_table_opts;
 
 static struct opt_section table_printer_opts = {

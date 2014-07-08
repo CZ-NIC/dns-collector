@@ -16,7 +16,7 @@ enum test_table_cols {
 
 static struct table_col_info test_column_order[] = { TBL_COL(test_col3_bool), TBL_COL(test_col4_double), TBL_COL(test_col2_uint), TBL_COL(test_col1_int), TBL_COL(test_col0_str) };
 
-static struct table test_tbl = {
+static struct table_template test_tbl = {
   TBL_COLUMNS {
     [test_col0_str] = TBL_COL_STR("col0_str", 20),
     [test_col1_int] = TBL_COL_INT("col1_int", 8),
@@ -36,7 +36,7 @@ enum test_default_order_cols {
   test_default_order_col0_int, test_default_order_col1_int, test_default_order_col2_int
 };
 
-static struct table test_default_order_tbl = {
+static struct table_template test_default_order_tbl = {
   TBL_COLUMNS {
     [test_default_order_col0_int] = TBL_COL_INT("col0_int", 8),
     [test_default_order_col1_int] = TBL_COL_INT("col1_int", 9),

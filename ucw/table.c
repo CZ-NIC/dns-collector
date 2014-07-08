@@ -20,14 +20,7 @@ static void table_update_ll(struct table *tbl);
 
 /*** Management of tables ***/
 
-static void table_template_init(struct table *tbl_template)
-{
-  if(!tbl_template->pool) {
-    tbl_template->pool = mp_new(4096);
-  }
-}
-
-static struct table *table_template_copy(struct table *tbl_template)
+static struct table *table_template_copy(struct table_template *tbl_template)
 {
   struct table *copy = mp_alloc_zero(tbl_template->pool, sizeof(struct table));
 
@@ -48,7 +41,7 @@ static struct table *table_template_copy(struct table *tbl_template)
   copy->columns = tbl_template->columns;
 
   copy->col_delimiter = tbl_template->col_delimiter;
-  copy->print_header = tbl_template->print_header;
+  copy->print_header = 1;
   copy->out = 0;
   copy->last_printed_col = -1;
   copy->row_printing_started = 0;
@@ -58,11 +51,13 @@ static struct table *table_template_copy(struct table *tbl_template)
   return copy;
 }
 
-struct table *table_init(struct table *tbl_template)
+struct table *table_init(struct table_template *tbl_template)
 {
   int col_count = 0; // count the number of columns in the struct table
 
-  table_template_init(tbl_template);
+  if(!tbl_template->pool) {
+    tbl_template->pool = mp_new(4096);
+  }
 
   struct table *tbl = table_template_copy(tbl_template);
 
@@ -683,7 +678,7 @@ enum test_table_cols {
 
 static struct table_col_info test_column_order[] = { TBL_COL(test_col3_bool), TBL_COL(test_col4_double), TBL_COL(test_col2_uint), TBL_COL(test_col1_int), TBL_COL(test_col0_str) };
 
-static struct table test_tbl = {
+static struct table_template test_tbl = {
   TBL_COLUMNS {
     [test_col0_str] = TBL_COL_STR("col0_str", 20),
     [test_col1_int] = TBL_COL_INT("col1_int", 8),
@@ -777,7 +772,7 @@ enum test_any_table_cols {
 
 static struct table_col_info test_any_column_order[] = { TBL_COL(test_any_col0_int), TBL_COL(test_any_col1_any) };
 
-static struct table test_any_tbl = {
+static struct table_template test_any_tbl = {
   TBL_COLUMNS {
     [test_any_col0_int] = TBL_COL_INT("col0_int", 8),
     [test_any_col1_any] = TBL_COL_ANY("col1_any", 9),

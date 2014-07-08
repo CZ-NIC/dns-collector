@@ -139,8 +139,25 @@ struct table_col_info {
 };
 
 /**
- * Definition of a table. Contains column definitions, per-table settings
- * and internal data. Please use only fields marked with `[*]`.
+ * Definition of a table. Contains column definitions, and some per-table settings.
+ * Please use only fields marked with `[*]`.
+ **/
+struct table_template {
+  struct table_column *columns;		// [*] Definition of columns
+  int column_count;			// [*] Number of columns (calculated by table_init())
+  struct table_col_info *column_order;  // [*] Order of the columns in the print-out of the table
+  uint cols_to_output;			// [*] Number of columns that are printed
+  const char *col_delimiter;		// [*] Delimiter that is placed between columns
+  // Back-end used for table formatting and its private data
+  struct table_formatter *formatter;
+
+  struct mempool *pool;			// Memory pool used for storing table handles.
+};
+
+/**
+ * Handle of a table. Contains column definitions, per-table settings
+ * and internal data. To change the table definition, please use only
+ * fields marked with `[*]`.
  **/
 struct table {
   struct table_column *columns;		// [*] Definition of columns
@@ -226,7 +243,7 @@ struct table {
  * Creates a new table from a table template. The template should already contain
  * the definitions of columns.
  **/
-struct table *table_init(struct table *tbl_template);
+struct table *table_init(struct table_template *tbl_template);
 
 /** Destroy a table definition, freeing all memory used by it. **/
 void table_cleanup(struct table *tbl);

@@ -14,7 +14,7 @@ enum test_table_cols {
   TEST_COL0_SIZE, TEST_COL1_TS
 };
 
-static struct table test_tbl = {
+static struct table_template test_tbl = {
   TBL_COLUMNS {
     [TEST_COL0_SIZE] = TBL_COL_SIZE_FMT("size", 15, UNIT_BYTE),
     [TEST_COL1_TS] = TBL_COL_TIMESTAMP("ts", 20),
@@ -66,9 +66,7 @@ static void do_test(void)
   bclose(out);
 }
 
-
-
-static struct table test_tbl2 = {
+static struct table_template test_tbl2 = {
   TBL_COLUMNS {
     [TEST_COL0_SIZE] = TBL_COL_SIZE_FMT("size", 15, UNIT_BYTE),
     [TEST_COL1_TS] = TBL_COL_TIMESTAMP("ts", 20),
