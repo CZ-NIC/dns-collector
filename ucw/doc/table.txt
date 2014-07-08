@@ -45,9 +45,9 @@ follows:
 
   struct table_col_info column_order[] = { TBL_COL(TBL_REC_ID), TBL_COL(TBL_REC_ALBUM_NAME) };
 
-The column order is supplied in the struct table using the TBL_COL_ORDER macro.
+The column order is supplied in the struct table_template using the TBL_COL_ORDER macro.
 
-  struct table recording_table_template = {
+  struct table_template recording_table_template = {
     TBL_COLUMNS {
        [TBL_REC_ID] = TBL_COL_UINT("id", 16),
        [TBL_REC_ALBUM_NAME] = TBL_COL_STR_FMT("album-name", 20 | CELL_ALIGN_LEFT, "%s"),
