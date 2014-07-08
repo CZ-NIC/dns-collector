@@ -22,7 +22,7 @@ static void table_update_ll(struct table *tbl);
 
 static struct table *table_template_copy(struct table_template *tbl_template)
 {
-  struct table *copy = mp_alloc_zero(tbl_template->pool, sizeof(struct table));
+  struct table *copy = xmalloc_zero(sizeof(struct table));
 
   copy->column_count = tbl_template->column_count;
   copy->pool = mp_new(4096);
@@ -55,10 +55,6 @@ struct table *table_init(struct table_template *tbl_template)
 {
   int col_count = 0; // count the number of columns in the struct table
 
-  if(!tbl_template->pool) {
-    tbl_template->pool = mp_new(4096);
-  }
-
   struct table *tbl = table_template_copy(tbl_template);
 
   for(;;) {
@@ -88,6 +84,7 @@ void table_cleanup(struct table *tbl)
 {
   mp_delete(tbl->pool);
   memset(tbl, 0, sizeof(struct table));
+  xfree(tbl);
 }
 
 // TODO: test default column order

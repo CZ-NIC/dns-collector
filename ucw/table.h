@@ -73,7 +73,7 @@
  * -----------------
  ***/
 
-// FIXME: update documentation according to the changes made in recent comments!
+// FIXME: update documentation according to the changes made in recent commits!
 
 /** Types of columns. These are seldom used explicitly, using a column definition macro is preferred. **/
 enum column_type {
@@ -150,8 +150,6 @@ struct table_template {
   const char *col_delimiter;		// [*] Delimiter that is placed between columns
   // Back-end used for table formatting and its private data
   struct table_formatter *formatter;
-
-  struct mempool *pool;			// Memory pool used for storing table handles.
 };
 
 /**
