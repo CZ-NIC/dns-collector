@@ -14,29 +14,29 @@ static const char *unit_suffix[] = {
   [UNIT_SIZE_TERABYTE] = "TB"
 };
 
-static bool table_set_col_opt_size(struct table *tbl, uint col_copy_idx, const char *col_arg, char **err)
+static bool table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
 {
-  struct table_column *col_def = tbl->column_order[col_copy_idx].col_def;
+  struct table_column *col_def = tbl->column_order[col_inst_idx].col_def;
   if(col_def->type != COL_TYPE_SIZE) {
     *err = NULL;
     return false;
   }
 
   if(col_arg == NULL || strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
-    tbl->column_order[col_copy_idx].output_type = UNIT_SIZE_BYTE;
+    tbl->column_order[col_inst_idx].output_type = UNIT_SIZE_BYTE;
     *err = NULL;
     return true;
   }
 
-  tbl->column_order[col_copy_idx].output_type = CELL_OUT_UNINITIALIZED;
-  for(uint i = 0; i < ARRAY_SIZE(unit_suffix); i++) {
+  tbl->column_order[col_inst_idx].output_type = CELL_OUT_UNINITIALIZED;
+  for(uint i = UNIT_SIZE_BYTE; i <= UNIT_SIZE_TERABYTE; i++) {
     if(strcasecmp(col_arg, unit_suffix[i]) == 0) {
-      tbl->column_order[col_copy_idx].output_type = i;
+      tbl->column_order[col_inst_idx].output_type = i;
     }
   }
 
-  if(tbl->column_order[col_copy_idx].output_type == CELL_OUT_UNINITIALIZED) {
-    *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d (counted from 0)", col_arg, col_copy_idx);
+  if(tbl->column_order[col_inst_idx].output_type == CELL_OUT_UNINITIALIZED) {
+    *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d (counted from 0)", col_arg, col_inst_idx);
     return true;
   }
 
@@ -49,9 +49,9 @@ struct table_user_type table_type_size = {
   .type = COL_TYPE_SIZE,
 };
 
-static bool table_set_col_opt_timestamp(struct table *tbl, uint col_copy_idx, const char *col_arg, char **err)
+static bool table_set_col_opt_timestamp(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
 {
-  int col_type_idx = tbl->column_order[col_copy_idx].idx;
+  int col_type_idx = tbl->column_order[col_inst_idx].idx;
   if(tbl->columns[col_type_idx].type != COL_TYPE_TIMESTAMP) {
     *err = NULL;
     return false;
@@ -63,11 +63,11 @@ static bool table_set_col_opt_timestamp(struct table *tbl, uint col_copy_idx, co
   }
 
   if(strcasecmp(col_arg, "timestamp") == 0 || strcasecmp(col_arg, "epoch") == 0) {
-    tbl->column_order[col_copy_idx].output_type = TIMESTAMP_EPOCH;
+    tbl->column_order[col_inst_idx].output_type = TIMESTAMP_EPOCH;
   } else if(strcasecmp(col_arg, "datetime") == 0) {
-    tbl->column_order[col_copy_idx].output_type = TIMESTAMP_DATETIME;
+    tbl->column_order[col_inst_idx].output_type = TIMESTAMP_DATETIME;
   } else {
-    *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_arg, col_copy_idx);
+    *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_arg, col_inst_idx);
     return true;
   }
 
@@ -108,7 +108,7 @@ void table_col_size(struct table *tbl, int col, u64 val)
     u64 curr_val = val;
     if(curr_col->output_type == CELL_OUT_UNINITIALIZED) {
       curr_val = curr_val / unit_div[UNIT_SIZE_BYTE];
-      out_type = 0;
+      out_type = UNIT_SIZE_BYTE;
     } else {
       curr_val = curr_val / unit_div[curr_col->output_type];
       out_type = curr_col->output_type;

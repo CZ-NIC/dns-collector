@@ -10,7 +10,7 @@
 #include <ucw/table.h>
 
 enum size_units {
-  UNIT_SIZE_BYTE,
+  UNIT_SIZE_BYTE = CELL_OUT_USER_DEF_START,
   UNIT_SIZE_KILOBYTE,
   UNIT_SIZE_MEGABYTE,
   UNIT_SIZE_GIGABYTE,

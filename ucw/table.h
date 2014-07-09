@@ -102,8 +102,9 @@ enum column_type {
 #define CELL_WIDTH_MASK	(~CELL_FLAG_MASK)
 
 #define CELL_OUT_UNINITIALIZED      -1
-#define CELL_OUT_HUMAN_READABLE     0
-#define CELL_OUT_MACHINE_READABLE   1
+#define CELL_OUT_HUMAN_READABLE     -2
+#define CELL_OUT_MACHINE_READABLE   -3
+#define CELL_OUT_USER_DEF_START     5
 
 struct table;
 
@@ -225,8 +226,8 @@ struct table {
 #define TBL_COLUMNS  .columns = (struct table_column [])
 #define TBL_COL_ORDER(order) .column_order = (struct table_col_instance *) order, .cols_to_output = ARRAY_SIZE(order)
 #define TBL_COL_DELIMITER(_delimiter_) .col_delimiter = _delimiter_
-#define TBL_COL(_idx) { .idx = _idx, .output_type = -1, .next_column = -1 }
-#define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .output_type = -1, .next_column = -1, .fmt = _fmt }
+#define TBL_COL(_idx) { .idx = _idx, .output_type = CELL_OUT_UNINITIALIZED, .next_column = -1 }
+#define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .output_type = CELL_OUT_UNINITIALIZED, .next_column = -1, .fmt = _fmt }
 #define TBL_COL_TYPE(_idx, _type) { .idx = _idx, .output_type = _type, .next_column = -1 }
 
 #define TBL_OUTPUT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
@@ -295,9 +296,9 @@ TABLE_COL_PROTO(uintmax, uintmax_t);
 TABLE_COL_PROTO(s64, s64);
 TABLE_COL_PROTO(u64, u64);
 
-void table_col_bool(struct table *tbl, int col, uint val);
-void table_col_bool_name(struct table *tbl, const char *col_name, uint val);
-void table_col_bool_fmt(struct table *tbl, int col, const char *fmt, uint val);
+void table_col_bool(struct table *tbl, int col, bool val);
+void table_col_bool_name(struct table *tbl, const char *col_name, bool val);
+void table_col_bool_fmt(struct table *tbl, int col, const char *fmt, bool val);
 #undef TABLE_COL_PROTO
 
 /**

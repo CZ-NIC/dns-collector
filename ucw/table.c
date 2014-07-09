@@ -54,7 +54,6 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
 
   new_inst->columns = mp_alloc_zero(new_inst->pool, sizeof(struct table_column) * new_inst->column_count);
   memcpy(new_inst->columns, tbl_template->columns, sizeof(struct table_column) * new_inst->column_count);
-  new_inst->columns = tbl_template->columns; // FIXME: copy also columns, if there will be two instances of table, then there will be clash between the linked lists!
 
   new_inst->col_delimiter = tbl_template->col_delimiter;
   new_inst->print_header = 1;
@@ -384,6 +383,10 @@ TABLE_COL_BODIES(u64, u64, COL_TYPE_U64, 0)
 // column type double is a special case
 TABLE_COL(double, double, COL_TYPE_DOUBLE);
 TABLE_COL_STR(double, double, COL_TYPE_DOUBLE);
+
+TABLE_COL(bool, bool, COL_TYPE_BOOL);
+TABLE_COL_STR(bool, bool, COL_TYPE_BOOL);
+
 #undef TABLE_COL
 #undef TABLE_COL_FMT
 #undef TABLE_COL_STR
@@ -399,27 +402,24 @@ void table_col_double_fmt(struct table *tbl, int col, const char *fmt, double va
   char *cell_content = mp_printf(tbl->pool, fmt, val);
   int curr_col = tbl->columns[col].first_column;
   while(curr_col != -1) {
-    if(tbl->column_order[curr_col].output_type < 0) tbl->column_order[curr_col].cell_content = cell_content;
-    else {
-      char *cell_content_tmp = mp_printf(tbl->pool, "%.*lf", tbl->column_order[curr_col].output_type, val);
-      tbl->column_order[curr_col].cell_content = cell_content_tmp;
+    char *cell_content_tmp = NULL;
+    switch(tbl->column_order[curr_col].output_type) {
+    case CELL_OUT_UNINITIALIZED:
+      cell_content_tmp = cell_content;
+      break;
+    case CELL_OUT_MACHINE_READABLE:
+      cell_content_tmp = mp_printf(tbl->pool, "%4lf", val);
+      break;
+    default:
+      cell_content_tmp = mp_printf(tbl->pool, "%.*lf", tbl->column_order[curr_col].output_type, val);
+      break;
     }
+    tbl->column_order[curr_col].cell_content = cell_content_tmp;
     curr_col = tbl->column_order[curr_col].next_column;
   }
 }
 
-void table_col_bool(struct table *tbl, int col, uint val)
-{
-  table_col_bool_fmt(tbl, col, tbl->columns[col].fmt, val);
-}
-
-void table_col_bool_name(struct table *tbl, const char *col_name, uint val)
-{
-  int col = table_get_col_idx(tbl, col_name);
-  table_col_bool(tbl, col, val);
-}
-
-void table_col_bool_fmt(struct table *tbl, int col, const char *fmt, uint val)
+void table_col_bool_fmt(struct table *tbl, int col, const char *fmt, bool val)
 {
   ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
   ASSERT(COL_TYPE_BOOL == tbl->columns[col].type);
@@ -655,8 +655,6 @@ struct table_formatter table_fmt_blockline = {
   .row_output = table_row_blockline_output,
   .table_start = table_start_blockline
 };
-
-
 
 /*** Tests ***/
 
