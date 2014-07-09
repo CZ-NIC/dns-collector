@@ -1,31 +1,29 @@
 #include <ucw/lib.h>
-#include <ucw/config.h>
 #include <ucw/table-types.h>
 #include <ucw/fastbuf.h>
-#include <ucw/config.h>
 #include <ucw/table.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 static const char *unit_suffix[] = {
-  [UNIT_BYTE] = "",
-  [UNIT_KILOBYTE] = "KB",
-  [UNIT_MEGABYTE] = "MB",
-  [UNIT_GIGABYTE] = "GB",
-  [UNIT_TERABYTE] = "TB"
+  [UNIT_SIZE_BYTE] = "",
+  [UNIT_SIZE_KILOBYTE] = "KB",
+  [UNIT_SIZE_MEGABYTE] = "MB",
+  [UNIT_SIZE_GIGABYTE] = "GB",
+  [UNIT_SIZE_TERABYTE] = "TB"
 };
 
 static bool table_set_col_opt_size(struct table *tbl, uint col_copy_idx, const char *col_arg, char **err)
 {
-  int col_type_idx = tbl->column_order[col_copy_idx].idx;
-  if(tbl->columns[col_type_idx].type != COL_TYPE_SIZE) {
+  struct table_column *col_def = tbl->column_order[col_copy_idx].col_def;
+  if(col_def->type != COL_TYPE_SIZE) {
     *err = NULL;
     return false;
   }
 
   if(col_arg == NULL || strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
-    tbl->column_order[col_copy_idx].output_type = UNIT_BYTE;
+    tbl->column_order[col_copy_idx].output_type = UNIT_SIZE_BYTE;
     *err = NULL;
     return true;
   }
@@ -38,7 +36,7 @@ static bool table_set_col_opt_size(struct table *tbl, uint col_copy_idx, const c
   }
 
   if(tbl->column_order[col_copy_idx].output_type == CELL_OUT_UNINITIALIZED) {
-    *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d (counted from 0)", col_arg, col_copy_idx);
+    *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d (counted from 0)", col_arg, col_copy_idx);
     return true;
   }
 
@@ -69,7 +67,7 @@ static bool table_set_col_opt_timestamp(struct table *tbl, uint col_copy_idx, co
   } else if(strcasecmp(col_arg, "datetime") == 0) {
     tbl->column_order[col_copy_idx].output_type = TIMESTAMP_DATETIME;
   } else {
-    *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d.", col_arg, col_copy_idx);
+    *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_arg, col_copy_idx);
     return true;
   }
 
@@ -97,19 +95,19 @@ void table_col_size(struct table *tbl, int col, u64 val)
   tbl->row_printing_started = 1;
 
   static u64 unit_div[] = {
-    [UNIT_BYTE] = (u64) 1,
-    [UNIT_KILOBYTE] = (u64) 1024LLU,
-    [UNIT_MEGABYTE] = (u64) (1024LLU * 1024LLU),
-    [UNIT_GIGABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU),
-    [UNIT_TERABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU * 1024LLU)
+    [UNIT_SIZE_BYTE] = (u64) 1,
+    [UNIT_SIZE_KILOBYTE] = (u64) 1024LLU,
+    [UNIT_SIZE_MEGABYTE] = (u64) (1024LLU * 1024LLU),
+    [UNIT_SIZE_GIGABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU),
+    [UNIT_SIZE_TERABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU * 1024LLU)
   };
 
-  TBL_COL_ITER(tbl, col, curr_col, curr_col_idx) {
+  TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {
     // FIXME: do some rounding? Or maybe use double and floating-point printing?
     uint out_type = 0;
     u64 curr_val = val;
     if(curr_col->output_type == CELL_OUT_UNINITIALIZED) {
-      curr_val = curr_val / unit_div[UNIT_BYTE];
+      curr_val = curr_val / unit_div[UNIT_SIZE_BYTE];
       out_type = 0;
     } else {
       curr_val = curr_val / unit_div[curr_col->output_type];
@@ -117,7 +115,7 @@ void table_col_size(struct table *tbl, int col, u64 val)
     }
 
     curr_col->cell_content = mp_printf(tbl->pool, "%lu%s", curr_val, unit_suffix[out_type]);
-  }
+  } TBL_COL_ITER_END
 }
 
 #define FORMAT_TIME_SIZE 20	// Minimum buffer size
@@ -137,7 +135,7 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
 
   time_t tmp_time = (time_t)val;
   struct tm t = *gmtime(&tmp_time);
-  TBL_COL_ITER(tbl, col, curr_col, curr_col_idx) {
+  TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {
     switch (curr_col->output_type) {
     case TIMESTAMP_EPOCH:
     case CELL_OUT_UNINITIALIZED:
@@ -152,5 +150,5 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
     }
 
     curr_col->cell_content = mp_printf(tbl->pool, "%s", formatted_time_buf);
-  }
+  } TBL_COL_ITER_END
 }

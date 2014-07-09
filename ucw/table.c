@@ -20,42 +20,42 @@ static void table_update_ll(struct table *tbl);
 
 /*** Management of tables ***/
 
-static struct table *table_template_copy(struct table_template *tbl_template)
+static struct table *table_make_instance(struct table_template *tbl_template)
 {
-  struct table *copy = xmalloc_zero(sizeof(struct table));
+  struct table *new_inst = xmalloc_zero(sizeof(struct table));
 
-  copy->column_count = tbl_template->column_count;
-  copy->pool = mp_new(4096);
+  new_inst->column_count = tbl_template->column_count;
+  new_inst->pool = mp_new(4096);
   if(tbl_template->column_order) {
-    copy->column_order = mp_alloc_zero(copy->pool, sizeof(struct table_col_info) * tbl_template->cols_to_output);
-    memcpy(copy->column_order, tbl_template->column_order, sizeof(struct table_col_info) * tbl_template->cols_to_output);
-    for(uint i = 0; i < copy->cols_to_output; i++) {
-      copy->column_order[i].cell_content = NULL;
-      copy->column_order[i].col_def = NULL;
-      copy->column_order[i].output_type = tbl_template->column_order[i].output_type;
+    new_inst->column_order = mp_alloc_zero(new_inst->pool, sizeof(struct table_col_info) * tbl_template->cols_to_output);
+    memcpy(new_inst->column_order, tbl_template->column_order, sizeof(struct table_col_info) * tbl_template->cols_to_output);
+    for(uint i = 0; i < new_inst->cols_to_output; i++) {
+      new_inst->column_order[i].cell_content = NULL;
+      new_inst->column_order[i].col_def = NULL;
+      new_inst->column_order[i].output_type = tbl_template->column_order[i].output_type;
     }
 
-    copy->cols_to_output = tbl_template->cols_to_output;
+    new_inst->cols_to_output = tbl_template->cols_to_output;
   }
 
-  copy->columns = tbl_template->columns;
+  new_inst->columns = tbl_template->columns; // FIXME: copy also columns, if there will be two instances of table, then there will be clash between the linked lists!
 
-  copy->col_delimiter = tbl_template->col_delimiter;
-  copy->print_header = 1;
-  copy->out = 0;
-  copy->last_printed_col = -1;
-  copy->row_printing_started = 0;
-  copy->col_out = -1;
-  copy->formatter = tbl_template->formatter;
-  copy->data = NULL;
-  return copy;
+  new_inst->col_delimiter = tbl_template->col_delimiter;
+  new_inst->print_header = 1;
+  new_inst->out = 0;
+  new_inst->last_printed_col = -1;
+  new_inst->row_printing_started = 0;
+  new_inst->col_out = -1;
+  new_inst->formatter = tbl_template->formatter;
+  new_inst->data = NULL;
+  return new_inst;
 }
 
 struct table *table_init(struct table_template *tbl_template)
 {
   int col_count = 0; // count the number of columns in the struct table
 
-  struct table *tbl = table_template_copy(tbl_template);
+  struct table *tbl = table_make_instance(tbl_template);
 
   for(;;) {
     if(tbl->columns[col_count].name == NULL &&
@@ -222,19 +222,22 @@ static char * table_parse_col_arg(char *col_def)
 /**
  * Setting options for basic table types (as defined in table.h)
  **/
-bool table_set_col_opt_default(struct table *tbl, int col_copy_idx, const char *col_arg, char **err)
+bool table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_arg, char **err)
 {
-  struct table_column *tmp_col = tbl->column_order[col_copy_idx].col_def;
-  int col_type_idx = tbl->column_order[col_copy_idx].idx;
+  struct table_column *col_def = tbl->column_order[col_idx].col_def;
 
-  if(tmp_col->type == COL_TYPE_DOUBLE) {
+  if(col_def->type == COL_TYPE_DOUBLE) {
     uint precision = 0;
-    str_to_uint(&precision, col_arg, NULL, 0);
-    tbl->column_order[col_type_idx].output_type = precision;
+    const char *tmp_err = str_to_uint(&precision, col_arg, NULL, 0);
+    if(tmp_err) {
+      *err = mp_printf(tbl->pool, "An error occured while parsing precision: %s", tmp_err);
+      return false;
+    }
+    tbl->column_order[col_idx].output_type = precision;
     return true;
   }
 
-  *err = mp_printf(tbl->pool, "Tableprinter: invalid column format option: '%s' for column %d.", col_arg, col_copy_idx);
+  *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_arg, col_idx);
   return false;
 }
 
@@ -307,16 +310,14 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
 
 /*** Table cells ***/
 
-static void table_set_all_cols_content(struct table *tbl, int col, char *col_content, int override)
+static void table_set_all_inst_content(struct table *tbl, int col_templ, char *col_content, int override)
 {
-  int curr_col = tbl->columns[col].first_column;
-  while(curr_col != -1) {
-    if(override == 0 && tbl->column_order[curr_col].output_type != CELL_OUT_UNINITIALIZED ) {
+  TBL_COL_ITER_START(tbl, col_templ, curr_col_ptr, curr_col) {
+    if(override == 0 && curr_col_ptr->output_type != CELL_OUT_UNINITIALIZED ) {
       die("Error while setting content of all cells of a single type column, cell format should not be overriden.");
     }
-    tbl->column_order[curr_col].cell_content = col_content;
-    curr_col = tbl->column_order[curr_col].next_column;
-  }
+    curr_col_ptr->cell_content = col_content;
+  } TBL_COL_ITER_END
 }
 
 void table_col_printf(struct table *tbl, int col, const char *fmt, ...)
@@ -327,7 +328,7 @@ void table_col_printf(struct table *tbl, int col, const char *fmt, ...)
   va_list args;
   va_start(args, fmt);
   char *cell_content = mp_vprintf(tbl->pool, fmt, args);
-  table_set_all_cols_content(tbl, col, cell_content, 1);
+  table_set_all_inst_content(tbl, col, cell_content, 1);
   va_end(args);
 }
 
@@ -368,7 +369,7 @@ static const char *table_col_default_fmts[] = {
      tbl->last_printed_col = col;\
      tbl->row_printing_started = 1;\
      char *cell_content = mp_printf(tbl->pool, fmt, val);\
-     table_set_all_cols_content(tbl, col, cell_content, _override);\
+     table_set_all_inst_content(tbl, col, cell_content, _override);\
   }
 
 #define TABLE_COL_BODIES(_name_, _type_, _typeconst_, _override) TABLE_COL(_name_, _type_, _typeconst_); \
@@ -478,7 +479,7 @@ struct fastbuf *table_col_fbstart(struct table *tbl, int col)
 void table_col_fbend(struct table *tbl)
 {
   char *cell_content = fbpool_end(&tbl->fb_col_out);
-  table_set_all_cols_content(tbl, tbl->col_out, cell_content, 1);
+  table_set_all_inst_content(tbl, tbl->col_out, cell_content, 1);
   tbl->col_out = -1;
 }
 
@@ -498,21 +499,20 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
   if(value) {
     if(strcmp(key, "header") == 0) {
       if(value[1] != 0)
-        return mp_printf(tbl->pool, "Tableprinter: invalid option: '%s' has invalid value: '%s'.", key, value);
+        return mp_printf(tbl->pool, "Invalid header parameter: '%s' has invalid value: '%s'.", key, value);
       uint tmp = value[0] - '0';
       if(tmp > 1)
-        return mp_printf(tbl->pool, "Tableprinter: invalid option: '%s' has invalid value: '%s'.", key, value);
+        return mp_printf(tbl->pool, "Invalid header parameter: '%s' has invalid value: '%s'.", key, value);
       tbl->print_header = tmp;
       return NULL;
     } else if(strcmp(key, "cols") == 0) {
-      const char *err = table_set_col_order_by_name(tbl, value);
-      return err;
+      return table_set_col_order_by_name(tbl, value);
     } else if(strcmp(key, "fmt") == 0) {
       if(strcmp(value, "human") == 0) table_set_formatter(tbl, &table_fmt_human_readable);
       else if(strcmp(value, "machine") == 0) table_set_formatter(tbl, &table_fmt_machine_readable);
       else if(strcmp(value, "blockline") == 0) table_set_formatter(tbl, &table_fmt_blockline);
       else {
-        return "Tableprinter: invalid argument to output-type option.";
+        return "Invalid argument to output-type option.";
       }
       return NULL;
     } else if(strcmp(key, "col-delim") == 0) {
@@ -531,7 +531,7 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
   }
 
   // Unrecognized option
-  return mp_printf(tbl->pool, "Tableprinter: invalid option: '%s%s%s'.", key, (value ? ":" : ""), (value ? : ""));
+  return mp_printf(tbl->pool, "Invalid option: '%s%s%s'.", key, (value ? ":" : ""), (value ? : ""));
 }
 
 const char *table_set_option(struct table *tbl, const char *opt)
@@ -560,12 +560,12 @@ const char *table_set_gary_options(struct table *tbl, char **gary_table_opts)
 static void table_row_human_readable(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    int col_idx = tbl->column_order[i].idx;
+    struct table_column *col_def = tbl->column_order[i].col_def;
     if(i) {
       bputs(tbl->out, tbl->col_delimiter);
     }
-    int col_width = tbl->columns[col_idx].width & CELL_WIDTH_MASK;
-    if(tbl->columns[col_idx].width & CELL_ALIGN_LEFT) col_width = -1 * col_width;
+    int col_width = col_def->width & CELL_WIDTH_MASK;
+    if(col_def->width & CELL_ALIGN_LEFT) col_width = -1 * col_width;
     bprintf(tbl->out, "%*s", col_width, tbl->column_order[i].cell_content);
   }
   bputc(tbl->out, '\n');
@@ -574,13 +574,13 @@ static void table_row_human_readable(struct table *tbl)
 static void table_write_header(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    int col_idx = tbl->column_order[i].col_def - tbl->columns;
+    struct table_column *col_def = tbl->column_order[i].col_def;
     if(i) {
       bputs(tbl->out, tbl->col_delimiter);
     }
-    int col_width = tbl->columns[col_idx].width & CELL_WIDTH_MASK;
-    if(tbl->columns[col_idx].width & CELL_ALIGN_LEFT) col_width = -1 * col_width;
-    bprintf(tbl->out, "%*s", col_width, tbl->columns[col_idx].name);
+    int col_width = col_def->width & CELL_WIDTH_MASK;
+    if(col_def->width & CELL_ALIGN_LEFT) col_width = -1 * col_width;
+    bprintf(tbl->out, "%*s", col_width, col_def->name);
   }
   bputc(tbl->out, '\n');
 }
@@ -620,13 +620,11 @@ static void table_start_machine_readable(struct table *tbl)
     tbl->col_delimiter = "\t";
   }
 
-  if(tbl->print_header != 0) {
-    uint col_idx = tbl->column_order[0].col_def - tbl->columns;
-    bputs(tbl->out, tbl->columns[col_idx].name);
+  if(tbl->print_header != 0 && tbl->cols_to_output > 0) {
+    bputs(tbl->out, tbl->column_order[0].col_def->name);
     for(uint i = 1; i < tbl->cols_to_output; i++) {
-      col_idx = tbl->column_order[i].col_def - tbl->columns;
       bputs(tbl->out, tbl->col_delimiter);
-      bputs(tbl->out, tbl->columns[col_idx].name);
+      bputs(tbl->out, tbl->column_order[i].col_def->name);
     }
     bputc(tbl->out, '\n');
   }
@@ -643,8 +641,8 @@ struct table_formatter table_fmt_machine_readable = {
 static void table_row_blockline_output(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    int col_idx = tbl->column_order[i].idx;
-    bprintf(tbl->out, "%s: %s\n", tbl->columns[col_idx].name, tbl->column_order[i].cell_content);
+    struct table_column *col_def = tbl->column_order[i].col_def;
+    bprintf(tbl->out, "%s: %s\n", col_def->name, tbl->column_order[i].cell_content);
   }
   bputc(tbl->out, '\n');
 }

@@ -1,15 +1,21 @@
+/*
+ *	UCW Library -- Table printer
+ *
+ *	(c) 2014 Robert Kessl <robert.kessl@economia.cz>
+ */
+
 #ifndef _UCW_TABLE_TYPES_H
 #define _UCW_TABLE_TYPES_H
 
 #include <ucw/table.h>
 
 enum size_units {
-  UNIT_BYTE,
-  UNIT_KILOBYTE,
-  UNIT_MEGABYTE,
-  UNIT_GIGABYTE,
-  UNIT_TERABYTE,
-  UNIT_AUTO
+  UNIT_SIZE_BYTE,
+  UNIT_SIZE_KILOBYTE,
+  UNIT_SIZE_MEGABYTE,
+  UNIT_SIZE_GIGABYTE,
+  UNIT_SIZE_TERABYTE,
+  UNIT_SIZE_AUTO
 };
 
 enum timestamp_format {
@@ -17,8 +23,8 @@ enum timestamp_format {
   TIMESTAMP_DATETIME
 };
 
-#define COL_TYPE_SIZE       COL_TYPE_CUSTOM
-#define COL_TYPE_TIMESTAMP  (COL_TYPE_CUSTOM+1)
+#define COL_TYPE_SIZE       COL_TYPE_UCW
+#define COL_TYPE_TIMESTAMP  (COL_TYPE_UCW+1)
 
 extern struct table_user_type table_type_timestamp;
 extern struct table_user_type table_type_size;

@@ -234,8 +234,10 @@ struct table {
 #define TBL_OUTPUT_BLOCKLINE          .formatter = &table_fmt_blockline
 #define TBL_OUTPUT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
 
-#define TBL_COL_ITER(_tbl, _colidx, _var, _idxval) struct table_col_info *_var = NULL; int _idxval = _tbl->columns[_colidx].first_column;\
+#define TBL_COL_ITER_START(_tbl, _colidx, _var, _idxval) { struct table_col_info *_var = NULL; int _idxval = _tbl->columns[_colidx].first_column; \
   for(_idxval = _tbl->columns[_colidx].first_column, _var = _tbl->column_order + _idxval; _idxval != -1; _idxval = _tbl->column_order[_idxval].next_column, _var = _tbl->column_order + _idxval)
+
+#define TBL_COL_ITER_END }
 
 /**
  * Creates a new table from a table template. The template should already contain
@@ -341,9 +343,9 @@ int table_get_col_idx(struct table *tbl, const char *col_name);
 
 
 /**
- * Sets a string argument to a column realization
+ * Sets a string argument to a column instance
  **/
-bool table_set_col_opt_default(struct table *tbl, int col_copy_idx, const char *col_arg, char ** err);
+bool table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_arg, char ** err);
 
 /**
  * Returns a comma-and-space-separated list of column names, allocated from table's internal

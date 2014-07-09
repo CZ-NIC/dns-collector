@@ -100,8 +100,8 @@ EOF
 
 Run: ../obj/ucw/table-test -i
 Out <<EOF
-Tableprinter option parser returned error: "Tableprinter: invalid option: 'invalid:option'.".
-Tableprinter option parser returned error: "Tableprinter: invalid option: 'invalid'.".
+Tableprinter option parser returned error: "Invalid option: 'invalid:option'.".
+Tableprinter option parser returned error: "Invalid option: 'invalid'.".
 setting key: novaluekey; value: (null)
 setting key: valuekey; value: value
 EOF
