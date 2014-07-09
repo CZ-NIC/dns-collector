@@ -374,7 +374,9 @@ bool table_col_is_printed(struct table *tbl, uint col_idx);
  * <col-order-string> := <col-def>[,<col-def>]*
  *
  * <col-def> := <col-name> '[' <col-opt> ']'
+ *
  * <col-name> is a string that does not contain comma ',' or '[',']' brackets
+ *
  * <col-opt> is currently only one string.
  *
  * FIXME In the future, we should allow <col-opt> to be a comma(,) separated list of identifiers

@@ -7,11 +7,11 @@
 #include <stdlib.h>
 
 static const char *unit_suffix[] = {
-  [UNIT_SIZE_BYTE] = "",
-  [UNIT_SIZE_KILOBYTE] = "KB",
-  [UNIT_SIZE_MEGABYTE] = "MB",
-  [UNIT_SIZE_GIGABYTE] = "GB",
-  [UNIT_SIZE_TERABYTE] = "TB"
+  [SIZE_UNIT_BYTE] = "",
+  [SIZE_UNIT_KILOBYTE] = "KB",
+  [SIZE_UNIT_MEGABYTE] = "MB",
+  [SIZE_UNIT_GIGABYTE] = "GB",
+  [SIZE_UNIT_TERABYTE] = "TB"
 };
 
 static bool table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
@@ -23,13 +23,13 @@ static bool table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const c
   }
 
   if(col_arg == NULL || strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
-    tbl->column_order[col_inst_idx].output_type = UNIT_SIZE_BYTE;
+    tbl->column_order[col_inst_idx].output_type = SIZE_UNIT_BYTE;
     *err = NULL;
     return true;
   }
 
   tbl->column_order[col_inst_idx].output_type = CELL_OUT_UNINITIALIZED;
-  for(uint i = UNIT_SIZE_BYTE; i <= UNIT_SIZE_TERABYTE; i++) {
+  for(uint i = SIZE_UNIT_BYTE; i <= SIZE_UNIT_TERABYTE; i++) {
     if(strcasecmp(col_arg, unit_suffix[i]) == 0) {
       tbl->column_order[col_inst_idx].output_type = i;
     }
@@ -95,11 +95,11 @@ void table_col_size(struct table *tbl, int col, u64 val)
   tbl->row_printing_started = 1;
 
   static u64 unit_div[] = {
-    [UNIT_SIZE_BYTE] = (u64) 1,
-    [UNIT_SIZE_KILOBYTE] = (u64) 1024LLU,
-    [UNIT_SIZE_MEGABYTE] = (u64) (1024LLU * 1024LLU),
-    [UNIT_SIZE_GIGABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU),
-    [UNIT_SIZE_TERABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU * 1024LLU)
+    [SIZE_UNIT_BYTE] = (u64) 1,
+    [SIZE_UNIT_KILOBYTE] = (u64) 1024LLU,
+    [SIZE_UNIT_MEGABYTE] = (u64) (1024LLU * 1024LLU),
+    [SIZE_UNIT_GIGABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU),
+    [SIZE_UNIT_TERABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU * 1024LLU)
   };
 
   TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {
@@ -107,8 +107,8 @@ void table_col_size(struct table *tbl, int col, u64 val)
     uint out_type = 0;
     u64 curr_val = val;
     if(curr_col->output_type == CELL_OUT_UNINITIALIZED) {
-      curr_val = curr_val / unit_div[UNIT_SIZE_BYTE];
-      out_type = UNIT_SIZE_BYTE;
+      curr_val = curr_val / unit_div[SIZE_UNIT_BYTE];
+      out_type = SIZE_UNIT_BYTE;
     } else {
       curr_val = curr_val / unit_div[curr_col->output_type];
       out_type = curr_col->output_type;

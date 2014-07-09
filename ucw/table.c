@@ -22,7 +22,7 @@ static void table_update_ll(struct table *tbl);
 
 static struct table *table_make_instance(const struct table_template *tbl_template)
 {
-  struct table *new_inst = xmalloc_zero(sizeof(struct table));
+  struct table *new_inst = xmalloc_zero(sizeof(struct table)); // FIXME: update allocation to the weird schema made by pchar and mj?
 
   new_inst->pool = mp_new(4096);
   if(tbl_template->column_order) {
