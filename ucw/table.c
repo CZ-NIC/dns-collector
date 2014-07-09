@@ -161,7 +161,6 @@ static void table_update_ll(struct table *tbl)
 
   for(int i = 0; i < tbl->column_count; i++) {
     tbl->columns[i].first_column = -1;
-    tbl->columns[i].last_column = -1;
   }
 
   for(int i = 0; i < cols_to_output; i++) {
@@ -170,15 +169,14 @@ static void table_update_ll(struct table *tbl)
   }
 
   for(int i = 0; i < cols_to_output; i++) {
-    int last = tbl->column_order[i].col_def->last_column;
-    if(last != -1) {
-      tbl->column_order[i].col_def->last_column = i;
-      tbl->column_order[last].next_column = i;
+    int first = tbl->column_order[i].col_def->first_column;
+    tbl->column_order[i].col_def->first_column = i;
+
+    if(first != -1) {
+      tbl->column_order[i].next_column = first;
     } else {
-      tbl->column_order[i].col_def->last_column = i;
-      tbl->column_order[i].col_def->first_column = i;
+      tbl->column_order[i].next_column = -1;
     }
-    tbl->column_order[i].next_column = -1;
   }
 }
 

@@ -125,11 +125,12 @@ struct table_column {
   const char *fmt;		// [*] Default format of each cell in the column
   enum column_type type;	// [*] Type of the cells in the column
   int first_column;             // head of linked list of columns of this type
-  int last_column;              // tail of linked list of columns of this type
+  //int last_column;              // tail of linked list of columns of this type
   struct table_user_type *type_def;
 };
 
 // FIXME: is it correct to have idx and col_def? idx is sufficient and in fact a duplicity of idx
+// idx is used only for initialization and col_def is used in other cases
 struct table_col_info {
   uint idx;                      // idx is a pointer to struct table::columns
   struct table_column *col_def;  // this is pointer to the column definition, located in the array struct table::columns
@@ -198,7 +199,7 @@ struct table {
  *
  ***/
 
-#define TBL_COL_LIST_INIT     .first_column = -1, .last_column = -1
+#define TBL_COL_LIST_INIT     .first_column = -1
 #define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_STR, TBL_COL_LIST_INIT }
 #define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = "%d", .type = COL_TYPE_INT, TBL_COL_LIST_INIT }
 #define TBL_COL_S64(_name, _width)            { .name = _name, .width = _width, .fmt = "%lld", .type = COL_TYPE_S64, TBL_COL_LIST_INIT }
