@@ -14,7 +14,7 @@ enum test_table_cols {
   test_col0_str, test_col1_int, test_col2_uint, test_col3_bool, test_col4_double, test_col5_size, test_col6_time
 };
 
-static struct table_col_info test_column_order[] = { TBL_COL(test_col3_bool), TBL_COL(test_col4_double), TBL_COL(test_col2_uint), TBL_COL(test_col1_int), TBL_COL(test_col0_str) };
+static struct table_col_instance test_column_order[] = { TBL_COL(test_col3_bool), TBL_COL(test_col4_double), TBL_COL(test_col2_uint), TBL_COL(test_col1_int), TBL_COL(test_col0_str) };
 
 static struct table_template test_tbl = {
   TBL_COLUMNS {

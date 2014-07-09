@@ -20,15 +20,14 @@ static void table_update_ll(struct table *tbl);
 
 /*** Management of tables ***/
 
-static struct table *table_make_instance(struct table_template *tbl_template)
+static struct table *table_make_instance(const struct table_template *tbl_template)
 {
   struct table *new_inst = xmalloc_zero(sizeof(struct table));
 
-  new_inst->column_count = tbl_template->column_count;
   new_inst->pool = mp_new(4096);
   if(tbl_template->column_order) {
-    new_inst->column_order = mp_alloc_zero(new_inst->pool, sizeof(struct table_col_info) * tbl_template->cols_to_output);
-    memcpy(new_inst->column_order, tbl_template->column_order, sizeof(struct table_col_info) * tbl_template->cols_to_output);
+    new_inst->column_order = mp_alloc_zero(new_inst->pool, sizeof(struct table_col_instance) * tbl_template->cols_to_output);
+    memcpy(new_inst->column_order, tbl_template->column_order, sizeof(struct table_col_instance) * tbl_template->cols_to_output);
     for(uint i = 0; i < new_inst->cols_to_output; i++) {
       new_inst->column_order[i].cell_content = NULL;
       new_inst->column_order[i].col_def = NULL;
@@ -38,6 +37,23 @@ static struct table *table_make_instance(struct table_template *tbl_template)
     new_inst->cols_to_output = tbl_template->cols_to_output;
   }
 
+  int col_count = 0; // count the number of columns in the struct table
+  for(;;) {
+    if(tbl_template->columns[col_count].name == NULL &&
+       tbl_template->columns[col_count].fmt == NULL &&
+       tbl_template->columns[col_count].width == 0 &&
+       tbl_template->columns[col_count].type == COL_TYPE_LAST)
+      break;
+    ASSERT(tbl_template->columns[col_count].name != NULL);
+    ASSERT(tbl_template->columns[col_count].type == COL_TYPE_ANY || tbl_template->columns[col_count].fmt != NULL);
+    ASSERT(tbl_template->columns[col_count].width != 0);
+
+    col_count++;
+  }
+  new_inst->column_count = col_count;
+
+  new_inst->columns = mp_alloc_zero(new_inst->pool, sizeof(struct table_column) * new_inst->column_count);
+  memcpy(new_inst->columns, tbl_template->columns, sizeof(struct table_column) * new_inst->column_count);
   new_inst->columns = tbl_template->columns; // FIXME: copy also columns, if there will be two instances of table, then there will be clash between the linked lists!
 
   new_inst->col_delimiter = tbl_template->col_delimiter;
@@ -51,26 +67,9 @@ static struct table *table_make_instance(struct table_template *tbl_template)
   return new_inst;
 }
 
-struct table *table_init(struct table_template *tbl_template)
+struct table *table_init(const struct table_template *tbl_template)
 {
-  int col_count = 0; // count the number of columns in the struct table
-
   struct table *tbl = table_make_instance(tbl_template);
-
-  for(;;) {
-    if(tbl->columns[col_count].name == NULL &&
-       tbl->columns[col_count].fmt == NULL &&
-       tbl->columns[col_count].width == 0 &&
-       tbl->columns[col_count].type == COL_TYPE_LAST)
-      break;
-    ASSERT(tbl->columns[col_count].name != NULL);
-    ASSERT(tbl->columns[col_count].type == COL_TYPE_ANY || tbl_template->columns[col_count].fmt != NULL);
-    ASSERT(tbl->columns[col_count].width != 0);
-
-    col_count++;
-  }
-
-  tbl->column_count = col_count;
 
   if(!tbl->formatter) {
     tbl->formatter = &table_fmt_human_readable;
@@ -187,7 +186,7 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
   }
 
   tbl->cols_to_output = cols_to_output;
-  tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_info) * cols_to_output);
+  tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_instance) * cols_to_output);
   for(int i = 0; i < cols_to_output; i++) {
     int col_idx = col_order[i];
     tbl->column_order[i].idx = col_idx;
@@ -271,7 +270,7 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
   }
 
   tbl->cols_to_output = col_count;
-  tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_info) * col_count);
+  tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_instance) * col_count);
 
   int curr_col_idx = 0;
   char *name_start = tmp_col_order;
@@ -669,7 +668,7 @@ enum test_table_cols {
   test_col0_str, test_col1_int, test_col2_uint, test_col3_bool, test_col4_double
 };
 
-static struct table_col_info test_column_order[] = { TBL_COL(test_col3_bool), TBL_COL(test_col4_double), TBL_COL(test_col2_uint), TBL_COL(test_col1_int), TBL_COL(test_col0_str) };
+static struct table_col_instance test_column_order[] = { TBL_COL(test_col3_bool), TBL_COL(test_col4_double), TBL_COL(test_col2_uint), TBL_COL(test_col1_int), TBL_COL(test_col0_str) };
 
 static struct table_template test_tbl = {
   TBL_COLUMNS {
@@ -763,7 +762,7 @@ enum test_any_table_cols {
   test_any_col0_int, test_any_col1_any
 };
 
-static struct table_col_info test_any_column_order[] = { TBL_COL(test_any_col0_int), TBL_COL(test_any_col1_any) };
+static struct table_col_instance test_any_column_order[] = { TBL_COL(test_any_col0_int), TBL_COL(test_any_col1_any) };
 
 static struct table_template test_any_tbl = {
   TBL_COLUMNS {

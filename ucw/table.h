@@ -125,14 +125,13 @@ struct table_column {
   const char *fmt;		// [*] Default format of each cell in the column
   enum column_type type;	// [*] Type of the cells in the column
   int first_column;             // head of linked list of columns of this type
-  //int last_column;              // tail of linked list of columns of this type
   struct table_user_type *type_def;
 };
 
 // FIXME: is it correct to have idx and col_def? idx is sufficient and in fact a duplicity of idx
 // idx is used only for initialization and col_def is used in other cases
-struct table_col_info {
-  uint idx;                      // idx is a pointer to struct table::columns
+struct table_col_instance {
+  uint idx;                      // idx is a index into struct table::columns
   struct table_column *col_def;  // this is pointer to the column definition, located in the array struct table::columns
   char *cell_content;            // content of the cell of the current row
   int next_column;               // index of next column in linked list of columns of the same type
@@ -145,8 +144,7 @@ struct table_col_info {
  **/
 struct table_template {
   struct table_column *columns;		// [*] Definition of columns
-  int column_count;			// [*] Number of columns (calculated by table_init())
-  struct table_col_info *column_order;  // [*] Order of the columns in the print-out of the table
+  struct table_col_instance *column_order;  // [*] Order of the columns in the print-out of the table
   uint cols_to_output;			// [*] Number of columns that are printed
   const char *col_delimiter;		// [*] Delimiter that is placed between columns
   // Back-end used for table formatting and its private data
@@ -166,7 +164,7 @@ struct table {
   struct mempool_state pool_state;	// State of the pool after the table is initialized, i.e., before
 					// per-row data have been allocated.
 
-  struct table_col_info *column_order;  // [*] Order of the columns in the print-out of the table
+  struct table_col_instance *column_order;  // [*] Order of the columns in the print-out of the table
   uint cols_to_output;			// [*] Number of columns that are printed
   const char *col_delimiter;		// [*] Delimiter that is placed between columns
   uint print_header;			// [*] 0 indicates that table header should not be printed
@@ -225,7 +223,7 @@ struct table {
 #define TBL_COL_END { .name = 0, .width = 0, .fmt = 0, .type = COL_TYPE_LAST }
 
 #define TBL_COLUMNS  .columns = (struct table_column [])
-#define TBL_COL_ORDER(order) .column_order = (struct table_col_info *) order, .cols_to_output = ARRAY_SIZE(order)
+#define TBL_COL_ORDER(order) .column_order = (struct table_col_instance *) order, .cols_to_output = ARRAY_SIZE(order)
 #define TBL_COL_DELIMITER(_delimiter_) .col_delimiter = _delimiter_
 #define TBL_COL(_idx) { .idx = _idx, .output_type = -1, .next_column = -1 }
 #define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .output_type = -1, .next_column = -1, .fmt = _fmt }
@@ -235,7 +233,7 @@ struct table {
 #define TBL_OUTPUT_BLOCKLINE          .formatter = &table_fmt_blockline
 #define TBL_OUTPUT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
 
-#define TBL_COL_ITER_START(_tbl, _colidx, _var, _idxval) { struct table_col_info *_var = NULL; int _idxval = _tbl->columns[_colidx].first_column; \
+#define TBL_COL_ITER_START(_tbl, _colidx, _var, _idxval) { struct table_col_instance *_var = NULL; int _idxval = _tbl->columns[_colidx].first_column; \
   for(_idxval = _tbl->columns[_colidx].first_column, _var = _tbl->column_order + _idxval; _idxval != -1; _idxval = _tbl->column_order[_idxval].next_column, _var = _tbl->column_order + _idxval)
 
 #define TBL_COL_ITER_END }
@@ -244,7 +242,7 @@ struct table {
  * Creates a new table from a table template. The template should already contain
  * the definitions of columns.
  **/
-struct table *table_init(struct table_template *tbl_template);
+struct table *table_init(const struct table_template *tbl_template);
 
 /** Destroy a table definition, freeing all memory used by it. **/
 void table_cleanup(struct table *tbl);
@@ -440,7 +438,6 @@ struct table_formatter {
   void (*table_end)(struct table *tbl);		// [*] table_end callback (optional)
   bool (*process_option)(struct table *tbl, const char *key, const char *value, const char **err);
 	// [*] Process table option and possibly return an error message (optional)
-  const char *formats[];
 };
 
 /** Standard formatter for human-readable output. **/
