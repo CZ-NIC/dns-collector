@@ -25,18 +25,8 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
   struct table *new_inst = xmalloc_zero(sizeof(struct table)); // FIXME: update allocation to the weird schema made by pchar and mj?
 
   new_inst->pool = mp_new(4096);
-  if(tbl_template->column_order) {
-    new_inst->column_order = mp_alloc_zero(new_inst->pool, sizeof(struct table_col_instance) * tbl_template->cols_to_output);
-    memcpy(new_inst->column_order, tbl_template->column_order, sizeof(struct table_col_instance) * tbl_template->cols_to_output);
-    for(uint i = 0; i < new_inst->cols_to_output; i++) {
-      new_inst->column_order[i].cell_content = NULL;
-      new_inst->column_order[i].col_def = NULL;
-      new_inst->column_order[i].output_type = tbl_template->column_order[i].output_type;
-    }
 
-    new_inst->cols_to_output = tbl_template->cols_to_output;
-  }
-
+  // initialize column definitions
   int col_count = 0; // count the number of columns in the struct table
   for(;;) {
     if(tbl_template->columns[col_count].name == NULL &&
@@ -54,6 +44,21 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
 
   new_inst->columns = mp_alloc_zero(new_inst->pool, sizeof(struct table_column) * new_inst->column_count);
   memcpy(new_inst->columns, tbl_template->columns, sizeof(struct table_column) * new_inst->column_count);
+
+  // initialize column_order
+  if(tbl_template->column_order) {
+    new_inst->column_order = mp_alloc_zero(new_inst->pool, sizeof(struct table_col_instance) * tbl_template->cols_to_output);
+    memcpy(new_inst->column_order, tbl_template->column_order, sizeof(struct table_col_instance) * tbl_template->cols_to_output);
+    for(uint i = 0; i < new_inst->cols_to_output; i++) {
+      new_inst->column_order[i].cell_content = NULL;
+      //new_inst->column_order[i].col_def = NULL; // FIXME: col_def should not be touched, probably ...
+      int col_idx = new_inst->column_order[i].idx;//col_order[i];
+      new_inst->column_order[i].col_def = new_inst->columns + col_idx;
+      new_inst->column_order[i].output_type = tbl_template->column_order[i].output_type;
+    }
+
+    new_inst->cols_to_output = tbl_template->cols_to_output;
+  }
 
   new_inst->col_delimiter = tbl_template->col_delimiter;
   new_inst->print_header = 1;
