@@ -38,7 +38,7 @@ LIBUCW_MODS= \
 	daemon daemon-ctrl \
 	signames \
 	opt opt-help opt-conf \
-	table table-types
+	table table-types xtypes xtypes-basic
 
 LIBUCW_MAIN_INCLUDES= \
 	lib.h log.h tbf.h threads.h time.h \
