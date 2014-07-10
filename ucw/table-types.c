@@ -102,6 +102,7 @@ void table_col_size(struct table *tbl, int col, u64 val)
     [SIZE_UNIT_TERABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU * 1024LLU)
   };
 
+  // FIXME: add the SIZE_UNIT_AUTO
   TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {
     // FIXME: do some rounding? Or maybe use double and floating-point printing?
     uint out_type = 0;
