@@ -36,10 +36,10 @@
   XTYPE_NUM_STRUCT(_type, _typename)
 
 XTYPE_NUM_DEF(int, "%d", int)
-XTYPE_NUM_DEF(s64, "%ld", s64)
+XTYPE_NUM_DEF(s64, PRId64, s64)
 XTYPE_NUM_DEF(intmax_t, "%jd", intmax)
 XTYPE_NUM_DEF(uint, "%u", uint)
-XTYPE_NUM_DEF(u64, "%lu", u64)
+XTYPE_NUM_DEF(u64, PRIu64, u64)
 XTYPE_NUM_DEF(uintmax_t, "%ju", uintmax)
 
 /* double */
@@ -61,9 +61,9 @@ static const char *xt_double_format(void *src, u32 fmt, struct mempool *pool)
 static const char *xt_double_parse(const char *str, void *dest, struct mempool *pool UNUSED)
 {
   char *endptr = NULL;
+  size_t sz = strlen(str);
   errno = 0;
   double result = strtod(str, &endptr);
-  size_t sz = strlen(str);
   if(endptr != str + sz) return "Could not parse double.";
   if(errno == ERANGE) return "Could not parse double: overflow happend during parsing";
 
