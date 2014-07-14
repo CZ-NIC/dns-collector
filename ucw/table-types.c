@@ -106,7 +106,7 @@ void table_col_size(struct table *tbl, int col, u64 val)
       out_type = SIZE_UNIT_BYTE;
     } else if(curr_col->output_type == XTYPE_FMT_PRETTY) {
       curr_val = curr_val / unit_div[SIZE_UNIT_BYTE];
-      out_type = SIZE_UNIT_BYTE; // curr_col->output_type;
+      out_type = SIZE_UNIT_BYTE;
     } else if((curr_col->output_type & SIZE_UNITS_FIXED) != 0) {
       curr_val = curr_val / unit_div[curr_col->output_type & ~SIZE_UNITS_FIXED];
       out_type = curr_col->output_type & ~SIZE_UNITS_FIXED;

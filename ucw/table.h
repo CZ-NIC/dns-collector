@@ -90,22 +90,6 @@
 #define COL_TYPE_DOUBLE   &xt_double
 #define COL_TYPE_ANY      NULL
 
-/*
-enum column_type {
-  COL_TYPE_STR,		// String
-  COL_TYPE_INT,		// int
-  COL_TYPE_S64,		// Signed 64-bit integer
-  COL_TYPE_INTMAX,	// intmax_t
-  COL_TYPE_UINT,	// unsigned int
-  COL_TYPE_U64,		// Unsigned 64-bit integer
-  COL_TYPE_UINTMAX,	// uintmax_t
-  COL_TYPE_BOOL,	// bool
-  COL_TYPE_DOUBLE,	// double
-  COL_TYPE_ANY,		// Any type
-  COL_TYPE_LAST
-};
-*/
-
 /** Justify cell contents to the left. **/
 #define CELL_ALIGN_LEFT     (1U << 31)
 
@@ -113,11 +97,6 @@ enum column_type {
 // CELL_WIDTH_MASK has 1's in bits used for column width.
 #define CELL_FLAG_MASK	(CELL_ALIGN_LEFT)
 #define CELL_WIDTH_MASK	(~CELL_FLAG_MASK)
-
-//#define CELL_OUT_UNINITIALIZED      -1
-//#define CELL_OUT_HUMAN_READABLE     -2
-//#define CELL_OUT_MACHINE_READABLE   -3
-//#define CELL_OUT_USER_DEF_START      5
 
 struct table;
 
@@ -129,8 +108,6 @@ struct table;
 struct table_column {
   const char *name;		// [*] Name of the column displayed in table header
   int width;			// [*] Width of the column (in characters) OR'ed with column flags
-  //const char *fmt;		// [*] Default format of each cell in the column
-  //enum column_type type;	// [*] Type of the cells in the column
   enum xtype_fmt fmt;
   int first_column;             // head of linked list of columns of this type
   const struct xtype *type_def;
@@ -307,9 +284,6 @@ TABLE_COL_PROTO(s64, s64);
 TABLE_COL_PROTO(u64, u64);
 TABLE_COL_PROTO(bool, bool);
 
-//void table_col_bool(struct table *tbl, int col, bool val);
-//void table_col_bool_name(struct table *tbl, const char *col_name, bool val);
-//void table_col_bool_fmt(struct table *tbl, int col, enum xtype_fmt fmt, bool val);
 #undef TABLE_COL_PROTO
 
 /**

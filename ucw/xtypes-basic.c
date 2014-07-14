@@ -31,7 +31,6 @@
   .format = xt_##_typename##_format,\
 };
 
-
 #define XTYPE_NUM_DEF(_type, _fmt, _typename) XTYPE_NUM_FORMAT(_type, _fmt, _typename) \
   XTYPE_NUM_PARSE(_typename)\
   XTYPE_NUM_STRUCT(_type, _typename)
