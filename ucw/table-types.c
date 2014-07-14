@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+const struct xtype xt_size;
+const struct xtype xt_timestamp;
+
 static const char *unit_suffix[] = {
   [SIZE_UNIT_BYTE] = "",
   [SIZE_UNIT_KILOBYTE] = "KB",
@@ -14,28 +17,28 @@ static const char *unit_suffix[] = {
   [SIZE_UNIT_TERABYTE] = "TB"
 };
 
-static bool table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
+bool table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
 {
   struct table_column *col_def = tbl->column_order[col_inst_idx].col_def;
-  if(col_def->type != COL_TYPE_SIZE) {
+  if(col_def->type_def != COL_TYPE_SIZE) {
     *err = NULL;
     return false;
   }
 
   if(col_arg == NULL || strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
-    tbl->column_order[col_inst_idx].output_type = SIZE_UNIT_BYTE;
+    tbl->column_order[col_inst_idx].output_type = SIZE_UNIT_BYTE | SIZE_UNITS_FIXED;
     *err = NULL;
     return true;
   }
 
-  tbl->column_order[col_inst_idx].output_type = CELL_OUT_UNINITIALIZED;
+  tbl->column_order[col_inst_idx].output_type = XTYPE_FMT_DEFAULT; // CELL_OUT_UNINITIALIZED;
   for(uint i = SIZE_UNIT_BYTE; i <= SIZE_UNIT_TERABYTE; i++) {
     if(strcasecmp(col_arg, unit_suffix[i]) == 0) {
-      tbl->column_order[col_inst_idx].output_type = i;
+      tbl->column_order[col_inst_idx].output_type = i | SIZE_UNITS_FIXED;
     }
   }
 
-  if(tbl->column_order[col_inst_idx].output_type == CELL_OUT_UNINITIALIZED) {
+  if(tbl->column_order[col_inst_idx].output_type == XTYPE_FMT_DEFAULT) {
     *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d (counted from 0)", col_arg, col_inst_idx);
     return true;
   }
@@ -44,15 +47,10 @@ static bool table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const c
   return true;
 }
 
-struct table_user_type table_type_size = {
-  .set_col_instance_option = table_set_col_opt_size,
-  .type = COL_TYPE_SIZE,
-};
-
-static bool table_set_col_opt_timestamp(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
+bool table_set_col_opt_timestamp(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
 {
   int col_type_idx = tbl->column_order[col_inst_idx].idx;
-  if(tbl->columns[col_type_idx].type != COL_TYPE_TIMESTAMP) {
+  if(tbl->columns[col_type_idx].type_def != COL_TYPE_TIMESTAMP) {
     *err = NULL;
     return false;
   }
@@ -75,11 +73,6 @@ static bool table_set_col_opt_timestamp(struct table *tbl, uint col_inst_idx, co
   return true;
 }
 
-struct table_user_type table_type_timestamp = {
-  .set_col_instance_option = table_set_col_opt_timestamp,
-  .type = COL_TYPE_TIMESTAMP,
-};
-
 void table_col_size_name(struct table *tbl, const char *col_name, u64 val)
 {
   int col = table_get_col_idx(tbl, col_name);
@@ -89,7 +82,7 @@ void table_col_size_name(struct table *tbl, const char *col_name, u64 val)
 void table_col_size(struct table *tbl, int col, u64 val)
 {
   ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
-  ASSERT(tbl->columns[col].type == COL_TYPE_ANY || COL_TYPE_SIZE == tbl->columns[col].type);
+  ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || COL_TYPE_SIZE == tbl->columns[col].type_def);
 
   tbl->last_printed_col = col;
   tbl->row_printing_started = 1;
@@ -107,12 +100,16 @@ void table_col_size(struct table *tbl, int col, u64 val)
     // FIXME: do some rounding? Or maybe use double and floating-point printing?
     uint out_type = 0;
     u64 curr_val = val;
-    if(curr_col->output_type == CELL_OUT_UNINITIALIZED) {
+
+    if(curr_col->output_type == XTYPE_FMT_DEFAULT || curr_col->output_type == XTYPE_FMT_RAW) {
       curr_val = curr_val / unit_div[SIZE_UNIT_BYTE];
       out_type = SIZE_UNIT_BYTE;
-    } else {
-      curr_val = curr_val / unit_div[curr_col->output_type];
-      out_type = curr_col->output_type;
+    } else if(curr_col->output_type == XTYPE_FMT_PRETTY) {
+      curr_val = curr_val / unit_div[SIZE_UNIT_BYTE];
+      out_type = SIZE_UNIT_BYTE; // curr_col->output_type;
+    } else if((curr_col->output_type & SIZE_UNITS_FIXED) != 0) {
+      curr_val = curr_val / unit_div[curr_col->output_type & ~SIZE_UNITS_FIXED];
+      out_type = curr_col->output_type & ~SIZE_UNITS_FIXED;
     }
 
     curr_col->cell_content = mp_printf(tbl->pool, "%lu%s", curr_val, unit_suffix[out_type]);
@@ -130,7 +127,7 @@ void table_col_timestamp_name(struct table *tbl, const char * col_name, u64 val)
 void table_col_timestamp(struct table *tbl, int col, u64 val)
 {
   ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
-  ASSERT(tbl->columns[col].type == COL_TYPE_ANY || COL_TYPE_TIMESTAMP == tbl->columns[col].type);
+  ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || COL_TYPE_TIMESTAMP == tbl->columns[col].type_def);
 
   char formatted_time_buf[FORMAT_TIME_SIZE] = { 0 };
 
@@ -138,11 +135,11 @@ void table_col_timestamp(struct table *tbl, int col, u64 val)
   struct tm t = *gmtime(&tmp_time);
   TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {
     switch (curr_col->output_type) {
-    case TIMESTAMP_EPOCH:
-    case CELL_OUT_UNINITIALIZED:
+    case XTYPE_FMT_DEFAULT:
+    case XTYPE_FMT_RAW:
       sprintf(formatted_time_buf, "%lu", val);
       break;
-    case TIMESTAMP_DATETIME:
+    case XTYPE_FMT_PRETTY:
       strftime(formatted_time_buf, FORMAT_TIME_SIZE, "%F %T", &t);
     break;
     default:

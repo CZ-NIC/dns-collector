@@ -88,6 +88,14 @@ const char *xtype_parse_fmt(struct xtype *xt, const char *str, u32 *dest, struct
 const char *xtype_format_fmt(struct xtype *xt, u32 fmt, struct mempool *pool);
 
 // Basic set of extended types
+extern const struct xtype xt_str;
 extern const struct xtype xt_int;
+extern const struct xtype xt_s64;
+extern const struct xtype xt_intmax;
+extern const struct xtype xt_uint;
+extern const struct xtype xt_u64;
+extern const struct xtype xt_uintmax;
+extern const struct xtype xt_bool;
+extern const struct xtype xt_double;
 
 #endif

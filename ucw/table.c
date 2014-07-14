@@ -22,7 +22,8 @@ static void table_update_ll(struct table *tbl);
 
 static struct table *table_make_instance(const struct table_template *tbl_template)
 {
-  struct table *new_inst = xmalloc_zero(sizeof(struct table)); // FIXME: update allocation to the weird schema made by pchar and mj?
+  struct mempool *pool = mp_new(4096);
+  struct table *new_inst = mp_alloc_zero(pool, sizeof(struct table)); // FIXME: update allocation to the weird schema made by pchar and mj?
 
   new_inst->pool = mp_new(4096);
 
@@ -30,12 +31,10 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
   int col_count = 0; // count the number of columns in the struct table
   for(;;) {
     if(tbl_template->columns[col_count].name == NULL &&
-       tbl_template->columns[col_count].fmt == NULL &&
        tbl_template->columns[col_count].width == 0 &&
-       tbl_template->columns[col_count].type == COL_TYPE_LAST)
+       tbl_template->columns[col_count].type_def == COL_TYPE_ANY)
       break;
     ASSERT(tbl_template->columns[col_count].name != NULL);
-    ASSERT(tbl_template->columns[col_count].type == COL_TYPE_ANY || tbl_template->columns[col_count].fmt != NULL);
     ASSERT(tbl_template->columns[col_count].width != 0);
 
     col_count++;
@@ -51,8 +50,7 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
     memcpy(new_inst->column_order, tbl_template->column_order, sizeof(struct table_col_instance) * tbl_template->cols_to_output);
     for(uint i = 0; i < new_inst->cols_to_output; i++) {
       new_inst->column_order[i].cell_content = NULL;
-      //new_inst->column_order[i].col_def = NULL; // FIXME: col_def should not be touched, probably ...
-      int col_idx = new_inst->column_order[i].idx;//col_order[i];
+      int col_idx = new_inst->column_order[i].idx;
       new_inst->column_order[i].col_def = new_inst->columns + col_idx;
       new_inst->column_order[i].output_type = tbl_template->column_order[i].output_type;
     }
@@ -87,7 +85,6 @@ void table_cleanup(struct table *tbl)
 {
   mp_delete(tbl->pool);
   memset(tbl, 0, sizeof(struct table));
-  xfree(tbl);
 }
 
 // TODO: test default column order
@@ -196,7 +193,7 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
     tbl->column_order[i].idx = col_idx;
     tbl->column_order[i].col_def = tbl->columns + col_idx;
     tbl->column_order[i].cell_content = NULL;
-    tbl->column_order[i].output_type = CELL_OUT_UNINITIALIZED;
+    tbl->column_order[i].output_type = XTYPE_FMT_DEFAULT;
   }
   table_update_ll(tbl);
 }
@@ -227,14 +224,14 @@ bool table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_a
 {
   struct table_column *col_def = tbl->column_order[col_idx].col_def;
 
-  if(col_def->type == COL_TYPE_DOUBLE) {
+  if(col_def->type_def == COL_TYPE_DOUBLE) {
     uint precision = 0;
     const char *tmp_err = str_to_uint(&precision, col_arg, NULL, 0);
     if(tmp_err) {
       *err = mp_printf(tbl->pool, "An error occured while parsing precision: %s", tmp_err);
       return false;
     }
-    tbl->column_order[col_idx].output_type = precision;
+    tbl->column_order[col_idx].output_type = precision; // FIXME: shift the value of precision
     return true;
   }
 
@@ -293,10 +290,10 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     tbl->column_order[curr_col_idx].col_def = tbl->columns + col_idx;
     tbl->column_order[curr_col_idx].idx = col_idx;
     tbl->column_order[curr_col_idx].cell_content = NULL;
-    tbl->column_order[curr_col_idx].output_type = CELL_OUT_UNINITIALIZED;
-    if(tbl->columns[col_idx].type_def && tbl->columns[col_idx].type_def->set_col_instance_option) {
+    tbl->column_order[curr_col_idx].output_type = XTYPE_FMT_DEFAULT;
+    if(tbl->columns[col_idx].type_def && tbl->columns[col_idx].set_col_instance_option) {
       char *err = NULL;
-      tbl->columns[col_idx].type_def->set_col_instance_option(tbl, curr_col_idx, arg, &err);
+      tbl->columns[col_idx].set_col_instance_option(tbl, curr_col_idx, arg, &err);
       if(err) return mp_printf(tbl->pool, "Error occured while setting column option: %s.", err);
     }
 
@@ -311,12 +308,12 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
 
 /*** Table cells ***/
 
-static void table_set_all_inst_content(struct table *tbl, int col_templ, char *col_content, int override)
+static void table_set_all_inst_content(struct table *tbl, int col_templ, const char *col_content)
 {
   TBL_COL_ITER_START(tbl, col_templ, curr_col_ptr, curr_col) {
-    if(override == 0 && curr_col_ptr->output_type != CELL_OUT_UNINITIALIZED ) {
-      die("Error while setting content of all cells of a single type column, cell format should not be overriden.");
-    }
+    //if( override == 0 ) {
+    //die("Error while setting content of all cells of a single type column, cell format should not be overriden.");
+    //}
     curr_col_ptr->cell_content = col_content;
   } TBL_COL_ITER_END
 }
@@ -329,30 +326,13 @@ void table_col_printf(struct table *tbl, int col, const char *fmt, ...)
   va_list args;
   va_start(args, fmt);
   char *cell_content = mp_vprintf(tbl->pool, fmt, args);
-  table_set_all_inst_content(tbl, col, cell_content, 1);
+  table_set_all_inst_content(tbl, col, cell_content);
   va_end(args);
 }
 
-static const char *table_col_default_fmts[] = {
-  [COL_TYPE_STR] = "%s",
-  [COL_TYPE_INT] = "%d",
-  [COL_TYPE_S64] = "%lld",
-  [COL_TYPE_INTMAX] = "%jd",
-  [COL_TYPE_UINT] = "%u",
-  [COL_TYPE_U64] = "%llu",
-  [COL_TYPE_UINTMAX] = "%ju",
-  [COL_TYPE_BOOL] = "%d",
-  [COL_TYPE_DOUBLE] = "%.2lf",
-  [COL_TYPE_ANY] = NULL,
-  [COL_TYPE_LAST] = NULL
-};
-
 #define TABLE_COL(_name_, _type_, _typeconst_) void table_col_##_name_(struct table *tbl, int col, _type_ val)\
   {\
-    const char *fmt = tbl->columns[col].fmt;\
-    if(tbl->columns[col].type == COL_TYPE_ANY) {\
-       fmt = table_col_default_fmts[_typeconst_];\
-    }\
+    enum xtype_fmt fmt = tbl->columns[col].fmt;\
     table_col_##_name_##_fmt(tbl, col, fmt, val);\
   }
 
@@ -362,15 +342,16 @@ static const char *table_col_default_fmts[] = {
     table_col_##_name_(tbl, col, val);\
   }
 
-#define TABLE_COL_FMT(_name_, _type_, _typeconst_, _override) void table_col_##_name_##_fmt(struct table *tbl, int col, const char *fmt, _type_ val) \
+#define TABLE_COL_FMT(_name_, _type_, _typeconst_, _override) void table_col_##_name_##_fmt(struct table *tbl, int col, enum xtype_fmt fmt, _type_ val) \
   {\
      ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);\
-     ASSERT(tbl->columns[col].type == COL_TYPE_ANY || _typeconst_ == tbl->columns[col].type);\
-     ASSERT(fmt != NULL);\
+     ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || _typeconst_ == tbl->columns[col].type_def);\
      tbl->last_printed_col = col;\
      tbl->row_printing_started = 1;\
-     char *cell_content = mp_printf(tbl->pool, fmt, val);\
-     table_set_all_inst_content(tbl, col, cell_content, _override);\
+     const char *cell_content = NULL;\
+     if(tbl->columns[col].type_def != COL_TYPE_ANY) cell_content = tbl->columns[col].type_def->format(&val, fmt, tbl->pool);\
+     else cell_content = (_typeconst_)->format(&val, fmt, tbl->pool);   \
+     table_set_all_inst_content(tbl, col, cell_content);\
   }
 
 #define TABLE_COL_BODIES(_name_, _type_, _typeconst_, _override) TABLE_COL(_name_, _type_, _typeconst_); \
@@ -384,71 +365,22 @@ TABLE_COL_BODIES(intmax, intmax_t, COL_TYPE_INTMAX, 0)
 TABLE_COL_BODIES(uintmax, uintmax_t, COL_TYPE_UINTMAX, 0)
 TABLE_COL_BODIES(s64, s64, COL_TYPE_S64, 0)
 TABLE_COL_BODIES(u64, u64, COL_TYPE_U64, 0)
+TABLE_COL_BODIES(double, double, COL_TYPE_DOUBLE, 0)
+//TABLE_COL_BODIES(bool, bool, COL_TYPE_BOOL, 0)
 
 // column type double is a special case
-TABLE_COL(double, double, COL_TYPE_DOUBLE);
-TABLE_COL_STR(double, double, COL_TYPE_DOUBLE);
+//TABLE_COL(double, double, COL_TYPE_DOUBLE);
+//TABLE_COL_STR(double, double, COL_TYPE_DOUBLE);
 
-TABLE_COL(bool, bool, COL_TYPE_BOOL);
-TABLE_COL_STR(bool, bool, COL_TYPE_BOOL);
+TABLE_COL(bool, bool, COL_TYPE_BOOL)
+TABLE_COL_STR(bool, bool, COL_TYPE_BOOL)
+TABLE_COL_FMT(bool, bool, COL_TYPE_BOOL, 0)
 
 #undef TABLE_COL
 #undef TABLE_COL_FMT
 #undef TABLE_COL_STR
 #undef TABLE_COL_BODIES
 
-void table_col_double_fmt(struct table *tbl, int col, const char *fmt, double val)
-{
-  ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
-  ASSERT(tbl->columns[col].type == COL_TYPE_ANY || COL_TYPE_DOUBLE == tbl->columns[col].type);
-  ASSERT(fmt != NULL);
-  tbl->last_printed_col = col;
-  tbl->row_printing_started = 1;
-  char *cell_content = mp_printf(tbl->pool, fmt, val);
-  int curr_col = tbl->columns[col].first_column;
-  while(curr_col != -1) {
-    char *cell_content_tmp = NULL;
-    switch(tbl->column_order[curr_col].output_type) {
-    case CELL_OUT_UNINITIALIZED:
-      cell_content_tmp = cell_content;
-      break;
-    case CELL_OUT_MACHINE_READABLE:
-      cell_content_tmp = mp_printf(tbl->pool, "%4lf", val);
-      break;
-    default:
-      cell_content_tmp = mp_printf(tbl->pool, "%.*lf", tbl->column_order[curr_col].output_type, val);
-      break;
-    }
-    tbl->column_order[curr_col].cell_content = cell_content_tmp;
-    curr_col = tbl->column_order[curr_col].next_column;
-  }
-}
-
-void table_col_bool_fmt(struct table *tbl, int col, const char *fmt, bool val)
-{
-  ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
-  ASSERT(COL_TYPE_BOOL == tbl->columns[col].type);
-
-  tbl->last_printed_col = col;
-  tbl->row_printing_started = 1;
-
-  int curr_col = tbl->columns[col].first_column;
-  while(curr_col != -1) {
-    switch(tbl->column_order[curr_col].output_type) {
-    case CELL_OUT_HUMAN_READABLE:
-    case CELL_OUT_UNINITIALIZED:
-      tbl->column_order[curr_col].cell_content = mp_printf(tbl->pool, fmt, val ? "true" : "false");
-      break;
-    case CELL_OUT_MACHINE_READABLE:
-      // FIXME: this is just an example of printing in different formats
-      tbl->column_order[curr_col].cell_content = mp_printf(tbl->pool, fmt, val ? "1" : "0");
-      break;
-    default:
-      die("Unsupported output type.");
-    }
-    curr_col = tbl->column_order[curr_col].next_column;
-  }
-}
 
 void table_reset_row(struct table *tbl)
 {
@@ -481,7 +413,7 @@ struct fastbuf *table_col_fbstart(struct table *tbl, int col)
 void table_col_fbend(struct table *tbl)
 {
   char *cell_content = fbpool_end(&tbl->fb_col_out);
-  table_set_all_inst_content(tbl, tbl->col_out, cell_content, 1);
+  table_set_all_inst_content(tbl, tbl->col_out, cell_content);
   tbl->col_out = -1;
 }
 
