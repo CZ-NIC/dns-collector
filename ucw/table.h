@@ -197,6 +197,7 @@ struct table {
 #define TBL_COL_DOUBLE(_name, _width, _prec)  { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_DOUBLE, TBL_COL_LIST_INIT }
 #define TBL_COL_BOOL(_name, _width)           { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_BOOL, TBL_COL_LIST_INIT }
 #define TBL_COL_ANY(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_ANY, TBL_COL_LIST_INIT }
+#define TBL_COL_CUSTOM(_name, _width, _xtype) { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = _xtype, TBL_COL_LIST_INIT }
 
 #define TBL_COL_STR_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_STR, TBL_COL_LIST_INIT }
 #define TBL_COL_INT_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_INT, TBL_COL_LIST_INIT }
@@ -284,7 +285,39 @@ TABLE_COL_PROTO(s64, s64);
 TABLE_COL_PROTO(u64, u64);
 TABLE_COL_PROTO(bool, bool);
 
-#undef TABLE_COL_PROTO
+/** macros that enables easy definitions of bodies of table_col_<something> functions **/
+
+#define TABLE_COL(_name_, _type_, _typeconst_) void table_col_##_name_(struct table *tbl, int col, _type_ val)\
+  {\
+    enum xtype_fmt fmt = tbl->columns[col].fmt;\
+    table_col_##_name_##_fmt(tbl, col, fmt, val);\
+  }
+
+#define TABLE_COL_STR(_name_, _type_, _typeconst_) void table_col_##_name_##_name(struct table *tbl, const char *col_name, _type_ val)\
+  {\
+    int col = table_get_col_idx(tbl, col_name);\
+    table_col_##_name_(tbl, col, val);\
+  }
+
+#define TABLE_COL_FMT(_name_, _type_, _typeconst_) void table_col_##_name_##_fmt(struct table *tbl, int col, enum xtype_fmt fmt, _type_ val) \
+  {\
+     ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);\
+     ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || _typeconst_ == tbl->columns[col].type_def);\
+     tbl->last_printed_col = col;\
+     tbl->row_printing_started = 1;\
+     const char *cell_content = NULL;\
+     if(tbl->columns[col].type_def != COL_TYPE_ANY) cell_content = tbl->columns[col].type_def->format(&val, fmt, tbl->pool);\
+     else cell_content = (_typeconst_)->format(&val, fmt, tbl->pool);\
+     table_set_all_inst_content(tbl, col, cell_content);\
+  }
+
+#define TABLE_COL_BODIES(_name_, _type_, _typeconst_) TABLE_COL(_name_, _type_, _typeconst_); \
+  TABLE_COL_STR(_name_, _type_, _typeconst_);\
+  TABLE_COL_FMT(_name_, _type_, _typeconst_);
+
+// FIXME: the next line was removed, the question is whether it should
+// be there currently it is impossible to undef the macro.
+// #undef TABLE_COL_PROTO
 
 /**
  * Set a particular cell of the current row to a string formatted

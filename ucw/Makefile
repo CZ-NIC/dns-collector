@@ -69,7 +69,8 @@ LIBUCW_MAIN_INCLUDES= \
 	signames.h \
 	sighandler.h \
 	opt.h \
-	table.h table-types.h
+	table.h table-types.h \
+	xtypes.h
 
 ifdef CONFIG_UCW_THREADS
 # Some modules require threading

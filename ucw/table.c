@@ -311,9 +311,6 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
 static void table_set_all_inst_content(struct table *tbl, int col_templ, const char *col_content)
 {
   TBL_COL_ITER_START(tbl, col_templ, curr_col_ptr, curr_col) {
-    //if( override == 0 ) {
-    //die("Error while setting content of all cells of a single type column, cell format should not be overriden.");
-    //}
     curr_col_ptr->cell_content = col_content;
   } TBL_COL_ITER_END
 }
@@ -330,57 +327,23 @@ void table_col_printf(struct table *tbl, int col, const char *fmt, ...)
   va_end(args);
 }
 
-#define TABLE_COL(_name_, _type_, _typeconst_) void table_col_##_name_(struct table *tbl, int col, _type_ val)\
-  {\
-    enum xtype_fmt fmt = tbl->columns[col].fmt;\
-    table_col_##_name_##_fmt(tbl, col, fmt, val);\
-  }
-
-#define TABLE_COL_STR(_name_, _type_, _typeconst_) void table_col_##_name_##_name(struct table *tbl, const char *col_name, _type_ val)\
-  {\
-    int col = table_get_col_idx(tbl, col_name);\
-    table_col_##_name_(tbl, col, val);\
-  }
-
-#define TABLE_COL_FMT(_name_, _type_, _typeconst_, _override) void table_col_##_name_##_fmt(struct table *tbl, int col, enum xtype_fmt fmt, _type_ val) \
-  {\
-     ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);\
-     ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || _typeconst_ == tbl->columns[col].type_def);\
-     tbl->last_printed_col = col;\
-     tbl->row_printing_started = 1;\
-     const char *cell_content = NULL;\
-     if(tbl->columns[col].type_def != COL_TYPE_ANY) cell_content = tbl->columns[col].type_def->format(&val, fmt, tbl->pool);\
-     else cell_content = (_typeconst_)->format(&val, fmt, tbl->pool);   \
-     table_set_all_inst_content(tbl, col, cell_content);\
-  }
-
-#define TABLE_COL_BODIES(_name_, _type_, _typeconst_, _override) TABLE_COL(_name_, _type_, _typeconst_); \
-  TABLE_COL_STR(_name_, _type_, _typeconst_);\
-  TABLE_COL_FMT(_name_, _type_, _typeconst_, _override);
-
-TABLE_COL_BODIES(int, int, COL_TYPE_INT, 0)
-TABLE_COL_BODIES(uint, uint, COL_TYPE_UINT, 0)
-TABLE_COL_BODIES(str, const char *, COL_TYPE_STR, 1)
-TABLE_COL_BODIES(intmax, intmax_t, COL_TYPE_INTMAX, 0)
-TABLE_COL_BODIES(uintmax, uintmax_t, COL_TYPE_UINTMAX, 0)
-TABLE_COL_BODIES(s64, s64, COL_TYPE_S64, 0)
-TABLE_COL_BODIES(u64, u64, COL_TYPE_U64, 0)
-TABLE_COL_BODIES(double, double, COL_TYPE_DOUBLE, 0)
-//TABLE_COL_BODIES(bool, bool, COL_TYPE_BOOL, 0)
-
-// column type double is a special case
-//TABLE_COL(double, double, COL_TYPE_DOUBLE);
-//TABLE_COL_STR(double, double, COL_TYPE_DOUBLE);
+TABLE_COL_BODIES(int, int, COL_TYPE_INT)
+TABLE_COL_BODIES(uint, uint, COL_TYPE_UINT)
+TABLE_COL_BODIES(str, const char *, COL_TYPE_STR)
+TABLE_COL_BODIES(intmax, intmax_t, COL_TYPE_INTMAX)
+TABLE_COL_BODIES(uintmax, uintmax_t, COL_TYPE_UINTMAX)
+TABLE_COL_BODIES(s64, s64, COL_TYPE_S64)
+TABLE_COL_BODIES(u64, u64, COL_TYPE_U64)
+TABLE_COL_BODIES(double, double, COL_TYPE_DOUBLE)
 
 TABLE_COL(bool, bool, COL_TYPE_BOOL)
 TABLE_COL_STR(bool, bool, COL_TYPE_BOOL)
-TABLE_COL_FMT(bool, bool, COL_TYPE_BOOL, 0)
+TABLE_COL_FMT(bool, bool, COL_TYPE_BOOL)
 
 #undef TABLE_COL
 #undef TABLE_COL_FMT
 #undef TABLE_COL_STR
 #undef TABLE_COL_BODIES
-
 
 void table_reset_row(struct table *tbl)
 {

@@ -13,6 +13,7 @@
 #include <ucw/xtypes.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #define XTYPE_NUM_FORMAT(_type, _fmt, _typename) static const char *xt_##_typename##_format(void *src, u32 fmt UNUSED, struct mempool *pool) \
 {\
@@ -36,10 +37,10 @@
   XTYPE_NUM_STRUCT(_type, _typename)
 
 XTYPE_NUM_DEF(int, "%d", int)
-XTYPE_NUM_DEF(s64, PRId64, s64)
+XTYPE_NUM_DEF(s64, "%" PRId64, s64)
 XTYPE_NUM_DEF(intmax_t, "%jd", intmax)
 XTYPE_NUM_DEF(uint, "%u", uint)
-XTYPE_NUM_DEF(u64, PRIu64, u64)
+XTYPE_NUM_DEF(u64, "%" PRIu64, u64)
 XTYPE_NUM_DEF(uintmax_t, "%ju", uintmax)
 
 /* double */
@@ -127,9 +128,9 @@ const struct xtype xt_bool = {
   .format = xt_bool_format,
 };
 
-
 /* str */
-static const char *xt_str_format(void *src, u32 fmt UNUSED, struct mempool *pool) // (struct table *tbl, int col, enum xtype_fmt fmt, bool val)
+
+static const char *xt_str_format(void *src, u32 fmt UNUSED, struct mempool *pool)
 {
   return mp_printf(pool, "%s", *((char **) src));
 }
