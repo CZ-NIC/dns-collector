@@ -340,11 +340,6 @@ TABLE_COL(bool, bool, COL_TYPE_BOOL)
 TABLE_COL_STR(bool, bool, COL_TYPE_BOOL)
 TABLE_COL_FMT(bool, bool, COL_TYPE_BOOL)
 
-#undef TABLE_COL
-#undef TABLE_COL_FMT
-#undef TABLE_COL_STR
-#undef TABLE_COL_BODIES
-
 void table_reset_row(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
@@ -574,7 +569,7 @@ static struct table_template test_tbl = {
     [test_col1_int] = TBL_COL_INT("col1_int", 8),
     [test_col2_uint] = TBL_COL_UINT("col2_uint", 9),
     [test_col3_bool] = TBL_COL_BOOL("col3_bool", 9),
-    [test_col4_double] = TBL_COL_DOUBLE("col4_double", 11, 2),
+    [test_col4_double] = TBL_COL_DOUBLE("col4_double", 11),
     TBL_COL_END
   },
   TBL_COL_ORDER(test_column_order),
@@ -657,15 +652,15 @@ static void test_simple1(struct fastbuf *out)
 }
 
 enum test_any_table_cols {
-  test_any_col0_int, test_any_col1_any
+  TEST_ANY_COL0_INT, TEST_ANY_COL1_ANY
 };
 
-static struct table_col_instance test_any_column_order[] = { TBL_COL(test_any_col0_int), TBL_COL(test_any_col1_any) };
+static struct table_col_instance test_any_column_order[] = { TBL_COL(TEST_ANY_COL0_INT), TBL_COL(TEST_ANY_COL1_ANY) };
 
 static struct table_template test_any_tbl = {
   TBL_COLUMNS {
-    [test_any_col0_int] = TBL_COL_INT("col0_int", 8),
-    [test_any_col1_any] = TBL_COL_ANY("col1_any", 9),
+    [TEST_ANY_COL0_INT] = TBL_COL_INT("col0_int", 8),
+    [TEST_ANY_COL1_ANY] = TBL_COL_ANY("col1_any", 9),
     TBL_COL_END
   },
   TBL_COL_ORDER(test_any_column_order),
@@ -677,18 +672,20 @@ static void test_any_type(struct fastbuf *out)
 {
   struct table *tbl = table_init(&test_any_tbl);
 
+  tbl->columns[TEST_ANY_COL1_ANY].fmt = XTYPE_FMT_PRETTY;
+
   table_start(tbl, out);
 
-  table_col_int(tbl, test_any_col0_int, -10);
-  table_col_int(tbl, test_any_col1_any, 10000);
+  table_col_int(tbl, TEST_ANY_COL0_INT, -10);
+  table_col_int(tbl, TEST_ANY_COL1_ANY, 10000);
   table_end_row(tbl);
 
-  table_col_int(tbl, test_any_col0_int, -10);
-  table_col_double(tbl, test_any_col1_any, 1.4);
+  table_col_int(tbl, TEST_ANY_COL0_INT, -10);
+  table_col_double(tbl, TEST_ANY_COL1_ANY, 1.4);
   table_end_row(tbl);
 
-  table_col_printf(tbl, test_any_col0_int, "%d", 10);
-  table_col_double(tbl, test_any_col1_any, 1.4);
+  table_col_printf(tbl, TEST_ANY_COL0_INT, "%d", 10);
+  table_col_double(tbl, TEST_ANY_COL1_ANY, 1.4);
   table_end_row(tbl);
 
   table_end(tbl);

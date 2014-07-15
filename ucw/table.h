@@ -194,7 +194,7 @@ struct table {
 #define TBL_COL_INTMAX(_name, _width)         { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_INTMAX, TBL_COL_LIST_INIT }
 #define TBL_COL_UINTMAX(_name, _width)        { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_UINTMAX, TBL_COL_LIST_INIT }
 #define TBL_COL_HEXUINT(_name, _width)        { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_UINT, TBL_COL_LIST_INIT }
-#define TBL_COL_DOUBLE(_name, _width, _prec)  { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_DOUBLE, TBL_COL_LIST_INIT }
+#define TBL_COL_DOUBLE(_name, _width)  { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_DOUBLE, TBL_COL_LIST_INIT }
 #define TBL_COL_BOOL(_name, _width)           { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_BOOL, TBL_COL_LIST_INIT }
 #define TBL_COL_ANY(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_ANY, TBL_COL_LIST_INIT }
 #define TBL_COL_CUSTOM(_name, _width, _xtype) { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = _xtype, TBL_COL_LIST_INIT }
@@ -208,6 +208,7 @@ struct table {
 #define TBL_COL_UINTMAX_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_UINTMAX, TBL_COL_LIST_INIT }
 #define TBL_COL_HEXUINT_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_UINT, TBL_COL_LIST_INIT }
 #define TBL_COL_BOOL_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_BOOL, TBL_COL_LIST_INIT }
+#define TBL_COL_DOUBLE_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_DOUBLE, TBL_COL_LIST_INIT }
 
 #define TBL_COL_END { .name = 0, .width = 0, .fmt = 0, .type_def = NULL }
 
@@ -316,7 +317,7 @@ TABLE_COL_PROTO(bool, bool);
   TABLE_COL_FMT(_name_, _type_, _typeconst_);
 
 // FIXME: the next line was removed, the question is whether it should
-// be there currently it is impossible to undef the macro.
+// be there. Currently it is impossible to undef the macro.
 // #undef TABLE_COL_PROTO
 
 /**

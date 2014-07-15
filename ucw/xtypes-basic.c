@@ -49,13 +49,13 @@ static const char *xt_double_format(void *src, u32 fmt, struct mempool *pool)
 {
   switch(fmt) {
   case XTYPE_FMT_RAW:
-    return mp_printf(pool, "%.2lf", *(double *)src);
+    return mp_printf(pool, "%.10lf", *(double *)src);
   case XTYPE_FMT_PRETTY:
     return mp_printf(pool, "%.2lf", *(double *)src);
 
   case XTYPE_FMT_DEFAULT:
   default:
-    return mp_printf(pool, "%.2lf", *(double *)src);
+    return mp_printf(pool, "%.5lf", *(double *)src);
   }
 }
 
