@@ -38,10 +38,15 @@ bool table_set_col_opt_timestamp(struct table *tbl, uint col_inst_idx, const cha
 #define TBL_COL_SIZE_FMT(_name, _width, _units)         { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_SIZE, .set_col_instance_option = table_set_col_opt_size }
 #define TBL_COL_TIMESTAMP_FMT(_name, _width, _fmt)      { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_TIMESTAMP, .set_col_instance_option = table_set_col_opt_timestamp }
 
+
+/*
 void table_col_size_name(struct table *tbl, const char *col_name, u64 val);
 void table_col_timestamp_name(struct table *tbl, const char * col_name, u64 val);
 
 void table_col_size(struct table *tbl, int col, u64 val);
 void table_col_timestamp(struct table *tbl, int col, u64 val);
+*/
+TABLE_COL_PROTO(size, u64)
+TABLE_COL_PROTO(timestamp, u64)
 
 #endif
