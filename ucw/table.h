@@ -79,15 +79,6 @@
 
 /** Types of columns. These are seldom used explicitly, using a column definition macro is preferred. **/
 
-#define COL_TYPE_STR      &xt_str
-#define COL_TYPE_INT      &xt_int
-#define COL_TYPE_S64      &xt_s64
-#define COL_TYPE_INTMAX   &xt_intmax
-#define COL_TYPE_UINT     &xt_uint
-#define COL_TYPE_U64      &xt_u64
-#define COL_TYPE_UINTMAX  &xt_uintmax
-#define COL_TYPE_BOOL     &xt_bool
-#define COL_TYPE_DOUBLE   &xt_double
 #define COL_TYPE_ANY      NULL
 
 /** Justify cell contents to the left. **/
@@ -185,30 +176,30 @@ struct table {
  *
  ***/
 
-#define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_STR }
-#define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_INT }
-#define TBL_COL_S64(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_S64 }
-#define TBL_COL_UINT(_name, _width)           { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_UINT }
-#define TBL_COL_U64(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_U64 }
-#define TBL_COL_INTMAX(_name, _width)         { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_INTMAX }
-#define TBL_COL_UINTMAX(_name, _width)        { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_UINTMAX }
-#define TBL_COL_HEXUINT(_name, _width)        { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_UINT }
-#define TBL_COL_DOUBLE(_name, _width)         { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_DOUBLE }
-#define TBL_COL_BOOL(_name, _width)           { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_BOOL }
+#define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_str }
+#define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_int }
+#define TBL_COL_S64(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_s64 }
+#define TBL_COL_UINT(_name, _width)           { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_uint }
+#define TBL_COL_U64(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_u64 }
+#define TBL_COL_INTMAX(_name, _width)         { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_intmax }
+#define TBL_COL_UINTMAX(_name, _width)        { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_uintmax }
+#define TBL_COL_HEXUINT(_name, _width)        { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_uint }
+#define TBL_COL_DOUBLE(_name, _width)         { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_double }
+#define TBL_COL_BOOL(_name, _width)           { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_bool }
 #define TBL_COL_ANY(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_ANY }
 #define TBL_COL_CUSTOM(_name, _width, _xtype) { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = _xtype }
 
-#define TBL_COL_STR_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_STR }
-#define TBL_COL_INT_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_INT }
-#define TBL_COL_S64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_S64 }
-#define TBL_COL_UINT_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_UINT }
-#define TBL_COL_U64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_U64 }
-#define TBL_COL_INTMAX_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_INTMAX }
-#define TBL_COL_UINTMAX_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_UINTMAX }
-#define TBL_COL_HEXUINT_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_UINT }
-#define TBL_COL_BOOL_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_BOOL }
+#define TBL_COL_STR_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_str }
+#define TBL_COL_INT_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_int }
+#define TBL_COL_S64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_s64 }
+#define TBL_COL_UINT_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_uint }
+#define TBL_COL_U64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_u64 }
+#define TBL_COL_INTMAX_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_intmax }
+#define TBL_COL_UINTMAX_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_uintmax }
+#define TBL_COL_HEXUINT_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_uint }
+#define TBL_COL_BOOL_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_bool }
 #define TBL_COL_ANY_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_ANY }
-#define TBL_COL_DOUBLE_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_DOUBLE }
+#define TBL_COL_DOUBLE_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_double }
 
 #define TBL_COL_END { .name = 0, .width = 0, .fmt = 0, .type_def = NULL }
 

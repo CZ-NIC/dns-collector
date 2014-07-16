@@ -222,7 +222,7 @@ bool table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_a
 {
   const struct table_column *col_def = tbl->column_order[col_idx].col_def;
 
-  if(col_def->type_def == COL_TYPE_DOUBLE) {
+  if(col_def->type_def == &xt_double) {
     uint precision = 0;
     const char *tmp_err = str_to_uint(&precision, col_arg, NULL, 0);
     if(tmp_err) {
