@@ -28,7 +28,7 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
   new_inst->pool = pool;
 
   // initialize column definitions
-  int col_count = 0; // count the number of columns in the struct table
+  uint col_count = 0; // count the number of columns in the struct table
   for(;;) {
     if(tbl_template->columns[col_count].name == NULL &&
        tbl_template->columns[col_count].width == 0 &&
@@ -41,8 +41,11 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
   }
   new_inst->column_count = col_count;
 
-  new_inst->columns = mp_alloc_zero(new_inst->pool, sizeof(struct table_column) * new_inst->column_count);
-  memcpy(new_inst->columns, tbl_template->columns, sizeof(struct table_column) * new_inst->column_count);
+  new_inst->columns = tbl_template->columns;
+  new_inst->ll_headers = mp_alloc(new_inst->pool, sizeof(int) * col_count);
+  for(uint i = 0; i < col_count; i++) {
+    new_inst->ll_headers[i] = -1;
+  }
 
   // initialize column_order
   if(tbl_template->column_order) {
@@ -159,7 +162,7 @@ static void table_update_ll(struct table *tbl)
   int cols_to_output = tbl->cols_to_output;
 
   for(int i = 0; i < tbl->column_count; i++) {
-    tbl->columns[i].first_column = -1;
+    tbl->ll_headers[i] = -1;
   }
 
   for(int i = 0; i < cols_to_output; i++) {
@@ -168,14 +171,10 @@ static void table_update_ll(struct table *tbl)
   }
 
   for(int i = 0; i < cols_to_output; i++) {
-    int first = tbl->column_order[i].col_def->first_column;
-    tbl->column_order[i].col_def->first_column = i;
-
-    if(first != -1) {
-      tbl->column_order[i].next_column = first;
-    } else {
-      tbl->column_order[i].next_column = -1;
-    }
+    int col_def_idx = tbl->column_order[i].col_def - tbl->columns;
+    int first = tbl->ll_headers[col_def_idx];
+    tbl->ll_headers[col_def_idx] = i;
+    tbl->column_order[i].next_column = first;
   }
 }
 
@@ -199,7 +198,7 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
 
 bool table_col_is_printed(struct table *tbl, uint col_idx)
 {
-  if(tbl->columns[col_idx].first_column == -1) return 0;
+  if(tbl->ll_headers[col_idx] == -1) return 0;
 
   return 1;
 }
@@ -221,7 +220,7 @@ static char * table_parse_col_arg(char *col_def)
  **/
 bool table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_arg, char **err)
 {
-  struct table_column *col_def = tbl->column_order[col_idx].col_def;
+  const struct table_column *col_def = tbl->column_order[col_idx].col_def;
 
   if(col_def->type_def == COL_TYPE_DOUBLE) {
     uint precision = 0;
@@ -473,7 +472,7 @@ const char *table_set_gary_options(struct table *tbl, char **gary_table_opts)
 static void table_row_human_readable(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    struct table_column *col_def = tbl->column_order[i].col_def;
+    const struct table_column *col_def = tbl->column_order[i].col_def;
     if(i) {
       bputs(tbl->out, tbl->col_delimiter);
     }
@@ -487,7 +486,7 @@ static void table_row_human_readable(struct table *tbl)
 static void table_write_header(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    struct table_column *col_def = tbl->column_order[i].col_def;
+    const struct table_column *col_def = tbl->column_order[i].col_def;
     if(i) {
       bputs(tbl->out, tbl->col_delimiter);
     }
@@ -554,7 +553,7 @@ struct table_formatter table_fmt_machine_readable = {
 static void table_row_blockline_output(struct table *tbl)
 {
   for(uint i = 0; i < tbl->cols_to_output; i++) {
-    struct table_column *col_def = tbl->column_order[i].col_def;
+    const struct table_column *col_def = tbl->column_order[i].col_def;
     bprintf(tbl->out, "%s: %s\n", col_def->name, tbl->column_order[i].cell_content);
   }
   bputc(tbl->out, '\n');
@@ -692,8 +691,6 @@ static struct table_template test_any_tbl = {
 static void test_any_type(struct fastbuf *out)
 {
   struct table *tbl = table_init(&test_any_tbl);
-
-  tbl->columns[TEST_ANY_COL1_ANY].fmt = XTYPE_FMT_PRETTY;
 
   table_start(tbl, out);
 

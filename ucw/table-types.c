@@ -45,7 +45,7 @@ static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
 
 bool table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
 {
-  struct table_column *col_def = tbl->column_order[col_inst_idx].col_def;
+  const struct table_column *col_def = tbl->column_order[col_inst_idx].col_def;
   if(col_def->type_def != COL_TYPE_SIZE) {
     *err = NULL;
     return false;
