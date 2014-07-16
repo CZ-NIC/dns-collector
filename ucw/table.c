@@ -422,7 +422,7 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
     } else if(strcmp(key, "cell-fmt") == 0) {
       u32 fmt = 0;
       const char *err = xtype_parse_fmt(NULL, value, &fmt, tbl->pool);
-      if(err) return mp_printf(tbl->pool, "??? Invalid cell format: '%s'.", err);
+      if(err) return mp_printf(tbl->pool, "Invalid cell format: '%s'.", err);
       for(uint i = 0; i < tbl->cols_to_output; i++) {
         tbl->column_order[i].output_type = fmt;
       }
@@ -578,18 +578,18 @@ struct table_formatter table_fmt_blockline = {
 #include <stdio.h>
 
 enum test_table_cols {
-  test_col0_str, test_col1_int, test_col2_uint, test_col3_bool, test_col4_double
+  TEST_COL0_STR, TEST_COL1_INT, TEST_COL2_UINT, TEST_COL3_BOOL, TEST_COL4_DOUBLE
 };
 
-static struct table_col_instance test_column_order[] = { TBL_COL(test_col3_bool), TBL_COL(test_col4_double), TBL_COL(test_col2_uint), TBL_COL(test_col1_int), TBL_COL(test_col0_str) };
+static struct table_col_instance test_column_order[] = { TBL_COL(TEST_COL3_BOOL), TBL_COL(TEST_COL4_DOUBLE), TBL_COL(TEST_COL2_UINT), TBL_COL(TEST_COL1_INT), TBL_COL(TEST_COL0_STR) };
 
 static struct table_template test_tbl = {
   TBL_COLUMNS {
-    [test_col0_str] = TBL_COL_STR("col0_str", 20),
-    [test_col1_int] = TBL_COL_INT("col1_int", 8),
-    [test_col2_uint] = TBL_COL_UINT("col2_uint", 9),
-    [test_col3_bool] = TBL_COL_BOOL("col3_bool", 9),
-    [test_col4_double] = TBL_COL_DOUBLE("col4_double", 11),
+    [TEST_COL0_STR] = TBL_COL_STR("col0_str", 20),
+    [TEST_COL1_INT] = TBL_COL_INT("col1_int", 8),
+    [TEST_COL2_UINT] = TBL_COL_UINT("col2_uint", 9),
+    [TEST_COL3_BOOL] = TBL_COL_BOOL("col3_bool", 9),
+    [TEST_COL4_DOUBLE] = TBL_COL_DOUBLE("col4_double", 11),
     TBL_COL_END
   },
   TBL_COL_ORDER(test_column_order),
@@ -602,21 +602,21 @@ static struct table_template test_tbl = {
  **/
 static void do_print1(struct table *test_tbl)
 {
-  table_col_str(test_tbl, test_col0_str, "sdsdf");
-  table_col_int(test_tbl, test_col1_int, -10);
-  table_col_int(test_tbl, test_col1_int, 10000);
-  table_col_uint(test_tbl, test_col2_uint, 10);
-  table_col_printf(test_tbl, test_col2_uint, "XXX-%u", 22222);
-  table_col_bool(test_tbl, test_col3_bool, true);
-  table_col_double(test_tbl, test_col4_double, 1.5);
-  table_col_printf(test_tbl, test_col4_double, "AAA");
+  table_col_str(test_tbl, TEST_COL0_STR, "sdsdf");
+  table_col_int(test_tbl, TEST_COL1_INT, -10);
+  table_col_int(test_tbl, TEST_COL1_INT, 10000);
+  table_col_uint(test_tbl, TEST_COL2_UINT, 10);
+  table_col_printf(test_tbl, TEST_COL2_UINT, "XXX-%u", 22222);
+  table_col_bool(test_tbl, TEST_COL3_BOOL, true);
+  table_col_double(test_tbl, TEST_COL4_DOUBLE, 1.5);
+  table_col_printf(test_tbl, TEST_COL4_DOUBLE, "AAA");
   table_end_row(test_tbl);
 
-  table_col_str(test_tbl, test_col0_str, "test");
-  table_col_int(test_tbl, test_col1_int, -100);
-  table_col_uint(test_tbl, test_col2_uint, 100);
-  table_col_bool(test_tbl, test_col3_bool, false);
-  table_col_printf(test_tbl, test_col4_double, "%.2lf", 1.5);
+  table_col_str(test_tbl, TEST_COL0_STR, "test");
+  table_col_int(test_tbl, TEST_COL1_INT, -100);
+  table_col_uint(test_tbl, TEST_COL2_UINT, 100);
+  table_col_bool(test_tbl, TEST_COL3_BOOL, false);
+  table_col_printf(test_tbl, TEST_COL4_DOUBLE, "%.2lf", 1.5);
   table_end_row(test_tbl);
 }
 

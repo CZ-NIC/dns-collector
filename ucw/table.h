@@ -118,11 +118,11 @@ struct table_column {
 // FIXME: is it correct to have idx and col_def? idx is sufficient and in fact a duplicity of idx
 // idx is used only for initialization and col_def is used in other cases
 struct table_col_instance {
-  uint idx;                      // idx is a index into struct table::columns
+  uint idx;                            // idx is a index into struct table::columns
   const struct table_column *col_def;  // this is pointer to the column definition, located in the array struct table::columns
   const char *cell_content;            // content of the cell of the current row
-  int next_column;               // index of next column in linked list of columns of the same type
-  enum xtype_fmt output_type;               // format of this column
+  int next_column;                     // index of next column in linked list of columns of the same type
+  enum xtype_fmt output_type;          // format of this column
 };
 
 /**
@@ -130,10 +130,10 @@ struct table_col_instance {
  * Please use only fields marked with `[*]`.
  **/
 struct table_template {
-  const struct table_column *columns;		// [*] Definition of columns
+  const struct table_column *columns;       // [*] Definition of columns
   struct table_col_instance *column_order;  // [*] Order of the columns in the print-out of the table
-  uint cols_to_output;			// [*] Number of columns that are printed
-  const char *col_delimiter;		// [*] Delimiter that is placed between columns
+  uint cols_to_output;                      // [*] Number of columns that are printed
+  const char *col_delimiter;                // [*] Delimiter that is placed between columns
   // Back-end used for table formatting and its private data
   struct table_formatter *formatter;
 };
@@ -185,7 +185,6 @@ struct table {
  *
  ***/
 
-//#define TBL_COL_LIST_INIT     .first_column = -1
 #define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_STR }
 #define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_INT }
 #define TBL_COL_S64(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_S64 }
