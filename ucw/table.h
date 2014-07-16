@@ -269,69 +269,31 @@ void table_end(struct table *tbl);
  *     recently accessed cell.
  ***/
 
-#define TABLE_COL_PROTO(_name_, _type_) void table_col_##_name_(struct table *tbl, int col, _type_ val);\
-  void table_col_##_name_##_name(struct table *tbl, const char *col_name, _type_ val);\
-  void table_col_##_name_##_fmt(struct table *tbl, int col, enum xtype_fmt fmt, _type_ val);
+
+#define TABLE_COL_PROTO(_name_, _type_) void table_col_##_name_(struct table *tbl, int col, _type_ val);
 
 // table_col_<type>_fmt has one disadvantage: it is not possible to
 // check whether fmt contains format that contains formatting that is
 // compatible with _type_
 
-TABLE_COL_PROTO(int, int);
-TABLE_COL_PROTO(uint, uint);
-TABLE_COL_PROTO(double, double);
-TABLE_COL_PROTO(str, const char *);
-TABLE_COL_PROTO(intmax, intmax_t);
-TABLE_COL_PROTO(uintmax, uintmax_t);
-TABLE_COL_PROTO(s64, s64);
-TABLE_COL_PROTO(u64, u64);
-TABLE_COL_PROTO(bool, bool);
+TABLE_COL_PROTO(int, int)
+TABLE_COL_PROTO(uint, uint)
+TABLE_COL_PROTO(double, double)
+TABLE_COL_PROTO(intmax, intmax_t)
+TABLE_COL_PROTO(uintmax, uintmax_t)
+TABLE_COL_PROTO(s64, s64)
+TABLE_COL_PROTO(u64, u64)
+TABLE_COL_PROTO(bool, bool)
+
+void table_col_str(struct table *tbl, int col, const char * val);
 
 /** macros that enables easy definitions of bodies of table_col_<something> functions **/
-// FIXME: these macros really do not do what they are supposed to do :)
-// the problem is the default formatting
 
-#define TABLE_COL(_name_, _type_, _typeconst_) void table_col_##_name_(struct table *tbl, int col, _type_ val)\
-  {\
-     ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);\
-     ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || _typeconst_ == tbl->columns[col].type_def);\
-     tbl->last_printed_col = col;\
-     tbl->row_printing_started = 1;\
-     const char *cell_content = NULL;\
-     TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {\
-        if(tbl->columns[col].type_def != COL_TYPE_ANY) cell_content = tbl->columns[col].type_def->format(&val, curr_col->output_type, tbl->pool);\
-        else cell_content = (_typeconst_)->format(&val, curr_col->output_type, tbl->pool);\
-        curr_col->cell_content = cell_content;\
-     } TBL_COL_ITER_END\
+#define TABLE_COL_BODY(_name_, _type_) void table_col_##_name_(struct table *tbl, int col, _type_ val) {\
+    table_col_generic_format(tbl, col, (void*)&val, &xt_##_name_);\
   }
 
-#define TABLE_COL_STR(_name_, _type_, _typeconst_) void table_col_##_name_##_name(struct table *tbl, const char *col_name, _type_ val)\
-  {\
-    int col = table_get_col_idx(tbl, col_name);\
-    table_col_##_name_(tbl, col, val);\
-  }
-
-#define TABLE_COL_FMT(_name_, _type_, _typeconst_) void table_col_##_name_##_fmt(struct table *tbl, int col, enum xtype_fmt fmt, _type_ val) \
-  {\
-     ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);\
-     ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || _typeconst_ == tbl->columns[col].type_def);\
-     tbl->last_printed_col = col;\
-     tbl->row_printing_started = 1;\
-     const char *cell_content = NULL;\
-        if(tbl->columns[col].type_def != COL_TYPE_ANY) cell_content = tbl->columns[col].type_def->format(&val, fmt, tbl->pool);\
-        else cell_content = (_typeconst_)->format(&val, fmt, tbl->pool);\
-     TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {\
-        curr_col->cell_content = cell_content;\
-     } TBL_COL_ITER_END\
-  }
-
-#define TABLE_COL_BODIES(_name_, _type_, _typeconst_) TABLE_COL(_name_, _type_, _typeconst_); \
-  TABLE_COL_STR(_name_, _type_, _typeconst_);\
-  TABLE_COL_FMT(_name_, _type_, _typeconst_);
-
-// FIXME: the next line was removed, the question is whether it should
-// be there. Currently it is impossible to undef the macro.
-// #undef TABLE_COL_PROTO
+void table_col_generic_format(struct table *tbl, int col, void *value, const struct xtype *expected_type);
 
 /**
  * Set a particular cell of the current row to a string formatted

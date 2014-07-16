@@ -23,9 +23,9 @@ static void table_update_ll(struct table *tbl);
 static struct table *table_make_instance(const struct table_template *tbl_template)
 {
   struct mempool *pool = mp_new(4096);
-  struct table *new_inst = mp_alloc_zero(pool, sizeof(struct table)); // FIXME: update allocation to the weird schema made by pchar and mj?
+  struct table *new_inst = mp_alloc_zero(pool, sizeof(struct table));
 
-  new_inst->pool = mp_new(4096);
+  new_inst->pool = pool;
 
   // initialize column definitions
   int col_count = 0; // count the number of columns in the struct table
@@ -84,7 +84,6 @@ struct table *table_init(const struct table_template *tbl_template)
 void table_cleanup(struct table *tbl)
 {
   mp_delete(tbl->pool);
-  memset(tbl, 0, sizeof(struct table));
 }
 
 // TODO: test default column order
@@ -315,6 +314,20 @@ static void table_set_all_inst_content(struct table *tbl, int col_templ, const c
   } TBL_COL_ITER_END
 }
 
+void table_col_generic_format(struct table *tbl, int col, void *value, const struct xtype *expected_type)
+{
+  ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
+  ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || expected_type == tbl->columns[col].type_def);
+  tbl->last_printed_col = col;
+  tbl->row_printing_started = 1;
+  const char *cell_content = NULL;
+  TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {
+    enum xtype_fmt fmt = curr_col->output_type;
+    cell_content = expected_type->format(value, fmt, tbl->pool);
+    curr_col->cell_content = cell_content;
+  } TBL_COL_ITER_END
+}
+
 void table_col_printf(struct table *tbl, int col, const char *fmt, ...)
 {
   ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
@@ -327,18 +340,18 @@ void table_col_printf(struct table *tbl, int col, const char *fmt, ...)
   va_end(args);
 }
 
-TABLE_COL_BODIES(int, int, COL_TYPE_INT)
-TABLE_COL_BODIES(uint, uint, COL_TYPE_UINT)
-TABLE_COL_BODIES(str, const char *, COL_TYPE_STR)
-TABLE_COL_BODIES(intmax, intmax_t, COL_TYPE_INTMAX)
-TABLE_COL_BODIES(uintmax, uintmax_t, COL_TYPE_UINTMAX)
-TABLE_COL_BODIES(s64, s64, COL_TYPE_S64)
-TABLE_COL_BODIES(u64, u64, COL_TYPE_U64)
-TABLE_COL_BODIES(double, double, COL_TYPE_DOUBLE)
+TABLE_COL_BODY(int, int)
+TABLE_COL_BODY(uint, uint)
+TABLE_COL_BODY(double, double)
+TABLE_COL_BODY(intmax, intmax_t)
+TABLE_COL_BODY(uintmax, uintmax_t)
+TABLE_COL_BODY(s64, s64)
+TABLE_COL_BODY(u64, u64)
+TABLE_COL_BODY(bool, bool)
 
-TABLE_COL(bool, bool, COL_TYPE_BOOL)
-TABLE_COL_STR(bool, bool, COL_TYPE_BOOL)
-TABLE_COL_FMT(bool, bool, COL_TYPE_BOOL)
+void table_col_str(struct table *tbl, int col, const char *val) {
+  table_col_generic_format(tbl, col, (void*)val, &xt_str);
+}
 
 void table_reset_row(struct table *tbl)
 {
@@ -595,7 +608,7 @@ static void do_print1(struct table *test_tbl)
   table_col_int(test_tbl, test_col1_int, 10000);
   table_col_uint(test_tbl, test_col2_uint, 10);
   table_col_printf(test_tbl, test_col2_uint, "XXX-%u", 22222);
-  table_col_bool(test_tbl, test_col3_bool, 1);
+  table_col_bool(test_tbl, test_col3_bool, true);
   table_col_double(test_tbl, test_col4_double, 1.5);
   table_col_printf(test_tbl, test_col4_double, "AAA");
   table_end_row(test_tbl);
@@ -603,7 +616,7 @@ static void do_print1(struct table *test_tbl)
   table_col_str(test_tbl, test_col0_str, "test");
   table_col_int(test_tbl, test_col1_int, -100);
   table_col_uint(test_tbl, test_col2_uint, 100);
-  table_col_bool(test_tbl, test_col3_bool, 0);
+  table_col_bool(test_tbl, test_col3_bool, false);
   table_col_printf(test_tbl, test_col4_double, "%.2lf", 1.5);
   table_end_row(test_tbl);
 }

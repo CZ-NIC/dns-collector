@@ -132,7 +132,7 @@ const struct xtype xt_bool = {
 
 static const char *xt_str_format(void *src, u32 fmt UNUSED, struct mempool *pool)
 {
-  return mp_printf(pool, "%s", *((char **) src));
+  return mp_printf(pool, "%s", (const char *) src);
 }
 
 static const char *xt_str_parse(const char *str, void *dest, struct mempool *pool UNUSED)
