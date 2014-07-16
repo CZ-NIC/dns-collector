@@ -52,7 +52,7 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
       new_inst->column_order[i].cell_content = NULL;
       int col_idx = new_inst->column_order[i].idx;
       new_inst->column_order[i].col_def = new_inst->columns + col_idx;
-      new_inst->column_order[i].output_type = tbl_template->column_order[i].output_type;
+      new_inst->column_order[i].output_type = tbl_template->columns[col_idx].fmt;
     }
 
     new_inst->cols_to_output = tbl_template->cols_to_output;
@@ -193,7 +193,7 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
     tbl->column_order[i].idx = col_idx;
     tbl->column_order[i].col_def = tbl->columns + col_idx;
     tbl->column_order[i].cell_content = NULL;
-    tbl->column_order[i].output_type = XTYPE_FMT_DEFAULT;
+    tbl->column_order[i].output_type = tbl->columns[col_idx].fmt;
   }
   table_update_ll(tbl);
 }
@@ -290,7 +290,7 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     tbl->column_order[curr_col_idx].col_def = tbl->columns + col_idx;
     tbl->column_order[curr_col_idx].idx = col_idx;
     tbl->column_order[curr_col_idx].cell_content = NULL;
-    tbl->column_order[curr_col_idx].output_type = XTYPE_FMT_DEFAULT;
+    tbl->column_order[curr_col_idx].output_type = tbl->columns[col_idx].fmt;
     if(tbl->columns[col_idx].type_def && tbl->columns[col_idx].set_col_instance_option) {
       char *err = NULL;
       tbl->columns[col_idx].set_col_instance_option(tbl, curr_col_idx, arg, &err);
@@ -405,6 +405,14 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
       else if(strcmp(value, "blockline") == 0) table_set_formatter(tbl, &table_fmt_blockline);
       else {
         return "Invalid argument to output-type option.";
+      }
+      return NULL;
+    } else if(strcmp(key, "cell-fmt") == 0) {
+      u32 fmt = 0;
+      const char *err = xtype_parse_fmt(NULL, value, &fmt, tbl->pool);
+      if(err) return mp_printf(tbl->pool, "??? Invalid cell format: '%s'.", err);
+      for(uint i = 0; i < tbl->cols_to_output; i++) {
+        tbl->column_order[i].output_type = fmt;
       }
       return NULL;
     } else if(strcmp(key, "col-delim") == 0) {
@@ -655,12 +663,12 @@ enum test_any_table_cols {
   TEST_ANY_COL0_INT, TEST_ANY_COL1_ANY
 };
 
-static struct table_col_instance test_any_column_order[] = { TBL_COL(TEST_ANY_COL0_INT), TBL_COL(TEST_ANY_COL1_ANY) };
+static struct table_col_instance test_any_column_order[] = { TBL_COL(TEST_ANY_COL0_INT), TBL_COL_FMT(TEST_ANY_COL1_ANY, XTYPE_FMT_PRETTY) };
 
 static struct table_template test_any_tbl = {
   TBL_COLUMNS {
     [TEST_ANY_COL0_INT] = TBL_COL_INT("col0_int", 8),
-    [TEST_ANY_COL1_ANY] = TBL_COL_ANY("col1_any", 9),
+    [TEST_ANY_COL1_ANY] = TBL_COL_ANY_FMT("col1_any", 9, XTYPE_FMT_PRETTY),
     TBL_COL_END
   },
   TBL_COL_ORDER(test_any_column_order),

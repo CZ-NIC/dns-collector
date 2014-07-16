@@ -194,7 +194,7 @@ struct table {
 #define TBL_COL_INTMAX(_name, _width)         { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_INTMAX, TBL_COL_LIST_INIT }
 #define TBL_COL_UINTMAX(_name, _width)        { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_UINTMAX, TBL_COL_LIST_INIT }
 #define TBL_COL_HEXUINT(_name, _width)        { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_UINT, TBL_COL_LIST_INIT }
-#define TBL_COL_DOUBLE(_name, _width)  { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_DOUBLE, TBL_COL_LIST_INIT }
+#define TBL_COL_DOUBLE(_name, _width)         { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_DOUBLE, TBL_COL_LIST_INIT }
 #define TBL_COL_BOOL(_name, _width)           { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_BOOL, TBL_COL_LIST_INIT }
 #define TBL_COL_ANY(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_ANY, TBL_COL_LIST_INIT }
 #define TBL_COL_CUSTOM(_name, _width, _xtype) { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = _xtype, TBL_COL_LIST_INIT }
@@ -208,7 +208,8 @@ struct table {
 #define TBL_COL_UINTMAX_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_UINTMAX, TBL_COL_LIST_INIT }
 #define TBL_COL_HEXUINT_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_UINT, TBL_COL_LIST_INIT }
 #define TBL_COL_BOOL_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_BOOL, TBL_COL_LIST_INIT }
-#define TBL_COL_DOUBLE_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_DOUBLE, TBL_COL_LIST_INIT }
+#define TBL_COL_ANY_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_ANY, TBL_COL_LIST_INIT }
+#define TBL_COL_DOUBLE_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_DOUBLE, TBL_COL_LIST_INIT }
 
 #define TBL_COL_END { .name = 0, .width = 0, .fmt = 0, .type_def = NULL }
 
@@ -216,7 +217,7 @@ struct table {
 #define TBL_COL_ORDER(order) .column_order = (struct table_col_instance *) order, .cols_to_output = ARRAY_SIZE(order)
 #define TBL_COL_DELIMITER(_delimiter_) .col_delimiter = _delimiter_
 #define TBL_COL(_idx) { .idx = _idx, .output_type = XTYPE_FMT_DEFAULT, .next_column = -1 }
-#define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .output_type = XTYPE_FMT_DEFAULT, .next_column = -1, .fmt = _fmt }
+#define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .output_type = _fmt, .next_column = -1 }
 #define TBL_COL_TYPE(_idx, _type) { .idx = _idx, .output_type = _type, .next_column = -1 }
 
 #define TBL_OUTPUT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
@@ -287,11 +288,21 @@ TABLE_COL_PROTO(u64, u64);
 TABLE_COL_PROTO(bool, bool);
 
 /** macros that enables easy definitions of bodies of table_col_<something> functions **/
+// FIXME: these macros really do not do what they are supposed to do :)
+// the problem is the default formatting
 
 #define TABLE_COL(_name_, _type_, _typeconst_) void table_col_##_name_(struct table *tbl, int col, _type_ val)\
   {\
-    enum xtype_fmt fmt = tbl->columns[col].fmt;\
-    table_col_##_name_##_fmt(tbl, col, fmt, val);\
+     ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);\
+     ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || _typeconst_ == tbl->columns[col].type_def);\
+     tbl->last_printed_col = col;\
+     tbl->row_printing_started = 1;\
+     const char *cell_content = NULL;\
+     TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {\
+        if(tbl->columns[col].type_def != COL_TYPE_ANY) cell_content = tbl->columns[col].type_def->format(&val, curr_col->output_type, tbl->pool);\
+        else cell_content = (_typeconst_)->format(&val, curr_col->output_type, tbl->pool);\
+        curr_col->cell_content = cell_content;\
+     } TBL_COL_ITER_END\
   }
 
 #define TABLE_COL_STR(_name_, _type_, _typeconst_) void table_col_##_name_##_name(struct table *tbl, const char *col_name, _type_ val)\
@@ -307,9 +318,11 @@ TABLE_COL_PROTO(bool, bool);
      tbl->last_printed_col = col;\
      tbl->row_printing_started = 1;\
      const char *cell_content = NULL;\
-     if(tbl->columns[col].type_def != COL_TYPE_ANY) cell_content = tbl->columns[col].type_def->format(&val, fmt, tbl->pool);\
-     else cell_content = (_typeconst_)->format(&val, fmt, tbl->pool);\
-     table_set_all_inst_content(tbl, col, cell_content);\
+        if(tbl->columns[col].type_def != COL_TYPE_ANY) cell_content = tbl->columns[col].type_def->format(&val, fmt, tbl->pool);\
+        else cell_content = (_typeconst_)->format(&val, fmt, tbl->pool);\
+     TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {\
+        curr_col->cell_content = cell_content;\
+     } TBL_COL_ITER_END\
   }
 
 #define TABLE_COL_BODIES(_name_, _type_, _typeconst_) TABLE_COL(_name_, _type_, _typeconst_); \

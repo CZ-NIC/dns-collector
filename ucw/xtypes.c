@@ -27,7 +27,7 @@ const char *xtype_parse_fmt(struct xtype *xt, const char *str, u32 *dest, struct
 	return NULL;
       }
 
-  if (xt->parse_fmt)
+  if (xt && xt->parse_fmt)
     return (xt->parse_fmt)(str, dest, pool);
   else
     return "Unknown mode";
