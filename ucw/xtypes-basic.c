@@ -97,7 +97,7 @@ static const char *xt_bool_format(void *src, u32 fmt UNUSED, struct mempool *poo
 
 static const char *xt_bool_parse(const char *str, void *dest, struct mempool *pool UNUSED)
 {
-  if(str[1] == 0) {
+  if(str[1] == 0) { // FIXME: Possible segfault
     if(str[0] == '1') {
       *((bool *)dest) = false;
       return NULL;
