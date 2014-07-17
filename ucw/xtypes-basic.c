@@ -2,6 +2,7 @@
  *	UCW Library -- Basic Extended Types
  *
  *	(c) 2014 Martin Mares <mj@ucw.cz>
+ *	(c) 2014 Robert Kessl <robert.kessl@economia.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -52,7 +53,6 @@ static const char *xt_double_format(void *src, u32 fmt, struct mempool *pool)
     return mp_printf(pool, "%.10lf", *(double *)src);
   case XTYPE_FMT_PRETTY:
     return mp_printf(pool, "%.2lf", *(double *)src);
-
   case XTYPE_FMT_DEFAULT:
   default:
     return mp_printf(pool, "%.5lf", *(double *)src);
@@ -65,7 +65,7 @@ static const char *xt_double_parse(const char *str, void *dest, struct mempool *
   size_t sz = strlen(str);
   errno = 0;
   double result = strtod(str, &endptr);
-  if(endptr != str + sz) return "Could not parse double.";
+  if(endptr != str + sz) return "Could not parse double";
   if(errno == ERANGE) return "Could not parse double: overflow happend during parsing";
 
   *((double *) dest) = result;
@@ -82,7 +82,7 @@ const struct xtype xt_double = {
 
 /* bool */
 
-static const char *xt_bool_format(void *src, u32 fmt UNUSED, struct mempool *pool) // (struct table *tbl, int col, enum xtype_fmt fmt, bool val)
+static const char *xt_bool_format(void *src, u32 fmt UNUSED, struct mempool *pool)
 {
   switch(fmt) {
     case XTYPE_FMT_DEFAULT:
@@ -118,7 +118,7 @@ static const char *xt_bool_parse(const char *str, void *dest, struct mempool *po
     return NULL;
   }
 
-  return "Could not parse bool.";
+  return "Could not parse bool";
 }
 
 const struct xtype xt_bool = {
@@ -132,7 +132,7 @@ const struct xtype xt_bool = {
 
 static const char *xt_str_format(void *src, u32 fmt UNUSED, struct mempool *pool)
 {
-  return mp_printf(pool, "%s", (const char *) src);
+  return mp_strdup(pool, (const char *) src);
 }
 
 static const char *xt_str_parse(const char *str, void *dest, struct mempool *pool UNUSED)
