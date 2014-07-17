@@ -181,7 +181,7 @@ static void table_update_ll(struct table *tbl)
 void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
 {
   for(int i = 0; i < cols_to_output; i++) {
-    ASSERT_MSG(col_order[i] >= 0 && col_order[i] < tbl->column_count, "Column %d does not exist (column number should be between 0 and %d)", col_order[i], tbl->column_count - 1);
+    ASSERT_MSG(col_order[i] >= 0 && col_order[i] < tbl->column_count, "Column %d does not exist (column number should be between 0 and %d).", col_order[i], tbl->column_count - 1);
   }
 
   tbl->cols_to_output = cols_to_output;
@@ -226,7 +226,7 @@ bool table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_a
     uint precision = 0;
     const char *tmp_err = str_to_uint(&precision, col_arg, NULL, 0);
     if(tmp_err) {
-      *err = mp_printf(tbl->pool, "An error occured while parsing precision: %s", tmp_err);
+      *err = mp_printf(tbl->pool, "An error occured while parsing precision: %s.", tmp_err);
       return false;
     }
     tbl->column_order[col_idx].output_type = precision; // FIXME: shift the value of precision
