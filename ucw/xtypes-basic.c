@@ -65,8 +65,8 @@ static const char *xt_double_parse(const char *str, void *dest, struct mempool *
   size_t sz = strlen(str);
   errno = 0;
   double result = strtod(str, &endptr);
-  if(endptr != str + sz) return "Could not parse double";
-  if(errno == ERANGE) return "Could not parse double: overflow happend during parsing";
+  if(endptr != str + sz) return "Could not parse double.";
+  if(errno == ERANGE) return "Could not parse double: overflow happend during parsing.";
 
   *((double *) dest) = result;
 
@@ -97,7 +97,9 @@ static const char *xt_bool_format(void *src, u32 fmt UNUSED, struct mempool *poo
 
 static const char *xt_bool_parse(const char *str, void *dest, struct mempool *pool UNUSED)
 {
-  if(str[1] == 0) { // FIXME: Possible segfault
+  if(!str) return "Cannot parse bool: string is NULL.";
+
+  if(str[1] == 0) {
     if(str[0] == '1') {
       *((bool *)dest) = false;
       return NULL;
@@ -118,7 +120,7 @@ static const char *xt_bool_parse(const char *str, void *dest, struct mempool *po
     return NULL;
   }
 
-  return "Could not parse bool";
+  return "Could not parse bool.";
 }
 
 const struct xtype xt_bool = {
