@@ -5,6 +5,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 /** xt_size **/
 
@@ -19,14 +20,14 @@ static const char *unit_suffix[] = {
 static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
 {
   u64 curr_val = *(u64*) src;
-  uint out_type = 0;
+  uint out_type = SIZE_UNIT_BYTE;
 
   static u64 unit_div[] = {
-    [SIZE_UNIT_BYTE] = (u64) 1,
-    [SIZE_UNIT_KILOBYTE] = (u64) 1024LLU,
-    [SIZE_UNIT_MEGABYTE] = (u64) (1024LLU * 1024LLU),
-    [SIZE_UNIT_GIGABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU),
-    [SIZE_UNIT_TERABYTE] = (u64) (1024LLU * 1024LLU * 1024LLU * 1024LLU)
+    [SIZE_UNIT_BYTE] = 1LLU,
+    [SIZE_UNIT_KILOBYTE] = 1024LLU,
+    [SIZE_UNIT_MEGABYTE] = 1024LLU * 1024LLU,
+    [SIZE_UNIT_GIGABYTE] = 1024LLU * 1024LLU * 1024LLU,
+    [SIZE_UNIT_TERABYTE] = 1024LLU * 1024LLU * 1024LLU * 1024LLU
   };
 
   if(fmt == XTYPE_FMT_DEFAULT || fmt == XTYPE_FMT_RAW) {
@@ -40,7 +41,7 @@ static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
     out_type = fmt & ~SIZE_UNITS_FIXED;
   }
 
-  return mp_printf(pool, "%lu%s", curr_val, unit_suffix[out_type]);
+  return mp_printf(pool, "%"PRIu64"%s", curr_val, unit_suffix[out_type]);
 }
 
 bool table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
@@ -116,18 +117,19 @@ static const char *xt_timestamp_format(void *src, u32 fmt, struct mempool *pool)
 {
   char formatted_time_buf[FORMAT_TIME_SIZE] = { 0 };
 
-  time_t tmp_time = *(time_t*)src;
+  u64 tmp_time_u64 = *(u64*)src;
+  time_t tmp_time = (time_t) tmp_time_u64;
   struct tm t = *gmtime(&tmp_time);
   switch (fmt) {
   case XTYPE_FMT_DEFAULT:
   case XTYPE_FMT_RAW:
-    sprintf(formatted_time_buf, "%lu", tmp_time);
+    sprintf(formatted_time_buf, "%"PRIu64, tmp_time_u64);
     break;
   case XTYPE_FMT_PRETTY:
     strftime(formatted_time_buf, FORMAT_TIME_SIZE, "%F %T", &t);
     break;
   default:
-    abort();
+    ASSERT(0);
     break;
   }
 

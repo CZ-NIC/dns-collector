@@ -98,9 +98,9 @@ struct table;
  **/
 struct table_column {
   const char *name;		// [*] Name of the column displayed in table header
-  int width;			// [*] Width of the column (in characters) OR'ed with column flags
-  enum xtype_fmt fmt;
-  const struct xtype *type_def;
+  uint width;			// [*] Width of the column (in characters) OR'ed with column flags
+  uint fmt;                     // [*] default format of the column
+  const struct xtype *type_def; // [*] pointer to xtype of this column
 
   bool (*set_col_instance_option)(struct table *tbl, uint col, const char *value, char **err);
        // [*] process table option for a column instance
@@ -113,7 +113,7 @@ struct table_col_instance {
   const struct table_column *col_def;  // this is pointer to the column definition, located in the array struct table::columns
   const char *cell_content;            // content of the cell of the current row
   int next_column;                     // index of next column in linked list of columns of the same type
-  enum xtype_fmt output_type;          // format of this column
+  uint output_type;                    // format of this column
 };
 
 /**
@@ -126,7 +126,7 @@ struct table_template {
   uint cols_to_output;                      // [*] Number of columns that are printed
   const char *col_delimiter;                // [*] Delimiter that is placed between columns
   // Back-end used for table formatting and its private data
-  struct table_formatter *formatter;
+  struct table_formatter *formatter; // FIXME: should be const?
 };
 
 /**
@@ -206,16 +206,27 @@ struct table {
 #define TBL_COLUMNS  .columns = (struct table_column [])
 #define TBL_COL_ORDER(order) .column_order = (struct table_col_instance *) order, .cols_to_output = ARRAY_SIZE(order)
 #define TBL_COL_DELIMITER(_delimiter_) .col_delimiter = _delimiter_
+
+/**
+ * These macros are used for definition of column order
+ **/
 #define TBL_COL(_idx) { .idx = _idx, .output_type = XTYPE_FMT_DEFAULT, .next_column = -1 }
 #define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .output_type = _fmt, .next_column = -1 }
-#define TBL_COL_TYPE(_idx, _type) { .idx = _idx, .output_type = _type, .next_column = -1 }
 
 #define TBL_OUTPUT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
 #define TBL_OUTPUT_BLOCKLINE          .formatter = &table_fmt_blockline
 #define TBL_OUTPUT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
 
-#define TBL_COL_ITER_START(_tbl, _colidx, _var, _idxval) { struct table_col_instance *_var = NULL; int _idxval = _tbl->ll_headers[_colidx]; \
-  for(_idxval = _tbl->ll_headers[_colidx], _var = _tbl->column_order + _idxval; _idxval != -1; _idxval = _tbl->column_order[_idxval].next_column, _var = _tbl->column_order + _idxval)
+/**
+ * The TBL_COL_ITER_START macro are used for iterating over all instances of a particular column in
+ * table _tbl.  _colidx is the column index in _tbl, _instptr is the pointer to the column instance
+ * (struct table_col_instance *), _idxval is the index of current column index. The variables are
+ * enclosed in a block, so they do not introduce variable name collisions.
+ *
+ * The TBL_COL_ITER_END macro must close the block started with TBL_COL_ITER_START.
+ **/
+#define TBL_COL_ITER_START(_tbl, _colidx, _instptr, _idxval) { struct table_col_instance *_instptr = NULL; int _idxval = _tbl->ll_headers[_colidx]; \
+  for(_idxval = _tbl->ll_headers[_colidx], _instptr = _tbl->column_order + _idxval; _idxval != -1; _idxval = _tbl->column_order[_idxval].next_column, _instptr = _tbl->column_order + _idxval)
 
 #define TBL_COL_ITER_END }
 
@@ -262,10 +273,6 @@ void table_end(struct table *tbl);
 
 #define TABLE_COL_PROTO(_name_, _type_) void table_col_##_name_(struct table *tbl, int col, _type_ val);
 
-// table_col_<type>_fmt has one disadvantage: it is not possible to
-// check whether fmt contains format that contains formatting that is
-// compatible with _type_
-
 TABLE_COL_PROTO(int, int)
 TABLE_COL_PROTO(uint, uint)
 TABLE_COL_PROTO(double, double)
@@ -277,12 +284,16 @@ TABLE_COL_PROTO(bool, bool)
 
 void table_col_str(struct table *tbl, int col, const char * val);
 
-/** macros that enables easy definitions of bodies of table_col_<something> functions **/
-
+/** TABLE_COL_BODY macro enables easy definitions of bodies of table_col_<something> functions **/
 #define TABLE_COL_BODY(_name_, _type_) void table_col_##_name_(struct table *tbl, int col, _type_ val) {\
     table_col_generic_format(tbl, col, (void*)&val, &xt_##_name_);\
   }
 
+/**
+ *The table_col_generic_format performs all the checks necessary while filling cell with value,
+ * calls the format function from expected_type and stores its result as a cell value. The function
+ * guarantees that each column instance is printed with its format.
+ **/
 void table_col_generic_format(struct table *tbl, int col, void *value, const struct xtype *expected_type);
 
 /**
@@ -384,6 +395,7 @@ void table_set_formatter(struct table *tbl, struct table_formatter *fmt);
  * | `cols`	| comma-separated column list	| set order of columns
  * | `fmt`	| `human`/`machine`/`block`	| set table formatter to one of the built-in formatters
  * | `col-delim`| string			| set column delimiter
+*  | `cell-fmt` | string                        | set column format type
  * |===================================================================================================
  **/
 const char *table_set_option_value(struct table *tbl, const char *key, const char *value);
