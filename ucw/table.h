@@ -91,6 +91,12 @@
 
 struct table;
 
+enum table_option_state {
+  TABLE_OPT_PROCESSED,
+  TABLE_OPT_UNKNOWN,
+  TABLE_OPT_ERR
+};
+
 /**
  * Definition of a single table column.
  * Usually, this is generated using the `TABLE_COL_`'type' macros.
@@ -102,7 +108,7 @@ struct table_column {
   uint fmt;                     // [*] default format of the column
   const struct xtype *type_def; // [*] pointer to xtype of this column
 
-  bool (*set_col_instance_option)(struct table *tbl, uint col, const char *value, char **err);
+  int (*set_col_instance_option)(struct table *tbl, uint col, const char *value, char **err);
        // [*] process table option for a column instance
 };
 
@@ -340,7 +346,7 @@ int table_get_col_idx(struct table *tbl, const char *col_name);
 /**
  * Sets a string argument to a column instance
  **/
-bool table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_arg, char ** err);
+int table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_arg, char ** err);
 
 /**
  * Returns a comma-and-space-separated list of column names, allocated from table's internal

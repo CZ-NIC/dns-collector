@@ -218,7 +218,7 @@ static char * table_parse_col_arg(char *col_def)
 /**
  * Setting options for basic table types (as defined in table.h)
  **/
-bool table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_arg, char **err)
+int table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_arg, char **err)
 {
   const struct table_column *col_def = tbl->column_order[col_idx].col_def;
 
