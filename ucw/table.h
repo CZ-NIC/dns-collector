@@ -296,7 +296,7 @@ void table_col_str(struct table *tbl, int col, const char * val);
   }
 
 /**
- *The table_col_generic_format performs all the checks necessary while filling cell with value,
+ * The table_col_generic_format performs all the checks necessary while filling cell with value,
  * calls the format function from expected_type and stores its result as a cell value. The function
  * guarantees that each column instance is printed with its format.
  **/
