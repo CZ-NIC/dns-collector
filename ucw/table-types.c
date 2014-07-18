@@ -63,7 +63,7 @@ int table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *col
   }
 
   const struct table_column *col_def = tbl->column_order[col_inst_idx].col_def;
-  if(col_def->type_def != COL_TYPE_SIZE) {
+  if(col_def->type_def != &xt_size) {
     *err = NULL;
     return TABLE_OPT_UNKNOWN;
   }
@@ -106,7 +106,7 @@ const struct xtype xt_size = {
 int table_set_col_opt_timestamp(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
 {
   int col_type_idx = tbl->column_order[col_inst_idx].idx;
-  if(tbl->columns[col_type_idx].type_def != COL_TYPE_TIMESTAMP) {
+  if(tbl->columns[col_type_idx].type_def != &xt_timestamp) {
     *err = NULL;
     return TABLE_OPT_UNKNOWN;
   }
