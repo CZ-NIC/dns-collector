@@ -1,5 +1,5 @@
 /*
- *	Unit tests of table printer
+ *	Types used in table printer
  *
  *	(c) 2014 Robert Kessl <robert.kessl@economia.cz>
  */

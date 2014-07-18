@@ -1,3 +1,9 @@
+/*
+ *	UCW Library -- Table printer types
+ *
+ *	(c) 2014 Robert Kessl <robert.kessl@economia.cz>
+ */
+
 #include <ucw/lib.h>
 #include <ucw/table-types.h>
 #include <ucw/fastbuf.h>
@@ -20,6 +26,11 @@ static const char *unit_suffix[] = {
 static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
 {
   u64 curr_val = *(u64*) src;
+
+  if(fmt == XTYPE_FMT_RAW) {
+    return mp_printf(pool, "%"PRIu64, curr_val);
+  }
+
   uint out_type = SIZE_UNIT_BYTE;
 
   static u64 unit_div[] = {
@@ -30,7 +41,7 @@ static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
     [SIZE_UNIT_TERABYTE] = 1024LLU * 1024LLU * 1024LLU * 1024LLU
   };
 
-  if(fmt == XTYPE_FMT_DEFAULT || fmt == XTYPE_FMT_RAW) {
+  if(fmt == XTYPE_FMT_DEFAULT) {
     curr_val = curr_val / unit_div[SIZE_UNIT_BYTE];
     out_type = SIZE_UNIT_BYTE;
   } else if(fmt == XTYPE_FMT_PRETTY) {
@@ -44,18 +55,23 @@ static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
   return mp_printf(pool, "%"PRIu64"%s", curr_val, unit_suffix[out_type]);
 }
 
-bool table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
+int table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
 {
+  if(col_arg == NULL) {
+    *err = "NULL is not supported as a column argument.";
+    return TABLE_OPT_ERR;
+  }
+
   const struct table_column *col_def = tbl->column_order[col_inst_idx].col_def;
   if(col_def->type_def != COL_TYPE_SIZE) {
     *err = NULL;
-    return false;
+    return TABLE_OPT_UNKNOWN;
   }
 
-  if(col_arg == NULL || strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
+  if(strlen(col_arg) == 0 || strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
     tbl->column_order[col_inst_idx].output_type = SIZE_UNIT_BYTE | SIZE_UNITS_FIXED;
     *err = NULL;
-    return true;
+    return TABLE_OPT_PROCESSED;
   }
 
   tbl->column_order[col_inst_idx].output_type = XTYPE_FMT_DEFAULT; // CELL_OUT_UNINITIALIZED;
@@ -67,11 +83,11 @@ bool table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *co
 
   if(tbl->column_order[col_inst_idx].output_type == XTYPE_FMT_DEFAULT) {
     *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d (counted from 0)", col_arg, col_inst_idx);
-    return true;
+    return TABLE_OPT_ERR;
   }
 
   *err = NULL;
-  return true;
+  return TABLE_OPT_PROCESSED;
 }
 
 TABLE_COL_BODY(size, u64)
@@ -87,17 +103,17 @@ const struct xtype xt_size = {
 
 #define FORMAT_TIME_SIZE 20	// Minimum buffer size
 
-bool table_set_col_opt_timestamp(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
+int table_set_col_opt_timestamp(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
 {
   int col_type_idx = tbl->column_order[col_inst_idx].idx;
   if(tbl->columns[col_type_idx].type_def != COL_TYPE_TIMESTAMP) {
     *err = NULL;
-    return false;
+    return TABLE_OPT_UNKNOWN;
   }
 
   if(col_arg == NULL) {
-    *err = NULL;
-    return true;
+    *err = "NULL is not supported as a column argument.";
+    return TABLE_OPT_ERR;
   }
 
   if(strcasecmp(col_arg, "timestamp") == 0 || strcasecmp(col_arg, "epoch") == 0) {
@@ -106,11 +122,11 @@ bool table_set_col_opt_timestamp(struct table *tbl, uint col_inst_idx, const cha
     tbl->column_order[col_inst_idx].output_type = TIMESTAMP_DATETIME;
   } else {
     *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_arg, col_inst_idx);
-    return true;
+    return TABLE_OPT_ERR;
   }
 
   *err = NULL;
-  return true;
+  return TABLE_OPT_PROCESSED;
 }
 
 static const char *xt_timestamp_format(void *src, u32 fmt, struct mempool *pool)
