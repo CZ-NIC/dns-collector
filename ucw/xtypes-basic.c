@@ -48,6 +48,11 @@ XTYPE_NUM_DEF(uintmax_t, "%ju", uintmax)
 
 static const char *xt_double_format(void *src, u32 fmt, struct mempool *pool)
 {
+  if(fmt & XTYPE_FMT_DBL_PREC) {
+    uint prec = fmt & ~XTYPE_FMT_DBL_PREC;
+    return mp_printf(pool, "%.*lf", prec, *(double *)src);
+  }
+
   switch(fmt) {
   case XTYPE_FMT_RAW:
     return mp_printf(pool, "%.10lf", *(double *)src);
@@ -62,10 +67,9 @@ static const char *xt_double_format(void *src, u32 fmt, struct mempool *pool)
 static const char *xt_double_parse(const char *str, void *dest, struct mempool *pool UNUSED)
 {
   char *endptr = NULL;
-  size_t sz = strlen(str);
   errno = 0;
   double result = strtod(str, &endptr);
-  if(endptr != str + sz) return "Could not parse double.";
+  if(*endptr != 0 || endptr == str) return "Could not parse double.";
   if(errno == ERANGE) return "Could not parse double: overflow happend during parsing.";
 
   *((double *) dest) = result;

@@ -98,4 +98,8 @@ extern const struct xtype xt_uintmax;
 extern const struct xtype xt_bool;
 extern const struct xtype xt_double;
 
+
+#define XTYPE_FMT_DBL_PREC 0x40000000
+#define XTYPE_FMT_DBL_FIXED_PREC(_prec) (_prec | XTYPE_FMT_DBL_PREC)
+
 #endif
