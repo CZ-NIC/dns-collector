@@ -171,7 +171,7 @@ static void table_update_ll(struct table *tbl)
   }
 
   for(int i = 0; i < cols_to_output; i++) {
-    int col_def_idx = tbl->column_order[i].col_def - tbl->columns;
+    int col_def_idx = tbl->column_order[i].idx;
     int first = tbl->ll_headers[col_def_idx];
     tbl->ll_headers[col_def_idx] = i;
     tbl->column_order[i].next_column = first;
