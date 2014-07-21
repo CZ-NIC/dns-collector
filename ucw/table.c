@@ -55,7 +55,7 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
       new_inst->column_order[i].cell_content = NULL;
       int col_idx = new_inst->column_order[i].idx;
       new_inst->column_order[i].col_def = new_inst->columns + col_idx;
-      new_inst->column_order[i].output_type = tbl_template->columns[col_idx].fmt;
+      new_inst->column_order[i].fmt = tbl_template->columns[col_idx].fmt;
     }
 
     new_inst->cols_to_output = tbl_template->cols_to_output;
@@ -191,7 +191,7 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
     tbl->column_order[i].idx = col_idx;
     tbl->column_order[i].col_def = tbl->columns + col_idx;
     tbl->column_order[i].cell_content = NULL;
-    tbl->column_order[i].output_type = tbl->columns[col_idx].fmt;
+    tbl->column_order[i].fmt = tbl->columns[col_idx].fmt;
   }
   table_update_ll(tbl);
 }
@@ -229,7 +229,7 @@ int table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_ar
       *err = mp_printf(tbl->pool, "An error occured while parsing precision: %s.", tmp_err);
       return false;
     }
-    tbl->column_order[col_idx].output_type = precision; // FIXME: shift the value of precision
+    tbl->column_order[col_idx].fmt = precision; // FIXME: shift the value of precision
     return true;
   }
 
@@ -282,8 +282,7 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     }
     tbl->column_order[curr_col_idx].col_def = tbl->columns + col_idx;
     tbl->column_order[curr_col_idx].idx = col_idx;
-    tbl->column_order[curr_col_idx].cell_content = NULL;
-    tbl->column_order[curr_col_idx].output_type = tbl->columns[col_idx].fmt;
+    tbl->column_order[curr_col_idx].fmt = tbl->columns[col_idx].fmt;
     if(tbl->columns[col_idx].type_def && tbl->columns[col_idx].set_col_instance_option) {
       char *err = NULL;
       tbl->columns[col_idx].set_col_instance_option(tbl, curr_col_idx, arg, &err);
@@ -315,7 +314,7 @@ void table_col_generic_format(struct table *tbl, int col, void *value, const str
   tbl->last_printed_col = col;
   tbl->row_printing_started = 1;
   TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {
-    enum xtype_fmt fmt = curr_col->output_type;
+    enum xtype_fmt fmt = curr_col->fmt;
     curr_col->cell_content = expected_type->format(value, fmt, tbl->pool);
   } TBL_COL_ITER_END
 }
@@ -414,7 +413,7 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
       const char *err = xtype_parse_fmt(NULL, value, &fmt, tbl->pool);
       if(err) return mp_printf(tbl->pool, "Invalid cell format: '%s'.", err);
       for(uint i = 0; i < tbl->cols_to_output; i++) {
-        tbl->column_order[i].output_type = fmt;
+        tbl->column_order[i].fmt = fmt;
       }
       return NULL;
     } else if(strcmp(key, "raw") == 0 || strcmp(key, "pretty") == 0) {
@@ -422,7 +421,7 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
       const char *err = xtype_parse_fmt(NULL, key, &fmt, tbl->pool);
       if(err) return mp_printf(tbl->pool, "Invalid cell format: '%s'.", err);
       for(uint i = 0; i < tbl->cols_to_output; i++) {
-        tbl->column_order[i].output_type = fmt;
+        tbl->column_order[i].fmt = fmt;
       }
       return NULL;
     } else if(strcmp(key, "col-delim") == 0) {
@@ -586,7 +585,7 @@ static struct table_template test_tbl = {
     [TEST_COL0_STR] = TBL_COL_STR("col0_str", 20),
     [TEST_COL1_INT] = TBL_COL_INT("col1_int", 8),
     [TEST_COL2_UINT] = TBL_COL_UINT("col2_uint", 9),
-    [TEST_COL3_BOOL] = TBL_COL_BOOL("col3_bool", 9),
+    [TEST_COL3_BOOL] = TBL_COL_BOOL_FMT("col3_bool", 9, XTYPE_FMT_PRETTY),
     [TEST_COL4_DOUBLE] = TBL_COL_DOUBLE("col4_double", 11),
     TBL_COL_END
   },

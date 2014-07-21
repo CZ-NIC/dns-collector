@@ -37,25 +37,25 @@ static void do_test(void)
   table_col_timestamp(tbl, TEST_COL1_TS, test_time);
   table_end_row(tbl);
 
-  tbl->column_order[TEST_COL0_SIZE].output_type = SIZE_UNITS_FIXED | SIZE_UNIT_KILOBYTE;
+  tbl->column_order[TEST_COL0_SIZE].fmt = SIZE_UNITS_FIXED | SIZE_UNIT_KILOBYTE;
   table_col_size(tbl, TEST_COL0_SIZE, test_size);
   table_col_timestamp(tbl, TEST_COL1_TS, test_time);
   table_end_row(tbl);
 
-  tbl->column_order[TEST_COL0_SIZE].output_type = SIZE_UNITS_FIXED | SIZE_UNIT_MEGABYTE;
+  tbl->column_order[TEST_COL0_SIZE].fmt = SIZE_UNITS_FIXED | SIZE_UNIT_MEGABYTE;
   table_col_size(tbl, TEST_COL0_SIZE, test_size);
   table_col_timestamp(tbl, TEST_COL1_TS, test_time);
   table_end_row(tbl);
 
-  tbl->column_order[TEST_COL0_SIZE].output_type = SIZE_UNITS_FIXED | SIZE_UNIT_GIGABYTE;
-  tbl->column_order[TEST_COL1_TS].output_type = TIMESTAMP_DATETIME;
+  tbl->column_order[TEST_COL0_SIZE].fmt = SIZE_UNITS_FIXED | SIZE_UNIT_GIGABYTE;
+  tbl->column_order[TEST_COL1_TS].fmt = TIMESTAMP_DATETIME;
   table_col_size(tbl, TEST_COL0_SIZE, test_size);
   table_col_timestamp(tbl, TEST_COL1_TS, test_time);
   table_end_row(tbl);
 
   test_size = test_size * 1024LU;
-  tbl->column_order[TEST_COL0_SIZE].output_type = SIZE_UNITS_FIXED | SIZE_UNIT_TERABYTE;
-  tbl->column_order[TEST_COL1_TS].output_type = TIMESTAMP_DATETIME;
+  tbl->column_order[TEST_COL0_SIZE].fmt = SIZE_UNITS_FIXED | SIZE_UNIT_TERABYTE;
+  tbl->column_order[TEST_COL1_TS].fmt = TIMESTAMP_DATETIME;
   table_col_size(tbl, TEST_COL0_SIZE, test_size);
   table_col_timestamp(tbl, TEST_COL1_TS, test_time);
   table_end_row(tbl);

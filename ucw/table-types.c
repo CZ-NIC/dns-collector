@@ -69,19 +69,19 @@ int table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *col
   }
 
   if(strlen(col_arg) == 0 || strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
-    tbl->column_order[col_inst_idx].output_type = SIZE_UNIT_BYTE | SIZE_UNITS_FIXED;
+    tbl->column_order[col_inst_idx].fmt = SIZE_UNIT_BYTE | SIZE_UNITS_FIXED;
     *err = NULL;
     return TABLE_OPT_PROCESSED;
   }
 
-  tbl->column_order[col_inst_idx].output_type = XTYPE_FMT_DEFAULT; // CELL_OUT_UNINITIALIZED;
+  tbl->column_order[col_inst_idx].fmt = XTYPE_FMT_DEFAULT; // CELL_OUT_UNINITIALIZED;
   for(uint i = SIZE_UNIT_BYTE; i <= SIZE_UNIT_TERABYTE; i++) {
     if(strcasecmp(col_arg, unit_suffix[i]) == 0) {
-      tbl->column_order[col_inst_idx].output_type = i | SIZE_UNITS_FIXED;
+      tbl->column_order[col_inst_idx].fmt = i | SIZE_UNITS_FIXED;
     }
   }
 
-  if(tbl->column_order[col_inst_idx].output_type == XTYPE_FMT_DEFAULT) {
+  if(tbl->column_order[col_inst_idx].fmt == XTYPE_FMT_DEFAULT) {
     *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d (counted from 0)", col_arg, col_inst_idx);
     return TABLE_OPT_ERR;
   }
@@ -117,9 +117,9 @@ int table_set_col_opt_timestamp(struct table *tbl, uint col_inst_idx, const char
   }
 
   if(strcasecmp(col_arg, "timestamp") == 0 || strcasecmp(col_arg, "epoch") == 0) {
-    tbl->column_order[col_inst_idx].output_type = TIMESTAMP_EPOCH;
+    tbl->column_order[col_inst_idx].fmt = TIMESTAMP_EPOCH;
   } else if(strcasecmp(col_arg, "datetime") == 0) {
-    tbl->column_order[col_inst_idx].output_type = TIMESTAMP_DATETIME;
+    tbl->column_order[col_inst_idx].fmt = TIMESTAMP_DATETIME;
   } else {
     *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_arg, col_inst_idx);
     return TABLE_OPT_ERR;

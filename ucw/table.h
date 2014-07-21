@@ -121,7 +121,7 @@ struct table_col_instance {
   const struct table_column *col_def;  // this is pointer to the column definition, located in the array struct table::columns
   const char *cell_content;            // content of the cell of the current row
   int next_column;                     // index of next column in linked list of columns of the same type
-  uint output_type;                    // format of this column
+  uint fmt;                    // format of this column
 };
 
 /**
@@ -218,8 +218,8 @@ struct table {
 /**
  * These macros are used for definition of column order
  **/
-#define TBL_COL(_idx) { .idx = _idx, .output_type = XTYPE_FMT_DEFAULT, .next_column = -1 }
-#define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .output_type = _fmt, .next_column = -1 }
+#define TBL_COL(_idx) { .idx = _idx, .fmt = XTYPE_FMT_DEFAULT, .next_column = -1 }
+#define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .fmt = _fmt, .next_column = -1 }
 
 #define TBL_FMT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
 #define TBL_FMT_BLOCKLINE          .formatter = &table_fmt_blockline
@@ -378,7 +378,7 @@ bool table_col_is_printed(struct table *tbl, uint col_idx);
  *
  * <col-name> is a string that does not contain comma ',' or '[',']' brackets
  *
- * <col-opt> is currently only one string.
+ * <col-opt> is currently only one string without commas. In the future the format can be <str1>,<str2>,... .
  *
  * FIXME In the future, we should allow <col-opt> to be a comma(,) separated list of identifiers
  **/

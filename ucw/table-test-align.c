@@ -9,7 +9,6 @@
 #include <ucw/opt.h>
 #include <stdio.h>
 
-
 enum test_table_cols {
   test_col0_str, test_col1_int, test_col2_uint, test_col3_bool, test_col4_double
 };
@@ -19,7 +18,7 @@ static struct table_template test_tbl = {
     [test_col0_str] = TBL_COL_STR("col0_str", 30 | CELL_ALIGN_LEFT),
     [test_col1_int] = TBL_COL_INT("col1_int", 8),
     [test_col2_uint] = TBL_COL_UINT("col2_uint", 9),
-    [test_col3_bool] = TBL_COL_BOOL("col3_bool", 9 | CELL_ALIGN_LEFT),
+    [test_col3_bool] = TBL_COL_BOOL_FMT("col3_bool", 9 | CELL_ALIGN_LEFT, XTYPE_FMT_PRETTY),
     [test_col4_double] = TBL_COL_DOUBLE_FMT("col4_double", 11 | CELL_ALIGN_LEFT, XTYPE_FMT_DEFAULT),
     TBL_COL_END
   },
