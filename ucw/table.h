@@ -77,7 +77,7 @@
 
 // FIXME: update documentation according to the changes made in recent commits!
 
-/** Types of columns. These are seldom used explicitly, using a column definition macro is preferred. **/
+/** The COL_TYPE_ANY macro specifies a column type which can be filled with arbitrary type. **/
 
 #define COL_TYPE_ANY      NULL
 
@@ -132,7 +132,7 @@ struct table_template {
   uint cols_to_output;                      // [*] Number of columns that are printed
   const char *col_delimiter;                // [*] Delimiter that is placed between columns
   // Back-end used for table formatting and its private data
-  struct table_formatter *formatter; // FIXME: should be const?
+  const struct table_formatter *formatter; // FIXME: should be const?
 };
 
 /**
@@ -162,7 +162,7 @@ struct table {
   int col_out;				// Index of the column that is currently printed using fb_col_out
 
   // Back-end used for table formatting and its private data
-  struct table_formatter *formatter;
+  const struct table_formatter *formatter;
   void *data;
 };
 
@@ -387,7 +387,7 @@ const char *table_set_col_order_by_name(struct table *tbl, const char *col_order
 /**
  * Sets table formatter. See below for the list of formatters.
  **/
-void table_set_formatter(struct table *tbl, struct table_formatter *fmt);
+void table_set_formatter(struct table *tbl, const struct table_formatter *fmt);
 
 /**
  * Set a table option. All options have a key and a value. Currently,
@@ -446,15 +446,15 @@ struct table_formatter {
 };
 
 /** Standard formatter for human-readable output. **/
-extern struct table_formatter table_fmt_human_readable;
+extern const struct table_formatter table_fmt_human_readable;
 
 /** Standard formatter for machine-readable output (tab-separated values). **/
-extern struct table_formatter table_fmt_machine_readable;
+extern const struct table_formatter table_fmt_machine_readable;
 
 /**
  * Standard formatter for block output. Each cell is output on its own line
  * of the form `column_name: value`. Rows are separated by blank lines.
  **/
-extern struct table_formatter table_fmt_blockline;
+extern const struct table_formatter table_fmt_blockline;
 
 #endif

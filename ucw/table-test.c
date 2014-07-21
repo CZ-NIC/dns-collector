@@ -143,7 +143,12 @@ static bool user_defined_option(struct table *tbl UNUSED, const char *key, const
 
 static void test_option_parser(struct table *tbl)
 {
-  tbl->formatter->process_option = user_defined_option;
+  struct table_formatter test_option_fmtr = table_fmt_human_readable;
+  test_option_fmtr.process_option = user_defined_option;
+
+  const struct table_formatter *tmp_fmtr = tbl->formatter;
+  tbl->formatter = &test_option_fmtr;
+
   const char *rv = table_set_option(tbl, "invalid:option");
   if(rv) printf("Tableprinter option parser returned error: \"%s\".\n", rv);
 
@@ -155,6 +160,8 @@ static void test_option_parser(struct table *tbl)
 
   rv = table_set_option(tbl, "valuekey:value");
   if(rv) printf("Tableprinter option parser returned error: \"%s\".\n", rv);
+
+  tbl->formatter = tmp_fmtr;
 }
 
 int main(int argc UNUSED, char **argv)

@@ -131,7 +131,7 @@ void table_end(struct table *tbl)
 
 /*** Configuration ***/
 
-void table_set_formatter(struct table *tbl, struct table_formatter *fmt)
+void table_set_formatter(struct table *tbl, const struct table_formatter *fmt)
 {
   tbl->formatter = fmt;
 }
@@ -503,7 +503,7 @@ static void table_start_human_readable(struct table *tbl)
   }
 }
 
-struct table_formatter table_fmt_human_readable = {
+const struct table_formatter table_fmt_human_readable = {
   .row_output = table_row_human_readable,
   .table_start = table_start_human_readable,
 };
@@ -537,7 +537,7 @@ static void table_start_machine_readable(struct table *tbl)
   }
 }
 
-struct table_formatter table_fmt_machine_readable = {
+const struct table_formatter table_fmt_machine_readable = {
   .row_output = table_row_machine_readable,
   .table_start = table_start_machine_readable,
 };
@@ -561,7 +561,7 @@ static void table_start_blockline(struct table *tbl)
   }
 }
 
-struct table_formatter table_fmt_blockline = {
+const struct table_formatter table_fmt_blockline = {
   .row_output = table_row_blockline_output,
   .table_start = table_start_blockline
 };
