@@ -71,6 +71,9 @@
  *  TREE_WANT_SEARCH_DOWN node *search_down(key) -- find either the node with
  *                      specified value, or if it does not exist, the node
  *                      with nearest smaller value.
+ *  TREE_WANT_SEARCH_UP	node *search_up(key) -- find either the node with
+ *                      specified value, or if it does not exist, the node
+ *                      with nearest greater value.
  *  TREE_WANT_BOUNDARY	node *boundary(uint direction) -- finds smallest
  *			(direction==0) or largest (direction==1) node.
  *  TREE_WANT_ADJACENT	node *adjacent(node *, uint direction) -- finds next
@@ -101,16 +104,20 @@
  *  TREE_GIVE_INIT_DATA	void init_data(node *) -- initialize data fields in a
  *			newly created node. Very useful for lookup operations.
  *  TREE_GIVE_ALLOC	void *alloc(uint size) -- allocate space for
- *			a node. Default is either normal or pooled allocation
- *			depending on whether we want deletions.
+ *			a node. By default, xmalloc() is used unless overridden
+ *			by TREE_AUTO_POOL.
  *			void free(void *) -- the converse.
  *
  *  ... and a couple of extra parameters:
  *
  *  TREE_NOCASE		string comparisons should be case-insensitive.
  *  TREE_ATOMIC_TYPE=t	Atomic values are of type `t' instead of int.
- *  TREE_USE_POOL=pool	Allocate all nodes from given mempool.
- *			Collides with delete/remove functions.
+ *  TREE_USE_POOL=pool	Allocate all nodes from given mempool. Please keep
+ *			in mind that deleted/removed nodes cannot be freed.
+ *  TREE_AUTO_POOL=size	Automatically allocate nodes from an internal memory
+ *			pool of a given block size. This is either an eltpool
+ *			(for fixed-size nodes), or a mempool for variable-sized
+ *			ones (in this case, deletes/removes are not deallocated).
  *  TREE_GLOBAL		Functions are exported (i.e., not static).
  *  TREE_CONSERVE_SPACE	Use as little space as possible at the price of a
  *			little slowdown.
@@ -153,6 +160,16 @@ typedef TREE_NODE P(node);
 #	define TREE_STORE_PARENT
 #endif
 
+#ifdef TREE_AUTO_POOL
+#	if defined(TREE_GIVE_EXTRA_SIZE) || defined(TREE_KEY_ENDSTRING)
+#		define TREE_AUTO_MEMPOOL
+#		include <ucw/mempool.h>
+#	else
+#		define TREE_AUTO_ELTPOOL
+#		include <ucw/eltpool.h>
+#	endif
+#endif
+
 typedef struct P(bucket) {
 	struct P(bucket) *son[2];
 #ifdef TREE_STORE_PARENT
@@ -171,6 +188,12 @@ struct P(tree) {
 	uint count;
 	uint height;			/* of black nodes */
 	P(bucket) *root;
+#ifdef TREE_AUTO_MEMPOOL
+	struct mempool *mp;
+#endif
+#ifdef TREE_AUTO_ELTPOOL
+	struct eltpool *ep;
+#endif
 };
 
 typedef struct P(stack_entry) {
@@ -307,7 +330,18 @@ static inline void P(init_data) (P(node) *n UNUSED)
 #	ifdef TREE_USE_POOL
 		static inline void * P(alloc) (T *t UNUSED, uint size)
 		{ return mp_alloc_fast(TREE_USE_POOL, size); }
-#		define TREE_SAFE_FREE(t, x)
+		static inline void P(free) (T *t UNUSED, void *x UNUSED)
+		{ }
+#	elif defined(TREE_AUTO_MEMPOOL)
+		static inline void * P(alloc) (T *t, uint size)
+		{ return mp_alloc_fast(t->mp, size); }
+		static inline void P(free) (T *t UNUSED, void *x UNUSED)
+		{ }
+#	elif defined(TREE_AUTO_ELTPOOL)
+		static inline void * P(alloc) (T *t, uint size)
+		{ ASSERT(size == sizeof(P(bucket))); return ep_alloc(t->ep); }
+		static inline void P(free) (T *t, void *x)
+		{ ep_free(t->ep, x); }
 #	else
 		static inline void * P(alloc) (T *t UNUSED, uint size)
 		{ return xmalloc(size); }
@@ -317,14 +351,10 @@ static inline void P(init_data) (P(node) *n UNUSED)
 #	endif
 #endif
 
-#ifndef	TREE_SAFE_FREE
-#	define TREE_SAFE_FREE(t, x)	P(free) (t, x)
-#endif
-
 #ifdef TREE_GLOBAL
-#	define STATIC
+#	define TREE_STATIC
 #else
-#	define STATIC static
+#	define TREE_STATIC static
 #endif
 
 #ifndef TREE_MAX_DEPTH
@@ -346,10 +376,16 @@ static inline void P(init_data) (P(node) *n UNUSED)
 
 /* Now the operations */
 
-STATIC void P(init) (T *t)
+TREE_STATIC void P(init) (T *t)
 {
 	t->count = t->height = 0;
 	t->root = NULL;
+#ifdef TREE_AUTO_MEMPOOL
+	t->mp = mp_new(TREE_AUTO_POOL);
+#endif
+#ifdef TREE_AUTO_ELTPOOL
+	t->ep = ep_new(sizeof(P(bucket)), (TREE_AUTO_POOL + sizeof(P(bucket)) - 1) / sizeof(P(bucket)));
+#endif
 }
 
 #ifdef TREE_WANT_CLEANUP
@@ -363,11 +399,19 @@ static void P(cleanup_subtree) (T *t, P(bucket) *node)
 	t->count--;
 }
 
-STATIC void P(cleanup) (T *t)
+TREE_STATIC void P(cleanup) (T *t)
 {
 	P(cleanup_subtree) (t, t->root);
 	ASSERT(!t->count);
 	t->height = 0;
+#ifdef TREE_AUTO_MEMPOOL
+	mp_delete(t->mp);
+	t->mp = NULL;
+#endif
+#ifdef TREE_AUTO_ELTPOOL
+	ep_delete(t->ep);
+	t->ep = NULL;
+#endif
 }
 #endif
 
@@ -407,7 +451,7 @@ static uint P(fill_stack) (P(stack_entry) *stack, uint max_depth, P(bucket) *nod
 }
 
 #ifdef TREE_WANT_FIND
-STATIC P(node) * P(find) (T *t, TREE_KEY_DECL)
+TREE_STATIC P(node) * P(find) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	uint depth;
@@ -417,7 +461,7 @@ STATIC P(node) * P(find) (T *t, TREE_KEY_DECL)
 #endif
 
 #ifdef TREE_WANT_SEARCH_DOWN
-STATIC P(node) * P(search_down) (T *t, TREE_KEY_DECL)
+TREE_STATIC P(node) * P(search_down) (T *t, TREE_KEY_DECL)
 {
 	P(node) *last_right=NULL;
 	P(bucket) *node=t->root;
@@ -439,8 +483,31 @@ STATIC P(node) * P(search_down) (T *t, TREE_KEY_DECL)
 }
 #endif
 
+#ifdef TREE_WANT_SEARCH_UP
+TREE_STATIC P(node) * P(search_up) (T *t, TREE_KEY_DECL)
+{
+	P(node) *last_left=NULL;
+	P(bucket) *node=t->root;
+	while(node)
+	{
+		int cmp;
+		cmp = P(cmp) (TREE_KEY(), TREE_KEY(node->n.));
+		if (cmp == 0)
+			return &node->n;
+		else if (cmp > 0)
+			node=P(tree_son) (node, 1);
+		else
+		{
+			last_left=&node->n;
+			node=P(tree_son) (node, 0);
+		}
+	}
+	return last_left;
+}
+#endif
+
 #ifdef TREE_WANT_BOUNDARY
-STATIC P(node) * P(boundary) (T *t, uint direction)
+TREE_STATIC P(node) * P(boundary) (T *t, uint direction)
 {
 	P(bucket) *n = t->root, *ns;
 	if (!n)
@@ -456,7 +523,7 @@ STATIC P(node) * P(boundary) (T *t, uint direction)
 #endif
 
 #ifdef TREE_STORE_PARENT
-STATIC P(node) * P(adjacent) (P(node) *start, uint direction)
+TREE_STATIC P(node) * P(adjacent) (P(node) *start, uint direction)
 {
 	P(bucket) *node = SKIP_BACK(P(bucket), n, start);
 	P(bucket) *next = P(tree_son) (node, direction);
@@ -509,7 +576,7 @@ static int P(find_next_node) (P(stack_entry) *stack, uint max_depth, uint direct
 #endif
 
 #ifdef TREE_WANT_FIND_NEXT
-STATIC P(node) * P(find_next) (P(node) *start)
+TREE_STATIC P(node) * P(find_next) (P(node) *start)
 {
 	P(node) *next = P(adjacent) (start, 1);
 	if (next && P(cmp) (TREE_KEY(start->), TREE_KEY(next->)) == 0)
@@ -521,7 +588,7 @@ STATIC P(node) * P(find_next) (P(node) *start)
 #endif
 
 #ifdef TREE_WANT_SEARCH
-STATIC P(node) * P(search) (T *t, TREE_KEY_DECL)
+TREE_STATIC P(node) * P(search) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	uint depth;
@@ -626,7 +693,7 @@ try_it_again:
 }
 
 #ifdef TREE_WANT_NEW
-STATIC P(node) * P(new) (T *t, TREE_KEY_DECL)
+TREE_STATIC P(node) * P(new) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	P(bucket) *added;
@@ -667,7 +734,7 @@ STATIC P(node) * P(new) (T *t, TREE_KEY_DECL)
 #endif
 
 #ifdef TREE_WANT_LOOKUP
-STATIC P(node) * P(lookup) (T *t, TREE_KEY_DECL)
+TREE_STATIC P(node) * P(lookup) (T *t, TREE_KEY_DECL)
 {
 	P(node) *node;
 	node = P(find) (t, TREE_KEY());
@@ -856,7 +923,7 @@ static void P(remove_by_stack) (T *t, P(stack_entry) *stack, uint depth)
 		ASSERT(!son);
 		return;
 	}
-	TREE_SAFE_FREE(t, node);
+	P(free)(t, node);
 	/* We have deleted a black node.  */
 	if (son)
 	{
@@ -869,7 +936,7 @@ static void P(remove_by_stack) (T *t, P(stack_entry) *stack, uint depth)
 #endif
 
 #ifdef TREE_WANT_REMOVE
-STATIC void P(remove) (T *t, P(node) *Node)
+TREE_STATIC void P(remove) (T *t, P(node) *Node)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	P(bucket) *node = SKIP_BACK(P(bucket), n, Node);
@@ -895,7 +962,7 @@ STATIC void P(remove) (T *t, P(node) *Node)
 #endif
 
 #ifdef TREE_WANT_DELETE
-STATIC int P(delete) (T *t, TREE_KEY_DECL)
+TREE_STATIC int P(delete) (T *t, TREE_KEY_DECL)
 {
 	P(stack_entry) stack[TREE_MAX_DEPTH];
 	uint depth;
@@ -949,7 +1016,7 @@ static void P(dump_subtree) (struct fastbuf *fb, T *t, P(bucket) *node, P(bucket
 	P(dump_subtree) (fb, t, P(tree_son) (node, 1), node, +1, level+1, black + (1-flag));
 }
 
-STATIC void P(dump) (struct fastbuf *fb, T *t)
+TREE_STATIC void P(dump) (struct fastbuf *fb, T *t)
 {
 	if (fb)
 	{
@@ -1012,6 +1079,7 @@ do											\
 #undef TREE_WANT_FIND_NEXT
 #undef TREE_WANT_SEARCH
 #undef TREE_WANT_SEARCH_DOWN
+#undef TREE_WANT_SEARCH_UP
 #undef TREE_WANT_BOUNDARY
 #undef TREE_WANT_ADJACENT
 #undef TREE_WANT_NEW
@@ -1035,6 +1103,7 @@ do											\
 #undef TREE_STORE_PARENT
 #undef TREE_KEY
 #undef TREE_EXTRA_SIZE
-#undef TREE_SAFE_FREE
 #undef TREE_TRACE
-#undef STATIC
+#undef TREE_AUTO_POOL
+#undef TREE_AUTO_MEMPOOL
+#undef TREE_AUTO_ELTPOOL

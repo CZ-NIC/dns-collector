@@ -7,6 +7,8 @@
 #ifndef _UCW_TABLE_H
 #define _UCW_TABLE_H
 
+#include <inttypes.h>
+
 #include <ucw/fastbuf.h>
 #include <ucw/mempool.h>
 #include <ucw/xtypes.h>

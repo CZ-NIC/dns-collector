@@ -63,6 +63,8 @@
  *   contents of another list of options.
  * - `OPT_CL_HELP`: no option, just print a help text.
  * - `OPT_CL_HOOK`: no option, but a definition of a <<hooks,hook>>.
+ * - `OPT_CL_BREAK`: when a given option occurs, stop parsing and keep
+ *   the option in the argument list.
  ***/
 
 enum opt_class {
@@ -76,6 +78,7 @@ enum opt_class {
   OPT_CL_SECTION,
   OPT_CL_HELP,
   OPT_CL_HOOK,
+  OPT_CL_BREAK,
 };
 
 /***
@@ -92,7 +95,7 @@ enum opt_class {
 
 /** A section of option list. **/
 struct opt_section {
-  struct opt_item * opt;
+  const struct opt_item * opt;
 };
 
 /** A definition of a single option item. **/
@@ -102,10 +105,10 @@ struct opt_item {
   void * ptr;				// variable to store the value to
   const char * help;			// description in --help (NULL to omit the option from the help)
   union opt_union {
-    struct opt_section * section;	// subsection for OPT_CL_SECTION
+    const struct opt_section * section;	// subsection for OPT_CL_SECTION
     int value;				// value for OPT_CL_SWITCH
-    void (* call)(struct opt_item * opt, const char * value, void * data);		// function to call for OPT_CL_CALL
-    void (* hook)(struct opt_item * opt, uint event, const char * value, void * data);	// function to call for OPT_CL_HOOK
+    void (* call)(const struct opt_item * opt, const char * value, void * data);		// function to call for OPT_CL_CALL
+    void (* hook)(const struct opt_item * opt, uint event, const char * value, void * data);	// function to call for OPT_CL_HOOK
     struct cf_user_type * utype;	// specification of the user-defined type for CT_USER
   } u;
   u16 flags;				// as defined below (for hooks, event mask is stored instead)
@@ -131,6 +134,7 @@ struct opt_item {
 #define OPT_MULTIPLE	    0x200	/** The option may appear multiple times; will save all the values into a simple list. **/
 #define OPT_SEEN_AS_LONG    0x400	// Used internally to signal that we currently process the long form of the option
 #define OPT_BEFORE_CONFIG   0x800	/** The option may appear before a config file is loaded. **/
+#define OPT_HELP_COL        0x1000	/** Used for OPT_CL_HELP to signal that tabs switch columns. **/
 #define OPT_INTERNAL        0x4000	// Used internally to ask for passing of struct opt_context to OPT_CALL
 
 /**
@@ -157,6 +161,9 @@ struct opt_item {
 
 /** No option, just a piece of help text. **/
 #define OPT_HELP(line) { .help = line, .cls = OPT_CL_HELP }
+
+/** Like OPT_HELP, but the help text uses tab characters to switch columns like help text for ordinary options does. **/
+#define OPT_HELP_COLUMNS(line) { .help = line, .flags = OPT_HELP_COL, .cls = OPT_CL_HELP }
 
 /** Standard `--help` option. **/
 #define OPT_HELP_OPTION OPT_CALL(0, "help", opt_handle_help, NULL, OPT_BEFORE_CONFIG | OPT_INTERNAL | OPT_NO_VALUE, "\tShow this help")
@@ -205,6 +212,9 @@ struct opt_item {
 
 /** Incrementing option. @target should be a variable of type `int`. **/
 #define OPT_INC(shortopt, longopt, target, fl, desc) { .letter = shortopt, .name = longopt, .ptr = CHECK_PTR_TYPE(&target, int *), .flags = fl, .help = desc, .cls = OPT_CL_INC, .type = CT_INT }
+
+/** Breakpoint option. When this option occurs, parsing is terminated and the option is kept in the argument array. **/
+#define OPT_BREAK(shortopt, longopt, fl) { .letter = shortopt, .name = longopt, .flags = fl, .cls = OPT_CL_BREAK }
 
 /* FIXME: Backwards compatibility only, should not be used anymore. */
 #define OPT_UNS OPT_UINT
@@ -298,7 +308,7 @@ int opt_parse(const struct opt_section * options, char ** argv);
 void opt_failure(const char * mesg, ...) FORMAT_CHECK(printf,1,2) NONRET;
 
 void opt_help(const struct opt_section * sec);
-void opt_handle_help(struct opt_item * opt, const char * value, void * data);
+void opt_handle_help(const struct opt_item * opt, const char * value, void * data);
 
 /***
  * [[conf]]
@@ -347,10 +357,10 @@ void opt_handle_help(struct opt_item * opt, const char * value, void * data);
 #define OPT_CONF_DUMPCONFIG OPT_CALL(0, "dumpconfig", opt_handle_dumpconfig, NULL, OPT_INTERNAL | OPT_NO_VALUE, "\tDump program configuration")
 #define OPT_CONF_HOOK	    OPT_HOOK(opt_conf_hook_internal, NULL, OPT_HOOK_BEFORE_VALUE | OPT_HOOK_FINAL | OPT_HOOK_INTERNAL)
 
-void opt_handle_config(struct opt_item * opt, const char * value, void * data);
-void opt_handle_set(struct opt_item * opt, const char * value, void * data);
-void opt_handle_dumpconfig(struct opt_item * opt, const char * value, void * data);
-void opt_conf_hook_internal(struct opt_item * opt, uint event, const char * value, void * data);
+void opt_handle_config(const struct opt_item * opt, const char * value, void * data);
+void opt_handle_set(const struct opt_item * opt, const char * value, void * data);
+void opt_handle_dumpconfig(const struct opt_item * opt, const char * value, void * data);
+void opt_conf_hook_internal(const struct opt_item * opt, uint event, const char * value, void * data);
 
 // XXX: This is duplicated with <ucw/getopt.h>, but that one will hopefully go away one day.
 /**

@@ -28,15 +28,20 @@ struct help_line {
 
 static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
 {
-  struct opt_item *item = opt->item;
+  const struct opt_item *item = opt->item;
 
   if (!item->help)
     return;
 
+  bool force_col1 = 0;
   if (item->cls == OPT_CL_HELP) {
-    struct help_line *l = GARY_PUSH(h->lines);
-    l->extra = item->help;
-    return;
+    if (item->flags & OPT_HELP_COL) {
+      force_col1 = 1;
+    } else {
+      struct help_line *l = GARY_PUSH(h->lines);
+      l->extra = item->help;
+      return;
+    }
   }
 
   if (item->letter >= OPT_POSITIONAL_TAIL)
@@ -50,7 +55,7 @@ static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
     if (eol)
       *eol++ = 0;
 
-    int field = (l == first ? 1 : 0);
+    int field = (l == first && !force_col1 ? 1 : 0);
     char *f = text;
     while (f) {
       char *tab = strchr(f, '\t');
@@ -90,7 +95,7 @@ static void opt_help_scan_item(struct help *h, struct opt_precomputed *opt)
 
 static void opt_help_scan(struct help *h, const struct opt_section *sec)
 {
-  for (struct opt_item * item = sec->opt; item->cls != OPT_CL_END; item++) {
+  for (const struct opt_item * item = sec->opt; item->cls != OPT_CL_END; item++) {
     if (item->cls == OPT_CL_SECTION)
       opt_help_scan(h, item->u.section);
     else if (item->cls == OPT_CL_HOOK)
@@ -156,7 +161,7 @@ void opt_help(const struct opt_section * sec) {
   mp_delete(h.pool);
 }
 
-void opt_handle_help(struct opt_item * opt UNUSED, const char * value UNUSED, void * data)
+void opt_handle_help(const struct opt_item * opt UNUSED, const char * value UNUSED, void * data)
 {
   struct opt_context *oc = data;
   opt_help(oc->options);

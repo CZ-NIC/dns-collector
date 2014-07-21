@@ -499,6 +499,8 @@ str_hier_suffix
 str_to_uintmax
 str_to_uint
 str_to_uns
+str_to_u32
+str_to_u64
 # ucw/table.h
 table_init
 table_cleanup

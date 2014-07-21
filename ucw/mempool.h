@@ -69,7 +69,7 @@ struct mempool_state {
  * You should use this one as an opaque handle only, the insides are internal.
  **/
 struct mempool {
-  struct ucw_allocator allocator;
+  struct ucw_allocator allocator;	// This must be the first element
   struct mempool_state state;
   void *unused, *last_big;
   size_t chunk_size, threshold;

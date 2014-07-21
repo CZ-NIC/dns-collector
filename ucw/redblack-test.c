@@ -39,6 +39,7 @@ static void my_dump_data(struct fastbuf *fb, struct my1_node *n)
 #define TREE_WANT_ITERATOR
 #define TREE_WANT_DUMP
 #define TREE_CONSERVE_SPACE
+#define TREE_AUTO_POOL 4096
 #include "redblack.h"
 
 static void my_check_order(struct fastbuf *fb, struct my_tree *t)
@@ -87,8 +88,8 @@ static void my2_dump_data(struct fastbuf *fb UNUSED, struct my2_node *n UNUSED)
 #define TREE_WANT_FIND_NEXT
 #define TREE_WANT_ITERATOR
 #define TREE_WANT_DUMP
-#define TREE_STATIC
 #define TREE_CONSERVE_SPACE
+#define TREE_AUTO_POOL 4096
 #include "redblack.h"
 
 static void random_string(char *txt, uint max_len)
