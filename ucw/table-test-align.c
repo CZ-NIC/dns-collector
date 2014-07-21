@@ -23,7 +23,7 @@ static struct table_template test_tbl = {
     [test_col4_double] = TBL_COL_DOUBLE_FMT("col4_double", 11 | CELL_ALIGN_LEFT, XTYPE_FMT_DEFAULT),
     TBL_COL_END
   },
-  TBL_OUTPUT_HUMAN_READABLE,
+  TBL_FMT_HUMAN_READABLE,
   TBL_COL_DELIMITER("\t"),
 };
 

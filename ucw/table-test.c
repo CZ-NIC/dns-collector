@@ -28,7 +28,7 @@ static struct table_template test_tbl = {
     TBL_COL_END
   },
   TBL_COL_ORDER(test_column_order),
-  TBL_OUTPUT_HUMAN_READABLE,
+  TBL_FMT_HUMAN_READABLE,
   TBL_COL_DELIMITER("\t"),
 };
 
@@ -43,7 +43,7 @@ static struct table_template test_default_order_tbl = {
     [TEST_DEFAULT_ORDER_COL2_INT] = TBL_COL_INT("col2_int", 9),
     TBL_COL_END
   },
-  TBL_OUTPUT_HUMAN_READABLE,
+  TBL_FMT_HUMAN_READABLE,
   TBL_COL_DELIMITER("\t"),
 };
 

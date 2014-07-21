@@ -70,19 +70,14 @@ static const char *xt_double_parse(const char *str, void *dest, struct mempool *
   errno = 0;
   double result = strtod(str, &endptr);
   if(*endptr != 0 || endptr == str) return "Could not parse double.";
-  if(errno == ERANGE) return "Could not parse double: overflow happend during parsing.";
+  if(errno == ERANGE) return "Could not parse double.";
 
   *((double *) dest) = result;
 
   return NULL;
 }
 
-const struct xtype xt_double = {
-  .size = sizeof(double),
-  .name = "double",
-  .parse = xt_double_parse,
-  .format = xt_double_format,
-};
+XTYPE_NUM_STRUCT(double, double)
 
 /* bool */
 
@@ -127,18 +122,13 @@ static const char *xt_bool_parse(const char *str, void *dest, struct mempool *po
   return "Could not parse bool.";
 }
 
-const struct xtype xt_bool = {
-  .size = sizeof(bool),
-  .name = "bool",
-  .parse = xt_bool_parse,
-  .format = xt_bool_format,
-};
+XTYPE_NUM_STRUCT(bool, bool)
 
 /* str */
 
 static const char *xt_str_format(void *src, u32 fmt UNUSED, struct mempool *pool)
 {
-  return mp_strdup(pool, (const char *) src);
+  return mp_strdup(pool, *((const char **) src));
 }
 
 static const char *xt_str_parse(const char *str, void *dest, struct mempool *pool UNUSED)
@@ -147,9 +137,4 @@ static const char *xt_str_parse(const char *str, void *dest, struct mempool *poo
   return NULL;
 }
 
-const struct xtype xt_str = {
-  .size = sizeof(char *),
-  .name = "str",
-  .parse = xt_str_parse,
-  .format = xt_str_format,
-};
+XTYPE_NUM_STRUCT(char *, str)

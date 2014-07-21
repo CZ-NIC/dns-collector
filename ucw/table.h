@@ -176,9 +176,9 @@ struct table {
  *  * `TBL_COL_END` ends the column definitions
  *  * `TBL_COL_ORDER` specifies custom ordering of columns in the output
  *  * `TBL_COL_DELIMITER` and `TBL_APPEND_DELIMITER` override default delimiters
- *  * `TBL_OUTPUT_HUMAN_READABLE` requests human-readable formatting (this is the default)
- *  * `TBL_OUTPUT_MACHINE_READABLE` requests machine-readable TSV output
- *  * `TBL_OUTPUT_BLOCKLINE` requests block formatting (each cell printed a pair of a key and value on its own line)
+ *  * `TBL_FMT__HUMAN_READABLE` requests human-readable formatting (this is the default)
+ *  * `TBL_FMT_MACHINE_READABLE` requests machine-readable TSV output
+ *  * `TBL_FMT_BLOCKLINE` requests block formatting (each cell printed a pair of a key and value on its own line)
  *
  ***/
 
@@ -219,9 +219,9 @@ struct table {
 #define TBL_COL(_idx) { .idx = _idx, .output_type = XTYPE_FMT_DEFAULT, .next_column = -1 }
 #define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .output_type = _fmt, .next_column = -1 }
 
-#define TBL_OUTPUT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
-#define TBL_OUTPUT_BLOCKLINE          .formatter = &table_fmt_blockline
-#define TBL_OUTPUT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
+#define TBL_FMT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
+#define TBL_FMT_BLOCKLINE          .formatter = &table_fmt_blockline
+#define TBL_FMT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
 
 /**
  * The TBL_COL_ITER_START macro are used for iterating over all instances of a particular column in
@@ -272,8 +272,6 @@ void table_end(struct table *tbl);
  *     a custom printf-like format string
  *   * `table_col_`'type'`_name(table, name, value)` refers to the column
  *     by its name instead of its index.
- *   * `table_append_`'type'`(table, value)` appends a value to the most
- *     recently accessed cell.
  ***/
 
 
@@ -401,7 +399,7 @@ void table_set_formatter(struct table *tbl, const struct table_formatter *fmt);
  * | `cols`	| comma-separated column list	| set order of columns
  * | `fmt`	| `human`/`machine`/`block`	| set table formatter to one of the built-in formatters
  * | `col-delim`| string			| set column delimiter
-*  | `cell-fmt` | string                        | set column format type
+*  | `cells`    | string                        | set column format mode
  * |===================================================================================================
  **/
 const char *table_set_option_value(struct table *tbl, const char *key, const char *value);

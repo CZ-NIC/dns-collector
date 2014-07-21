@@ -20,7 +20,7 @@ static struct table_template test_tbl = {
     [TEST_COL1_TS] = TBL_COL_TIMESTAMP("ts", 20),
     TBL_COL_END
   },
-  TBL_OUTPUT_HUMAN_READABLE,
+  TBL_FMT_HUMAN_READABLE,
 };
 
 static void do_test(void)
@@ -72,7 +72,7 @@ static struct table_template test_tbl2 = {
     [TEST_COL1_TS] = TBL_COL_TIMESTAMP("ts", 20),
     TBL_COL_END
   },
-  TBL_OUTPUT_HUMAN_READABLE,
+  TBL_FMT_HUMAN_READABLE,
 };
 
 static void do_test2(void)

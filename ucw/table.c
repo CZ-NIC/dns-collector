@@ -314,11 +314,9 @@ void table_col_generic_format(struct table *tbl, int col, void *value, const str
   ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || expected_type == tbl->columns[col].type_def);
   tbl->last_printed_col = col;
   tbl->row_printing_started = 1;
-  const char *cell_content = NULL;
   TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {
     enum xtype_fmt fmt = curr_col->output_type;
-    cell_content = expected_type->format(value, fmt, tbl->pool);
-    curr_col->cell_content = cell_content;
+    curr_col->cell_content = expected_type->format(value, fmt, tbl->pool);
   } TBL_COL_ITER_END
 }
 
@@ -342,10 +340,7 @@ TABLE_COL_BODY(uintmax, uintmax_t)
 TABLE_COL_BODY(s64, s64)
 TABLE_COL_BODY(u64, u64)
 TABLE_COL_BODY(bool, bool)
-
-void table_col_str(struct table *tbl, int col, const char *val) {
-  table_col_generic_format(tbl, col, (void*)val, &xt_str);
-}
+TABLE_COL_BODY(str, const char *)
 
 void table_reset_row(struct table *tbl)
 {
@@ -414,9 +409,17 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
         return "Invalid argument to output-type option.";
       }
       return NULL;
-    } else if(strcmp(key, "cell-fmt") == 0) {
+    } else if(strcmp(key, "cells") == 0) {
       u32 fmt = 0;
       const char *err = xtype_parse_fmt(NULL, value, &fmt, tbl->pool);
+      if(err) return mp_printf(tbl->pool, "Invalid cell format: '%s'.", err);
+      for(uint i = 0; i < tbl->cols_to_output; i++) {
+        tbl->column_order[i].output_type = fmt;
+      }
+      return NULL;
+    } else if(strcmp(key, "raw") == 0 || strcmp(key, "pretty") == 0) {
+      u32 fmt = 0;
+      const char *err = xtype_parse_fmt(NULL, key, &fmt, tbl->pool);
       if(err) return mp_printf(tbl->pool, "Invalid cell format: '%s'.", err);
       for(uint i = 0; i < tbl->cols_to_output; i++) {
         tbl->column_order[i].output_type = fmt;
@@ -588,7 +591,7 @@ static struct table_template test_tbl = {
     TBL_COL_END
   },
   TBL_COL_ORDER(test_column_order),
-  TBL_OUTPUT_HUMAN_READABLE,
+  TBL_FMT_HUMAN_READABLE,
   TBL_COL_DELIMITER("\t"),
 };
 
@@ -679,7 +682,7 @@ static struct table_template test_any_tbl = {
     TBL_COL_END
   },
   TBL_COL_ORDER(test_any_column_order),
-  TBL_OUTPUT_HUMAN_READABLE,
+  TBL_FMT_HUMAN_READABLE,
   TBL_COL_DELIMITER("\t"),
 };
 
