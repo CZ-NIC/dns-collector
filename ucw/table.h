@@ -211,7 +211,7 @@ struct table {
 
 #define TBL_COLUMNS  .columns = (struct table_column [])
 #define TBL_COL_ORDER(order) .column_order = (struct table_col_instance *) order, .cols_to_output = ARRAY_SIZE(order)
-#define TBL_COL_DELIMITER(_delimiter_) .col_delimiter = _delimiter_
+#define TBL_COL_DELIMITER(_delimiter) .col_delimiter = _delimiter
 
 /**
  * These macros are used for definition of column order
@@ -277,7 +277,7 @@ void table_end(struct table *tbl);
  ***/
 
 
-#define TABLE_COL_PROTO(_name_, _type_) void table_col_##_name_(struct table *tbl, int col, _type_ val);
+#define TABLE_COL_PROTO(_name, _type) void table_col_##_name(struct table *tbl, int col, _type val);
 
 TABLE_COL_PROTO(int, int)
 TABLE_COL_PROTO(uint, uint)
@@ -291,8 +291,8 @@ TABLE_COL_PROTO(bool, bool)
 void table_col_str(struct table *tbl, int col, const char * val);
 
 /** TABLE_COL_BODY macro enables easy definitions of bodies of table_col_<something> functions **/
-#define TABLE_COL_BODY(_name_, _type_) void table_col_##_name_(struct table *tbl, int col, _type_ val) {\
-    table_col_generic_format(tbl, col, (void*)&val, &xt_##_name_);\
+#define TABLE_COL_BODY(_name, _type) void table_col_##_name(struct table *tbl, int col, _type val) {\
+    table_col_generic_format(tbl, col, (void*)&val, &xt_##_name);\
   }
 
 /**
