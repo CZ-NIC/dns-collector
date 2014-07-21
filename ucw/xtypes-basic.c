@@ -55,12 +55,12 @@ static const char *xt_double_format(void *src, u32 fmt, struct mempool *pool)
 
   switch(fmt) {
   case XTYPE_FMT_RAW:
-    return mp_printf(pool, "%.10lf", *(double *)src);
+    return mp_printf(pool, "%.15lg", *(double *)src);
   case XTYPE_FMT_PRETTY:
     return mp_printf(pool, "%.2lf", *(double *)src);
   case XTYPE_FMT_DEFAULT:
   default:
-    return mp_printf(pool, "%.5lf", *(double *)src);
+    return mp_printf(pool, "%.6lg", *(double *)src);
   }
 }
 
@@ -84,9 +84,9 @@ XTYPE_NUM_STRUCT(double, double)
 static const char *xt_bool_format(void *src, u32 fmt UNUSED, struct mempool *pool)
 {
   switch(fmt) {
-    case XTYPE_FMT_DEFAULT:
     case XTYPE_FMT_PRETTY:
       return mp_printf(pool, "%s", *((bool *)src) ? "true" : "false");
+    case XTYPE_FMT_DEFAULT:
     case XTYPE_FMT_RAW:
       return mp_printf(pool, "%s", *((bool *)src) ? "1" : "0");
     default:
