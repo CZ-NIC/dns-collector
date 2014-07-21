@@ -244,12 +244,7 @@ int table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_ar
 const char * table_set_col_order_by_name(struct table *tbl, const char *col_order_str)
 {
   if(col_order_str[0] == '*') {
-    int *col_order_int = alloca(sizeof(int) * tbl->column_count);
-    for(int i = 0; i < tbl->column_count; i++) {
-      col_order_int[i] = i;
-    }
-    table_set_col_order(tbl, col_order_int, tbl->column_count);
-
+    table_make_default_column_order(tbl);
     return NULL;
   }
 
