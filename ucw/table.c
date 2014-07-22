@@ -387,12 +387,13 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
   // Options with a value
   if(value) {
     if(strcmp(key, "header") == 0) {
-      if(value[1] != 0)
+      bool tmp;
+      const char *err = xt_bool.parse(value, &tmp, tbl->pool);
+      if(err)
         return mp_printf(tbl->pool, "Invalid header parameter: '%s' has invalid value: '%s'.", key, value);
-      uint tmp = value[0] - '0';
-      if(tmp > 1)
-        return mp_printf(tbl->pool, "Invalid header parameter: '%s' has invalid value: '%s'.", key, value);
+
       tbl->print_header = tmp;
+
       return NULL;
     } else if(strcmp(key, "cols") == 0) {
       return table_set_col_order_by_name(tbl, value);
