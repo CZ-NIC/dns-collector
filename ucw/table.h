@@ -104,7 +104,7 @@ struct table_column {
   uint fmt;                     // [*] default format of the column
   const struct xtype *type_def; // [*] pointer to xtype of this column
 
-  const char * (*set_col_instance_option)(struct table *tbl, uint col, const char *value);
+  const char * (*set_col_opt)(struct table *tbl, uint col, const char *value);
        // [*] process table option for a column instance
 };
 
@@ -115,7 +115,7 @@ struct table_col_instance {
   const struct table_column *col_def;  // this is pointer to the column definition, located in the array struct table::columns
   const char *cell_content;            // content of the cell of the current row
   int next_column;                     // index of next column in linked list of columns of the same type
-  uint fmt;                    // format of this column
+  uint fmt;                            // format of this column
 };
 
 /**
@@ -338,9 +338,11 @@ int table_get_col_idx(struct table *tbl, const char *col_name);
 
 
 /**
- * Sets a string argument to a column instance
+ * Sets a string option to an instance of a columnt type. This is the default version that checks
+ * whether the xtype::parse_fmt can be called and calls it. However, there are situation in which
+ * the xtype::parse_fmt is not sufficient, e.g., column decoration, post-processing, etc.
  **/
-const char *table_set_col_opt_default(struct table *tbl, uint col_idx, const char *col_opt);
+const char *table_set_col_opt(struct table *tbl, uint col_idx, const char *col_opt);
 
 /**
  * Returns a comma-and-space-separated list of column names, allocated from table's internal
