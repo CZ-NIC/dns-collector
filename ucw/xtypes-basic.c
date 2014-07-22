@@ -118,7 +118,7 @@ static const char *xt_bool_parse(const char *str, void *dest, struct mempool *po
   if(!str) return "Cannot parse bool: string is NULL.";
 
   if(str[1] == 0) {
-    if(str[0] == '1') {
+    if(str[0] == '0') {
       *((bool *)dest) = false;
       return NULL;
     }
