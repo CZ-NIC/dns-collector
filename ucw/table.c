@@ -218,23 +218,19 @@ static char * table_parse_col_arg(char *col_def)
 /**
  * Setting options for basic table types (as defined in table.h)
  **/
-int table_set_col_opt_default(struct table *tbl, int col_idx, const char *col_arg, char **err)
+const char *table_set_col_opt_default(struct table *tbl, uint col_idx, const char *col_opt)
 {
   const struct table_column *col_def = tbl->column_order[col_idx].col_def;
 
-  if(col_def->type_def == &xt_double) {
-    uint precision = 0;
-    const char *tmp_err = str_to_uint(&precision, col_arg, NULL, 0);
-    if(tmp_err) {
-      *err = mp_printf(tbl->pool, "An error occured while parsing precision: %s.", tmp_err);
-      return false;
-    }
-    tbl->column_order[col_idx].fmt = precision; // FIXME: shift the value of precision
-    return true;
+  if(col_def && col_def->type_def && col_def->type_def->parse_fmt) {
+    uint fmt = 0;
+    const char *tmp_err = col_def->type_def->parse_fmt(col_opt, &fmt, tbl->pool);
+    if(tmp_err) return tmp_err;
+    tbl->column_order[col_idx].fmt = fmt;
+    return NULL;
   }
 
-  *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_arg, col_idx);
-  return false;
+  return mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_opt, col_idx);
 }
 
 /**
@@ -284,8 +280,8 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     tbl->column_order[curr_col_idx].idx = col_idx;
     tbl->column_order[curr_col_idx].fmt = tbl->columns[col_idx].fmt;
     if(tbl->columns[col_idx].type_def && tbl->columns[col_idx].set_col_instance_option) {
-      char *err = NULL;
-      tbl->columns[col_idx].set_col_instance_option(tbl, curr_col_idx, arg, &err);
+      const char *err = NULL;
+      err = tbl->columns[col_idx].set_col_instance_option(tbl, curr_col_idx, arg);
       if(err) return mp_printf(tbl->pool, "Error occured while setting column option: %s.", err);
     }
 

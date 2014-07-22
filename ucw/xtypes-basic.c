@@ -77,7 +77,26 @@ static const char *xt_double_parse(const char *str, void *dest, struct mempool *
   return NULL;
 }
 
-XTYPE_NUM_STRUCT(double, double)
+static const char * xt_double_fmt_parse(const char *str, u32 *dest, struct mempool *pool)
+{
+  uint precision = 0;
+  const char *tmp_err = str_to_uint(&precision, str, NULL, 0);
+  if(tmp_err) {
+    return mp_printf(pool, "An error occured while parsing precision: %s.", tmp_err);
+  }
+
+  *dest = XTYPE_FMT_DBL_FIXED_PREC(precision);
+
+  return NULL;
+}
+
+const struct xtype xt_double = {
+  .size = sizeof(double),
+  .name = "double",
+  .parse = xt_double_parse,
+  .format = xt_double_format,
+  .parse_fmt = xt_double_fmt_parse
+};
 
 /* bool */
 

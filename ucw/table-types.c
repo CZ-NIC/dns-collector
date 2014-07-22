@@ -55,39 +55,25 @@ static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
   return mp_printf(pool, "%"PRIu64"%s", curr_val, unit_suffix[out_type]);
 }
 
-int table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
+static const char * xt_size_fmt_parse(const char *opt_str, u32 *dest, struct mempool *pool UNUSED)
 {
-  if(col_arg == NULL) {
-    *err = "NULL is not supported as a column argument.";
-    return TABLE_OPT_ERR;
+  if(opt_str == NULL) {
+    return "NULL is not supported as a column argument.";
   }
 
-  const struct table_column *col_def = tbl->column_order[col_inst_idx].col_def;
-  if(col_def->type_def != &xt_size) {
-    *err = NULL;
-    return TABLE_OPT_UNKNOWN;
+  if(strlen(opt_str) == 0 || strcasecmp(opt_str, "b") == 0 || strcasecmp(opt_str, "bytes") == 0) {
+    *dest = SIZE_UNIT_BYTE | SIZE_UNITS_FIXED;
+    return NULL;
   }
 
-  if(strlen(col_arg) == 0 || strcasecmp(col_arg, "b") == 0 || strcasecmp(col_arg, "bytes") == 0) {
-    tbl->column_order[col_inst_idx].fmt = SIZE_UNIT_BYTE | SIZE_UNITS_FIXED;
-    *err = NULL;
-    return TABLE_OPT_PROCESSED;
-  }
-
-  tbl->column_order[col_inst_idx].fmt = XTYPE_FMT_DEFAULT; // CELL_OUT_UNINITIALIZED;
   for(uint i = SIZE_UNIT_BYTE; i <= SIZE_UNIT_TERABYTE; i++) {
-    if(strcasecmp(col_arg, unit_suffix[i]) == 0) {
-      tbl->column_order[col_inst_idx].fmt = i | SIZE_UNITS_FIXED;
+    if(strcasecmp(opt_str, unit_suffix[i]) == 0) {
+      *dest = i | SIZE_UNITS_FIXED;
+      return NULL;
     }
   }
 
-  if(tbl->column_order[col_inst_idx].fmt == XTYPE_FMT_DEFAULT) {
-    *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d (counted from 0)", col_arg, col_inst_idx);
-    return TABLE_OPT_ERR;
-  }
-
-  *err = NULL;
-  return TABLE_OPT_PROCESSED;
+  return "Unknown option.";
 }
 
 TABLE_COL_BODY(size, u64)
@@ -97,37 +83,12 @@ const struct xtype xt_size = {
   .name = "size",
   //.parse = xt_size_parse,
   .format = xt_size_format,
+  .parse_fmt = xt_size_fmt_parse
 };
 
 /** xt_timestamp **/
 
 #define FORMAT_TIME_SIZE 20	// Minimum buffer size
-
-int table_set_col_opt_timestamp(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err)
-{
-  int col_type_idx = tbl->column_order[col_inst_idx].idx;
-  if(tbl->columns[col_type_idx].type_def != &xt_timestamp) {
-    *err = NULL;
-    return TABLE_OPT_UNKNOWN;
-  }
-
-  if(col_arg == NULL) {
-    *err = "NULL is not supported as a column argument.";
-    return TABLE_OPT_ERR;
-  }
-
-  if(strcasecmp(col_arg, "timestamp") == 0 || strcasecmp(col_arg, "epoch") == 0) {
-    tbl->column_order[col_inst_idx].fmt = TIMESTAMP_EPOCH;
-  } else if(strcasecmp(col_arg, "datetime") == 0) {
-    tbl->column_order[col_inst_idx].fmt = TIMESTAMP_DATETIME;
-  } else {
-    *err = mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_arg, col_inst_idx);
-    return TABLE_OPT_ERR;
-  }
-
-  *err = NULL;
-  return TABLE_OPT_PROCESSED;
-}
 
 static const char *xt_timestamp_format(void *src, u32 fmt, struct mempool *pool)
 {
@@ -152,6 +113,23 @@ static const char *xt_timestamp_format(void *src, u32 fmt, struct mempool *pool)
   return mp_printf(pool, "%s", formatted_time_buf);
 }
 
+static const char * xt_timestamp_fmt_parse(const char *opt_str, u32 *dest, struct mempool *pool)
+{
+  if(opt_str == NULL) {
+    return "NULL is not supported as a column argument.";
+  }
+
+  if(strcasecmp(opt_str, "timestamp") == 0 || strcasecmp(opt_str, "epoch") == 0) {
+    *dest = TIMESTAMP_EPOCH;
+    return NULL;
+  } else if(strcasecmp(opt_str, "datetime") == 0) {
+    *dest = TIMESTAMP_DATETIME;
+    return NULL;
+  }
+
+  return mp_printf(pool, "Invalid column format option: '%s'.", opt_str);
+}
+
 TABLE_COL_BODY(timestamp, u64)
 
 const struct xtype xt_timestamp = {
@@ -159,4 +137,5 @@ const struct xtype xt_timestamp = {
   .name = "timestamp",
   //.parse = xt_timestamp_parse,
   .format = xt_timestamp_format,
+  .parse_fmt = xt_timestamp_fmt_parse
 };

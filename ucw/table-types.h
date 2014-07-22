@@ -26,14 +26,11 @@ enum size_units {
 extern const struct xtype xt_size;
 extern const struct xtype xt_timestamp;
 
-int table_set_col_opt_size(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err);
-int table_set_col_opt_timestamp(struct table *tbl, uint col_inst_idx, const char *col_arg, char **err);
+#define TBL_COL_SIZE(_name, _width)       { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_size, .set_col_instance_option = table_set_col_opt_default }
+#define TBL_COL_TIMESTAMP(_name, _width)  { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_timestamp, .set_col_instance_option = table_set_col_opt_default }
 
-#define TBL_COL_SIZE(_name, _width)       { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_size, .set_col_instance_option = table_set_col_opt_size }
-#define TBL_COL_TIMESTAMP(_name, _width)  { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_timestamp, .set_col_instance_option = table_set_col_opt_timestamp }
-
-#define TBL_COL_SIZE_FMT(_name, _width, _units)    { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_size, .set_col_instance_option = table_set_col_opt_size }
-#define TBL_COL_TIMESTAMP_FMT(_name, _width, _fmt) { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_timestamp, .set_col_instance_option = table_set_col_opt_timestamp }
+#define TBL_COL_SIZE_FMT(_name, _width, _units)    { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_size, .set_col_instance_option = table_set_col_opt_default }
+#define TBL_COL_TIMESTAMP_FMT(_name, _width, _fmt) { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_timestamp, .set_col_instance_option = table_set_col_opt_default}
 
 
 TABLE_COL_PROTO(size, u64)
