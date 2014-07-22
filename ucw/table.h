@@ -172,7 +172,7 @@ struct table {
  *  * `TBL_COL_END` ends the column definitions
  *  * `TBL_COL_ORDER` specifies custom ordering of columns in the output
  *  * `TBL_COL_DELIMITER` and `TBL_APPEND_DELIMITER` override default delimiters
- *  * `TBL_FMT__HUMAN_READABLE` requests human-readable formatting (this is the default)
+ *  * `TBL_FMT_HUMAN_READABLE` requests human-readable formatting (this is the default)
  *  * `TBL_FMT_MACHINE_READABLE` requests machine-readable TSV output
  *  * `TBL_FMT_BLOCKLINE` requests block formatting (each cell printed a pair of a key and value on its own line)
  *
@@ -215,6 +215,9 @@ struct table {
 #define TBL_COL(_idx) { .idx = _idx, .fmt = XTYPE_FMT_DEFAULT, .next_column = -1 }
 #define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .fmt = _fmt, .next_column = -1 }
 
+/**
+ * These macros are aliases to various kinds of table formats.
+ **/
 #define TBL_FMT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
 #define TBL_FMT_BLOCKLINE          .formatter = &table_fmt_blockline
 #define TBL_FMT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
@@ -226,6 +229,9 @@ struct table {
  * enclosed in a block, so they do not introduce variable name collisions.
  *
  * The TBL_COL_ITER_END macro must close the block started with TBL_COL_ITER_START.
+ *
+ * These macros are usually used to hide the implementation details of the column instances linked
+ * list. This is usefull for definition of new types.
  **/
 #define TBL_COL_ITER_START(_tbl, _colidx, _instptr, _idxval) { struct table_col_instance *_instptr = NULL; int _idxval = _tbl->ll_headers[_colidx]; \
   for(_idxval = _tbl->ll_headers[_colidx], _instptr = _tbl->column_order + _idxval; _idxval != -1; _idxval = _tbl->column_order[_idxval].next_column, _instptr = _tbl->column_order + _idxval)
@@ -238,7 +244,7 @@ struct table {
  **/
 struct table *table_init(const struct table_template *tbl_template);
 
-/** Destroy a table definition, freeing all memory used by it. **/
+/** Destroy a table instance, freeing all memory used by it. **/
 void table_cleanup(struct table *tbl);
 
 /**
@@ -322,7 +328,7 @@ void table_col_fbend(struct table *tbl);
 void table_end_row(struct table *tbl);
 
 /**
- * Resets data in current row.
+ * Resets data in the current row.
  **/
 void table_reset_row(struct table *tbl);
 
@@ -341,6 +347,9 @@ int table_get_col_idx(struct table *tbl, const char *col_name);
  * Sets a string option to an instance of a columnt type. This is the default version that checks
  * whether the xtype::parse_fmt can be called and calls it. However, there are situation in which
  * the xtype::parse_fmt is not sufficient, e.g., column decoration, post-processing, etc.
+ *
+ * Each struct table_column has a pointer to a customized version of table_set_col_opt which is
+ * called instead of this (default) version of table_set_col_opt
  **/
 const char *table_set_col_opt(struct table *tbl, uint col_idx, const char *col_opt);
 
@@ -358,7 +367,7 @@ const char *table_get_col_list(struct table *tbl);
 void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
 
 /**
- * Returns 1 if col_idx will be printed, 0 otherwise.
+ * Returns true if col_idx will be printed, false otherwise.
  **/
 bool table_col_is_printed(struct table *tbl, uint col_idx);
 
@@ -397,7 +406,7 @@ void table_set_formatter(struct table *tbl, const struct table_formatter *fmt);
  * | `cols`	| comma-separated column list	| set order of columns
  * | `fmt`	| `human`/`machine`/`block`	| set table formatter to one of the built-in formatters
  * | `col-delim`| string			| set column delimiter
-*  | `cells`    | string                        | set column format mode
+ * | `cells`    | string                        | set column format mode
  * |===================================================================================================
  **/
 const char *table_set_option_value(struct table *tbl, const char *key, const char *value);
