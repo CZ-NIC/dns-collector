@@ -136,6 +136,7 @@ $(o)/ucw/opt-test: $(o)/ucw/opt-test.o $(LIBUCW)
 $(o)/ucw/table-test: $(o)/ucw/table-test.o $(LIBUCW)
 $(o)/ucw/table-test-2: $(o)/ucw/table-test-2.o $(LIBUCW)
 $(o)/ucw/table-test-align: $(o)/ucw/table-test-align.o $(LIBUCW)
+$(o)/ucw/xtypes-test: $(o)/ucw/xtypes-test.o $(LIBUCW)
 
 TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test stkstring.test \
     slists.test bbuf.test kmp-test.test getopt.test ff-unicode.test eltpool.test \
@@ -144,7 +145,7 @@ TESTS+=$(addprefix $(o)/ucw/,regex.test unicode.test hash-test.test mempool.test
     fb-mem.test fb-buffer.test fb-mmap.test fb-multi.test fb-null.test \
     redblack-test.test url.test strtonum-test.test \
     gary.test time.test crc.test signames.test md5.test bitops.test opt.test \
-    table.test table-test.test table-test-2.test table-test-align.test)
+    table.test table-test.test table-test-2.test table-test-align.test xtypes-test.test)
 
 $(o)/ucw/varint.test: $(o)/ucw/varint-t
 $(o)/ucw/regex.test: $(o)/ucw/regex-t
@@ -180,6 +181,7 @@ $(o)/ucw/table.test: $(o)/ucw/table-t
 $(o)/ucw/table-test.test: $(o)/ucw/table-test
 $(o)/ucw/table-test-2.test: $(o)/ucw/table-test-2
 $(o)/ucw/table-test-align.test: $(o)/ucw/table-test-align
+$(o)/ucw/xtypes-test.test: $(o)/ucw/xtypes-test
 
 ifdef CONFIG_UCW_THREADS
 TESTS+=$(addprefix $(o)/ucw/,asio.test)

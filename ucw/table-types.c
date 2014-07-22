@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <errno.h>
 
 /** xt_size **/
 
@@ -23,6 +24,14 @@ static const char *unit_suffix[] = {
   [SIZE_UNIT_TERABYTE] = "TB"
 };
 
+static u64 unit_div[] = {
+  [SIZE_UNIT_BYTE] = 1LLU,
+  [SIZE_UNIT_KILOBYTE] = 1024LLU,
+  [SIZE_UNIT_MEGABYTE] = 1024LLU * 1024LLU,
+  [SIZE_UNIT_GIGABYTE] = 1024LLU * 1024LLU * 1024LLU,
+  [SIZE_UNIT_TERABYTE] = 1024LLU * 1024LLU * 1024LLU * 1024LLU
+};
+
 static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
 {
   u64 curr_val = *(u64*) src;
@@ -32,14 +41,6 @@ static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
   }
 
   uint out_type = SIZE_UNIT_BYTE;
-
-  static u64 unit_div[] = {
-    [SIZE_UNIT_BYTE] = 1LLU,
-    [SIZE_UNIT_KILOBYTE] = 1024LLU,
-    [SIZE_UNIT_MEGABYTE] = 1024LLU * 1024LLU,
-    [SIZE_UNIT_GIGABYTE] = 1024LLU * 1024LLU * 1024LLU,
-    [SIZE_UNIT_TERABYTE] = 1024LLU * 1024LLU * 1024LLU * 1024LLU
-  };
 
   if(fmt == XTYPE_FMT_DEFAULT) {
     curr_val = curr_val / unit_div[SIZE_UNIT_BYTE];
@@ -76,12 +77,39 @@ static const char * xt_size_fmt_parse(const char *opt_str, u32 *dest, struct mem
   return "Unknown option.";
 }
 
+static const char *xt_size_parse(const char *str, void *dest, struct mempool *pool UNUSED)
+{
+  errno = 0;
+  char *units_start = NULL;
+  u64 parsed = strtol(str, &units_start, 10);
+  if(str == units_start) {
+    return mp_printf(pool, "Invalid value of size: '%s'.", str);
+  }
+  if(*units_start == 0) {
+    *(u64*) dest = (u64) parsed;
+    return NULL;
+  }
+
+  if(errno == EINVAL || errno == ERANGE) {
+    return mp_printf(pool, "Invalid value of size: '%s'.", str);
+  }
+
+  for(uint i = 0; i < ARRAY_SIZE(unit_suffix); i++) {
+    if(strcmp(unit_suffix[i], units_start) == 0) {
+      *(u64*) dest = parsed * unit_div[i];
+      return NULL;
+    }
+  }
+
+  return mp_printf(pool, "Invalid format of size: '%s'.", str);
+}
+
 TABLE_COL_BODY(size, u64)
 
 const struct xtype xt_size = {
   .size = sizeof(u64),
   .name = "size",
-  //.parse = xt_size_parse,
+  .parse = xt_size_parse,
   .format = xt_size_format,
   .parse_fmt = xt_size_fmt_parse
 };
