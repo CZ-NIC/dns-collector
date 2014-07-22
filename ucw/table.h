@@ -148,12 +148,12 @@ struct table {
   struct table_col_instance *column_order;  // [*] Order of the columns in the print-out of the table
   uint cols_to_output;			// [*] Number of columns that are printed
   const char *col_delimiter;		// [*] Delimiter that is placed between columns
-  uint print_header;			// [*] 0 indicates that table header should not be printed
+  bool print_header;			// [*] false indicates that table header should not be printed
 
   struct fastbuf *out;			// [*] Fastbuffer to which the table is printed
   int last_printed_col;			// Index of the last column which was set. -1 indicates start of row.
 					// Used for example for appending to the current column.
-  int row_printing_started;		// Indicates that a row has been started. Duplicates last_printed_col, but harmlessly.
+  bool row_printing_started;		// Indicates that a row has been started. Duplicates last_printed_col, but harmlessly.
   struct fbpool fb_col_out;		// Per-cell fastbuf, see table_col_fbstart()
   int col_out;				// Index of the column that is currently printed using fb_col_out
 

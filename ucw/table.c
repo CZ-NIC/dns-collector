@@ -62,10 +62,10 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
   }
 
   new_inst->col_delimiter = tbl_template->col_delimiter;
-  new_inst->print_header = 1;
+  new_inst->print_header = true;
   new_inst->out = 0;
   new_inst->last_printed_col = -1;
-  new_inst->row_printing_started = 0;
+  new_inst->row_printing_started = false;
   new_inst->col_out = -1;
   new_inst->formatter = tbl_template->formatter;
   new_inst->data = NULL;
@@ -80,7 +80,7 @@ struct table *table_init(const struct table_template *tbl_template)
     tbl->formatter = &table_fmt_human_readable;
   }
 
-  tbl->print_header = 1; // by default, print header
+  tbl->print_header = true; // by default, print header
   return tbl;
 }
 
@@ -102,7 +102,7 @@ static void table_make_default_column_order(struct table *tbl)
 void table_start(struct table *tbl, struct fastbuf *out)
 {
   tbl->last_printed_col = -1;
-  tbl->row_printing_started = 0;
+  tbl->row_printing_started = false;
   tbl->out = out;
 
   ASSERT_MSG(tbl->out, "Output fastbuf not specified.");
@@ -122,7 +122,7 @@ void table_start(struct table *tbl, struct fastbuf *out)
 void table_end(struct table *tbl)
 {
   tbl->last_printed_col = -1;
-  tbl->row_printing_started = 0;
+  tbl->row_printing_started = false;
 
   mp_restore(tbl->pool, &tbl->pool_state);
 
@@ -308,7 +308,7 @@ void table_col_generic_format(struct table *tbl, int col, void *value, const str
   ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
   ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || expected_type == tbl->columns[col].type_def);
   tbl->last_printed_col = col;
-  tbl->row_printing_started = 1;
+  tbl->row_printing_started = true;
   TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {
     enum xtype_fmt fmt = curr_col->fmt;
     curr_col->cell_content = expected_type->format(value, fmt, tbl->pool);
@@ -319,7 +319,7 @@ void table_col_printf(struct table *tbl, int col, const char *fmt, ...)
 {
   ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
   tbl->last_printed_col = col;
-  tbl->row_printing_started = 1;
+  tbl->row_printing_started = true;
   va_list args;
   va_start(args, fmt);
   char *cell_content = mp_vprintf(tbl->pool, fmt, args);
@@ -344,13 +344,13 @@ void table_reset_row(struct table *tbl)
   }
   mp_restore(tbl->pool, &tbl->pool_state);
   tbl->last_printed_col = -1;
-  tbl->row_printing_started = 0;
+  tbl->row_printing_started = false;
 }
 
 void table_end_row(struct table *tbl)
 {
   ASSERT(tbl->formatter->row_output);
-  if(tbl->row_printing_started == 0) return;
+  if(tbl->row_printing_started == false) return;
   tbl->formatter->row_output(tbl);
   table_reset_row(tbl);
 }
@@ -379,7 +379,7 @@ const char *table_set_option_value(struct table *tbl, const char *key, const cha
   // Options with no value
   if(value == NULL || (value != NULL && strlen(value) == 0)) {
     if(strcmp(key, "noheader") == 0) {
-      tbl->print_header = 0;
+      tbl->print_header = false;
       return NULL;
     }
   }
@@ -496,7 +496,7 @@ static void table_start_human_readable(struct table *tbl)
     tbl->col_delimiter = " ";
   }
 
-  if(tbl->print_header != 0) {
+  if(tbl->print_header != false) {
     table_write_header(tbl);
   }
 }
@@ -525,7 +525,7 @@ static void table_start_machine_readable(struct table *tbl)
     tbl->col_delimiter = "\t";
   }
 
-  if(tbl->print_header != 0 && tbl->cols_to_output > 0) {
+  if(tbl->print_header != false && tbl->cols_to_output > 0) {
     bputs(tbl->out, tbl->column_order[0].col_def->name);
     for(uint i = 1; i < tbl->cols_to_output; i++) {
       bputs(tbl->out, tbl->col_delimiter);
@@ -630,11 +630,11 @@ static void test_simple1(struct fastbuf *out)
   table_end(tbl);
 
   // this also tests whether there is need to call table_set_col_order_by_name after table_end was called
-  tbl->print_header = 0;
+  tbl->print_header = false;
   table_start(tbl, out);
   do_print1(tbl);
   table_end(tbl);
-  tbl->print_header = 1;
+  tbl->print_header = true;
 
   table_set_col_order_by_name(tbl, "col3_bool");
   table_start(tbl, out);
