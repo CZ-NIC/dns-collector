@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-static void test_size_correct(struct fastbuf *out)
+static void test_size_parse_correct(struct fastbuf *out)
 {
   static const char *size_strs[] = {
     "4",
@@ -70,7 +70,7 @@ static void test_size_parse_errors(struct fastbuf *out)
     u64 result;
     const char *parse_err = xt_size.parse(size_strs[i], &result, pool);
     if(parse_err == NULL) {
-      bprintf(out, "xt_size.parse did not result in error while parsing: '%s'.\n", size_strs[i]);
+      bprintf(out, "xt_size.parse incorrectly did not result in error while parsing: '%s'.\n", size_strs[i]);
     } else {
       bprintf(out, "xt_size.parse error: '%s'.\n", parse_err);
     }
@@ -81,7 +81,7 @@ static void test_size_parse_errors(struct fastbuf *out)
   mp_delete(pool);
 }
 
-static void test_bool_correct(struct fastbuf *out UNUSED)
+static void test_bool_parse_correct(struct fastbuf *out)
 {
   static const char *bool_strs[] = {
     "0",
@@ -104,9 +104,71 @@ static void test_bool_correct(struct fastbuf *out UNUSED)
   while(bool_strs[i] != NULL) {
     bool result;
     const char *err_str = xt_bool.parse(bool_strs[i], &result, pool);
-    ASSERT_MSG(err_str == NULL, "Unexpected error in xt_bool.parse.");
+    ASSERT_MSG(err_str == NULL, "Unexpected error in xt_bool.parse %s", err_str);
     ASSERT_MSG(bool_parsed[i] == result, "xt_bool.parse parsed an incorrect value.");
     bprintf(out, "%s %s\n", bool_strs[i], result ? "true" : "false");
+    i++;
+  }
+
+  mp_delete(pool);
+}
+
+static void test_timestamp_parse_correct(struct fastbuf *out)
+{
+  static const char *timestamp_strs[] = {
+    "1403685533",
+    "2014-06-25 08:38:53",
+    NULL
+  };
+
+  static u64 timestamp_parsed[] = {
+    1403685533,
+    1403685533,
+  };
+
+  struct mempool *pool = mp_new(4096);
+  uint i = 0;
+
+  while(timestamp_strs[i]) {
+    u64 result;
+    const char *err_str = xt_size.parse(timestamp_strs[i], &result, pool);
+    ASSERT_MSG(err_str == NULL, "Unexpected error in xt_size.parse: %s", err_str);
+    ASSERT_MSG(timestamp_parsed[i] == result, "Expected: %" PRIu64 " but got %" PRIu64, timestamp_parsed[i], result);
+    bprintf(out, "%" PRIu64 " %" PRIu64 "\n", timestamp_parsed[i], result);
+
+    i++;
+  }
+
+  mp_delete(pool);
+}
+
+static void test_timestamp_parse_errors(struct fastbuf *out UNUSED)
+{
+  static const char *timestamp_strs[] = {
+    "1403685533X",
+    "2014X-06-25 08:38:53",
+    "2X014-06-25 08:38:53",
+    "X1403685533",
+    NULL
+  };
+
+  struct mempool *pool = mp_new(4096);
+  uint i = 0;
+
+  while(timestamp_strs[i]) {
+    u64 result;
+    const char *err_str = xt_size.parse(timestamp_strs[i], &result, pool);
+
+    if(err_str == NULL) {
+      bprintf(out, "xt_timestamp.parse incorrectly did not result in error while parsing: '%s'.\n", timestamp_strs[i]);
+    } else {
+      bprintf(out, "xt_timestamp.parse error: '%s'.\n", err_str);
+    }
+
+    // ASSERT_MSG(err_str != NULL,
+    //bprintf(out, "%" PRIu64 " %" PRIu64 "\n", timestamp_parsed[i], result);
+    //ASSERT_MSG(timestamp_parsed[i] == result, "Expected: %" PRIu64 " but got %" PRIu64, timestamp_parsed[i], result);
+
     i++;
   }
 
@@ -118,9 +180,10 @@ int main(void)
   struct fastbuf *out;
   out = bfdopen_shared(1, 4096);
 
-  test_size_correct(out);
+  test_size_parse_correct(out);
   test_size_parse_errors(out);
-  test_bool_correct(out);
+  test_bool_parse_correct(out);
+  test_timestamp_parse_correct(out);
   bclose(out);
 
   return 0;
