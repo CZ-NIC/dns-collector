@@ -5,8 +5,11 @@ Out <<EOF
 4MB 4MB
 4GB 4GB
 4TB 4TB
-xt_size.parse error: 'Invalid format of size: '1X'.'.
+xt_size.parse error: 'Invalid units: 'X'.'.
 xt_size.parse error: 'Invalid value of size: 'KB'.'.
+xt_size.parse error: 'Invalid value of size: 'X1KB'.'.
+xt_size.parse error: 'Invalid units: 'XKB'.'.
+xt_size.parse error: 'Invalid units: 'KBX'.'.
 xt_size.parse error: 'Invalid value of size: ''.'.
 0 false
 1 true

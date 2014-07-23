@@ -63,6 +63,9 @@ static void test_size_parse_errors(struct fastbuf *out)
   static const char *size_strs[] = {
     "1X",
     "KB",
+    "X1KB",
+    "1XKB",
+    "1KBX",
     "\0",
     NULL
   };
