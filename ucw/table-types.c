@@ -49,7 +49,7 @@ static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
   return mp_printf(pool, "%"PRIu64"%s", curr_val, xtype_units_size[out_units].unit);
 }
 
-static const char * xt_size_fmt_parse(const char *opt_str, u32 *dest, struct mempool *pool UNUSED)
+static const char * xt_size_fmt_parse(const char *opt_str, u32 *dest, struct mempool *pool)
 {
   if(opt_str == NULL) {
     return "NULL is not supported as a column argument.";
@@ -69,7 +69,7 @@ static const char * xt_size_fmt_parse(const char *opt_str, u32 *dest, struct mem
   return NULL;
 }
 
-static const char *xt_size_parse(const char *str, void *dest, struct mempool *pool UNUSED)
+static const char *xt_size_parse(const char *str, void *dest, struct mempool *pool)
 {
   errno = 0;
   char *units_start = NULL;
@@ -153,7 +153,7 @@ static const char * xt_timestamp_fmt_parse(const char *opt_str, u32 *dest, struc
   return mp_printf(pool, "Invalid column format option: '%s'.", opt_str);
 }
 
-static const char *xt_timestamp_parse(const char *str, void *dest, struct mempool *pool UNUSED)
+static const char *xt_timestamp_parse(const char *str, void *dest, struct mempool *pool)
 {
   errno = 0;
   char *parse_end = NULL;
