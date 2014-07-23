@@ -73,7 +73,7 @@ static const char *xt_size_parse(const char *str, void *dest, struct mempool *po
 {
   errno = 0;
   char *units_start = NULL;
-  u64 parsed = strtol(str, &units_start, 10);
+  u64 parsed = strtoul(str, &units_start, 10);
   if(str == units_start) {
     return mp_printf(pool, "Invalid value of size: '%s'.", str);
   }
@@ -92,7 +92,7 @@ static const char *xt_size_parse(const char *str, void *dest, struct mempool *po
 
   int unit_idx = xtype_unit_parser(units_start, xtype_units_size);
   if(unit_idx == -1) {
-    return mp_printf(pool, "Invalid format of size: '%s'.", str);
+    return mp_printf(pool, "Invalid units: '%s'.", units_start);
   }
 
   *(u64*) dest = parsed * xtype_units_size[unit_idx].num;
@@ -157,7 +157,7 @@ static const char *xt_timestamp_parse(const char *str, void *dest, struct mempoo
 {
   errno = 0;
   char *parse_end = NULL;
-  u64 parsed = strtol(str, &parse_end, 10);
+  u64 parsed = strtoul(str, &parse_end, 10);
   if(str == parse_end) {
     return mp_printf(pool, "Invalid value of timestamp: '%s'.", str);
   }
