@@ -45,3 +45,16 @@ const char *xtype_format_fmt(struct xtype *xt, u32 fmt, struct mempool *pool)
 
   return "";
 }
+
+int xtype_unit_parser(const char *units_str, struct unit_definition *units_def)
+{
+  int i = 0;
+  while(units_def[i].unit != NULL) {
+    if(strcmp(units_str, units_def[i].unit) == 0) {
+      return i;
+    }
+    i++;
+  }
+
+  return -1;
+}

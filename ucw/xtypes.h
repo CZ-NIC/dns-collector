@@ -60,6 +60,23 @@ typedef const char * (*xtype_fmt_parser)(const char *str, u32 *dest, struct memp
 typedef const char * (*xtype_fmt_formatter)(u32 fmt, struct mempool *pool);
 
 /**
+ * Definition of the units that are appended to an xtype value. The value with units is represented
+ * by the following string: "<value><units>". The final value of the of the string is computed using
+ * the following formula: <value> * <num>/<denom>.
+ **/
+struct unit_definition {
+  const char *unit; // string representation of unit
+  u64 num;
+  u64 denom;
+};
+
+/**
+ * Parses a unit definition in units_str and returns index into units_def array. -1 if the units
+ * were not contained in the array.
+ **/
+int xtype_unit_parser(const char *units_str, struct unit_definition *units_def);
+
+/**
  * This structure describes an xtype. Among other things, it points to callback
  * functions handling this xtype.
  **/

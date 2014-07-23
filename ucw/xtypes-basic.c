@@ -69,8 +69,8 @@ static const char *xt_double_parse(const char *str, void *dest, struct mempool *
   char *endptr = NULL;
   errno = 0;
   double result = strtod(str, &endptr);
-  if(*endptr != 0 || endptr == str) return "Could not parse double.";
-  if(errno == ERANGE) return "Could not parse double.";
+  if(*endptr != 0 || endptr == str) return "Could not parse floating point number.";
+  if(errno == ERANGE) return "Could not parse floating point number.";
 
   *((double *) dest) = result;
 

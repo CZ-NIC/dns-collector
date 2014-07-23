@@ -16,7 +16,6 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-
 static void test_size_correct(struct fastbuf *out)
 {
   static const char *size_strs[] = {

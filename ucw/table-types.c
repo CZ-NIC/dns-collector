@@ -16,20 +16,13 @@
 
 /** xt_size **/
 
-static const char *unit_suffix[] = {
-  [SIZE_UNIT_BYTE] = "",
-  [SIZE_UNIT_KILOBYTE] = "KB",
-  [SIZE_UNIT_MEGABYTE] = "MB",
-  [SIZE_UNIT_GIGABYTE] = "GB",
-  [SIZE_UNIT_TERABYTE] = "TB"
-};
-
-static u64 unit_div[] = {
-  [SIZE_UNIT_BYTE] = 1LLU,
-  [SIZE_UNIT_KILOBYTE] = 1024LLU,
-  [SIZE_UNIT_MEGABYTE] = 1024LLU * 1024LLU,
-  [SIZE_UNIT_GIGABYTE] = 1024LLU * 1024LLU * 1024LLU,
-  [SIZE_UNIT_TERABYTE] = 1024LLU * 1024LLU * 1024LLU * 1024LLU
+struct unit_definition xtype_units_size[] = {
+  [SIZE_UNIT_BYTE] = { "", 1LLU, 1 },
+  [SIZE_UNIT_KILOBYTE] = { "KB", 1024LLU, 1 },
+  [SIZE_UNIT_MEGABYTE] = { "MB", 1024LLU * 1024LLU, 1 },
+  [SIZE_UNIT_GIGABYTE] = { "GB", 1024LLU * 1024LLU * 1024LLU, 1 },
+  [SIZE_UNIT_TERABYTE] = { "TB", 1024LLU * 1024LLU * 1024LLU * 1024LLU, 1 },
+  { 0, 0, 0 }
 };
 
 static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
@@ -40,20 +33,20 @@ static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
     return mp_printf(pool, "%"PRIu64, curr_val);
   }
 
-  uint out_type = SIZE_UNIT_BYTE;
+  uint out_units = SIZE_UNIT_BYTE;
 
   if(fmt == XTYPE_FMT_DEFAULT) {
-    curr_val = curr_val / unit_div[SIZE_UNIT_BYTE];
-    out_type = SIZE_UNIT_BYTE;
+    curr_val = curr_val;
+    out_units = SIZE_UNIT_BYTE;
   } else if(fmt == XTYPE_FMT_PRETTY) {
-    curr_val = curr_val / unit_div[SIZE_UNIT_BYTE];
-    out_type = SIZE_UNIT_BYTE;
+    curr_val = curr_val;
+    out_units = SIZE_UNIT_BYTE;
   } else if((fmt & SIZE_UNITS_FIXED) != 0) {
-    curr_val = curr_val / unit_div[fmt & ~SIZE_UNITS_FIXED];
-    out_type = fmt & ~SIZE_UNITS_FIXED;
+    curr_val = curr_val / xtype_units_size[fmt & ~SIZE_UNITS_FIXED].num;
+    out_units = fmt & ~SIZE_UNITS_FIXED;
   }
 
-  return mp_printf(pool, "%"PRIu64"%s", curr_val, unit_suffix[out_type]);
+  return mp_printf(pool, "%"PRIu64"%s", curr_val, xtype_units_size[out_units].unit);
 }
 
 static const char * xt_size_fmt_parse(const char *opt_str, u32 *dest, struct mempool *pool UNUSED)
@@ -62,19 +55,18 @@ static const char * xt_size_fmt_parse(const char *opt_str, u32 *dest, struct mem
     return "NULL is not supported as a column argument.";
   }
 
-  if(strlen(opt_str) == 0 || strcasecmp(opt_str, "b") == 0 || strcasecmp(opt_str, "bytes") == 0) {
+  if(strlen(opt_str) == 0 || strcmp(opt_str, "B") == 0 || strcmp(opt_str, "Bytes") == 0) {
     *dest = SIZE_UNIT_BYTE | SIZE_UNITS_FIXED;
     return NULL;
   }
 
-  for(uint i = SIZE_UNIT_BYTE; i <= SIZE_UNIT_TERABYTE; i++) {
-    if(strcasecmp(opt_str, unit_suffix[i]) == 0) {
-      *dest = i | SIZE_UNITS_FIXED;
-      return NULL;
-    }
+  int unit_idx = xtype_unit_parser(opt_str, xtype_units_size);
+  if(unit_idx == -1) {
+    return mp_printf(pool, "Unknown option '%s'", opt_str);
   }
 
-  return "Unknown option.";
+  *dest = unit_idx | SIZE_UNITS_FIXED;
+  return NULL;
 }
 
 static const char *xt_size_parse(const char *str, void *dest, struct mempool *pool UNUSED)
@@ -85,23 +77,26 @@ static const char *xt_size_parse(const char *str, void *dest, struct mempool *po
   if(str == units_start) {
     return mp_printf(pool, "Invalid value of size: '%s'.", str);
   }
+
+  if(errno == EINVAL) {
+    return "Error occured during parsing of size.";
+  }
+  if(errno == ERANGE) {
+    return "Error: size value either too large or too small.";
+  }
+
   if(*units_start == 0) {
     *(u64*) dest = (u64) parsed;
     return NULL;
   }
 
-  if(errno == EINVAL || errno == ERANGE) {
-    return mp_printf(pool, "Invalid value of size: '%s'.", str);
+  int unit_idx = xtype_unit_parser(units_start, xtype_units_size);
+  if(unit_idx == -1) {
+    return mp_printf(pool, "Invalid format of size: '%s'.", str);
   }
 
-  for(uint i = 0; i < ARRAY_SIZE(unit_suffix); i++) {
-    if(strcmp(unit_suffix[i], units_start) == 0) {
-      *(u64*) dest = parsed * unit_div[i];
-      return NULL;
-    }
-  }
-
-  return mp_printf(pool, "Invalid format of size: '%s'.", str);
+  *(u64*) dest = parsed * xtype_units_size[unit_idx].num;
+  return NULL;
 }
 
 TABLE_COL_BODY(size, u64)
@@ -158,12 +153,48 @@ static const char * xt_timestamp_fmt_parse(const char *opt_str, u32 *dest, struc
   return mp_printf(pool, "Invalid column format option: '%s'.", opt_str);
 }
 
+static const char *xt_timestamp_parse(const char *str, void *dest, struct mempool *pool UNUSED)
+{
+  errno = 0;
+  char *parse_end = NULL;
+  u64 parsed = strtol(str, &parse_end, 10);
+  if(str == parse_end) {
+    return mp_printf(pool, "Invalid value of timestamp: '%s'.", str);
+  }
+  if(errno == EINVAL) {
+    return "Error occured during parsing of size.";
+  }
+
+  if(errno == ERANGE) {
+    return "Error: size value either too large or too small.";
+  }
+
+  if(*parse_end == 0) {
+    *(u64*) dest = (u64) parsed;
+    return NULL;
+  }
+
+
+  struct tm parsed_time;
+  errno = 0;
+  parse_end = strptime(str, "%F %T", &parsed_time);
+  if(parse_end == NULL) {
+    return mp_printf(pool, "Invalid value of timestamp: '%s'.", str);
+  }
+
+  time_t tmp_time = mktime(&parsed_time);
+  *(u64*)dest = (u64) tmp_time;
+
+  return NULL;
+}
+
+
 TABLE_COL_BODY(timestamp, u64)
 
 const struct xtype xt_timestamp = {
   .size = sizeof(u64),
   .name = "timestamp",
-  //.parse = xt_timestamp_parse,
+  .parse = xt_timestamp_parse,
   .format = xt_timestamp_format,
   .parse_fmt = xt_timestamp_fmt_parse
 };
