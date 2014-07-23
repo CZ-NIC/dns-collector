@@ -18,5 +18,8 @@ xt_timestamp.parse error: 'Invalid value of timestamp: '1403685533X'.'.
 xt_timestamp.parse error: 'Invalid value of timestamp: '2014X-06-25 08:38:53'.'.
 xt_timestamp.parse error: 'Invalid value of timestamp: '2X014-06-25 08:38:53'.'.
 xt_timestamp.parse error: 'Invalid value of timestamp: '2014-06-25 08:38:53X'.'.
+xt_timestamp.parse error: 'Invalid value of timestamp: 'X2014-06-25 08:38:53'.'.
 xt_timestamp.parse error: 'Invalid value of timestamp: 'X1403685533'.'.
+xt_timestamp.parse error: 'Invalid value of timestamp: '14X03685533'.'.
+xt_timestamp.parse error: 'Invalid value of timestamp: '1403685533X'.'.
 EOF
