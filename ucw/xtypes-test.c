@@ -42,8 +42,12 @@ static void test_size_parse_correct(struct fastbuf *out)
     u64 result;
     const char *parse_err = xt_size.parse(size_strs[i], &result, pool);
 
-    ASSERT_MSG(parse_err == NULL, "Unexpected error in xt_size.parse");
-    ASSERT_MSG(size_parsed[i] == result, "xt_size.parse parsed an incorrect value.");
+    if(parse_err != NULL) {
+      die("Unexpected error in xt_size.parse");
+    }
+    if(size_parsed[i] != result) {
+      die("xt_size.parse parsed an incorrect value.");
+    }
 
     const char *result_str = xt_size.format(&result, i | SIZE_UNITS_FIXED, pool);
     bprintf(out, "%s %s\n", size_strs[i], result_str);
@@ -104,8 +108,12 @@ static void test_bool_parse_correct(struct fastbuf *out)
   while(bool_strs[i] != NULL) {
     bool result;
     const char *err_str = xt_bool.parse(bool_strs[i], &result, pool);
-    ASSERT_MSG(err_str == NULL, "Unexpected error in xt_bool.parse %s", err_str);
-    ASSERT_MSG(bool_parsed[i] == result, "xt_bool.parse parsed an incorrect value.");
+    if(err_str != NULL) {
+      die("Unexpected error in xt_bool.parse %s", err_str);
+    }
+    if(bool_parsed[i] != result) {
+      die("xt_bool.parse parsed an incorrect value.");
+    }
     bprintf(out, "%s %s\n", bool_strs[i], result ? "true" : "false");
     i++;
   }
@@ -132,8 +140,13 @@ static void test_timestamp_parse_correct(struct fastbuf *out)
   while(timestamp_strs[i]) {
     u64 result;
     const char *err_str = xt_timestamp.parse(timestamp_strs[i], &result, pool);
-    ASSERT_MSG(err_str == NULL, "Unexpected error in xt_size.parse: %s", err_str);
-    ASSERT_MSG(timestamp_parsed[i] == result, "Expected: %" PRIu64 " but got %" PRIu64, timestamp_parsed[i], result);
+    if(err_str != NULL) {
+      die("Unexpected error in xt_timestamp.parse: %s", err_str);
+    }
+    if(timestamp_parsed[i] != result) {
+      die("Expected: %" PRIu64 " but got %" PRIu64, timestamp_parsed[i], result);
+    }
+
     bprintf(out, "%" PRIu64 " %" PRIu64 "\n", timestamp_parsed[i], result);
 
     i++;
@@ -148,6 +161,7 @@ static void test_timestamp_parse_errors(struct fastbuf *out)
     "1403685533X",
     "2014X-06-25 08:38:53",
     "2X014-06-25 08:38:53",
+    "2014-06-25 08:38:53X",
     "X1403685533",
     NULL
   };
@@ -164,10 +178,6 @@ static void test_timestamp_parse_errors(struct fastbuf *out)
     } else {
       bprintf(out, "xt_timestamp.parse error: '%s'.\n", err_str);
     }
-
-    // ASSERT_MSG(err_str != NULL,
-    //bprintf(out, "%" PRIu64 " %" PRIu64 "\n", timestamp_parsed[i], result);
-    //ASSERT_MSG(timestamp_parsed[i] == result, "Expected: %" PRIu64 " but got %" PRIu64, timestamp_parsed[i], result);
 
     i++;
   }

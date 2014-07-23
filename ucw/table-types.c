@@ -174,12 +174,12 @@ static const char *xt_timestamp_parse(const char *str, void *dest, struct mempoo
     return NULL;
   }
 
-
   struct tm parsed_time;
-  //"%Y-%m-%d %H:%M:%S"
-  //"%F %T"
   parse_end = strptime(str, "%F %T", &parsed_time);
   if(parse_end == NULL) {
+    return mp_printf(pool, "Invalid value of timestamp: '%s'.", str);
+  }
+  if(*parse_end != 0) {
     return mp_printf(pool, "Invalid value of timestamp: '%s'.", str);
   }
 
