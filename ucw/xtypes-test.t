@@ -12,4 +12,10 @@ xt_size.parse error: 'Invalid value of size: ''.'.
 1 true
 false false
 true true
+1403685533 1403685533
+1403678333 1403678333
+xt_timestamp.parse error: 'Invalid value of timestamp: '1403685533X'.'.
+xt_timestamp.parse error: 'Invalid value of timestamp: '2014X-06-25 08:38:53'.'.
+xt_timestamp.parse error: 'Invalid value of timestamp: '2X014-06-25 08:38:53'.'.
+xt_timestamp.parse error: 'Invalid value of timestamp: 'X1403685533'.'.
 EOF
