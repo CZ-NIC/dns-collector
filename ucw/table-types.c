@@ -16,7 +16,7 @@
 
 /** xt_size **/
 
-struct unit_definition xtype_units_size[] = {
+static struct unit_definition xtype_units_size[] = {
   [SIZE_UNIT_BYTE] = { "", 1LLU, 1 },
   [SIZE_UNIT_KILOBYTE] = { "KB", 1024LLU, 1 },
   [SIZE_UNIT_MEGABYTE] = { "MB", 1024LLU * 1024LLU, 1 },
