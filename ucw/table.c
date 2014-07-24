@@ -296,7 +296,7 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
 
 /*** Table cells ***/
 
-static void table_set_all_inst_content(struct table *tbl, int col_templ, const char *col_content)
+static void table_set_raw(struct table *tbl, int col_templ, const char *col_content)
 {
   TBL_COL_ITER_START(tbl, col_templ, curr_col_ptr, curr_col) {
     curr_col_ptr->cell_content = col_content;
@@ -323,7 +323,7 @@ void table_col_printf(struct table *tbl, int col, const char *fmt, ...)
   va_list args;
   va_start(args, fmt);
   char *cell_content = mp_vprintf(tbl->pool, fmt, args);
-  table_set_all_inst_content(tbl, col, cell_content);
+  table_set_raw(tbl, col, cell_content);
   va_end(args);
 }
 
@@ -368,7 +368,7 @@ struct fastbuf *table_col_fbstart(struct table *tbl, int col)
 void table_col_fbend(struct table *tbl)
 {
   char *cell_content = fbpool_end(&tbl->fb_col_out);
-  table_set_all_inst_content(tbl, tbl->col_out, cell_content);
+  table_set_raw(tbl, tbl->col_out, cell_content);
   tbl->col_out = -1;
 }
 
