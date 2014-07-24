@@ -270,10 +270,6 @@ void table_end(struct table *tbl);
  *
  *   * `table_col_`'type'`(table, idx, value)` sets the cell in column `idx`
  *     to the `value`
- *   * `table_col_`'type'`_fmt(table, idx, fmt, ...)` does the same with
- *     a custom printf-like format string
- *   * `table_col_`'type'`_name(table, name, value)` refers to the column
- *     by its name instead of its index.
  ***/
 
 
@@ -360,9 +356,10 @@ const char *table_set_col_opt(struct table *tbl, uint col_idx, const char *col_o
 const char *table_get_col_list(struct table *tbl);
 
 /**
- * Sets the order in which the columns are printed. The @col_order parameter is used until @table_end() or
- * @table_cleanup() is called. The table stores only the pointer and the memory pointed to by @col_order is
- * allocated and deallocated by the caller.
+ * Sets the order in which the columns are printed. The @col_order parameter is used until
+ * @table_end() or @table_cleanup() is called. The table converts the integers in @col_order into
+ * internal representation stored in @column_order. Options to column instances can be set using
+ * @table_set_col_opt.
  **/
 void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
 
