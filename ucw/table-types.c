@@ -25,6 +25,21 @@ static struct unit_definition xtype_units_size[] = {
   { 0, 0, 0 }
 };
 
+static enum size_units xt_size_auto_units(u64 sz)
+{
+  if(sz >= xtype_units_size[SIZE_UNIT_TERABYTE].num) {
+    return SIZE_UNIT_TERABYTE;
+  } else if(sz >= xtype_units_size[SIZE_UNIT_GIGABYTE].num) {
+    return SIZE_UNIT_GIGABYTE;
+  } else if(sz >= xtype_units_size[SIZE_UNIT_MEGABYTE].num) {
+    return SIZE_UNIT_MEGABYTE;
+  } else if(sz >= xtype_units_size[SIZE_UNIT_KILOBYTE].num) {
+    return SIZE_UNIT_KILOBYTE;
+  }
+
+  return SIZE_UNIT_BYTE;
+}
+
 static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
 {
   u64 curr_val = *(u64*) src;
@@ -39,8 +54,13 @@ static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
     curr_val = curr_val;
     out_units = SIZE_UNIT_BYTE;
   } else if(fmt == XTYPE_FMT_PRETTY) {
-    curr_val = curr_val;
-    out_units = SIZE_UNIT_BYTE;
+    // the same as SIZE_UNIT_AUTO
+    out_units = xt_size_auto_units(curr_val);
+    curr_val = curr_val / xtype_units_size[out_units].num;
+  } else if((fmt & SIZE_UNITS_FIXED) != 0 && (fmt & SIZE_UNIT_AUTO) == SIZE_UNIT_AUTO) {
+    // the same as XTYPE_FMT_PRETTY
+    out_units = xt_size_auto_units(curr_val);
+    curr_val = curr_val / xtype_units_size[out_units].num;
   } else if((fmt & SIZE_UNITS_FIXED) != 0) {
     curr_val = curr_val / xtype_units_size[fmt & ~SIZE_UNITS_FIXED].num;
     out_units = fmt & ~SIZE_UNITS_FIXED;
@@ -57,6 +77,11 @@ static const char *xt_size_fmt_parse(const char *opt_str, u32 *dest, struct memp
 
   if(strlen(opt_str) == 0 || strcmp(opt_str, "B") == 0 || strcmp(opt_str, "Bytes") == 0) {
     *dest = SIZE_UNIT_BYTE | SIZE_UNITS_FIXED;
+    return NULL;
+  }
+
+  if(strcmp(opt_str, "auto") == 0) {
+    *dest = SIZE_UNIT_AUTO | SIZE_UNITS_FIXED;
     return NULL;
   }
 

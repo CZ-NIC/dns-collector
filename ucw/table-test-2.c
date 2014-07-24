@@ -81,7 +81,7 @@ static void do_test2(void)
   out = bfdopen_shared(1, 4096);
   struct table *tbl = table_init(&test_tbl2);
   table_set_col_order_by_name(tbl, "");
-  const char *err = table_set_option_value(tbl, "cols", "size[KB],size[MB],size[GB],size[TB],ts[datetime],ts[timestamp]");
+  const char *err = table_set_option_value(tbl, "cols", "size[KB],size[MB],size[GB],size[TB],size[auto],ts[datetime],ts[timestamp]");
   if(err) {
     opt_failure("err in table_set_option_value: '%s'.", err);
     abort();
@@ -89,11 +89,13 @@ static void do_test2(void)
   table_start(tbl, out);
 
   u64 test_time = 1403685533;
-  s64 test_size = 4LU*(1024LU * 1024LU * 1024LU);
+  s64 test_size = 4LU*(1024LU * 1024LU);
 
   table_col_size(tbl, TEST_COL0_SIZE, test_size);
   table_col_timestamp(tbl, TEST_COL1_TS, test_time);
   table_end_row(tbl);
+
+  test_size = test_size * 1024LU;
 
   table_col_size(tbl, TEST_COL0_SIZE, test_size);
   table_col_timestamp(tbl, TEST_COL1_TS, test_time);
