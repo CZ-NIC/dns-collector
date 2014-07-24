@@ -10,6 +10,21 @@
 #ifndef _UCW_XTYPE_H
 #define _UCW_XTYPE_H
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define xt_bool ucw_xt_bool
+#define xt_double ucw_xt_double
+#define xt_int ucw_xt_int
+#define xt_intmax ucw_xt_intmax
+#define xt_s64 ucw_xt_s64
+#define xt_str ucw_xt_str
+#define xt_u64 ucw_xt_u64
+#define xt_uint ucw_xt_uint
+#define xt_uintmax ucw_xt_uintmax
+#define xtype_format_fmt ucw_xtype_format_fmt
+#define xtype_parse_fmt ucw_xtype_parse_fmt
+#define xtype_unit_parser ucw_xtype_unit_parser
+#endif
+
 struct mempool;
 
 /**

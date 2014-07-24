@@ -9,6 +9,13 @@
 
 #include <ucw/table.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define table_col_size ucw_table_col_size
+#define table_col_timestamp ucw_table_col_timestamp
+#define xt_size ucw_xt_size
+#define xt_timestamp ucw_xt_timestamp
+#endif
+
 enum size_units {
   SIZE_UNIT_BYTE,
   SIZE_UNIT_KILOBYTE,
