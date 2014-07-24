@@ -138,6 +138,16 @@ static const char *xt_bool_parse(const char *str, void *dest, struct mempool *po
     return NULL;
   }
 
+  if(strcasecmp(str, "no") == 0) {
+    *((bool *)dest) = false;
+    return NULL;
+  }
+
+  if(strcasecmp(str, "yes") == 0) {
+    *((bool *)dest) = true;
+    return NULL;
+  }
+
   return "Could not parse bool.";
 }
 
