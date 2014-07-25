@@ -186,9 +186,9 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
   table_update_ll(tbl);
 }
 
-bool table_col_is_printed(struct table *tbl, uint col_idx)
+bool table_col_is_printed(struct table *tbl, uint col_def_idx)
 {
-  if(tbl->ll_headers[col_idx] == -1) return 0;
+  if(tbl->ll_headers[col_def_idx] == -1) return 0;
 
   return 1;
 }

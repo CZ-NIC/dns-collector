@@ -106,7 +106,7 @@ struct table_template {
   uint cols_to_output;                      // [*] Number of columns that are printed
   const char *col_delimiter;                // [*] Delimiter that is placed between columns
   // Back-end used for table formatting and its private data
-  const struct table_formatter *formatter; // FIXME: should be const?
+  const struct table_formatter *formatter;
 };
 
 /**
@@ -354,7 +354,7 @@ void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
  * FIXME: Naming of arguments is confusing. @col_idx sometimes indexes
  * columns, but sometimes their instances.
  **/
-bool table_col_is_printed(struct table *tbl, uint col_idx);
+bool table_col_is_printed(struct table *tbl, uint col_def_idx);
 
 /**
  * Sets the order in which the columns are printed. The specification is a string with comma-separated column
