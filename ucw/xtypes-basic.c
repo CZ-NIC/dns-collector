@@ -48,20 +48,24 @@ XTYPE_NUM_DEF(uintmax_t, "%ju", uintmax)
 
 static const char *xt_double_format(void *src, u32 fmt, struct mempool *pool)
 {
-  if(fmt & XTYPE_FMT_DBL_PREC) {
-    uint prec = fmt & ~XTYPE_FMT_DBL_PREC;
-    return mp_printf(pool, "%.*lf", prec, *(double *)src);
-  }
+  double val = *((double *)src);
 
-  switch(fmt) {
-  case XTYPE_FMT_RAW:
-    return mp_printf(pool, "%.15lg", *(double *)src);
-  case XTYPE_FMT_PRETTY:
-    return mp_printf(pool, "%.2lf", *(double *)src);
-  case XTYPE_FMT_DEFAULT:
-  default:
-    return mp_printf(pool, "%.6lg", *(double *)src);
-  }
+  if (fmt & XTYPE_FMT_DBL_PREC)
+    {
+      uint prec = fmt & ~XTYPE_FMT_DBL_PREC;
+      return mp_printf(pool, "%.*lf", prec, val);
+    }
+
+  switch(fmt)
+    {
+    case XTYPE_FMT_RAW:
+      return mp_printf(pool, "%.15lg", val);
+    case XTYPE_FMT_PRETTY:
+      return mp_printf(pool, "%.2lf", val);
+    case XTYPE_FMT_DEFAULT:
+    default:
+      return mp_printf(pool, "%.6lg", val);
+    }
 }
 
 static const char *xt_double_parse(const char *str, void *dest, struct mempool *pool UNUSED)
@@ -69,11 +73,11 @@ static const char *xt_double_parse(const char *str, void *dest, struct mempool *
   char *endptr = NULL;
   errno = 0;
   double result = strtod(str, &endptr);
-  if(*endptr != 0 || endptr == str) return "Could not parse floating point number.";
-  if(errno == ERANGE) return "Could not parse floating point number.";
+  if (*endptr != 0 || endptr == str ||
+      errno == ERANGE)
+    return "Could not parse floating point number.";
 
   *((double *) dest) = result;
-
   return NULL;
 }
 
@@ -81,12 +85,10 @@ static const char * xt_double_fmt_parse(const char *str, u32 *dest, struct mempo
 {
   uint precision = 0;
   const char *tmp_err = str_to_uint(&precision, str, NULL, 0);
-  if(tmp_err) {
-    return mp_printf(pool, "An error occured while parsing precision: %s.", tmp_err);
-  }
+  if (tmp_err)
+    return mp_printf(pool, "Could not parse floating point number precision: %s", tmp_err);
 
   *dest = XTYPE_FMT_DBL_FIXED_PREC(precision);
-
   return NULL;
 }
 
