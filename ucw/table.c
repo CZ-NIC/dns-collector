@@ -20,7 +20,7 @@ static void table_update_ll(struct table *tbl);
 
 /*** Management of tables ***/
 
-static struct table *table_make_instance(const struct table_template *tbl_template)
+struct table *table_init(const struct table_template *tbl_template)
 {
   struct mempool *pool = mp_new(4096);
   struct table *new_inst = mp_alloc_zero(pool, sizeof(struct table));
@@ -72,15 +72,6 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
   }
   new_inst->formatter_data = NULL;
   return new_inst;
-}
-
-struct table *table_init(const struct table_template *tbl_template)
-{
-  struct table *tbl = table_make_instance(tbl_template);
-  // FIXME: What remains of table_init()? Just combine it with table_make_instance()
-
-
-  return tbl;
 }
 
 void table_cleanup(struct table *tbl)
