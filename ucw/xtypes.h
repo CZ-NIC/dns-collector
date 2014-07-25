@@ -114,8 +114,8 @@ extern const struct xtype xt_bool;
 extern const struct xtype xt_double;
 
 // Fixed-precision formats for xt_double
-#define XTYPE_FMT_DBL_FIXED_PREC(_prec) (_prec | XTYPE_FMT_DBL_PREC)
-#define XTYPE_FMT_DBL_PREC XTYPE_FMT_CUSTOM
+#define XT_DOUBLE_FMT_PREC(_prec) (_prec | XT_DOUBLE_FMT_PREC_FLAG)
+#define XT_DOUBLE_FMT_PREC_FLAG XTYPE_FMT_CUSTOM
 
 /* Tables of units, provided as convenience for the implementations of xtypes */
 

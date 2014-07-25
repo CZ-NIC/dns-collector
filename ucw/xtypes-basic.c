@@ -50,9 +50,9 @@ static const char *xt_double_format(void *src, u32 fmt, struct mempool *pool)
 {
   double val = *((double *)src);
 
-  if (fmt & XTYPE_FMT_DBL_PREC)
+  if (fmt & XT_DOUBLE_FMT_PREC_FLAG)
     {
-      uint prec = fmt & ~XTYPE_FMT_DBL_PREC;
+      uint prec = fmt & ~XT_DOUBLE_FMT_PREC_FLAG;
       return mp_printf(pool, "%.*lf", prec, val);
     }
 
@@ -88,7 +88,7 @@ static const char * xt_double_fmt_parse(const char *str, u32 *dest, struct mempo
   if (tmp_err)
     return mp_printf(pool, "Could not parse floating point number precision: %s", tmp_err);
 
-  *dest = XTYPE_FMT_DBL_FIXED_PREC(precision);
+  *dest = XT_DOUBLE_FMT_PREC(precision);
   return NULL;
 }
 
