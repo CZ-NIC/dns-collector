@@ -81,8 +81,8 @@ struct table_column {
   uint fmt;                     // [*] default format of the column
   const struct xtype *type_def; // [*] pointer to xtype of this column
 
-  const char * (*set_col_opt)(struct table *tbl, uint col, const char *value);
-       // [*] process table option for a column instance
+  const char * (*set_col_opt)(struct table *tbl, uint col_inst_idx, const char *col_opt);
+       // [*] process table option for a column instance. @col_inst_idx is the index of the column to which the @col_opt is set.
        // FIXME: Comment on arguments and return value
 };
 
@@ -129,9 +129,7 @@ struct table {
   bool print_header;			// [*] false indicates that table header should not be printed
 
   struct fastbuf *out;			// [*] Fastbuffer to which the table is printed
-  int last_printed_col;			// Index of the last column which was set. -1 indicates start of row.
-					// Used for example for appending to the current column.
-  bool row_printing_started;		// Indicates that a row has been started. Duplicates last_printed_col, but harmlessly.
+  bool row_printing_started;		// Indicates that a row has been started.
   struct fbpool fb_col_out;		// Per-cell fastbuf, see table_col_fbstart()
   int col_out;				// Index of the column that is currently printed using fb_col_out
 
@@ -329,6 +327,8 @@ int table_get_col_idx(struct table *tbl, const char *col_name);
  * which checks if the set_col_opt hook is defined and either calls it or
  * processes the options in the generic way. Nobody else should call the
  * hook directly.
+ *     RK: that is the current solution the only confusion can be that
+ *     the hook and this function has the same prototype.
  **/
 const char *table_set_col_opt(struct table *tbl, uint col_idx, const char *col_opt);
 
@@ -342,6 +342,9 @@ const char *table_get_col_list(struct table *tbl);
  * Sets the order in which the columns are printed.
  * The table converts the integers in @col_order into an internal representation stored
  * in `column_order`. Options to column instances can be set using @table_set_col_opt().
+ *
+ * FIXME: add a function to the interface that accepts a pointer to an
+ * array of table_col_instance.
  **/
 void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
 

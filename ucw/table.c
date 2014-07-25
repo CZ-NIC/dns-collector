@@ -64,12 +64,13 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
   new_inst->col_delimiter = tbl_template->col_delimiter;
   new_inst->print_header = true;
   new_inst->out = 0;
-  // FIXME: last_printed_col is not used anywhere
-  new_inst->last_printed_col = -1;
   new_inst->row_printing_started = false;
   new_inst->col_out = -1;
   new_inst->formatter = tbl_template->formatter;
-  new_inst->data = NULL;
+  if(!new_inst->formatter) {
+    new_inst->formatter = &table_fmt_human_readable;
+  }
+  new_inst->formatter_data = NULL;
   return new_inst;
 }
 
@@ -78,12 +79,7 @@ struct table *table_init(const struct table_template *tbl_template)
   struct table *tbl = table_make_instance(tbl_template);
   // FIXME: What remains of table_init()? Just combine it with table_make_instance()
 
-  if(!tbl->formatter) {
-    tbl->formatter = &table_fmt_human_readable;
-  }
 
-  // FIXME: This is already set by table_make_instance()
-  tbl->print_header = true; // by default, print header
   return tbl;
 }
 
@@ -95,7 +91,8 @@ void table_cleanup(struct table *tbl)
 // TODO: test default column order
 static void table_make_default_column_order(struct table *tbl)
 {
-  int *col_order_int = mp_alloc_zero(tbl->pool, sizeof(int) * tbl->column_count); // FIXME: use stack instead of memory pool (yes, please!)
+  int *col_order_int = alloca(sizeof(int) * tbl->column_count);
+
   for(int i = 0; i < tbl->column_count; i++) {
     col_order_int[i] = i;
   }
@@ -104,7 +101,6 @@ static void table_make_default_column_order(struct table *tbl)
 
 void table_start(struct table *tbl, struct fastbuf *out)
 {
-  tbl->last_printed_col = -1;
   tbl->row_printing_started = false;
   tbl->out = out;
 
@@ -124,7 +120,6 @@ void table_start(struct table *tbl, struct fastbuf *out)
 
 void table_end(struct table *tbl)
 {
-  tbl->last_printed_col = -1;
   tbl->row_printing_started = false;
 
   mp_restore(tbl->pool, &tbl->pool_state);
@@ -193,7 +188,8 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
     int col_idx = col_order[i];
     tbl->column_order[i].idx = col_idx;
     tbl->column_order[i].col_def = tbl->columns + col_idx;
-    tbl->column_order[i].cell_content = NULL;
+    tbl->column_order[i].cell_content = NULL; // it is in fact initialized by mp_alloc_zero, but for completeness ...
+    tbl->column_order[i].next_column = -1;
     tbl->column_order[i].fmt = tbl->columns[col_idx].fmt;
   }
   table_update_ll(tbl);
@@ -218,22 +214,28 @@ static char * table_parse_col_arg(char *col_def)
   return left_br;
 }
 
-const char *table_set_col_opt(struct table *tbl, uint col_idx, const char *col_opt)
+const char *table_set_col_opt(struct table *tbl, uint col_inst_idx, const char *col_opt)
 {
-  const struct table_column *col_def = tbl->column_order[col_idx].col_def;
-  if(col_def && col_def->set_col_opt && col_def->set_col_opt != table_set_col_opt) {
-    return col_def->set_col_opt(tbl, col_idx, col_opt);
+  const struct table_column *col_def = tbl->column_order[col_inst_idx].col_def;
+
+  // Make sure that we do not call table_set_col_opt, which would
+  // result in an infinite recursion.
+  if(col_def && col_def->set_col_opt) {
+    if(col_def->set_col_opt == table_set_col_opt) {
+      die("table_set_col_opt should not be used as a struct table_column::set_col_opt hook");
+    }
+    return col_def->set_col_opt(tbl, col_inst_idx, col_opt);
   }
 
   if(col_def && col_def->type_def && col_def->type_def->parse_fmt) {
     uint fmt = 0;
     const char *tmp_err = col_def->type_def->parse_fmt(col_opt, &fmt, tbl->pool);
     if(tmp_err) return tmp_err;
-    tbl->column_order[col_idx].fmt = fmt;
+    tbl->column_order[col_inst_idx].fmt = fmt;
     return NULL;
   }
 
-  return mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_opt, col_idx);
+  return mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_opt, col_inst_idx);
 }
 
 /**
@@ -299,8 +301,7 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
 
 /*** Table cells ***/
 
-// FIXME: This should be table_col_raw(), shouldn't it?
-static void table_set_raw(struct table *tbl, int col_templ, const char *col_content)
+static void table_col_raw(struct table *tbl, int col_templ, const char *col_content)
 {
   TBL_COL_ITER_START(tbl, col_templ, curr_col_ptr, curr_col) {
     curr_col_ptr->cell_content = col_content;
@@ -311,7 +312,6 @@ void table_col_generic_format(struct table *tbl, int col, void *value, const str
 {
   ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
   ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || expected_type == tbl->columns[col].type_def);
-  tbl->last_printed_col = col;
   tbl->row_printing_started = true;
   TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {
     enum xtype_fmt fmt = curr_col->fmt;
@@ -322,12 +322,11 @@ void table_col_generic_format(struct table *tbl, int col, void *value, const str
 void table_col_printf(struct table *tbl, int col, const char *fmt, ...)
 {
   ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
-  tbl->last_printed_col = col;
   tbl->row_printing_started = true;
   va_list args;
   va_start(args, fmt);
   char *cell_content = mp_vprintf(tbl->pool, fmt, args);
-  table_set_raw(tbl, col, cell_content);
+  table_col_raw(tbl, col, cell_content);
   va_end(args);
 }
 
@@ -347,7 +346,6 @@ void table_reset_row(struct table *tbl)
     tbl->column_order[i].cell_content = NULL;
   }
   mp_restore(tbl->pool, &tbl->pool_state);
-  tbl->last_printed_col = -1;
   tbl->row_printing_started = false;
 }
 
@@ -372,7 +370,7 @@ struct fastbuf *table_col_fbstart(struct table *tbl, int col)
 void table_col_fbend(struct table *tbl)
 {
   char *cell_content = fbpool_end(&tbl->fb_col_out);
-  table_set_raw(tbl, tbl->col_out, cell_content);
+  table_col_raw(tbl, tbl->col_out, cell_content);
   tbl->col_out = -1;
 }
 
