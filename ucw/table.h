@@ -136,7 +136,7 @@ struct table {
 
   // Back-end used for table formatting and its private data
   const struct table_formatter *formatter;
-  void *data;
+  void *formatter_data;
 };
 
 /****
