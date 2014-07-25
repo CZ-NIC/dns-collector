@@ -244,7 +244,7 @@ void table_end(struct table *tbl);
  * For each column type, there are functions for filling of cells
  * of the particular type:
  *
- *   * `table_col_`'type'`(table, idx, value)` sets the cell in column `idx`
+ *   * `table_col_`'type'`(table, col_def_idx, value)` sets the cell in column `col_def_idx`
  *     to the `value`
  ***/
 
@@ -310,7 +310,7 @@ void table_reset_row(struct table *tbl);
  ***/
 
 /**
- * Find the index of a column with name @col_name. Returns -1 if there is no such column.
+ * Find the index of a column definition with name @col_name. Returns -1 if there is no such column.
  **/
 int table_get_col_idx(struct table *tbl, const char *col_name);
 
@@ -330,7 +330,7 @@ int table_get_col_idx(struct table *tbl, const char *col_name);
  *     RK: that is the current solution the only confusion can be that
  *     the hook and this function has the same prototype.
  **/
-const char *table_set_col_opt(struct table *tbl, uint col_idx, const char *col_opt);
+const char *table_set_col_opt(struct table *tbl, uint col_inst_idx, const char *col_opt);
 
 /**
  * Returns a comma-and-space-separated list of column names, allocated from table's internal

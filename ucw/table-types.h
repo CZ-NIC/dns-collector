@@ -32,8 +32,8 @@ enum size_units {
 #define XT_SIZE_FMT_UNIT(_unit) (_unit | XT_SIZE_FMT_FIXED_UNIT)
 #define XT_SIZE_FMT_FIXED_UNIT XTYPE_FMT_CUSTOM
 
-#define TBL_COL_SIZE(_name, _width)       { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_size, .set_col_opt = table_set_col_opt }
-#define TBL_COL_SIZE_FMT(_name, _width, _fmt)      { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_size, .set_col_opt = table_set_col_opt }
+#define TBL_COL_SIZE(_name, _width)       { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_size }
+#define TBL_COL_SIZE_FMT(_name, _width, _fmt)      { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_size }
 
 TABLE_COL_PROTO(size, u64)
 
@@ -44,8 +44,8 @@ TABLE_COL_PROTO(size, u64)
 
 extern const struct xtype xt_timestamp;
 
-#define TBL_COL_TIMESTAMP(_name, _width)  { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_timestamp, .set_col_opt = table_set_col_opt }
-#define TBL_COL_TIMESTAMP_FMT(_name, _width, _fmt) { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_timestamp, .set_col_opt = table_set_col_opt }
+#define TBL_COL_TIMESTAMP(_name, _width)  { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_timestamp }
+#define TBL_COL_TIMESTAMP_FMT(_name, _width, _fmt) { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_timestamp }
 
 TABLE_COL_PROTO(timestamp, u64)
 

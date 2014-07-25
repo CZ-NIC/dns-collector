@@ -53,9 +53,9 @@ struct table *table_init(const struct table_template *tbl_template)
     memcpy(new_inst->column_order, tbl_template->column_order, sizeof(struct table_col_instance) * tbl_template->cols_to_output);
     for(uint i = 0; i < new_inst->cols_to_output; i++) {
       new_inst->column_order[i].cell_content = NULL;
-      int col_idx = new_inst->column_order[i].idx;
-      new_inst->column_order[i].col_def = new_inst->columns + col_idx;
-      new_inst->column_order[i].fmt = tbl_template->columns[col_idx].fmt;
+      int col_def_idx = new_inst->column_order[i].idx;
+      new_inst->column_order[i].col_def = new_inst->columns + col_def_idx;
+      new_inst->column_order[i].fmt = tbl_template->columns[col_def_idx].fmt;
     }
 
     new_inst->cols_to_output = tbl_template->cols_to_output;
@@ -155,8 +155,8 @@ static void table_update_ll(struct table *tbl)
   }
 
   for(int i = 0; i < cols_to_output; i++) {
-    int idx = tbl->column_order[i].idx;
-    tbl->column_order[i].col_def = tbl->columns + idx;
+    int col_def_idx = tbl->column_order[i].idx;
+    tbl->column_order[i].col_def = tbl->columns + col_def_idx;
   }
 
   for(int i = 0; i < cols_to_output; i++) {
@@ -176,12 +176,12 @@ void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
   tbl->cols_to_output = cols_to_output;
   tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_instance) * cols_to_output);
   for(int i = 0; i < cols_to_output; i++) {
-    int col_idx = col_order[i];
-    tbl->column_order[i].idx = col_idx;
-    tbl->column_order[i].col_def = tbl->columns + col_idx;
+    int col_def_idx = col_order[i];
+    tbl->column_order[i].idx = col_def_idx;
+    tbl->column_order[i].col_def = tbl->columns + col_def_idx;
     tbl->column_order[i].cell_content = NULL; // it is in fact initialized by mp_alloc_zero, but for completeness ...
     tbl->column_order[i].next_column = -1;
-    tbl->column_order[i].fmt = tbl->columns[col_idx].fmt;
+    tbl->column_order[i].fmt = tbl->columns[col_def_idx].fmt;
   }
   table_update_ll(tbl);
 }
@@ -258,7 +258,7 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
   tbl->cols_to_output = col_count;
   tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_instance) * col_count);
 
-  int curr_col_idx = 0;
+  int curr_col_inst_idx = 0;
   char *name_start = tmp_col_order;
   while(name_start) {
     char *next = strchr(name_start, ',');
@@ -267,22 +267,22 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     }
 
     char *arg = table_parse_col_arg(name_start); // this sets 0 on the '['
-    int col_idx = table_get_col_idx(tbl, name_start);
+    int col_def_idx = table_get_col_idx(tbl, name_start);
 
-    if(col_idx == -1) {
+    if(col_def_idx == -1) {
       return mp_printf(tbl->pool, "Unknown table column '%s', possible column names are: %s.", name_start, table_get_col_list(tbl));
     }
-    tbl->column_order[curr_col_idx].col_def = tbl->columns + col_idx;
-    tbl->column_order[curr_col_idx].idx = col_idx;
-    tbl->column_order[curr_col_idx].fmt = tbl->columns[col_idx].fmt;
-    if(tbl->columns[col_idx].type_def && tbl->columns[col_idx].set_col_opt) {
+    tbl->column_order[curr_col_inst_idx].col_def = tbl->columns + col_def_idx;
+    tbl->column_order[curr_col_inst_idx].idx = col_def_idx;
+    tbl->column_order[curr_col_inst_idx].fmt = tbl->columns[col_def_idx].fmt;
+    if(arg) {
       const char *err = NULL;
-      err = tbl->columns[col_idx].set_col_opt(tbl, curr_col_idx, arg);
+      err = table_set_col_opt(tbl, curr_col_inst_idx, arg);
       if(err) return mp_printf(tbl->pool, "Error occured while setting column option: %s.", err);
     }
 
     name_start = next;
-    curr_col_idx++;
+    curr_col_inst_idx++;
   }
 
   table_update_ll(tbl);
@@ -304,7 +304,7 @@ void table_col_generic_format(struct table *tbl, int col, void *value, const str
   ASSERT_MSG(col < tbl->column_count && col >= 0, "Table column %d does not exist.", col);
   ASSERT(tbl->columns[col].type_def == COL_TYPE_ANY || expected_type == tbl->columns[col].type_def);
   tbl->row_printing_started = true;
-  TBL_COL_ITER_START(tbl, col, curr_col, curr_col_idx) {
+  TBL_COL_ITER_START(tbl, col, curr_col, curr_col_inst_idx) {
     enum xtype_fmt fmt = curr_col->fmt;
     curr_col->cell_content = expected_type->format(value, fmt, tbl->pool);
   } TBL_COL_ITER_END
