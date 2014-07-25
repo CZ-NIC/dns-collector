@@ -111,9 +111,8 @@ static const char *xt_bool_format(void *src, u32 fmt UNUSED, struct mempool *poo
       return val ? "true" : "false";
     case XTYPE_FMT_DEFAULT:
     case XTYPE_FMT_RAW:
-      return val ? "1" : "0";
     default:
-      ASSERT(0);
+      return val ? "1" : "0";
     }
 }
 
