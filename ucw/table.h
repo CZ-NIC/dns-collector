@@ -83,6 +83,7 @@ struct table_column {
 
   const char * (*set_col_opt)(struct table *tbl, uint col, const char *value);
        // [*] process table option for a column instance
+       // FIXME: Comment on arguments and return value
 };
 
 // FIXME: is it correct to have idx and col_def? idx is sufficient and in fact a duplicity of idx
@@ -317,12 +318,17 @@ int table_get_col_idx(struct table *tbl, const char *col_name);
 
 
 /**
- * Sets a string option to an instance of a columnt type. This is the default version that checks
+ * Sets a string option to an instance of a column type. This is the default version that checks
  * whether the xtype::parse_fmt can be called and calls it. However, there are situation in which
  * the xtype::parse_fmt is not sufficient, e.g., column decoration, post-processing, etc.
  *
  * Each struct table_column has a pointer to a customized version of table_set_col_opt which is
  * called instead of this (default) version of table_set_col_opt
+ *
+ * FIXME: Make table_set_col_opt() a front-end function used by everybody,
+ * which checks if the set_col_opt hook is defined and either calls it or
+ * processes the options in the generic way. Nobody else should call the
+ * hook directly.
  **/
 const char *table_set_col_opt(struct table *tbl, uint col_idx, const char *col_opt);
 
@@ -333,15 +339,17 @@ const char *table_set_col_opt(struct table *tbl, uint col_idx, const char *col_o
 const char *table_get_col_list(struct table *tbl);
 
 /**
- * Sets the order in which the columns are printed. The @col_order parameter is used until
- * @table_end() or @table_cleanup() is called. The table converts the integers in @col_order into
- * internal representation stored in @column_order. Options to column instances can be set using
- * @table_set_col_opt.
+ * Sets the order in which the columns are printed.
+ * The table converts the integers in @col_order into an internal representation stored
+ * in `column_order`. Options to column instances can be set using @table_set_col_opt().
  **/
 void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
 
 /**
  * Returns true if col_idx will be printed, false otherwise.
+ *
+ * FIXME: Naming of arguments is confusing. @col_idx sometimes indexes
+ * columns, but sometimes their instances.
  **/
 bool table_col_is_printed(struct table *tbl, uint col_idx);
 
@@ -381,6 +389,8 @@ void table_set_formatter(struct table *tbl, const struct table_formatter *fmt);
  * | `fmt`	| `human`/`machine`/`block`	| set table formatter to one of the built-in formatters
  * | `col-delim`| string			| set column delimiter
  * | `cells`    | string                        | set column format mode
+ * | `raw`	| 'none'			| set column format to raw data
+ * | `pretty`	| 'none'			| set column format to pretty-printing
  * |===================================================================================================
  **/
 const char *table_set_option_value(struct table *tbl, const char *key, const char *value);

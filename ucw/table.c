@@ -64,6 +64,7 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
   new_inst->col_delimiter = tbl_template->col_delimiter;
   new_inst->print_header = true;
   new_inst->out = 0;
+  // FIXME: last_printed_col is not used anywhere
   new_inst->last_printed_col = -1;
   new_inst->row_printing_started = false;
   new_inst->col_out = -1;
@@ -75,11 +76,13 @@ static struct table *table_make_instance(const struct table_template *tbl_templa
 struct table *table_init(const struct table_template *tbl_template)
 {
   struct table *tbl = table_make_instance(tbl_template);
+  // FIXME: What remains of table_init()? Just combine it with table_make_instance()
 
   if(!tbl->formatter) {
     tbl->formatter = &table_fmt_human_readable;
   }
 
+  // FIXME: This is already set by table_make_instance()
   tbl->print_header = true; // by default, print header
   return tbl;
 }
@@ -92,7 +95,7 @@ void table_cleanup(struct table *tbl)
 // TODO: test default column order
 static void table_make_default_column_order(struct table *tbl)
 {
-  int *col_order_int = mp_alloc_zero(tbl->pool, sizeof(int) * tbl->column_count); // FIXME: use stack instead of memory pool
+  int *col_order_int = mp_alloc_zero(tbl->pool, sizeof(int) * tbl->column_count); // FIXME: use stack instead of memory pool (yes, please!)
   for(int i = 0; i < tbl->column_count; i++) {
     col_order_int[i] = i;
   }
@@ -116,7 +119,7 @@ void table_start(struct table *tbl, struct fastbuf *out)
 
   mp_save(tbl->pool, &tbl->pool_state);
 
-  ASSERT_MSG(tbl->col_delimiter, "In-between column delimiter not specified.");
+  ASSERT_MSG(tbl->col_delimiter, "Column delimiter not specified.");
 }
 
 void table_end(struct table *tbl)
@@ -296,6 +299,7 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
 
 /*** Table cells ***/
 
+// FIXME: This should be table_col_raw(), shouldn't it?
 static void table_set_raw(struct table *tbl, int col_templ, const char *col_content)
 {
   TBL_COL_ITER_START(tbl, col_templ, curr_col_ptr, curr_col) {
