@@ -13,8 +13,8 @@
 #include <ucw/strtonum.h>
 #include <ucw/xtypes.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <inttypes.h>
+#include <stdlib.h>
 
 #define XTYPE_NUM_FORMAT(_type, _fmt, _typename) static const char *xt_##_typename##_format(void *src, u32 fmt UNUSED, struct mempool *pool) \
 {\
