@@ -49,7 +49,7 @@ static void test_size_parse_correct(struct fastbuf *out)
       die("xt_size.parse parsed an incorrect value.");
     }
 
-    const char *result_str = xt_size.format(&result, i | SIZE_UNITS_FIXED, pool);
+    const char *result_str = xt_size.format(&result, XT_SIZE_FMT_UNIT(i), pool);
     bprintf(out, "%s %s\n", size_strs[i], result_str);
 
     i++;

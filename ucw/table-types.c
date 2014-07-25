@@ -14,83 +14,86 @@
 #include <inttypes.h>
 #include <errno.h>
 
+// FIXME: I seriously doubt there is any good reason for keeping
+// these types separated from the generic xtype machinery. There
+// is nothing special in them, which would be tightly connected
+// to the table printer. Especially as they are already tested
+// by xtypes-test.c.  --mj
+
 /** xt_size **/
 
-static struct unit_definition xtype_units_size[] = {
-  [SIZE_UNIT_BYTE] = { "", 1LLU, 1 },
-  [SIZE_UNIT_KILOBYTE] = { "KB", 1024LLU, 1 },
-  [SIZE_UNIT_MEGABYTE] = { "MB", 1024LLU * 1024LLU, 1 },
-  [SIZE_UNIT_GIGABYTE] = { "GB", 1024LLU * 1024LLU * 1024LLU, 1 },
-  [SIZE_UNIT_TERABYTE] = { "TB", 1024LLU * 1024LLU * 1024LLU * 1024LLU, 1 },
+static const struct unit_definition xt_size_units[] = {
+  [XT_SIZE_UNIT_BYTE] = { "", 1LLU, 1 },
+  [XT_SIZE_UNIT_KILOBYTE] = { "KB", 1024LLU, 1 },
+  [XT_SIZE_UNIT_MEGABYTE] = { "MB", 1024LLU * 1024LLU, 1 },
+  [XT_SIZE_UNIT_GIGABYTE] = { "GB", 1024LLU * 1024LLU * 1024LLU, 1 },
+  [XT_SIZE_UNIT_TERABYTE] = { "TB", 1024LLU * 1024LLU * 1024LLU * 1024LLU, 1 },
   { 0, 0, 0 }
 };
 
 static enum size_units xt_size_auto_units(u64 sz)
 {
-  if(sz >= xtype_units_size[SIZE_UNIT_TERABYTE].num) {
-    return SIZE_UNIT_TERABYTE;
-  } else if(sz >= xtype_units_size[SIZE_UNIT_GIGABYTE].num) {
-    return SIZE_UNIT_GIGABYTE;
-  } else if(sz >= xtype_units_size[SIZE_UNIT_MEGABYTE].num) {
-    return SIZE_UNIT_MEGABYTE;
-  } else if(sz >= xtype_units_size[SIZE_UNIT_KILOBYTE].num) {
-    return SIZE_UNIT_KILOBYTE;
+  if(sz >= xt_size_units[XT_SIZE_UNIT_TERABYTE].num) {
+    return XT_SIZE_UNIT_TERABYTE;
+  } else if(sz >= xt_size_units[XT_SIZE_UNIT_GIGABYTE].num) {
+    return XT_SIZE_UNIT_GIGABYTE;
+  } else if(sz >= xt_size_units[XT_SIZE_UNIT_MEGABYTE].num) {
+    return XT_SIZE_UNIT_MEGABYTE;
+  } else if(sz >= xt_size_units[XT_SIZE_UNIT_KILOBYTE].num) {
+    return XT_SIZE_UNIT_KILOBYTE;
   }
 
-  return SIZE_UNIT_BYTE;
+  return XT_SIZE_UNIT_BYTE;
 }
 
 static const char *xt_size_format(void *src, u32 fmt, struct mempool *pool)
 {
   u64 curr_val = *(u64*) src;
+  uint out_units;
 
-  if(fmt == XTYPE_FMT_RAW) {
-    return mp_printf(pool, "%"PRIu64, curr_val);
+  if(fmt & XT_SIZE_FMT_FIXED_UNIT) {
+    out_units = fmt & ~XT_SIZE_FMT_FIXED_UNIT;
+  } else {
+    switch(fmt) {
+    case XTYPE_FMT_RAW:
+      return mp_printf(pool, "%"PRIu64, curr_val);
+    case XTYPE_FMT_PRETTY:
+      out_units = XT_SIZE_UNIT_AUTO;
+      break;
+    case XTYPE_FMT_DEFAULT:
+    default:
+      out_units = XT_SIZE_UNIT_BYTE;
+      break;
+    }
   }
 
-  uint out_units = SIZE_UNIT_BYTE;
-
-  if(fmt == XTYPE_FMT_DEFAULT) {
-    curr_val = curr_val;
-    out_units = SIZE_UNIT_BYTE;
-  } else if(fmt == XTYPE_FMT_PRETTY) {
-    // the same as SIZE_UNIT_AUTO
+  if(out_units == XT_SIZE_UNIT_AUTO) {
     out_units = xt_size_auto_units(curr_val);
-    curr_val = curr_val / xtype_units_size[out_units].num;
-  } else if((fmt & SIZE_UNITS_FIXED) != 0 && (fmt & SIZE_UNIT_AUTO) == SIZE_UNIT_AUTO) {
-    // the same as XTYPE_FMT_PRETTY
-    out_units = xt_size_auto_units(curr_val);
-    curr_val = curr_val / xtype_units_size[out_units].num;
-  } else if((fmt & SIZE_UNITS_FIXED) != 0) {
-    curr_val = curr_val / xtype_units_size[fmt & ~SIZE_UNITS_FIXED].num;
-    out_units = fmt & ~SIZE_UNITS_FIXED;
   }
+  ASSERT(out_units < ARRAY_SIZE(xt_size_units));
 
-  return mp_printf(pool, "%"PRIu64"%s", curr_val, xtype_units_size[out_units].unit);
+  curr_val = curr_val / xt_size_units[out_units].num;
+  return mp_printf(pool, "%"PRIu64"%s", curr_val, xt_size_units[out_units].unit);
 }
 
 static const char *xt_size_fmt_parse(const char *opt_str, u32 *dest, struct mempool *pool)
 {
-  if(opt_str == NULL) {
-    return "NULL is not supported as a column argument.";
-  }
-
   if(strlen(opt_str) == 0 || strcmp(opt_str, "B") == 0 || strcmp(opt_str, "Bytes") == 0) {
-    *dest = SIZE_UNIT_BYTE | SIZE_UNITS_FIXED;
+    *dest = XT_SIZE_FMT_UNIT(XT_SIZE_UNIT_BYTE);
     return NULL;
   }
 
   if(strcmp(opt_str, "auto") == 0) {
-    *dest = SIZE_UNIT_AUTO | SIZE_UNITS_FIXED;
+    *dest = XT_SIZE_FMT_UNIT(XT_SIZE_UNIT_AUTO);
     return NULL;
   }
 
-  int unit_idx = xtype_unit_parser(opt_str, xtype_units_size);
+  int unit_idx = xtype_unit_parser(opt_str, xt_size_units);
   if(unit_idx == -1) {
     return mp_printf(pool, "Unknown option '%s'", opt_str);
   }
 
-  *dest = unit_idx | SIZE_UNITS_FIXED;
+  *dest = XT_SIZE_FMT_UNIT(unit_idx);
   return NULL;
 }
 
@@ -98,6 +101,8 @@ static const char *xt_size_parse(const char *str, void *dest, struct mempool *po
 {
   errno = 0;
   char *units_start = NULL;
+  // FIXME: Use str_to_u64() here to avoid troubles with strtoul()
+  // FIXME: Besides, who promises that u64 fits in unsigned long int?
   u64 parsed = strtoul(str, &units_start, 10);
   if(str == units_start) {
     return mp_printf(pool, "Invalid value of size: '%s'.", str);
@@ -115,12 +120,13 @@ static const char *xt_size_parse(const char *str, void *dest, struct mempool *po
     return NULL;
   }
 
-  int unit_idx = xtype_unit_parser(units_start, xtype_units_size);
+  int unit_idx = xtype_unit_parser(units_start, xt_size_units);
   if(unit_idx == -1) {
     return mp_printf(pool, "Invalid units: '%s'.", units_start);
   }
 
-  *(u64*) dest = parsed * xtype_units_size[unit_idx].num;
+  // FIXME: Detect overflow?
+  *(u64*) dest = parsed * xt_size_units[unit_idx].num;
   return NULL;
 }
 
@@ -158,20 +164,16 @@ static const char *xt_timestamp_format(void *src, u32 fmt, struct mempool *pool)
     break;
   }
 
-  return mp_printf(pool, "%s", formatted_time_buf);
+  return mp_strdup(pool, formatted_time_buf);
 }
 
 static const char *xt_timestamp_fmt_parse(const char *opt_str, u32 *dest, struct mempool *pool)
 {
-  if(opt_str == NULL) {
-    return "NULL is not supported as a column argument.";
-  }
-
   if(strcasecmp(opt_str, "timestamp") == 0 || strcasecmp(opt_str, "epoch") == 0) {
-    *dest = TIMESTAMP_EPOCH;
+    *dest = XT_TIMESTAMP_FMT_EPOCH;
     return NULL;
   } else if(strcasecmp(opt_str, "datetime") == 0) {
-    *dest = TIMESTAMP_DATETIME;
+    *dest = XT_TIMESTAMP_FMT_DATETIME;
     return NULL;
   }
 
@@ -182,6 +184,7 @@ static const char *xt_timestamp_parse(const char *str, void *dest, struct mempoo
 {
   errno = 0;
   char *parse_end = NULL;
+  // FIXME: Again, why strtoul()?
   u64 parsed = strtoul(str, &parse_end, 10);
   if(str == parse_end) {
     return mp_printf(pool, "Invalid value of timestamp: '%s'.", str);
