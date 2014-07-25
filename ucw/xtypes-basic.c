@@ -160,9 +160,9 @@ static const char *xt_str_format(void *src, u32 fmt UNUSED, struct mempool *pool
   return mp_strdup(pool, *((const char **) src));
 }
 
-static const char *xt_str_parse(const char *str, void *dest, struct mempool *pool UNUSED)
+static const char *xt_str_parse(const char *str, void *dest, struct mempool *pool)
 {
-  *((const char **) dest) = str;
+  *((const char **) dest) = mp_strdup(pool, str);
   return NULL;
 }
 
