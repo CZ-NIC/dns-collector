@@ -75,23 +75,6 @@ typedef const char * (*xtype_fmt_parser)(const char *str, u32 *dest, struct memp
 typedef const char * (*xtype_fmt_formatter)(u32 fmt, struct mempool *pool);
 
 /**
- * Definition of the units that are appended to an xtype value. The value with units is represented
- * by the following string: "<value><units>". The final value of the of the string is computed using
- * the following formula: <value> * <num>/<denom>.
- **/
-struct unit_definition {
-  const char *unit; // string representation of unit
-  u64 num;
-  u64 denom;
-};
-
-/**
- * Parse a name of a unit and return its index in the @units array or -1
- * if is not present there.
- **/
-int xtype_unit_parser(const char *str, struct unit_definition *units);
-
-/**
  * This structure describes an xtype. Among other things, it points to callback
  * functions handling this xtype.
  **/
@@ -133,5 +116,24 @@ extern const struct xtype xt_double;
 // Fixed-precision formats for xt_double
 #define XTYPE_FMT_DBL_FIXED_PREC(_prec) (_prec | XTYPE_FMT_DBL_PREC)
 #define XTYPE_FMT_DBL_PREC XTYPE_FMT_CUSTOM
+
+/* Tables of units, provided as convenience for the implementations of xtypes */
+
+/**
+ * Definition of the units that are appended to an xtype value. The value with units is represented
+ * by the following string: "<value><units>". The final value of the of the string is computed using
+ * the following formula: <value> * <num>/<denom>.
+ **/
+struct unit_definition {
+  const char *unit; // string representation of unit
+  u64 num;
+  u64 denom;
+};
+
+/**
+ * Parse a name of a unit and return its index in the @units array or -1
+ * if is not present there.
+ **/
+int xtype_unit_parser(const char *str, struct unit_definition *units);
 
 #endif
