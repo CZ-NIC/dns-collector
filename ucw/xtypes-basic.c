@@ -100,55 +100,35 @@ const struct xtype xt_double = {
 
 /* bool */
 
-static const char *xt_bool_format(void *src, u32 fmt UNUSED, struct mempool *pool)
+static const char *xt_bool_format(void *src, u32 fmt UNUSED, struct mempool *pool UNUSED)
 {
-  switch(fmt) {
+  bool val = *((bool *)src);
+  switch (fmt)
+    {
     case XTYPE_FMT_PRETTY:
-      return mp_printf(pool, "%s", *((bool *)src) ? "true" : "false");
+      return val ? "true" : "false";
     case XTYPE_FMT_DEFAULT:
     case XTYPE_FMT_RAW:
-      return mp_printf(pool, "%s", *((bool *)src) ? "1" : "0");
+      return val ? "1" : "0";
     default:
-      die("Unsupported output type.");
-  }
+      ASSERT(0);
+    }
 }
 
 static const char *xt_bool_parse(const char *str, void *dest, struct mempool *pool UNUSED)
 {
-  if(!str) return "Cannot parse bool: string is NULL.";
-
-  if(str[1] == 0) {
-    if(str[0] == '0') {
+  if (!strcmp(str, "0") || !strcmp(str, "false") || !strcmp(str, "no"))
+    {
       *((bool *)dest) = false;
       return NULL;
     }
-    if(str[0] == '1') {
+  else if (!strcmp(str, "1") || !strcmp(str, "true") || !strcmp(str, "yes"))
+    {
       *((bool *)dest) = true;
       return NULL;
     }
-  }
 
-  if(strcasecmp(str, "false") == 0) {
-    *((bool *)dest) = false;
-    return NULL;
-  }
-
-  if(strcasecmp(str, "true") == 0) {
-    *((bool *)dest) = true;
-    return NULL;
-  }
-
-  if(strcasecmp(str, "no") == 0) {
-    *((bool *)dest) = false;
-    return NULL;
-  }
-
-  if(strcasecmp(str, "yes") == 0) {
-    *((bool *)dest) = true;
-    return NULL;
-  }
-
-  return "Could not parse bool.";
+  return "Could not parse a boolean value.";
 }
 
 XTYPE_NUM_STRUCT(bool, bool)
