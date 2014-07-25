@@ -134,6 +134,6 @@ struct unit_definition {
  * Parse a name of a unit and return its index in the @units array or -1
  * if is not present there.
  **/
-int xtype_unit_parser(const char *str, struct unit_definition *units);
+int xtype_unit_parser(const char *str, const struct unit_definition *units);
 
 #endif

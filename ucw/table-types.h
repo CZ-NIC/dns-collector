@@ -16,30 +16,37 @@
 #define xt_timestamp ucw_xt_timestamp
 #endif
 
-enum size_units {
-  SIZE_UNIT_BYTE,
-  SIZE_UNIT_KILOBYTE,
-  SIZE_UNIT_MEGABYTE,
-  SIZE_UNIT_GIGABYTE,
-  SIZE_UNIT_TERABYTE,
-  SIZE_UNIT_AUTO
-};
-
-#define TIMESTAMP_EPOCH     XTYPE_FMT_RAW
-#define TIMESTAMP_DATETIME  XTYPE_FMT_PRETTY
-
-#define SIZE_UNITS_FIXED    0x40000000
+/* Size, possibly with a unit. Internally represented as u64. */
 
 extern const struct xtype xt_size;
-extern const struct xtype xt_timestamp;
+
+enum size_units {
+  XT_SIZE_UNIT_BYTE,
+  XT_SIZE_UNIT_KILOBYTE,
+  XT_SIZE_UNIT_MEGABYTE,
+  XT_SIZE_UNIT_GIGABYTE,
+  XT_SIZE_UNIT_TERABYTE,
+  XT_SIZE_UNIT_AUTO
+};
+
+#define XT_SIZE_FMT_UNIT(_unit) (_unit | XT_SIZE_FMT_FIXED_UNIT)
+#define XT_SIZE_FMT_FIXED_UNIT XTYPE_FMT_CUSTOM
 
 #define TBL_COL_SIZE(_name, _width)       { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_size, .set_col_opt = table_set_col_opt }
-#define TBL_COL_TIMESTAMP(_name, _width)  { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_timestamp, .set_col_opt = table_set_col_opt }
-
-#define TBL_COL_SIZE_FMT(_name, _width, _units)    { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_size, .set_col_opt = table_set_col_opt }
-#define TBL_COL_TIMESTAMP_FMT(_name, _width, _fmt) { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_timestamp, .set_col_opt = table_set_col_opt}
+#define TBL_COL_SIZE_FMT(_name, _width, _fmt)      { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_size, .set_col_opt = table_set_col_opt }
 
 TABLE_COL_PROTO(size, u64)
+
+/* Timestamp. Internally represented as time_t. */
+
+#define XT_TIMESTAMP_FMT_EPOCH     XTYPE_FMT_RAW
+#define XT_TIMESTAMP_FMT_DATETIME  XTYPE_FMT_PRETTY
+
+extern const struct xtype xt_timestamp;
+
+#define TBL_COL_TIMESTAMP(_name, _width)  { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_timestamp, .set_col_opt = table_set_col_opt }
+#define TBL_COL_TIMESTAMP_FMT(_name, _width, _fmt) { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_timestamp, .set_col_opt = table_set_col_opt }
+
 TABLE_COL_PROTO(timestamp, u64)
 
 #endif
