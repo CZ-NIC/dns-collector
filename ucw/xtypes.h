@@ -86,10 +86,10 @@ struct unit_definition {
 };
 
 /**
- * Parses a unit definition in units_str and returns index into units_def array. -1 if the units
- * were not contained in the array.
+ * Parse a name of a unit and return its index in the @units array or -1
+ * if is not present there.
  **/
-int xtype_unit_parser(const char *units_str, struct unit_definition *units_def);
+int xtype_unit_parser(const char *str, struct unit_definition *units);
 
 /**
  * This structure describes an xtype. Among other things, it points to callback
