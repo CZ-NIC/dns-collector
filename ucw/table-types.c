@@ -126,6 +126,12 @@ static const char *xt_size_parse(const char *str, void *dest, struct mempool *po
   }
 
   // FIXME: Detect overflow?
+  u64 num = xt_size_units[unit_idx].num;
+  if((parsed && UINT64_MAX / parsed < num) ||
+     (num && UINT64_MAX / num < parsed)) {
+    return mp_printf(pool, "Size too large: '%s'.", str);
+  }
+
   *(u64*) dest = parsed * xt_size_units[unit_idx].num;
   return NULL;
 }
