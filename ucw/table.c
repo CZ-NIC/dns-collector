@@ -80,14 +80,18 @@ void table_cleanup(struct table *tbl)
 }
 
 // TODO: test default column order
+// FIXME: should we copy the default format from table definition or use TBL_FMT_HUMAN_READABLE?
 static void table_make_default_column_order(struct table *tbl)
 {
-  int *col_order_int = alloca(sizeof(int) * tbl->column_count);
+  struct table_col_instance *col_order = alloca(sizeof(struct table_col_instance) * tbl->column_count);
+  bzero(col_order, sizeof(struct table_col_instance) * tbl->column_count);
 
   for(int i = 0; i < tbl->column_count; i++) {
-    col_order_int[i] = i;
+    col_order[i].idx = (uint) i;
+    col_order[i].fmt = tbl->columns[i].fmt;
   }
-  table_set_col_order(tbl, col_order_int, tbl->column_count);
+
+  table_set_col_order(tbl, col_order, tbl->column_count);
 }
 
 void table_start(struct table *tbl, struct fastbuf *out)
@@ -167,21 +171,21 @@ static void table_update_ll(struct table *tbl)
   }
 }
 
-void table_set_col_order(struct table *tbl, int *col_order, int cols_to_output)
+void table_set_col_order(struct table *tbl, const struct table_col_instance *col_order, uint cols_to_output)
 {
-  for(int i = 0; i < cols_to_output; i++) {
-    ASSERT_MSG(col_order[i] >= 0 && col_order[i] < tbl->column_count, "Column %d does not exist (column number should be between 0 and %d).", col_order[i], tbl->column_count - 1);
+  for(uint i = 0; i < cols_to_output; i++) {
+    ASSERT_MSG(col_order[i].idx < (uint) tbl->column_count, "Column %d does not exist; column number should be between 0 and %d(including).", col_order[i].idx, tbl->column_count - 1);
   }
 
   tbl->cols_to_output = cols_to_output;
   tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_instance) * cols_to_output);
-  for(int i = 0; i < cols_to_output; i++) {
-    int col_def_idx = col_order[i];
-    tbl->column_order[i].idx = col_def_idx;
+  memcpy(tbl->column_order, col_order, sizeof(struct table_col_instance) * cols_to_output);
+  for(uint i = 0; i < cols_to_output; i++) {
+    int col_def_idx = tbl->column_order[i].idx; // this is given in col_order
     tbl->column_order[i].col_def = tbl->columns + col_def_idx;
-    tbl->column_order[i].cell_content = NULL; // it is in fact initialized by mp_alloc_zero, but for completeness ...
+    tbl->column_order[i].cell_content = NULL; // cell_content is copied from @col_order, so make sure that it is NULL
     tbl->column_order[i].next_column = -1;
-    tbl->column_order[i].fmt = tbl->columns[col_def_idx].fmt;
+    // tbl->column_order[i].fmt should be untouched (copied from col_order)
   }
   table_update_ll(tbl);
 }
@@ -653,6 +657,22 @@ static void test_simple1(struct fastbuf *out)
   table_set_col_order_by_name(tbl, "col0_str,col1_int,col2_uint,col3_bool,col4_double");
   table_start(tbl, out);
   do_print1(tbl);
+  table_end(tbl);
+
+
+  // test table_col_order_fmt
+  struct table_col_instance col_order[] = { TBL_COL(TEST_COL0_STR), TBL_COL_FMT(TEST_COL4_DOUBLE, XTYPE_FMT_PRETTY), TBL_COL_FMT(TEST_COL4_DOUBLE, XTYPE_FMT_RAW) };
+  table_set_col_order(tbl, col_order, ARRAY_SIZE(col_order));
+  table_start(tbl, out);
+
+  table_col_str(tbl, TEST_COL0_STR, "test");
+  table_col_double(tbl, TEST_COL4_DOUBLE, 1.23456789);
+  table_end_row(tbl);
+
+  table_col_str(tbl, TEST_COL0_STR, "test");
+  table_col_double(tbl, TEST_COL4_DOUBLE, 1.23456789);
+  table_end_row(tbl);
+
   table_end(tbl);
 
   table_cleanup(tbl);

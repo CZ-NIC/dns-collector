@@ -197,6 +197,7 @@ struct table {
 #define TBL_FMT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
 #define TBL_FMT_BLOCKLINE          .formatter = &table_fmt_blockline
 #define TBL_FMT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
+#define TBL_FMT(_fmt)              .formatter = _fmt
 
 /**
  * The TBL_COL_ITER_START macro are used for iterating over all instances of a particular column in
@@ -314,7 +315,6 @@ void table_reset_row(struct table *tbl);
  **/
 int table_get_col_idx(struct table *tbl, const char *col_name);
 
-
 /**
  * Sets a string option to an instance of a column type. This is the default version that checks
  * whether the xtype::parse_fmt can be called and calls it. However, there are situation in which
@@ -339,22 +339,16 @@ const char *table_set_col_opt(struct table *tbl, uint col_inst_idx, const char *
 const char *table_get_col_list(struct table *tbl);
 
 /**
+ * Sets the order in which the columns are printed. The columns are specified by struct
+ *
  * Sets the order in which the columns are printed.
  * The table converts the integers in @col_order into an internal representation stored
  * in `column_order`. Options to column instances can be set using @table_set_col_opt().
  *
- * FIXME: add a function to the interface that accepts a pointer to an
- * array of table_col_instance.
+ * @table_col_instance. This allows specification of format. The user should make an array of struct
+ * @table_col_instance and fill the array using the TBL_COL and TBL_COL_FMT.
  **/
-void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
-
-/**
- * Returns true if col_idx will be printed, false otherwise.
- *
- * FIXME: Naming of arguments is confusing. @col_idx sometimes indexes
- * columns, but sometimes their instances.
- **/
-bool table_col_is_printed(struct table *tbl, uint col_def_idx);
+void table_set_col_order(struct table *tbl, const struct table_col_instance *col_order, uint cols_to_output);
 
 /**
  * Sets the order in which the columns are printed. The specification is a string with comma-separated column
@@ -373,6 +367,14 @@ bool table_col_is_printed(struct table *tbl, uint col_def_idx);
  * FIXME In the future, we should allow <col-opt> to be a comma(,) separated list of identifiers
  **/
 const char *table_set_col_order_by_name(struct table *tbl, const char *col_order);
+
+/**
+ * Returns true if col_idx will be printed, false otherwise.
+ *
+ * FIXME: Naming of arguments is confusing. @col_idx sometimes indexes
+ * columns, but sometimes their instances.
+ **/
+bool table_col_is_printed(struct table *tbl, uint col_def_idx);
 
 /**
  * Sets table formatter. See below for the list of formatters.
