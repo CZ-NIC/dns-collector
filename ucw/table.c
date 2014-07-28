@@ -80,7 +80,6 @@ void table_cleanup(struct table *tbl)
 }
 
 // TODO: test default column order
-// FIXME: should we copy the default format from table definition or use TBL_FMT_HUMAN_READABLE?
 static void table_make_default_column_order(struct table *tbl)
 {
   struct table_col_instance *col_order = alloca(sizeof(struct table_col_instance) * tbl->column_count);
@@ -88,7 +87,8 @@ static void table_make_default_column_order(struct table *tbl)
 
   for(int i = 0; i < tbl->column_count; i++) {
     col_order[i].idx = (uint) i;
-    col_order[i].fmt = tbl->columns[i].fmt;
+    // currently, XTYPE_FMT_DEFAULT is 0, so bzero actually sets it correctly. This makes it more explicit.
+    col_order[i].fmt = XTYPE_FMT_DEFAULT;
   }
 
   table_set_col_order(tbl, col_order, tbl->column_count);
