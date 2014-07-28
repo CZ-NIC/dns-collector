@@ -200,22 +200,6 @@ struct table {
 #define TBL_FMT(_fmt)              .formatter = _fmt
 
 /**
- * The TBL_COL_ITER_START macro are used for iterating over all instances of a particular column in
- * table _tbl.  _colidx is the column index in _tbl, _instptr is the pointer to the column instance
- * (struct table_col_instance *), _idxval is the index of current column index. The variables are
- * enclosed in a block, so they do not introduce variable name collisions.
- *
- * The TBL_COL_ITER_END macro must close the block started with TBL_COL_ITER_START.
- *
- * These macros are usually used to hide the implementation details of the column instances linked
- * list. This is usefull for definition of new types.
- **/
-#define TBL_COL_ITER_START(_tbl, _colidx, _instptr, _idxval) { struct table_col_instance *_instptr = NULL; int _idxval = _tbl->ll_headers[_colidx]; \
-  for(_idxval = _tbl->ll_headers[_colidx], _instptr = _tbl->column_order + _idxval; _idxval != -1; _idxval = _tbl->column_order[_idxval].next_column, _instptr = _tbl->column_order + _idxval)
-
-#define TBL_COL_ITER_END }
-
-/**
  * Creates a new table from a table template. The template should already contain
  * the definitions of columns.
  **/
