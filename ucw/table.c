@@ -102,10 +102,8 @@ void table_start(struct table *tbl, struct fastbuf *out)
   ASSERT_MSG(tbl->out, "Output fastbuf not specified.");
 
   if(tbl->column_order == NULL) table_make_default_column_order(tbl);
-  else {
-    // update linked lists
-    table_update_ll(tbl);
-  }
+  // update linked lists
+  table_update_ll(tbl);
   if(tbl->formatter->table_start != NULL) tbl->formatter->table_start(tbl);
 
   mp_save(tbl->pool, &tbl->pool_state);
@@ -187,7 +185,6 @@ void table_set_col_order(struct table *tbl, const struct table_col_instance *col
     tbl->column_order[i].next_column = -1;
     // tbl->column_order[i].fmt should be untouched (copied from col_order)
   }
-  table_update_ll(tbl);
 }
 
 bool table_col_is_printed(struct table *tbl, uint col_def_idx)
@@ -288,8 +285,6 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     name_start = next;
     curr_col_inst_idx++;
   }
-
-  table_update_ll(tbl);
 
   return NULL;
 }
