@@ -69,16 +69,16 @@ Out <<EOF
 col0_str: sdsdf
 col1_int: 10000
 col2_uint: XXX-22222
-col3_bool: true
-col4_double: 1.50
+col3_bool: 1
+col4_double: 1.5
 col5_size: 5368709120
 col6_timestamp: 1404305876
 
 col0_str: test
 col1_int: -100
 col2_uint: 100
-col3_bool: false
-col4_double: 1.50
+col3_bool: 0
+col4_double: 1.5
 col5_size: 2147483648
 col6_timestamp: 1404305909
 
