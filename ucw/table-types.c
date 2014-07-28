@@ -7,10 +7,10 @@
 #include <ucw/lib.h>
 #include <ucw/table-types.h>
 #include <ucw/fastbuf.h>
+#include <ucw/strtonum.h>
 #include <ucw/table.h>
 #include <time.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <inttypes.h>
 #include <errno.h>
 
@@ -100,19 +100,11 @@ static const char *xt_size_fmt_parse(const char *opt_str, u32 *dest, struct memp
 static const char *xt_size_parse(const char *str, void *dest, struct mempool *pool)
 {
   errno = 0;
-  char *units_start = NULL;
-  // FIXME: Use str_to_u64() here to avoid troubles with strtoul()
-  // FIXME: Besides, who promises that u64 fits in unsigned long int?
-  u64 parsed = strtoul(str, &units_start, 10);
-  if(str == units_start) {
-    return mp_printf(pool, "Invalid value of size: '%s'.", str);
-  }
-
-  if(errno == EINVAL) {
-    return "Error occured during parsing of size.";
-  }
-  if(errno == ERANGE) {
-    return "Error: size value either too large or too small.";
+  const char *units_start = NULL;
+  u64 parsed;
+  const char *err = str_to_u64(&parsed, str, &units_start, 10 | STN_FLAGS);
+  if(err != NULL) {
+    return mp_printf(pool, "Invalid value of size: '%s'; number parser error: %s.", str, err);
   }
 
   if(*units_start == 0) {
@@ -122,7 +114,7 @@ static const char *xt_size_parse(const char *str, void *dest, struct mempool *po
 
   int unit_idx = xtype_unit_parser(units_start, xt_size_units);
   if(unit_idx == -1) {
-    return mp_printf(pool, "Invalid units: '%s'.", units_start);
+    return mp_printf(pool, "Invalid units: '%s'.", str);
   }
 
   // FIXME: Detect overflow?
@@ -189,18 +181,11 @@ static const char *xt_timestamp_fmt_parse(const char *opt_str, u32 *dest, struct
 static const char *xt_timestamp_parse(const char *str, void *dest, struct mempool *pool)
 {
   errno = 0;
-  char *parse_end = NULL;
-  // FIXME: Again, why strtoul()?
-  u64 parsed = strtoul(str, &parse_end, 10);
+  const char *parse_end = NULL;
+  u64 parsed;
+  const char *err = str_to_u64(&parsed, str, &parse_end, 10 | STN_FLAGS);
   if(str == parse_end) {
-    return mp_printf(pool, "Invalid value of timestamp: '%s'.", str);
-  }
-  if(errno == EINVAL) {
-    return "Error occured during parsing of size.";
-  }
-
-  if(errno == ERANGE) {
-    return "Error: size value either too large or too small.";
+    return mp_printf(pool, "Invalid value of timestamp: '%s'; number parser error: %s.", str, err);
   }
 
   if(*parse_end == 0) {
