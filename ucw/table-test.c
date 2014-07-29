@@ -6,7 +6,7 @@
 
 #include <ucw/lib.h>
 #include <ucw/table.h>
-#include <ucw/table-types.h>
+#include <ucw/xtypes-extra.h>
 #include <ucw/opt.h>
 #include <stdio.h>
 

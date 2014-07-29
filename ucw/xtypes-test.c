@@ -10,7 +10,7 @@
 #include <ucw/lib.h>
 #include <ucw/mempool.h>
 #include <ucw/xtypes.h>
-#include <ucw/table-types.h>
+#include <ucw/xtypes-extra.h>
 
 #include <errno.h>
 #include <stdlib.h>

@@ -5,7 +5,6 @@
  */
 
 #include <ucw/lib.h>
-#include <ucw/table-types.h>
 #include <ucw/fastbuf.h>
 #include <ucw/strtonum.h>
 #include <ucw/table.h>
@@ -13,6 +12,8 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <errno.h>
+
+#include <ucw/xtypes-extra.h>
 
 // FIXME: I seriously doubt there is any good reason for keeping
 // these types separated from the generic xtype machinery. There

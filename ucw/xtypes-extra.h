@@ -1,12 +1,13 @@
 /*
- *	UCW Library -- Table printer
+ *	UCW Library -- Extended types - extra types
  *
  *	(c) 2014 Robert Kessl <robert.kessl@economia.cz>
  */
 
-#ifndef _UCW_TABLE_TYPES_H
-#define _UCW_TABLE_TYPES_H
+#ifndef _UCW_XTYPES_EXTRA_H
+#define _UCW_XTYPES_EXTRA_H
 
+#include <ucw/xtypes.h>
 #include <ucw/table.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
