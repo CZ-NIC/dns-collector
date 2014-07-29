@@ -204,18 +204,6 @@ bool table_col_is_printed(struct table *tbl, uint col_def_idx)
   return true;
 }
 
-static char * table_parse_col_arg(char *col_def)
-{
-  // FIXME: should be switched to str_sepsplit
-  char * left_br = strchr(col_def, '[');
-  if(left_br == NULL) return NULL;
-  *left_br = 0;
-  left_br++;
-  char *right_br = strchr(left_br, ']');
-  *right_br = 0;
-  return left_br;
-}
-
 const char *table_set_col_opt(struct table *tbl, uint col_inst_idx, const char *col_opt)
 {
   const struct table_column *col_def = tbl->column_order[col_inst_idx].col_def;
@@ -238,6 +226,34 @@ const char *table_set_col_opt(struct table *tbl, uint col_inst_idx, const char *
   return mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_opt, col_inst_idx);
 }
 
+static char **table_parse_col_arg2(char *col_def)
+{
+  char * left_br = strchr(col_def, '[');
+  if(left_br == NULL) return NULL;
+
+  *left_br = 0;
+  left_br++;
+
+  char *col_opt = left_br;
+
+  char *next = NULL;
+  char **result = NULL;
+  GARY_INIT(result, 0);
+  for(;;) {
+    next = strchr(col_opt, ',');
+    if(!next) break;
+    if(*next == 0) break;
+    *next = 0;
+    next++;
+    *GARY_PUSH(result) = col_opt;
+
+    col_opt = next;
+  }
+  *GARY_PUSH(result) = col_opt;
+
+  return result;
+}
+
 /**
  * TODO: This function deliberately leaks memory. When it is called multiple times,
  * previous column orders still remain allocated in the table's memory pool.
@@ -258,8 +274,11 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
   char *tmp_col_order = stk_strdup(col_order_str);
 
   int col_count = 1;
+  bool inside_brackets = false;
   for(int i = 0; col_order_str[i] != 0; i++) {
-    if(col_order_str[i] == ',') {
+    if(col_order_str[i] == '[')  inside_brackets = true;
+    if(col_order_str[i] == ']')  inside_brackets = false;
+    if(!inside_brackets && col_order_str[i] == ',') {
       col_count++;
     }
   }
@@ -270,12 +289,16 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
   int curr_col_inst_idx = 0;
   char *name_start = tmp_col_order;
   while(name_start) {
-    char *next = strchr(name_start, ',');
-    if(next) {
+    char *next = strpbrk(name_start, "[,");
+    if(next && *next == '[') {
+      next = strchr(next, ']');
+      *next++ = 0;
+      next = *next == 0 ? NULL : next + 1;
+    } else if(next) {
       *next++ = 0;
     }
 
-    char *arg = table_parse_col_arg(name_start); // this sets 0 on the '['
+    char **args = table_parse_col_arg2(name_start); // this sets 0 on the '['
     int col_def_idx = table_get_col_idx(tbl, name_start);
 
     if(col_def_idx == -1) {
@@ -284,11 +307,14 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     tbl->column_order[curr_col_inst_idx].col_def = tbl->columns + col_def_idx;
     tbl->column_order[curr_col_inst_idx].idx = col_def_idx;
     tbl->column_order[curr_col_inst_idx].fmt = tbl->columns[col_def_idx].fmt;
-    if(arg) {
-      const char *err = NULL;
-      err = table_set_col_opt(tbl, curr_col_inst_idx, arg);
-      if(err) return mp_printf(tbl->pool, "Error occured while setting column option: %s.", err);
-    }
+    if(args) {
+      for(uint i = 0; i < GARY_SIZE(args); i++) {
+        const char *err = NULL;
+        err = table_set_col_opt(tbl, curr_col_inst_idx, args[i]);
+        if(err) return mp_printf(tbl->pool, "Error occured while setting column option: %s.", err);
+      }
+      GARY_FREE(args);
+   }
 
     name_start = next;
     curr_col_inst_idx++;
