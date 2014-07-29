@@ -242,8 +242,7 @@ TABLE_COL_PROTO(uintmax, uintmax_t)
 TABLE_COL_PROTO(s64, s64)
 TABLE_COL_PROTO(u64, u64)
 TABLE_COL_PROTO(bool, bool)
-
-void table_col_str(struct table *tbl, int col, const char * val);
+TABLE_COL_PROTO(str, const char *)
 
 /** TABLE_COL_BODY macro enables easy definitions of bodies of table_col_<something> functions **/
 #define TABLE_COL_BODY(_name, _type) void table_col_##_name(struct table *tbl, int col, _type val) {\

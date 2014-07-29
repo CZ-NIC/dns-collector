@@ -471,7 +471,7 @@ const char *table_set_option(struct table *tbl, const char *opt)
 
 const char *table_set_gary_options(struct table *tbl, char **gary_table_opts)
 {
-  for (uint i = 0; i < GARY_SIZE(gary_table_opts); i++) {
+  for(uint i = 0; i < GARY_SIZE(gary_table_opts); i++) {
     const char *rv = table_set_option(tbl, gary_table_opts[i]);
     if(rv != NULL) {
       return rv;
