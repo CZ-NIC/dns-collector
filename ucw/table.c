@@ -49,8 +49,13 @@ struct table *table_init(const struct table_template *tbl_template)
 
   // initialize column_order
   if(tbl_template->column_order) {
-    new_inst->column_order = mp_alloc_zero(new_inst->pool, sizeof(struct table_col_instance) * tbl_template->cols_to_output);
-    memcpy(new_inst->column_order, tbl_template->column_order, sizeof(struct table_col_instance) * tbl_template->cols_to_output);
+    int cols_to_output = 0;
+    for(; ; cols_to_output++) {
+      if(tbl_template->column_order[cols_to_output].idx == (uint) ~0) break;
+    }
+
+    new_inst->column_order = mp_alloc_zero(new_inst->pool, sizeof(struct table_col_instance) * cols_to_output);
+    memcpy(new_inst->column_order, tbl_template->column_order, sizeof(struct table_col_instance) * cols_to_output);
     for(uint i = 0; i < new_inst->cols_to_output; i++) {
       new_inst->column_order[i].cell_content = NULL;
       int col_def_idx = new_inst->column_order[i].idx;
@@ -58,7 +63,7 @@ struct table *table_init(const struct table_template *tbl_template)
       new_inst->column_order[i].fmt = tbl_template->columns[col_def_idx].fmt;
     }
 
-    new_inst->cols_to_output = tbl_template->cols_to_output;
+    new_inst->cols_to_output = cols_to_output;
   }
 
   new_inst->col_delimiter = tbl_template->col_delimiter;
@@ -82,7 +87,7 @@ void table_cleanup(struct table *tbl)
 // TODO: test default column order
 static void table_make_default_column_order(struct table *tbl)
 {
-  struct table_col_instance *col_order = alloca(sizeof(struct table_col_instance) * tbl->column_count);
+  struct table_col_instance *col_order = alloca(sizeof(struct table_col_instance) * (tbl->column_count + 1));
   bzero(col_order, sizeof(struct table_col_instance) * tbl->column_count);
 
   for(int i = 0; i < tbl->column_count; i++) {
@@ -90,8 +95,10 @@ static void table_make_default_column_order(struct table *tbl)
     // currently, XTYPE_FMT_DEFAULT is 0, so bzero actually sets it correctly. This makes it more explicit.
     col_order[i].fmt = XTYPE_FMT_DEFAULT;
   }
+  struct table_col_instance tbl_col_order_end = TBL_COL_ORDER_END;
+  col_order[tbl->column_count] = tbl_col_order_end;
 
-  table_set_col_order(tbl, col_order, tbl->column_count);
+  table_set_col_order(tbl, col_order);
 }
 
 void table_start(struct table *tbl, struct fastbuf *out)
@@ -169,10 +176,13 @@ static void table_update_ll(struct table *tbl)
   }
 }
 
-void table_set_col_order(struct table *tbl, const struct table_col_instance *col_order, uint cols_to_output)
+void table_set_col_order(struct table *tbl, const struct table_col_instance *col_order)
 {
-  for(uint i = 0; i < cols_to_output; i++) {
-    ASSERT_MSG(col_order[i].idx < (uint) tbl->column_count, "Column %d does not exist; column number should be between 0 and %d(including).", col_order[i].idx, tbl->column_count - 1);
+  uint cols_to_output = 0;
+  for(; ; cols_to_output++) {
+    if(col_order[cols_to_output].idx == (uint) ~0) break;
+    ASSERT_MSG(col_order[cols_to_output].idx < (uint) tbl->column_count,
+               "Column %d does not exist; column number should be between 0 and %d(including).", col_order[cols_to_output].idx, tbl->column_count - 1);
   }
 
   tbl->cols_to_output = cols_to_output;
@@ -213,9 +223,7 @@ const char *table_set_col_opt(struct table *tbl, uint col_inst_idx, const char *
   // Make sure that we do not call table_set_col_opt, which would
   // result in an infinite recursion.
   if(col_def && col_def->set_col_opt) {
-    if(col_def->set_col_opt == table_set_col_opt) {
-      die("table_set_col_opt should not be used as a struct table_column::set_col_opt hook");
-    }
+    ASSERT_MSG(col_def->set_col_opt != table_set_col_opt,"table_set_col_opt should not be used as a struct table_column::set_col_opt hook");
     return col_def->set_col_opt(tbl, col_inst_idx, col_opt);
   }
 
@@ -586,7 +594,8 @@ enum test_table_cols {
   TEST_COL0_STR, TEST_COL1_INT, TEST_COL2_UINT, TEST_COL3_BOOL, TEST_COL4_DOUBLE
 };
 
-static struct table_col_instance test_column_order[] = { TBL_COL(TEST_COL3_BOOL), TBL_COL(TEST_COL4_DOUBLE), TBL_COL(TEST_COL2_UINT), TBL_COL(TEST_COL1_INT), TBL_COL(TEST_COL0_STR) };
+static struct table_col_instance test_column_order[] = { TBL_COL(TEST_COL3_BOOL), TBL_COL(TEST_COL4_DOUBLE),
+                      TBL_COL(TEST_COL2_UINT), TBL_COL(TEST_COL1_INT), TBL_COL(TEST_COL0_STR), TBL_COL_ORDER_END };
 
 static struct table_template test_tbl = {
   TBL_COLUMNS {
@@ -675,8 +684,8 @@ static void test_simple1(struct fastbuf *out)
 
 
   // test table_col_order_fmt
-  struct table_col_instance col_order[] = { TBL_COL(TEST_COL0_STR), TBL_COL_FMT(TEST_COL4_DOUBLE, XTYPE_FMT_PRETTY), TBL_COL_FMT(TEST_COL4_DOUBLE, XTYPE_FMT_RAW) };
-  table_set_col_order(tbl, col_order, ARRAY_SIZE(col_order));
+  struct table_col_instance col_order[] = { TBL_COL(TEST_COL0_STR), TBL_COL_FMT(TEST_COL4_DOUBLE, XTYPE_FMT_PRETTY), TBL_COL_FMT(TEST_COL4_DOUBLE, XTYPE_FMT_RAW), TBL_COL_ORDER_END };
+  table_set_col_order(tbl, col_order);
   table_start(tbl, out);
 
   table_col_str(tbl, TEST_COL0_STR, "test");
@@ -696,7 +705,7 @@ enum test_any_table_cols {
   TEST_ANY_COL0_INT, TEST_ANY_COL1_ANY
 };
 
-static struct table_col_instance test_any_column_order[] = { TBL_COL(TEST_ANY_COL0_INT), TBL_COL_FMT(TEST_ANY_COL1_ANY, XTYPE_FMT_PRETTY) };
+static struct table_col_instance test_any_column_order[] = { TBL_COL(TEST_ANY_COL0_INT), TBL_COL_FMT(TEST_ANY_COL1_ANY, XTYPE_FMT_PRETTY), TBL_COL_ORDER_END };
 
 static struct table_template test_any_tbl = {
   TBL_COLUMNS {

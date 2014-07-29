@@ -103,7 +103,6 @@ struct table_col_instance {
 struct table_template {
   const struct table_column *columns;       // [*] Definition of columns
   struct table_col_instance *column_order;  // [*] Order of the columns in the print-out of the table
-  uint cols_to_output;                      // [*] Number of columns that are printed
   const char *col_delimiter;                // [*] Delimiter that is placed between columns
   // Back-end used for table formatting and its private data
   const struct table_formatter *formatter;
@@ -182,7 +181,7 @@ struct table {
 #define TBL_COL_END { .name = 0, .width = 0, .fmt = 0, .type_def = NULL }
 
 #define TBL_COLUMNS  .columns = (struct table_column [])
-#define TBL_COL_ORDER(order) .column_order = (struct table_col_instance *) order, .cols_to_output = ARRAY_SIZE(order)
+#define TBL_COL_ORDER(order) .column_order = (struct table_col_instance *) order
 #define TBL_COL_DELIMITER(_delimiter) .col_delimiter = _delimiter
 
 /**
@@ -190,6 +189,7 @@ struct table {
  **/
 #define TBL_COL(_idx) { .idx = _idx, .fmt = XTYPE_FMT_DEFAULT, .next_column = -1 }
 #define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .fmt = _fmt, .next_column = -1 }
+#define TBL_COL_ORDER_END { .col_def = 0, .idx = (uint) ~0, .fmt = 0, .next_column = -1 }
 
 /**
  * These macros are aliases to various kinds of table formats.
@@ -323,16 +323,15 @@ const char *table_set_col_opt(struct table *tbl, uint col_inst_idx, const char *
 const char *table_get_col_list(struct table *tbl);
 
 /**
- * Sets the order in which the columns are printed. The columns are specified by struct
- *
- * Sets the order in which the columns are printed.
- * The table converts the integers in @col_order into an internal representation stored
- * in `column_order`. Options to column instances can be set using @table_set_col_opt().
- *
+ * Sets the order in which the columns are printed. The columns are specified by array of struct
  * @table_col_instance. This allows specification of format. The user should make an array of struct
- * @table_col_instance and fill the array using the TBL_COL and TBL_COL_FMT.
+ * @table_col_instance and fill the array using the TBL_COL and TBL_COL_FMT. The array has a special
+ * last element: @TBL_COL_ORDER_END.
+ *
+ * The table copies content of @col_order into an internal representation stored
+ * in `column_order`. Options to column instances can be set using @table_set_col_opt().
  **/
-void table_set_col_order(struct table *tbl, const struct table_col_instance *col_order, uint cols_to_output);
+void table_set_col_order(struct table *tbl, const struct table_col_instance *col_order);
 
 /**
  * Sets the order in which the columns are printed. The specification is a string with comma-separated column
