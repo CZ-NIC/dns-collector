@@ -199,9 +199,9 @@ void table_set_col_order(struct table *tbl, const struct table_col_instance *col
 
 bool table_col_is_printed(struct table *tbl, uint col_def_idx)
 {
-  if(tbl->ll_headers[col_def_idx] == -1) return 0;
+  if(tbl->ll_headers[col_def_idx] == -1) return false;
 
-  return 1;
+  return true;
 }
 
 static char * table_parse_col_arg(char *col_def)

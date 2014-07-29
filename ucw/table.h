@@ -86,12 +86,19 @@ struct table_column {
        //     instance to which the @col_opt is set. Return value is the error string.
 };
 
+/**
+ * Definition of a column instance. The table_col_instance belongs to a struct table. col_def is
+ * pointing to a definition of the column in struct table::columns. The user can fill only the @idx
+ * and @fmt. The @col_def, @cell_content, @next_column are private fields.
+ *
+ * Please use only fields marked with `[*]`.
+ **/
 struct table_col_instance {
-  uint idx;                            // idx is a index into struct table::columns
+  uint idx;                            // [*] idx is a index into struct table::columns
   const struct table_column *col_def;  // this is pointer to the column definition, located in the array struct table::columns
   const char *cell_content;            // content of the cell of the current row
   int next_column;                     // index of next column in linked list of columns of the same type
-  uint fmt;                            // format of this column
+  uint fmt;                            // [*] format of this column
 };
 
 /**
@@ -344,7 +351,7 @@ void table_set_col_order(struct table *tbl, const struct table_col_instance *col
 const char *table_set_col_order_by_name(struct table *tbl, const char *col_order);
 
 /**
- * Returns true if col_idx will be printed, false otherwise.
+ * Returns true if @col_def_idx will be printed, false otherwise.
  **/
 bool table_col_is_printed(struct table *tbl, uint col_def_idx);
 
