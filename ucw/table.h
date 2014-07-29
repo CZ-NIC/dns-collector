@@ -82,12 +82,10 @@ struct table_column {
   const struct xtype *type_def; // [*] pointer to xtype of this column
 
   const char * (*set_col_opt)(struct table *tbl, uint col_inst_idx, const char *col_opt);
-       // [*] process table option for a column instance. @col_inst_idx is the index of the column to which the @col_opt is set.
-       // FIXME: Comment on arguments and return value
+       // [*] process table option for a column instance. @col_inst_idx is the index of the column
+       //     instance to which the @col_opt is set. Return value is the error string.
 };
 
-// FIXME: is it correct to have idx and col_def? idx is sufficient and in fact a duplicity of idx
-// idx is used only for initialization and col_def is used in other cases
 struct table_col_instance {
   uint idx;                            // idx is a index into struct table::columns
   const struct table_column *col_def;  // this is pointer to the column definition, located in the array struct table::columns
@@ -304,15 +302,10 @@ int table_get_col_idx(struct table *tbl, const char *col_name);
  * whether the xtype::parse_fmt can be called and calls it. However, there are situation in which
  * the xtype::parse_fmt is not sufficient, e.g., column decoration, post-processing, etc.
  *
- * Each struct table_column has a pointer to a customized version of table_set_col_opt which is
- * called instead of this (default) version of table_set_col_opt
- *
- * FIXME: Make table_set_col_opt() a front-end function used by everybody,
- * which checks if the set_col_opt hook is defined and either calls it or
- * processes the options in the generic way. Nobody else should call the
- * hook directly.
- *     RK: that is the current solution the only confusion can be that
- *     the hook and this function has the same prototype.
+ * Each struct table_column has a pointer to a customized version of table_set_col_opt (called
+ * set_col_opt). The hook set_call_opt should be always called through @table_set_col_opt. The hook
+ * and @table_set_col_opt has the same prototype, but @table_set_col_opt should never be used as the
+ * table_set_opt hook.
  **/
 const char *table_set_col_opt(struct table *tbl, uint col_inst_idx, const char *col_opt);
 
@@ -353,9 +346,6 @@ const char *table_set_col_order_by_name(struct table *tbl, const char *col_order
 
 /**
  * Returns true if col_idx will be printed, false otherwise.
- *
- * FIXME: Naming of arguments is confusing. @col_idx sometimes indexes
- * columns, but sometimes their instances.
  **/
 bool table_col_is_printed(struct table *tbl, uint col_def_idx);
 
