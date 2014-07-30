@@ -340,11 +340,12 @@ void table_set_col_order(struct table *tbl, const struct table_col_instance *col
  * The format of the col_order string is the following:
  * <col-order-string> := <col-def>[,<col-def>]*
  *
- * <col-def> := <col-name> '[' <col-opt> ']'
+ * <col-def> := <col-name> [ '[' <col-opts> ']' ]
  *
  * <col-name> is a string that does not contain comma ',' or '[',']' brackets
  *
- * <col-opt> is currently only one string without commas. In the future the format can be <str1>,<str2>,... .
+ * <col-opts> := <string> [ ',' <string> ]
+ *  - <col-opts> is a comma-separated list of options
  **/
 const char *table_set_col_order_by_name(struct table *tbl, const char *col_order);
 
