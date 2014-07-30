@@ -1,5 +1,5 @@
 /*
- *	UCW Library -- Test of Tableprinter Types
+ *	UCW Library -- Test of Extended Types
  *
  *	(c) 2014 Robert Kessl <robert.kessl@economia.cz>
  *
