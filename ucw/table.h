@@ -345,8 +345,6 @@ void table_set_col_order(struct table *tbl, const struct table_col_instance *col
  * <col-name> is a string that does not contain comma ',' or '[',']' brackets
  *
  * <col-opt> is currently only one string without commas. In the future the format can be <str1>,<str2>,... .
- *
- * FIXME In the future, we should allow <col-opt> to be a comma(,) separated list of identifiers
  **/
 const char *table_set_col_order_by_name(struct table *tbl, const char *col_order);
 

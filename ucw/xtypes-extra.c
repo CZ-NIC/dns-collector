@@ -15,12 +15,6 @@
 
 #include <ucw/xtypes-extra.h>
 
-// FIXME: I seriously doubt there is any good reason for keeping
-// these types separated from the generic xtype machinery. There
-// is nothing special in them, which would be tightly connected
-// to the table printer. Especially as they are already tested
-// by xtypes-test.c.  --mj
-
 /** xt_size **/
 
 static const struct unit_definition xt_size_units[] = {
