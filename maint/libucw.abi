@@ -501,11 +501,6 @@ str_to_uint
 str_to_uns
 str_to_u32
 str_to_u64
-# ucw/table-types.h
-table_col_size
-table_col_timestamp
-xt_size
-xt_timestamp
 # ucw/table.h
 table_init
 table_cleanup
@@ -522,8 +517,8 @@ table_get_col_idx
 table_set_col_opt
 table_get_col_list
 table_set_col_order
-table_col_is_printed
 table_set_col_order_by_name
+table_col_is_printed
 table_set_formatter
 table_set_option_value
 table_set_option
@@ -604,7 +599,6 @@ work_submit
 work_wait
 work_try_wait
 # ucw/xtypes.h
-xtype_unit_parser
 xtype_parse_fmt
 xtype_format_fmt
 xt_str
@@ -616,6 +610,12 @@ xt_u64
 xt_uintmax
 xt_bool
 xt_double
+xtype_unit_parser
+# ucw/xtypes-extra.h
+table_col_size
+table_col_timestamp
+xt_size
+xt_timestamp
 # ucw/sorter/common.h
 sorter_trace
 sorter_trace_array
