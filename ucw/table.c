@@ -250,11 +250,12 @@ static char **table_parse_col_arg2(char *col_def)
     if(*next == 0) break;
     *next = 0;
     next++;
-    *GARY_PUSH(result) = col_opt;
+    if(*col_opt)
+      *GARY_PUSH(result) = col_opt;
 
     col_opt = next;
   }
-  if(strlen(col_opt) > 0)
+  if(*col_opt)
     *GARY_PUSH(result) = col_opt;
 
   return result;
