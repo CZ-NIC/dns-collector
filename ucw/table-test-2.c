@@ -81,7 +81,7 @@ static void do_test2(void)
   out = bfdopen_shared(1, 4096);
   struct table *tbl = table_init(&test_tbl2);
   table_set_col_order_by_name(tbl, "");
-  const char *err = table_set_option_value(tbl, "cols", "size[KB],size[MB],size[GB],size[TB],size[auto],ts[datetime],ts[timestamp]");
+  const char *err = table_set_option_value(tbl, "cols", "size[MB,TB,KB],size[MB],size[GB],size[TB],size[auto],ts[datetime],ts[timestamp],size[MB,KB]");
   if(err) {
     opt_failure("err in table_set_option_value: '%s'.", err);
     abort();
@@ -113,10 +113,46 @@ static void do_test2(void)
   bclose(out);
 }
 
+static void do_test3(void)
+{
+  struct fastbuf *out;
+  out = bfdopen_shared(1, 4096);
+
+  struct table *tbl = table_init(&test_tbl2);
+  table_set_col_order_by_name(tbl, "");
+  const char *err = table_set_option_value(tbl, "cols", "size[MB,TB,KB],size[MB],size[GB],size[TB],size[auto],ts[datetime],ts[timestamp],size[MB,KB]");
+  bprintf(out, "Error occured: %s\n", err);
+  table_cleanup(tbl);
+
+
+  tbl = table_init(&test_tbl2);
+  table_set_col_order_by_name(tbl, "");
+  err = table_set_option_value(tbl, "cols", "size[MB,TB,KB],size[MB],size[GB],size[TB],size[auto],ts[datetime],ts[timestamp],size[MB,KB");
+  bprintf(out, "Error occured: %s\n", err);
+  table_cleanup(tbl);
+
+
+  tbl = table_init(&test_tbl2);
+  table_set_col_order_by_name(tbl, "");
+  err = table_set_option_value(tbl, "cols", "size[MB,TB,KB");
+  bprintf(out, "Error occured: %s\n", err);
+  table_cleanup(tbl);
+
+
+  tbl = table_init(&test_tbl2);
+  table_set_col_order_by_name(tbl, "");
+  err = table_set_option_value(tbl, "cols", "size[MB,TB,KB]");
+  bprintf(out, "Error occured: %s\n", err);
+  table_cleanup(tbl);
+
+  bclose(out);
+}
+
 int main(int argc UNUSED, char **argv UNUSED)
 {
   do_test();
   do_test2();
+  do_test3();
 
   return 0;
 }
