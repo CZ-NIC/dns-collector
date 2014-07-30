@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _UCW_XTYPE_H
-#define _UCW_XTYPE_H
+#ifndef _UCW_XTYPES_H
+#define _UCW_XTYPES_H
 
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define xt_bool ucw_xt_bool
