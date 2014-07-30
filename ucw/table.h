@@ -194,7 +194,7 @@ struct table {
  **/
 #define TBL_COL(_idx) { .idx = _idx, .fmt = XTYPE_FMT_DEFAULT, .next_column = -1 }
 #define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .fmt = _fmt, .next_column = -1 }
-#define TBL_COL_ORDER_END { .col_def = 0, .idx = (uint) ~0, .fmt = 0, .next_column = -1 }
+#define TBL_COL_ORDER_END { .col_def = 0, .idx = ~0U, .fmt = 0, .next_column = -1 }
 
 /**
  * These macros are aliases to various kinds of table formats.

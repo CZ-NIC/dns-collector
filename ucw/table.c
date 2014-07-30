@@ -49,9 +49,8 @@ struct table *table_init(const struct table_template *tbl_template)
 
   // initialize column_order
   if(tbl_template->column_order) {
-    int cols_to_output = 0;
-    for(; ; cols_to_output++) {
-      if(tbl_template->column_order[cols_to_output].idx == (uint) ~0) break;
+    for(int cols_to_output = 0; ; cols_to_output++) {
+      if(tbl_template->column_order[cols_to_output].idx == ~0U) break;
     }
 
     new_inst->column_order = mp_alloc_zero(new_inst->pool, sizeof(struct table_col_instance) * cols_to_output);
@@ -180,13 +179,13 @@ void table_set_col_order(struct table *tbl, const struct table_col_instance *col
 {
   uint cols_to_output = 0;
   for(; ; cols_to_output++) {
-    if(col_order[cols_to_output].idx == (uint) ~0) break;
+    if(col_order[cols_to_output].idx == ~0U) break;
     ASSERT_MSG(col_order[cols_to_output].idx < (uint) tbl->column_count,
                "Column %d does not exist; column number should be between 0 and %d(including).", col_order[cols_to_output].idx, tbl->column_count - 1);
   }
 
   tbl->cols_to_output = cols_to_output;
-  tbl->column_order = mp_alloc_zero(tbl->pool, sizeof(struct table_col_instance) * cols_to_output);
+  tbl->column_order = mp_alloc(tbl->pool, sizeof(struct table_col_instance) * cols_to_output);
   memcpy(tbl->column_order, col_order, sizeof(struct table_col_instance) * cols_to_output);
   for(uint i = 0; i < cols_to_output; i++) {
     int col_def_idx = tbl->column_order[i].idx; // this is given in col_order
