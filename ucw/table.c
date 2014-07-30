@@ -49,7 +49,8 @@ struct table *table_init(const struct table_template *tbl_template)
 
   // initialize column_order
   if(tbl_template->column_order) {
-    for(int cols_to_output = 0; ; cols_to_output++) {
+    int cols_to_output = 0;
+    for(; ; cols_to_output++) {
       if(tbl_template->column_order[cols_to_output].idx == ~0U) break;
     }
 
