@@ -188,11 +188,11 @@ void table_set_col_order(struct table *tbl, const struct table_col_instance *col
   tbl->column_order = mp_alloc(tbl->pool, sizeof(struct table_col_instance) * cols_to_output);
   memcpy(tbl->column_order, col_order, sizeof(struct table_col_instance) * cols_to_output);
   for(uint i = 0; i < cols_to_output; i++) {
-    int col_def_idx = tbl->column_order[i].idx; // this is given in col_order
+    int col_def_idx = tbl->column_order[i].idx; // this is given in arg @col_order
     tbl->column_order[i].col_def = tbl->columns + col_def_idx;
-    tbl->column_order[i].cell_content = NULL; // cell_content is copied from @col_order, so make sure that it is NULL
+    tbl->column_order[i].cell_content = NULL; // cell_content is copied from arg @col_order, so make sure that it is NULL
     tbl->column_order[i].next_column = -1;
-    // tbl->column_order[i].fmt should be untouched (copied from col_order)
+    // tbl->column_order[i].fmt should be untouched (copied from arg @col_order)
   }
 }
 
