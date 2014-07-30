@@ -254,7 +254,8 @@ static char **table_parse_col_arg2(char *col_def)
 
     col_opt = next;
   }
-  *GARY_PUSH(result) = col_opt;
+  if(strlen(col_opt) > 0)
+    *GARY_PUSH(result) = col_opt;
 
   return result;
 }
