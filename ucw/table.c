@@ -226,6 +226,11 @@ const char *table_set_col_opt(struct table *tbl, uint col_inst_idx, const char *
   return mp_printf(tbl->pool, "Invalid column format option: '%s' for column %d.", col_opt, col_inst_idx);
 }
 
+/**
+ * the input is a null-terminated string that contains: "<col-name>'['<param1>','<param2>\0
+ * i.e., the ']' is missing and is replaced by \0.
+ * the function replace the '[' by \0 and then parses the rest of the string.
+ **/
 static char **table_parse_col_arg2(char *col_def)
 {
   char * left_br = strchr(col_def, '[');
@@ -292,8 +297,9 @@ const char * table_set_col_order_by_name(struct table *tbl, const char *col_orde
     char *next = strpbrk(name_start, "[,");
     if(next && *next == '[') {
       next = strchr(next, ']');
+      if(!next) return mp_printf(tbl->pool, "Invalid column definition, missing ']'.");
       *next++ = 0;
-      next = *next == 0 ? NULL : next + 1;
+      next = *next == 0 ? NULL : next + 1; // if next points to the last \0 => end the computation
     } else if(next) {
       *next++ = 0;
     }
