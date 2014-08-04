@@ -215,10 +215,10 @@ const char *table_set_col_opt(struct table *tbl, uint col_inst_idx, const char *
     return col_def->set_col_opt(tbl, col_inst_idx, col_opt);
   }
 
-  if(col_def && col_def->type_def && col_def->type_def->parse_fmt) {
-    uint fmt = 0;
-    const char *tmp_err = col_def->type_def->parse_fmt(col_opt, &fmt, tbl->pool);
-    if(tmp_err) return tmp_err;
+  if(col_def && col_def->type_def) {
+    u32 fmt = 0;
+    const char *tmp_err = xtype_parse_fmt(col_def->type_def, col_opt, &fmt, tbl->pool);
+    if(tmp_err) return mp_printf(tbl->pool, "Invalid column format; xtypes error: '%s'.", tmp_err);
     tbl->column_order[col_inst_idx].fmt = fmt;
     return NULL;
   }
