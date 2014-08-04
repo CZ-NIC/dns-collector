@@ -84,7 +84,7 @@ static const char *xt_double_parse(const char *str, void *dest, struct mempool *
 static const char * xt_double_fmt_parse(const char *str, u32 *dest, struct mempool *pool)
 {
   uint precision = 0;
-  const char *tmp_err = str_to_uint(&precision, str, NULL, 0);
+  const char *tmp_err = str_to_uint(&precision, str, NULL, 10);
   if (tmp_err)
     return mp_printf(pool, "Could not parse floating point number precision: %s", tmp_err);
 
