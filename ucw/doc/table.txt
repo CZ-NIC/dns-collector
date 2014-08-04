@@ -4,17 +4,34 @@ Table printer
 The table printer module provides formatting of 2-dimensional tables
 in various ways.
 
-Each table consists of a number of rows, which are processed one
-after another. All rows have the same number of columns. Internally,
-the columns have a fixed order, each column has its name and a data
-type (e.g., int, uint, u64, etc.). The table printer checks that
-each cell is filled by a value of the appropriate type, except that
-a string value is allowed in any cell (for example, this allows
-a numeric cell to be set to "--" or "unknown").
+Each table print-out consists of a number of rows, which are processed
+one after another. All rows have the same number of columns.
+Internally, the columns have a fixed order, each column has its name
+and a data type (e.g., int, uint, u64, etc.). The data type is
+realized using extended types (referred to as xtypes). The table
+printer checks that each cell is filled by a value of the appropriate
+type, except that a string value is allowed in any cell (for example,
+this allows a numeric cell to be set to "--" or "unknown"). Once a
+table is defined, it can be printed using a variety of formatters
+(human-readable, tab-separated values, etc.) and its cells can be
+formatted using at least three different formats: 1) pretty (or
+human-readable); 2) raw; 3) default.
 
-Once a table is defined, it can be printed using a variety of formatters
-(human-readable, tab-separated values, etc.). Also, a subset of columns
-can be selected and their order changed.
+The table definition consists of various column types, each column
+type is a pair consisting of a name and a data type. Name of each
+column must be unique in the whole table definition.  Each column type
+can have multiple instances in the final table print-out. The columns
+are printed using xtypes.  For example: let have a column definition
+with name 'size' of type xt_size. The column can be printed on
+position 0 (in bytes) and position 5 (in kilobytes).  This allows easy
+filtering using standart cmd line filters. For example, we want to
+remove all rows that has size greater then 1572864 bytes (1.5MB) and
+print the size in human readable format. Human readable format means
+that if there is size of 1610612736 bytes it will be rather printed as
+1536MB.
+
+Also, columns can be printed in an arbitrary order and with repeated
+columns.
 
 Example
 -------
