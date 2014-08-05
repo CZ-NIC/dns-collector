@@ -93,7 +93,7 @@ struct xtype {
  *
  * The generic modes are called `default`, `raw`, and `pretty`.
  **/
-const char *xtype_parse_fmt(struct xtype *xt, const char *str, u32 *dest, struct mempool *pool);
+const char *xtype_parse_fmt(const struct xtype *xt, const char *str, u32 *dest, struct mempool *pool);
 
 /**
  * Construct a string representation of a formatting mode. It is a wrapper

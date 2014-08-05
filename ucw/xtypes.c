@@ -18,7 +18,7 @@ static const char * const fmt_names[] = {
   [XTYPE_FMT_PRETTY] = "pretty",
 };
 
-const char *xtype_parse_fmt(struct xtype *xt, const char *str, u32 *dest, struct mempool *pool)
+const char *xtype_parse_fmt(const struct xtype *xt, const char *str, u32 *dest, struct mempool *pool)
 {
   for (uint i=0; i < ARRAY_SIZE(fmt_names); i++)
     if (!strcmp(str, fmt_names[i]))
