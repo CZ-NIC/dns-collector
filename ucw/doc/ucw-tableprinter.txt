@@ -49,7 +49,7 @@ Column order (`cols` option) has the following format:
 
 <col-opts> := <string> [ ',' <string> ]
 
-Where <col-opts> is a comma-separated list of options
+Where <col-opts> is a comma-separated list of options.
 
 Column delimiter option (`col-delim`) can be an arbitrary string. The
 cell format option `cells` can have one of the possible three values:
