@@ -7,16 +7,18 @@ UCW_INDEX=$(o)/ucw/doc/def_index.html
 UCW_DOCS_HTML=$(addprefix $(o)/ucw/doc/,$(addsuffix .html,$(UCW_DOCS)))
 
 UCW_SRC_MANPAGES=ucw-tableprinter
-UCW_MANPAGES=$(addprefix  $(o)/ucw/doc/,$(addsuffix .1,$(UCW_SRC_MANPAGES)))
+MANPAGES+=$(addprefix  $(o)/ucw/doc/,$(addsuffix .1,$(UCW_SRC_MANPAGES)))
 
 $(o)/ucw/doc/ucw-tableprinter.1: ucw/doc/ucw-tableprinter.txt
-	a2x -f manpage -D $(o)/ucw/doc/ $<
+	$(M)"MANPAGE $<"
+	$(Q)a2x -d manpage -f manpage $<
+	$(Q)mv ucw/doc/ucw-tableprinter.1 $(o)/ucw/doc/
 
 $(UCW_INDEX): DOC_HEAD=$(s)/ucw/doc/def_index.txt
 $(UCW_INDEX): DOC_LIST=$(patsubst %,$(o)/ucw/doc/%.deflist,$(UCW_DOCS))
 $(UCW_INDEX) $(UCW_DOCS_HTML): DOC_MODULE=ucw
 
-DOCS+=$(UCW_DOCS_HTML)
+DOCS+=$(UCW_DOCS_HTML) $(UCW_MANPAGES)
 DOC_INDICES+=$(UCW_INDEX)
 DOC_MODULES+=ucw
 
@@ -25,8 +27,8 @@ INSTALL_TARGETS+=install-libucw-docs
 endif
 
 .PHONY: install-libucw-docs
-install-libucw-docs: $(UCW_INDEX) $(UCW_DOCS_HTML) $(UCW_MANPAGES)
+install-libucw-docs: $(UCW_INDEX) $(UCW_DOCS_HTML) $(MANPAGES)
 	install -d -m 755 $(DESTDIR)$(INSTALL_DOC_DIR)/ucw/
 	install -m 644 $^ $(DESTDIR)$(INSTALL_DOC_DIR)/ucw/
-	install -d -m 755 $(DESTDIR)$(INSTALL_MAN_DIR)/man1
-	install -m 644 $(UCW_MANPAGES) $(DESTDIR)$(INSTALL_MAN_DIR)/man1
+	install -d -m 755 $(DESTDIR)$(INSTALL_MAN_DIR)/man1/
+	install -m 644 $(UCW_MANPAGES) $(DESTDIR)$(INSTALL_MAN_DIR)/man1/

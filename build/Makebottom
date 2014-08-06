@@ -18,7 +18,7 @@ programs: $(PROGS)
 datafiles: $(DATAFILES)
 tests: $(TESTS)
 configs: $(addprefix run/$(CONFIG_DIR)/,$(CONFIGS))
-docs: runtree $(DOCS) $(DOC_INDICES)
+docs: runtree $(DOCS) $(DOC_INDICES) $(MANPAGES)
 
 tags:
 	etags `find . -name "*.[ch]"`

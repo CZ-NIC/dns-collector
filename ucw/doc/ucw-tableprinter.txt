@@ -57,7 +57,7 @@ cell format option `cells` can have one of the possible three values:
 `cells` option can be shortcutted as options `raw` and `pretty` with
 no value.
 
-Additionally to standart types (like integer, floating point) there
+Additionally to standard types (like integer, floating point) there
 are the two following types: 1) size; 2) timestamp. The 'size' type
 has the following case-sensitive column options: `KB`, `MB`, `GB`,
 `TB`, `auto`, e.g., a column of type size and name `file-size` can be
