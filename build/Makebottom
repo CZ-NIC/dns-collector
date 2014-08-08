@@ -18,7 +18,7 @@ programs: $(PROGS)
 datafiles: $(DATAFILES)
 tests: $(TESTS)
 configs: $(addprefix run/$(CONFIG_DIR)/,$(CONFIGS))
-docs: runtree $(DOCS) $(DOC_INDICES) $(MANPAGES)
+docs: runtree $(DOCS) $(DOC_INDICES) $(UCW_MANPAGES)
 
 tags:
 	etags `find . -name "*.[ch]"`
@@ -209,6 +209,11 @@ $(o)/%.html: $(o)/%.txt $(BUILDSYS)/asciidoc.conf $(BUILDSYS)/asciidoc-xhtml.con
 	$(M)"DOC-HTML $<"
 	$(Q)asciidoc -e -f $(BUILDSYS)/asciidoc.conf -f $(BUILDSYS)/asciidoc-xhtml.conf -f $(HOST_PREFIX)/etc/asciidoc/asciidoc.conf -f $(HOST_PREFIX)/etc/asciidoc/xhtml11.conf $<
 	$(Q)$(call symlink,$@,run/$(DOCDIR)/$(DOC_MODULE))
+
+$(o)/%.1: $(s)/%.txt
+	$(M)"MANPAGE $<"
+	$(Q)a2x -d manpage -f manpage $<
+	$(Q)mv $(patsubst %.txt, %.1, $<) $(dir $@)
 
 # In reality, we do not depend on the .txt files, but on the corresponding .deflist's.
 # However, the Makefile language cannot express that doc-extract generates both .txt

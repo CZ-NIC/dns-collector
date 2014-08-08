@@ -7,18 +7,13 @@ UCW_INDEX=$(o)/ucw/doc/def_index.html
 UCW_DOCS_HTML=$(addprefix $(o)/ucw/doc/,$(addsuffix .html,$(UCW_DOCS)))
 
 UCW_SRC_MANPAGES=ucw-tableprinter
-MANPAGES+=$(addprefix  $(o)/ucw/doc/,$(addsuffix .1,$(UCW_SRC_MANPAGES)))
-
-$(o)/ucw/doc/ucw-tableprinter.1: ucw/doc/ucw-tableprinter.txt
-	$(M)"MANPAGE $<"
-	$(Q)a2x -d manpage -f manpage $<
-	$(Q)mv ucw/doc/ucw-tableprinter.1 $(o)/ucw/doc/
+UCW_MANPAGES+=$(addprefix  $(o)/ucw/doc/,$(addsuffix .1,$(UCW_SRC_MANPAGES)))
 
 $(UCW_INDEX): DOC_HEAD=$(s)/ucw/doc/def_index.txt
 $(UCW_INDEX): DOC_LIST=$(patsubst %,$(o)/ucw/doc/%.deflist,$(UCW_DOCS))
 $(UCW_INDEX) $(UCW_DOCS_HTML): DOC_MODULE=ucw
 
-DOCS+=$(UCW_DOCS_HTML) $(UCW_MANPAGES)
+DOCS+=$(UCW_DOCS_HTML)
 DOC_INDICES+=$(UCW_INDEX)
 DOC_MODULES+=ucw
 
