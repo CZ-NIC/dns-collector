@@ -9,25 +9,23 @@
 #include <ucw/opt.h>
 #include <stdio.h>
 
-
 enum test_table_cols {
   test_col0_str, test_col1_int, test_col2_uint, test_col3_bool, test_col4_double
 };
 
-static struct table test_tbl = {
+static struct table_template test_tbl = {
   TBL_COLUMNS {
     [test_col0_str] = TBL_COL_STR("col0_str", 30 | CELL_ALIGN_LEFT),
     [test_col1_int] = TBL_COL_INT("col1_int", 8),
     [test_col2_uint] = TBL_COL_UINT("col2_uint", 9),
-    [test_col3_bool] = TBL_COL_BOOL("col3_bool", 9 | CELL_ALIGN_LEFT),
-    [test_col4_double] = TBL_COL_DOUBLE("col4_double", 11 | CELL_ALIGN_LEFT, 5),
+    [test_col3_bool] = TBL_COL_BOOL_FMT("col3_bool", 9 | CELL_ALIGN_LEFT, XTYPE_FMT_PRETTY),
+    [test_col4_double] = TBL_COL_DOUBLE_FMT("col4_double", 11 | CELL_ALIGN_LEFT, XTYPE_FMT_DEFAULT),
     TBL_COL_END
   },
-  TBL_OUTPUT_HUMAN_READABLE,
+  TBL_FMT_HUMAN_READABLE,
   TBL_COL_DELIMITER("\t"),
 };
 
-static int test_to_perform = -1;
 static char **cli_table_opts;
 
 static struct opt_section table_printer_opts = {
@@ -99,14 +97,11 @@ int main(int argc UNUSED, char **argv)
   struct fastbuf *out;
   out = bfdopen_shared(1, 4096);
 
-  table_init(&test_tbl);
-  process_command_line_opts(argv, &test_tbl);
+  struct table *tbl = table_init(&test_tbl);
+  process_command_line_opts(argv, tbl);
 
-  //bprintf(out, "width: %X; masked: %d; mask: %X\n", test_tbl.columns[0].width, test_tbl.columns[0].width & CELL_ALIGN_MASK, CELL_ALIGN_MASK);
-  //bflush(out);
-
-  print_table(&test_tbl, out);
-  table_cleanup(&test_tbl);
+  print_table(tbl, out);
+  table_cleanup(tbl);
   bclose(out);
 
   return 0;

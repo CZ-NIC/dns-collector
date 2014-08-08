@@ -21,7 +21,7 @@ for my $g (sort keys %renames) {
 	my @symbols = sort @{$renames{$g}};
 	@symbols or next;
 
-	open my $in, '<', $g or die;
+	open my $in, '<', $g or die "Cannot open $g: $!\n";
 	open my $out, '>', "$g.new" or die;
 	my $mode = 0;
 	my $cmt = 0;

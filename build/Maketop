@@ -23,6 +23,10 @@ INSTALL_RUNDIRS=bin lib
 API_INCLUDES=
 API_LIBS=
 
+DOCS=
+DOC_INDICES=
+MANPAGES=
+
 # Various files whose type does not fit into PROGS
 DATAFILES=
 

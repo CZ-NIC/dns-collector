@@ -11,48 +11,25 @@
 
 #include <ucw/fastbuf.h>
 #include <ucw/mempool.h>
+#include <ucw/xtypes.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
-#define table_append_bool ucw_table_append_bool
-#define table_append_double ucw_table_append_double
-#define table_append_int ucw_table_append_int
-#define table_append_intmax ucw_table_append_intmax
-#define table_append_printf ucw_table_append_printf
-#define table_append_str ucw_table_append_str
-#define table_append_u64 ucw_table_append_u64
-#define table_append_uint ucw_table_append_uint
-#define table_append_uintmax ucw_table_append_uintmax
 #define table_cleanup ucw_table_cleanup
 #define table_col_bool ucw_table_col_bool
-#define table_col_bool_fmt ucw_table_col_bool_fmt
-#define table_col_bool_name ucw_table_col_bool_name
 #define table_col_double ucw_table_col_double
-#define table_col_double_fmt ucw_table_col_double_fmt
-#define table_col_double_name ucw_table_col_double_name
 #define table_col_fbend ucw_table_col_fbend
 #define table_col_fbstart ucw_table_col_fbstart
+#define table_col_generic_format ucw_table_col_generic_format
 #define table_col_int ucw_table_col_int
-#define table_col_int_fmt ucw_table_col_int_fmt
-#define table_col_int_name ucw_table_col_int_name
 #define table_col_intmax ucw_table_col_intmax
-#define table_col_intmax_fmt ucw_table_col_intmax_fmt
-#define table_col_intmax_name ucw_table_col_intmax_name
+#define table_col_is_printed ucw_table_col_is_printed
 #define table_col_printf ucw_table_col_printf
 #define table_col_s64 ucw_table_col_s64
-#define table_col_s64_fmt ucw_table_col_s64_fmt
-#define table_col_s64_name ucw_table_col_s64_name
 #define table_col_str ucw_table_col_str
-#define table_col_str_fmt ucw_table_col_str_fmt
-#define table_col_str_name ucw_table_col_str_name
+#define table_col_str ucw_table_col_str
 #define table_col_u64 ucw_table_col_u64
-#define table_col_u64_fmt ucw_table_col_u64_fmt
-#define table_col_u64_name ucw_table_col_u64_name
 #define table_col_uint ucw_table_col_uint
-#define table_col_uint_fmt ucw_table_col_uint_fmt
-#define table_col_uint_name ucw_table_col_uint_name
 #define table_col_uintmax ucw_table_col_uintmax
-#define table_col_uintmax_fmt ucw_table_col_uintmax_fmt
-#define table_col_uintmax_name ucw_table_col_uintmax_name
 #define table_end ucw_table_end
 #define table_end_row ucw_table_end_row
 #define table_fmt_blockline ucw_table_fmt_blockline
@@ -61,6 +38,8 @@
 #define table_get_col_idx ucw_table_get_col_idx
 #define table_get_col_list ucw_table_get_col_list
 #define table_init ucw_table_init
+#define table_reset_row ucw_table_reset_row
+#define table_set_col_opt ucw_table_set_col_opt
 #define table_set_col_order ucw_table_set_col_order
 #define table_set_col_order_by_name ucw_table_set_col_order_by_name
 #define table_set_formatter ucw_table_set_formatter
@@ -75,20 +54,11 @@
  * -----------------
  ***/
 
-/** Types of columns. These are seldom used explicitly, using a column definition macro is preferred. **/
-enum column_type {
-  COL_TYPE_STR,		// String
-  COL_TYPE_INT,		// int
-  COL_TYPE_S64,		// Signed 64-bit integer
-  COL_TYPE_INTMAX,	// intmax_t
-  COL_TYPE_UINT,	// unsigned int
-  COL_TYPE_U64,		// Unsigned 64-bit integer
-  COL_TYPE_UINTMAX,	// uintmax_t
-  COL_TYPE_BOOL,	// bool
-  COL_TYPE_DOUBLE,	// double
-  COL_TYPE_ANY,		// Any type
-  COL_TYPE_LAST
-};
+// FIXME: update documentation according to the changes made in recent commits!
+
+/** The COL_TYPE_ANY macro specifies a column type which can be filled with arbitrary type. **/
+
+#define COL_TYPE_ANY      NULL
 
 /** Justify cell contents to the left. **/
 #define CELL_ALIGN_LEFT     (1U << 31)
@@ -98,6 +68,8 @@ enum column_type {
 #define CELL_FLAG_MASK	(CELL_ALIGN_LEFT)
 #define CELL_WIDTH_MASK	(~CELL_FLAG_MASK)
 
+struct table;
+
 /**
  * Definition of a single table column.
  * Usually, this is generated using the `TABLE_COL_`'type' macros.
@@ -105,41 +77,69 @@ enum column_type {
  **/
 struct table_column {
   const char *name;		// [*] Name of the column displayed in table header
-  int width;			// [*] Width of the column (in characters) OR'ed with column flags
-  const char *fmt;		// [*] Default format of each cell in the column
-  enum column_type type;	// [*] Type of the cells in the column
+  uint width;			// [*] Width of the column (in characters) OR'ed with column flags
+  uint fmt;                     // [*] default format of the column
+  const struct xtype *type_def; // [*] pointer to xtype of this column
+
+  const char * (*set_col_opt)(struct table *tbl, uint col_inst_idx, const char *col_opt);
+       // [*] process table option for a column instance. @col_inst_idx is the index of the column
+       //     instance to which the @col_opt is set. Return value is the error string.
 };
 
 /**
- * Definition of a table. Contains column definitions, per-table settings
- * and internal data. Please use only fields marked with `[*]`.
+ * Definition of a column instance. The table_col_instance belongs to a struct table. col_def is
+ * pointing to a definition of the column in struct table::columns. The user can fill only the @idx
+ * and @fmt. The @col_def, @cell_content, @next_column are private fields.
+ *
+ * Please use only fields marked with `[*]`.
+ **/
+struct table_col_instance {
+  uint idx;                            // [*] idx is a index into struct table::columns
+  const struct table_column *col_def;  // this is pointer to the column definition, located in the array struct table::columns
+  const char *cell_content;            // content of the cell of the current row
+  int next_column;                     // index of next column in linked list of columns of the same type
+  uint fmt;                            // [*] format of this column
+};
+
+/**
+ * Definition of a table. Contains column definitions, and some per-table settings.
+ * Please use only fields marked with `[*]`.
+ **/
+struct table_template {
+  const struct table_column *columns;       // [*] Definition of columns
+  struct table_col_instance *column_order;  // [*] Order of the columns in the print-out of the table
+  const char *col_delimiter;                // [*] Delimiter that is placed between columns
+  // Back-end used for table formatting and its private data
+  const struct table_formatter *formatter;
+};
+
+/**
+ * Handle of a table. Contains column definitions, per-table settings
+ * and internal data. To change the table definition, please use only
+ * fields marked with `[*]`.
  **/
 struct table {
-  struct table_column *columns;		// [*] Definition of columns
+  const struct table_column *columns;	// [*] Definition of columns
   int column_count;			// [*] Number of columns (calculated by table_init())
+  int *ll_headers;                      // headers of linked lists that connects column instances
   struct mempool *pool;			// Memory pool used for storing table data. Contains global state
 					// and data of the current row.
   struct mempool_state pool_state;	// State of the pool after the table is initialized, i.e., before
 					// per-row data have been allocated.
 
-  char **col_str_ptrs;			// Values of cells in the current row (allocated from the pool)
-
-  uint *column_order;			// [*] Order of the columns in the print-out of the table
+  struct table_col_instance *column_order;  // [*] Order of the columns in the print-out of the table
   uint cols_to_output;			// [*] Number of columns that are printed
   const char *col_delimiter;		// [*] Delimiter that is placed between columns
-  const char *append_delimiter;		// [*] Separator of multiple values in a single cell (see table_append_...())
-  uint print_header;			// [*] 0 indicates that table header should not be printed
+  bool print_header;			// [*] false indicates that table header should not be printed
 
   struct fastbuf *out;			// [*] Fastbuffer to which the table is printed
-  int last_printed_col;			// Index of the last column which was set. -1 indicates start of row.
-					// Used for example for appending to the current column.
-  int row_printing_started;		// Indicates that a row has been started. Duplicates last_printed_col, but harmlessly.
+  bool row_printing_started;		// Indicates that a row has been started.
   struct fbpool fb_col_out;		// Per-cell fastbuf, see table_col_fbstart()
   int col_out;				// Index of the column that is currently printed using fb_col_out
 
   // Back-end used for table formatting and its private data
-  struct table_formatter *formatter;
-  void *data;
+  const struct table_formatter *formatter;
+  void *formatter_data;
 };
 
 /****
@@ -152,52 +152,65 @@ struct table {
  *  * `TBL_COL_END` ends the column definitions
  *  * `TBL_COL_ORDER` specifies custom ordering of columns in the output
  *  * `TBL_COL_DELIMITER` and `TBL_APPEND_DELIMITER` override default delimiters
- *  * `TBL_OUTPUT_HUMAN_READABLE` requests human-readable formatting (this is the default)
- *  * `TBL_OUTPUT_MACHINE_READABLE` requests machine-readable TSV output
- *  * `TBL_OUTPUT_BLOCKLINE` requests block formatting (each cell printed a pair of a key and value on its own line)
+ *  * `TBL_FMT_HUMAN_READABLE` requests human-readable formatting (this is the default)
+ *  * `TBL_FMT_MACHINE_READABLE` requests machine-readable TSV output
+ *  * `TBL_FMT_BLOCKLINE` requests block formatting (each cell printed a pair of a key and value on its own line)
  *
  ***/
 
-#define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_STR }
-#define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = "%d", .type = COL_TYPE_INT }
-#define TBL_COL_S64(_name, _width)            { .name = _name, .width = _width, .fmt = "%" PRId64, .type = COL_TYPE_S64 }
-#define TBL_COL_UINT(_name, _width)           { .name = _name, .width = _width, .fmt = "%u", .type = COL_TYPE_UINT }
-#define TBL_COL_U64(_name, _width)            { .name = _name, .width = _width, .fmt = "%" PRIu64, .type = COL_TYPE_U64 }
-#define TBL_COL_INTMAX(_name, _width)         { .name = _name, .width = _width, .fmt = "%jd", .type = COL_TYPE_INTMAX }
-#define TBL_COL_UINTMAX(_name, _width)        { .name = _name, .width = _width, .fmt = "%ju", .type = COL_TYPE_UINTMAX }
-#define TBL_COL_HEXUINT(_name, _width)        { .name = _name, .width = _width, .fmt = "0x%x", .type = COL_TYPE_UINT }
-#define TBL_COL_DOUBLE(_name, _width, _prec)  { .name = _name, .width = _width, .fmt = "%." #_prec "lf", .type = COL_TYPE_DOUBLE }
-#define TBL_COL_BOOL(_name, _width)           { .name = _name, .width = _width, .fmt = "%s", .type = COL_TYPE_BOOL }
-#define TBL_COL_ANY(_name, _width)            { .name = _name, .width = _width, .fmt = 0, .type = COL_TYPE_ANY }
+#define TBL_COL_STR(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_str }
+#define TBL_COL_INT(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_int }
+#define TBL_COL_S64(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_s64 }
+#define TBL_COL_UINT(_name, _width)           { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_uint }
+#define TBL_COL_U64(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_u64 }
+#define TBL_COL_INTMAX(_name, _width)         { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_intmax }
+#define TBL_COL_UINTMAX(_name, _width)        { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_uintmax }
+#define TBL_COL_HEXUINT(_name, _width)        { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_uint }
+#define TBL_COL_DOUBLE(_name, _width)         { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_double }
+#define TBL_COL_BOOL(_name, _width)           { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = &xt_bool }
+#define TBL_COL_ANY(_name, _width)            { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = COL_TYPE_ANY }
+#define TBL_COL_XTYPE(_name, _width, _xtype)  { .name = _name, .width = _width, .fmt = XTYPE_FMT_DEFAULT, .type_def = _xtype }
 
-#define TBL_COL_STR_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_STR }
-#define TBL_COL_INT_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INT }
-#define TBL_COL_S64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_S64 }
-#define TBL_COL_UINT_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT }
-#define TBL_COL_U64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_U64 }
-#define TBL_COL_INTMAX_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_INTMAX }
-#define TBL_COL_UINTMAX_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINTMAX }
-#define TBL_COL_HEXUINT_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_UINT }
-#define TBL_COL_BOOL_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type = COL_TYPE_BOOL }
+#define TBL_COL_STR_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_str }
+#define TBL_COL_INT_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_int }
+#define TBL_COL_S64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_s64 }
+#define TBL_COL_UINT_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_uint }
+#define TBL_COL_U64_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_u64 }
+#define TBL_COL_INTMAX_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_intmax }
+#define TBL_COL_UINTMAX_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_uintmax }
+#define TBL_COL_HEXUINT_FMT(_name, _width, _fmt)        { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_uint }
+#define TBL_COL_BOOL_FMT(_name, _width, _fmt)           { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_bool }
+#define TBL_COL_ANY_FMT(_name, _width, _fmt)            { .name = _name, .width = _width, .fmt = _fmt, .type_def = COL_TYPE_ANY }
+#define TBL_COL_DOUBLE_FMT(_name, _width, _fmt)         { .name = _name, .width = _width, .fmt = _fmt, .type_def = &xt_double }
 
-#define TBL_COL_END { .name = 0, .width = 0, .fmt = 0, .type = COL_TYPE_LAST }
+#define TBL_COL_END { .name = 0, .width = 0, .fmt = 0, .type_def = NULL }
 
 #define TBL_COLUMNS  .columns = (struct table_column [])
-#define TBL_COL_ORDER(order) .column_order = (int *) order, .cols_to_output = ARRAY_SIZE(order)
-#define TBL_COL_DELIMITER(_delimiter_) .col_delimiter = _delimiter_
-#define TBL_APPEND_DELIMITER(_delimiter_) .append_delimiter = _delimiter_
-
-#define TBL_OUTPUT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
-#define TBL_OUTPUT_BLOCKLINE          .formatter = &table_fmt_blockline
-#define TBL_OUTPUT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
+#define TBL_COL_ORDER(order) .column_order = (struct table_col_instance *) order
+#define TBL_COL_DELIMITER(_delimiter) .col_delimiter = _delimiter
 
 /**
- * Initialize a table definition. The structure should already contain
+ * These macros are used for definition of column order
+ **/
+#define TBL_COL(_idx) { .idx = _idx, .fmt = XTYPE_FMT_DEFAULT, .next_column = -1 }
+#define TBL_COL_FMT(_idx, _fmt) { .idx = _idx, .fmt = _fmt, .next_column = -1 }
+#define TBL_COL_ORDER_END { .col_def = 0, .idx = ~0U, .fmt = 0, .next_column = -1 }
+
+/**
+ * These macros are aliases to various kinds of table formats.
+ **/
+#define TBL_FMT_HUMAN_READABLE     .formatter = &table_fmt_human_readable
+#define TBL_FMT_BLOCKLINE          .formatter = &table_fmt_blockline
+#define TBL_FMT_MACHINE_READABLE   .formatter = &table_fmt_machine_readable
+#define TBL_FMT(_fmt)              .formatter = _fmt
+
+/**
+ * Creates a new table from a table template. The template should already contain
  * the definitions of columns.
  **/
-void table_init(struct table *tbl);
+struct table *table_init(const struct table_template *tbl_template);
 
-/** Destroy a table definition, freeing all memory used by it. **/
+/** Destroy a table instance, freeing all memory used by it. **/
 void table_cleanup(struct table *tbl);
 
 /**
@@ -221,61 +234,40 @@ void table_end(struct table *tbl);
  * For each column type, there are functions for filling of cells
  * of the particular type:
  *
- *   * `table_col_`'type'`(table, idx, value)` sets the cell in column `idx`
+ *   * `table_col_`'type'`(table, col_def_idx, value)` sets the cell in column `col_def_idx`
  *     to the `value`
- *   * `table_col_`'type'`_fmt(table, idx, fmt, ...)` does the same with
- *     a custom printf-like format string
- *   * `table_col_`'type'`_name(table, name, value)` refers to the column
- *     by its name instead of its index.
- *   * `table_append_`'type'`(table, value)` appends a value to the most
- *     recently accessed cell.
  ***/
 
-#define TABLE_COL_PROTO(_name_, _type_) void table_col_##_name_(struct table *tbl, int col, _type_ val);\
-  void table_col_##_name_##_name(struct table *tbl, const char *col_name, _type_ val);\
-  void table_col_##_name_##_fmt(struct table *tbl, int col, const char *fmt, _type_ val) FORMAT_CHECK(printf, 3, 0);
 
-// table_col_<type>_fmt has one disadvantage: it is not possible to
-// check whether fmt contains format that contains formatting that is
-// compatible with _type_
+#define TABLE_COL_PROTO(_name, _type) void table_col_##_name(struct table *tbl, int col, _type val);
 
-TABLE_COL_PROTO(int, int);
-TABLE_COL_PROTO(uint, uint);
-TABLE_COL_PROTO(double, double);
-TABLE_COL_PROTO(str, const char *);
-TABLE_COL_PROTO(intmax, intmax_t);
-TABLE_COL_PROTO(uintmax, uintmax_t);
-TABLE_COL_PROTO(s64, s64);
-TABLE_COL_PROTO(u64, u64);
+TABLE_COL_PROTO(int, int)
+TABLE_COL_PROTO(uint, uint)
+TABLE_COL_PROTO(double, double)
+TABLE_COL_PROTO(intmax, intmax_t)
+TABLE_COL_PROTO(uintmax, uintmax_t)
+TABLE_COL_PROTO(s64, s64)
+TABLE_COL_PROTO(u64, u64)
+TABLE_COL_PROTO(bool, bool)
+TABLE_COL_PROTO(str, const char *)
 
-void table_col_bool(struct table *tbl, int col, uint val);
-void table_col_bool_name(struct table *tbl, const char *col_name, uint val);
-void table_col_bool_fmt(struct table *tbl, int col, const char *fmt, uint val);
-#undef TABLE_COL_PROTO
+/** TABLE_COL_BODY macro enables easy definitions of bodies of table_col_<something> functions **/
+#define TABLE_COL_BODY(_name, _type) void table_col_##_name(struct table *tbl, int col, _type val) {\
+    table_col_generic_format(tbl, col, (void*)&val, &xt_##_name);\
+  }
 
-#define TABLE_APPEND_PROTO(_name_, _type_) void table_append_##_name_(struct table *tbl, _type_ val)
-TABLE_APPEND_PROTO(int, int);
-TABLE_APPEND_PROTO(uint, uint);
-TABLE_APPEND_PROTO(double, double);
-TABLE_APPEND_PROTO(str, const char *);
-TABLE_APPEND_PROTO(intmax, intmax_t);
-TABLE_APPEND_PROTO(uintmax, uintmax_t);
-TABLE_APPEND_PROTO(s64, s64);
-TABLE_APPEND_PROTO(u64, u64);
-void table_append_bool(struct table *tbl, int val);
-#undef TABLE_APPEND_PROTO
+/**
+ * The table_col_generic_format performs all the checks necessary while filling cell with value,
+ * calls the format function from expected_type and stores its result as a cell value. The function
+ * guarantees that each column instance is printed with its format.
+ **/
+void table_col_generic_format(struct table *tbl, int col, void *value, const struct xtype *expected_type);
 
 /**
  * Set a particular cell of the current row to a string formatted
  * by sprintf(). This function can set a column of an arbitrary type.
  **/
 void table_col_printf(struct table *tbl, int col, const char *fmt, ...) FORMAT_CHECK(printf, 3, 4);
-
-/**
- * Append a string formatted by sprintf() to the most recently filled cell.
- * This function can work with columns of an arbitrary type.
- **/
-void table_append_printf(struct table *tbl, const char *fmt, ...) FORMAT_CHECK(printf, 2, 3);
 
 /**
  * Alternatively, a string cell can be constructed as a stream.
@@ -297,7 +289,7 @@ void table_col_fbend(struct table *tbl);
 void table_end_row(struct table *tbl);
 
 /**
- * Resets data in current row.
+ * Resets data in the current row.
  **/
 void table_reset_row(struct table *tbl);
 
@@ -307,9 +299,21 @@ void table_reset_row(struct table *tbl);
  ***/
 
 /**
- * Find the index of a column with name @col_name. Returns -1 if there is no such column.
+ * Find the index of a column definition with name @col_name. Returns -1 if there is no such column.
  **/
 int table_get_col_idx(struct table *tbl, const char *col_name);
+
+/**
+ * Sets a string option to an instance of a column type. This is the default version that checks
+ * whether the xtype::parse_fmt can be called and calls it. However, there are situation in which
+ * the xtype::parse_fmt is not sufficient, e.g., column decoration, post-processing, etc.
+ *
+ * Each struct table_column has a pointer to a customized version of table_set_col_opt (called
+ * set_col_opt). The hook set_call_opt should be always called through @table_set_col_opt. The hook
+ * and @table_set_col_opt has the same prototype, but @table_set_col_opt should never be used as the
+ * table_set_opt hook.
+ **/
+const char *table_set_col_opt(struct table *tbl, uint col_inst_idx, const char *col_opt);
 
 /**
  * Returns a comma-and-space-separated list of column names, allocated from table's internal
@@ -318,28 +322,42 @@ int table_get_col_idx(struct table *tbl, const char *col_name);
 const char *table_get_col_list(struct table *tbl);
 
 /**
- * Sets the order in which the columns are printed. The @col_order parameter is used until @table_end() or
- * @table_cleanup() is called. The table stores only the pointer and the memory pointed to by @col_order is
- * allocated and deallocated by the caller.
+ * Sets the order in which the columns are printed. The columns are specified by array of struct
+ * @table_col_instance. This allows specification of format. The user should make an array of struct
+ * @table_col_instance and fill the array using the TBL_COL and TBL_COL_FMT. The array has a special
+ * last element: @TBL_COL_ORDER_END.
+ *
+ * The table copies content of @col_order into an internal representation stored
+ * in `column_order`. Options to column instances can be set using @table_set_col_opt().
  **/
-void table_set_col_order(struct table *tbl, int *col_order, int col_order_size);
-
-/**
- * Returns 1 if col_idx will be printed, 0 otherwise.
- **/
-bool table_col_is_printed(struct table *tbl, uint col_idx);
+void table_set_col_order(struct table *tbl, const struct table_col_instance *col_order);
 
 /**
  * Sets the order in which the columns are printed. The specification is a string with comma-separated column
  * names. Returns NULL for success and an error message otherwise. The string is not referenced after
  * this function returns.
+ *
+ * The format of the col_order string is the following:
+ * <col-order-string> := <col-def>[,<col-def>]*
+ *
+ * <col-def> := <col-name> [ '[' <col-opts> ']' ]
+ *
+ * <col-name> is a string that does not contain comma ',' or '[',']' brackets
+ *
+ * <col-opts> := <string> [ ',' <string> ]
+ *  - <col-opts> is a comma-separated list of options
  **/
 const char *table_set_col_order_by_name(struct table *tbl, const char *col_order);
 
 /**
+ * Returns true if @col_def_idx will be printed, false otherwise.
+ **/
+bool table_col_is_printed(struct table *tbl, uint col_def_idx);
+
+/**
  * Sets table formatter. See below for the list of formatters.
  **/
-void table_set_formatter(struct table *tbl, struct table_formatter *fmt);
+void table_set_formatter(struct table *tbl, const struct table_formatter *fmt);
 
 /**
  * Set a table option. All options have a key and a value. Currently,
@@ -353,6 +371,9 @@ void table_set_formatter(struct table *tbl, struct table_formatter *fmt);
  * | `cols`	| comma-separated column list	| set order of columns
  * | `fmt`	| `human`/`machine`/`block`	| set table formatter to one of the built-in formatters
  * | `col-delim`| string			| set column delimiter
+ * | `cells`    | string                        | set column format mode
+ * | `raw`	| 'none'			| set column format to raw data
+ * | `pretty`	| 'none'			| set column format to pretty-printing
  * |===================================================================================================
  **/
 const char *table_set_option_value(struct table *tbl, const char *key, const char *value);
@@ -397,15 +418,15 @@ struct table_formatter {
 };
 
 /** Standard formatter for human-readable output. **/
-extern struct table_formatter table_fmt_human_readable;
+extern const struct table_formatter table_fmt_human_readable;
 
 /** Standard formatter for machine-readable output (tab-separated values). **/
-extern struct table_formatter table_fmt_machine_readable;
+extern const struct table_formatter table_fmt_machine_readable;
 
 /**
  * Standard formatter for block output. Each cell is output on its own line
  * of the form `column_name: value`. Rows are separated by blank lines.
  **/
-extern struct table_formatter table_fmt_blockline;
+extern const struct table_formatter table_fmt_blockline;
 
 #endif

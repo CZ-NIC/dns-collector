@@ -1,0 +1,81 @@
+UCW-TABLEPRINTER(1)
+===================
+
+NAME
+----
+
+ucw-tableprinter - UCW table printer is a program module that allows user-customized printing of tables.
+
+DESCRIPTION
+-----------
+
+The table printer module provides formatting of 2-dimensional tables
+in various ways.
+
+Each table print-out consists of a number of rows, which are processed
+one after another. All rows have the same number of columns. Once a
+table is defined, it can be printed using a variety of formatters
+(block-line, human-readable, machine-readable, etc.).
+
+The table definition consists of various column definitions, each
+column definition is a pair consisting of a name and a type. Name of
+each column must be unique in the whole table. Each column definition
+can be instantiated(printed) in its own format, e.g., a size column
+can be printed three-times: 1) in bytes; 2) in gigabytes; 3)
+human-readable.
+
+The table can be controlled using various options:
+
+[options="header"]
+|===============================================================================================================
+| option      | argument                    | meaning
+| `header`    | 0 or 1                      | set whether a table header should be printed
+| `noheader`  | 'none'                      | equivalent to `header`=0
+| `cols`      | comma-separated column list | set order of columns
+| `fmt`	      | `human`/`machine`/`block`   | set table formatter to one of the built-in formatters
+| `col-delim` | string                      | set column delimiter
+| `cells`     | string                      | set column cell format mode, possibilities are: default, raw, pretty
+| `raw`	      | 'none'                      | set column cell format to raw data, equivalent to cells:raw
+| `pretty`    | 'none'                      | set column cell format to pretty-printing, equivalent to cells:pretty
+|===============================================================================================================
+
+Column order (`cols` option) has the following format:
+
+<col-order-string> := <col-def>[,<col-def>]*
+
+<col-def> := <col-name> [ '[' <col-opts> ']' ]
+
+<col-name> is a string that does not contain comma ',' or '[',']' brackets
+
+<col-opts> := <string> [ ',' <string> ]
+
+Where <col-opts> is a comma-separated list of options.
+
+Column delimiter option (`col-delim`) can be an arbitrary string. The
+cell format option `cells` can have one of the possible three values:
+1) `pretty`, 2) `default`, 3) `raw`. The `raw` and `pretty` value of
+`cells` option can be shortcutted as options `raw` and `pretty` with
+no value.
+
+Additionally to standard types (like integer, floating point) there
+are the two following types: 1) size; 2) timestamp. The 'size' type
+has the following case-sensitive column options: `KB`, `MB`, `GB`,
+`TB`, `auto`, e.g., a column of type size and name `file-size` can be
+specified as `file-size[MB]` or `file-size[auto]`.  The 'timestamp'
+has the following case-sensitive column options: 1) `datetime` which
+corresponds to date(1) format "%F %T", 2) `timestamp` which
+corresponds to a number of seconds relative to start of some epoch.
+
+Description of table formats
+-----------------------------
+
+'human-readable': prints columns separated by single space, rows
+separated by newline '\n'.
+
+'block-line': prints each column on one line, i.e., the column
+separator is '\n', rows are separated by double newlines
+'\n\n'. Therefore, rows forms newline separated blocks of rows.
+
+'machine-readable': prints columns separated by a tabulator '\t', rows
+separated by '\n'.
+

@@ -1,67 +1,71 @@
 /*
- *	Unit tests of table printer
+ *	Types used in table printer
  *
  *	(c) 2014 Robert Kessl <robert.kessl@economia.cz>
  */
 
 #include <ucw/lib.h>
 #include <ucw/table.h>
+#include <ucw/xtypes-extra.h>
 #include <ucw/opt.h>
 #include <stdio.h>
 
 enum test_table_cols {
-  test_col0_str, test_col1_int, test_col2_uint, test_col3_bool, test_col4_double
+  TEST_COL0_STR, TEST_COL1_INT, TEST_COL2_UINT, TEST_COL3_BOOL, TEST_COL4_DOUBLE, TEST_COL5_SIZE, TEST_COL6_TIME
 };
 
-static uint test_column_order[] = { test_col3_bool, test_col4_double, test_col2_uint,test_col1_int, test_col0_str };
+static struct table_col_instance test_column_order[] = { TBL_COL(TEST_COL3_BOOL), TBL_COL(TEST_COL4_DOUBLE),
+                       TBL_COL(TEST_COL2_UINT), TBL_COL(TEST_COL1_INT), TBL_COL(TEST_COL0_STR), TBL_COL_ORDER_END };
 
-static struct table test_tbl = {
+static struct table_template test_tbl = {
   TBL_COLUMNS {
-    [test_col0_str] = TBL_COL_STR("col0_str", 20),
-    [test_col1_int] = TBL_COL_INT("col1_int", 8),
-    [test_col2_uint] = TBL_COL_UINT("col2_uint", 9),
-    [test_col3_bool] = TBL_COL_BOOL("col3_bool", 9),
-    [test_col4_double] = TBL_COL_DOUBLE("col4_double", 11, 2),
+    [TEST_COL0_STR] = TBL_COL_STR("col0_str", 20),
+    [TEST_COL1_INT] = TBL_COL_INT("col1_int", 8),
+    [TEST_COL2_UINT] = TBL_COL_UINT("col2_uint", 9),
+    [TEST_COL3_BOOL] = TBL_COL_BOOL_FMT("col3_bool", 9, XTYPE_FMT_PRETTY),
+    [TEST_COL4_DOUBLE] = TBL_COL_DOUBLE_FMT("col4_double", 11, XTYPE_FMT_PRETTY),
+    [TEST_COL5_SIZE] = TBL_COL_SIZE("col5_size", 11),
+    [TEST_COL6_TIME] = TBL_COL_TIMESTAMP("col6_timestamp", 20),
     TBL_COL_END
   },
   TBL_COL_ORDER(test_column_order),
-  TBL_OUTPUT_HUMAN_READABLE,
+  TBL_FMT_HUMAN_READABLE,
   TBL_COL_DELIMITER("\t"),
 };
 
 enum test_default_order_cols {
-  test_default_order_col0_int, test_default_order_col1_int, test_default_order_col2_int
+  TEST_DEFAULT_ORDER_COL0_INT, TEST_DEFAULT_ORDER_COL1_INT, TEST_DEFAULT_ORDER_COL2_INT
 };
 
-static struct table test_default_order_tbl = {
+static struct table_template test_default_order_tbl = {
   TBL_COLUMNS {
-    [test_default_order_col0_int] = TBL_COL_INT("col0_int", 8),
-    [test_default_order_col1_int] = TBL_COL_INT("col1_int", 9),
-    [test_default_order_col2_int] = TBL_COL_INT("col2_int", 9),
+    [TEST_DEFAULT_ORDER_COL0_INT] = TBL_COL_INT("col0_int", 8),
+    [TEST_DEFAULT_ORDER_COL1_INT] = TBL_COL_INT("col1_int", 9),
+    [TEST_DEFAULT_ORDER_COL2_INT] = TBL_COL_INT("col2_int", 9),
     TBL_COL_END
   },
-  TBL_OUTPUT_HUMAN_READABLE,
+  TBL_FMT_HUMAN_READABLE,
   TBL_COL_DELIMITER("\t"),
 };
 
 static void do_default_order_test(struct fastbuf *out)
 {
-  table_init(&test_default_order_tbl);
+  struct table *tbl = table_init(&test_default_order_tbl);
 
-  table_start(&test_default_order_tbl, out);
+  table_start(tbl, out);
 
-  table_col_int(&test_default_order_tbl, test_default_order_col0_int, 0);
-  table_col_int(&test_default_order_tbl, test_default_order_col1_int, 1);
-  table_col_int(&test_default_order_tbl, test_default_order_col2_int, 2);
-  table_end_row(&test_default_order_tbl);
+  table_col_int(tbl, TEST_DEFAULT_ORDER_COL0_INT, 0);
+  table_col_int(tbl, TEST_DEFAULT_ORDER_COL1_INT, 1);
+  table_col_int(tbl, TEST_DEFAULT_ORDER_COL2_INT, 2);
+  table_end_row(tbl);
 
-  table_col_int(&test_default_order_tbl, test_default_order_col0_int, 10);
-  table_col_int(&test_default_order_tbl, test_default_order_col1_int, 11);
-  table_col_int(&test_default_order_tbl, test_default_order_col2_int, 12);
-  table_end_row(&test_default_order_tbl);
+  table_col_int(tbl, TEST_DEFAULT_ORDER_COL0_INT, 10);
+  table_col_int(tbl, TEST_DEFAULT_ORDER_COL1_INT, 11);
+  table_col_int(tbl, TEST_DEFAULT_ORDER_COL2_INT, 12);
+  table_end_row(tbl);
 
-  table_end(&test_default_order_tbl);
-  table_cleanup(&test_default_order_tbl);
+  table_end(tbl);
+  table_cleanup(tbl);
 }
 
 /**
@@ -69,22 +73,24 @@ static void do_default_order_test(struct fastbuf *out)
  **/
 static void do_print1(struct table *test_tbl)
 {
-  table_col_str(test_tbl, test_col0_str, "sdsdf");
-  table_append_str(test_tbl, "aaaaa");
-  table_col_int(test_tbl, test_col1_int, -10);
-  table_col_int(test_tbl, test_col1_int, 10000);
-  table_col_uint(test_tbl, test_col2_uint, 10);
-  table_col_printf(test_tbl, test_col2_uint, "XXX-%u", 22222);
-  table_col_bool(test_tbl, test_col3_bool, 1);
-  table_col_double(test_tbl, test_col4_double, 1.5);
+  table_col_str(test_tbl, TEST_COL0_STR, "sdsdf");
+  table_col_int(test_tbl, TEST_COL1_INT, -10);
+  table_col_int(test_tbl, TEST_COL1_INT, 10000);
+  table_col_uint(test_tbl, TEST_COL2_UINT, 10);
+  table_col_printf(test_tbl, TEST_COL2_UINT, "XXX-%u", 22222);
+  table_col_bool(test_tbl, TEST_COL3_BOOL, 1);
+  table_col_double(test_tbl, TEST_COL4_DOUBLE, 1.5);
+  table_col_size(test_tbl, TEST_COL5_SIZE, (1024LLU*1024LLU*1024LLU*5LLU));
+  table_col_timestamp(test_tbl, TEST_COL6_TIME, 1404305876);
   table_end_row(test_tbl);
 
-  table_col_str(test_tbl, test_col0_str, "test");
-  table_append_str(test_tbl, "bbbbb");
-  table_col_int(test_tbl, test_col1_int, -100);
-  table_col_uint(test_tbl, test_col2_uint, 100);
-  table_col_bool(test_tbl, test_col3_bool, 0);
-  table_col_double(test_tbl, test_col4_double, 1.5);
+  table_col_str(test_tbl, TEST_COL0_STR, "test");
+  table_col_int(test_tbl, TEST_COL1_INT, -100);
+  table_col_uint(test_tbl, TEST_COL2_UINT, 100);
+  table_col_bool(test_tbl, TEST_COL3_BOOL, 0);
+  table_col_double(test_tbl, TEST_COL4_DOUBLE, 1.5);
+  table_col_size(test_tbl, TEST_COL5_SIZE, (1024LLU*1024LLU*1024LLU*2LLU));
+  table_col_timestamp(test_tbl, TEST_COL6_TIME, 1404305909);
   table_end_row(test_tbl);
 }
 
@@ -114,7 +120,10 @@ static void process_command_line_opts(char *argv[], struct table *tbl)
   GARY_INIT(cli_table_opts, 0);
 
   opt_parse(&table_printer_opts, argv+1);
-  table_set_gary_options(tbl, cli_table_opts);
+  const char *err = table_set_gary_options(tbl, cli_table_opts);
+  if(err) {
+    opt_failure("error while setting cmd line options: %s", err);
+  }
 
   GARY_FREE(cli_table_opts);
 }
@@ -135,7 +144,12 @@ static bool user_defined_option(struct table *tbl UNUSED, const char *key, const
 
 static void test_option_parser(struct table *tbl)
 {
-  tbl->formatter->process_option = user_defined_option;
+  struct table_formatter test_option_fmtr = table_fmt_human_readable;
+  test_option_fmtr.process_option = user_defined_option;
+
+  const struct table_formatter *tmp_fmtr = tbl->formatter;
+  tbl->formatter = &test_option_fmtr;
+
   const char *rv = table_set_option(tbl, "invalid:option");
   if(rv) printf("Tableprinter option parser returned error: \"%s\".\n", rv);
 
@@ -147,6 +161,8 @@ static void test_option_parser(struct table *tbl)
 
   rv = table_set_option(tbl, "valuekey:value");
   if(rv) printf("Tableprinter option parser returned error: \"%s\".\n", rv);
+
+  tbl->formatter = tmp_fmtr;
 }
 
 int main(int argc UNUSED, char **argv)
@@ -154,14 +170,14 @@ int main(int argc UNUSED, char **argv)
   struct fastbuf *out;
   out = bfdopen_shared(1, 4096);
 
-  table_init(&test_tbl);
+  struct table *tbl = table_init(&test_tbl);
 
-  process_command_line_opts(argv, &test_tbl);
+  process_command_line_opts(argv, tbl);
 
   const char *rv = NULL;
   switch(test_to_perform) {
   case TEST_INVALID_ORDER:
-    rv = table_set_option(&test_tbl, "cols:test_col0_str,test_col1_int,xxx");
+    rv = table_set_option(tbl, "cols:test_col0_str,test_col1_int,xxx");
     if(rv) printf("Tableprinter option parser returned: '%s'.\n", rv);
     return 0;
   case TEST_DEFAULT_COLUMN_ORDER:
@@ -169,15 +185,15 @@ int main(int argc UNUSED, char **argv)
     bclose(out);
     return 0;
   case TEST_INVALID_OPTION:
-    test_option_parser(&test_tbl);
+    test_option_parser(tbl);
     bclose(out);
     return 0;
   };
 
-  table_start(&test_tbl, out);
-  do_print1(&test_tbl);
-  table_end(&test_tbl);
-  table_cleanup(&test_tbl);
+  table_start(tbl, out);
+  do_print1(tbl);
+  table_end(tbl);
+  table_cleanup(tbl);
 
   bclose(out);
 

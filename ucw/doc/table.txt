@@ -4,17 +4,34 @@ Table printer
 The table printer module provides formatting of 2-dimensional tables
 in various ways.
 
-Each table consists of a number of rows, which are processed one
-after another. All rows have the same number of columns. Internally,
-the columns have a fixed order, each column has its name and a data
-type (e.g., int, uint, u64, etc.). The table printer checks that
-each cell is filled by a value of the appropriate type, except that
-a string value is allowed in any cell (for example, this allows
-a numeric cell to be set to "--" or "unknown").
+Each table print-out consists of a number of rows, which are processed
+one after another. All rows have the same number of columns.
+Internally, the columns have a fixed order, each column has its name
+and a data type (e.g., int, uint, u64, etc.). The data type is
+realized using extended types (referred to as xtypes). The table
+printer checks that each cell is filled by a value of the appropriate
+type, except that a string value is allowed in any cell (for example,
+this allows a numeric cell to be set to "--" or "unknown"). Once a
+table is defined, it can be printed using a variety of formatters
+(human-readable, tab-separated values, etc.) and its cells can be
+formatted using at least three different formats: 1) pretty (or
+human-readable); 2) raw; 3) default.
 
-Once a table is defined, it can be printed using a variety of formatters
-(human-readable, tab-separated values, etc.). Also, a subset of columns
-can be selected and their order changed.
+The table definition consists of various column types, each column
+type is a pair consisting of a name and a data type. Name of each
+column must be unique in the whole table definition.  Each column type
+can have multiple instances in the final table print-out. The columns
+are printed using xtypes.  For example: let have a column definition
+with name 'size' of type xt_size. The column can be printed on
+position 0 (in bytes) and position 5 (in kilobytes).  This allows easy
+filtering using standart cmd line filters. For example, we want to
+remove all rows that has size greater then 1572864 bytes (1.5MB) and
+print the size in human readable format. Human readable format means
+that if there is size of 1610612736 bytes it will be rather printed as
+1536MB.
+
+Also, columns can be printed in an arbitrary order and with repeated
+columns.
 
 Example
 -------
@@ -39,50 +56,60 @@ string for `printf` used for this column. Moreover, various flags can
 be OR-ed to the width of the column, for example `CELL_ALIGN_LEFT` prescribes
 that the cell should be aligned to the left.
 
-  struct table recording_table = {
+To define the column order, we can create an array of struct table_col_info
+using the following macros: TBL_COL, TBL_COL_FMT, TBL_COL_TYPE. An example
+follows:
+
+  struct table_col_info column_order[] = { TBL_COL(TBL_REC_ID), TBL_COL(TBL_REC_ALBUM_NAME) };
+
+The column order is supplied in the struct table_template using the TBL_COL_ORDER macro.
+
+  struct table_template recording_table_template = {
     TBL_COLUMNS {
        [TBL_REC_ID] = TBL_COL_UINT("id", 16),
        [TBL_REC_ALBUM_NAME] = TBL_COL_STR_FMT("album-name", 20 | CELL_ALIGN_LEFT, "%s"),
        [TBL_REC_ARTIST] = TBL_COL_STR("artist", 20),
        [TBL_REC_YEAR] = TBL_COL_UINT("year", 10),
        TBL_COL_END
-    }
+    },
+    TBL_COL_ORDER(column_order)
   };
 
-Each table definition has to be initialized before use by @table_init():
 
-  table_init(&recording_table);
+Each table definition has to be created from a template before use by @table_init():
+
+  struct table *rec_table = table_init(&recording_table_template);
 
 Once it is initialized, we can use it for printing multiple tables.
 At the start of each table, we should obtain a <<fastbuf:,fastbuf>> where the output
 should be sent, store it in the table structure and call @table_start():
 
   struct fastbuf *out = bfdopen_shared(1, 4096);
-  table_start(&recording_table, out);
+  table_start(&rec_table, out);
 
 Then we can fill the rows one after another. Each row is ended by
 @table_end_row():
 
-  table_col_uint(&recording_table, TBL_REC_ID, 0);
-  table_col_str(&recording_table, TBL_REC_ALBUM_NAME, "The Wall");
-  table_col_str(&recording_table, TBL_REC_ARTIST, "Pink Floyd");
-  table_col_uint(&recording_table, TBL_REC_YEAR, 1979);
-  table_end_row(&recording_table);
+  table_col_uint(&rec_table, TBL_REC_ID, 0);
+  table_col_str(&rec_table, TBL_REC_ALBUM_NAME, "The Wall");
+  table_col_str(&rec_table, TBL_REC_ARTIST, "Pink Floyd");
+  table_col_uint(&rec_table, TBL_REC_YEAR, 1979);
+  table_end_row(&rec_table);
 
-  table_col_uint(&recording_table, TBL_REC_ID, 1);
-  table_col_str(&recording_table, TBL_REC_ALBUM_NAME, "Rio Grande Mud");
-  table_col_str(&recording_table, TBL_REC_ARTIST, "ZZ Top");
-  table_col_uint(&recording_table, TBL_REC_YEAR, 1972);
-  table_end_row(&recording_table);
+  table_col_uint(&rec_table, TBL_REC_ID, 1);
+  table_col_str(&rec_table, TBL_REC_ALBUM_NAME, "Rio Grande Mud");
+  table_col_str(&rec_table, TBL_REC_ARTIST, "ZZ Top");
+  table_col_uint(&rec_table, TBL_REC_YEAR, 1972);
+  table_end_row(&rec_table);
 
 Finally, we should close the table by calling @table_end():
 
-  table_end(&recording_table);
+  table_end(&rec_table);
 
 At this moment, the table structure is ready to be used again. When
 you do not need it any longer, you can dispose of it by @table_cleanup():
 
-  table_cleanup(&recording_table);
+  table_cleanup(&rec_table);
 
 ucw/table.h
 -----------
