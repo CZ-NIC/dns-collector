@@ -26,7 +26,7 @@ if (defined($dry) && $dry eq "-n") {
 
 my $vv = $ARGV[0];
 
-my $v = `git describe`;
+my $v = `git describe --tags`;
 chomp $v;
 $v =~ s/^v// or die;
 $v =~ s/-.*//;
