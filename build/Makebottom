@@ -210,10 +210,11 @@ $(o)/%.html: $(o)/%.txt $(BUILDSYS)/asciidoc.conf $(BUILDSYS)/asciidoc-xhtml.con
 	$(Q)asciidoc -e -f $(BUILDSYS)/asciidoc.conf -f $(BUILDSYS)/asciidoc-xhtml.conf -f $(HOST_PREFIX)/etc/asciidoc/asciidoc.conf -f $(HOST_PREFIX)/etc/asciidoc/xhtml11.conf $<
 	$(Q)$(call symlink,$@,run/$(DOCDIR)/$(DOC_MODULE))
 
-$(MANPAGES): $(o)/%.1: $(s)/%.txt run/$(DOCDIR)/man/man1/.dir-stamp
-	$(M)"DOC-MANPAGE $<"
+$(MANPAGES): $(o)/%: $(s)/%.txt
+	$(M)"DOC-MAN $<"
 	$(Q)a2x -d manpage -f manpage -D $(dir $@) $<
-	$(Q)$(call symlink,$@,run/$(DOCDIR)/man/man1)
+	$(Q)mkdir -p run/$(DOCDIR)/man/man$(subst .,,$(suffix $@))
+	$(Q)$(call symlink,$@,run/$(DOCDIR)/man/man$(subst .,,$(suffix $@)))
 
 # In reality, we do not depend on the .txt files, but on the corresponding .deflist's.
 # However, the Makefile language cannot express that doc-extract generates both .txt
