@@ -119,7 +119,7 @@ Set("LIBS" => "");
 
 # Extra flags for compiling and linking shared libraries
 Set("CSHARED" => '-fPIC');
-Append("LOPT" => "-Wl,--rpath-link,run/lib");
+Append("LOPT" => "-Wl,--rpath-link,run/lib -Lrun/lib");
 if (Get("INSTALL_LIB_DIR") eq "/usr/lib") {
 	Set("SO_LINK_PATH" => '');
 }
