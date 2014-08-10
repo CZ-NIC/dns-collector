@@ -1,3 +1,4 @@
+- sorter: broken memory management in radix sort (can be bypassed with Sorter.Debug=32)
 - ipaccess: support IPv6
 - transactions: Unit tests
 - Maint: git push --tags
