@@ -1,7 +1,13 @@
 Source: libucw
 Priority: optional
 Maintainer: LibUCW developers <libucw-devel@ucw.cz>
-Build-Depends: debhelper (>= 7), devscripts, bash, pkg-config, libjpeg-dev, libpng-dev, libgif-dev, asciidoc
+Build-Depends: debhelper (>= 7), devscripts, bash, pkg-config
+#ifdef CONFIG_IMAGES
+	, libjpeg-dev, libpng-dev, libgif-dev
+#endif
+#ifdef CONFIG_DOC
+	, asciidoc, xmlto
+#endif
 Standards-Version: 3.8.0
 
 Package: libucw@UCW_ABI_SUFFIX@
