@@ -67,7 +67,7 @@ corresponds to date(1) format "%F %T", 2) `timestamp` which
 corresponds to a number of seconds relative to start of some epoch.
 
 Description of table formats
------------------------------
+----------------------------
 
 'human-readable': prints columns separated by single space, rows
 separated by newline '\n'.
@@ -78,4 +78,3 @@ separator is '\n', rows are separated by double newlines
 
 'machine-readable': prints columns separated by a tabulator '\t', rows
 separated by '\n'.
-
