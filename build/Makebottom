@@ -211,9 +211,8 @@ $(o)/%.html: $(o)/%.txt $(BUILDSYS)/asciidoc.conf $(BUILDSYS)/asciidoc-xhtml.con
 	$(Q)$(call symlink,$@,run/$(DOCDIR)/$(DOC_MODULE))
 
 $(MANPAGES): $(o)/%.1: $(s)/%.txt
-	$(M)"MANPAGE $<"
-	$(Q)a2x -d manpage -f manpage $<
-	$(Q)mv $(patsubst %.txt, %.1, $<) $(dir $@)
+	$(M)"DOC-MANPAGE $<"
+	$(Q)a2x -d manpage -f manpage -D $(dir $@) $<
 
 # In reality, we do not depend on the .txt files, but on the corresponding .deflist's.
 # However, the Makefile language cannot express that doc-extract generates both .txt
