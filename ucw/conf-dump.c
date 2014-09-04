@@ -69,12 +69,11 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
   else
     bprintf(fb, "%d ", item->number);
   if (item->cls == CC_STATIC || item->cls == CC_DYNAMIC || item->cls == CC_BITMAP) {
+    bprintf(fb, "T%s ", cf_type_names[type]);
     if (item->type == CT_USER)
       bprintf(fb, "U%s S%d ", item->u.utype->name, size);
     else if (item->type == CT_XTYPE)
       bprintf(fb, "X%s S%d ", item->u.xtype->name, size);
-    else
-      bprintf(fb, "T%s ", cf_type_names[type]);
   }
   if (item->cls == CC_STATIC) {
     for (i=0; i<item->number; i++)

@@ -112,7 +112,7 @@ cf_parse_ary(uint number, char **pars, void *ptr, enum cf_type type, union cf_un
 #define T(x) #x,
 char *cf_op_names[] = { CF_OPERATIONS };
 #undef T
-char *cf_type_names[] = { "int", "u64", "double", "ip", "string", "lookup", "user" };
+char *cf_type_names[] = { "int", "u64", "double", "ip", "string", "lookup", "user", "xtype" };
 
 static char *
 interpret_set_dynamic(struct cf_item *item, int number, char **pars, void **ptr)
