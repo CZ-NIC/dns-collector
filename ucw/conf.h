@@ -431,17 +431,17 @@ struct cf_section {			/** A section. **/
  * An extended type.
  * See <<xtypes:,extended types>> if you want to know more.
  **/
-#define CF_XTYPE(n,p,t)		{ .cls = CC_STATIC, .type = CT_XTYPE, .name = n, .number = 1, .ptr = p, .u.xtype = &t }
+#define CF_XTYPE(n,p,t)		{ .cls = CC_STATIC, .type = CT_XTYPE, .name = n, .number = 1, .ptr = p, .u.xtype = t }
 /**
  * Static array of extended types (all of the same type).
  * See <<xtypes:,extended types>>.
  **/
-#define CF_XTYPE_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_XTYPE, .name = n, .number = c, .ptr = p, .u.xtype = &t }
+#define CF_XTYPE_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_XTYPE, .name = n, .number = c, .ptr = p, .u.xtype = t }
 /**
  * Dynamic array of extended types.
  * See <<xtypes:,extended types>>.
  **/
-#define CF_XTYPE_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_XTYPE, .name = n, .number = c, .ptr = p, .u.xtype = &t }
+#define CF_XTYPE_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_XTYPE, .name = n, .number = c, .ptr = p, .u.xtype = t }
 
 /**
  * Any number of dynamic array elements
