@@ -219,8 +219,11 @@ Creating custom parsers
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 If you need to parse some data type the configuration system can't
-handle, you can write your own parser. But before you start, you
-should know a few things.
+handle, you can write your own <<xtypes:,extended type>>
+and use <<def_CF_XTYPE,`CF_XTYPE`>> macro to declare a new option.
+
+There is also an obsolete way to write a custom parser.
+Before you start, you should know a few things.
 
 The parser needs to support <<journal,journalling>>. To accomplish that,
 you have to use the <<alloc,configuration mempool>> for memory allocation.

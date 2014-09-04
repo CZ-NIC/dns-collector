@@ -14,6 +14,7 @@
 
 #include <ucw/lib.h>
 #include <ucw/conf.h>
+#include <ucw/xtypes.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -110,6 +111,7 @@ struct opt_item {
     void (* call)(const struct opt_item * opt, const char * value, void * data);		// function to call for OPT_CL_CALL
     void (* hook)(const struct opt_item * opt, uint event, const char * value, void * data);	// function to call for OPT_CL_HOOK
     struct cf_user_type * utype;	// specification of the user-defined type for CT_USER
+    const struct xtype * xtype;		// specification of the extended type for CT_XTYPE
   } u;
   u16 flags;				// as defined below (for hooks, event mask is stored instead)
   byte cls;				// enum opt_class
@@ -238,6 +240,16 @@ struct opt_item {
 
 /** Multi-valued option of user-defined type. @target should be a growing array of the right kind of items. **/
 #define OPT_USER_MULTIPLE(shortopt, longopt, target, ttype, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .u.utype = &ttype, .flags = fl, .help = desc, .cls = OPT_CL_MULTIPLE, .type = CT_USER }
+
+/**
+ * An option with user-defined syntax. @xtype is a <<xtypes:struct_xtype,`xtype`>>
+ * describing the syntax, @target is a variable of the corresponding type. If the @OPT_REQUIRED_VALUE
+ * flag is not set, the parser must be able to parse a NULL value.
+ **/
+#define OPT_XTYPE(shortopt, longopt, target, ttype, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .u.xtype = &ttype, .flags = fl, .help = desc, .cls = OPT_CL_STATIC, .type = CT_XTYPE }
+
+/** Multi-valued option of extended type. @target should be a growing array of the right kind of items. **/
+#define OPT_XTYPE_MULTIPLE(shortopt, longopt, target, ttype, fl, desc) { .letter = shortopt, .name = longopt, .ptr = &target, .u.xtype = &ttype, .flags = fl, .help = desc, .cls = OPT_CL_MULTIPLE, .type = CT_XTYPE }
 
 /** A sub-section. **/
 #define OPT_SECTION(sec) { .cls = OPT_CL_SECTION, .u.section = &sec }
