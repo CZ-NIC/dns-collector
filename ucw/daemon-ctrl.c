@@ -68,13 +68,6 @@ daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *pidp)
 	}
     }
 
-  struct flock fl = { .l_type = F_RDLCK, .l_whence = SEEK_SET };
-  while (fcntl(pid_fd, F_SETLKW, &fl) < 0)
-    {
-      if (errno != EINTR)
-	die("Unable to get fcntl lock on '%s': %m", dc->pid_file);
-    }
-
   char buf[16];
   int n = read(pid_fd, buf, sizeof(buf));
   if (n < 0)
@@ -103,7 +96,7 @@ daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *pidp)
 
   int pid;
   const char *next;
-  if (str_to_int(&pid, buf, &next, 10) || strcmp(next, "\n"))
+  if (str_to_int(&pid, buf, &next, 10) || *next != '\n')
     {
       daemon_control_err(dc, "PID file `%s' does not contain a valid PID", dc->pid_file);
       goto fail;
