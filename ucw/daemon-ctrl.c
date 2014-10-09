@@ -2,6 +2,7 @@
  *	UCW Library -- Daemon Control
  *
  *	(c) 2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2014 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -18,6 +19,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+#include <string.h>
 #include <sys/file.h>
 #include <sys/wait.h>
 
@@ -31,34 +33,44 @@ daemon_control_err(struct daemon_control_params *dc, char *msg, ...)
   return DAEMON_STATUS_ERROR;
 }
 
-static int
-daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *stalep)
+static enum daemon_control_status
+daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *pidp)
 {
-  *stalep = 0;
+  // Possible results:
+  // -- DAEMON_STATUS_ERROR, pid == 0
+  // -- DAEMON_STATUS_NOT_RUNNING, pid == 0
+  // -- DAEMON_STATUS_OK, pid > 0
+  // -- DAEMON_STATUS_OK, pid == 0 (stopping)
 
-  int pid_fd = open(dc->pid_file, O_RDONLY);
+  enum daemon_control_status st = DAEMON_STATUS_NOT_RUNNING;
+  *pidp = 0;
+
+  int pid_fd = open(dc->pid_file, O_RDWR);
   if (pid_fd < 0)
     {
       if (errno == ENOENT)
-	return 0;
-      daemon_control_err(dc, "Cannot open PID file `%s': %m", dc->pid_file);
-      return -1;
+	return st;
+      return daemon_control_err(dc, "Cannot open PID file `%s': %m", dc->pid_file);
     }
 
-  if (flock(pid_fd, LOCK_EX | (will_wait ? 0 : LOCK_NB)) >= 0)
+  while (flock(pid_fd, LOCK_EX | (will_wait ? 0 : LOCK_NB)) < 0)
     {
-      // The lock file is stale
-      close(pid_fd);
-      *stalep = 1;
-      return 0;
+      if (errno == EWOULDBLOCK)
+	{
+	  st = DAEMON_STATUS_OK;
+	  break;
+	}
+      else if (errno != EINTR)
+	{
+	  daemon_control_err(dc, "Cannot lock PID file `%s': %m", dc->pid_file);
+	  goto fail;
+	}
     }
 
-  if (errno != EINTR && errno != EWOULDBLOCK)
-    {
-      daemon_control_err(dc, "Cannot lock PID file `%s': %m", dc->pid_file);
-      goto fail;
-    }
-
+  // Beware that daemon modifies PID file by write() + ftruncate() => even with
+  // atomic read() and write() we could get more bytes then expected.
+  // It should not be problem here, but it would be probably better to use
+  // the already existing fcntl lock or align all writes to a common size.
   char buf[16];
   int n = read(pid_fd, buf, sizeof(buf));
   if (n < 0)
@@ -72,6 +84,19 @@ daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *stalep)
       goto fail;
     }
   buf[n] = 0;
+
+  if (!strncmp(buf, "(stopped)", 9))
+    {
+      close(pid_fd);
+      return st;
+    }
+
+  if (st != DAEMON_STATUS_OK)
+    {
+      close(pid_fd);
+      return DAEMON_STATUS_STALE;
+    }
+
   int pid = atoi(buf);
   if (!pid)
     {
@@ -79,19 +104,17 @@ daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *stalep)
       goto fail;
     }
   close(pid_fd);
-  return pid;
+  *pidp = pid;
+  return DAEMON_STATUS_OK;
 
 fail:
   close(pid_fd);
-  return -1;
+  return DAEMON_STATUS_ERROR;
 }
 
 enum daemon_control_status
 daemon_control(struct daemon_control_params *dc)
 {
-  enum daemon_control_status st = DAEMON_STATUS_ERROR;
-  int sig, stale, stale2;
-
   int guard_fd = open(dc->guard_file, O_RDWR | O_CREAT, 0666);
   if (guard_fd < 0)
     return daemon_control_err(dc, "Cannot open guard file `%s': %m", dc->guard_file);
@@ -99,29 +122,24 @@ daemon_control(struct daemon_control_params *dc)
     return daemon_control_err(dc, "Cannot lock guard file `%s': %m", dc->guard_file);
 
   // Read the PID file
-  int pid = daemon_read_pid(dc, 0, &stale);
-  if (pid < 0)
+  int pid, sig;
+  enum daemon_control_status st = daemon_read_pid(dc, 0, &pid);
+  if (st == DAEMON_STATUS_ERROR)
     goto done;
 
   switch (dc->action)
     {
     case DAEMON_CONTROL_CHECK:
-      if (pid)
-	st = DAEMON_STATUS_OK;
-      else if (stale)
-	st = DAEMON_STATUS_STALE;
-      else
-	st = DAEMON_STATUS_NOT_RUNNING;
       break;
     case DAEMON_CONTROL_START:
-      if (pid)
+      if (st == DAEMON_STATUS_OK)
 	st = DAEMON_STATUS_ALREADY_DONE;
       else
 	{
 	  pid_t pp = fork();
 	  if (pp < 0)
 	    {
-	      daemon_control_err(dc, "Cannot fork: %m");
+	      st = daemon_control_err(dc, "Cannot fork: %m");
 	      goto done;
 	    }
 	  if (!pp)
@@ -135,39 +153,40 @@ daemon_control(struct daemon_control_params *dc)
 	  int ec = waitpid(pp, &stat, 0);
 	  if (ec < 0)
 	    {
-	      daemon_control_err(dc, "Cannot wait: %m");
+	      st = daemon_control_err(dc, "Cannot wait: %m");
 	      goto done;
 	    }
 	  if (WIFEXITED(stat) && WEXITSTATUS(stat) == DAEMON_STATUS_ERROR)
 	    {
-	      daemon_control_err(dc, "Cannot execute the daemon");
+	      st = daemon_control_err(dc, "Cannot execute the daemon");
 	      goto done;
 	    }
 	  char ecmsg[EXIT_STATUS_MSG_SIZE];
 	  if (format_exit_status(ecmsg, stat))
 	    {
-	      daemon_control_err(dc, "Daemon %s %s", dc->argv[0], ecmsg);
+	      st = daemon_control_err(dc, "Daemon %s %s", dc->argv[0], ecmsg);
 	      goto done;
 	    }
-	  pid = daemon_read_pid(dc, 0, &stale2);
-	  if (!pid)
-	    daemon_control_err(dc, "Daemon %s failed to write the PID file `%s'", dc->argv[0], dc->pid_file);
-	  else
-	    st = stale ? DAEMON_STATUS_STALE : DAEMON_STATUS_OK;
+	  st = DAEMON_STATUS_OK;
 	}
       break;
     case DAEMON_CONTROL_STOP:
-      if (!pid)
-	return stale ? DAEMON_STATUS_STALE : DAEMON_STATUS_ALREADY_DONE;
-      sig = dc->signal ? : SIGTERM;
-      if (kill(pid, sig) < 0)
+      if (st == DAEMON_STATUS_NOT_RUNNING)
 	{
-	  daemon_control_err(dc, "Cannot send signal %d: %m", sig);
+	  st = DAEMON_STATUS_ALREADY_DONE;
 	  goto done;
 	}
-      pid = daemon_read_pid(dc, 1, &stale2);
-      ASSERT(pid <= 0);
-      if (!pid)
+      if (pid)
+	{
+	  sig = dc->signal ? : SIGTERM;
+	  if (kill(pid, sig) < 0)
+	    {
+	      st = daemon_control_err(dc, "Cannot send signal %d: %m", sig);
+	      goto done;
+	    }
+	}
+      st = daemon_read_pid(dc, 1, &pid);
+      if (st != DAEMON_STATUS_ERROR)
 	st = DAEMON_STATUS_OK;
       break;
     case DAEMON_CONTROL_SIGNAL:
@@ -175,7 +194,7 @@ daemon_control(struct daemon_control_params *dc)
 	return DAEMON_STATUS_NOT_RUNNING;
       sig = dc->signal ? : SIGHUP;
       if (kill(pid, sig) < 0)
-	daemon_control_err(dc, "Cannot send signal %d: %m", sig);
+	st = daemon_control_err(dc, "Cannot send signal %d: %m", sig);
       else
 	st = DAEMON_STATUS_OK;
       break;

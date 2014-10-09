@@ -2,6 +2,7 @@
  *	UCW Library -- Daemonization
  *
  *	(c) 2012--2014 Martin Mares <mj@ucw.cz>
+ *	(c) 2014 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -18,6 +19,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <errno.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
@@ -79,7 +81,8 @@ daemon_resolve_ugid(struct daemon_params *dp)
     }
 }
 
-void daemon_switch_ugid(struct daemon_params *dp)
+void
+daemon_switch_ugid(struct daemon_params *dp)
 {
   if (dp->want_setgid && setresgid(dp->run_as_gid, dp->run_as_gid, dp->run_as_gid) < 0)
     die("Cannot set GID to %d: %m", (int) dp->run_as_gid);
@@ -87,6 +90,17 @@ void daemon_switch_ugid(struct daemon_params *dp)
     die("Cannot initialize groups: %m");
   if (dp->want_setuid && setresuid(dp->run_as_uid, dp->run_as_uid, dp->run_as_uid) < 0)
     die("Cannot set UID to %d: %m", (int) dp->run_as_uid);
+}
+
+static void
+daemon_fcntl_lock(struct daemon_params *dp)
+{
+  struct flock fl = { .l_type = F_WRLCK, .l_whence = SEEK_SET };
+  while (fcntl(dp->pid_fd, F_SETLKW, &fl) < 0)
+    {
+      if (errno != EINTR)
+	die("Unable to get fcntl lock on '%s': %m", dp->pid_file);
+    }
 }
 
 void
@@ -119,6 +133,11 @@ daemon_init(struct daemon_params *dp)
 	  else
 	    die("Cannot lock `%s': %m", dp->pid_file);
 	}
+
+      // Also temporarily lock it with a fcntl lock until the master process
+      // finishes writing of pid -- used to avoid possible collision with
+      // writing of "(stopped)"
+      daemon_fcntl_lock(dp);
 
       // Make a note that the daemon is starting
       if (write(dp->pid_fd, "(starting)\n", 11) != 11 ||
@@ -189,8 +208,11 @@ daemon_exit(struct daemon_params *dp)
 
   if (dp->pid_file)
     {
-      if (unlink(dp->pid_file) < 0)
-	msg(L_ERROR, "Cannot unlink PID file `%s': %m", dp->pid_file);
+      daemon_fcntl_lock(dp);
+      if (lseek(dp->pid_fd, 0, SEEK_SET) < 0 ||
+	write(dp->pid_fd, "(stopped)", 9) != 9 ||
+	ftruncate(dp->pid_fd, 9))
+	die("Error writing `%s': %m", dp->pid_file);
       close(dp->pid_fd);
     }
 }
