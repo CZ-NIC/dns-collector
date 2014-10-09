@@ -134,14 +134,14 @@ daemon_init(struct daemon_params *dp)
 	    die("Cannot lock `%s': %m", dp->pid_file);
 	}
 
-      // Also temporarily lock it with a fcntl lock until the master process
-      // finishes writing of pid -- used to avoid possible collision with
-      // writing of "(stopped)"
+      // Temporarily lock it with a fcntl lock until the master process ends
+      // -- used to avoid possible collision between writing of pid and
+      // truncating during stop
       daemon_fcntl_lock(dp);
 
       // Make a note that the daemon is starting
-      if (write(dp->pid_fd, "(starting)\n", 11) != 11 ||
-	  ftruncate(dp->pid_fd, 11) < 0)
+      if (ftruncate(dp->pid_fd, 0) < 0 ||
+          write(dp->pid_fd, "(starting)\n", 11) != 11)
 	die("Error writing `%s': %m", dp->pid_file);
     }
 }
@@ -209,10 +209,8 @@ daemon_exit(struct daemon_params *dp)
   if (dp->pid_file)
     {
       daemon_fcntl_lock(dp);
-      if (lseek(dp->pid_fd, 0, SEEK_SET) < 0 ||
-	write(dp->pid_fd, "(stopped)", 9) != 9 ||
-	ftruncate(dp->pid_fd, 9))
-	die("Error writing `%s': %m", dp->pid_file);
+      if (ftruncate(dp->pid_fd, 0))
+	die("Error truncating `%s': %m", dp->pid_file);
       close(dp->pid_fd);
     }
 }

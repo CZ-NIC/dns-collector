@@ -11,6 +11,7 @@
 #include <ucw/lib.h>
 #include <ucw/daemon.h>
 #include <ucw/process.h>
+#include <ucw/strtonum.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,12 +41,12 @@ daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *pidp)
   // -- DAEMON_STATUS_ERROR, pid == 0
   // -- DAEMON_STATUS_NOT_RUNNING, pid == 0
   // -- DAEMON_STATUS_OK, pid > 0
-  // -- DAEMON_STATUS_OK, pid == 0 (stopping)
+  // -- DAEMON_STATUS_OK, pid == 0 (flocked, but no pid available during start or stop)
 
   enum daemon_control_status st = DAEMON_STATUS_NOT_RUNNING;
   *pidp = 0;
 
-  int pid_fd = open(dc->pid_file, O_RDWR);
+  int pid_fd = open(dc->pid_file, O_RDONLY);
   if (pid_fd < 0)
     {
       if (errno == ENOENT)
@@ -53,7 +54,7 @@ daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *pidp)
       return daemon_control_err(dc, "Cannot open PID file `%s': %m", dc->pid_file);
     }
 
-  while (flock(pid_fd, LOCK_EX | (will_wait ? 0 : LOCK_NB)) < 0)
+  while (flock(pid_fd, LOCK_SH | (will_wait ? 0 : LOCK_NB)) < 0)
     {
       if (errno == EWOULDBLOCK)
 	{
@@ -67,10 +68,13 @@ daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *pidp)
 	}
     }
 
-  // Beware that daemon modifies PID file by write() + ftruncate() => even with
-  // atomic read() and write() we could get more bytes then expected.
-  // It should not be problem here, but it would be probably better to use
-  // the already existing fcntl lock or align all writes to a common size.
+  struct flock fl = { .l_type = F_RDLCK, .l_whence = SEEK_SET };
+  while (fcntl(pid_fd, F_SETLKW, &fl) < 0)
+    {
+      if (errno != EINTR)
+	die("Unable to get fcntl lock on '%s': %m", dc->pid_file);
+    }
+
   char buf[16];
   int n = read(pid_fd, buf, sizeof(buf));
   if (n < 0)
@@ -85,7 +89,7 @@ daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *pidp)
     }
   buf[n] = 0;
 
-  if (!strncmp(buf, "(stopped)", 9))
+  if (!n)
     {
       close(pid_fd);
       return st;
@@ -97,8 +101,9 @@ daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *pidp)
       return DAEMON_STATUS_STALE;
     }
 
-  int pid = atoi(buf);
-  if (!pid)
+  int pid;
+  const char *next;
+  if (str_to_int(&pid, buf, &next, 10) || strcmp(next, "\n"))
     {
       daemon_control_err(dc, "PID file `%s' does not contain a valid PID", dc->pid_file);
       goto fail;
@@ -167,13 +172,15 @@ daemon_control(struct daemon_control_params *dc)
 	      st = daemon_control_err(dc, "Daemon %s %s", dc->argv[0], ecmsg);
 	      goto done;
 	    }
-	  st = DAEMON_STATUS_OK;
+	  if (st != DAEMON_STATUS_STALE)
+	    st = DAEMON_STATUS_OK;
 	}
       break;
     case DAEMON_CONTROL_STOP:
-      if (st == DAEMON_STATUS_NOT_RUNNING)
+      if (st != DAEMON_STATUS_OK)
 	{
-	  st = DAEMON_STATUS_ALREADY_DONE;
+	  if (st == DAEMON_STATUS_NOT_RUNNING)
+	    st = DAEMON_STATUS_ALREADY_DONE;
 	  goto done;
 	}
       if (pid)
@@ -184,6 +191,11 @@ daemon_control(struct daemon_control_params *dc)
 	      st = daemon_control_err(dc, "Cannot send signal %d: %m", sig);
 	      goto done;
 	    }
+	}
+      else
+	{
+	  // With locked guard file it's sure that daemon is currently exiting
+	  // and not starting => we can safely wait without any signal
 	}
       st = daemon_read_pid(dc, 1, &pid);
       if (st != DAEMON_STATUS_ERROR)
