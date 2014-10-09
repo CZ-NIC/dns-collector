@@ -165,7 +165,10 @@ daemon_control(struct daemon_control_params *dc)
 	      st = daemon_control_err(dc, "Daemon %s %s", dc->argv[0], ecmsg);
 	      goto done;
 	    }
-	  if (st != DAEMON_STATUS_STALE)
+	  enum daemon_control_status st2 = daemon_read_pid(dc, 0, &pid);
+	  if (st2 != DAEMON_STATUS_OK && st2 != DAEMON_STATUS_NOT_RUNNING)
+	    st = daemon_control_err(dc, "Daemon %s failed to write the PID file `%s'", dc->argv[0], dc->pid_file);
+	  else if (st != DAEMON_STATUS_STALE)
 	    st = DAEMON_STATUS_OK;
 	}
       break;
