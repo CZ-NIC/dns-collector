@@ -39,6 +39,7 @@ daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *pidp)
 {
   // Possible results:
   // -- DAEMON_STATUS_ERROR, pid == 0
+  // -- DAEMON_STATUS_STALE, pid == 0
   // -- DAEMON_STATUS_NOT_RUNNING, pid == 0
   // -- DAEMON_STATUS_OK, pid > 0
   // -- DAEMON_STATUS_OK, pid == 0 (flocked, but no pid available during start or stop)
