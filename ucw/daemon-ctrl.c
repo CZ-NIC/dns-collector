@@ -187,7 +187,7 @@ daemon_control(struct daemon_control_params *dc)
       if (pid)
 	{
 	  sig = dc->signal ? : SIGTERM;
-	  if (kill(pid, sig) < 0)
+	  if (kill(pid, sig) < 0 && errno != ESRCH)
 	    {
 	      st = daemon_control_err(dc, "Cannot send signal %d: %m", sig);
 	      goto done;
@@ -205,10 +205,12 @@ daemon_control(struct daemon_control_params *dc)
       if (!pid)
 	return DAEMON_STATUS_NOT_RUNNING;
       sig = dc->signal ? : SIGHUP;
-      if (kill(pid, sig) < 0)
-	st = daemon_control_err(dc, "Cannot send signal %d: %m", sig);
-      else
+      if (kill(pid, sig) >= 0)
 	st = DAEMON_STATUS_OK;
+      else if (errno == ESRCH)
+	st = DAEMON_STATUS_NOT_RUNNING;
+      else
+	st = daemon_control_err(dc, "Cannot send signal %d: %m", sig);
       break;
     default:
       ASSERT(0);
