@@ -92,17 +92,6 @@ daemon_switch_ugid(struct daemon_params *dp)
     die("Cannot set UID to %d: %m", (int) dp->run_as_uid);
 }
 
-static void
-daemon_fcntl_lock(struct daemon_params *dp)
-{
-  struct flock fl = { .l_type = F_WRLCK, .l_whence = SEEK_SET };
-  while (fcntl(dp->pid_fd, F_SETLKW, &fl) < 0)
-    {
-      if (errno != EINTR)
-	die("Unable to get fcntl lock on '%s': %m", dp->pid_file);
-    }
-}
-
 void
 daemon_init(struct daemon_params *dp)
 {
@@ -133,11 +122,6 @@ daemon_init(struct daemon_params *dp)
 	  else
 	    die("Cannot lock `%s': %m", dp->pid_file);
 	}
-
-      // Temporarily lock it with a fcntl lock until the master process ends
-      // -- used to avoid possible collision between writing of pid and
-      // truncating during stop
-      daemon_fcntl_lock(dp);
 
       // Make a note that the daemon is starting
       if (ftruncate(dp->pid_fd, 0) < 0 ||
@@ -175,12 +159,28 @@ daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp))
 	die("Cannot chdir to root: %m");
     }
 
+  // Create pipe to synchronize child process with master and avoid possible
+  // collision between writing of PID and daemon_exit()
+  int pipe_fd[2];
+  if (dp->pid_file && pipe(pipe_fd) < 0)
+    die("Cannot create pipe: %m");
+
   // Fork
   pid_t pid = fork();
   if (pid < 0)
     die("Cannot fork: %m");
   if (!pid)
     {
+      // Wait for master process to finish writing of PID
+      if (dp->pid_file)
+	{
+	  byte pipe_buf[1];
+	  close(pipe_fd[1]);
+	  if (read(pipe_fd[0], pipe_buf, 1) < 0)
+	    die("Cannot read pipe: %m");
+	  close(pipe_fd[0]);
+	}
+
       // We still keep the PID file open and thus locked
       body(dp);
       exit(0);
@@ -197,6 +197,8 @@ daemon_run(struct daemon_params *dp, void (*body)(struct daemon_params *dp))
 	  ftruncate(dp->pid_fd, c) ||
 	  close(dp->pid_fd) < 0)
 	die("Cannot write PID to `%s': %m", dp->pid_file);
+      close(pipe_fd[0]);
+      close(pipe_fd[1]);
     }
 }
 
@@ -208,7 +210,6 @@ daemon_exit(struct daemon_params *dp)
 
   if (dp->pid_file)
     {
-      daemon_fcntl_lock(dp);
       if (ftruncate(dp->pid_fd, 0))
 	die("Error truncating `%s': %m", dp->pid_file);
       close(dp->pid_fd);
