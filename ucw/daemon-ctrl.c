@@ -37,12 +37,15 @@ daemon_control_err(struct daemon_control_params *dc, char *msg, ...)
 static enum daemon_control_status
 daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *pidp)
 {
-  // Possible results:
-  // -- DAEMON_STATUS_ERROR, pid == 0
-  // -- DAEMON_STATUS_STALE, pid == 0
-  // -- DAEMON_STATUS_NOT_RUNNING, pid == 0
-  // -- DAEMON_STATUS_OK, pid > 0
-  // -- DAEMON_STATUS_OK, pid == 0 (flocked, but no pid available during start or stop)
+  // We expect successfully locked guard file, so no foreign process
+  // can be inside daemon_control() and therefore also in daemon_init()
+  // or daemon_run(). Only these results are then possible:
+  //
+  // -- DAEMON_STATUS_ERROR -- some local failure
+  // -- DAEMON_STATUS_NOT_RUNNING -- no daemon is running
+  // -- DAEMON_STATUS_STALE -- crashed daemon
+  // -- DAEMON_STATUS_OK, pid > 0 -- running daemon with known PID
+  // -- DAEMON_STATUS_OK, pid == 0 -- just exiting daemon, after ftruncate()
 
   enum daemon_control_status st = DAEMON_STATUS_NOT_RUNNING;
   *pidp = 0;
@@ -97,11 +100,12 @@ daemon_read_pid(struct daemon_control_params *dc, int will_wait, int *pidp)
 
   int pid;
   const char *next;
-  if (str_to_int(&pid, buf, &next, 10) || *next != '\n')
+  if (str_to_int(&pid, buf, &next, 10) || strcmp(next, "\n"))
     {
       daemon_control_err(dc, "PID file `%s' does not contain a valid PID", dc->pid_file);
       goto fail;
     }
+
   close(pid_fd);
   *pidp = pid;
   return DAEMON_STATUS_OK;
@@ -191,8 +195,7 @@ daemon_control(struct daemon_control_params *dc)
 	}
       else
 	{
-	  // With locked guard file it's sure that daemon is currently exiting
-	  // and not starting => we can safely wait without any signal
+	  // Just exiting daemon => we can safely wait without sending any signal
 	}
       st = daemon_read_pid(dc, 1, &pid);
       if (st != DAEMON_STATUS_ERROR)
