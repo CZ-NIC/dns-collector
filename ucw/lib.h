@@ -68,7 +68,7 @@
 
 #define MIN(a,b) (((a)<(b))?(a):(b))			/** Minimum of two numbers **/
 #define MAX(a,b) (((a)>(b))?(a):(b))			/** Maximum of two numbers **/
-#define CLAMP(x,min,max) ({ int _t=x; (_t < min) ? min : (_t > max) ? max : _t; })	/** Clip a number @x to interval [@min,@max] **/
+#define CLAMP(x,min,max) ({ typeof(x) _t=x; (_t < min) ? min : (_t > max) ? max : _t; })	/** Clip a number @x to interval [@min,@max] **/
 #define ABS(x) ((x) < 0 ? -(x) : (x))			/** Absolute value **/
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))		/** The number of elements of an array **/
 #define STRINGIFY(x) #x					/** Convert macro parameter to a string **/
