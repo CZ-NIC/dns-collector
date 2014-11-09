@@ -360,7 +360,11 @@ file_del_ctx(struct main_context *m, struct main_file *fi)
   m->file_cnt--;
 #ifdef CONFIG_UCW_EPOLL
   if (m->epoll_fd >= 0 && epoll_ctl(m->epoll_fd, EPOLL_CTL_DEL, fi->fd, NULL) < 0)
-    die("epoll_ctl() failed: %m");
+    {
+      // Some clients call file_del() on an already closed descriptor. Trying to be benevolent.
+      if (errno != EBADF)
+	die("epoll_ctl() failed: %m");
+    }
 #else
   m->poll_table_obsolete = 1;
 #endif
