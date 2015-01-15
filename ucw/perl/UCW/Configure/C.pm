@@ -120,16 +120,19 @@ Set("LIBS" => "");
 # Extra flags for compiling and linking shared libraries
 Set("CSHARED" => '-fPIC');
 Append("LOPT" => "-Wl,--rpath-link,run/lib -Lrun/lib");
-if (Get("INSTALL_LIB_DIR") eq "/usr/lib") {
+if (!IsSet("CONFIG_LOCAL")) {
+	# Beware that in non-local builds the INSTALL_LIB_DIR must exist in
+	# standard search paths for shared libraries.
 	Set("SO_LINK_PATH" => '');
 }
 else {
+	# In local builds, we need to link binaries with custom --rpath.
+	# GCC seems to fail when this directory does not exist.
 	Set("SO_LINK_PATH" => "-Wl,--rpath," . Get("INSTALL_LIB_DIR"));
 	AtWrite {
-		# FIXME: This is a hack. GCC would otherwise fail to link binaries.
 		my $libdir = Get("INSTALL_LIB_DIR");
-		if (IsSet("CONFIG_SHARED") && !(-d $libdir)) {
-			`install -d -m 755 $libdir`; Fail("Cannot create $libdir") if $?;
+		if (IsSet("CONFIG_SHARED")) {
+			`mkdir -p $libdir`; Fail("Cannot create $libdir") if $?;
 		}
 	};
 }
