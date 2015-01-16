@@ -46,7 +46,8 @@ Modules
 - <<daemon:,Daemon helpers>>
 - <<signal:,Signal helpers>>
 - <<opt:,Command line parser>>
-- <<table:,Table printer>>
+- <<table:,Table printer>> and its <<ucw-tableprinter.5:,options>>
+- <<xtypes:,Extended data types>>
 
 Other features
 --------------

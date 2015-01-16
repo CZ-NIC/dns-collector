@@ -37,7 +37,10 @@ enum size_units {
   XT_SIZE_UNIT_AUTO
 };
 
-/** Custom formatting mode: use a specified unit (`XT_SIZE_UNIT_`'xxx') **/
+/**
+ * Custom formatting mode: use a specified unit (`XT_SIZE_UNIT_`'xxx').
+ * Textual representation of the mode is the name of the unit (case-insensitive).
+ **/
 #define XT_SIZE_FMT_UNIT(_unit) (_unit | XT_SIZE_FMT_FIXED_UNIT)
 #define XT_SIZE_FMT_FIXED_UNIT XTYPE_FMT_CUSTOM
 
@@ -53,7 +56,16 @@ TABLE_COL_PROTO(size, u64)
  * `xt_timestamp` is a timestamp, internally represented as `time_t`.
  ***/
 
+/**
+ * Custom formatting mode: seconds since Unix epoch. Currently,
+ * this is the same as the raw format. Textual representation: `timestamp` or `epoch`.
+ **/
 #define XT_TIMESTAMP_FMT_EPOCH     XTYPE_FMT_RAW
+
+/**
+ * Custom formatting mode: date and time. Currently, this is the same
+ * as the human-readable format. Textual representation: `datetime`.
+ **/
 #define XT_TIMESTAMP_FMT_DATETIME  XTYPE_FMT_PRETTY
 
 extern const struct xtype xt_timestamp;

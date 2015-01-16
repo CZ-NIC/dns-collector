@@ -6,7 +6,7 @@ UCW_DOCS=basics log fastbuf index config configure install basecode hash docsys 
 UCW_INDEX=$(o)/ucw/doc/def_index.html
 UCW_DOCS_HTML=$(addprefix $(o)/ucw/doc/,$(addsuffix .html,$(UCW_DOCS)))
 
-UCW_MANPAGES=ucw-tableprinter.1
+UCW_MANPAGES=ucw-tableprinter.5
 UCW_MANPAGES_HTML=$(patsubst %,$(o)/ucw/doc/%.html,$(UCW_MANPAGES))
 UCW_MANPAGES_NROFF=$(addprefix $(o)/ucw/doc/,$(UCW_MANPAGES))
 MANPAGES+=$(UCW_MANPAGES_NROFF)

@@ -1,0 +1,88 @@
+UCW-TABLEPRINTER(5)
+===================
+
+NAME
+----
+
+ucw-tableprinter - a program module for customizable printing of tables.
+
+DESCRIPTION
+-----------
+The table printer module is a part of the LibUCW library. It provides formatting
+of 2-dimensional tables in various ways. Users seldom interact with the table
+printer itself, but programs using it often provide means for customizing table
+output by passing options.
+
+This manual page describes the overall logic of the table printer and its
+options.
+
+Each table print-out consists of a number of rows, which are processed
+one after another. All rows have the same number of columns. Once a
+table is defined, it can be printed using a variety of formatters
+(block-line, human-readable, machine-readable, etc.).
+
+The table definition consists of various column definitions, each
+column definition is a pair consisting of a name and a type. Name of
+each column must be unique in the whole table. Each column definition
+can be instantiated (printed) in its own format, e.g., a size column
+can be printed three times: first in bytes, then in gigabytes, and
+finally in a human-readable form.
+
+The table can be controlled using various options:
+
+[options="header"]
+|===============================================================================================================
+| option      | argument                    | meaning
+| `header`    | 0 or 1                      | set whether a table header should be printed
+| `noheader`  | 'none'                      | equivalent to `header:0`
+| `cols`      | comma-separated column list | set order of columns and per-column options (see below)
+| `fmt`	      | `human`/`machine`/`block`   | set table formatter to one of the built-in formatters (see below)
+| `col-delim` | string                      | set column delimiter
+| `cells`     | string                      | set column cell format mode, possibilities are: `default`, `raw`, `pretty`
+| `raw`	      | 'none'                      | set column cell format to raw data, equivalent to `cells:raw`
+| `pretty`    | 'none'                      | set column cell format to pretty-printing, equivalent to `cells:pretty`
+|===============================================================================================================
+
+Table formats
+-------------
+The `fmt` option sets the overall format of the table. Currently,
+the following formats are available:
+
+* 'human-readable' (`human`): prints columns separated by a single space, rows
+separated by a newline character (ASCII 0x0a).
+
+* 'machine-readable' (`machine`): prints columns separated by a tab character (ASCII 0x09),
+rows separated by a newline character.
+
+* 'block-line' (`block`): prints each column on one line, rows separated by a single
+blank line. That is, the column separator is set to the newline character
+and an extra newline is printed at the end of each row.
+
+Column definitions
+------------------
+The `cols` option allows to specify a list of table columns and their options.
+For instance, you can use `name,size[raw],size[pretty]` to request a table with three columns:
+name, size as a raw value, and the same size pretty-printed.
+
+Formally, the argument of the `cols` option follows this grammar:
+
+  <col-order-string> := <col-def>[,<col-def>]*
+  <col-def> := <col-name> [ '[' <col-opts> ']' ]
+  <col-name> contains no commas nor square brackets
+  <col-opts> := <col-opt> [ ',' <col-opt> ]
+  <col-opt> contains no commas nor square brackets
+
+Column options
+--------------
+All column types accept these standard formatting modes:
+
+* `default`: human-readable, but not hostile to machine parsing
+* `raw`: raw data with no frills
+* `pretty`: tries to please humans (e.g., like `ls -h`)
+
+There are also formatting modes specific for particular column types:
+
+* Sizes can be given a unit (`KB`, `MB`, `GB`, `TB`, or `auto`; case-insensitive).
+* Timestamps can be formatted as `timestamp` or `epoch` (both are seconds since the
+  Unix epoch), or `datetime` (corresponds to date(1) format `"%F %T"`. Currently,
+  `raw` is an alias for `timestamp` and `pretty` is the same as `datetime`.

@@ -6,6 +6,7 @@ Release notes
 * Fixed race conditions in <<daemon:,daemon helpers>>.
 * The <<xtypes:,extended types>> have been documented and integrated
   in the table printer, command-line option parser, and configuration parser.
+* The <<ucw-tableprinter.5:,table printer options>> have been documented.
 
 6.1 (2014-08-09)
 ----------------

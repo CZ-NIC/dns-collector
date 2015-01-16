@@ -151,7 +151,7 @@ struct table {
  *  * `TBL_COL_`'type'`_FMT(name, width, fmt)` defines a column with a custom format string
  *  * `TBL_COL_END` ends the column definitions
  *  * `TBL_COL_ORDER` specifies custom ordering of columns in the output
- *  * `TBL_COL_DELIMITER` and `TBL_APPEND_DELIMITER` override default delimiters
+ *  * `TBL_COL_DELIMITER` overrides the default delimiter
  *  * `TBL_FMT_HUMAN_READABLE` requests human-readable formatting (this is the default)
  *  * `TBL_FMT_MACHINE_READABLE` requests machine-readable TSV output
  *  * `TBL_FMT_BLOCKLINE` requests block formatting (each cell printed a pair of a key and value on its own line)
@@ -238,7 +238,6 @@ void table_end(struct table *tbl);
  *     to the `value`
  ***/
 
-
 #define TABLE_COL_PROTO(_name, _type) void table_col_##_name(struct table *tbl, int col, _type val);
 
 TABLE_COL_PROTO(int, int)
@@ -304,14 +303,16 @@ void table_reset_row(struct table *tbl);
 int table_get_col_idx(struct table *tbl, const char *col_name);
 
 /**
- * Sets a string option to an instance of a column type. This is the default version that checks
- * whether the xtype::parse_fmt can be called and calls it. However, there are situation in which
- * the xtype::parse_fmt is not sufficient, e.g., column decoration, post-processing, etc.
+ * Sets a string option on a column instance.
  *
- * Each struct table_column has a pointer to a customized version of table_set_col_opt (called
- * set_col_opt). The hook set_call_opt should be always called through @table_set_col_opt. The hook
- * and @table_set_col_opt has the same prototype, but @table_set_col_opt should never be used as the
- * table_set_opt hook.
+ * By default, the option is parsed as a formatting mode of the corresponding <<xtypes:,xtype>>
+ * using <<xtypes:fun_xtype_parse_fmt,`xtype_parse_fmt()`>>.
+ *
+ * As special cases might require special handling (e.g., column decoration, post-processing, etc.),
+ * a column can define a `set_col_opt` hook, which takes over option parsing. (Beware, the hook must
+ * not be called directly and it must not call this function.)
+ *
+ * See <<ucw-tableprinter.5:,the list of options>> for more.
  **/
 const char *table_set_col_opt(struct table *tbl, uint col_inst_idx, const char *col_opt);
 
@@ -337,15 +338,7 @@ void table_set_col_order(struct table *tbl, const struct table_col_instance *col
  * names. Returns NULL for success and an error message otherwise. The string is not referenced after
  * this function returns.
  *
- * The format of the col_order string is the following:
- * <col-order-string> := <col-def>[,<col-def>]*
- *
- * <col-def> := <col-name> [ '[' <col-opts> ']' ]
- *
- * <col-name> is a string that does not contain comma ',' or '[',']' brackets
- *
- * <col-opts> := <string> [ ',' <string> ]
- *  - <col-opts> is a comma-separated list of options
+ * See <<ucw-tableprinter.5:,the list of options>> for full syntax.
  **/
 const char *table_set_col_order_by_name(struct table *tbl, const char *col_order);
 
@@ -360,21 +353,8 @@ bool table_col_is_printed(struct table *tbl, uint col_def_idx);
 void table_set_formatter(struct table *tbl, const struct table_formatter *fmt);
 
 /**
- * Set a table option. All options have a key and a value. Currently,
- * the following keys are defined (other keys can be accepted by formatters):
- *
- * [options="header"]
- * |===================================================================================================
- * | key	| value				| meaning
- * | `header`	| 0 or 1			| set whether a table header should be printed
- * | `noheader`	| 'none'			| equivalent to `header`=0
- * | `cols`	| comma-separated column list	| set order of columns
- * | `fmt`	| `human`/`machine`/`block`	| set table formatter to one of the built-in formatters
- * | `col-delim`| string			| set column delimiter
- * | `cells`    | string                        | set column format mode
- * | `raw`	| 'none'			| set column format to raw data
- * | `pretty`	| 'none'			| set column format to pretty-printing
- * |===================================================================================================
+ * Set a table option. All options have a key and a value.
+ * See <<ucw-tableprinter.5:,the list of options>>.
  **/
 const char *table_set_option_value(struct table *tbl, const char *key, const char *value);
 
