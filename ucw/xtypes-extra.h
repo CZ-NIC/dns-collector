@@ -17,10 +17,17 @@
 #define xt_timestamp ucw_xt_timestamp
 #endif
 
-/* Size, possibly with a unit. Internally represented as u64. */
+/***
+ * Size
+ * ~~~~
+ *
+ * `xt_size` is a size, possibly with a unit. Internally, it is represented
+ * as a `u64`.
+ ***/
 
 extern const struct xtype xt_size;
 
+/** Units **/
 enum size_units {
   XT_SIZE_UNIT_BYTE,
   XT_SIZE_UNIT_KILOBYTE,
@@ -30,6 +37,7 @@ enum size_units {
   XT_SIZE_UNIT_AUTO
 };
 
+/** Custom formatting mode: use a specified unit (`XT_SIZE_UNIT_`'xxx') **/
 #define XT_SIZE_FMT_UNIT(_unit) (_unit | XT_SIZE_FMT_FIXED_UNIT)
 #define XT_SIZE_FMT_FIXED_UNIT XTYPE_FMT_CUSTOM
 
@@ -38,7 +46,12 @@ enum size_units {
 
 TABLE_COL_PROTO(size, u64)
 
-/* Timestamp. Internally represented as time_t. */
+/***
+ * Time
+ * ~~~~
+ *
+ * `xt_timestamp` is a timestamp, internally represented as `time_t`.
+ ***/
 
 #define XT_TIMESTAMP_FMT_EPOCH     XTYPE_FMT_RAW
 #define XT_TIMESTAMP_FMT_DATETIME  XTYPE_FMT_PRETTY

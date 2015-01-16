@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Extended Types
  *
- *	(c) 2014 Martin Mares <mj@ucw.cz>
+ *	(c) 2014--2015 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -26,6 +26,11 @@
 #endif
 
 struct mempool;
+
+/***
+ * Definitions of types
+ * ~~~~~~~~~~~~~~~~~~~~
+ ***/
 
 /**
  * A parsing callback. Takes a string, interprets it as a value of the particular
@@ -53,7 +58,6 @@ typedef const char * (*xtype_formatter)(void *src, u32 fmt, struct mempool *pool
  * significant bit is set, the meaning of the mode is specific to the particular
  * xtype.
  **/
-
 enum xtype_fmt {
   XTYPE_FMT_DEFAULT = 0,	// Default format: readable, but not hostile to machine parsing
   XTYPE_FMT_RAW = 1,		// Raw data with no frills
@@ -102,37 +106,61 @@ const char *xtype_parse_fmt(const struct xtype *xt, const char *str, u32 *dest, 
  **/
 const char *xtype_format_fmt(struct xtype *xt, u32 fmt, struct mempool *pool);
 
-// Basic set of extended types
-extern const struct xtype xt_str;
-extern const struct xtype xt_int;
-extern const struct xtype xt_s64;
-extern const struct xtype xt_intmax;
-extern const struct xtype xt_uint;
-extern const struct xtype xt_u64;
-extern const struct xtype xt_uintmax;
+/***
+ * Basic pre-defined types
+ * ~~~~~~~~~~~~~~~~~~~~~~~
+ *
+ * We provide xtypes for many basic data types:
+ *
+ * * `xt_bool`
+ * * `xt_double` -- in addition to the generic formatting modes, you can use
+ *   `XT_DOUBLE_FMT_PREC(`'n'`)` to generate a mode for fixed formatting with
+ *   'n' decimal places.
+ * * `xt_int`
+ * * `xt_intmax`
+ * * `xt_s64`
+ * * `xt_str` -- string, represented by a `const char *`
+ * * `xt_u64`
+ * * `xt_uint`
+ * * `xt_uintmax`
+ ***/
+
 extern const struct xtype xt_bool;
 extern const struct xtype xt_double;
+extern const struct xtype xt_int;
+extern const struct xtype xt_intmax;
+extern const struct xtype xt_s64;
+extern const struct xtype xt_str;
+extern const struct xtype xt_u64;
+extern const struct xtype xt_uint;
+extern const struct xtype xt_uintmax;
 
 // Fixed-precision formats for xt_double
 #define XT_DOUBLE_FMT_PREC(_prec) (_prec | XT_DOUBLE_FMT_PREC_FLAG)
 #define XT_DOUBLE_FMT_PREC_FLAG XTYPE_FMT_CUSTOM
 
-/* Tables of units, provided as convenience for the implementations of xtypes */
+/***
+ * Tables of units
+ * ~~~~~~~~~~~~~~~
+ *
+ * Various xtypes accept values accompanied by a unit of measure.
+ * Units by handled by the xtypes themselves, but we provide a couple
+ * of generic functions for their convenience.
+ ***/
 
 /**
- * Definition of the units that are appended to an xtype value. The value with units is represented
- * by the following string: "<value><units>". The final value of the of the string is computed using
- * the following formula: <value> * <num>/<denom>.
+ * Each unit is defined by a conversion ratio, which is a fraction with 64-bit numerator
+ * and denominator. Therefore, a value of 'x' units is interpreted as 'x' * 'num' / 'denon'.
  **/
 struct unit_definition {
-  const char *unit; // string representation of unit
-  u64 num;
-  u64 denom;
+  const char *unit;		// Symbol (name of the unit, as appended to values)
+  u64 num;			// Numerator
+  u64 denom;			// Denominator
 };
 
 /**
- * Parse a name of a unit and return its index in the @units array or -1
- * if is not present there.
+ * Given an array @units of unit definitions (terminated by an all-zero entry),
+ * parse a name of a unit and return its index in the array, or -1 if it is not found.
  **/
 int xtype_unit_parser(const char *str, const struct unit_definition *units);
 

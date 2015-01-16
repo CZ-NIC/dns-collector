@@ -6,4 +6,3 @@
 Tableprinter:
 - computing statistics of columns via the table_start_callback/table_end_callback.
 - unsupported: (dynamic) alignment of cells which is computed in table_end
-* document xtypes
