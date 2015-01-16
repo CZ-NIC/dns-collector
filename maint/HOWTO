@@ -1,0 +1,17 @@
+How to release libucw
+~~~~~~~~~~~~~~~~~~~~~
+
+- Run maint/abi-check-exports. No symbols should be listed except for _init
+  and friends. Otherwise, run maint/abi-map-symbols, update maint/libucw.abi
+  accordingly, and call maint/abi-rename symbols to fix headers.
+
+- Update version numbers and ABI suffix in ucw/default.cfg:
+      - If there were major changes, or changes which are not backward
+        compatible on source level, increase the major number.
+      - If new features were added, increase the minor number.
+      - Otherwise, increase only the third number.
+      - If anything in the ABI was changed, update UCW_ABI_SUFFIX.
+
+- git-tag vX.Y.Z
+
+- Run maint/release
