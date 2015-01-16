@@ -12,6 +12,6 @@ How to release libucw
       - Otherwise, increase only the third number.
       - If anything in the ABI was changed, update UCW_ABI_SUFFIX.
 
-- git-tag vX.Y.Z
+- git-tag vX.Y.Z && git push --tags
 
 - Run maint/release
