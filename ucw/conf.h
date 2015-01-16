@@ -3,6 +3,7 @@
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
  *	(c) 2003--2014 Martin Mares <mj@ucw.cz>
+ *	(c) 2014 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -155,7 +156,8 @@ enum cf_type {				/** Type of a single value. **/
   CT_IP,				// IP address
   CT_STRING,				// string type
   CT_LOOKUP,				// in a string table
-  CT_USER				// user-defined type
+  CT_USER,				// user-defined type (obsolete)
+  CT_XTYPE				// extended type
 };
 
 struct fastbuf;
@@ -212,7 +214,8 @@ struct cf_item {			/** Single configuration item. **/
     struct cf_section *sec;		// declaration of a section or a list
     cf_parser *par;			// parser function
     const char * const *lookup;		// NULL-terminated sequence of allowed strings for lookups
-    struct cf_user_type *utype;		// specification of the user-defined type
+    struct cf_user_type *utype;		// specification of the user-defined type (obsolete)
+    const struct xtype *xtype;		// specification of the extended type
   } u;
   enum cf_class cls:16;			// attribute class
   enum cf_type type:16;			// type of a static or dynamic attribute
@@ -424,6 +427,21 @@ struct cf_section {			/** A section. **/
  * See <<custom_parser,creating custom parsers>> section.
  **/
 #define CF_USER_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_USER, .name = n, .number = c, .ptr = p, .u.utype = t }
+/**
+ * An extended type.
+ * See <<xtypes:,extended types>> if you want to know more.
+ **/
+#define CF_XTYPE(n,p,t)		{ .cls = CC_STATIC, .type = CT_XTYPE, .name = n, .number = 1, .ptr = p, .u.xtype = t }
+/**
+ * Static array of extended types (all of the same type).
+ * See <<xtypes:,extended types>>.
+ **/
+#define CF_XTYPE_ARY(n,p,t,c)	{ .cls = CC_STATIC, .type = CT_XTYPE, .name = n, .number = c, .ptr = p, .u.xtype = t }
+/**
+ * Dynamic array of extended types.
+ * See <<xtypes:,extended types>>.
+ **/
+#define CF_XTYPE_DYN(n,p,t,c)	{ .cls = CC_DYNAMIC, .type = CT_XTYPE, .name = n, .number = c, .ptr = p, .u.xtype = t }
 
 /**
  * Any number of dynamic array elements

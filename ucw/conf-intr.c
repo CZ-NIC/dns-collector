@@ -3,6 +3,7 @@
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
  *	(c) 2003--2014 Martin Mares <mj@ucw.cz>
+ *	(c) 2014 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -15,6 +16,7 @@
 #include <ucw/clists.h>
 #include <ucw/gary.h>
 #include <ucw/mempool.h>
+#include <ucw/xtypes.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -45,12 +47,18 @@ static struct {
 };
 
 inline uint
-cf_type_size(enum cf_type type, struct cf_user_type *utype)
+cf_type_size(enum cf_type type, const union cf_union *u)
 {
-  if (type < CT_USER)
-    return parsers[type].size;
-  else
-    return utype->size;
+  switch (type)
+    {
+      case CT_USER:
+        return u->utype->size;
+      case CT_XTYPE:
+	return u->xtype->size;
+      default:
+	ASSERT(type < ARRAY_SIZE(parsers) - 1);
+	return parsers[type].size;
+    }
 }
 
 static char *
@@ -82,13 +90,15 @@ cf_parse_ary(uint number, char **pars, void *ptr, enum cf_type type, union cf_un
   for (uint i=0; i<number; i++)
   {
     char *msg;
-    uint size = cf_type_size(type, u->utype);
+    uint size = cf_type_size(type, u);
     if (type < CT_LOOKUP)
       msg = ((cf_basic_parser*) parsers[type].parser) (pars[i], ptr + i * size);
     else if (type == CT_LOOKUP)
       msg = cf_parse_lookup(pars[i], ptr + i * size, u->lookup);
     else if (type == CT_USER)
       msg = u->utype->parser(pars[i], ptr + i * size);
+    else if (type == CT_XTYPE)
+      msg = (char *)u->xtype->parse(pars[i], ptr + i * size, cf_get_pool());
     else
       ASSERT(0);
     if (msg)
@@ -102,13 +112,13 @@ cf_parse_ary(uint number, char **pars, void *ptr, enum cf_type type, union cf_un
 #define T(x) #x,
 char *cf_op_names[] = { CF_OPERATIONS };
 #undef T
-char *cf_type_names[] = { "int", "u64", "double", "ip", "string", "lookup", "user" };
+char *cf_type_names[] = { "int", "u64", "double", "ip", "string", "lookup", "user", "xtype" };
 
 static char *
 interpret_set_dynamic(struct cf_item *item, int number, char **pars, void **ptr)
 {
   enum cf_type type = item->type;
-  uint size = cf_type_size(type, item->u.utype);
+  uint size = cf_type_size(type, &item->u);
   cf_journal_block(ptr, sizeof(void*));
   // boundary checks done by the caller
   *ptr = gary_init(size, number, mp_get_allocator(cf_get_pool()));
@@ -120,7 +130,7 @@ interpret_add_dynamic(struct cf_item *item, int number, char **pars, int *proces
 {
   enum cf_type type = item->type;
   void *old_p = *ptr;
-  uint size = cf_type_size(item->type, item->u.utype);
+  uint size = cf_type_size(item->type, &item->u);
   ASSERT(size >= sizeof(uint));
   int old_nr = old_p ? GARY_SIZE(old_p) : 0;
   int taken = MIN(number, ABS(item->number)-old_nr);
@@ -261,7 +271,7 @@ interpret_set_item(struct cf_item *item, int number, char **pars, int *processed
 	return "Missing value";
       taken = MIN(number, item->number);
       *processed = taken;
-      uint size = cf_type_size(item->type, item->u.utype);
+      uint size = cf_type_size(item->type, &item->u);
       cf_journal_block(ptr, taken * size);
       return cf_parse_ary(taken, pars, ptr, item->type, &item->u);
     case CC_DYNAMIC:
@@ -337,7 +347,7 @@ cmp_items(void *i1, void *i2, struct cf_item *item)
   if (item->type == CT_STRING)
     return strcmp(* (char**) i1, * (char**) i2);
   else				// all numeric types
-    return memcmp(i1, i2, cf_type_size(item->type, item->u.utype));
+    return memcmp(i1, i2, cf_type_size(item->type, &item->u));
 }
 
 static void *

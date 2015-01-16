@@ -13,8 +13,9 @@
 #include <ucw/xtypes-extra.h>
 
 #include <errno.h>
-#include <stdlib.h>
 #include <inttypes.h>
+#include <stdlib.h>
+#include <time.h>
 
 static void test_size_parse_correct(struct fastbuf *out)
 {
@@ -134,8 +135,16 @@ static void test_timestamp_parse_correct(struct fastbuf *out)
 
   static u64 timestamp_parsed[] = {
     1403685533,
-    1403678333,
+    0,
   };
+
+  // fill the value of timestamp_parsed as the timestamp in the
+  // current time zone.
+  {
+    struct tm parsed_time;
+    strptime(timestamp_strs[1], "%F %T", &parsed_time);
+    timestamp_parsed[1] = mktime(&parsed_time);
+  }
 
   struct mempool *pool = mp_new(4096);
   uint i = 0;

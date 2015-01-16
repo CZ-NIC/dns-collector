@@ -3,6 +3,7 @@
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
  *	(c) 2003--2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2014 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -14,6 +15,7 @@
 #include <ucw/conf-internal.h>
 #include <ucw/clists.h>
 #include <ucw/fastbuf.h>
+#include <ucw/xtypes.h>
 
 static void
 spaces(struct fastbuf *fb, uint nr)
@@ -43,6 +45,9 @@ dump_basic(struct fastbuf *fb, void *ptr, enum cf_type type, union cf_union *u)
       else
 	bprintf(fb, "??? ");
       break;
+    case CT_XTYPE:
+      bprintf(fb, "'%s' ", u->xtype->format(ptr, XTYPE_FMT_DEFAULT, cf_get_pool()));
+      break;
   }
 }
 
@@ -55,7 +60,7 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
 {
   ptr += (uintptr_t) item->ptr;
   enum cf_type type = item->type;
-  uint size = cf_type_size(item->type, item->u.utype);
+  uint size = cf_type_size(item->type, &item->u);
   int i;
   spaces(fb, level);
   bprintf(fb, "%s: C%s #", item->name, class_names[item->cls]);
@@ -67,6 +72,8 @@ dump_item(struct fastbuf *fb, struct cf_item *item, int level, void *ptr)
     bprintf(fb, "T%s ", cf_type_names[type]);
     if (item->type == CT_USER)
       bprintf(fb, "U%s S%d ", item->u.utype->name, size);
+    else if (item->type == CT_XTYPE)
+      bprintf(fb, "X%s S%d ", item->u.xtype->name, size);
   }
   if (item->cls == CC_STATIC) {
     for (i=0; i<item->number; i++)

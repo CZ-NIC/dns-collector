@@ -29,6 +29,7 @@ Top {
   bitmap1:remove 3 3
   bitmap2:all
   bitmap2:remove eleven twelve one
+  intmax 1000000000
 };;;;;;
 
 unknown.ignored :-)

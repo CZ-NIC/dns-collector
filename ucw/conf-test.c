@@ -3,6 +3,7 @@
  *
  *	(c) 2006 Robert Spalek <robert@ucw.cz>
  *	(c) 2012--2014 Martin Mares <mj@ucw.cz>
+ *	(c) 2014 Pavel Charvat <pchar@ucw.cz>
  */
 
 #include <ucw/lib.h>
@@ -11,6 +12,7 @@
 #include <ucw/clists.h>
 #include <ucw/fastbuf.h>
 #include <ucw/gary.h>
+#include <ucw/xtypes.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -88,6 +90,7 @@ static int *look;
 static u16 numbers[10] = { 2, 100, 1, 5 };
 static u32 bitmap1 = 0xff;
 static u32 bitmap2 = 3;
+static intmax_t intmax;
 
 static char *
 parse_u16(char *string, u16 *ptr)
@@ -155,6 +158,7 @@ static struct cf_section cf_top = {
     CF_IP("ip", &ip),
     CF_LOOKUP_DYN("look", &look, alphabet, 1000),
     CF_USER_ARY("numbers", numbers, &u16_type, 10),
+    CF_XTYPE("intmax", &intmax, &xt_intmax),
     CF_BITMAP_INT("bitmap1", &bitmap1),
     CF_BITMAP_LOOKUP("bitmap2", &bitmap2, ((const char* const[]) {
 	  "one", "two", "three", "four", "five", "six", "seven", "eight", 

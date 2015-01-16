@@ -3,6 +3,7 @@
  *
  *	(c) 2001--2006 Robert Spalek <robert@ucw.cz>
  *	(c) 2003--2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2014 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -98,7 +99,7 @@ enum cf_operation;
 extern char *cf_op_names[];
 extern char *cf_type_names[];
 
-uint cf_type_size(enum cf_type type, struct cf_user_type *utype);
+uint cf_type_size(enum cf_type type, const union cf_union *u);
 char *cf_interpret_line(struct cf_context *cc, char *name, enum cf_operation op, int number, char **pars);
 void cf_init_stack(struct cf_context *cc);
 int cf_done_stack(struct cf_context *cc);

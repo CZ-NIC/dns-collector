@@ -3,6 +3,7 @@
  *
  *	(c) 2013 Jan Moskyto Matejka <mq@ucw.cz>
  *	(c) 2014 Martin Mares <mj@ucw.cz>
+ *	(c) 2014 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -197,6 +198,13 @@ static void opt_parse_value(struct opt_context * oc, struct opt_precomputed * op
 	  case CT_USER:
 	      {
 		char * e = item->u.utype->parser(value, ptr);
+		if (e)
+		  opt_failure("Cannot parse the value of %s: %s", THIS_OPT, e);
+		break;
+	      }
+	  case CT_XTYPE:
+	      {
+		const char * e = item->u.xtype->parse(value, ptr, cf_get_pool());
 		if (e)
 		  opt_failure("Cannot parse the value of %s: %s", THIS_OPT, e);
 		break;
