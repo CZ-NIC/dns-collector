@@ -31,7 +31,7 @@ install: build
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-dev install-libucw-api
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-utils install-ucw-shell install-ucw-utils
 ifdef CONFIG_DOC
-	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-doc install-libucw-docs install-libucw-config
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-doc install-libucw-docs install-libucw-man install-libucw-config
 	install -d -m 755 $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples
 	cp -r examples/external $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples/program
 endif
