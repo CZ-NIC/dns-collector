@@ -24,7 +24,7 @@ if ($r->{"do_upload"}) {
 	my $tdir = $r->{"TESTDIR"};
 	if (defined $tdir) {
 		print "Generating documentation\n";
-		`cd $tdir && make install-libucw-docs INSTALL_DOC_DIR=../doc`;
+		`cd $tdir && make install-libucw-docs INSTALL_DOC_DIR=../doc INSTALL_MAN_DIR=../man`;
 		die if $?;
 		print "Upload of documentation\n";
 		$r->Confirm;
