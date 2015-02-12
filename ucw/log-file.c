@@ -119,6 +119,8 @@ log_new_fd(int fd, uint flags)
   struct log_stream *ls = log_new_stream(sizeof(struct file_stream));
   struct file_stream *fs = (struct file_stream *) ls;
   fs->fd = fd;
+  if (fd == 2)
+    log_stderr_replaced = 1;
   fs->flags = flags;
   ls->msgfmt = LSFMT_DEFAULT;
   ls->handler = file_handler;
