@@ -3,4 +3,4 @@ Makefile.PL
 MANIFEST
 Fcntllock.pm
 Fcntllock.xs
-lib/Sherlock/.exists
+lib/UCW/.exists

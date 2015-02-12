@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Charset Conversion Wrapper for Fast Buffered I/O
+ *	UCW Library -- Charset Conversion Wrapper for Fast Buffered I/O
  *
  *	(c) 2003--2005 Martin Mares <mj@ucw.cz>
  *

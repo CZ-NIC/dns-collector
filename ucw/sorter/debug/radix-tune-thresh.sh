@@ -1,13 +1,13 @@
 #!/bin/bash
-# An utility for tuning the Sherlock's radix sorter threshold
+# An utility for tuning the LibUCW radix sorter threshold
 # (c) 2007 Martin Mares <mj@ucw.cz>
 set -e
 UCW_PROGNAME="$0"
 . lib/libucw.sh
 
-# Path to Sherlock build directory
+# Path to LibUCW build directory
 [ -n "$BUILD" ] || BUILD=..
-[ -f "$BUILD/ucw/sorter/sorter.h" ] || die "BUILD does not point to Sherlock build directory"
+[ -f "$BUILD/ucw/sorter/sorter.h" ] || die "BUILD does not point to LibUCW build directory"
 
 # Find out sort buffer size
 parse-config 'Sorter{##SortBuffer}'
@@ -16,7 +16,7 @@ SORTBUF=$CF_Sorter_SortBuffer
 log "Detected sort buffer size $SORTBUF"
 
 # Find out radix-sorter width
-[ -f "$BUILD/obj/config.mk" ] || die "Sherlock source not configured"
+[ -f "$BUILD/obj/config.mk" ] || die "LibUCW source not configured"
 WIDTH=`sed <$BUILD/obj/config.mk 's/^CONFIG_UCW_RADIX_SORTER_BITS=\(.*\)/\1/;t;d'`
 [ -n "$WIDTH" ] || die "CONFIG_UCW_RADIX_SORTER_BITS not set (!?)"
 log "Detected radix-sorter width $WIDTH"

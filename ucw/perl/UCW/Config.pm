@@ -1,4 +1,4 @@
-#	Perl module for parsing Sherlock configuration files (using the config utility)
+#	Perl module for parsing LibUCW configuration files (using the ucw-config utility)
 #
 #	(c) 2002--2005 Martin Mares <mj@ucw.cz>
 #

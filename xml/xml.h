@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- A simple XML parser
+ *	UCW Library -- A simple XML parser
  *
  *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
@@ -7,8 +7,8 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_XML_XML_H
-#define _SHERLOCK_XML_XML_H
+#ifndef _UCW_XML_XML_H
+#define _UCW_XML_XML_H
 
 #include <ucw/clists.h>
 #include <ucw/slists.h>
