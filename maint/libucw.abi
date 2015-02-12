@@ -803,7 +803,7 @@ image_sig_segmentation
 image_sig_detect_textured
 image_signatures_dist
 image_signatures_dist_explain
-# xml/dtd.h
+# ucw-xml/dtd.h
 xml_dtd_find_notn
 xml_dtd_find_entity
 xml_dtd_find_elem
@@ -811,7 +811,7 @@ xml_dtd_init
 xml_dtd_cleanup
 xml_dtd_finish
 xml_dtd_find_attr
-# xml/internals.h
+# ucw-xml/internals.h
 xml_throw
 xml_hash_new
 xml_spout_chars
@@ -846,7 +846,7 @@ xml_skip_pi
 xml_attrs_table_init
 xml_attrs_table_cleanup
 xml_validate_attr
-# xml/xml.h
+# ucw-xml/xml.h
 xml_init
 xml_cleanup
 xml_reset

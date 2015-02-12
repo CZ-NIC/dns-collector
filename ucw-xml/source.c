@@ -10,9 +10,9 @@
 #undef LOCAL_DEBUG
 
 #include <ucw/lib.h>
-#include <xml/xml.h>
-#include <xml/dtd.h>
-#include <xml/internals.h>
+#include <ucw-xml/xml.h>
+#include <ucw-xml/dtd.h>
+#include <ucw-xml/internals.h>
 #include <ucw/unicode.h>
 #include <ucw/ff-unicode.h>
 #include <charset/charconv.h>
@@ -20,7 +20,7 @@
 
 /*** Character categorization ***/
 
-#include "obj/xml/unicat.c"
+#include "obj/ucw-xml/unicat.c"
 
 static void
 xml_init_cats(struct xml_context *ctx)

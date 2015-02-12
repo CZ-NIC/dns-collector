@@ -8,8 +8,8 @@
  */
 
 #include <ucw/lib.h>
-#include <xml/xml.h>
-#include <xml/dtd.h>
+#include <ucw-xml/xml.h>
+#include <ucw-xml/dtd.h>
 #include <ucw/getopt.h>
 #include <ucw/fastbuf.h>
 

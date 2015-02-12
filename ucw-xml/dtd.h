@@ -10,7 +10,7 @@
 #ifndef _UCW_XML_DTD_H
 #define _UCW_XML_DTD_H
 
-#include <xml/xml.h>
+#include <ucw-xml/xml.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define xml_dtd_cleanup ucw_xml_dtd_cleanup

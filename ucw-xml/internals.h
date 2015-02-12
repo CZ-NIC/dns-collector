@@ -10,8 +10,8 @@
 #ifndef _UCW_XML_INTERNALS_H
 #define _UCW_XML_INTERNALS_H
 
-#include <xml/xml.h>
-#include <xml/dtd.h>
+#include <ucw-xml/xml.h>
+#include <ucw-xml/dtd.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define xml_attrs_table_cleanup ucw_xml_attrs_table_cleanup
@@ -172,7 +172,7 @@ static inline void xml_dec(struct xml_context *ctx)
     xml_fatal_nested(ctx);
 }
 
-#include "obj/xml/unicat.h"
+#include "obj/ucw-xml/unicat.h"
 
 static inline uint xml_char_cat(uint c)
 {
