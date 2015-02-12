@@ -323,4 +323,11 @@ void xml_attrs_table_cleanup(struct xml_context *ctx);
 
 void xml_validate_attr(struct xml_context *ctx, struct xml_dtd_attr *dtd, char *value);
 
+/*** Namespaces ***/
+
+void xml_ns_cleanup(struct xml_context *ctx);
+void xml_ns_reset(struct xml_context *ctx);
+void xml_ns_push_element(struct xml_context *ctx);
+void xml_ns_pop_element(struct xml_context *ctx);
+
 #endif

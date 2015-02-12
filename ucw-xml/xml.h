@@ -2,6 +2,7 @@
  *	UCW Library -- A simple XML parser
  *
  *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2015 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -104,6 +105,7 @@ enum xml_flags {
   XML_PARSE_DTD =			0x00000200,	/* Enable parsing of DTD */
   XML_NO_CHARS =			0x00000400,	/* The current element must not contain character data (filled automaticaly if using DTD) */
   XML_ALLOC_DEFAULT_ATTRS =		0x00000800,	/* Allocate default attribute values so they can be found by XML_ATTR_FOR_EACH */
+  XML_NAMESPACES =			0x00001000,	/* Parse namespaces, use xml_ns_enable() to set this */
 
   /* Internals, do not change! */
   XML_EMPTY_ELEM_TAG =			0x00010000,	/* The current element match EmptyElemTag */
@@ -131,6 +133,14 @@ struct xml_node {
   cnode n;						/* Node for list of parent's sons */
   uint type;						/* XML_NODE_x */
   struct xml_node *parent;				/* Parent node */
+  /*
+   *  If namespaces are enabled, node->name points to the local part of the name
+   *  and node->ns is the resolved namespace ID.
+   *
+   *  However, the namespace prefix is kept in memory just before the local part,
+   *  so you can use xml_node_qname() to find out the full qualified name.
+   *  The same applies to attributes, but the function is xml_attr_qname().
+   */
   char *name;						/* Element name / PI target */
   clist sons;						/* Children nodes */
   union {
@@ -139,6 +149,7 @@ struct xml_node {
       uint len;						/* Text length in bytes */
     };
     struct {
+      uint ns;						/* Namespace ID */
       struct xml_dtd_elem *dtd;				/* Element DTD */
       slist attrs;					/* Link list of element attributes */
     };
@@ -150,7 +161,8 @@ struct xml_attr {
   snode n;						/* Node for elem->attrs */
   struct xml_node *elem;				/* Parent element */
   struct xml_dtd_attr *dtd;				/* Attribute DTD */
-  char *name;						/* Attribute name */
+  uint ns;						/* Namespace ID */
+  char *name;						/* Attribute name without NS prefix */
   char *val;						/* Attribute value */
   void *user;						/* User-defined (initialized to NULL) */
 };
@@ -228,6 +240,14 @@ struct xml_context {
   struct xml_node *dom;					/* DOM root */
   struct xml_node *node;				/* Current DOM node */
 
+  /* Namespaces */
+  struct mempool *ns_pool;				/* Memory pool for NS definitions */
+  const char **ns_by_id;				/* A growing array translating NS IDs to their names */
+  void *ns_by_name;					/* Hash table translating NS names to their IDs */
+  void *ns_by_prefix;					/* Hash table translating current prefixes to NS IDs, allocated from xml->stack */
+  struct xml_ns_prefix *ns_prefix_stack;		/* A stack of prefix definitions, allocated from xml->stack */
+  uint ns_default;					/* Current default namespace */
+
   char *version_str;
   uint standalone;
   char *doctype;					/* The document type (or NULL if unknown) */
@@ -265,8 +285,17 @@ uint xml_skip_element(struct xml_context *ctx);
 /* Returns the current row number in the document entity */
 uint xml_row(struct xml_context *ctx);
 
+/* Finds a qualified name (including namespace prefix) of a given element node. */
+char *xml_node_qname(struct xml_context *ctx, struct xml_node *node);
+
+/* Finds a qualified name (including namespace prefix) of a given attribute. */
+char *xml_attr_qname(struct xml_context *ctx, struct xml_attr *node);
+
 /* Finds a given attribute value in a XML_NODE_ELEM node */
 struct xml_attr *xml_attr_find(struct xml_context *ctx, struct xml_node *node, char *name);
+
+/* The same, but namespace-aware */
+struct xml_attr *xml_attr_find_ns(struct xml_context *ctx, struct xml_node *node, uint ns, char *name);
 
 /* Similar to xml_attr_find, but it deals also with default values */
 char *xml_attr_value(struct xml_context *ctx, struct xml_node *node, char *name);
@@ -290,5 +319,19 @@ char *xml_merge_dom_chars(struct xml_context *ctx, struct xml_node *node, struct
 void xml_warn(struct xml_context *ctx, const char *format, ...);
 void xml_error(struct xml_context *ctx, const char *format, ...);
 void NONRET xml_fatal(struct xml_context *ctx, const char *format, ...);
+
+/* Request processing of namespaces */
+void xml_ns_enable(struct xml_context *ctx);
+
+/* Looks up namespace by its ID, dies on an invalid ID */
+const char *xml_ns_by_id(struct xml_context *ctx, uint ns);
+
+/* Looks up namespace by its name and returns its ID. Creates a new ID if necessary. */
+uint xml_ns_by_name(struct xml_context *ctx, const char *name);
+
+/* Well-known namespaces */
+#define XML_NS_NONE		0	/* This element has no namespace */
+#define XML_NS_XMLNS		1	/* xmlns: */
+#define XML_NS_XML		2	/* xml: */
 
 #endif

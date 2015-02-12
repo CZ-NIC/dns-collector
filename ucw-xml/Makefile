@@ -4,7 +4,7 @@
 DIRS+=ucw-xml
 PROGS+=$(o)/ucw-xml/xml-test
 
-LIBXML_MODS=common source parse dtd
+LIBXML_MODS=common source parse dtd ns
 LIBXML_MOD_PATHS=$(addprefix $(o)/ucw-xml/,$(LIBXML_MODS))
 LIBXML_INCLUDES=xml.h dtd.h
 LIBXML_DEPS=$(LIBUCW) $(LIBCHARSET)
@@ -18,14 +18,8 @@ ifdef CONFIG_INSTALL_API
 $(o)/ucw-xml/libucw-xml.pc: $(addprefix $(o)/ucw-xml/libucw-xml$(LV),.a .so)
 endif
 
-$(o)/ucw-xml/common.o: $(o)/ucw-xml/unicat.h
-$(o)/ucw-xml/common.oo: $(o)/ucw-xml/unicat.h
-$(o)/ucw-xml/source.o: $(o)/ucw-xml/unicat.h
-$(o)/ucw-xml/source.oo: $(o)/ucw-xml/unicat.h
-$(o)/ucw-xml/dtd.o: $(o)/ucw-xml/unicat.h
-$(o)/ucw-xml/dtd.oo: $(o)/ucw-xml/unicat.h
-$(o)/ucw-xml/parse.o: $(o)/ucw-xml/unicat.h
-$(o)/ucw-xml/parse.oo: $(o)/ucw-xml/unicat.h
+$(addsuffix .o,$(LIBXML_MOD_PATHS)): $(o)/ucw-xml/unicat.h
+$(addsuffix .oo,$(LIBXML_MOD_PATHS)): $(o)/ucw-xml/unicat.h
 $(o)/ucw-xml/unicat.h: $(s)/ucw-xml/unicat.pl
 	$(M)GEN $(addprefix $(o)/ucw-xml/unicat,.h .c)
 	$(Q)$< $(addprefix $(o)/ucw-xml/unicat,.h .c)
