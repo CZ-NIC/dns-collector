@@ -14,8 +14,6 @@
 #include <ucw-xml/dtd.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
-#define xml_attrs_table_cleanup ucw_xml_attrs_table_cleanup
-#define xml_attrs_table_init ucw_xml_attrs_table_init
 #define xml_fatal_expected ucw_xml_fatal_expected
 #define xml_fatal_expected_quot ucw_xml_fatal_expected_quot
 #define xml_fatal_expected_white ucw_xml_fatal_expected_white
@@ -317,9 +315,6 @@ void xml_skip_comment(struct xml_context *ctx);
 void xml_push_pi(struct xml_context *ctx);
 void xml_pop_pi(struct xml_context *ctx);
 void xml_skip_pi(struct xml_context *ctx);
-
-void xml_attrs_table_init(struct xml_context *ctx);
-void xml_attrs_table_cleanup(struct xml_context *ctx);
 
 void xml_validate_attr(struct xml_context *ctx, struct xml_dtd_attr *dtd, char *value);
 

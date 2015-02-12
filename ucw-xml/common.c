@@ -96,19 +96,12 @@ static struct xml_context xml_defaults = {
   },
 };
 
-static void
-xml_do_init(struct xml_context *ctx)
-{
-  xml_attrs_table_init(ctx);
-}
-
 void
 xml_init(struct xml_context *ctx)
 {
   *ctx = xml_defaults;
   ctx->pool = mp_new(65536);
   ctx->stack = mp_new(65536);
-  xml_do_init(ctx);
   TRACE(ctx, "init");
 }
 
@@ -116,7 +109,6 @@ void
 xml_cleanup(struct xml_context *ctx)
 {
   TRACE(ctx, "cleanup");
-  xml_attrs_table_cleanup(ctx);
   xml_dtd_cleanup(ctx);
   xml_sources_cleanup(ctx);
   xml_ns_cleanup(ctx);
@@ -129,7 +121,6 @@ xml_reset(struct xml_context *ctx)
 {
   TRACE(ctx, "reset");
   struct mempool *pool = ctx->pool, *stack = ctx->stack;
-  xml_attrs_table_cleanup(ctx);
   xml_dtd_cleanup(ctx);
   xml_sources_cleanup(ctx);
   mp_flush(pool);
@@ -138,5 +129,4 @@ xml_reset(struct xml_context *ctx)
   ctx->pool = pool;
   ctx->stack = stack;
   xml_ns_reset(ctx);
-  xml_do_init(ctx);
 }

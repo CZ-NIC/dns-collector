@@ -159,6 +159,7 @@ struct xml_node {
 
 struct xml_attr {
   snode n;						/* Node for elem->attrs */
+  uint hash;						/* Internal hash of ns + name */
   struct xml_node *elem;				/* Parent element */
   struct xml_dtd_attr *dtd;				/* Attribute DTD */
   uint ns;						/* Namespace ID */
@@ -207,7 +208,6 @@ struct xml_context {
   struct fastbuf chars;					/* Character data / attribute value */
   struct mempool_state chars_state;			/* Mempool state before the current character block has started */
   char *chars_trivial;					/* If not empty, it will be appended to chars */
-  void *tab_attrs;					/* Hash table of element attributes */
 
   /* Input */
   struct xml_source *src;				/* Current source */
@@ -299,6 +299,9 @@ struct xml_attr *xml_attr_find_ns(struct xml_context *ctx, struct xml_node *node
 
 /* Similar to xml_attr_find, but it deals also with default values */
 char *xml_attr_value(struct xml_context *ctx, struct xml_node *node, char *name);
+
+/* The same, but namespace-aware */
+char *xml_attr_value_ns(struct xml_context *ctx, struct xml_node *node, uint ns, char *name);
 
 /* The default value of h_find_entity(), knows &lt;, &gt;, &amp;, &apos; and &quot; */
 struct xml_dtd_entity *xml_def_find_entity(struct xml_context *ctx, char *name);

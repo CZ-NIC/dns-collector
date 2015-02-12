@@ -586,46 +586,25 @@ xml_normalize_white(struct xml_context *ctx UNUSED, char *text)
 
 /*** Attributes ***/
 
-struct xml_attrs_table;
-
-static inline uint
-xml_attrs_hash(struct xml_attrs_table *t UNUSED, struct xml_node *e, uint ns, char *n)
+static void
+xml_raw_add_attr(struct xml_context *ctx, struct xml_node *e, char *name, char *value)
 {
-  return hash_pointer(e) ^ hash_string(n) ^ hash_u32(ns);
-}
-
-static inline int
-xml_attrs_eq(struct xml_attrs_table *t UNUSED, struct xml_node *e1, uint ns1, char *n1, struct xml_node *e2, uint ns2, char *n2)
-{
-  return (e1 == e2) && (ns1 == ns2) && !strcmp(n1, n2);
-}
-
-static inline void
-xml_attrs_init_key(struct xml_attrs_table *t UNUSED, struct xml_attr *a, struct xml_node *e, uint ns, char *name)
-{
+  struct xml_attr *a = mp_alloc(ctx->pool, sizeof(*a));
   a->elem = e;
-  a->ns = ns;
+  a->ns = 0;		/* Namespaces will be resolved later */
   a->name = name;
-  a->val = NULL;
+  a->val = value;
+  a->dtd = NULL;
   a->user = NULL;
+  /* a->hash will be calculated later */
   slist_add_tail(&e->attrs, &a->n);
 }
 
-#define HASH_PREFIX(x) xml_attrs_##x
-#define HASH_NODE struct xml_attr
-#define HASH_KEY_COMPLEX(x) x elem, x ns, x name
-#define HASH_KEY_DECL struct xml_node *elem, uint ns, char *name
-#define HASH_TABLE_DYNAMIC
-#define HASH_GIVE_EQ
-#define HASH_GIVE_HASHFN
-#define HASH_GIVE_INIT_KEY
-#define HASH_WANT_CLEANUP
-#define HASH_WANT_REMOVE
-#define HASH_WANT_LOOKUP
-#define HASH_WANT_FIND
-#define HASH_GIVE_ALLOC
-XML_HASH_GIVE_ALLOC
-#include <ucw/hashtable.h>
+static inline uint
+xml_attr_hash(uint ns, char *name)
+{
+  return hash_string(name) ^ hash_u32(ns);
+}
 
 static void
 xml_parse_attr(struct xml_context *ctx)
@@ -634,58 +613,61 @@ xml_parse_attr(struct xml_context *ctx)
   /* Attribute ::= Name Eq AttValue */
   struct xml_node *e = ctx->node;
   char *n = xml_parse_name(ctx, ctx->pool);
-  // FIXME: This is wrong! This way, we never find attributes in a non-default NS.
-  struct xml_attr *a = xml_attrs_lookup(ctx->tab_attrs, e, 0, n);
   xml_parse_eq(ctx);
   char *v = xml_parse_attr_value(ctx, NULL);
-  if (a->val)
+  xml_raw_add_attr(ctx, e, n, v);
+}
+
+static void
+xml_process_attr(struct xml_context *ctx, struct xml_attr *a)
+{
+  struct xml_node *e = a->elem;
+  a->hash = xml_attr_hash(a->ns, a->name);
+
+  XML_ATTR_FOR_EACH(a2, e)
     {
-      xml_error(ctx, "Attribute %s is not unique in element <%s>", n, e->name);
-      return;
+      if (a2 == a)
+	break;
+      if (a2->hash == a->hash && a2->ns == a->ns && !strcmp(a2->name, a->name))
+	xml_error(ctx, "Attribute %s is not unique in element <%s>", xml_attr_qname(ctx, a), xml_node_qname(ctx, e));
     }
-  a->val = v;
-  if (!e->dtd)
-    a->dtd = NULL;
-  else if (!(a->dtd = xml_dtd_find_attr(ctx, e->dtd, a->name)))
-    xml_error(ctx, "Undefined attribute %s in element <%s>", n, e->name);
-  else
-    xml_validate_attr(ctx, a->dtd, a->val);
 }
 
 struct xml_attr *
 xml_attr_find(struct xml_context *ctx, struct xml_node *node, char *name)
 {
-  return xml_attrs_find(ctx->tab_attrs, node, 0, name);
+  return xml_attr_find_ns(ctx, node, 0, name);
 }
 
 struct xml_attr *
-xml_attr_find_ns(struct xml_context *ctx, struct xml_node *node, uint ns, char *name)
+xml_attr_find_ns(struct xml_context *ctx UNUSED, struct xml_node *node, uint ns, char *name)
 {
-  return xml_attrs_find(ctx->tab_attrs, node, ns, name);
+  ASSERT(node->type == XML_NODE_ELEM);
+  uint hash = xml_attr_hash(ns, name);
+  XML_ATTR_FOR_EACH(a, node)
+    if (a->hash == hash && a->ns == ns && !strcmp(a->name, name))
+      return a;
+  return NULL;
 }
 
 char *
-xml_attr_value(struct xml_context *ctx, struct xml_node *node, char *name)
+xml_attr_value_ns(struct xml_context *ctx, struct xml_node *node, uint ns, char *name)
 {
-  struct xml_attr *attr = xml_attrs_find(ctx->tab_attrs, node, 0, name);
+  struct xml_attr *attr = xml_attr_find_ns(ctx, node, ns, name);
   if (attr)
     return attr->val;
   if (!node->dtd)
+    return NULL;
+  if (ns)			/* So far, our DTD support is not namespace-aware */
     return NULL;
   struct xml_dtd_attr *dtd = xml_dtd_find_attr(ctx, node->dtd, name);
   return dtd ? dtd->default_value : NULL;
 }
 
-void
-xml_attrs_table_init(struct xml_context *ctx)
+char *
+xml_attr_value(struct xml_context *ctx, struct xml_node *node, char *name)
 {
-  xml_attrs_init(ctx->tab_attrs = xml_hash_new(ctx->pool, sizeof(struct xml_attrs_table)));
-}
-
-void
-xml_attrs_table_cleanup(struct xml_context *ctx)
-{
-  xml_attrs_cleanup(ctx->tab_attrs);
+  return xml_attr_value_ns(ctx, node, 0, name);
 }
 
 char *
@@ -754,6 +736,7 @@ xml_push_element(struct xml_context *ctx)
 	  }
     }
 
+  /* Parse attributes */
   while (1)
     {
       uint white = xml_parse_white(ctx, 0);
@@ -772,22 +755,38 @@ xml_push_element(struct xml_context *ctx)
       xml_parse_attr(ctx);
     }
 
+  /* Resolve namespaces */
   xml_ns_push_element(ctx);
+
+  /* Once we have namespaces, hash attribute names */
+  XML_ATTR_FOR_EACH(a, e)
+    xml_process_attr(ctx, a);
 
   /* FIXME: DTD logic is not namespace-aware */
   if (e->dtd)
-    SLIST_FOR_EACH(struct xml_dtd_attr *, a, e->dtd->attrs)
-      if (a->default_mode == XML_ATTR_REQUIRED)
-        {
-	  if (!xml_attrs_find(ctx->tab_attrs, e, 0, a->name))
-	    xml_error(ctx, "Missing required attribute %s in element <%s>", a->name, e->name);
+    {
+      XML_ATTR_FOR_EACH(a, e)
+	{
+	  if (!(a->dtd = xml_dtd_find_attr(ctx, e->dtd, a->name)))
+	    xml_error(ctx, "Undefined attribute %s in element <%s>", a->name, e->name);
+	  else
+	    xml_validate_attr(ctx, a->dtd, a->val);
 	}
-      else if (a->default_mode != XML_ATTR_IMPLIED && ctx->flags & XML_ALLOC_DEFAULT_ATTRS)
-        {
-	  struct xml_attr *attr = xml_attrs_lookup(ctx->tab_attrs, e, 0, a->name);
-	  if (!attr->val)
-	    attr->val = a->default_value;
+      SLIST_FOR_EACH(struct xml_dtd_attr *, a, e->dtd->attrs)
+	{
+	  if (a->default_mode == XML_ATTR_REQUIRED)
+	    {
+	      if (!xml_attr_find(ctx, e, a->name))
+		xml_error(ctx, "Missing required attribute %s in element <%s>", a->name, e->name);
+	    }
+	  else if (a->default_mode != XML_ATTR_IMPLIED && ctx->flags & XML_ALLOC_DEFAULT_ATTRS)
+	    {
+	      if (!xml_attr_find(ctx, e, a->name))
+		xml_raw_add_attr(ctx, e, a->name, a->default_value);
+	    }
 	}
+    }
+
   if ((ctx->flags & XML_REPORT_TAGS) && ctx->h_stag)
     ctx->h_stag(ctx);
 }
@@ -807,7 +806,11 @@ xml_pop_element(struct xml_context *ctx)
     {
       if (!e->parent)
 	ctx->dom = NULL;
-      /* Restore hash table of attributes */
+#if 0
+      /*
+       *  With the current data structures, freeing of attributes is not necessary,
+       *  but it might be if we switch to a global hash table of large elements.
+       */
       SLIST_FOR_EACH(struct xml_attr *, a, e->attrs)
 	xml_attrs_remove(ctx->tab_attrs, a);
       struct xml_node *n;
@@ -821,6 +824,7 @@ xml_pop_element(struct xml_context *ctx)
 	    }
 	  clist_remove(&n->n);
 	}
+#endif
     }
 
   xml_pop_dom(ctx, free);
