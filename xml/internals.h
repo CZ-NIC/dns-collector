@@ -13,6 +13,43 @@
 #include <xml/xml.h>
 #include <xml/dtd.h>
 
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define xml_attrs_table_cleanup ucw_xml_attrs_table_cleanup
+#define xml_attrs_table_init ucw_xml_attrs_table_init
+#define xml_fatal_expected ucw_xml_fatal_expected
+#define xml_fatal_expected_quot ucw_xml_fatal_expected_quot
+#define xml_fatal_expected_white ucw_xml_fatal_expected_white
+#define xml_fatal_nested ucw_xml_fatal_nested
+#define xml_hash_new ucw_xml_hash_new
+#define xml_parse_attr_list_decl ucw_xml_parse_attr_list_decl
+#define xml_parse_attr_value ucw_xml_parse_attr_value
+#define xml_parse_char_ref ucw_xml_parse_char_ref
+#define xml_parse_element_decl ucw_xml_parse_element_decl
+#define xml_parse_entity_decl ucw_xml_parse_entity_decl
+#define xml_parse_eq ucw_xml_parse_eq
+#define xml_parse_name ucw_xml_parse_name
+#define xml_parse_nmtoken ucw_xml_parse_nmtoken
+#define xml_parse_notation_decl ucw_xml_parse_notation_decl
+#define xml_parse_pe_ref ucw_xml_parse_pe_ref
+#define xml_parse_pubid_literal ucw_xml_parse_pubid_literal
+#define xml_parse_system_literal ucw_xml_parse_system_literal
+#define xml_pop_comment ucw_xml_pop_comment
+#define xml_pop_pi ucw_xml_pop_pi
+#define xml_push_comment ucw_xml_push_comment
+#define xml_push_entity ucw_xml_push_entity
+#define xml_push_pi ucw_xml_push_pi
+#define xml_push_source ucw_xml_push_source
+#define xml_refill ucw_xml_refill
+#define xml_skip_comment ucw_xml_skip_comment
+#define xml_skip_internal_subset ucw_xml_skip_internal_subset
+#define xml_skip_name ucw_xml_skip_name
+#define xml_skip_pi ucw_xml_skip_pi
+#define xml_sources_cleanup ucw_xml_sources_cleanup
+#define xml_spout_chars ucw_xml_spout_chars
+#define xml_throw ucw_xml_throw
+#define xml_validate_attr ucw_xml_validate_attr
+#endif
+
 /*** Debugging ***/
 
 #ifdef LOCAL_DEBUG
@@ -33,8 +70,7 @@ struct xml_stack {
   uint flags;
 };
 
-static inline void *
-xml_do_push(struct xml_context *ctx, uint size)
+static inline void *xml_do_push(struct xml_context *ctx, uint size)
 {
   /* Saves ctx->stack and ctx->flags state */
   struct mempool_state state;
@@ -47,8 +83,7 @@ xml_do_push(struct xml_context *ctx, uint size)
   return s;
 }
 
-static inline void
-xml_do_pop(struct xml_context *ctx, struct xml_stack *s)
+static inline void xml_do_pop(struct xml_context *ctx, struct xml_stack *s)
 {
   /* Restore ctx->stack and ctx->flags state */
   ctx->stack_list = s->next;
@@ -56,15 +91,13 @@ xml_do_pop(struct xml_context *ctx, struct xml_stack *s)
   mp_restore(ctx->stack, &s->state);
 }
 
-static inline void
-xml_push(struct xml_context *ctx)
+static inline void xml_push(struct xml_context *ctx)
 {
   TRACE(ctx, "push");
   xml_do_push(ctx, sizeof(struct xml_stack));
 }
 
-static inline void
-xml_pop(struct xml_context *ctx)
+static inline void xml_pop(struct xml_context *ctx)
 {
   TRACE(ctx, "pop");
   ASSERT(ctx->stack_list);
@@ -76,8 +109,7 @@ struct xml_dom_stack {
   struct mempool_state state;
 };
 
-static inline struct xml_node *
-xml_push_dom(struct xml_context *ctx, struct mempool_state *state)
+static inline struct xml_node *xml_push_dom(struct xml_context *ctx, struct mempool_state *state)
 {
   /* Create a new DOM node */
   TRACE(ctx, "push_dom");
@@ -93,8 +125,7 @@ xml_push_dom(struct xml_context *ctx, struct mempool_state *state)
   return ctx->node = n;
 }
 
-static inline void
-xml_pop_dom(struct xml_context *ctx, uint free)
+static inline void xml_pop_dom(struct xml_context *ctx, uint free)
 {
   /* Leave DOM subtree */
   TRACE(ctx, "pop_dom");
@@ -126,16 +157,14 @@ void xml_spout_chars(struct fastbuf *fb);
 
 void NONRET xml_fatal_nested(struct xml_context *ctx);
 
-static inline void
-xml_inc(struct xml_context *ctx)
+static inline void xml_inc(struct xml_context *ctx)
 {
   /* Called after the first character of a block */
   TRACE(ctx, "inc");
   ctx->depth++;
 }
 
-static inline void
-xml_dec(struct xml_context *ctx)
+static inline void xml_dec(struct xml_context *ctx)
 {
   /* Called after the last character of a block */
   TRACE(ctx, "dec");
@@ -145,21 +174,19 @@ xml_dec(struct xml_context *ctx)
 
 #include "obj/xml/unicat.h"
 
-static inline uint
-xml_char_cat(uint c)
+static inline uint xml_char_cat(uint c)
 {
   if (c < 0x10000)
-    return 1U << xml_char_tab1[(c & 0xff) + xml_char_tab2[c >> 8]];
+    return 1U << ucw_xml_char_tab1[(c & 0xff) + ucw_xml_char_tab2[c >> 8]];
   else if (likely(c < 0x110000))
-    return 1U << xml_char_tab3[c >> 16];
+    return 1U << ucw_xml_char_tab3[c >> 16];
   else
     return 1;
 }
 
-static inline uint
-xml_ascii_cat(uint c)
+static inline uint xml_ascii_cat(uint c)
 {
-  return xml_char_tab1[c];
+  return ucw_xml_char_tab1[c];
 }
 
 struct xml_source *xml_push_source(struct xml_context *ctx);
@@ -167,60 +194,52 @@ void xml_push_entity(struct xml_context *ctx, struct xml_dtd_entity *ent);
 
 void xml_refill(struct xml_context *ctx);
 
-static inline uint
-xml_peek_char(struct xml_context *ctx)
+static inline uint xml_peek_char(struct xml_context *ctx)
 {
   if (ctx->bptr == ctx->bstop)
     xml_refill(ctx);
   return ctx->bptr[0];
 }
 
-static inline uint
-xml_peek_cat(struct xml_context *ctx)
+static inline uint xml_peek_cat(struct xml_context *ctx)
 {
   if (ctx->bptr == ctx->bstop)
     xml_refill(ctx);
   return ctx->bptr[1];
 }
 
-static inline uint
-xml_get_char(struct xml_context *ctx)
+static inline uint xml_get_char(struct xml_context *ctx)
 {
   uint c = xml_peek_char(ctx);
   ctx->bptr += 2;
   return c;
 }
 
-static inline uint
-xml_get_cat(struct xml_context *ctx)
+static inline uint xml_get_cat(struct xml_context *ctx)
 {
   uint c = xml_peek_cat(ctx);
   ctx->bptr += 2;
   return c;
 }
 
-static inline uint
-xml_last_char(struct xml_context *ctx)
+static inline uint xml_last_char(struct xml_context *ctx)
 {
   return ctx->bptr[-2];
 }
 
-static inline uint
-xml_last_cat(struct xml_context *ctx)
+static inline uint xml_last_cat(struct xml_context *ctx)
 {
   return ctx->bptr[-1];
 }
 
-static inline uint
-xml_skip_char(struct xml_context *ctx)
+static inline uint xml_skip_char(struct xml_context *ctx)
 {
   uint c = ctx->bptr[0];
   ctx->bptr += 2;
   return c;
 }
 
-static inline uint
-xml_unget_char(struct xml_context *ctx)
+static inline uint xml_unget_char(struct xml_context *ctx)
 {
   return *(ctx->bptr -= 2);
 }
@@ -233,8 +252,7 @@ void NONRET xml_fatal_expected(struct xml_context *ctx, uint c);
 void NONRET xml_fatal_expected_white(struct xml_context *ctx);
 void NONRET xml_fatal_expected_quot(struct xml_context *ctx);
 
-static inline uint
-xml_parse_white(struct xml_context *ctx, uint mandatory)
+static inline uint xml_parse_white(struct xml_context *ctx, uint mandatory)
 {
   /* mandatory=1 -> S ::= (#x20 | #x9 | #xD | #xA)+
    * mandatory=0 -> S? */
@@ -249,16 +267,14 @@ xml_parse_white(struct xml_context *ctx, uint mandatory)
   return cnt;
 }
 
-static inline void
-xml_parse_char(struct xml_context *ctx, uint c)
+static inline void xml_parse_char(struct xml_context *ctx, uint c)
 {
   /* Consumes a given Unicode character */
   if (unlikely(c != xml_get_char(ctx)))
     xml_fatal_expected(ctx, c);
 }
 
-static inline void
-xml_parse_seq(struct xml_context *ctx, const char *seq)
+static inline void xml_parse_seq(struct xml_context *ctx, const char *seq)
 {
   /* Consumes a given sequence of ASCII characters */
   while (*seq)
@@ -267,8 +283,7 @@ xml_parse_seq(struct xml_context *ctx, const char *seq)
 
 void xml_parse_eq(struct xml_context *ctx);
 
-static inline uint
-xml_parse_quote(struct xml_context *ctx)
+static inline uint xml_parse_quote(struct xml_context *ctx)
 {
   /* "'" | '"' */
   uint c = xml_get_char(ctx);

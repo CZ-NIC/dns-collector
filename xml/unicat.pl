@@ -133,11 +133,11 @@ sub gen_tabs {
   my @tab = ();
   my %hash = ();
 
-  print H "extern const byte xml_char_tab1[];\n";
-  print H "extern const uint xml_char_tab2[];\n";
-  print H "extern const byte xml_char_tab3[];\n";
+  print H "extern const byte ucw_xml_char_tab1[];\n";
+  print H "extern const uint ucw_xml_char_tab2[];\n";
+  print H "extern const byte ucw_xml_char_tab3[];\n";
 
-  print C "const uint xml_char_tab2[] = {\n  ";
+  print C "const uint ucw_xml_char_tab2[] = {\n  ";
   for (my $t=0; $t<256; $t++) {
     my $i = $t * 256;
     my @x = ();
@@ -153,7 +153,7 @@ sub gen_tabs {
     print C ((~$t & 15) ? "," : ($t < 255) ? ",\n  " : "\n};\n\n");
   }
 
-  print C "const byte xml_char_tab1[] = {\n";
+  print C "const byte ucw_xml_char_tab1[] = {\n";
   print C join(",\n\n", @tab);
   print C "\n};\n\n";
 
@@ -161,5 +161,5 @@ sub gen_tabs {
   for (my $i=0; $i<0x11; $i++) {
     push @l, sprintf("%d", $cls{$lcat[$i]});
   }
-  print C "const byte xml_char_tab3[] = {" . join(",", @l) . "};\n";
+  print C "const byte ucw_xml_char_tab3[] = {" . join(",", @l) . "};\n";
 }
