@@ -183,26 +183,31 @@ void xml_ns_push_element(struct xml_context *ctx)
   XML_ATTR_FOR_EACH(a, e)
     if (!memcmp(a->name, "xmlns", 5))
       {
-	struct xml_ns_prefix *px = ns_push_prefix(ctx);
 	uint ns = xml_ns_by_name(ctx, a->val);
-	if (a->name[5] == ':')
+	if (a->name[5] == ':' && a->name[6])
 	  {
-	    if (a->name[6])
+	    if (!ns)
+	      xml_error(ctx, "Namespace prefixes must not be undeclared");
+	    else if (a->name[6])
 	      {
 		/* New NS prefix */
 		int new_p;
 		struct ns_hash_entry *he = ns_hash_lookup(ctx->ns_by_prefix, a->name + 6, &new_p);
 		if (new_p)
 		  he->ns = 0;
+		struct xml_ns_prefix *px = ns_push_prefix(ctx);
 		px->he = he;
 		px->prev_ns = he->ns;
 		he->ns = ns;
 		TRACE(ctx, "NS: New prefix <%s> -> ID %u", he->name, he->ns);
 	      }
+	    else
+	      xml_error(ctx, "Invalid namespace prefix");
 	  }
-	else
+	else if (!a->name[5])
 	  {
 	    /* New default NS */
+	    struct xml_ns_prefix *px = ns_push_prefix(ctx);
 	    px->he = NULL;
 	    px->prev_ns = ctx->ns_default;
 	    ctx->ns_default = ns;
