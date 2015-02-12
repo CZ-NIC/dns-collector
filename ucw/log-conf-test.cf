@@ -1,4 +1,4 @@
-Include cf/libucw
+Include etc/libucw
 
 Logging {
 

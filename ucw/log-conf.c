@@ -20,6 +20,8 @@
 #include <syslog.h>
 #include <sys/time.h>
 
+#ifndef TEST
+
 /*** Configuration of streams ***/
 
 struct stream_config {
@@ -339,7 +341,7 @@ log_configured(const char *name)
   log_set_default_stream(log_new_configured(name));
 }
 
-#ifdef TEST
+#else /* TEST */
 
 #include <unistd.h>
 #include <ucw/getopt.h>
@@ -353,6 +355,7 @@ int main(int argc, char **argv)
 
   int type = log_register_type("foo");
   struct log_stream *ls = log_new_configured("combined");
+  log_drop_stderr();
   for (uint i=0; i<10; i++)
     {
       msg(L_INFO | ls->regnum | type, "Hello, universe!");
