@@ -26,7 +26,7 @@
 void NONRET
 xml_fatal_expected(struct xml_context *ctx, uint c)
 {
-  if (c >= 32 && c < 128)
+  if (c >= 32 && c < 127)
     xml_fatal(ctx, "Expected '%c'", c);
   else
     xml_fatal(ctx, "Expected U+%04x", c);
