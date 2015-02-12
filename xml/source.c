@@ -18,7 +18,7 @@
 #include <charset/charconv.h>
 #include <charset/fb-charconv.h>
 
-/*** Charecter categorization ***/
+/*** Character categorization ***/
 
 #include "obj/xml/unicat.c"
 
