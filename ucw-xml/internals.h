@@ -19,6 +19,10 @@
 #define xml_fatal_expected_white ucw_xml_fatal_expected_white
 #define xml_fatal_nested ucw_xml_fatal_nested
 #define xml_hash_new ucw_xml_hash_new
+#define xml_ns_cleanup ucw_xml_ns_cleanup
+#define xml_ns_pop_element ucw_xml_ns_pop_element
+#define xml_ns_push_element ucw_xml_ns_push_element
+#define xml_ns_reset ucw_xml_ns_reset
 #define xml_parse_attr_list_decl ucw_xml_parse_attr_list_decl
 #define xml_parse_attr_value ucw_xml_parse_attr_value
 #define xml_parse_char_ref ucw_xml_parse_char_ref

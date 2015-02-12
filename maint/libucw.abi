@@ -843,9 +843,11 @@ xml_skip_comment
 xml_push_pi
 xml_pop_pi
 xml_skip_pi
-xml_attrs_table_init
-xml_attrs_table_cleanup
 xml_validate_attr
+xml_ns_cleanup
+xml_ns_reset
+xml_ns_push_element
+xml_ns_pop_element
 # ucw-xml/xml.h
 xml_init
 xml_cleanup
@@ -856,8 +858,12 @@ xml_next
 xml_next_state
 xml_skip_element
 xml_row
+xml_node_qname
+xml_attr_qname
 xml_attr_find
+xml_attr_find_ns
 xml_attr_value
+xml_attr_value_ns
 xml_def_find_entity
 xml_def_resolve_entity
 xml_normalize_white
@@ -866,3 +872,6 @@ xml_merge_dom_chars
 xml_warn
 xml_error
 xml_fatal
+xml_ns_enable
+xml_ns_by_id
+xml_ns_by_name

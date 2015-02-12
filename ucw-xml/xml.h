@@ -18,7 +18,10 @@
 
 #ifdef CONFIG_UCW_CLEAN_ABI
 #define xml_attr_find ucw_xml_attr_find
+#define xml_attr_find_ns ucw_xml_attr_find_ns
+#define xml_attr_qname ucw_xml_attr_qname
 #define xml_attr_value ucw_xml_attr_value
+#define xml_attr_value_ns ucw_xml_attr_value_ns
 #define xml_cleanup ucw_xml_cleanup
 #define xml_def_find_entity ucw_xml_def_find_entity
 #define xml_def_resolve_entity ucw_xml_def_resolve_entity
@@ -29,7 +32,11 @@
 #define xml_merge_dom_chars ucw_xml_merge_dom_chars
 #define xml_next ucw_xml_next
 #define xml_next_state ucw_xml_next_state
+#define xml_node_qname ucw_xml_node_qname
 #define xml_normalize_white ucw_xml_normalize_white
+#define xml_ns_by_id ucw_xml_ns_by_id
+#define xml_ns_by_name ucw_xml_ns_by_name
+#define xml_ns_enable ucw_xml_ns_enable
 #define xml_parse ucw_xml_parse
 #define xml_push_fastbuf ucw_xml_push_fastbuf
 #define xml_reset ucw_xml_reset
