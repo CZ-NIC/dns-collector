@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Logging to Files
  *
- *	(c) 1997--2009 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2015 Martin Mares <mj@ucw.cz>
  *	(c) 2008 Tomas Gavenciak <gavento@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -32,6 +32,7 @@ struct file_stream {
 #define MAX_EXPAND 64		// Maximum size of expansion of strftime escapes
 
 static int log_switch_nest;
+static bool log_stderr_replaced;
 
 static void
 do_log_reopen(struct file_stream *fs, const char *name)
@@ -43,7 +44,10 @@ do_log_reopen(struct file_stream *fs, const char *name)
     close(fs->fd);
   fs->fd = fd;
   if (fs->flags & FF_FD2_FOLLOWS)
-    dup2(fd, 2);
+    {
+      dup2(fd, 2);
+      log_stderr_replaced = 1;
+    }
   if (fs->ls.name)
     {
       xfree(fs->ls.name);
@@ -179,6 +183,17 @@ log_file(const char *name)
     return;
 
   log_set_default_stream(log_new_file(name, FF_FD2_FOLLOWS));
+}
+
+void
+log_drop_stderr(void)
+{
+  if (!log_stderr_replaced)
+    {
+      if (dup2(1, 2) < 0)
+	die("Cannot get rid of stderr: %m");
+      log_stderr_replaced = 1;
+    }
 }
 
 #ifdef TEST

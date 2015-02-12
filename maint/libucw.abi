@@ -304,6 +304,7 @@ log_new_fd
 log_switch_disable
 log_switch_enable
 log_switch
+log_drop_stderr
 log_new_syslog
 log_syslog_facility_exists
 log_new_configured

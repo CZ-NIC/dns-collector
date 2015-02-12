@@ -14,7 +14,8 @@ helper which performs the necessary actions. Namely:
   set according to `/etc/passwd` and `/etc/group`.
 * Redirecting standard input and output from `/dev/null`. Standard error
   output is left open, so that error messages can be printed before you
-  set up proper <<log:,logging>>.
+  set up proper <<log:,logging>>. If you are not sure that your log streams
+  replaced stderr, you can call <<log:log_drop_stderr()>> to do that.
 * Setting the `umask()` to a fixed value (022).
 * Switching from the current directory to `/`, so that it is not kept busy.
 * Writing a PID file. While the daemon is running, the PID file is kept locked

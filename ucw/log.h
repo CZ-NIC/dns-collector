@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Logging
  *
- *	(c) 1997--2009 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2015 Martin Mares <mj@ucw.cz>
  *	(c) 2008 Tomas Gavenciak <gavento@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -19,6 +19,7 @@
 #define log_close_all ucw_log_close_all
 #define log_close_stream ucw_log_close_stream
 #define log_configured ucw_log_configured
+#define log_drop_stderr ucw_log_drop_stderr
 #define log_find_type ucw_log_find_type
 #define log_new_configured ucw_log_new_configured
 #define log_new_fd ucw_log_new_fd
@@ -257,6 +258,15 @@ enum log_file_flag {		/** Flags used for file-based logging **/
 void log_switch_disable(void);
 void log_switch_enable(void);		/** Negate the effect of log_switch_disable(). **/
 int log_switch(void);			/** Switch log files manually. **/
+
+/**
+ * Drop stderr if it is not already redirected to a log file.
+ * This is usually needed in daemons to make sure that the original
+ * stderr does not stay open (stdin and stdout are dropped by our
+ * <<daemon:,daemon setup functions>> automatically). More specifically,
+ * it makes stderr a clone of stdout.
+ **/
+void log_drop_stderr(void);
 
 /***
  * === Logging to syslog
