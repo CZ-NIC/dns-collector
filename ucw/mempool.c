@@ -31,7 +31,8 @@ static size_t
 mp_align_size(size_t size)
 {
 #ifdef CONFIG_UCW_POOL_IS_MMAP
-  return ALIGN_TO(size + MP_CHUNK_TAIL, CPU_PAGE_SIZE) - MP_CHUNK_TAIL;
+  size = MAX(size, 64 + MP_CHUNK_TAIL);
+  return ALIGN_TO(size, CPU_PAGE_SIZE) - MP_CHUNK_TAIL;
 #else
   return ALIGN_TO(size, CPU_STRUCT_ALIGN);
 #endif
