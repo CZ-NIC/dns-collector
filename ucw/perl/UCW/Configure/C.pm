@@ -170,6 +170,16 @@ if (IsSet("CONFIG_DEBUG")) {
 	Append("LOPT" => "-s");
 }
 
+# Link-time optimization (experimental)
+# This is currently very inefficient, because we do not attempt to disable
+# optimizations when compiling individual modules. Therefore, we optimize
+# each shared library module twice: when compiling and when linking.
+# Doing it properly would require hacking makefiles.
+if (IsSet("CONFIG_LTO")) {
+	Append("LOPT", "-flto");
+	Append("COPT", "-flto");
+}
+
 if (IsSet("CONFIG_DARWIN")) {
 	# gcc-4.0 on Darwin doesn't set this in the gnu99 mode
 	Append("CLANG" => "-fnested-functions");
