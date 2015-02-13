@@ -71,8 +71,8 @@ you can move the `run` directory around your filesystem as you like:
 Examples
 --------
   - `./configure -CONFIG_SHARED` will build the libraries statically.
-  - `./configure -CONFIG_IMAGES` avoids building the image library.
-  - `./configure CONFIG_UCW_ONLY -CONFIG_UCW_UTILS` compiles only the
-    libucw library without its util programs.
-  - `./configure CONFIG_XML PREFIX=$HOME/libucw` includes a xml
+  - `./configure -CONFIG_XML` avoids building the XML library.
+  - `./configure -CONFIG_UCW_UTILS` compiles only the libraries
+    without its utility programs.
+  - `./configure CONFIG_IMAGES PREFIX=$HOME/libucw` includes an image
     library and installs into your home directory.
