@@ -2,7 +2,7 @@
  *	UCW Library -- Memory Pools (One-Time Allocation)
  *
  *	(c) 1997--2014 Martin Mares <mj@ucw.cz>
- *	(c) 2007--2014 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2007--2015 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
