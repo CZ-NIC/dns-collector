@@ -54,6 +54,80 @@ xml_parse_eq(struct xml_context *ctx)
   xml_parse_white(ctx, 0);
 }
 
+/*** Memory management ***/
+
+void *xml_do_push(struct xml_context *ctx, uint size)
+{
+  /* Saves ctx->stack and ctx->flags state */
+  struct mempool_state state;
+  mp_save(ctx->stack, &state);
+  struct xml_stack *s = mp_alloc(ctx->stack, size);
+  s->state = state;
+  s->flags = ctx->flags;
+  s->next = ctx->stack_list;
+  ctx->stack_list = s;
+  return s;
+}
+
+void xml_do_pop(struct xml_context *ctx, struct xml_stack *s)
+{
+  /* Restore ctx->stack and ctx->flags state */
+  ctx->stack_list = s->next;
+  ctx->flags = s->flags;
+  mp_restore(ctx->stack, &s->state);
+}
+
+struct xml_node *xml_push_dom(struct xml_context *ctx, struct mempool_state *state)
+{
+  /* Create a new DOM node */
+  TRACE(ctx, "push_dom");
+  struct xml_dom_stack *s = xml_do_push(ctx, sizeof(*s));
+  if (state)
+    s->state = *state;
+  else
+    mp_save(ctx->pool, &s->state);
+  struct xml_node *n = mp_alloc(ctx->pool, sizeof(*n));
+  n->user = NULL;
+  if (n->parent = ctx->node)
+    clist_add_tail(&n->parent->sons, &n->n);
+  return ctx->node = n;
+}
+
+void xml_pop_dom(struct xml_context *ctx, uint free)
+{
+  /* Leave DOM subtree */
+  TRACE(ctx, "pop_dom");
+  ASSERT(ctx->node);
+  struct xml_node *p = ctx->node->parent;
+  struct xml_dom_stack *s = (void *)ctx->stack_list;
+  if (free)
+    {
+      /* See xml_pop_element() for cleanup of attribute hash table */
+      if (p)
+        clist_remove(&ctx->node->n);
+      mp_restore(ctx->pool, &s->state);
+    }
+  ctx->node = p;
+  xml_do_pop(ctx, &s->stack);
+}
+
+/*** Basics ***/
+
+uint xml_parse_white(struct xml_context *ctx, uint mandatory)
+{
+  /* mandatory=1 -> S ::= (#x20 | #x9 | #xD | #xA)+
+   * mandatory=0 -> S? */
+  uint cnt = 0;
+  while (xml_peek_cat(ctx) & XML_CHAR_WHITE)
+    {
+      xml_skip_char(ctx);
+      cnt++;
+    }
+  if (unlikely(mandatory && !cnt))
+    xml_fatal_expected_white(ctx);
+  return cnt;
+}
+
 /*** Names and nmtokens ***/
 
 static char *
@@ -387,7 +461,7 @@ xml_spout_chars(struct fastbuf *fb)
     }
 }
 
-static inline uint
+static uint
 xml_end_chars(struct xml_context *ctx, char **out)
 {
   struct fastbuf *fb = &ctx->chars;
@@ -402,7 +476,7 @@ xml_end_chars(struct xml_context *ctx, char **out)
   return len;
 }
 
-static inline uint
+static uint
 xml_report_chars(struct xml_context *ctx, char **out)
 {
   struct fastbuf *fb = &ctx->chars;
@@ -416,7 +490,7 @@ xml_report_chars(struct xml_context *ctx, char **out)
   return len;
 }
 
-static inline uint
+static uint
 xml_flush_chars(struct xml_context *ctx)
 {
   char *text, *rtext;
@@ -447,14 +521,14 @@ xml_flush_chars(struct xml_context *ctx)
   return len;
 }
 
-static inline void
+static void
 xml_pop_chars(struct xml_context *ctx)
 {
   xml_pop_dom(ctx, !(ctx->flags & XML_ALLOC_CHARS));
   TRACE(ctx, "pop_chars");
 }
 
-static inline void
+static void
 xml_append_chars(struct xml_context *ctx)
 {
   TRACE(ctx, "append_chars");

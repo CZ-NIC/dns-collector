@@ -813,6 +813,10 @@ xml_dtd_finish
 xml_dtd_find_attr
 # ucw-xml/internals.h
 xml_throw
+xml_do_push
+xml_do_pop
+xml_push_dom
+xml_pop_dom
 xml_hash_new
 xml_spout_chars
 xml_fatal_nested
@@ -823,6 +827,7 @@ xml_sources_cleanup
 xml_fatal_expected
 xml_fatal_expected_white
 xml_fatal_expected_quot
+xml_parse_white
 xml_parse_eq
 xml_parse_name
 xml_skip_name
