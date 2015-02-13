@@ -33,4 +33,10 @@ if ($r->{"do_upload"}) {
 	} else {
 		print "WARNING: With --notest, no documentation is published!\n";
 	}
+
+	print "Updating version at MJ's web\n";
+	$r->Confirm;
+	my $wv = $r->{"VERSION"};
+	`ssh jw "cd web && bin/release-prog libucw $wv"`;
+	die if $?;
 }
