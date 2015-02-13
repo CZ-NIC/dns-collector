@@ -11,6 +11,7 @@
 
 #include <ucw/lib.h>
 #include <ucw/gary.h>
+#include <ucw/string.h>
 #include <ucw-xml/xml.h>
 #include <ucw-xml/internals.h>
 
@@ -31,10 +32,10 @@ struct ns_hash_entry {
 #define HASH_NODE struct ns_hash_entry
 #define HASH_PREFIX(x) ns_hash_##x
 #define HASH_KEY_ENDSTRING name
-#define HASH_WANT_CLEANUP
 #define HASH_WANT_FIND
 #define HASH_WANT_LOOKUP
 #define HASH_TABLE_DYNAMIC
+#define HASH_TABLE_ALLOC
 #define HASH_LOOKUP_DETECT_NEW
 #define HASH_GIVE_ALLOC
 XML_HASH_GIVE_ALLOC
@@ -60,9 +61,11 @@ xml_ns_enable(struct xml_context *ctx)
     return;
 
   TRACE(ctx, "NS: Enabling");
+  ASSERT(!ctx->depth);
   ctx->flags |= XML_NAMESPACES;
   if (!ctx->ns_pool)
     {
+      // CAVEAT: xml_reset() must handle everything we allocate here
       TRACE(ctx, "NS: Allocating data structures");
       ctx->ns_pool = mp_new(4096);
       GARY_INIT(ctx->ns_by_id, 16);
@@ -95,8 +98,6 @@ xml_ns_cleanup(struct xml_context *ctx)
     return;
 
   TRACE(ctx, "NS: Cleanup");
-  ns_hash_cleanup(ctx->ns_by_prefix);
-  ns_hash_cleanup(ctx->ns_by_name);
   GARY_FREE(ctx->ns_by_id);
   mp_delete(ctx->ns_pool);
 }
@@ -108,21 +109,23 @@ xml_ns_reset(struct xml_context *ctx)
     return;
 
   TRACE(ctx, "NS: Reset");
-  GARY_RESIZE(ctx->ns_by_id, 1);
-  ctx->ns_by_id[0] = "";
+  GARY_RESIZE(ctx->ns_by_id, 0);
   mp_flush(ctx->ns_pool);
 }
 
 const char *
 xml_ns_by_id(struct xml_context *ctx, uint ns)
 {
-  ASSERT(ns < GARY_SIZE(ctx->ns_by_id));
+  if (!ns)		// This should work even if namespaces are disabled
+    return "";
+  ASSERT(ns_enabled(ctx) && ns < GARY_SIZE(ctx->ns_by_id));
   return ctx->ns_by_id[ns];
 }
 
 uint
 xml_ns_by_name(struct xml_context *ctx, const char *name)
 {
+  ASSERT(ns_enabled(ctx));
   int new_p;
   struct ns_hash_entry *he = ns_hash_lookup(ctx->ns_by_name, (char *) name, &new_p);
   if (new_p)
@@ -181,10 +184,10 @@ void xml_ns_push_element(struct xml_context *ctx)
 
   /* Scan attributes for prefix definitions */
   XML_ATTR_FOR_EACH(a, e)
-    if (!memcmp(a->name, "xmlns", 5))
+    if (str_has_prefix(a->name, "xmlns"))
       {
 	uint ns = xml_ns_by_name(ctx, a->val);
-	if (a->name[5] == ':' && a->name[6])
+	if (a->name[5] == ':')
 	  {
 	    if (!ns)
 	      xml_error(ctx, "Namespace prefixes must not be undeclared");

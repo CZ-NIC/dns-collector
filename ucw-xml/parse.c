@@ -850,7 +850,7 @@ xml_parse_etag(struct xml_context *ctx)
   if (xml_get_char(ctx) != '>')
     {
 recover:
-      xml_error(ctx, "Invalid ETag, expected </%s>", e->name);
+      xml_error(ctx, "Invalid ETag, expected </%s>", xml_node_qname(ctx, e));
       while (xml_get_char(ctx) != '>');
     }
   xml_dec(ctx);

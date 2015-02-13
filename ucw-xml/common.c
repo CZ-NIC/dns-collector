@@ -120,7 +120,8 @@ void
 xml_reset(struct xml_context *ctx)
 {
   TRACE(ctx, "reset");
-  struct mempool *pool = ctx->pool, *stack = ctx->stack;
+  struct mempool *pool = ctx->pool, *stack = ctx->stack, *ns_pool = ctx->ns_pool;
+  const char **ns_by_id = ctx->ns_by_id;
   xml_dtd_cleanup(ctx);
   xml_sources_cleanup(ctx);
   mp_flush(pool);
@@ -128,5 +129,7 @@ xml_reset(struct xml_context *ctx)
   *ctx = xml_defaults;
   ctx->pool = pool;
   ctx->stack = stack;
+  ctx->ns_pool = ns_pool;
+  ctx->ns_by_id = ns_by_id;
   xml_ns_reset(ctx);
 }
