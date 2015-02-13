@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- A simple XML parser
+ *	UCW Library -- A simple XML parser
  *
  *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
@@ -7,13 +7,35 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_XML_XML_H
-#define _SHERLOCK_XML_XML_H
+#ifndef _UCW_XML_XML_H
+#define _UCW_XML_XML_H
 
 #include <ucw/clists.h>
 #include <ucw/slists.h>
 #include <ucw/mempool.h>
 #include <ucw/fastbuf.h>
+
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define xml_attr_find ucw_xml_attr_find
+#define xml_attr_value ucw_xml_attr_value
+#define xml_cleanup ucw_xml_cleanup
+#define xml_def_find_entity ucw_xml_def_find_entity
+#define xml_def_resolve_entity ucw_xml_def_resolve_entity
+#define xml_error ucw_xml_error
+#define xml_fatal ucw_xml_fatal
+#define xml_init ucw_xml_init
+#define xml_merge_chars ucw_xml_merge_chars
+#define xml_merge_dom_chars ucw_xml_merge_dom_chars
+#define xml_next ucw_xml_next
+#define xml_next_state ucw_xml_next_state
+#define xml_normalize_white ucw_xml_normalize_white
+#define xml_parse ucw_xml_parse
+#define xml_push_fastbuf ucw_xml_push_fastbuf
+#define xml_reset ucw_xml_reset
+#define xml_row ucw_xml_row
+#define xml_skip_element ucw_xml_skip_element
+#define xml_warn ucw_xml_warn
+#endif
 
 struct xml_context;
 struct xml_dtd_entity;

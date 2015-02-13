@@ -3,4 +3,4 @@ Makefile.PL
 MANIFEST
 Ulimit.pm
 Ulimit.xs
-lib/Sherlock/.exists
+lib/UCW/.exists

@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- A simple XML parser
+ *	UCW Library -- A simple XML parser
  *
  *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
@@ -10,9 +10,9 @@
 #undef LOCAL_DEBUG
 
 #include <ucw/lib.h>
-#include <xml/xml.h>
-#include <xml/dtd.h>
-#include <xml/internals.h>
+#include <ucw-xml/xml.h>
+#include <ucw-xml/dtd.h>
+#include <ucw-xml/internals.h>
 #include <ucw/fastbuf.h>
 #include <ucw/ff-unicode.h>
 #include <ucw/unicode.h>
@@ -26,7 +26,7 @@
 void NONRET
 xml_fatal_expected(struct xml_context *ctx, uint c)
 {
-  if (c >= 32 && c < 128)
+  if (c >= 32 && c < 127)
     xml_fatal(ctx, "Expected '%c'", c);
   else
     xml_fatal(ctx, "Expected U+%04x", c);

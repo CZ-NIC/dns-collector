@@ -1,4 +1,4 @@
-# Makefile for Sherlock Build Tools
+# Makefile for LibUCW Build Tools
 
 DIRS+=build
 

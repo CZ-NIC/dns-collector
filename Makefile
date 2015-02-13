@@ -51,8 +51,8 @@ include $(s)/images/Makefile
 endif
 
 ifdef CONFIG_XML
-LIBXML=$(o)/xml/libucw-xml.pc
-include $(s)/xml/Makefile
+LIBXML=$(o)/ucw-xml/libucw-xml.pc
+include $(s)/ucw-xml/Makefile
 endif
 
 # Build documentation by default?

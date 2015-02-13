@@ -1,5 +1,5 @@
 /*
- *	Sherlock Utilities -- URL Handling Tool
+ *	LibUCW Utilities -- URL Handling Tool
  *
  *	(c) 2004 Martin Mares <mj@ucw.cz>
  */

@@ -1,13 +1,13 @@
 #!/bin/bash
-# An utility for tuning the Sherlock's radix sorter
+# An utility for tuning the LibUCW radix sorter
 # (c) 2007 Martin Mares <mj@ucw.cz>
 set -e
 UCW_PROGNAME="$0"
 . lib/libucw.sh
 
-# Path to Sherlock build directory
+# Path to LibUCW build directory
 [ -n "$BUILD" ] || BUILD=..
-[ -f "$BUILD/ucw/sorter/sorter.h" ] || die "BUILD does not point to Sherlock build directory"
+[ -f "$BUILD/ucw/sorter/sorter.h" ] || die "BUILD does not point to LibUCW build directory"
 
 # Find out sort buffer size
 parse-config 'Sorter{##SortBuffer}'

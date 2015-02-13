@@ -45,7 +45,7 @@
 #if !defined _LIBC && defined __GLIBC__ && __GLIBC__ >= 2
 # include <gnu-versions.h>
 # if _GNU_GETOPT_INTERFACE_VERSION == GETOPT_INTERFACE_VERSION
-//#  define ELIDE_CODE   // SHERLOCK: disabled
+//#  define ELIDE_CODE   // UCW: disabled
 # endif
 #endif
 
@@ -70,7 +70,7 @@
 #ifdef _LIBC
 # include <libintl.h>
 #else
-//# include "gettext.h"  // SHERLOCK: replaced by <libintl.h>
+//# include "gettext.h"  // UCW: replaced by <libintl.h>
 # include <libintl.h>
 # define _(msgid) gettext (msgid)
 #endif

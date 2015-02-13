@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- Character Conversion with Allocation on a Memory Pool
+ *	UCW Library -- Character Conversion with Allocation on a Memory Pool
  *
  *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
  *

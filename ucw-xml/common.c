@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- A simple XML parser
+ *	UCW Library -- A simple XML parser
  *
  *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
@@ -10,9 +10,9 @@
 #undef LOCAL_DEBUG
 
 #include <ucw/lib.h>
-#include <xml/xml.h>
-#include <xml/dtd.h>
-#include <xml/internals.h>
+#include <ucw-xml/xml.h>
+#include <ucw-xml/dtd.h>
+#include <ucw-xml/internals.h>
 #include <ucw/stkstring.h>
 #include <ucw/ff-unicode.h>
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-#	Rotate Sherlock logs
+#	LibUCW Utilities -- Rotate logs
 #	(c) 2001--2002 Martin Mares <mj@ucw.cz>
 
 use File::stat;

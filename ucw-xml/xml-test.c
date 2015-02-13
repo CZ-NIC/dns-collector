@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- A simple XML parser
+ *	UCW Library -- A simple XML parser
  *
  *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
@@ -8,8 +8,8 @@
  */
 
 #include <ucw/lib.h>
-#include <xml/xml.h>
-#include <xml/dtd.h>
+#include <ucw-xml/xml.h>
+#include <ucw-xml/dtd.h>
 #include <ucw/getopt.h>
 #include <ucw/fastbuf.h>
 

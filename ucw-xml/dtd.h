@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- A simple XML parser
+ *	UCW Library -- A simple XML parser
  *
  *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
@@ -7,10 +7,20 @@
  *	of the GNU Lesser General Public License.
  */
 
-#ifndef _SHERLOCK_XML_DTD_H
-#define _SHERLOCK_XML_DTD_H
+#ifndef _UCW_XML_DTD_H
+#define _UCW_XML_DTD_H
 
-#include <xml/xml.h>
+#include <ucw-xml/xml.h>
+
+#ifdef CONFIG_UCW_CLEAN_ABI
+#define xml_dtd_cleanup ucw_xml_dtd_cleanup
+#define xml_dtd_find_attr ucw_xml_dtd_find_attr
+#define xml_dtd_find_elem ucw_xml_dtd_find_elem
+#define xml_dtd_find_entity ucw_xml_dtd_find_entity
+#define xml_dtd_find_notn ucw_xml_dtd_find_notn
+#define xml_dtd_finish ucw_xml_dtd_finish
+#define xml_dtd_init ucw_xml_dtd_init
+#endif
 
 struct xml_dtd {
   struct mempool *pool;			/* Memory pool where to allocate DTD */

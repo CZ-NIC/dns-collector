@@ -79,7 +79,7 @@ my %blacklist = map { $_ => 1 } qw(
 	images/scale-gen.h
 );
 
-for my $f (<ucw/*.h>, <ucw/sorter/common.h>, <charset/*.h>, <images/*.h>) {
+for my $f (<ucw/*.h>, <ucw/sorter/common.h>, <charset/*.h>, <images/*.h>, <ucw-xml/*.h>) {
 	next if $blacklist{$f};
 	parse($f);
 }

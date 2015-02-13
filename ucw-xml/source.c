@@ -1,5 +1,5 @@
 /*
- *	Sherlock Library -- A simple XML parser
+ *	UCW Library -- A simple XML parser
  *
  *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *
@@ -10,17 +10,17 @@
 #undef LOCAL_DEBUG
 
 #include <ucw/lib.h>
-#include <xml/xml.h>
-#include <xml/dtd.h>
-#include <xml/internals.h>
+#include <ucw-xml/xml.h>
+#include <ucw-xml/dtd.h>
+#include <ucw-xml/internals.h>
 #include <ucw/unicode.h>
 #include <ucw/ff-unicode.h>
 #include <charset/charconv.h>
 #include <charset/fb-charconv.h>
 
-/*** Charecter categorization ***/
+/*** Character categorization ***/
 
-#include "obj/xml/unicat.c"
+#include "obj/ucw-xml/unicat.c"
 
 static void
 xml_init_cats(struct xml_context *ctx)
@@ -175,7 +175,7 @@ xml_error_restricted(struct xml_context *ctx, uint c)
   return UNI_REPLACEMENT;
 }
 
-void xml_parse_decl(struct xml_context *ctx);
+static void xml_parse_decl(struct xml_context *ctx);
 
 #define REFILL(ctx, func, params...)							\
   struct xml_source *src = ctx->src;							\
@@ -314,7 +314,7 @@ xml_init_charconv(struct xml_context *ctx, int cs)
   src->fb = fb_wrap_charconv_in(src->fb, cs, CONV_CHARSET_UTF8);
 }
 
-void
+static void
 xml_parse_decl(struct xml_context *ctx)
 {
   TRACE(ctx, "xml_parse_decl");
