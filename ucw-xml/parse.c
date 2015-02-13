@@ -2,6 +2,7 @@
  *	UCW Library -- A simple XML parser
  *
  *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2015 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -53,12 +54,87 @@ xml_parse_eq(struct xml_context *ctx)
   xml_parse_white(ctx, 0);
 }
 
+/*** Memory management ***/
+
+void *xml_do_push(struct xml_context *ctx, uint size)
+{
+  /* Saves ctx->stack and ctx->flags state */
+  struct mempool_state state;
+  mp_save(ctx->stack, &state);
+  struct xml_stack *s = mp_alloc(ctx->stack, size);
+  s->state = state;
+  s->flags = ctx->flags;
+  s->next = ctx->stack_list;
+  ctx->stack_list = s;
+  return s;
+}
+
+void xml_do_pop(struct xml_context *ctx, struct xml_stack *s)
+{
+  /* Restore ctx->stack and ctx->flags state */
+  ctx->stack_list = s->next;
+  ctx->flags = s->flags;
+  mp_restore(ctx->stack, &s->state);
+}
+
+struct xml_node *xml_push_dom(struct xml_context *ctx, struct mempool_state *state)
+{
+  /* Create a new DOM node */
+  TRACE(ctx, "push_dom");
+  struct xml_dom_stack *s = xml_do_push(ctx, sizeof(*s));
+  if (state)
+    s->state = *state;
+  else
+    mp_save(ctx->pool, &s->state);
+  struct xml_node *n = mp_alloc(ctx->pool, sizeof(*n));
+  n->user = NULL;
+  if (n->parent = ctx->node)
+    clist_add_tail(&n->parent->sons, &n->n);
+  return ctx->node = n;
+}
+
+void xml_pop_dom(struct xml_context *ctx, uint free)
+{
+  /* Leave DOM subtree */
+  TRACE(ctx, "pop_dom");
+  ASSERT(ctx->node);
+  struct xml_node *p = ctx->node->parent;
+  struct xml_dom_stack *s = (void *)ctx->stack_list;
+  if (free)
+    {
+      /* See xml_pop_element() for cleanup of attribute hash table */
+      if (p)
+        clist_remove(&ctx->node->n);
+      mp_restore(ctx->pool, &s->state);
+    }
+  ctx->node = p;
+  xml_do_pop(ctx, &s->stack);
+}
+
+/*** Basics ***/
+
+uint xml_parse_white(struct xml_context *ctx, uint mandatory)
+{
+  /* mandatory=1 -> S ::= (#x20 | #x9 | #xD | #xA)+
+   * mandatory=0 -> S? */
+  uint cnt = 0;
+  while (xml_peek_cat(ctx) & XML_CHAR_WHITE)
+    {
+      xml_skip_char(ctx);
+      cnt++;
+    }
+  if (unlikely(mandatory && !cnt))
+    xml_fatal_expected_white(ctx);
+  return cnt;
+}
+
 /*** Names and nmtokens ***/
 
 static char *
 xml_parse_string(struct xml_context *ctx, struct mempool *pool, uint first_cat, uint next_cat, char *err)
 {
-  char *p = mp_start_noalign(pool, 1);
+  char *p = mp_start_noalign(pool, 2);
+  *p++ = '<';		/* We always prepend a '<', so we can seek backwards in the string */
   if (unlikely(!(xml_peek_cat(ctx) & first_cat)))
     xml_fatal(ctx, "%s", err);
   do
@@ -68,7 +144,7 @@ xml_parse_string(struct xml_context *ctx, struct mempool *pool, uint first_cat, 
     }
   while (xml_peek_cat(ctx) & next_cat);
   *p++ = 0;
-  return mp_end(pool, p);
+  return mp_end(pool, p) + 1;
 }
 
 static void
@@ -385,7 +461,7 @@ xml_spout_chars(struct fastbuf *fb)
     }
 }
 
-static inline uint
+static uint
 xml_end_chars(struct xml_context *ctx, char **out)
 {
   struct fastbuf *fb = &ctx->chars;
@@ -400,7 +476,7 @@ xml_end_chars(struct xml_context *ctx, char **out)
   return len;
 }
 
-static inline uint
+static uint
 xml_report_chars(struct xml_context *ctx, char **out)
 {
   struct fastbuf *fb = &ctx->chars;
@@ -414,7 +490,7 @@ xml_report_chars(struct xml_context *ctx, char **out)
   return len;
 }
 
-static inline uint
+static uint
 xml_flush_chars(struct xml_context *ctx)
 {
   char *text, *rtext;
@@ -445,14 +521,14 @@ xml_flush_chars(struct xml_context *ctx)
   return len;
 }
 
-static inline void
+static void
 xml_pop_chars(struct xml_context *ctx)
 {
   xml_pop_dom(ctx, !(ctx->flags & XML_ALLOC_CHARS));
   TRACE(ctx, "pop_chars");
 }
 
-static inline void
+static void
 xml_append_chars(struct xml_context *ctx)
 {
   TRACE(ctx, "append_chars");
@@ -584,45 +660,25 @@ xml_normalize_white(struct xml_context *ctx UNUSED, char *text)
 
 /*** Attributes ***/
 
-struct xml_attrs_table;
-
-static inline uint
-xml_attrs_hash(struct xml_attrs_table *t UNUSED, struct xml_node *e, char *n)
+static void
+xml_raw_add_attr(struct xml_context *ctx, struct xml_node *e, char *name, char *value)
 {
-  return hash_pointer(e) ^ hash_string(n);
-}
-
-static inline int
-xml_attrs_eq(struct xml_attrs_table *t UNUSED, struct xml_node *e1, char *n1, struct xml_node *e2, char *n2)
-{
-  return (e1 == e2) && !strcmp(n1, n2);
-}
-
-static inline void
-xml_attrs_init_key(struct xml_attrs_table *t UNUSED, struct xml_attr *a, struct xml_node *e, char *name)
-{
+  struct xml_attr *a = mp_alloc(ctx->pool, sizeof(*a));
   a->elem = e;
+  a->ns = 0;		/* Namespaces will be resolved later */
   a->name = name;
-  a->val = NULL;
+  a->val = value;
+  a->dtd = NULL;
   a->user = NULL;
+  /* a->hash will be calculated later */
   slist_add_tail(&e->attrs, &a->n);
 }
 
-#define HASH_PREFIX(x) xml_attrs_##x
-#define HASH_NODE struct xml_attr
-#define HASH_KEY_COMPLEX(x) x elem, x name
-#define HASH_KEY_DECL struct xml_node *elem, char *name
-#define HASH_TABLE_DYNAMIC
-#define HASH_GIVE_EQ
-#define HASH_GIVE_HASHFN
-#define HASH_GIVE_INIT_KEY
-#define HASH_WANT_CLEANUP
-#define HASH_WANT_REMOVE
-#define HASH_WANT_LOOKUP
-#define HASH_WANT_FIND
-#define HASH_GIVE_ALLOC
-XML_HASH_GIVE_ALLOC
-#include <ucw/hashtable.h>
+static inline uint
+xml_attr_hash(uint ns, char *name)
+{
+  return hash_string(name) ^ hash_u32(ns);
+}
 
 static void
 xml_parse_attr(struct xml_context *ctx)
@@ -631,51 +687,70 @@ xml_parse_attr(struct xml_context *ctx)
   /* Attribute ::= Name Eq AttValue */
   struct xml_node *e = ctx->node;
   char *n = xml_parse_name(ctx, ctx->pool);
-  struct xml_attr *a = xml_attrs_lookup(ctx->tab_attrs, e, n);
   xml_parse_eq(ctx);
   char *v = xml_parse_attr_value(ctx, NULL);
-  if (a->val)
+  xml_raw_add_attr(ctx, e, n, v);
+}
+
+static void
+xml_process_attr(struct xml_context *ctx, struct xml_attr *a)
+{
+  struct xml_node *e = a->elem;
+  a->hash = xml_attr_hash(a->ns, a->name);
+
+  XML_ATTR_FOR_EACH(a2, e)
     {
-      xml_error(ctx, "Attribute %s is not unique in element <%s>", n, e->name);
-      return;
+      if (a2 == a)
+	break;
+      if (a2->hash == a->hash && a2->ns == a->ns && !strcmp(a2->name, a->name))
+	xml_error(ctx, "Attribute %s is not unique in element <%s>", xml_attr_qname(ctx, a), xml_node_qname(ctx, e));
     }
-  a->val = v;
-  if (!e->dtd)
-    a->dtd = NULL;
-  else if (!(a->dtd = xml_dtd_find_attr(ctx, e->dtd, a->name)))
-    xml_error(ctx, "Undefined attribute %s in element <%s>", n, e->name);
-  else
-    xml_validate_attr(ctx, a->dtd, a->val);
 }
 
 struct xml_attr *
 xml_attr_find(struct xml_context *ctx, struct xml_node *node, char *name)
 {
-  return xml_attrs_find(ctx->tab_attrs, node, name);
+  return xml_attr_find_ns(ctx, node, 0, name);
+}
+
+struct xml_attr *
+xml_attr_find_ns(struct xml_context *ctx UNUSED, struct xml_node *node, uint ns, char *name)
+{
+  ASSERT(node->type == XML_NODE_ELEM);
+  uint hash = xml_attr_hash(ns, name);
+  XML_ATTR_FOR_EACH(a, node)
+    if (a->hash == hash && a->ns == ns && !strcmp(a->name, name))
+      return a;
+  return NULL;
 }
 
 char *
-xml_attr_value(struct xml_context *ctx, struct xml_node *node, char *name)
+xml_attr_value_ns(struct xml_context *ctx, struct xml_node *node, uint ns, char *name)
 {
-  struct xml_attr *attr = xml_attrs_find(ctx->tab_attrs, node, name);
+  struct xml_attr *attr = xml_attr_find_ns(ctx, node, ns, name);
   if (attr)
     return attr->val;
   if (!node->dtd)
+    return NULL;
+  if (ns)			/* So far, our DTD support is not namespace-aware */
     return NULL;
   struct xml_dtd_attr *dtd = xml_dtd_find_attr(ctx, node->dtd, name);
   return dtd ? dtd->default_value : NULL;
 }
 
-void
-xml_attrs_table_init(struct xml_context *ctx)
+char *
+xml_attr_value(struct xml_context *ctx, struct xml_node *node, char *name)
 {
-  xml_attrs_init(ctx->tab_attrs = xml_hash_new(ctx->pool, sizeof(struct xml_attrs_table)));
+  return xml_attr_value_ns(ctx, node, 0, name);
 }
 
-void
-xml_attrs_table_cleanup(struct xml_context *ctx)
+char *
+xml_attr_qname(struct xml_context *ctx UNUSED, struct xml_attr *attr)
 {
-  xml_attrs_cleanup(ctx->tab_attrs);
+  char *n = attr->name;
+  while (n[-1] != '<')
+    n--;
+  return n;
 }
 
 /*** Elements ***/
@@ -705,12 +780,14 @@ xml_push_element(struct xml_context *ctx)
   e->type = XML_NODE_ELEM;
   e->name = xml_parse_name(ctx, ctx->pool);
   slist_init(&e->attrs);
+
   if (!e->parent)
     {
       ctx->dom = e;
       if (ctx->doctype && strcmp(e->name, ctx->doctype))
 	xml_error(ctx, "The root element <%s> does not match the document type <%s>", e->name, ctx->doctype);
     }
+
   if (!ctx->dtd)
     e->dtd = NULL;
   else if (!(e->dtd = xml_dtd_find_elem(ctx, e->name)))
@@ -732,6 +809,8 @@ xml_push_element(struct xml_context *ctx)
 	      xml_error(ctx, "Unexpected element <%s>", e->name);
 	  }
     }
+
+  /* Parse attributes */
   while (1)
     {
       uint white = xml_parse_white(ctx, 0);
@@ -749,19 +828,39 @@ xml_push_element(struct xml_context *ctx)
       xml_unget_char(ctx);
       xml_parse_attr(ctx);
     }
+
+  /* Resolve namespaces */
+  xml_ns_push_element(ctx);
+
+  /* Once we have namespaces, hash attribute names */
+  XML_ATTR_FOR_EACH(a, e)
+    xml_process_attr(ctx, a);
+
+  /* FIXME: DTD logic is not namespace-aware */
   if (e->dtd)
-    SLIST_FOR_EACH(struct xml_dtd_attr *, a, e->dtd->attrs)
-      if (a->default_mode == XML_ATTR_REQUIRED)
-        {
-	  if (!xml_attrs_find(ctx->tab_attrs, e, a->name))
-	    xml_error(ctx, "Missing required attribute %s in element <%s>", a->name, e->name);
+    {
+      XML_ATTR_FOR_EACH(a, e)
+	{
+	  if (!(a->dtd = xml_dtd_find_attr(ctx, e->dtd, a->name)))
+	    xml_error(ctx, "Undefined attribute %s in element <%s>", a->name, e->name);
+	  else
+	    xml_validate_attr(ctx, a->dtd, a->val);
 	}
-      else if (a->default_mode != XML_ATTR_IMPLIED && ctx->flags & XML_ALLOC_DEFAULT_ATTRS)
-        {
-	  struct xml_attr *attr = xml_attrs_lookup(ctx->tab_attrs, e, a->name);
-	  if (!attr->val)
-	    attr->val = a->default_value;
+      SLIST_FOR_EACH(struct xml_dtd_attr *, a, e->dtd->attrs)
+	{
+	  if (a->default_mode == XML_ATTR_REQUIRED)
+	    {
+	      if (!xml_attr_find(ctx, e, a->name))
+		xml_error(ctx, "Missing required attribute %s in element <%s>", a->name, e->name);
+	    }
+	  else if (a->default_mode != XML_ATTR_IMPLIED && ctx->flags & XML_ALLOC_DEFAULT_ATTRS)
+	    {
+	      if (!xml_attr_find(ctx, e, a->name))
+		xml_raw_add_attr(ctx, e, a->name, a->default_value);
+	    }
 	}
+    }
+
   if ((ctx->flags & XML_REPORT_TAGS) && ctx->h_stag)
     ctx->h_stag(ctx);
 }
@@ -772,13 +871,20 @@ xml_pop_element(struct xml_context *ctx)
   TRACE(ctx, "pop_element");
   if ((ctx->flags & XML_REPORT_TAGS) && ctx->h_etag)
     ctx->h_etag(ctx);
+
+  xml_ns_pop_element(ctx);
+
   struct xml_node *e = ctx->node;
   uint free = !(ctx->flags & XML_ALLOC_TAGS);
   if (free)
     {
       if (!e->parent)
 	ctx->dom = NULL;
-      /* Restore hash table of attributes */
+#if 0
+      /*
+       *  With the current data structures, freeing of attributes is not necessary,
+       *  but it might be if we switch to a global hash table of large elements.
+       */
       SLIST_FOR_EACH(struct xml_attr *, a, e->attrs)
 	xml_attrs_remove(ctx->tab_attrs, a);
       struct xml_node *n;
@@ -792,7 +898,9 @@ xml_pop_element(struct xml_context *ctx)
 	    }
 	  clist_remove(&n->n);
 	}
+#endif
     }
+
   xml_pop_dom(ctx, free);
   xml_dec(ctx);
 }
@@ -804,7 +912,7 @@ xml_parse_etag(struct xml_context *ctx)
   * Already parsed: '<' */
   struct xml_node *e = ctx->node;
   ASSERT(e);
-  char *n = e->name;
+  char *n = xml_node_qname(ctx, e);
   while (*n)
     {
       uint c;
@@ -816,10 +924,20 @@ xml_parse_etag(struct xml_context *ctx)
   if (xml_get_char(ctx) != '>')
     {
 recover:
-      xml_error(ctx, "Invalid ETag, expected </%s>", e->name);
+      xml_error(ctx, "Invalid ETag, expected </%s>", xml_node_qname(ctx, e));
       while (xml_get_char(ctx) != '>');
     }
   xml_dec(ctx);
+}
+
+char *
+xml_node_qname(struct xml_context *ctx UNUSED, struct xml_node *node)
+{
+  ASSERT(node->type == XML_NODE_ELEM);
+  char *n = node->name;
+  while (n[-1] != '<')
+    n--;
+  return n;
 }
 
 /*** Document type declaration ***/

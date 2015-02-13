@@ -218,7 +218,7 @@ xml_dtd_attrs_eq(struct xml_dtd_attrs_table *tab UNUSED, struct xml_dtd_elem *el
   return (elem1 == elem2) && !strcmp(name1, name2);
 }
 
-static inline void
+static void
 xml_dtd_attrs_init_key(struct xml_dtd_attrs_table *tab UNUSED, struct xml_dtd_attr *attr, struct xml_dtd_elem *elem, char *name)
 {
   attr->elem = elem;
@@ -302,7 +302,7 @@ xml_dtd_enotns_eq(struct xml_dtd_enotns_table *tab UNUSED, struct xml_dtd_attr *
   return (attr1 == attr2) && (notn1 == notn2);
 }
 
-static inline void
+static void
 xml_dtd_enotns_init_key(struct xml_dtd_enotns_table *tab UNUSED, struct xml_dtd_enotn *enotn, struct xml_dtd_attr *attr, struct xml_dtd_notn *notn)
 {
   enotn->attr = attr;
@@ -411,7 +411,7 @@ xml_parse_dtd_pe(struct xml_context *ctx, uint entity_decl)
   return 1;
 }
 
-static inline uint
+static uint
 xml_parse_dtd_white(struct xml_context *ctx, uint mandatory)
 {
   /* Whitespace or parameter entity,

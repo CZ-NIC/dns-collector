@@ -96,19 +96,12 @@ static struct xml_context xml_defaults = {
   },
 };
 
-static void
-xml_do_init(struct xml_context *ctx)
-{
-  xml_attrs_table_init(ctx);
-}
-
 void
 xml_init(struct xml_context *ctx)
 {
   *ctx = xml_defaults;
   ctx->pool = mp_new(65536);
   ctx->stack = mp_new(65536);
-  xml_do_init(ctx);
   TRACE(ctx, "init");
 }
 
@@ -116,9 +109,9 @@ void
 xml_cleanup(struct xml_context *ctx)
 {
   TRACE(ctx, "cleanup");
-  xml_attrs_table_cleanup(ctx);
   xml_dtd_cleanup(ctx);
   xml_sources_cleanup(ctx);
+  xml_ns_cleanup(ctx);
   mp_delete(ctx->pool);
   mp_delete(ctx->stack);
 }
@@ -127,8 +120,8 @@ void
 xml_reset(struct xml_context *ctx)
 {
   TRACE(ctx, "reset");
-  struct mempool *pool = ctx->pool, *stack = ctx->stack;
-  xml_attrs_table_cleanup(ctx);
+  struct mempool *pool = ctx->pool, *stack = ctx->stack, *ns_pool = ctx->ns_pool;
+  const char **ns_by_id = ctx->ns_by_id;
   xml_dtd_cleanup(ctx);
   xml_sources_cleanup(ctx);
   mp_flush(pool);
@@ -136,5 +129,7 @@ xml_reset(struct xml_context *ctx)
   *ctx = xml_defaults;
   ctx->pool = pool;
   ctx->stack = stack;
-  xml_do_init(ctx);
+  ctx->ns_pool = ns_pool;
+  ctx->ns_by_id = ns_by_id;
+  xml_ns_reset(ctx);
 }

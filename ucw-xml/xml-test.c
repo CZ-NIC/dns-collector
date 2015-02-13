@@ -12,6 +12,7 @@
 #include <ucw-xml/dtd.h>
 #include <ucw/getopt.h>
 #include <ucw/fastbuf.h>
+#include <ucw/gary.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,21 +26,24 @@ enum {
   WANT_REPORT_BLOCKS,
   WANT_REPORT_IGNORABLE,
   WANT_FILE_ENTITIES,
+  WANT_QNAMES,
 };
 
-static char *shortopts = "spdt" CF_SHORT_OPTS;
+static char *shortopts = "spdtn" CF_SHORT_OPTS;
 static struct option longopts[] = {
   CF_LONG_OPTS
   { "sax",		0, 0, 's' },
   { "pull",		0, 0, 'p' },
   { "dom",		0, 0, 't' },
   { "dtd",		0, 0, 'd' },
+  { "namespaces",	0, 0, 'n' },
   { "hide-errors",	0, 0, WANT_HIDE_ERRORS },
   { "ignore-comments",	0, 0, WANT_IGNORE_COMMENTS },
   { "ignore-pis",	0, 0, WANT_IGNORE_PIS },
   { "report-blocks",	0, 0, WANT_REPORT_BLOCKS },
   { "report-ignorable",	0, 0, WANT_REPORT_IGNORABLE },
   { "file-entities",	0, 0, WANT_FILE_ENTITIES },
+  { "qnames",		0, 0, WANT_QNAMES },
   { NULL,		0, 0, 0 }
 };
 
@@ -56,12 +60,14 @@ CF_USAGE
 -s, --sax               Test SAX interface\n\
 -t, --dom               Test DOM interface\n\
 -d, --dtd               Enable parsing of DTD\n\
+-n, --namespaces	Resolve namespaces\n\
     --hide-errors       Hide warnings and error messages\n\
     --ignore-comments   Ignore comments\n\
     --ignore-pis        Ignore processing instructions\n\
     --report-blocks	Report blocks or characters and CDATA sections\n\
     --report-ignorable  Report ignorable whitespace\n\
     --file-entities     Resolve file external entities (not fully normative)\n\
+    --qnames		Display qualified names including namespace prefixes\n\
 \n", stderr);
   exit(1);
 }
@@ -69,6 +75,7 @@ CF_USAGE
 static uint want_sax;
 static uint want_pull;
 static uint want_dom;
+static uint want_ns;
 static uint want_parse_dtd;
 static uint want_hide_errors;
 static uint want_ignore_comments;
@@ -76,6 +83,7 @@ static uint want_ignore_pis;
 static uint want_report_blocks;
 static uint want_report_ignorable;
 static uint want_file_entities;
+static uint want_qnames;
 
 static struct fastbuf *out;
 
@@ -93,14 +101,20 @@ node_type(struct xml_node *node)
 }
 
 static void
-show_node(struct xml_node *node)
+show_node(struct xml_context *ctx, struct xml_node *node)
 {
   switch (node->type)
     {
       case XML_NODE_ELEM:
-	bprintf(out, " <%s>", node->name);
+	if (want_ns)
+	  bprintf(out, " (ns%u)<%s>", node->ns, (want_qnames ? xml_node_qname(ctx, node) : node->name));
+	else
+	  bprintf(out, " <%s>", node->name);
         XML_ATTR_FOR_EACH(a, node)
-          bprintf(out, " %s='%s'", a->name, a->val);
+	  if (want_ns)
+	    bprintf(out, " (ns%u)%s='%s'", a->ns, (want_qnames ? xml_attr_qname(ctx, a) : a->name), a->val);
+	  else
+	    bprintf(out, " %s='%s'", a->name, a->val);
 	bputc(out, '\n');
 	break;
       case XML_NODE_COMMENT:
@@ -118,7 +132,7 @@ show_node(struct xml_node *node)
 }
 
 static void
-show_tree(struct xml_node *node, uint level)
+show_tree(struct xml_context *ctx, struct xml_node *node, uint level)
 {
   if (!node)
     return;
@@ -126,10 +140,10 @@ show_tree(struct xml_node *node, uint level)
   for (uint i = 0; i < level; i++)
     bputs(out, "    ");
   bputs(out, node_type(node));
-  show_node(node);
+  show_node(ctx, node);
   if (node->type == XML_NODE_ELEM)
     XML_NODE_FOR_EACH(son, node)
-      show_tree(son, level + 1);
+      show_tree(ctx, son, level + 1);
 }
 
 static void
@@ -168,21 +182,21 @@ static void
 h_comment(struct xml_context *ctx)
 {
   bputs(out, "SAX:  comment");
-  show_node(ctx->node);
+  show_node(ctx, ctx->node);
 }
 
 static void
 h_pi(struct xml_context *ctx)
 {
   bputs(out, "SAX:  pi");
-  show_node(ctx->node);
+  show_node(ctx, ctx->node);
 }
 
 static void
 h_stag(struct xml_context *ctx)
 {
   bputs(out, "SAX:  stag");
-  show_node(ctx->node);
+  show_node(ctx, ctx->node);
 }
 
 static void
@@ -195,7 +209,7 @@ static void
 h_chars(struct xml_context *ctx)
 {
   bputs(out, "SAX:  chars");
-  show_node(ctx->node);
+  show_node(ctx, ctx->node);
 }
 
 static void
@@ -255,6 +269,9 @@ main(int argc, char **argv)
 	case 'd':
 	  want_parse_dtd++;
 	  break;
+	case 'n':
+	  want_ns++;
+	  break;
 	case WANT_HIDE_ERRORS:
 	  want_hide_errors++;
 	  break;
@@ -272,6 +289,9 @@ main(int argc, char **argv)
 	  break;
 	case WANT_FILE_ENTITIES:
 	  want_file_entities++;
+	  break;
+	case WANT_QNAMES:
+	  want_qnames++;
 	  break;
 	default:
 	  usage();
@@ -315,6 +335,8 @@ main(int argc, char **argv)
     ctx.flags &= ~(XML_REPORT_PIS | XML_ALLOC_PIS);
   if (want_file_entities)
     ctx.h_resolve_entity = h_resolve_entity;
+  if (want_ns)
+    xml_ns_enable(&ctx);
   xml_push_fastbuf(&ctx, bfdopen_shared(0, 4096));
   bputs(out, "PULL: start\n");
   if (want_pull)
@@ -326,22 +348,22 @@ main(int argc, char **argv)
 	  {
 	    case XML_STATE_CHARS:
 	      bputs(out, "PULL: chars");
-	      show_node(ctx.node);
+	      show_node(&ctx, ctx.node);
 	      break;
 	    case XML_STATE_STAG:
 	      bputs(out, "PULL: stag");
-	      show_node(ctx.node);
+	      show_node(&ctx, ctx.node);
 	      break;
 	    case XML_STATE_ETAG:
 	      bprintf(out, "PULL: etag </%s>\n", ctx.node->name);
 	      break;
 	    case XML_STATE_COMMENT:
 	      bputs(out, "PULL: comment");
-	      show_node(ctx.node);
+	      show_node(&ctx, ctx.node);
 	      break;
 	    case XML_STATE_PI:
 	      bputs(out, "PULL: pi");
-	      show_node(ctx.node);
+	      show_node(&ctx, ctx.node);
 	      break;
 	    default:
 	      bputs(out, "PULL: unknown\n");
@@ -356,7 +378,14 @@ main(int argc, char **argv)
     {
       bputs(out, "PULL: eof\n");
       if (want_dom)
-	show_tree(ctx.dom, 0);
+	show_tree(&ctx, ctx.dom, 0);
+    }
+
+  if (want_ns)
+    {
+      bputs(out, "Known namespaces:\n");
+      for (uns i=0; i < GARY_SIZE(ctx.ns_by_id); i++)
+	bprintf(out, "%u\t%s\n", i, ctx.ns_by_id[i]);
     }
 
   xml_cleanup(&ctx);

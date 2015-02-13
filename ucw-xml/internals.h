@@ -14,13 +14,17 @@
 #include <ucw-xml/dtd.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
-#define xml_attrs_table_cleanup ucw_xml_attrs_table_cleanup
-#define xml_attrs_table_init ucw_xml_attrs_table_init
+#define xml_do_pop ucw_xml_do_pop
+#define xml_do_push ucw_xml_do_push
 #define xml_fatal_expected ucw_xml_fatal_expected
 #define xml_fatal_expected_quot ucw_xml_fatal_expected_quot
 #define xml_fatal_expected_white ucw_xml_fatal_expected_white
 #define xml_fatal_nested ucw_xml_fatal_nested
 #define xml_hash_new ucw_xml_hash_new
+#define xml_ns_cleanup ucw_xml_ns_cleanup
+#define xml_ns_pop_element ucw_xml_ns_pop_element
+#define xml_ns_push_element ucw_xml_ns_push_element
+#define xml_ns_reset ucw_xml_ns_reset
 #define xml_parse_attr_list_decl ucw_xml_parse_attr_list_decl
 #define xml_parse_attr_value ucw_xml_parse_attr_value
 #define xml_parse_char_ref ucw_xml_parse_char_ref
@@ -33,9 +37,12 @@
 #define xml_parse_pe_ref ucw_xml_parse_pe_ref
 #define xml_parse_pubid_literal ucw_xml_parse_pubid_literal
 #define xml_parse_system_literal ucw_xml_parse_system_literal
+#define xml_parse_white ucw_xml_parse_white
 #define xml_pop_comment ucw_xml_pop_comment
+#define xml_pop_dom ucw_xml_pop_dom
 #define xml_pop_pi ucw_xml_pop_pi
 #define xml_push_comment ucw_xml_push_comment
+#define xml_push_dom ucw_xml_push_dom
 #define xml_push_entity ucw_xml_push_entity
 #define xml_push_pi ucw_xml_push_pi
 #define xml_push_source ucw_xml_push_source
@@ -70,26 +77,8 @@ struct xml_stack {
   uint flags;
 };
 
-static inline void *xml_do_push(struct xml_context *ctx, uint size)
-{
-  /* Saves ctx->stack and ctx->flags state */
-  struct mempool_state state;
-  mp_save(ctx->stack, &state);
-  struct xml_stack *s = mp_alloc(ctx->stack, size);
-  s->state = state;
-  s->flags = ctx->flags;
-  s->next = ctx->stack_list;
-  ctx->stack_list = s;
-  return s;
-}
-
-static inline void xml_do_pop(struct xml_context *ctx, struct xml_stack *s)
-{
-  /* Restore ctx->stack and ctx->flags state */
-  ctx->stack_list = s->next;
-  ctx->flags = s->flags;
-  mp_restore(ctx->stack, &s->state);
-}
+void *xml_do_push(struct xml_context *ctx, uint size);
+void xml_do_pop(struct xml_context *ctx, struct xml_stack *s);
 
 static inline void xml_push(struct xml_context *ctx)
 {
@@ -109,39 +98,8 @@ struct xml_dom_stack {
   struct mempool_state state;
 };
 
-static inline struct xml_node *xml_push_dom(struct xml_context *ctx, struct mempool_state *state)
-{
-  /* Create a new DOM node */
-  TRACE(ctx, "push_dom");
-  struct xml_dom_stack *s = xml_do_push(ctx, sizeof(*s));
-  if (state)
-    s->state = *state;
-  else
-    mp_save(ctx->pool, &s->state);
-  struct xml_node *n = mp_alloc(ctx->pool, sizeof(*n));
-  n->user = NULL;
-  if (n->parent = ctx->node)
-    clist_add_tail(&n->parent->sons, &n->n);
-  return ctx->node = n;
-}
-
-static inline void xml_pop_dom(struct xml_context *ctx, uint free)
-{
-  /* Leave DOM subtree */
-  TRACE(ctx, "pop_dom");
-  ASSERT(ctx->node);
-  struct xml_node *p = ctx->node->parent;
-  struct xml_dom_stack *s = (void *)ctx->stack_list;
-  if (free)
-    {
-      /* See xml_pop_element() for cleanup of attribute hash table */
-      if (p)
-        clist_remove(&ctx->node->n);
-      mp_restore(ctx->pool, &s->state);
-    }
-  ctx->node = p;
-  xml_do_pop(ctx, &s->stack);
-}
+struct xml_node *xml_push_dom(struct xml_context *ctx, struct mempool_state *state);
+void xml_pop_dom(struct xml_context *ctx, uint free);
 
 #define XML_HASH_HDR_SIZE ALIGN_TO(sizeof(void *), CPU_STRUCT_ALIGN)
 #define XML_HASH_GIVE_ALLOC struct HASH_PREFIX(table); \
@@ -252,20 +210,7 @@ void NONRET xml_fatal_expected(struct xml_context *ctx, uint c);
 void NONRET xml_fatal_expected_white(struct xml_context *ctx);
 void NONRET xml_fatal_expected_quot(struct xml_context *ctx);
 
-static inline uint xml_parse_white(struct xml_context *ctx, uint mandatory)
-{
-  /* mandatory=1 -> S ::= (#x20 | #x9 | #xD | #xA)+
-   * mandatory=0 -> S? */
-  uint cnt = 0;
-  while (xml_peek_cat(ctx) & XML_CHAR_WHITE)
-    {
-      xml_skip_char(ctx);
-      cnt++;
-    }
-  if (unlikely(mandatory && !cnt))
-    xml_fatal_expected_white(ctx);
-  return cnt;
-}
+uint xml_parse_white(struct xml_context *ctx, uint mandatory);
 
 static inline void xml_parse_char(struct xml_context *ctx, uint c)
 {
@@ -318,9 +263,13 @@ void xml_push_pi(struct xml_context *ctx);
 void xml_pop_pi(struct xml_context *ctx);
 void xml_skip_pi(struct xml_context *ctx);
 
-void xml_attrs_table_init(struct xml_context *ctx);
-void xml_attrs_table_cleanup(struct xml_context *ctx);
-
 void xml_validate_attr(struct xml_context *ctx, struct xml_dtd_attr *dtd, char *value);
+
+/*** Namespaces ***/
+
+void xml_ns_cleanup(struct xml_context *ctx);
+void xml_ns_reset(struct xml_context *ctx);
+void xml_ns_push_element(struct xml_context *ctx);
+void xml_ns_pop_element(struct xml_context *ctx);
 
 #endif
