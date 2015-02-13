@@ -1,6 +1,13 @@
 Release notes
 =============
 
+6.3 (2015-02-14)
+----------------
+* Cleaned up and documented the <<../ucw-xml/index:,LibUCW-XML>> companion
+  library -- a lightning fast standards-complient XML parser.
+* Solved problems with closing of stderr in daemons: see the new function
+  <<log:log_drop_stderr()>>.
+
 6.2 (2015-01-16)
 ----------------
 * Fixed race conditions in <<daemon:,daemon helpers>>.
