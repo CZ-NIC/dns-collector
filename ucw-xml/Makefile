@@ -50,3 +50,5 @@ install-libucw-xml-api:
 	ln -sf libucw-xml$(LV).so.0.0 $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-xml$(LV).so
 	install -m 644 run/lib/libucw-xml$(LV).a $(DESTDIR)$(INSTALL_LIB_DIR)
 .PHONY: install-libucw-xml-api
+
+include $(s)/ucw-xml/doc/Makefile

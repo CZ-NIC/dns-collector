@@ -88,6 +88,12 @@ Yet undocumented modules
   * `sighandler.h`
   * `process.h`
 
+Companion libraries
+-------------------
+- <<../ucw-xml/index:,LibUCW-XML>> -- a XML parser
+- LibUCW-charset -- character set conversion (undocumented)
+- LibUCW-images -- loading and conversion of images (undocumented)
+
 License
 -------
 The UCW library is copyrighted by its authors.

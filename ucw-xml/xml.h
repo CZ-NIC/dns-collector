@@ -45,9 +45,14 @@
 #define xml_warn ucw_xml_warn
 #endif
 
+/***
+ * === Constants
+ ***/
+
 struct xml_context;
 struct xml_dtd_entity;
 
+/** Error code reported by the parser. So far, only the basic error classes are recognized. **/
 enum xml_error {
   XML_ERR_OK = 0,
   XML_ERR_WARN = 1000,					/* Warning */
@@ -56,6 +61,7 @@ enum xml_error {
   XML_ERR_EOF,
 };
 
+/** Parser state. A pull parser returns one of these to indicate the type of the current node. **/
 enum xml_state {
   XML_STATE_EOF,					/* EOF or a fatal error */
   XML_STATE_START,					/* Initial state */
@@ -79,6 +85,7 @@ enum xml_state {
   XML_STATE_EPILOG_PI,
 };
 
+/** Pull requests: a bit mask of node types you want to return. The other nodes are silently skipped. **/
 enum xml_pull {
   XML_PULL_XML_DECL =			0x00000001,	/* Stop after the XML declaration */
   XML_PULL_DOCTYPE_DECL =		0x00000002,	/* Stop in the doctype declaration (before optional internal subset) */
@@ -90,6 +97,7 @@ enum xml_pull {
   XML_PULL_ALL =			0xffffffff,
 };
 
+/** Parser mode flags. **/
 enum xml_flags {
   /* Enable reporting of various events via SAX and/or PULL interface */
   XML_REPORT_COMMENTS =			0x00000001,	/* Report comments */
@@ -126,16 +134,29 @@ enum xml_flags {
   XML_SRC_EXTERNAL =			0x00800000,	/* An external entity */
 };
 
+/***
+ * === Internal representation of DOM
+ *
+ * All DOM nodes are allocated within temporary memory pools and they are not
+ * guaranteed to survive when the parser leaves the element. Upon <<xml_cleanup()>>,
+ * all remaining nodes are always freed.
+ ***/
+
+/** Node types **/
 enum xml_node_type {
-  XML_NODE_ELEM,
-  XML_NODE_COMMENT,
-  XML_NODE_CHARS,
-  XML_NODE_PI,
+  XML_NODE_ELEM,			/* Element */
+  XML_NODE_COMMENT,			/* Comment */
+  XML_NODE_CHARS,			/* Character data */
+  XML_NODE_PI,				/* Processing instruction */
 };
 
+/** Iterate over all children of a node. **/
 #define XML_NODE_FOR_EACH(var, node) CLIST_FOR_EACH(struct xml_node *, var, (node)->sons)
+
+/** Iterate over all attributes of a node. **/
 #define XML_ATTR_FOR_EACH(var, node) SLIST_FOR_EACH(struct xml_attr *, var, (node)->attrs)
 
+/** A single DOM node. **/
 struct xml_node {
   cnode n;						/* Node for list of parent's sons */
   uint type;						/* XML_NODE_x */
@@ -164,6 +185,7 @@ struct xml_node {
   void *user;						/* User-defined (initialized to NULL) */
 };
 
+/** A single attribute. **/
 struct xml_attr {
   snode n;						/* Node for elem->attrs */
   uint hash;						/* Internal hash of ns + name */
@@ -197,6 +219,42 @@ struct xml_source {
   uint pending_0xd;					/* The last read character is 0xD */
 };
 
+/** Finds a qualified name (including namespace prefix) of a given element node. **/
+char *xml_node_qname(struct xml_context *ctx, struct xml_node *node);
+
+/** Finds a qualified name (including namespace prefix) of a given attribute. **/
+char *xml_attr_qname(struct xml_context *ctx, struct xml_attr *node);
+
+/** Finds a given attribute value in a `XML_NODE_ELEM` node **/
+struct xml_attr *xml_attr_find(struct xml_context *ctx, struct xml_node *node, char *name);
+
+/** The same, but namespace-aware **/
+struct xml_attr *xml_attr_find_ns(struct xml_context *ctx, struct xml_node *node, uint ns, char *name);
+
+/** Similar to xml_attr_find, but it deals also with default values **/
+char *xml_attr_value(struct xml_context *ctx, struct xml_node *node, char *name);
+
+/** The same, but namespace-aware **/
+char *xml_attr_value_ns(struct xml_context *ctx, struct xml_node *node, uint ns, char *name);
+
+/** Remove leading/trailing spaces and replaces sequences of spaces to a single space character (non-CDATA attribute normalization) **/
+uint xml_normalize_white(struct xml_context *ctx, char *value);
+
+/** Merge character contents of a given element to a single string (not recursive) **/
+char *xml_merge_chars(struct xml_context *ctx, struct xml_node *node, struct mempool *pool);
+
+/** Merge character contents of a given subtree to a single string **/
+char *xml_merge_dom_chars(struct xml_context *ctx, struct xml_node *node, struct mempool *pool);
+
+/***
+ * === Parser context
+ ***/
+
+/**
+ * The state of the parser is kept in this structure. There are some
+ * user-accessible parts (like pointers to various hooks), but the
+ * majority of fields is private.
+ **/
 struct xml_context {
   /* Error handling */
   char *err_msg;					/* Last error message */
@@ -206,7 +264,7 @@ struct xml_context {
   void (*h_error)(struct xml_context *ctx);		/* Recoverable error callback */
   void (*h_fatal)(struct xml_context *ctx);		/* Unrecoverable error callback */
 
-  /* Memory management */
+  /* Memory management (private) */
   struct mempool *pool;					/* DOM pool */
   struct mempool *stack;				/* Stack pool (freed as soon as possible) */
   struct xml_stack *stack_list;				/* See xml_push(), xml_pop() */
@@ -216,7 +274,7 @@ struct xml_context {
   struct mempool_state chars_state;			/* Mempool state before the current character block has started */
   char *chars_trivial;					/* If not empty, it will be appended to chars */
 
-  /* Input */
+  /* Input (private) */
   struct xml_source *src;				/* Current source */
   u32 *bptr, *bstop;					/* Buffer with preprocessed characters (validated UCS-4 + category flags) */
   uint cat_chars;					/* Unicode range of supported characters (cdata, attribute values, ...) */
@@ -247,7 +305,7 @@ struct xml_context {
   struct xml_node *dom;					/* DOM root */
   struct xml_node *node;				/* Current DOM node */
 
-  /* Namespaces */
+  /* Namespaces (private) */
   struct mempool *ns_pool;				/* Memory pool for NS definitions */
   const char **ns_by_id;				/* A growing array translating NS IDs to their names */
   void *ns_by_name;					/* Hash table translating NS names to their IDs */
@@ -255,6 +313,7 @@ struct xml_context {
   struct xml_ns_prefix *ns_prefix_stack;		/* A stack of prefix definitions, allocated from xml->stack */
   uint ns_default;					/* Current default namespace */
 
+  /* Other stuff */
   char *version_str;
   uint standalone;
   char *doctype;					/* The document type (or NULL if unknown) */
@@ -265,50 +324,32 @@ struct xml_context {
   uint pull;						/* Parameters for the PULL interface (XML_PULL_x) */
 };
 
-/* Initialize XML context */
+/** Initialize XML context **/
 void xml_init(struct xml_context *ctx);
 
-/* Clean up all internal structures */
+/** Clean up all internal structures **/
 void xml_cleanup(struct xml_context *ctx);
 
-/* Reuse XML context, equivalent to xml_cleanup() and xml_init() */
+/** Reuse XML context, equivalent to xml_cleanup() and xml_init(), but faster **/
 void xml_reset(struct xml_context *ctx);
 
-/* Add XML source (fastbuf will be automatically closed) */
+/** Add XML source (fastbuf will be automatically closed) **/
 struct xml_source *xml_push_fastbuf(struct xml_context *ctx, struct fastbuf *fb);
 
-/* Parse without the PULL interface, return XML_ERR_x code (zero on success) */
+/** Parse the whole document without the PULL interface, return `XML_ERR_x` code (zero on success) **/
 uint xml_parse(struct xml_context *ctx);
 
-/* Parse with the PULL interface, return XML_STATE_x (zero on EOF or fatal error) */
+/** Parse with the PULL interface, return `XML_STATE_x` (zero on EOF or fatal error) **/
 uint xml_next(struct xml_context *ctx);
 
-/* Equivalent to xml_next, but with temporarily changed ctx->pull value */
+/** Equivalent to xml_next, but with temporarily changed ctx->pull value **/
 uint xml_next_state(struct xml_context *ctx, uint pull);
 
-/* May be called on XML_STATE_STAG to skip it's content; can return XML_STATE_ETAG or XML_STATE_EOF on fatal error */
+/** May be called on XML_STATE_STAG to skip its content; can return `XML_STATE_ETAG` or `XML_STATE_EOF` on fatal error **/
 uint xml_skip_element(struct xml_context *ctx);
 
-/* Returns the current row number in the document entity */
+/** Returns the current row (line) number in the document entity **/
 uint xml_row(struct xml_context *ctx);
-
-/* Finds a qualified name (including namespace prefix) of a given element node. */
-char *xml_node_qname(struct xml_context *ctx, struct xml_node *node);
-
-/* Finds a qualified name (including namespace prefix) of a given attribute. */
-char *xml_attr_qname(struct xml_context *ctx, struct xml_attr *node);
-
-/* Finds a given attribute value in a XML_NODE_ELEM node */
-struct xml_attr *xml_attr_find(struct xml_context *ctx, struct xml_node *node, char *name);
-
-/* The same, but namespace-aware */
-struct xml_attr *xml_attr_find_ns(struct xml_context *ctx, struct xml_node *node, uint ns, char *name);
-
-/* Similar to xml_attr_find, but it deals also with default values */
-char *xml_attr_value(struct xml_context *ctx, struct xml_node *node, char *name);
-
-/* The same, but namespace-aware */
-char *xml_attr_value_ns(struct xml_context *ctx, struct xml_node *node, uint ns, char *name);
 
 /* The default value of h_find_entity(), knows &lt;, &gt;, &amp;, &apos; and &quot; */
 struct xml_dtd_entity *xml_def_find_entity(struct xml_context *ctx, char *name);
@@ -316,32 +357,48 @@ struct xml_dtd_entity *xml_def_find_entity(struct xml_context *ctx, char *name);
 /* The default value of h_resolve_entity(), throws an error */
 void xml_def_resolve_entity(struct xml_context *ctx, struct xml_dtd_entity *ent);
 
-/* Remove leading/trailing spaces and replaces sequences of spaces to a single space character (non-CDATA attribute normalization) */
-uint xml_normalize_white(struct xml_context *ctx, char *value);
-
-/* Merge character contents of a given element to a single string (not recursive) */
-char *xml_merge_chars(struct xml_context *ctx, struct xml_node *node, struct mempool *pool);
-
-/* Merge character contents of a given subtree to a single string */
-char *xml_merge_dom_chars(struct xml_context *ctx, struct xml_node *node, struct mempool *pool);
-
-/* Public part of error handling */
+/** Throw a warning at the current node **/
 void xml_warn(struct xml_context *ctx, const char *format, ...);
+
+/** Throw an error at the current node **/
 void xml_error(struct xml_context *ctx, const char *format, ...);
+
+/** Throw a fatal error, aborting parsing. This can be called only from SAX hooks (and from parser internals). **/
 void NONRET xml_fatal(struct xml_context *ctx, const char *format, ...);
 
-/* Request processing of namespaces */
+/***
+ * === Namespaces
+ *
+ * When namespace-aware parsing is requested by calling xml_ns_enable(),
+ * all namespaces are collected and assigned integer identifiers. Names of
+ * elements and attributes then always contain a namespace ID and a local
+ * name within the namespace. An ID of zero corresponds to an unspecified
+ * namespace.
+ *
+ * Once an ID is assigned, it is never changed, even if the namespace
+ * goes out of scope temporarily.
+ */
+
+/** Request processing of namespaces (must be called before the first node is parsed). **/
 void xml_ns_enable(struct xml_context *ctx);
 
-/* Looks up namespace by its ID, dies on an invalid ID */
+/**
+ * Looks up namespace by its ID, dies on an invalid ID. Returns a pointer
+ * which remains valid until the context is cleaned up or reset.
+ **/
 const char *xml_ns_by_id(struct xml_context *ctx, uint ns);
 
-/* Looks up namespace by its name and returns its ID. Creates a new ID if necessary. */
+/**
+ * Looks up namespace by its name and returns its ID. Assigns a new ID if necessary.
+ * When this function returns, @name is not referenced any more.
+ **/
 uint xml_ns_by_name(struct xml_context *ctx, const char *name);
 
-/* Well-known namespaces */
-#define XML_NS_NONE		0	/* This element has no namespace */
-#define XML_NS_XMLNS		1	/* xmlns: */
-#define XML_NS_XML		2	/* xml: */
+/** Well-known namespaces. **/
+enum xml_ns_id {
+  XML_NS_NONE = 0,		/* This element has no namespace */
+  XML_NS_XMLNS = 1,		/* xmlns: */
+  XML_NS_XML = 2,		/* xml: */
+};
 
 #endif
