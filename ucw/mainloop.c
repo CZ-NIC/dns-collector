@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Main Loop
  *
- *	(c) 2004--2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2004--2015 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -311,6 +311,49 @@ file_want_events(struct main_file *fi)
   return events;
 }
 
+static void
+file_set_events(struct main_context *m, struct main_file *fi, uint mask)
+{
+  uint prev_events = fi->want_events;
+  if (prev_events == mask)
+    return;
+  DBG("MAIN: Changing requested events for fd %d to %x", fi->fd, mask);
+  fi->want_events = mask;
+
+#ifdef CONFIG_UCW_EPOLL
+  if (m->epoll_fd < 0)
+    return;
+  struct epoll_event evt = {
+    .events = mask,
+    .data.ptr = fi,
+  };
+  int op;
+  if (!prev_events)
+    {
+      op = EPOLL_CTL_ADD;
+      m->poll_cnt++;
+    }
+  else if (!mask)
+    {
+      op = EPOLL_CTL_DEL;
+      m->poll_cnt--;
+    }
+  else
+    op = EPOLL_CTL_MOD;
+  if (epoll_ctl(m->epoll_fd, op, fi->fd, &evt) < 0)
+    {
+      // Some clients call file_del() on an already closed descriptor. Trying to be benevolent.
+      if (errno != EBADF || op != EPOLL_CTL_DEL)
+	die("epoll_ctl() failed: %m");
+    }
+#else
+  if (!prev_events || !mask || !fi->pollfd)
+    m->poll_table_obsolete = 1;
+  else
+    fi->pollfd->events = mask;
+#endif
+}
+
 void
 file_add(struct main_file *fi)
 {
@@ -320,17 +363,7 @@ file_add(struct main_file *fi)
   ASSERT(!file_is_active(fi));
   clist_add_tail(&m->file_list, &fi->n);
   m->file_cnt++;
-#ifdef CONFIG_UCW_EPOLL
-  struct epoll_event evt = {
-    .events = file_want_events(fi),
-    .data.ptr = fi,
-  };
-  if (epoll_ctl(m->epoll_fd, EPOLL_CTL_ADD, fi->fd, &evt) < 0)
-    die("epoll_ctl() failed: %m");
-  fi->last_want_events = evt.events;
-#else
-  m->poll_table_obsolete = 1;
-#endif
+  file_set_events(m, fi, file_want_events(fi));
   if (fcntl(fi->fd, F_SETFL, O_NONBLOCK) < 0)
     msg(L_ERROR, "Error setting fd %d to non-blocking mode: %m. Keep fingers crossed.", fi->fd);
 }
@@ -338,13 +371,12 @@ file_add(struct main_file *fi)
 void
 file_chg(struct main_file *fi)
 {
+  struct main_context *m = main_current();
 #ifdef CONFIG_UCW_EPOLL
   clist_remove(&fi->n);
-  clist_add_tail(&main_current()->file_recalc_list, &fi->n);
+  clist_add_tail(&m->file_recalc_list, &fi->n);
 #else
-  struct pollfd *p = fi->pollfd;
-  if (p)
-    p->events = file_want_events(fi);
+  file_set_events(m, fi, file_want_events(fi));
 #endif
 }
 
@@ -358,16 +390,7 @@ file_del_ctx(struct main_context *m, struct main_file *fi)
     return;
   clist_unlink(&fi->n);
   m->file_cnt--;
-#ifdef CONFIG_UCW_EPOLL
-  if (m->epoll_fd >= 0 && epoll_ctl(m->epoll_fd, EPOLL_CTL_DEL, fi->fd, NULL) < 0)
-    {
-      // Some clients call file_del() on an already closed descriptor. Trying to be benevolent.
-      if (errno != EBADF)
-	die("epoll_ctl() failed: %m");
-    }
-#else
-  m->poll_table_obsolete = 1;
-#endif
+  file_set_events(m, fi, 0);
 }
 
 void
@@ -735,17 +758,7 @@ recalc_files(struct main_context *m)
 
   while (fi = clist_remove_head(&m->file_recalc_list))
     {
-      struct epoll_event evt = {
-	.events = file_want_events(fi),
-	.data.ptr = fi,
-      };
-      if (evt.events != fi->last_want_events)
-	{
-	  DBG("MAIN: Changing requested events for fd %d to %x", fi->fd, evt.events);
-	  fi->last_want_events = evt.events;
-	  if (epoll_ctl(main_current()->epoll_fd, EPOLL_CTL_MOD, fi->fd, &evt) < 0)
-	    die("epoll_ctl() failed: %m");
-	}
+      file_set_events(m, fi, file_want_events(fi));
       clist_add_tail(&m->file_list, &fi->n);
     }
 }
@@ -758,15 +771,21 @@ rebuild_poll_table(struct main_context *m)
   GARY_INIT_OR_RESIZE(m->poll_table, m->file_cnt);
   GARY_INIT_OR_RESIZE(m->poll_file_table, m->file_cnt);
   DBG("MAIN: Rebuilding poll table: %d entries", m->file_cnt);
+  // From this point on, the gary's must not be resized: we keep pointers to their entries
 
   struct pollfd *p = m->poll_table;
   struct main_file **pf = m->poll_file_table;
+  m->poll_cnt = 0;
   CLIST_FOR_EACH(struct main_file *, fi, m->file_list)
     {
       p->fd = fi->fd;
-      p->events = file_want_events(fi);
-      fi->pollfd = p++;
-      *pf++ = fi;
+      p->events = fi->want_events;
+      if (p->events)
+	{
+	  fi->pollfd = p++;
+	  *pf++ = fi;
+	  m->poll_cnt++;
+	}
     }
   m->poll_table_obsolete = 0;
 }
@@ -807,13 +826,13 @@ main_loop(void)
 
 #ifdef CONFIG_UCW_EPOLL
       recalc_files(m);
-      DBG("MAIN: Epoll for %d fds and timeout %d ms", m->file_cnt, timeout);
+      DBG("MAIN: Epoll for %d fds and timeout %d ms", m->poll_cnt, timeout);
       int n = epoll_wait(m->epoll_fd, m->epoll_events, EPOLL_BUF_SIZE, timeout);
 #else
       if (m->poll_table_obsolete)
 	rebuild_poll_table(m);
-      DBG("MAIN: Poll for %d fds and timeout %d ms", m->file_cnt, timeout);
-      int n = poll(m->poll_table, m->file_cnt, timeout);
+      DBG("MAIN: Poll for %d fds and timeout %d ms", m->poll_cnt, timeout);
+      int n = poll(m->poll_table, m->poll_cnt, timeout);
 #endif
 
       DBG("\t-> %d events", n);
@@ -844,7 +863,7 @@ main_loop(void)
 #else
       struct pollfd *p = m->poll_table;
       struct main_file **pf = m->poll_file_table;
-      for (uint i=0; i < m->file_cnt; i++)
+      for (uint i=0; i < m->poll_cnt; i++)
 	if (p[i].revents)
 	  {
 	    struct main_file *fi = pf[i];

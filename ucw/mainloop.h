@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Main Loop
  *
- *	(c) 2004--2012 Martin Mares <mj@ucw.cz>
+ *	(c) 2004--2015 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -90,6 +90,7 @@ struct main_context {
   struct pollfd *poll_table;
   struct main_file **poll_file_table;
 #endif
+  uint poll_cnt;
   struct main_timer **timer_table;	/* Growing array containing the heap of timers */
   sigset_t want_signals;
   int sig_pipe_send;
@@ -352,9 +353,8 @@ struct main_file {
   int (*write_handler)(struct main_file *fi);
   void *data;					/* [*] Data for use by the handlers */
   uint events;
-#ifdef CONFIG_UCW_EPOLL
-  uint last_want_events;
-#else
+  uint want_events;
+#ifndef CONFIG_UCW_EPOLL
   struct pollfd *pollfd;
 #endif
 };
