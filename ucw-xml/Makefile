@@ -44,7 +44,7 @@ install-libucw-xml-lib:
 
 INSTALL_TARGETS+=install-libucw-xml-api
 install-libucw-xml-api:
-	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/xml $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
+	install -d -m 755 $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw-xml $(DESTDIR)$(INSTALL_LIB_DIR) $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 run/lib/pkgconfig/libucw-xml.pc $(DESTDIR)$(INSTALL_PKGCONFIG_DIR)
 	install -m 644 $(addprefix run/include/ucw-xml/,$(LIBXML_INCLUDES)) $(DESTDIR)$(INSTALL_INCLUDE_DIR)/ucw-xml
 	ln -sf libucw-xml$(LV).so.0.0 $(DESTDIR)$(INSTALL_LIB_DIR)/libucw-xml$(LV).so
