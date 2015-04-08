@@ -1,6 +1,10 @@
 Release notes
 =============
 
+6.4 (2015-04-08)
+----------------
+* Fixed several minor bugs in the <<mainloop:,mainloop>> module.
+
 6.3 (2015-02-14)
 ----------------
 * Cleaned up and documented the <<../ucw-xml/index:,LibUCW-XML>> companion
