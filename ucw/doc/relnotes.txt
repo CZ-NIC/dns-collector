@@ -1,6 +1,14 @@
 Release notes
 =============
 
+FIXME
+-----
+* The naming of memory pool functions mp_append_printf() and mp_append_vprintf()
+  turned out to be unfortunate as they have differently from all other functions
+  operating on growing buffers. They have been renamed to mp_printf_append()
+  and mp_vprintf_append() with the old names kept as aliases for backward
+  compatibility.
+
 6.4 (2015-04-08)
 ----------------
 * Fixed several minor bugs in the <<mainloop:,mainloop>> module.

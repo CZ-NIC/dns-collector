@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Memory Pools
  *
- *	(c) 1997--2014 Martin Mares <mj@ucw.cz>
+ *	(c) 1997--2015 Martin Mares <mj@ucw.cz>
  *	(c) 2007 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -19,8 +19,6 @@
 #define mp_alloc_internal ucw_mp_alloc_internal
 #define mp_alloc_noalign ucw_mp_alloc_noalign
 #define mp_alloc_zero ucw_mp_alloc_zero
-#define mp_append_printf ucw_mp_append_printf
-#define mp_append_vprintf ucw_mp_append_vprintf
 #define mp_delete ucw_mp_delete
 #define mp_flush ucw_mp_flush
 #define mp_grow_internal ucw_mp_grow_internal
@@ -31,6 +29,7 @@
 #define mp_open ucw_mp_open
 #define mp_pop ucw_mp_pop
 #define mp_printf ucw_mp_printf
+#define mp_printf_append ucw_mp_printf_append
 #define mp_push ucw_mp_push
 #define mp_realloc ucw_mp_realloc
 #define mp_realloc_zero ucw_mp_realloc_zero
@@ -46,6 +45,7 @@
 #define mp_strjoin ucw_mp_strjoin
 #define mp_total_size ucw_mp_total_size
 #define mp_vprintf ucw_mp_vprintf
+#define mp_vprintf_append ucw_mp_vprintf_append
 #endif
 
 /***
@@ -542,18 +542,22 @@ char *mp_vprintf(struct mempool *mp, const char *fmt, va_list args) LIKE_MALLOC;
  * Returns pointer to the beginning of the string (the pointer may have
  * changed due to reallocation).
  *
- * Alternatively, this function may be called mp_printf_append() for compatibility with
- * previous releases of LibUCW.
+ * In some versions of LibUCW, this function was called mp_append_printf(). However,
+ * this name turned out to be confusing -- unlike other appending functions, this one is
+ * not called on an opened growing buffer. The old name will be preserved for backward
+ * compatibility for the time being.
  **/
-char *mp_append_printf(struct mempool *mp, char *ptr, const char *fmt, ...) FORMAT_CHECK(printf,3,4);
-#define mp_printf_append mp_append_printf
+char *mp_printf_append(struct mempool *mp, char *ptr, const char *fmt, ...) FORMAT_CHECK(printf,3,4);
+#define mp_append_printf mp_printf_append
 /**
- * Like @mp_append_printf(), but uses `va_list` for parameters.
+ * Like @mp_printf_append(), but uses `va_list` for parameters.
  *
- * Alternatively, this function may be called mp_vprintf_append() for compatibility with
- * previous releases of LibUCW.
+ * In some versions of LibUCW, this function was called mp_append_vprintf(). However,
+ * this name turned out to be confusing -- unlike other appending functions, this one is
+ * not called on an opened growing buffer. The old name will be preserved for backward
+ * compatibility for the time being.
  **/
-char *mp_append_vprintf(struct mempool *mp, char *ptr, const char *fmt, va_list args);
-#define mp_vprintf_append mp_append_vprintf
+char *mp_vprintf_append(struct mempool *mp, char *ptr, const char *fmt, va_list args);
+#define mp_append_vprintf mp_vprintf_append
 
 #endif

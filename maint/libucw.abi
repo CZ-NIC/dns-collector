@@ -389,8 +389,8 @@ mp_strjoin
 mp_str_from_mem
 mp_printf
 mp_vprintf
-mp_append_printf
-mp_append_vprintf
+mp_printf_append
+mp_vprintf_append
 # ucw/opt-internal.h
 opt_precompute
 # ucw/opt.h
