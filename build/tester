@@ -84,8 +84,10 @@ my $errors = 0;
 my $prev_run = undef;
 TEST: foreach $tt (@tests) {
 	$i++;
-	my $name = $tt->{'Name'} || $i;
-	print "Test $name: ";
+	my $name = $tt->{'Name'};
+	printf "Test %03d", $i;
+	print " [$name]" if defined $name;
+	print ": ";
 	$run = ($tt->{'Run'} || $prev_run) or die "Don't know what to run";
 	$prev_run = $run;
 
