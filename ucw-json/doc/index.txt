@@ -3,9 +3,11 @@ The UCW-JSON library
 
 This library provides a light-weight JSON parser and generator built atop <<../ucw/index:,LibUCW>>.
 
+It follows the specification of JSON in RFC 7159.
+
 Modules
 -------
-- <<json:,JSON Parser>>
+- <<json:,JSON Parser and Generator>>
 
 Authors
 -------

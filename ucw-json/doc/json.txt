@@ -1,14 +1,12 @@
-JSON Parser
-===========
+JSON Parser and Generator
+=========================
 
 ucw-json/json.h
--------------
+---------------
+
+To use the JSON library, you need to create a context (<<struct json_context,struct json_context>>)
+by calling <<json_new()>> first.
 
 FIXME
-
-To parse a document, create a parser context (<<struct_xml_context,struct xml_context>>),
-initialize it with <<xml_init()>>, fill in requested parsing mode, pointers to hooks, and
-other parameters. Then call <<xml_parse()>> or <<xml_next()>> as you need. At the end, dispose
-of the context by <<xml_cleanup()>> or recycle it by <<xml_reset()>>.
 
 !!ucw-json/json.h
