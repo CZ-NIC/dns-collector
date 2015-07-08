@@ -1,7 +1,7 @@
 /*
  *	UCW Library: Reading and writing of UTF-8 and UTF-16 on Fastbuf Streams
  *
- *	(c) 2001--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2015 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *	(c) 2007--2008 Pavel Charvat <pchar@ucw.cz>
  *

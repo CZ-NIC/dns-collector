@@ -1,7 +1,7 @@
 /*
  *	UCW Library: Reading and writing of UTF-8 on Fastbuf Streams
  *
- *	(c) 2001--2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2001--2015 Martin Mares <mj@ucw.cz>
  *	(c) 2004 Robert Spalek <robert@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
@@ -41,6 +41,8 @@ bget_utf8_slow(struct fastbuf *b, uint repl)
       if ((c = bgetc(b)) < 0x80 || c >= 0xc0)
 	goto wrong;
       code = (code << 6) | (c & 0x3f);
+      if (code < 0x800)
+	goto wrong2;
     }
   else					/* 2 bytes */
     {
@@ -48,12 +50,15 @@ bget_utf8_slow(struct fastbuf *b, uint repl)
       if ((c = bgetc(b)) < 0x80 || c >= 0xc0)
 	goto wrong;
       code = (code << 6) | (c & 0x3f);
+      if (code < 0x80)
+	goto wrong2;
     }
   return code;
 
- wrong:
+wrong:
   if (c >= 0)
     bungetc(b);
+wrong2:
   return repl;
 }
 
@@ -63,6 +68,7 @@ bget_utf8_32_slow(struct fastbuf *b, uint repl)
   int c = bgetc(b);
   int code;
   int nr;
+  int limit;
 
   if (c < 0x80)				/* Includes EOF */
     return c;
@@ -72,44 +78,48 @@ bget_utf8_32_slow(struct fastbuf *b, uint repl)
     {
       code = c & 0x1f;
       nr = 1;
+      limit = 0x80;
     }
   else if (c < 0xf0)
     {
       code = c & 0x0f;
       nr = 2;
+      limit = 0x800;
     }
   else if (c < 0xf8)
     {
       code = c & 0x07;
       nr = 3;
+      limit = 1 << 16;
     }
   else if (c < 0xfc)
     {
       code = c & 0x03;
       nr = 4;
+      limit = 1 << 21;
     }
   else if (c < 0xfe)
     {
       code = c & 0x01;
       nr = 5;
+      limit = 1 << 26;
     }
-  else					/* Too large, skip it */
-    {
-      while ((c = bgetc(b)) >= 0x80 && c < 0xc0)
-	;
-      goto wrong;
-    }
+  else					/* Too large */
+    goto wrong2;
   while (nr-- > 0)
     {
       if ((c = bgetc(b)) < 0x80 || c >= 0xc0)
 	goto wrong;
       code = (code << 6) | (c & 0x3f);
     }
+  if (code < limit)
+    goto wrong2;
   return code;
 
- wrong:
+wrong:
   if (c >= 0)
     bungetc(b);
+wrong2:
   return repl;
 }
 
