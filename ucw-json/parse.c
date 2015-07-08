@@ -21,6 +21,7 @@ void json_set_input(struct json_context *js, struct fastbuf *in)
 {
   js->in_fb = in;
   js->in_line = 1;
+  js->in_column = 0;
   js->next_char = -1;
   js->next_token = NULL;
   js->in_eof = 0;
@@ -28,10 +29,9 @@ void json_set_input(struct json_context *js, struct fastbuf *in)
     js->trivial_token = json_new_node(js, JSON_INVALID);
 }
 
-// FIXME: Report column as well as line?
 static void NONRET json_parse_error(struct json_context *js, const char *msg)
 {
-  trans_throw("ucw.js.parse", js, "%s at line %u", msg, js->in_line);
+  trans_throw("ucw.js.parse", js, "%s at line %u:%u", msg, js->in_line, js->in_column);
 }
 
 static int json_get_char(struct json_context *js)
@@ -45,6 +45,7 @@ static int json_get_char(struct json_context *js)
       // FIXME: Reject alternative sequences
       return c;
     }
+  js->in_column++;
   return c;
 }
 
@@ -291,7 +292,10 @@ static struct json_node *json_read_token(struct json_context *js)
   while (c == 0x20 || c == 0x09 || c == 0x0a || c == 0x0d)
     {
       if (c == 0x0a)
-	js->in_line++;
+	{
+	  js->in_line++;
+	  js->in_column = 0;
+	}
       c = json_get_char(js);
     }
   if (c < 0)

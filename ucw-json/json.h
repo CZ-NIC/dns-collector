@@ -30,6 +30,7 @@ struct json_context {
 
   struct fastbuf *in_fb;
   uint in_line;
+  uint in_column;
   bool in_eof;
   struct json_node *next_token;
   struct json_node *trivial_token;
