@@ -29,7 +29,7 @@ fb_hex_spout(struct fastbuf *f)
   for (byte *p = f->buffer; p < f->bptr; p++)
     {
       uint c = *p;
-      if (c >= 0x21 && c <= 0x7f && c != '<' && c != '>')
+      if (c >= 0x21 && c <= 0x7e && c != '<' && c != '>')
 	bputc(orig, c);
       else
 	bprintf(orig, "<%02x>", c);
