@@ -1,14 +1,10 @@
 # Tests for the JSON library
 # (c) 2015 Martin Mares <mj@ucw.cz>
 
-Name:	Empty input
-Run:	../obj/ucw-json/json-test -rw
-Exit:	1
-Err:	ERROR: Empty input at line 1:0
-
 ### Literals ###
 
 Name:	Null
+Run:	../obj/ucw-json/json-test -rw
 In:	null
 Out:	null
 
@@ -275,3 +271,109 @@ In:	[
 	,false
 	]
 Out:	[ "a", null, false, false ]
+
+Name:	Unterminated array 1
+In:	[1,2
+Exit:	1
+Err:	ERROR: Comma or right bracket expected at line 2:0
+
+Name:	Unterminated array 2
+In:	[1,2,
+Exit:	1
+Err:	ERROR: Unterminated array at line 2:0
+
+Name:	Extra comma not allowed
+In:	[1,2,]
+Exit:	1
+Err:	ERROR: Misplaced end of array at line 1:6
+
+Name:	Solitary comma not allowed
+In:	,
+Exit:	1
+Err:	ERROR: Misplaced comma at line 1:1
+
+Name:	Deeply nested array
+In:	[[[[[[[[[[]]]]]]]]]]
+Out:	[ [ [ [ [ [ [ [ [ [] ] ] ] ] ] ] ] ] ]
+
+Name:	Deeply unclosed array
+In:	[[[[[[[[[[]
+Exit:	1
+Err:	ERROR: Comma or right bracket expected at line 2:0
+
+Name:	Missing comma
+In:	[1 2]
+Exit:	1
+Err:	ERROR: Comma or right bracket expected at line 1:5
+
+### Objects ###
+
+Name:	Empty object
+In:	{}
+Out:	{}
+
+Name:	One-entry object
+In:	{"a":"b"}
+Out:	{ "a": "b" }
+
+Name:	Two-entry object
+In:	{"a":1,"b":2}
+Out:	{ "a": 1, "b": 2 }
+
+Name:	Nested objects
+In:	{
+		"a": [1,2],
+		"b": { "x": true, "y": false }
+	}
+Out:	{ "a": [ 1, 2 ], "b": { "x": true, "y": false } }
+
+Name:	Unterminated object 1
+In:	{
+Exit:	1
+Err:	ERROR: Unterminated object at line 2:0
+
+Name:	Unterminated object 2
+In:	{ "a"
+Exit:	1
+Err:	ERROR: Colon expected at line 2:0
+
+Name:	Unterminated object 3
+In:	{ "a":
+Exit:	1
+Err:	ERROR: Unterminated object at line 2:0
+
+Name:	Unterminated object 4
+In:	{ "a":1,
+Exit:	1
+Err:	ERROR: Unterminated object at line 2:0
+
+Name:	Extra comma not allowed in objects
+In:	{ "a":1, }
+Exit:	1
+Err:	ERROR: Misplaced end of object at line 1:10
+
+Name:	Non-string key
+In:	{1:2}
+Exit:	1
+Err:	ERROR: Object key must be a string at line 1:3
+
+Name:	Repeated key
+In:	{"a":1, "a":2}
+Exit:	1
+Err:	ERROR: Key already set at line 1:14
+
+Name:	Missing object comma
+In:	{"a":1 "b":2}
+Exit:	1
+Err:	ERROR: Comma expected at line 1:10
+
+### Top-level problems ###
+
+Name:	Empty input
+Exit:	1
+Err:	ERROR: Empty input at line 1:0
+
+Name:	Multiple values
+In:	1 2
+Exit:	1
+Err:	ERROR: Only one top-level value allowed at line 1:4

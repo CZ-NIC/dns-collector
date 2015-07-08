@@ -386,7 +386,7 @@ struct json_node *json_next_value(struct json_context *js)
 	    if (t->type == JSON_END_ARRAY)
 	      break;
 	    if (t->type != JSON_VALUE_SEP)
-	      json_parse_error(js, "Comma expected");
+	      json_parse_error(js, "Comma or right bracket expected");
 	  }
 	return a;
       }

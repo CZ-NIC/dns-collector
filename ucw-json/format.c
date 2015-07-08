@@ -134,21 +134,24 @@ void json_write_value(struct json_context *js, struct json_node *n)
       {
 	if (!GARY_SIZE(n->pairs))
 	  bputs(fb, "{}");
-	bputc(fb, '{');
-	js->out_indent++;
-	for (size_t i=0; i < GARY_SIZE(n->pairs); i++)
+	else
 	  {
-	    if (i)
-	      bputc(fb, ',');
+	    bputc(fb, '{');
+	    js->out_indent++;
+	    for (size_t i=0; i < GARY_SIZE(n->pairs); i++)
+	      {
+		if (i)
+		  bputc(fb, ',');
+		write_space(js);
+		struct json_pair *p = &n->pairs[i];
+		write_string(js, p->key);
+		bputs(fb, ": ");
+		json_write_value(js, p->value);
+	      }
+	    js->out_indent--;
 	    write_space(js);
-	    struct json_pair *p = &n->pairs[i];
-	    write_string(js, p->key);
-	    bputs(fb, ": ");
-	    json_write_value(js, p->value);
+	    bputc(fb, '}');
 	  }
-	js->out_indent--;
-	write_space(js);
-	bputc(fb, '}');
 	break;
       }
     default:
