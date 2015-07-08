@@ -55,12 +55,17 @@ LIBXML=$(o)/ucw-xml/libucw-xml.pc
 include $(s)/ucw-xml/Makefile
 endif
 
+ifdef CONFIG_JSON
+LIBJSON=$(o)/ucw-json/libucw-json.pc
+include $(s)/ucw-json/Makefile
+endif
+
 # Build documentation by default?
 ifdef CONFIG_DOC
 all: docs
 endif
 
-libs: $(LIBUCW) $(LIBXML) $(LIBIMAGES) $(LIBCHARSET)
+libs: $(LIBUCW) $(LIBXML) $(LIBJSON) $(LIBIMAGES) $(LIBCHARSET)
 
 # And finally the default rules of the build system
 include $(BUILDSYS)/Makebottom
