@@ -25,8 +25,6 @@ void json_set_input(struct json_context *js, struct fastbuf *in)
   js->next_char = -1;
   js->next_token = NULL;
   js->in_eof = 0;
-  if (!js->trivial_token)
-    js->trivial_token = json_new_node(js, JSON_INVALID);
 }
 
 static void NONRET json_parse_error(struct json_context *js, const char *msg)

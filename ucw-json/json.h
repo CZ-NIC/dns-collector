@@ -28,6 +28,8 @@
 #define json_object_set ucw_json_object_set
 #define json_parse ucw_json_parse
 #define json_peek_token ucw_json_peek_token
+#define json_pop ucw_json_pop
+#define json_push ucw_json_push
 #define json_reset ucw_json_reset
 #define json_set_input ucw_json_set_input
 #define json_set_output ucw_json_set_output
@@ -38,7 +40,15 @@
 /***
  * === JSON library context
  *
- * FIXME: Document memory management
+ * The context structure remembers the whole state of the JSON
+ * library. All JSON values are allocated from a memory pool associated
+ * with the context. By default, their lifetime is the same as that
+ * of the context.
+ *
+ * Alternatively, you can mark the current state of the context
+ * with json_push() and return to the marked state later using
+ * json_pop(). All JSON values created between these two operations
+ * are released afterwards. See json_push() for details.
  ***/
 
 /**
@@ -77,6 +87,25 @@ void json_delete(struct json_context *js);
  * and the address of the context is preserved.
  **/
 void json_reset(struct json_context *js);
+
+/**
+ * Push the current state of the context onto state stack.
+ *
+ * Between json_push() and the associated json_pop(), only newly
+ * created JSON values can be modified. Older values can be only
+ * inspected, never modified. In particular, new values cannot be
+ * inserted to old arrays nor objects.
+ *
+ * If you are using json_peek_token(), the saved tokens cannot
+ * be carried over push/pop boundary.
+ **/
+void json_push(struct json_context *js);
+
+/**
+ * Pop state of the context off state stack. All JSON values created
+ * since the state was saved by json_push() are released.
+ **/
+void json_pop(struct json_context *js);
 
 /***
  * === JSON values
@@ -204,9 +233,9 @@ struct json_node *json_object_get(struct json_node *n, const char *key);
  * which returns a value tree representing the contents of the file.
  *
  * Alternatively, you can read the input token by token: call json_set_input()
- * and then repeat json_next_token(). Note that even in this mode, the tokens
- * are kept in memory. (If you need to parse huge JSON files, please ask the
- * maintainer of this library to improve memory allocation.)
+ * and then repeat json_next_token(). If you are parsing huge JSON files,
+ * you probably want to do json_push() first, then scan and process some
+ * tokens, and then json_pop().
  ***/
 
 /** Parses a JSON file from the given fastbuf stream. **/

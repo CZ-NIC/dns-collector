@@ -15,6 +15,7 @@
 static void json_init(struct json_context *js)
 {
   mp_save(js->pool, &js->init_state);
+  js->trivial_token = json_new_node(js, JSON_INVALID);
 }
 
 struct json_context *json_new(void)
@@ -38,6 +39,18 @@ void json_reset(struct json_context *js)
   bzero(js, sizeof(*js));
   js->pool = mp;
   json_init(js);
+}
+
+void json_push(struct json_context *js)
+{
+  ASSERT(!js->next_token);
+  mp_push(js->pool);
+}
+
+void json_pop(struct json_context *js)
+{
+  ASSERT(!js->next_token);
+  mp_pop(js->pool);
 }
 
 struct json_node *json_new_node(struct json_context *js, enum json_node_type type)

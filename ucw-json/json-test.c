@@ -20,6 +20,7 @@ static int opt_escape;
 static int opt_indent;
 static int opt_read_hex;
 static int opt_write_hex;
+static int opt_stream;
 
 static struct opt_section options = {
   OPT_ITEMS {
@@ -34,6 +35,7 @@ static struct opt_section options = {
     OPT_BOOL('W', "write-hex", opt_write_hex, 0, "\tWrite JSON, print non-ASCII as hex escapes"),
     OPT_BOOL('e', "escape", opt_escape, 0, "\tEscape non-ASCII characters in strings"),
     OPT_BOOL('i', "indent", opt_indent, 0, "\tIndent output"),
+    OPT_BOOL('s', "stream", opt_stream, 0, "\tTest of streaming mode"),
     OPT_END
   }
 };
@@ -54,6 +56,28 @@ static struct json_node *do_parse(struct json_context *js, struct fastbuf *fb)
   return n;
 }
 
+static void test_stream(struct json_context *js)
+{
+  struct fastbuf *in = bfdopen_shared(0, 65536);
+  struct fastbuf *out = bfdopen_shared(1, 65536);
+  json_set_input(js, in);
+  json_set_output(js, out);
+
+  for (;;)
+    {
+      json_push(js);
+      struct json_node *n = json_next_value(js);
+      if (!n)
+	break;
+      json_write_value(js, n);
+      bputc(out, '\n');
+      json_pop(js);
+    }
+
+  bclose(out);
+  bclose(in);
+}
+
 int main(int argc UNUSED, char **argv)
 {
   opt_parse(&options, argv+1);
@@ -65,6 +89,13 @@ int main(int argc UNUSED, char **argv)
     js->format_options |= JSON_FORMAT_ESCAPE_NONASCII;
   if (opt_indent)
     js->format_options |= JSON_FORMAT_INDENT;
+
+  if (opt_stream)
+    {
+      test_stream(js);
+      json_delete(js);
+      return 0;
+    }
 
   if (opt_read || opt_read_hex)
     {

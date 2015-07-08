@@ -4,9 +4,4 @@ JSON Parser and Generator
 ucw-json/json.h
 ---------------
 
-To use the JSON library, you need to create a context (<<struct json_context,struct json_context>>)
-by calling <<json_new()>> first.
-
-FIXME
-
 !!ucw-json/json.h

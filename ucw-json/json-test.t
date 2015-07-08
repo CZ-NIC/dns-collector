@@ -377,3 +377,12 @@ Name:	Multiple values
 In:	1 2
 Exit:	1
 Err:	ERROR: Only one top-level value allowed at line 1:4
+
+### Streaming interface ###
+
+Name:	Streaming
+Run:	../obj/ucw-json/json-test -s
+In:	123 [true, false] "Rincewind"
+Out:	123
+	[ true, false ]
+	"Rincewind"
