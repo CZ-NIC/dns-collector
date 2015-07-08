@@ -212,6 +212,9 @@ bput_utf16_le_slow
 # ucw/ff-varint.h
 bget_varint_slow
 bput_varint_slow
+# ucw/fw-hex.h
+fb_wrap_hex_out
+fb_wrap_hex_in
 # ucw/gary.h
 gary_init
 gary_set_size
@@ -376,6 +379,7 @@ mp_grow_internal
 mp_spread_internal
 mp_start
 mp_start_noalign
+mp_append_utf8_32
 mp_open
 mp_realloc
 mp_realloc_zero
@@ -854,6 +858,15 @@ xml_ns_reset
 xml_ns_push_element
 xml_ns_pop_element
 # ucw-xml/xml.h
+xml_node_qname
+xml_attr_qname
+xml_attr_find
+xml_attr_find_ns
+xml_attr_value
+xml_attr_value_ns
+xml_normalize_white
+xml_merge_chars
+xml_merge_dom_chars
 xml_init
 xml_cleanup
 xml_reset
@@ -863,20 +876,29 @@ xml_next
 xml_next_state
 xml_skip_element
 xml_row
-xml_node_qname
-xml_attr_qname
-xml_attr_find
-xml_attr_find_ns
-xml_attr_value
-xml_attr_value_ns
 xml_def_find_entity
 xml_def_resolve_entity
-xml_normalize_white
-xml_merge_chars
-xml_merge_dom_chars
 xml_warn
 xml_error
 xml_fatal
 xml_ns_enable
 xml_ns_by_id
 xml_ns_by_name
+# ucw-json/json.h
+json_new
+json_delete
+json_reset
+json_new_node
+json_new_array
+json_array_append
+json_new_object
+json_object_set
+json_object_get
+json_set_input
+json_peek_token
+json_next_token
+json_next_value
+json_parse
+json_set_output
+json_write_value
+json_write

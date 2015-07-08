@@ -19,6 +19,7 @@
 #define mp_alloc_internal ucw_mp_alloc_internal
 #define mp_alloc_noalign ucw_mp_alloc_noalign
 #define mp_alloc_zero ucw_mp_alloc_zero
+#define mp_append_utf8_32 ucw_mp_append_utf8_32
 #define mp_delete ucw_mp_delete
 #define mp_flush ucw_mp_flush
 #define mp_grow_internal ucw_mp_grow_internal

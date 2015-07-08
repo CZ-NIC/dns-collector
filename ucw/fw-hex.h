@@ -13,7 +13,8 @@
 #include <ucw/fastbuf.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
-// FIXME
+#define fb_wrap_hex_in ucw_fb_wrap_hex_in
+#define fb_wrap_hex_out ucw_fb_wrap_hex_out
 #endif
 
 /***

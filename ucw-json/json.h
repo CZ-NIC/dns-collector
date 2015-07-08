@@ -16,7 +16,23 @@
 #include <ucw/fastbuf.h>
 
 #ifdef CONFIG_UCW_CLEAN_ABI
-// FIXME
+#define json_array_append ucw_json_array_append
+#define json_delete ucw_json_delete
+#define json_new ucw_json_new
+#define json_new_array ucw_json_new_array
+#define json_new_node ucw_json_new_node
+#define json_new_object ucw_json_new_object
+#define json_next_token ucw_json_next_token
+#define json_next_value ucw_json_next_value
+#define json_object_get ucw_json_object_get
+#define json_object_set ucw_json_object_set
+#define json_parse ucw_json_parse
+#define json_peek_token ucw_json_peek_token
+#define json_reset ucw_json_reset
+#define json_set_input ucw_json_set_input
+#define json_set_output ucw_json_set_output
+#define json_write ucw_json_write
+#define json_write_value ucw_json_write_value
 #endif
 
 /***
