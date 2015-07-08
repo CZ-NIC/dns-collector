@@ -95,6 +95,7 @@ static struct json_node *json_parse_number(struct json_context *js, int c)
   if (c == '.')
     {
       p = mp_append_char(js->pool, p, c);
+      c = json_get_char(js);
       if (!(c >= '0' && c <= '9'))
 	json_parse_error(js, "Malformed number: no digits after decimal point");
       while (c >= '0' && c <= '9')
@@ -248,7 +249,7 @@ static struct json_node *json_parse_string(struct json_context *js, int c)
 			  y = json_parse_hex4(js);
 			if (!(y >= 0xdc00 && y < 0xe000))
 			  json_parse_error(js, "Escaped high surrogate codepoint must be followed by a low surrogate codepoint");
-			c = 0x10000 | ((x & 0x03ff) << 10) | (y & 0x03ff);
+			c = 0x10000 + ((x & 0x03ff) << 10) | (y & 0x03ff);
 			if (c > 0xf0000)
 			  json_parse_error(js, "Invalid escaped private-use character");
 		      }
@@ -260,6 +261,8 @@ static struct json_node *json_parse_string(struct json_context *js, int c)
 		    else
 		      json_parse_error(js, "Invalid escaped private-use character");
 		  }
+		else
+		  c = x;
 		break;
 	      }
 	    default:
@@ -274,7 +277,7 @@ static struct json_node *json_parse_string(struct json_context *js, int c)
   return json_new_string_ref(js, p);
 }
 
-struct json_node *json_peek_token(struct json_context *js)
+static struct json_node *json_read_token(struct json_context *js)
 {
   if (unlikely(js->in_eof))
     return json_triv_token(js, JSON_EOF);
@@ -322,13 +325,22 @@ struct json_node *json_peek_token(struct json_context *js)
     }
 }
 
-struct json_node *json_next_token(struct json_context *js)
+struct json_node *json_peek_token(struct json_context *js)
 {
   if (!js->next_token)
-    json_peek_token(js);
+    js->next_token = json_read_token(js);
+  return js->next_token;
+}
+
+struct json_node *json_next_token(struct json_context *js)
+{
   struct json_node *t = js->next_token;
-  js->next_token = NULL;
-  return t;
+  if (t)
+    {
+      js->next_token = NULL;
+      return t;
+    }
+  return json_read_token(js);
 }
 
 struct json_node *json_next_value(struct json_context *js)

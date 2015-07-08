@@ -36,6 +36,8 @@ struct json_context {
   int next_char;
 
   struct fastbuf *out_fb;
+  uint out_indent;
+  uint format_options;		// Public
 };
 
 struct json_context *json_new(void);
@@ -129,5 +131,10 @@ struct json_node *json_parse(struct json_context *js, struct fastbuf *fb);
 void json_set_output(struct json_context *js, struct fastbuf *fb);
 void json_write_value(struct json_context *js, struct json_node *n);
 void json_write(struct json_context *js, struct fastbuf *fb, struct json_node *n);
+
+enum json_format_option {
+  JSON_FORMAT_ESCAPE_NONASCII = 1,
+  JSON_FORMAT_INDENT = 2,
+};
 
 #endif
