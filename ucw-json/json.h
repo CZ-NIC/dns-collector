@@ -167,17 +167,20 @@ struct json_pair {
 struct json_node *json_new_node(struct json_context *js, enum json_node_type type);
 
 /** Creates a new null value. **/
-static inline struct json_node *json_new_null(struct json_context *js)
+static inline struct json_node *json_new_null(struct json_context *js UNUSED)
 {
-  return json_new_node(js, JSON_NULL);
+  static const struct json_node static_null = { .type = JSON_NULL };
+  return (struct json_node *) &static_null;
 }
 
 /** Creates a new boolean value. **/
-static inline struct json_node *json_new_bool(struct json_context *js, bool value)
+static inline struct json_node *json_new_bool(struct json_context *js UNUSED, bool value)
 {
-  struct json_node *n = json_new_node(js, JSON_BOOLEAN);
-  n->boolean = value;
-  return n;
+  static const struct json_node static_bool[2] = {
+    [0] = { .type = JSON_BOOLEAN, .boolean = 0 },
+    [1] = { .type = JSON_BOOLEAN, .boolean = 1 },
+  };
+  return (struct json_node *) &static_bool[value];
 }
 
 /** Creates a new numeric value. **/
