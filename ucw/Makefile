@@ -1,4 +1,4 @@
-# Makefile for the UCW Library (c) 1997--2014 Martin Mares <mj@ucw.cz>
+# Makefile for the UCW Library (c) 1997--2015 Martin Mares <mj@ucw.cz>
 
 DIRS+=ucw
 LIBUCW=$(o)/ucw/libucw.pc
@@ -18,6 +18,7 @@ LIBUCW_MODS= \
 	ipaccess \
 	fastbuf ff-binary ff-string ff-printf ff-unicode ff-varint ff-stkstring \
 	fb-file fb-mem fb-temp tempfile fb-mmap fb-limfd fb-buffer fb-grow fb-pool fb-atomic fb-param fb-socket fb-multi fb-null \
+	fw-hex \
 	char-cat char-upper char-lower unicode varint stkstring \
 	wildmatch regex \
 	prime primetable random \
@@ -54,7 +55,7 @@ LIBUCW_MAIN_INCLUDES= \
 	prime.h \
 	bitops.h \
 	conf.h getopt.h ipaccess.h \
-	fastbuf.h io.h ff-unicode.h ff-varint.h ff-binary.h fb-socket.h \
+	fastbuf.h io.h ff-unicode.h ff-varint.h ff-binary.h fb-socket.h fw-hex.h \
 	url.h \
 	mainloop.h \
 	process.h \

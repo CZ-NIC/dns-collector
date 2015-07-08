@@ -8,9 +8,12 @@ Fastbufs can represent many different kinds of objects: regular files, network
 sockets, file descriptors in general, or various memory buffers. These objects
 are handled by different fastbuf *back-ends.*
 
-Once you have a fastbuf, you can access it by fuctions similar to those of
+Once you have a fastbuf, you can access it by functions similar to those of
 `stdio.h`, or you can use a variety of fastbuf *front-ends* providing various
 formatted operations.
+
+There are also fastbuf *wrappers*, which serve as both back-ends and front-ends,
+taking one stream and converting it to another on the fly.
 
 Please keep in mind that fastbufs do not allow arbitrary mixing of reads and
 writes on the same stream. If you need to mix them, you have to call @bflush()
@@ -36,6 +39,9 @@ When the pool gets cleaned up, the fastbuf is automatically closed. If you call
 
 .Front-ends:
 - <<ffbasic,Basic functions>>
+
+.Wrappers:
+- <<fwhex,Hexadecimal wrapper>>
 
 .Other reading:
 - <<internal,Internal structure>>
@@ -67,6 +73,11 @@ ucw/ff-binary.h
 ---------------
 
 !!ucw/ff-binary.h
+
+ucw/fw-hex.h [[fwhex]]
+----------------------
+
+!!ucw/fw-hex.h
 
 Exceptions [[fbexc]]
 --------------------
