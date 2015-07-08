@@ -7,11 +7,10 @@
  *	of the GNU Lesser General Public License.
  */
 
-#undef LOCAL_DEBUG
-
 #include <ucw/lib.h>
-#include <ucw/trans.h>
+#include <ucw/fastbuf.h>
 #include <ucw/ff-unicode.h>
+#include <ucw/trans.h>
 #include <ucw/unicode.h>
 #include <ucw-json/json.h>
 
@@ -332,7 +331,7 @@ struct json_node *json_next_token(struct json_context *js)
   return t;
 }
 
-struct json_node *json_next_object(struct json_context *js)
+struct json_node *json_next_value(struct json_context *js)
 {
   struct json_node *t = json_next_token(js);
 
@@ -356,7 +355,7 @@ struct json_node *json_next_object(struct json_context *js)
 	  json_next_token(js);
 	else for (;;)
 	  {
-	    struct json_node *v = json_next_object(js);
+	    struct json_node *v = json_next_value(js);
 	    if (!v)
 	      json_parse_error(js, "Unterminated array");
 	    json_array_append(a, v);
@@ -378,7 +377,7 @@ struct json_node *json_next_object(struct json_context *js)
 	  json_next_token(js);
 	else for (;;)
 	  {
-	    struct json_node *k = json_next_object(js);
+	    struct json_node *k = json_next_value(js);
 	    if (!k)
 	      json_parse_error(js, "Unterminated object");
 	    if (k->type != JSON_STRING)
@@ -388,7 +387,7 @@ struct json_node *json_next_object(struct json_context *js)
 	    if (t->type != JSON_NAME_SEP)
 	      json_parse_error(js, "Colon expected");
 
-	    struct json_node *v = json_next_object(js);
+	    struct json_node *v = json_next_value(js);
 	    if (!v)
 	      json_parse_error(js, "Unterminated object");
 	    if (json_object_get(o, k->string))		// FIXME: Optimize
@@ -422,7 +421,7 @@ struct json_node *json_parse(struct json_context *js, struct fastbuf *fb)
 {
   json_set_input(js, fb);
 
-  struct json_node *n = json_next_object(js);
+  struct json_node *n = json_next_value(js);
   if (!n)
     json_parse_error(js, "Empty input");
 

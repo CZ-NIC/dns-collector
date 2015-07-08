@@ -7,8 +7,6 @@
  *	of the GNU Lesser General Public License.
  */
 
-#undef LOCAL_DEBUG
-
 #include <ucw/lib.h>
 #include <ucw/gary.h>
 #include <ucw/mempool.h>

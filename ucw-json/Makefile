@@ -4,7 +4,7 @@
 DIRS+=ucw-json
 PROGS+=$(o)/ucw-json/json-test
 
-LIBJSON_MODS=json parse
+LIBJSON_MODS=json parse format
 LIBJSON_MOD_PATHS=$(addprefix $(o)/ucw-json/,$(LIBJSON_MODS))
 LIBJSON_INCLUDES=json.h
 LIBJSON_DEPS=$(LIBUCW)

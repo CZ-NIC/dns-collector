@@ -34,6 +34,8 @@ struct json_context {
   struct json_node *next_token;
   struct json_node *trivial_token;
   int next_char;
+
+  struct fastbuf *out_fb;
 };
 
 struct json_context *json_new(void);
@@ -120,8 +122,12 @@ void json_set_input(struct json_context *js, struct fastbuf *in);
 struct json_node *json_peek_token(struct json_context *js);
 struct json_node *json_next_token(struct json_context *js);
 
-struct json_node *json_next_object(struct json_context *js);
+struct json_node *json_next_value(struct json_context *js);
 
 struct json_node *json_parse(struct json_context *js, struct fastbuf *fb);
+
+void json_set_output(struct json_context *js, struct fastbuf *fb);
+void json_write_value(struct json_context *js, struct json_node *n);
+void json_write(struct json_context *js, struct fastbuf *fb, struct json_node *n);
 
 #endif
