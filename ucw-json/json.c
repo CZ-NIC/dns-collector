@@ -12,12 +12,17 @@
 #include <ucw/mempool.h>
 #include <ucw-json/json.h>
 
+static void json_init(struct json_context *js)
+{
+  mp_save(js->pool, &js->init_state);
+}
+
 struct json_context *json_new(void)
 {
   struct mempool *mp = mp_new(4096);
   struct json_context *js = mp_alloc_zero(mp, sizeof(*js));
   js->pool = mp;
-  mp_save(mp, &js->init_state);
+  json_init(js);
   return js;
 }
 
@@ -28,9 +33,12 @@ void json_delete(struct json_context *js)
 
 void json_reset(struct json_context *js)
 {
-  mp_restore(js->pool, &js->init_state);
+  struct mempool *mp = js->pool;
+  mp_restore(mp, &js->init_state);
+  bzero(js, sizeof(*js));
+  js->pool = mp;
+  json_init(js);
 }
-
 
 struct json_node *json_new_node(struct json_context *js, enum json_node_type type)
 {

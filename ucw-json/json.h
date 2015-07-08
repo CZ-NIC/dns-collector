@@ -26,7 +26,6 @@
 struct json_context {
   struct mempool *pool;
   struct mempool_state init_state;
-  // FIXME: Size limit?
 
   struct fastbuf *in_fb;
   uint in_line;

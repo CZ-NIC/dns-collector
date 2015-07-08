@@ -69,7 +69,7 @@ static void write_string(struct json_context *js, const char *p)
 static void write_number(struct fastbuf *fb, double val)
 {
   ASSERT(isfinite(val));
-  bprintf(fb, "%.*g", DBL_DIG, val);
+  bprintf(fb, "%.*g", DBL_DIG+1, val);
 }
 
 static bool want_indent_p(struct json_context *js)

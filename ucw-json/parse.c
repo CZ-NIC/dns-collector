@@ -139,28 +139,30 @@ static struct json_node *json_parse_number(struct json_context *js, int c)
 
 static struct json_node *json_parse_name(struct json_context *js, int c)
 {
-  mp_push(js->pool);
-  char *p = mp_start_noalign(js->pool, 0);
+  char name[16];
+  uint i = 0;
 
   while (c >= 'a' && c <= 'z')
     {
-      p = mp_append_char(js->pool, p, c);
+      if (i < sizeof(name) - 1)
+	name[i++] = c;
       c = json_get_char(js);
     }
+  if (i >= sizeof(name) - 1)
+    json_parse_error(js, "Invalid literal name");
+  name[i] = 0;
   json_unget_char(js, c);
 
-  p = mp_end_string(js->pool, p);
   struct json_node *n;
-  if (!strcmp(p, "null"))
+  if (!strcmp(name, "null"))
     n = json_new_null(js);
-  else if (!strcmp(p, "false"))
+  else if (!strcmp(name, "false"))
     n = json_new_bool(js, 0);
-  else if (!strcmp(p, "true"))
+  else if (!strcmp(name, "true"))
     n = json_new_bool(js, 1);
   else
     json_parse_error(js, "Invalid literal name");
 
-  mp_pop(js->pool);
   return n;
 }
 
@@ -204,7 +206,7 @@ static struct json_node *json_parse_string(struct json_context *js, int c)
 	  else
 	    json_parse_error(js, "Invalid private-use character in string");
 	}
-      if (unlikely(c > 0xf0000))
+      if (unlikely(c >= 0xf0000))
 	{
 	  if (c > 0x10ffff)
 	    json_parse_error(js, "Invalid non-Unicode character in string");
@@ -324,6 +326,10 @@ static struct json_node *json_read_token(struct json_context *js)
       return json_triv_token(js, JSON_NAME_SEP);
     case ',':
       return json_triv_token(js, JSON_VALUE_SEP);
+    case '.':
+      json_parse_error(js, "Numbers must start with a digit");
+    case 0xfeff:
+      json_parse_error(js, "Misplaced byte-order mark, complain in Redmond");
     default:
       json_parse_error(js, "Invalid character");
     }
