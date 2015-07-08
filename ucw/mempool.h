@@ -362,6 +362,13 @@ static inline void *mp_append_string(struct mempool *pool, void *p, const char *
 }
 
 /**
+ * Append an UTF-8 character to the growing buffer. Called with @p pointing after
+ * the last byte in the buffer, returns a pointer after the last byte
+ * of the new (possibly reallocated) buffer.
+ **/
+void *mp_append_utf8_32(struct mempool *pool, void *p, uint c);
+
+/**
  * Close the growing buffer. The @end must point just behind the data, you want to keep
  * allocated (so it can be in the interval `[@mp_ptr(@pool), @mp_ptr(@pool) + @mp_avail(@pool)]`).
  * Returns a pointer to the beginning of the just closed block.

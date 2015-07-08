@@ -1,7 +1,7 @@
 /*
  *	UCW Library -- Memory Pools (String Operations)
  *
- *	(c) 2004 Martin Mares <mj@ucw.cz>
+ *	(c) 2004--2015 Martin Mares <mj@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -9,6 +9,7 @@
 
 #include <ucw/lib.h>
 #include <ucw/mempool.h>
+#include <ucw/unicode.h>
 
 #include <alloca.h>
 #include <string.h>
@@ -92,6 +93,12 @@ mp_str_from_mem(struct mempool *a, const void *mem, size_t len)
   memcpy(str, mem, len);
   str[len] = 0;
   return str;
+}
+
+void *mp_append_utf8_32(struct mempool *pool, void *p, uint c)
+{
+  p = mp_spread(pool, p, utf8_space(c));
+  return utf8_32_put(p, c);
 }
 
 #ifdef TEST
