@@ -10,8 +10,6 @@
 #ifndef _UCW_JSON_JSON_H
 #define _UCW_JSON_JSON_H
 
-#include <ucw/clists.h>
-#include <ucw/slists.h>
 #include <ucw/mempool.h>
 #include <ucw/fastbuf.h>
 
