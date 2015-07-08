@@ -344,7 +344,7 @@ static inline void *utf16_be_get(const void *p, uint *uu)
 static inline uint unicode_sanitize_char(uint u)
 {
   if (u >= 0x10000 ||			// We don't accept anything outside the basic plane
-      u >= 0xd800 && u < 0xf900 ||	// neither we do surrogates
+      u >= 0xd800 && u < 0xf900 ||	// neither we do surrogates and private use characters
       u >= 0x80 && u < 0xa0 ||		// nor latin-1 control chars
       u < 0x20 && u != '\t')
     return UNI_REPLACEMENT;
