@@ -205,6 +205,12 @@ In:	"<ed><b0><80>"
 Exit:	1
 Err:	ERROR: Invalid surrogate character in string at line 1:2
 
+# Denormalized U+07FF
+Name:	UTF-8 denormalized
+In:	"<c1><bf>"
+Exit:	1
+Err:	ERROR: Malformed UTF-8 character at line 1:1
+
 # U+FEFF
 Name:	UTF-8 BOM
 In:	<ef><bb><bf>

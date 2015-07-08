@@ -40,7 +40,6 @@ static int json_get_char(struct json_context *js)
       if (c == -2)
 	json_parse_error(js, "Malformed UTF-8 character");
       js->in_eof = 1;
-      // FIXME: Reject alternative sequences
       return c;
     }
   js->in_column++;
