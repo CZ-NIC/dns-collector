@@ -100,6 +100,17 @@ void json_reset(struct json_context *js);
 void json_push(struct json_context *js);
 
 /**
+ * Create a copy of a string in JSON memory.
+ *
+ * For example, this is useful when you want to use a string of unknown
+ * lifetime as a key in json_object_set().
+ **/
+static inline const char *json_strdup(struct json_context *js, const char *str)
+{
+  return mp_strdup(js->pool, str);
+}
+
+/**
  * Pop state of the context off state stack. All JSON values created
  * since the state was saved by json_push() are released.
  **/
@@ -218,9 +229,7 @@ struct json_node *json_new_object(struct json_context *js);
  * and a pre-existing pair is deleted.
  *
  * The @key is referenced by the object, you must not free it during
- * the lifetime of the JSON context.
- *
- * FIXME: Add json_copy_key().
+ * the lifetime of the object. When in doubt, use json_strdup().
  **/
 void json_object_set(struct json_node *n, const char *key, struct json_node *value);
 
