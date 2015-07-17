@@ -90,6 +90,7 @@ Yet undocumented modules
 
 Companion libraries
 -------------------
+- <<../ucw-json/index:,LibUCW-JSON>> -- a JSON parser and formatter
 - <<../ucw-xml/index:,LibUCW-XML>> -- a XML parser
 - LibUCW-charset -- character set conversion (undocumented)
 - LibUCW-images -- loading and conversion of images (undocumented)

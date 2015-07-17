@@ -1,8 +1,15 @@
 Release notes
 =============
 
-FIXME
------
+6.5 (2015-07-17)
+----------------
+* Added companion library <<../ucw-json/index:,LibUCW-JSON>> for parsing
+  and formatting JSON.
+* Fastbufs have a new wrapper for parsing and generating hex-dumps.
+  Useful primarily for debugging.
+* Unicode functions are now more strict and they reject denormalized
+  UTF-8 sequences. Also, it is now possible to append UTF-8 characters
+  to a memory pool.
 * The naming of memory pool functions mp_append_printf() and mp_append_vprintf()
   turned out to be unfortunate as they have differently from all other functions
   operating on growing buffers. They have been renamed to mp_printf_append()
