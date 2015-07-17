@@ -50,6 +50,7 @@ In:	0041 004a 2a5f feff 0000 10ffff ffff 10000
 Out:	00 41 00 4a 2a 5f fe ff 00 00 db ff df ff ff ff d8 00 dc 00
 
 Name:	utf16_le_put
+Run:	../obj/ucw/unicode-t utf16_le_put
 In:	0041 004a 2a5f feff 0000 10ffff ffff 10000
 Out:	41 00 4a 00 5f 2a ff fe 00 00 ff db ff df ff ff 00 d8 00 dc
 
