@@ -248,6 +248,9 @@ static inline uint utf8_encoding_len(uint c)
   return 6;
 }
 
+/** Maximum number of bytes an UTF-8 character can have. **/
+#define UTF8_MAX_LEN 6
+
 /**
  * Encode an UTF-16LE character from the range `[0, 0xD7FF]` or `[0xE000,0x11FFFF]`;
  * up to 4 bytes needed.

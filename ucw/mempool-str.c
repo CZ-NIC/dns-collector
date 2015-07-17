@@ -97,7 +97,7 @@ mp_str_from_mem(struct mempool *a, const void *mem, size_t len)
 
 void *mp_append_utf8_32(struct mempool *pool, void *p, uint c)
 {
-  p = mp_spread(pool, p, utf8_space(c));
+  p = mp_spread(pool, p, UTF8_MAX_LEN);
   return utf8_32_put(p, c);
 }
 
