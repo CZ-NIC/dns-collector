@@ -8,4 +8,5 @@ Description: JSON parser for LibUCW project
 Version: @UCW_VERSION@
 Cflags: -I${incdir}
 Libs: -L${libdir} @SO_LINK_PATH@ -lucw-json@UCW_ABI_SUFFIX@
+Libs.private: @LIBJSON_LIBS@
 Requires.private: @DEPS@

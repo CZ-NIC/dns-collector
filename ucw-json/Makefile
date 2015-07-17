@@ -8,10 +8,12 @@ LIBJSON_MODS=json parse format
 LIBJSON_MOD_PATHS=$(addprefix $(o)/ucw-json/,$(LIBJSON_MODS))
 LIBJSON_INCLUDES=json.h
 LIBJSON_DEPS=$(LIBUCW)
+export LIBJSON_LIBS=-lm
 
 $(o)/ucw-json/libucw-json$(LV).a: $(addsuffix .o,$(LIBJSON_MOD_PATHS))
 $(o)/ucw-json/libucw-json$(LV).so: $(addsuffix .oo,$(LIBJSON_MOD_PATHS)) $(LIBJSON_DEPS)
 $(o)/ucw-json/libucw-json$(LV).so: SONAME_SUFFIX=.0
+$(o)/ucw-json/libucw-json$(LV).so: LIBS+=$(LIBJSON_LIBS)
 $(o)/ucw-json/libucw-json.pc: $(LIBJSON_DEPS)
 
 ifdef CONFIG_INSTALL_API
