@@ -12,7 +12,9 @@
 #include <ucw/mempool.h>
 #include <ucw-json/json.h>
 
+#include <limits.h>
 #include <math.h>
+#include <stdint.h>
 
 static void json_init(struct json_context *js)
 {
@@ -69,6 +71,23 @@ struct json_node *json_new_number(struct json_context *js, double value)
   n->number = value;
   return n;
 }
+
+#define JSON_NUM_TO(_type, _min, _max)					\
+  bool json_number_to_##_type(struct json_node *num, _type *dest)	\
+  {									\
+    if (num->type == JSON_NUMBER &&					\
+        num->number >= _min && num->number <= _max)			\
+      {									\
+        *dest = num->number;						\
+        return 1;							\
+      }									\
+    return 0;								\
+  }
+
+JSON_NUM_TO(int, INT_MIN, INT_MAX)
+JSON_NUM_TO(uint, 0, UINT_MAX)
+JSON_NUM_TO(s64, INT64_MIN, INT64_MAX)
+JSON_NUM_TO(u64, 0, UINT64_MAX)
 
 struct json_node *json_new_array(struct json_context *js)
 {

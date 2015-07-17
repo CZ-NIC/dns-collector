@@ -891,6 +891,11 @@ json_reset
 json_push
 json_pop
 json_new_node
+json_new_number
+json_number_to_int
+json_number_to_uint
+json_number_to_s64
+json_number_to_u64
 json_new_array
 json_array_append
 json_new_object

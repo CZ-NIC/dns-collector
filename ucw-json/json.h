@@ -19,9 +19,14 @@
 #define json_new ucw_json_new
 #define json_new_array ucw_json_new_array
 #define json_new_node ucw_json_new_node
+#define json_new_number ucw_json_new_number
 #define json_new_object ucw_json_new_object
 #define json_next_token ucw_json_next_token
 #define json_next_value ucw_json_next_value
+#define json_number_to_int ucw_json_number_to_int
+#define json_number_to_s64 ucw_json_number_to_s64
+#define json_number_to_u64 ucw_json_number_to_u64
+#define json_number_to_uint ucw_json_number_to_uint
 #define json_object_get ucw_json_object_get
 #define json_object_set ucw_json_object_set
 #define json_parse ucw_json_parse
@@ -194,6 +199,21 @@ static inline struct json_node *json_new_bool(struct json_context *js UNUSED, bo
 
 /** Creates a new numeric value. The @value must be a finite number. **/
 struct json_node *json_new_number(struct json_context *js, double value);
+
+/**
+ * Convert a numeric value to an `int`. Returns false if the value
+ * is not numeric or if it is too large for an int.
+ **/
+bool json_number_to_int(struct json_node *num, int *dest);
+
+/** Same as above, but for `uint`. **/
+bool json_number_to_uint(struct json_node *num, uint *dest);
+
+/** Same as above, but for `s64`. **/
+bool json_number_to_s64(struct json_node *num, s64 *dest);
+
+/** Same as above, but for `u64`. **/
+bool json_number_to_u64(struct json_node *num, u64 *dest);
 
 /** Creates a new string value. The @value is kept only as a reference. **/
 static inline struct json_node *json_new_string_ref(struct json_context *js, const char *value)
