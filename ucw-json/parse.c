@@ -29,7 +29,7 @@ void json_set_input(struct json_context *js, struct fastbuf *in)
 
 static void NONRET json_parse_error(struct json_context *js, const char *msg)
 {
-  trans_throw("ucw.js.parse", js, "%s at line %u:%u", msg, js->in_line, js->in_column);
+  trans_throw("ucw.json.parse", js, "%s at line %u:%u", msg, js->in_line, js->in_column);
 }
 
 static int json_get_char(struct json_context *js)
