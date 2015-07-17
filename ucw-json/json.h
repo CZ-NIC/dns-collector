@@ -246,6 +246,10 @@ struct json_node *json_object_get(struct json_node *n, const char *key);
  * and then repeat json_next_token(). If you are parsing huge JSON files,
  * you probably want to do json_push() first, then scan and process some
  * tokens, and then json_pop().
+ *
+ * All parsing functions throw LibUCW exceptions of class `ucw.json.parse`
+ * upon errors. If you want to catch them, call the parser inside
+ * a transaction.
  ***/
 
 /** Parses a JSON file from the given fastbuf stream. **/
