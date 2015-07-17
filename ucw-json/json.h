@@ -215,7 +215,13 @@ bool json_number_to_s64(struct json_node *num, s64 *dest);
 /** Same as above, but for `u64`. **/
 bool json_number_to_u64(struct json_node *num, u64 *dest);
 
-/** Creates a new string value. The @value is kept only as a reference. **/
+/**
+ * Creates a new string value. The @value is kept only as a reference.
+ *
+ * String values can contain an arbitrary UTF-8 string with no null
+ * characters. However, it is not recommended to use UTF-8 values outside
+ * the range of UniCode codepoints (0 to 0x10ffff).
+ **/
 static inline struct json_node *json_new_string_ref(struct json_context *js, const char *value)
 {
   struct json_node *n = json_new_node(js, JSON_STRING);
