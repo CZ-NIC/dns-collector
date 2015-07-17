@@ -44,6 +44,10 @@ ifdef CONFIG_XML
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-xml$(UCW_ABI_SUFFIX) install-libucw-xml-lib
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-xml-dev install-libucw-xml-api
 endif
+ifdef CONFIG_JSON
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-json$(UCW_ABI_SUFFIX) install-libucw-json-lib
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-json-dev install-libucw-json-api
+endif
 ifdef CONFIG_IMAGES
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-images$(UCW_ABI_SUFFIX) install-libucw-images-lib
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-images-dev install-libucw-images-api

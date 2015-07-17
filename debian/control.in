@@ -70,6 +70,20 @@ Depends: libucw-xml@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends
 Description: LibUCW XML parser development files
 
 #endif
+#ifdef CONFIG_JSON
+Package: libucw-json@UCW_ABI_SUFFIX@
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW JSON parser library
+
+Package: libucw-json-dev
+Section: libdevel
+Architecture: any
+Depends: libucw-json@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW JSON parser development files
+
+#endif
 #ifdef CONFIG_IMAGES
 Package: libucw-images@UCW_ABI_SUFFIX@
 Section: libs
