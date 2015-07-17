@@ -192,13 +192,8 @@ static inline struct json_node *json_new_bool(struct json_context *js UNUSED, bo
   return (struct json_node *) &static_bool[value];
 }
 
-/** Creates a new numeric value. **/
-static inline struct json_node *json_new_number(struct json_context *js, double value)
-{
-  struct json_node *n = json_new_node(js, JSON_NUMBER);
-  n->number = value;
-  return n;
-}
+/** Creates a new numeric value. The @value must be a finite number. **/
+struct json_node *json_new_number(struct json_context *js, double value);
 
 /** Creates a new string value. The @value is kept only as a reference. **/
 static inline struct json_node *json_new_string_ref(struct json_context *js, const char *value)

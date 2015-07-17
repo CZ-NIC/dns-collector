@@ -15,7 +15,6 @@
 #include <ucw-json/json.h>
 
 #include <float.h>
-#include <math.h>
 #include <stdio.h>
 
 void json_set_output(struct json_context *js, struct fastbuf *fb)
@@ -68,7 +67,6 @@ static void write_string(struct json_context *js, const char *p)
 
 static void write_number(struct fastbuf *fb, double val)
 {
-  ASSERT(isfinite(val));
   bprintf(fb, "%.*g", DBL_DIG+1, val);
 }
 

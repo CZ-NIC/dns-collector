@@ -12,6 +12,8 @@
 #include <ucw/mempool.h>
 #include <ucw-json/json.h>
 
+#include <math.h>
+
 static void json_init(struct json_context *js)
 {
   mp_save(js->pool, &js->init_state);
@@ -57,6 +59,14 @@ struct json_node *json_new_node(struct json_context *js, enum json_node_type typ
 {
   struct json_node *n = mp_alloc_fast(js->pool, sizeof(*n));
   n->type = type;
+  return n;
+}
+
+struct json_node *json_new_number(struct json_context *js, double value)
+{
+  ASSERT(isfinite(value));
+  struct json_node *n = json_new_node(js, JSON_NUMBER);
+  n->number = value;
   return n;
 }
 
