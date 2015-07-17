@@ -57,7 +57,7 @@ static void write_string(struct json_context *js, const char *p)
 	  else if (u < 0x110000)
 	    bprintf(fb, "\\u%04x\\u%04x", 0xd800 + ((u - 0x10000) >> 10), 0xdc00 + (u & 0x3ff));
 	  else
-	    ASSERT(0);
+	    bprintf(fb, "\\u%04x", UNI_REPLACEMENT);
 	}
       else
 	bput_utf8_32(fb, u);
