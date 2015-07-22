@@ -191,8 +191,8 @@ static inline struct json_node *json_new_null(struct json_context *js UNUSED)
 static inline struct json_node *json_new_bool(struct json_context *js UNUSED, bool value)
 {
   static const struct json_node static_bool[2] = {
-    [0] = { .type = JSON_BOOLEAN, .boolean = 0 },
-    [1] = { .type = JSON_BOOLEAN, .boolean = 1 },
+    [0] = { .type = JSON_BOOLEAN, { .boolean = 0 } },
+    [1] = { .type = JSON_BOOLEAN, { .boolean = 1 } },
   };
   return (struct json_node *) &static_bool[value];
 }
