@@ -1,6 +1,6 @@
 #	Poor Man's CGI Module for Perl
 #
-#	(c) 2002--2011 Martin Mares <mj@ucw.cz>
+#	(c) 2002--2015 Martin Mares <mj@ucw.cz>
 #	Slightly modified by Tomas Valla <tom@ucw.cz>
 #
 #	This software may be freely distributed and used according to the terms
@@ -187,8 +187,10 @@ sub parse_args($) {			# CAVEAT: attached files must be defined in the main arg t
 		defined($raw_args{$arg}) or next;
 		for (@{$raw_args{$arg}}) {
 			$a->{'multiline'} or s/(\n|\t)/ /g;
-			s/^\s+//;
-			s/\s+$//;
+			unless ($a->{'preserve_spaces'}) {
+				s/^\s+//;
+				s/\s+$//;
+			}
 			if (my $rx = $a->{'check'}) {
 				if (!/^$rx$/) { $_ = $a->{'default'}; }
 			}
