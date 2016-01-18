@@ -4,7 +4,7 @@
 #include <pcap/pcap.h>
 #include <time.h>
 
-#define DNSCOL_MAX_FNAME_LEN 256
+#include "common.h"
 
 /** Configuration of a DNS collector. */
 struct dns_collector_config {
@@ -13,7 +13,6 @@ struct dns_collector_config {
     struct timespec frame_length;
     const char *dumpfile_base;
 };
-typedef struct dns_collector_config dns_collector_config_t;
 
 
 /** Stats of a DNS collector */
@@ -22,15 +21,16 @@ struct dns_collector_stats {
     long packets_captured;
     /** exceptional packets (some/all of them dumped). */
     long packets_exceptional;
+    /** exceptional dumped packets. */
+    long packets_dumped;
 };
-typedef struct dns_collector_stats dns_collector_stats_t;
 
 
 /** DNS collector instance */
 struct dns_collector {
 
     /** configuration variables. Not owned by collector. */
-    dns_collector_config_t *config;
+    const dns_collector_config_t *config;
 
     /** dns collector status and stats. */
     dns_collector_stats_t stats;
@@ -52,7 +52,6 @@ struct dns_collector {
      * Frames in the array are owned by the collector. */
     dns_timeframe_t *timeframes[];
 };
-typedef struct dns_collector dns_collector_t;
 
 
 /**
@@ -81,5 +80,30 @@ dns_collector_destroy(dns_collector_t *col);
  */
 int
 dns_collector_open_pcap(dns_collector_t *col, const char *pcap_fname);
+
+/**
+ * Dump a packet to the exceptional packet pcap.
+ *
+ * Increases stat dump counter for both collector and current timeframe.
+ * Return -1 on error, 0 otherwise.
+ */
+int
+dns_collector_dump_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
+
+/**
+ * Try to get the next packet from pcap and process it with
+ * dns_collector_process_packet.
+ *
+ * Return -2 (eof), -1 (error), 0 (timeout) or 1 (ok) as pcap_next_ex.
+ */
+int
+dns_collector_next_packet(dns_collector_t *col);
+
+/**
+ * Write current stats in a human-readable way.
+ */
+void
+dns_collector_write_stats(dns_collector_t *col, FILE *f);
+
 
 #endif /* DNSCOL_COLLECTOR_H */
