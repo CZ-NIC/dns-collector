@@ -1,0 +1,36 @@
+syntax = "proto2";
+
+message DnsExchange {
+  // Time of request first arrival, at most one of:
+  optional uint64  timestamp_us = 1;     // micro-seconds since the Epoch
+  optional uint64  delta_us = 2;         // micro-seconds since the last listed
+                                         // exchange or frame start
+
+  // DnsExchange condensed information 
+  enum ExchangeFlags {
+    PROTOCOL_TCP = 1;                    // if 0, UDP
+    PRTOCOL_IPV6 = 2;                    // if 0, then IPv4
+    RESPONSE = 4;                        // matching response received
+  }
+  // exchange_flags is a bit-combination of ExchangeFlags
+  optional uint32  exchange_flags = 3;
+
+  // Client information
+  optional bytes   client_addr = 4;      // client IP, either 4 or 16 bytes
+  optional fixed32 client_port = 5;      // client port (TCP or UDP)
+
+  // DNS request information
+  optional fixed32 transaction_id = 6; 
+  optional fixed32 request_flags = 7;
+  optional uint32  request_type = 8;
+  optional bytes   qname_raw = 9;        // bytes of wire-encoded query name
+  optional string  qname = 10;           // decoded dot-separated query name
+
+  // DNS response information
+  optional uint64  response_time_us = 11;// first response packet:
+                                         // micro-seconds since exchange start
+  optional fixed32 response_flags = 12;  // flags from response packet
+
+  // Other ideas:
+  //optional bytes   server_addr = 13;   // server IP, either 4 or 16 bytes
+}
