@@ -39,12 +39,7 @@ struct dns_collector {
     pcap_t *pcap;
 
     /** dumper for unprocessed packets. Owned by collector. May be NULL. */
-    pcap_dumper_t *pcap_dumper;
-
-    /** name of the current dumper file.
-     * Empty (pcap_dumper_fname==0) only if pcap_dumper==NULL.
-     * When pcap_dumper==NULL, may contain name of previously open file. */
-    char pcap_dumper_fname[DNSCOL_MAX_FNAME_LEN];
+    pcap_dumper_t *pcap_dump;
 
     /** active timeframes.
      * there are config->active_frames frames allocated. frames[0] is always
@@ -71,15 +66,27 @@ dns_collector_destroy(dns_collector_t *col);
 /**
  * Open a pcap file for reading.
  *
- * Also opens a exceptional dump file (if configured).
- * If a pcap is currently open, it is closed and a new pcap is created.
- * The old and new pcap must be compatible (e.g. same network layer).
- *
- * If a pcap dump file is open, it has to be closed (as it is tied to the
- * previous pcap) and is reopened with the new pcap.
+ * Data link layer must be DLT_RAW. 
+ * Preserves open exceptional dump file.
  */
 int
 dns_collector_open_pcap(dns_collector_t *col, const char *pcap_fname);
+
+
+
+/* Dumping exceptional packetc */
+
+/**
+ * Open a dump file, closing one if already open.
+ */
+int
+dns_collector_dump_open(dns_collector_t *col, const char *dump_fname);
+
+/**
+ *  Closes a dump file, NOP if none open.
+ */
+void
+dns_collector_dump_close(dns_collector_t *col);
 
 /**
  * Dump a packet to the exceptional packet pcap.
@@ -90,6 +97,18 @@ dns_collector_open_pcap(dns_collector_t *col, const char *pcap_fname);
 int
 dns_collector_dump_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
 
+
+
+/* Packet processing */
+
+/**
+ * Process and dissect the packet: file in to a frame, log or dump
+ *
+ * Returns -1 on error, 0 otherwise.
+ */
+int
+dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
+
 /**
  * Try to get the next packet from pcap and process it with
  * dns_collector_process_packet.
@@ -98,6 +117,7 @@ dns_collector_dump_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, 
  */
 int
 dns_collector_next_packet(dns_collector_t *col);
+
 
 /**
  * Write current stats in a human-readable way.
