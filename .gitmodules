@@ -1,0 +1,3 @@
+[submodule "libucw"]
+	path = libucw
+	url = git://git.ucw.cz/libucw.git
