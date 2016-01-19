@@ -2,3 +2,5 @@
 /main
 *.pcap
 .*.swp
+*.pb-c.c
+*.pb-c.h
