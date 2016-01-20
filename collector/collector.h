@@ -15,6 +15,8 @@ struct dns_collector_config {
 
     struct timespec frame_length;
 
+    uint32_t pcap_snaplen;
+
     /* Dump dropped packets by reason */
     int dump_packet_reason[dns_drop_LAST];
 };
@@ -28,7 +30,8 @@ struct dns_collector {
     /** dns collector status and stats. */
     dns_stats_t stats;
 
-    /** open pcap. Owned by collector. May be NULL. */
+    /** open pcap. Owned by collector, should always be open,
+     * initially may be dead (dummy) pcap. */
     pcap_t *pcap;
 
     /** dumper for unprocessed packets. Owned by collector. May be NULL. */
