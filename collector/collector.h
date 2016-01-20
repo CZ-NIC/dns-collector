@@ -9,22 +9,14 @@
 /** Configuration of a DNS collector. */
 struct dns_collector_config {
     const char *output_base;
+
     int active_frames;
+
     struct timespec frame_length;
-    const char *dumpfile_base;
+
+    /* Dump dropped packets by reason */
+    bool dump_packet_reason[dns_drop_LAST];
 };
-
-
-/** Stats of a DNS collector */
-struct dns_collector_stats {
-    /** all packets received from pcap_next_ex(). */
-    long packets_captured;
-    /** exceptional packets (some/all of them dumped). */
-    long packets_exceptional;
-    /** exceptional dumped packets. */
-    long packets_dumped;
-};
-
 
 /** DNS collector instance */
 struct dns_collector {
@@ -33,7 +25,7 @@ struct dns_collector {
     const dns_collector_config_t *config;
 
     /** dns collector status and stats. */
-    dns_collector_stats_t stats;
+    dns_stats_t stats;
 
     /** open pcap. Owned by collector. May be NULL. */
     pcap_t *pcap;
@@ -47,7 +39,6 @@ struct dns_collector {
      * Frames in the array are owned by the collector. */
     dns_timeframe_t *timeframes[];
 };
-
 
 /**
  * Allocate new collector instance.
@@ -70,8 +61,7 @@ dns_collector_destroy(dns_collector_t *col);
  * Preserves open exceptional dump file.
  */
 int
-dns_collector_open_pcap(dns_collector_t *col, const char *pcap_fname);
-
+dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname);
 
 
 /* Dumping exceptional packetc */
