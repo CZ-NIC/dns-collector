@@ -19,15 +19,23 @@ dns_drop_packet(dns_collector *col, dns_packet_t* pkt, dns_drop_reason reason)
 
     col->stats.packets_dropped++;
     col->stats.packets_dropped_reason[reason]++;
-    // TODO: frame stats
+    if (col->timeframes[0]) {
+        col->timeframes[0]->stats.packets_dropped++;        
+        col->timeframes[0]->stats.packets_dropped_reason[reason]++;        
+    }
 
     if (col->config->dump_packet_reason[reason])
     {
-        // TODO: check dump (soft/hard) quota
+        // TODO: check dump (soft/hard) quota?
+
         if (col->pcap_dump) {
             pcap_dump((u_char *)(col->pcap_dump), pkt->pkt_header, pkt->pkt_data);
             col->stats.packets_dumped++;
             col->stats.packets_dumped_reason[reason]++;
+            if (col->timeframes[0]) {
+                col->timeframes[0]->stats.packets_dumped++;        
+                col->timeframes[0]->stats.packets_dumped_reason[reason]++;        
+            }
         }
     }
 }
@@ -38,7 +46,7 @@ dns_parse_packet(dns_collector *col, dns_packet_t* pkt, struct pcap_pkthdr *pkt_
     assert(col && pkt && pkt_header && pkt_data);
 
     // basic size assertions
-
+    // TODO: parse packet
 
 }
 
