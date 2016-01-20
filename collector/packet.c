@@ -32,7 +32,7 @@ dns_drop_packet(dns_collector *col, dns_packet_t* pkt, dns_drop_reason reason)
     }
 }
 
-int
+dns_ret
 dns_parse_packet(dns_collector *col, dns_packet_t* pkt, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
 {
     assert(col && pkt && pkt_header && pkt_data);

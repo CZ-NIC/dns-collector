@@ -39,11 +39,11 @@ dns_drop_packet(dns_collector *col, dns_packet_t* pkt, dns_drop_reason reason);
 
 /**
  * Initialize pkt with data from pkt_header,pkt_data and begin parsing.
- * Return -1 on parsing failure and packet drop/dump.
- * Returns 0 when the packet is pre-parsed up to DNS header (dns_data set).
- * Does not allocate any data.
+ * Return DNS_RET_DROPPED on parsing failure and packet drop/dump.
+ * Returns DNS_RET_OK when the packet is pre-parsed up to DNS header (dns_data is set).
+ * Does no de/allocation.
  */
-int
+dns_ret
 dns_parse_packet(dns_collector *col, dns_packet_t* pkt, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
 
 #endif /* DNSCOL_PACKET_H */

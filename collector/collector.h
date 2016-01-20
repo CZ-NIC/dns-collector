@@ -40,6 +40,7 @@ struct dns_collector {
     dns_timeframe_t *timeframes[];
 };
 
+
 /**
  * Allocate new collector instance.
  *
@@ -49,7 +50,8 @@ dns_collector_t *
 dns_collector_create(const dns_collector_config_t *conf);
 
 /**
- * Close and deallocate a collector instance.
+ * Close and deallocate a collector instance and dependent
+ * structures.
  */
 void
 dns_collector_destroy(dns_collector_t *col);
@@ -60,16 +62,16 @@ dns_collector_destroy(dns_collector_t *col);
  * Data link layer must be DLT_RAW. 
  * Preserves open exceptional dump file.
  */
-int
+dns_ret
 dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname);
 
 
-/* Dumping exceptional packetc */
+/* Dumping exceptional packets **************************************/
 
 /**
  * Open a dump file, closing one if already open.
  */
-int
+dns_ret
 dns_collector_dump_open(dns_collector_t *col, const char *dump_fname);
 
 /**
@@ -78,42 +80,22 @@ dns_collector_dump_open(dns_collector_t *col, const char *dump_fname);
 void
 dns_collector_dump_close(dns_collector_t *col);
 
-/**
- * Dump a packet to the exceptional packet pcap.
- *
- * Increases stat dump counter for both collector and current timeframe.
- * Return -1 on error, 0 otherwise.
- */
-int
-dns_collector_dump_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
 
-
-
-/* Packet processing */
-
-/**
- * Process and dissect the packet: file in to a frame, log or dump
- *
- * Returns -1 on error, 0 otherwise.
- */
-int
-dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
+/* Packet processing ************************************************/
 
 /**
  * Try to get the next packet from pcap and process it with
  * dns_collector_process_packet.
  *
- * Return -2 (eof), -1 (error), 0 (timeout) or 1 (ok) as pcap_next_ex.
+ * Returns DNS_RET_ERR, DNS_RET_OK, DNS_RET_EOF or DNS_RET_TIMEOUT; see pcap_next_ex().
  */
-int
+dns_ret
 dns_collector_next_packet(dns_collector_t *col);
 
-
 /**
- * Write current stats in a human-readable way.
+ * Process and dissect the packet: create dns_packet_t, file it to a frame, log or dump.
  */
 void
-dns_collector_write_stats(dns_collector_t *col, FILE *f);
-
+dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
 
 #endif /* DNSCOL_COLLECTOR_H */
