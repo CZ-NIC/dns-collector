@@ -9,7 +9,7 @@
 #include "timeframe.h"
 
 dns_timeframe_t *
-dns_timeframe_new(const struct timespec *time_start, const char *frame_name) 
+dns_timeframe_create(const struct timespec *time_start, const char *frame_name) 
 {
     dns_timeframe_t *frame = (dns_timeframe_t*) calloc(sizeof(dns_timeframe_t), 1);
     if (!frame) return NULL;
