@@ -37,7 +37,7 @@ dns_collector_destroy(dns_collector_t *col)
 
 
 int
-dns_collector_open_pcap(dns_collector_t *col, const char *pcap_fname)
+dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname)
 {
     char pcap_errbuf[PCAP_ERRBUF_SIZE];
 
@@ -94,21 +94,6 @@ dns_collector_dump_close(dns_collector_t *col)
 }
 
 int
-dns_collector_dump_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
-{
-    assert(col);
-    if (!col->pcap_dump) {
-        return -1;
-    }
-
-    pcap_dump((u_char *)(col->pcap_dump), pkt_header, pkt_data);
-    col->stats.packets_dumped++;
-    // TODO: frame stats
-
-    return 0;
-}
-
-int
 dns_collector_next_packet(dns_collector_t *col)
 {
     int r;
@@ -136,14 +121,34 @@ dns_collector_next_packet(dns_collector_t *col)
     return -1;
 }
 
+
+int
+dns_collector_process_ipv4_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
+{
+}
+
+
+int
+dns_collector_process_ipv6_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
+{
+}
+
+dns_collector_defective_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
+{
+    
+}
+
 int
 dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
 {
+    if ()   
+
     // TODO: add some processing :)
     dns_collector_dump_packet(col, pkt_header, pkt_data);
     
     return 0;
 }
+
 
 void
 dns_collector_write_stats(dns_collector_t *col, FILE *f)
