@@ -65,6 +65,16 @@ enum dns_drop_reason {
     dns_drop_LAST // highest possible value (array sizes)
 };
 
+/**
+ * dnscol return / error codes
+ */
 
+enum dns_ret {
+    DNS_RET_OK = 0,
+    DNS_RET_ERR = -1,
+    DNS_RET_EOF = 1,
+    DNS_RET_TIMEOUT = 2,
+    DNS_RET_DROPPED = 3,
+}
 
 #endif /* DNSCOL_COMMON_H */

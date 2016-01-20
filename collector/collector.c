@@ -36,7 +36,7 @@ dns_collector_destroy(dns_collector_t *col)
 }
 
 
-int
+dns_ret
 dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname)
 {
     char pcap_errbuf[PCAP_ERRBUF_SIZE];
@@ -52,21 +52,21 @@ dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname)
 
     if (!col->pcap) {
         fprintf(stderr, "libpcap error: %s\n", pcap_errbuf);
-        return -1;
+        return DNS_RET_ERR;
     }
 
     if (pcap_datalink(col->pcap) != DLT_RAW) {
         fprintf(stderr, "error: pcap with link %s not supported\n", pcap_datalink_val_to_name(pcap_datalink(col->pcap)));
         pcap_close(col->pcap);
         col->pcap = NULL;
-        return -1;
+        return DNS_RET_ERR;
     }
 
-    return 0;
+    return DNS_RET_OK;
 }
 
 
-int
+dns_ret
 dns_collector_dump_open(dns_collector_t *col, const char *dump_fname)
 {
     assert(col);
@@ -76,10 +76,10 @@ dns_collector_dump_open(dns_collector_t *col, const char *dump_fname)
 
     if (!col->pcap_dump) {
         fprintf(stderr, "libpcap error: %s\n", pcap_geterr(col->pcap));
-        return -1;
+        return DNS_RET_ERR;
     }
 
-    return 0;
+    return DNS_RET_OK;
 }
 
 void
@@ -93,7 +93,7 @@ dns_collector_dump_close(dns_collector_t *col)
     }
 }
 
-int
+dns_ret
 dns_collector_next_packet(dns_collector_t *col)
 {
     int r;
@@ -101,60 +101,55 @@ dns_collector_next_packet(dns_collector_t *col)
     const u_char *pkt_data;
 
     assert(col);
+
     if (!col->pcap) {
-        return -1;
+        fprintf(stderr, "error: pcap not open\n");
+        return DNS_RET_ERR;
     }
 
     r = pcap_next_ex(col->pcap, &pkt_header, &pkt_data);
-    if (r <= 0) {
-        return r;
+
+    switch(r) {
+        case -2: 
+            return DNS_RET_EOF;
+
+        case -1:
+            fprintf(stderr, "libpcap error: %s\n", pcap_geterr(col->pcap));
+            return DNS_RET_ERR;
+
+        case 0:
+            return DNS_RET_TIMEOUT;
+
+        case 1:
+            col->stats.packets_captured++;
+            if (col->timeframes[0])
+                col->timeframes[0]->stats.packets_captured++;
+
+            dns_collector_process_packet(col, pkt_header, pkt_data);
+
+            return DNS_RET_OK;
     }
-    assert(r == 1); 
 
-    col->stats.packets_captured++;
-    // TODO: frame stats
-
-    r = dns_collector_process_packet(col, pkt_header, pkt_data);
-
-    if (r == 0)
-        return 1;
-    return -1;
+    assert(0);
 }
-
-
-int
-dns_collector_process_ipv4_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
-{
-}
-
-
-int
-dns_collector_process_ipv6_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
-{
-}
-
-dns_collector_defective_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
-{
-    
-}
-
-int
-dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
-{
-    if ()   
-
-    // TODO: add some processing :)
-    dns_collector_dump_packet(col, pkt_header, pkt_data);
-    
-    return 0;
-}
-
 
 void
-dns_collector_write_stats(dns_collector_t *col, FILE *f)
+dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
 {
-    assert(col);
-    fprintf(f, "packets_captured: %ld\n", col->stats.packets_captured);
-    fprintf(f, "packets_exceptional: %ld\n", col->stats.packets_exceptional);
-    fprintf(f, "packets_dumped: %ld\n", col->stats.packets_dumped);
+    assert(col && pkt_header && pkt_data);
+
+    dns_packet_t *pkt = (dns_packet_t *)malloc(sizeof(dns_packet_t));
+    assert(pkt);
+
+    dns_ret r = dns_parse_packet(col, pkt, pkt_header, pkt_data);
+    if (r == DNS_RET_DROPPED) {
+        free(pkt);
+        return;
+    }
+
+    // TODO: gt a packet - YAY! do something next ...
+    fprintf(stdout, "#");
+    free(pkt);
 }
+
+
