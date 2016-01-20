@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "common.h"
+#include "stats.h"
 
 /** Configuration of a DNS collector. */
 struct dns_collector_config {
@@ -15,7 +16,7 @@ struct dns_collector_config {
     struct timespec frame_length;
 
     /* Dump dropped packets by reason */
-    bool dump_packet_reason[dns_drop_LAST];
+    int dump_packet_reason[dns_drop_LAST];
 };
 
 /** DNS collector instance */
@@ -62,7 +63,7 @@ dns_collector_destroy(dns_collector_t *col);
  * Data link layer must be DLT_RAW. 
  * Preserves open exceptional dump file.
  */
-dns_ret
+dns_ret_t
 dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname);
 
 
@@ -71,7 +72,7 @@ dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname);
 /**
  * Open a dump file, closing one if already open.
  */
-dns_ret
+dns_ret_t
 dns_collector_dump_open(dns_collector_t *col, const char *dump_fname);
 
 /**
@@ -89,7 +90,7 @@ dns_collector_dump_close(dns_collector_t *col);
  *
  * Returns DNS_RET_ERR, DNS_RET_OK, DNS_RET_EOF or DNS_RET_TIMEOUT; see pcap_next_ex().
  */
-dns_ret
+dns_ret_t
 dns_collector_next_packet(dns_collector_t *col);
 
 /**

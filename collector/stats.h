@@ -2,6 +2,7 @@
 #define DNSCOL_STATS_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "common.h"
 
@@ -28,7 +29,7 @@ struct dns_stats {
  * Print stats into a file. conf is optional (for dump configuration hints).
  */
 void
-dns_stats_fprint(const dns_stats_t *stats, const dns_collector_config_t *conf, FILE *f)
+dns_stats_fprint(const dns_stats_t *stats, const dns_collector_config_t *conf, FILE *f);
 
 
 #endif /* DNSCOL_STATS_H */

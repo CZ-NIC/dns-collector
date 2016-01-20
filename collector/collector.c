@@ -7,6 +7,8 @@
 #include <pcap/pcap.h>
 
 #include "collector.h"
+#include "timeframe.h"
+#include "packet.h"
 
 dns_collector_t *
 dns_collector_create(const dns_collector_config_t *conf)
@@ -36,7 +38,7 @@ dns_collector_destroy(dns_collector_t *col)
 }
 
 
-dns_ret
+dns_ret_t
 dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname)
 {
     char pcap_errbuf[PCAP_ERRBUF_SIZE];
@@ -66,7 +68,7 @@ dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname)
 }
 
 
-dns_ret
+dns_ret_t
 dns_collector_dump_open(dns_collector_t *col, const char *dump_fname)
 {
     assert(col);
@@ -93,7 +95,7 @@ dns_collector_dump_close(dns_collector_t *col)
     }
 }
 
-dns_ret
+dns_ret_t
 dns_collector_next_packet(dns_collector_t *col)
 {
     int r;
@@ -141,7 +143,7 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
     dns_packet_t *pkt = (dns_packet_t *)malloc(sizeof(dns_packet_t));
     assert(pkt);
 
-    dns_ret r = dns_parse_packet(col, pkt, pkt_header, pkt_data);
+    dns_ret_t r = dns_parse_packet(col, pkt, pkt_header, pkt_data);
     if (r == DNS_RET_DROPPED) {
         free(pkt);
         return;

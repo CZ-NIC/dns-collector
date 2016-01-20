@@ -4,7 +4,7 @@ CC=clang
 CFLAGS=-g3 -std=gnu99 -Wall -pedantic
 LDFLAGS=-lpcap -lprotobuf `pkg-config --libs 'libprotobuf-c >= 1.0.0'`
 DEPS=$(wildcard *.h)
-OBJS=main.o collector.o timeframe.o exchange.pb-c.o stats.o
+OBJS=main.o collector.o timeframe.o exchange.pb-c.o stats.o packet.o
 PROG=main
 
 all: $(PROG)

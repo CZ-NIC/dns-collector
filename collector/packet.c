@@ -1,5 +1,6 @@
 
-#include <stdint.h>
+#include <stdlib.h>
+#include <assert.h>
 
 #include <netinet/in.h>
 #include <netinet/ip.h>
@@ -11,9 +12,12 @@
 
 #include "common.h"
 #include "packet.h"
+#include "collector.h"
+#include "stats.h"
+#include "timeframe.h"
 
 void
-dns_drop_packet(dns_collector *col, dns_packet_t* pkt, dns_drop_reason reason)
+dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, dns_drop_reason_t reason)
 {
     assert(col && pkt && pkt->pkt_header && pkt->pkt_data && reason < dns_drop_LAST);
 
@@ -40,13 +44,13 @@ dns_drop_packet(dns_collector *col, dns_packet_t* pkt, dns_drop_reason reason)
     }
 }
 
-dns_ret
-dns_parse_packet(dns_collector *col, dns_packet_t* pkt, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
+dns_ret_t
+dns_parse_packet(dns_collector_t *col, dns_packet_t* pkt, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
 {
     assert(col && pkt && pkt_header && pkt_data);
 
     // basic size assertions
     // TODO: parse packet
-
+    return DNS_RET_OK;
 }
 
