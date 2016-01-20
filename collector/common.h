@@ -1,6 +1,8 @@
 #ifndef DNSCOL_COMMON_H
 #define DNSCOL_COMMON_H
 
+#include <stdbool.h>
+#include <stdint.h>
 
 #define DNSCOL_MAX_FNAME_LEN 256
 
@@ -37,6 +39,7 @@ enum dns_packet_dir {
     dns_dir_in = 1,
     dns_dir_out = 2,
 };
+typedef enum dns_packet_dir dns_packet_dir_t;
 
 /**
  * Packet drop/dump reasons
@@ -64,6 +67,7 @@ enum dns_drop_reason {
     dns_drop_no_query,
     dns_drop_LAST // highest possible value (array sizes)
 };
+typedef enum dns_drop_reason dns_drop_reason_t;
 
 /**
  * dnscol return / error codes
@@ -75,6 +79,7 @@ enum dns_ret {
     DNS_RET_EOF = 1,
     DNS_RET_TIMEOUT = 2,
     DNS_RET_DROPPED = 3,
-}
+};
+typedef enum dns_ret dns_ret_t;
 
 #endif /* DNSCOL_COMMON_H */

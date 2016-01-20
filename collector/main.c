@@ -6,25 +6,29 @@
 
 int main(int argc, const char **argv)
 {
+    dns_ret_t r;
+
     assert(argc > 1);
 
-    dns_collector_config_t conf = {"out", 10, {10, 0}, "out-except"}; 
+    dns_collector_config_t conf = {"out", 10, {10, 0}, {1, 1, 1, 1, 1, 1, 1, 1, 1}}; 
 
     dns_collector_t *col = dns_collector_create(&conf);
     assert(col);
 
-    int r;
+    r = dns_collector_dump_open(col, "dump.pcap");
+    assert(r == DNS_RET_OK);
+
     for (int in = 1; in < argc; in++) {
-        r = dns_collector_open_pcap(col, argv[in]);
-        assert(r == 0);
+        r = dns_collector_open_pcap_file(col, argv[in]);
+        assert(r == DNS_RET_OK);
         
-        while((r = dns_collector_next_packet(col)) >= 0) {
-        }
-        if (r == -1)
+        while(r = dns_collector_next_packet(col), r == DNS_RET_OK) { }
+        if (r == DNS_RET_ERR)
             break;
     }
 
-    dns_collector_write_stats(col, stderr);
+    dns_stats_fprint(&(col->stats), col->config, stderr);
     dns_collector_destroy(col);
+
     return 0;
 }
