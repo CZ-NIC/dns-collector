@@ -46,9 +46,9 @@ typedef enum dns_packet_dir dns_packet_dir_t;
  *
  * * malformed - too short, bad headers, protocol, ...
  * * fragmented - when unimpl
- * * tcp - unimpl or weird stream
+ * * protocol - unimplemented (now tcp) or other proto (ICMP)
  * * direction - unknown addrs or wrong dir
- * * port - not a configured port packet
+ * * port - not a configured port
  * * bad_dns - bad dns header (odd type, weird nums, ...)
  * * frame_full - request/response table is full
  * * no_query - response without known request
@@ -59,7 +59,7 @@ enum dns_drop_reason {
     dns_drop_other = 0,
     dns_drop_malformed,
     dns_drop_fragmented,
-    dns_drop_tcp,
+    dns_drop_protocol,
     dns_drop_direction,
     dns_drop_port,
     dns_drop_bad_dns,

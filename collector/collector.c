@@ -1,7 +1,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #include <assert.h>
 
 #include <pcap/pcap.h>
@@ -140,7 +140,8 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
     dns_packet_t *pkt = (dns_packet_t *)malloc(sizeof(dns_packet_t));
     assert(pkt);
 
-    dns_ret_t r = dns_parse_packet(col, pkt, pkt_header, pkt_data);
+    dns_packet_from_pcap(col, pkt, pkt_header, pkt_data);
+    dns_ret_t r = dns_parse_packet(col, pkt);
     if (r == DNS_RET_DROPPED) {
         free(pkt);
         return;
