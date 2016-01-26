@@ -167,12 +167,12 @@ dns_parse_packet(dns_collector_t *col, dns_packet_t* pkt)
 
         if (query_len != pkt->dns_len) {
             dns_drop_packet(col, pkt, dns_drop_protocol);
-            printf(".");
             return DNS_RET_DROPPED;
         }
         // We have a packet with length exactly matching DNS query length
     }
-    
+    // TODO: HERE: Preparse DNS
+
     return DNS_RET_OK;
 }
 
