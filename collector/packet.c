@@ -135,14 +135,42 @@ dns_parse_packet(dns_collector_t *col, dns_packet_t* pkt)
             dns_drop_packet(col, pkt, dns_drop_malformed);
             return DNS_RET_DROPPED;
         }
-        // assured to be valid (and dns_len positive by the size check)
+        // assured to be valid (and dns_caplen positive by the size check)
         pkt->dns_data = proto_data + 8;
-        pkt->dns_len = pkt->pkt_len - header_len - 8; 
+        pkt->dns_len = pkt->pkt_len - header_len - 8;
+        pkt->dns_caplen = pkt->pkt_caplen - header_len - 8;
         
     } else {
-        // TODO: implement TCP
-        dns_drop_packet(col, pkt, dns_drop_protocol);
-        return DNS_RET_DROPPED;
+        struct tcphdr *tcp_header = (struct tcphdr *)proto_data;
+        
+        pkt->src_port = ntohs(tcp_header->th_sport);
+        pkt->dst_port = ntohs(tcp_header->th_dport);
+        uint32_t tcp_header_len = tcp_header->th_off * 4;
+
+        // TODO: implement TCP streams
+        // Below: only accept packets with exactly one query (may be fooled! no way to check for seq==1)
+        
+        if ((tcp_header->th_flags & TH_FIN) || (tcp_header->th_flags & TH_SYN)) {
+            dns_drop_packet(col, pkt, dns_drop_protocol);
+            return DNS_RET_DROPPED;
+        }
+
+        if ((tcp_header_len < 20) || (header_len + tcp_header_len + 2 + DNS_DNS_HEADER_MIN_LEN > pkt->pkt_caplen)) {
+            dns_drop_packet(col, pkt, dns_drop_malformed);
+            return DNS_RET_DROPPED;
+        }
+
+        pkt->dns_data = proto_data + tcp_header_len + 2;
+        uint16_t query_len = ntohs(((uint16_t *)pkt->dns_data)[-1]);
+        pkt->dns_len = pkt->pkt_len - header_len - tcp_header_len - 2;
+        pkt->dns_caplen = pkt->pkt_caplen - header_len - tcp_header_len - 2;
+
+        if (query_len != pkt->dns_len) {
+            dns_drop_packet(col, pkt, dns_drop_protocol);
+            printf(".");
+            return DNS_RET_DROPPED;
+        }
+        // We have a packet with length exactly matching DNS query length
     }
     
     return DNS_RET_OK;

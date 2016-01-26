@@ -44,6 +44,7 @@ struct dns_packet {
     // DNS packet TODO: specify ownership
     const u_char *dns_data;
     uint32_t dns_len;
+    uint32_t dns_caplen;
 };
 
 
