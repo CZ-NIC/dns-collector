@@ -13,7 +13,7 @@ struct dns_drop_reason_desc {
 static const struct dns_drop_reason_desc dns_drop_reason_desc_table[] = {
     {dns_drop_malformed, "malformed"},
     {dns_drop_fragmented, "fragmented"},
-    {dns_drop_tcp, "tcp"},
+    {dns_drop_protocol, "protocol"},
     {dns_drop_direction, "direction"},
     {dns_drop_port, "port"},
     {dns_drop_bad_dns, "bad_dns"},
