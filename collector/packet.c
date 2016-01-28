@@ -24,9 +24,9 @@ dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, dns_drop_reason_t reaso
 
     col->stats.packets_dropped++;
     col->stats.packets_dropped_reason[reason]++;
-    if (col->timeframes[0]) {
-        col->timeframes[0]->stats.packets_dropped++;        
-        col->timeframes[0]->stats.packets_dropped_reason[reason]++;        
+    if (col->tf_cur) {
+        col->tf_cur->stats.packets_dropped++;        
+        col->tf_cur->stats.packets_dropped_reason[reason]++;        
     }
 
     if (col->config->dump_packet_reason[reason])
@@ -38,9 +38,9 @@ dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, dns_drop_reason_t reaso
             pcap_dump((u_char *)(col->pcap_dump), &hdr, pkt->pkt_data);
             col->stats.packets_dumped++;
             col->stats.packets_dumped_reason[reason]++;
-            if (col->timeframes[0]) {
-                col->timeframes[0]->stats.packets_dumped++;        
-                col->timeframes[0]->stats.packets_dumped_reason[reason]++;        
+            if (col->tf_cur) {
+                col->tf_cur->stats.packets_dumped++;        
+                col->tf_cur->stats.packets_dumped_reason[reason]++;        
             }
         }
     }

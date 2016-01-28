@@ -15,12 +15,12 @@ dns_collector_create(const dns_collector_config_t *conf)
 {
     assert(conf);
 
-    dns_collector_t *col = (dns_collector_t *)calloc(sizeof(dns_collector_t) + conf->active_frames * sizeof(dns_timeframe_t *), 1);
+    dns_collector_t *col = (dns_collector_t *)calloc(sizeof(dns_collector_t), 1);
     if (!col) return NULL;
   
     col->config = conf;
 
-    col->pcap = pcap_open_dead(DLT_RAW, conf->pcap_snaplen);
+    col->pcap = pcap_open_dead(DLT_RAW, conf->capture_limit);
     if (!col->pcap) {
         fprintf(stderr, "error: pcap_open_dead() failed\n");
         free(col);
@@ -121,8 +121,8 @@ dns_collector_next_packet(dns_collector_t *col)
 
         case 1:
             col->stats.packets_captured++;
-            if (col->timeframes[0])
-                col->timeframes[0]->stats.packets_captured++;
+            if (col->tf_cur)
+                col->tf_cur->stats.packets_captured++;
 
             dns_collector_process_packet(col, pkt_header, pkt_data);
 
