@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <ucw/lib.h>
+
 #define DNSCOL_MAX_FNAME_LEN 256
 
 #define DNSCOL_ADDR_MAXLEN 16
@@ -81,5 +83,12 @@ enum dns_ret {
     DNS_RET_DROPPED = 3,
 };
 typedef enum dns_ret dns_ret_t;
+
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))                    /** Minimum of two numbers **/
+#define MAX(a,b) (((a)>(b))?(a):(b))                    /** Maximum of two numbers **/
+#endif
+
+
 
 #endif /* DNSCOL_COMMON_H */
