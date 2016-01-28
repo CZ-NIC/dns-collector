@@ -58,24 +58,25 @@ dns_packet_from_pcap(dns_collector_t *col, dns_packet_t* pkt, struct pcap_pkthdr
     pkt->pkt_data = pkt_data;
 }
 
+
 dns_ret_t
-dns_parse_packet(dns_collector_t *col, dns_packet_t* pkt)
+dns_packet_parse_ip(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_offset)
 {
-    assert(col && pkt && pkt->pkt_data);
+    assert(col && pkt && pkt->pkt_data && header_offset && (pkt->pkt_caplen > (*header_offset)));
 
-    if ((pkt->pkt_caplen < DNS_PACKET_MIN_LEN) || (pkt->pkt_caplen > pkt->pkt_len) || (pkt->pkt_len > DNS_PACKET_MAX_LEN)) {
-        // DROP: basic size assumptions
-        dns_drop_packet(col, pkt, dns_drop_malformed);
-        return DNS_RET_DROPPED;
-    }
+    const u_char *data = pkt->pkt_data + (*header_offset);
 
-    // IPv4/6 header length
-    uint32_t header_len;
+    if ((data[0] & 0xf0) == 0x40) {
 
-    if ((pkt->pkt_data[0] & 0xf0) == 0x40) {
-        // ensure proper memory alignment; enough data by DNS_PACKET_MIN_LEN
+        if (pkt->pkt_caplen < sizeof(struct ip) + (*header_offset)) {
+            // DROP: no space for IPv4 header
+            dns_drop_packet(col, pkt, dns_drop_malformed);
+            return DNS_RET_DROPPED;
+        }
+
+        // ensure proper memory alignment
         struct ip hdr4;
-        memcpy(&hdr4, pkt->pkt_data, sizeof(struct ip));
+        memcpy(&hdr4, data, sizeof(struct ip));
 
         pkt->ip_ver = 4;
         memcpy(pkt->src_addr, &(hdr4.ip_src), 4);
@@ -86,7 +87,6 @@ dns_parse_packet(dns_collector_t *col, dns_packet_t* pkt)
             dns_drop_packet(col, pkt, dns_drop_protocol);
             return DNS_RET_DROPPED;
         }
-        header_len = hdr4.ip_hl * 4;
 
         uint16_t offset = ntohs(hdr4.ip_off);
         if ((offset & IP_MF) || (offset & IP_OFFMASK)) {
@@ -100,10 +100,20 @@ dns_parse_packet(dns_collector_t *col, dns_packet_t* pkt)
             return DNS_RET_DROPPED;
         }
 
-    } else if ((pkt->pkt_data[0] & 0xf0) == 0x60) {
-        // ensure proper memory alignment; enough data by DNS_PACKET_MIN_LEN
+        (*header_offset) = hdr4.ip_hl * 4;
+        return DNS_RET_OK;
+
+    } else if ((data[0] & 0xf0) == 0x60) {
+
+        if (pkt->pkt_caplen < sizeof(struct ip6_hdr) + (*header_offset)) {
+            // DROP: no space for IPv6 header
+            dns_drop_packet(col, pkt, dns_drop_malformed);
+            return DNS_RET_DROPPED;
+        }
+
+        // ensure proper memory alignment
         struct ip6_hdr hdr6;
-        memcpy(&hdr6, pkt->pkt_data, sizeof(struct ip6_hdr));
+        memcpy(&hdr6, data, sizeof(struct ip6_hdr));
 
         pkt->ip_ver = 6;
         memcpy(pkt->src_addr, &(hdr6.ip6_src), 16);
@@ -116,7 +126,9 @@ dns_parse_packet(dns_collector_t *col, dns_packet_t* pkt)
             dns_drop_packet(col, pkt, dns_drop_protocol);
             return DNS_RET_DROPPED;
         }
-        header_len = sizeof ( struct ip6_hdr );
+
+        (*header_offset) = sizeof(struct ip6_hdr);
+        return DNS_RET_OK;
 
     } else {
         // DROP: neither IPv4 or IPv6
@@ -124,35 +136,52 @@ dns_parse_packet(dns_collector_t *col, dns_packet_t* pkt)
         return DNS_RET_DROPPED;
     }
 
-    if (header_len + (pkt->ip_proto == IPPROTO_UDP ? sizeof(struct udphdr) : sizeof(struct tcphdr)) > pkt->pkt_caplen) {
-        // DROP: no data for UDP header or TCP header
-        dns_drop_packet(col, pkt, dns_drop_malformed);
-        return DNS_RET_DROPPED;
-    }
+}
 
-    // DNS data offset from the packet start
-    uint32_t data_offset;
+dns_ret_t
+dns_packet_parse_proto(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_offset)
+{
+    assert(col && pkt && pkt->pkt_data && header_offset && (pkt->pkt_caplen > (*header_offset)));
+
+    const u_char *data = pkt->pkt_data + (*header_offset);
+
     if (pkt->ip_proto == IPPROTO_UDP) {
+
+        if (pkt->pkt_caplen < sizeof(struct udphdr) + (*header_offset)) {
+            // DROP: no space for UDP header
+            dns_drop_packet(col, pkt, dns_drop_malformed);
+            return DNS_RET_DROPPED;
+        }
+
         // ensure proper memory alignment
         struct udphdr udp_header;
-        memcpy(&udp_header, pkt->pkt_data + header_len, sizeof(struct udphdr));
+        memcpy(&udp_header, data, sizeof(struct udphdr));
 
         pkt->src_port = ntohs(udp_header.source);
         pkt->dst_port = ntohs(udp_header.dest);
-        if (ntohs(udp_header.len) != pkt->pkt_len - header_len) {
+        if (ntohs(udp_header.len) != pkt->pkt_len - (*header_offset)) {
             // DROP: data length mismatch
             dns_drop_packet(col, pkt, dns_drop_malformed);
             return DNS_RET_DROPPED;
         }
-        data_offset = header_len + sizeof(struct udphdr);
         // the following are positive by the above
-        pkt->dns_len = pkt->pkt_len - header_len - sizeof(struct udphdr);
-        pkt->dns_caplen = pkt->pkt_caplen - header_len - sizeof(struct udphdr);
+        pkt->dns_len = pkt->pkt_len - (*header_offset) - sizeof(struct udphdr);
+        pkt->dns_caplen = pkt->pkt_caplen - (*header_offset) - sizeof(struct udphdr);
+
+        (*header_offset) += sizeof(struct udphdr);
+        return DNS_RET_OK;
         
     } else {
+
+        if (pkt->pkt_caplen < sizeof(struct tcphdr) + (*header_offset)) {
+            // DROP: no space for TCP header
+            dns_drop_packet(col, pkt, dns_drop_malformed);
+            return DNS_RET_DROPPED;
+        }
+
         // ensure proper memory alignment
         struct tcphdr tcp_header;
-        memcpy(&tcp_header, pkt->pkt_data + header_len, sizeof(struct tcphdr));
+        memcpy(&tcp_header, data, sizeof(struct tcphdr));
         
         pkt->src_port = ntohs(tcp_header.th_sport);
         pkt->dst_port = ntohs(tcp_header.th_dport);
@@ -168,34 +197,105 @@ dns_parse_packet(dns_collector_t *col, dns_packet_t* pkt)
         }
 
         if ((tcp_header_len < sizeof(struct tcphdr)) ||
-            (header_len + tcp_header_len + sizeof(uint16_t) +
-             DNS_DNS_HEADER_MIN_LEN > pkt->pkt_caplen)) {
-            // DROP: not enough data
+            ((*header_offset) + tcp_header_len + sizeof(uint16_t) > pkt->pkt_caplen)) {
+            // DROP: not enough data or bad header length
             dns_drop_packet(col, pkt, dns_drop_malformed);
             return DNS_RET_DROPPED;
         }
 
-        data_offset = header_len + tcp_header_len + sizeof(uint16_t);
-        pkt->dns_len = pkt->pkt_len - header_len - tcp_header_len - sizeof(uint16_t);
-        pkt->dns_caplen = pkt->pkt_caplen - header_len - tcp_header_len - sizeof(uint16_t);
+        pkt->dns_len = pkt->pkt_len - (*header_offset) - tcp_header_len - sizeof(uint16_t);
+        pkt->dns_caplen = pkt->pkt_caplen - (*header_offset) - tcp_header_len - sizeof(uint16_t);
 
         // ensure proper memory alignment
         uint16_t dns_len_net;
-        memcpy(&dns_len_net, pkt->pkt_data + header_len + tcp_header_len, sizeof(uint16_t));
+        memcpy(&dns_len_net, data + tcp_header_len, sizeof(uint16_t));
+
         if (ntohs(dns_len_net) != pkt->dns_len) {
             // DROP: not a single-packet TCP stream, or malformed
             dns_drop_packet(col, pkt, dns_drop_protocol);
             return DNS_RET_DROPPED;
         }
+
+        (*header_offset) += tcp_header_len + sizeof(uint16_t);
+        return DNS_RET_OK;
+    }
+}
+
+dns_ret_t
+dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_offset)
+{
+    assert(col && pkt && pkt->pkt_data && header_offset && (pkt->pkt_caplen > (*header_offset)));
+    assert(pkt->dns_data == NULL);
+
+    if ((*header_offset) + sizeof(dns_hdr_t) < pkt->pkt_caplen) {
+        // DROP: no space for DNS header
+        dns_drop_packet(col, pkt, dns_drop_malformed);
+        return DNS_RET_DROPPED;
     }
 
-    pkt->dns_caplen = MIN(pkt->dns_caplen, col->config->capture_limit);
+    pkt->dns_caplen = MIN(pkt->dns_caplen, MAX(col->config->dns_capture_limit, sizeof(dns_hdr_t)));
+
+    // ensure proper memory alignment
     pkt->dns_data = malloc(pkt->dns_caplen);
     if (!pkt->dns_data) 
         die("Out of memory"); 
-    memcpy(pkt->dns_data, pkt->pkt_data, pkt->dns_caplen);
+    memcpy(pkt->dns_data, pkt->pkt_data + (*header_offset), pkt->dns_caplen);
+    (*header_offset) += sizeof(dns_hdr_t); // now points after DNS header
 
-    // TODO: HERE: Preparse DNS ID and QNAME
+    // TODO: HERE: Check flags and dir and class and type
+    if (pkt->dns_data->qs != 1) {
+        // DROP: wrong # of DNS queries
+        free(pkt->dns_data);
+        dns_drop_packet(col, pkt, dns_drop_bad_dns);
+        return DNS_RET_DROPPED;
+    }
+
+    pkt->dns_qname = pkt->dns_data->data;
+    int32_t r = dns_query_check(pkt->dns_qname, pkt->dns_caplen - (*header_offset));
+    if ((r < 0) || ((*header_offset) + r + 2 * sizeof(uint16_t) < pkt->pkt_caplen)) {
+        // DROP: query invalid ot too long
+        free(pkt->dns_data);
+        dns_drop_packet(col, pkt, dns_drop_bad_dns);
+        return DNS_RET_DROPPED;
+    }
+    pkt->dns_qname_len = r;
+    (*header_offset) += r; // now points to DNS query type
+
+    // ensure proper memory alignment
+    uint16_t tmp;
+    memcpy(&tmp, pkt->pkt_data + (*header_offset), sizeof(uint16_t));
+    pkt->dns_qtype = ntohs(tmp);
+    (*header_offset) += sizeof(uint16_t); // now points to DNS query class
+    memcpy(&tmp, pkt->pkt_data + (*header_offset), sizeof(uint16_t));
+    pkt->dns_qclass = ntohs(tmp);
+    (*header_offset) += sizeof(uint16_t); // now points to first RR
+
+    return DNS_RET_OK;
+}
+
+dns_ret_t
+dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt)
+{
+    assert(col && pkt && pkt->pkt_data);
+
+    if ((pkt->pkt_caplen < DNS_PACKET_MIN_LEN) || (pkt->pkt_caplen > pkt->pkt_len) || (pkt->pkt_len > DNS_PACKET_MAX_LEN)) {
+        // DROP: basic size assumptions
+        dns_drop_packet(col, pkt, dns_drop_malformed);
+        return DNS_RET_DROPPED;
+    }
+
+    // header offset
+    uint32_t header_len = 0;
+    dns_ret_t r;
+
+    if ((r = dns_packet_parse_ip(col, pkt, &header_len) < 0))
+        return r;
+
+    if ((r = dns_packet_parse_proto(col, pkt, &header_len) < 0))
+        return r;
+
+    if ((r = dns_packet_parse_dns(col, pkt, &header_len) < 0))
+        return r;
 
     return DNS_RET_OK;
 }

@@ -5,6 +5,7 @@
 #include <pcap/pcap.h>
 
 #include "common.h"
+#include "dns.h"
 
 /** Smallest possible length of DNS query/response (only header) */
 #define DNS_DNS_HEADER_MIN_LEN (12)
@@ -42,10 +43,20 @@ struct dns_packet {
     uint16_t dst_port;
     uint8_t ip_proto; // TCP or UDP
 
-    // DNS packet, aligned, owned by the packet if not NULL
-    u_char *dns_data;
+    /** DNS packet data, aligned, owned by the packet if not NULL */
+    dns_hdr_t *dns_data;
+    /** Total length of original DNS packet */
     uint32_t dns_len;
+    /** Captured data, sizeof(dns_header_t) <= dns_caplen <= dns_len */
     uint32_t dns_caplen;
+    /** Pointer to QNAME */
+    u_char *dns_qname;
+    /** Length of QNAME (incl. the final '\0' */
+    uint32_t dns_qname_len;
+    /** Query type */
+    uint16_t dns_qtype;
+    /** Query class */
+    uint16_t dns_qclass;
 };
 
 
@@ -71,6 +82,6 @@ dns_packet_from_pcap(dns_collector_t *col, dns_packet_t* pkt, struct pcap_pkthdr
  * No de/allocation.
  */
 dns_ret_t
-dns_parse_packet(dns_collector_t *col, dns_packet_t* pkt);
+dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt);
 
 #endif /* DNSCOL_PACKET_H */

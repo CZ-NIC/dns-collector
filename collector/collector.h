@@ -13,7 +13,7 @@ struct dns_collector_config {
 
     struct timeval frame_length;
 
-    uint32_t capture_limit;
+    uint32_t dns_capture_limit;
 
     /* Dump dropped packets by reason */
     int dump_packet_reason[dns_drop_LAST];
