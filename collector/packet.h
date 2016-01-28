@@ -43,7 +43,7 @@ struct dns_packet {
     uint8_t ip_proto; // TCP or UDP
 
     // DNS packet, aligned, owned by the packet if not NULL
-    const u_char *dns_data;
+    u_char *dns_data;
     uint32_t dns_len;
     uint32_t dns_caplen;
 };

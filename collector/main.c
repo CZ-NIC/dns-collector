@@ -10,7 +10,7 @@ int main(int argc, const char **argv)
 
     assert(argc > 1);
 
-    dns_collector_config_t conf = {"out", 10, {10, 0}, 65535, {1, 1, 1, 1, 1, 1, 1, 1, 1}}; 
+    dns_collector_config_t conf = {"out", {10, 0}, 600, {1, 1, 1, 1, 1, 1, 1, 1, 1}}; 
 
     dns_collector_t *col = dns_collector_create(&conf);
     assert(col);

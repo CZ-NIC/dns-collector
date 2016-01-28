@@ -11,11 +11,9 @@
 struct dns_collector_config {
     const char *output_base;
 
-    int active_frames;
+    struct timeval frame_length;
 
-    struct timespec frame_length;
-
-    uint32_t pcap_snaplen;
+    uint32_t capture_limit;
 
     /* Dump dropped packets by reason */
     int dump_packet_reason[dns_drop_LAST];
@@ -37,11 +35,10 @@ struct dns_collector {
     /** dumper for unprocessed packets. Owned by collector. May be NULL. */
     pcap_dumper_t *pcap_dump;
 
-    /** active timeframes.
-     * there are config->active_frames frames allocated. frames[0] is always
-     * the current one, all timeframes except timeframes[0] may be NULL. 
-     * Frames in the array are owned by the collector. */
-    dns_timeframe_t *timeframes[];
+    /** current and old timeframes.
+     * Frames here are owned by the collector. */
+    dns_timeframe_t *tf_cur;
+    dns_timeframe_t *tf_old;
 };
 
 
