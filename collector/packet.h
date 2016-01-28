@@ -76,12 +76,52 @@ void
 dns_packet_from_pcap(dns_collector_t *col, dns_packet_t* pkt, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
 
 /**
- * Parse initialised pkt up to the dns header.
+ * Parse initialised pkt and fill in all fields.
+ *
  * Return DNS_RET_DROPPED on parsing failure and packet drop/dump.
- * Returns DNS_RET_OK when the packet is pre-parsed up to DNS header (dns_data is set).
- * No de/allocation.
+ * In this case, dns_data == NULL.
+ *
+ * Returns DNS_RET_OK on success, in this case dns_data is allocated
+ * and owned by the packet.
  */
 dns_ret_t
 dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt);
+
+/**
+ * Parse IPv4/6 header at offset *header_offset.
+ * Detects IP version from the data.
+ *
+ * Return DNS_RET_DROPPED on parsing failure and packet drop/dump.
+ *
+ * Returns DNS_RET_OK on success, *header_offset is the offset of
+ * the TCP/UDP header.
+ */
+dns_ret_t
+dns_packet_parse_ip(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_offset);
+
+/**
+ * Parse TCP/UDP header at offset *header_offset.
+ * Needs pkt->ip_proto to be set.
+ *
+ * Return DNS_RET_DROPPED on parsing failure and packet drop/dump.
+ *
+ * Returns DNS_RET_OK on success, *header_offset is the offset of
+ * the DNS header.
+ */
+dns_ret_t
+dns_packet_parse_proto(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_offset);
+
+/**
+ * Parse DNS header at offset *header_offset.
+ * Drops some weird packet and only accepts packets with exactly one query.
+ *
+ * Return DNS_RET_DROPPED on parsing failure and packet drop/dump.
+ *
+ * Returns DNS_RET_OK on success, *header_offset is the offset of
+ * the first RR (if any) just after the QUERY, dns_data is allocated
+ * and owned by the packet.
+ */
+dns_ret_t
+dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_offset);
 
 #endif /* DNSCOL_PACKET_H */
