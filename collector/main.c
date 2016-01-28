@@ -3,10 +3,13 @@
 #include "common.h"
 #include "timeframe.h"
 #include "collector.h"
+#include "dns.h"
 
 int main(int argc, const char **argv)
 {
     dns_ret_t r;
+
+    printf("Len: %d\n", dns_query_check("\x02s2\x01\x01\x00w332", 8));
 
     assert(argc > 1);
 
