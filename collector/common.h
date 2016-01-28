@@ -26,6 +26,9 @@ typedef struct dns_timeframe dns_timeframe_t;
 struct dns_packet;
 typedef struct dns_packet dns_packet_t;
 
+struct dns_hdr;
+typedef struct dns_hdr dns_hdr_t;
+
 /* Enums */
 
 /**
@@ -66,7 +69,7 @@ enum dns_drop_reason {
     dns_drop_port,
     dns_drop_bad_dns,
     dns_drop_frame_full,
-    dns_drop_no_query,
+    dns_drop_no_request,
     dns_drop_LAST // highest possible value (array sizes)
 };
 typedef enum dns_drop_reason dns_drop_reason_t;

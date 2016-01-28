@@ -20,7 +20,8 @@ dns_collector_create(const dns_collector_config_t *conf)
   
     col->config = conf;
 
-    col->pcap = pcap_open_dead(DLT_RAW, conf->capture_limit);
+    col->pcap = pcap_open_dead(DLT_RAW, conf->dns_capture_limit + 128);
+    // TODO: specify maximum extra header size
     if (!col->pcap) {
         fprintf(stderr, "error: pcap_open_dead() failed\n");
         free(col);
@@ -137,11 +138,11 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
 {
     assert(col && pkt_header && pkt_data);
 
-    dns_packet_t *pkt = (dns_packet_t *)malloc(sizeof(dns_packet_t));
+    dns_packet_t *pkt = (dns_packet_t *)calloc(sizeof(dns_packet_t), 1);
     assert(pkt);
 
     dns_packet_from_pcap(col, pkt, pkt_header, pkt_data);
-    dns_ret_t r = dns_parse_packet(col, pkt);
+    dns_ret_t r = dns_packet_parse(col, pkt);
     if (r == DNS_RET_DROPPED) {
         free(pkt);
         return;
@@ -149,6 +150,7 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
 
     // TODO: gt a packet - YAY! do something next ...
     //fprintf(stdout, "#");
+    free(pkt->dns_data);
     free(pkt);
 }
 

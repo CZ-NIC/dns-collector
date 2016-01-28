@@ -9,8 +9,6 @@ int main(int argc, const char **argv)
 {
     dns_ret_t r;
 
-    printf("Len: %d\n", dns_query_check("\x02s2\x01\x01\x00w332", 8));
-
     assert(argc > 1);
 
     dns_collector_config_t conf = {"out", {10, 0}, 600, {1, 1, 1, 1, 1, 1, 1, 1, 1}}; 

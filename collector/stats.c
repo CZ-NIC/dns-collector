@@ -18,7 +18,7 @@ static const struct dns_drop_reason_desc dns_drop_reason_desc_table[] = {
     {dns_drop_port, "port"},
     {dns_drop_bad_dns, "bad_dns"},
     {dns_drop_frame_full, "frame_full"},
-    {dns_drop_no_query, "no_query"},
+    {dns_drop_no_request, "no_request"},
     {dns_drop_other, "other"},
     {dns_drop_LAST} // End guard
 };

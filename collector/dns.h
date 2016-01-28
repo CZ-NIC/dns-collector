@@ -1,7 +1,7 @@
 #ifndef DNSCOL_DNS_H
 #define DNSCOL_DNS_H
 
-struct dnshdr {
+struct dns_hdr {
     uint16_t id;
     uint8_t f_qr :1;
     uint8_t f_opcode :4;
