@@ -227,7 +227,8 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
     assert(col && pkt && pkt->pkt_data && header_offset && (pkt->pkt_caplen > (*header_offset)));
     assert(pkt->dns_data == NULL);
 
-    if ((*header_offset) + sizeof(dns_hdr_t) < pkt->pkt_caplen) {
+    if ((*header_offset) + sizeof(dns_hdr_t) > pkt->pkt_caplen) {
+        printf("%d %d %d\n", *header_offset, sizeof(dns_hdr_t), pkt->pkt_caplen);
         // DROP: no space for DNS header
         dns_drop_packet(col, pkt, dns_drop_malformed);
         return DNS_RET_DROPPED;
@@ -243,7 +244,7 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
     (*header_offset) += sizeof(dns_hdr_t); // now points after DNS header
 
     // TODO: HERE: Check flags and dir and class and type
-    if (pkt->dns_data->qs != 1) {
+    if (ntohs(pkt->dns_data->qs) != 1) {
         // DROP: wrong # of DNS queries
         free(pkt->dns_data);
         dns_drop_packet(col, pkt, dns_drop_bad_dns);
@@ -251,8 +252,8 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
     }
 
     pkt->dns_qname = pkt->dns_data->data;
-    int32_t r = dns_query_check(pkt->dns_qname, pkt->dns_caplen - (*header_offset));
-    if ((r < 0) || ((*header_offset) + r + 2 * sizeof(uint16_t) < pkt->pkt_caplen)) {
+    int32_t r = dns_query_check(pkt->dns_qname, pkt->pkt_caplen - (*header_offset));
+    if ((r < 0) || ((*header_offset) + r + 2 * sizeof(uint16_t) > pkt->pkt_caplen)) {
         // DROP: query invalid ot too long
         free(pkt->dns_data);
         dns_drop_packet(col, pkt, dns_drop_bad_dns);
@@ -288,13 +289,13 @@ dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt)
     uint32_t header_len = 0;
     dns_ret_t r;
 
-    if ((r = dns_packet_parse_ip(col, pkt, &header_len) < 0))
+    if ((r = dns_packet_parse_ip(col, pkt, &header_len)) != DNS_RET_OK)
         return r;
 
-    if ((r = dns_packet_parse_proto(col, pkt, &header_len) < 0))
+    if ((r = dns_packet_parse_proto(col, pkt, &header_len)) != DNS_RET_OK)
         return r;
 
-    if ((r = dns_packet_parse_dns(col, pkt, &header_len) < 0))
+    if ((r = dns_packet_parse_dns(col, pkt, &header_len)) != DNS_RET_OK)
         return r;
 
     return DNS_RET_OK;
