@@ -149,7 +149,6 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
     }
 
     // TODO: gt a packet - YAY! do something next ...
-    //fprintf(stdout, "#");
     free(pkt->dns_data);
     free(pkt);
 }
