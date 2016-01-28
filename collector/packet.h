@@ -43,7 +43,8 @@ struct dns_packet {
     uint16_t dst_port;
     uint8_t ip_proto; // TCP or UDP
 
-    /** DNS packet data, aligned, owned by the packet if not NULL */
+    /** DNS packet data, aligned, owned by the packet if not NULL.
+     * Warning: this data is in network byte-order! */
     dns_hdr_t *dns_data;
     /** Total length of original DNS packet */
     uint32_t dns_len;
@@ -53,9 +54,9 @@ struct dns_packet {
     u_char *dns_qname;
     /** Length of QNAME (incl. the final '\0' */
     uint32_t dns_qname_len;
-    /** Query type */
+    /** Query type, host byte-order */
     uint16_t dns_qtype;
-    /** Query class */
+    /** Query class host byte-order */
     uint16_t dns_qclass;
 };
 
