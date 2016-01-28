@@ -26,7 +26,8 @@ struct dns_packet {
     uint32_t pkt_len;
     /** Captured data length, length of pkt_data */
     uint32_t pkt_caplen;
-    /** Packet data inc. IP header, borrowed from PCAP, only valid during first processing */
+    /** Packet data inc. IP header, borrowed from PCAP,
+     * only valid during first processing, no alignment assumptions */
     const u_char *pkt_data;
 
     // IP packet info
@@ -41,7 +42,7 @@ struct dns_packet {
     uint16_t dst_port;
     uint8_t ip_proto; // TCP or UDP
 
-    // DNS packet TODO: specify ownership
+    // DNS packet, aligned, owned by the packet if not NULL
     const u_char *dns_data;
     uint32_t dns_len;
     uint32_t dns_caplen;
@@ -62,7 +63,6 @@ dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, dns_drop_reason_t reaso
  */
 void
 dns_packet_from_pcap(dns_collector_t *col, dns_packet_t* pkt, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
-
 
 /**
  * Parse initialised pkt up to the dns header.
