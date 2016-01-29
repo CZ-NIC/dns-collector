@@ -83,13 +83,13 @@ dns_fill_proto(const dns_collector_config_t *conf, const dns_packet_t* request, 
     // qname_raw
     if (1) { 
         proto->has_qname_raw = true;
-        proto->qname_raw.len = any->dns_qname_len;
-        proto->qname_raw.data = any->dns_qname;
+        proto->qname_raw.len = any->dns_qname_raw_len;
+        proto->qname_raw.data = any->dns_qname_raw;
     }
 
-    // qname TODO
-    if (1) { 
-        proto->qname = "";
+    // qname
+    if (1 && any->dns_qname_string) { 
+        proto->qname = any->dns_qname_string;
     }
 
     // qtype
@@ -116,6 +116,12 @@ dns_fill_proto(const dns_collector_config_t *conf, const dns_packet_t* request, 
         proto->request_flags = ntohs(request->dns_data->flags);
     }
 
+    // request_length
+    if (1 && request) { 
+        proto->has_request_length = true;
+        proto->request_length = request->dns_len;
+    }
+
     // response_time_us
     if (1 && response) { 
         proto->has_response_time_us = true;
@@ -127,5 +133,11 @@ dns_fill_proto(const dns_collector_config_t *conf, const dns_packet_t* request, 
         proto->has_response_flags = true;
         proto->response_flags = ntohs(response->dns_data->flags);
     }    
+
+    // response_length
+    if (1 && response) { 
+        proto->has_response_length = true;
+        proto->response_length = response->dns_len;
+    }
 }
 

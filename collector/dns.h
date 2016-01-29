@@ -38,13 +38,13 @@ int32_t
 dns_query_check(u_char *query, uint32_t caplen);
 
 /**
- * Convert a given QNAME to a printable o-terminated string with dots.
+ * Convert a given QNAME to a printable 0-terminated string with dots as separators.
  *
- * Assumes the `qname` passes `dns_query_check()` and that `output` can hold
+ * Assumes the `query` passes `dns_query_check()` and that `output` can hold
  * the entire raw qname.
  *
  * Replaces any characters not in [a-zA-Z0-9-] by '#', returns the number
- * of such replacements (0 if all ok).
+ * of such replacements (0 if all OK).
  */
 int
 dns_query_to_printable(u_char *query, char *output);
