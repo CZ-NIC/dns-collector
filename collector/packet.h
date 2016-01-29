@@ -16,6 +16,9 @@
 /** Packet max length (hard limit) */
 #define DNS_PACKET_MAX_LEN (32000)
 
+/** Packet QNAME max length (by RFC) */
+#define DNS_PACKET_QNAME_MAX_LEN 255
+
 /** TCP ot UDP protocol? */
 #define DNS_ACCEPTED_PROTOCOL(p) (((p) == IPPROTO_UDP) || ((p) == IPPROTO_TCP))
 
@@ -33,7 +36,6 @@ struct dns_packet {
 
     // IP packet info
     uint8_t ip_ver; // 4 or 6
-    dns_packet_dir_t dir; // direction based on known address
     // for IPv4, only _addr[0..3] matter
     uint8_t src_addr[DNSCOL_ADDR_MAXLEN]; 
     uint8_t dst_addr[DNSCOL_ADDR_MAXLEN];
