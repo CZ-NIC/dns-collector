@@ -21,6 +21,12 @@ struct dns_hdr {
 };
 
 /**
+ * Return the value of all flags of a given dns header in host byte-order.
+ */
+uint16_t
+dns_hdr_flags(const struct dns_hdr *hdr);
+
+/**
  * Check a dns-encoded query.
  *
  * Returns -1 on query longer that caplen, when a "compressed" label is found,
@@ -32,6 +38,17 @@ struct dns_hdr {
 int32_t
 dns_query_check(u_char *query, uint32_t caplen);
 
+/**
+ * Convert a given QNAME to a printable o-terminated string with dots.
+ *
+ * Assumes the `qname` passes `dns_query_check()` and that `output` can hold
+ * the entire raw qname.
+ *
+ * Replaces any characters not in [a-zA-Z0-9-] by '#', returns the number
+ * of such replacements (0 if all ok).
+ */
+int
+dns_query_to_printable(u_char *query, char *output);
 
 #endif /* DNSCOL_DNS_H */
 
