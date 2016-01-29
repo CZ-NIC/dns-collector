@@ -259,8 +259,9 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
     (*header_offset) += sizeof(dns_hdr_t); // now points after DNS header
 
     // TODO: HERE: Check flags and dir and class and type
-    if (ntohs(pkt->dns_data->qs) != 1) {
-        // DROP: wrong # of DNS queries
+    if ((ntohs(pkt->dns_data->qs) != 1) ||
+        (DNS_HDR_FLAGS_OPCODE(pkt->dns_data->flags) != 0 )) {
+        // DROP: wrong # of DNS qnames
         free(pkt->dns_data);
         dns_drop_packet(col, pkt, dns_drop_bad_dns);
         return DNS_RET_DROPPED;
@@ -269,12 +270,19 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
     pkt->dns_qname_raw = pkt->dns_data->data;
     int32_t r = dns_query_check(pkt->dns_qname_raw, pkt->pkt_caplen - (*header_offset));
     if ((r < 0) || ((*header_offset) + r + 2 * sizeof(uint16_t) > pkt->pkt_caplen)) {
-        // DROP: query invalid ot too long
+        // DROP: qname invalid, compressed or longer than captured data
         free(pkt->dns_data);
         dns_drop_packet(col, pkt, dns_drop_bad_dns);
         return DNS_RET_DROPPED;
     }
     pkt->dns_qname_raw_len = r;
+    if (pkt->dns_qname_raw_len > DNS_PACKET_QNAME_MAX_LEN) {
+        // DROP: qname too long
+        free(pkt->dns_data);
+        dns_drop_packet(col, pkt, dns_drop_bad_dns);
+        return DNS_RET_DROPPED;
+    }
+
     pkt->dns_qname_string = malloc(pkt->dns_qname_raw_len);
     if (!pkt->dns_qname_string) 
         die("Out of memory");
