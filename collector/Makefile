@@ -1,8 +1,8 @@
 .PHONY: all clean
 
 CC=clang
-CFLAGS=-g3 -std=gnu99 -Wall -pedantic -Wcast-align -Wunused-parameter -Wno-variadic-macros -I ../libucw/run/include
-LDFLAGS=-lpcap `pkg-config --libs 'libprotobuf-c >= 1.0.0'` -L ../libucw/run/lib -lucw-6.5
+CFLAGS=-g3 -std=gnu99 -Wall -pedantic -Wcast-align -Wunused-parameter -Wno-variadic-macros 
+LDFLAGS=-lpcap `pkg-config --libs 'libprotobuf-c >= 1.0.0'` -lucw-6.5
 DEPS=$(wildcard *.h)
 OBJS=main.o collector.o timeframe.o $(PROTO).pb-c.o stats.o packet.o dns.o writeproto.o
 PROG=main
