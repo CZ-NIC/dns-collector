@@ -8,16 +8,16 @@
 #include "writeproto.h"
 
 void
-dns_fill_proto(dns_collector_config_t *conf, const dns_packet_t* request, const dns_packet_t* response, DnsQuery *proto)
+dns_fill_proto(const dns_collector_config_t *conf, const dns_packet_t* request, const dns_packet_t* response, DnsQuery *proto)
 {
     // TODO: Include fields based on config
     assert(conf && (request || response) && proto);
     if (request && response)
         assert(dns_packets_match(request, response));
     if (request)
-        assert(request->dns_data->f_qr == 0 && request->dns_data);
+        assert(DNS_HDR_FLAGS_QR(request->dns_data->flags) == 0 && request->dns_data);
     if (response)
-        assert(response->dns_data->f_qr == 1 && response->dns_data);
+        assert(DNS_HDR_FLAGS_QR(response->dns_data->flags) == 1 && response->dns_data);
 
     dns_query__init(proto);
     const dns_packet_t* const any = (request ? request : response);
@@ -113,7 +113,7 @@ dns_fill_proto(dns_collector_config_t *conf, const dns_packet_t* request, const 
     // request_flags
     if (1 && request) { 
         proto->has_request_flags = true;
-        proto->request_flags = dns_hdr_flags(request->dns_data);
+        proto->request_flags = ntohs(request->dns_data->flags);
     }
 
     // response_time_us
@@ -125,7 +125,7 @@ dns_fill_proto(dns_collector_config_t *conf, const dns_packet_t* request, const 
     // response_flags
     if (1 && response) { 
         proto->has_response_flags = true;
-        proto->response_flags = dns_hdr_flags(response->dns_data);
+        proto->response_flags = ntohs(response->dns_data->flags);
     }    
 }
 

@@ -1,18 +1,11 @@
 #ifndef DNSCOL_DNS_H
 #define DNSCOL_DNS_H
 
+#include <netinet/in.h>
+
 struct dns_hdr {
     uint16_t id;
-    uint8_t f_qr :1;
-    uint8_t f_opcode :4;
-    uint8_t f_aa :1;
-    uint8_t f_tc :1;
-    uint8_t f_rd :1;
-    uint8_t f_ra :1;
-    uint8_t f_z :1;
-    uint8_t f_ad :1;
-    uint8_t f_cd :1;
-    uint8_t f_rcode :4;
+    uint16_t flags;
     uint16_t qs;
     uint16_t ans_rrs;
     uint16_t auth_rrs;
@@ -20,11 +13,17 @@ struct dns_hdr {
     u_char data[];
 };
 
-/**
- * Return the value of all flags of a given dns header in host byte-order.
- */
-uint16_t
-dns_hdr_flags(const struct dns_hdr *hdr);
+#define DNS_HDR_FLAGS_QR(flags)     ((ntohs(flags) & 0x8000) >> 15)
+#define DNS_HDR_FLAGS_OPCODE(flags) ((ntohs(flags) & 0x7800) >> 11)
+#define DNS_HDR_FLAGS_AA(flags)     ((ntohs(flags) & 0x0400) >> 10)
+#define DNS_HDR_FLAGS_TC(flags)     ((ntohs(flags) & 0x0200) >> 9)
+#define DNS_HDR_FLAGS_RD(flags)     ((ntohs(flags) & 0x0100) >> 8)
+
+#define DNS_HDR_FLAGS_RA(flags)     ((ntohs(flags) & 0x0080) >> 7)
+#define DNS_HDR_FLAGS_Z(flags)      ((ntohs(flags) & 0x0040) >> 6)
+#define DNS_HDR_FLAGS_AD(flags)     ((ntohs(flags) & 0x0020) >> 5)
+#define DNS_HDR_FLAGS_CD(flags)     ((ntohs(flags) & 0x0010) >> 4)
+#define DNS_HDR_FLAGS_RCODE(flags)  ((ntohs(flags) & 0x000f) >> 0)
 
 /**
  * Check a dns-encoded query.

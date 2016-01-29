@@ -13,6 +13,6 @@
  * Uses `conf` to select included fields.
  */
 void
-dns_fill_proto(dns_collector_config_t *conf, const dns_packet_t* request, const dns_packet_t* response, DnsQuery *proto);
+dns_fill_proto(const dns_collector_config_t *conf, const dns_packet_t* request, const dns_packet_t* response, DnsQuery *proto);
 
 #endif /* DNSCOL_WRITEPROTO_H */
