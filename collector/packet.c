@@ -17,6 +17,22 @@
 #include "stats.h"
 #include "timeframe.h"
 
+dns_packet_t*
+dns_packet_create()
+{
+    return (dns_packet_t *)calloc(sizeof(dns_packet_t), 1);
+}
+
+void
+dns_packet_destroy(dns_packet_t *pkt)
+{
+    if (pkt->dns_data)
+        free(pkt->dns_data);
+    if (pkt->dns_qname_string)
+        free(pkt->dns_qname_string);
+    free(pkt);
+}
+
 void
 dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, dns_drop_reason_t reason)
 {
