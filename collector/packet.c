@@ -228,7 +228,6 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
     assert(pkt->dns_data == NULL);
 
     if ((*header_offset) + sizeof(dns_hdr_t) > pkt->pkt_caplen) {
-        printf("%d %d %d\n", *header_offset, sizeof(dns_hdr_t), pkt->pkt_caplen);
         // DROP: no space for DNS header
         dns_drop_packet(col, pkt, dns_drop_malformed);
         return DNS_RET_DROPPED;
@@ -300,4 +299,31 @@ dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt)
 
     return DNS_RET_OK;
 }
+
+uint16_t
+dns_packet_get_qclass(const dns_packet_t* pkt)
+{
+    assert(pkt && pkt->dns_data && pkt->dns_qname);
+    uint16_t tmp;
+    // ensure proper alignment
+    memcpy(&tmp, pkt->dns_qname + pkt->dns_qname_len + sizeof(uint16_t), sizeof(uint16_t));
+    return ntohs(tmp);
+}
+
+uint16_t
+dns_packet_get_qtype(const dns_packet_t* pkt)
+{
+    assert(pkt && pkt->dns_data && pkt->dns_qname);
+    uint16_t tmp;
+    // ensure proper alignment
+    memcpy(&tmp, pkt->dns_qname + pkt->dns_qname_len, sizeof(uint16_t));
+    return ntohs(tmp);
+}
+
+uint32_t
+dns_packet_get_time_us(const dns_packet_t* pkt)
+{
+    return pkt->ts.tv_sec * 1000000 + pkt->ts.tv_usec;
+}
+
 

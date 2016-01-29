@@ -125,4 +125,24 @@ dns_packet_parse_proto(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header
 dns_ret_t
 dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_offset);
 
+/**
+ * Return query qclass in host byte-order.
+ * Assumes `dns_packet_parse_dns()` was run successfully.
+ */
+uint16_t
+dns_packet_get_qclass(const dns_packet_t* pkt);
+
+/**
+ * Return query qtype in host byte-order.
+ * Assumes `dns_packet_parse_dns()` was run successfully.
+ */
+uint16_t
+dns_packet_get_qtype(const dns_packet_t* pkt);
+
+/**
+ * Returns packet timestamp in usec since Epoch.
+ */
+uint32_t
+dns_packet_get_time_us(const dns_packet_t* pkt);
+
 #endif /* DNSCOL_PACKET_H */
