@@ -4,8 +4,8 @@ message DnsQuery {
 
   // Query condensed information 
   enum Flags {
-    PROTOCOL_TCP = 1;                    // if 0, UDP
-    PRTOCOL_IPV6 = 2;                    // if 0, then IPv4
+    PROTOCOL_TCP = 1;                    // 0: UDP, 1: TCP
+    PRTOCOL_IPV6 = 2;                    // 0: IPv4, 1: IPv6
     HAS_REQUEST = 4;                     // request present
     HAS_RESPONSE = 8;                    // response present
   }
@@ -14,25 +14,25 @@ message DnsQuery {
 
   // Client information
   optional bytes   client_addr = 2;      // client IP, either 4 or 16 bytes
-  optional uint32  client_port = 3;      // client port (TCP or UDP)
+  optional uint32  client_port = 3;      // client port (16 bits)
 
   // Server information
   optional bytes   server_addr = 4;      // client IP, either 4 or 16 bytes
-  optional uint32  server_port = 5;      // client port (TCP or UDP)
+  optional uint32  server_port = 5;      // client port (16 bits)
 
   // Common DNS information
-  optional fixed32 id = 6;               // transaction ID
+  optional uint32  id = 6;               // transaction ID (16 bits)
   optional bytes   qname_raw = 7;        // bytes of wire-encoded query name
   optional string  qname = 8;            // decoded dot-separated ASCI-only query name
-  optional uint32  qtype = 9;            // query type
-  optional uint32  qclass = 10;          // query class
+  optional uint32  qtype = 9;            // query type (16 bits)
+  optional uint32  qclass = 10;          // query class (16 bits)
 
   // DNS request information
   optional uint64  request_time_us = 11; // micro-seconds since the Epoch
-  optional fixed32 request_flags = 12;   // flags from response packet
+  optional uint32  request_flags = 12;   // flags from response packet (16 bits)
 
   // DNS response information
   optional uint64  response_time_us = 13;// micro-seconds since the Epoch
-  optional fixed32 response_flags = 14;  // flags from response packet
+  optional uint32  response_flags = 14;  // flags from response packet (16 bits)
 
 }

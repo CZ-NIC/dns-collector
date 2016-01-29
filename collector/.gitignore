@@ -4,3 +4,4 @@
 .*.swp
 *.pb-c.c
 *.pb-c.h
+.gdb_history
