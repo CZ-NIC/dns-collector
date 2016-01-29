@@ -30,9 +30,11 @@ message DnsQuery {
   // DNS request information
   optional uint64  request_time_us = 11; // micro-seconds since the Epoch
   optional uint32  request_flags = 12;   // flags from response packet (16 bits)
+  optional uint32  request_length = 13;  // length of the request DNS message
 
   // DNS response information
-  optional uint64  response_time_us = 13;// micro-seconds since the Epoch
-  optional uint32  response_flags = 14;  // flags from response packet (16 bits)
+  optional uint64  response_time_us = 14;// micro-seconds since the Epoch
+  optional uint32  response_flags = 15;  // flags from response packet (16 bits)
+  optional uint32  response_length = 16; // length of the response DNS message
 
 }

@@ -250,15 +250,19 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
         return DNS_RET_DROPPED;
     }
 
-    pkt->dns_qname = pkt->dns_data->data;
-    int32_t r = dns_query_check(pkt->dns_qname, pkt->pkt_caplen - (*header_offset));
+    pkt->dns_qname_raw = pkt->dns_data->data;
+    int32_t r = dns_query_check(pkt->dns_qname_raw, pkt->pkt_caplen - (*header_offset));
     if ((r < 0) || ((*header_offset) + r + 2 * sizeof(uint16_t) > pkt->pkt_caplen)) {
         // DROP: query invalid ot too long
         free(pkt->dns_data);
         dns_drop_packet(col, pkt, dns_drop_bad_dns);
         return DNS_RET_DROPPED;
     }
-    pkt->dns_qname_len = r;
+    pkt->dns_qname_raw_len = r;
+    pkt->dns_qname_string = malloc(pkt->dns_qname_raw_len);
+    if (!pkt->dns_qname_string) 
+        die("Out of memory");
+    dns_query_to_printable(pkt->dns_qname_raw, pkt->dns_qname_string);
     (*header_offset) += r; // now points to DNS query type
 
     // ensure proper memory alignment
@@ -303,20 +307,20 @@ dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt)
 uint16_t
 dns_packet_get_qclass(const dns_packet_t* pkt)
 {
-    assert(pkt && pkt->dns_data && pkt->dns_qname);
+    assert(pkt && pkt->dns_data && pkt->dns_qname_raw);
     uint16_t tmp;
     // ensure proper alignment
-    memcpy(&tmp, pkt->dns_qname + pkt->dns_qname_len + sizeof(uint16_t), sizeof(uint16_t));
+    memcpy(&tmp, pkt->dns_qname_raw + pkt->dns_qname_raw_len + sizeof(uint16_t), sizeof(uint16_t));
     return ntohs(tmp);
 }
 
 uint16_t
 dns_packet_get_qtype(const dns_packet_t* pkt)
 {
-    assert(pkt && pkt->dns_data && pkt->dns_qname);
+    assert(pkt && pkt->dns_data && pkt->dns_qname_raw);
     uint16_t tmp;
     // ensure proper alignment
-    memcpy(&tmp, pkt->dns_qname + pkt->dns_qname_len, sizeof(uint16_t));
+    memcpy(&tmp, pkt->dns_qname_raw + pkt->dns_qname_raw_len, sizeof(uint16_t));
     return ntohs(tmp);
 }
 

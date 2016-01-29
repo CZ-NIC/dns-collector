@@ -50,10 +50,13 @@ struct dns_packet {
     uint32_t dns_len;
     /** Captured data, sizeof(dns_header_t) <= dns_caplen <= dns_len */
     uint32_t dns_caplen;
-    /** Pointer to QNAME */
-    u_char *dns_qname;
-    /** Length of QNAME (incl. the final '\0' */
-    uint32_t dns_qname_len;
+    /** Pointer to raw QNAME */
+    u_char *dns_qname_raw;
+    /** Length of qname_raw (incl. the final '\0' */
+    uint32_t dns_qname_raw_len;
+    /** Pointer to ascii-only, 0-terminated QNAME string with dots.
+     * Owned by the packet if not NULL */
+    char *dns_qname_string;
     /** Query type, host byte-order */
     uint16_t dns_qtype;
     /** Query class host byte-order */
