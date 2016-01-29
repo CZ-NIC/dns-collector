@@ -63,6 +63,17 @@ struct dns_packet {
     uint16_t dns_qclass;
 };
 
+/**
+ * Allocate an empty packet to be filled from pcap or socket
+ */
+dns_packet_t*
+dns_packet_create();
+
+/**
+ * Free a given packet and its data
+ */
+void
+dns_packet_destroy(dns_packet_t *pkt);
 
 /**
  * Drop and optionally dump a packet, depending on the reason and config.
