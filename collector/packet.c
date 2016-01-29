@@ -326,4 +326,22 @@ dns_packet_get_time_us(const dns_packet_t* pkt)
     return pkt->ts.tv_sec * 1000000 + pkt->ts.tv_usec;
 }
 
+int
+dns_packets_match(dns_packet_t* request, dns_packet_t* response)
+{
+    assert(request && request->dns_data && response && response->dns_data);
+    assert(request->dns_data->f_qr == 0 && response->dns_data->f_qr == 1);
+
+    const int addr_len = (request->ip_ver == 4 ? 4 : 16);
+
+    return (request->ip_ver == response->ip_ver &&
+            request->ip_proto == response->ip_proto &&
+            request->src_port == response->dst_port &&
+            request->dst_port == response->src_port &&
+            request->dns_data->id == response->dns_data->id && // network byte-order
+            memcmp(request->src_addr, response->dst_addr, addr_len) == 0 &&
+            memcmp(request->dst_addr, response->src_addr, addr_len) == 0);
+}
+
+
 

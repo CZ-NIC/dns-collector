@@ -145,4 +145,13 @@ dns_packet_get_qtype(const dns_packet_t* pkt);
 uint32_t
 dns_packet_get_time_us(const dns_packet_t* pkt);
 
+/**
+ * Compare two packets as request+response.
+ * Return true when they match, false otherwise.
+ * Assumes `dns_packet_parse_dns()` was run successfully on both.
+ */
+int
+dns_packets_match(dns_packet_t* request, dns_packet_t* response);
+
+
 #endif /* DNSCOL_PACKET_H */
