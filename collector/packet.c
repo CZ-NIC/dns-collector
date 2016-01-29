@@ -330,7 +330,8 @@ int
 dns_packets_match(const dns_packet_t* request, const dns_packet_t* response)
 {
     assert(request && request->dns_data && response && response->dns_data);
-    assert(request->dns_data->f_qr == 0 && response->dns_data->f_qr == 1);
+    assert(DNS_HDR_FLAGS_QR(request->dns_data->flags) == 0 &&
+           DNS_HDR_FLAGS_QR(response->dns_data->flags) == 1);
 
     const int addr_len = (request->ip_ver == 4 ? 4 : 16);
 
