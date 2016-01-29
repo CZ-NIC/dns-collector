@@ -327,7 +327,7 @@ dns_packet_get_time_us(const dns_packet_t* pkt)
 }
 
 int
-dns_packets_match(dns_packet_t* request, dns_packet_t* response)
+dns_packets_match(const dns_packet_t* request, const dns_packet_t* response)
 {
     assert(request && request->dns_data && response && response->dns_data);
     assert(request->dns_data->f_qr == 0 && response->dns_data->f_qr == 1);

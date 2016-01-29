@@ -151,7 +151,7 @@ dns_packet_get_time_us(const dns_packet_t* pkt);
  * Assumes `dns_packet_parse_dns()` was run successfully on both.
  */
 int
-dns_packets_match(dns_packet_t* request, dns_packet_t* response);
+dns_packets_match(const dns_packet_t* request, const dns_packet_t* response);
 
 
 #endif /* DNSCOL_PACKET_H */
