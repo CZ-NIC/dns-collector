@@ -1,7 +1,13 @@
-/*.o
 /main
+/.gdb_history
+/__pycache__
+
+*.o
 *.pcap
 .*.swp
 *.pb-c.c
 *.pb-c.h
-.gdb_history
+*_pb2.py
+*.pyc
+
+
