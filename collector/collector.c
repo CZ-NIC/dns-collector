@@ -7,6 +7,7 @@
 #include <pcap/pcap.h>
 
 #include "collector.h"
+#include "writeproto.h"
 #include "timeframe.h"
 #include "packet.h"
 
@@ -138,7 +139,7 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
 {
     assert(col && pkt_header && pkt_data);
 
-    dns_packet_t *pkt = (dns_packet_t *)calloc(sizeof(dns_packet_t), 1);
+    dns_packet_t *pkt = dns_packet_create();
     assert(pkt);
 
     dns_packet_from_pcap(col, pkt, pkt_header, pkt_data);
@@ -149,8 +150,18 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
     }
 
     // TODO: got a packet - YAY! do something next ...
-    free(pkt->dns_data);
-    free(pkt);
+    DnsQuery q;
+    if (DNS_HDR_FLAGS_QR(pkt->dns_data->flags) == 0)
+        dns_fill_proto(col->config, pkt, NULL, &q);
+    else
+        dns_fill_proto(col->config, NULL, pkt, &q);
+    uint16_t len = protobuf_c_message_get_packed_size((ProtobufCMessage *)&q);
+    u_char *buf = (u_char *)alloca(len);
+    protobuf_c_message_pack((ProtobufCMessage *)&q, buf);
+    fwrite(&len, 2, 1, stdout);
+    fwrite(buf, len, 1, stdout);
+
+    dns_packet_destroy(pkt);
 }
 
 
