@@ -22,6 +22,8 @@
 /** TCP ot UDP protocol? */
 #define DNS_ACCEPTED_PROTOCOL(p) (((p) == IPPROTO_UDP) || ((p) == IPPROTO_TCP))
 
+/** Address length for IP ver (4/6) */
+#define DNS_ADDR_LEN(ipver) ((ipver) == 4 ? 4 : 16)
 
 struct dns_packet {
     /** Timestamp [us] */
@@ -63,6 +65,14 @@ struct dns_packet {
     uint16_t dns_qtype;
     /** Query class host byte-order */
     uint16_t dns_qclass;
+
+    /** DNS request/response key in the form 
+     * `[CLIENT_IP][CLIENT_PORT][DNS_ID(net order)][QNAME_RAW]`.
+     * Makes queries comparable and matchable with `memcmp()`.
+     * If not NULL, owned by the packet. */
+    u_char *hash_key;
+    /** Length of `hash_key` */
+    uint32_t hash_key_len;
 };
 
 /**
@@ -168,6 +178,18 @@ dns_packet_get_time_us(const dns_packet_t* pkt);
  */
 int
 dns_packets_match(const dns_packet_t* request, const dns_packet_t* response);
+
+/** 
+ * Create a query hash key for a packet in `pkt->hash_key`.
+ *
+ * Allocates space for pkt->hash_key, must not be already allocated.
+ * The hash key has format:
+ * `[CLIENT_IP][CLIENT_PORT][DNS_ID(net order)][QNAME_RAW]`
+ * So it is suitable to directly match requests and responses.
+ */
+void
+dns_packet_create_hash_key(dns_collector_t *col, dns_packet_t *pkt);
+
 
 
 #endif /* DNSCOL_PACKET_H */

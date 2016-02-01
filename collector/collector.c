@@ -149,6 +149,8 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
         return;
     }
 
+    dns_packet_create_hash_key(col, pkt);
+
     // TODO: got a packet - YAY! do something next ...
     DnsQuery q;
     if (DNS_HDR_FLAGS_QR(pkt->dns_data->flags) == 0)
