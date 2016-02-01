@@ -30,6 +30,8 @@ dns_packet_destroy(dns_packet_t *pkt)
         free(pkt->dns_data);
     if (pkt->dns_qname_string)
         free(pkt->dns_qname_string);
+    if (pkt->hash_key)
+        free(pkt->hash_key);
     free(pkt);
 }
 
@@ -327,6 +329,39 @@ dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt)
 
     return DNS_RET_OK;
 }
+
+void
+dns_packet_create_hash_key(dns_collector_t *col, dns_packet_t *pkt)
+{
+    assert(col && pkt && pkt->dns_data && (!pkt->hash_key));
+
+    // Hashh key:
+    // [CLIENT_IP][CLIENT_PORT][DNS_ID(net order)][QNAME_RAW]
+    pkt->hash_key_len = DNS_ADDR_LEN(pkt->ip_ver) + sizeof(uint16_t) + sizeof(uint16_t) + pkt->dns_qname_raw_len;
+    pkt->hash_key = (u_char *)malloc(pkt->hash_key_len);
+    if (!pkt->hash_key)
+        die("Out of memory");
+    u_char *p = pkt->hash_key;
+
+    if (DNS_HDR_FLAGS_QR(pkt->dns_data->flags) == 0) // Request
+        memcpy(p, pkt->src_addr, DNS_ADDR_LEN(pkt->ip_ver));
+    else
+        memcpy(p, pkt->dst_addr, DNS_ADDR_LEN(pkt->ip_ver));
+    p += DNS_ADDR_LEN(pkt->ip_ver);
+
+    if (DNS_HDR_FLAGS_QR(pkt->dns_data->flags) == 0) // Request
+        memcpy(p, &(pkt->src_port), sizeof(uint16_t));
+    else
+        memcpy(p, &(pkt->dst_port), sizeof(uint16_t));
+    p += sizeof(uint16_t);
+
+    memcpy(p, &(pkt->dns_data->id), sizeof(uint16_t));
+    p += sizeof(uint16_t);
+
+    memcpy(p, pkt->dns_qname_raw, pkt->dns_qname_raw_len);
+    p += pkt->dns_qname_raw_len;
+}
+
 
 uint16_t
 dns_packet_get_qclass(const dns_packet_t* pkt)
