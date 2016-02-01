@@ -256,7 +256,7 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
     // ensure proper memory alignment
     pkt->dns_data = malloc(pkt->dns_caplen);
     if (!pkt->dns_data) 
-        die("Out of memory"); 
+        dns_die("Out of memory"); 
     memcpy(pkt->dns_data, pkt->pkt_data + (*header_offset), pkt->dns_caplen);
     (*header_offset) += sizeof(dns_hdr_t); // now points after DNS header
 
@@ -287,7 +287,7 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
 
     pkt->dns_qname_string = malloc(pkt->dns_qname_raw_len);
     if (!pkt->dns_qname_string) 
-        die("Out of memory");
+        dns_die("Out of memory");
     dns_query_to_printable(pkt->dns_qname_raw, pkt->dns_qname_string);
     (*header_offset) += r; // now points to DNS query type
 
@@ -340,7 +340,7 @@ dns_packet_create_hash_key(dns_collector_t *col, dns_packet_t *pkt)
     pkt->hash_key_len = DNS_ADDR_LEN(pkt->ip_ver) + sizeof(uint16_t) + sizeof(uint16_t) + pkt->dns_qname_raw_len;
     pkt->hash_key = (u_char *)malloc(pkt->hash_key_len);
     if (!pkt->hash_key)
-        die("Out of memory");
+        dns_die("Out of memory");
     u_char *p = pkt->hash_key;
 
     if (DNS_HDR_FLAGS_QR(pkt->dns_data->flags) == 0) // Request

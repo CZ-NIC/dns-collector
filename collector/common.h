@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <time.h>
 
 #include <ucw/lib.h>
 
@@ -92,6 +93,24 @@ typedef enum dns_ret dns_ret_t;
 #define MAX(a,b) (((a)>(b))?(a):(b))                    /** Maximum of two numbers **/
 #endif
 
+
+/**
+ * Time for timestamps and time differences.
+ * Absolute time in micro-seconds since the Epoch.
+ * Holds up to +- 292 000 years.
+ */
+typedef int64_t dns_us_time_t;
+
+dns_us_time_t
+dns_us_time_from_timeval(const struct timeval *t);
+
+dns_us_time_t
+dns_us_time_from_timespec(const struct timespec *t);
+
+/**
+ * Immediatelly end the program, writing msg to stderr.
+ */
+void dns_die(const char *msg) __attribute__((noreturn));
 
 
 #endif /* DNSCOL_COMMON_H */
