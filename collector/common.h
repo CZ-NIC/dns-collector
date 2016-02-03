@@ -110,7 +110,8 @@ dns_us_time_from_timespec(const struct timespec *t);
 /**
  * Immediatelly end the program, writing msg to stderr.
  */
-void dns_die(const char *msg) __attribute__((noreturn));
+#define dns_die(msg) dns_die_f(__LINE__, __FILE__, __func__, (msg))
+void dns_die_f(int line, const char *file, const char *func, const char *msg) __attribute__((noreturn));
 
 
 #endif /* DNSCOL_COMMON_H */
