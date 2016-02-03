@@ -32,6 +32,8 @@ dns_packet_destroy(dns_packet_t *pkt)
         free(pkt->dns_qname_string);
     if (pkt->hash_key)
         free(pkt->hash_key);
+    if (pkt->response)
+        dns_packet_destroy(pkt->response);
     free(pkt);
 }
 

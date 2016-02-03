@@ -11,7 +11,7 @@
 struct dns_collector_config {
     const char *output_base;
 
-    struct timeval frame_length;
+    dns_us_time_t frame_length;
 
     uint32_t dns_capture_limit;
 

@@ -9,80 +9,91 @@
 #include "timeframe.h"
 #include "packet.h"
 
+
 dns_timeframe_t *
-dns_timeframe_create(const struct timespec *time_start, const char *frame_name) 
+dns_timeframe_create(const dns_collector_t *col, dns_us_time_t time_start) 
 {
+    assert(col);
+
     dns_timeframe_t *frame = (dns_timeframe_t*) calloc(sizeof(dns_timeframe_t), 1);
-    if (!frame) return NULL;
+    if (!frame)
+        dns_die("Out of memory");
 
-    if (time_start) {
-        frame->time_start.tv_sec = time_start->tv_sec;
-        frame->time_start.tv_nsec = time_start->tv_nsec;
+    if (time_start >= 0) {
+        frame->time_start = time_start;
     } else {
-        clock_gettime(CLOCK_REALTIME, &(frame->time_start));
+        struct timespec now;
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        frame->time_start = dns_us_time_from_timespec(&now);
     }
+    frame->time_end = frame->time_start + col->config->frame_length;
 
-    strncpy(frame->name, frame_name, DNSCOL_MAX_FNAME_LEN);
-    frame->name[DNSCOL_MAX_FNAME_LEN - 1] = 0;
+    frame->collector = col;
+    frame->packets_next_elem_ptr = &(frame->packets);
 
     return frame;
 }
 
 void
-dns_timeframe_writeout(dns_timeframe_t *frame)
+dns_timeframe_destroy(dns_timeframe_t *frame) 
 {
-//    if (frame->time_end) 
+    struct dns_timeframe_elem *p = frame->packets, *ptmp;
+
+    while(p) {
+        // also destroys pkt->response, if any
+        dns_packet_destroy(p->elem);
+
+        ptmp = p;
+        p = p -> next;
+        free(ptmp);
+    }
+
+    free(frame);
 }
 
-
-
-
-struct queryhash_table;
-
-typedef struct querypair {
-    u_char *hash_key;
-    uint32_t hash_key_len;
-    dns_packet_t *request;
-    dns_packet_t *response;
-} querypair;
-
-#define HASH_PREFIX(x) queryhash_##x
-#define HASH_NODE struct querypair
-#define HASH_TABLE_DYNAMIC 
-
-#define HASH_WANT_FIND
-#define HASH_WANT_LOOKUP
-#define HASH_WANT_CLEANUP
-
-#define HASH_AUTO_POOL 4096
-#define HASH_ZERO_FILL
-#define HASH_TABLE_ALLOC 
-
-#define HASH_KEY_COMPLEX(x) x hash_key_len, x hash_key
-#define HASH_KEY_DECL uint32_t hash_key_len, u_char *hash_key
-
-#define HASH_GIVE_HASHFN
-uint HASH_PREFIX(hash)(UNUSED void *t, uint32_t hash_key_len, u_char *hash_key)
+void
+dns_timeframe_add_packet(dns_timeframe_t *frame, dns_packet_t *pkt)
 {
-    return 0; // TODO
+    assert(frame && pkt);
+
+    struct dns_timeframe_elem *e = calloc(sizeof(struct dns_timeframe_elem), 1);
+    if (!e)
+        dns_die("Out of memory");
+
+    e->elem = pkt;
+    *(frame->packets_next_elem_ptr) = e;
+    frame->packets_next_elem_ptr = &(e->next);
 }
 
-#define HASH_GIVE_EQ
-int HASH_PREFIX(eq)(UNUSED void *t, uint32_t hash_key_len1, u_char *hash_key1, uint32_t hash_key_len2, u_char *hash_key2)
+void
+dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
 {
-    if (hash_key_len1 != hash_key_len2)
-        return 0;
-    return !memcmp(hash_key1, hash_key2, hash_key_len1);
-}
+    assert(frame);
 
-#define HASH_GIVE_INIT_KEY
-void HASH_PREFIX(init_key)(UNUSED void *t, querypair *node, uint32_t hash_key_len, u_char *hash_key)
-{
-    node->hash_key = hash_key;
-    node->hash_key_len = hash_key_len;
-}
+    DnsQuery q;
+    struct dns_timeframe_elem *p = frame->packets;
+    u_char buf[DNS_MAX_PROTOBUF_LEN];
+    size_t len;
 
-#include <ucw/hashtable.h>
+    while(p) {
+        dns_packet_t *pkt = p->elem;
+
+        if (DNS_HDR_FLAGS_QR(pkt->dns_data->flags) == 0)
+            // request with optional response
+            dns_fill_proto(col->config, pkt, pkt->response, &q);
+        else
+            // response only
+            dns_fill_proto(col->config, NULL, pkt, &q);
+        len = protobuf_c_message_pack((ProtobufCMessage *)&q, buf);
+        if (len > DNS_MAX_PROTOBUF_LEN) // Should never happen, but defensively:
+            dns_die("Impossibly long protobuf");
+
+        fwrite(&len, 2, 1, f);
+        fwrite(buf, len, 1, f);
+
+        p = p -> next;
+    }
+}
 
 
 
