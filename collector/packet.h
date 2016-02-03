@@ -26,8 +26,8 @@
 #define DNS_ADDR_LEN(ipver) ((ipver) == 4 ? 4 : 16)
 
 struct dns_packet {
-    /** Timestamp [us] */
-    struct timeval ts;
+    /** Timestamp [us since Epoch] */
+    dns_us_time_t ts;
     /** Total (claimed) length of packet, may be longer than pkt_caplen */
     uint32_t pkt_len;
     /** Captured data length, length of pkt_data */
@@ -66,13 +66,20 @@ struct dns_packet {
     /** Query class host byte-order */
     uint16_t dns_qclass;
 
-    /** DNS request/response key in the form 
-     * `[CLIENT_IP][CLIENT_PORT][DNS_ID(net order)][QNAME_RAW]`.
+    /** When this is a request, a pointer to an optional matching response */
+    dns_packet_t *response;
+
+      
+    /** DNS request/response hash key in the form 
+     * `[CLIENT_IP][CLIENT_PORT][DNS_ID(net order)][QNAME_RAW](\0)*`,
+     * padded to 4 byte multiple by '\0'.
      * Makes queries comparable and matchable with `memcmp()`.
      * If not NULL, owned by the packet. */
     u_char *hash_key;
-    /** Length of `hash_key` */
+    /** Length of `hash_key` in bytes, multiple of 4. */
     uint32_t hash_key_len;
+
+
 };
 
 /**

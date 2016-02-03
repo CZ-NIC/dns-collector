@@ -5,6 +5,11 @@
 #include "dnsquery.pb-c.h"
 #include "packet.h"
 
+/** Buffer large enough to hold serialised DnsQuery protobuf.
+ * All fixed-size attributes should take <=96 bytes even at 8b/attr,
+ * IPs and 2xQNAME should fit 4*4+2*16+2*256, 656 bytes total. */
+#define DNS_MAX_PROTO_LEN 1024
+
 /**
  * Reset and fill in a given `proto` with combined `request` and `response`.
  *
