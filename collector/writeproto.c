@@ -107,7 +107,7 @@ dns_fill_proto(const dns_collector_config_t *conf, const dns_packet_t* request, 
     // request_time_us
     if (1 && request) { 
         proto->has_request_time_us = true;
-        proto->request_time_us = dns_packet_get_time_us(request);
+        proto->request_time_us = request->ts;
     }
 
     // request_flags
@@ -125,7 +125,7 @@ dns_fill_proto(const dns_collector_config_t *conf, const dns_packet_t* request, 
     // response_time_us
     if (1 && response) { 
         proto->has_response_time_us = true;
-        proto->response_time_us = dns_packet_get_time_us(response);
+        proto->response_time_us = response->ts;
     }
 
     // response_flags

@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "stats.h"
+#include "collector.h"
 
 #include <time.h>
 
@@ -12,7 +13,7 @@
 struct dns_timeframe_elem {
     dns_packet_t *elem;
     struct dns_timeframe_elem *next;
-}
+};
 
 /**
  * Single time frame.

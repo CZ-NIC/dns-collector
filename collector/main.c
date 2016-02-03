@@ -11,7 +11,12 @@ int main(int argc, const char **argv)
 
     assert(argc > 1);
 
-    dns_collector_config_t conf = {"out", {10, 0}, 600, {1, 1, 1, 1, 1, 1, 1, 1, 1}}; 
+    dns_collector_config_t conf = {
+        .output_base = "out",
+        .frame_length = 1 * 1000000,
+        .dns_capture_limit = 600,
+        .dump_packet_reason = {1, 1, 1, 1, 1, 1, 1, 1, 1},
+    }; 
 
     dns_collector_t *col = dns_collector_create(&conf);
     assert(col);
