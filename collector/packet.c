@@ -54,7 +54,10 @@ dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, dns_drop_reason_t reaso
         // TODO: check dump (soft/hard) quota?
 
         if (col->pcap_dump) {
-            const struct pcap_pkthdr hdr = {pkt->ts, pkt->pkt_caplen, pkt->pkt_len};
+            const struct pcap_pkthdr hdr = {
+                .ts = {.tv_sec = pkt->ts / 1000000, .tv_usec = pkt->ts % 1000000},
+                .caplen = pkt->pkt_caplen,
+                .len = pkt->pkt_len};
             pcap_dump((u_char *)(col->pcap_dump), &hdr, pkt->pkt_data);
             col->stats.packets_dumped++;
             col->stats.packets_dumped_reason[reason]++;
@@ -71,8 +74,7 @@ dns_packet_from_pcap(dns_collector_t *col, dns_packet_t* pkt, struct pcap_pkthdr
 {
     assert(col && pkt && pkt_header && pkt_data);
 
-    pkt->ts.tv_sec = pkt_header->ts.tv_sec;
-    pkt->ts.tv_usec = pkt_header->ts.tv_usec;
+    pkt->ts = dns_us_time_from_timeval(&(pkt_header->ts));
     pkt->pkt_len = pkt_header->len;
     pkt->pkt_caplen = pkt_header->caplen;
     pkt->pkt_data = pkt_data;
@@ -383,12 +385,6 @@ dns_packet_get_qtype(const dns_packet_t* pkt)
     // ensure proper alignment
     memcpy(&tmp, pkt->dns_qname_raw + pkt->dns_qname_raw_len, sizeof(uint16_t));
     return ntohs(tmp);
-}
-
-uint32_t
-dns_packet_get_time_us(const dns_packet_t* pkt)
-{
-    return pkt->ts.tv_sec * 1000000 + pkt->ts.tv_usec;
 }
 
 int

@@ -7,11 +7,12 @@
 #include <pcap/pcap.h>
 
 #include "timeframe.h"
+#include "writeproto.h"
 #include "packet.h"
 
 
 dns_timeframe_t *
-dns_timeframe_create(const dns_collector_t *col, dns_us_time_t time_start) 
+dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start) 
 {
     assert(col);
 
@@ -72,7 +73,7 @@ dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
 
     DnsQuery q;
     struct dns_timeframe_elem *p = frame->packets;
-    u_char buf[DNS_MAX_PROTOBUF_LEN];
+    u_char buf[DNS_MAX_PROTO_LEN];
     size_t len;
 
     while(p) {
@@ -80,12 +81,12 @@ dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
 
         if (DNS_HDR_FLAGS_QR(pkt->dns_data->flags) == 0)
             // request with optional response
-            dns_fill_proto(col->config, pkt, pkt->response, &q);
+            dns_fill_proto(frame->collector->config, pkt, pkt->response, &q);
         else
             // response only
-            dns_fill_proto(col->config, NULL, pkt, &q);
+            dns_fill_proto(frame->collector->config, NULL, pkt, &q);
         len = protobuf_c_message_pack((ProtobufCMessage *)&q, buf);
-        if (len > DNS_MAX_PROTOBUF_LEN) // Should never happen, but defensively:
+        if (len > sizeof(buf)) // Should never happen, but defensively:
             dns_die("Impossibly long protobuf");
 
         fwrite(&len, 2, 1, f);

@@ -173,12 +173,6 @@ uint16_t
 dns_packet_get_qtype(const dns_packet_t* pkt);
 
 /**
- * Returns packet timestamp in usec since Epoch.
- */
-uint32_t
-dns_packet_get_time_us(const dns_packet_t* pkt);
-
-/**
  * Compare two packets as request+response.
  * Return true when they match, false otherwise.
  * Assumes `dns_packet_parse_dns()` was run successfully on both.

@@ -4,7 +4,7 @@
 
 #include "common.h"
 
-void dns_die_f(int line, const char *file, const char *func, const char *msg) __attribute__((noreturn));
+void dns_die_f(int line, const char *file, const char *func, const char *msg)
 {
     fprintf(stderr, "FATAL [%s:%d] (%s): %s\n", file, line, func, msg);
     exit(1);
