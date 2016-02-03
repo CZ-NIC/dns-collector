@@ -33,6 +33,11 @@ int main(int argc, const char **argv)
             break;
     }
 
+    // Write tf_old
+    dns_collector_rotate_frames(col, col->tf_cur->time_start + col->config->frame_length); // Hacky
+    // Write tf_cur
+    dns_collector_rotate_frames(col, 0); // Any time will do
+
     dns_stats_fprint(&(col->stats), col->config, stderr);
     dns_collector_destroy(col);
 

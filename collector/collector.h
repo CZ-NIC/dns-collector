@@ -99,4 +99,8 @@ dns_collector_next_packet(dns_collector_t *col);
 void
 dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
 
+void
+dns_collector_rotate_frames(dns_collector_t *col, dns_us_time_t time_now);
+
+
 #endif /* DNSCOL_COLLECTOR_H */
