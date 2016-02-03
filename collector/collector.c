@@ -22,7 +22,8 @@ dns_collector_create(const dns_collector_config_t *conf)
     col->config = conf;
 
     col->pcap = pcap_open_dead(DLT_RAW, conf->dns_capture_limit + 128);
-    // TODO: specify maximum extra header size
+    // TODO: specify maximum extra IP6+TCP header size
+
     if (!col->pcap) {
         fprintf(stderr, "error: pcap_open_dead() failed\n");
         free(col);
@@ -38,7 +39,10 @@ dns_collector_destroy(dns_collector_t *col)
 { 
     assert(col && col->pcap);
     
-    // TODO: destroy frames
+    if (col->tf_cur)
+        dns_timeframe_destroy(col->tf_cur);
+    if (col->tf_old)
+        dns_timeframe_destroy(col->tf_old);
     dns_collector_dump_close(col);
     pcap_close(col->pcap);
    
@@ -126,6 +130,10 @@ dns_collector_next_packet(dns_collector_t *col)
             if (col->tf_cur)
                 col->tf_cur->stats.packets_captured++;
 
+            dns_us_time_t now = dns_us_time_from_timeval(&(pkt_header->ts));
+            if ((!col->tf_cur) || (col->tf_cur->time_start + col->config->frame_length > now))
+                dns_collector_rotate_frames(col, now);
+
             dns_collector_process_packet(col, pkt_header, pkt_data);
 
             return DNS_RET_OK;
@@ -137,7 +145,7 @@ dns_collector_next_packet(dns_collector_t *col)
 void
 dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
 {
-    assert(col && pkt_header && pkt_data);
+    assert(col && pkt_header && pkt_data && col->tf_cur);
 
     dns_packet_t *pkt = dns_packet_create();
     assert(pkt);
@@ -151,19 +159,29 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
 
     dns_packet_create_hash_key(col, pkt);
 
-    // TODO: got a packet - YAY! do something next ...
-    DnsQuery q;
-    if (DNS_HDR_FLAGS_QR(pkt->dns_data->flags) == 0)
-        dns_fill_proto(col->config, pkt, NULL, &q);
-    else
-        dns_fill_proto(col->config, NULL, pkt, &q);
-    uint16_t len = protobuf_c_message_get_packed_size((ProtobufCMessage *)&q);
-    u_char *buf = (u_char *)alloca(len);
-    protobuf_c_message_pack((ProtobufCMessage *)&q, buf);
-    fwrite(&len, 2, 1, stdout);
-    fwrite(buf, len, 1, stdout);
-
-    dns_packet_destroy(pkt);
+    dns_timeframe_add_packet(col->tf_cur, pkt);
 }
 
+void
+dns_collector_rotate_frames(dns_collector_t *col, dns_us_time_t time_now)
+{
+    if (col->tf_old) {
+        dns_timeframe_writeout(col->tf_old, stdout); // TODO: specify file
+        dns_timeframe_destroy(col->tf_old);
+        col->tf_old = NULL;
+    }
 
+    if (time_now == 0) {
+        struct timespec now;
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        time_now = dns_us_time_from_timespec(&now);
+    }
+
+    if (col->tf_cur) {
+        col->tf_cur -> time_end = time_now - 1; // prevent overlaps
+        col->tf_old = col->tf_cur;
+        col->tf_cur = NULL;
+    }
+
+    col->tf_cur = dns_timeframe_create(col, time_now);
+}

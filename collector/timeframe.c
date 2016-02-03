@@ -64,6 +64,8 @@ dns_timeframe_add_packet(dns_timeframe_t *frame, dns_packet_t *pkt)
     e->elem = pkt;
     *(frame->packets_next_elem_ptr) = e;
     frame->packets_next_elem_ptr = &(e->next);
+
+    frame->packets_count++;
 }
 
 void
@@ -94,6 +96,10 @@ dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
 
         p = p -> next;
     }
+
+    fprintf(stderr, "Frame %lf - %lf wrote %d queries\n",
+            dns_us_time_to_sec(frame->time_start), dns_us_time_to_sec(frame->time_end),
+            frame->packets_count);
 }
 
 
