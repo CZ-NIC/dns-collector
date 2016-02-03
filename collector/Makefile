@@ -4,8 +4,9 @@ PROG=main
 PROTO=dnsquery
 
 CC=clang
-CFLAGS=-O1 -g3 -std=gnu99 -Wall -pedantic -Wcast-align -Wunused-parameter -Wno-variadic-macros -flto
-LDFLAGS=-lpcap `pkg-config --libs 'libprotobuf-c >= 1.0.0'` -lucw-6.5 -flto
+CFLAGS=-O1 -g3 -std=gnu99 -Wall -pedantic -Wcast-align -Wunused-parameter -Wno-variadic-macros 
+LDFLAGS=-lpcap `pkg-config --libs 'libprotobuf-c >= 1.0.0'` -lucw-6.5 
+# TODO: add -flto, -fuse-ld
 
 DEPS=$(wildcard *.h) $(PROTO).pb-c.h
 OBJS=main.o collector.o timeframe.o $(PROTO).pb-c.o stats.o packet.o dns.o writeproto.o common.o
