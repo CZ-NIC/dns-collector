@@ -157,9 +157,22 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
         return;
     }
 
-    dns_packet_create_hash_key(col, pkt);
+    // Matching request 
+    dns_packet_t *req = NULL;
 
-    dns_timeframe_add_packet(col->tf_cur, pkt);
+    if (DNS_PACKET_IS_RESPONSE(pkt)) {
+        if (col->tf_old) {
+            req = dns_timeframe_match_response(col->tf_old, pkt);
+        }
+        if (req == NULL) {
+            req = dns_timeframe_match_response(col->tf_cur, pkt);
+        }
+    }
+
+    if (req)
+        return; // packet given to a matching request
+        
+    dns_timeframe_append_packet(col->tf_cur, pkt);
 }
 
 void
