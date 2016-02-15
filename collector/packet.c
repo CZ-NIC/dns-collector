@@ -371,7 +371,7 @@ dns_packets_match(const dns_packet_t* request, const dns_packet_t* response)
             memcmp(request->src_addr, response->dst_addr, addr_len) == 0 &&
             memcmp(request->dst_addr, response->src_addr, addr_len) == 0 &&
             request->dns_qname_raw_len == response->dns_qname_raw_len &&
-            memcmp(request->dns_qname_raw, response->dns_qname_raw, request->dns_qname_raw_len));
+            memcmp(request->dns_qname_raw, response->dns_qname_raw, request->dns_qname_raw_len) == 0);
 }
 
 uint64_t
