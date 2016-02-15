@@ -185,7 +185,8 @@ int
 dns_packets_match(const dns_packet_t* request, const dns_packet_t* response);
 
 /**
- * Compute a packet hash function parameterized by `param` (used as a multiplier).
+ * Compute a packet hash function parameterized by `param`.
+ * `param` is used as a modulo - make sure it is large enough.
  * Assumes `dns_packet_parse_dns()` was run successfully.
  * Uses IPver, TCP/UDP, both port numbers, both IPs, DNS ID and QNAME.
  */

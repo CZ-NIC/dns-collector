@@ -37,8 +37,10 @@ dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start)
     frame->hash_order = 20; 
     // Account for possibly small RAND_MAX
     frame->hash_param = rand() + (rand() << 16);
-    // Make sure the modulo is larger than hash size
+    // Make sure the modulo is larger than hash size, but not more than twice
     frame->hash_param |= 1 << frame->hash_order;
+    frame->hash_param &= (1 << (frame->hash_order + 1)) - 1;
+
     frame->hash_data = (dns_packet_t **) xmalloc_zero(sizeof(dns_packet_t *) * DNS_TIMEFRAME_HASH_SIZE(frame->hash_order));
 
     return frame;

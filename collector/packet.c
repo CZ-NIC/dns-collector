@@ -375,24 +375,24 @@ dns_packets_match(const dns_packet_t* request, const dns_packet_t* response)
 }
 
 uint64_t
-dns_packet_hash(const dns_packet_t* pkt, uint64_t param);
+dns_packet_hash(const dns_packet_t* pkt, uint64_t param)
 {
-    assert(col && pkt && pkt->dns_data && param > 0x100);
+    assert(pkt && pkt->dns_data && param > 0x100);
 
     uint64_t hash = (pkt->ip_ver << 0) +
                     (pkt->ip_proto << 16) +
                     // Treat src and dst symmetrically
                     ((pkt->dst_port + pkt->src_port) << 32) +
                     (pkt->dns_data->id << 48);
-    hash = hash % param;
+    hash = (hash % param) << 32;
 
     for (int i = 0; i < pkt->dns_qname_raw_len; i++)
-        hash = hash + (pkt->dns_qname_raw[i] << i)
-    hash = hash % param;
+        hash = hash + (pkt->dns_qname_raw[i] << i);
+    hash = (hash % param) << 32;
 
     for (int i = 0; i < DNS_ADDR_LEN(pkt->ip_ver); i++)
         // Treat src and dst symmetrically
-        hash = hash + ((pkt->src_addr[i] + pkt->dst_addr[i]) << i)
+        hash = hash + ((pkt->src_addr[i] + pkt->dst_addr[i]) << i);
     hash = hash % param;
 
     return hash;
