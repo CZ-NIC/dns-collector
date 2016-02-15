@@ -56,7 +56,7 @@ dns_fill_proto(const dns_collector_config_t *conf, const dns_packet_t* request, 
     }
 
     // server_addr
-    if (1) { 
+    if (0) { 
         proto->has_server_addr = true;
         proto->server_addr.len = addr_len;
         if (request)
@@ -66,7 +66,7 @@ dns_fill_proto(const dns_collector_config_t *conf, const dns_packet_t* request, 
     }
 
     // server_port
-    if (1) { 
+    if (0) { 
         proto->has_server_port = true;
         if (request)
             proto->server_port = request->dst_port;
@@ -81,7 +81,7 @@ dns_fill_proto(const dns_collector_config_t *conf, const dns_packet_t* request, 
     }
  
     // qname_raw
-    if (1) { 
+    if (0) { 
         proto->has_qname_raw = true;
         proto->qname_raw.len = any->dns_qname_raw_len;
         proto->qname_raw.data = any->dns_qname_raw;
