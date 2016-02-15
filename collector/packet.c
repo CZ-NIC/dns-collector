@@ -30,8 +30,6 @@ dns_packet_destroy(dns_packet_t *pkt)
         free(pkt->dns_data);
     if (pkt->dns_qname_string)
         free(pkt->dns_qname_string);
-    if (pkt->hash_key)
-        free(pkt->hash_key);
     if (pkt->response)
         dns_packet_destroy(pkt->response);
     free(pkt);
@@ -334,37 +332,6 @@ dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt)
     return DNS_RET_OK;
 }
 
-void
-dns_packet_create_hash_key(dns_collector_t *col, dns_packet_t *pkt)
-{
-    assert(col && pkt && pkt->dns_data && (!pkt->hash_key));
-
-    // Hashh key:
-    // [CLIENT_IP][CLIENT_PORT][DNS_ID(net order)][QNAME_RAW]
-    pkt->hash_key_len = DNS_ADDR_LEN(pkt->ip_ver) + sizeof(uint16_t) + sizeof(uint16_t) + pkt->dns_qname_raw_len;
-    pkt->hash_key = (u_char *)malloc(pkt->hash_key_len);
-    if (!pkt->hash_key)
-        dns_die("Out of memory");
-    u_char *p = pkt->hash_key;
-
-    if (DNS_HDR_FLAGS_QR(pkt->dns_data->flags) == 0) // Request
-        memcpy(p, pkt->src_addr, DNS_ADDR_LEN(pkt->ip_ver));
-    else
-        memcpy(p, pkt->dst_addr, DNS_ADDR_LEN(pkt->ip_ver));
-    p += DNS_ADDR_LEN(pkt->ip_ver);
-
-    if (DNS_HDR_FLAGS_QR(pkt->dns_data->flags) == 0) // Request
-        memcpy(p, &(pkt->src_port), sizeof(uint16_t));
-    else
-        memcpy(p, &(pkt->dst_port), sizeof(uint16_t));
-    p += sizeof(uint16_t);
-
-    memcpy(p, &(pkt->dns_data->id), sizeof(uint16_t));
-    p += sizeof(uint16_t);
-
-    memcpy(p, pkt->dns_qname_raw, pkt->dns_qname_raw_len);
-    p += pkt->dns_qname_raw_len;
-}
 
 
 uint16_t
@@ -391,8 +358,8 @@ int
 dns_packets_match(const dns_packet_t* request, const dns_packet_t* response)
 {
     assert(request && request->dns_data && response && response->dns_data);
-    assert(DNS_HDR_FLAGS_QR(request->dns_data->flags) == 0 &&
-           DNS_HDR_FLAGS_QR(response->dns_data->flags) == 1);
+    assert(DNS_PACKET_IS_REQUEST(request) &&
+           DNS_PACKET_IS_RESPONSE(response));
 
     const int addr_len = (request->ip_ver == 4 ? 4 : 16);
 
@@ -402,8 +369,31 @@ dns_packets_match(const dns_packet_t* request, const dns_packet_t* response)
             request->dst_port == response->src_port &&
             request->dns_data->id == response->dns_data->id && // network byte-order
             memcmp(request->src_addr, response->dst_addr, addr_len) == 0 &&
-            memcmp(request->dst_addr, response->src_addr, addr_len) == 0);
+            memcmp(request->dst_addr, response->src_addr, addr_len) == 0 &&
+            request->dns_qname_raw_len == response->dns_qname_raw_len &&
+            memcmp(request->dns_qname_raw, response->dns_qname_raw, request->dns_qname_raw_len));
 }
 
+uint64_t
+dns_packet_hash(const dns_packet_t* pkt, uint64_t param);
+{
+    assert(col && pkt && pkt->dns_data && param > 0x100);
 
+    uint64_t hash = (pkt->ip_ver << 0) +
+                    (pkt->ip_proto << 16) +
+                    // Treat src and dst symmetrically
+                    ((pkt->dst_port + pkt->src_port) << 32) +
+                    (pkt->dns_data->id << 48);
+    hash = hash % param;
 
+    for (int i = 0; i < pkt->dns_qname_raw_len; i++)
+        hash = hash + (pkt->dns_qname_raw[i] << i)
+    hash = hash % param;
+
+    for (int i = 0; i < DNS_ADDR_LEN(pkt->ip_ver); i++)
+        // Treat src and dst symmetrically
+        hash = hash + ((pkt->src_addr[i] + pkt->dst_addr[i]) << i)
+    hash = hash % param;
+
+    return hash;
+}

@@ -25,6 +25,12 @@
 /** Address length for IP ver (4/6) */
 #define DNS_ADDR_LEN(ipver) ((ipver) == 4 ? 4 : 16)
 
+/** Is the packet DNS request? */
+#define DNS_PACKET_IS_REQUEST(pkt) (DNS_HDR_FLAGS_QR((pkt)->dns_data->flags) == 0)
+
+/** Is the packet DNS response? */
+#define DNS_PACKET_IS_RESPONSE(pkt) (DNS_HDR_FLAGS_QR((pkt)->dns_data->flags) == 1)
+
 struct dns_packet {
     /** Timestamp [us since Epoch] */
     dns_us_time_t ts;
@@ -66,20 +72,17 @@ struct dns_packet {
     /** Query class host byte-order */
     uint16_t dns_qclass;
 
-    /** When this is a request, a pointer to an optional matching response */
+    /** When this is a request, a pointer to an optional matching response.
+     * Owned by this packet. */
     dns_packet_t *response;
 
-      
-    /** DNS request/response hash key in the form 
-     * `[CLIENT_IP][CLIENT_PORT][DNS_ID(net order)][QNAME_RAW](\0)*`,
-     * padded to 4 byte multiple by '\0'.
-     * Makes queries comparable and matchable with `memcmp()`.
-     * If not NULL, owned by the packet. */
-    u_char *hash_key;
-    /** Length of `hash_key` in bytes, multiple of 4. */
-    uint32_t hash_key_len;
+    /** When a packet is in timeframe hash, next packet with the same hash.
+     * Not owned by this packet. */
+    dns_packet_t *next_in_hash;
 
-
+    /** When a packet is in timeframe packet sequence, next packet in the sequence.
+     * Not owned by this packet. */
+    dns_packet_t *next_in_timeframe;
 };
 
 /**
@@ -176,20 +179,18 @@ dns_packet_get_qtype(const dns_packet_t* pkt);
  * Compare two packets as request+response.
  * Return true when they match, false otherwise.
  * Assumes `dns_packet_parse_dns()` was run successfully on both.
+ * Uses IPver, TCP/UDP, both port numbers, both IPs, DNS ID and QNAME.
  */
 int
 dns_packets_match(const dns_packet_t* request, const dns_packet_t* response);
 
-/** 
- * Create a query hash key for a packet in `pkt->hash_key`.
- *
- * Allocates space for pkt->hash_key, must not be already allocated.
- * The hash key has format:
- * `[CLIENT_IP][CLIENT_PORT][DNS_ID(net order)][QNAME_RAW]`
- * So it is suitable to directly match requests and responses.
+/**
+ * Compute a packet hash function parameterized by `param` (used as a multiplier).
+ * Assumes `dns_packet_parse_dns()` was run successfully.
+ * Uses IPver, TCP/UDP, both port numbers, both IPs, DNS ID and QNAME.
  */
-void
-dns_packet_create_hash_key(dns_collector_t *col, dns_packet_t *pkt);
+uint64_t
+dns_packet_hash(const dns_packet_t* pkt, uint64_t param);
 
 
 
