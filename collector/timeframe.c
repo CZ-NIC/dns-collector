@@ -58,7 +58,6 @@ dns_timeframe_destroy(dns_timeframe_t *frame)
     while(p) {
         ptmp = p;
         p = p -> next_in_timeframe;
-        free(ptmp);
 
         // also destroys pkt->response, if any
         dns_packet_destroy(ptmp);
