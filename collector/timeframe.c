@@ -16,10 +16,10 @@ dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start)
 {
     assert(col);
 
-    dns_timeframe_t *frame = (dns_timeframe_t*) calloc(sizeof(dns_timeframe_t), 1);
-    if (!frame)
-        dns_die("Out of memory");
+    dns_timeframe_t *frame = (dns_timeframe_t*) xmalloc_zero(sizeof(dns_timeframe_t));
+    frame->collector = col;
 
+    // Init times
     if (time_start >= 0) {
         frame->time_start = time_start;
     } else {
@@ -29,8 +29,17 @@ dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start)
     }
     frame->time_end = frame->time_start + col->config->frame_length;
 
-    frame->collector = col;
-    frame->packets_next_elem_ptr = &(frame->packets);
+    // Init packet sequence
+    frame->packets_next_ptr = &(frame->packets);
+
+    // Init hash
+    // TODO: configurable order
+    frame->hash_order = 20; 
+    // Account for possibly small RAND_MAX
+    frame->hash_param = rand() + (rand() << 16);
+    // Make sure the modulo is larger than hash size
+    frame->hash_param |= 1 << frame->hash_order;
+    frame->hash_data = (dns_packet_t **) xmalloc_zero(sizeof(dns_packet_t *) * DNS_TIMEFRAME_HASH_SIZE(frame->hash_order));
 
     return frame;
 }
@@ -38,50 +47,87 @@ dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start)
 void
 dns_timeframe_destroy(dns_timeframe_t *frame) 
 {
-    struct dns_timeframe_elem *p = frame->packets, *ptmp;
+    dns_packet_t *p = frame->packets, *ptmp;
 
+    // Free hash
+    xfree(frame->hash_data);
+
+    // Free packet sequence
     while(p) {
-        // also destroys pkt->response, if any
-        dns_packet_destroy(p->elem);
-
         ptmp = p;
-        p = p -> next;
+        p = p -> next_in_timeframe;
         free(ptmp);
+
+        // also destroys pkt->response, if any
+        dns_packet_destroy(ptmp);
     }
 
     free(frame);
 }
 
 void
-dns_timeframe_add_packet(dns_timeframe_t *frame, dns_packet_t *pkt)
+dns_timeframe_append_packet(dns_timeframe_t *frame, dns_packet_t *pkt)
 {
     assert(frame && pkt);
 
-    struct dns_timeframe_elem *e = calloc(sizeof(struct dns_timeframe_elem), 1);
-    if (!e)
-        dns_die("Out of memory");
-
-    e->elem = pkt;
-    *(frame->packets_next_elem_ptr) = e;
-    frame->packets_next_elem_ptr = &(e->next);
-
+    // add to sequence
+    pkt->next_in_timeframe = NULL;
+    *(frame->packets_next_ptr) = pkt;
+    frame->packets_next_ptr = &(pkt->next_in_timeframe);
     frame->packets_count++;
+
+    // Add to hash if request
+    if (DNS_PACKET_IS_REQUEST(pkt)) {
+        // Add to request hash
+        uint64_t hash = dns_packet_hash(pkt, frame->hash_param);
+        hash = hash % DNS_TIMEFRAME_HASH_SIZE(frame->hash_order);
+        pkt->next_in_hash = frame->hash_data[hash];
+        frame->hash_data[hash] = pkt;
+        frame->hash_elements++;
+    }
+}
+
+dns_packet_t *
+dns_timeframe_match_response(dns_timeframe_t *frame, dns_packet_t *pkt)
+{
+    assert(frame && pkt && DNS_PACKET_IS_RESPONSE(pkt));
+
+    uint64_t hash = dns_packet_hash(pkt, frame->hash_param);
+    hash = hash % DNS_TIMEFRAME_HASH_SIZE(frame->hash_order);
+    dns_packet_t **pp = &(frame->hash_data[hash]);
+
+    // Explore hash bucket
+    while(*pp) {
+        dns_packet_t *req = *pp;
+        if (dns_packets_match(req, pkt)) {
+            // Assign response to request
+            assert(req->response == NULL);
+            req->response = pkt;
+
+            // Remove request from hash
+            *pp = req->next_in_hash;
+            frame->hash_elements--;
+
+            return req;
+        }
+        pp = &((*pp)->next_in_hash);
+    }
+
+    return NULL;
 }
 
 void
 dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
 {
-    assert(frame);
+    assert(frame && f);
 
     DnsQuery q;
-    struct dns_timeframe_elem *p = frame->packets;
+    dns_packet_t *pkt = frame->packets;
     u_char buf[DNS_MAX_PROTO_LEN];
     size_t len;
 
-    while(p) {
-        dns_packet_t *pkt = p->elem;
-
-        if (DNS_HDR_FLAGS_QR(pkt->dns_data->flags) == 0)
+    while(pkt) {
+        if (DNS_PACKET_IS_REQUEST(pkt))
             // request with optional response
             dns_fill_proto(frame->collector->config, pkt, pkt->response, &q);
         else
@@ -94,7 +140,7 @@ dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
         fwrite(&len, 2, 1, f);
         fwrite(buf, len, 1, f);
 
-        p = p -> next;
+        pkt = pkt -> next_in_timeframe;
     }
 
     fprintf(stderr, "Frame %lf - %lf wrote %d queries\n",
