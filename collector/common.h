@@ -16,9 +16,6 @@
 struct dns_stats;
 typedef struct dns_stats dns_stats_t;
 
-struct dns_collector_config;
-typedef struct dns_collector_config dns_collector_config_t;
-
 struct dns_collector;
 typedef struct dns_collector dns_collector_t;
 

@@ -253,7 +253,7 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
         return DNS_RET_DROPPED;
     }
 
-    pkt->dns_caplen = MIN(pkt->dns_caplen, MAX(col->config->dns_capture_limit, sizeof(dns_hdr_t)));
+    pkt->dns_caplen = MIN(pkt->dns_caplen, MAX(col->config->capture_limit, sizeof(dns_hdr_t)));
 
     // ensure proper memory alignment
     pkt->dns_data = malloc(pkt->dns_caplen);

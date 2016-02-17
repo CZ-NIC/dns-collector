@@ -1,26 +1,49 @@
 #include <assert.h>
 
+#include <ucw/lib.h>
+#include <ucw/opt.h>
+
 #include "common.h"
 #include "timeframe.h"
 #include "collector.h"
 #include "dns.h"
+#include "output.h"
 
-int main(int argc, const char **argv)
+static void add_input(const struct opt_item * opt UNUSED, const char * name, void * data UNUSED)
 {
-    dns_ret_t r;
+    // TODO
+}
 
-    assert(argc > 1);
+static struct opt_section dns_options = {
+    OPT_ITEMS {
+        OPT_HELP("A collector of DNS queries."),
+        OPT_HELP("Usage: main [options] pcap-files..."),
+        OPT_HELP(""),
+        OPT_HELP("Options:"),
+        OPT_HELP_OPTION,
+        OPT_CONF_OPTIONS,
+        OPT_CALL(OPT_POSITIONAL_TAIL, NULL, &add_input, NULL, OPT_REQUIRED | OPT_BEFORE_CONFIG, ""),
+        OPT_END
+    }
+};
 
-    dns_collector_config_t conf = {
-        .output_base = "out",
-        .frame_length = 1 * 1000000,
-        .dns_capture_limit = 600,
-        .dump_packet_reason = {1, 1, 1, 1, 1, 1, 1, 1, 1},
-    }; 
+
+int main(int argc, char **argv)
+{
+    struct dns_collector_config conf;
+
+    cf_declare_rel_section("collector", &dns_collector_config_section, &conf, 0);
+
+    opt_parse(&dns_options, argv + 1);
 
     dns_collector_t *col = dns_collector_create(&conf);
-    assert(col);
 
+    return 0; ////// TEST
+
+
+
+    dns_ret_t r;
+  
     r = dns_collector_dump_open(col, "dump.pcap");
     assert(r == DNS_RET_OK);
 
@@ -34,7 +57,7 @@ int main(int argc, const char **argv)
     }
 
     // Write tf_old
-    dns_collector_rotate_frames(col, col->tf_cur->time_start + col->config->frame_length); // Hacky
+    dns_collector_rotate_frames(col, col->tf_cur->time_start + col->config->timeframe_length); // Hacky
     // Write tf_cur
     dns_collector_rotate_frames(col, 0); // Any time will do
 

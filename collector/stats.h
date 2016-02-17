@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "common.h"
+#include "collector_config.h"
 
 /** Stats of a DNS collector or frame */
 struct dns_stats {
@@ -25,11 +26,13 @@ struct dns_stats {
     uint64_t packets_dumped_reason[dns_drop_LAST];
 };
 
+struct dns_collector_config;
+
 /**
  * Print stats into a file. conf is optional (for dump configuration hints).
  */
 void
-dns_stats_fprint(const dns_stats_t *stats, const dns_collector_config_t *conf, FILE *f);
+dns_stats_fprint(const dns_stats_t *stats, const struct dns_collector_config *conf, FILE *f);
 
 
 #endif /* DNSCOL_STATS_H */
