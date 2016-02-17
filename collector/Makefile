@@ -4,13 +4,15 @@ PROG=main
 PROTO=dnsquery
 
 CC=clang
-CFLAGS=-O1 -g3 -std=gnu99 -Wall -pedantic -Wcast-align -Wunused-parameter -Wno-variadic-macros 
+WARNS=-Wall -Wcast-align -Wunused-parameter -Wno-variadic-macros -Wno-gnu-statement-expression -Wno-language-extension-token
+CFLAGS=-O1 -g3 -std=gnu99 -pedantic $(WARNS)
 LDFLAGS=-lpcap `pkg-config --libs 'libprotobuf-c >= 1.0.0'` -lucw-6.5 
-# TODO: add -flto, -fuse-ld
+
+# TODO: add -flto, -fuse-ld later
 
 DEPS=$(wildcard *.h) $(PROTO).pb-c.h
-OBJS=main.o collector.o timeframe.o $(PROTO).pb-c.o stats.o packet.o dns.o writeproto.o common.o output.o output_csv.o collector_config.o
-
+SRCS=$(wildcard *.c) $(PROTO).pb-c.c
+OBJS=$(sort $(SRCS:.c=.o))
 
 all: $(PROG) protodump.py
 

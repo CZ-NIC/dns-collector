@@ -5,14 +5,14 @@
 #include <time.h>
 
 #include "common.h"
-#include "collector_config.h"
+#include "config.h"
 #include "stats.h"
 
 /** DNS collector instance */
 struct dns_collector {
 
     /** configuration variables. Not owned by collector. */
-    struct dns_collector_config *config;
+    struct dns_config *config;
 
     /** dns collector status and stats. */
     dns_stats_t stats;
@@ -37,7 +37,7 @@ struct dns_collector {
  * All fields are zeroed.
  */
 dns_collector_t *
-dns_collector_create(struct dns_collector_config *conf);
+dns_collector_create(struct dns_config *conf);
 
 /**
  * Run the collector processing loop: process all the inputs,

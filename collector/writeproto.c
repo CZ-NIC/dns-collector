@@ -8,7 +8,7 @@
 #include "writeproto.h"
 
 void
-dns_fill_proto(const struct dns_collector_config *conf, const dns_packet_t* request, const dns_packet_t* response, DnsQuery *proto)
+dns_fill_proto(const struct dns_config *conf, const dns_packet_t* request, const dns_packet_t* response, DnsQuery *proto)
 {
     // TODO: Include fields based on config
     assert(conf && (request || response) && proto);
