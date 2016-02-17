@@ -23,8 +23,14 @@ dns_us_time_from_timespec(const struct timespec *t)
 }
 
 double
-dns_us_time_to_sec(dns_us_time_t t)
+dns_us_time_to_fsec(dns_us_time_t t)
 {
     return ((double)t) / 1000000.0;
+}
+
+dns_us_time_t
+dns_fsec_to_us_time(double s)
+{
+    return (dns_us_time_t)(s * 1000000.0);
 }
 
