@@ -9,7 +9,7 @@ LDFLAGS=-lpcap `pkg-config --libs 'libprotobuf-c >= 1.0.0'` -lucw-6.5
 # TODO: add -flto, -fuse-ld
 
 DEPS=$(wildcard *.h) $(PROTO).pb-c.h
-OBJS=main.o collector.o timeframe.o $(PROTO).pb-c.o stats.o packet.o dns.o writeproto.o common.o
+OBJS=main.o collector.o timeframe.o $(PROTO).pb-c.o stats.o packet.o dns.o writeproto.o common.o output.o output_csv.o collector_config.o
 
 
 all: $(PROG) protodump.py

@@ -5,25 +5,14 @@
 #include <time.h>
 
 #include "common.h"
+#include "collector_config.h"
 #include "stats.h"
-
-/** Configuration of a DNS collector. */
-struct dns_collector_config {
-    const char *output_base;
-
-    dns_us_time_t frame_length;
-
-    uint32_t dns_capture_limit;
-
-    /* Dump dropped packets by reason */
-    int dump_packet_reason[dns_drop_LAST];
-};
 
 /** DNS collector instance */
 struct dns_collector {
 
     /** configuration variables. Not owned by collector. */
-    const dns_collector_config_t *config;
+    struct dns_collector_config *config;
 
     /** dns collector status and stats. */
     dns_stats_t stats;
@@ -48,7 +37,7 @@ struct dns_collector {
  * All fields are zeroed.
  */
 dns_collector_t *
-dns_collector_create(const dns_collector_config_t *conf);
+dns_collector_create(struct dns_collector_config *conf);
 
 /**
  * Close and deallocate a collector instance and dependent

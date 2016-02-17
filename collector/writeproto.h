@@ -4,6 +4,7 @@
 #include "common.h"
 #include "dnsquery.pb-c.h"
 #include "packet.h"
+#include "collector_config.h"
 
 /** Buffer large enough to hold serialised DnsQuery protobuf.
  * All fixed-size attributes should take <=96 bytes even at 8b/attr,
@@ -18,6 +19,6 @@
  * Uses `conf` to select included fields.
  */
 void
-dns_fill_proto(const dns_collector_config_t *conf, const dns_packet_t* request, const dns_packet_t* response, DnsQuery *proto);
+dns_fill_proto(const struct dns_collector_config *conf, const dns_packet_t* request, const dns_packet_t* response, DnsQuery *proto);
 
 #endif /* DNSCOL_WRITEPROTO_H */

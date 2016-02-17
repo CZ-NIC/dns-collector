@@ -26,7 +26,7 @@ static const struct dns_drop_reason_desc dns_drop_reason_desc_table[] = {
 
 
 void
-dns_stats_fprint(const dns_stats_t *stats, const dns_collector_config_t *conf, FILE *f)
+dns_stats_fprint(const dns_stats_t *stats, const struct dns_collector_config *conf, FILE *f)
 { 
     assert(stats && f);
 

@@ -12,7 +12,7 @@
 #include "packet.h"
 
 dns_collector_t *
-dns_collector_create(const dns_collector_config_t *conf)
+dns_collector_create(struct dns_collector_config *conf)
 {
     assert(conf);
 
@@ -21,7 +21,7 @@ dns_collector_create(const dns_collector_config_t *conf)
   
     col->config = conf;
 
-    col->pcap = pcap_open_dead(DLT_RAW, conf->dns_capture_limit + 128);
+    col->pcap = pcap_open_dead(DLT_RAW, conf->capture_limit);
     // TODO: specify maximum extra IP6+TCP header size
 
     if (!col->pcap) {
@@ -131,7 +131,7 @@ dns_collector_next_packet(dns_collector_t *col)
                 col->tf_cur->stats.packets_captured++;
 
             dns_us_time_t now = dns_us_time_from_timeval(&(pkt_header->ts));
-            if ((!col->tf_cur) || (col->tf_cur->time_start + col->config->frame_length < now))
+            if ((!col->tf_cur) || (col->tf_cur->time_start + col->config->timeframe_length < now))
                 dns_collector_rotate_frames(col, now);
 
             dns_collector_process_packet(col, pkt_header, pkt_data);

@@ -27,7 +27,7 @@ dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start)
         clock_gettime(CLOCK_MONOTONIC, &now);
         frame->time_start = dns_us_time_from_timespec(&now);
     }
-    frame->time_end = frame->time_start + col->config->frame_length;
+    frame->time_end = frame->time_start + col->config->timeframe_length;
 
     // Init packet sequence
     frame->packets_next_ptr = &(frame->packets);
