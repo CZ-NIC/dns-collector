@@ -1,11 +1,11 @@
-#include "collector_config.h"
+#include "config.h"
 #include "output.h"
 
 
 static char *
 dns_collector_conf_init(void *data)
 {
-    struct dns_collector_config *conf = (struct dns_collector_config *) data;
+    struct dns_config *conf = (struct dns_config *) data;
 
     conf->capture_limit = 300;
     conf->timeframe_length_sec = 5.0;
@@ -18,7 +18,7 @@ dns_collector_conf_init(void *data)
 static char *
 dns_collector_conf_commit(void *data)
 {
-    struct dns_collector_config *conf = (struct dns_collector_config *) data;
+    struct dns_config *conf = (struct dns_config *) data;
 
     if ((conf->hash_order  < 0) || (conf->hash_order > 36))
         return "'hash_order' should be 0 .. 36.";
@@ -34,15 +34,15 @@ dns_collector_conf_commit(void *data)
 }
 
 
-struct cf_section dns_collector_config_section = {
-    CF_TYPE(struct dns_collector_config),
+struct cf_section dns_config_section = {
+    CF_TYPE(struct dns_config),
     CF_INIT(dns_collector_conf_init),
     CF_COMMIT(dns_collector_conf_commit),
     CF_ITEMS {
-        CF_INT("capture_limit", PTR_TO(struct dns_collector_config, capture_limit)),
-        CF_INT("hash_order", PTR_TO(struct dns_collector_config, hash_order)),
-        CF_DOUBLE("timeframe_length", PTR_TO(struct dns_collector_config, timeframe_length_sec)),
-        CF_LIST("csv_output", PTR_TO(struct dns_collector_config, outputs), &dns_output_csv_section),
+        CF_INT("capture_limit", PTR_TO(struct dns_config, capture_limit)),
+        CF_INT("hash_order", PTR_TO(struct dns_config, hash_order)),
+        CF_DOUBLE("timeframe_length", PTR_TO(struct dns_config, timeframe_length_sec)),
+        CF_LIST("csv_output", PTR_TO(struct dns_config, outputs), &dns_output_csv_section),
   //    CF_LIST("protobuf_output", &outputs, &dns_output_csv_section),
   //    CF_LIST("dump_output", &outputs, &dns_output_csv_section),
         CF_END

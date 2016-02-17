@@ -12,7 +12,7 @@
 #include "packet.h"
 
 dns_collector_t *
-dns_collector_create(struct dns_collector_config *conf)
+dns_collector_create(struct dns_config *conf)
 {
     assert(conf);
 
@@ -40,8 +40,8 @@ collector_run(dns_collector_t *col)
     r = dns_collector_dump_open(col, "dump.pcap");
     assert(r == DNS_RET_OK);
 
-    for (int in = 0; in < GARY_SIZE(col->config->inputs); in++) {
-        r = dns_collector_open_pcap_file(col, col->config->inputs[in]);
+    for (char ** in = col->config->inputs; *in; in++) {
+        r = dns_collector_open_pcap_file(col, *in);
         assert(r == DNS_RET_OK);
 
         while(r = dns_collector_next_packet(col), r == DNS_RET_OK) { }
