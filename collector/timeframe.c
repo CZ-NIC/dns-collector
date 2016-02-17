@@ -145,7 +145,7 @@ dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
     }
 
     fprintf(stderr, "Frame %lf - %lf wrote %d queries\n",
-            dns_us_time_to_sec(frame->time_start), dns_us_time_to_sec(frame->time_end),
+            dns_us_time_to_fsec(frame->time_start), dns_us_time_to_fsec(frame->time_end),
             frame->packets_count);
 }
 
