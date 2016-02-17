@@ -40,6 +40,13 @@ dns_collector_t *
 dns_collector_create(struct dns_collector_config *conf);
 
 /**
+ * Run the collector processing loop: process all the inputs,
+ * then finalize the outputs.
+ */
+void
+collector_run(dns_collector_t *col);
+
+/**
  * Close and deallocate a collector instance and dependent
  * structures.
  */
