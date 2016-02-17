@@ -22,7 +22,6 @@ dns_collector_create(struct dns_collector_config *conf)
     col->config = conf;
 
     col->pcap = pcap_open_dead(DLT_RAW, conf->capture_limit);
-    // TODO: specify maximum extra IP6+TCP header size
 
     if (!col->pcap) {
         fprintf(stderr, "error: pcap_open_dead() failed\n");
@@ -31,6 +30,30 @@ dns_collector_create(struct dns_collector_config *conf)
     }
 
     return col;
+}
+
+void
+collector_run(dns_collector_t *col)
+{ // TODO: improve
+    dns_ret_t r;
+
+    r = dns_collector_dump_open(col, "dump.pcap");
+    assert(r == DNS_RET_OK);
+
+    for (int in = 0; in < GARY_SIZE(col->config->inputs); in++) {
+        r = dns_collector_open_pcap_file(col, col->config->inputs[in]);
+        assert(r == DNS_RET_OK);
+
+        while(r = dns_collector_next_packet(col), r == DNS_RET_OK) { }
+        if (r == DNS_RET_ERR)
+            break;
+    }
+
+    // Write tf_old
+    dns_collector_rotate_frames(col, col->tf_cur->time_start + col->config->timeframe_length); // TODO: Hacky
+
+    // Write tf_cur
+    dns_collector_rotate_frames(col, 0); // Any time will do
 }
 
 
