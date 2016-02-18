@@ -7,6 +7,7 @@ dns_collector_conf_init(void *data)
 {
     struct dns_config *conf = (struct dns_config *) data;
 
+    clist_init(&(conf->outputs));
     conf->capture_limit = 300;
     conf->timeframe_length_sec = 5.0;
     conf->hash_order = 20;
