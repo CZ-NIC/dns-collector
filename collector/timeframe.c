@@ -9,6 +9,7 @@
 #include "timeframe.h"
 #include "writeproto.h"
 #include "packet.h"
+#include "output.h"
 
 
 dns_timeframe_t *
@@ -140,6 +141,13 @@ dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
 
         fwrite(&len, 2, 1, f);
         fwrite(buf, len, 1, f);
+
+        // TODO: rewrite frame output routine
+        // actually:
+        CLIST_FOR_EACH(struct dns_output*, out, frame->collector->config->outputs) {
+            if (out->write_packet)
+                out->write_packet(out, pkt);
+        }
 
         pkt = pkt -> next_in_timeframe;
     }
