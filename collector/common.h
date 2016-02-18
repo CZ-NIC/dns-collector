@@ -112,6 +112,13 @@ dns_us_time_t
 dns_fsec_to_us_time(double s);
 
 /**
+ * Format a string with `strftime()` for UTC from given `dns_us_time_t`.
+ * Return value, `s`, `max` and `format` same as `strftime()`.
+ */
+size_t
+dns_us_time_strftime(char *s, size_t max, const char *format, dns_us_time_t time);
+
+/**
  * Immediatelly end the program, writing msg to stderr.
  */
 #define dns_die(msg) dns_die_f(__LINE__, __FILE__, __func__, (msg))
