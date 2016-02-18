@@ -123,12 +123,13 @@ dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
 {
     assert(frame && f);
 
-    DnsQuery q;
+//    DnsQuery q;
     dns_packet_t *pkt = frame->packets;
-    u_char buf[DNS_MAX_PROTO_LEN];
-    size_t len;
+//    u_char buf[DNS_MAX_PROTO_LEN];
+//    size_t len;
 
     while(pkt) {
+      /*
         if (DNS_PACKET_IS_REQUEST(pkt))
             // request with optional response
             dns_fill_proto(frame->collector->config, pkt, pkt->response, &q);
@@ -141,9 +142,8 @@ dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
 
         fwrite(&len, 2, 1, f);
         fwrite(buf, len, 1, f);
-
+*/
         // TODO: rewrite frame output routine
-        // actually:
         CLIST_FOR_EACH(struct dns_output*, out, frame->collector->config->outputs) {
             if (out->write_packet)
                 out->write_packet(out, pkt);
