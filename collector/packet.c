@@ -397,3 +397,20 @@ dns_packet_hash(const dns_packet_t* pkt, uint64_t param)
 
     return hash;
 }
+
+uint16_t
+dns_packet_get_output_flags(const dns_packet_t* pkt)
+{
+    uint16_t flags = 0;
+
+    if (pkt->ip_ver == 6)
+        flags |= DNS_PACKET_PRTOCOL_IPV6;
+    if (pkt->ip_proto == IPPROTO_TCP)
+        flags |= DNS_PACKET_PROTOCOL_TCP;
+    if (DNS_PACKET_IS_REQUEST(pkt))
+        flags |= DNS_PACKET_HAS_REQUEST;
+    if (DNS_PACKET_IS_RESPONSE(pkt) || (pkt->response))
+        flags |= DNS_PACKET_HAS_RESPONSE;
+
+    return flags;
+}
