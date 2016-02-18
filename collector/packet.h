@@ -195,4 +195,17 @@ dns_packet_hash(const dns_packet_t* pkt, uint64_t param);
 
 
 
+#define DNS_PACKET_PRTOCOL_IPV6 0x01
+#define DNS_PACKET_PROTOCOL_TCP 0x02
+#define DNS_PACKET_HAS_REQUEST 0x04
+#define DNS_PACKET_HAS_RESPONSE 0x08
+
+/**
+ * Return the combined flags `DNS_PACKET_*` for the packet.
+ */
+uint16_t
+dns_packet_get_output_flags(const dns_packet_t* pkt);
+
+
+
 #endif /* DNSCOL_PACKET_H */
