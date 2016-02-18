@@ -107,8 +107,12 @@ dns_output_write(struct dns_output *out, const char *buf, size_t len, dns_us_tim
             return;
     }
 
-    if (fwrite(buf, len, 1, out->f) != len) {
-        msg(L_ERROR, "IO error %d writing to an output file.", ferror(out->f));
+    if (len > 1) {
+        size_t l = fwrite(buf, len, 1, out->f);
+        if (l != 1) {
+            msg(L_ERROR, "IO error %d writing to an output file.", ferror(out->f));
+            // TODO: Do something else?
+        }
     }
 }
 
