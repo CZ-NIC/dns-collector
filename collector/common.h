@@ -99,6 +99,10 @@ typedef enum dns_ret dns_ret_t;
  */
 typedef int64_t dns_us_time_t;
 
+/** Value representing "no time given". */
+#define DNS_NO_TIME (INT64_MIN)
+// TODO: use this instead of 0
+
 dns_us_time_t
 dns_us_time_from_timeval(const struct timeval *t);
 
@@ -123,6 +127,7 @@ dns_us_time_strftime(char *s, size_t max, const char *format, dns_us_time_t time
  */
 #define dns_die(msg) dns_die_f(__LINE__, __FILE__, __func__, (msg))
 void dns_die_f(int line, const char *file, const char *func, const char *msg) __attribute__((noreturn));
+// TODO: replace with UCW die()
 
 
 #endif /* DNSCOL_COMMON_H */
