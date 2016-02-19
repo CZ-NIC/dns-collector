@@ -2,7 +2,7 @@ syntax = "proto2";
 
 message DnsQuery {
 
-  // Query condensed information 
+  // Query condensed information, must match DNS_PACKET_* in packet.h
   enum Flags {
     PROTOCOL_TCP = 1;                    // 0: UDP, 1: TCP
     PRTOCOL_IPV6 = 2;                    // 0: IPv4, 1: IPv6
@@ -22,19 +22,17 @@ message DnsQuery {
 
   // Common DNS information
   optional uint32  id = 6;               // transaction ID (16 bits)
-  optional bytes   qname_raw = 7;        // bytes of wire-encoded query name
-  optional string  qname = 8;            // decoded dot-separated ASCI-only query name
-  optional uint32  qtype = 9;            // query type (16 bits)
-  optional uint32  qclass = 10;          // query class (16 bits)
+  optional string  qname = 7;            // decoded dot-separated ASCI-only query name
+  optional uint32  qtype = 8;            // query type (16 bits)
+  optional uint32  qclass = 9;          // query class (16 bits)
 
   // DNS request information
-  optional uint64  request_time_us = 11; // micro-seconds since the Epoch
-  optional uint32  request_flags = 12;   // flags from response packet (16 bits)
-  optional uint32  request_length = 13;  // length of the request DNS message
+  optional uint64  request_time_us = 10; // micro-seconds since the Epoch
+  optional uint32  request_flags = 11;   // flags from response packet (16 bits)
+  optional uint32  request_length = 12;  // length of the request DNS message
 
   // DNS response information
-  optional uint64  response_time_us = 14;// micro-seconds since the Epoch
-  optional uint32  response_flags = 15;  // flags from response packet (16 bits)
-  optional uint32  response_length = 16; // length of the response DNS message
-
+  optional uint64  response_time_us = 13;// micro-seconds since the Epoch
+  optional uint32  response_flags = 14;  // flags from response packet (16 bits)
+  optional uint32  response_length = 15; // length of the response DNS message
 }
