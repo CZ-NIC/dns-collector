@@ -35,11 +35,10 @@ dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start)
 
     // Init hash
     frame->hash_order = col->config->hash_order; 
-    // Account for possibly small RAND_MAX
-    frame->hash_param = rand() + (rand() << 16);
-    // Make sure the modulo is larger than hash size, but not more than twice
+    frame->hash_param = random_u64();
+    // Make sure the modulo is larger than hash size, but not more than 8x
     frame->hash_param |= 1 << frame->hash_order;
-    frame->hash_param &= (1 << (frame->hash_order + 1)) - 1;
+    frame->hash_param &= (1 << (frame->hash_order + 3)) - 1;
 
     frame->hash_data = (dns_packet_t **) xmalloc_zero(sizeof(dns_packet_t *) * DNS_TIMEFRAME_HASH_SIZE(frame->hash_order));
 

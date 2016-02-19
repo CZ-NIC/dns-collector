@@ -20,7 +20,7 @@
 dns_packet_t*
 dns_packet_create()
 {
-    return (dns_packet_t *)calloc(sizeof(dns_packet_t), 1);
+    return (dns_packet_t *)xmalloc_zero(sizeof(dns_packet_t));
 }
 
 void
@@ -256,9 +256,7 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
     pkt->dns_caplen = MIN(pkt->dns_caplen, MAX(col->config->capture_limit, sizeof(dns_hdr_t)));
 
     // ensure proper memory alignment
-    pkt->dns_data = malloc(pkt->dns_caplen);
-    if (!pkt->dns_data) 
-        dns_die("Out of memory"); 
+    pkt->dns_data = xmalloc(pkt->dns_caplen);
     memcpy(pkt->dns_data, pkt->pkt_data + (*header_offset), pkt->dns_caplen);
     (*header_offset) += sizeof(dns_hdr_t); // now points after DNS header
 
@@ -287,9 +285,7 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
         return DNS_RET_DROPPED;
     }
 
-    pkt->dns_qname_string = malloc(pkt->dns_qname_raw_len);
-    if (!pkt->dns_qname_string) 
-        dns_die("Out of memory");
+    pkt->dns_qname_string = xmalloc(pkt->dns_qname_raw_len);
     dns_query_to_printable(pkt->dns_qname_raw, pkt->dns_qname_string);
     (*header_offset) += r; // now points to DNS query type
 
