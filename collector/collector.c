@@ -16,7 +16,6 @@ dns_collector_create(struct dns_config *conf)
     assert(conf);
 
     dns_collector_t *col = (dns_collector_t *)xmalloc_zero(sizeof(dns_collector_t));
-    if (!col) return NULL;
   
     col->config = conf;
     CLIST_FOR_EACH(struct dns_output*, out, conf->outputs) {
@@ -25,11 +24,8 @@ dns_collector_create(struct dns_config *conf)
     
     col->pcap = pcap_open_dead(DLT_RAW, conf->capture_limit);
 
-    if (!col->pcap) {
-        fprintf(stderr, "error: pcap_open_dead() failed\n");
-        free(col);
-        return NULL;
-    }
+    if (!col->pcap) 
+        die("pcap_open_dead() failed");
 
     return col;
 }
@@ -38,9 +34,6 @@ void
 collector_run(dns_collector_t *col)
 { // TODO: improve
     dns_ret_t r;
-
-    r = dns_collector_dump_open(col, "dump.pcap");
-    assert(r == DNS_RET_OK);
 
     for (char ** in = col->config->inputs; *in; in++) {
         r = dns_collector_open_pcap_file(col, *in);
@@ -55,7 +48,7 @@ collector_run(dns_collector_t *col)
     dns_collector_rotate_frames(col, col->tf_cur->time_start + col->config->timeframe_length); // TODO: Hacky
 
     // Write tf_cur
-    dns_collector_rotate_frames(col, 0); // Any time will do
+    dns_collector_rotate_frames(col, col->tf_cur->time_start + 2 * col->config->timeframe_length); // Any time would do
 }
 
 
@@ -64,11 +57,16 @@ dns_collector_destroy(dns_collector_t *col)
 { 
     assert(col && col->pcap);
     
+    CLIST_FOR_EACH(struct dns_output*, out, col->config->outputs) {
+        if(out->finish_file)
+            out->finish_file(out, col->tf_cur->time_end);
+    }
+
     if (col->tf_cur)
         dns_timeframe_destroy(col->tf_cur);
     if (col->tf_old)
         dns_timeframe_destroy(col->tf_old);
-    dns_collector_dump_close(col);
+
     pcap_close(col->pcap);
    
     free(col);
@@ -85,12 +83,12 @@ dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname)
     pcap_t *newcap = pcap_open_offline(pcap_fname, pcap_errbuf);
 
     if (!newcap) {
-        fprintf(stderr, "libpcap error: %s\n", pcap_errbuf);
+        msg(L_ERROR, "libpcap error: %s", pcap_errbuf);
         return DNS_RET_ERR;
     }
 
     if (pcap_datalink(newcap) != DLT_RAW) {
-        fprintf(stderr, "error: pcap with link %s not supported (only DLT_RAW)\n", pcap_datalink_val_to_name(pcap_datalink(newcap)));
+        msg(L_ERROR, "pcap with link %s not supported (only DLT_RAW)", pcap_datalink_val_to_name(pcap_datalink(newcap)));
         pcap_close(newcap);
         return DNS_RET_ERR;
     }
@@ -100,33 +98,6 @@ dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname)
     return DNS_RET_OK;
 }
 
-
-dns_ret_t
-dns_collector_dump_open(dns_collector_t *col, const char *dump_fname)
-{
-    assert(col && dump_fname && col->pcap);
-
-    dns_collector_dump_close(col);
-    col->pcap_dump = pcap_dump_open(col->pcap, dump_fname);
-
-    if (!col->pcap_dump) {
-        fprintf(stderr, "libpcap error: %s\n", pcap_geterr(col->pcap));
-        return DNS_RET_ERR;
-    }
-
-    return DNS_RET_OK;
-}
-
-void
-dns_collector_dump_close(dns_collector_t *col)
-{
-    assert(col && col->pcap);
-    
-    if (col->pcap_dump) {
-        pcap_dump_close(col->pcap_dump);
-        col->pcap_dump = NULL;
-    }
-}
 
 dns_ret_t
 dns_collector_next_packet(dns_collector_t *col)
@@ -144,7 +115,7 @@ dns_collector_next_packet(dns_collector_t *col)
             return DNS_RET_EOF;
 
         case -1:
-            fprintf(stderr, "libpcap error: %s\n", pcap_geterr(col->pcap));
+            msg(L_ERROR, "pcap: %s", pcap_geterr(col->pcap));
             return DNS_RET_ERR;
 
         case 0:

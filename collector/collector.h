@@ -63,21 +63,6 @@ dns_ret_t
 dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname);
 
 
-/* Dumping exceptional packets **************************************/
-
-/**
- * Open a dump file, closing one if already open.
- */
-dns_ret_t
-dns_collector_dump_open(dns_collector_t *col, const char *dump_fname);
-
-/**
- *  Closes a dump file, NOP if none open.
- */
-void
-dns_collector_dump_close(dns_collector_t *col);
-
-
 /* Packet processing ************************************************/
 
 /**
