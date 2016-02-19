@@ -21,7 +21,7 @@ dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start)
     frame->collector = col;
 
     // Init times
-    if (time_start >= 0) {
+    if (time_start != DNS_NO_TIME) {
         frame->time_start = time_start;
     } else {
         struct timespec now;
@@ -34,8 +34,7 @@ dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start)
     frame->packets_next_ptr = &(frame->packets);
 
     // Init hash
-    // TODO: configurable order
-    frame->hash_order = 20; 
+    frame->hash_order = col->config->hash_order; 
     // Account for possibly small RAND_MAX
     frame->hash_param = rand() + (rand() << 16);
     // Make sure the modulo is larger than hash size, but not more than twice

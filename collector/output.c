@@ -55,12 +55,7 @@ char *dns_output_commit(struct dns_output *s)
 void
 dns_output_open(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && !out->f && out->manage_files);
-
-    if (time == DNS_NO_TIME) {
-        msg(L_ERROR, "[BUG] Unable to open file with time==DNS_NO_TIME.");
-        return;
-    }
+    assert(out && !out->f && out->manage_files && (time != DNS_NO_TIME));
 
     char path[PATH_MAX];
     size_t l = dns_us_time_strftime(path, PATH_MAX, out->path_template, time);

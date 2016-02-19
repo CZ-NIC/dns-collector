@@ -207,7 +207,7 @@ dns_collector_rotate_frames(dns_collector_t *col, dns_us_time_t time_now)
         col->tf_old = NULL;
     }
 
-    if (time_now == 0) {
+    if (time_now == DNS_NO_TIME) {
         struct timespec now;
         clock_gettime(CLOCK_MONOTONIC, &now);
         time_now = dns_us_time_from_timespec(&now);
