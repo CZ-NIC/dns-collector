@@ -101,7 +101,6 @@ typedef int64_t dns_us_time_t;
 
 /** Value representing "no time given". */
 #define DNS_NO_TIME (INT64_MIN)
-// TODO: use this instead of 0
 
 dns_us_time_t
 dns_us_time_from_timeval(const struct timeval *t);

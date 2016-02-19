@@ -30,6 +30,7 @@ dns_us_time_from_timespec(const struct timespec *t)
 double
 dns_us_time_to_fsec(dns_us_time_t t)
 {
+    assert(t != DNS_NO_TIME);
     return ((double)t) / 1000000.0;
 }
 
@@ -44,6 +45,7 @@ dns_fsec_to_us_time(double s)
 size_t
 dns_us_time_strftime(char *s, size_t max, const char *format, dns_us_time_t time)
 {
+    assert(time != DNS_NO_TIME);
     struct tm tmp_tm;
     time_t tsec = time / 1000000;
     struct tm *res = gmtime_r(&tsec, &tmp_tm);
