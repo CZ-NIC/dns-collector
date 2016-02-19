@@ -16,7 +16,7 @@ dns_collector_create(struct dns_config *conf)
 {
     assert(conf);
 
-    dns_collector_t *col = (dns_collector_t *)calloc(sizeof(dns_collector_t), 1);
+    dns_collector_t *col = (dns_collector_t *)xmalloc_zero(sizeof(dns_collector_t));
     if (!col) return NULL;
   
     col->config = conf;

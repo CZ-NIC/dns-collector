@@ -6,13 +6,6 @@
 #include "common.h"
 
 
-void dns_die_f(int line, const char *file, const char *func, const char *msg)
-{
-    fprintf(stderr, "FATAL [%s:%d] (%s): %s\n", file, line, func, msg);
-    exit(1);
-}
-
-
 dns_us_time_t
 dns_us_time_from_timeval(const struct timeval *t)
 {

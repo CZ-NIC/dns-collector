@@ -121,12 +121,4 @@ dns_fsec_to_us_time(double s);
 size_t
 dns_us_time_strftime(char *s, size_t max, const char *format, dns_us_time_t time);
 
-/**
- * Immediatelly end the program, writing msg to stderr.
- */
-#define dns_die(msg) dns_die_f(__LINE__, __FILE__, __func__, (msg))
-void dns_die_f(int line, const char *file, const char *func, const char *msg) __attribute__((noreturn));
-// TODO: replace with UCW die()
-
-
 #endif /* DNSCOL_COMMON_H */
