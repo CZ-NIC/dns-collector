@@ -9,22 +9,22 @@
 #include "output.h"
 
 
-char *dns_output_init(struct dns_output *s)
+char *dns_output_init(struct dns_output *out)
 {
-    s->period_sec = 300.0; // 5 min
+    out->period_sec = 300.0; // 5 min
 
     return NULL;
 }
 
 
-char *dns_output_commit(struct dns_output *s)
+char *dns_output_commit(struct dns_output *out)
 {
-    if (s->period_sec < 0.000001)
-        s->period = 0;
+    if (out->period_sec < 0.000001)
+        out->period = 0;
     else
-        s->period = dns_fsec_to_us_time(s->period_sec);
+        out->period = dns_fsec_to_us_time(out->period_sec);
 
-    if (!s->path_template)
+    if (!out->path_template)
         return "'path_template' needed in output.";
 
     return NULL;
@@ -71,7 +71,7 @@ dns_output_check_rotation(struct dns_output *out, dns_us_time_t time)
     assert(out && (time != DNS_NO_TIME) && out->manage_files);
 
     // check if we need to switch output files
-    if ((out->f) && (time >= out->f_time_opened + out->period))
+    if ((out->period > 0) && (out->f) && (time >= out->f_time_opened + out->period))
         dns_output_close(out, time);
 
     // open if not open

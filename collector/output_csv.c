@@ -93,16 +93,16 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
 static char *
 dns_output_csv_conf_init(void *data)
 {
-    struct dns_output_csv *s = (struct dns_output_csv *) data;
+    struct dns_output_csv *out = (struct dns_output_csv *) data;
 
-    s->base.write_packet = dns_output_csv_write_packet;
-    s->base.start_file = dns_output_csv_start_file;
-    s->base.manage_files = 1;
+    out->base.write_packet = dns_output_csv_write_packet;
+    out->base.start_file = dns_output_csv_start_file;
+    out->base.manage_files = 1;
 
-    s->header = 1;
-    s->separator = "|";
+    out->header = 1;
+    out->separator = "|";
 
-    return dns_output_init(&(s->base));
+    return dns_output_init(&(out->base));
 }
 
 
@@ -112,12 +112,12 @@ dns_output_csv_conf_init(void *data)
 static char *
 dns_output_csv_conf_commit(void *data)
 {
-    struct dns_output_csv *s = (struct dns_output_csv *) data;
+    struct dns_output_csv *out = (struct dns_output_csv *) data;
 
-    if (strlen(s->separator) != 1)
+    if (strlen(out->separator) != 1)
         return "'separator' needs to be exactly one character.";
 
-    return dns_output_commit(&(s->base));
+    return dns_output_commit(&(out->base));
 }
 
 

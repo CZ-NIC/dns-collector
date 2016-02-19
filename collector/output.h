@@ -23,6 +23,7 @@ struct dns_output {
 
     char *path_template;
     double period_sec;
+    /** Zero means do not rotate */
     dns_us_time_t period;
     FILE *f;
     dns_us_time_t f_time_opened;
