@@ -7,7 +7,6 @@
 #include <pcap/pcap.h>
 
 #include "collector.h"
-#include "writeproto.h"
 #include "timeframe.h"
 #include "packet.h"
 

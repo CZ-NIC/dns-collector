@@ -43,7 +43,7 @@ dns_output_commit(struct dns_output *out);
 
 extern struct cf_section dns_output_csv_section;
 extern struct cf_section dns_output_pcap_section;
-//extern const struct cf_section dns_output_protobuf_section;
+extern struct cf_section dns_output_proto_section;
 
 
 /**

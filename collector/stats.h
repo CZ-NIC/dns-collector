@@ -7,6 +7,8 @@
 #include "common.h"
 #include "output.h"
 
+// TODO: rework to otutputs somehow ...
+
 /** Stats of a DNS collector or frame */
 struct dns_stats {
 
