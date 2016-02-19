@@ -7,7 +7,6 @@
 #include <pcap/pcap.h>
 
 #include "timeframe.h"
-#include "writeproto.h"
 #include "packet.h"
 #include "output.h"
 
@@ -120,28 +119,9 @@ void
 dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
 {
     assert(frame && f);
-
-//    DnsQuery q;
     dns_packet_t *pkt = frame->packets;
-//    u_char buf[DNS_MAX_PROTO_LEN];
-//    size_t len;
 
     while(pkt) {
-      /*
-        if (DNS_PACKET_IS_REQUEST(pkt))
-            // request with optional response
-            dns_fill_proto(frame->collector->config, pkt, pkt->response, &q);
-        else
-            // response only
-            dns_fill_proto(frame->collector->config, NULL, pkt, &q);
-        len = protobuf_c_message_pack((ProtobufCMessage *)&q, buf);
-        if (len > sizeof(buf)) // Should never happen, but defensively:
-            dns_die("Impossibly long protobuf");
-
-        fwrite(&len, 2, 1, f);
-        fwrite(buf, len, 1, f);
-*/
-        // TODO: rewrite frame output routine
         CLIST_FOR_EACH(struct dns_output*, out, frame->collector->config->outputs) {
 
             dns_output_check_rotation(out, pkt->ts);
@@ -153,7 +133,7 @@ dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
         pkt = pkt -> next_in_timeframe;
     }
 
-    fprintf(stderr, "Frame %lf - %lf wrote %d queries\n",
+    msg(L_INFO, "Frame %lf - %lf wrote %d queries",
             dns_us_time_to_fsec(frame->time_start), dns_us_time_to_fsec(frame->time_end),
             frame->packets_count);
 }

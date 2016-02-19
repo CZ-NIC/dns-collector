@@ -53,8 +53,7 @@ struct cf_section dns_config_section = {
         CF_DOUBLE("timeframe_length", PTR_TO(struct dns_config, timeframe_length_sec)),
         CF_LIST("output_csv", PTR_TO(struct dns_config, outputs_csv), &dns_output_csv_section),
         CF_LIST("output_pcap", PTR_TO(struct dns_config, outputs_pcap), &dns_output_pcap_section),
-  //    CF_LIST("protobuf_output", &outputs, &dns_output_csv_section),
-  //    CF_LIST("dump_output", &outputs, &dns_output_csv_section),
+        CF_LIST("output_proto", PTR_TO(struct dns_config, outputs_proto), &dns_output_proto_section),
         CF_END
     }
 };

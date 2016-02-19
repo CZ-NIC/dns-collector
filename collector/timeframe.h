@@ -13,7 +13,7 @@
  * Single time frame.
  *
  * Unit to match requests and responses. Multiple frames may be written to a
- * single file, stats should be also file-based. (TODO)
+ * single file.
  */
 struct dns_timeframe {
     /** Owning collector */
