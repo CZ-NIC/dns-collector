@@ -46,6 +46,44 @@ enum dns_packet_dir {
 typedef enum dns_packet_dir dns_packet_dir_t;
 
 /**
+ * dnscol return / error codes
+ */
+
+enum dns_ret {
+    DNS_RET_OK = 0,
+    DNS_RET_ERR = -1,
+    DNS_RET_EOF = 1,
+    DNS_RET_TIMEOUT = 2,
+    DNS_RET_DROPPED = 3,
+};
+typedef enum dns_ret dns_ret_t;
+
+/**
+ * Common optional output fields
+ */
+
+enum dns_output_field {
+    dns_of_flags = 0,
+    dns_of_client_addr,
+    dns_of_client_port,
+    dns_of_server_addr,
+    dns_of_server_port,
+    dns_of_id,
+    dns_of_qname,
+    dns_of_qtype,
+    dns_of_qclass,
+    dns_of_request_time_us,
+    dns_of_request_flags,
+    dns_of_request_length,
+    dns_of_response_time_us,
+    dns_of_response_flags,
+    dns_of_response_length,
+    dns_of_LAST, // Sentinel
+};
+
+extern const char *dns_output_field_names[];
+
+/**
  * Packet drop/dump reasons
  *
  * * malformed - too short, bad headers, protocol, ...
@@ -69,28 +107,10 @@ enum dns_drop_reason {
     dns_drop_bad_dns,
     dns_drop_frame_full,
     dns_drop_no_request,
-    dns_drop_LAST // highest possible value (array sizes)
+    dns_drop_LAST // Sentinel
 };
-typedef enum dns_drop_reason dns_drop_reason_t;
 
-/**
- * dnscol return / error codes
- */
-
-enum dns_ret {
-    DNS_RET_OK = 0,
-    DNS_RET_ERR = -1,
-    DNS_RET_EOF = 1,
-    DNS_RET_TIMEOUT = 2,
-    DNS_RET_DROPPED = 3,
-};
-typedef enum dns_ret dns_ret_t;
-
-#ifndef MIN
-#define MIN(a,b) (((a)<(b))?(a):(b))                    /** Minimum of two numbers **/
-#define MAX(a,b) (((a)>(b))?(a):(b))                    /** Maximum of two numbers **/
-#endif
-
+extern const char *dns_drop_reason_names[];
 
 /**
  * Time for timestamps and time differences.

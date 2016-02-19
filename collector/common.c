@@ -46,4 +46,35 @@ dns_us_time_strftime(char *s, size_t max, const char *format, dns_us_time_t time
     return strftime(s, max, format, &tmp_tm);
 }
 
+const char *dns_output_field_names[] = {
+    "flags",
+    "client_addr",
+    "client_port",
+    "server_addr",
+    "server_port",
+    "id",
+    "qname",
+    "qtype",
+    "qclass",
+    "request_time_us",
+    "request_flags",
+    "request_length",
+    "response_time_us",
+    "response_flags",
+    "response_length",
+    NULL,
+};
+
+const char *dns_drop_reason_names[] = {
+  "other",
+  "malformed",
+  "fragmented",
+  "protocol",
+  "direction",
+  "port",
+  "bad_dns",
+  "frame_full",
+  "no_request",
+  NULL,
+};
 

@@ -143,6 +143,9 @@ dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
 */
         // TODO: rewrite frame output routine
         CLIST_FOR_EACH(struct dns_output*, out, frame->collector->config->outputs) {
+
+            dns_output_check_rotation(out, pkt->ts);
+
             if (out->write_packet)
                 out->write_packet(out, pkt);
         }

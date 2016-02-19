@@ -20,7 +20,10 @@ dns_collector_create(struct dns_config *conf)
     if (!col) return NULL;
   
     col->config = conf;
-
+    CLIST_FOR_EACH(struct dns_output*, out, conf->outputs) {
+        out->col = col;
+    }
+    
     col->pcap = pcap_open_dead(DLT_RAW, conf->capture_limit);
 
     if (!col->pcap) {
@@ -150,8 +153,6 @@ dns_collector_next_packet(dns_collector_t *col)
 
         case 1:
             col->stats.packets_captured++;
-            if (col->tf_cur)
-                col->tf_cur->stats.packets_captured++;
 
             dns_us_time_t now = dns_us_time_from_timeval(&(pkt_header->ts));
             if ((!col->tf_cur) || (col->tf_cur->time_start + col->config->timeframe_length < now))
