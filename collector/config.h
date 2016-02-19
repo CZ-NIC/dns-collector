@@ -13,7 +13,10 @@ struct dns_config {
     dns_us_time_t timeframe_length;
     double timeframe_length_sec;
     int32_t capture_limit;
-    struct clist outputs; // clst of struct dns_output
+    struct clist outputs_pcap; // for config only, later empty
+    struct clist outputs_proto; // for config only, later empty
+    struct clist outputs_csv; // for config only, later empty
+    struct clist outputs; // clst of collected struct dns_output from outputs_csv, outputs_proto, outputs_pcap
     char **inputs; // not owned by config, NULL-terminated
     int32_t hash_order;
 

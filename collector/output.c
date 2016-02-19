@@ -5,29 +5,8 @@
 #include <linux/limits.h>
 #include <errno.h>
 
-
 #include "common.h"
 #include "output.h"
-
-
-const char *dns_output_field_names[] = {
-    "flags",
-    "client_addr",
-    "client_port",
-    "server_addr",
-    "server_port",
-    "id",
-    "qname",
-    "qtype",
-    "qclass",
-    "request_time_us",
-    "request_flags",
-    "request_length",
-    "response_time_us",
-    "response_flags",
-    "response_length",
-    NULL,
-};
 
 
 char *dns_output_init(struct dns_output *s)
@@ -87,22 +66,26 @@ dns_output_close(struct dns_output *out, dns_us_time_t time)
 
 
 void
-dns_output_write(struct dns_output *out, const char *buf, size_t len, dns_us_time_t time)
+dns_output_check_rotation(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && buf && out->manage_files);
+    assert(out && (time != DNS_NO_TIME) && out->manage_files);
 
     // check if we need to switch output files
-    if ((time != DNS_NO_TIME) && (out->f) && (time >= out->f_time_opened + out->period))
+    if ((out->f) && (time >= out->f_time_opened + out->period))
         dns_output_close(out, time);
 
-    // open output if none open
-    if (!out->f) {
+    // open if not open
+    if (!out->f)
         dns_output_open(out, time);
-        if (!out->f)
-            return;
-    }
+}
+// TODO: Sync wile rotation with respect to drop/write
 
-    if (len > 1) {
+void
+dns_output_write(struct dns_output *out, const char *buf, size_t len)
+{
+    assert(out && buf);
+
+    if ((len > 1) && (out->f)) {
         size_t l = fwrite(buf, len, 1, out->f);
         if (l != 1) {
             msg(L_ERROR, "IO error %d writing to an output file.", ferror(out->f));

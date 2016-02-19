@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #include "common.h"
-#include "config.h"
+#include "output.h"
 
 /** Stats of a DNS collector or frame */
 struct dns_stats {

@@ -43,7 +43,7 @@ dns_output_csv_start_file(struct dns_output *out0, dns_us_time_t time UNUSED)
 
     *(p++) = '\n';
     *(p) = '\0';
-    dns_output_write(out0, buf, (p - buf), DNS_NO_TIME);
+    dns_output_write(out0, buf, (p - buf));
 }
 
 
@@ -81,7 +81,7 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
 
     *(p++) = '\n';
     *(p) = '\0';
-    dns_output_write(out0, buf, (p - buf), pkt->ts);
+    dns_output_write(out0, buf, (p - buf));
 
     return DNS_RET_OK;
 }

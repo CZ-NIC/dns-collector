@@ -7,7 +7,11 @@ dns_collector_conf_init(void *data)
 {
     struct dns_config *conf = (struct dns_config *) data;
 
+    clist_init(&(conf->outputs_pcap));
+    clist_init(&(conf->outputs_proto));
+    clist_init(&(conf->outputs_csv));
     clist_init(&(conf->outputs));
+
     conf->capture_limit = 300;
     conf->timeframe_length_sec = 5.0;
     conf->hash_order = 20;
@@ -31,6 +35,10 @@ dns_collector_conf_commit(void *data)
     if (conf->capture_limit < 128)
         return "'capture_limit' too small, minimum 128.";
 
+    clist_insert_list_after(&(conf->outputs_csv), &(conf->outputs.head));
+    clist_insert_list_after(&(conf->outputs_pcap), &(conf->outputs.head));
+    clist_insert_list_after(&(conf->outputs_proto), &(conf->outputs.head));
+
     return NULL;
 }
 
@@ -43,7 +51,8 @@ struct cf_section dns_config_section = {
         CF_INT("capture_limit", PTR_TO(struct dns_config, capture_limit)),
         CF_INT("hash_order", PTR_TO(struct dns_config, hash_order)),
         CF_DOUBLE("timeframe_length", PTR_TO(struct dns_config, timeframe_length_sec)),
-        CF_LIST("csv_output", PTR_TO(struct dns_config, outputs), &dns_output_csv_section),
+        CF_LIST("output_csv", PTR_TO(struct dns_config, outputs_csv), &dns_output_csv_section),
+        CF_LIST("output_pcap", PTR_TO(struct dns_config, outputs_pcap), &dns_output_pcap_section),
   //    CF_LIST("protobuf_output", &outputs, &dns_output_csv_section),
   //    CF_LIST("dump_output", &outputs, &dns_output_csv_section),
         CF_END

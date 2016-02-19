@@ -103,7 +103,7 @@ dns_packet_destroy(dns_packet_t *pkt);
  * Does not deallocate any memory.
  */
 void
-dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, dns_drop_reason_t reason);
+dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, enum dns_drop_reason reason);
 
 /**
  * Initialize given pkt with data from pcap pkt_header,pkt_data.

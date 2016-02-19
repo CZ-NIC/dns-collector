@@ -25,18 +25,13 @@ struct dns_timeframe {
     /** End timestamp */
     dns_us_time_t time_end;
 
-    /** Local frame statistics
-     * TODO: probably compute per file. */
-    dns_stats_t stats;
-
     /** Linked list of requests (some with responses), and responses without requests.
      * Linked by `packet->next_in_timeframe`.
      * Ordered by the arrival time, not necessarily by timestamps.
      * All owned by the frame. */
     dns_packet_t *packets;
 
-    /** Pointer to the head of the list, pointer to be overwritten
-     * with newly arriving packet. */
+    /** Pointer to the head of the list, to be overwritten with newly arriving packet. */
     dns_packet_t **packets_next_ptr;
 
     /** Number of queries in list (matched pairs counted as 1) = length of `packets` list. */
@@ -47,7 +42,6 @@ struct dns_timeframe {
     uint64_t hash_elements;
     uint64_t hash_param;
     dns_packet_t **hash_data;
-
 
     // TODO: memory pool
 };

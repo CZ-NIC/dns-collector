@@ -36,34 +36,16 @@ dns_packet_destroy(dns_packet_t *pkt)
 }
 
 void
-dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, dns_drop_reason_t reason)
+dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, enum dns_drop_reason reason)
 {
     assert(col && pkt && pkt->pkt_data && reason < dns_drop_LAST);
 
     col->stats.packets_dropped++;
     col->stats.packets_dropped_reason[reason]++;
-    if (col->tf_cur) {
-        col->tf_cur->stats.packets_dropped++;        
-        col->tf_cur->stats.packets_dropped_reason[reason]++;        
-    }
 
-    if (col->config->dump_packet_reason[reason])
-    {
-        // TODO: check dump (soft/hard) quota?
-
-        if (col->pcap_dump) {
-            const struct pcap_pkthdr hdr = {
-                .ts = {.tv_sec = pkt->ts / 1000000, .tv_usec = pkt->ts % 1000000},
-                .caplen = pkt->pkt_caplen,
-                .len = pkt->pkt_len};
-            pcap_dump((u_char *)(col->pcap_dump), &hdr, pkt->pkt_data);
-            col->stats.packets_dumped++;
-            col->stats.packets_dumped_reason[reason]++;
-            if (col->tf_cur) {
-                col->tf_cur->stats.packets_dumped++;        
-                col->tf_cur->stats.packets_dumped_reason[reason]++;        
-            }
-        }
+    CLIST_FOR_EACH(struct dns_output*, out, col->config->outputs) {
+        if (out->drop_packet)
+            out->drop_packet(out, pkt, reason);
     }
 }
 
@@ -260,7 +242,6 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
     memcpy(pkt->dns_data, pkt->pkt_data + (*header_offset), pkt->dns_caplen);
     (*header_offset) += sizeof(dns_hdr_t); // now points after DNS header
 
-    // TODO: HERE: Check flags and dir and class and type
     if ((ntohs(pkt->dns_data->qs) != 1) ||
         (DNS_HDR_FLAGS_OPCODE(pkt->dns_data->flags) != 0 )) {
         // DROP: wrong # of DNS qnames
