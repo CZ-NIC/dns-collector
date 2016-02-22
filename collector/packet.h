@@ -31,6 +31,21 @@
 /** Is the packet DNS response? */
 #define DNS_PACKET_IS_RESPONSE(pkt) (DNS_HDR_FLAGS_QR((pkt)->dns_data->flags) == 1)
 
+#define DNS_PACKET_REQUEST(pkt) (DNS_PACKET_IS_REQUEST(pkt) ? (pkt) : NULL)
+#define DNS_PACKET_RESPONSE(pkt) (DNS_PACKET_IS_RESPONSE(pkt) ? (pkt) : (pkt)->response)
+
+/** Address family as AF_INET or AF_INET6 */
+#define DNS_PACKET_AF(pkt) ((pkt)->ip_ver == 4 ? AF_INET : AF_INET6)
+
+#define DNS_PACKET_CLIENT_ADDR(pkt) (DNS_PACKET_IS_REQUEST(pkt) ? (pkt)->src_addr : (pkt)->dst_addr)
+#define DNS_PACKET_SERVER_ADDR(pkt) (DNS_PACKET_IS_REQUEST(pkt) ? (pkt)->dst_addr : (pkt)->src_addr)
+#define DNS_PACKET_CLIENT_PORT(pkt) (DNS_PACKET_IS_REQUEST(pkt) ? (pkt)->src_port : (pkt)->dst_port)
+#define DNS_PACKET_SERVER_PORT(pkt) (DNS_PACKET_IS_REQUEST(pkt) ? (pkt)->dst_port : (pkt)->src_port)
+
+/**
+ * Main structure storing the packet data and parsed values.
+ */
+
 struct dns_packet {
     /** Timestamp [us since Epoch] */
     dns_us_time_t ts;
