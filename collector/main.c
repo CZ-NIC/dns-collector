@@ -39,11 +39,13 @@ int main(int argc UNUSED, char **argv)
     *(GARY_PUSH(main_inputs)) = NULL;
     #pragma GCC diagnostic pop
     conf.inputs = main_inputs;
+
     dns_collector_t *col = dns_collector_create(&conf);
 
     collector_run(col);
 
     dns_stats_fprint(&(col->stats), col->config, stderr);
+
     dns_collector_destroy(col);
 
     // TODO: free the input strings

@@ -89,6 +89,7 @@ dns_output_pcap_drop_packet(struct dns_output *out0, dns_packet_t *pkt, enum dns
         };
         dns_output_write(out0, (void *)&sf_hdr, sizeof(sf_hdr));
         dns_output_write(out0, (void *)pkt->pkt_data, sf_hdr.caplen);
+        out0->wrote_items ++;
     }
 
     return DNS_RET_OK;

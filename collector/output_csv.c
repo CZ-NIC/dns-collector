@@ -137,6 +137,7 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
     *(p++) = '\n';
     *(p) = '\0';
     dns_output_write(out0, buf, (p - buf));
+    out0->wrote_items ++;
 
     return DNS_RET_OK;
 }

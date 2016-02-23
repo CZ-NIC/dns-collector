@@ -116,24 +116,20 @@ dns_timeframe_match_response(dns_timeframe_t *frame, dns_packet_t *pkt)
 }
 
 void
-dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f)
+dns_timeframe_writeout(dns_timeframe_t *frame)
 {
-    assert(frame && f);
+    assert(frame);
     dns_packet_t *pkt = frame->packets;
 
     while(pkt) {
         CLIST_FOR_EACH(struct dns_output*, out, frame->collector->config->outputs) {
-
-            dns_output_check_rotation(out, pkt->ts);
-
             if (out->write_packet)
                 out->write_packet(out, pkt);
         }
-
         pkt = pkt -> next_in_timeframe;
     }
 
-    msg(L_INFO, "Frame %lf - %lf wrote %d queries",
+    msg(L_DEBUG, "Frame %lf - %lf wrote %d queries",
             dns_us_time_to_fsec(frame->time_start), dns_us_time_to_fsec(frame->time_end),
             frame->packets_count);
 }

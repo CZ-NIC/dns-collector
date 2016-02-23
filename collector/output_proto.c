@@ -22,11 +22,6 @@ struct dns_output_proto {
 /**
  * Callback for cvs_output, writes singe DnsQuery protobuf.
  */
-//void
-//dns_fill_proto(const struct dns_config *conf, const dns_packet_t* request, const dns_packet_t* response, DnsQuery *proto)
-//{
-    // TODO: Include fields based on config
-//}
 static dns_ret_t
 dns_output_proto_write_packet(struct dns_output *out0, dns_packet_t *pkt)
 {
@@ -147,8 +142,8 @@ dns_output_proto_write_packet(struct dns_output *out0, dns_packet_t *pkt)
         proto.has_response_length = true;
         proto.response_length = response->dns_len;
     }
-
 #undef FLG
+
     len = protobuf_c_message_pack((ProtobufCMessage *)&proto, (uint8_t *)buf + 2);
     if (len > DNS_MAX_PROTO_LEN) // Should never happen, but defensively:
         die("Impossibly long protobuf (%d, max is %d)", len, DNS_MAX_PROTO_LEN);
@@ -156,6 +151,7 @@ dns_output_proto_write_packet(struct dns_output *out0, dns_packet_t *pkt)
     memcpy(buf, &len, 2);
     
     dns_output_write(out0, buf, len + 2);
+    out0->wrote_items ++;
 
     return DNS_RET_OK;
 }

@@ -4,11 +4,9 @@
 #include <string.h>
 #include <linux/limits.h>
 #include <errno.h>
-
+#include <ucw/lib.h>
 #include <lz4.h>
 #include <lz4frame.h>
-#define LZ4_HEADER_SIZE 20
-#define LZ4_FOOTER_SIZE 8
 
 #include "common.h"
 #include "output.h"
@@ -80,21 +78,29 @@ dns_output_writebuf_helper(const char *buf, size_t len, FILE *f)
     }
 }
 
+#define DNS_OUTPUT_FILENAME_STRFTIME_EXTRA 32
+#define LZ4_HEADER_SIZE 20
+#define LZ4_FOOTER_SIZE 8
+
 void
 dns_output_open(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && !out->f && out->manage_files && (time != DNS_NO_TIME));
+    assert(out && (!out->f) && (!out->fname) && out->manage_files && (time != DNS_NO_TIME));
 
-    char path[PATH_MAX];
-    size_t l = dns_us_time_strftime(path, PATH_MAX, out->path_template, time);
+    // Extra space for expansion -- note that most used covetsions are "in place": "%d" -> "01" 
+    int fname_len = strlen(out->path_template) + DNS_OUTPUT_FILENAME_STRFTIME_EXTRA;
+    out->fname = xmalloc(fname_len);
+    size_t l = dns_us_time_strftime(out->fname, fname_len, out->path_template, time);
 
     if (l == 0)
-        die("Expanded filename '%s' too long.", out->path_template);
+        die("Expanded filename '%s' expansion too long.", out->path_template);
         
-    out->f = fopen(path, "w");
+    out->f = fopen(out->fname, "w");
     if (!out->f)
-        die("Unable to open output file '%s': %s.", path, strerror(errno));
+        die("Unable to open output file '%s': %s.", out->fname, strerror(errno));
     out->f_time_opened = time;
+
+    out->wrote_bytes = out->wrote_bytes_compressed = out->wrote_items = 0;
 
     if (out->compression == dns_oc_lz4fast || out->compression == dns_oc_lz4med || out->compression == dns_oc_lz4best) {
         size_t n;
@@ -117,6 +123,7 @@ dns_output_open(struct dns_output *out, dns_us_time_t time)
         if (LZ4F_isError(n))
             die("LZ4 error: %s", LZ4F_getErrorName(n));
         dns_output_writebuf_helper(out->lz4_buf, n, out->f);
+        out->wrote_bytes_compressed += n;
     }
 
     if (out->start_file)
@@ -139,16 +146,29 @@ dns_output_close(struct dns_output *out, dns_us_time_t time)
         if (LZ4F_isError(n))
             die("LZ4 error: %s", LZ4F_getErrorName(n));
         dns_output_writebuf_helper(out->lz4_buf, n, out->f);
+        out->wrote_bytes_compressed += n;
 
         LZ4F_freeCompressionContext(out->lz4_ctx);
         xfree(out->lz4_buf);
         out->lz4_buf_len = 0;
     }
 
+    if (out->compression != dns_oc_none)
+        msg(L_INFO, "Wrote %lu B (%lu B compressed to %.1f%%), %lu items to '%s'", out->wrote_bytes_compressed,
+            out->wrote_bytes, 100.0 * out->wrote_bytes_compressed / out->wrote_bytes,
+            out->wrote_items, out->fname);
+    else
+        msg(L_INFO, "Wrote %lu B, %lu items to '%s'", out->wrote_bytes_compressed,
+            out->wrote_items, out->fname);
+
     fclose(out->f);
     out->f = NULL;
+    xfree(out->fname);
+    out->fname = NULL;
 }
 
+
+#define DNS_OUTPUT_ROTATION_GRACE_TIME (10000)
 
 void
 dns_output_check_rotation(struct dns_output *out, dns_us_time_t time)
@@ -156,7 +176,7 @@ dns_output_check_rotation(struct dns_output *out, dns_us_time_t time)
     assert(out && (time != DNS_NO_TIME) && out->manage_files);
 
     // check if we need to switch output files
-    if ((out->period > 0) && (out->f) && (time >= out->f_time_opened + out->period))
+    if ((out->period > 0) && (out->f) && (time >= out->f_time_opened + out->period - DNS_OUTPUT_ROTATION_GRACE_TIME))
         dns_output_close(out, time);
 
     // open if not open
@@ -170,8 +190,11 @@ dns_output_write(struct dns_output *out, const char *buf, size_t len)
 {
     assert(out && buf);
 
+    out->wrote_bytes += len;
+
     if (out->compression == dns_oc_none) {
         dns_output_writebuf_helper(buf, len, out->f);
+        out->wrote_bytes_compressed += len;
         return;
     }
 
@@ -180,6 +203,7 @@ dns_output_write(struct dns_output *out, const char *buf, size_t len)
             size_t n, wr = MIN(len, DNS_OUTPUT_LZ4_WRITE_SIZE);
             n = LZ4F_compressUpdate(out->lz4_ctx, out->lz4_buf, out->lz4_buf_len, buf, wr, NULL);
             dns_output_writebuf_helper(out->lz4_buf, n, out->f);
+            out->wrote_bytes_compressed += n;
             buf += wr;
             len -= wr;
         }
