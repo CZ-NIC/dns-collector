@@ -32,7 +32,9 @@ int main(int argc UNUSED, char **argv)
     GARY_INIT(main_inputs, 0);
     cf_declare_rel_section("collector", &dns_config_section, &conf, 0);
 
+    log_register_type("spam");
     opt_parse(&dns_options, argv + 1);
+    log_configured("default-log");
 
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wcast-align"
@@ -48,7 +50,6 @@ int main(int argc UNUSED, char **argv)
 
     dns_collector_destroy(col);
 
-    // TODO: free the input strings
     GARY_FREE(main_inputs);
     // TODO: free config
 
