@@ -52,7 +52,8 @@ int main(int argc UNUSED, char **argv)
     dns_collector_destroy(col);
 
     GARY_FREE(main_inputs);
-    // TODO: free config
+    // Valgrind registers 13 unfreed blocks amounting to libUCW config data.
+    // There seems to be no way to free it.
 
     return 0;
 }
