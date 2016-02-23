@@ -191,8 +191,7 @@ struct cf_section dns_output_proto_section = {
     .init = &dns_output_proto_conf_init,
     .commit = &dns_output_proto_conf_commit,
     CF_ITEMS {
-        CF_STRING("path_template", PTR_TO(struct dns_output, path_template)),
-        CF_DOUBLE("period", PTR_TO(struct dns_output, period_sec)),
+        CF_DNS_OUTPUT_COMMON,
         CF_BITMAP_LOOKUP("fields", PTR_TO(struct dns_output_proto, fields), dns_output_field_names),
         CF_END
     }

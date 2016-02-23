@@ -1,4 +1,4 @@
-.PHONY: all clean
+.PHONY: all clean deps
 
 PROG=main
 PROTO=dnsquery
@@ -6,7 +6,7 @@ PROTO=dnsquery
 CC=clang
 WARNS=-Wall -Wcast-align -Wunused-parameter -Wno-variadic-macros -Wno-gnu-statement-expression -Wno-language-extension-token
 CFLAGS=-O1 -g3 -std=gnu99 -pedantic $(WARNS)
-LDFLAGS=-lpcap `pkg-config --libs 'libprotobuf-c >= 1.0.0'` -lucw-6.5 
+LDFLAGS=-lpcap `pkg-config --libs 'libprotobuf-c >= 1.0.0'` -lucw-6.5 -llz4
 
 # TODO: add -flto, -fuse-ld later
 
@@ -33,3 +33,20 @@ $(PROTO)_pb2.py: $(PROTO).proto
 	protoc --python_out=. $<
 
 protodump.py: $(PROTO)_pb2.py
+
+
+deps: deps-libucw deps-liblz4
+
+deps-libucw:
+	cd ../libs/libucw
+	git submodule init
+	git submodule update
+	./configure -CONFIG_UCW_PERL -CONFIG_XML -CONFIG_JSON CONFIG_DEBUG -CONFIG_SHARED -CONFIG_DOC
+	make all
+
+deps-liblz4:
+	cd ../libs/liblz4
+	git submodule init
+	git submodule update
+	make lib
+

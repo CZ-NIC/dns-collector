@@ -4,9 +4,30 @@
 #include <string.h>
 #include <ucw/lib.h>
 #include <ucw/conf.h>
+#include <lz4frame.h>
 
 #include "common.h"
 #include "packet.h"
+
+
+/** Output compression types */
+
+enum dns_output_compressions {
+    dns_oc_none = 0,
+    dns_oc_lz4fast,
+    dns_oc_lz4med,
+    dns_oc_lz4best,
+    dns_oc_LAST, // Sentinel
+};
+
+/** Output compression type names */
+
+extern const char *dns_output_compression_names[];
+
+#define CF_DNS_OUTPUT_COMMON \
+        CF_STRING("path_template", PTR_TO(struct dns_output, path_template)), \
+        CF_DOUBLE("period", PTR_TO(struct dns_output, period_sec)), \
+        CF_LOOKUP("compression", PTR_TO(struct dns_output, compression), dns_output_compression_names)
 
 /**
  * Output configuration and active output entry.
@@ -23,10 +44,18 @@ struct dns_output {
 
     char *path_template;
     double period_sec;
-    /** Zero means do not rotate */
+    /** Zero or less means do not rotate */
     dns_us_time_t period;
     FILE *f;
     dns_us_time_t f_time_opened;
+
+    /** Compression */
+    int compression; // enum dns_output_compressions 
+    LZ4F_compressionContext_t lz4_ctx;
+    LZ4F_preferences_t *lz4_prefs;
+    char *lz4_buf;
+    size_t lz4_buf_len;
+    size_t lz4_buf_offset;
 };
 
 /**
