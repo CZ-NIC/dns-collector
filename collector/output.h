@@ -42,11 +42,18 @@ struct dns_output {
     void (*finish_file)(struct dns_output *out, dns_us_time_t time);
     int manage_files;
 
-    char *path_template;
+    /** Configured file rotation period. Zero or less means do not rotate */
     double period_sec;
-    /** Zero or less means do not rotate */
+    /** Computed from `period_sec`. Zero means do not rotate */
     dns_us_time_t period;
+
+    /** Open file stream */
     FILE *f;
+    /** Configured path format string */
+    char *path_template;
+    /** Allocated file name when !=NULL, owned by the output */
+    char *fname;
+    /** File opening time */
     dns_us_time_t f_time_opened;
 
     /** Compression */
@@ -56,6 +63,14 @@ struct dns_output {
     char *lz4_buf;
     size_t lz4_buf_len;
     size_t lz4_buf_offset;
+
+    /** The number of bytes outputted before compression. */
+    size_t wrote_bytes;
+    /** Total number of bytes written after compression. */
+    size_t wrote_bytes_compressed;
+    /** Number of items (packets or query pairs) outputted.
+     * Specific `write_packet` and `drop_packet` must update this.*/
+    size_t wrote_items;
 };
 
 /**

@@ -80,8 +80,20 @@ dns_collector_next_packet(dns_collector_t *col);
 void
 dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
 
+/**
+ * Rotate the timeframes.
+ *
+ * Writeout and destroy tf_old (if any), move tf_cut to tf_old (if any), create new tf_cur.
+ */
 void
 dns_collector_rotate_frames(dns_collector_t *col, dns_us_time_t time_now);
+
+/**
+ * Check rotation for output files. Should be synced with timeframe change.
+ * Creates the files if not open.
+ */
+void
+dns_collector_rotate_outputs(dns_collector_t *col, dns_us_time_t time_now);
 
 
 #endif /* DNSCOL_COLLECTOR_H */

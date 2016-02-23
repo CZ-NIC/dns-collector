@@ -45,10 +45,18 @@ collector_run(dns_collector_t *col)
     }
 
     // Write tf_old
-    dns_collector_rotate_frames(col, col->tf_cur->time_start + col->config->timeframe_length); // TODO: Hacky
+    if (col->tf_old) {
+        dns_timeframe_writeout(col->tf_old);
+        dns_timeframe_destroy(col->tf_old);
+        col->tf_old = NULL;
+    }
 
     // Write tf_cur
-    dns_collector_rotate_frames(col, col->tf_cur->time_start + 2 * col->config->timeframe_length); // Any time would do
+    if (col->tf_cur) {
+        dns_timeframe_writeout(col->tf_cur);
+        dns_timeframe_destroy(col->tf_cur);
+        col->tf_cur = NULL;
+    }
 }
 
 
@@ -58,8 +66,7 @@ dns_collector_destroy(dns_collector_t *col)
     assert(col && col->pcap);
     
     CLIST_FOR_EACH(struct dns_output*, out, col->config->outputs) {
-        if(out->finish_file)
-            out->finish_file(out, col->tf_cur->time_end);
+        dns_output_close(out, col->tf_cur->time_end);
     }
 
     if (col->tf_cur)
@@ -125,8 +132,10 @@ dns_collector_next_packet(dns_collector_t *col)
             col->stats.packets_captured++;
 
             dns_us_time_t now = dns_us_time_from_timeval(&(pkt_header->ts));
-            if ((!col->tf_cur) || (col->tf_cur->time_start + col->config->timeframe_length < now))
+            if ((!col->tf_cur) || (col->tf_cur->time_start + col->config->timeframe_length < now)) {
                 dns_collector_rotate_frames(col, now);
+                dns_collector_rotate_outputs(col, now);
+            }
 
             dns_collector_process_packet(col, pkt_header, pkt_data);
 
@@ -170,10 +179,18 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
 }
 
 void
+dns_collector_rotate_outputs(dns_collector_t *col, dns_us_time_t time_now)
+{
+    CLIST_FOR_EACH(struct dns_output*, out, col->config->outputs) {
+        dns_output_check_rotation(out, time_now);
+    }
+}
+
+void
 dns_collector_rotate_frames(dns_collector_t *col, dns_us_time_t time_now)
 {
     if (col->tf_old) {
-        dns_timeframe_writeout(col->tf_old, stdout); // TODO: specify file
+        dns_timeframe_writeout(col->tf_old);
         dns_timeframe_destroy(col->tf_old);
         col->tf_old = NULL;
     }

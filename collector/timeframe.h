@@ -77,9 +77,9 @@ dns_packet_t *
 dns_timeframe_match_response(dns_timeframe_t *frame, dns_packet_t *pkt);
 
 /**
- * Write the frame protobufs to the given file.
+ * Write the frame protobufs to the configured outputs.
  */
 void
-dns_timeframe_writeout(dns_timeframe_t *frame, FILE *f);
+dns_timeframe_writeout(dns_timeframe_t *frame);
 
 #endif /* DNSCOL_TIMEFRAME_H */
