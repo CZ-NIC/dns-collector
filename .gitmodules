@@ -1,3 +1,6 @@
 [submodule "libucw"]
-	path = libucw
+	path = libs/libucw
 	url = git://git.ucw.cz/libucw.git
+[submodule "lz4"]
+	path = libs/lz4
+	url = https://github.com/Cyan4973/lz4
