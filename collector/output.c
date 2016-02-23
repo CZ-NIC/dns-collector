@@ -65,6 +65,7 @@ char *dns_output_commit(struct dns_output *out)
 }
 
 #define DNS_OUTPUT_LZ4_WRITE_SIZE (1024 * 4)
+#define DNS_MSG_SPAM (LS_SET_TYPE(log_find_type("spam")))
 
 static void
 dns_output_writebuf_helper(const char *buf, size_t len, FILE *f)
@@ -73,7 +74,7 @@ dns_output_writebuf_helper(const char *buf, size_t len, FILE *f)
     while (pos < len) {
         n = fwrite(buf + pos, 1, len - pos, f);
         if ((n < len - pos) && ferror(f))
-            msg(L_ERROR, "Output write error %d", ferror(f));
+            msg(L_ERROR | DNS_MSG_SPAM), "Output write error %d", ferror(f));
         pos += n;
     }
 }
