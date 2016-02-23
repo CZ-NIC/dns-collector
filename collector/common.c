@@ -48,20 +48,31 @@ dns_us_time_strftime(char *s, size_t max, const char *format, dns_us_time_t time
 
 const char *dns_output_field_names[] = {
     "flags",
+
     "client_addr",
     "client_port",
     "server_addr",
     "server_port",
+
     "id",
     "qname",
     "qtype",
     "qclass",
+
     "request_time_us",
     "request_flags",
+    "request_ans_rrs",
+    "request_auth_rrs",
+    "request_add_rrs",
     "request_length",
+
     "response_time_us",
     "response_flags",
+    "response_ans_rrs",
+    "response_auth_rrs",
+    "response_add_rrs",
     "response_length",
+
     NULL,
 };
 

@@ -74,6 +74,7 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
                 case dns_of_flags:
                     p += sprintf(p, "%d", dns_packet_get_output_flags(pkt));
                     break;
+
                 case dns_of_client_addr:
                     inet_ntop(DNS_PACKET_AF(pkt), DNS_PACKET_CLIENT_ADDR(pkt), addrbuf, sizeof(addrbuf));
                     p += sprintf(p, "%s", addrbuf);
@@ -88,6 +89,7 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
                 case dns_of_server_port:
                     p += sprintf(p, "%d", DNS_PACKET_SERVER_PORT(pkt));
                     break;
+
                 case dns_of_id:
                     p += sprintf(p, "%d", ntohs(pkt->dns_data->id));
                     break;
@@ -103,6 +105,7 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
                 case dns_of_qclass:
                     p += sprintf(p, "%d", pkt->dns_qclass);
                     break;
+
                 case dns_of_request_time_us:
                     if (DNS_PACKET_REQUEST(pkt))
                         p += sprintf(p, "%"PRId64, DNS_PACKET_REQUEST(pkt)->ts);
@@ -111,10 +114,23 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
                     if (DNS_PACKET_REQUEST(pkt))
                         p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->flags));
                     break;
+                case dns_of_request_ans_rrs:
+                    if (DNS_PACKET_REQUEST(pkt))
+                        p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->ans_rrs));
+                    break;
+                case dns_of_request_auth_rrs:
+                    if (DNS_PACKET_REQUEST(pkt))
+                        p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->auth_rrs));
+                    break;
+                case dns_of_request_add_rrs:
+                    if (DNS_PACKET_REQUEST(pkt))
+                        p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->add_rrs));
+                    break;
                 case dns_of_request_length:
                     if (DNS_PACKET_REQUEST(pkt))
                         p += sprintf(p, "%d", DNS_PACKET_REQUEST(pkt)->pkt_len);
                     break;
+
                 case dns_of_response_time_us:
                     if (DNS_PACKET_RESPONSE(pkt))
                         p += sprintf(p, "%"PRId64, DNS_PACKET_RESPONSE(pkt)->ts);
@@ -122,6 +138,18 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
                 case dns_of_response_flags:
                     if (DNS_PACKET_RESPONSE(pkt))
                         p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->flags));
+                    break;
+                case dns_of_response_ans_rrs:
+                    if (DNS_PACKET_RESPONSE(pkt))
+                        p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->ans_rrs));
+                    break;
+                case dns_of_response_auth_rrs:
+                    if (DNS_PACKET_RESPONSE(pkt))
+                        p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->auth_rrs));
+                    break;
+                case dns_of_response_add_rrs:
+                    if (DNS_PACKET_RESPONSE(pkt))
+                        p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->add_rrs));
                     break;
                 case dns_of_response_length:
                     if (DNS_PACKET_RESPONSE(pkt))

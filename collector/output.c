@@ -157,11 +157,13 @@ dns_output_close(struct dns_output *out, dns_us_time_t time)
     }
 
     if (out->compression != dns_oc_none)
-        msg(L_INFO, "Wrote %lu B (%lu B compressed to %.1f%%), %lu items to '%s'", out->wrote_bytes_compressed,
-            out->wrote_bytes, 100.0 * out->wrote_bytes_compressed / out->wrote_bytes,
+        msg(L_INFO, "Output %lu B [%.1f B/q] compressed to %lu B [%.1f B/q] (%.1f%%), %lu items to '%s'",
+            out->wrote_bytes, 1.0 * out->wrote_bytes / out->wrote_items,
+            out->wrote_bytes_compressed, 1.0 * out->wrote_bytes_compressed / out->wrote_items, 100.0 * out->wrote_bytes_compressed / out->wrote_bytes,
             out->wrote_items, out->fname);
     else
-        msg(L_INFO, "Wrote %lu B, %lu items to '%s'", out->wrote_bytes_compressed,
+        msg(L_INFO, "Output %lu B [%.1f B/q], %lu items to '%s'",
+            out->wrote_bytes, 1.0 * out->wrote_bytes / out->wrote_items,
             out->wrote_items, out->fname);
 
     fclose(out->f);
