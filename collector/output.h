@@ -110,6 +110,10 @@ dns_output_open(struct dns_output *out, dns_us_time_t time);
 void 
 dns_output_close(struct dns_output *out, dns_us_time_t time);
 
+/**
+ * Allowed inaccuracy [microsec] when checking output rotation on frame rotation.
+ */
+#define DNS_OUTPUT_ROTATION_GRACE_US 10000
 
 /**
  * Check and potentionally rotate output files.
@@ -124,8 +128,7 @@ dns_output_check_rotation(struct dns_output *out, dns_us_time_t time);
 /**
  * Write a data block to an output file, handling compression.
  *
- * TODO: Currently may block, on an error just logs it.
- * TODO: Compression
+ * TODO: Currently may block, also ignores errors (just logs them).
  */
 void
 dns_output_write(struct dns_output *out, const char *buf, size_t len);
