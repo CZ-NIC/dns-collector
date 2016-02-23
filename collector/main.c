@@ -1,6 +1,7 @@
 #include <assert.h>
 
 #include <ucw/lib.h>
+#include <ucw/log.h>
 #include <ucw/opt.h>
 
 #include "common.h"

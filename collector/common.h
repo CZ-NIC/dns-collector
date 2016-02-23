@@ -7,6 +7,7 @@
 #include <sys/time.h>
 
 #include <ucw/lib.h>
+#include <ucw/log.h>
 
 #define DNSCOL_MAX_FNAME_LEN 256
 
@@ -140,5 +141,11 @@ dns_fsec_to_us_time(double s);
  */
 size_t
 dns_us_time_strftime(char *s, size_t max, const char *format, dns_us_time_t time);
+
+/**
+ * Logging flag indicating a possibly very frequent message 
+ * (IO errors ...) to be rate-limited.
+ */
+#define DNS_MSG_SPAM (LS_SET_TYPE(log_find_type("spam")))
 
 #endif /* DNSCOL_COMMON_H */

@@ -30,9 +30,10 @@ dns_collector_create(struct dns_config *conf)
     return col;
 }
 
+
 void
 collector_run(dns_collector_t *col)
-{ // TODO: improve
+{
     dns_ret_t r;
 
     for (char ** in = col->config->inputs; *in; in++) {
@@ -43,20 +44,6 @@ collector_run(dns_collector_t *col)
         if (r == DNS_RET_ERR)
             break;
     }
-
-    // Write tf_old
-    if (col->tf_old) {
-        dns_timeframe_writeout(col->tf_old);
-        dns_timeframe_destroy(col->tf_old);
-        col->tf_old = NULL;
-    }
-
-    // Write tf_cur
-    if (col->tf_cur) {
-        dns_timeframe_writeout(col->tf_cur);
-        dns_timeframe_destroy(col->tf_cur);
-        col->tf_cur = NULL;
-    }
 }
 
 
@@ -64,15 +51,23 @@ void
 dns_collector_destroy(dns_collector_t *col)
 { 
     assert(col && col->pcap);
+
+    // Write remaining data
+    if (col->tf_old)
+        dns_timeframe_writeout(col->tf_old);
+
+    if (col->tf_cur)
+        dns_timeframe_writeout(col->tf_cur);
     
+    // Flush and close outputs
     CLIST_FOR_EACH(struct dns_output*, out, col->config->outputs) {
         dns_output_close(out, col->tf_cur->time_end);
     }
 
-    if (col->tf_cur)
-        dns_timeframe_destroy(col->tf_cur);
     if (col->tf_old)
         dns_timeframe_destroy(col->tf_old);
+    if (col->tf_cur)
+        dns_timeframe_destroy(col->tf_cur);
 
     pcap_close(col->pcap);
    
@@ -132,9 +127,15 @@ dns_collector_next_packet(dns_collector_t *col)
             col->stats.packets_captured++;
 
             dns_us_time_t now = dns_us_time_from_timeval(&(pkt_header->ts));
-            if ((!col->tf_cur) || (col->tf_cur->time_start + col->config->timeframe_length < now)) {
+            if (!col->tf_cur) {
                 dns_collector_rotate_frames(col, now);
                 dns_collector_rotate_outputs(col, now);
+            } else {
+                // Possibly rotate several times to fill any gaps
+                while (col->tf_cur->time_start + col->config->timeframe_length < now) {
+                    dns_collector_rotate_frames(col, col->tf_cur->time_start + col->config->timeframe_length);
+                    dns_collector_rotate_outputs(col, col->tf_cur->time_start + col->config->timeframe_length);
+                }
             }
 
             dns_collector_process_packet(col, pkt_header, pkt_data);
