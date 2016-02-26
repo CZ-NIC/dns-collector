@@ -1,9 +1,5 @@
 #include <assert.h>
 
-#include <ucw/lib.h>
-#include <ucw/log.h>
-#include <ucw/opt.h>
-
 #include "common.h"
 #include "timeframe.h"
 #include "collector.h"
@@ -39,6 +35,7 @@ int main(int argc UNUSED, char **argv)
 
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wcast-align"
+    #pragma GCC diagnostic ignored "-Wpedantic"
     *(GARY_PUSH(main_inputs)) = NULL;
     #pragma GCC diagnostic pop
     conf.inputs = main_inputs;

@@ -3,9 +3,9 @@
 
 #include <string.h>
 #include <ucw/lib.h>
-#include <ucw/conf.h>
 #include <lz4frame.h>
 
+#include "config.h"
 #include "common.h"
 #include "packet.h"
 

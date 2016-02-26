@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <time.h>
 #include <ucw/lib.h>
-#include <ucw/conf.h>
 
 #include "common.h"
 #include "output.h"

@@ -6,8 +6,15 @@
 #include <time.h>
 #include <sys/time.h>
 
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wcast-align"
+#pragma GCC diagnostic ignored "-Wpedantic"
 #include <ucw/lib.h>
 #include <ucw/log.h>
+#include <ucw/conf.h>
+#include <ucw/gary.h>
+#include <ucw/opt.h>
+#pragma GCC diagnostic pop
 
 #define DNSCOL_MAX_FNAME_LEN 256
 

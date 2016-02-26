@@ -1,9 +1,6 @@
 #ifndef DNSCOL_COLLECTOR_CONFIG_H
 #define DNSCOL_COLLECTOR_CONFIG_H
 
-#include <ucw/lib.h>
-#include <ucw/conf.h>
-
 #include "common.h"
 #include "stats.h"
 
