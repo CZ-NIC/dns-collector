@@ -2,16 +2,14 @@
 
 # TODO: add -flto, -fuse-ld later
 
+PROTOC_C=protoc-c
+PROTOC=protoc
 CC=clang
 WARNS=-Wall -Wcast-align -Wunused-parameter -Wno-variadic-macros -Wno-gnu-statement-expression -Wno-language-extension-token
 CFLAGS=-O1 -g3 -std=gnu99 -pedantic $(WARNS)
 LDFLAGS=$(LDLIBS) -static
-
-# Using local libucw, liblz4, libprotobuf-c
-LDLIBS=-lpcap -Llibs/libucw/run/lib/ -lucw-6.5 -Llibs/lz4/lib/ -llz4 -Llibs/protobuf-c/protobuf-c/ -lprotobuf-c
-PROTOC_C=libs/protobuf-c/protoc-c/protoc-c
-# Global protoc for pytho
-PROTOC=protoc
+# Using local libucw
+LDLIBS=-lpcap -llz4 -lprotobuf-c -Llibs/libucw/run/lib/ -lucw-6.5
 
 
 PROG=dnscol
@@ -48,9 +46,9 @@ help:
 
 ### Dependencies
 
-build-deps: build-deps-libucw build-deps-liblz4 build-deps-protobuf-c
+build-deps: build-deps-libucw
 
-clean-deps: clean-deps-libucw clean-deps-liblz4 clean-deps-protobuf-c
+clean-deps: clean-deps-libucw
 
 .PHONY: build-deps-libucw build-deps-liblz4 build-deps-protobuf-c clean-deps-libucw clean-deps-liblz4 clean-deps-protobuf-c
 
