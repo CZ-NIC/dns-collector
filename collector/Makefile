@@ -4,12 +4,15 @@
 
 PROTOC_C=protoc-c
 PROTOC=protoc
-CC=clang
-WARNS=-Wall -Wcast-align -Wunused-parameter -Wno-variadic-macros -Wno-gnu-statement-expression -Wno-language-extension-token
-CFLAGS=-O1 -g3 -std=gnu99 -pedantic $(WARNS)
-LDFLAGS=$(LDLIBS) -static
-# Using local libucw
-LDLIBS=-lpcap -llz4 -lprotobuf-c -Llibs/libucw/run/lib/ -lucw-6.5
+CC=gcc
+WARNS=-Wall -Wcast-align -Wunused-parameter -Wno-variadic-macros
+ifeq ($(CC),clang)
+WARNS+=-Wno-gnu-statement-expression -Wno-language-extension-token
+endif
+CFLAGS=-O1 -g3 -std=gnu99 -pedantic $(WARNS) -Ilibs/libucw/run/include/ -flto
+# Using local static libucw
+LDLIBS=libs/libucw/run/lib/libucw-6.5.a -lpcap -llz4 -lprotobuf-c -lpthread
+LDFLAGS=
 
 
 PROG=dnscol
@@ -28,7 +31,7 @@ clean:
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(PROG): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
 
 $(PROTO).pb-c.c $(PROTO).pb-c.h: $(PROTO).proto
 	$(PROTOC_C) --c_out=. $<
@@ -59,7 +62,7 @@ libs/libucw/run/lib/libucw-6.5.a:
 	git submodule init
 	git submodule update
 	cd libs/libucw && \
-	    ./configure -CONFIG_UCW_PERL -CONFIG_XML -CONFIG_JSON CONFIG_DEBUG -CONFIG_SHARED -CONFIG_DOC && \
+	    ./configure -CONFIG_UCW_PERL -CONFIG_XML -CONFIG_JSON CONFIG_DEBUG CONFIG_LOCAL -CONFIG_SHARED -CONFIG_DOC -CONFIG_CHARSET && \
 	    make all
 
 clean-deps-libucw:
