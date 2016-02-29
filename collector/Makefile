@@ -1,4 +1,4 @@
-.PHONY: all clean build-deps clean-deps help
+.PHONY: all clean build-deps clean-deps help docs
 
 # TODO: add -flto, -fuse-ld later
 
@@ -23,9 +23,13 @@ OBJS=$(sort $(SRCS:.c=.o))
 
 all: $(PROG) protodump.py
 
+docs:
+	doxygen Doxyfile
+
 clean:
 	rm -f $(OBJS) $(PROG) $(PROTO)_pb2.py $(PROTO).pb-c.c $(PROTO).pb-c.h *.pyc
 	rm -rf __pycache__/
+	rm -rf docs/html
 
 %.o: %.c $(DEPS)
 	$(CC) $(CFLAGS) -c $< -o $@
