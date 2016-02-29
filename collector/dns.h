@@ -1,8 +1,16 @@
 #ifndef DNSCOL_DNS_H
 #define DNSCOL_DNS_H
 
+/**
+ * \file dns.h
+ * Simple DNS packet header and QNAME parsing.
+ */
+
 #include <netinet/in.h>
 
+/**
+ * DNS packet header (as on the wire).
+ */
 struct dns_hdr {
     uint16_t id;
     uint16_t flags;
@@ -10,8 +18,9 @@ struct dns_hdr {
     uint16_t ans_rrs;
     uint16_t auth_rrs;
     uint16_t add_rrs;
-    u_char data[];
+    u_char data[]; ///< The rest of the packet.
 };
+
 
 #define DNS_HDR_FLAGS_QR(flags)     ((ntohs(flags) & 0x8000) >> 15)
 #define DNS_HDR_FLAGS_OPCODE(flags) ((ntohs(flags) & 0x7800) >> 11)
@@ -26,25 +35,22 @@ struct dns_hdr {
 #define DNS_HDR_FLAGS_RCODE(flags)  ((ntohs(flags) & 0x000f) >> 0)
 
 /**
- * Check a dns-encoded query.
+ * Check the length and validity of a dns-encoded query.
  *
- * Returns -1 on query longer that caplen, when a "compressed" label is found,
- * or when '\0' is part of the query string.
- *
- * Returns lenght including the final 0 otherwise. In this case, query is
- * a well-behaved zero-delimited string.
+ * \return QNAME lenght including the final '\0' otherwise. In this case, query is
+ * a well-behaved zero-delimited string. On error (QNAME exceeding `maxlen`,
+ * when a "compressed" label is found, or when the query string contains '\0')
+ * returns -1.
  */
 int32_t
-dns_query_check(u_char *query, uint32_t caplen);
+dns_query_check(u_char *query, uint32_t maxlen);
 
 /**
  * Convert a given QNAME to a printable 0-terminated string with dots as separators.
  *
  * Assumes the `query` passes `dns_query_check()` and that `output` can hold
- * the entire raw qname.
- *
- * Replaces any characters not in [a-zA-Z0-9-] by '#', returns the number
- * of such replacements (0 if all OK).
+ * the entire raw qname. Replaces any characters not in [a-zA-Z0-9-] by '#'.
+ * \return The number of such '#' replacements (0 if all OK).
  */
 int
 dns_query_to_printable(u_char *query, char *output);

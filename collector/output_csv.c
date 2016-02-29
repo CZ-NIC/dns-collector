@@ -9,6 +9,10 @@
 #include "output.h"
 #include "packet.h"
 
+/**
+ * \file output_csv.c
+ * Output to CSV files - configuration and writing.
+ */
 
 struct dns_output_csv {
     struct dns_output base;
@@ -18,7 +22,14 @@ struct dns_output_csv {
     uint32_t fields;
 };
 
-#define DNS_OUTPUT_CVS_LINEMAX 512
+/**
+ * Maximal length of CSV output line. 
+ * Should hold both CSV field names and values.
+ * Estimate of the length: QNAME max len is 253 (1x), addr len is at most 40 each (2x),
+ * timestamps are at most 20 bytes each (2x), other 16 values are 16 bit ints and fit 5 bytes,
+ * that is 474 bytes including the separators. Increase if more or longer fields are added.
+ */
+#define DNS_OUTPUT_CVS_LINEMAX 1024
 
 /**
  * Callback for cvs_output, writes CVS header.
@@ -41,6 +52,8 @@ dns_output_csv_start_file(struct dns_output *out0, dns_us_time_t time UNUSED)
             size_t l = strlen(dns_output_field_names[f]);
             memcpy(p, dns_output_field_names[f], l);
             p += l;
+
+            assert(p < buf + sizeof(buf));
         }
     }
 

@@ -22,11 +22,6 @@ dns_collector_create(struct dns_config *conf)
         out->col = col;
     }
     
-    col->pcap = pcap_open_dead(DLT_RAW, conf->capture_limit);
-
-    if (!col->pcap) 
-        die("pcap_open_dead() failed");
-
     return col;
 }
 

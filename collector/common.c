@@ -81,11 +81,8 @@ const char *dns_drop_reason_names[] = {
   "malformed",
   "fragmented",
   "protocol",
-  "direction",
-  "port",
   "bad_dns",
-  "frame_full",
-  "no_request",
+  "limit",
   NULL,
 };
 
