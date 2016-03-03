@@ -1,3 +1,8 @@
+/**
+ * \file output_proto.c
+ * Output to protocol buffers.
+ */
+
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
@@ -8,19 +13,25 @@
 #include "packet.h"
 #include "config.h"
 
+/**
+ * Configuration structure extending `struct dns_output`.
+ */
 struct dns_output_proto {
     struct dns_output base;
 
     uint32_t fields;
 };
 
-/** Buffer large enough to hold serialised DnsQuery protobuf.
+/**
+ * Buffer large enough to hold serialised DnsQuery protobuf.
  * All fixed-size attributes should take <=96 bytes even at 8b/attr,
- * IPs and 2xQNAME should fit 4*4+2*16+2*256, 656 bytes total. */
+ * IPs and 2xQNAME should fit 4*4+2*16+2*256, 656 bytes total.
+ */
 #define DNS_MAX_PROTO_LEN 1024
 
 /**
  * Callback for cvs_output, writes singe DnsQuery protobuf.
+ * TODO: Add RR counts.
  */
 static dns_ret_t
 dns_output_proto_write_packet(struct dns_output *out0, dns_packet_t *pkt)
