@@ -22,7 +22,7 @@ struct dns_collector {
     /** DNS collector status and stats. \todo Redesign */
     dns_stats_t stats;
 
-    /** Open input pcap. Owned by collector. */
+    /** Open input pcap or NULL. Owned by collector. */
     pcap_t *pcap;
 
     /** Current timeframe. Owned by the collector. */

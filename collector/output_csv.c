@@ -195,7 +195,6 @@ dns_output_csv_conf_init(void *data)
 
     out->base.write_packet = dns_output_csv_write_packet;
     out->base.start_file = dns_output_csv_start_file;
-    out->base.manage_files = 1;
 
     out->header = 1;
     out->separator = "|";
