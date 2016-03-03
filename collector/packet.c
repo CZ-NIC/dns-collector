@@ -287,7 +287,7 @@ dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt)
 {
     assert(col && pkt && pkt->pkt_data);
 
-    if ((pkt->pkt_caplen < DNS_PACKET_MIN_LEN) || (pkt->pkt_caplen > pkt->pkt_len) || (pkt->pkt_len > DNS_PACKET_MAX_LEN)) {
+    if ((pkt->pkt_caplen < DNS_PACKET_MIN_LEN) || (pkt->pkt_caplen > pkt->pkt_len) || (pkt->pkt_caplen > col->config->capture_limit)) {
         // DROP: basic size assumptions
         dns_drop_packet(col, pkt, dns_drop_malformed);
         return DNS_RET_DROPPED;

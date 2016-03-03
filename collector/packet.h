@@ -1,6 +1,11 @@
 #ifndef DNSCOL_PACKET_H
 #define DNSCOL_PACKET_H
 
+/**
+ * \file packet.h
+ * DNS packet structure, parsing and utilities.
+ */
+
 #include <stdint.h>
 #include <pcap/pcap.h>
 
@@ -8,13 +13,10 @@
 #include "dns.h"
 
 /** Smallest possible length of DNS query/response (only header) */
-#define DNS_DNS_HEADER_MIN_LEN (12)
+#define DNS_DNS_HEADER_MIN_LEN 12
 
 /** Packet min length (just smallest headers) */
 #define DNS_PACKET_MIN_LEN (20 + 8 + DNS_DNS_HEADER_MIN_LEN)
-
-/** Packet max length (hard limit) */
-#define DNS_PACKET_MAX_LEN (32000)
 
 /** Packet QNAME max length (by RFC) */
 #define DNS_PACKET_QNAME_MAX_LEN 255
@@ -107,21 +109,21 @@ dns_packet_t*
 dns_packet_create();
 
 /**
- * Free a given packet and its data
+ * Free a given packet and its owned data
  */
 void
 dns_packet_destroy(dns_packet_t *pkt);
 
 /**
  * Drop and optionally dump a packet, depending on the reason and config.
- * Also records the packet in stats. May checks the dump quota.
+ * Also records the packet in stats. May check the dump quota.
  * Does not deallocate any memory.
  */
 void
 dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, enum dns_drop_reason reason);
 
 /**
- * Initialize given pkt with data from pcap pkt_header,pkt_data.
+ * Initialize given pkt with data from pcap pkt_header, pkt_data.
  * No allocation.
  */
 void
@@ -208,11 +210,19 @@ dns_packets_match(const dns_packet_t* request, const dns_packet_t* response);
 uint64_t
 dns_packet_hash(const dns_packet_t* pkt, uint64_t param);
 
+/**
+ * Packet flags field bits definition (collector query flags).
+ * Represent packet IP version, transport, whether the pair has a request
+ * and whether the pair has a response.
+ */
 
-
+/** If set, the IP version is IPv6, otherwise IPv4. */
 #define DNS_PACKET_PRTOCOL_IPV6 0x01
+/** If set, the transport is TCP, otherwise UDP. */
 #define DNS_PACKET_PROTOCOL_TCP 0x02
+/** If set, the query pair contains its request packet. */
 #define DNS_PACKET_HAS_REQUEST 0x04
+/** If set, the query pair contains its response packet. */
 #define DNS_PACKET_HAS_RESPONSE 0x08
 
 /**

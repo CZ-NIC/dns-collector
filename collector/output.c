@@ -4,7 +4,6 @@
 #include <string.h>
 #include <linux/limits.h>
 #include <errno.h>
-#include <ucw/lib.h>
 #include <lz4.h>
 #include <lz4frame.h>
 

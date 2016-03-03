@@ -3,7 +3,6 @@
 #include <inttypes.h>
 #include <stdint.h>
 #include <time.h>
-#include <ucw/lib.h>
 
 #include "common.h"
 #include "output.h"
@@ -14,6 +13,9 @@
  * Output to CSV files - configuration and writing.
  */
 
+/**
+ * Configuration structure extending `struct dns_output`.
+ */
 struct dns_output_csv {
     struct dns_output base;
 
