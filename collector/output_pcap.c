@@ -110,7 +110,6 @@ dns_output_pcap_conf_init(void *data)
 
     out->base.start_file = dns_output_pcap_start_file;
     out->base.drop_packet = dns_output_pcap_drop_packet;
-    out->base.manage_files = 1;
 
     return dns_output_init(&(out->base));
 }

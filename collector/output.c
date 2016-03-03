@@ -87,7 +87,7 @@ dns_output_writebuf_helper(const char *buf, size_t len, FILE *f)
 void
 dns_output_open(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && (!out->f) && (!out->fname) && out->manage_files && (time != DNS_NO_TIME));
+    assert(out && (!out->f) && (!out->fname) && (time != DNS_NO_TIME));
 
     // Extra space for expansion -- note that most used covetsions are "in place": "%d" -> "01" 
     int fname_len = strlen(out->path_template) + DNS_OUTPUT_FILENAME_STRFTIME_EXTRA;
@@ -136,7 +136,7 @@ dns_output_open(struct dns_output *out, dns_us_time_t time)
 void
 dns_output_close(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && out->f && out->manage_files && time != DNS_NO_TIME);
+    assert(out && out->f && time != DNS_NO_TIME);
 
     if (out->finish_file)
           out->finish_file(out, time);
@@ -175,7 +175,7 @@ dns_output_close(struct dns_output *out, dns_us_time_t time)
 void
 dns_output_check_rotation(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && (time != DNS_NO_TIME) && out->manage_files);
+    assert(out && (time != DNS_NO_TIME));
 
     // check if we need to switch output files
     if ((out->period > 0) && (out->f) && (time >= out->f_time_opened + out->period - DNS_OUTPUT_ROTATION_GRACE_US))

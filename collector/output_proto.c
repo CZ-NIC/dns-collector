@@ -176,7 +176,6 @@ dns_output_proto_conf_init(void *data)
     struct dns_output_proto *out = (struct dns_output_proto *) data;
 
     out->base.write_packet = dns_output_proto_write_packet;
-    out->base.manage_files = 1;
 
     return dns_output_init(&(out->base));
 }
