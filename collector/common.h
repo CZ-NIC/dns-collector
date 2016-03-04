@@ -6,6 +6,9 @@
  * Collector common definitions
  */
 
+#define DNS_WITH_CSV
+#define DNS_WITH_PROTO
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
@@ -41,6 +44,8 @@ typedef struct dns_packet dns_packet_t;
 
 struct dns_hdr;
 typedef struct dns_hdr dns_hdr_t;
+
+struct dns_output;
 
 /* Enums */
 

@@ -12,6 +12,8 @@
 #include "dnsquery.pb-c.h"
 #include "packet.h"
 #include "config.h"
+#include "output_compression.h"
+
 
 /**
  * Configuration structure extending `struct dns_output`.
@@ -177,7 +179,7 @@ dns_output_proto_conf_init(void *data)
 
     out->base.write_packet = dns_output_proto_write_packet;
 
-    return dns_output_init(&(out->base));
+    return dns_output_conf_init(&(out->base));
 }
 
 
@@ -189,7 +191,7 @@ dns_output_proto_conf_commit(void *data)
 {
     struct dns_output_proto *out = (struct dns_output_proto *) data;
 
-    return dns_output_commit(&(out->base));
+    return dns_output_conf_commit(&(out->base));
 }
 
 struct cf_section dns_output_proto_section = {

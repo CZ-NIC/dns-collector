@@ -12,12 +12,11 @@
 
 
 dns_timeframe_t *
-dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start) 
+dns_timeframe_create(struct dns_config *conf, dns_us_time_t time_start) 
 {
-    assert(col);
+    assert(conf);
 
     dns_timeframe_t *frame = (dns_timeframe_t*) xmalloc_zero(sizeof(dns_timeframe_t));
-    frame->collector = col;
 
     // Init times
     if (time_start != DNS_NO_TIME) {
@@ -27,13 +26,13 @@ dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start)
         clock_gettime(CLOCK_MONOTONIC, &now);
         frame->time_start = dns_us_time_from_timespec(&now);
     }
-    frame->time_end = frame->time_start + col->config->timeframe_length;
+    frame->time_end = frame->time_start + conf->timeframe_length;
 
     // Init packet sequence
     frame->packets_next_ptr = &(frame->packets);
 
     // Init hash
-    frame->hash_order = col->config->hash_order; 
+    frame->hash_order = conf->hash_order; 
     frame->hash_param = random_u64();
     // Make sure the modulo is larger than hash size, but not more than 8x
     frame->hash_param |= 1 << frame->hash_order;
@@ -43,6 +42,7 @@ dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start)
 
     return frame;
 }
+
 
 void
 dns_timeframe_destroy(dns_timeframe_t *frame) 
@@ -61,8 +61,30 @@ dns_timeframe_destroy(dns_timeframe_t *frame)
         dns_packet_destroy(ptmp);
     }
 
-    free(frame);
+    xfree(frame);
 }
+
+
+void
+dns_timeframe_decref(dns_timeframe_t *frame)
+{
+    assert(frame && (frame->refcount > 0));
+
+    frame->refcount --;
+
+    if (frame->refcount == 0)
+        dns_timeframe_destroy(frame);
+}
+
+
+void
+dns_timeframe_incref(dns_timeframe_t *frame)
+{
+    assert(frame && (frame->refcount >= 0));
+
+    frame->refcount ++;
+}
+
 
 void
 dns_timeframe_append_packet(dns_timeframe_t *frame, dns_packet_t *pkt)
@@ -85,6 +107,7 @@ dns_timeframe_append_packet(dns_timeframe_t *frame, dns_packet_t *pkt)
         frame->hash_elements++;
     }
 }
+
 
 dns_packet_t *
 dns_timeframe_match_response(dns_timeframe_t *frame, dns_packet_t *pkt)
@@ -114,27 +137,6 @@ dns_timeframe_match_response(dns_timeframe_t *frame, dns_packet_t *pkt)
 
     return NULL;
 }
-
-void
-dns_timeframe_writeout(dns_timeframe_t *frame)
-{
-    assert(frame);
-    dns_packet_t *pkt = frame->packets;
-
-    while(pkt) {
-        CLIST_FOR_EACH(struct dns_output*, out, frame->collector->config->outputs) {
-            if (out->write_packet)
-                out->write_packet(out, pkt);
-        }
-        pkt = pkt -> next_in_timeframe;
-    }
-
-    msg(L_DEBUG, "Frame %lf - %lf wrote %d queries",
-            dns_us_time_to_fsec(frame->time_start), dns_us_time_to_fsec(frame->time_end),
-            frame->packets_count);
-}
-
-
 
 
 

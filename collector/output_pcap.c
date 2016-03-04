@@ -10,6 +10,8 @@
 #include "output.h"
 #include "collector.h"
 #include "packet.h"
+#include "output_compression.h"
+
 
 /**
  * Configuration structure extending `struct dns_output`.
@@ -19,6 +21,7 @@ struct dns_output_pcap {
 
     /** Bitfield filter of packets to dump. Combination of `1 << dns_drop_*`. */
     uint32_t dump_reasons;
+    size_t snaplen;
 };
 
 /**
@@ -55,7 +58,7 @@ struct dns_pcapfile_pkt_header {
 void
 dns_output_pcap_start_file(struct dns_output *out0, dns_us_time_t time UNUSED)
 {
-    assert(out0 && out0->col);
+    assert(out0);
 
     struct dns_output_pcap *out UNUSED = (struct dns_output_pcap *) out0;
 
@@ -64,7 +67,7 @@ dns_output_pcap_start_file(struct dns_output *out0, dns_us_time_t time UNUSED)
         .version_major = 2,
         .version_minor = 4,
         .thiszone = 0,
-        .snaplen = out0->col->config->capture_limit,
+        .snaplen = out->snaplen,
         .sigfigs = 0,
         .linktype = 101, // LINKTYPE_RAW
     };
@@ -109,9 +112,9 @@ dns_output_pcap_conf_init(void *data)
     struct dns_output_pcap *out = (struct dns_output_pcap *) data;
 
     out->base.start_file = dns_output_pcap_start_file;
-    out->base.drop_packet = dns_output_pcap_drop_packet;
+    out->snaplen = 300; // TODO: configure
 
-    return dns_output_init(&(out->base));
+    return dns_output_conf_init(&(out->base));
 }
 
 
@@ -123,7 +126,7 @@ dns_output_pcap_conf_commit(void *data)
 {
     struct dns_output_pcap *out = (struct dns_output_pcap *) data;
 
-    return dns_output_commit(&(out->base));
+    return dns_output_conf_commit(&(out->base));
 }
 
 

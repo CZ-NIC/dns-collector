@@ -14,15 +14,23 @@
  *
  * Unit to match requests and responses. Multiple frames may be written to a
  * single file.
+ *    
+ * @note The entire struct except for `refcount` is read only when in some output queues (when `refcount > 0`).
  */
 struct dns_timeframe {
-    /** Owning collector */
-    dns_collector_t *collector;
+    /** 
+     * Number of output queues containing the frame.
+     * To be modified only by `dns_timeframe_decref()`
+     * and `dns_timeframe_incref()` with locked collector mutex.
+     * Frame is freed when this drops to zero. (But may be zero when
+     * being filled by the collector.)
+     */
+    int refcount;
 
-    /** Start timestamp */
+    /** Start timestamp. */
     dns_us_time_t time_start;
 
-    /** End timestamp */
+    /** End timestamp. */
     dns_us_time_t time_end;
 
     /** Linked list of requests (some with responses), and responses without requests.
@@ -37,13 +45,12 @@ struct dns_timeframe {
     /** Number of queries in list (matched pairs counted as 1) = length of `packets` list. */
     uint32_t packets_count;
 
-    /** Request hash by (client IP, transport, PORT, DNS-ID, QNAME) */
+    /** @{ @name Request hash by (client IP, transport, PORT, DNS-ID, QNAME) */
     uint32_t hash_order;
     uint64_t hash_elements;
     uint64_t hash_param;
     dns_packet_t **hash_data;
-
-    // TODO: memory pool
+    /** @} */
 };
 
 /**
@@ -51,13 +58,27 @@ struct dns_timeframe {
  * Set start time to `time_start` or the current time when `time_start==0`
  */
 dns_timeframe_t *
-dns_timeframe_create(dns_collector_t *col, dns_us_time_t time_start);
+dns_timeframe_create(struct dns_config *conf, dns_us_time_t time_start);
 
 /**
  * Destroy the frame, hash and all inserted packets (and their responses).
  */
 void
 dns_timeframe_destroy(dns_timeframe_t *frame);
+
+/**
+ * Decrease refcount of `frame`, freeing it if it drops to 0.
+ * The caller must hold the collector mutex.
+ */
+void 
+dns_timeframe_decref(dns_timeframe_t *frame);
+
+/**
+ * Increase refcount of `frame`.
+ * The caller must hold the collector mutex.
+ */
+void
+dns_timeframe_incref(dns_timeframe_t *frame);
 
 /**
  * Insert the packet to the timeframe sequence, taking ownership.
@@ -75,11 +96,5 @@ dns_timeframe_append_packet(dns_timeframe_t *frame, dns_packet_t *pkt);
  */
 dns_packet_t *
 dns_timeframe_match_response(dns_timeframe_t *frame, dns_packet_t *pkt);
-
-/**
- * Write the frame protobufs to the configured outputs.
- */
-void
-dns_timeframe_writeout(dns_timeframe_t *frame);
 
 #endif /* DNSCOL_TIMEFRAME_H */

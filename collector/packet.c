@@ -43,9 +43,10 @@ dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, enum dns_drop_reason re
     col->stats.packets_dropped++;
     col->stats.packets_dropped_reason[reason]++;
 
-    CLIST_FOR_EACH(struct dns_output*, out, col->config->outputs) {
-        if (out->drop_packet)
-            out->drop_packet(out, pkt, reason);
+    CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
+// TODO: refactor paket dropping/dumping
+//        if (out->drop_packet)
+//            out->drop_packet(out, pkt, reason);
     }
 }
 
@@ -67,6 +68,8 @@ dns_packet_parse_ip(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_of
     assert(col && pkt && pkt->pkt_data && header_offset && (pkt->pkt_caplen > (*header_offset)));
 
     const u_char *data = pkt->pkt_data + (*header_offset);
+    // assert proper memory alignment
+    assert((size_t)(data) % 2 == 0);
 
     if ((data[0] & 0xf0) == 0x40) {
 
@@ -76,33 +79,31 @@ dns_packet_parse_ip(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_of
             return DNS_RET_DROPPED;
         }
 
-        // ensure proper memory alignment
-        struct ip hdr4;
-        memcpy(&hdr4, data, sizeof(struct ip));
+        struct ip *hdr4 = (struct ip *) data;
 
         pkt->ip_ver = 4;
-        memcpy(pkt->src_addr, &(hdr4.ip_src), 4);
-        memcpy(pkt->dst_addr, &(hdr4.ip_dst), 4);
-        pkt->ip_proto = hdr4.ip_p;
+        memcpy(pkt->src_addr, &(hdr4->ip_src), 4);
+        memcpy(pkt->dst_addr, &(hdr4->ip_dst), 4);
+        pkt->ip_proto = hdr4->ip_p;
         if (!DNS_ACCEPTED_PROTOCOL(pkt->ip_proto)) {
             // DROP: unknown protocol (ICMP, ...)
             dns_drop_packet(col, pkt, dns_drop_protocol);
             return DNS_RET_DROPPED;
         }
 
-        uint16_t offset = ntohs(hdr4.ip_off);
+        uint16_t offset = ntohs(hdr4->ip_off);
         if ((offset & IP_MF) || (offset & IP_OFFMASK)) {
             // DROP: packet fragmented
             dns_drop_packet(col, pkt, dns_drop_fragmented);
             return DNS_RET_DROPPED;
         }
-        if (pkt->pkt_len != ntohs(hdr4.ip_len)) {
+        if (pkt->pkt_len != ntohs(hdr4->ip_len)) {
             // DROP: size mismatch
             dns_drop_packet(col, pkt, dns_drop_malformed);
             return DNS_RET_DROPPED;
         }
 
-        (*header_offset) = hdr4.ip_hl * 4;
+        (*header_offset) = hdr4->ip_hl * 4;
         return DNS_RET_OK;
 
     } else if ((data[0] & 0xf0) == 0x60) {
@@ -113,14 +114,12 @@ dns_packet_parse_ip(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_of
             return DNS_RET_DROPPED;
         }
 
-        // ensure proper memory alignment
-        struct ip6_hdr hdr6;
-        memcpy(&hdr6, data, sizeof(struct ip6_hdr));
+        struct ip6_hdr *hdr6 = (struct ip6_hdr *) data;
 
         pkt->ip_ver = 6;
-        memcpy(pkt->src_addr, &(hdr6.ip6_src), 16);
-        memcpy(pkt->dst_addr, &(hdr6.ip6_dst), 16);
-        pkt->ip_proto = hdr6.ip6_nxt;
+        memcpy(pkt->src_addr, &(hdr6->ip6_src), 16);
+        memcpy(pkt->dst_addr, &(hdr6->ip6_dst), 16);
+        pkt->ip_proto = hdr6->ip6_nxt;
 
         // TODO: traverse extension IPv6 headers (fragmentation, ...)
         if (!DNS_ACCEPTED_PROTOCOL(pkt->ip_proto)) {
@@ -146,6 +145,8 @@ dns_packet_parse_proto(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header
     assert(col && pkt && pkt->pkt_data && header_offset && (pkt->pkt_caplen > (*header_offset)));
 
     const u_char *data = pkt->pkt_data + (*header_offset);
+    // assert proper memory alignment
+    assert((size_t)(data) % 2 == 0);
 
     if (pkt->ip_proto == IPPROTO_UDP) {
 
@@ -156,12 +157,11 @@ dns_packet_parse_proto(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header
         }
 
         // ensure proper memory alignment
-        struct udphdr udp_header;
-        memcpy(&udp_header, data, sizeof(struct udphdr));
+        struct udphdr *udp_header = (struct udphdr *) data;
 
-        pkt->src_port = ntohs(udp_header.source);
-        pkt->dst_port = ntohs(udp_header.dest);
-        if (ntohs(udp_header.len) != pkt->pkt_len - (*header_offset)) {
+        pkt->src_port = ntohs(udp_header->source);
+        pkt->dst_port = ntohs(udp_header->dest);
+        if (ntohs(udp_header->len) != pkt->pkt_len - (*header_offset)) {
             // DROP: data length mismatch
             dns_drop_packet(col, pkt, dns_drop_malformed);
             return DNS_RET_DROPPED;
@@ -182,17 +182,16 @@ dns_packet_parse_proto(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header
         }
 
         // ensure proper memory alignment
-        struct tcphdr tcp_header;
-        memcpy(&tcp_header, data, sizeof(struct tcphdr));
+        struct tcphdr *tcp_header = (struct tcphdr *) data;
         
-        pkt->src_port = ntohs(tcp_header.th_sport);
-        pkt->dst_port = ntohs(tcp_header.th_dport);
-        uint32_t tcp_header_len = tcp_header.th_off * 4;
+        pkt->src_port = ntohs(tcp_header->th_sport);
+        pkt->dst_port = ntohs(tcp_header->th_dport);
+        uint32_t tcp_header_len = tcp_header->th_off * 4;
 
         // TODO: implement TCP streams
         // Below: only accepting packets with exactly one query (may be fooled! no way to check for seq==1)
         
-        if ((tcp_header.th_flags & TH_FIN) || (tcp_header.th_flags & TH_SYN)) {
+        if ((tcp_header->th_flags & TH_FIN) || (tcp_header->th_flags & TH_SYN)) {
             // DROP: unlikely to be a single-packet TCP stream
             dns_drop_packet(col, pkt, dns_drop_protocol);
             return DNS_RET_DROPPED;
@@ -235,9 +234,9 @@ dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_o
         return DNS_RET_DROPPED;
     }
 
-    pkt->dns_caplen = MIN(pkt->dns_caplen, MAX(col->config->capture_limit, sizeof(dns_hdr_t)));
+    pkt->dns_caplen = MIN(pkt->dns_caplen, MAX(col->conf->capture_limit, sizeof(dns_hdr_t)));
 
-    // ensure proper memory alignment
+    // ensure proper memory alignment and keep data copy
     pkt->dns_data = xmalloc(pkt->dns_caplen);
     memcpy(pkt->dns_data, pkt->pkt_data + (*header_offset), pkt->dns_caplen);
     (*header_offset) += sizeof(dns_hdr_t); // now points after DNS header
@@ -287,7 +286,7 @@ dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt)
 {
     assert(col && pkt && pkt->pkt_data);
 
-    if ((pkt->pkt_caplen < DNS_PACKET_MIN_LEN) || (pkt->pkt_caplen > pkt->pkt_len) || (pkt->pkt_caplen > col->config->capture_limit)) {
+    if ((pkt->pkt_caplen < DNS_PACKET_MIN_LEN) || (pkt->pkt_caplen > pkt->pkt_len) || (pkt->pkt_caplen > col->conf->capture_limit)) {
         // DROP: basic size assumptions
         dns_drop_packet(col, pkt, dns_drop_malformed);
         return DNS_RET_DROPPED;
