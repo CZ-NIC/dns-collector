@@ -53,9 +53,10 @@ int main(int argc UNUSED, char **argv)
 
     dns_collector_t *col = dns_collector_create(&conf);
 
-    collector_start_output_threads(col);
-    collector_run(col);
-    collector_stop_output_threads(col, dns_os_queue);
+    dns_collector_start_output_threads(col);
+    dns_collector_run(col);
+    dns_collector_finish(col);
+    dns_collector_stop_output_threads(col, dns_os_queue);
 
     dns_stats_fprint(&(col->stats), col->conf, stderr);
 

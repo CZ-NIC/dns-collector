@@ -23,6 +23,7 @@ dns_collector_create(struct dns_config *conf)
   
     col->conf = conf;
     CLIST_FOR_EACH(struct dns_output*, out, conf->outputs) {
+        msg(L_DEBUG, "Collector configuring output '%s'", out->path_fmt);
         dns_output_init(out, col);
     }
     
@@ -31,10 +32,11 @@ dns_collector_create(struct dns_config *conf)
 
 
 void
-collector_start_output_threads(dns_collector_t *col)
+dns_collector_start_output_threads(dns_collector_t *col)
 {
     pthread_mutex_lock(&(col->collector_mutex));
     CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
+        msg(L_DEBUG, "Creating thread for %s", out->path_fmt);
         int r = pthread_create(&(out->thread), NULL, dns_output_thread_main, out);
         if (r)
             die("Thread creation failed [err %d].", r);
@@ -43,7 +45,7 @@ collector_start_output_threads(dns_collector_t *col)
 }
 
 void
-collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how)
+dns_collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how)
 {
     assert(col && how != dns_os_none);
 
@@ -51,6 +53,7 @@ collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how)
     CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
         out->stop_flag = how;
     }
+    pthread_cond_broadcast(&(col->output_cond));
     pthread_mutex_unlock(&col->collector_mutex);
 
     CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
@@ -60,7 +63,7 @@ collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how)
 }
 
 void
-collector_run(dns_collector_t *col)
+dns_collector_run(dns_collector_t *col)
 {
     dns_ret_t r;
 
@@ -74,17 +77,47 @@ collector_run(dns_collector_t *col)
     }
 }
 
+void
+dns_collector_output_timeframe(struct dns_collector *col, struct dns_timeframe *tf)
+{
+    assert(col && tf && (tf->refcount == 0));
+
+    pthread_mutex_lock(&(col->collector_mutex));
+
+    CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
+        msg(L_DEBUG, "Pushing frame %.2f - %.2f (%d queries) to output %s",
+            dns_us_time_to_fsec(tf->time_start), dns_us_time_to_fsec(tf->time_end),
+            tf->packets_count, out->path_fmt);
+        dns_output_push_frame(out, tf);
+    }
+    // inc and dec to free in case frame was not inserted anywhere
+    dns_timeframe_incref(tf);
+    dns_timeframe_decref(tf);
+
+    pthread_cond_broadcast(&(col->output_cond));
+    pthread_mutex_unlock(&(col->collector_mutex));
+}
+
+void
+dns_collector_finish(dns_collector_t *col)
+{ 
+    assert(col);
+
+    if (col->tf_old) {
+        dns_collector_output_timeframe(col, col->tf_old);
+        col->tf_old = NULL;
+    }
+
+    if (col->tf_cur) {
+        dns_collector_output_timeframe(col, col->tf_cur);
+        col->tf_cur = NULL;
+    }
+}
 
 void
 dns_collector_destroy(dns_collector_t *col)
 { 
-    assert(col);
-
-    if (col->tf_old)
-        dns_timeframe_destroy(col->tf_old);
-
-    if (col->tf_cur)
-        dns_timeframe_destroy(col->tf_cur);
+    assert(col && (!col->tf_old) && (!col->tf_cur));
 
     if (col->pcap)
         pcap_close(col->pcap);
@@ -138,6 +171,7 @@ dns_collector_next_packet(dns_collector_t *col)
 
     if (!col->pcap)
         return DNS_RET_EOF;
+
 
     r = pcap_next_ex(col->pcap, &pkt_header, &pkt_data);
 
@@ -211,18 +245,12 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
 void
 dns_collector_rotate_frames(dns_collector_t *col, dns_us_time_t time_now)
 {
-    pthread_mutex_lock(&col->collector_mutex);
+    assert(col);
 
     if (col->tf_old) {
-        CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
-            dns_output_push_frame(out, col->tf_old);
-        }
-
+        dns_collector_output_timeframe(col, col->tf_old);
         col->tf_old = NULL;
-        pthread_cond_broadcast(&(col->output_cond));
     }
-
-    pthread_mutex_unlock(&col->collector_mutex);
 
     if (time_now == DNS_NO_TIME) {
         struct timespec now;
