@@ -84,10 +84,10 @@ dns_collector_output_timeframe(struct dns_collector *col, struct dns_timeframe *
 
     pthread_mutex_lock(&(col->collector_mutex));
 
+    msg(L_DEBUG, "Pushing frame %.2f - %.2f (%d queries) to all outputs",
+        dns_us_time_to_fsec(tf->time_start), dns_us_time_to_fsec(tf->time_end),
+        tf->packets_count);
     CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
-        msg(L_DEBUG, "Pushing frame %.2f - %.2f (%d queries) to output %s",
-            dns_us_time_to_fsec(tf->time_start), dns_us_time_to_fsec(tf->time_end),
-            tf->packets_count, out->path_fmt);
         dns_output_push_frame(out, tf);
     }
     // inc and dec to free in case frame was not inserted anywhere
@@ -121,6 +121,10 @@ dns_collector_destroy(dns_collector_t *col)
 
     if (col->pcap)
         pcap_close(col->pcap);
+
+    CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
+        dns_output_destroy(out);
+    }
  
     pthread_mutex_destroy(&col->collector_mutex);
     pthread_cond_destroy(&col->output_cond);

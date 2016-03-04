@@ -206,7 +206,7 @@ dns_output_init(struct dns_output *out, struct dns_collector *col);
 
 
 /**
- * Deinitialise the given output.
+ * Deinitialise the given output. Must be called only after all output threads exited.
  * Does NOT dealloc the output itself, as it was probably allocated by the config system.
  */
 void

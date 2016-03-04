@@ -61,6 +61,13 @@ void
 dns_output_destroy(struct dns_output *out)
 {
     assert(out && out->queue);
+
+    struct dns_timeframe *frame;
+    while(frame = dns_output_pop_frame(out)) {
+        msg(L_WARN, "Leftover frame on dns_output_destroy() of output %s", out->path_fmt);
+        dns_timeframe_decref(frame);
+    }
+
     xfree(out->queue);
     out->queue = NULL;
     out->max_queue_len = 0;
@@ -77,7 +84,6 @@ dns_output_thread_main(void *data)
     pthread_mutex_lock(out->collector_mutex);
     while(1) {
 
-        msg(L_WARN, "Thread loop start, queue %d, stop %d", out->queue_len, out->stop_flag);
         // check stop conditions
         if ((out->stop_flag == dns_os_frame) ||
             ((out->stop_flag == dns_os_queue) && (out->queue_len == 0))) {
@@ -105,7 +111,6 @@ dns_output_thread_main(void *data)
             current_frame = NULL;
         } else {
             // unlock the mutex and wait for wakeup condition, then repeat
-            msg(L_WARN, "Thread waits ...");
             pthread_cond_wait(out->collector_output_cond, out->collector_mutex);
         }
     }
@@ -161,9 +166,11 @@ dns_output_write_frame(struct dns_output *out, struct dns_timeframe *tf)
             out->write_packet(out, pkt);
             pkt = pkt -> next_in_timeframe;
         }
-        msg(L_DEBUG, "Wrote frame %.2f - %.2f (%d queries) at output %s",
+        /*
+        msg(L_DEBUG, "Wrote frame %.2f - %.2f (%d queries) to output %s",
             dns_us_time_to_fsec(tf->time_start), dns_us_time_to_fsec(tf->time_end),
             tf->packets_count, out->path_fmt);
+        */
     }
 }
 
