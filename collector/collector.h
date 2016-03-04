@@ -52,20 +52,41 @@ dns_collector_create(struct dns_config *conf);
  * Create one thread per output and start it.
  */
 void
-collector_start_output_threads(dns_collector_t *col);
+dns_collector_start_output_threads(dns_collector_t *col);
 
 /**
  * Set given stop flag for all output threads and join() them.
  */
 void
-collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how);
+dns_collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how);
 
 /**
  * Run the collector processing loop. Process all the inputs,
  * then finalize the outputs.
  */
 void
-collector_run(dns_collector_t *col);
+dns_collector_run(dns_collector_t *col);
+
+/**
+ * Rotate the timeframes.
+ * Writeout and destroy `tf_old` (if any), move `tf_cut` to `tf_old` (if any), create new `tf_cur`.
+ */
+void
+dns_collector_rotate_frames(dns_collector_t *col, dns_us_time_t time_now);
+
+
+/**
+ * Flush the remaining frames into the outputs.
+ */
+void
+dns_collector_finish(dns_collector_t *col);
+
+/**
+ * Push the given timeframe to all outputs. Takes timeframe ownership.
+ * Deals with the collector mutex (should be unlocked when called).
+ */
+void
+dns_collector_output_timeframe(struct dns_collector *col, struct dns_timeframe *tf);
 
 /**
  * Close and deallocate a collector instance and dependent
@@ -99,20 +120,6 @@ dns_collector_next_packet(dns_collector_t *col);
  */
 void
 dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
-
-/**
- * Rotate the timeframes.
- * Writeout and destroy `tf_old` (if any), move `tf_cut` to `tf_old` (if any), create new `tf_cur`.
- */
-void
-dns_collector_rotate_frames(dns_collector_t *col, dns_us_time_t time_now);
-
-/**
- * Check rotation for output files. Should be synced with timeframe change.
- * Creates the files if not open.
- */
-void
-dns_collector_rotate_outputs(dns_collector_t *col, dns_us_time_t time_now);
 
 
 #endif /* DNSCOL_COLLECTOR_H */

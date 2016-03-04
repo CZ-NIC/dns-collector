@@ -45,18 +45,22 @@ dns_output_conf_commit(struct dns_output *out)
 void
 dns_output_init(struct dns_output *out, struct dns_collector *col)
 {
+    assert(out && col && (!out->queue));
+
     out->collector_output_cond = &(col->output_cond);
     out->collector_unblock_cond = &(col->unblock_cond);
     out->collector_mutex = &(col->collector_mutex);
 
     out->max_queue_len = col->conf->max_queue_len;
     out->queue = (struct dns_timeframe **) xmalloc_zero(sizeof(struct dns_timeframe *) * out->max_queue_len);
+    out->output_opened = DNS_NO_TIME;
 }
 
 
 void
 dns_output_destroy(struct dns_output *out)
 {
+    assert(out && out->queue);
     xfree(out->queue);
     out->queue = NULL;
     out->max_queue_len = 0;
@@ -73,6 +77,7 @@ dns_output_thread_main(void *data)
     pthread_mutex_lock(out->collector_mutex);
     while(1) {
 
+        msg(L_WARN, "Thread loop start, queue %d, stop %d", out->queue_len, out->stop_flag);
         // check stop conditions
         if ((out->stop_flag == dns_os_frame) ||
             ((out->stop_flag == dns_os_queue) && (out->queue_len == 0))) {
@@ -100,6 +105,7 @@ dns_output_thread_main(void *data)
             current_frame = NULL;
         } else {
             // unlock the mutex and wait for wakeup condition, then repeat
+            msg(L_WARN, "Thread waits ...");
             pthread_cond_wait(out->collector_output_cond, out->collector_mutex);
         }
     }
@@ -117,7 +123,7 @@ dns_output_pop_frame(struct dns_output *out)
         return NULL;
 
     struct dns_timeframe *next = out->queue[0];
-    memcpy(out->queue + 1, out->queue + 0, sizeof(struct dns_timeframe *) * (out->queue_len - 1));
+    memcpy(out->queue + 0, out->queue + 1, sizeof(struct dns_timeframe *) * (out->queue_len - 1));
     out->queue[out->queue_len - 1] = NULL;
     out->queue_len --;
     return next;
@@ -140,6 +146,7 @@ dns_output_push_frame(struct dns_output *out, struct dns_timeframe *tf)
     }
 
     out->queue[out->queue_len] = tf;
+    out->queue_len ++;
     dns_timeframe_incref(tf);
 }
 
@@ -149,14 +156,15 @@ dns_output_write_frame(struct dns_output *out, struct dns_timeframe *tf)
     assert(out && tf);
     struct dns_packet *pkt = tf->packets;
 
-    if (out->write_packet)
+    if (out->write_packet) {
         while(pkt) {
             out->write_packet(out, pkt);
             pkt = pkt -> next_in_timeframe;
-            msg(L_DEBUG, "Wrote frame %.2f - %.2f (%d queries) at output %s",
-                dns_us_time_to_fsec(tf->time_start), dns_us_time_to_fsec(tf->time_end),
-                tf->packets_count, out->path_fmt);
         }
+        msg(L_DEBUG, "Wrote frame %.2f - %.2f (%d queries) at output %s",
+            dns_us_time_to_fsec(tf->time_start), dns_us_time_to_fsec(tf->time_end),
+            tf->packets_count, out->path_fmt);
+    }
 }
 
 
@@ -184,7 +192,7 @@ dns_output_open_file(struct dns_output *out, dns_us_time_t time)
 void
 dns_output_close_file(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && out->f && out->path && time != DNS_NO_TIME);
+    assert(out && out->f && out->path);
 
     fclose(out->f);
     out->f = NULL;
@@ -217,7 +225,7 @@ dns_output_open(struct dns_output *out, dns_us_time_t time)
 void
 dns_output_close(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && out->f && time != DNS_NO_TIME);
+    assert(out && (time != DNS_NO_TIME));
 
     if (out->output_opened == DNS_NO_TIME)
         return;

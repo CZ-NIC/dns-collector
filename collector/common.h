@@ -6,6 +6,8 @@
  * Collector common definitions
  */
 
+// TODO: is msg() threadsafe?
+
 #define DNS_WITH_CSV
 #define DNS_WITH_PROTO
 

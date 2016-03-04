@@ -38,6 +38,10 @@ enum dns_output_stop {
  * Output configuration and active output entry.
  */
 struct dns_output {
+    /**
+     * LibUCW circular list node header. Read-only after init.
+     */
+    cnode n;
 
     /**
      * The thread processing this output. Not owned by the output.
