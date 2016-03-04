@@ -7,6 +7,8 @@
 #include "common.h"
 #include "output.h"
 #include "packet.h"
+#include "output_compression.h"
+
 
 /**
  * \file output_csv.c
@@ -199,7 +201,7 @@ dns_output_csv_conf_init(void *data)
     out->header = 1;
     out->separator = "|";
 
-    return dns_output_init(&(out->base));
+    return dns_output_conf_init(&(out->base));
 }
 
 
@@ -214,7 +216,7 @@ dns_output_csv_conf_commit(void *data)
     if (strlen(out->separator) != 1)
         return "'separator' needs to be exactly one character.";
 
-    return dns_output_commit(&(out->base));
+    return dns_output_conf_commit(&(out->base));
 }
 
 

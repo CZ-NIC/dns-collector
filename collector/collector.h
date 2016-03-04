@@ -13,11 +13,20 @@
 #include "config.h"
 #include "stats.h"
 
+#define DNS_MAX_OUTPUTS 64
+
 /** DNS collector instance. */
 struct dns_collector {
 
     /** Configuration variables. Not owned by collector. */
-    struct dns_config *config;
+    struct dns_config *conf;
+
+    pthread_mutex_t collector_mutex;
+    pthread_cond_t output_cond;
+    pthread_cond_t unblock_cond;
+
+//    /** NULL-terminated array of configured outputs, later also with active output threads. */
+//    struct dns_output *outputs[];
 
     /** DNS collector status and stats. \todo Redesign */
     dns_stats_t stats;
@@ -27,6 +36,7 @@ struct dns_collector {
 
     /** Current timeframe. Owned by the collector. */
     dns_timeframe_t *tf_cur;
+
     /** Previous timeframe. Owned by the collector. */
     dns_timeframe_t *tf_old;
 };
@@ -37,6 +47,18 @@ struct dns_collector {
  */
 dns_collector_t *
 dns_collector_create(struct dns_config *conf);
+
+/**
+ * Create one thread per output and start it.
+ */
+void
+collector_start_output_threads(dns_collector_t *col);
+
+/**
+ * Set given stop flag for all output threads and join() them.
+ */
+void
+collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how);
 
 /**
  * Run the collector processing loop. Process all the inputs,

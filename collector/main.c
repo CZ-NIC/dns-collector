@@ -1,10 +1,20 @@
 #include <assert.h>
+#include <execinfo.h>
+#include <signal.h>
 
 #include "common.h"
 #include "timeframe.h"
 #include "collector.h"
 #include "dns.h"
 #include "output.h"
+
+void segv_handler(int sig) {
+    const int maxsize = 42;
+    void *array[maxsize];
+    size_t size = backtrace(array, maxsize);
+    backtrace_symbols_fd(array, size, 2);
+    exit(1);
+}
 
 
 static char **main_inputs; // growing array of char*
@@ -25,6 +35,7 @@ static struct opt_section dns_options = {
 int main(int argc UNUSED, char **argv)
 {
     struct dns_config conf;
+//    signal(SIGSEGV, segv_handler);
 
     GARY_INIT(main_inputs, 0);
     cf_declare_rel_section("collector", &dns_config_section, &conf, 0);
@@ -42,9 +53,11 @@ int main(int argc UNUSED, char **argv)
 
     dns_collector_t *col = dns_collector_create(&conf);
 
+    collector_start_output_threads(col);
     collector_run(col);
+    collector_stop_output_threads(col, dns_os_queue);
 
-    dns_stats_fprint(&(col->stats), col->config, stderr);
+    dns_stats_fprint(&(col->stats), col->conf, stderr);
 
     dns_collector_destroy(col);
 

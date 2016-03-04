@@ -16,10 +16,14 @@ dns_collector_create(struct dns_config *conf)
     assert(conf);
 
     dns_collector_t *col = (dns_collector_t *)xmalloc_zero(sizeof(dns_collector_t));
+
+    pthread_mutex_init(&(col->collector_mutex), NULL);
+    pthread_cond_init(&(col->output_cond), NULL);
+    pthread_cond_init(&(col->unblock_cond), NULL);
   
-    col->config = conf;
+    col->conf = conf;
     CLIST_FOR_EACH(struct dns_output*, out, conf->outputs) {
-        out->col = col;
+        dns_output_init(out, col);
     }
     
     return col;
@@ -27,11 +31,40 @@ dns_collector_create(struct dns_config *conf)
 
 
 void
+collector_start_output_threads(dns_collector_t *col)
+{
+    pthread_mutex_lock(&(col->collector_mutex));
+    CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
+        int r = pthread_create(&(out->thread), NULL, dns_output_thread_main, out);
+        if (r)
+            die("Thread creation failed [err %d].", r);
+    }
+    pthread_mutex_unlock(&(col->collector_mutex));
+}
+
+void
+collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how)
+{
+    assert(col && how != dns_os_none);
+
+    pthread_mutex_lock(&(col->collector_mutex));
+    CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
+        out->stop_flag = how;
+    }
+    pthread_mutex_unlock(&col->collector_mutex);
+
+    CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
+        pthread_join(out->thread, NULL);
+    }
+    // TODO: detect pthread errors
+}
+
+void
 collector_run(dns_collector_t *col)
 {
     dns_ret_t r;
 
-    for (char ** in = col->config->inputs; *in; in++) {
+    for (char ** in = col->conf->inputs; *in; in++) {
         r = dns_collector_open_pcap_file(col, *in);
         assert(r == DNS_RET_OK);
 
@@ -47,26 +80,19 @@ dns_collector_destroy(dns_collector_t *col)
 { 
     assert(col);
 
-    // Write remaining data
-    if (col->tf_old)
-        dns_timeframe_writeout(col->tf_old);
-
-    if (col->tf_cur)
-        dns_timeframe_writeout(col->tf_cur);
-    
-    // Flush and close outputs
-    CLIST_FOR_EACH(struct dns_output*, out, col->config->outputs) {
-        dns_output_close(out, col->tf_cur->time_end);
-    }
-
     if (col->tf_old)
         dns_timeframe_destroy(col->tf_old);
+
     if (col->tf_cur)
         dns_timeframe_destroy(col->tf_cur);
 
     if (col->pcap)
         pcap_close(col->pcap);
-   
+ 
+    pthread_mutex_destroy(&col->collector_mutex);
+    pthread_cond_destroy(&col->output_cond);
+    pthread_cond_destroy(&col->unblock_cond);
+
     free(col);
 }
 
@@ -128,18 +154,17 @@ dns_collector_next_packet(dns_collector_t *col)
 
         case 1:
             col->stats.packets_captured++;
-
             dns_us_time_t now = dns_us_time_from_timeval(&(pkt_header->ts));
+
             if (!col->tf_cur) {
                 dns_collector_rotate_frames(col, now);
-                dns_collector_rotate_outputs(col, now);
-            } else {
-                // Possibly rotate several times to fill any gaps
-                while (col->tf_cur->time_start + col->config->timeframe_length < now) {
-                    dns_collector_rotate_frames(col, col->tf_cur->time_start + col->config->timeframe_length);
-                    dns_collector_rotate_outputs(col, col->tf_cur->time_start + col->config->timeframe_length);
-                }
             }
+
+            // Possibly rotate several times to fill any gaps
+            while (col->tf_cur->time_start + col->conf->timeframe_length < now) {
+                dns_collector_rotate_frames(col, col->tf_cur->time_start + col->conf->timeframe_length);
+            }
+        
 
             dns_collector_process_packet(col, pkt_header, pkt_data);
 
@@ -182,22 +207,22 @@ dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_heade
     dns_timeframe_append_packet(col->tf_cur, pkt);
 }
 
-void
-dns_collector_rotate_outputs(dns_collector_t *col, dns_us_time_t time_now)
-{
-    CLIST_FOR_EACH(struct dns_output*, out, col->config->outputs) {
-        dns_output_check_rotation(out, time_now);
-    }
-}
 
 void
 dns_collector_rotate_frames(dns_collector_t *col, dns_us_time_t time_now)
 {
+    pthread_mutex_lock(&col->collector_mutex);
+
     if (col->tf_old) {
-        dns_timeframe_writeout(col->tf_old);
-        dns_timeframe_destroy(col->tf_old);
+        CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
+            dns_output_push_frame(out, col->tf_old);
+        }
+
         col->tf_old = NULL;
+        pthread_cond_broadcast(&(col->output_cond));
     }
+
+    pthread_mutex_unlock(&col->collector_mutex);
 
     if (time_now == DNS_NO_TIME) {
         struct timespec now;
@@ -211,5 +236,6 @@ dns_collector_rotate_frames(dns_collector_t *col, dns_us_time_t time_now)
         col->tf_cur = NULL;
     }
 
-    col->tf_cur = dns_timeframe_create(col, time_now);
+    col->tf_cur = dns_timeframe_create(col->conf, time_now);
 }
+

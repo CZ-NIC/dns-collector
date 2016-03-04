@@ -16,10 +16,12 @@ struct dns_config {
     dns_us_time_t timeframe_length;
     double timeframe_length_sec;
     int32_t capture_limit;
-    struct clist outputs_pcap; ///< For config only, later empty.
-    struct clist outputs_proto; ///< For config only, later empty.
+    int max_queue_len;
+
     struct clist outputs_csv; ///< For config only, later empty.
-    struct clist outputs; ///< clist of collected struct dns_output from outputs_csv, outputs_proto, outputs_pcap.
+    struct clist outputs_proto; ///< For config only, later empty.
+    struct clist outputs_cbor; ///< For config only, later empty.
+    struct clist outputs; ///< clist of collected struct dns_output from outputs_*.
     char **inputs; ///< Not owned by config, NULL-terminated array.
     int32_t hash_order;
 
