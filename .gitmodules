@@ -1,9 +1,9 @@
 [submodule "libucw"]
-	path = collector/libs/libucw
+	path = libs/libucw
 	url = git://git.ucw.cz/libucw.git
 [submodule "lz4"]
-	path = collector/libs/lz4
+	path = libs/lz4
 	url = https://github.com/Cyan4973/lz4
 [submodule "collector/libs/protobuf-c"]
-	path = collector/libs/protobuf-c
+	path = libs/protobuf-c
 	url = https://github.com/protobuf-c/protobuf-c
