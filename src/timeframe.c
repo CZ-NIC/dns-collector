@@ -4,8 +4,6 @@
 #include <string.h>
 #include <assert.h>
 
-#include <pcap/pcap.h>
-
 #include "timeframe.h"
 #include "packet.h"
 #include "output.h"

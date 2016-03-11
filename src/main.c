@@ -8,10 +8,10 @@
 #include "dns.h"
 #include "output.h"
 
-void segv_handler(int sig) {
-    const int maxsize = 42;
-    void *array[maxsize];
-    size_t size = backtrace(array, maxsize);
+#define MAX_TRACE_SIZE 42
+void segv_handler(int sig UNUSED) {
+    void *array[MAX_TRACE_SIZE];
+    size_t size = backtrace(array, MAX_TRACE_SIZE);
     backtrace_symbols_fd(array, size, 2);
     exit(1);
 }
@@ -54,7 +54,10 @@ int main(int argc UNUSED, char **argv)
     dns_collector_t *col = dns_collector_create(&conf);
 
     dns_collector_start_output_threads(col);
-    dns_collector_run(col);
+
+    for (char **in = col->conf->inputs; *in; in++)
+        dns_collector_run_on_input(col, *in);
+
     dns_collector_finish(col);
     dns_collector_stop_output_threads(col, dns_os_queue);
 

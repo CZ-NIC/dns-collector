@@ -18,7 +18,6 @@ struct dns_hdr {
     uint16_t ans_rrs;
     uint16_t auth_rrs;
     uint16_t add_rrs;
-    u_char data[]; ///< The rest of the packet.
 };
 
 
@@ -33,6 +32,10 @@ struct dns_hdr {
 #define DNS_HDR_FLAGS_AD(flags)     ((ntohs(flags) & 0x0020) >> 5)
 #define DNS_HDR_FLAGS_CD(flags)     ((ntohs(flags) & 0x0010) >> 4)
 #define DNS_HDR_FLAGS_RCODE(flags)  ((ntohs(flags) & 0x000f) >> 0)
+
+/** Maximum length of a QNAME by the RFC */
+
+#define DNS_PACKET_QNAME_MAX_LEN 255
 
 /**
  * Check the length and validity of a dns-encoded query.

@@ -63,7 +63,7 @@ dns_output_destroy(struct dns_output *out)
     assert(out && out->queue);
 
     struct dns_timeframe *frame;
-    while(frame = dns_output_pop_frame(out)) {
+    while((frame = dns_output_pop_frame(out))) {
         msg(L_WARN, "Leftover frame on dns_output_destroy() of output %s", out->path_fmt);
         dns_timeframe_decref(frame);
     }
@@ -197,7 +197,7 @@ dns_output_open_file(struct dns_output *out, dns_us_time_t time)
 
 
 void
-dns_output_close_file(struct dns_output *out, dns_us_time_t time)
+dns_output_close_file(struct dns_output *out, dns_us_time_t time UNUSED)
 {
     assert(out && out->f && out->path);
 

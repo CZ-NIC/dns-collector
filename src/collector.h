@@ -31,8 +31,11 @@ struct dns_collector {
     /** DNS collector status and stats. \todo Redesign */
     dns_stats_t stats;
 
-    /** Open input pcap or NULL. Owned by collector. */
-    pcap_t *pcap;
+    /** Open input trace or NULL. Owned by collector. */
+    libtrace_t *trace;
+
+    /** Packet structure for reading the trace. Owned by collector. */
+    libtrace_packet_t *packet;
 
     /** Current timeframe. Owned by the collector. */
     dns_timeframe_t *tf_cur;
@@ -61,11 +64,11 @@ void
 dns_collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how);
 
 /**
- * Run the collector processing loop. Process all the inputs,
- * then finalize the outputs.
+ * Run the collector processing loop. Process all data from one named input
+ * in the libtrace notation.
  */
 void
-dns_collector_run(dns_collector_t *col);
+dns_collector_run_on_input(dns_collector_t *col, char *inuri);
 
 /**
  * Rotate the timeframes.
@@ -96,30 +99,11 @@ void
 dns_collector_destroy(dns_collector_t *col);
 
 /**
- * Open a pcap file for reading.
- * Data link layer must be DLT_RAW. 
- */
-dns_ret_t
-dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname);
-
-
-/* Packet processing ************************************************/
-
-/**
- * Try to get the next packet from pcap and process it with
- * `dns_collector_process_packet`.
- *
- * \return `DNS_RET_ERR`, `DNS_RET_OK`, `DNS_RET_EOF` or `DNS_RET_TIMEOUT`; see `pcap_next_ex()`.
- */
-dns_ret_t
-dns_collector_next_packet(dns_collector_t *col);
-
-/**
  * Process and dissect the packet. Create `dns_packet_t`, fill with data, parse it,
  * append to a frame, log or dump.
  */
 void
-dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
+dns_collector_process_packet(dns_collector_t *col, libtrace_packet_t *packet);
 
 
 #endif /* DNSCOL_COLLECTOR_H */

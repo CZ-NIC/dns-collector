@@ -8,8 +8,8 @@
 
 // TODO: is msg() threadsafe?
 
-#define DNS_WITH_CSV
-#define DNS_WITH_PROTO
+//#define DNS_WITH_CSV
+//#define DNS_WITH_PROTO
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -102,6 +102,20 @@ enum dns_output_field {
 extern const char *dns_output_field_names[];
 
 /**
+ * Packet parsing error or drop reason.
+ */
+enum dns_parse_error {
+    DNS_PE_OK = 0,
+    DNS_PE_NETWORK,
+    DNS_PE_FRAGMENTED,
+    DNS_PE_TRANSPORT,
+    DNS_PE_DNS,
+    DNS_PE_LIMIT,
+    DNS_PE_LAST // Sentinel
+};
+typedef enum dns_parse_error dns_parse_error_t;
+
+/**
  * Packet drop/dump reasons.
  */
 
@@ -109,7 +123,7 @@ enum dns_drop_reason {
     dns_drop_other = 0,  ///< Unknown reason.
     dns_drop_malformed,  ///< Too short, bad headers, protocol, ...
     dns_drop_fragmented, ///< IP defrag not implemented.
-    dns_drop_protocol,   ///< Unimplemented (now fragmented TCP) or other proto (ICMP).
+    dns_drop_protocol,   ///< Unimplemented (now TCP)
     dns_drop_bad_dns,    ///< Bad dns header or query count != 1
     dns_drop_limit,      ///< Rate/resource-limiting.
     dns_drop_LAST // Sentinel
