@@ -9,7 +9,7 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 
-#include <pcap/pcap.h>
+#include <libtrace.h>
 
 #include "common.h"
 #include "packet.h"
@@ -18,27 +18,228 @@
 #include "timeframe.h"
 
 dns_packet_t*
-dns_packet_create()
+dns_packet_create(size_t dns_data_len)
 {
-    return (dns_packet_t *)xmalloc_zero(sizeof(dns_packet_t));
+    dns_packet_t *pkt = xmalloc_zero(sizeof(dns_packet_t) + dns_data_len);
+    pkt->dns_data_len = dns_data_len;
+    return pkt;
+}
+
+/**
+ * Create `dns_packet` from a given `libtrace_packet_t`.
+ * Copies DNS data from the packet.
+ */
+dns_packet_t*
+dns_packet_create_from_libtrace(dns_collector_t *col UNUSED, libtrace_packet_t *tp, dns_parse_error_t *err)
+{
+    uint8_t proto;
+    uint32_t remaining;
+    void *transport_data = trace_get_transport(tp, &proto, &remaining);
+    void *dns_data = NULL;
+    dns_parse_error_t dummy;
+    if (!err)
+        err = &dummy;
+
+    if (!transport_data) {
+        // No transport layer found
+        *err = DNS_PE_NETWORK;
+        return NULL;
+    }
+
+    // IPv4/6 fragmentation
+    uint16_t frag_offset;
+    uint8_t frag_more;
+    frag_offset = trace_get_fragment_offset(tp, &frag_more);
+    if ((frag_offset > 0) || (frag_more)) {
+        // fragmented packet
+        // TODO: reassemble?
+        *err = DNS_PE_FRAGMENTED;
+        return NULL;
+    }
+
+    // Protocol header skip
+    switch(proto) {
+        case TRACE_IPPROTO_TCP:
+            *err = DNS_PE_TRANSPORT;
+            return NULL;
+            // TODO: Check TCP packet for type etc. Drop SYN/ACK/...
+            //dns_data = trace_get_payload_from_tcp(transport_data, &remaining);
+            break;
+        case TRACE_IPPROTO_UDP:
+            dns_data = trace_get_payload_from_udp(transport_data, &remaining);
+            break;
+        case TRACE_IPPROTO_ICMP:
+            dns_data = trace_get_payload_from_icmp(transport_data, &remaining);
+            break;
+        case TRACE_IPPROTO_ICMPV6:
+            dns_data = trace_get_payload_from_icmp6(transport_data, &remaining);
+            break;
+        default:
+            *err = DNS_PE_TRANSPORT;
+            return NULL;
+    }
+
+    if ((!dns_data) || (remaining < sizeof(struct dns_hdr))) {
+        *err = DNS_PE_NETWORK;
+        return NULL;
+    }
+
+    int is_request UNUSED = (DNS_HDR_FLAGS_QR(((struct dns_hdr*)dns_data)->flags) == 0);
+    // TODO: Limit copied data length for responses (probably just to hdr+qname+qtype+qclass)
+    size_t dns_copy = remaining;
+    if (dns_copy < sizeof(struct dns_hdr)) {
+        *err = DNS_PE_NETWORK;
+        return NULL;
+    }
+
+    // Packet allocation, DNS data copy and data lengths
+    struct dns_packet *pkt = dns_packet_create(dns_copy);
+
+    memcpy(pkt->dns_data, dns_data, dns_copy);
+    // pkt->dns_data_len already set
+    pkt->dns_orig_len = trace_get_payload_length(tp);
+    if (pkt->dns_orig_len == 0) {
+        *err = DNS_PE_NETWORK;
+        dns_packet_destroy(pkt);
+        return NULL;
+    }
+
+    // Timestamp
+    struct timeval tv = trace_get_timeval(tp);
+    pkt->ts = dns_us_time_from_timeval(&tv);
+
+    // Addresses and ports
+    if (!( trace_get_source_address(tp, (struct sockaddr *)&(pkt->src_addr)) &&
+           trace_get_destination_address(tp, (struct sockaddr *)&(pkt->dst_addr))
+         )) {
+        *err = DNS_PE_NETWORK;
+        dns_packet_destroy(pkt);
+        return NULL;
+    }
+
+    // Protocol
+    pkt->protocol = proto;
+
+    // QNAME validity and length
+    if (ntohs(pkt->dns_data->qs) != 1) {
+        *err = DNS_PE_DNS;
+        dns_packet_destroy(pkt);
+        return NULL;
+    }
+    pkt->dns_qname_raw = ((u_char *)(pkt->dns_data)) + sizeof(struct dns_hdr);
+    pkt->dns_qname_raw_len = dns_query_check(pkt->dns_qname_raw, pkt->dns_data_len - sizeof(struct dns_hdr));
+    if (pkt->dns_qname_raw_len <= 0) {
+        // qname invalid
+        *err = DNS_PE_DNS;
+        dns_packet_destroy(pkt);
+        return NULL;
+    }
+    if (sizeof(struct dns_hdr) + pkt->dns_qname_raw_len + 2 * sizeof(uint16_t) > pkt->dns_data_len) {
+        // captured data too short
+        *err = DNS_PE_NETWORK;
+        dns_packet_destroy(pkt);
+        return NULL;
+    }
+
+    // QTYPE, QCLASS
+    // ensure proper memory alignment by memcpy
+    uint16_t tmp[2];
+    memcpy(tmp, pkt->dns_qname_raw + pkt->dns_qname_raw_len, sizeof(tmp));
+    pkt->dns_qtype = ntohs(tmp[0]);
+    pkt->dns_qclass = ntohs(tmp[1]);
+
+    *err = DNS_PE_OK;
+    return pkt;
 }
 
 void
 dns_packet_destroy(dns_packet_t *pkt)
 {
-    if (pkt->dns_data)
-        free(pkt->dns_data);
-    if (pkt->dns_qname_string)
-        free(pkt->dns_qname_string);
     if (pkt->response)
         dns_packet_destroy(pkt->response);
-    free(pkt);
+    xfree(pkt);
+}
+
+int
+dns_packets_match(const dns_packet_t* request, const dns_packet_t* response)
+{
+    assert(request && response);
+    assert(DNS_PACKET_IS_REQUEST(request) &&
+           DNS_PACKET_IS_RESPONSE(response));
+
+    const int addr_len = DNS_SOCKADDR_ADDRLEN(&request->src_addr);
+
+    return (DNS_PACKET_AF(request) == DNS_PACKET_AF(response) &&
+            request->protocol == response->protocol &&
+            DNS_SOCKADDR_PORT(&request->src_addr) == DNS_SOCKADDR_PORT(&response->dst_addr) &&
+            DNS_SOCKADDR_PORT(&request->dst_addr) == DNS_SOCKADDR_PORT(&response->src_addr) &&
+            request->dns_data->id == response->dns_data->id && // network byte-order ids
+            memcmp(DNS_SOCKADDR_ADDR(&request->src_addr), DNS_SOCKADDR_ADDR(&response->dst_addr), addr_len) == 0 &&
+            memcmp(DNS_SOCKADDR_ADDR(&request->dst_addr), DNS_SOCKADDR_ADDR(&response->src_addr), addr_len) == 0 &&
+            request->dns_qname_raw_len == response->dns_qname_raw_len &&
+            memcmp(request->dns_qname_raw, response->dns_qname_raw, request->dns_qname_raw_len) == 0);
+}
+
+uint64_t
+dns_packet_hash(const dns_packet_t* pkt, uint64_t param)
+{
+    assert(pkt && param > 0x100);
+
+    uint64_t hash = 0;
+    hash += (uint64_t)(DNS_PACKET_AF(pkt)) << 0;
+    hash += (uint64_t)(pkt->protocol) << 16;
+    // Treat src and dst symmetrically
+    hash += (uint64_t)(DNS_SOCKADDR_PORT(&pkt->dst_addr)) << 32;
+    hash += (uint64_t)(DNS_SOCKADDR_PORT(&pkt->src_addr)) << 32;
+    hash += (uint64_t)(pkt->dns_data->id) << 48;
+
+    for (int i = 0; i < pkt->dns_qname_raw_len; i++) {
+        if (i % 32 == 0)
+            hash = hash % param;
+        hash += ((uint64_t)(pkt->dns_qname_raw[i]) << (i % 32)) << 32;
+    }
+    hash = hash % param;
+
+    for (int i = 0; i < DNS_SOCKADDR_ADDRLEN(&pkt->src_addr) / 4; i++) {
+        // Treat src and dst symmetrically
+        hash += (uint64_t)((uint32_t *)(DNS_SOCKADDR_ADDR(&pkt->src_addr)))[i] << 32;
+        hash += (uint64_t)((uint32_t *)(DNS_SOCKADDR_ADDR(&pkt->dst_addr)))[i] << 32;
+        hash = hash % param;
+    }
+
+    return hash;
+}
+
+uint16_t
+dns_packet_get_output_flags(const dns_packet_t* pkt)
+{
+    uint16_t flags = 0;
+
+    if (DNS_PACKET_AF(pkt) == AF_INET6)
+        flags |= DNS_PACKET_PRTOCOL_IPV6;
+
+    if (pkt->protocol == TRACE_IPPROTO_TCP)
+        flags |= DNS_PACKET_PROTOCOL_TCP;
+
+    if (pkt->protocol == TRACE_IPPROTO_ICMP)
+        flags |= DNS_PACKET_PROTOCOL_ICMP;
+
+    if (pkt->protocol == TRACE_IPPROTO_ICMPV6)
+        flags |= DNS_PACKET_PROTOCOL_ICMPV6;
+
+    if (DNS_PACKET_IS_REQUEST(pkt))
+        flags |= DNS_PACKET_HAS_REQUEST;
+
+    if (DNS_PACKET_IS_RESPONSE(pkt) || (pkt->response))
+        flags |= DNS_PACKET_HAS_RESPONSE;
+
+    return flags;
 }
 
 void
 dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, enum dns_drop_reason reason)
 {
-    assert(col && pkt && pkt->pkt_data && reason < dns_drop_LAST);
+    assert(col && pkt && reason < dns_drop_LAST);
 
     col->stats.packets_dropped++;
     col->stats.packets_dropped_reason[reason]++;
@@ -50,6 +251,7 @@ dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, enum dns_drop_reason re
     }
 }
 
+/* Obsolete parsing - might reuse part for libtrace 
 void
 dns_packet_from_pcap(dns_collector_t *col, dns_packet_t* pkt, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
 {
@@ -222,64 +424,6 @@ dns_packet_parse_proto(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header
     }
 }
 
-dns_ret_t
-dns_packet_parse_dns(dns_collector_t *col, dns_packet_t* pkt, uint32_t *header_offset)
-{
-    assert(col && pkt && pkt->pkt_data && header_offset && (pkt->pkt_caplen > (*header_offset)));
-    assert(pkt->dns_data == NULL);
-
-    if ((*header_offset) + sizeof(dns_hdr_t) > pkt->pkt_caplen) {
-        // DROP: no space for DNS header
-        dns_drop_packet(col, pkt, dns_drop_malformed);
-        return DNS_RET_DROPPED;
-    }
-
-    pkt->dns_caplen = MIN(pkt->dns_caplen, MAX(col->conf->capture_limit, sizeof(dns_hdr_t)));
-
-    // ensure proper memory alignment and keep data copy
-    pkt->dns_data = xmalloc(pkt->dns_caplen);
-    memcpy(pkt->dns_data, pkt->pkt_data + (*header_offset), pkt->dns_caplen);
-    (*header_offset) += sizeof(dns_hdr_t); // now points after DNS header
-
-    if ((ntohs(pkt->dns_data->qs) != 1) ||
-        (DNS_HDR_FLAGS_OPCODE(pkt->dns_data->flags) != 0 )) {
-        // DROP: wrong # of DNS qnames
-        free(pkt->dns_data);
-        dns_drop_packet(col, pkt, dns_drop_bad_dns);
-        return DNS_RET_DROPPED;
-    }
-
-    pkt->dns_qname_raw = pkt->dns_data->data;
-    int32_t r = dns_query_check(pkt->dns_qname_raw, pkt->pkt_caplen - (*header_offset));
-    if ((r < 0) || ((*header_offset) + r + 2 * sizeof(uint16_t) > pkt->pkt_caplen)) {
-        // DROP: qname invalid, compressed or longer than captured data
-        free(pkt->dns_data);
-        dns_drop_packet(col, pkt, dns_drop_bad_dns);
-        return DNS_RET_DROPPED;
-    }
-    pkt->dns_qname_raw_len = r;
-    if (pkt->dns_qname_raw_len > DNS_PACKET_QNAME_MAX_LEN) {
-        // DROP: qname too long
-        free(pkt->dns_data);
-        dns_drop_packet(col, pkt, dns_drop_bad_dns);
-        return DNS_RET_DROPPED;
-    }
-
-    pkt->dns_qname_string = xmalloc(pkt->dns_qname_raw_len);
-    dns_query_to_printable(pkt->dns_qname_raw, pkt->dns_qname_string);
-    (*header_offset) += r; // now points to DNS query type
-
-    // ensure proper memory alignment
-    uint16_t tmp;
-    memcpy(&tmp, pkt->pkt_data + (*header_offset), sizeof(uint16_t));
-    pkt->dns_qtype = ntohs(tmp);
-    (*header_offset) += sizeof(uint16_t); // now points to DNS query class
-    memcpy(&tmp, pkt->pkt_data + (*header_offset), sizeof(uint16_t));
-    pkt->dns_qclass = ntohs(tmp);
-    (*header_offset) += sizeof(uint16_t); // now points to first RR
-
-    return DNS_RET_OK;
-}
 
 dns_ret_t
 dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt)
@@ -308,85 +452,6 @@ dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt)
     return DNS_RET_OK;
 }
 
+*/
 
 
-uint16_t
-dns_packet_get_qclass(const dns_packet_t* pkt)
-{
-    assert(pkt && pkt->dns_data && pkt->dns_qname_raw);
-    uint16_t tmp;
-    // ensure proper alignment
-    memcpy(&tmp, pkt->dns_qname_raw + pkt->dns_qname_raw_len + sizeof(uint16_t), sizeof(uint16_t));
-    return ntohs(tmp);
-}
-
-uint16_t
-dns_packet_get_qtype(const dns_packet_t* pkt)
-{
-    assert(pkt && pkt->dns_data && pkt->dns_qname_raw);
-    uint16_t tmp;
-    // ensure proper alignment
-    memcpy(&tmp, pkt->dns_qname_raw + pkt->dns_qname_raw_len, sizeof(uint16_t));
-    return ntohs(tmp);
-}
-
-int
-dns_packets_match(const dns_packet_t* request, const dns_packet_t* response)
-{
-    assert(request && request->dns_data && response && response->dns_data);
-    assert(DNS_PACKET_IS_REQUEST(request) &&
-           DNS_PACKET_IS_RESPONSE(response));
-
-    const int addr_len = (request->ip_ver == 4 ? 4 : 16);
-
-    return (request->ip_ver == response->ip_ver &&
-            request->ip_proto == response->ip_proto &&
-            request->src_port == response->dst_port &&
-            request->dst_port == response->src_port &&
-            request->dns_data->id == response->dns_data->id && // network byte-order
-            memcmp(request->src_addr, response->dst_addr, addr_len) == 0 &&
-            memcmp(request->dst_addr, response->src_addr, addr_len) == 0 &&
-            request->dns_qname_raw_len == response->dns_qname_raw_len &&
-            memcmp(request->dns_qname_raw, response->dns_qname_raw, request->dns_qname_raw_len) == 0);
-}
-
-uint64_t
-dns_packet_hash(const dns_packet_t* pkt, uint64_t param)
-{
-    assert(pkt && pkt->dns_data && param > 0x100);
-
-    uint64_t hash = ((uint64_t)(pkt->ip_ver) << 0) +
-                    ((uint64_t)(pkt->ip_proto) << 16) +
-                    // Treat src and dst symmetrically
-                    (((uint64_t)(pkt->dst_port + pkt->src_port)) << 32) +
-                    ((uint64_t)(pkt->dns_data->id) << 48);
-    hash = (hash % param) << 32;
-
-    for (int i = 0; i < pkt->dns_qname_raw_len; i++)
-        hash = hash + ((uint64_t)(pkt->dns_qname_raw[i]) << i);
-    hash = (hash % param) << 32;
-
-    for (int i = 0; i < DNS_ADDR_LEN(pkt->ip_ver); i++)
-        // Treat src and dst symmetrically
-        hash = hash + (((uint64_t)(pkt->src_addr[i]) + pkt->dst_addr[i]) << i);
-    hash = hash % param;
-
-    return hash;
-}
-
-uint16_t
-dns_packet_get_output_flags(const dns_packet_t* pkt)
-{
-    uint16_t flags = 0;
-
-    if (pkt->ip_ver == 6)
-        flags |= DNS_PACKET_PRTOCOL_IPV6;
-    if (pkt->ip_proto == IPPROTO_TCP)
-        flags |= DNS_PACKET_PROTOCOL_TCP;
-    if (DNS_PACKET_IS_REQUEST(pkt))
-        flags |= DNS_PACKET_HAS_REQUEST;
-    if (DNS_PACKET_IS_RESPONSE(pkt) || (pkt->response))
-        flags |= DNS_PACKET_HAS_RESPONSE;
-
-    return flags;
-}

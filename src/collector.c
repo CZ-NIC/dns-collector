@@ -4,7 +4,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include <pcap/pcap.h>
+#include <libtrace.h>
 
 #include "collector.h"
 #include "timeframe.h"
@@ -26,10 +26,13 @@ dns_collector_create(struct dns_config *conf)
         msg(L_DEBUG, "Collector configuring output '%s'", out->path_fmt);
         dns_output_init(out, col);
     }
+
+    col->packet = trace_create_packet();
+    if (!col->packet)
+        die("FATAL: libtrace packet allocation error!");
     
     return col;
 }
-
 
 void
 dns_collector_start_output_threads(dns_collector_t *col)
@@ -59,22 +62,62 @@ dns_collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how
     CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
         pthread_join(out->thread, NULL);
     }
-    // TODO: detect pthread errors
+    // TODO(tomas): detect pthread errors
 }
 
 void
-dns_collector_run(dns_collector_t *col)
+dns_collector_run_on_input(dns_collector_t *col, char *inuri)
 {
-    dns_ret_t r;
+    assert(col && inuri && (!col->trace) && col->packet);
 
-    for (char ** in = col->conf->inputs; *in; in++) {
-        r = dns_collector_open_pcap_file(col, *in);
-        assert(r == DNS_RET_OK);
-
-        while(r = dns_collector_next_packet(col), r == DNS_RET_OK) { }
-        if (r == DNS_RET_ERR)
-            break;
+    col->trace = trace_create(inuri);
+    assert(col->trace);
+    if (trace_is_err(col->trace)) {
+        msg(L_FATAL, "libtrace error opening '%s': %s", inuri, trace_get_err(col->trace).problem);
+        trace_destroy(col->trace);
+        col->trace = NULL;
+        return;
     }
+
+    // TODO(tomas): configure the trace here
+
+    int r = trace_start(col->trace);
+    if (r < 0) {
+        msg(L_FATAL, "libtrace error starting '%s': %s", inuri, trace_get_err(col->trace).problem);
+        trace_destroy(col->trace);
+        col->trace = NULL;
+        return;
+    }
+
+    while (1) {
+        r = trace_read_packet(col->trace, col->packet);
+        if (r < 0) {
+            msg(L_FATAL, "libtrace error reading '%s': %s", inuri, trace_get_err(col->trace).problem);
+            break;
+        }
+        if (r == 0) {
+            msg(L_DEBUG, "finished reading '%s'", inuri);
+            break;
+        }
+
+        col->stats.packets_captured++;
+
+        struct timeval now_tv = trace_get_timeval(col->packet);
+        dns_us_time_t now = dns_us_time_from_timeval(&now_tv);
+        if (!col->tf_cur) {
+             dns_collector_rotate_frames(col, now);
+        }
+
+        // Possibly rotate several times to fill any gaps
+        while (col->tf_cur->time_start + col->conf->timeframe_length < now) {
+            dns_collector_rotate_frames(col, col->tf_cur->time_start + col->conf->timeframe_length);
+        }
+
+        dns_collector_process_packet(col, col->packet);
+    }
+
+    trace_destroy(col->trace);
+    col->trace = NULL;
 }
 
 void
@@ -90,7 +133,7 @@ dns_collector_output_timeframe(struct dns_collector *col, struct dns_timeframe *
     CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
         dns_output_push_frame(out, tf);
     }
-    // inc and dec to free in case frame was not inserted anywhere
+    // inc and dec refcount to free in case frame was not inserted anywhere
     dns_timeframe_incref(tf);
     dns_timeframe_decref(tf);
 
@@ -117,10 +160,7 @@ dns_collector_finish(dns_collector_t *col)
 void
 dns_collector_destroy(dns_collector_t *col)
 { 
-    assert(col && (!col->tf_old) && (!col->tf_cur));
-
-    if (col->pcap)
-        pcap_close(col->pcap);
+    assert(col && (!col->tf_old) && (!col->tf_cur) && col->packet && (!col->trace));
 
     CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
         dns_output_destroy(out);
@@ -130,100 +170,22 @@ dns_collector_destroy(dns_collector_t *col)
     pthread_cond_destroy(&col->output_cond);
     pthread_cond_destroy(&col->unblock_cond);
 
+    trace_destroy_packet(col->packet);
+
     free(col);
 }
 
 
-dns_ret_t
-dns_collector_open_pcap_file(dns_collector_t *col, const char *pcap_fname)
-{
-    assert(col && pcap_fname);
-
-    char pcap_errbuf[PCAP_ERRBUF_SIZE];
-
-    if (col->pcap) {
-        pcap_close(col->pcap);
-        col->pcap = NULL;
-    }
-
-    col->pcap = pcap_open_offline(pcap_fname, pcap_errbuf);
-
-    if (!col->pcap) {
-        msg(L_ERROR, "libpcap error: %s", pcap_errbuf);
-        return DNS_RET_ERR;
-    }
-
-    if (pcap_datalink(col->pcap) != DLT_RAW) {
-        msg(L_ERROR, "pcap with link %s not supported (only DLT_RAW)", pcap_datalink_val_to_name(pcap_datalink(col->pcap)));
-        pcap_close(col->pcap);
-        col->pcap = NULL;
-        return DNS_RET_ERR;
-    }
-
-    return DNS_RET_OK;
-}
-
-
-dns_ret_t
-dns_collector_next_packet(dns_collector_t *col)
-{
-    assert(col);
-
-    int r;
-    struct pcap_pkthdr *pkt_header;
-    const u_char *pkt_data;
-
-    if (!col->pcap)
-        return DNS_RET_EOF;
-
-
-    r = pcap_next_ex(col->pcap, &pkt_header, &pkt_data);
-
-    switch(r) {
-        case -2: 
-            return DNS_RET_EOF;
-
-        case -1:
-            msg(L_ERROR, "pcap: %s", pcap_geterr(col->pcap));
-            return DNS_RET_ERR;
-
-        case 0:
-            return DNS_RET_TIMEOUT;
-
-        case 1:
-            col->stats.packets_captured++;
-            dns_us_time_t now = dns_us_time_from_timeval(&(pkt_header->ts));
-
-            if (!col->tf_cur) {
-                dns_collector_rotate_frames(col, now);
-            }
-
-            // Possibly rotate several times to fill any gaps
-            while (col->tf_cur->time_start + col->conf->timeframe_length < now) {
-                dns_collector_rotate_frames(col, col->tf_cur->time_start + col->conf->timeframe_length);
-            }
-        
-
-            dns_collector_process_packet(col, pkt_header, pkt_data);
-
-            return DNS_RET_OK;
-    }
-
-    assert(0);
-}
-
 void
-dns_collector_process_packet(dns_collector_t *col, struct pcap_pkthdr *pkt_header, const u_char *pkt_data)
+dns_collector_process_packet(dns_collector_t *col, libtrace_packet_t *tp)
 {
-    assert(col && pkt_header && pkt_data && col->tf_cur);
+    assert(col && col->tf_cur && tp);
 
-    dns_packet_t *pkt = dns_packet_create();
-    assert(pkt);
-
-    dns_packet_from_pcap(col, pkt, pkt_header, pkt_data);
-    dns_ret_t r = dns_packet_parse(col, pkt);
-    if (r == DNS_RET_DROPPED) {
-        free(pkt);
+    dns_parse_error_t err;
+    dns_packet_t *pkt = dns_packet_create_from_libtrace(col, tp, &err);
+    if (!pkt) {
+        // TODO(tomas): drop packet
+        msg(L_WARN, "Dropping packet, err: %d", err);
         return;
     }
 

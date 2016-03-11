@@ -4,12 +4,14 @@
 #include <netinet/in.h>
 
 #include "common.h"
+#include "packet.h"
 #include "dns.h"
 
 int32_t
 dns_query_check(u_char *query, uint32_t caplen)
 {
     assert(query);
+    caplen = MIN(caplen, DNS_PACKET_QNAME_MAX_LEN);
 
     int rem = 0;
     for(int32_t i = 0; i < caplen; i++) {

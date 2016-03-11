@@ -7,7 +7,7 @@
 #include "collector.h"
 
 void
-dns_stats_fprint(const dns_stats_t *stats, const struct dns_config *conf, FILE *f)
+dns_stats_fprint(const dns_stats_t *stats, const struct dns_config *conf UNUSED, FILE *f)
 { 
     assert(stats && f);
 
