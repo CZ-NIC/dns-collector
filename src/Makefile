@@ -4,14 +4,17 @@
 
 PROTOC_C=protoc-c
 PROTOC=protoc
-CC=gcc
+CC=gcc # or clang
 WARNS=-Wall -Wcast-align -Wunused-parameter -Wno-variadic-macros
+
 ifeq ($(CC),clang)
 WARNS+=-Wno-gnu-statement-expression -Wno-language-extension-token
 endif
-CFLAGS=-O1 -g3 -std=gnu99 -pedantic $(WARNS) -Ilibs/libucw/run/include/ #-flto
+
+CFLAGS=-O1 -g3 -std=gnu99 -pedantic $(WARNS) -I../libs/libucw/run/include/ #-flto
+
 # Using local static libucw
-LDLIBS=libs/libucw/run/lib/libucw-6.5.a -lpcap -llz4 -lprotobuf-c -lpthread
+LDLIBS=../libs/libucw/run/lib/libucw-6.5.a -lpcap -ltrace -llz4 -lprotobuf-c -lpthread
 LDFLAGS=
 
 
