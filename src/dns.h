@@ -39,12 +39,14 @@ struct dns_hdr {
 
 /**
  * Convert a given QNAME to a printable 0-terminated string with dots as separators and check its validity.
+ * Special in-label characters '.' and '\0' are converted to '#'.
+ *
  * @param qname  Raw qname string.
  * @param qname_maxlen  Maximum length of `qname` data.
  * @param output  Destination string. When `NULL`, just verify the qname.
  * @param output_len  Destination string maximum length including the fonal '\0'. Ignored when `output==NULL`.
  * 
- * \return QNAME raw lenght including the final '\0'. Returns `-1` when `qname` is compressed, contains invalid characters,
+ * \return QNAME raw lenght including the final '\0'. Returns `-1` when `qname` is compressed,
  * exceeds `qname_maxlen` or `DNS_PACKET_QNAME_MAX_LEN` or output exceeds `output_len`.
  */
 int32_t

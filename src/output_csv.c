@@ -51,7 +51,7 @@ dns_output_csv_start_file(struct dns_output *out0, dns_us_time_t time UNUSED)
     for (int f = 0; f < dns_of_LAST; f++) {
         if (out->fields & (1 << f)) {
             if (!first)
-                *(p++) = '|';
+                *(p++) = out->separator[0];
             else
                 first = 0;
 
@@ -83,7 +83,7 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
 
 #define CONDWRITE(flag) \
         if (p - buf >= sizeof(buf) - CSV_ELEM_MAX_LEN) return DNS_RET_ERR; \
-        if ((out->fields & (1 << (flag))) && (*(p++) = '|'))
+        if ((out->fields & (1 << (flag))) && (*(p++) = out->separator[0]))
 
     CONDWRITE(dns_of_flags) {
         p += sprintf(p, "%d", dns_packet_get_output_flags(pkt));
@@ -112,11 +112,21 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
     }
 
     CONDWRITE(dns_of_qname) {
-        int r = dns_qname_printable(pkt->dns_qname_raw, pkt->dns_qname_raw_len, p, CSV_ELEM_MAX_LEN);
-        if (r < 0) 
-            *(p++) = '?';
-        else 
-            p += r - 2;
+        char qname_buf[CSV_ELEM_MAX_LEN];
+        int res = dns_qname_printable(pkt->dns_qname_raw, pkt->dns_qname_raw_len, qname_buf, CSV_ELEM_MAX_LEN);
+        assert(res > 0);
+
+        // replacement character for the separator
+        // TODO: Proper escaping of unprintable characters?
+        char badchars[] = "\1\1\2\3\4\5\6\7\10\11\12\13\14\15\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37";
+        badchars[0] = out->separator[0];
+        int replacement = (out->separator[0] == '#' ? '?' : '#');
+
+        char *sp;
+        while(( sp = strpbrk(qname_buf, badchars) )) {
+            *sp = replacement;
+        }
+        p += sprintf(p, "%s", qname_buf);
     }
 
     CONDWRITE(dns_of_qtype) {
@@ -188,10 +198,14 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
     }
 #undef CONDWRITE
 
+    // if anything was written, it starts with the separator - skip it
+    char *writebuf = buf;
+    if (p > buf)
+        writebuf ++;
 
     *(p++) = '\n';
     *(p) = '\0';
-    dns_output_write(out0, buf, (p - buf));
+    dns_output_write(out0, writebuf, (p - writebuf));
     out0->wrote_items ++;
 
     if (out->debug_packet_delay_us > 0) {
@@ -231,6 +245,8 @@ dns_output_csv_conf_commit(void *data)
 
     if (strlen(out->separator) != 1)
         return "'separator' needs to be exactly one character.";
+    if (out->separator[0] < 0x20)
+        return "'separator' should be a printable character.";
 
     return dns_output_conf_commit(&(out->base));
 }
