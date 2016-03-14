@@ -4,6 +4,3 @@
 [submodule "lz4"]
 	path = libs/lz4
 	url = https://github.com/Cyan4973/lz4
-[submodule "collector/libs/protobuf-c"]
-	path = libs/protobuf-c
-	url = https://github.com/protobuf-c/protobuf-c
