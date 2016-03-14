@@ -131,6 +131,13 @@ dns_collector_output_timeframe(struct dns_collector *col, struct dns_timeframe *
         dns_us_time_to_fsec(tf->time_start), dns_us_time_to_fsec(tf->time_end),
         tf->packets_count);
     CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
+        if (col->conf->wait_for_outputs) {
+            // wait for output to be ready
+            while (dns_output_queue_space(out) <= 0) {
+                pthread_cond_wait(&col->unblock_cond, &col->collector_mutex);
+            }
+        }
+        // drop a frame when queue full
         dns_output_push_frame(out, tf);
     }
     // inc and dec refcount to free in case frame was not inserted anywhere

@@ -3,6 +3,7 @@
 #include <inttypes.h>
 #include <stdint.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "output.h"
@@ -24,6 +25,7 @@ struct dns_output_csv {
     char *separator;
     int header;
     uint32_t fields;
+    int debug_packet_delay_us; ///< Delay for debugging congestion
 };
 
 /**
@@ -192,6 +194,10 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
     dns_output_write(out0, buf, (p - buf));
     out0->wrote_items ++;
 
+    if (out->debug_packet_delay_us > 0) {
+        usleep(out->debug_packet_delay_us);
+    }
+
     return DNS_RET_OK;
 }
 
@@ -209,6 +215,7 @@ dns_output_csv_conf_init(void *data)
 
     out->header = 1;
     out->separator = "|";
+    out->debug_packet_delay_us = 0;
 
     return dns_output_conf_init(&(out->base));
 }
@@ -237,6 +244,7 @@ struct cf_section dns_output_csv_section = {
         CF_DNS_OUTPUT_COMMON,
         CF_STRING("separator", PTR_TO(struct dns_output_csv, separator)),
         CF_INT("header", PTR_TO(struct dns_output_csv, header)),
+        CF_INT("debug_packet_delay_us", PTR_TO(struct dns_output_csv, debug_packet_delay_us)),
         CF_BITMAP_LOOKUP("fields", PTR_TO(struct dns_output_csv, fields), dns_output_field_names),
         CF_END
     }

@@ -109,6 +109,7 @@ dns_output_thread_main(void *data)
             pthread_mutex_lock(out->collector_mutex);
             dns_timeframe_decref(current_frame);
             current_frame = NULL;
+            pthread_cond_broadcast(out->collector_unblock_cond);
         } else {
             // unlock the mutex and wait for wakeup condition, then repeat
             pthread_cond_wait(out->collector_output_cond, out->collector_mutex);
@@ -134,6 +135,11 @@ dns_output_pop_frame(struct dns_output *out)
     return next;
 }
 
+int
+dns_output_queue_space(struct dns_output *out)
+{
+    return out->max_queue_len - out->queue_len;
+}
 
 void
 dns_output_push_frame(struct dns_output *out, struct dns_timeframe *tf)
@@ -141,7 +147,7 @@ dns_output_push_frame(struct dns_output *out, struct dns_timeframe *tf)
     assert(out && tf && (out->max_queue_len >= 2) &&
            (out->queue_len <= out->max_queue_len));
 
-    if (out->queue_len == out->max_queue_len) {
+    if (dns_output_queue_space(out) <= 0) {
         // Queue full: drop the oldest frame from the queue.
         struct dns_timeframe *drop = dns_output_pop_frame(out);
         msg(L_WARN, "Dropping frame %.2f - %.2f (%d queries) at output %s",

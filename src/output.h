@@ -287,6 +287,12 @@ dns_output_pop_frame(struct dns_output *out);
 void
 dns_output_push_frame(struct dns_output *out, struct dns_timeframe *tf);
 
+/**
+ * Return the number of free frame slots in this output queue.
+ */
+int
+dns_output_queue_space(struct dns_output *out);
+
 
 /**
  * Write all frame queries into the output.
