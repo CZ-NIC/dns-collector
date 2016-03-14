@@ -38,25 +38,17 @@ struct dns_hdr {
 #define DNS_PACKET_QNAME_MAX_LEN 255
 
 /**
- * Check the length and validity of a dns-encoded query.
- *
- * \return QNAME lenght including the final '\0' otherwise. In this case, query is
- * a well-behaved zero-delimited string. On error (QNAME exceeding `maxlen`,
- * when a "compressed" label is found, or when the query string contains '\0')
- * returns -1.
+ * Convert a given QNAME to a printable 0-terminated string with dots as separators and check its validity.
+ * @param qname  Raw qname string.
+ * @param qname_maxlen  Maximum length of `qname` data.
+ * @param output  Destination string. When `NULL`, just verify the qname.
+ * @param output_len  Destination string maximum length including the fonal '\0'. Ignored when `output==NULL`.
+ * 
+ * \return QNAME raw lenght including the final '\0'. Returns `-1` when `qname` is compressed, contains invalid characters,
+ * exceeds `qname_maxlen` or `DNS_PACKET_QNAME_MAX_LEN` or output exceeds `output_len`.
  */
 int32_t
-dns_query_check(u_char *query, uint32_t maxlen);
-
-/**
- * Convert a given QNAME to a printable 0-terminated string with dots as separators.
- *
- * Assumes the `query` passes `dns_query_check()` and that `output` can hold
- * the entire raw qname. Replaces any characters not in [a-zA-Z0-9-] by '#'.
- * \return The number of such '#' replacements (0 if all OK).
- */
-int
-dns_query_to_printable(u_char *query, char *output);
+dns_qname_printable(u_char *qname, uint32_t qname_maxlen, char *output, size_t output_len)
 
 #endif /* DNSCOL_DNS_H */
 
