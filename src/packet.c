@@ -120,20 +120,21 @@ dns_packet_create_from_libtrace(dns_collector_t *col UNUSED, libtrace_packet_t *
     // Protocol
     pkt->protocol = proto;
 
-    // QNAME validity and length
+    // QNAME count, validity and length
     if (ntohs(pkt->dns_data->qs) != 1) {
         *err = DNS_PE_DNS;
         dns_packet_destroy(pkt);
         return NULL;
     }
     pkt->dns_qname_raw = ((u_char *)(pkt->dns_data)) + sizeof(struct dns_hdr);
-    pkt->dns_qname_raw_len = dns_query_check(pkt->dns_qname_raw, pkt->dns_data_len - sizeof(struct dns_hdr));
-    if (pkt->dns_qname_raw_len <= 0) {
-        // qname invalid
+    int raw_len = dns_qname_printable(pkt->dns_qname_raw, pkt->dns_data_len - sizeof(struct dns_hdr), NULL, 0);
+    if (raw_len <= 0) {
         *err = DNS_PE_DNS;
         dns_packet_destroy(pkt);
         return NULL;
     }
+    pkt->dns_qname_raw_len = raw_len;
+
     if (sizeof(struct dns_hdr) + pkt->dns_qname_raw_len + 2 * sizeof(uint16_t) > pkt->dns_data_len) {
         // captured data too short
         *err = DNS_PE_NETWORK;

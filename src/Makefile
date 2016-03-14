@@ -21,7 +21,7 @@ LDFLAGS=
 PROG=dnscol
 PROTO=dnsquery
 DEPS=$(wildcard *.h)
-SRCS=collector.c common.c config.c dns.c main.c output.c output_compression.c packet.c stats.c timeframe.c
+SRCS=collector.c common.c config.c dns.c main.c output.c output_compression.c packet.c stats.c timeframe.c output_csv.c
 OBJS=$(sort $(SRCS:.c=.o))
 
 all: $(PROG) protodump.py

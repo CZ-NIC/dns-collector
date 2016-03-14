@@ -33,7 +33,7 @@ struct dns_output_csv {
  * timestamps are at most 20 bytes each (2x), other 16 values are 16 bit ints and fit 5 bytes,
  * that is 474 bytes including the separators. Increase if more or longer fields are added.
  */
-#define DNS_OUTPUT_CVS_LINEMAX 1024
+#define DNS_OUTPUT_CVS_LINEMAX 2048
 
 /**
  * Callback for cvs_output, writes CVS header.
@@ -73,110 +73,119 @@ dns_output_csv_start_file(struct dns_output *out0, dns_us_time_t time UNUSED)
 static dns_ret_t
 dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
 {
+    const size_t CSV_ELEM_MAX_LEN = 512; // Upper bound on a single CVS element length
     struct dns_output_csv *out = (struct dns_output_csv *) out0;
     char buf[DNS_OUTPUT_CVS_LINEMAX] = "";
     char addrbuf[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1] = "";
     char *p = buf;
-    int first = 1;
 
-    for (int f = 0; f < dns_of_LAST; f++) {
-        if (out->fields & (1 << f)) {
-            if (!first)
-                *(p++) = '|';
-            else
-                first = 0;
+#define CONDWRITE(flag) \
+        if (p - buf >= sizeof(buf) - CSV_ELEM_MAX_LEN) return DNS_RET_ERR; \
+        if ((out->fields & (1 << (flag))) && (*(p++) = '|'))
 
-            switch (f) {
-                case dns_of_flags:
-                    p += sprintf(p, "%d", dns_packet_get_output_flags(pkt));
-                    break;
-
-                case dns_of_client_addr:
-                    inet_ntop(DNS_PACKET_AF(pkt), DNS_PACKET_CLIENT_ADDR(pkt), addrbuf, sizeof(addrbuf));
-                    p += sprintf(p, "%s", addrbuf);
-                    break;
-                case dns_of_client_port:
-                    p += sprintf(p, "%d", DNS_PACKET_CLIENT_PORT(pkt));
-                    break;
-                case dns_of_server_addr:
-                    inet_ntop(DNS_PACKET_AF(pkt), DNS_PACKET_SERVER_ADDR(pkt), addrbuf, sizeof(addrbuf));
-                    p += sprintf(p, "%s", addrbuf);
-                    break;
-                case dns_of_server_port:
-                    p += sprintf(p, "%d", DNS_PACKET_SERVER_PORT(pkt));
-                    break;
-
-                case dns_of_id:
-                    p += sprintf(p, "%d", ntohs(pkt->dns_data->id));
-                    break;
-                case dns_of_qname:
-                    if (pkt->dns_qname_string)
-                        p += sprintf(p, "%s", pkt->dns_qname_string);
-                    else
-                        *(p++) = '?';
-                    break;
-                case dns_of_qtype:
-                    p += sprintf(p, "%d", pkt->dns_qtype);
-                    break;
-                case dns_of_qclass:
-                    p += sprintf(p, "%d", pkt->dns_qclass);
-                    break;
-
-                case dns_of_request_time_us:
-                    if (DNS_PACKET_REQUEST(pkt))
-                        p += sprintf(p, "%"PRId64, DNS_PACKET_REQUEST(pkt)->ts);
-                    break;
-                case dns_of_request_flags:
-                    if (DNS_PACKET_REQUEST(pkt))
-                        p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->flags));
-                    break;
-                case dns_of_request_ans_rrs:
-                    if (DNS_PACKET_REQUEST(pkt))
-                        p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->ans_rrs));
-                    break;
-                case dns_of_request_auth_rrs:
-                    if (DNS_PACKET_REQUEST(pkt))
-                        p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->auth_rrs));
-                    break;
-                case dns_of_request_add_rrs:
-                    if (DNS_PACKET_REQUEST(pkt))
-                        p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->add_rrs));
-                    break;
-                case dns_of_request_length:
-                    if (DNS_PACKET_REQUEST(pkt))
-                        p += sprintf(p, "%d", DNS_PACKET_REQUEST(pkt)->pkt_len);
-                    break;
-
-                case dns_of_response_time_us:
-                    if (DNS_PACKET_RESPONSE(pkt))
-                        p += sprintf(p, "%"PRId64, DNS_PACKET_RESPONSE(pkt)->ts);
-                    break;
-                case dns_of_response_flags:
-                    if (DNS_PACKET_RESPONSE(pkt))
-                        p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->flags));
-                    break;
-                case dns_of_response_ans_rrs:
-                    if (DNS_PACKET_RESPONSE(pkt))
-                        p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->ans_rrs));
-                    break;
-                case dns_of_response_auth_rrs:
-                    if (DNS_PACKET_RESPONSE(pkt))
-                        p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->auth_rrs));
-                    break;
-                case dns_of_response_add_rrs:
-                    if (DNS_PACKET_RESPONSE(pkt))
-                        p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->add_rrs));
-                    break;
-                case dns_of_response_length:
-                    if (DNS_PACKET_RESPONSE(pkt))
-                        p += sprintf(p, "%d", DNS_PACKET_RESPONSE(pkt)->pkt_len);
-                    break;
-                default:
-                    assert(0);
-            }
-            assert(p < buf + sizeof(buf));
-        }
+    CONDWRITE(dns_of_flags) {
+        p += sprintf(p, "%d", dns_packet_get_output_flags(pkt));
     }
+
+    CONDWRITE(dns_of_client_addr) {
+        inet_ntop(DNS_PACKET_AF(pkt), DNS_PACKET_CLIENT_ADDR(pkt), addrbuf, sizeof(addrbuf));
+        p += sprintf(p, "%s", addrbuf);
+    }
+
+    CONDWRITE(dns_of_client_port) {
+        p += sprintf(p, "%d", DNS_PACKET_CLIENT_PORT(pkt));
+    }
+
+    CONDWRITE(dns_of_server_addr) {
+        inet_ntop(DNS_PACKET_AF(pkt), DNS_PACKET_SERVER_ADDR(pkt), addrbuf, sizeof(addrbuf));
+        p += sprintf(p, "%s", addrbuf);
+    }
+
+    CONDWRITE(dns_of_server_port) {
+        p += sprintf(p, "%d", DNS_PACKET_SERVER_PORT(pkt));
+    }
+
+    CONDWRITE(dns_of_id) {
+        p += sprintf(p, "%d", ntohs(pkt->dns_data->id));
+    }
+
+    CONDWRITE(dns_of_qname) {
+        int r = dns_qname_printable(pkt->dns_qname_raw, pkt->dns_qname_raw_len, p, CSV_ELEM_MAX_LEN);
+        if (r < 0) 
+            *(p++) = '?';
+        else 
+            p += r - 2;
+    }
+
+    CONDWRITE(dns_of_qtype) {
+        p += sprintf(p, "%d", pkt->dns_qtype);
+    }
+
+    CONDWRITE(dns_of_qclass) {
+        p += sprintf(p, "%d", pkt->dns_qclass);
+    }
+
+    CONDWRITE(dns_of_request_time_us) {
+        if (DNS_PACKET_REQUEST(pkt))
+            p += sprintf(p, "%"PRId64, DNS_PACKET_REQUEST(pkt)->ts);
+    }
+
+    CONDWRITE(dns_of_request_flags) {
+        if (DNS_PACKET_REQUEST(pkt))
+            p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->flags));
+    }
+
+    CONDWRITE(dns_of_request_ans_rrs) {
+        if (DNS_PACKET_REQUEST(pkt))
+            p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->ans_rrs));
+    }
+
+    CONDWRITE(dns_of_request_auth_rrs) {
+        if (DNS_PACKET_REQUEST(pkt))
+            p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->auth_rrs));
+    }
+
+    CONDWRITE(dns_of_request_add_rrs) {
+        if (DNS_PACKET_REQUEST(pkt))
+            p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->add_rrs));
+    }
+
+    CONDWRITE(dns_of_request_length) {
+        if (DNS_PACKET_REQUEST(pkt))
+            p += sprintf(p, "%d", DNS_PACKET_REQUEST(pkt)->dns_orig_len);
+    }
+
+    CONDWRITE(dns_of_response_time_us) {
+        if (DNS_PACKET_RESPONSE(pkt))
+            p += sprintf(p, "%"PRId64, DNS_PACKET_RESPONSE(pkt)->ts);
+    }
+
+    CONDWRITE(dns_of_response_flags) {
+        if (DNS_PACKET_RESPONSE(pkt))
+            p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->flags));
+    }
+
+    CONDWRITE(dns_of_response_ans_rrs) {
+        if (DNS_PACKET_RESPONSE(pkt))
+            p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->ans_rrs));
+    }
+
+    CONDWRITE(dns_of_response_auth_rrs) {
+        if (DNS_PACKET_RESPONSE(pkt))
+            p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->auth_rrs));
+    }
+
+    CONDWRITE(dns_of_response_add_rrs) {
+        if (DNS_PACKET_RESPONSE(pkt))
+            p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->add_rrs));
+    }
+
+    CONDWRITE(dns_of_response_length) {
+        if (DNS_PACKET_RESPONSE(pkt))
+            p += sprintf(p, "%d", DNS_PACKET_RESPONSE(pkt)->dns_orig_len);
+    }
+#undef CONDWRITE
+
 
     *(p++) = '\n';
     *(p) = '\0';
