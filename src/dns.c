@@ -22,6 +22,9 @@ dns_qname_printable(u_char *qname, uint32_t qname_maxlen, char *output, size_t o
             // compressed balel?
             if (qname[i] & 0xc0)
                 return -1;
+
+            rem = qname[i];
+
             // final label?
             if (qname[i] == '\0') {
                 if (output) {
@@ -31,26 +34,24 @@ dns_qname_printable(u_char *qname, uint32_t qname_maxlen, char *output, size_t o
                 }
                 return i + 1;
             }
-            // intermed. label (skip first dot)
+
+            // intermed. label, skip first dot
             if (output && (i > 0)) {
                 if (outpos >= output_len)
                     return -1;
                 output[outpos++] = '.';
             }
-            rem = qname[i];
         } else {
-            if (((qname[i] >= 'a') && (qname[i] <= 'z')) ||
-                ((qname[i] >= 'A') && (qname[i] <= 'Z')) ||
-                ((qname[i] >= '0') && (qname[i] <= '9')) ||
-                (qname[i] == '-')) {
-                if (output) {
-                    if (outpos >= output_len)
-                        return -1;
+            rem --;
+
+            if (output) {
+                if (outpos >= output_len)
+                    return -1;
+                if ((qname[i] == '\0') || (qname[i] == '.')) {
+                    output[outpos++] = '#';
+                } else {
                     output[outpos++] = qname[i];
                 }
-                rem --;
-            } else {
-                return -1;
             }
         }
     }
