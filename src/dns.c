@@ -8,74 +8,53 @@
 #include "dns.h"
 
 int32_t
-dns_query_check(u_char *query, uint32_t caplen)
+dns_qname_printable(u_char *qname, uint32_t qname_maxlen, char *output, size_t output_len)
 {
-    assert(query);
-    caplen = MIN(caplen, DNS_PACKET_QNAME_MAX_LEN);
+    assert(qname);
+    qname_maxlen = MIN(qname_maxlen, DNS_PACKET_QNAME_MAX_LEN);
 
     int rem = 0;
-    for(int32_t i = 0; i < caplen; i++) {
+    int outpos = 0;
+
+    for(int32_t i = 0; i < qname_maxlen; i++) {
+        // read label length
         if (rem == 0) {
-            if (query[i] == '\0')
+            // compressed balel?
+            if (qname[i] & 0xc0)
+                return -1;
+            // final label?
+            if (qname[i] == '\0') {
+                if (output) {
+                    if (outpos >= output_len)
+                        return -1;
+                    output[outpos++] = '\0';
+                }
                 return i + 1;
-            if (query[i] & 0xc0)
-                return -1;
-            rem = query[i];
+            }
+            // intermed. label (skip first dot)
+            if (output && (i > 0)) {
+                if (outpos >= output_len)
+                    return -1;
+                output[outpos++] = '.';
+            }
+            rem = qname[i];
         } else {
-            if (query[i] == '\0')
+            if (((qname[i] >= 'a') && (qname[i] <= 'z')) ||
+                ((qname[i] >= 'A') && (qname[i] <= 'Z')) ||
+                ((qname[i] >= '0') && (qname[i] <= '9')) ||
+                (qname[i] == '-')) {
+                if (output) {
+                    if (outpos >= output_len)
+                        return -1;
+                    output[outpos++] = qname[i];
+                }
+                rem --;
+            } else {
                 return -1;
-            rem --;
+            }
         }
     }
     return -1;
 }
 
-int
-dns_query_to_printable(u_char *query, char *output)
-{
-    assert(query && output);
-
-    int rem = 0;
-    int bad = 0;
-
-    // first label: do not start output with a dot
-    if (*query == '\0') {
-        *output = '\0';
-        return bad;
-    } else {
-        assert((*query & 0xc0) == 0);
-        rem = *query;
-        query++;
-    }
-
-    for(;; query++, output++) {
-        if (rem == 0) {
-            if (*query == '\0')
-            {
-                *output = '\0';
-                return bad;
-            }
-            assert((*query & 0xc0) == 0);
-            *output = '.';
-            rem = *query;
-        } else {
-            if (((*query >= 'a') && (*query <= 'z')) ||
-                ((*query >= 'A') && (*query <= 'Z')) ||
-                ((*query >= '0') && (*query <= '9')) ||
-                (*query == '-')) {
-                *output = *query;
-            } else {
-                bad++;
-                *output = '#';
-            }
-            rem --;
-        }
-    }
-}
-
-uint16_t
-dns_hdr_flags(const struct dns_hdr *hdr)
-{ 
-    return ntohs(((const uint16_t*)hdr)[1]);
-}
 
