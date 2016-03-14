@@ -1,6 +1,9 @@
 /dnscol
 /.gdb_history
 /__pycache__
+/src/dnscol
+/out
+/misc
 
 *.o
 *.pcap
