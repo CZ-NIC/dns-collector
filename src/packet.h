@@ -12,46 +12,6 @@
 #include "common.h"
 #include "dns.h"
 
-/** TCP ot UDP protocol? */
-#define DNS_ACCEPTED_PROTOCOL(p) (((p) == IPPROTO_UDP) || ((p) == IPPROTO_TCP))
-
-/** Is the packet DNS request? */
-#define DNS_PACKET_IS_REQUEST(pkt) (DNS_HDR_FLAGS_QR((pkt)->dns_data->flags) == 0)
-
-/** Is the packet DNS response? */
-#define DNS_PACKET_IS_RESPONSE(pkt) (DNS_HDR_FLAGS_QR((pkt)->dns_data->flags) == 1)
-
-#define DNS_PACKET_REQUEST(pkt) (DNS_PACKET_IS_REQUEST(pkt) ? (pkt) : NULL)
-#define DNS_PACKET_RESPONSE(pkt) (DNS_PACKET_IS_RESPONSE(pkt) ? (pkt) : (pkt)->response)
-
-/** Address family as AF_INET or AF_INET6 */
-#define DNS_PACKET_AF(pkt) (DNS_SOCKADDR_AF(&(pkt)->src_addr))
-
-#define DNS_SOCKADDR_AF(sa) ( ((struct sockaddr*)(sa))->sa_family )
-
-#define DNS_SOCKADDR_PORT(sa) ( DNS_SOCKADDR_AF(sa) == AF_INET ? \
-                                ((struct sockaddr_in*)(sa))->sin_port : \
-                                ((struct sockaddr_in6*)(sa))->sin6_port )
-
-#define DNS_SOCKADDR_ADDR(sa) ( DNS_SOCKADDR_AF(sa) == AF_INET ? \
-                                (void *)(&((struct sockaddr_in*)(sa))->sin_addr) : \
-                                (void *)(&((struct sockaddr_in6*)(sa))->sin6_addr) )
-
-#define DNS_SOCKADDR_ADDRLEN(sa) ( DNS_SOCKADDR_AF(sa) == AF_INET ? \
-                                   sizeof(((struct sockaddr_in*)(sa))->sin_addr) : \
-                                   sizeof(((struct sockaddr_in6*)(sa))->sin6_addr) )
-
-#define DNS_PACKET_CLIENT_SOCKADDR(pkt) ( DNS_PACKET_IS_REQUEST(pkt) ? \
-                                          (struct sockaddr*)(&(pkt)->src_addr) : \
-                                          (struct sockaddr*)(&(pkt)->dst_addr) )
-
-#define DNS_PACKET_SERVER_SOCKADDR(pkt) ( DNS_PACKET_IS_REQUEST(pkt) ? \
-                                          (struct sockaddr*)(&(pkt)->dst_addr) : \
-                                          (struct sockaddr*)(&(pkt)->src_addr) )
-
-#define DNS_PACKET_CLIENT_PORT(pkt) (DNS_SOCKADDR_PORT(DNS_PACKET_CLIENT_SOCKADDR(pkt) ))
-#define DNS_PACKET_SERVER_PORT(pkt) (DNS_SOCKADDR_PORT(DNS_PACKET_SERVER_SOCKADDR(pkt) ))
-
 /**
  * Main structure storing the packet data and parsed values.
  */
@@ -108,6 +68,125 @@ struct dns_packet {
      * This entry MUST be last in `struct dns_packet`. */
     struct dns_hdr dns_data[];
 };
+
+
+/** @name Getters for packet DNS properties */
+/** @{ */
+
+/** Is the packet DNS request? */
+#define DNS_PACKET_IS_REQUEST(pkt) (DNS_HDR_FLAGS_QR((pkt)->dns_data->flags) == 0)
+
+/** Is the packet DNS response? */
+#define DNS_PACKET_IS_RESPONSE(pkt) (DNS_HDR_FLAGS_QR((pkt)->dns_data->flags) == 1)
+
+/** Return the request part of the query (or NULL id response-only) */
+#define DNS_PACKET_REQUEST(pkt) (DNS_PACKET_IS_REQUEST(pkt) ? (pkt) : NULL)
+
+/** Return the response part of the query (or NULL id request-only) */
+#define DNS_PACKET_RESPONSE(pkt) (DNS_PACKET_IS_RESPONSE(pkt) ? (pkt) : (pkt)->response)
+
+/** @} */
+
+/** @name Getters for `struct sockaddr` properties */
+/** @{ */
+
+/** Address family as AF_INET or AF_INET6 */
+#define DNS_SOCKADDR_AF(sa) ( ((struct sockaddr*)(sa))->sa_family )
+
+#define DNS_SOCKADDR_PORT(sa) ( DNS_SOCKADDR_AF(sa) == AF_INET ? \
+                                ((struct sockaddr_in*)(void*)(sa))->sin_port : \
+                                ((struct sockaddr_in6*)(void*)(sa))->sin6_port )
+
+#define DNS_SOCKADDR_ADDR(sa) ( DNS_SOCKADDR_AF(sa) == AF_INET ? \
+                                (void *)(&((struct sockaddr_in*)(void*)(sa))->sin_addr) : \
+                                (void *)(&((struct sockaddr_in6*)(void*)(sa))->sin6_addr) )
+
+#define DNS_SOCKADDR_ADDRLEN(sa) ( DNS_SOCKADDR_AF(sa) == AF_INET ? \
+                                   sizeof(((struct sockaddr_in*)(void*)(sa))->sin_addr) : \
+                                   sizeof(((struct sockaddr_in6*)(void*)(sa))->sin6_addr) )
+
+/** @} */
+
+/** @name Getters for packet network properties */
+/** @{ */
+
+#define DNS_PACKET_CLIENT_SOCKADDR(pkt) ( DNS_PACKET_IS_REQUEST(pkt) ? \
+                                          (struct sockaddr*)(&(pkt)->src_addr) : \
+                                          (struct sockaddr*)(&(pkt)->dst_addr) )
+
+#define DNS_PACKET_SERVER_SOCKADDR(pkt) ( DNS_PACKET_IS_REQUEST(pkt) ? \
+                                          (struct sockaddr*)(&(pkt)->dst_addr) : \
+                                          (struct sockaddr*)(&(pkt)->src_addr) )
+
+#define DNS_PACKET_AF(pkt) (DNS_SOCKADDR_AF(&(pkt)->src_addr))
+
+#define DNS_PACKET_ADDRLEN(pkt) (DNS_SOCKADDR_ADDRLEN(&(pkt)->src_addr))
+
+#define DNS_PACKET_CLIENT_PORT(pkt) (DNS_SOCKADDR_PORT(DNS_PACKET_CLIENT_SOCKADDR(pkt)))
+
+#define DNS_PACKET_SERVER_PORT(pkt) (DNS_SOCKADDR_PORT(DNS_PACKET_SERVER_SOCKADDR(pkt)))
+
+#define DNS_PACKET_CLIENT_ADDR(pkt) (DNS_SOCKADDR_ADDR(DNS_PACKET_CLIENT_SOCKADDR(pkt)))
+
+#define DNS_PACKET_SERVER_ADDR(pkt) (DNS_SOCKADDR_ADDR(DNS_PACKET_SERVER_SOCKADDR(pkt)))
+
+/** @} */
+
+/*
+inline uint16_t
+dns_sockaddr_port(void *sa)
+{
+    if (DNS_SOCKADDR_AF(sa) == AF_INET)
+        return ((struct sockaddr_in*)(void*)sa)->sin_port;
+    if (DNS_SOCKADDR_AF(sa) == AF_INET6)
+        return ((struct sockaddr_in6*)(void*)sa)->sin6_port;
+    assert(!"Unsupported sockaddr AF");
+}
+#define DNS_SOCKADDR_PORT(sa) dns_sockaddr_port(sa)
+
+inline u_char *
+dns_sockaddr_addr(struct sockaddr *sa)
+{
+    if (DNS_SOCKADDR_AF(sa) == AF_INET)
+        return (u_char *)&(((struct sockaddr_in*)(void*)sa)->sin_addr);
+    if (DNS_SOCKADDR_AF(sa) == AF_INET6)
+        return (u_char *)&(((struct sockaddr_in6*)(void*)sa)->sin6_addr);
+    assert(!"Unsupported sockaddr AF");
+}
+#define DNS_SOCKADDR_ADDR(sa) dns_sockaddr_addr(sa)
+
+inline size_t
+dns_sockaddr_addrlen(struct sockaddr *sa)
+{
+    if (DNS_SOCKADDR_AF(sa) == AF_INET)
+        return 4;
+    if (DNS_SOCKADDR_AF(sa) == AF_INET6)
+        return 16;
+    assert(!"Unsupported sockaddr AF");
+}
+#define DNS_SOCKADDR_ADDRLEN(sa) dns_sockaddr_addrlen(sa)
+
+inline struct sockaddr *
+dns_packet_client_sockaddr(struct dns_packet *pkt)
+{
+    if (DNS_PACKET_IS_REQUEST(pkt))
+        return (struct sockaddr*)(&(pkt)->src_addr);
+    else
+        return (struct sockaddr*)(&(pkt)->dst_addr);
+}
+#define DNS_PACKET_CLIENT_SOCKADDR(pkt) dns_packet_server_sockaddr(pkt)
+
+inline struct sockaddr *
+dns_packet_server_sockaddr(struct dns_packet *pkt)
+{
+    if (DNS_PACKET_IS_RESPONSE(pkt))
+        return (struct sockaddr*)(&(pkt)->src_addr);
+    else
+        return (struct sockaddr*)(&(pkt)->dst_addr);
+}
+#define DNS_PACKET_SERVER_SOCKADDR(pkt) dns_packet_server_sockaddr(pkt)
+*/
+
 
 /**
  * Allocate and initialise `struct dns_packet` with `dns_data_len` extra bytes for dns header and data.

@@ -48,7 +48,7 @@ struct dns_hdr {
  * exceeds `qname_maxlen` or `DNS_PACKET_QNAME_MAX_LEN` or output exceeds `output_len`.
  */
 int32_t
-dns_qname_printable(u_char *qname, uint32_t qname_maxlen, char *output, size_t output_len)
+dns_qname_printable(u_char *qname, uint32_t qname_maxlen, char *output, size_t output_len);
 
 #endif /* DNSCOL_DNS_H */
 
