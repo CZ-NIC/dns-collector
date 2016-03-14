@@ -49,19 +49,18 @@ int main(int argc UNUSED, char **argv)
     #pragma GCC diagnostic ignored "-Wpedantic"
     *(GARY_PUSH(main_inputs)) = NULL;
     #pragma GCC diagnostic pop
-    conf.inputs = main_inputs;
 
     dns_collector_t *col = dns_collector_create(&conf);
 
     dns_collector_start_output_threads(col);
 
-    for (char **in = col->conf->inputs; *in; in++)
+    for (char **in = main_inputs; *in; in++)
         dns_collector_run_on_input(col, *in);
 
     dns_collector_finish(col);
     dns_collector_stop_output_threads(col, dns_os_queue);
 
-    dns_stats_fprint(&(col->stats), col->conf, stderr);
+    //dns_stats_fprint(&(col->stats), col->conf, stderr);
 
     dns_collector_destroy(col);
 

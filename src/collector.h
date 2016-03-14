@@ -21,8 +21,14 @@ struct dns_collector {
     /** Configuration variables. Not owned by collector. */
     struct dns_config *conf;
 
+    /** Collector-wide mutex for shared data.
+     * Is only un/locked by every thread limited number of times per frame (not per packet!).
+     * Should be very low-overhead and held only for the shared-data access. */
     pthread_mutex_t collector_mutex;
+    /** Condition signalling to the outputs that a new frame might be available in their queue */
     pthread_cond_t output_cond;
+    /** Condition signalling to the collector that a frame got processed
+     * (and a next one *might* be pushed without blocking). */
     pthread_cond_t unblock_cond;
 
 //    /** NULL-terminated array of configured outputs, later also with active output threads. */

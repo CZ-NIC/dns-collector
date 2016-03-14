@@ -17,6 +17,7 @@ dns_collector_conf_init(void *data)
     conf->timeframe_length_sec = 5.0;
     conf->hash_order = 20;
     conf->max_queue_len = 5;
+    conf->wait_for_outputs = 0;
 
     return NULL;
 }
@@ -53,6 +54,7 @@ struct cf_section dns_config_section = {
         CF_INT("capture_limit", PTR_TO(struct dns_config, capture_limit)),
         CF_INT("hash_order", PTR_TO(struct dns_config, hash_order)),
         CF_DOUBLE("timeframe_length", PTR_TO(struct dns_config, timeframe_length_sec)),
+        CF_INT("offline", PTR_TO(struct dns_config, wait_for_outputs)),
         #ifdef DNS_WITH_CSV
         CF_LIST("output_csv", PTR_TO(struct dns_config, outputs_csv), &dns_output_csv_section),
         #endif // DNS_WITH_CSV

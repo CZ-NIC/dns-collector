@@ -15,14 +15,20 @@ struct dns_config {
 
     dns_us_time_t timeframe_length;
     double timeframe_length_sec;
+
     int32_t capture_limit;
+
     int max_queue_len;
+    
+    int wait_for_outputs; ///< If set, the queued frames are never dropped. The collector waits instead.
 
     struct clist outputs_csv; ///< For config only, later empty.
     struct clist outputs_proto; ///< For config only, later empty.
     struct clist outputs_cbor; ///< For config only, later empty.
     struct clist outputs; ///< clist of collected struct dns_output from outputs_*.
-    char **inputs; ///< Not owned by config, NULL-terminated array.
+
+//    char **inputs; ///< Not owned by config, NULL-terminated array.
+
     int32_t hash_order;
 
     /** Whether to also dump dropped packets by drop reason. */
