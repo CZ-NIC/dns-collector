@@ -8,6 +8,8 @@
 
 #include "common.h"
 #include "stats.h"
+#include "input.h"
+#include "output.h"
 
 /** Configuration of a DNS collector. Filled in mostly by the `libucw` config system.
  * See `dnscol.conf` for detaled description. */
@@ -30,6 +32,8 @@ struct dns_config {
 //    char **inputs; ///< Not owned by config, NULL-terminated array.
 
     int32_t hash_order;
+
+    struct dns_input input;
 
     /** Whether to also dump dropped packets by drop reason. */
     int dump_packet_reason[dns_drop_LAST];
