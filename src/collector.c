@@ -68,18 +68,11 @@ dns_collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how
 void
 dns_collector_run_on_input(dns_collector_t *col, char *inuri)
 {
-    assert(col && inuri && (!col->trace) && col->packet);
+    assert(col && (inuri || col->conf->input.uri) && (!col->trace) && col->packet);
 
-    col->trace = trace_create(inuri);
-    assert(col->trace);
-    if (trace_is_err(col->trace)) {
-        msg(L_FATAL, "libtrace error opening '%s': %s", inuri, trace_get_err(col->trace).problem);
-        trace_destroy(col->trace);
-        col->trace = NULL;
+    if (dns_trace_open(col, inuri) != DNS_RET_OK)
         return;
-    }
-
-    // TODO(tomas): configure the trace here
+    assert(col->trace);
 
     int r = trace_start(col->trace);
     if (r < 0) {
@@ -116,8 +109,7 @@ dns_collector_run_on_input(dns_collector_t *col, char *inuri)
         dns_collector_process_packet(col, col->packet);
     }
 
-    trace_destroy(col->trace);
-    col->trace = NULL;
+    dns_trace_close(col);
 }
 
 void
