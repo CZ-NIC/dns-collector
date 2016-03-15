@@ -65,7 +65,7 @@ struct cf_section dns_config_section = {
         #ifdef DNS_WITH_CBOR
         CF_LIST("output_cbor", PTR_TO(struct dns_config, outputs_cbor), &dns_output_cbor_section),
         #endif // DNS_WITH_CBOR
-        CF_SECTION("input", PTR_TO(struct dns_config, input), &dns_input_section),
+        CF_LIST("input", PTR_TO(struct dns_config, inputs), &dns_input_section),
         CF_END
     }
 };

@@ -51,73 +51,62 @@ struct cf_section dns_input_section = {
 
 
 void
-dns_trace_close(dns_collector_t *col)
+dns_input_close(struct dns_input *input)
 {
-    assert(col && col->trace);
+    assert(input && input->trace && input->packet);
 
-    struct dns_input *input = &col->conf->input;
-
-    if (input && input->bpf_filter) {
+    if (input->bpf_filter) {
         trace_destroy_filter(input->bpf_filter);
         input->bpf_filter = NULL;
     }
 
-    trace_destroy(col->trace);
-    col->trace = NULL;
+    trace_destroy(input->trace);
+    input->trace = NULL;
+
+    trace_destroy_packet(input->packet);
+    input->packet = NULL;
 }
 
 
 dns_ret_t
-dns_trace_open(dns_collector_t *col, char *inuri)
+dns_input_open(struct dns_input *input)
 {
-    assert(col && (!col->trace));
-
-    struct dns_input *input = &col->conf->input;
+    assert(input && !input->trace && !input->packet);
     int r;
 
-    if (inuri) {
-        // offline from a pcap file
-        col->trace = trace_create(inuri);
-    } else {
-        assert(input);
-        // configured live input
-        col->trace = trace_create(input->uri);
-    }
-    assert(col->trace);
+    input->packet = trace_create_packet();
+    if (!input->packet)
+        die("FATAL: libtrace packet allocation error!");
 
-    if (trace_is_err(col->trace)) {
-        if (inuri)
-            msg(L_FATAL, "libtrace error opening offline input '%s': %s", inuri, trace_get_err(col->trace).problem);
-        else
-            msg(L_FATAL, "libtrace error opening live input '%s': %s", input->uri, trace_get_err(col->trace).problem);
-        trace_destroy(col->trace);
-        col->trace = NULL;
+    input->trace = trace_create(input->uri);
+    assert(input->trace);
+
+    if (trace_is_err(input->trace)) {
+        msg(L_FATAL, "libtrace error opening input '%s': %s", input->uri, trace_get_err(input->trace).problem);
+        trace_destroy(input->trace);
+        input->trace = NULL;
         return DNS_RET_ERR;
     }
 
-    if (inuri) {
+    if (input->offline) {
         // offline from a pcap file
-        col->conf->wait_for_outputs = 1;
         int enable = 1;
-        r = trace_config(col->trace, TRACE_OPTION_EVENT_REALTIME, &enable);
+        r = trace_config(input->trace, TRACE_OPTION_EVENT_REALTIME, &enable);
         if (r < 0)
-            msg(L_ERROR, "libtrace error setting no-wait reading for '%s': %s", inuri, trace_get_err(col->trace).problem);
-        return DNS_RET_OK;
+            msg(L_ERROR, "libtrace error setting no-wait reading for '%s': %s", input->uri, trace_get_err(input->trace).problem);
     }
-
-    // configure live input
 
     r = 0;
     if (input->snaplen > 0)
-        r = trace_config(col->trace, TRACE_OPTION_SNAPLEN, &input->snaplen);
+        r = trace_config(input->trace, TRACE_OPTION_SNAPLEN, &input->snaplen);
 
-    if (r == 0)
-        r = trace_config(col->trace, TRACE_OPTION_PROMISC, &input->promisc);
+    if ((r == 0) && (input->promisc))
+        r = trace_config(input->trace, TRACE_OPTION_PROMISC, &input->promisc);
 
     if (r < 0) {
-        msg(L_FATAL, "libtrace error configutring live input '%s': %s", input->uri, trace_get_err(col->trace).problem);
-        trace_destroy(col->trace);
-        col->trace = NULL;
+        msg(L_FATAL, "libtrace error configutring input '%s': %s", input->uri, trace_get_err(input->trace).problem);
+        trace_destroy(input->trace);
+        input->trace = NULL;
         return DNS_RET_ERR;
     }
 
@@ -125,15 +114,15 @@ dns_trace_open(dns_collector_t *col, char *inuri)
         assert(!input->bpf_filter);
 
         input->bpf_filter = trace_create_filter(input->bpf_string);
-        // no error possible here
+        // NOTE: no error should be possible here
         assert(input->bpf_filter); 
     
-        r = trace_config(col->trace, TRACE_OPTION_FILTER, input->bpf_filter);
+        r = trace_config(input->trace, TRACE_OPTION_FILTER, input->bpf_filter);
 
         if (r < 0) {
-            msg(L_FATAL, "libtrace error applying filter '%s' to '%s': %s", input->bpf_string, input->uri, trace_get_err(col->trace).problem);
-            trace_destroy(col->trace);
-            col->trace = NULL;
+            msg(L_FATAL, "libtrace error applying filter '%s' to '%s': %s", input->bpf_string, input->uri, trace_get_err(input->trace).problem);
+            trace_destroy(input->trace);
+            input->trace = NULL;
             return DNS_RET_ERR;
         }
 
