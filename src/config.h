@@ -33,7 +33,7 @@ struct dns_config {
 
     int32_t hash_order;
 
-    struct dns_input input;
+    struct clist inputs; ///< clist of configured `struct dns_input`
 
     /** Whether to also dump dropped packets by drop reason. */
     int dump_packet_reason[dns_drop_LAST];

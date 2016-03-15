@@ -54,7 +54,7 @@ int main(int argc UNUSED, char **argv)
     *(GARY_PUSH(main_inputs)) = NULL;
     #pragma GCC diagnostic pop
 
-    if ((main_inputs[0] == NULL) && (conf.input.uri == NULL)) {
+    if ((*main_inputs == NULL) && clist_empty(&conf.inputs)) {
         msg(L_FATAL, "Provide at least one input capture filename or configure capture device in the config.");
         return 1;
     }
@@ -66,10 +66,10 @@ int main(int argc UNUSED, char **argv)
     if (*main_inputs) {
         // offline pcaps
         for (char **in = main_inputs; *in; in++)
-            dns_collector_run_on_input(col, *in);
+            dns_collector_run_on_pcap(col, *in);
     } else {
         // live
-        dns_collector_run_on_input(col, NULL);
+        dns_collector_run_on_inputs(col, &conf.inputs, 0);
     }
 
     dns_collector_finish(col);

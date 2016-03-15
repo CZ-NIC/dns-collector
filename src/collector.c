@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
+#include <sys/select.h>
+#include <unistd.h>
 
 #include <libtrace.h>
 
@@ -26,10 +29,6 @@ dns_collector_create(struct dns_config *conf)
         msg(L_DEBUG, "Collector configuring output '%s'", out->path_fmt);
         dns_output_init(out, col);
     }
-
-    col->packet = trace_create_packet();
-    if (!col->packet)
-        die("FATAL: libtrace packet allocation error!");
     
     return col;
 }
@@ -65,51 +64,141 @@ dns_collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how
     // TODO(tomas): detect pthread errors
 }
 
-void
-dns_collector_run_on_input(dns_collector_t *col, char *inuri)
+
+static dns_us_time_t
+dns_trace_packet_time(libtrace_packet_t *tp)
 {
-    assert(col && (inuri || col->conf->input.uri) && (!col->trace) && col->packet);
+    struct timeval now_tv = trace_get_timeval(tp);
+    return dns_us_time_from_timeval(&now_tv);
+}
 
-    if (dns_trace_open(col, inuri) != DNS_RET_OK)
-        return;
-    assert(col->trace);
 
-    int r = trace_start(col->trace);
-    if (r < 0) {
-        msg(L_FATAL, "libtrace error starting '%s': %s", inuri, trace_get_err(col->trace).problem);
-        trace_destroy(col->trace);
-        col->trace = NULL;
-        return;
+void
+dns_collector_update_rotation(dns_collector_t *col, dns_us_time_t time)
+{
+    if (!col->tf_cur) {
+         dns_collector_rotate_frames(col, time);
     }
 
-    while (1) {
-        r = trace_read_packet(col->trace, col->packet);
-        if (r < 0) {
-            msg(L_FATAL, "libtrace error reading '%s': %s", inuri, trace_get_err(col->trace).problem);
-            break;
-        }
-        if (r == 0) {
-            msg(L_DEBUG, "finished reading '%s'", inuri);
-            break;
-        }
+    // Possibly rotate several times to fill any gaps
+    while (col->tf_cur->time_start + col->conf->timeframe_length < time) {
+        dns_collector_rotate_frames(col, col->tf_cur->time_start + col->conf->timeframe_length);
+    }
+}
 
-        col->stats.packets_captured++;
 
-        struct timeval now_tv = trace_get_timeval(col->packet);
-        dns_us_time_t now = dns_us_time_from_timeval(&now_tv);
-        if (!col->tf_cur) {
-             dns_collector_rotate_frames(col, now);
-        }
+void
+dns_collector_run_on_pcap(dns_collector_t *col, char *inuri)
+{
+    assert(col && inuri);
 
-        // Possibly rotate several times to fill any gaps
-        while (col->tf_cur->time_start + col->conf->timeframe_length < now) {
-            dns_collector_rotate_frames(col, col->tf_cur->time_start + col->conf->timeframe_length);
-        }
+    struct dns_input input = {
+        .uri = inuri,
+        .snaplen = -1,
+        .promisc = 0,
+        .bpf_string = NULL, // TODO: allow filtering for pcaps as well?
+        .bpf_filter = NULL,
+        .offline = 1,
+    };
 
-        dns_collector_process_packet(col, col->packet);
+    clist inputs;
+    clist_init(&inputs);
+    clist_add_head(&inputs, &input.n);
+
+    col->conf->wait_for_outputs = 1;
+    dns_collector_run_on_inputs(col, &inputs, 1);
+}
+
+void
+dns_collector_run_on_inputs(dns_collector_t *col, clist *inputs, int offline)
+{
+    assert(col);
+
+    CLIST_FOR_EACH(struct dns_input*, input, *inputs) {
+        assert(input->uri);
+        if (dns_input_open(input) != DNS_RET_OK)
+            die("could not open '%s'", input->uri);
+        assert(input->trace && input->packet);
+        if ((! ! offline) != (! ! input->offline))
+            die("Live and offline inputs may not be combined.");
     }
 
-    dns_trace_close(col);
+    CLIST_FOR_EACH(struct dns_input*, input, *inputs) {
+        if(trace_start(input->trace) < 0) {
+            msg(L_FATAL, "libtrace error starting '%s': %s", input->uri, trace_get_err(input->trace).problem);
+            die("error starting capture");
+        }
+    }
+
+    libtrace_eventobj_t ev;
+    int stop = 0;
+    fd_set fd_in;
+
+    while (!stop) {
+        // Wake up at least twice per timeframe
+        double sleep = dns_us_time_to_fsec(col->conf->timeframe_length) / 2;
+        int someread = 0;
+        int largest_fd = -1;
+        FD_ZERO(&fd_in);
+
+        CLIST_FOR_EACH(struct dns_input*, input, *inputs) {
+            // rotate frames and inputs if online
+            if (!offline) {
+                struct timespec tp;
+                if (clock_gettime(CLOCK_REALTIME, &tp) < 0)
+                    die("clock_gettime(CLOCK_REALTIME, ...) error");
+                dns_collector_update_rotation(col, dns_us_time_from_timespec(&tp));
+            }
+
+            // receive the next event
+            ev = trace_event(input->trace, input->packet);
+            switch (ev.type) {
+            case TRACE_EVENT_PACKET:
+                dns_collector_update_rotation(col, dns_trace_packet_time(input->packet));
+                dns_collector_process_packet(col, input->packet);
+                someread = 1;
+                break;
+            case TRACE_EVENT_TERMINATE:
+                msg(L_DEBUG, "finished reading '%s'", input->uri);
+                stop = 1;
+                break;
+            case TRACE_EVENT_SLEEP:
+                sleep = MIN(ev.seconds, sleep);
+                break;
+            case TRACE_EVENT_IOWAIT:
+                FD_SET(ev.fd, &fd_in);
+                largest_fd = MAX(ev.fd, largest_fd);
+                break;
+            default:
+                assert(!"Unknown event");
+            }
+
+            if (stop)
+                break;
+        }
+
+        if (stop)
+            break;
+
+        // all inputs blocking - wait or select
+        if (!someread) {
+            dns_us_time_t us = sleep * 1000000;
+            if (largest_fd >= 0) {
+                struct timeval tv = {.tv_sec = us / 1000000, .tv_usec = us % 1000000 };
+                int r = select( largest_fd + 1, &fd_in, NULL, NULL, &tv );
+                if (r < 0)
+                    die("select error: %s", strerror(errno));
+            } else {
+                usleep((useconds_t)(sleep * 1000000));
+            }
+        }
+    }
+
+    CLIST_FOR_EACH(struct dns_input*, input, *inputs) {
+        dns_input_close(input);
+        assert(!input->trace);
+    }
+
 }
 
 void
@@ -159,7 +248,7 @@ dns_collector_finish(dns_collector_t *col)
 void
 dns_collector_destroy(dns_collector_t *col)
 { 
-    assert(col && (!col->tf_old) && (!col->tf_cur) && col->packet && (!col->trace));
+    assert(col && (!col->tf_old) && (!col->tf_cur));
 
     CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
         dns_output_destroy(out);
@@ -168,8 +257,6 @@ dns_collector_destroy(dns_collector_t *col)
     pthread_mutex_destroy(&col->collector_mutex);
     pthread_cond_destroy(&col->output_cond);
     pthread_cond_destroy(&col->unblock_cond);
-
-    trace_destroy_packet(col->packet);
 
     free(col);
 }

@@ -31,17 +31,8 @@ struct dns_collector {
      * (and a next one *might* be pushed without blocking). */
     pthread_cond_t unblock_cond;
 
-//    /** NULL-terminated array of configured outputs, later also with active output threads. */
-//    struct dns_output *outputs[];
-
     /** DNS collector status and stats. \todo Redesign */
     dns_stats_t stats;
-
-    /** Open input trace or NULL. Owned by collector. */
-    libtrace_t *trace;
-
-    /** Packet structure for reading the trace. Owned by collector. */
-    libtrace_packet_t *packet;
 
     /** Current timeframe. Owned by the collector. */
     dns_timeframe_t *tf_cur;
@@ -69,12 +60,19 @@ dns_collector_start_output_threads(dns_collector_t *col);
 void
 dns_collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how);
 
+void
+dns_collector_run_on_pcap(dns_collector_t *col, char *inuri);
+
 /**
- * Run the collector processing loop. Process all data from one named input
- * in the libtrace notation.
+ * Run the collector processing loop. Process all data from the inputs.
  */
 void
-dns_collector_run_on_input(dns_collector_t *col, char *inuri);
+dns_collector_run_on_inputs(dns_collector_t *col, clist *inputs, int offline);
+
+void
+dns_collector_update_rotation(dns_collector_t *col, dns_us_time_t time);
+
+
 
 /**
  * Rotate the timeframes.
