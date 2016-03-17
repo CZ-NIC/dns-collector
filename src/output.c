@@ -94,9 +94,6 @@ dns_output_thread_main(void *data)
         assert(!current_frame);
         current_frame = dns_output_pop_frame(out);
         if (current_frame) {
-            // was the queue full? signal it.
-            if (out->queue_len >= out->max_queue_len - 1)
-                pthread_cond_broadcast(out->collector_unblock_cond);
             // unlock the mutex
             pthread_mutex_unlock(out->collector_mutex);
 
@@ -107,8 +104,11 @@ dns_output_thread_main(void *data)
 
             // relock the mutex, decref the frame
             pthread_mutex_lock(out->collector_mutex);
+
             dns_timeframe_decref(current_frame);
             current_frame = NULL;
+
+            // Signal the collector that a frame was removed from the queue.
             pthread_cond_broadcast(out->collector_unblock_cond);
         } else {
             // unlock the mutex and wait for wakeup condition, then repeat

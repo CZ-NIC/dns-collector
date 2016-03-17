@@ -1,9 +1,17 @@
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <execinfo.h>
 
 #include "common.h"
+
+#define MAX_TRACE_SIZE 42
+void dns_ptrace(void)
+{
+    void *array[MAX_TRACE_SIZE];
+    size_t size = backtrace(array, MAX_TRACE_SIZE);
+    backtrace_symbols_fd(array, size, 2);
+}
 
 
 dns_us_time_t

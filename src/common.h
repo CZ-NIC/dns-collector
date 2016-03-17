@@ -131,6 +131,13 @@ enum dns_drop_reason {
 
 extern const char *dns_drop_reason_names[];
 
+
+/**
+ * Internal debugging: print the current trace to stderr.
+ */
+void dns_ptrace(void);
+
+
 /**
  * Time type for timestamps and time differences.
  * Absolute time in micro-seconds since the Epoch.
