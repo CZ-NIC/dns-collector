@@ -81,7 +81,9 @@ dns_output_thread_main(void *data)
     dns_us_time_t last_frame_end = DNS_NO_TIME;
 
     // acquire the collector mutex
-    pthread_mutex_lock(out->collector_mutex);
+    if (pthread_mutex_lock(out->collector_mutex))
+        die("Error locking mutex");
+
     while(1) {
 
         // check stop conditions
@@ -95,7 +97,8 @@ dns_output_thread_main(void *data)
         current_frame = dns_output_pop_frame(out);
         if (current_frame) {
             // unlock the mutex
-            pthread_mutex_unlock(out->collector_mutex);
+            if (pthread_mutex_unlock(out->collector_mutex))
+                die("Error unlocking mutex");
 
             // process the output with collector mutex unlocked
             dns_output_check_rotation(out, current_frame->time_start);
@@ -103,7 +106,8 @@ dns_output_thread_main(void *data)
             dns_output_write_frame(out, current_frame);
 
             // relock the mutex, decref the frame
-            pthread_mutex_lock(out->collector_mutex);
+            if (pthread_mutex_lock(out->collector_mutex))
+                die("Error locking mutex");
 
             dns_timeframe_decref(current_frame);
             current_frame = NULL;
@@ -115,7 +119,10 @@ dns_output_thread_main(void *data)
             pthread_cond_wait(out->collector_output_cond, out->collector_mutex);
         }
     }
-    pthread_mutex_unlock(out->collector_mutex);
+
+    if (pthread_mutex_unlock(out->collector_mutex))
+        die("Error unlocking mutex");
+
     dns_output_close(out, last_frame_end);
 
     return NULL;

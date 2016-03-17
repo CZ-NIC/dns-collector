@@ -47,6 +47,7 @@ int main(int argc UNUSED, char **argv)
     log_register_type("spam");
     opt_parse(&dns_options, argv + 1);
     log_configured("default-log");
+    log_set_format(log_stream_by_flags(0), 0, LSFMT_LEVEL | LSFMT_TIME | LSFMT_TITLE | LSFMT_PID | LSFMT_USEC );
 
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wcast-align"

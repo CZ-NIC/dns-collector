@@ -7,7 +7,7 @@ ifeq ($(CC),clang)
 WARNS+=-Wno-gnu-statement-expression -Wno-language-extension-token
 endif
 
-CFLAGS=-O1 -g3 -std=gnu99 -pedantic $(WARNS) -I../libs/libucw/run/include/ -I../libs/lz4/lib/ # ADD -flto ?
+CFLAGS=-O1 -g3 -std=gnu99 -pedantic $(WARNS) -I../libs/libucw/run/include/ -I../libs/lz4/lib/ -rdynamic -pthread # ADD -flto ?
 
 # Using local static libucw and liblz4
 LDLIBS=../libs/libucw/run/lib/libucw-6.5.a ../libs/lz4/lib/liblz4.a -ltrace -lpthread
