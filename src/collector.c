@@ -270,8 +270,8 @@ dns_collector_process_packet(dns_collector_t *col, libtrace_packet_t *tp)
     dns_parse_error_t err;
     dns_packet_t *pkt = dns_packet_create_from_libtrace(col, tp, &err);
     if (!pkt) {
-        // TODO(tomas): drop packet
-        msg(L_WARN, "Dropping packet, err: %d", err);
+        // TODO(tomas): drop packet and dump/account it
+        msg(L_DEBUG, "Dropping packet, err: %d", err);
         return;
     }
 
