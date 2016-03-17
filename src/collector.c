@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -6,7 +7,7 @@
 #include <errno.h>
 #include <sys/select.h>
 #include <unistd.h>
-
+#include <pthread.h>
 #include <libtrace.h>
 
 #include "collector.h"
@@ -20,7 +21,11 @@ dns_collector_create(struct dns_config *conf)
 
     dns_collector_t *col = (dns_collector_t *)xmalloc_zero(sizeof(dns_collector_t));
 
-    pthread_mutex_init(&(col->collector_mutex), NULL);
+    pthread_mutexattr_t mutattr;
+    pthread_mutexattr_init(&mutattr);
+    pthread_mutexattr_settype(&mutattr, PTHREAD_MUTEX_ERRORCHECK_NP);
+
+    pthread_mutex_init(&(col->collector_mutex), &mutattr);
     pthread_cond_init(&(col->output_cond), NULL);
     pthread_cond_init(&(col->unblock_cond), NULL);
   
@@ -36,14 +41,17 @@ dns_collector_create(struct dns_config *conf)
 void
 dns_collector_start_output_threads(dns_collector_t *col)
 {
-    pthread_mutex_lock(&(col->collector_mutex));
+    if (pthread_mutex_lock(&(col->collector_mutex)))
+        die("Error locking mutex");
+
     CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
         msg(L_DEBUG, "Creating thread for %s", out->path_fmt);
         int r = pthread_create(&(out->thread), NULL, dns_output_thread_main, out);
         if (r)
             die("Thread creation failed [err %d].", r);
     }
-    pthread_mutex_unlock(&(col->collector_mutex));
+    if (pthread_mutex_unlock(&(col->collector_mutex)))
+        die("Error unlocking mutex");
 }
 
 void
@@ -51,12 +59,16 @@ dns_collector_stop_output_threads(dns_collector_t *col, enum dns_output_stop how
 {
     assert(col && how != dns_os_none);
 
-    pthread_mutex_lock(&(col->collector_mutex));
+    if (pthread_mutex_lock(&(col->collector_mutex)))
+        die("Error locking mutex");
+
     CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
         out->stop_flag = how;
     }
+
     pthread_cond_broadcast(&(col->output_cond));
-    pthread_mutex_unlock(&col->collector_mutex);
+    if (pthread_mutex_unlock(&(col->collector_mutex)))
+        die("Error unlocking mutex");
 
     CLIST_FOR_EACH(struct dns_output*, out, col->conf->outputs) {
         pthread_join(out->thread, NULL);
@@ -206,7 +218,13 @@ dns_collector_output_timeframe(struct dns_collector *col, struct dns_timeframe *
 {
     assert(col && tf && (tf->refcount == 0));
 
-    pthread_mutex_lock(&(col->collector_mutex));
+    if (pthread_mutex_lock(&(col->collector_mutex)))
+        die("Error locking mutex");
+
+    // inc and later dec refcount to free in case frame was not inserted anywhere
+    // and to hold the frame alive in case a thread gets woken up in waiting for unblock_cond
+    dns_timeframe_incref(tf);
+
 
     msg(L_DEBUG, "Pushing frame %.2f - %.2f (%d queries) to all outputs",
         dns_us_time_to_fsec(tf->time_start), dns_us_time_to_fsec(tf->time_end),
@@ -221,12 +239,12 @@ dns_collector_output_timeframe(struct dns_collector *col, struct dns_timeframe *
         // drop a frame when queue full
         dns_output_push_frame(out, tf);
     }
-    // inc and dec refcount to free in case frame was not inserted anywhere
-    dns_timeframe_incref(tf);
+
     dns_timeframe_decref(tf);
 
     pthread_cond_broadcast(&(col->output_cond));
-    pthread_mutex_unlock(&(col->collector_mutex));
+    if (pthread_mutex_unlock(&(col->collector_mutex)))
+        die("Error unlocking mutex");
 }
 
 void
