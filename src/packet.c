@@ -43,6 +43,7 @@ dns_packet_create_from_libtrace(dns_collector_t *col UNUSED, libtrace_packet_t *
     if (!transport_data) {
         // No transport layer found
         *err = DNS_PE_NETWORK;
+msg(L_DEBUG, "D0");
         return NULL;
     }
 
@@ -53,6 +54,7 @@ dns_packet_create_from_libtrace(dns_collector_t *col UNUSED, libtrace_packet_t *
     if ((frag_offset > 0) || (frag_more)) {
         // fragmented packet
         // TODO: reassemble?
+msg(L_DEBUG, "D1");
         *err = DNS_PE_FRAGMENTED;
         return NULL;
     }
@@ -60,10 +62,35 @@ dns_packet_create_from_libtrace(dns_collector_t *col UNUSED, libtrace_packet_t *
     // Protocol header skip
     switch(proto) {
         case TRACE_IPPROTO_TCP:
-            *err = DNS_PE_TRANSPORT;
-            return NULL;
-            // TODO: Check TCP packet for type etc. Drop SYN/ACK/...
-            //dns_data = trace_get_payload_from_tcp(transport_data, &remaining);
+            {/* to allow declaration in case */} 
+            // Check TCP packet for type etc. Drop SYN/FIN/...
+            libtrace_tcp_t *tcp = trace_get_tcp(tp);
+            if (tcp->syn || tcp->fin) {
+                *err = DNS_PE_TRANSPORT;
+msg(L_DEBUG, "D2a");
+                return NULL;
+            }
+            
+            // Below we assume that the TCP packet contains exactly one DNS
+            // message, verifying this by checking the 16 bits of DNS data
+            // lenght at the beginning of the packet
+            // TODO: CHange here when implementing TCP reconstruction
+            if (remaining < sizeof(uint16_t)) {
+                *err = DNS_PE_NETWORK;
+msg(L_DEBUG, "D2b");
+                return NULL;
+            }
+            dns_data = trace_get_payload_from_tcp(transport_data, &remaining);
+            size_t message_size = ntohs(*((uint16_t *)dns_data));
+            dns_data = ((uint16_t *)dns_data) + 1;
+            remaining -= sizeof(uint16_t);
+
+            // Check whether the indicated size matches the remaining packet size
+            if (message_size + sizeof(uint16_t) != trace_get_payload_length(tp)) {
+                *err = DNS_PE_TRANSPORT;
+msg(L_DEBUG, "D2c %lu %lu", message_size, trace_get_payload_length(tp));
+                return NULL;
+            }
             break;
         case TRACE_IPPROTO_UDP:
             dns_data = trace_get_payload_from_udp(transport_data, &remaining);
@@ -76,11 +103,13 @@ dns_packet_create_from_libtrace(dns_collector_t *col UNUSED, libtrace_packet_t *
             break;
         default:
             *err = DNS_PE_TRANSPORT;
+msg(L_DEBUG, "D3");
             return NULL;
     }
 
     if ((!dns_data) || (remaining < sizeof(struct dns_hdr))) {
         *err = DNS_PE_NETWORK;
+msg(L_DEBUG, "D4");
         return NULL;
     }
 
@@ -89,6 +118,7 @@ dns_packet_create_from_libtrace(dns_collector_t *col UNUSED, libtrace_packet_t *
     size_t dns_copy = remaining;
     if (dns_copy < sizeof(struct dns_hdr)) {
         *err = DNS_PE_NETWORK;
+msg(L_DEBUG, "D5");
         return NULL;
     }
 
@@ -100,6 +130,7 @@ dns_packet_create_from_libtrace(dns_collector_t *col UNUSED, libtrace_packet_t *
     pkt->dns_orig_len = trace_get_payload_length(tp);
     if (pkt->dns_orig_len == 0) {
         *err = DNS_PE_NETWORK;
+msg(L_DEBUG, "D6");
         dns_packet_destroy(pkt);
         return NULL;
     }
@@ -113,6 +144,7 @@ dns_packet_create_from_libtrace(dns_collector_t *col UNUSED, libtrace_packet_t *
            trace_get_destination_address(tp, (struct sockaddr *)&(pkt->dst_addr))
          )) {
         *err = DNS_PE_NETWORK;
+msg(L_DEBUG, "D7");
         dns_packet_destroy(pkt);
         return NULL;
     }
@@ -124,6 +156,7 @@ dns_packet_create_from_libtrace(dns_collector_t *col UNUSED, libtrace_packet_t *
     if (ntohs(pkt->dns_data->qs) != 1) {
         *err = DNS_PE_DNS;
         dns_packet_destroy(pkt);
+msg(L_DEBUG, "D8");
         return NULL;
     }
     pkt->dns_qname_raw = ((u_char *)(pkt->dns_data)) + sizeof(struct dns_hdr);
@@ -131,6 +164,7 @@ dns_packet_create_from_libtrace(dns_collector_t *col UNUSED, libtrace_packet_t *
     if (raw_len <= 0) {
         *err = DNS_PE_DNS;
         dns_packet_destroy(pkt);
+msg(L_DEBUG, "D9: %s", pkt->dns_qname_raw);
         return NULL;
     }
     pkt->dns_qname_raw_len = raw_len;
@@ -138,6 +172,7 @@ dns_packet_create_from_libtrace(dns_collector_t *col UNUSED, libtrace_packet_t *
     if (sizeof(struct dns_hdr) + pkt->dns_qname_raw_len + 2 * sizeof(uint16_t) > pkt->dns_data_len) {
         // captured data too short
         *err = DNS_PE_NETWORK;
+msg(L_DEBUG, "D10");
         dns_packet_destroy(pkt);
         return NULL;
     }
