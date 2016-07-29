@@ -3,7 +3,7 @@
 ## Requirements
 
 * Clang or GCC, make
-* Libraries: `apt-get install liblz4-dev libpcap-dev libtrace3-dev` 
+* Libraries: liblz4-dev libpcap-dev libtrace3-dev`libknot-dev (from [Knot PPA](https://launchpad.net/~cz.nic-labs/+archive/ubuntu/knot-dns))
 * Protocol Buffer libs (optional): `apt-get install protobuf-c-compiler protobuf-compiler libprotobuf-c-dev python-protobuf`
 
 ## Installation and usage
