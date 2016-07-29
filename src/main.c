@@ -4,7 +4,7 @@
 
 #include "common.h"
 #include "packet_frame.h"
-#include "packet_frame_logger.h"
+#include "worker_frame_logger.h"
 #include "input.h"
 #include "frame_queue.h"
 //#include "collector.h"
@@ -47,8 +47,8 @@ int main(int argc UNUSED, char **argv)
 
     struct dns_frame_queue *qinput = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
     struct dns_input *input = dns_input_create(qinput);
-    struct dns_packet_frame_logger *inputlog = dns_packet_frame_logger_create("inputlog", qinput, NULL);
-    dns_packet_frame_logger_start(inputlog);
+    struct dns_worker_frame_logger *inputlog = dns_worker_frame_logger_create("inputlog", qinput, NULL);
+    dns_worker_frame_logger_start(inputlog);
     dns_ret_t r;
 
     // Configure
@@ -96,12 +96,12 @@ int main(int argc UNUSED, char **argv)
     // Send the last frame, wait for threads to exit
 
     dns_input_finish(input);
-    dns_packet_frame_logger_finish(inputlog);
+    dns_worker_frame_logger_finish(inputlog);
 
     // Dealloc and cleanup
 
     dns_input_destroy(input);
-    dns_packet_frame_logger_destroy(inputlog);
+    dns_worker_frame_logger_destroy(inputlog);
     dns_frame_queue_destroy(qinput);
     GARY_FREE(main_inputs);
 
