@@ -14,6 +14,9 @@ struct dns_packet_frame {
     /** End timestamp. */
     dns_us_time_t time_end;
 
+    /** Frame type: 0 - packet load, 1 - final empty packet */
+    int type;
+
     /** Linked list of requests (some with responses) and responses without requests.
      * All owned by the frame. */
     clist packets;
@@ -28,19 +31,19 @@ struct dns_packet_frame {
 /**
  * Allocate and init the frame.
  */
-dns_packet_frame_t *
+struct dns_packet_frame *
 dns_packet_frame_create(dns_us_time_t time_start, dns_us_time_t time_end);
 
 /**
  * Destroy the frame and all inserted packets (and their responses).
  */
 void
-dns_packet_frame_destroy(dns_packet_frame_t *frame);
+dns_packet_frame_destroy(struct dns_packet_frame *frame);
 
 /**
  * Append the given packet to the timeframe sequence, taking ownership.
  */
 void
-dns_packet_frame_append_packet(dns_packet_frame_t *frame, dns_packet_t *pkt);
+dns_packet_frame_append_packet(struct dns_packet_frame *frame, dns_packet_t *pkt);
 
 #endif /* DNSCOL_PACKET_FRAME_H */

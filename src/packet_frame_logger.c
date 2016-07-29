@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <pthread.h>
 
 #include "packet_frame.h"
+#include "frame_queue.h"
 #include "packet_frame_logger.h"
 
 struct dns_packet_frame_logger *
@@ -30,22 +32,14 @@ dns_packet_frame_logger_destroy(struct dns_packet_frame_logger *l)
     free(l);
 }
 
-void
-dns_packet_frame_logger_start(struct dns_packet_frame_logger *l)
-{
-    if (pthread_mutex_trylock(&l->running) != 0)
-        die("starting a running logger");
-    pthread_create(l->thread, NULL, dns_packet_frame_logger_main, l);
-}
-
-static void
+static void*
 dns_packet_frame_logger_main(void *logger)
 {
     struct dns_packet_frame_logger *l = logger;
     int run = 1;
     while(run) {
         struct dns_packet_frame *f = dns_frame_queue_dequeue(l->in);
-        msg(L_INFO, "Frame through %s: %d packets, %d bytes, %f - %f", l->name, f->count, f->size,
+        msg(L_INFO, "Frame through %s: %ld packets, %lu bytes, %f - %f", l->name, f->count, f->size,
             dns_us_time_to_fsec(f->time_start), dns_us_time_to_fsec(f->time_end));
         if (f->type == 1) run = 0;
         if (l->out) {
@@ -54,6 +48,21 @@ dns_packet_frame_logger_main(void *logger)
             dns_packet_frame_destroy(f);
         }
     }
+    return NULL;
 }
 
+void
+dns_packet_frame_logger_finish(struct dns_packet_frame_logger *l)
+{
+    int r = pthread_join(l->thread, NULL);
+    assert(r = 0);
+}
+
+void
+dns_packet_frame_logger_start(struct dns_packet_frame_logger *l)
+{
+    if (pthread_mutex_trylock(&l->running) != 0)
+        die("starting a running logger");
+    pthread_create(&l->thread, NULL, dns_packet_frame_logger_main, l);
+}
 
