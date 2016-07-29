@@ -19,7 +19,7 @@
 struct dns_input {
 
     /** Libtrace current input name.
-     * Owned by the input, not NULL.
+     * Not owned by the input! (and not NULL)
      * Empty string for offline (pcap file input) processing. */
     char *uri;
 

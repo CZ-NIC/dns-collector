@@ -41,19 +41,22 @@ static struct opt_section dns_options = {
 
 int main(int argc UNUSED, char **argv)
 {
-//    struct dns_config conf;
     signal(SIGSEGV, segv_handler);
+
+    // Construct workflow
 
     struct dns_frame_queue *qinput = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
     struct dns_input *input = dns_input_create(qinput);
     struct dns_packet_frame_logger *inputlog = dns_packet_frame_logger_create("inputlog", qinput, NULL);
-    GARY_INIT(main_inputs, 0);
+    dns_packet_frame_logger_start(inputlog);
+    dns_ret_t r;
 
-    cf_declare_rel_section("dnscol_input", &dns_input_section, &input, 0);
+    // Configure
+
+    GARY_INIT(main_inputs, 0);
+    cf_declare_rel_section("dnscol_input", &dns_input_section, input, 0);
     log_register_type("spam");
     opt_parse(&dns_options, argv + 1);
-    log_configured("default-log");
-    log_set_format(log_stream_by_flags(0), 0, LSFMT_LEVEL | LSFMT_TIME | LSFMT_TITLE | LSFMT_PID | LSFMT_USEC );
 
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wcast-align"
@@ -66,39 +69,44 @@ int main(int argc UNUSED, char **argv)
         return 2;
     }
 
-/*    dns_collector_t *col = dns_collector_create(&conf);
+    log_configured("default-log");
+    log_set_format(log_stream_by_flags(0), 0, LSFMT_LEVEL | LSFMT_TIME | LSFMT_TITLE | LSFMT_PID | LSFMT_USEC );
 
-    dns_collector_start_output_threads(col);
-*/
+    // Main loop
+
     if (*main_inputs) {
         // offline pcaps
-        for (char **in = main_inputs; *in; in++)
-            dns_input_process(input, *in);
+        for (char **in = main_inputs; *in; in++) {
+            char fn[1024];
+            snprintf(fn, sizeof(fn), "pcapfile:%s", *in);
+            r = dns_input_process(input, fn);
+            if (r != DNS_RET_OK) {
+                msg(L_INFO, "Processing of %s unsuccesfull (code %d)", fn, r);
+            }
+        }
     } else {
         // live
-        dns_input_process(input, NULL);
+        input->online = 1;
+        r = dns_input_process(input, NULL);
+        if (r != DNS_RET_OK) {
+            msg(L_INFO, "Processing of %s unsuccesfull (code %d)", input->uri, r);
+        }
     }
 
     // Send the last frame, wait for threads to exit
+
     dns_input_finish(input);
     dns_packet_frame_logger_finish(inputlog);
 
-    // Dealloc
+    // Dealloc and cleanup
+
     dns_input_destroy(input);
     dns_packet_frame_logger_destroy(inputlog);
     dns_frame_queue_destroy(qinput);
     GARY_FREE(main_inputs);
 
-
-//    dns_collector_finish(col);
-//    dns_collector_stop_output_threads(col, dns_os_queue);
-
-    //dns_stats_fprint(&(col->stats), col->conf, stderr);
-
-//    dns_collector_destroy(col);
-
-    // Valgrind registers 13 unfreed blocks amounting to libUCW config data.
-    // There seems to be no way to free it.
+    // NOTE: Valgrind registers 13 unfreed blocks amounting to libUCW config data.
+    // There seems to be no clean way to free it.
 
     return 0;
 }
