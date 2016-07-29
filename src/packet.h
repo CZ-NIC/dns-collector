@@ -8,17 +8,22 @@
 
 #include <stdint.h>
 #include <libtrace.h>
+#include <libknot/libknot.h>
 
 #include "common.h"
-#include "dns.h"
+//#include "dns.h"
 
 /**
  * Main structure storing the packet data and parsed values.
  */
 
 struct dns_packet {
-    // Phys. layer
-    
+    /** Circular linked list node */
+    cnode node;
+
+    /** Secondary sircular linked list node (used for hash bucket chains)  */
+    cnode secnode;
+
     /** Timestamp [us since Epoch] */
     dns_us_time_t ts;
 
@@ -31,58 +36,43 @@ struct dns_packet {
     /** Transport layer protocol number */
     uint8_t protocol;
 
-    /** When this is a request, a pointer to an optional matching response.
-     * Owned by this packet. */
+    /** TODO: More TCP/IP features */
+
+    /** When this is a request, a pointer to an matching response.
+     * The response packet is then owned by this packet. */
     struct dns_packet *response;
 
-    /** When a packet is in timeframe hash, next packet with the same hash.
-     * Not owned by this packet. */
-    struct dns_packet *next_in_hash;
+    /** DNS data copy, owned by the packet. */
+    char *dns_data;
 
-    /** When a packet is in timeframe packet sequence, next packet in the sequence.
-     * Not owned by this packet. */
-    struct dns_packet *next_in_timeframe;
+    /** Length of the DNS data. */
+    size_t dns_data_size;
 
-    /** The length of original DNS packet (starting at the DNS header). */
-    uint32_t dns_orig_len;
+    /** Length of the DNS data befora any shortening. */
+    size_t dns_data_size_orig;
 
-    /** Pointer to raw QNAME within `dns_data`. */
-    u_char *dns_qname_raw;
+    /** libknot packet structure for DNS parsing. Owned by the packet. */
+    knot_pkt_t *knot_packet;
 
-    /** Length of qname_raw (incl. the final '\0' */
-    uint32_t dns_qname_raw_len;
-
-    /** Query type (host byte-order). */
-    uint16_t dns_qtype;
-
-    /** Query class (host byte-order). */
-    uint16_t dns_qclass;
-
-    /** Captured DNS data length (starting at the DNS header).
-     * Parsing the packet only succeeds if the captured data contains the header, QNAME, QCLASS and QTYPE. */
-    uint32_t dns_data_len;
-
-    /** DNS packet data starting with `struct dns_hdr` allocated directly after `struct dns_packet`.
-     * This data is in network byte-order!
-     *
-     * This entry MUST be last in `struct dns_packet`. */
-    struct dns_hdr dns_data[];
+    /** Estimate of total packet memory size (for resource limiting) */
+    size_t memory_size;
 };
 
+// TODO: below
 
 /** @name Getters for packet DNS properties */
 /** @{ */
 
 /** Is the packet DNS request? */
-#define DNS_PACKET_IS_REQUEST(pkt) (DNS_HDR_FLAGS_QR((pkt)->dns_data->flags) == 0)
+#define DNS_PACKET_IS_REQUEST(pkt) (! DNS_PACKET_IS_RESPONSE(pkt))
 
 /** Is the packet DNS response? */
-#define DNS_PACKET_IS_RESPONSE(pkt) (DNS_HDR_FLAGS_QR((pkt)->dns_data->flags) == 1)
+#define DNS_PACKET_IS_RESPONSE(pkt) (knot_pkt_type((pkt)->knot_packet) & KNOT_RESPONSE)
 
-/** Return the request part of the query (or NULL id response-only) */
+/** Return the request part of the query (or NULL if response-only) */
 #define DNS_PACKET_REQUEST(pkt) (DNS_PACKET_IS_REQUEST(pkt) ? (pkt) : NULL)
 
-/** Return the response part of the query (or NULL id request-only) */
+/** Return the response part of the query (or NULL if request-only) */
 #define DNS_PACKET_RESPONSE(pkt) (DNS_PACKET_IS_RESPONSE(pkt) ? (pkt) : (pkt)->response)
 
 /** @} */
@@ -132,90 +122,46 @@ struct dns_packet {
 
 /** @} */
 
-/*
-inline uint16_t
-dns_sockaddr_port(void *sa)
-{
-    if (DNS_SOCKADDR_AF(sa) == AF_INET)
-        return ((struct sockaddr_in*)(void*)sa)->sin_port;
-    if (DNS_SOCKADDR_AF(sa) == AF_INET6)
-        return ((struct sockaddr_in6*)(void*)sa)->sin6_port;
-    assert(!"Unsupported sockaddr AF");
-}
-#define DNS_SOCKADDR_PORT(sa) dns_sockaddr_port(sa)
-
-inline u_char *
-dns_sockaddr_addr(struct sockaddr *sa)
-{
-    if (DNS_SOCKADDR_AF(sa) == AF_INET)
-        return (u_char *)&(((struct sockaddr_in*)(void*)sa)->sin_addr);
-    if (DNS_SOCKADDR_AF(sa) == AF_INET6)
-        return (u_char *)&(((struct sockaddr_in6*)(void*)sa)->sin6_addr);
-    assert(!"Unsupported sockaddr AF");
-}
-#define DNS_SOCKADDR_ADDR(sa) dns_sockaddr_addr(sa)
-
-inline size_t
-dns_sockaddr_addrlen(struct sockaddr *sa)
-{
-    if (DNS_SOCKADDR_AF(sa) == AF_INET)
-        return 4;
-    if (DNS_SOCKADDR_AF(sa) == AF_INET6)
-        return 16;
-    assert(!"Unsupported sockaddr AF");
-}
-#define DNS_SOCKADDR_ADDRLEN(sa) dns_sockaddr_addrlen(sa)
-
-inline struct sockaddr *
-dns_packet_client_sockaddr(struct dns_packet *pkt)
-{
-    if (DNS_PACKET_IS_REQUEST(pkt))
-        return (struct sockaddr*)(&(pkt)->src_addr);
-    else
-        return (struct sockaddr*)(&(pkt)->dst_addr);
-}
-#define DNS_PACKET_CLIENT_SOCKADDR(pkt) dns_packet_server_sockaddr(pkt)
-
-inline struct sockaddr *
-dns_packet_server_sockaddr(struct dns_packet *pkt)
-{
-    if (DNS_PACKET_IS_RESPONSE(pkt))
-        return (struct sockaddr*)(&(pkt)->src_addr);
-    else
-        return (struct sockaddr*)(&(pkt)->dst_addr);
-}
-#define DNS_PACKET_SERVER_SOCKADDR(pkt) dns_packet_server_sockaddr(pkt)
-*/
-
-
 /**
- * Allocate and initialise `struct dns_packet` with `dns_data_len` extra bytes for dns header and data.
- * Sets `dns_data_len`.
+ * Allocate and initialise `struct dns_packet` from given data.
+ * The data is copied (need not dtay valid afterwards).
+ * Initializes knot_packet but no parsing is done.
+ * When dns_data == NULL allocates new block.
  */
-dns_packet_t*
-dns_packet_create(size_t extra_size);
+struct dns_packet*
+dns_packet_create(void *dns_data, size_t dns_data_size);
 
 /**
  * Create `dns_packet` from a given `libtrace_packet_t`.
- * Copies DNS data from the packet and parses the DNS packet data.
- * Returns NULL on any error and in that case `err` is set.
+ * Copies DNS data from the packet, so the libtrace_packet_t is free to be reused.
+ * The new packet address is stored in pktp when successfull (DNS_RET_OK).
  */
-dns_packet_t*
-dns_packet_create_from_libtrace(dns_collector_t *col, libtrace_packet_t *tp, dns_parse_error_t *err);
+dns_ret_t
+dns_packet_create_from_libtrace(libtrace_packet_t *tp, struct dns_packet **pktp);
 
 /**
  * Free a given packet and its owned data.
  */
 void
-dns_packet_destroy(dns_packet_t *pkt);
+dns_packet_destroy(struct dns_packet *pkt);
+
+
+
+
+
+
+
+
+
+
 
 /**
  * Drop and optionally dump a packet, depending on the reason and config.
  * Also records the packet in stats. May check the dump quota.
  * Does not destroy the packet.
  */
-void
-dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, enum dns_drop_reason reason);
+//void
+//dns_drop_packet(dns_collector_t *col, struct dns_packet* pkt, enum dns_drop_reason reason);
 
 /**
  * Parse initialised pkt and fill in all fields.
@@ -226,8 +172,8 @@ dns_drop_packet(dns_collector_t *col, dns_packet_t* pkt, enum dns_drop_reason re
  * Returns DNS_RET_OK on success, in this case dns_data is allocated
  * and owned by the packet.
  */
-dns_ret_t
-dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt);
+//dns_ret_t
+//dns_packet_parse(dns_collector_t *col, struct dns_packet* pkt);
 
 /**
  * Compare two packets as request+response.
@@ -235,8 +181,8 @@ dns_packet_parse(dns_collector_t *col, dns_packet_t* pkt);
  * Assumes `dns_packet_parse_dns()` was run successfully on both.
  * Uses IPver, TCP/UDP, both port numbers, both IPs, DNS ID and QNAME.
  */
-int
-dns_packets_match(const dns_packet_t* request, const dns_packet_t* response);
+//int
+//dns_packets_match(const struct dns_packet* request, const struct dns_packet* response);
 
 /**
  * Compute a packet hash function parameterized by `param`.
@@ -244,8 +190,8 @@ dns_packets_match(const dns_packet_t* request, const dns_packet_t* response);
  * Assumes `dns_packet_parse_dns()` was run successfully.
  * Uses IPver, TCP/UDP, both port numbers, both IPs, DNS ID and QNAME.
  */
-uint64_t
-dns_packet_hash(const dns_packet_t* pkt, uint64_t param);
+//uint64_t
+//dns_packet_hash(const struct dns_packet* pkt, uint64_t param);
 
 /**
  * Packet flags field bits definition (collector query flags).
@@ -273,7 +219,7 @@ dns_packet_hash(const dns_packet_t* pkt, uint64_t param);
  * Return the combined flags `DNS_PACKET_*` for the packet.
  */
 uint16_t
-dns_packet_get_output_flags(const dns_packet_t* pkt);
+dns_packet_get_output_flags(const struct dns_packet* pkt);
 
 
 

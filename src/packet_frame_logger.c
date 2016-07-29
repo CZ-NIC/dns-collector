@@ -39,15 +39,21 @@ dns_packet_frame_logger_main(void *logger)
     int run = 1;
     while(run) {
         struct dns_packet_frame *f = dns_frame_queue_dequeue(l->in);
-        msg(L_INFO, "Frame through %s: %ld packets, %lu bytes, %f - %f", l->name, f->count, f->size,
-            dns_us_time_to_fsec(f->time_start), dns_us_time_to_fsec(f->time_end));
-        if (f->type == 1) run = 0;
+        if (f->time_start == DNS_NO_TIME) {
+            msg(L_INFO, "Frame (type %d) through %s: %ld packets, %lu bytes, no time info", f->type, l->name, f->count, f->size);
+        } else {
+            msg(L_INFO, "Frame (type %d) through %s: %ld packets, %lu bytes, %.3f - %.3f", f->type, l->name, f->count, f->size,
+                dns_us_time_to_fsec(f->time_start), dns_us_time_to_fsec(f->time_end));
+        }
+        if (f->type == 1)
+            run = 0;
         if (l->out) {
             dns_frame_queue_enqueue(l->out, f);
         } else {
             dns_packet_frame_destroy(f);
         }
     }
+    pthread_mutex_unlock(&l->running);
     return NULL;
 }
 
@@ -55,7 +61,8 @@ void
 dns_packet_frame_logger_finish(struct dns_packet_frame_logger *l)
 {
     int r = pthread_join(l->thread, NULL);
-    assert(r = 0);
+    assert(r == 0);
+    msg(L_DEBUG, "Worker frame logger \"%s\" stopped and joined", l->name);
 }
 
 void
@@ -63,6 +70,8 @@ dns_packet_frame_logger_start(struct dns_packet_frame_logger *l)
 {
     if (pthread_mutex_trylock(&l->running) != 0)
         die("starting a running logger");
-    pthread_create(&l->thread, NULL, dns_packet_frame_logger_main, l);
+    int r = pthread_create(&l->thread, NULL, dns_packet_frame_logger_main, l);
+    assert(r == 0);
+    msg(L_DEBUG, "Worker frame logger \"%s\" started", l->name);
 }
 

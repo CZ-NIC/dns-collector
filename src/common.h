@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <sys/time.h>
+#include <libknot/libknot.h>
 
 #pragma GCC diagnostic push 
 #pragma GCC diagnostic ignored "-Wcast-align"
@@ -52,15 +53,25 @@ struct dns_output;
 /* Enums */
 
 /**
- * Dnscol return/error codes.
+ * Dnscol return and error codes.
+ * Extends enum knot_error;
  */
 
 enum dns_ret {
     DNS_RET_OK = 0,
-    DNS_RET_ERR = -1,
-    DNS_RET_EOF = 1,
-    DNS_RET_TIMEOUT = 2,
-    DNS_RET_DROPPED = 3,
+
+    DNS_RET_ERR = KNOT_ERROR_MIN - 1000,
+    DNS_RET_EOF,
+    DNS_RET_TIMEOUT,
+    DNS_RET_DROP_NETWORK, // Network layers parsing error
+    DNS_RET_DROP_FRAGMENTED, // TCP fragments unsupported
+    DNS_RET_DROP_TRANSPORT, // Unsupported transport
+
+    /* Sentinel */
+    DNS_RET_LAST,
+
+    /* Some errors mapped to KNOT errors */
+    DNS_RET_DROP_MALF = KNOT_EMALF, // Malformed or short DNS data
 };
 
 typedef enum dns_ret dns_ret_t;

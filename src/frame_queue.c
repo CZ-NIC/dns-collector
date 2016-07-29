@@ -14,6 +14,7 @@ dns_frame_queue_create(size_t capacity, size_t size_cap, enum dns_frame_queue_on
     struct dns_frame_queue *q = (struct dns_frame_queue*) malloc(sizeof(struct dns_frame_queue));
     q->queue = (struct dns_packet_frame**) malloc(sizeof(struct dns_packet_frame *) * capacity);
     q->length = 0;
+    q->start = 0;
     q->capacity = capacity;
     q->on_full = on_full;
     q->total_size = 0;
