@@ -47,27 +47,27 @@ struct dns_frame_queue {
  * Size is counted in bytes as reported by the contained structures, size_cap == 0 ignores the cap.
  * The parameter on_full determines the behaviour on full queue, see enum dns_frame_queue_on_full.
  */
-struct dns_frame_queue_create *
-dns_new_frame_queue(size_t capacity, size_t size_cap, enum dns_frame_queue_on_full on_full);
+struct dns_frame_queue *
+dns_frame_queue_create(size_t capacity, size_t size_cap, enum dns_frame_queue_on_full on_full);
 
 /**
  * Free the queue and all contained frames.
  */
 void
-dns_frame_queue_destroy(struct dns_create_frame_queue* q);
+dns_frame_queue_destroy(struct dns_frame_queue* q);
 
 /**
  * Enqueue a frame. Capacity and size bounds are handled based on on_full.
  * Blocks only on DNS_QUEUE_BLOCK.
  */
 void
-dns_frame_queue_enqueue(struct dns_create_frame_queue* q, struct dns_packet_frame *f);
+dns_frame_queue_enqueue(struct dns_frame_queue* q, struct dns_packet_frame *f);
 
 /**
  * Dequeues the oldest frame, blocks on empty queue.
  */
 struct dns_packet_frame *
-dns_frame_queue_dequeue(struct dns_create_frame_queue* q);
+dns_frame_queue_dequeue(struct dns_frame_queue* q);
 
 
 #endif /* DNSCOL_FRAME_QUEUE_H */

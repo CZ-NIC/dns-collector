@@ -9,28 +9,38 @@
 
 #include "common.h"
 #include "collector.h"
-#include "timeframe.h"
+#include "packet_frame.h"
+#include "frame_queue.h"
 #include "input.h"
 
 
+/* Unused
 static char *
 dns_input_conf_init(void *data)
 {
-    struct dns_input *input = (struct dns_input *) data;
-    input->snaplen = -1;
-    input->uri = NULL;
-    input->bpf_string = NULL;
-    input->promisc = 0;
-    input->bpf_filter = NULL;
-
+    struct dns_input *input UNUSED = data;
     return NULL;
 }
+*/
 
-
+/**
+ * Finalise and check input configuration.
+ * Note that this may be called repeatedly.
+ */
 static char *
 dns_input_conf_commit(void *data)
 {
-    struct dns_input *input UNUSED = (struct dns_input *) data;
+    struct dns_input *input = data;
+
+    if (input->frame_max_duration_sec < 0.001)
+        return "Input frame_max_duration too small, 0.0001s minimum.";
+    input->frame_max_duration = dns_fsec_to_us_time(input->frame_max_duration_sec);
+
+    if (strlen(input->uri) > 0) {
+        input->online = 1;
+    } else {
+        input->online = 0;
+    }
 
     return NULL;
 }
@@ -38,22 +48,105 @@ dns_input_conf_commit(void *data)
 
 struct cf_section dns_input_section = {
     CF_TYPE(struct dns_input),
-    .init = &dns_input_conf_init,
+/*    .init = &dns_input_conf_init, -- unused */
     .commit = &dns_input_conf_commit,
     CF_ITEMS {
         CF_STRING("device", PTR_TO(struct dns_input, uri)),
         CF_STRING("filter", PTR_TO(struct dns_input, bpf_string)),
         CF_INT("snaplen", PTR_TO(struct dns_input, snaplen)),
         CF_INT("promiscuous", PTR_TO(struct dns_input, promisc)),
+        CF_DOUBLE("frame_max_duration", PTR_TO(struct dns_input, frame_max_duration_sec)),
+        CF_INT("frame_max_size", PTR_TO(struct dns_input, frame_max_size)),
         CF_END
     }
 };
 
 
-void
-dns_input_close(struct dns_input *input)
+struct dns_input *
+dns_input_create(struct dns_frame_queue *output)
 {
-    assert(input && input->trace && input->packet);
+    struct dns_input *input = xmalloc_zero(sizeof(struct dns_input));
+
+    input->snaplen = -1;
+    input->online = 0;
+    input->uri = strdup("");
+    input->output = output;
+    input->frame = dns_packet_frame_create(DNS_NO_TIME, DNS_NO_TIME);
+    input->frame_max_duration_sec = 1.0;
+    input->frame_max_size = 1024 * 1024; // 1MB
+    char *r = dns_input_conf_commit(input); // Finish default configuration
+    assert(r == NULL);
+
+    return input;
+}
+
+/**
+ * Outputs the current frame and creates a new one.
+ */
+
+static void
+dns_input_output_frame(struct dns_input *input)
+{
+    assert(input && input->output && input->frame);
+
+    struct dns_packet_frame *new_frame = dns_packet_frame_create(input->frame->time_end, input->frame->time_end);
+    dns_frame_queue_enqueue(input->output, input->frame); // Hand over ownership
+    input->frame = new_frame;
+}
+
+/**
+ * Output packet frames until the given time fits within the current frame.
+ * Sets the current frame time if not set yet (DNS_NO_TIME).
+ */
+
+static void
+dns_input_advance_time_to(struct dns_input *input, dns_us_time_t time)
+{
+    if (input->frame->time_start == DNS_NO_TIME) {
+        input->frame->time_start = time;
+        input->frame->time_end = time;
+    }
+    while (time >= input->frame->time_start + input->frame_max_duration) {
+        assert(input->frame->time_end <= input->frame->time_start + input->frame_max_duration);
+        input->frame->time_end = input->frame->time_start + input->frame_max_duration;
+        dns_input_output_frame(input);
+    }
+    input->frame->time_end = MAX(input->frame->time_end, time);
+}
+
+
+void
+dns_input_finish(struct dns_input *input)
+{
+    assert(input && input->output && input->frame);
+
+    dns_input_output_frame(input);
+
+    // One final empty frame
+    input->frame->type = 1;
+    dns_frame_queue_enqueue(input->output, input->frame);
+    input->frame = NULL;
+}
+
+
+void
+dns_input_destroy(struct dns_input *input)
+{
+    assert(input && !input->trace && !input->packet && input->output && !input->frame && input->uri);
+
+    free(input->uri);
+    free(input);
+}
+
+
+/**
+ * Actually closes the open trace.
+ */
+
+static void
+dns_input_trace_close(struct dns_input *input)
+{
+    assert(input && input->trace && input->packet && input->output && input->frame);
 
     if (input->bpf_filter) {
         trace_destroy_filter(input->bpf_filter);
@@ -67,11 +160,14 @@ dns_input_close(struct dns_input *input)
     input->packet = NULL;
 }
 
+/**
+ * Actually opens a live or offline trace given by input->uri.
+ */
 
-dns_ret_t
-dns_input_open(struct dns_input *input)
+static dns_ret_t
+dns_input_trace_open(struct dns_input *input)
 {
-    assert(input && !input->trace && !input->packet);
+    assert(input && input->uri && input->output && !input->trace && !input->packet);
     int r;
 
     input->packet = trace_create_packet();
@@ -88,12 +184,18 @@ dns_input_open(struct dns_input *input)
         return DNS_RET_ERR;
     }
 
-    if (input->offline) {
+    if (!input->online) {
         // offline from a pcap file
         int enable = 1;
         r = trace_config(input->trace, TRACE_OPTION_EVENT_REALTIME, &enable);
         if (r < 0)
             msg(L_ERROR, "libtrace error setting no-wait reading for '%s': %s", input->uri, trace_get_err(input->trace).problem);
+    }
+
+    if (input->online) {
+        struct timespec now;
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        dns_input_advance_time_to(input, dns_us_time_from_timespec(&now));
     }
 
     r = 0;
@@ -130,5 +232,59 @@ dns_input_open(struct dns_input *input)
 
     return DNS_RET_OK;
 }
+
+/**
+ * Read and process the next packet from an input trace.
+ */
+static dns_ret_t
+dns_input_read_next_packet(struct dns_input *input)
+{
+    int r = trace_read_packet(input->trace, input->packet);
+    if (r == 0)
+        return DNS_RET_EOF;
+    if (r < 0)
+        return DNS_RET_ERR;
+
+    dns_parse_error_t parse_err;
+    struct dns_packet *pkt = dns_packet_create_from_libtrace(input->packet, &parse_err);
+    if (!pkt) {
+        // TODO: dump and account the invalid packet, use err
+        return DNS_RET_OK;
+    }
+
+    dns_input_advance_time_to(input, pkt->ts);
+    dns_packet_frame_append_packet(input->frame, pkt);
+    return DNS_RET_OK;
+}
+    
+dns_ret_t
+dns_input_process(struct dns_input *input, const char *offline_uri)
+{
+    assert((!!input->online) == (!offline_uri));
+    dns_ret_t r;
+
+    if (!input->online) {
+        if (input->uri)
+            free(input->uri);
+        input->uri = strdup(offline_uri);
+    }
+    
+    r = dns_input_trace_open(input);
+    if (r != DNS_RET_OK)
+        return r;
+
+    while (1) {
+        // Naive loop, TODO: event loop and SIGINT handling
+        r = dns_input_read_next_packet(input);
+        if (r == DNS_RET_EOF)
+            break;
+        if (r != DNS_RET_OK)
+            return r;
+    }
+
+    dns_input_trace_close(input);
+    return DNS_RET_OK;
+}
+
 
 

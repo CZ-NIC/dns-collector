@@ -8,14 +8,17 @@ WARNS+=-Wno-gnu-statement-expression -Wno-language-extension-token
 endif
 
 CFLAGS=-O1 -g3 -std=gnu99 -pedantic $(WARNS) -I../libs/libucw/run/include/ -I../libs/lz4/lib/ -rdynamic -pthread # ADD -flto ?
+#CFLAGS+= -I../libs/knot/src/
 
 # Using local static libucw and liblz4
 LDLIBS=../libs/libucw/run/lib/libucw-6.5.a ../libs/lz4/lib/liblz4.a -ltrace -lpthread
+#LDLIBS+= ../libs/knot/src/libknot.la
 LDFLAGS=
 
 PROG=dnscol
 DEPS=$(wildcard *.h)
-SRCS=collector.c common.c config.c dns.c main.c output.c output_compression.c packet.c stats.c timeframe.c output_csv.c input.c
+#SRCS=collector.c common.c config.c dns.c main.c output.c output_compression.c packet.c stats.c timeframe.c output_csv.c input.c
+SRCS=common.c input.c frame_queue.c packet_frame.c packet_frame_logger.c main.c
 OBJS=$(sort $(SRCS:.c=.o))
 
 all: $(PROG)
