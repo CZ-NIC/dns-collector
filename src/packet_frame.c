@@ -42,6 +42,8 @@ void
 dns_packet_frame_append_packet(struct dns_packet_frame *frame, dns_packet_t *pkt)
 {
     clist_add_tail(&frame->packets, &pkt->node);
+    if (frame->time_end == DNS_NO_TIME || frame->time_end < pkt->ts)
+        frame->time_end = pkt->ts;
     frame->count ++;
     frame->size += pkt->memory_size;
 }
