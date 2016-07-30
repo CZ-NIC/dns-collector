@@ -52,6 +52,11 @@ dns_frame_queue_enqueue(struct dns_frame_queue* q, struct dns_packet_frame *f)
 {
     pthread_mutex_lock(&q->mutex);
 
+    if (q == NULL) {
+        dns_packet_frame_destroy(f);
+        return;
+    }
+
     if ((q->size_cap > 0) && (f->size > q->size_cap)) {
         dns_packet_frame_destroy(f);
         f = NULL;

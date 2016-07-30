@@ -35,6 +35,12 @@ struct dns_packet_frame *
 dns_packet_frame_create(dns_us_time_t time_start, dns_us_time_t time_end);
 
 /**
+ * Allocate and init the final frame with given time.
+ */
+struct dns_packet_frame *
+dns_packet_frame_create_final(dns_us_time_t time);
+
+/**
  * Destroy the frame and all inserted packets (and their responses).
  */
 void

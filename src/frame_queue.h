@@ -59,6 +59,7 @@ dns_frame_queue_destroy(struct dns_frame_queue* q);
 /**
  * Enqueue a frame. Capacity and size bounds are handled based on on_full.
  * Blocks only on DNS_QUEUE_BLOCK.
+ * q may be NULL, then the frame is destroyed.
  */
 void
 dns_frame_queue_enqueue(struct dns_frame_queue* q, struct dns_packet_frame *f);
