@@ -1,12 +1,12 @@
-#ifndef DNSCOL_PACKET_PACKET_MATCHER_H
-#define DNSCOL_PACKET_PACKET_MATCHER_H
+#ifndef DNSCOL_WORKER_PACKET_MATCHER_H
+#define DNSCOL_WORKER_PACKET_MATCHER_H
 
 #include "common.h"
 
 struct dns_frame_queue;
 struct dns_packet_hash;
 
-#define INITIAL_HASH_SIZE 1024
+#define WORKER_PACKET_MATCHER_MIN_HASH_SIZE 1024
 
 /**
  * A worker matching requests to responses within a time window.
@@ -17,14 +17,31 @@ struct dns_packet_hash;
 struct dns_worker_packet_matcher {
     /** Input and output queue. Output may be NULL (discard). */
     struct dns_frame_queue *in, *out;
+
     /** The thread processing this output. Owned by the output. */
     pthread_t thread;
+
     /** The mutex indicating that the thread is started and running. */
     pthread_mutex_t running;
+
     /** The hash table with packets */
     dns_packet_hash *hash_table;
+
+    /** The hash table with packets */
+    clist packet_queue;
+
     /** The length of the window for finding matches */
     dns_us_time_t matching_duration;
+
+    /** Maximum packet frame duration */
+    dns_us_time_t frame_max_duration;
+
+    /** Maximum packet frame size in bytes */
+    int frame_max_size;
+
+    dns_packet_frame *inframe;
+    dns_packet_frame *outframe;
+    dns_us_time_t current_time;
 };
 
 /**
@@ -51,4 +68,4 @@ dns_worker_packet_matcher_destroy(struct dns_worker_packet_matcher *pm);
 void
 dns_worker_packet_matcher_start(struct dns_worker_packet_matcher *pm);
 
-#endif /* DNSCOL_PACKET_PACKET_MATCHER_H */
+#endif /* DNSCOL_WORKER_PACKET_MATCHER_H */
