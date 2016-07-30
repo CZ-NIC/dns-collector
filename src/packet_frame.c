@@ -19,6 +19,15 @@ dns_packet_frame_create(dns_us_time_t time_start, dns_us_time_t time_end)
     return frame;
 }
 
+
+struct dns_packet_frame *
+dns_packet_frame_create_final(dns_us_time_t time)
+{
+    struct dns_packet_frame *frame = dns_packet_frame_create(time, time);
+    frame->type = 1;
+    return frame;
+}
+
 void
 dns_packet_frame_destroy(struct dns_packet_frame *frame)
 {

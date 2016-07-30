@@ -72,7 +72,7 @@ dns_input_create(struct dns_frame_queue *output)
 static void
 dns_input_output_frame(struct dns_input *input)
 {
-    assert(input && input->output && input->frame);
+    assert(input && input->frame);
 
     struct dns_packet_frame *new_frame = dns_packet_frame_create(input->frame->time_end, input->frame->time_end);
     dns_frame_queue_enqueue(input->output, input->frame); // Hand over ownership
@@ -107,7 +107,7 @@ dns_input_advance_time_to(struct dns_input *input, dns_us_time_t time)
 void
 dns_input_finish(struct dns_input *input)
 {
-    assert(input && input->output && input->frame);
+    assert(input && input->frame);
 
     dns_input_output_frame(input);
 
@@ -134,7 +134,7 @@ dns_input_destroy(struct dns_input *input)
 static void
 dns_input_trace_close(struct dns_input *input)
 {
-    assert(input && input->trace && input->packet && input->output && input->frame);
+    assert(input && input->trace && input->packet && input->frame);
 
     if (input->bpf_filter) {
         trace_destroy_filter(input->bpf_filter);
@@ -155,7 +155,7 @@ dns_input_trace_close(struct dns_input *input)
 static dns_ret_t
 dns_input_trace_open(struct dns_input *input)
 {
-    assert(input && input->uri && input->output && !input->trace && !input->packet);
+    assert(input && input->uri && !input->trace && !input->packet);
     int r;
 
     input->trace = trace_create(input->uri);

@@ -47,8 +47,7 @@ dns_worker_frame_logger_main(void *logger)
         }
         if (f->type == 1)
             run = 0;
-        if (l->out) {
-            dns_frame_queue_enqueue(l->out, f);
+        dns_frame_queue_enqueue(l->out, f);
         } else {
             dns_packet_frame_destroy(f);
         }
