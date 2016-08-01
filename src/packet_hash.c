@@ -27,7 +27,7 @@ dns_packet_hash_create(size_t capacity, dns_hash_value_t seed)
 void
 dns_packet_hash_destroy(struct dns_packet_hash *h)
 {
-    for (dns_packet_hash i = 0; i < h->capacity; i++)
+    for (dns_hash_value_t i = 0; i < h->capacity; i++)
         for (struct dns_packet_hash_bucket *b = h->data[i]; b;) {
             struct dns_packet_hash_bucket *t = b->next;
             free(b);
@@ -48,11 +48,11 @@ dns_packet_hash_resize(struct dns_packet_hash *h, size_t new_capacity)
     if (new_capacity == h->capacity)
         return;
 
-    struct dns_packet_hash_bucket **new_data = xmalloc_zero(new_size * sizeof(struct dns_packet_hash_bucket*));
-    for (dns_packet_hash i = 0; i < h->capacity; i++)
+    struct dns_packet_hash_bucket **new_data = xmalloc_zero(new_capacity * sizeof(struct dns_packet_hash_bucket*));
+    for (dns_hash_value_t i = 0; i < h->capacity; i++)
         for (struct dns_packet_hash_bucket *b = h->data[i]; b;) {
             struct dns_packet_hash_bucket *t = b->next;
-            dns_packet_hash mod_hash = b->hash_value % new_size;
+            dns_hash_value_t mod_hash = b->hash_value % new_capacity;
             b->next = new_data[mod_hash];
             b->prevp = &new_data[mod_hash];
             new_data[mod_hash] = b;
@@ -71,11 +71,12 @@ dns_packet_hash_resize(struct dns_packet_hash *h, size_t new_capacity)
  * Never returns NULL.
  */
 static struct dns_packet_hash_bucket **
-dns_packet_hash_find_bucket(struct dns_packet_hash *h, struct dns_packet *p, dns_packet_hash hash_value)
+dns_packet_hash_find_bucket(struct dns_packet_hash *h, struct dns_packet *p, dns_hash_value_t hash_value)
 {
-    for (struct dns_packet_hash_bucket **bp = h->data[hash_value % h->capacity]; *bp; bp = &(*bp->next)) {
-        struct dns_packet *first_packet = (struct dns_packet *) clist_head(*bp->packets);
-        if ((*bp->hash_value == hash_value) && (dns_packet_primary_keys_equal(p, first_packet)))
+    struct dns_packet_hash_bucket **bp;
+    for (bp = &h->data[hash_value % h->capacity]; *bp; bp = &((*bp)->next)) {
+        struct dns_packet *first_packet = (struct dns_packet *) clist_head(&(*bp)->packets);
+        if (((*bp)->hash_value == hash_value) && (dns_packet_primary_keys_equal(p, first_packet)))
             return bp;
     }
     return bp;
@@ -84,7 +85,7 @@ dns_packet_hash_find_bucket(struct dns_packet_hash *h, struct dns_packet *p, dns
 void
 dns_packet_hash_insert_packet(struct dns_packet_hash *h, struct dns_packet *p)
 {
-    dns_packet_hash hash_value = dns_packet_primary_hash(p, h->seed);
+    dns_hash_value_t hash_value = dns_packet_primary_hash(p, h->seed);
     struct dns_packet_hash_bucket **bp = dns_packet_hash_find_bucket(h, p, hash_value);
     struct dns_packet_hash_bucket *b = *bp;
 
@@ -125,7 +126,7 @@ dns_packet_hash_remove_from_bucket(struct dns_packet_hash *h, struct dns_packet 
 struct dns_packet *
 dns_packet_hash_get_match(struct dns_packet_hash *h, struct dns_packet *p)
 {
-    dns_packet_hash hash_value = dns_packet_primary_hash(p, h->seed);
+    dns_hash_value_t hash_value = dns_packet_primary_hash(p, h->seed);
     struct dns_packet_hash_bucket **bp = dns_packet_hash_find_bucket(h, p, hash_value);
     if (!*bp)
         return NULL;
@@ -133,7 +134,7 @@ dns_packet_hash_get_match(struct dns_packet_hash *h, struct dns_packet *p)
     // Search the bucket oldest-to-newest
     // NOTE: Thic can be sped up in some adversarial worst-cases
     struct dns_packet *req;
-    CLIST_WALK(req, *bp->packets) {
+    CLIST_WALK(req, (*bp)->packets) {
         if (dns_packet_match(req, p)) {
             dns_packet_hash_remove_from_bucket(h, req, bp);
             return req;
@@ -145,8 +146,8 @@ dns_packet_hash_get_match(struct dns_packet_hash *h, struct dns_packet *p)
 void
 dns_packet_hash_remove_packet(struct dns_packet_hash *h, struct dns_packet *p)
 {
-    dns_packet_hash hash_value = dns_packet_primary_hash(p, h->seed);
+    dns_hash_value_t hash_value = dns_packet_primary_hash(p, h->seed);
     struct dns_packet_hash_bucket **bp = dns_packet_hash_find_bucket(h, p, hash_value);
-    assert(*pb);
+    assert(*bp);
     dns_packet_hash_remove_from_bucket(h, p, bp);
 }

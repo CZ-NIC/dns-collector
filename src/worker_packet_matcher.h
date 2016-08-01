@@ -25,7 +25,7 @@ struct dns_worker_packet_matcher {
     pthread_mutex_t running;
 
     /** The hash table with packets */
-    dns_packet_hash *hash_table;
+    struct dns_packet_hash *hash_table;
 
     /** The hash table with packets */
     clist packet_queue;
@@ -39,8 +39,8 @@ struct dns_worker_packet_matcher {
     /** Maximum packet frame size in bytes */
     int frame_max_size;
 
-    dns_packet_frame *inframe;
-    dns_packet_frame *outframe;
+    struct dns_packet_frame *inframe;
+    struct dns_packet_frame *outframe;
     dns_us_time_t current_time;
 };
 
