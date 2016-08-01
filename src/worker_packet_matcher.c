@@ -5,9 +5,11 @@
 #include <pthread.h>
 
 #include "packet_frame.h"
+#include "packet_hash.h"
 #include "frame_queue.h"
 #include "worker_packet_matcher.h"
 #include "packet_hash.h"
+#include "packet.h"
 
 struct dns_worker_packet_matcher *
 dns_worker_packet_matcher_create(dns_us_time_t matching_duration, struct dns_frame_queue *in, struct dns_frame_queue *out)
@@ -26,7 +28,7 @@ dns_worker_packet_matcher_create(dns_us_time_t matching_duration, struct dns_fra
     pthread_mutex_init(&pm->running, NULL);
     // Actually uses a random seed (indicated by the 0 value)
     pm->hash_table = dns_packet_hash_create(WORKER_PACKET_MATCHER_MIN_HASH_SIZE, 0);
-    clist_init(pm->packet_queue);
+    clist_init(&pm->packet_queue);
     return pm;
 }
 
@@ -72,7 +74,7 @@ dns_worker_packet_matcher_advance_time_to(struct dns_worker_packet_matcher *pm, 
 
     while (pm->current_time < time) {
         // What happens first - packet exit or frame end?
-        struct dns_packet *pkt = clist_head(pm->packet_queue);
+        struct dns_packet *pkt = clist_head(&pm->packet_queue);
         dns_us_time_t ev_time = pm->outframe->time_start + pm->frame_max_duration;
         if (pkt)
             ev_time = MIN(ev_time, pkt->ts + pm->matching_duration);
@@ -90,7 +92,7 @@ dns_worker_packet_matcher_advance_time_to(struct dns_worker_packet_matcher *pm, 
                 if (pm->outframe->size + pkt->memory_size > pm->frame_max_size)
                     dns_worker_packet_matcher_output_frame(pm);
                 // Remove packet from queue and hashtable
-                clist_unlink(pkt->node);
+                clist_unlink(&pkt->node);
                 // TODO; remove pkt from the hashtable if request
                 dns_packet_frame_append_packet(pm->outframe, pkt);
                 pm->current_time = ev_time;
@@ -106,7 +108,7 @@ dns_worker_packet_matcher_advance_time_to(struct dns_worker_packet_matcher *pm, 
  * Outputs any intermediate empty frames while seeking in input time.
  */
 static struct dns_packet *
-dns_worker_packet_matcher_next_packet(dns_worker_packet_matcher *pm)
+dns_worker_packet_matcher_next_packet(struct dns_worker_packet_matcher *pm)
 {
     while(1) {
         // Load the first or next frame if not loaded
@@ -125,12 +127,12 @@ dns_worker_packet_matcher_next_packet(dns_worker_packet_matcher *pm)
             dns_worker_packet_matcher_advance_time_to(pm, pm->inframe->time_start);
         }
 
-        if (clist_empty(pm->inframe->packets)) {
+        if (clist_empty(&pm->inframe->packets)) {
             dns_worker_packet_matcher_advance_time_to(pm, pm->inframe->time_end);
             dns_packet_frame_destroy(pm->inframe);
             pm->inframe = NULL;
         } else {
-            struct dns_packet *pkt = clist_remove_head(pm->inframe->packets);
+            struct dns_packet *pkt = clist_remove_head(&pm->inframe->packets);
             dns_worker_packet_matcher_advance_time_to(pm, pkt->ts);
             return pkt;
         }
@@ -144,16 +146,16 @@ dns_worker_packet_matcher_main(void *matcher)
     struct dns_packet *pkt;
     while((pkt = dns_worker_packet_matcher_next_packet(pm))) {
         // pm->curtime is already advanced. Insert and match the packet.
-        clist_add_tail(pm->packet_queue, pkt->node); 
+        clist_add_tail(&pm->packet_queue, &pkt->node); 
         // TODO: look up in hash, match (if response) or insert (if request)
     }
-    dns_worker_packet_matcher_advance_time_to(pm, pm->curtime + pm->matching_duration + 1);
+    dns_worker_packet_matcher_advance_time_to(pm, pm->current_time + pm->matching_duration + 1);
     if (pm->outframe) {
         dns_frame_queue_enqueue(pm->out, pm->outframe);
         pm->outframe = NULL;
     }
-    dns_frame_queue_enqueue(pm->out, dns_packet_frame_create_final(pm->curtime));
-    pthread_mutex_unlock(&l->running);
+    dns_frame_queue_enqueue(pm->out, dns_packet_frame_create_final(pm->current_time));
+    pthread_mutex_unlock(&pm->running);
     return NULL;
 }
 

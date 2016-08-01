@@ -48,9 +48,6 @@ dns_worker_frame_logger_main(void *logger)
         if (f->type == 1)
             run = 0;
         dns_frame_queue_enqueue(l->out, f);
-        } else {
-            dns_packet_frame_destroy(f);
-        }
     }
     pthread_mutex_unlock(&l->running);
     return NULL;

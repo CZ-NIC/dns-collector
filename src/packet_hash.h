@@ -4,6 +4,7 @@
 #include "common.h"
 
 typedef uint64_t dns_hash_value_t;
+struct dns_packet_hash_bucket;
 
 /**
  * Hash bucket with a linked list of packets with the same key.
@@ -40,7 +41,7 @@ struct dns_packet_hash {
     /** Seed for hash functions */
     dns_hash_value_t seed;
     /** Hash table itself */
-    dns_packet_hash_bucket **data;
+    struct dns_packet_hash_bucket **data;
 };
 
 /**
