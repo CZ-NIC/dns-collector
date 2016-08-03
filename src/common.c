@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <execinfo.h>
+#include <arpa/inet.h>
 
 #include "common.h"
 
@@ -13,6 +14,23 @@ void dns_ptrace(void)
     backtrace_symbols_fd(array, size, 2);
 }
 
+char *
+dns_sockaddr_to_str(const struct sockaddr *sa, char *s, size_t maxlen)
+{
+    switch(sa->sa_family) {
+    case AF_INET:
+	inet_ntop(AF_INET, &(((struct sockaddr_in *)sa)->sin_addr), s, maxlen);
+	return s;
+
+    case AF_INET6:
+	inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sa)->sin6_addr), s, maxlen);
+	return s;
+
+    default:
+	strncpy(s, "unknown_AF", maxlen);
+	return NULL;
+    }
+}
 
 dns_us_time_t
 dns_us_time_from_timeval(const struct timeval *t)

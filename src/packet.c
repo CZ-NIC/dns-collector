@@ -13,6 +13,7 @@
 
 #include "common.h"
 #include "packet.h"
+#include "packet_hash.h"
 
 struct dns_packet*
 dns_packet_create(void *dns_data, size_t dns_data_size)
@@ -116,7 +117,7 @@ dns_packet_create_from_libtrace(libtrace_packet_t *tp, struct dns_packet **pktp)
     // Protocol
     pkt->protocol = proto;
 
-    // QNAME count, validity and length
+    // Parse and check QNAME count, validity and length
     int r = knot_pkt_parse_question(pkt->knot_packet);
     if (r != DNS_RET_OK)
     {
@@ -124,6 +125,9 @@ dns_packet_create_from_libtrace(libtrace_packet_t *tp, struct dns_packet **pktp)
         dns_packet_destroy(pkt);
         return r;
     }
+
+    // DNS ID - aty this point the entire header is present
+    pkt->dns_id = knot_wire_get_id(pkt->dns_data);
 
     *pktp = pkt;
     return DNS_RET_OK;
@@ -139,57 +143,75 @@ dns_packet_destroy(struct dns_packet *pkt)
     xfree(pkt);
 }
 
-// TODO: refresh code below
-/*
-int
-dns_packets_match(const struct dns_packet* request, const struct dns_packet* response)
-{
-    assert(request && response);
-    assert(DNS_PACKET_IS_REQUEST(request) &&
-           DNS_PACKET_IS_RESPONSE(response));
-
-    const int addr_len = DNS_SOCKADDR_ADDRLEN(&request->src_addr);
-
-    return (DNS_PACKET_AF(request) == DNS_PACKET_AF(response) &&
-            request->protocol == response->protocol &&
-            DNS_SOCKADDR_PORT(&request->src_addr) == DNS_SOCKADDR_PORT(&response->dst_addr) &&
-            DNS_SOCKADDR_PORT(&request->dst_addr) == DNS_SOCKADDR_PORT(&response->src_addr) &&
-            request->dns_data->id == response->dns_data->id && // network byte-order ids
-            memcmp(DNS_SOCKADDR_ADDR(&request->src_addr), DNS_SOCKADDR_ADDR(&response->dst_addr), addr_len) == 0 &&
-            memcmp(DNS_SOCKADDR_ADDR(&request->dst_addr), DNS_SOCKADDR_ADDR(&response->src_addr), addr_len) == 0 &&
-            request->dns_qname_raw_len == response->dns_qname_raw_len &&
-            memcmp(request->dns_qname_raw, response->dns_qname_raw, request->dns_qname_raw_len) == 0);
-}
-
-uint64_t
-dns_packet_hash(const dns_packet_t* pkt, uint64_t param)
+dns_hash_value_t
+dns_packet_primary_hash(const dns_packet_t* pkt, dns_hash_value_t param)
 {
     assert(pkt && param > 0x100);
 
-    uint64_t hash = 0;
-    hash += (uint64_t)(DNS_PACKET_AF(pkt)) << 0;
-    hash += (uint64_t)(pkt->protocol) << 16;
+    dns_hash_value_t hash = 0;
+    hash += (dns_hash_value_t)(DNS_PACKET_AF(pkt)) << 0;
+    hash += (dns_hash_value_t)(pkt->protocol) << 16;
     // Treat src and dst symmetrically
-    hash += (uint64_t)(DNS_SOCKADDR_PORT(&pkt->dst_addr)) << 32;
-    hash += (uint64_t)(DNS_SOCKADDR_PORT(&pkt->src_addr)) << 32;
-    hash += (uint64_t)(pkt->dns_data->id) << 48;
-
-    for (int i = 0; i < pkt->dns_qname_raw_len; i++) {
-        if (i % 32 == 0)
-            hash = hash % param;
-        hash += ((uint64_t)(pkt->dns_qname_raw[i]) << (i % 32)) << 32;
-    }
+    hash += (dns_hash_value_t)(DNS_SOCKADDR_PORT(&pkt->dst_addr)) << 32;
+    hash += (dns_hash_value_t)(DNS_SOCKADDR_PORT(&pkt->src_addr)) << 32;
+    hash += (dns_hash_value_t)(pkt->dns_id) << 48;
     hash = hash % param;
 
     for (int i = 0; i < DNS_SOCKADDR_ADDRLEN(&pkt->src_addr) / 4; i++) {
         // Treat src and dst symmetrically
-        hash += (uint64_t)((uint32_t *)(DNS_SOCKADDR_ADDR(&pkt->src_addr)))[i] << 32;
-        hash += (uint64_t)((uint32_t *)(DNS_SOCKADDR_ADDR(&pkt->dst_addr)))[i] << 32;
+        hash += ((dns_hash_value_t)((uint32_t *)(DNS_SOCKADDR_ADDR(&pkt->src_addr)))[i]) << 32;
+        hash += ((dns_hash_value_t)((uint32_t *)(DNS_SOCKADDR_ADDR(&pkt->dst_addr)))[i]) << 32;
         hash = hash % param;
     }
 
     return hash;
 }
+
+
+int
+dns_packet_qname_match(struct dns_packet *request, struct dns_packet *response)
+{
+    assert(request && response);
+    assert(DNS_PACKET_IS_REQUEST(request) &&
+           DNS_PACKET_IS_RESPONSE(response));
+    // Equal, or response empty (1 byte) (matches any request)
+    return ((response->knot_packet->qname_size == 1) || 
+            (request->knot_packet->qname_size == response->knot_packet->qname_size &&
+            knot_dname_is_equal(knot_pkt_qname(request->knot_packet), knot_pkt_qname(response->knot_packet))));
+}
+
+int
+dns_packet_primary_match(const struct dns_packet* pkt1, const struct dns_packet* pkt2)
+{
+    assert(pkt1 && pkt2);
+
+    const int addr_len = DNS_SOCKADDR_ADDRLEN(&pkt1->src_addr);
+
+    // Compare AF, proto, DNS ID
+    if (DNS_PACKET_AF(pkt1) != DNS_PACKET_AF(pkt2) ||
+        pkt1->protocol != pkt2->protocol ||
+        pkt1->dns_id != pkt2->dns_id) return 0;
+
+    if ((!DNS_PACKET_IS_REQUEST(pkt1)) == (!DNS_PACKET_IS_REQUEST(pkt2))) {
+        // Same direction, comapre src-src, dst-dst
+        return (
+            DNS_SOCKADDR_PORT(&pkt1->src_addr) == DNS_SOCKADDR_PORT(&pkt2->src_addr) &&
+            DNS_SOCKADDR_PORT(&pkt1->dst_addr) == DNS_SOCKADDR_PORT(&pkt2->dst_addr) &&
+            memcmp(DNS_SOCKADDR_ADDR(&pkt1->src_addr), DNS_SOCKADDR_ADDR(&pkt2->src_addr), addr_len) == 0 &&
+            memcmp(DNS_SOCKADDR_ADDR(&pkt1->dst_addr), DNS_SOCKADDR_ADDR(&pkt2->dst_addr), addr_len) == 0);
+    } else {
+        // Different directions, compare src-dst and vice versa
+        return (
+            DNS_SOCKADDR_PORT(&pkt1->src_addr) == DNS_SOCKADDR_PORT(&pkt2->dst_addr) &&
+            DNS_SOCKADDR_PORT(&pkt1->dst_addr) == DNS_SOCKADDR_PORT(&pkt2->src_addr) &&
+            memcmp(DNS_SOCKADDR_ADDR(&pkt1->src_addr), DNS_SOCKADDR_ADDR(&pkt2->dst_addr), addr_len) == 0 &&
+            memcmp(DNS_SOCKADDR_ADDR(&pkt1->dst_addr), DNS_SOCKADDR_ADDR(&pkt2->src_addr), addr_len) == 0);
+    }
+}
+
+// TODO: refresh code below
+/*
+
 
 uint16_t
 dns_packet_get_output_flags(const dns_packet_t* pkt)

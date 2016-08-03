@@ -91,9 +91,12 @@ dns_worker_packet_matcher_advance_time_to(struct dns_worker_packet_matcher *pm, 
                 // Output the packet
                 if (pm->outframe->size + pkt->memory_size > pm->frame_max_size)
                     dns_worker_packet_matcher_output_frame(pm);
-                // Remove packet from queue and hashtable
+                // Remove packet from the queue
                 clist_unlink(&pkt->node);
-                // TODO; remove pkt from the hashtable if request
+                // Remove the packet from the hashtable only if it has no matched response
+                if ((DNS_PACKET_IS_REQUEST(pkt)) && (!pkt->response)) {
+                    dns_packet_hash_remove_packet(pm->hash_table, pkt);
+                }
                 dns_packet_frame_append_packet(pm->outframe, pkt);
                 pm->current_time = ev_time;
             }
@@ -145,9 +148,23 @@ dns_worker_packet_matcher_main(void *matcher)
     struct dns_worker_packet_matcher *pm = matcher;
     struct dns_packet *pkt;
     while((pkt = dns_worker_packet_matcher_next_packet(pm))) {
-        // pm->curtime is already advanced. Insert and match the packet.
-        clist_add_tail(&pm->packet_queue, &pkt->node); 
-        // TODO: look up in hash, match (if response) or insert (if request)
+        // NOTE: pm->curtime is already advanced by .._next_packet()
+        if (DNS_PACKET_IS_REQUEST(pkt)) {
+            // Requests are enqueued and hashed
+            dns_packet_hash_insert_packet(pm->hash_table, pkt);
+            clist_add_tail(&pm->packet_queue, &pkt->node); 
+        } else {
+            struct dns_packet *req = dns_packet_hash_get_match(pm->hash_table, pkt);
+            if (req) {
+                // Matched response to a request 
+                // - request removed from hash and left in the queue
+                // - response included in the request
+                req->response = pkt;
+            } else {
+                // Response not matched, enqueue
+                clist_add_tail(&pm->packet_queue, &pkt->node);
+            }
+        }
     }
     dns_worker_packet_matcher_advance_time_to(pm, pm->current_time + pm->matching_duration + 1);
     if (pm->outframe) {

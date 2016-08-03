@@ -28,6 +28,8 @@ dns_frame_queue_create(size_t capacity, size_t size_cap, enum dns_frame_queue_on
 void
 dns_frame_queue_destroy(struct dns_frame_queue* q)
 {
+    assert(q);
+
     for (int i = 0; i < q->length; i++)
         dns_packet_frame_destroy(q->queue[i]);
     free(q->queue);
@@ -40,6 +42,8 @@ dns_frame_queue_destroy(struct dns_frame_queue* q)
 static inline struct dns_packet_frame *
 dns_frame_queue_dequeue_internal(struct dns_frame_queue* q)
 {
+    assert(q);
+
     struct dns_packet_frame *f = q->queue[q->start];
     q->start = (q->start + 1) % q->capacity;
     q->length --;
@@ -50,12 +54,14 @@ dns_frame_queue_dequeue_internal(struct dns_frame_queue* q)
 void
 dns_frame_queue_enqueue(struct dns_frame_queue* q, struct dns_packet_frame *f)
 {
-    pthread_mutex_lock(&q->mutex);
+    assert(f);
 
     if (q == NULL) {
         dns_packet_frame_destroy(f);
         return;
     }
+
+    pthread_mutex_lock(&q->mutex);
 
     if ((q->size_cap > 0) && (f->size > q->size_cap)) {
         dns_packet_frame_destroy(f);
@@ -90,6 +96,8 @@ dns_frame_queue_enqueue(struct dns_frame_queue* q, struct dns_packet_frame *f)
 struct dns_packet_frame *
 dns_frame_queue_dequeue(struct dns_frame_queue* q)
 {
+    assert(q);
+
     pthread_mutex_lock(&q->mutex);
 
     while (q->length == 0) {

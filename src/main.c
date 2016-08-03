@@ -5,6 +5,7 @@
 #include "common.h"
 #include "packet_frame.h"
 #include "worker_frame_logger.h"
+#include "worker_packet_matcher.h"
 #include "input.h"
 #include "frame_queue.h"
 //#include "collector.h"
@@ -41,15 +42,27 @@ static struct opt_section dns_options = {
 
 int main(int argc UNUSED, char **argv)
 {
+    dns_ret_t r;
+
+    // Setup segv handler
+
     signal(SIGSEGV, segv_handler);
 
     // Construct workflow
 
-    struct dns_frame_queue *qinput = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
-    struct dns_input *input = dns_input_create(qinput);
-    struct dns_worker_frame_logger *inputlog = dns_worker_frame_logger_create("inputlog", qinput, NULL);
-    dns_worker_frame_logger_start(inputlog);
-    dns_ret_t r;
+    struct dns_frame_queue *q_in_log1 = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
+    struct dns_frame_queue *q_log1_match = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
+    struct dns_frame_queue *q_match_log2 = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
+    struct dns_frame_queue *q_log2_out = NULL;
+
+    struct dns_input *input = dns_input_create(q_in_log1);
+    struct dns_worker_frame_logger *w_log1 = dns_worker_frame_logger_create("log1", q_in_log1, q_log1_match);
+    struct dns_worker_packet_matcher *w_match = dns_worker_packet_matcher_create(dns_fsec_to_us_time(20.0), q_log1_match, q_match_log2);
+    struct dns_worker_frame_logger *w_log2 = dns_worker_frame_logger_create("log2", q_match_log2, q_log2_out);
+
+    dns_worker_frame_logger_start(w_log1);
+    dns_worker_frame_logger_start(w_log2);
+    dns_worker_packet_matcher_start(w_match);
 
     // Configure
 
@@ -96,13 +109,20 @@ int main(int argc UNUSED, char **argv)
     // Send the last frame, wait for threads to exit
 
     dns_input_finish(input);
-    dns_worker_frame_logger_finish(inputlog);
+    dns_worker_frame_logger_finish(w_log1);
+    dns_worker_frame_logger_finish(w_log2);
+    dns_worker_packet_matcher_finish(w_match);
 
     // Dealloc and cleanup
 
     dns_input_destroy(input);
-    dns_worker_frame_logger_destroy(inputlog);
-    dns_frame_queue_destroy(qinput);
+    dns_worker_frame_logger_destroy(w_log1);
+    dns_worker_frame_logger_destroy(w_log2);
+    dns_worker_packet_matcher_destroy(w_match);
+    dns_frame_queue_destroy(q_in_log1);
+    dns_frame_queue_destroy(q_log1_match);
+    dns_frame_queue_destroy(q_match_log2);
+    dns_frame_queue_destroy(q_log2_out);
     GARY_FREE(main_inputs);
 
     // NOTE: Valgrind registers 13 unfreed blocks amounting to libUCW config data.
