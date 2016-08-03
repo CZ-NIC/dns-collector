@@ -122,7 +122,7 @@ int main(int argc UNUSED, char **argv)
     dns_frame_queue_destroy(q_in_log1);
     dns_frame_queue_destroy(q_log1_match);
     dns_frame_queue_destroy(q_match_log2);
-    dns_frame_queue_destroy(q_log2_out);
+//    dns_frame_queue_destroy(q_log2_out);
     GARY_FREE(main_inputs);
 
     // NOTE: Valgrind registers 13 unfreed blocks amounting to libUCW config data.
