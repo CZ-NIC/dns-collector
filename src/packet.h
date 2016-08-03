@@ -58,7 +58,8 @@ struct dns_packet {
     size_t dns_data_size_orig;
 
     /** libknot packet structure for DNS parsing. Owned by the packet.
-     * Should be parsed at least until the question (QNAME, type, class) */
+     * Should be parsed at least until the question (QNAME, type, class) after creation.
+     * Requests are fully parsed (all RRs). */
     knot_pkt_t *knot_packet;
 
     /** Estimate of total packet memory size (for resource limiting) */

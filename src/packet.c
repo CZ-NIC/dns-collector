@@ -121,9 +121,24 @@ dns_packet_create_from_libtrace(libtrace_packet_t *tp, struct dns_packet **pktp)
     int r = knot_pkt_parse_question(pkt->knot_packet);
     if (r != DNS_RET_OK)
     {
-        assert(r == DNS_RET_DROP_MALF); // Note: There should be no other possible errors
+        if (r != KNOT_EOK)
+            r = DNS_RET_DROP_MALF;
         dns_packet_destroy(pkt);
         return r;
+    }
+
+    // Fully parse and check requests
+    if (DNS_PACKET_IS_REQUEST(pkt)) {
+        r = knot_pkt_parse(pkt->knot_packet, 0);
+        if (r != DNS_RET_OK)
+        {
+            if (r == KNOT_ENOMEM)
+                die("Out of memory allocating packet structures.");
+            if (r != KNOT_EOK)
+                r = DNS_RET_DROP_MALF;
+            dns_packet_destroy(pkt);
+            return r;
+        }
     }
 
     // DNS ID - aty this point the entire header is present

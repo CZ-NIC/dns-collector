@@ -22,7 +22,7 @@ dns_worker_packet_matcher_create(dns_us_time_t matching_duration, struct dns_fra
     pm->outframe = NULL;
     pm->current_time = DNS_NO_TIME;
     pm->matching_duration = matching_duration;
-    pm->frame_max_duration = 1.0; // TODO: copy from input or config
+    pm->frame_max_duration = 1e6; // TODO: copy from input or config
     pm->frame_max_size = 1024 * 1024; // TODO: copy from input or config
     assert(pm->matching_duration > 0);
     pthread_mutex_init(&pm->running, NULL);
@@ -66,8 +66,10 @@ static void
 dns_worker_packet_matcher_advance_time_to(struct dns_worker_packet_matcher *pm, dns_us_time_t time)
 {
     assert(pm && time != DNS_NO_TIME && pm->current_time != DNS_NO_TIME);
+//    msg(L_DEBUG, "Advancing matcher time from %f to %f",
+//        dns_us_time_to_fsec(pm->current_time), dns_us_time_to_fsec(time));
     if (time < pm->current_time) {
-        msg(L_WARN, "Packet arrived at matcher %f s before the latest seen",
+        msg(L_WARN, "Not advancing matcher time back %f s (packets in the wrong order?)",
             dns_us_time_to_fsec(pm->current_time - time));
         return;
     }
@@ -75,16 +77,20 @@ dns_worker_packet_matcher_advance_time_to(struct dns_worker_packet_matcher *pm, 
     while (pm->current_time < time) {
         // What happens first - packet exit or frame end?
         struct dns_packet *pkt = clist_head(&pm->packet_queue);
-        dns_us_time_t ev_time = pm->outframe->time_start + pm->frame_max_duration;
-        if (pkt)
+        // When will current frame get evicted:
+        dns_us_time_t ev_time = pm->outframe->time_start + pm->frame_max_duration + pm->matching_duration;
+        // When will the next queued packet (if any) get evicted:
+        if (pkt) {
             ev_time = MIN(ev_time, pkt->ts + pm->matching_duration);
+        }
         if (ev_time > time) {
+            // Both events after `time`
             pm->current_time = time;
         } else {
-            if (ev_time == pm->outframe->time_start + pm->frame_max_duration) {
+            if (ev_time == pm->outframe->time_start + pm->frame_max_duration + pm->matching_duration) {
                 // Output frame before it is too long
-                assert(pm->outframe->time_end <= ev_time);
-                pm->outframe->time_end = ev_time;
+                assert(pm->outframe->time_end <= ev_time - pm->matching_duration);
+                pm->outframe->time_end = ev_time - pm->matching_duration;
                 pm->current_time = ev_time;
                 dns_worker_packet_matcher_output_frame(pm);
             } else {
