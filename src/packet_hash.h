@@ -27,6 +27,10 @@ struct dns_packet_hash_bucket {
 #define DNS_PACKET_HASH_BEST_PERCENT 50
 #define DNS_PACKET_HASH_MAX_PERCENT 75
 
+/** Maximum number of packets in a hash bucket to search for a matching QNAME
+ * (prevents one type of DoS, in normal traffic even 1-2 should suffice) */
+#define DNS_PACKET_HASH_MAX_SEARCH 32
+
 /**
  * Hash table structure.
  * Only hashes by primary DNS key (everything but QNAME).
@@ -56,12 +60,17 @@ dns_packet_hash_create(size_t capacity, dns_hash_value_t seed);
 void
 dns_packet_hash_destroy(struct dns_packet_hash *h);
 
-
 /**
  * Insert the packet into the hash, creating a new bucket if necessary
  */
 void
 dns_packet_hash_insert_packet(struct dns_packet_hash *h, struct dns_packet *p);
+
+/**
+ * Remove the packet from the hash, deleting its bucket if empty
+ */
+void
+dns_packet_hash_remove_packet(struct dns_packet_hash *h, struct dns_packet *p);
 
 /**
  * Find a matching request for the given response in the hash, returning the oldest

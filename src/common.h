@@ -148,6 +148,14 @@ extern const char *dns_drop_reason_names[];
  */
 void dns_ptrace(void);
 
+/**
+ * Extract an IP address string from a sockaddr.
+ * Works for IPv4 and IPv6, returns `s` on success, NULL on error (but the message is still set)
+ */
+char *
+dns_sockaddr_to_str(const struct sockaddr *sa, char *s, size_t maxlen);
+
+
 
 /**
  * Time type for timestamps and time differences.

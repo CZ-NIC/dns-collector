@@ -5,6 +5,7 @@
 #include <pthread.h>
 
 #include "packet_frame.h"
+#include "packet.h"
 #include "frame_queue.h"
 #include "worker_frame_logger.h"
 
@@ -45,6 +46,18 @@ dns_worker_frame_logger_main(void *logger)
             msg(L_INFO, "Frame (type %d) through %s: %ld packets, %lu bytes, %.3f - %.3f", f->type, l->name, f->count, f->size,
                 dns_us_time_to_fsec(f->time_start), dns_us_time_to_fsec(f->time_end));
         }
+        int requests=0, requests_matched=0, responses_unmatched=0;
+        CLIST_FOR_EACH(struct dns_packet *, pkt, f->packets) {
+            if (DNS_PACKET_IS_REQUEST(pkt)) {
+                requests++;
+                if (pkt->response)
+                    requests_matched++;
+            } else {
+                responses_unmatched++;
+            }
+        }
+        msg(L_DEBUG, "Frame details: %d requests (%d of that with response), %d unmatched responses",
+            requests, requests_matched, responses_unmatched);
         if (f->type == 1)
             run = 0;
         dns_frame_queue_enqueue(l->out, f);

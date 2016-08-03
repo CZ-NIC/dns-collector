@@ -15,7 +15,7 @@ dns_packet_hash_create(size_t capacity, dns_hash_value_t seed)
     h->buckets = 0;
     if (seed == 0) {
         seed = random();
-#if RAND_MAX < (1 << 28)
+#if RAND_MAX < (1 << 33)
         seed += random() << 32;
 #endif
     }
@@ -75,8 +75,9 @@ dns_packet_hash_find_bucket(struct dns_packet_hash *h, struct dns_packet *p, dns
 {
     struct dns_packet_hash_bucket **bp;
     for (bp = &h->data[hash_value % h->capacity]; *bp; bp = &((*bp)->next)) {
-        struct dns_packet *first_packet = (struct dns_packet *) clist_head(&(*bp)->packets);
-        if (((*bp)->hash_value == hash_value) && (dns_packet_primary_keys_equal(p, first_packet)))
+        struct dns_packet *first_packet = DNS_PACKET_FROM_SECNODE(clist_head(&(*bp)->packets));
+        assert(first_packet); // Buckets should never be empty
+        if (((*bp)->hash_value == hash_value) && (dns_packet_primary_match(p, first_packet)))
             return bp;
     }
     return bp;
@@ -101,7 +102,7 @@ dns_packet_hash_insert_packet(struct dns_packet_hash *h, struct dns_packet *p)
             dns_packet_hash_resize(h, h->buckets * 100 / DNS_PACKET_HASH_BEST_PERCENT);
     }
 
-    clist_add_head(&b->packets, &p->node);
+    clist_add_head(&b->packets, &p->secnode);
 }
 
 /**
@@ -111,9 +112,10 @@ dns_packet_hash_insert_packet(struct dns_packet_hash *h, struct dns_packet *p)
 static void
 dns_packet_hash_remove_from_bucket(struct dns_packet_hash *h, struct dns_packet *p, struct dns_packet_hash_bucket **bp)
 {
-    clist_remove(&p->node);
-
+    assert(h && p && bp && (*bp));
     struct dns_packet_hash_bucket *b = *bp;
+
+    clist_remove(&p->secnode);
     if (clist_empty(&b->packets)) {
         *bp = b->next;
         free(b);
@@ -132,12 +134,22 @@ dns_packet_hash_get_match(struct dns_packet_hash *h, struct dns_packet *p)
         return NULL;
 
     // Search the bucket oldest-to-newest
-    // NOTE: Thic can be sped up in some adversarial worst-cases
-    struct dns_packet *req;
-    CLIST_WALK(req, (*bp)->packets) {
-        if (dns_packet_match(req, p)) {
+    int cnt = 0;
+    cnode *secnode;
+    CLIST_WALK(secnode, (*bp)->packets) {
+        struct dns_packet *req = DNS_PACKET_FROM_SECNODE(secnode);
+        if (dns_packet_qname_match(req, p)) {
             dns_packet_hash_remove_from_bucket(h, req, bp);
             return req;
+        }
+        // Check for very long lists (a potential DOS vector)
+        cnt ++;
+        if (cnt > DNS_PACKET_HASH_MAX_SEARCH) {
+            char msgbuf[128];
+            dns_sockaddr_to_str((struct sockaddr *)&p->dst_addr, msgbuf, sizeof(msgbuf));
+            msg(L_WARN, "List of requests from %s (all with the same port and ID) too long (more than %d)",
+                msgbuf, DNS_PACKET_HASH_MAX_SEARCH);
+            break;
         }
     }
     return NULL;

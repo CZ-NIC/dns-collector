@@ -9,9 +9,12 @@
 #include <stdint.h>
 #include <libtrace.h>
 #include <libknot/libknot.h>
+#include <stddef.h>
 
 #include "common.h"
-//#include "dns.h"
+#include "packet_hash.h"
+
+#define DNS_PACKET_FROM_SECNODE(cnodep) (SKIP_BACK(struct dns_packet, secnode, (cnodep)))
 
 /**
  * Main structure storing the packet data and parsed values.
@@ -36,6 +39,9 @@ struct dns_packet {
     /** Transport layer protocol number */
     uint8_t protocol;
 
+    /** DNS ID */
+    uint16_t dns_id;
+
     /** TODO: More TCP/IP features */
 
     /** When this is a request, a pointer to an matching response.
@@ -43,7 +49,7 @@ struct dns_packet {
     struct dns_packet *response;
 
     /** DNS data copy, owned by the packet. */
-    char *dns_data;
+    uint8_t *dns_data;
 
     /** Length of the DNS data. */
     size_t dns_data_size;
@@ -51,14 +57,14 @@ struct dns_packet {
     /** Length of the DNS data befora any shortening. */
     size_t dns_data_size_orig;
 
-    /** libknot packet structure for DNS parsing. Owned by the packet. */
+    /** libknot packet structure for DNS parsing. Owned by the packet.
+     * Should be parsed at least until the question (QNAME, type, class) */
     knot_pkt_t *knot_packet;
 
     /** Estimate of total packet memory size (for resource limiting) */
     size_t memory_size;
 };
 
-// TODO: below
 
 /** @name Getters for packet DNS properties */
 /** @{ */
@@ -145,53 +151,35 @@ dns_packet_create_from_libtrace(libtrace_packet_t *tp, struct dns_packet **pktp)
 void
 dns_packet_destroy(struct dns_packet *pkt);
 
-
-
-
-
-
-
-
-
-
-
 /**
- * Drop and optionally dump a packet, depending on the reason and config.
- * Also records the packet in stats. May check the dump quota.
- * Does not destroy the packet.
+ * Compute a packet hash function parameterized by `param`, caching the value.
+ * `param` is used as a modulus - make sure it is large enough.
+ * Uses IPver, TCP/UDP, both port numbers (summetrically), both IPs (summetrically), DNS ID.
+ * Does not use QNAME.
  */
-//void
-//dns_drop_packet(dns_collector_t *col, struct dns_packet* pkt, enum dns_drop_reason reason);
+dns_hash_value_t
+dns_packet_primary_hash(const dns_packet_t* pkt, dns_hash_value_t param);
 
 /**
- * Parse initialised pkt and fill in all fields.
- *
- * Return DNS_RET_DROPPED on parsing failure and packet drop/dump.
- * In this case, dns_data == NULL.
- *
- * Returns DNS_RET_OK on success, in this case dns_data is allocated
- * and owned by the packet.
- */
-//dns_ret_t
-//dns_packet_parse(dns_collector_t *col, struct dns_packet* pkt);
-
-/**
- * Compare two packets as request+response.
+ * Compare two packets as request+response by teir QNAME.
  * Return true when they match, false otherwise.
- * Assumes `dns_packet_parse_dns()` was run successfully on both.
- * Uses IPver, TCP/UDP, both port numbers, both IPs, DNS ID and QNAME.
+ * Note that packets match if the QNAMES match or response QNAME is empty
+ * (e.g. in NOTIMPL messages).
  */
-//int
-//dns_packets_match(const struct dns_packet* request, const struct dns_packet* response);
+int
+dns_packet_qname_match(struct dns_packet *request, struct dns_packet *response);
+
 
 /**
- * Compute a packet hash function parameterized by `param`.
- * `param` is used as a modulo - make sure it is large enough.
- * Assumes `dns_packet_parse_dns()` was run successfully.
- * Uses IPver, TCP/UDP, both port numbers, both IPs, DNS ID and QNAME.
+ * Compare two packets by their (IPver, TCP/UDP, both port numbers, both IPs and DNS ID).
+ * Takes into account which of the packets are request and response (if same type,
+ * compares src1 to src2, dest1 to dest2, if different type, src1 to dest2, dest1 to src2).
+ * Return true when they match, false otherwise.
  */
-//uint64_t
-//dns_packet_hash(const struct dns_packet* pkt, uint64_t param);
+int
+dns_packet_primary_match(const struct dns_packet* pkt1, const struct dns_packet* pkt2);
+
+
 
 /**
  * Packet flags field bits definition (collector query flags).
@@ -218,9 +206,28 @@ dns_packet_destroy(struct dns_packet *pkt);
 /**
  * Return the combined flags `DNS_PACKET_*` for the packet.
  */
-uint16_t
-dns_packet_get_output_flags(const struct dns_packet* pkt);
+//uint16_t
+//dns_packet_get_output_flags(const struct dns_packet* pkt);
 
+/**
+ * Drop and optionally dump a packet, depending on the reason and config.
+ * Also records the packet in stats. May check the dump quota.
+ * Does not destroy the packet.
+ */
+//void
+//dns_drop_packet(dns_collector_t *col, struct dns_packet* pkt, enum dns_drop_reason reason);
+
+/**
+ * Parse initialised pkt and fill in all fields.
+ *
+ * Return DNS_RET_DROPPED on parsing failure and packet drop/dump.
+ * In this case, dns_data == NULL.
+ *
+ * Returns DNS_RET_OK on success, in this case dns_data is allocated
+ * and owned by the packet.
+ */
+//dns_ret_t
+//dns_packet_parse(dns_collector_t *col, struct dns_packet* pkt);
 
 
 #endif /* DNSCOL_PACKET_H */
