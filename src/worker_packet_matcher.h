@@ -6,7 +6,6 @@
 struct dns_frame_queue;
 struct dns_packet_hash;
 
-#define WORKER_PACKET_MATCHER_MIN_HASH_SIZE 1024
 
 /**
  * A worker matching requests to responses within a time window.
@@ -39,10 +38,18 @@ struct dns_worker_packet_matcher {
     /** Maximum packet frame size in bytes */
     int frame_max_size;
 
+    /** Currently read frame */
     struct dns_packet_frame *inframe;
+
+    /** Currently written frame */
     struct dns_packet_frame *outframe;
+
+    /** Time of the last packet read */
     dns_us_time_t current_time;
 };
+
+/** Default and minimal size for the matcher hash table */
+#define WORKER_PACKET_MATCHER_MIN_HASH_SIZE 1024
 
 /**
  * Create a packet matcher. The output queue is optional.
