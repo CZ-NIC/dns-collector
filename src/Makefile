@@ -15,7 +15,8 @@ LDFLAGS=
 
 PROG=dnscol
 DEPS=$(wildcard *.h)
-SRCS=common.c input.c frame_queue.c packet_frame.c worker_frame_logger.c main.c packet.c worker_packet_matcher.c packet_hash.c
+SRCS=common.c input.c frame_queue.c packet_frame.c worker_frame_logger.c main.c \
+     output.c packet.c worker_packet_matcher.c packet_hash.c
 OBJS=$(sort $(SRCS:.c=.o))
 
 all: $(PROG)

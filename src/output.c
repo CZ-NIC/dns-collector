@@ -4,288 +4,298 @@
 #include <string.h>
 #include <linux/limits.h>
 #include <errno.h>
-#include <lz4.h>
-#include <lz4frame.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <limits.h>
+
 
 #include "common.h"
-#include "collector.h"
-#include "timeframe.h"
+#include "packet_frame.h"
+#include "packet.h"
+#include "frame_queue.h"
 #include "output.h"
-#include "output_compression.h"
-
-char *
-dns_output_conf_init(struct dns_output *out)
-{
-    out->period_sec = 300.0; // 5 min
-
-    out->compression = dns_oc_none;
-
-    return NULL;
-}
-
-
-char *
-dns_output_conf_commit(struct dns_output *out)
-{
-    if (out->period_sec < 0.000001)
-        out->period = 0;
-    else
-        out->period = dns_fsec_to_us_time(out->period_sec);
-
-    if (!out->path_fmt)
-        return "'path' needed in output.";
-
-    if (out->compression >= dns_oc_LAST)
-        return "Invalid compression.";
-
-    return NULL;
-}
 
 
 void
-dns_output_init(struct dns_output *out, struct dns_collector *col)
+dns_output_init(struct dns_output *out, struct dns_frame_queue *in, const char *path_fmt, const char *pipe_cmd, int period_sec)
 {
-    assert(out && col && (!out->queue));
-
-    out->collector_output_cond = &(col->output_cond);
-    out->collector_unblock_cond = &(col->unblock_cond);
-    out->collector_mutex = &(col->collector_mutex);
-
-    out->max_queue_len = col->conf->max_queue_len;
-    out->queue = (struct dns_timeframe **) xmalloc_zero(sizeof(struct dns_timeframe *) * out->max_queue_len);
+    assert(out);
+    bzero(out, sizeof(struct dns_output));
     out->output_opened = DNS_NO_TIME;
+    out->current_time = DNS_NO_TIME;
+    out->in = in;
+    out->path_fmt = strdup(path_fmt ? path_fmt : "");
+    out->pipe_cmd = strdup(pipe_cmd ? pipe_cmd : "");
+    out->period_sec = period_sec;
 }
 
 
 void
-dns_output_destroy(struct dns_output *out)
+dns_output_finalize(struct dns_output *out)
 {
-    assert(out && out->queue);
+    assert(out && (!out->out_file) && (!out->path));
 
-    struct dns_timeframe *frame;
-    while((frame = dns_output_pop_frame(out))) {
-        msg(L_WARN, "Leftover frame on dns_output_destroy() of output %s", out->path_fmt);
-        dns_timeframe_decref(frame);
-    }
-
-    xfree(out->queue);
-    out->queue = NULL;
-    out->max_queue_len = 0;
+    if (pthread_mutex_trylock(&out->running) != 0)
+	die("destroying a running output");
+    pthread_mutex_unlock(&out->running);
+    pthread_mutex_destroy(&out->running);
+    if (out->path_fmt)
+        free(out->path_fmt);
+    if (out->pipe_cmd)
+        free(out->pipe_cmd);
 }
 
-void *
-dns_output_thread_main(void *data)
+/**
+ * Check the status of the output pipe subprocess.
+ * With wait actually waits for the process,
+ * with wait 0 just checks and returns immeditelly.
+ * Returns 0 when not started at all or still running.
+ * Returns 1 when exited successfully.
+ * Returns 2 when exited unsuccessfully or abnormally.
+ */
+static int
+dns_output_wait_for_pipe_process(struct dns_output *out, int wait)
 {
-    struct dns_output *out = (struct dns_output *) data;
-    struct dns_timeframe *current_frame = NULL;
-    dns_us_time_t last_frame_end = DNS_NO_TIME;
+    if (out->pipe_pid <= 0)
+        return 0;
 
-    // acquire the collector mutex
-    if (pthread_mutex_lock(out->collector_mutex))
-        die("Error locking mutex");
+    int status;
+    pid_t pid = waitpid(out->pipe_pid, &status, wait ? 0 : WNOHANG);
+    if (pid < 0) {
+        perror("output pipe subprocess error");
+        die("waitpid() error");
+    }
+    if (pid == 0) {
+        return 0;
+    }
+    assert(out->pipe_pid == pid);
+    out->pipe_pid = 0;
 
-    while(1) {
+    if (!WIFEXITED(status)) {
+        msg(L_ERROR, "Abnormal pipe subprocess termination.");
+        return 2;
+    }
+    if (WEXITSTATUS(status) != 0) {
+        msg(L_ERROR, "Pipe subprocess exited with error status %d.", WEXITSTATUS(status));
+        return 2;
+    }
+    return 1;
+}
 
-        // check stop conditions
-        if ((out->stop_flag == dns_os_frame) ||
-            ((out->stop_flag == dns_os_queue) && (out->queue_len == 0))) {
-            break;
+/**
+ * Spawn a subprocess running "/bin/sh" "-c" "sh_cmd".
+ * The output of the subprocess is attached to stdout or file named outfile (if given).
+ * If outfile is not NULL or "", the file is open (creating or truncating it).
+ *
+ * The input of the subprocess is attached to a new fd, which is returned.
+ * No recoverable error can happen in the master process.
+ *
+ * On failure in the subprocess (e.g. invalid command, file open error, ...),
+ * you have to check it via waitpid() later, e.g. use dns_output_wait_for_pipe_process().
+ */
+static int
+dns_output_start_subprocess(const char *sh_cmd, const char *outfile, pid_t *pidp)
+{
+    int pipefds[2];
+    if (pipe(pipefds) != 0) {
+        perror("pipe in dns_output_start_subprocess()");
+        die("pipe() error");
+    }
+    pid_t subpid = fork();
+    if (subpid < 0) {
+        perror("fork in dns_output_start_subprocess()");
+        die("fork() error");
+    }
+    if (subpid == 0) {
+
+        // Subprocess
+        if (close(pipefds[1]) != 0) {
+            perror("close in dns_output_start_subprocess() in subprocess");
+            die("close() error");
         }
-
-        // acquire a frame or wait for it
-        assert(!current_frame);
-        current_frame = dns_output_pop_frame(out);
-        if (current_frame) {
-            // unlock the mutex
-            if (pthread_mutex_unlock(out->collector_mutex))
-                die("Error unlocking mutex");
-
-            // process the output with collector mutex unlocked
-            dns_output_check_rotation(out, current_frame->time_start);
-            last_frame_end = current_frame->time_end;
-            dns_output_write_frame(out, current_frame);
-
-            // relock the mutex, decref the frame
-            if (pthread_mutex_lock(out->collector_mutex))
-                die("Error locking mutex");
-
-            dns_timeframe_decref(current_frame);
-            current_frame = NULL;
-
-            // Signal the collector that a frame was removed from the queue.
-            pthread_cond_broadcast(out->collector_unblock_cond);
-        } else {
-            // unlock the mutex and wait for wakeup condition, then repeat
-            pthread_cond_wait(out->collector_output_cond, out->collector_mutex);
+        // Connect pipe to stdin
+        if (dup2(pipefds[0], 0) < 0) {
+            perror("dup2 of input pipe in dns_output_start_subprocess() in subprocess");
+            die("dup2() error");
         }
-    }
-
-    if (pthread_mutex_unlock(out->collector_mutex))
-        die("Error unlocking mutex");
-
-    dns_output_close(out, last_frame_end);
-
-    return NULL;
-}
-
-
-struct dns_timeframe *
-dns_output_pop_frame(struct dns_output *out)
-{
-    if (out->queue_len == 0)
-        return NULL;
-
-    struct dns_timeframe *next = out->queue[0];
-    memcpy(out->queue + 0, out->queue + 1, sizeof(struct dns_timeframe *) * (out->queue_len - 1));
-    out->queue[out->queue_len - 1] = NULL;
-    out->queue_len --;
-    return next;
-}
-
-int
-dns_output_queue_space(struct dns_output *out)
-{
-    return out->max_queue_len - out->queue_len;
-}
-
-void
-dns_output_push_frame(struct dns_output *out, struct dns_timeframe *tf)
-{
-    assert(out && tf && (out->max_queue_len >= 2) &&
-           (out->queue_len <= out->max_queue_len));
-
-    if (dns_output_queue_space(out) <= 0) {
-        // Queue full: drop the oldest frame from the queue.
-        struct dns_timeframe *drop = dns_output_pop_frame(out);
-        msg(L_WARN, "Dropping frame %.2f - %.2f (%d queries) at output %s",
-            dns_us_time_to_fsec(drop->time_start), dns_us_time_to_fsec(drop->time_end),
-            drop->packets_count, out->path_fmt);
-        dns_timeframe_decref(drop);
-    }
-
-    out->queue[out->queue_len] = tf;
-    out->queue_len ++;
-    dns_timeframe_incref(tf);
-}
-
-void
-dns_output_write_frame(struct dns_output *out, struct dns_timeframe *tf)
-{
-    assert(out && tf);
-    struct dns_packet *pkt = tf->packets;
-
-    if (out->write_packet) {
-        while(pkt) {
-            out->write_packet(out, pkt);
-            pkt = pkt -> next_in_timeframe;
+        // Connect output to stdout if defined
+        fflush(stdout);
+        if (outfile && strlen(outfile) > 0) {
+            fclose(stdout);
+            int outfd = open(outfile, O_CREAT | O_TRUNC, O_RDWR);
+            if (outfd < 0) {
+                perror("open output file in dns_output_start_subprocess() in subprocess");
+                die("error opening \"%s\"", outfile);
+            }
+            if (dup2(outfd, 1) < 0) {
+                perror("dup2 of open output file in dns_output_start_subprocess() in subprocess");
+                die("dup2() error");
+            }
         }
-        /*
-        msg(L_DEBUG, "Wrote frame %.2f - %.2f (%d queries) to output %s",
-            dns_us_time_to_fsec(tf->time_start), dns_us_time_to_fsec(tf->time_end),
-            tf->packets_count, out->path_fmt);
-        */
+        // Close all fds except for (0, 1, 2)
+        for (int fdi = 3; fdi < FOPEN_MAX; fdi++)
+            close(fdi);
+        fflush(stderr);
+        // TODO: subprocess exec
+        execl("/bin/sh", "-c", sh_cmd, (char *)NULL);
+        perror("exec in dns_output_start_subprocess() in subprocess");
+        die("failed to exec: \"/bin/sh\" \"-c\" \"%s\"", sh_cmd);
+
     }
+    // Master process
+    if (close(pipefds[0]) != 0) {
+        perror("close in dns_output_start_subprocess() in subprocess");
+        die("close() error");
+    }
+    *pidp = subpid;
+    return pipefds[1];
 }
 
 
 #define DNS_OUTPUT_FILENAME_STRFTIME_EXTRA 64
 
 void
-dns_output_open_file(struct dns_output *out, dns_us_time_t time)
-{
-    assert(out && (!out->f) && (!out->path) && (time != DNS_NO_TIME));
-
-    // Extra space for expansion -- note that most used conversions are "in place": "%d" -> "01" 
-    int path_len = strlen(out->path_fmt) + DNS_OUTPUT_FILENAME_STRFTIME_EXTRA;
-    out->path = xmalloc(path_len);
-    size_t l = dns_us_time_strftime(out->path, path_len, out->path_fmt, time);
-
-    if (l == 0)
-        die("Expanded filename '%s' expansion too long.", out->path_fmt);
-        
-    out->f = fopen(out->path, "w");
-    if (!out->f)
-        die("Unable to open output file '%s': %s.", out->path, strerror(errno));
-}
-
-
-void
-dns_output_close_file(struct dns_output *out, dns_us_time_t time UNUSED)
-{
-    assert(out && out->f && out->path);
-
-    fclose(out->f);
-    out->f = NULL;
-    xfree(out->path);
-    out->path = NULL;
-}
-
-
-void
 dns_output_open(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && (time != DNS_NO_TIME));
+    assert(out && (!out->out_file) && (time != DNS_NO_TIME));
 
-    out->wrote_bytes = out->wrote_bytes_compressed = out->wrote_items = 0;
+    if (out->path_fmt && strlen(out->path_fmt) > 0) {
+        // Extra space for expansion -- note that most used conversions are "in place": "%d" -> "01" 
+        int path_len = strlen(out->path_fmt) + DNS_OUTPUT_FILENAME_STRFTIME_EXTRA;
+        out->path = xmalloc(path_len);
+        size_t l = dns_us_time_strftime(out->path, path_len, out->path_fmt, time);
+        if (l == 0)
+            die("Expanded filename '%s' expansion too long.", out->path_fmt);
+    } else {
+        out->path = strdup("");
+    }
 
-    if (out->open_file)
-        out->open_file(out, time);
-    else
-        dns_output_open_file(out, time);
-
+    if (out->pipe_cmd && strlen(out->pipe_cmd) > 0) {
+        // Run a subprocess
+        out->out_fd = dns_output_start_subprocess(out->pipe_cmd, out->path, &(out->pipe_pid));
+        out->out_file = fdopen(out->out_fd, "w");
+        if (!out->out_file) {
+            dns_output_wait_for_pipe_process(out, 0);
+            die("Unable to open output pipe descriptor %d: %s.", out->out_fd, strerror(errno));
+        }
+    } else {
+        // Open a file
+        out->out_file = fopen(out->path, "w");
+        if (!out->out_file)
+            die("Unable to open output file '%s': %s.", out->path, strerror(errno));
+        out->out_fd = fileno(out->out_file);
+    }
+        
     out->output_opened = time;
+    out->current_time = MAX(out->current_time, time);
 
-    dns_output_start_compression(out);
+    out->wrote_packets = 0;
+    out->wrote_bytes = 0;
 
     if (out->start_file)
           out->start_file(out, time);
 }
 
-
 void
 dns_output_close(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && (time != DNS_NO_TIME));
+    assert(out && out->out_file && (time != DNS_NO_TIME));
 
-    if (out->output_opened == DNS_NO_TIME)
-        return;
+    // Finish the format
+    if (out->finish_file) {
+        (out->finish_file)(out, time);
+    }
 
-    if (out->finish_file)
-          out->finish_file(out, time);
+    // Close out fd
+    fclose(out->out_file);
+    out->out_file = NULL;
+    out->out_fd = -1;
 
-    dns_output_finish_compression(out);
+    // Wait for the pipe process
+    if (dns_output_wait_for_pipe_process(out, 1) == 2) {
+        die("Pipe subprocess terminated with error, check your configuration.");
+    }
 
-    if (out->compression != dns_oc_none)
-        msg(L_INFO, "Output %lu B [%.1f B/q] compressed to %lu B [%.1f B/q] (%.1f%%), %lu items to '%s'",
-            out->wrote_bytes, 1.0 * out->wrote_bytes / out->wrote_items,
-            out->wrote_bytes_compressed, 1.0 * out->wrote_bytes_compressed / out->wrote_items, 100.0 * out->wrote_bytes_compressed / out->wrote_bytes,
-            out->wrote_items, out->path);
-    else
-        msg(L_INFO, "Output %lu B [%.1f B/q], %lu items to '%s'",
-            out->wrote_bytes, 1.0 * out->wrote_bytes / out->wrote_items,
-            out->wrote_items, out->path);
-
-    if (out->close_file)
-          out->close_file(out, time);
-    else
-        dns_output_close_file(out, time);
-
-    out->output_opened = DNS_NO_TIME;
+    // Report and free
+    msg(L_INFO, "Wrote %d packets (%d bytes pre-pipe) to \"%s\".", (int)out->wrote_packets, (int)out->wrote_bytes, out->path ? out->path : "<STDOUT>");
+    out->current_time = MAX(out->current_time, time);
+    free(out->path);
+    out->path = NULL;
 }
 
-
-void
+/**
+ * Check and potentionally rotate output files.
+ * Opens the output if not open. Rotates output file after `out->period` time
+ * has passed since the opening. Requires `time!=DNS_NO_TIME`.
+ */
+static void
 dns_output_check_rotation(struct dns_output *out, dns_us_time_t time)
 {
     assert(out && (time != DNS_NO_TIME));
 
+    // TODO: Better timing (based on second_since_midnight division), also doc above
     // check if we need to switch output files
-    if ((out->period > 0) && (out->output_opened != DNS_NO_TIME) &&
-        (time >= out->output_opened + out->period - DNS_OUTPUT_ROTATION_GRACE_US))
+    if ((out->out_file) && (out->period_sec > 0) && (out->output_opened != DNS_NO_TIME) &&
+        (time >= out->output_opened + (out->period_sec * 1000000)))
         dns_output_close(out, time);
 
     // open if not open
     if (out->output_opened == DNS_NO_TIME)
         dns_output_open(out, time);
+
+    out->current_time = MAX(out->current_time, time);
 }
 
+static void *
+dns_output_main(void *data)
+{
+    struct dns_output *out = (struct dns_output *) data;
+
+    int run = 1;
+    while(run) {
+        struct dns_packet_frame *f = dns_frame_queue_dequeue(out->in);
+        if (f->type == 1) {
+            assert(f->count == 0);
+            run = 0;
+        } else if (f->time_start == DNS_NO_TIME) {
+            assert(f->count == 0);
+        } else { // Regular frame
+            if (dns_output_wait_for_pipe_process(out, 0) != 0) {
+                die("Pipe subprocess terminated with error, check your configuration.");
+            }
+            dns_output_check_rotation(out, f->time_start);
+            CLIST_FOR_EACH(struct dns_packet *, pkt, f->packets) {
+                dns_output_check_rotation(out, pkt->ts);
+                if (out->write_packet)
+                    (out->write_packet)(out, pkt);
+            }
+        }
+        dns_packet_frame_destroy(f);
+    }
+    if (out->out_file) {
+        dns_output_close(out, out->current_time);
+    }
+    pthread_mutex_unlock(&out->running);
+    return NULL;
+}
+
+void
+dns_output_start(struct dns_output *out)
+{
+    if (pthread_mutex_trylock(&out->running) != 0)
+        die("starting a running output thread");
+    int r = pthread_create(&out->thread, NULL, dns_output_main, out);
+    assert(r == 0);
+    msg(L_DEBUG, "Output thread started");
+}
+
+void
+dns_output_finish(struct dns_output *out)
+{
+    int r = pthread_join(out->thread, NULL);
+    assert(r == 0);
+    msg(L_DEBUG, "Output stopped and joined");
+}

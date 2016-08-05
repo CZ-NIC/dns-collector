@@ -8,7 +8,6 @@
 #include <lz4frame.h>
 
 #include "common.h"
-#include "collector.h"
 #include "packet_frame.h"
 #include "frame_queue.h"
 #include "input.h"
