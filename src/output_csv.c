@@ -8,64 +8,59 @@
 #include "common.h"
 #include "output.h"
 #include "packet.h"
-#include "output_compression.h"
-
-
-/**
- * \file output_csv.c
- * Output to CSV files - configuration and writing.
- */
+#include "output_csv.h"
 
 /**
- * Configuration structure extending `struct dns_output`.
+ * Helper to write CSV header to a file, return num of bytes
  */
-struct dns_output_csv {
-    struct dns_output base;
-
-    char *separator;
-    int header;
-    uint32_t fields;
-    int debug_packet_delay_us; ///< Delay for debugging congestion
-};
-
-/**
- * Maximal length of CSV output line. 
- * Should hold both CSV field names and values.
- * Estimate of the length: QNAME max len is 253 (1x), addr len is at most 40 each (2x),
- * timestamps are at most 20 bytes each (2x), other 16 values are 16 bit ints and fit 5 bytes,
- * that is 474 bytes including the separators. Increase if more or longer fields are added.
- */
-#define DNS_OUTPUT_CVS_LINEMAX 2048
+static size_t
+dns_output_csv_write_header(struct dns_output_csv *out, FILE *file)
+{
+    size_t n = 0;
+    int first = 1;
+    for (int f = 0; f < dns_of_LAST; f++) {
+        if (out->csv_fields & (1 << f)) {
+            if (first)
+                first = 0;
+            else {
+                fputc(out->separator, file);
+                n++;
+            }
+            fputs(dns_output_field_names[f], file);
+            n += strlen(dns_output_field_names[f]);
+        }
+    }
+    fputc('\n', file);
+    n++;
+    return n;
+}
 
 /**
  * Callback for cvs_output, writes CVS header.
  */
-void
-dns_output_csv_start_file(struct dns_output *out0, dns_us_time_t time UNUSED)
+static void
+dns_output_csv_start_file(struct dns_output *out0, dns_us_time_t time)
 {
     struct dns_output_csv *out = (struct dns_output_csv *) out0;
-    char buf[DNS_OUTPUT_CVS_LINEMAX] = "";
-    char *p = buf;
-    int first = 1;
+    assert(out && out->base.out_file);
 
-    for (int f = 0; f < dns_of_LAST; f++) {
-        if (out->fields & (1 << f)) {
-            if (!first)
-                *(p++) = out->separator[0];
-            else
-                first = 0;
+    if (out->inline_header)
+        out->base.wrote_bytes += dns_output_csv_write_header(out, out->base.out_file);
 
-            size_t l = strlen(dns_output_field_names[f]);
-            memcpy(p, dns_output_field_names[f], l);
-            p += l;
+    if (out->external_header_path_fmt && strlen(out->external_header_path_fmt) > 0) {
+        int path_len = strlen(out->external_header_path_fmt) + DNS_OUTPUT_FILENAME_EXTRA;
+        char *path = alloca(path_len);
+        size_t l = dns_us_time_strftime(path, path_len, out->external_header_path_fmt, time);
+        if (l == 0)
+            die("Expanded filename '%s' expansion too long.", out->external_header_path_fmt);
 
-            assert(p < buf + sizeof(buf));
+        FILE *headerf = fopen(path, "w");
+        if (!headerf) {
+            die("Unable to open output header file '%s': %s.", path, strerror(errno));
         }
+        dns_output_csv_write_header(out, headerf);
+        fclose(headerf);
     }
-
-    *(p++) = '\n';
-    *(p) = '\0';
-    dns_output_write(out0, buf, (p - buf));
 }
 
 
@@ -75,78 +70,63 @@ dns_output_csv_start_file(struct dns_output *out0, dns_us_time_t time UNUSED)
 static dns_ret_t
 dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
 {
-    const size_t CSV_ELEM_MAX_LEN = 512; // Upper bound on a single CVS element length
     struct dns_output_csv *out = (struct dns_output_csv *) out0;
-    char buf[DNS_OUTPUT_CVS_LINEMAX] = "";
     char addrbuf[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1] = "";
-    char *p = buf;
+    int first = 1;
 
-#define CONDWRITE(flag) \
-        if (p - buf >= sizeof(buf) - CSV_ELEM_MAX_LEN) return DNS_RET_ERR; \
-        if ((out->fields & (1 << (flag))) && (*(p++) = out->separator[0]))
+#define COND(flag) \
+        if (out->csv_fields & (1 << (flag)))
+#define WRITEFIELD(fmt, args...) \
+        if (first) { first = 0; } else { putc(out->separator, out->base.out_file); out->base.wrote_bytes += 1; } \
+        out->base.wrote_bytes += fprintf(out->base.out_file, fmt, args);
 
-    CONDWRITE(dns_of_flags) {
-        p += sprintf(p, "%d", dns_packet_get_output_flags(pkt));
+    COND(dns_of_timestamp) {
+        WRITEFIELD("%"PRId64".%06"PRId64, pkt->ts / 1000000L, pkt->ts % 1000000L);
     }
 
-    CONDWRITE(dns_of_client_addr) {
+    COND(dns_of_client_addr) {
         inet_ntop(DNS_PACKET_AF(pkt), DNS_PACKET_CLIENT_ADDR(pkt), addrbuf, sizeof(addrbuf));
-        p += sprintf(p, "%s", addrbuf);
+        WRITEFIELD("%s", addrbuf);
     }
 
-    CONDWRITE(dns_of_client_port) {
-        p += sprintf(p, "%d", DNS_PACKET_CLIENT_PORT(pkt));
+    COND(dns_of_client_port) {
+        WRITEFIELD("%d", DNS_PACKET_CLIENT_PORT(pkt));
     }
 
-    CONDWRITE(dns_of_server_addr) {
+    COND(dns_of_server_addr) {
         inet_ntop(DNS_PACKET_AF(pkt), DNS_PACKET_SERVER_ADDR(pkt), addrbuf, sizeof(addrbuf));
-        p += sprintf(p, "%s", addrbuf);
+        WRITEFIELD("%s", addrbuf);
     }
 
-    CONDWRITE(dns_of_server_port) {
-        p += sprintf(p, "%d", DNS_PACKET_SERVER_PORT(pkt));
+    COND(dns_of_server_port) {
+        WRITEFIELD("%d", DNS_PACKET_SERVER_PORT(pkt));
     }
 
-    CONDWRITE(dns_of_id) {
-        p += sprintf(p, "%d", ntohs(pkt->dns_data->id));
+    COND(dns_of_id) {
+        WRITEFIELD("%d", knot_wire_get_id(pkt->knot_packet->wire));
     }
 
-    CONDWRITE(dns_of_qname) {
-        char qname_buf[CSV_ELEM_MAX_LEN];
-        int res = dns_qname_printable(pkt->dns_qname_raw, pkt->dns_qname_raw_len, qname_buf, CSV_ELEM_MAX_LEN);
-        assert(res > 0);
-
-        // replacement character for the separator
-        // TODO: Proper escaping of unprintable characters?
-        char badchars[] = "\1\1\2\3\4\5\6\7\10\11\12\13\14\15\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37";
-        badchars[0] = out->separator[0];
-        int replacement = (out->separator[0] == '#' ? '?' : '#');
-
-        char *sp;
-        while(( sp = strpbrk(qname_buf, badchars) )) {
-            *sp = replacement;
-        }
-        p += sprintf(p, "%s", qname_buf);
+    COND(dns_of_qname) {
+        char qname_buf[512];
+        char * res = knot_dname_to_str(qname_buf, knot_pkt_qname(pkt->knot_packet), sizeof(qname_buf));
+        WRITEFIELD("%s", res ? res : "INVALID_QNAME" );
     }
 
-    CONDWRITE(dns_of_qtype) {
-        p += sprintf(p, "%d", pkt->dns_qtype);
+    COND(dns_of_qtype) {
+        WRITEFIELD("%d", knot_pkt_qtype(pkt->knot_packet));
     }
 
-    CONDWRITE(dns_of_qclass) {
-        p += sprintf(p, "%d", pkt->dns_qclass);
+    COND(dns_of_qclass) {
+        WRITEFIELD("%d", knot_pkt_qclass(pkt->knot_packet));
     }
 
-    CONDWRITE(dns_of_request_time_us) {
-        if (DNS_PACKET_REQUEST(pkt))
-            p += sprintf(p, "%"PRId64, DNS_PACKET_REQUEST(pkt)->ts);
+    COND(dns_of_flags) {
+        struct dns_packet *pp = pkt;
+        if (pkt->response)
+            pp = pkt->response;
+        WRITEFIELD("%d", (knot_wire_get_flags1(pp->knot_packet->wire) << 8) + knot_wire_get_flags2(pp->knot_packet->wire))
     }
-
-    CONDWRITE(dns_of_request_flags) {
-        if (DNS_PACKET_REQUEST(pkt))
-            p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->flags));
-    }
-
+/*
     CONDWRITE(dns_of_request_ans_rrs) {
         if (DNS_PACKET_REQUEST(pkt))
             p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->ans_rrs));
@@ -161,12 +141,15 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
         if (DNS_PACKET_REQUEST(pkt))
             p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->add_rrs));
     }
-
-    CONDWRITE(dns_of_request_length) {
-        if (DNS_PACKET_REQUEST(pkt))
-            p += sprintf(p, "%d", DNS_PACKET_REQUEST(pkt)->dns_orig_len);
+*/
+    COND(dns_of_request_length) {
+        if (DNS_PACKET_REQUEST(pkt)) {
+            WRITEFIELD("%zd", DNS_PACKET_REQUEST(pkt)->dns_data_size_orig);
+        } else {
+            WRITEFIELD("%d", -1);
+        }
     }
-
+/*
     CONDWRITE(dns_of_response_time_us) {
         if (DNS_PACKET_RESPONSE(pkt))
             p += sprintf(p, "%"PRId64, DNS_PACKET_RESPONSE(pkt)->ts);
@@ -191,78 +174,126 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
         if (DNS_PACKET_RESPONSE(pkt))
             p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->add_rrs));
     }
-
-    CONDWRITE(dns_of_response_length) {
-        if (DNS_PACKET_RESPONSE(pkt))
-            p += sprintf(p, "%d", DNS_PACKET_RESPONSE(pkt)->dns_orig_len);
+*/
+    COND(dns_of_response_length) {
+        if (DNS_PACKET_RESPONSE(pkt)) {
+            WRITEFIELD("%zd", DNS_PACKET_RESPONSE(pkt)->dns_data_size_orig);
+        } else {
+            WRITEFIELD("%d", -1);
+        }
     }
-#undef CONDWRITE
 
-    // if anything was written, it starts with the separator - skip it
-    char *writebuf = buf;
-    if (p > buf)
-        writebuf ++;
-
-    *(p++) = '\n';
-    *(p) = '\0';
-    dns_output_write(out0, writebuf, (p - writebuf));
-    out0->wrote_items ++;
-
-    if (out->debug_packet_delay_us > 0) {
-        usleep(out->debug_packet_delay_us);
+    COND(dns_of_delay_us) {
+        if (pkt->response) {
+            WRITEFIELD("%"PRId64, pkt->response->ts - pkt->ts);
+        } else {
+            WRITEFIELD("%d", -1);
+        }
     }
+
+#undef COND
+#undef WRITEFIELD
+
+    putc('\n', out->base.out_file);
+    out->base.wrote_bytes += 1;
+    out->base.wrote_packets ++;
 
     return DNS_RET_OK;
 }
 
+// Outer interface
+
+struct dns_output_csv *
+dns_output_csv_create(struct dns_frame_queue *in, const struct dns_output_csv_config *conf)
+{
+    struct dns_output_csv *out = xmalloc_zero(sizeof(struct dns_output_csv));
+
+    dns_output_init(&out->base, in, conf->path_fmt, conf->pipe_cmd, conf->period_sec);
+    out->base.start_file = dns_output_csv_start_file;
+    out->base.write_packet = dns_output_csv_write_packet;
+
+    out->separator = conf->separator[0];
+    out->inline_header = conf->inline_header;
+    out->csv_fields = conf->csv_fields;
+    if (conf->external_header_path_fmt)
+        out->external_header_path_fmt = strdup(conf->external_header_path_fmt);
+    return out;
+}
+
+void
+dns_output_csv_start(struct dns_output_csv *out)
+{
+    dns_output_start(&out->base);
+}
+
+void
+dns_output_csv_finish(struct dns_output_csv *out)
+{
+    dns_output_finish(&out->base);
+}
+
+void
+dns_output_csv_destroy(struct dns_output_csv *out)
+{
+    dns_output_finalize(&out->base);
+    if (out->external_header_path_fmt)
+        free(out->external_header_path_fmt);
+    free(out);
+}
 
 /**
  * Helper for configuration init.
  */
 static char *
-dns_output_csv_conf_init(void *data)
+dns_output_csv_config_init(void *data)
 {
-    struct dns_output_csv *out = (struct dns_output_csv *) data;
+    struct dns_output_csv_config *conf = (struct dns_output_csv_config *) data;
 
-    out->base.write_packet = dns_output_csv_write_packet;
-    out->base.start_file = dns_output_csv_start_file;
-
-    out->header = 1;
-    out->separator = "|";
-    out->debug_packet_delay_us = 0;
-
-    return dns_output_conf_init(&(out->base));
+    conf->path_fmt = NULL;
+    conf->pipe_cmd = NULL;
+    conf->period_sec = 0;
+    conf->separator = ",";
+    conf->inline_header = 0;
+    conf->external_header_path_fmt = NULL;
+    conf->csv_fields = 0; // TODO: some other default?
+    return NULL;
 }
-
 
 /**
  * Helper for configuration post-processing and validation.
  */
 static char *
-dns_output_csv_conf_commit(void *data)
+dns_output_csv_config_commit(void *data)
 {
-    struct dns_output_csv *out = (struct dns_output_csv *) data;
+    struct dns_output_csv_config *conf = (struct dns_output_csv_config *) data;
 
-    if (strlen(out->separator) != 1)
+    if (strlen(conf->separator) != 1)
         return "'separator' needs to be exactly one character.";
-    if (out->separator[0] < 0x20)
-        return "'separator' should be a printable character.";
+    if ((conf->separator[0] < 0x20) || (conf->separator[0] > 0x7f))
+        return "'separator' should be a printable, non-whitespace character.";
+    if (conf->csv_fields == 0)
+        return "Set output_csv.csv_fields to contain at least one field.";
 
-    return dns_output_conf_commit(&(out->base));
+    return NULL;
 }
 
-
+/**
+ * Libucw configuration subsection definition.
+ */
 struct cf_section dns_output_csv_section = {
-    CF_TYPE(struct dns_output_csv),
-    .init = &dns_output_csv_conf_init,
-    .commit = &dns_output_csv_conf_commit,
+    CF_TYPE(struct dns_output_csv_config),
+    .init = &dns_output_csv_config_init,
+    .commit = &dns_output_csv_config_commit,
     CF_ITEMS {
-        CF_DNS_OUTPUT_COMMON,
-        CF_STRING("separator", PTR_TO(struct dns_output_csv, separator)),
-        CF_INT("header", PTR_TO(struct dns_output_csv, header)),
-        CF_INT("debug_packet_delay_us", PTR_TO(struct dns_output_csv, debug_packet_delay_us)),
-        CF_BITMAP_LOOKUP("fields", PTR_TO(struct dns_output_csv, fields), dns_output_field_names),
+        CF_STRING("path_fmt", PTR_TO(struct dns_output_csv_config, path_fmt)),
+        CF_STRING("pipe_cmd", PTR_TO(struct dns_output_csv_config, pipe_cmd)),
+        CF_INT("period_seconds", PTR_TO(struct dns_output_csv_config, period_sec)),
+        CF_STRING("separator", PTR_TO(struct dns_output_csv_config, separator)),
+        CF_INT("inline_header", PTR_TO(struct dns_output_csv_config, inline_header)),
+        CF_STRING("external_header_path_fmt", PTR_TO(struct dns_output_csv_config, external_header_path_fmt)),
+        CF_BITMAP_LOOKUP("fields", PTR_TO(struct dns_output_csv_config, csv_fields), dns_output_field_names),
         CF_END
     }
 };
+
 

@@ -7,7 +7,7 @@ ifeq ($(CC),clang)
 WARNS+=-Wno-gnu-statement-expression -Wno-language-extension-token
 endif
 
-CFLAGS=-O3 -g3 -std=gnu99 -pedantic $(WARNS) -I../libs/libucw/run/include/ -I../libs/lz4/lib/ -rdynamic -pthread # ADD -flto ?
+CFLAGS=-O3 -g3 -std=gnu11 -pedantic $(WARNS) -I../libs/libucw/run/include/ -I../libs/lz4/lib/ -rdynamic -pthread # ADD -flto ?
 
 # Using local static libucw and liblz4
 LDLIBS=../libs/libucw/run/lib/libucw-6.5.a ../libs/lz4/lib/liblz4.a -ltrace -lpthread -lknot
@@ -16,7 +16,7 @@ LDFLAGS=
 PROG=dnscol
 DEPS=$(wildcard *.h)
 SRCS=common.c input.c frame_queue.c packet_frame.c worker_frame_logger.c main.c \
-     output.c packet.c worker_packet_matcher.c packet_hash.c
+     output.c output_csv.c packet.c worker_packet_matcher.c packet_hash.c
 OBJS=$(sort $(SRCS:.c=.o))
 
 all: $(PROG)

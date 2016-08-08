@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <libtrace.h>
 #include <libknot/libknot.h>
+#include <arpa/inet.h>
 #include <stddef.h>
 
 #include "common.h"
@@ -91,8 +92,8 @@ struct dns_packet {
 #define DNS_SOCKADDR_AF(sa) ( ((struct sockaddr*)(sa))->sa_family )
 
 #define DNS_SOCKADDR_PORT(sa) ( DNS_SOCKADDR_AF(sa) == AF_INET ? \
-                                ((struct sockaddr_in*)(void*)(sa))->sin_port : \
-                                ((struct sockaddr_in6*)(void*)(sa))->sin6_port )
+                                ntohs(((struct sockaddr_in*)(void*)(sa))->sin_port) : \
+                                ntohs(((struct sockaddr_in6*)(void*)(sa))->sin6_port) )
 
 #define DNS_SOCKADDR_ADDR(sa) ( DNS_SOCKADDR_AF(sa) == AF_INET ? \
                                 (void *)(&((struct sockaddr_in*)(void*)(sa))->sin_addr) : \

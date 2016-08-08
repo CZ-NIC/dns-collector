@@ -73,7 +73,7 @@ dns_us_time_strftime(char *s, size_t max, const char *format, dns_us_time_t time
 }
 
 const char *dns_output_field_names[] = {
-    "flags",
+    "timestamp",
 
     "client_addr",
     "client_port",
@@ -84,23 +84,24 @@ const char *dns_output_field_names[] = {
     "qname",
     "qtype",
     "qclass",
+    "flags",
 
-    "request_time_us",
-    "request_flags",
     "request_ans_rrs",
     "request_auth_rrs",
     "request_add_rrs",
     "request_length",
 
-    "response_time_us",
-    "response_flags",
     "response_ans_rrs",
     "response_auth_rrs",
     "response_add_rrs",
     "response_length",
 
+    "delay_us",
+
     NULL,
 };
+
+_Static_assert(sizeof(dns_output_field_names) == sizeof(char *) * (dns_of_LAST + 1), "dns_output_field_names and dns_output_field mismatch");
 
 const char *dns_drop_reason_names[] = {
   "other",
