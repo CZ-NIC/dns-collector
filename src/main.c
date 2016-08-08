@@ -49,9 +49,11 @@ int main(int argc UNUSED, char **argv)
     // Construct workflow (Preconf)
 
     struct dns_frame_queue *q_in_log1 = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
-    struct dns_frame_queue *q_log1_match = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
+    //struct dns_frame_queue *q_log1_match = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
+    struct dns_frame_queue *q_log1_match = q_in_log1;
     struct dns_frame_queue *q_match_log2 = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
-    struct dns_frame_queue *q_log2_out = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
+    //struct dns_frame_queue *q_log2_out = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
+    struct dns_frame_queue *q_log2_out = q_match_log2;
 
     struct dns_input *input = dns_input_create(q_in_log1);
 
@@ -75,19 +77,18 @@ int main(int argc UNUSED, char **argv)
         opt_failure("Provide at least one input capture filename or configure capture device in the config.");
         return 2;
     }
-
     log_configured("default-log");
     log_set_format(log_stream_by_flags(0), 0, LSFMT_LEVEL | LSFMT_TIME | LSFMT_TITLE | LSFMT_PID | LSFMT_USEC );
 
     // Construct and start workflow (Postconf)
 
-    struct dns_worker_frame_logger *w_log1 = dns_worker_frame_logger_create("log1", q_in_log1, q_log1_match);
+//    struct dns_worker_frame_logger *w_log1 = dns_worker_frame_logger_create("log1", q_in_log1, q_log1_match);
     struct dns_worker_packet_matcher *w_match = dns_worker_packet_matcher_create(dns_fsec_to_us_time(20.0), q_log1_match, q_match_log2);
-    struct dns_worker_frame_logger *w_log2 = dns_worker_frame_logger_create("log2", q_match_log2, q_log2_out);
+//    struct dns_worker_frame_logger *w_log2 = dns_worker_frame_logger_create("log2", q_match_log2, q_log2_out);
     struct dns_output_csv *output = dns_output_csv_create(q_log2_out, &output_csv_conf);
 
-    dns_worker_frame_logger_start(w_log1);
-    dns_worker_frame_logger_start(w_log2);
+//    dns_worker_frame_logger_start(w_log1);
+//    dns_worker_frame_logger_start(w_log2);
     dns_worker_packet_matcher_start(w_match);
     dns_output_csv_start(output);
 
@@ -115,8 +116,8 @@ int main(int argc UNUSED, char **argv)
     // Send the last frame, wait for threads to exit
 
     dns_input_finish(input);
-    dns_worker_frame_logger_finish(w_log1);
-    dns_worker_frame_logger_finish(w_log2);
+//    dns_worker_frame_logger_finish(w_log1);
+//    dns_worker_frame_logger_finish(w_log2);
     dns_worker_packet_matcher_finish(w_match);
     dns_output_csv_finish(output);
 
@@ -124,15 +125,15 @@ int main(int argc UNUSED, char **argv)
     // Dealloc and cleanup
 
     dns_input_destroy(input);
-    dns_worker_frame_logger_destroy(w_log1);
-    dns_worker_frame_logger_destroy(w_log2);
+//    dns_worker_frame_logger_destroy(w_log1);
+//    dns_worker_frame_logger_destroy(w_log2);
     dns_worker_packet_matcher_destroy(w_match);
     dns_output_csv_destroy(output);
 
     dns_frame_queue_destroy(q_in_log1);
-    dns_frame_queue_destroy(q_log1_match);
+//    dns_frame_queue_destroy(q_log1_match);
     dns_frame_queue_destroy(q_match_log2);
-    dns_frame_queue_destroy(q_log2_out);
+//    dns_frame_queue_destroy(q_log2_out);
 
     GARY_FREE(main_inputs);
 
