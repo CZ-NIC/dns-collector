@@ -247,7 +247,7 @@ dns_output_check_rotation(struct dns_output *out, dns_us_time_t time)
         dns_output_close(out, time);
 
     // open if not open
-    if (out->output_opened == DNS_NO_TIME)
+    if (!out->out_file)
         dns_output_open(out, time);
 
     out->current_time = MAX(out->current_time, time);
