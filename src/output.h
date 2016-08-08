@@ -85,6 +85,7 @@ struct dns_output {
     size_t wrote_packets;
 };
 
+#define DNS_OUTPUT_FILENAME_EXTRA 64
 
 /**
  * Initialise an already allocated output structure.

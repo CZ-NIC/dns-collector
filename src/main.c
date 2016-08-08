@@ -7,10 +7,8 @@
 #include "worker_frame_logger.h"
 #include "worker_packet_matcher.h"
 #include "input.h"
+#include "output_csv.h"
 #include "frame_queue.h"
-//#include "collector.h"
-//#include "dns.h"
-//#include "output.h"
 
 #define MAX_TRACE_SIZE 42
 void segv_handler(int sig UNUSED) {
@@ -48,27 +46,23 @@ int main(int argc UNUSED, char **argv)
 
     signal(SIGSEGV, segv_handler);
 
-    // Construct workflow
+    // Construct workflow (Preconf)
 
     struct dns_frame_queue *q_in_log1 = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
     struct dns_frame_queue *q_log1_match = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
     struct dns_frame_queue *q_match_log2 = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
-    struct dns_frame_queue *q_log2_out = NULL;
+    struct dns_frame_queue *q_log2_out = dns_frame_queue_create(5, 0, DNS_QUEUE_BLOCK);
 
     struct dns_input *input = dns_input_create(q_in_log1);
-    struct dns_worker_frame_logger *w_log1 = dns_worker_frame_logger_create("log1", q_in_log1, q_log1_match);
-    struct dns_worker_packet_matcher *w_match = dns_worker_packet_matcher_create(dns_fsec_to_us_time(20.0), q_log1_match, q_match_log2);
-    struct dns_worker_frame_logger *w_log2 = dns_worker_frame_logger_create("log2", q_match_log2, q_log2_out);
-
-    dns_worker_frame_logger_start(w_log1);
-    dns_worker_frame_logger_start(w_log2);
-    dns_worker_packet_matcher_start(w_match);
 
     // Configure
+    
+    struct dns_output_csv_config output_csv_conf;
 
     GARY_INIT(main_inputs, 0);
-    cf_declare_rel_section("dnscol_input", &dns_input_section, input, 0);
     log_register_type("spam");
+    cf_declare_rel_section("input", &dns_input_section, input, 0);
+    cf_declare_rel_section("output_csv", &dns_output_csv_section, &output_csv_conf, 0);
     opt_parse(&dns_options, argv + 1);
 
     #pragma GCC diagnostic push
@@ -85,7 +79,19 @@ int main(int argc UNUSED, char **argv)
     log_configured("default-log");
     log_set_format(log_stream_by_flags(0), 0, LSFMT_LEVEL | LSFMT_TIME | LSFMT_TITLE | LSFMT_PID | LSFMT_USEC );
 
-    // Main loop
+    // Construct and start workflow (Postconf)
+
+    struct dns_worker_frame_logger *w_log1 = dns_worker_frame_logger_create("log1", q_in_log1, q_log1_match);
+    struct dns_worker_packet_matcher *w_match = dns_worker_packet_matcher_create(dns_fsec_to_us_time(20.0), q_log1_match, q_match_log2);
+    struct dns_worker_frame_logger *w_log2 = dns_worker_frame_logger_create("log2", q_match_log2, q_log2_out);
+    struct dns_output_csv *output = dns_output_csv_create(q_log2_out, &output_csv_conf);
+
+    dns_worker_frame_logger_start(w_log1);
+    dns_worker_frame_logger_start(w_log2);
+    dns_worker_packet_matcher_start(w_match);
+    dns_output_csv_start(output);
+
+    // Main loop, start inputs
 
     if (*main_inputs) {
         // offline pcaps
@@ -112,6 +118,8 @@ int main(int argc UNUSED, char **argv)
     dns_worker_frame_logger_finish(w_log1);
     dns_worker_frame_logger_finish(w_log2);
     dns_worker_packet_matcher_finish(w_match);
+    dns_output_csv_finish(output);
+
 
     // Dealloc and cleanup
 
@@ -119,10 +127,13 @@ int main(int argc UNUSED, char **argv)
     dns_worker_frame_logger_destroy(w_log1);
     dns_worker_frame_logger_destroy(w_log2);
     dns_worker_packet_matcher_destroy(w_match);
+    dns_output_csv_destroy(output);
+
     dns_frame_queue_destroy(q_in_log1);
     dns_frame_queue_destroy(q_log1_match);
     dns_frame_queue_destroy(q_match_log2);
-//    dns_frame_queue_destroy(q_log2_out);
+    dns_frame_queue_destroy(q_log2_out);
+
     GARY_FREE(main_inputs);
 
     // NOTE: Valgrind registers 13 unfreed blocks amounting to libUCW config data.

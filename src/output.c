@@ -125,7 +125,7 @@ dns_output_start_subprocess(const char *sh_cmd, const char *outfile, pid_t *pidp
         fflush(stdout);
         if (outfile && strlen(outfile) > 0) {
             fclose(stdout);
-            int outfd = open(outfile, O_CREAT | O_TRUNC, O_RDWR);
+            int outfd = open(outfile, O_CREAT | O_TRUNC | O_WRONLY, 00644);
             if (outfd < 0) {
                 perror("open output file in dns_output_start_subprocess() in subprocess");
                 die("error opening \"%s\"", outfile);
@@ -139,8 +139,7 @@ dns_output_start_subprocess(const char *sh_cmd, const char *outfile, pid_t *pidp
         for (int fdi = 3; fdi < FOPEN_MAX; fdi++)
             close(fdi);
         fflush(stderr);
-        // TODO: subprocess exec
-        execl("/bin/sh", "-c", sh_cmd, (char *)NULL);
+        execl("/bin/sh", "/bin/sh", "-c", sh_cmd, (char *)NULL);
         perror("exec in dns_output_start_subprocess() in subprocess");
         die("failed to exec: \"/bin/sh\" \"-c\" \"%s\"", sh_cmd);
 
@@ -155,8 +154,6 @@ dns_output_start_subprocess(const char *sh_cmd, const char *outfile, pid_t *pidp
 }
 
 
-#define DNS_OUTPUT_FILENAME_STRFTIME_EXTRA 64
-
 void
 dns_output_open(struct dns_output *out, dns_us_time_t time)
 {
@@ -164,7 +161,7 @@ dns_output_open(struct dns_output *out, dns_us_time_t time)
 
     if (out->path_fmt && strlen(out->path_fmt) > 0) {
         // Extra space for expansion -- note that most used conversions are "in place": "%d" -> "01" 
-        int path_len = strlen(out->path_fmt) + DNS_OUTPUT_FILENAME_STRFTIME_EXTRA;
+        int path_len = strlen(out->path_fmt) + DNS_OUTPUT_FILENAME_EXTRA;
         out->path = xmalloc(path_len);
         size_t l = dns_us_time_strftime(out->path, path_len, out->path_fmt, time);
         if (l == 0)
@@ -181,13 +178,20 @@ dns_output_open(struct dns_output *out, dns_us_time_t time)
             dns_output_wait_for_pipe_process(out, 0);
             die("Unable to open output pipe descriptor %d: %s.", out->out_fd, strerror(errno));
         }
-    } else {
+    } else if ((out->path) && (strlen(out->path) > 0)) {
         // Open a file
         out->out_file = fopen(out->path, "w");
         if (!out->out_file)
             die("Unable to open output file '%s': %s.", out->path, strerror(errno));
         out->out_fd = fileno(out->out_file);
+    } else {
+        // Use stdout 
+        out->out_fd = 1;
+        out->out_file = fdopen(out->out_fd, "w");
+        if (!out->out_file)
+            die("Unable to open STDOUT at fd 2: %s.", strerror(errno));
     }
+
         
     out->output_opened = time;
     out->current_time = MAX(out->current_time, time);
