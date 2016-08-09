@@ -9,7 +9,6 @@
 #include <string.h>
 #include <libtrace.h>
 
-#include "config.h"
 #include "common.h"
 #include "packet.h"
 

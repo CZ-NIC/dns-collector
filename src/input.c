@@ -4,8 +4,6 @@
 #include <string.h>
 #include <linux/limits.h>
 #include <errno.h>
-#include <lz4.h>
-#include <lz4frame.h>
 
 #include "common.h"
 #include "packet_frame.h"
