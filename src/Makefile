@@ -10,7 +10,7 @@ endif
 CFLAGS=-O3 -g3 -std=gnu11 -pedantic $(WARNS) -I../libs/libucw/run/include/ -I../libs/lz4/lib/ -rdynamic -pthread # ADD -flto ?
 
 # Using local static libucw and liblz4
-LDLIBS=../libs/libucw/run/lib/libucw-6.5.a ../libs/lz4/lib/liblz4.a -ltrace -lpthread -lknot
+LDLIBS=../libs/libucw/run/lib/libucw-6.5.a -ltrace -lpthread -lknot
 LDFLAGS=
 
 PROG=dnscol
