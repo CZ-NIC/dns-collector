@@ -55,7 +55,7 @@ struct dns_worker_packet_matcher {
  * Create a packet matcher. The output queue is optional.
  */
 struct dns_worker_packet_matcher *
-dns_worker_packet_matcher_create(dns_us_time_t matching_duration, struct dns_frame_queue *in, struct dns_frame_queue *out);
+dns_worker_packet_matcher_create(struct dns_config *conf, struct dns_frame_queue *in, struct dns_frame_queue *out);
 
 /**
  * Wait for the packet matcher thread to stop.

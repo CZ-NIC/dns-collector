@@ -1,24 +1,37 @@
+#include "common.h"
 #include "config.h"
-#include "output.h"
-#include "input.h"
-
 
 static char *
 dns_collector_conf_init(void *data)
 {
     struct dns_config *conf = (struct dns_config *) data;
 
-    clist_init(&(conf->outputs_csv));
-    clist_init(&(conf->outputs_proto));
-    clist_init(&(conf->outputs_cbor));
+    // Common
+    conf->max_frame_duration_sec = 0.5;
+    conf->max_frame_size = 1 << 18;
+    conf->max_queue_len = 8;
+    conf->report_period_sec = 5;
 
-    clist_init(&(conf->outputs));
+    // Input
+    conf->input_uri = "";
+    conf->input_filter = "";
+    conf->input_snaplen = 0;
+    conf->input_promiscuous = 1;
 
-    conf->capture_limit = 300;
-    conf->timeframe_length_sec = 5.0;
-    conf->hash_order = 20;
-    conf->max_queue_len = 5;
-    conf->wait_for_outputs = 0;
+    // Matching
+    conf->match_window_sec = 30.0;
+
+    // conf->output options
+    conf->output_type = "csv";
+    conf->output_path_fmt = "";
+    conf->output_pipe_cmd = "";
+    conf->output_period_sec = 300;
+
+    // conf->output
+    conf->csv_separator = ",";
+    conf->csv_inline_header = 1;
+    conf->csv_external_header_path_fmt = "";
+    conf->csv_fields = ;
 
     return NULL;
 }
@@ -29,19 +42,20 @@ dns_collector_conf_commit(void *data)
 {
     struct dns_config *conf = (struct dns_config *) data;
 
-    if ((conf->hash_order  < 0) || (conf->hash_order > 36))
-        return "'hash_order' should be 0 .. 36.";
-
-    if (conf->timeframe_length_sec < 0.001)
-        return "'timeframe_length' too small, minimum 0.001 sec.";
-    conf->timeframe_length = dns_fsec_to_us_time(conf->timeframe_length_sec);
-
-    if (conf->capture_limit < 128)
-        return "'capture_limit' too small, minimum 128.";
-
-    clist_insert_list_after(&(conf->outputs_csv), &(conf->outputs.head));
-    clist_insert_list_after(&(conf->outputs_proto), &(conf->outputs.head));
-    clist_insert_list_after(&(conf->outputs_cbor), &(conf->outputs.head));
+    if (conf->max_frame_duration_sec < 0.001)
+        return "'max_frame_duration_sec' too small, minimum 0.001 sec";
+    if (conf->max_queue_len < 1)
+        return "'max_queue_len' must be at least 1";
+    if (strcasecmp(conf->output_type, "csv") == 0) {
+        if (strlen(conf->csv_separator) != 1)
+            return "'csv_separator' needs to be exactly one character";
+        if ((conf->csv_separator[0] < 0x20) || (conf->csv_separator[0] > 0x7f))
+            return "'csv_separator' should be a printable, non-whitespace character";
+        if (conf->csv_fields == 0)
+            return "'csv_fields' must have at least one field";
+    } else {
+        return "only 'output_type csv' currently supported";
+    }
 
     return NULL;
 }
@@ -52,20 +66,32 @@ struct cf_section dns_config_section = {
     CF_INIT(dns_collector_conf_init),
     CF_COMMIT(dns_collector_conf_commit),
     CF_ITEMS {
-        CF_INT("capture_limit", PTR_TO(struct dns_config, capture_limit)),
-        CF_INT("hash_order", PTR_TO(struct dns_config, hash_order)),
-        CF_DOUBLE("timeframe_length", PTR_TO(struct dns_config, timeframe_length_sec)),
-        CF_INT("offline", PTR_TO(struct dns_config, wait_for_outputs)),
-        #ifdef DNS_WITH_CSV
-        CF_LIST("output_csv", PTR_TO(struct dns_config, outputs_csv), &dns_output_csv_section),
-        #endif // DNS_WITH_CSV
-        #ifdef DNS_WITH_PROTO
-        CF_LIST("output_proto", PTR_TO(struct dns_config, outputs_proto), &dns_output_proto_section),
-        #endif // DNS_WITH_PROTO
-        #ifdef DNS_WITH_CBOR
-        CF_LIST("output_cbor", PTR_TO(struct dns_config, outputs_cbor), &dns_output_cbor_section),
-        #endif // DNS_WITH_CBOR
-        CF_LIST("input", PTR_TO(struct dns_config, inputs), &dns_input_section),
+	// Common
+	CF_DOUBLE("max_frame_duration", PTR_TO(struct dns_config, max_frame_duration_sec)),
+	CF_INT("max_frame_size", PTR_TO(struct dns_config, max_frame_size)),
+	CF_INT("max_queue_len", PTR_TO(struct dns_config, max_queue_len)),
+	CF_INT("report_period", PTR_TO(struct dns_config, report_period_sec)),
+
+	// Input
+	CF_STRING("input_uri", PTR_TO(struct dns_config, input_uri)),
+	CF_STRING("input_filter", PTR_TO(struct dns_config, input_filter)),
+	CF_INT("input_snaplen", PTR_TO(struct dns_config, input_snaplen)),
+	CF_INT("input_promiscuous", PTR_TO(struct dns_config, input_promiscuous)),
+
+	// Matching
+	CF_DOUBLE("match_window", PTR_TO(struct dns_config, match_window_sec)),
+
+	// General output options
+	CF_STRING("output_type", PTR_TO(struct dns_config, output_type)),
+	CF_STRING("output_path_fmt", PTR_TO(struct dns_config, output_path_fmt)),
+	CF_STRING("output_pipe_cmd", PTR_TO(struct dns_config, output_pipe_cmd)),
+	CF_INT("output_period", PTR_TO(struct dns_config, output_period_sec)),
+
+	// CSV output
+	CF_STRING("csv_separator", PTR_TO(struct dns_config, csv_separator)),
+	CF_INT("csv_inline_header", PTR_TO(struct dns_config, csv_inline_header)),
+	CF_STRING("csv_external_header_path_fmt", PTR_TO(struct dns_config, csv_external_header_path_fmt)),
+	CF_BITMAP_LOOKUP("csv_fields", PTR_TO(struct dns_config, csv_fields), dns_output_field_names),
         CF_END
     }
 };

@@ -66,10 +66,10 @@ dns_frame_queue_enqueue(struct dns_frame_queue* q, struct dns_packet_frame *f)
     if ((q->size_cap > 0) && (f->size > q->size_cap)) {
         dns_packet_frame_destroy(f);
         f = NULL;
-        assert(0); // Should never happen in collector
+        assert(0); // Should never happen in collector TODO: remove this branch
     }
 
-    while ((f) && ((q->length + 1 > q->capacity) || ((q->size_cap > 0) && (q->total_size + f->size > q->size_cap)))) {
+    while ((q->length + 1 > q->capacity) || ((q->size_cap > 0) && (q->total_size + f->size > q->size_cap))) {
         assert(q->length >= 1);
         if (q->on_full == DNS_QUEUE_BLOCK) {
             pthread_cond_wait(&q->full_cond, &q->mutex);
@@ -80,6 +80,7 @@ dns_frame_queue_enqueue(struct dns_frame_queue* q, struct dns_packet_frame *f)
         if (q->on_full == DNS_QUEUE_DROP_NEWEST) {
             dns_packet_frame_destroy(f);
             f = NULL;
+            break;
         }      
     }
 

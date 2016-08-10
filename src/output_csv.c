@@ -10,6 +10,54 @@
 #include "packet.h"
 #include "output_csv.h"
 
+
+// Forward declarations
+
+static size_t
+dns_output_csv_write_header(struct dns_output_csv *out, FILE *file);
+
+static void
+dns_output_csv_start_file(struct dns_output *out0, dns_us_time_t time);
+
+
+struct dns_output_csv *
+dns_output_csv_create(struct dns_config *conf, struct dns_frame_queue *in)
+{
+    struct dns_output_csv *out = xmalloc_zero(sizeof(struct dns_output_csv));
+
+    dns_output_init(&out->base, in, conf->output_path_fmt, conf->output_pipe_cmd, conf->output_period_sec);
+    out->base.start_file = dns_output_csv_start_file;
+    out->base.write_packet = dns_output_csv_write_packet;
+
+    out->separator = conf->csv_separator[0];
+    out->inline_header = conf->csv_inline_header;
+    out->csv_fields = conf->csv_fields;
+    if (conf->csv_external_header_path_fmt)
+        out->csv_external_header_path_fmt = strdup(conf->csv_external_header_path_fmt);
+    return out;
+}
+
+void
+dns_output_csv_start(struct dns_output_csv *out)
+{
+    dns_output_start(&out->base);
+}
+
+void
+dns_output_csv_finish(struct dns_output_csv *out)
+{
+    dns_output_finish(&out->base);
+}
+
+void
+dns_output_csv_destroy(struct dns_output_csv *out)
+{
+    dns_output_finalize(&out->base);
+    if (out->external_header_path_fmt)
+        free(out->external_header_path_fmt);
+    free(out);
+}
+
 /**
  * Helper to write CSV header to a file, return num of bytes
  */
@@ -200,100 +248,4 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
 
     return DNS_RET_OK;
 }
-
-// Outer interface
-
-struct dns_output_csv *
-dns_output_csv_create(struct dns_frame_queue *in, const struct dns_output_csv_config *conf)
-{
-    struct dns_output_csv *out = xmalloc_zero(sizeof(struct dns_output_csv));
-
-    dns_output_init(&out->base, in, conf->path_fmt, conf->pipe_cmd, conf->period_sec);
-    out->base.start_file = dns_output_csv_start_file;
-    out->base.write_packet = dns_output_csv_write_packet;
-
-    out->separator = conf->separator[0];
-    out->inline_header = conf->inline_header;
-    out->csv_fields = conf->csv_fields;
-    if (conf->external_header_path_fmt)
-        out->external_header_path_fmt = strdup(conf->external_header_path_fmt);
-    return out;
-}
-
-void
-dns_output_csv_start(struct dns_output_csv *out)
-{
-    dns_output_start(&out->base);
-}
-
-void
-dns_output_csv_finish(struct dns_output_csv *out)
-{
-    dns_output_finish(&out->base);
-}
-
-void
-dns_output_csv_destroy(struct dns_output_csv *out)
-{
-    dns_output_finalize(&out->base);
-    if (out->external_header_path_fmt)
-        free(out->external_header_path_fmt);
-    free(out);
-}
-
-/**
- * Helper for configuration init.
- */
-static char *
-dns_output_csv_config_init(void *data)
-{
-    struct dns_output_csv_config *conf = (struct dns_output_csv_config *) data;
-
-    conf->path_fmt = NULL;
-    conf->pipe_cmd = NULL;
-    conf->period_sec = 0;
-    conf->separator = ",";
-    conf->inline_header = 0;
-    conf->external_header_path_fmt = NULL;
-    conf->csv_fields = 0; // TODO: some other default?
-    return NULL;
-}
-
-/**
- * Helper for configuration post-processing and validation.
- */
-static char *
-dns_output_csv_config_commit(void *data)
-{
-    struct dns_output_csv_config *conf = (struct dns_output_csv_config *) data;
-
-    if (strlen(conf->separator) != 1)
-        return "'separator' needs to be exactly one character.";
-    if ((conf->separator[0] < 0x20) || (conf->separator[0] > 0x7f))
-        return "'separator' should be a printable, non-whitespace character.";
-    if (conf->csv_fields == 0)
-        return "Set output_csv.csv_fields to contain at least one field.";
-
-    return NULL;
-}
-
-/**
- * Libucw configuration subsection definition.
- */
-struct cf_section dns_output_csv_section = {
-    CF_TYPE(struct dns_output_csv_config),
-    .init = &dns_output_csv_config_init,
-    .commit = &dns_output_csv_config_commit,
-    CF_ITEMS {
-        CF_STRING("path_fmt", PTR_TO(struct dns_output_csv_config, path_fmt)),
-        CF_STRING("pipe_cmd", PTR_TO(struct dns_output_csv_config, pipe_cmd)),
-        CF_INT("period_seconds", PTR_TO(struct dns_output_csv_config, period_sec)),
-        CF_STRING("separator", PTR_TO(struct dns_output_csv_config, separator)),
-        CF_INT("inline_header", PTR_TO(struct dns_output_csv_config, inline_header)),
-        CF_STRING("external_header_path_fmt", PTR_TO(struct dns_output_csv_config, external_header_path_fmt)),
-        CF_BITMAP_LOOKUP("fields", PTR_TO(struct dns_output_csv_config, csv_fields), dns_output_field_names),
-        CF_END
-    }
-};
-
 

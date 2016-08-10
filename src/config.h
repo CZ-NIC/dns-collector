@@ -7,36 +7,39 @@
  */
 
 #include "common.h"
-#include "stats.h"
-#include "input.h"
-#include "output.h"
 
-/** Configuration of a DNS collector. Filled in mostly by the `libucw` config system.
- * See `dnscol.conf` for detaled description. */
+/**
+ * Configuration of a DNS collector. Filled in mostly by the `libucw` config system.
+ * See `dnscol.conf` for detaled description.
+ */
 struct dns_config {
 
-    dns_us_time_t timeframe_length;
-    double timeframe_length_sec;
-
-    int32_t capture_limit;
-
+    // Common
+    double max_frame_duration_sec;
+    int max_frame_size;
     int max_queue_len;
-    
-    int wait_for_outputs; ///< If set, the queued frames are never dropped. The collector waits instead.
+    int report_period_sec;
 
-    struct clist outputs_csv; ///< For config only, later empty.
-    struct clist outputs_proto; ///< For config only, later empty.
-    struct clist outputs_cbor; ///< For config only, later empty.
-    struct clist outputs; ///< clist of collected struct dns_output from outputs_*.
+    // Input
+    char *input_uri;
+    char *input_filter;
+    int input_snaplen;
+    int input_promiscuous;
 
-//    char **inputs; ///< Not owned by config, NULL-terminated array.
+    // Matching
+    double match_window_sec;
 
-    int32_t hash_order;
+    // General output options
+    char *output_type;
+    char *output_path_fmt;
+    char *output_pipe_cmd;
+    int output_period_sec;
 
-    struct clist inputs; ///< clist of configured `struct dns_input`
-
-    /** Whether to also dump dropped packets by drop reason. */
-    int dump_packet_reason[dns_drop_LAST];
+    // CSV output
+    char *csv_separator;
+    int csv_inline_header;
+    char *csv_external_header_path_fmt;
+    uint32_t csv_fields;
 };
 
 extern struct cf_section dns_config_section;

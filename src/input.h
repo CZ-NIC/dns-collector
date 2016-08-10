@@ -10,6 +10,7 @@
 #include <libtrace.h>
 
 #include "common.h"
+#include "config.h"
 #include "packet.h"
 
 /**
@@ -18,8 +19,8 @@
 struct dns_input {
 
     /** Libtrace current input name.
-     * Not owned by the input! (and not NULL)
-     * Empty string for offline (pcap file input) processing. */
+     * Owned by the input, not NULL.
+     * Empty string for offline only processing (pcap file input). */
     char *uri;
 
     /** Length of wire packet capture */
@@ -37,9 +38,6 @@ struct dns_input {
 
     /** Maximum packet frame duration */
     dns_us_time_t frame_max_duration;
-
-    /** Configuration (temp) variable for frame_max_duration */
-    double frame_max_duration_sec;
 
     /** Maximum packet frame size in bytes */
     int frame_max_size;
@@ -68,11 +66,9 @@ extern struct cf_section dns_input_section;
 
 /**
  * Allocate and initialize the input, allocate a frame.
- * The input can be configured later, but note that 
- * dns_input_conf_commit is called by UCW config.
  */
 struct dns_input *
-dns_input_create(struct dns_frame_queue *output);
+dns_input_create(struct dns_config *conf, struct dns_frame_queue *output);
 
 /**
  * Send the last frame and a finalizing frame with

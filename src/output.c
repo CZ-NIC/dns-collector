@@ -213,21 +213,25 @@ dns_output_close(struct dns_output *out, dns_us_time_t time)
         (out->finish_file)(out, time);
     }
 
-    // Close out fd
-    fclose(out->out_file);
-    out->out_file = NULL;
-    out->out_fd = -1;
+    // Report and update time
+    msg(L_INFO, "Wrote %d packets (%d bytes pre-pipe) to \"%s\".",
+        (int)out->wrote_packets, (int)out->wrote_bytes,
+        (out->path && strlen(out->path) > 0) ? out->path : "<STDOUT>");
+    out->current_time = MAX(out->current_time, time);
+
+    // Close out fd if not stdout
+    if (out->path && strlen(out->path) > 0) {
+        fclose(out->out_file);
+        free(out->path);
+        out->path = NULL;
+        out->out_file = NULL;
+        out->out_fd = -1;
+    }
 
     // Wait for the pipe process
     if (dns_output_wait_for_pipe_process(out, 1) == 2) {
         die("Pipe subprocess terminated with error, check your configuration.");
     }
-
-    // Report and free
-    msg(L_INFO, "Wrote %d packets (%d bytes pre-pipe) to \"%s\".", (int)out->wrote_packets, (int)out->wrote_bytes, out->path ? out->path : "<STDOUT>");
-    out->current_time = MAX(out->current_time, time);
-    free(out->path);
-    out->path = NULL;
 }
 
 /**
