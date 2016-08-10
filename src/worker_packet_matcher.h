@@ -2,6 +2,7 @@
 #define DNSCOL_WORKER_PACKET_MATCHER_H
 
 #include "common.h"
+#include "config.h"
 
 struct dns_frame_queue;
 struct dns_packet_hash;

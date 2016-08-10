@@ -19,6 +19,9 @@ dns_output_csv_write_header(struct dns_output_csv *out, FILE *file);
 static void
 dns_output_csv_start_file(struct dns_output *out0, dns_us_time_t time);
 
+static dns_ret_t
+dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt);
+
 
 struct dns_output_csv *
 dns_output_csv_create(struct dns_config *conf, struct dns_frame_queue *in)
@@ -33,7 +36,7 @@ dns_output_csv_create(struct dns_config *conf, struct dns_frame_queue *in)
     out->inline_header = conf->csv_inline_header;
     out->csv_fields = conf->csv_fields;
     if (conf->csv_external_header_path_fmt)
-        out->csv_external_header_path_fmt = strdup(conf->csv_external_header_path_fmt);
+        out->external_header_path_fmt = strdup(conf->csv_external_header_path_fmt);
     return out;
 }
 

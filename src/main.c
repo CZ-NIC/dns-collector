@@ -72,13 +72,13 @@ int main(int argc UNUSED, char **argv)
     // Construct and start workflow
 
     struct dns_frame_queue *q_input_mathcher =
-        dns_frame_queue_create("input-matcher", conf->max_queue_len, 0, DNS_QUEUE_BLOCK);
+        dns_frame_queue_create(conf->max_queue_len, DNS_QUEUE_BLOCK);
     struct dns_frame_queue *q_matcher_output =
-        dns_frame_queue_create("matcher-output", conf->max_queue_len, 0, DNS_QUEUE_BLOCK);
+        dns_frame_queue_create(conf->max_queue_len, DNS_QUEUE_BLOCK);
     struct dns_input *input =
         dns_input_create(conf, q_input_mathcher);
     struct dns_worker_packet_matcher *w_matcher =
-        dns_worker_packet_matcher_create(dns_fsec_to_us_time(conf->match_window_sec), q_input_mathcher, q_matcher_output);
+        dns_worker_packet_matcher_create(conf, q_input_mathcher, q_matcher_output);
     struct dns_output_csv *output =
         dns_output_csv_create(conf, q_matcher_output);
 
@@ -119,7 +119,7 @@ int main(int argc UNUSED, char **argv)
     dns_worker_packet_matcher_destroy(w_matcher);
     dns_output_csv_destroy(output);
     dns_frame_queue_destroy(q_input_mathcher);
-    dns_frame_queue_destroy(q_mathcher_output);
+    dns_frame_queue_destroy(q_matcher_output);
 
     GARY_FREE(main_inputs);
 

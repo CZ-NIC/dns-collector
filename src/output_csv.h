@@ -8,6 +8,7 @@
 
 #include "output.h"
 #include "frame_queue.h"
+#include "config.h"
 
 /**
  * Configuration structure extending `struct dns_output`.
