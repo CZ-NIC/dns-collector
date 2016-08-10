@@ -12,7 +12,7 @@
 #include "packet.h"
 
 struct dns_worker_packet_matcher *
-dns_worker_packet_matcher_create(dns_us_time_t matching_duration, struct dns_frame_queue *in, struct dns_frame_queue *out)
+dns_worker_packet_matcher_create(struct dns_config *conf, struct dns_frame_queue *in, struct dns_frame_queue *out)
 {
     assert(in);
     struct dns_worker_packet_matcher *pm = xmalloc_zero(sizeof(struct dns_worker_packet_matcher));
@@ -21,9 +21,9 @@ dns_worker_packet_matcher_create(dns_us_time_t matching_duration, struct dns_fra
     pm->inframe = NULL;
     pm->outframe = NULL;
     pm->current_time = DNS_NO_TIME;
-    pm->matching_duration = matching_duration;
-    pm->frame_max_duration = 1e6; // TODO: copy from input or config
-    pm->frame_max_size = 1024 * 1024; // TODO: copy from input or config
+    pm->matching_duration = dns_fsec_to_us_time(conf->match_window_sec);
+    pm->frame_max_duration = dns_fsec_to_us_time(conf->max_frame_duration_sec);
+    pm->frame_max_size = conf->max_frame_size;
     assert(pm->matching_duration > 0);
     pthread_mutex_init(&pm->running, NULL);
     // Actually uses a random seed (indicated by the 0 value)
