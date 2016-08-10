@@ -42,7 +42,7 @@ dns_us_time_from_timeval(const struct timeval *t)
 dns_us_time_t
 dns_us_time_from_timespec(const struct timespec *t)
 {
-    return (t->tv_nsec / 1000) + (1000000 * t->tv_sec);
+    return ((dns_us_time_t)(t->tv_nsec) / 1000) + (1000000LL * (dns_us_time_t)(t->tv_sec));
 }
 
 
