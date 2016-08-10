@@ -21,13 +21,13 @@ dns_collector_conf_init(void *data)
     // Matching
     conf->match_window_sec = 30.0;
 
-    // conf->output options
+    // General output
     conf->output_type = "csv";
     conf->output_path_fmt = "";
     conf->output_pipe_cmd = "";
-    conf->output_period_sec = 300;
+    conf->output_period_sec = 0;
 
-    // conf->output
+    // CSV output
     conf->csv_separator = ",";
     conf->csv_inline_header = 1;
     conf->csv_external_header_path_fmt = "";

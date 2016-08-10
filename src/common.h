@@ -141,6 +141,12 @@ enum dns_drop_reason {
 
 extern const char *dns_drop_reason_names[];
 
+/**
+ * Global input stop flag.
+ * After it is set, the input is stopped and the program
+ * waits for pipeline to finish.
+ */
+extern int dns_global_stop;
 
 /**
  * Internal debugging: print the current trace to stderr.

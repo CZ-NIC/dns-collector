@@ -6,6 +6,8 @@
 
 #include "common.h"
 
+int dns_global_stop = 0;
+
 #define MAX_TRACE_SIZE 42
 void dns_ptrace(void)
 {
