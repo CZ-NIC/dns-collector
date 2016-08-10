@@ -11,7 +11,6 @@
 #include "input.h"
 
 
-
 struct dns_input *
 dns_input_create(struct dns_config *conf, struct dns_frame_queue *output)
 {

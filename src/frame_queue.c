@@ -9,7 +9,7 @@
 
 
 struct dns_frame_queue *
-dns_frame_queue_create(size_t capacity, size_t size_cap, enum dns_frame_queue_on_full on_full)
+dns_frame_queue_create(size_t capacity, enum dns_frame_queue_on_full on_full)
 {
     struct dns_frame_queue *q = (struct dns_frame_queue*) malloc(sizeof(struct dns_frame_queue));
     q->queue = (struct dns_packet_frame**) malloc(sizeof(struct dns_packet_frame *) * capacity);
@@ -18,7 +18,6 @@ dns_frame_queue_create(size_t capacity, size_t size_cap, enum dns_frame_queue_on
     q->capacity = capacity;
     q->on_full = on_full;
     q->total_size = 0;
-    q->size_cap = size_cap;
     pthread_cond_init(&q->empty_cond, NULL);
     pthread_cond_init(&q->full_cond, NULL);
     pthread_mutex_init(&q->mutex, NULL);
@@ -63,13 +62,7 @@ dns_frame_queue_enqueue(struct dns_frame_queue* q, struct dns_packet_frame *f)
 
     pthread_mutex_lock(&q->mutex);
 
-    if ((q->size_cap > 0) && (f->size > q->size_cap)) {
-        dns_packet_frame_destroy(f);
-        f = NULL;
-        assert(0); // Should never happen in collector TODO: remove this branch
-    }
-
-    while ((q->length + 1 > q->capacity) || ((q->size_cap > 0) && (q->total_size + f->size > q->size_cap))) {
+    while (q->length + 1 > q->capacity) {
         assert(q->length >= 1);
         if (q->on_full == DNS_QUEUE_BLOCK) {
             pthread_cond_wait(&q->full_cond, &q->mutex);

@@ -15,7 +15,7 @@ dns_collector_conf_init(void *data)
     // Input
     conf->input_uri = "";
     conf->input_filter = "";
-    conf->input_snaplen = 0;
+    conf->input_snaplen = -1;
     conf->input_promiscuous = 1;
 
     // Matching
@@ -31,7 +31,7 @@ dns_collector_conf_init(void *data)
     conf->csv_separator = ",";
     conf->csv_inline_header = 1;
     conf->csv_external_header_path_fmt = "";
-    conf->csv_fields = ;
+    conf->csv_fields = (1 << dns_of_LAST) - 1; // All fields by default
 
     return NULL;
 }

@@ -33,8 +33,6 @@ struct dns_frame_queue {
 
     /** Size of the queued frames in bytes. */
     size_t total_size;
-    /** Maximum allowed size in the queue. 0 for no size checks. Frame bigger that the limit is destroyed immediatelly. */
-    size_t size_cap;
 
     pthread_cond_t empty_cond;
     pthread_cond_t full_cond;
@@ -48,7 +46,7 @@ struct dns_frame_queue {
  * The parameter on_full determines the behaviour on full queue, see enum dns_frame_queue_on_full.
  */
 struct dns_frame_queue *
-dns_frame_queue_create(size_t capacity, size_t size_cap, enum dns_frame_queue_on_full on_full);
+dns_frame_queue_create(size_t capacity, enum dns_frame_queue_on_full on_full);
 
 /**
  * Free the queue and all contained frames.
