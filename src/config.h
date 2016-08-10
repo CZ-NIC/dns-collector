@@ -25,6 +25,8 @@ struct dns_config {
     char *input_filter;
     int input_snaplen;
     int input_promiscuous;
+    double input_real_time_grace_sec;
+
 
     // Matching
     double match_window_sec;

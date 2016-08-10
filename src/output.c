@@ -112,6 +112,9 @@ dns_output_start_subprocess(const char *sh_cmd, const char *outfile, pid_t *pidp
     if (subpid == 0) {
 
         // Subprocess
+        // New process group - ignore sigint
+        setpgid(0, 0);
+        // Close a half of the pipe
         if (close(pipefds[1]) != 0) {
             perror("close in dns_output_start_subprocess() in subprocess");
             die("close() error");
@@ -157,7 +160,7 @@ dns_output_start_subprocess(const char *sh_cmd, const char *outfile, pid_t *pidp
 void
 dns_output_open(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && (!out->path) && (time != DNS_NO_TIME));
+    assert(out && (!out->path) && (!out->out_file) && (time != DNS_NO_TIME));
 
     if (out->path_fmt && strlen(out->path_fmt) > 0) {
         // Extra space for expansion -- note that most used conversions are "in place": "%d" -> "01" 
@@ -186,13 +189,14 @@ dns_output_open(struct dns_output *out, dns_us_time_t time)
         out->out_fd = fileno(out->out_file);
     } else {
         // Use stdout 
-        out->out_fd = 1;
+        out->out_fd = dup(1);
+        if (out->out_fd < 0)
+            die("Failed to dup() stdin");
         out->out_file = fdopen(out->out_fd, "w");
         if (!out->out_file)
-            die("Unable to open STDOUT at fd 2: %s.", strerror(errno));
+            die("Unable to open dupped STDOUT at fd %d: %s", out->out_fd, strerror(errno));
     }
 
-        
     out->output_opened = time;
     out->current_time = MAX(out->current_time, time);
 
@@ -219,13 +223,10 @@ dns_output_close(struct dns_output *out, dns_us_time_t time)
         strlen(out->path) > 0 ? out->path : "<STDOUT>");
     out->current_time = MAX(out->current_time, time);
 
-    // Close out fd if not stdout
-    if (strlen(out->path) > 0) {
-        fclose(out->out_file);
-        out->out_file = NULL;
-        out->out_fd = -1;
-    }
-
+    // Close out file (with the fd)
+    fclose(out->out_file);
+    out->out_file = NULL;
+    out->out_fd = -1;
     free(out->path);
     out->path = NULL;
 
@@ -247,12 +248,12 @@ dns_output_check_rotation(struct dns_output *out, dns_us_time_t time)
 
     // TODO: Better timing (based on second_since_midnight division), also doc above
     // check if we need to switch output files
-    if ((out->path) && (out->period_sec > 0) && (out->output_opened != DNS_NO_TIME) &&
+    if ((out->out_file) && (out->period_sec > 0) && (out->output_opened != DNS_NO_TIME) &&
         (time >= out->output_opened + (out->period_sec * 1000000)))
         dns_output_close(out, time);
 
     // open if not open
-    if (!out->path)
+    if (!out->out_file)
         dns_output_open(out, time);
 
     out->current_time = MAX(out->current_time, time);
@@ -284,9 +285,10 @@ dns_output_main(void *data)
         }
         dns_packet_frame_destroy(f);
     }
-    if (out->path) {
+    if (out->out_file) {
         dns_output_close(out, out->current_time);
     }
+
     pthread_mutex_unlock(&out->running);
     return NULL;
 }
@@ -306,9 +308,5 @@ dns_output_finish(struct dns_output *out)
 {
     int r = pthread_join(out->thread, NULL);
     assert(r == 0);
-    if (out->out_file) { // This may be STDOUT, close it
-        fclose(out->out_file);
-        out->out_file = NULL;
-    }
     msg(L_DEBUG, "Output stopped and joined");
 }

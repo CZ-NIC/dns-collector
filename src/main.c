@@ -13,7 +13,8 @@
 
 #define MAX_TRACE_SIZE 42
 static void
-segv_handler(int sig UNUSED) {
+sigsegv_handler(int sig UNUSED)
+{
     void *array[MAX_TRACE_SIZE];
     size_t size = backtrace(array, MAX_TRACE_SIZE);
     backtrace_symbols_fd(array, size, 2);
@@ -21,14 +22,32 @@ segv_handler(int sig UNUSED) {
 }
 
 static void
-int_handler(int sig UNUSED) {
+sigint_handler(int sig UNUSED)
+{
     if (dns_global_stop) {
-        msg(L_INFO | L_SIGHANDLER, "Received another SIGINT, exitting immediatelly");
+        msg(L_WARN | L_SIGHANDLER, "Received another SIGINT, exitting immediatelly");
         exit(1);
     } else {
         dns_global_stop = 1;
         msg(L_INFO | L_SIGHANDLER, "Received SIGINT: stopping input, graceful shutdown (send again to kill immediatelly)");
     }
+}
+
+static void
+sigpipe_handler(int sig UNUSED)
+{
+    if (dns_global_stop) {
+        msg(L_WARN | L_SIGHANDLER, "Ignoring SIGPIPE after input termination (likely minor error)");
+    } else {
+        msg(L_FATAL | L_SIGHANDLER, "Received SIGPIPE during operation, exitting.");
+        exit(1);
+    }
+}
+
+static void UNUSED
+signal_ignore_handler(int sig)
+{
+    msg(L_INFO | L_SIGHANDLER, "Ignoring signal %s (%d)", sys_siglist[sig], sig);
 }
 
 static char **main_inputs; // growing array of char*
@@ -57,15 +76,16 @@ int main(int argc UNUSED, char **argv)
 
     // Setup signal handlers
 
-    signal(SIGSEGV, segv_handler);
-    signal(SIGINT, int_handler);
+    signal(SIGSEGV, sigsegv_handler);
+    signal(SIGINT, sigint_handler);
+    signal(SIGPIPE, sigpipe_handler);
 
     // Configure
     
     struct dns_config *conf = alloca(sizeof(struct dns_config));
 
     GARY_INIT(main_inputs, 0);
-    log_register_type("spam");
+    dns_log_spam_type = log_register_type("spam");
     cf_declare_rel_section("dnscol", &dns_config_section, conf, 0);
     opt_parse(&dns_options, argv + 1);
 
@@ -79,8 +99,8 @@ int main(int argc UNUSED, char **argv)
         opt_failure("Provide at least one input capture filename or configure capture device in the config.");
         return 2;
     }
-    log_configured("default-log");
-    log_set_format(log_stream_by_flags(0), 0, LSFMT_LEVEL | LSFMT_TIME | LSFMT_TITLE | LSFMT_PID | LSFMT_USEC );
+    log_configured("default");
+    log_set_format(log_stream_by_flags(0), 0, LSFMT_LEVEL | LSFMT_TIME | LSFMT_TITLE | LSFMT_PID | LSFMT_USEC | LSFMT_TYPE);
 
     // Construct and start workflow
 

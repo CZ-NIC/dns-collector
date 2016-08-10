@@ -24,6 +24,7 @@ dns_input_create(struct dns_config *conf, struct dns_frame_queue *output)
     input->frame = dns_packet_frame_create(DNS_NO_TIME, DNS_NO_TIME);
     input->frame_max_duration = dns_fsec_to_us_time(conf->max_frame_duration_sec);
     input->frame_max_size = conf->max_frame_size;
+    input->real_time_grace = dns_fsec_to_us_time(conf->input_real_time_grace_sec);
     input->promisc = conf->input_promiscuous;
     input->bpf_string = strdup(conf->input_filter);
 
@@ -56,7 +57,7 @@ dns_input_advance_time_to(struct dns_input *input, dns_us_time_t time)
         input->frame->time_end = time;
     }
     if (time < input->frame->time_start) {
-        msg(L_WARN, "Ignoring advance_time_to time before frame start: %f before (%f - %f)",
+        msg(L_WARN | MSG_DNS_SPAM, "Advance_time_to time before frame start: %f is before (%f - %f)",
             dns_us_time_to_fsec(time), dns_us_time_to_fsec(input->frame->time_start), dns_us_time_to_fsec(input->frame->time_end));
     }
     while (time >= input->frame->time_start + input->frame_max_duration) {
@@ -222,6 +223,24 @@ dns_input_process_read_packet(struct dns_input *input)
     dns_packet_frame_append_packet(input->frame, pkt);
     return DNS_RET_OK;
 }
+
+/**
+ * Advance the time to the real time when the trace is online and
+ * the frame time is more than real_time_grace behind real time.
+ * Only advances to real_time_grace before now.
+ */
+static void
+dns_input_process_catch_real_time(struct dns_input *input)
+{
+    if (input->online) {
+        struct timespec now;
+        clock_gettime(CLOCK_REALTIME, &now);
+        dns_us_time_t now_us = dns_us_time_from_timespec(&now);
+        if (now_us > input->frame->time_end + input->real_time_grace) {
+            dns_input_advance_time_to(input, now_us - input->real_time_grace);
+        }
+    }
+}
     
 dns_ret_t
 dns_input_process(struct dns_input *input, const char *offline_uri)
@@ -230,6 +249,7 @@ dns_input_process(struct dns_input *input, const char *offline_uri)
 
     dns_ret_t r;
     libtrace_eventobj_t ev;
+    fd_set rfds;
 
     if (!input->online) {
         if (input->uri)
@@ -246,57 +266,65 @@ dns_input_process(struct dns_input *input, const char *offline_uri)
         return r;
     }
 
-    r = DNS_RET_OK;
-    if (input->online) {
-        fd_set rfds;
-        int stop = 0;
 
-        // Wake up at least twice per timeframe or once per second
-        dns_us_time_t max_sleep = MIN(input->frame_max_duration, dns_fsec_to_us_time(1.0));
+    // Wake up at least twice per timeframe or once per second
+    dns_us_time_t max_sleep = MIN(input->frame_max_duration, dns_fsec_to_us_time(1.0));
 
-        // Online event loop
-        while ((!stop) && (!dns_global_stop)) {
-            if (input->online) {
-                struct timespec now;
-                clock_gettime(CLOCK_REALTIME, &now);
-                dns_input_advance_time_to(input, dns_us_time_from_timespec(&now));
-            }
-            // Reports, input trace stats, ...
-            // TODO: reports, input trace stats
+    // Online event loop
+    while (1) {
 
-            ev = trace_event(input->trace, input->packet);
-            switch (ev.type) {
-            case TRACE_EVENT_PACKET:
-                dns_input_process_read_packet(input);
-                break;
-            case TRACE_EVENT_TERMINATE:
-                msg(L_DEBUG, "Reading '%s' terminated", input->uri);
-                stop = 1;
-                if (trace_is_err(input->trace)) {
-                    trace_perror(input->trace, "terminated reading trace");
-                    r = DNS_RET_ERR;
-                } else {
-                    r = DNS_RET_OK;
-                }
-                break;
-            case TRACE_EVENT_SLEEP:
-                usleep((useconds_t)(MIN(max_sleep, dns_fsec_to_us_time(ev.seconds))));
-                break;
-            case TRACE_EVENT_IOWAIT:
-                FD_ZERO(&rfds);
-                FD_SET(ev.fd, &rfds);
-                struct timeval tv = { .tv_sec = max_sleep / 1000000, .tv_usec = max_sleep % 1000000};
-                int sr = select(ev.fd + 1, &rfds, NULL, NULL, &tv);
-                if (sr < 0) {
-                    perror("select on trace");
-                    r = DNS_RET_ERR;
-                    stop = 1;
-                }
-                break;
-            default:
-                die("Unknown trace event");
-            }
+        if (dns_global_stop) {
+            msg(L_INFO, "Interrupted reading input %s", input->uri);
+            dns_input_trace_close(input);
+            return DNS_RET_OK;
         }
+
+        // Reports, input trace stats, ...
+        // TODO: reports, input trace stats
+
+        ev = trace_event(input->trace, input->packet);
+        switch (ev.type) {
+
+        case TRACE_EVENT_PACKET:
+            dns_input_process_read_packet(input);
+            break;
+
+        case TRACE_EVENT_TERMINATE:
+            msg(L_DEBUG, "Reading '%s' terminated", input->uri);
+            if (trace_is_err(input->trace)) {
+                trace_perror(input->trace, "trace terminated with error");
+                r = DNS_RET_ERR;
+            } else {
+                r = DNS_RET_OK;
+            }
+            dns_input_trace_close(input);
+            return r;
+
+        case TRACE_EVENT_SLEEP:
+            dns_input_process_catch_real_time(input);
+            usleep((useconds_t)(MIN(max_sleep, dns_fsec_to_us_time(ev.seconds))));
+            break;
+
+        case TRACE_EVENT_IOWAIT:
+            dns_input_process_catch_real_time(input);
+            FD_ZERO(&rfds);
+            FD_SET(ev.fd, &rfds);
+            struct timeval tv = { .tv_sec = max_sleep / 1000000, .tv_usec = max_sleep % 1000000};
+            int sr = select(ev.fd + 1, &rfds, NULL, NULL, &tv);
+            if (sr < 0) {
+                if (errno != EINTR) {
+                    perror("select on trace");
+                    dns_input_trace_close(input);
+                    return DNS_RET_ERR;
+                }
+            }
+            break;
+
+        default:
+            die("Unknown trace event");
+        }
+    }
+/* Obsolete loop - TODO: remove
     } else {
         // Process an offline packet source
         while (1) {
@@ -313,9 +341,8 @@ dns_input_process(struct dns_input *input, const char *offline_uri)
             }
         }
     }
-
-    dns_input_trace_close(input);
-    return r;
+*/
+    die("Edge of the world!");
 }
 
 

@@ -69,7 +69,7 @@ dns_worker_packet_matcher_advance_time_to(struct dns_worker_packet_matcher *pm, 
 //    msg(L_DEBUG, "Advancing matcher time from %f to %f",
 //        dns_us_time_to_fsec(pm->current_time), dns_us_time_to_fsec(time));
     if (time < pm->current_time) {
-        msg(L_WARN | DNS_MSG_SPAM, "Not advancing matcher time back %f s (packets in the wrong order?)",
+        msg(L_WARN | MSG_DNS_SPAM, "Not advancing matcher time back %f s (packets in the wrong order?)",
             dns_us_time_to_fsec(pm->current_time - time));
         return;
     }

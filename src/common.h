@@ -207,6 +207,7 @@ dns_us_time_strftime(char *s, size_t max, const char *format, dns_us_time_t time
  * Logging type flag indicating possibly very frequent message 
  * (IO errors ...) to be rate-limited.
  */
-#define DNS_MSG_SPAM (LS_SET_TYPE(log_find_type("spam")))
+extern int dns_log_spam_type;
+#define MSG_DNS_SPAM (dns_log_spam_type)
 
 #endif /* DNSCOL_COMMON_H */
