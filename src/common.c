@@ -8,6 +8,8 @@
 
 int dns_global_stop = 0;
 
+int dns_log_spam_type = 0;
+
 #define MAX_TRACE_SIZE 42
 void dns_ptrace(void)
 {

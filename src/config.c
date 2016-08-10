@@ -17,6 +17,7 @@ dns_collector_conf_init(void *data)
     conf->input_filter = "";
     conf->input_snaplen = -1;
     conf->input_promiscuous = 1;
+    conf->input_real_time_grace_sec = 1.0; // TODO: allow configuration
 
     // Matching
     conf->match_window_sec = 30.0;

@@ -42,6 +42,10 @@ struct dns_input {
     /** Maximum packet frame size in bytes */
     int frame_max_size;
 
+    /** Grace time to lag behind real time when online
+     * (does not apply when there are packets to read). */
+    dns_us_time_t real_time_grace;
+
     /** BPF compiled filter. Owned by the input. */
     libtrace_filter_t *bpf_filter;
 
