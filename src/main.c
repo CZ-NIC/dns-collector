@@ -12,11 +12,23 @@
 #include "worker_packet_matcher.h"
 
 #define MAX_TRACE_SIZE 42
-void segv_handler(int sig UNUSED) {
+static void
+segv_handler(int sig UNUSED) {
     void *array[MAX_TRACE_SIZE];
     size_t size = backtrace(array, MAX_TRACE_SIZE);
     backtrace_symbols_fd(array, size, 2);
     exit(1);
+}
+
+static void
+int_handler(int sig UNUSED) {
+    if (dns_global_stop) {
+        msg(L_INFO | L_SIGHANDLER, "Received another SIGINT, exitting immediatelly");
+        exit(1);
+    } else {
+        dns_global_stop = 1;
+        msg(L_INFO | L_SIGHANDLER, "Received SIGINT: stopping input, graceful shutdown (send again to kill immediatelly)");
+    }
 }
 
 static char **main_inputs; // growing array of char*
@@ -43,9 +55,10 @@ int main(int argc UNUSED, char **argv)
 {
     dns_ret_t r;
 
-    // Setup segv handler
+    // Setup signal handlers
 
     signal(SIGSEGV, segv_handler);
+    signal(SIGINT, int_handler);
 
     // Configure
     
@@ -79,6 +92,9 @@ int main(int argc UNUSED, char **argv)
         dns_input_create(conf, q_input_mathcher);
     struct dns_worker_packet_matcher *w_matcher =
         dns_worker_packet_matcher_create(conf, q_input_mathcher, q_matcher_output);
+
+    // No other output supported. This is also checked by the config system.
+    assert(strcasecmp(conf->output_type, "csv") == 0);
     struct dns_output_csv *output =
         dns_output_csv_create(conf, q_matcher_output);
 

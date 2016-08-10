@@ -61,7 +61,8 @@ struct dns_output {
     dns_us_time_t current_time;
 
 
-    /** Current file name, may be `NULL`. Owned by the output. */
+    /** Current file name, not NULL after .._open(), NULL after .._close().
+     * Owned by the output. */
     char *path;
 
     /** Configured path format string. Owned by the output. */

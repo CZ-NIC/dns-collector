@@ -36,7 +36,7 @@ dns_output_init(struct dns_output *out, struct dns_frame_queue *in, const char *
 void
 dns_output_finalize(struct dns_output *out)
 {
-    assert(out && (!out->out_file) && (!out->path));
+    assert(out && (!out->path));
 
     if (pthread_mutex_trylock(&out->running) != 0)
 	die("destroying a running output");
@@ -157,7 +157,7 @@ dns_output_start_subprocess(const char *sh_cmd, const char *outfile, pid_t *pidp
 void
 dns_output_open(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && (!out->out_file) && (time != DNS_NO_TIME));
+    assert(out && (!out->path) && (time != DNS_NO_TIME));
 
     if (out->path_fmt && strlen(out->path_fmt) > 0) {
         // Extra space for expansion -- note that most used conversions are "in place": "%d" -> "01" 
@@ -178,7 +178,7 @@ dns_output_open(struct dns_output *out, dns_us_time_t time)
             dns_output_wait_for_pipe_process(out, 0);
             die("Unable to open output pipe descriptor %d: %s.", out->out_fd, strerror(errno));
         }
-    } else if ((out->path) && (strlen(out->path) > 0)) {
+    } else if (strlen(out->path) > 0) {
         // Open a file
         out->out_file = fopen(out->path, "w");
         if (!out->out_file)
@@ -206,7 +206,7 @@ dns_output_open(struct dns_output *out, dns_us_time_t time)
 void
 dns_output_close(struct dns_output *out, dns_us_time_t time)
 {
-    assert(out && out->out_file && (time != DNS_NO_TIME));
+    assert(out && out->out_file && out->path && (time != DNS_NO_TIME));
 
     // Finish the format
     if (out->finish_file) {
@@ -216,17 +216,18 @@ dns_output_close(struct dns_output *out, dns_us_time_t time)
     // Report and update time
     msg(L_INFO, "Wrote %d packets (%d bytes pre-pipe) to \"%s\".",
         (int)out->wrote_packets, (int)out->wrote_bytes,
-        (out->path && strlen(out->path) > 0) ? out->path : "<STDOUT>");
+        strlen(out->path) > 0 ? out->path : "<STDOUT>");
     out->current_time = MAX(out->current_time, time);
 
     // Close out fd if not stdout
-    if (out->path && strlen(out->path) > 0) {
+    if (strlen(out->path) > 0) {
         fclose(out->out_file);
-        free(out->path);
-        out->path = NULL;
         out->out_file = NULL;
         out->out_fd = -1;
     }
+
+    free(out->path);
+    out->path = NULL;
 
     // Wait for the pipe process
     if (dns_output_wait_for_pipe_process(out, 1) == 2) {
@@ -246,12 +247,12 @@ dns_output_check_rotation(struct dns_output *out, dns_us_time_t time)
 
     // TODO: Better timing (based on second_since_midnight division), also doc above
     // check if we need to switch output files
-    if ((out->out_file) && (out->period_sec > 0) && (out->output_opened != DNS_NO_TIME) &&
+    if ((out->path) && (out->period_sec > 0) && (out->output_opened != DNS_NO_TIME) &&
         (time >= out->output_opened + (out->period_sec * 1000000)))
         dns_output_close(out, time);
 
     // open if not open
-    if (!out->out_file)
+    if (!out->path)
         dns_output_open(out, time);
 
     out->current_time = MAX(out->current_time, time);
@@ -283,7 +284,7 @@ dns_output_main(void *data)
         }
         dns_packet_frame_destroy(f);
     }
-    if (out->out_file) {
+    if (out->path) {
         dns_output_close(out, out->current_time);
     }
     pthread_mutex_unlock(&out->running);
@@ -305,5 +306,9 @@ dns_output_finish(struct dns_output *out)
 {
     int r = pthread_join(out->thread, NULL);
     assert(r == 0);
+    if (out->out_file) { // This may be STDOUT, close it
+        fclose(out->out_file);
+        out->out_file = NULL;
+    }
     msg(L_DEBUG, "Output stopped and joined");
 }

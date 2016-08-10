@@ -4,6 +4,7 @@
 #include <string.h>
 #include <linux/limits.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "packet_frame.h"
@@ -201,21 +202,13 @@ dns_input_trace_open(struct dns_input *input)
 }
 
 /**
- * Read and process the next packet from an input trace.
+ * Read and process the packet just read from an input trace.
  */
 static dns_ret_t
-dns_input_read_next_packet(struct dns_input *input)
+dns_input_process_read_packet(struct dns_input *input)
 {
-    int r = trace_read_packet(input->trace, input->packet);
-    if (r == 0)
-        return DNS_RET_EOF;
-    if (r < 0) {
-        trace_perror(input->trace, "trace_read_packet");
-        return DNS_RET_ERR;
-    }
-
     struct dns_packet *pkt = NULL;
-    r = dns_packet_create_from_libtrace(input->packet, &pkt);
+    dns_ret_t r = dns_packet_create_from_libtrace(input->packet, &pkt);
     if (r != DNS_RET_OK) {
         // TODO: dump and account the invalid packet, use err
         return DNS_RET_OK;
@@ -234,12 +227,18 @@ dns_ret_t
 dns_input_process(struct dns_input *input, const char *offline_uri)
 {
     assert((!!input->online) == (!offline_uri));
+
     dns_ret_t r;
+    libtrace_eventobj_t ev;
 
     if (!input->online) {
-        input->uri = (char *)offline_uri;
+        if (input->uri)
+            free(input->uri);
+        input->uri = strdup(offline_uri);
+        msg(L_INFO, "Processing offline input %s", input->uri);
+    } else {
+        msg(L_INFO, "Processing online input %s", input->uri);
     }
-    msg(L_INFO, "Processing input %s", input->uri);
     
     r = dns_input_trace_open(input);
     if (r != DNS_RET_OK) {
@@ -247,15 +246,71 @@ dns_input_process(struct dns_input *input, const char *offline_uri)
         return r;
     }
 
-    while (1) {
-        // Naive loop, TODO: event loop and SIGINT handling
-        r = dns_input_read_next_packet(input);
-        if (r == DNS_RET_EOF) {
-            r = DNS_RET_OK;
-            break;
+    r = DNS_RET_OK;
+    if (input->online) {
+        fd_set rfds;
+        int stop = 0;
+
+        // Wake up at least twice per timeframe or once per second
+        dns_us_time_t max_sleep = MIN(input->frame_max_duration, dns_fsec_to_us_time(1.0));
+
+        // Online event loop
+        while ((!stop) && (!dns_global_stop)) {
+            if (input->online) {
+                struct timespec now;
+                clock_gettime(CLOCK_REALTIME, &now);
+                dns_input_advance_time_to(input, dns_us_time_from_timespec(&now));
+            }
+            // Reports, input trace stats, ...
+            // TODO: reports, input trace stats
+
+            ev = trace_event(input->trace, input->packet);
+            switch (ev.type) {
+            case TRACE_EVENT_PACKET:
+                dns_input_process_read_packet(input);
+                break;
+            case TRACE_EVENT_TERMINATE:
+                msg(L_DEBUG, "Reading '%s' terminated", input->uri);
+                stop = 1;
+                if (trace_is_err(input->trace)) {
+                    trace_perror(input->trace, "terminated reading trace");
+                    r = DNS_RET_ERR;
+                } else {
+                    r = DNS_RET_OK;
+                }
+                break;
+            case TRACE_EVENT_SLEEP:
+                usleep((useconds_t)(MIN(max_sleep, dns_fsec_to_us_time(ev.seconds))));
+                break;
+            case TRACE_EVENT_IOWAIT:
+                FD_ZERO(&rfds);
+                FD_SET(ev.fd, &rfds);
+                struct timeval tv = { .tv_sec = max_sleep / 1000000, .tv_usec = max_sleep % 1000000};
+                int sr = select(ev.fd + 1, &rfds, NULL, NULL, &tv);
+                if (sr < 0) {
+                    perror("select on trace");
+                    r = DNS_RET_ERR;
+                    stop = 1;
+                }
+                break;
+            default:
+                die("Unknown trace event");
+            }
         }
-        if (r != DNS_RET_OK) {
-            break;
+    } else {
+        // Process an offline packet source
+        while (1) {
+            int tr = trace_read_packet(input->trace, input->packet);
+            if (tr == 0) { // EOF
+                r = DNS_RET_OK;
+                break;
+            } else if (tr < 0) {
+                trace_perror(input->trace, "trace_read_packet");
+                r = DNS_RET_ERR;
+                break;
+            } else {
+                r = dns_input_process_read_packet(input);
+            }
         }
     }
 

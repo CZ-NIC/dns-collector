@@ -224,33 +224,3 @@ dns_packet_primary_match(const struct dns_packet* pkt1, const struct dns_packet*
     }
 }
 
-// TODO: refresh code below
-/*
-
-
-uint16_t
-dns_packet_get_output_flags(const dns_packet_t* pkt)
-{
-    uint16_t flags = 0;
-
-    if (DNS_PACKET_AF(pkt) == AF_INET6)
-        flags |= DNS_PACKET_PRTOCOL_IPV6;
-
-    if (pkt->protocol == TRACE_IPPROTO_TCP)
-        flags |= DNS_PACKET_PROTOCOL_TCP;
-
-    if (pkt->protocol == TRACE_IPPROTO_ICMP)
-        flags |= DNS_PACKET_PROTOCOL_ICMP;
-
-    if (pkt->protocol == TRACE_IPPROTO_ICMPV6)
-        flags |= DNS_PACKET_PROTOCOL_ICMPV6;
-
-    if (DNS_PACKET_IS_REQUEST(pkt))
-        flags |= DNS_PACKET_HAS_REQUEST;
-
-    if (DNS_PACKET_IS_RESPONSE(pkt) || (pkt->response))
-        flags |= DNS_PACKET_HAS_RESPONSE;
-
-    return flags;
-}
-*/
