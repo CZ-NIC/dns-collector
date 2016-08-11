@@ -46,6 +46,13 @@ struct dns_input {
      * (does not apply when there are packets to read). */
     dns_us_time_t real_time_grace;
 
+    int report_period_sec;
+    dns_us_time_t last_report_time;
+    uint64_t total_received;
+    uint64_t total_filtered;
+    uint64_t total_dropped;
+    uint64_t total_accepted;
+
     /** BPF compiled filter. Owned by the input. */
     libtrace_filter_t *bpf_filter;
 

@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <linux/limits.h>
 #include <errno.h>
+#include <libtrace.h>
 #include <unistd.h>
 
 #include "common.h"
@@ -27,6 +29,8 @@ dns_input_create(struct dns_config *conf, struct dns_frame_queue *output)
     input->real_time_grace = dns_fsec_to_us_time(conf->input_real_time_grace_sec);
     input->promisc = conf->input_promiscuous;
     input->bpf_string = strdup(conf->input_filter);
+    input->report_period_sec = conf->report_period_sec;
+    input->last_report_time = DNS_NO_TIME;
 
     return input;
 }
@@ -146,9 +150,7 @@ dns_input_trace_open(struct dns_input *input)
     }
 
     if (input->online) {
-        struct timespec now;
-        clock_gettime(CLOCK_REALTIME, &now);
-        dns_input_advance_time_to(input, dns_us_time_from_timespec(&now));
+        dns_input_advance_time_to(input, dns_current_us_time());
     }
 
     r = 0;
@@ -233,15 +235,52 @@ static void
 dns_input_process_catch_real_time(struct dns_input *input)
 {
     if (input->online) {
-        struct timespec now;
-        clock_gettime(CLOCK_REALTIME, &now);
-        dns_us_time_t now_us = dns_us_time_from_timespec(&now);
+        dns_us_time_t now_us = dns_current_us_time();
         if (now_us > input->frame->time_end + input->real_time_grace) {
             dns_input_advance_time_to(input, now_us - input->real_time_grace);
         }
     }
 }
-    
+
+/**
+ * Write a input state report if enough time has passed.
+ */
+static void
+dns_input_report(struct dns_input *input)
+{
+    dns_us_time_t now = dns_current_us_time();
+    if (!dns_next_rotation(input->report_period_sec, input->last_report_time, now)) 
+        return;
+
+    char msgbuf[1024];
+    char *p = msgbuf;
+
+#define DOSTAT(stat) \
+    uint64_t stat = trace_get_ ## stat ## _packets(input->trace); \
+    if (stat != UINT64_MAX) {\
+        input->total_ ## stat += stat; \
+        double rate = 0.0; \
+        if (input->last_report_time != DNS_NO_TIME) {\
+            rate = (stat) / dns_us_time_to_fsec(now - input->last_report_time);\
+        } \
+        p += snprintf(p, msgbuf + sizeof(msgbuf) - p, #stat ": %"PRIu64" (%.2f/s, %"PRIu64" total)  ",\
+                      stat, rate, input->total_ ## stat);\
+    } else {\
+        p += snprintf(p, msgbuf + sizeof(msgbuf) - p, #stat ": ?  "); \
+    } \
+
+    DOSTAT(received);
+    DOSTAT(filtered);
+    DOSTAT(accepted);
+    DOSTAT(dropped);
+#undef DOSTAT
+
+    if (p - 2 >= msgbuf)
+        *(p - 2) = 0;
+    msg(L_INFO, "input: %s", msgbuf);
+    input->last_report_time = now;
+}
+
 dns_ret_t
 dns_input_process(struct dns_input *input, const char *offline_uri)
 {
@@ -266,6 +305,9 @@ dns_input_process(struct dns_input *input, const char *offline_uri)
         return r;
     }
 
+    // Do not report immediatelly
+    if (input->last_report_time == DNS_NO_TIME)
+        input->last_report_time = dns_current_us_time();
 
     // Wake up at least twice per timeframe or once per second
     dns_us_time_t max_sleep = MIN(input->frame_max_duration, dns_fsec_to_us_time(1.0));
@@ -278,8 +320,10 @@ dns_input_process(struct dns_input *input, const char *offline_uri)
             dns_input_trace_close(input);
             return DNS_RET_OK;
         }
-
+        
         // Reports, input trace stats, ...
+        dns_input_report(input);
+
         // TODO: reports, input trace stats
 
         ev = trace_event(input->trace, input->packet);
