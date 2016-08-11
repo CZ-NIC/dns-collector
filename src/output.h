@@ -56,6 +56,15 @@ struct dns_output {
 
     /** File opening time. `DNS_NO_TIME` indicates output not open. */
     dns_us_time_t output_opened;
+    uint64_t total_items;
+    uint64_t total_request_only;
+    uint64_t total_response_only;
+    uint64_t total_bytes;
+    uint64_t current_items;
+    uint64_t current_request_only;
+    uint64_t current_response_only;
+    uint64_t current_bytes;
+
 
     /** The time of a last event in the output. */
     dns_us_time_t current_time;
@@ -78,12 +87,6 @@ struct dns_output {
 
     /** PID of the forked output if running, 0 otherwise. */
     pid_t pipe_pid;
-
-    /** The number of bytes of output before compression. */
-    size_t wrote_bytes;
-
-    /** Number of items (packets or packet pairs) of output. */
-    size_t wrote_packets;
 };
 
 #define DNS_OUTPUT_FILENAME_EXTRA 64

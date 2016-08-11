@@ -204,6 +204,20 @@ size_t
 dns_us_time_strftime(char *s, size_t max, const char *format, dns_us_time_t time);
 
 /**
+ * Return current real time as dns_us_time_t
+ */
+dns_us_time_t
+dns_current_us_time();
+
+/**
+ * Check whether a next rotation with given period should occur.
+ * If now==DNS_NO_TIME, use current time. 
+ */
+int
+dns_next_rotation(int period_sec, dns_us_time_t last_rotation, dns_us_time_t now);
+
+
+/**
  * Logging type flag indicating possibly very frequent message 
  * (IO errors ...) to be rate-limited.
  */

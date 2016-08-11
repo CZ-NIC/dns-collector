@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <inttypes.h>
 
 
 #include "common.h"
@@ -200,8 +201,6 @@ dns_output_open(struct dns_output *out, dns_us_time_t time)
     out->output_opened = time;
     out->current_time = MAX(out->current_time, time);
 
-    out->wrote_packets = 0;
-    out->wrote_bytes = 0;
 
     if (out->start_file)
           out->start_file(out, time);
@@ -218,10 +217,26 @@ dns_output_close(struct dns_output *out, dns_us_time_t time)
     }
 
     // Report and update time
-    msg(L_INFO, "Wrote %d packets (%d bytes pre-pipe) to \"%s\".",
-        (int)out->wrote_packets, (int)out->wrote_bytes,
-        strlen(out->path) > 0 ? out->path : "<STDOUT>");
+    out->total_items += out->current_items;
+    out->total_request_only += out->current_request_only;
+    out->total_response_only += out->current_response_only;
+    out->total_bytes += out->current_bytes;
     out->current_time = MAX(out->current_time, time);
+
+    double rate_items = (out->current_items) / dns_us_time_to_fsec(out->current_time - out->output_opened);
+    double rate_bytes = (out->current_bytes) / dns_us_time_to_fsec(out->current_time - out->output_opened);
+
+    msg(L_INFO, "output written to \"%s\": %"PRIu64" (%.3lg/s) bytes (before pipe cmd)",
+        strlen(out->path) > 0 ? out->path : "<STDOUT>", out->current_bytes, rate_bytes);
+    msg(L_INFO, "output items: %"PRIu64" (%.3lg/s, %"PRIu64" req-only, %"PRIu64" resp-only)",
+        out->current_items, rate_items, out->current_request_only, out->current_response_only);
+    msg(L_INFO, "output totals: %"PRIu64" items (%"PRIu64" req-only, %"PRIu64" resp-only), %"PRIu64" bytes",
+        out->total_items, out->total_request_only, out->total_response_only, out->total_bytes);
+
+    out->current_items = 0;
+    out->current_request_only = 0;
+    out->current_response_only = 0;
+    out->current_bytes = 0;
 
     // Close out file (with the fd)
     fclose(out->out_file);
@@ -246,10 +261,9 @@ dns_output_check_rotation(struct dns_output *out, dns_us_time_t time)
 {
     assert(out && (time != DNS_NO_TIME));
 
-    // TODO: Better timing (based on second_since_midnight division), also doc above
     // check if we need to switch output files
-    if ((out->out_file) && (out->period_sec > 0) && (out->output_opened != DNS_NO_TIME) &&
-        (time >= out->output_opened + (out->period_sec * 1000000)))
+    if ((out->out_file) && (out->period_sec > 0) &&
+        dns_next_rotation(out->period_sec, out->output_opened, time))
         dns_output_close(out, time);
 
     // open if not open
@@ -310,3 +324,4 @@ dns_output_finish(struct dns_output *out)
     assert(r == 0);
     msg(L_DEBUG, "Output stopped and joined");
 }
+
