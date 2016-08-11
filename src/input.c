@@ -13,6 +13,8 @@
 #include "frame_queue.h"
 #include "input.h"
 
+static void
+dns_input_report(struct dns_input *input, int force);
 
 struct dns_input *
 dns_input_create(struct dns_config *conf, struct dns_frame_queue *output)
@@ -60,11 +62,12 @@ dns_input_advance_time_to(struct dns_input *input, dns_us_time_t time)
         input->frame->time_start = time;
         input->frame->time_end = time;
     }
-    if (time < input->frame->time_start) {
+    if (time < input->frame->time_start - 1000) { // TODO: configurable grace time
         msg(L_WARN | MSG_DNS_SPAM, "Advance_time_to time before frame start: %f is before (%f - %f)",
             dns_us_time_to_fsec(time), dns_us_time_to_fsec(input->frame->time_start), dns_us_time_to_fsec(input->frame->time_end));
     }
     while (time >= input->frame->time_start + input->frame_max_duration) {
+        dns_input_report(input, 0);
         assert(input->frame->time_end <= input->frame->time_start + input->frame_max_duration);
         input->frame->time_end = input->frame->time_start + input->frame_max_duration;
         dns_input_output_frame(input);
@@ -210,6 +213,8 @@ dns_input_trace_open(struct dns_input *input)
 static dns_ret_t
 dns_input_process_read_packet(struct dns_input *input)
 {
+    input->current_packets_read += 1;
+    input->current_bytes_read += trace_get_wire_length(input->packet);
     struct dns_packet *pkt = NULL;
     dns_ret_t r = dns_packet_create_from_libtrace(input->packet, &pkt);
     if (r != DNS_RET_OK) {
@@ -246,39 +251,46 @@ dns_input_process_catch_real_time(struct dns_input *input)
  * Write a input state report if enough time has passed.
  */
 static void
-dns_input_report(struct dns_input *input)
+dns_input_report(struct dns_input *input, int force)
 {
     dns_us_time_t now = dns_current_us_time();
-    if (!dns_next_rotation(input->report_period_sec, input->last_report_time, now)) 
+    if ((!force) && (!dns_next_rotation(input->report_period_sec, input->last_report_time, now))) 
         return;
 
-    char msgbuf[1024];
-    char *p = msgbuf;
+    // Likely the only half-sane statistic from libtrace :-/
+    input->current_packets_dropped = trace_get_dropped_packets(input->trace);
+    if (input->current_packets_dropped == UINT64_MAX)
+        input->current_packets_dropped = 0;
 
 #define DOSTAT(stat) \
-    uint64_t stat = trace_get_ ## stat ## _packets(input->trace); \
-    if (stat != UINT64_MAX) {\
-        input->total_ ## stat += stat; \
-        double rate = 0.0; \
-        if (input->last_report_time != DNS_NO_TIME) {\
-            rate = (stat) / dns_us_time_to_fsec(now - input->last_report_time);\
-        } \
-        p += snprintf(p, msgbuf + sizeof(msgbuf) - p, #stat ": %"PRIu64" (%.2f/s, %"PRIu64" total)  ",\
-                      stat, rate, input->total_ ## stat);\
-    } else {\
-        p += snprintf(p, msgbuf + sizeof(msgbuf) - p, #stat ": ?  "); \
+    double rate_ ## stat = 0.0; \
+    if (input->last_report_time != DNS_NO_TIME) {\
+        rate_ ## stat = (input->current_ ## stat) / dns_us_time_to_fsec(now - input->last_report_time);\
     } \
+    input->total_ ## stat += input->current_ ## stat; 
 
-    DOSTAT(received);
-    DOSTAT(filtered);
-    DOSTAT(accepted);
-    DOSTAT(dropped);
-#undef DOSTAT
+    DOSTAT(packets_read);
+    DOSTAT(bytes_read);
+    DOSTAT(packets_dropped);
 
-    if (p - 2 >= msgbuf)
-        *(p - 2) = 0;
-    msg(L_INFO, "input: %s", msgbuf);
+    msg(L_INFO, "input: %"PRIu64" (%.3lg/s) packets, %"PRIu64" (%.3lg/s) bytes, %"PRIu64" (%.3lg/s) dropped",
+        input->current_packets_read, rate_packets_read,
+        input->current_bytes_read, rate_bytes_read,
+        input->current_packets_dropped, rate_packets_dropped);
+    msg(L_INFO, "input totals: %"PRIu64" packets, %"PRIu64" bytes, %"PRIu64" dropped",
+        input->total_packets_read, input->total_bytes_read, input->total_packets_dropped);
+    if (input->online && input->frame) {
+        msg(L_INFO, "input is %.3lf s behind real time (with %.3lf s grace time)",
+            dns_us_time_to_fsec(now - input->frame->time_end),
+            dns_us_time_to_fsec(input->real_time_grace + input->frame_max_duration));
+    }
+
+    input->current_packets_read = 0;
+    input->current_bytes_read = 0;
+    input->current_packets_dropped = 0;
+
     input->last_report_time = now;
+#undef DOSTAT
 }
 
 dns_ret_t
@@ -317,12 +329,10 @@ dns_input_process(struct dns_input *input, const char *offline_uri)
 
         if (dns_global_stop) {
             msg(L_INFO, "Interrupted reading input %s", input->uri);
+            dns_input_report(input, 1);
             dns_input_trace_close(input);
             return DNS_RET_OK;
         }
-        
-        // Reports, input trace stats, ...
-        dns_input_report(input);
 
         // TODO: reports, input trace stats
 
@@ -341,6 +351,7 @@ dns_input_process(struct dns_input *input, const char *offline_uri)
             } else {
                 r = DNS_RET_OK;
             }
+            dns_input_report(input, 1);
             dns_input_trace_close(input);
             return r;
 

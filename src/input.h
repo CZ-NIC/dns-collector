@@ -48,10 +48,12 @@ struct dns_input {
 
     int report_period_sec;
     dns_us_time_t last_report_time;
-    uint64_t total_received;
-    uint64_t total_filtered;
-    uint64_t total_dropped;
-    uint64_t total_accepted;
+    uint64_t total_packets_dropped;
+    uint64_t total_packets_read;
+    uint64_t total_bytes_read;
+    uint64_t current_packets_dropped;
+    uint64_t current_packets_read;
+    uint64_t current_bytes_read;
 
     /** BPF compiled filter. Owned by the input. */
     libtrace_filter_t *bpf_filter;

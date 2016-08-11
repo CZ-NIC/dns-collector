@@ -96,7 +96,7 @@ dns_output_csv_start_file(struct dns_output *out0, dns_us_time_t time)
     assert(out && out->base.out_file);
 
     if (out->inline_header)
-        out->base.wrote_bytes += dns_output_csv_write_header(out, out->base.out_file);
+        out->base.current_bytes += dns_output_csv_write_header(out, out->base.out_file);
 
     if (out->external_header_path_fmt && strlen(out->external_header_path_fmt) > 0) {
         int path_len = strlen(out->external_header_path_fmt) + DNS_OUTPUT_FILENAME_EXTRA;
@@ -128,8 +128,8 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
 #define COND(flag) \
         if (out->csv_fields & (1 << (flag)))
 #define WRITEFIELD(fmt, args...) \
-        if (first) { first = 0; } else { putc(out->separator, out->base.out_file); out->base.wrote_bytes += 1; } \
-        out->base.wrote_bytes += fprintf(out->base.out_file, fmt, args);
+        if (first) { first = 0; } else { putc(out->separator, out->base.out_file); out->base.current_bytes += 1; } \
+        out->base.current_bytes += fprintf(out->base.out_file, fmt, args);
 
     COND(dns_of_timestamp) {
         WRITEFIELD("%"PRId64".%06"PRId64, pkt->ts / 1000000L, pkt->ts % 1000000L);
@@ -246,8 +246,14 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
 #undef WRITEFIELD
 
     putc('\n', out->base.out_file);
-    out->base.wrote_bytes += 1;
-    out->base.wrote_packets ++;
+    out->base.current_bytes += 1;
+
+    // Accounting
+    out->base.current_items ++;
+    if (!DNS_PACKET_RESPONSE(pkt))
+        out->base.current_request_only ++;
+    if (!DNS_PACKET_REQUEST(pkt))
+        out->base.current_response_only ++;
 
     return DNS_RET_OK;
 }

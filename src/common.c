@@ -76,6 +76,25 @@ dns_us_time_strftime(char *s, size_t max, const char *format, dns_us_time_t time
     return strftime(s, max, format, &tmp_tm);
 }
 
+dns_us_time_t
+dns_current_us_time()
+{
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    return dns_us_time_from_timespec(&now);
+}
+
+int
+dns_next_rotation(int period_sec, dns_us_time_t last_rotation, dns_us_time_t now)
+{
+    if (now == DNS_NO_TIME)
+        now = dns_current_us_time();
+    // TODO: actual divisibility of seconds
+    if (last_rotation < now - dns_fsec_to_us_time(period_sec))
+        return 1;
+    return 0;
+}
+
 const char *dns_output_field_names[] = {
     "timestamp",
 
