@@ -222,6 +222,6 @@ dns_next_rotation(int period_sec, dns_us_time_t last_rotation, dns_us_time_t now
  * (IO errors ...) to be rate-limited.
  */
 extern int dns_log_spam_type;
-#define MSG_DNS_SPAM (dns_log_spam_type)
+#define DNS_MSG_SPAM (dns_log_spam_type)
 
 #endif /* DNSCOL_COMMON_H */
