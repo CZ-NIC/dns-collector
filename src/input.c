@@ -45,6 +45,7 @@ static void
 dns_input_output_frame(struct dns_input *input)
 {
     assert(input && input->frame);
+    dns_input_report(input, 0);
     struct dns_packet_frame *new_frame = dns_packet_frame_create(input->frame->time_end, input->frame->time_end);
     dns_frame_queue_enqueue(input->output, input->frame); // Hand over ownership
     input->frame = new_frame;
@@ -67,7 +68,6 @@ dns_input_advance_time_to(struct dns_input *input, dns_us_time_t time)
             dns_us_time_to_fsec(time), dns_us_time_to_fsec(input->frame->time_start), dns_us_time_to_fsec(input->frame->time_end));
     }
     while (time >= input->frame->time_start + input->frame_max_duration) {
-        dns_input_report(input, 0);
         assert(input->frame->time_end <= input->frame->time_start + input->frame_max_duration);
         input->frame->time_end = input->frame->time_start + input->frame_max_duration;
         dns_input_output_frame(input);
@@ -379,24 +379,6 @@ dns_input_process(struct dns_input *input, const char *offline_uri)
             die("Unknown trace event");
         }
     }
-/* Obsolete loop - TODO: remove
-    } else {
-        // Process an offline packet source
-        while (1) {
-            int tr = trace_read_packet(input->trace, input->packet);
-            if (tr == 0) { // EOF
-                r = DNS_RET_OK;
-                break;
-            } else if (tr < 0) {
-                trace_perror(input->trace, "trace_read_packet");
-                r = DNS_RET_ERR;
-                break;
-            } else {
-                r = dns_input_process_read_packet(input);
-            }
-        }
-    }
-*/
     die("Edge of the world!");
 }
 

@@ -19,8 +19,7 @@
 struct dns_input {
 
     /** Libtrace current input name.
-     * Owned by the input, not NULL.
-     * Empty string for offline only processing (pcap file input). */
+     * Owned by the input, not NULL. */
     char *uri;
 
     /** Length of wire packet capture */
@@ -72,10 +71,6 @@ struct dns_input {
     /** Output frame queue, not owned. */
     struct dns_frame_queue *output;
 };
-
-
-/** libUCW config section. */
-extern struct cf_section dns_input_section;
 
 /**
  * Allocate and initialize the input, allocate a frame.
