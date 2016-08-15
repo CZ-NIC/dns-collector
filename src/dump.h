@@ -87,6 +87,6 @@ dns_dump_destroy(struct dns_dump *dump);
  * Possibly rotates the output file.
  */
 dns_ret_t
-dns_dump_packet(struct dns_dump *dump, libtrace_packet_t *packet);
+dns_dump_packet(struct dns_dump *dump, libtrace_packet_t *packet, dns_ret_t reason);
 
 #endif /* DNSCOL_DUMP_H */
