@@ -6,6 +6,7 @@
  * DNS collector configuration.
  */
 
+#include <libtrace.h>
 #include "common.h"
 
 /**
@@ -27,6 +28,12 @@ struct dns_config {
     int input_promiscuous;
     double input_real_time_grace_sec;
 
+    // Packet dump options
+    char *dump_path_fmt;
+    int dump_period_sec;
+    int dump_compress_level;
+    int dump_compress_type;
+    double dump_rate_limit;
 
     // Matching
     double match_window_sec;
@@ -45,5 +52,8 @@ struct dns_config {
 };
 
 extern struct cf_section dns_config_section;
+
+/** TRACE_OPTION_COMPRESSTYPE_ corresponding to the values of dump_compress_type */
+extern trace_option_compresstype_t dns_dump_compress_types_num[];
 
 #endif /* DNSCOL_COLLECTOR_CONFIG_H */

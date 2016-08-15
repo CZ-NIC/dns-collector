@@ -19,6 +19,13 @@ dns_collector_conf_init(void *data)
     conf->input_promiscuous = 1;
     conf->input_real_time_grace_sec = 1.0; // TODO: allow configuration
 
+    // Packet dump options
+    conf->dump_path_fmt = "";
+    conf->dump_period_sec = 0;
+    conf->dump_compress_level = 4;
+    conf->dump_compress_type = 0;
+    conf->dump_rate_limit = 0.0;
+
     // Matching
     conf->match_window_sec = 30.0;
 
@@ -62,6 +69,21 @@ dns_collector_conf_commit(void *data)
 }
 
 
+static const char const *dns_dump_compress_types[] = {
+    "none",
+    "gzip",
+    "bz2",
+    "lzo",
+    "xz",
+    NULL};
+
+trace_option_compresstype_t dns_dump_compress_types_num[] = {
+    TRACE_OPTION_COMPRESSTYPE_NONE,
+    TRACE_OPTION_COMPRESSTYPE_ZLIB,
+    TRACE_OPTION_COMPRESSTYPE_BZ2,
+    TRACE_OPTION_COMPRESSTYPE_LZO,
+    TRACE_OPTION_COMPRESSTYPE_LZMA};
+
 struct cf_section dns_config_section = {
     CF_TYPE(struct dns_config),
     CF_INIT(dns_collector_conf_init),
@@ -78,6 +100,13 @@ struct cf_section dns_config_section = {
 	CF_STRING("input_filter", PTR_TO(struct dns_config, input_filter)),
 	CF_INT("input_snaplen", PTR_TO(struct dns_config, input_snaplen)),
 	CF_INT("input_promiscuous", PTR_TO(struct dns_config, input_promiscuous)),
+
+        // Packet dump options
+        CF_STRING("dump_path_fmt", PTR_TO(struct dns_config, dump_path_fmt)),
+        CF_INT("dump_period", PTR_TO(struct dns_config, dump_period_sec)),
+        CF_INT("dump_compress_level", PTR_TO(struct dns_config, dump_compress_level)),
+        CF_LOOKUP("dump_compress_type", PTR_TO(struct dns_config, dump_compress_type), dns_dump_compress_types),
+        CF_DOUBLE("dump_rate_limit", PTR_TO(struct dns_config, dump_rate_limit)),
 
 	// Matching
 	CF_DOUBLE("match_window", PTR_TO(struct dns_config, match_window_sec)),
