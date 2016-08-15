@@ -33,6 +33,11 @@ dns_input_create(struct dns_config *conf, struct dns_frame_queue *output)
     input->bpf_string = strdup(conf->input_filter);
     input->report_period_sec = conf->report_period_sec;
     input->last_report_time = DNS_NO_TIME;
+    if (conf->dump_path_fmt && strlen(conf->dump_path_fmt) > 0) {
+        input->dumper = dns_dump_create(conf);
+    } else {
+        input->dumper = NULL;
+    }
 
     return input;
 }
@@ -63,7 +68,7 @@ dns_input_advance_time_to(struct dns_input *input, dns_us_time_t time)
         input->frame->time_start = time;
         input->frame->time_end = time;
     }
-    if (time < input->frame->time_start - 1000) { // TODO: configurable grace time
+    if (time < input->frame->time_start - 1000) { // TODO: configurable grace time, currently 1 ms
         msg(L_WARN | DNS_MSG_SPAM, "Advance_time_to time before frame start: %f is before (%f - %f)",
             dns_us_time_to_fsec(time), dns_us_time_to_fsec(input->frame->time_start), dns_us_time_to_fsec(input->frame->time_end));
     }
@@ -95,6 +100,8 @@ dns_input_destroy(struct dns_input *input)
 {
     assert(input && !input->trace && !input->packet && !input->frame);
 
+    if (input->dumper)
+        dns_dump_destroy(input->dumper);
     if (input->bpf_string)
         free(input->bpf_string);
     if (input->uri)
@@ -218,7 +225,12 @@ dns_input_process_read_packet(struct dns_input *input)
     struct dns_packet *pkt = NULL;
     dns_ret_t r = dns_packet_create_from_libtrace(input->packet, &pkt);
     if (r != DNS_RET_OK) {
-        // TODO: dump and account the invalid packet, use err
+        if (input->dumper)
+            if (dns_dump_packet(input->dumper, input->packet, r) != DNS_RET_OK) {
+                msg(L_ERROR, "Dump error (opening or writing), givin up on packet dumping");
+                dns_dump_destroy(input->dumper);
+                input->dumper = NULL;
+            }
         return DNS_RET_OK;
     }
     assert(pkt != NULL);

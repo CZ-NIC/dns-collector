@@ -11,6 +11,7 @@
 
 #include "common.h"
 #include "config.h"
+#include "dump.h"
 #include "packet.h"
 
 /**
@@ -70,10 +71,14 @@ struct dns_input {
 
     /** Output frame queue, not owned. */
     struct dns_frame_queue *output;
+
+    /** Configured dumper (owned by the input) or NULL */
+    struct dns_dump *dumper;
 };
 
 /**
- * Allocate and initialize the input, allocate a frame.
+ * Allocate and initialize the input, allocate a frame,
+ * create dumper if path configured.
  */
 struct dns_input *
 dns_input_create(struct dns_config *conf, struct dns_frame_queue *output);

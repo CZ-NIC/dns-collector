@@ -103,7 +103,7 @@ dns_dump_destroy(struct dns_dump *dump)
 }
 
 dns_ret_t
-dns_dump_packet(struct dns_dump *dump, libtrace_packet_t *packet)
+dns_dump_packet(struct dns_dump *dump, libtrace_packet_t *packet, dns_ret_t reason UNUSED)
 {
     assert(dump && packet);
 
@@ -144,5 +144,7 @@ dns_dump_packet(struct dns_dump *dump, libtrace_packet_t *packet)
     dump->current_dumped ++;
     dump->current_bytes += r;
     dump->tokens -= r;
+    // TODO: use the reason?
+
     return DNS_RET_OK;
 }
