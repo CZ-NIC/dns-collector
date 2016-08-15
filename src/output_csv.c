@@ -124,12 +124,15 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
     struct dns_output_csv *out = (struct dns_output_csv *) out0;
     char addrbuf[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1] = "";
     int first = 1;
+    char outbuf[1024];
+    char *p = outbuf;
 
+//        if (first) { first = 0; } else { putc(out->separator, out->base.out_file); out->base.current_bytes += 1; } 
 #define COND(flag) \
         if (out->csv_fields & (1 << (flag)))
 #define WRITEFIELD(fmt, args...) \
-        if (first) { first = 0; } else { putc(out->separator, out->base.out_file); out->base.current_bytes += 1; } \
-        out->base.current_bytes += fprintf(out->base.out_file, fmt, args);
+        if (first) { first = 0; } else { *(p++) = out->separator; } \
+        p += snprintf(p, (outbuf + sizeof(outbuf)) - p, fmt, args);
 
     COND(dns_of_timestamp) {
         WRITEFIELD("%"PRId64".%06"PRId64, pkt->ts / 1000000L, pkt->ts % 1000000L);
@@ -245,8 +248,11 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
 #undef COND
 #undef WRITEFIELD
 
-    putc('\n', out->base.out_file);
-    out->base.current_bytes += 1;
+    *(p++) = '\n';
+    *(p++) = '\0';
+
+    fwrite(outbuf, p - outbuf - 1, 1, out->base.out_file);
+    out->base.current_bytes += p - outbuf - 1;
 
     // Accounting
     out->base.current_items ++;
