@@ -64,6 +64,8 @@ dns_collector_conf_commit(void *data)
     } else {
         return "only 'output_type csv' currently supported";
     }
+    if (conf->dump_compress_level < 0 || conf->dump_compress_level > 9)
+        return "'dump_compress_level' must be 0..9";
 
     return NULL;
 }
