@@ -64,7 +64,7 @@ dns_input_advance_time_to(struct dns_input *input, dns_us_time_t time)
         input->frame->time_end = time;
     }
     if (time < input->frame->time_start - 1000) { // TODO: configurable grace time
-        msg(L_WARN | MSG_DNS_SPAM, "Advance_time_to time before frame start: %f is before (%f - %f)",
+        msg(L_WARN | DNS_MSG_SPAM, "Advance_time_to time before frame start: %f is before (%f - %f)",
             dns_us_time_to_fsec(time), dns_us_time_to_fsec(input->frame->time_start), dns_us_time_to_fsec(input->frame->time_end));
     }
     while (time >= input->frame->time_start + input->frame_max_duration) {
