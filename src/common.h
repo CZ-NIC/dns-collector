@@ -81,30 +81,28 @@ typedef enum dns_ret dns_ret_t;
  */
 
 enum dns_output_field {
-    dns_of_timestamp=0,
-
+    dns_of_timestamp = 0,
+    dns_of_delay_us,
+    dns_of_req_dns_len,
+    dns_of_resp_dns_len,
+    dns_of_req_net_len,
+    dns_of_resp_net_len,
     dns_of_client_addr,
     dns_of_client_port,
     dns_of_server_addr,
     dns_of_server_port,
-
+    dns_of_net_proto,
+    dns_of_net_ipv,
+    dns_of_net_ttl,
+    dns_of_req_udp_sum,
     dns_of_id,
-    dns_of_qname,
     dns_of_qtype,
     dns_of_qclass,
     dns_of_flags,
-
-    dns_of_request_ans_rrs,
-    dns_of_request_auth_rrs,
-    dns_of_request_add_rrs,
-    dns_of_request_length,
-
-    dns_of_response_ans_rrs,
-    dns_of_response_auth_rrs,
-    dns_of_response_add_rrs,
-    dns_of_response_length,
-
-    dns_of_delay_us,
+    dns_of_qname,
+    dns_of_resp_ancount,
+    dns_of_resp_arcount,
+    dns_of_resp_nscount,
 
     dns_of_LAST, // Sentinel
 };

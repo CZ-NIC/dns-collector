@@ -130,13 +130,61 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
 //        if (first) { first = 0; } else { putc(out->separator, out->base.out_file); out->base.current_bytes += 1; } 
 #define COND(flag) \
         if (out->csv_fields & (1 << (flag)))
-#define WRITEFIELD(fmt, args...) \
-        if (first) { first = 0; } else { *(p++) = out->separator; } \
-        p += snprintf(p, (outbuf + sizeof(outbuf)) - p, fmt, args);
+#define WRITEFIELD0 \
+        if (first) { first = 0; } else { *(p++) = out->separator; } 
+#define WRITEFIELD(fmtargs...) \
+        WRITEFIELD0 \
+        p += snprintf(p, (outbuf + sizeof(outbuf)) - p, fmtargs);
+
+    // Time
 
     COND(dns_of_timestamp) {
         WRITEFIELD("%"PRId64".%06"PRId64, pkt->ts / 1000000L, pkt->ts % 1000000L);
     }
+
+    COND(dns_of_delay_us) {
+        if (pkt->response) {
+            WRITEFIELD("%"PRId64, pkt->response->ts - pkt->ts);
+        } else {
+            WRITEFIELD0;
+        }
+    }
+
+    // Sizes
+
+    COND(dns_of_req_dns_len) {
+        if (DNS_PACKET_REQUEST(pkt)) {
+            WRITEFIELD("%zd", DNS_PACKET_REQUEST(pkt)->dns_data_size_orig);
+        } else {
+            WRITEFIELD("%d", 0);
+        }
+    }
+
+    COND(dns_of_resp_dns_len) {
+        if (DNS_PACKET_RESPONSE(pkt)) {
+            WRITEFIELD("%zd", DNS_PACKET_RESPONSE(pkt)->dns_data_size_orig);
+        } else {
+            WRITEFIELD("%d", 0);
+        }
+    }
+
+    COND(dns_of_req_net_len) {
+        if (DNS_PACKET_REQUEST(pkt)) {
+            WRITEFIELD("%zd", DNS_PACKET_REQUEST(pkt)->net_size);
+        } else {
+            WRITEFIELD("%d", 0);
+        }
+    }
+
+    COND(dns_of_resp_net_len) {
+        if (DNS_PACKET_RESPONSE(pkt)) {
+            WRITEFIELD("%zd", DNS_PACKET_RESPONSE(pkt)->net_size);
+        } else {
+            WRITEFIELD("%d", 0);
+        }
+    }
+
+    // IP stats
 
     COND(dns_of_client_addr) {
         inet_ntop(DNS_PACKET_AF(pkt), DNS_PACKET_CLIENT_ADDR(pkt), addrbuf, sizeof(addrbuf));
@@ -156,14 +204,44 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
         WRITEFIELD("%d", DNS_PACKET_SERVER_PORT(pkt));
     }
 
-    COND(dns_of_id) {
-        WRITEFIELD("%d", knot_wire_get_id(pkt->knot_packet->wire));
+    COND(dns_of_net_proto) {
+        WRITEFIELD("%d", pkt->net_protocol);
     }
 
-    COND(dns_of_qname) {
-        char qname_buf[512];
-        char * res = knot_dname_to_str(qname_buf, knot_pkt_qname(pkt->knot_packet), sizeof(qname_buf));
-        WRITEFIELD("%s", res ? res : "INVALID_QNAME" );
+    COND(dns_of_net_ipv) {
+        switch (DNS_SOCKADDR_AF(&pkt->src_addr)) {
+        case AF_INET:
+            WRITEFIELD("4");
+            break;
+        case AF_INET6:
+            WRITEFIELD("6");
+            break;
+        default:
+            WRITEFIELD0;
+            break;
+        }
+    }
+
+    COND(dns_of_net_ttl) {
+        if (pkt->net_ttl > 0) {
+            WRITEFIELD("%d", pkt->net_ttl);
+        } else {
+            WRITEFIELD0;
+        }
+    }
+
+    COND(dns_of_req_udp_sum) {
+        if ((pkt->net_protocol == IPPROTO_UDP) && DNS_PACKET_REQUEST(pkt)) {
+            WRITEFIELD("%d", DNS_PACKET_REQUEST(pkt)->net_udp_sum);
+        } else {
+            WRITEFIELD0;
+        }
+    }
+
+    // DNS header
+
+    COND(dns_of_id) {
+        WRITEFIELD("%d", knot_wire_get_id(pkt->knot_packet->wire));
     }
 
     COND(dns_of_qtype) {
@@ -180,68 +258,35 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
             pp = pkt->response;
         WRITEFIELD("%d", (knot_wire_get_flags1(pp->knot_packet->wire) << 8) + knot_wire_get_flags2(pp->knot_packet->wire))
     }
-/*
-    CONDWRITE(dns_of_request_ans_rrs) {
-        if (DNS_PACKET_REQUEST(pkt))
-            p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->ans_rrs));
+
+    /* TODO: better escaping: impala-compatible? */
+    COND(dns_of_qname) {
+        char qname_buf[512];
+        char * res = knot_dname_to_str(qname_buf, knot_pkt_qname(pkt->knot_packet), sizeof(qname_buf));
+        WRITEFIELD("%s", res ? res : "INVALID_QNAME" );
     }
 
-    CONDWRITE(dns_of_request_auth_rrs) {
-        if (DNS_PACKET_REQUEST(pkt))
-            p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->auth_rrs));
-    }
-
-    CONDWRITE(dns_of_request_add_rrs) {
-        if (DNS_PACKET_REQUEST(pkt))
-            p += sprintf(p, "%d", ntohs(DNS_PACKET_REQUEST(pkt)->dns_data->add_rrs));
-    }
-*/
-    COND(dns_of_request_length) {
-        if (DNS_PACKET_REQUEST(pkt)) {
-            WRITEFIELD("%zd", DNS_PACKET_REQUEST(pkt)->dns_data_size_orig);
-        } else {
-            WRITEFIELD("%d", -1);
-        }
-    }
-/*
-    CONDWRITE(dns_of_response_time_us) {
-        if (DNS_PACKET_RESPONSE(pkt))
-            p += sprintf(p, "%"PRId64, DNS_PACKET_RESPONSE(pkt)->ts);
-    }
-
-    CONDWRITE(dns_of_response_flags) {
-        if (DNS_PACKET_RESPONSE(pkt))
-            p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->flags));
-    }
-
-    CONDWRITE(dns_of_response_ans_rrs) {
-        if (DNS_PACKET_RESPONSE(pkt))
-            p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->ans_rrs));
-    }
-
-    CONDWRITE(dns_of_response_auth_rrs) {
-        if (DNS_PACKET_RESPONSE(pkt))
-            p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->auth_rrs));
-    }
-
-    CONDWRITE(dns_of_response_add_rrs) {
-        if (DNS_PACKET_RESPONSE(pkt))
-            p += sprintf(p, "%d", ntohs(DNS_PACKET_RESPONSE(pkt)->dns_data->add_rrs));
-    }
-*/
-    COND(dns_of_response_length) {
+    COND(dns_of_resp_ancount) {
         if (DNS_PACKET_RESPONSE(pkt)) {
-            WRITEFIELD("%zd", DNS_PACKET_RESPONSE(pkt)->dns_data_size_orig);
+            WRITEFIELD("%d", knot_wire_get_ancount(DNS_PACKET_RESPONSE(pkt)->dns_data));
         } else {
-            WRITEFIELD("%d", -1);
+            WRITEFIELD0;
         }
     }
 
-    COND(dns_of_delay_us) {
-        if (pkt->response) {
-            WRITEFIELD("%"PRId64, pkt->response->ts - pkt->ts);
+    COND(dns_of_resp_arcount) {
+        if (DNS_PACKET_RESPONSE(pkt)) {
+            WRITEFIELD("%d", knot_wire_get_arcount(DNS_PACKET_RESPONSE(pkt)->dns_data));
         } else {
-            WRITEFIELD("%d", -1);
+            WRITEFIELD0;
+        }
+    }
+
+    COND(dns_of_resp_nscount) {
+        if (DNS_PACKET_RESPONSE(pkt)) {
+            WRITEFIELD("%d", knot_wire_get_nscount(DNS_PACKET_RESPONSE(pkt)->dns_data));
+        } else {
+            WRITEFIELD0;
         }
     }
 

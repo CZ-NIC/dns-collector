@@ -97,29 +97,27 @@ dns_next_rotation(int period_sec, dns_us_time_t last_rotation, dns_us_time_t now
 
 const char *dns_output_field_names[] = {
     "timestamp",
-
+    "delay_us",
+    "req_dns_len",
+    "resp_dns_len",
+    "req_net_len",
+    "resp_net_len",
     "client_addr",
     "client_port",
     "server_addr",
     "server_port",
-
+    "net_proto",
+    "net_ipv",
+    "net_ttl",
+    "req_udp_sum",
     "id",
-    "qname",
     "qtype",
     "qclass",
     "flags",
-
-    "request_ans_rrs",
-    "request_auth_rrs",
-    "request_add_rrs",
-    "request_length",
-
-    "response_ans_rrs",
-    "response_auth_rrs",
-    "response_add_rrs",
-    "response_length",
-
-    "delay_us",
+    "qname",
+    "resp_ancount",
+    "resp_arcount",
+    "resp_nscount",
 
     NULL,
 };

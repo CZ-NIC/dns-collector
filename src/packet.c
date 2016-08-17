@@ -46,6 +46,12 @@ dns_packet_create_from_libtrace(libtrace_packet_t *tp, struct dns_packet **pktp)
         // No transport layer found
         return DNS_RET_DROP_NETWORK;
     }
+    struct libtrace_ip *ip_hdr = trace_get_ip(tp);
+    struct libtrace_ip6 *ip6_hdr = trace_get_ip6(tp);
+    //struct libtrace_icmp *icmp_hdr = trace_get_icmp(tp);
+    //struct libtrace_icmp6 *icmp6_hdr = trace_get_icmp6(tp);
+    struct libtrace_tcp *tcp_hdr = trace_get_tcp(tp);
+    struct libtrace_udp *udp_hdr = trace_get_udp(tp);
 
     // IPv4/6 fragmentation
     uint16_t frag_offset;
@@ -62,15 +68,14 @@ dns_packet_create_from_libtrace(libtrace_packet_t *tp, struct dns_packet **pktp)
         case TRACE_IPPROTO_TCP:
             {/* to allow declaration in case */} 
             // Check TCP packet for type etc. Drop SYN/FIN/...
-            libtrace_tcp_t *tcp = trace_get_tcp(tp);
-            if (tcp->syn || tcp->fin) {
+            if (tcp_hdr->syn || tcp_hdr->fin) {
                 return DNS_RET_DROP_TRANSPORT;
             }
             
             // Below we assume that the TCP packet contains exactly one DNS
             // message, verifying this by checking the 16 bits of DNS data
             // lenght at the beginning of the packet
-            // TODO: CHange here when implementing TCP reconstruction
+            // TODO: Change here when implementing TCP reconstruction
             if (remaining < sizeof(uint16_t)) {
                 return DNS_RET_DROP_NETWORK;
             }
@@ -114,8 +119,13 @@ dns_packet_create_from_libtrace(libtrace_packet_t *tp, struct dns_packet **pktp)
         return DNS_RET_DROP_NETWORK;
     }
 
-    // Protocol
-    pkt->protocol = proto;
+    // Protocol and other net stats
+    pkt->net_protocol = proto;
+    pkt->net_size = trace_get_wire_length(tp);
+    pkt->net_ttl = 0;
+    if (ip_hdr) pkt->net_ttl = ip_hdr->ip_ttl;
+    if (ip6_hdr) pkt->net_ttl = ip6_hdr->hlim;
+    pkt->net_udp_sum = udp_hdr ? ntohs(udp_hdr->check) : 0;
 
     // Parse and check QNAME count, validity and length
     int r = knot_pkt_parse_question(pkt->knot_packet);
@@ -165,7 +175,7 @@ dns_packet_primary_hash(const dns_packet_t* pkt, dns_hash_value_t param)
 
     dns_hash_value_t hash = 0;
     hash += (dns_hash_value_t)(DNS_PACKET_AF(pkt)) << 0;
-    hash += (dns_hash_value_t)(pkt->protocol) << 16;
+    hash += (dns_hash_value_t)(pkt->net_protocol) << 16;
     // Treat src and dst symmetrically
     hash += (dns_hash_value_t)(DNS_SOCKADDR_PORT(&pkt->dst_addr)) << 32;
     hash += (dns_hash_value_t)(DNS_SOCKADDR_PORT(&pkt->src_addr)) << 32;
@@ -204,7 +214,7 @@ dns_packet_primary_match(const struct dns_packet* pkt1, const struct dns_packet*
 
     // Compare AF, proto, DNS ID
     if (DNS_PACKET_AF(pkt1) != DNS_PACKET_AF(pkt2) ||
-        pkt1->protocol != pkt2->protocol ||
+        pkt1->net_protocol != pkt2->net_protocol ||
         pkt1->dns_id != pkt2->dns_id) return 0;
 
     if ((!DNS_PACKET_IS_REQUEST(pkt1)) == (!DNS_PACKET_IS_REQUEST(pkt2))) {

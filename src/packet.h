@@ -38,12 +38,19 @@ struct dns_packet {
     struct sockaddr_in6 dst_addr;
 
     /** Transport layer protocol number */
-    uint8_t protocol;
+    uint8_t net_protocol;
+
+    /** Length of the packet (before snapping etc.) */
+    size_t net_size;
+
+    /** Original packet TTL */
+    uint8_t net_ttl;
+
+    /** Original packet checksum if UDP. */
+    uint16_t net_udp_sum;
 
     /** DNS ID */
     uint16_t dns_id;
-
-    /** TODO: More TCP/IP features */
 
     /** When this is a request, a pointer to an matching response.
      * The response packet is then owned by this packet. */
@@ -52,7 +59,7 @@ struct dns_packet {
     /** DNS data copy, owned by the packet. */
     uint8_t *dns_data;
 
-    /** Length of the DNS data. */
+    /** Actual length of dns_data. */
     size_t dns_data_size;
 
     /** Length of the DNS data befora any shortening. */
