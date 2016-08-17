@@ -8,11 +8,11 @@ WARNS+=-Wno-gnu-statement-expression -Wno-language-extension-token
 endif
 
 CFLAGS=-O2 -g3 -std=gnu11 -pedantic $(WARNS) -I../libs/libucw/run/include/ -rdynamic -pthread \
-       -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free # ADD -flto ?
+#       -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free # ADD -flto ?
 
 # Using local static libucw and libknot (?)
 LDLIBS=../libs/libucw/run/lib/libucw-6.5.a /usr/lib/x86_64-linux-gnu/libknot.a \
-       -ldnssec -ltrace -lpthread -ltcmalloc # /usr/lib/libtcmalloc_and_profiler.a
+       -ldnssec -ltrace -lpthread #-ltcmalloc # /usr/lib/libtcmalloc_and_profiler.a
 LDFLAGS=
 
 PROG=dnscol

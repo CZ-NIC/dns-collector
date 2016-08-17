@@ -92,6 +92,9 @@ dns_input_finish(struct dns_input *input)
     input->frame->type = 1;
     dns_frame_queue_enqueue(input->output, input->frame);
     input->frame = NULL;
+
+    if (input->dumper)
+        dns_dump_close(input->dumper);
 }
 
 

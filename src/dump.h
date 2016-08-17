@@ -36,7 +36,7 @@ struct dns_dump {
     dns_us_time_t dump_opened;
 
     /** Output file compression type */
-    trace_option_compresstype_t compress_type;
+    int compress_type;
     /* Level of compression (1-9, 0 for no compression) */
     int compress_level;
 

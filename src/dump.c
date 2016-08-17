@@ -21,6 +21,7 @@ dns_dump_create(struct dns_config *conf)
     dump->period_sec = conf->dump_period_sec;
     dump->path_fmt = strdup(conf->dump_path_fmt);
     dump->uri = NULL;
+    dump->trace = NULL;
     dump->rate = conf->dump_rate_limit;
     dump->tokens = 2 * conf->dump_rate_limit;
     dump->last_event = DNS_NO_TIME;
@@ -35,11 +36,17 @@ dns_dump_create(struct dns_config *conf)
 void
 dns_dump_close(struct dns_dump *dump)
 {
-    msg(L_INFO, "dump: Wrote %"PRIu64" packets (%"PRIu64" bytes) to %s, skipped %"PRIu64" packets (rate-limited)",
+    assert(dump);
+    if (!dump->trace)
+        return;
+
+    msg(L_INFO, "dump: Wrote %"PRIu64" packets (%"PRIu64" bytes) to %s, rate-limited %"PRIu64" packets",
         dump->current_dumped, dump->current_bytes, dump->uri, dump->current_skipped);
     trace_destroy_output(dump->trace);
     dump->trace = NULL;
+    assert(dump->uri);
     free(dump->uri);
+    dump->uri = NULL;
 }
 
 dns_ret_t
@@ -49,10 +56,10 @@ dns_dump_open(struct dns_dump *dump, dns_us_time_t time)
     // Extra space for expansion -- note that most used conversions are "in place": "%d" -> "01" 
     if (dump->uri)
         free(dump->uri);
-    int path_len = strlen(dump->path_fmt) + DNS_OUTPUT_FILENAME_EXTRA + 6;
+    int path_len = strlen(dump->path_fmt) + DNS_OUTPUT_FILENAME_EXTRA + 10;
     dump->uri = xmalloc(path_len);
     char *p = dump->uri;
-    p += snprintf(p, path_len, "pcap:");
+    p += snprintf(p, path_len, "pcapfile:");
     size_t l = dns_us_time_strftime(p, path_len - (p - dump->uri), dump->path_fmt, time);
     if (l == 0) {
         die("Expanded filename '%s' expansion too long.", dump->path_fmt);
@@ -69,11 +76,11 @@ dns_dump_open(struct dns_dump *dump, dns_us_time_t time)
     // Compression
     if ((dump->compress_level > 0) && (dump->compress_type != TRACE_OPTION_COMPRESSTYPE_NONE)) {
         int r = trace_config_output(dump->trace, TRACE_OPTION_OUTPUT_COMPRESSTYPE, &(dump->compress_type));
-        if (r >= 0)
-            r = trace_config_output(dump->trace, TRACE_OPTION_OUTPUT_COMPRESS, &(dump->compress_level));
+//        if (r >= 0)
+//            r = trace_config_output(dump->trace, TRACE_OPTION_OUTPUT_COMPRESS, &(dump->compress_level));
         if (r < 0) {
-            msg(L_FATAL, "libtrace error setting compression for dump '%s': %s", dump->uri, trace_get_err_output(dump->trace).problem);
-            trace_destroy_output(dump->trace);
+            msg(L_ERROR, "libtrace error setting compression for dump '%s': %s", dump->uri, trace_get_err_output(dump->trace).problem);
+//            trace_destroy_output(dump->trace);
             dump->trace = NULL;
             return DNS_RET_ERR;
         }
@@ -125,7 +132,7 @@ dns_dump_packet(struct dns_dump *dump, libtrace_packet_t *packet, dns_ret_t reas
     }
 
     // Rotation and opening of a new dump file
-    if (dump->trace && dns_next_rotation(dump->period_sec, dump->dump_opened, time)) {
+    if (dump->trace && dump->period_sec > 0 && dns_next_rotation(dump->period_sec, dump->dump_opened, time)) {
        dns_dump_close(dump);
     }
     if (!dump->trace) {
