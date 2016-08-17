@@ -76,11 +76,11 @@ dns_dump_open(struct dns_dump *dump, dns_us_time_t time)
     // Compression
     if ((dump->compress_level > 0) && (dump->compress_type != TRACE_OPTION_COMPRESSTYPE_NONE)) {
         int r = trace_config_output(dump->trace, TRACE_OPTION_OUTPUT_COMPRESSTYPE, &(dump->compress_type));
-//        if (r >= 0)
-//            r = trace_config_output(dump->trace, TRACE_OPTION_OUTPUT_COMPRESS, &(dump->compress_level));
+        if (r >= 0)
+            r = trace_config_output(dump->trace, TRACE_OPTION_OUTPUT_COMPRESS, &(dump->compress_level));
         if (r < 0) {
             msg(L_ERROR, "libtrace error setting compression for dump '%s': %s", dump->uri, trace_get_err_output(dump->trace).problem);
-//            trace_destroy_output(dump->trace);
+            trace_destroy_output(dump->trace);
             dump->trace = NULL;
             return DNS_RET_ERR;
         }
