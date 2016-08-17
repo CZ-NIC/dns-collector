@@ -66,9 +66,7 @@ static void
 dns_worker_packet_matcher_advance_time_to(struct dns_worker_packet_matcher *pm, dns_us_time_t time)
 {
     assert(pm && time != DNS_NO_TIME && pm->current_time != DNS_NO_TIME);
-//    msg(L_DEBUG, "Advancing matcher time from %f to %f",
-//        dns_us_time_to_fsec(pm->current_time), dns_us_time_to_fsec(time));
-    if (time < pm->current_time) {
+    if (time < pm->current_time - 1000) { // TODO: configurable grace time (now 1 ms), or reorder packets?
         msg(L_WARN | DNS_MSG_SPAM, "Not advancing matcher time back %f s (packets in the wrong order?)",
             dns_us_time_to_fsec(pm->current_time - time));
         return;
