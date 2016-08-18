@@ -132,9 +132,11 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
         if (out->csv_fields & (1 << (flag)))
 #define WRITEFIELD0 \
         if (first) { first = 0; } else { *(p++) = out->separator; } 
+#define WRITE(fmtargs...) \
+        p += snprintf(p, (outbuf + sizeof(outbuf)) - p, fmtargs);
 #define WRITEFIELD(fmtargs...) \
         WRITEFIELD0 \
-        p += snprintf(p, (outbuf + sizeof(outbuf)) - p, fmtargs);
+        WRITE(fmtargs)
 
     // Time
 
@@ -156,7 +158,7 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
         if (DNS_PACKET_REQUEST(pkt)) {
             WRITEFIELD("%zd", DNS_PACKET_REQUEST(pkt)->dns_data_size_orig);
         } else {
-            WRITEFIELD("%d", 0);
+            WRITEFIELD0;
         }
     }
 
@@ -164,7 +166,7 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
         if (DNS_PACKET_RESPONSE(pkt)) {
             WRITEFIELD("%zd", DNS_PACKET_RESPONSE(pkt)->dns_data_size_orig);
         } else {
-            WRITEFIELD("%d", 0);
+            WRITEFIELD0;
         }
     }
 
@@ -172,7 +174,7 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
         if (DNS_PACKET_REQUEST(pkt)) {
             WRITEFIELD("%zd", DNS_PACKET_REQUEST(pkt)->net_size);
         } else {
-            WRITEFIELD("%d", 0);
+            WRITEFIELD0;
         }
     }
 
@@ -180,7 +182,7 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
         if (DNS_PACKET_RESPONSE(pkt)) {
             WRITEFIELD("%zd", DNS_PACKET_RESPONSE(pkt)->net_size);
         } else {
-            WRITEFIELD("%d", 0);
+            WRITEFIELD0;
         }
     }
 
@@ -252,18 +254,50 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
         WRITEFIELD("%d", knot_pkt_qclass(pkt->knot_packet));
     }
 
-    COND(dns_of_flags) {
-        struct dns_packet *pp = pkt;
-        if (pkt->response)
-            pp = pkt->response;
-        WRITEFIELD("%d", (knot_wire_get_flags1(pp->knot_packet->wire) << 8) + knot_wire_get_flags2(pp->knot_packet->wire))
+    COND(dns_of_opcode) {
+        WRITEFIELD("%d", knot_wire_get_opcode(pkt->knot_packet->wire));
     }
 
-    /* TODO: better escaping: impala-compatible? */
+    COND(dns_of_rcode) {
+        if (DNS_PACKET_RESPONSE(pkt)) {
+            WRITEFIELD("%d", knot_wire_get_rcode(DNS_PACKET_RESPONSE(pkt)->knot_packet->wire));
+        } else {
+            WRITEFIELD0;
+        }
+    }
+
+#define WRITEFLAG(type, name)  if (DNS_PACKET_ ## type (pkt)) { \
+    WRITEFIELD("%d", !! knot_wire_get_ ## name(DNS_PACKET_ ## type (pkt)->knot_packet->wire)); \
+    } else { WRITEFIELD0; }
+
+    COND(dns_of_resp_aa) {
+        WRITEFLAG(RESPONSE, aa);
+    }
+    COND(dns_of_resp_tc) {
+        WRITEFLAG(RESPONSE, tc);
+    }
+    COND(dns_of_req_rd) {
+        WRITEFLAG(REQUEST, rd);
+    }
+    COND(dns_of_resp_ra) {
+        WRITEFLAG(RESPONSE, ra);
+    }
+    COND(dns_of_req_z) {
+        WRITEFLAG(REQUEST, z);
+    }
+    COND(dns_of_resp_ad) {
+        WRITEFLAG(RESPONSE, ad);
+    }
+    COND(dns_of_req_cd) {
+        WRITEFLAG(REQUEST, cd);
+    }
+#undef WRITEFLAG
+
+    /* TODO: check escaping, impala-compatible */
     COND(dns_of_qname) {
         char qname_buf[512];
         char * res = knot_dname_to_str(qname_buf, knot_pkt_qname(pkt->knot_packet), sizeof(qname_buf));
-        WRITEFIELD("%s", res ? res : "INVALID_QNAME" );
+        WRITEFIELD("%s", res ? res : "\\N" ); // Impala NULL string
     }
 
     COND(dns_of_resp_ancount) {
@@ -290,8 +324,53 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
         }
     }
 
-#undef COND
+    // EDNS
+
+    const knot_rrset_t *opt_rr = pkt->knot_packet->opt_rr;
+
+#define COND_EDNS(flag) COND(flag) { if (!opt_rr) { WRITEFIELD0; } else 
+#define COND_EDNS_END }
+
+    COND_EDNS(dns_of_edns_version) {
+        WRITEFIELD("%d", knot_edns_get_version(opt_rr));
+    } COND_EDNS_END
+    COND_EDNS(dns_of_edns_udp) {
+        WRITEFIELD("%d", knot_edns_get_payload(opt_rr));
+    } COND_EDNS_END
+    COND_EDNS(dns_of_edns_do) {
+        WRITEFIELD("%d", !! knot_edns_do(opt_rr));
+    } COND_EDNS_END
+    cond_edns(dns_of_edns_ping) {
+        writefield("%d", !! knot_edns_has_option(opt_rr));
+    } cond_edns_end
+    cond_edns(dns_of_edns_ext_rcode) {
+        writefield("%d", knot_edns_get_ext_rcode(opt_rr));
+    } cond_edns_end
+
+    // TODO: list separator "," and escaping (and use "|" or "\t" in CSV as the default
+#define WRITE_OPTBYTELIST(code) uint8_t *opt = knot_edns_get_option(opt_rr, code); \
+    WRITEFIELD0; \
+    if (opt) { for (int i = 0; i < knot_edns_opt_get_length(opt); i++) { if (i > 0) WRITE(" "); WRITE("%d", (int)(opt + 2 * sizeof(uint16_t) + i)); } }
+
+    // TODO: distinguish a PING request from DAU,
+    // see https://github.com/SIDN/entrada/blob/b787af190267df148683151638ce94508bd6139e/dnslib4java/src/main/java/nl/sidn/dnslib/message/records/edns0/OPTResourceRecord.java#L146
+    COND_EDNS(dns_of_edns_dnssec_dau) {
+        WRITE_OPTBYTELIST(5) /* DAU */
+    } COND_EDNS_END
+    COND_EDNS(dns_of_edns_dnssec_dhu) {
+        WRITE_OPTBYTELIST(6) /* DHU */
+    } COND_EDNS_END
+    COND_EDNS(dns_of_edns_dnssec_n3u) {
+        WRITE_OPTBYTELIST(7) /* N3U */
+    } COND_EDNS_END
+
 #undef WRITEFIELD
+#undef WRITEFIELD0
+#undef WRITE
+#undef WRITE_OPTBYTES
+#undef COND
+#undef COND_EDNS
+#undef COND_EDNS_END
 
     *(p++) = '\n';
     *(p++) = '\0';

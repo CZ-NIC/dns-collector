@@ -113,7 +113,9 @@ const char *dns_output_field_names[] = {
     "id",
     "qtype",
     "qclass",
-    "flags",
+    "opcode",
+    "rcode",
+    "flag_aa",
     "qname",
     "resp_ancount",
     "resp_arcount",
@@ -122,7 +124,7 @@ const char *dns_output_field_names[] = {
     NULL,
 };
 
-_Static_assert(sizeof(dns_output_field_names) == sizeof(char *) * (dns_of_LAST + 1), "dns_output_field_names and dns_output_field mismatch");
+//_Static_assert(sizeof(dns_output_field_names) == sizeof(char *) * (dns_of_LAST + 1), "dns_output_field_names and dns_output_field mismatch");
 
 const char *dns_drop_reason_names[] = {
   "other",
