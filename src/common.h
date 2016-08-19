@@ -124,6 +124,7 @@ enum dns_output_field {
     dns_field_req_edns_n3u = dns_field_edns,
     dns_field_resp_edns_nsid = dns_field_edns, 
     dns_field_edns_client_subnet = dns_field_edns,
+    dns_field_edns_other = dns_field_edns,
 
     dns_of_LAST, // Sentinel
 };

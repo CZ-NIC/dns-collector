@@ -319,6 +319,15 @@ write_packet(FILE *f, uint32_t fields, int separator, dns_packet_t *pkt)
         } else { WRITENULL; }
     COND_END
 
+    COND(edns_other)
+        const knot_rrset_t *opt_rr = resp_opt_rr;
+        if (req_opt_rr)
+            opt_rr = req_opt_rr; // Prefer request OPT RR
+        if (opt_rr) {
+            // TODO: PARSE and PRINT options other than used above
+        } else { WRITENULL; }
+    COND_END
+
 #undef WRITE
 #undef WRITENULL
 #undef COND

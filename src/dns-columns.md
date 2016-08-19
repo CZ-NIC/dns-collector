@@ -51,7 +51,7 @@
 | edns_dnssec_dhu| STRING	| req_edns_dhu   | X | Comma-separated list "1,3,5" |
 | edns_dnssec_n3u| STRING	| req_edns_n3u   | X | Comma-separated list "1,3,5" |
 | edns_client_subnet| STRING	| edns_client_subnet | . | "4,118.71.70/24,0" or "4,62.168.119/24,0" |
-| edns_other	| STRING	| req_edns_other | . | List of EDNS option types like "3,10,9" - request if present, fallback to response (Entrada: request only) |
+| edns_other	| STRING	| req_edns_other | . | List of EDNS option types like "3,10,9" from request if present, or from response (Entrada: request only) |
 | edns_client_subnet_asn|STRING | NA             | - | By IP list (Maxmind) |
 | edns_client_subnet_country|STRING| NA          | - | By IP list (Maxmind) |
 | -             |               | resp_edns_rcode| X | Not implemented by Entrada |
