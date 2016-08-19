@@ -36,6 +36,35 @@ dns_sockaddr_to_str(const struct sockaddr *sa, char *s, size_t maxlen)
     }
 }
 
+int
+dns_snescape(char *str, size_t strsize, int separator, const uint8_t *data, size_t datasize)
+{
+    if (strsize <= 0)
+        return 0;
+    char *strp = str;
+    const uint8_t *datap = data;
+#define WRITESTR(s, len) if (strp + (len) > str + strsize - 1) { break; } else \
+        { for (int ii = 0; ii < (len); ii++) { *(strp ++) = s[ii]; } }
+
+    while ((strp < str + strsize - 1) && (datap < data + datasize)) {
+        if (*datap == '\0') {
+            WRITESTR("\\0", 2)
+        } else if (*datap == '\\') {
+            WRITESTR("\\\\", 2)
+        } else if (*datap == '\n') {
+            WRITESTR("\\n", 2)
+        } else if (*datap == separator) {
+            WRITESTR("\\ ", 2) // Checking for space in str
+            *(strp - 1) = separator;
+        } else {
+            *(strp ++) = *datap;
+        }
+        datap ++;
+    }
+    *strp = '\0';
+    return strp - str;
+}
+
 dns_us_time_t
 dns_us_time_from_timeval(const struct timeval *t)
 {
@@ -95,7 +124,7 @@ dns_next_rotation(int period_sec, dns_us_time_t last_rotation, dns_us_time_t now
     return 0;
 }
 
-const char *dns_output_field_names[] = {
+const char *dns_output_field_flag_names[] = {
     "timestamp",
     "delay_us",
     "req_dns_len",
@@ -121,10 +150,10 @@ const char *dns_output_field_names[] = {
     "resp_arcount",
     "resp_nscount",
 
-    NULL,
+    NULL, // TODO: update
 };
 
-//_Static_assert(sizeof(dns_output_field_names) == sizeof(char *) * (dns_of_LAST + 1), "dns_output_field_names and dns_output_field mismatch");
+//_Static_assert(sizeof(dns_output_field_flag_names) == sizeof(char *) * (dns_of_LAST + 1), "dns_output_field_names and dns_output_field mismatch");
 
 const char *dns_drop_reason_names[] = {
   "other",
