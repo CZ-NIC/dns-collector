@@ -123,7 +123,7 @@ struct cf_section dns_config_section = {
 	CF_STRING("csv_separator", PTR_TO(struct dns_config, csv_separator)),
 	CF_INT("csv_inline_header", PTR_TO(struct dns_config, csv_inline_header)),
 	CF_STRING("csv_external_header_path_fmt", PTR_TO(struct dns_config, csv_external_header_path_fmt)),
-	CF_BITMAP_LOOKUP("csv_fields", PTR_TO(struct dns_config, csv_fields), dns_output_field_names),
+	CF_BITMAP_LOOKUP("csv_fields", PTR_TO(struct dns_config, csv_fields), dns_output_field_flag_names),
         CF_END
     }
 };

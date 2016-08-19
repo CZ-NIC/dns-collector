@@ -81,48 +81,54 @@ typedef enum dns_ret dns_ret_t;
  */
 
 enum dns_output_field {
-    dns_of_timestamp = 0,
-    dns_of_delay_us,
-    dns_of_req_dns_len,
-    dns_of_resp_dns_len,
-    dns_of_req_net_len,
-    dns_of_resp_net_len,
-    dns_of_client_addr,
-    dns_of_client_port,
-    dns_of_server_addr,
-    dns_of_server_port,
-    dns_of_net_proto,
-    dns_of_net_ipv,
-    dns_of_net_ttl,
-    dns_of_req_udp_sum,
-    dns_of_id,
-    dns_of_qtype,
-    dns_of_qclass,
-    dns_of_opcode,
-    dns_of_rcode,
-    dns_of_resp_aa,
-    dns_of_resp_tc,
-    dns_of_req_rd,
-    dns_of_resp_ra,
-    dns_of_req_z,
-    dns_of_resp_ad,
-    dns_of_req_cd,
-    dns_of_qname,
-    dns_of_resp_ancount,
-    dns_of_resp_arcount,
-    dns_of_resp_nscount,
-    dns_of_edns_version,
-    dns_of_edns_udp,
-    dns_of_edns_do,
-    dns_of_edns_ping,
-    dns_of_edns_dnssec_dau,
-    dns_of_edns_dnssec_dhu,
-    dns_of_edns_dnssec_n3u,
+    dns_field_timestamp = 0,
+    dns_field_delay_us, 
+    dns_field_req_dns_len,
+    dns_field_resp_dns_len, 
+    dns_field_req_net_len,
+    dns_field_resp_net_len,
+    dns_field_client_addr,
+    dns_field_client_port, 
+    dns_field_server_addr,
+    dns_field_server_port, 
+    dns_field_net_proto,
+    dns_field_net_ipv, 
+    dns_field_net_ttl, 
+    dns_field_req_udp_sum,
+    dns_field_id,
+    dns_field_qtype, 
+    dns_field_qclass, 
+    dns_field_opcode,
+    dns_field_rcode,
+    dns_field_flags, 
+    dns_field_resp_aa = dns_field_flags, 
+    dns_field_resp_tc = dns_field_flags, 
+    dns_field_req_rd = dns_field_flags,
+    dns_field_resp_ra = dns_field_flags,
+    dns_field_req_z = dns_field_flags,
+    dns_field_resp_ad = dns_field_flags,
+    dns_field_req_cd = dns_field_flags,
+    dns_field_qname,
+    dns_field_rr_counts, 
+    dns_field_resp_ancount = dns_field_rr_counts, 
+    dns_field_resp_arcount = dns_field_rr_counts, 
+    dns_field_resp_nscount = dns_field_rr_counts,
+    dns_field_edns,
+    dns_field_req_edns_ver = dns_field_edns, 
+    dns_field_req_edns_udp = dns_field_edns,
+    dns_field_req_edns_do = dns_field_edns, 
+    dns_field_resp_edns_rcode = dns_field_edns, 
+    dns_field_req_edns_ping = dns_field_edns,
+    dns_field_req_edns_dau = dns_field_edns,
+    dns_field_req_edns_dhu = dns_field_edns,
+    dns_field_req_edns_n3u = dns_field_edns,
+    dns_field_resp_edns_nsid = dns_field_edns, 
+    dns_field_edns_client_subnet = dns_field_edns,
 
     dns_of_LAST, // Sentinel
 };
 
-extern const char *dns_output_field_names[];
+extern const char *dns_output_field_flag_names[];
 
 /**
  * Packet parsing error or drop reason.
@@ -173,7 +179,14 @@ void dns_ptrace(void);
 char *
 dns_sockaddr_to_str(const struct sockaddr *sa, char *s, size_t maxlen);
 
-
+/**
+ * Write datasize bytes of data to str escaping special characters.
+ * Writes no more than strsize bytes including the final '\0'.
+ * Escapes '\', '\0', '\n' and the separator character.
+ * Returns the number of characters written to str excluding the final '\0'.
+ */
+int
+dns_snescape(char *str, size_t strsize, int separator, const uint8_t *data, size_t datasize);
 
 /**
  * Time type for timestamps and time differences.
