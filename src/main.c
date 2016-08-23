@@ -37,7 +37,7 @@ static void
 sigpipe_handler(int sig UNUSED)
 {
     if (dns_global_stop) {
-        msg(L_WARN | L_SIGHANDLER, "Ignoring SIGPIPE after input termination (likely minor error)");
+        msg(L_WARN | L_SIGHANDLER | DNS_MSG_SPAM, "Ignoring SIGPIPE after input termination (likely minor error)");
     } else {
         msg(L_FATAL | L_SIGHANDLER, "Received SIGPIPE during operation, exitting.");
         exit(1);
@@ -96,7 +96,7 @@ int main(int argc UNUSED, char **argv)
     #pragma GCC diagnostic pop
 
     if ((*main_inputs == NULL) && strlen(conf->input_uri) == 0) {
-        opt_failure("Provide at least one input capture filename or configure capture device in the config.");
+        opt_failure("ERROR: Provide at least one input capture filename or configure capture device in the config.");
         return 2;
     }
     log_configured("default");
