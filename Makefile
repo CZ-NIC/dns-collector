@@ -1,44 +1,37 @@
-.PHONY: all clean docs dnscol build-deps build-deps-libucw build-deps-liblz4 clean-deps clean-deps-libucw clean-deps-liblz4
+.PHONY: all clean docs dnscol help build-deps clean-deps
 
 all: dnscol
+
+help:
+	@echo "all          build dnscol dependencies (build-deps) and dnscol binary"
+	@echo "docs         generate Doxygen developer docs"
+	@echo "clean        remove dnscol binaries and Doxygen documentation"
+	@echo "build-deps   update libucw submodule and build the library"
+	@echo "clean-deps   clean the libucw binaries"
 
 clean:
 	cd src && make clean
 	rm -rf docs/html
 
-dnscol: build-deps-libucw build-deps-liblz4
+dnscol: build-deps
 	cd src && make dnscol
 
 docs:
 	doxygen Doxyfile
 
-build-deps: build-deps-libucw build-deps-liblz4
-
-clean-deps: clean-deps-libucw clean-deps-liblz4
-
 ## libs/libUCW
 
-build-deps-libucw: libs/libucw/run/lib/libucw-6.5.a
+build-deps: libs/libucw/run/lib/libucw-6.5.a
+
 libs/libucw/run/lib/libucw-6.5.a:
 	git submodule init
 	git submodule update
 	cd libs/libucw && \
-	    ./configure -CONFIG_UCW_PERL -CONFIG_XML -CONFIG_JSON CONFIG_DEBUG CONFIG_LOCAL -CONFIG_SHARED -CONFIG_DOC -CONFIG_CHARSET && \
+	    ./configure -CONFIG_UCW_PERL -CONFIG_XML -CONFIG_JSON CONFIG_DEBUG CONFIG_LOCAL \
+	                -CONFIG_SHARED -CONFIG_DOC -CONFIG_CHARSET && \
 	    make all
 
-clean-deps-libucw:
+clean-deps:
 	cd libs/libucw && make clean
 
-## libs/libLZ4
-
-build-deps-liblz4: libs/lz4/lib/liblz4.a
-libs/lz4/lib/liblz4.a:
-	git submodule init
-	git submodule update
-	cd libs/lz4 && \
-	    make lib
-
-clean-deps-liblz4:
-	cd libs/lz4 && \
-	    make clean
 
