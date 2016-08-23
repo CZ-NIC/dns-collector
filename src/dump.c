@@ -14,6 +14,8 @@
 #include "dump.h"
 #include "output.h"
 
+#define DUMP_BURST_MULT 10
+
 struct dns_dump *
 dns_dump_create(struct dns_config *conf)
 {
@@ -23,7 +25,7 @@ dns_dump_create(struct dns_config *conf)
     dump->uri = NULL;
     dump->trace = NULL;
     dump->rate = conf->dump_rate_limit;
-    dump->tokens = 2 * conf->dump_rate_limit;
+    dump->tokens = DUMP_BURST_MULT * conf->dump_rate_limit;
     dump->last_event = DNS_NO_TIME;
     dump->current_dumped = 0;
     dump->current_bytes = 0;
@@ -86,7 +88,7 @@ dns_dump_open(struct dns_dump *dump, dns_us_time_t time)
         }
     }
 
-    dump->tokens = MAX(2 * dump->rate, 2.0);
+    dump->tokens = DUMP_BURST_MULT * dump->rate;
     dump->last_event = time;
     dump->dump_opened = time;
     dump->current_dumped = 0;
@@ -124,7 +126,7 @@ dns_dump_packet(struct dns_dump *dump, libtrace_packet_t *packet, dns_ret_t reas
     if (dump->rate > 1e-6) {
         dump->tokens += dump->rate * dns_us_time_to_fsec(time - dump->last_event);
         dump->last_event = time;
-        dump->tokens = MIN(dump->tokens, MAX(2 * dump->rate, 2.0));
+        dump->tokens = MIN(dump->tokens, DUMP_BURST_MULT * dump->rate);
         if (dump->tokens < 0.0) {
             dump->current_skipped ++;
             return DNS_RET_OK;
@@ -151,7 +153,7 @@ dns_dump_packet(struct dns_dump *dump, libtrace_packet_t *packet, dns_ret_t reas
     dump->current_dumped ++;
     dump->current_bytes += r;
     dump->tokens -= r;
-    // TODO: use the reason?
+    // TODO: use the dump reason?
 
     return DNS_RET_OK;
 }
