@@ -23,7 +23,7 @@ A collector for DNS queries than matches observed queries with the responses.
 
 * TCP flow recoinstruction for reused streams (currently only single-query TCP connections are supported)
 * IP(4/6) fragmented packet reconstuction, DNS via ICMP
-* More EDNS features: Client subnet, other options
+* More EDNS features: Client subnet, other options, EDNS ping
 * Idea: slightly delay the responses in the workflow (cca 10 us, to remove capture timing jitter)
 
 ## Requirements
@@ -153,6 +153,7 @@ Some fields have a common configuration flag, for most the flag is the same as t
 
 ### Impala import
 
+
 It is recommended to create the Impala table as (with the selected field separator):
 ```sql
 CREATE TABLE table_name ( ... )
@@ -208,3 +209,9 @@ ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' ESCAPED BY '\\';
 
 Optionally, you might want to add `PARTITIONED BY (server STRING)` or even a date-based partitioning.
 Note that Impala can read gzip, lzo and bzip2 compressed CSV files transparently.
+
+### Entrada import
+
+See `entrada-columns.md` for an overview of dnscol-Entrada column correspondence.
+
+*TODO:* The SQL command to import Impala dnscol CSV table into the Entrada `dns.queries` table.
