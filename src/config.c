@@ -1,5 +1,6 @@
 #include "common.h"
 #include "config.h"
+#include <ctype.h>
 
 static char *
 dns_collector_conf_init(void *data)
@@ -17,7 +18,7 @@ dns_collector_conf_init(void *data)
     conf->input_filter = "";
     conf->input_snaplen = -1;
     conf->input_promiscuous = 1;
-    conf->input_real_time_grace_sec = 1.0; // TODO: allow configuration
+    conf->input_real_time_grace_sec = 0.1; // TODO: allow configuration
 
     // Packet dump options
     conf->dump_path_fmt = "";
@@ -27,7 +28,7 @@ dns_collector_conf_init(void *data)
     conf->dump_rate_limit = 0.0;
 
     // Matching
-    conf->match_window_sec = 30.0;
+    conf->match_window_sec = 5.0;
 
     // General output
     conf->output_type = "csv";
@@ -36,10 +37,11 @@ dns_collector_conf_init(void *data)
     conf->output_period_sec = 0;
 
     // CSV output
-    conf->csv_separator = ",";
-    conf->csv_inline_header = 1;
+    conf->csv_separator = "|";
+    conf->csv_inline_header = 0;
     conf->csv_external_header_path_fmt = "";
-    conf->csv_fields = (1 << dns_of_LAST) - 1; // All fields by default
+    conf->csv_fields = 0; // No fields by default
+    // conf->csv_fields = (1 << dns_of_LAST) - 1; // All fields by default
 
     return NULL;
 }
@@ -57,8 +59,9 @@ dns_collector_conf_commit(void *data)
     if (strcasecmp(conf->output_type, "csv") == 0) {
         if (strlen(conf->csv_separator) != 1)
             return "'csv_separator' needs to be exactly one character";
-        if ((conf->csv_separator[0] < 0x20) || (conf->csv_separator[0] > 0x7f))
-            return "'csv_separator' should be a printable, non-whitespace character";
+        if (isalnum(conf->csv_separator[0]) || strchr(".-#_\\\n/", conf->csv_separator[0]) 
+            || (conf->csv_separator[0] > 0x7f))
+            return "You shold use non-alphanumeric ASCII character for 'csv_separator', avoiding \".-#_\\/\" and newline.";
         if (conf->csv_fields == 0)
             return "'csv_fields' must have at least one field";
     } else {

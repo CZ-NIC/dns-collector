@@ -54,8 +54,13 @@ dns_snescape(char *str, size_t strsize, int separator, const uint8_t *data, size
         } else if (*datap == '\n') {
             WRITESTR("\\n", 2)
         } else if (*datap == separator) {
-            WRITESTR("\\ ", 2) // Checking for space in str
-            *(strp - 1) = separator;
+            if (isgraph(separator)) {
+                WRITESTR("\\ ", 2) // Checking for space in str
+                *(strp - 1) = separator;
+            } else {
+                WRITESTR("\\000", 4) // Checking for space in str
+                sprintf(strp - 3, "%03o", separator);
+            }
         } else {
             *(strp ++) = *datap;
         }
@@ -125,7 +130,7 @@ dns_next_rotation(int period_sec, dns_us_time_t last_rotation, dns_us_time_t now
 }
 
 const char *dns_output_field_flag_names[] = {
-    "timestamp",
+    "time",
     "delay_us",
     "req_dns_len",
     "resp_dns_len",
