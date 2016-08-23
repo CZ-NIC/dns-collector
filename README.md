@@ -87,6 +87,77 @@ Packet statistics:
 However, the drop to 600 kq/s does not seem to come from dnscol CPU usage but rather the packet capture
 load on the kernel: the Knot speed drop is the same (to 600 kq/s) with dnscol cpulimited to just 0.5 CPU.
 
+## CSV output
 
+### Escaping
 
+The output is primarily targetted for Impala import, so the CSV does NOT conform to RFC 4180.
+Instead of quoting, problematic characters are escaped with a backslash.
 
+The escaped characters are: backslash (`\\`), newline (`\n`), the configured field separator (e.g. `\,`),
+all non-ASCII and most non-printable characters (`\ooo` with octal notation).
+
+SQL `NULL` values in numeric fields are represented by an empty field and by `\N` in string fields
+(as in Impala).
+
+### Fields
+
+TODO
+
+### Impala import
+
+It is recommended to create the Impala table as (with the selected field separator):
+```
+CREATE TABLE table_name ( ... )
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' ESCAPED BY '\\';
+```
+
+The table for all features (in the right order) is created by:
+```
+CREATE TABLE dnscol_csv_import (
+time TIMESTAMP, -- has nanosecond precision in Impala
+delay_us INT,
+req_dns_len INT,
+resp_dns_len INT,
+req_net_len INT,
+resp_net_len INT,
+client_addr STRING,
+client_port INT,
+server_addr STRING,
+server_port INT,
+net_proto INT,
+net_ipv INT,
+net_ttl INT,
+req_udp_sum INT,
+id INT,
+qtype INT,
+qclass INT,
+opcode INT,
+rcode INT,
+resp_aa BOOLEAN,
+resp_tc BOOLEAN,
+req_rd BOOLEAN,
+resp_ra BOOLEAN,
+req_z BOOLEAN,
+resp_ad BOOLEAN,
+req_cd BOOLEAN,
+qname STRING,
+resp_ancount INT,
+resp_arcount INT,
+resp_nscount INT,
+req_edns_ver INT,
+req_edns_udp INT,
+req_edns_do BOOLEAN,
+resp_edns_rcode INT,
+req_edns_ping BOOLEAN,
+req_edns_dau STRING,
+req_edns_dhu STRING,
+req_edns_n3u STRING,
+resp_edns_nsid STRING,
+edns_client_subnet STRING,
+edns_other STRING)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' ESCAPED BY '\\';
+```
+
+Optionally, you might want to add `PARTITIONED BY (server STRING) or even a date-based partitioning.
+Note that Impala can read gzip, lzo and bzip2 compressed CSV files transparently.
