@@ -39,7 +39,7 @@ These are Ubuntu package names, but should be similar in other distros.
 ## Building and running
 
 * set `USE_TCMALLOC=1` in `src/Makefile` if you want dnscol to use tcmalloc
-* `make` to compile the dnscol
+* `make` to compile the `dnscol` binary
 * `make docs` to generate developer Doxygen documentation in `docs/html`
 
 * `src/dnscol -C dnscol.conf pcap_files ...` to process offline capture files in sequence.
@@ -102,18 +102,65 @@ SQL `NULL` values in numeric fields are represented by an empty field and by `\N
 
 ### Fields
 
-TODO
+The fields prefixes by `req_` always come from the request, `resp_` from the response.
+The other fields may generally come from either request or response, depending on
+their presence and other context. All values, including DNS ID, are correctly
+decoded from network endian.
+
+| field name   | config flag name (if not same) | type | comment |
+| ---- | ---- | ---- | ----- |
+| `time`        |           | DOUBLE  | seconds of request (or response if no request) since Unix epoch, microsecond precision |
+| `delay_us`    |           | INT     | request-response delay in microseconds  |
+| `req_dns_len` |           | INT     | DNS paload length |
+| `resp_dns_len`|           | INT     | DNS paload length     |
+| `req_net_len` |           | INT     | Packet network length     |
+| `resp_net_len`|           | INT     | Packet network length     |
+| `client_addr` |           | STRING  | e.g. "1.2.3.4" or "12:34::ef" |
+| `client_port` |           | INT     |      |
+| `server_addr` |           | STRING  | e.g. "1.2.3.4" or "12:34::ef" |
+| `server_port` |           | INT     |      |
+| `net_proto`   |           | INT     | 17 for UDP, 6 for TCP |
+| `net_ipv`     |           | INT     | 4 or 6 |
+| `net_ttl`     |           | INT     | TTL or hoplimit |
+| `req_udp_sum` |           | INT     | only if present (and not 0) |
+| `id`          |           | INT     | DNS ID |
+| `qtype`       |           | INT     |      |
+| `qclass`      |           | INT     |      |
+| `opcode`      |           | INT     |      |
+| `rcode`       |           | INT     |      |
+| `resp_aa`     | `flags`   | BOOLEAN |      |
+| `resp_tc`     | `flags`   | BOOLEAN |      |
+| `req_rd`      | `flags`   | BOOLEAN |      |
+| `resp_ra`     | `flags`   | BOOLEAN |      |
+| `req_z`       | `flags`   | BOOLEAN |      |
+| `resp_ad`     | `flags`   | BOOLEAN |      |
+| `req_cd`      | `flags`   | BOOLEAN |      |
+| `qname`       |           | STRING  | including the final dot, escaped by libknot (most non-basic-DNS characters as `\ooo` in octal) |
+| `resp_ancount`|`rr_counts`| INT     |      |
+| `resp_arcount`|`rr_counts`| INT     |      |
+| `resp_nscount`|`rr_counts`| INT     |      |
+| `req_edns_ver`| `edns`    | INT     | version, distinguish 0 and `NULL`! |
+| `req_edns_udp`| `edns`    | INT     |      |
+| `req_edns_do` | `edns`    | BOOLEAN |      |
+| `resp_edns_rcode`|`edns`  | INT     | extended part of `rcode` |
+| `req_edns_ping`|`edns`    | BOOLEAN |      |
+| `req_edns_dau`| `edns`    | STRING  | comma-separated numbers, e.g. "1,3,5" |
+| `req_edns_dhu`| `edns`    | STRING  | comma-separated numbers, e.g. "1,3,5" |
+| `req_edns_n3u`| `edns`    | STRING  | comma-separated numbers, e.g. "1,3,5" |
+| `resp_edns_nsid`|`edns`   | STRING  | escaped NSID |
+| `edns_client_subnet`|`edns`| STRING | *TODO* |
+| `edns_other`  | `edns`    | STRING  | *TODO* |
 
 ### Impala import
 
 It is recommended to create the Impala table as (with the selected field separator):
-```
+```sql
 CREATE TABLE table_name ( ... )
 ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' ESCAPED BY '\\';
 ```
 
 The table for all features (in the right order) is created by:
-```
+```sql
 CREATE TABLE dnscol_csv_import (
 time TIMESTAMP, -- has nanosecond precision in Impala
 delay_us INT,
@@ -159,5 +206,5 @@ edns_other STRING)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' ESCAPED BY '\\';
 ```
 
-Optionally, you might want to add `PARTITIONED BY (server STRING) or even a date-based partitioning.
+Optionally, you might want to add `PARTITIONED BY (server STRING)` or even a date-based partitioning.
 Note that Impala can read gzip, lzo and bzip2 compressed CSV files transparently.
