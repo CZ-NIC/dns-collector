@@ -97,37 +97,37 @@ Instead of quoting, problematic characters are escaped with a backslash.
 The escaped characters are: backslash (`\\`), newline (`\n`), the configured field separator (e.g. `\,`),
 all non-ASCII and most non-printable characters (`\ooo` with octal notation).
 
-SQL `NULL` values in numeric fields are represented by an empty field and by `\N` in string fields
-(as in Impala).
+"NULL" values are represented by an empty string in numeric fields and by `\N` in string fields (as in Impala CSVs).
 
 ### Fields
 
-The fields prefixes by `req_` always come from the request, `resp_` from the response.
+The fields prefixed by `req_` always come from the request, `resp_` from the response.
 The other fields may generally come from either request or response, depending on
-their presence and other context. All values, including DNS ID, are correctly
-decoded from network endian.
+request or response presence and other context. 
 
-| field name   | config flag name (if not same) | type | comment |
+Some fields have a common configuration flag, for most the flag is the same as the field name. 
+
+| field name   | config flag name | type | comment |
 | ---- | ---- | ---- | ----- |
-| `time`        |           | DOUBLE  | seconds of request (or response if no request) since Unix epoch, microsecond precision |
-| `delay_us`    |           | INT     | request-response delay in microseconds  |
-| `req_dns_len` |           | INT     | DNS paload length |
-| `resp_dns_len`|           | INT     | DNS paload length     |
-| `req_net_len` |           | INT     | Packet network length     |
-| `resp_net_len`|           | INT     | Packet network length     |
-| `client_addr` |           | STRING  | e.g. "1.2.3.4" or "12:34::ef" |
-| `client_port` |           | INT     |      |
-| `server_addr` |           | STRING  | e.g. "1.2.3.4" or "12:34::ef" |
-| `server_port` |           | INT     |      |
-| `net_proto`   |           | INT     | 17 for UDP, 6 for TCP |
-| `net_ipv`     |           | INT     | 4 or 6 |
-| `net_ttl`     |           | INT     | TTL or hoplimit |
-| `req_udp_sum` |           | INT     | only if present (and not 0) |
-| `id`          |           | INT     | DNS ID |
-| `qtype`       |           | INT     |      |
-| `qclass`      |           | INT     |      |
-| `opcode`      |           | INT     |      |
-| `rcode`       |           | INT     |      |
+| `time`        | .         | DOUBLE  | seconds of request (or response if no request) since Unix epoch, microsecond precision |
+| `delay_us`    | .         | INT     | request-response delay in microseconds  |
+| `req_dns_len` | .         | INT     | DNS paload length |
+| `resp_dns_len`| .         | INT     | DNS paload length     |
+| `req_net_len` | .         | INT     | packet network length     |
+| `resp_net_len`| .         | INT     | packet network length     |
+| `client_addr` | .         | STRING  | e.g. "1.2.3.4" or "12:34::ef" |
+| `client_port` | .         | INT     |      |
+| `server_addr` | .         | STRING  | e.g. "1.2.3.4" or "12:34::ef" |
+| `server_port` | .         | INT     |      |
+| `net_proto`   | .         | INT     | 17 for UDP, 6 for TCP |
+| `net_ipv`     | .         | INT     | 4 or 6 |
+| `net_ttl`     | .         | INT     | TTL or hoplimit |
+| `req_udp_sum` | .         | INT     | only if present (and not 0) |
+| `id`          | .         | INT     | DNS ID |
+| `qtype`       | .         | INT     |      |
+| `qclass`      | .         | INT     |      |
+| `opcode`      | .         | INT     |      |
+| `rcode`       | .         | INT     |      |
 | `resp_aa`     | `flags`   | BOOLEAN |      |
 | `resp_tc`     | `flags`   | BOOLEAN |      |
 | `req_rd`      | `flags`   | BOOLEAN |      |
@@ -135,7 +135,7 @@ decoded from network endian.
 | `req_z`       | `flags`   | BOOLEAN |      |
 | `resp_ad`     | `flags`   | BOOLEAN |      |
 | `req_cd`      | `flags`   | BOOLEAN |      |
-| `qname`       |           | STRING  | including the final dot, escaped by libknot (most non-basic-DNS characters as `\ooo` in octal) |
+| `qname`       | .         | STRING  | including the final dot, escaped by libknot (most non-basic-DNS characters as `\ooo` in octal) |
 | `resp_ancount`|`rr_counts`| INT     |      |
 | `resp_arcount`|`rr_counts`| INT     |      |
 | `resp_nscount`|`rr_counts`| INT     |      |
