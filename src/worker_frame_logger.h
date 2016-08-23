@@ -3,6 +3,11 @@
 
 #include "common.h"
 
+/**
+ * \file worker_frame_logger.h
+ * Example worker reporting the passing frames. Debugging only, not used anymore.
+ */
+
 struct dns_frame_queue;
 
 /**

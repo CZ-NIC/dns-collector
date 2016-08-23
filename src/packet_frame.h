@@ -4,6 +4,11 @@
 #include "common.h"
 
 /**
+ * \file packet_frame.h
+ * Packet container (short time interval).
+ */
+
+/**
  * A group of packets (or packet pairs) ordered by timestamp.
  */
 struct dns_packet_frame {

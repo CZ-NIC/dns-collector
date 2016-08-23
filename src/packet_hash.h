@@ -3,8 +3,16 @@
 
 #include "common.h"
 
+/**
+ * \file packet_hash.h
+ * Hashing requests by DNS features for matching.
+ */
+
+
+/**
+ * Type for hashed values.
+ */
 typedef uint64_t dns_hash_value_t;
-struct dns_packet_hash_bucket;
 
 /**
  * Hash bucket with a linked list of packets with the same key.
