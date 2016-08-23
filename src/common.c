@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <execinfo.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 
 #include "common.h"
 
