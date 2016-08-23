@@ -4,6 +4,11 @@
 #include "common.h"
 #include "config.h"
 
+/**
+ * \file worker_packet_matcher.h
+ * The main packet matching structures and code.
+ */
+
 struct dns_frame_queue;
 struct dns_packet_hash;
 
