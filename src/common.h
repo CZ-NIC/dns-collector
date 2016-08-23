@@ -81,7 +81,7 @@ typedef enum dns_ret dns_ret_t;
  */
 
 enum dns_output_field {
-    dns_field_timestamp = 0,
+    dns_field_time = 0,
     dns_field_delay_us, 
     dns_field_req_dns_len,
     dns_field_resp_dns_len, 

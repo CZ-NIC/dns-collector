@@ -32,6 +32,7 @@ dns_output_csv_create(struct dns_config *conf, struct dns_frame_queue *in)
     out->separator = conf->csv_separator[0];
     out->inline_header = conf->csv_inline_header;
     out->csv_fields = conf->csv_fields;
+    msg(L_INFO, "Selected fields: %#x", out->csv_fields);
     if (conf->csv_external_header_path_fmt)
         out->external_header_path_fmt = strdup(conf->csv_external_header_path_fmt);
     return out;
@@ -88,7 +89,7 @@ write_packet(FILE *f, uint32_t fields, int separator, dns_packet_t *pkt)
 
     // Time
 
-    COND(timestamp)
+    COND(time)
         WRITE("%"PRId64".%06"PRId64, pkt->ts / 1000000L, pkt->ts % 1000000L);
     COND_END
 
@@ -247,8 +248,8 @@ write_packet(FILE *f, uint32_t fields, int separator, dns_packet_t *pkt)
 
     // EDNS
 
-    const knot_rrset_t *req_opt_rr = DNS_PACKET_REQUEST(pkt) ? DNS_PACKET_REQUEST(pkt)->knot_packet->opt_rr : NULL;
-    const knot_rrset_t *resp_opt_rr = DNS_PACKET_RESPONSE(pkt) ? DNS_PACKET_RESPONSE(pkt)->knot_packet->opt_rr : NULL;
+    const knot_rrset_t *req_opt_rr = (pkt && DNS_PACKET_REQUEST(pkt)) ? DNS_PACKET_REQUEST(pkt)->knot_packet->opt_rr : NULL;
+    const knot_rrset_t *resp_opt_rr = (pkt && DNS_PACKET_RESPONSE(pkt)) ? DNS_PACKET_RESPONSE(pkt)->knot_packet->opt_rr : NULL;
 
     COND(req_edns_ver) 
         if (req_opt_rr)

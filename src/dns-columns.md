@@ -1,11 +1,11 @@
 | entrada col   | type		| dnscol field   |CVS| comment |
 | ------------- | ------------- | -------------- |---| ------- |
 | *Timing* |||||
-| unixtime 	| BIGINT	| timestamp      | X | Seconds since Epoch
-| time 		| BIGINT	| timestamp      | X | Miliseconds since Epoch 
-| year		| INT		| timestamp      | X |  |
-| month		| INT		| timestamp      | X |  |
-| day		| INT		| timestamp      | X |  |
+| unixtime 	| BIGINT	| time           | X | Seconds since Epoch
+| time 		| BIGINT	| time           | X | Miliseconds since Epoch 
+| year		| INT		| time           | X |  |
+| month		| INT		| time           | X |  |
+| day		| INT		| time           | X |  |
 | time_micro	| BIGINT	| delay_us       | X | Processing time (reply-request) |
 | *Lengths* |||||
 | len 		| INT		| req_pkt_len    | X | Request pkt length |
