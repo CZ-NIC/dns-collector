@@ -151,67 +151,58 @@ Some fields have a common configuration flag, for most the flag is the same as t
 | `edns_client_subnet`|`edns`| STRING | *TODO* |
 | `edns_other`  | `edns`    | STRING  | *TODO* |
 
-### Impala import
+### Impala and Entrada import
 
+See [the wiki page on Impala and Entrada import](https://gitlab.labs.nic.cz/alan/dns-collector/wikis/import-to-impala) for more details
+and SQL commands. Note that Impala can read gzip, lzo and bzip2 compressed CSV files transparently.
 
-It is recommended to create the Impala table as (with the selected field separator):
-```sql
-CREATE TABLE table_name ( ... )
-ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' ESCAPED BY '\\';
 ```
 
 The table for all features (in the right order) is created by:
 ```sql
-CREATE TABLE dnscol.csv_import (
-time DOUBLE, -- convert to TIMESTAMP in Impala
-delay_us INT,
-req_dns_len INT,
-resp_dns_len INT,
-req_net_len INT,
-resp_net_len INT,
-client_addr STRING,
-client_port INT,
-server_addr STRING,
-server_port INT,
-net_proto INT,
-net_ipv INT,
-net_ttl INT,
-req_udp_sum INT,
-id INT,
-qtype INT,
-qclass INT,
-opcode INT,
-rcode INT,
-resp_aa INT, -- convert to BOOLEAN
-resp_tc INT, -- convert to BOOLEAN
-req_rd INT,  -- convert to BOOLEAN
-resp_ra INT, -- convert to BOOLEAN
-req_z INT,   -- convert to BOOLEAN
-resp_ad INT, -- convert to BOOLEAN
-req_cd INT,  -- convert to BOOLEAN
-qname STRING,
-resp_ancount INT,
-resp_arcount INT,
-resp_nscount INT,
-req_edns_ver INT,
-req_edns_udp INT,
-req_edns_do BOOLEAN,
-resp_edns_rcode INT,
-req_edns_ping BOOLEAN,
-req_edns_dau STRING,
-req_edns_dhu STRING,
-req_edns_n3u STRING,
-resp_edns_nsid STRING,
-edns_client_subnet STRING,
-edns_other STRING)
+create table dnscol.csv_import (
+  time DOUBLE, -- convert to timestamp
+  delay_us INT,
+  req_dns_len INT,
+  resp_dns_len INT,
+  req_net_len INT,
+  resp_net_len INT,
+  client_addr STRING,
+  client_port INT,
+  server_addr STRING,
+  server_port INT,
+  net_proto INT,
+  net_ipv INT,
+  net_ttl INT,
+  req_udp_sum INT,
+  id INT,
+  qtype INT,
+  qclass INT,
+  opcode INT,
+  rcode INT,
+  resp_aa INT, -- convert to boolean
+  resp_tc INT, -- convert to boolean
+  req_rd INT, -- convert to boolean
+  resp_ra INT, -- convert to boolean
+  req_z INT, -- convert to boolean
+  resp_ad INT, -- convert to boolean
+  req_cd INT, -- convert to boolean
+  qname STRING,
+  resp_ancount INT,
+  resp_arcount INT,
+  resp_nscount INT,
+  req_edns_ver INT,
+  req_edns_udp INT,
+  req_edns_do INT, -- convert to boolean
+  resp_edns_rcode INT,
+  req_edns_ping INT, -- convert to boolean
+  req_edns_dau STRING,
+  req_edns_dhu STRING,
+  req_edns_n3u STRING,
+  resp_edns_nsid STRING,
+  edns_client_subnet STRING,
+  edns_other STRING)
+partitioned by (server STRING, batchname STRING)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' ESCAPED BY '\\';
 ```
 
-Optionally, you might want to add `PARTITIONED BY (server STRING)` or even a date-based partitioning.
-Note that Impala can read gzip, lzo and bzip2 compressed CSV files transparently.
-
-### Entrada import
-
-See `entrada-columns.md` for an overview of dnscol-Entrada column correspondence.
-
-*TODO:* The SQL command to import Impala dnscol CSV table into the Entrada `dns.queries` table.

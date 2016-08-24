@@ -219,8 +219,6 @@ write_packet(FILE *f, uint32_t fields, int separator, dns_packet_t *pkt)
         WRITEFLAG(REQUEST, cd);
     COND_END
 
-    /* TODO: check escaping, impala-compatible? */
-
     COND(qname) 
         char qname_buf[1024];
         char *res = knot_dname_to_str(qname_buf, knot_pkt_qname(pkt->knot_packet), sizeof(qname_buf));

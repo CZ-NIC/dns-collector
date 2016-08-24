@@ -349,8 +349,6 @@ dns_input_process(struct dns_input *input, const char *offline_uri)
             return DNS_RET_OK;
         }
 
-        // TODO: reports, input trace stats
-
         ev = trace_event(input->trace, input->packet);
         switch (ev.type) {
 
