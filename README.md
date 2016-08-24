@@ -31,7 +31,7 @@ A collector for DNS queries than matches observed queries with the responses.
 These are Ubuntu package names, but should be similar in other distros.
 
 * Clang or GCC build environmrnt, make
-* `libtrace-dev` 3.x (tested with 3.0.21)
+* `libtrace-dev` 3.0.21+ (tested with 3.0.21 in xenial, 3.0.18 from trusty is not sufficient)
 * `libknot-dev` 2.3+ (tested with 2.3.0) Use [Knot PPA](https://launchpad.net/~cz.nic-labs/+archive/ubuntu/knot-dns) for Ubuntu (`libknot-dev 2.1.1` in Ubuntu multiverse is broken)
 * Optionally tcmalloc (from package `libgoogle-perftools-dev`, tested with ver 2.4) for faster allocation and cca 20% speedup (to use set `USE_TCMALLOC` in `src/Makefile`)
 * [LibUCW](http://www.ucw.cz/libucw/) 6.5+ is included as git submodule and fetched and built automatically
@@ -162,8 +162,8 @@ ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' ESCAPED BY '\\';
 
 The table for all features (in the right order) is created by:
 ```sql
-CREATE TABLE dnscol_csv_import (
-time TIMESTAMP, -- has nanosecond precision in Impala
+CREATE TABLE dnscol.csv_import (
+time DOUBLE, -- convert to TIMESTAMP in Impala
 delay_us INT,
 req_dns_len INT,
 resp_dns_len INT,
@@ -182,13 +182,13 @@ qtype INT,
 qclass INT,
 opcode INT,
 rcode INT,
-resp_aa BOOLEAN,
-resp_tc BOOLEAN,
-req_rd BOOLEAN,
-resp_ra BOOLEAN,
-req_z BOOLEAN,
-resp_ad BOOLEAN,
-req_cd BOOLEAN,
+resp_aa INT, -- convert to BOOLEAN
+resp_tc INT, -- convert to BOOLEAN
+req_rd INT,  -- convert to BOOLEAN
+resp_ra INT, -- convert to BOOLEAN
+req_z INT,   -- convert to BOOLEAN
+resp_ad INT, -- convert to BOOLEAN
+req_cd INT,  -- convert to BOOLEAN
 qname STRING,
 resp_ancount INT,
 resp_arcount INT,
