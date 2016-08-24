@@ -278,7 +278,7 @@ write_packet(FILE *f, uint32_t fields, int separator, dns_packet_t *pkt)
             if (i > 0) WRITE( (separator == ',') ? "\\," : "," ); \
             WRITE("%d", (int)((opt + 2 * sizeof(uint16_t) + i)[i])); \
         } } else { WRITENULL; } \
-    } 
+    } else { WRITENULL; }
 
     COND(req_edns_ping)
         // TODO: distinguish a PING request from DAU,
