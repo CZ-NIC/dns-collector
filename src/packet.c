@@ -59,7 +59,7 @@ dns_packet_create_from_libtrace(libtrace_packet_t *tp, struct dns_packet **pktp)
     frag_offset = trace_get_fragment_offset(tp, &frag_more);
     if ((frag_offset > 0) || (frag_more)) {
         // fragmented packet
-        // TODO: reassemble
+        // TODO: reassemble IP fragments (very infrequent)
         return DNS_RET_DROP_FRAGMENTED;
     }
 
@@ -76,6 +76,7 @@ dns_packet_create_from_libtrace(libtrace_packet_t *tp, struct dns_packet **pktp)
             // message, verifying this by checking the 16 bits of DNS data
             // lenght at the beginning of the packet
             // TODO: Change here when implementing TCP reconstruction
+            // TODO: Silently ignore SYN/ACK packets for now
             if (remaining < sizeof(uint16_t)) {
                 return DNS_RET_DROP_NETWORK;
             }
