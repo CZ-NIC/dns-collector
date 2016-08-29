@@ -3,7 +3,7 @@
 # Configuration
 
 # Set to gcc or clang
-CC=gcc 
+CC ?=gcc 
 
 # Uncomment to use tcmalloc for faster allocations
 #USE_TCMALLOC=1
@@ -11,17 +11,17 @@ CC=gcc
 # Customizing the path with build libucw
 LIBUCW_DIR=../libs/libucw/
 
-
-
-WARNS=-Wall -Wcast-align -Wunused-parameter -Wno-variadic-macros
+WARNS ?=-Wall -Wcast-align -Wunused-parameter -Wno-variadic-macros
 
 ifeq ($(CC),clang)
 WARNS+=-Wno-gnu-statement-expression -Wno-language-extension-token
 endif
 
-LDLIBS=-lknot -ltrace -lpthread
-LDFLAGS=
-CFLAGS=-O2 -g3 -std=gnu11 -pedantic $(WARNS) -rdynamic -pthread
+LDLIBS ?=
+LDFLAGS ?=
+CFLAGS ?=-O2 -g3 -pedantic
+CFLAGS +=$(WARNS) -rdynamic -pthread -std=gnu11
+LDLIBS +=-lknot -ltrace -lpthread
 
 PROG=dnscol
 DEPS=$(wildcard *.h)

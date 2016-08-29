@@ -38,7 +38,7 @@ These are Ubuntu package names, but should be similar in other distros.
 
 ## Building and running
 
-* set `USE_TCMALLOC=1` in `src/Makefile` if you want dnscol to use tcmalloc
+* define `USE_TCMALLOC` in `src/Makefile` if you want dnscol to use tcmalloc
 * (make any additional flag/compiler changes in `src/Makefile`)
 * `make` to compile the `dnscol` binary
 * `make docs` to generate developer Doxygen documentation in `docs/html`
