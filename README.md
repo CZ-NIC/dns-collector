@@ -1,6 +1,6 @@
 # Dns Collector
 
-A collector for DNS queries than matches observed queries with the responses.
+A collector for DNS queries than matches observed queries with the responses. Released under [GNU GPL v3 or later](https://www.gnu.org/licenses/) (see `LICENSE`).
 
 ## Features
 
@@ -10,7 +10,7 @@ A collector for DNS queries than matches observed queries with the responses.
 * Configurable CSV output compatible with Entrada packet parser, modular output allows easy implementation of other output formats.
 * Automatic output file rotation and compression or other post-processing (any pipe command).
 * Easy configuration via config files, periodic status and statistics logging, graceful shutdown on first SIGINT.
-* Well documented and clean code, licenced under GNU GPL v3.
+* Well documented and clean code, licenced under [GNU GPL v3 or later](https://www.gnu.org/licenses/).
 
 ### Extracted DNS features 
 
