@@ -13,10 +13,10 @@ OBJS=$(sort $(SRCS:.c=.o))
 clean::
 	rm -f $(OBJS) $(PROG)
 
-%.o: %.c $(DEPS)
+%.o: %.c $(DEPS) libucw
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(PROG): $(OBJS) $(LIBUCW_DIR)/run/lib/libucw-6.5.a
+$(PROG): $(OBJS) libucw
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
 
 

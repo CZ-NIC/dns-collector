@@ -1,4 +1,4 @@
-.PHONY: all clean veryclean docs
+.PHONY: all clean veryclean docs libucw
 
 PROG=./dnscol
 
@@ -16,11 +16,15 @@ docs:
 ## libs/libUCW
 
 LIBUCW_DIR?=./libucw
-$(LIBUCW_DIR)/run/lib/libucw-6.5.a:
+LIBUCW_LIBRARY?=$(LIBUCW_DIR)/run/lib/libucw-6.5.a
+
+libucw: $(LIBUCW_LIBRARY)
+
+$(LIBUCW_LIBRARY):
 	cd $(LIBUCW_DIR)/ && \
 	    ./configure -CONFIG_UCW_PERL -CONFIG_XML -CONFIG_JSON CONFIG_DEBUG CONFIG_LOCAL \
 	                -CONFIG_SHARED -CONFIG_DOC -CONFIG_CHARSET && \
-	    make runtree libs
+	    make runtree libs api
 
 veryclean::
 	cd $(LIBUCW_DIR)/ && make clean
