@@ -1,6 +1,6 @@
 # Dns Collector
 
-A collector for DNS queries than matches observed queries with the responses. Released under [GNU GPL v3 or later](https://www.gnu.org/licenses/) (see `LICENSE`).
+A collector for DNS queries than matches observed queries with the responses. Released under [GNU GPL v3](https://www.gnu.org/licenses/) (see `LICENSE`).
 
 Contact Tomáš Gavenčiak (tomas.gavenciak@nic.cz) with any questions.
 
@@ -12,7 +12,7 @@ Contact Tomáš Gavenčiak (tomas.gavenciak@nic.cz) with any questions.
 * Configurable CSV output compatible with Entrada packet parser, modular output allows easy implementation of other output formats.
 * Automatic output file rotation and compression or other post-processing (any pipe command).
 * Easy configuration via config files, periodic status and statistics logging, graceful shutdown on first SIGINT.
-* Well documented and clean code, licenced under [GNU GPL v3 or later](https://www.gnu.org/licenses/).
+* Well documented and clean code, [GNU GPL v3](https://www.gnu.org/licenses/).
 
 ### Extracted DNS features 
 
@@ -35,18 +35,17 @@ These are Ubuntu package names, but should be similar in other distros.
 * Clang or GCC build environmrnt, make
 * `libtrace-dev` 3.0.21+ (tested with 3.0.21 in xenial, 3.0.18 from trusty is not sufficient)
 * `libknot-dev` 2.3+ (tested with 2.3.0) Use [Knot PPA](https://launchpad.net/~cz.nic-labs/+archive/ubuntu/knot-dns) for Ubuntu (`libknot-dev 2.1.1` in Ubuntu multiverse is broken)
-* Optionally tcmalloc (from package `libgoogle-perftools-dev`, tested with ver 2.4) for faster allocation and cca 20% speedup (to use set `USE_TCMALLOC` in `src/Makefile`)
-* [LibUCW](http://www.ucw.cz/libucw/) 6.5+ is included as git subtree and is built automatically
+* Optionally tcmalloc (from package `libgoogle-perftools-dev`, tested with ver 2.4) for faster allocation and cca 20% speedup (to use, set `USE_TCMALLOC`)
+* [LibUCW](http://www.ucw.cz/libucw/) 6.5+ is included as a git subtree and is built automatically
 
 ## Building and running
 
-* define `USE_TCMALLOC` in `src/Makefile` if you want dnscol to use tcmalloc
-* (make any additional flag/compiler changes in `src/Makefile`)
 * `make` to compile the `dnscol` binary
+* use `USE_TCMALLOC=1 make` instead to build with tcmalloc
 * `make docs` to generate developer Doxygen documentation in `docs/html`
 
-* `src/dnscol -C dnscol.conf pcap_files ...` to process offline capture files in sequence.
-* `src/dnscol -C dnscol.conf` to process configured live trace, Ctrl+C (SIGINT) to gracefully stop.
+* `./dnscol -C dnscol.conf pcap_files ...` to process offline capture files in sequence.
+* `./dnscol -C dnscol.conf` to process a configured live trace, Ctrl+C (SIGINT) to gracefully stop.
 
 ## Memory footprint
 
