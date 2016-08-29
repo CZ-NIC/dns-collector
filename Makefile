@@ -1,37 +1,48 @@
-.PHONY: all clean docs dnscol help build-deps clean-deps
+.PHONY: all clean veryclean docs
 
-all: dnscol
+PROG=./dnscol
 
-help:
-	@echo "all          build dnscol dependencies (build-deps) and dnscol binary"
-	@echo "docs         generate Doxygen developer docs"
-	@echo "clean        remove dnscol binaries and Doxygen documentation"
-	@echo "build-deps   update libucw submodule and build the library"
-	@echo "clean-deps   clean the libucw binaries"
+all: $(PROG)
 
-clean:
-	cd src && make clean
+
+## Docs
+
+clean::
 	rm -rf docs/html
-
-dnscol: build-deps
-	cd src && make dnscol
 
 docs:
 	doxygen Doxyfile
 
 ## libs/libUCW
 
-build-deps: libs/libucw/run/lib/libucw-6.5.a
-
-libs/libucw/run/lib/libucw-6.5.a:
-	git submodule init
-	git submodule update
-	cd libs/libucw && \
+LIBUCW_DIR?=./libucw
+$(LIBUCW_DIR)/run/lib/libucw-6.5.a:
+	cd $(LIBUCW_DIR)/ && \
 	    ./configure -CONFIG_UCW_PERL -CONFIG_XML -CONFIG_JSON CONFIG_DEBUG CONFIG_LOCAL \
 	                -CONFIG_SHARED -CONFIG_DOC -CONFIG_CHARSET && \
-	    make all
+	    make runtree libs
 
-clean-deps:
-	cd libs/libucw && make clean
+veryclean::
+	cd $(LIBUCW_DIR)/ && make clean
 
 
+## dnscol
+
+LDLIBS?=
+LDFLAGS?=
+CFLAGS?=-O2 -g -pedantic
+WARNS?=-Wall -Wcast-align -Wunused-parameter -Wno-variadic-macros
+
+ifeq ($(CC),clang)
+WARNS+=-Wno-gnu-statement-expression -Wno-language-extension-token
+endif
+
+CFLAGS+=$(WARNS) -rdynamic -pthread -std=gnu11 -I$(LIBUCW_DIR)/run/include/
+LDLIBS+=-lknot -ltrace -lpthread $(LIBUCW_DIR)/run/lib/libucw-6.5.a
+
+ifdef USE_TCMALLOC
+    CFLAGS+=-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+    LDLIBS+=-ltcmalloc
+endif
+
+include src/Makefile
