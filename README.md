@@ -21,10 +21,10 @@ A collector for DNS queries than matches observed queries with the responses.
 
 ### Not yet implemented
 
+* More EDNS features: Client subnet, other options, EDNS ping
 * TCP flow recoinstruction for reused streams (currently only single-query TCP connections are supported)
 * IP(4/6) fragmented packet reconstuction, DNS via ICMP
-* More EDNS features: Client subnet, other options, EDNS ping
-* Idea: slightly delay the responses in the workflow (cca 10 us, to remove capture timing jitter)
+* Idea: slightly delay the responses in the workflow (cca 10 us to remove capture timing jitter)
 
 ## Requirements
 
@@ -39,6 +39,7 @@ These are Ubuntu package names, but should be similar in other distros.
 ## Building and running
 
 * set `USE_TCMALLOC=1` in `src/Makefile` if you want dnscol to use tcmalloc
+* (make any additional flag/compiler changes in `src/Makefile`)
 * `make` to compile the `dnscol` binary
 * `make docs` to generate developer Doxygen documentation in `docs/html`
 
@@ -60,7 +61,7 @@ For example, 10 s matching window and 10 kqps requires 300 MB. In an extremal si
 
 *Testing machine:* `knot-master` 2x4 core Intel Xeon, 2.4 GHz. Debian 8.5. Online test packets are replayed from another machine via Intel 10G X520.
 
-### Offline preocessing
+### Offline processing
 
 Cca 150 000 q/s on authoritative server data (Knot DNS server), 34% DNSSEC requests (very little other EDNS), 71% IPv6, 8% TCP.
 
