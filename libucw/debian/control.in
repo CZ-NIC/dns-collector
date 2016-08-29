@@ -1,0 +1,106 @@
+Source: libucw
+Priority: optional
+Maintainer: LibUCW developers <libucw-devel@ucw.cz>
+Build-Depends: debhelper (>= 7), devscripts, bash, pkg-config
+#ifdef CONFIG_IMAGES
+	, libjpeg-dev, libpng-dev, libgif-dev
+#endif
+#ifdef CONFIG_DOC
+	, asciidoc, xmlto
+#endif
+Standards-Version: 3.8.0
+
+Package: libucw@UCW_ABI_SUFFIX@
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW library
+
+Package: libucw-dev
+Section: libdevel
+Architecture: any
+Depends: libucw@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW development files
+
+Package: libucw-utils
+Section: misc
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW utilities
+
+#ifdef CONFIG_DOC
+Package: libucw-doc
+Section: doc
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW documentation
+
+#endif
+#ifdef CONFIG_CHARSET
+Package: libucw-charset@UCW_ABI_SUFFIX@
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW charset library
+
+Package: libucw-charset-dev
+Section: libdevel
+Architecture: any
+Depends: libucw-charset@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW charset development files
+
+Package: libucw-charset-utils
+Section: misc
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW charset utilities
+
+#endif
+#ifdef CONFIG_XML
+Package: libucw-xml@UCW_ABI_SUFFIX@
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW XML parser library
+
+Package: libucw-xml-dev
+Section: libdevel
+Architecture: any
+Depends: libucw-xml@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW XML parser development files
+
+#endif
+#ifdef CONFIG_JSON
+Package: libucw-json@UCW_ABI_SUFFIX@
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW JSON parser library
+
+Package: libucw-json-dev
+Section: libdevel
+Architecture: any
+Depends: libucw-json@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW JSON parser development files
+
+#endif
+#ifdef CONFIG_IMAGES
+Package: libucw-images@UCW_ABI_SUFFIX@
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW image library
+
+Package: libucw-images-dev
+Section: libdevel
+Architecture: any
+Depends: libucw-images@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW image development files
+
+Package: libucw-images-utils
+Section: misc
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW image utilities
+
+#endif

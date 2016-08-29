@@ -1,0 +1,18 @@
+Growing arrays
+==============
+
+This module provides growing arrays with items of an arbitrary type.
+(Alternatively, you might want to use <<mempool:gbuf,growing mempool buffers>>,
+or the somewhat obsolete <<growbuf:,growing buffers>>.)
+
+From the user's point of view, the array is represented as a pointer to
+its first element, so it can be indexed by the usual `[]` operator. Please
+keep in mind that this pointer can change, whenever the array is resized.
+
+Additional book-keeping information is stored before the first element
+and it can be accessed using the macros below.
+
+ucw/gary.h
+----------
+
+!!ucw/gary.h

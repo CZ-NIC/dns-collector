@@ -1,0 +1,73 @@
+#!/usr/bin/perl
+#
+#  Generate Expansion Table of Compatibility Ligatures
+#  (c) 2003 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+#
+
+use strict;
+use warnings;
+
+print STDERR "Reading ligature list\n";
+open(L, "misc/u-ligatures") || die "lig file open";
+my %ligs = ();
+while (<L>) {
+	chomp;
+	$ligs{$_} = 1;
+}
+close L;
+
+print STDERR "Reading decompositions\n";
+open(I, "unidata/UnicodeData.txt") || die "Unable to open UniCode data file";
+my %decs = ();
+while (<I>) {
+	chomp;
+	(/^$/ || /^#/) && next;
+	my ($code,$name,$cat,$comb,$bidir,$decomp,$d0,$d1,$n0,$mirr,$cmt1,$cmt2,$upper,$lower,$title) = split /;/;
+	$code =~ /^....$/ || next;
+	if (my ($d) = ($decomp =~ /^<compat> (.*)/)) {
+		$decs{$code} = $d;
+	}
+}
+close I;
+
+sub expand($) {
+	my ($c) = @_;
+	if (defined $decs{$c}) {
+		return join (" ", map { expand($_) } split(/\s+/, $decs{$c}));
+	} else {
+		return $c;
+	}
+}
+
+print STDERR "Searching for a perfect hash function\n";
+my $n = keys %ligs;
+my $div = $n-1;
+DIV: while (++$div) {
+	#print STDERR "Trying $div... ";
+	my @c = ();
+	foreach my $l (keys %ligs) {
+		my $i = (hex $l) % $div;
+		if (defined $c[$i]) {
+			#print STDERR "collision\n";
+			next DIV;
+		}
+		$c[$i] = 1;
+	}
+	#print STDERR "FOUND\n";
+	last;
+}
+
+print STDERR "Filling hash table with $div entries for $n ligatures\n";
+my @ht = map { "NULL" } 1..$div;
+foreach my $l (keys %ligs) {
+	my $i = (hex $l) % $div;
+	my $w = join(", ", map { "0x$_" } split(/ /, expand($l)));
+	$ht[$i] = "/* $l */ (const u16 []) { $w, 0 }";
+}
+
+print "#define LIG_HASH_SIZE $div\n\n";
+print "static const u16 *_U_lig_hash[] = {\n";
+for (my $i=0; $i<$div; $i++) {
+	print "\t", $ht[$i], ",\n";
+}
+print "};\n";

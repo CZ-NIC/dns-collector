@@ -1,0 +1,69 @@
+#!/usr/bin/perl
+# Re-generate symbol renaming defines
+# (c) 2014 Martin Mares <mj@ucw.cz>
+
+use common::sense;
+
+my %renames = ();
+open my $f, '<', 'maint/libucw.abi' or die;
+my $current;
+while (<$f>) {
+	chomp;
+	if (/^#\s*(.*)/) {
+		$current = $1;
+	} else {
+		push @{$renames{$current}}, $_;
+	}
+}
+close $f;
+
+for my $g (sort keys %renames) {
+	my @symbols = sort @{$renames{$g}};
+	@symbols or next;
+
+	open my $in, '<', $g or die "Cannot open $g: $!\n";
+	open my $out, '>', "$g.new" or die;
+	my $mode = 0;
+	my $cmt = 0;
+	while (<$in>) {
+		if (!$mode) {
+			if (m{^/\*$} && !$cmt) {
+				$cmt = 1;
+			} elsif (m{^\s} ||
+			    m{^#include\s} ||
+			    m{^#define\s+_} ||
+			    m{^#ifndef\s+_} ||
+			    m{^\s*$}
+			   ) {
+				# Waiting for the right spot
+			} elsif (m{^#ifdef CONFIG_UCW_CLEAN_ABI$}) {
+				$mode = 2;
+				next;
+			} else {
+				$mode = 1;
+				print $out "#ifdef CONFIG_UCW_CLEAN_ABI\n";
+				for my $sym (@symbols) {
+					print $out "#define $sym ucw_$sym\n";
+				}
+				print $out "#endif\n\n";
+			}
+		} elsif ($mode == 2) {
+			if (m{^$}) {
+				$mode = 0;
+			}
+			next;
+		}
+		print $out "$_";
+	}
+	$mode or die;
+	close $out;
+	close $in;
+	system "cmp", "-s", $g, "$g.new";
+	if ($?) {
+		print "### $g: updated\n";
+		rename "$g.new", $g or die;
+	} else {
+		print "--- $g: not modified\n";
+		unlink "$g.new" or die;
+	}
+}

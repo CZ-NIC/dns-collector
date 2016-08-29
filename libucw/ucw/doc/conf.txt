@@ -1,0 +1,327 @@
+Configuration parser
+====================
+
+Libucw contains a parser for configuration files. The syntax of the
+configuration files is described in <<config:>>, here we explain the
+interface of the parser.
+
+Basically, you write a description of the configuration file syntax,
+which maps configuration items to variables of your program. Then
+Then you run the parser and it fills your variables with the values
+from the configuration file.
+
+The descriptions are modular. The configuration can be split to sections,
+each section declared at a separate place. You can also define your own
+data types.
+
+- <<example,Example>>
+  * <<ex_structure,The structure>>
+  * <<ex_load,Loading configuration>>
+- <<deep,Getting deeper>>
+  * <<conf_multi,Arrays and lists>>
+  * <<reload,Reloading configuration>>
+  * <<custom_parser,Creating custom parsers>>
+  * <<hooks,Hooks>>
+- <<conf_h,ucw/conf.h>>
+  * <<conf_ctxt,Configuration contexts>>
+  * <<conf_load,Safe configuration loading>>
+  * <<conf_types,Data types>>
+  * <<conf_macros,Convenience macros>>
+  * <<alloc,Memory allocation>>
+  * <<journal,Undo journal>>
+  * <<declare,Section declaration>>
+  * <<bparser,Parsers for basic types>>
+  * <<conf_direct,Direct access>>
+  * <<conf_dump,Debug dumping>>
+- <<getopt_h,ucw/getopt.h>>
+  * <<conf_getopt,Loading configuration by cf_getopt()>> (obsolete)
+  * <<getopt_example,Example>> (obsolete)
+
+[[example]]
+Example
+-------
+If you want to just load simple configuration, this is the part you
+want to read. This simple example should give you the overview. Look
+at the <<conf_macros,convenience macros>> section to see list of
+supported data types, sections, etc.
+
+[[ex_cfile]]
+Suppose you have configuration file with the following content and you
+want to load it:
+
+  HelloWorld {
+    Text	"Hello planet"
+    Count	3
+  }
+
+[[ex_structure]]
+The structure
+~~~~~~~~~~~~~
+First, you declare the structure and let the configuration parser know
+it exists.
+
+  #include <ucw/lib.h>
+  #include <ucw/conf.h>
+
+  static char *hw_text = "Hello world";
+  static int hw_count = 1;
+  static int hw_wait_answer = 0;
+
+  static struct cf_section hw_config = {
+    CF_ITEMS {
+      CF_STRING("Text", &hw_text),
+      CF_INT("Count", &hw_count),
+      CF_INT("WaitAnswer", &hw_wait_answer),
+      CF_END
+    }
+  };
+
+  static void CONSTRUCTOR hw_init(void) {
+    cf_declare_section("HelloWorld", &hw_config, 0);
+  }
+
+The variables are used to store the loaded values. Their initial
+values work as defaults, if nothing else is loaded. The hw_config()
+structure assigns the variables to configuration names. The hw_init()
+function (because of the `CONSTRUCTOR` macro) is run before main()
+is called and it tells the parser that the section exists (alternatively,
+you can call @cf_declare_section() at the start of your main()).
+
+You can plug in as many configuration sections as you like, from
+various places across your code.
+
+[[ex_load]]
+Loading configuration
+~~~~~~~~~~~~~~~~~~~~~
+You can load the configuration explicitly by calling @cf_load().
+That can be convenient when writing a library, but in normal programs,
+you can ask the <<opt:,option parser>> to handle it for you.
+
+A typical example follows, please see the <<opt:conf,interface between
+conf and opt>> for details.
+
+  #include <ucw/lib.h>
+  #include <ucw/opt.h>
+  
+  static struct opt_section options = {
+    OPT_ITEMS {
+      // More options can be specified here
+      OPT_HELP("Configuration options:"),
+      OPT_CONF_OPTIONS,
+      OPT_END
+    }
+  };
+  
+  int main(int argc, char **argv)
+  {
+    cf_def_file = "default.cf";
+    opt_parse(&options, argv+1);
+    // Configuration file is already loaded here
+    return 0;
+  }
+
+[[deep]]
+Getting deeper
+--------------
+
+Since the configuration system is somehow complicated, this part gives
+you a little overview of what you can find and where.
+
+[[conf_multi]]
+Arrays and lists
+~~~~~~~~~~~~~~~~
+
+It is sometime needed to have multiple items of the same type. There
+are three ways to do that:
+
+*Static arrays*::
+  An array with fixed maximum length. You provide
+  the length and already allocated array which is filled with items.
+  The configuration may contain less than the maximum length items.
++
+For example, you can have an static array of five unsigned integers:
++
+  static uint array[] = { 1, 2, 3, 4, 5 };
++
+  static struct cf_section section = {
+    CF_ITEMS {
+      CF_UINT_ARY("array", array, 5),
+      CF_END
+    }
+  };
+
+*Dynamic arrays*::
+  Similar to static array, but you provide pointer
+  to pointer to the given item (eg. if you want dynamic array of
+  integers, you give `**int`). The parser allocates a <<gary:,growing array>>
+  of the required size.
++
+If you want dynamic array of strings, you would use:
++
+  static char *array[];
++
+  static struct cf_section section = {
+    CF_ITEMS {
+      CF_STRING_DYN("array", &array, CF_ANY_NUM),
+      CF_END
+    }
+  };
+
+*Lists*::
+  Linked lists based on <<lists:clists,clists>>. You provide description
+  of single node and pointer to the
+  <<lists:struct_clist,`struct clist`>> variable. All the nodes will
+  be created dynamically and put there.
++
+First element of your structure must be <<lists:struct_cnode,`cnode`>>.
++
+The first example is list of strings and uses <<lists:simple_lists,simple
+lists>>:
++
+  static struct clist list;
++
+  static struct cf_section section = {
+    CF_ITEMS {
+      CF_LIST("list", &list, &cf_string_list_config),
+      CF_END
+    }
+  };
++
+Another example, describing how to create more complicated list node
+than just a string can be found at the <<def_CF_TYPE,`CF_TYPE`>> macro.
+
+[[reload]]
+Reloading configuration
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The configuration system allows you to reload configuration at
+runtime. The new config changes the values against the default values.
+It means, if the default value for variable `A` is `10`, the currently
+loaded config sets it to `42` and the new config does not talk about
+this variable, `A` will have a value of `10` after a successful load.
+
+Furthermore, if the loading of a new configuration fails, the current
+configuration is preserved.
+
+All this is done with <<journal,config journalling>>. The load of the
+first config creates a journal entry. If you try to load some new
+configuration, it is partially rolled back to defaults (the rollback
+happens, but instead of removing the journal entry, another journal
+entry is added for the rollback). If the loading succeeds, the two
+journal entries are removed and a new one, for the new configuration,
+is added. If it fails, the first one is replayed and the rollback
+entry is removed.
+
+See @cf_reload().
+
+[[custom_parser]]
+Creating custom parsers
+~~~~~~~~~~~~~~~~~~~~~~~
+
+If you need to parse some data type the configuration system can't
+handle, you can write your own <<xtypes:,extended type>>
+and use <<def_CF_XTYPE,`CF_XTYPE`>> macro to declare a new option.
+
+There is also an obsolete way to write a custom parser.
+Before you start, you should know a few things.
+
+The parser needs to support <<journal,journalling>>. To accomplish that,
+you have to use the <<alloc,configuration mempool>> for memory allocation.
+
+Now, you need a function with the same signature as
+<<type_cf_parser1,`cf_parser1`>>. Parse the first parameter (the
+string) and store the data in the second parameter. You may want to
+write a dumper function, with signature of
+<<type_cf_dumper1,`cf_dumper1`>> (needed for debug dumps).
+
+Fill in a structure <<struct_cf_user_type,cf_user_type>> and use the
+new data type in your configuration description with
+<<def_CF_USER,`CF_USER`>> macro as its @t parameter.
+
+You do not need to call @cf_journal_block() on the variable you store
+the result. It is true you change it, but it was stored to journal
+before your parser function was called.
+
+[[hooks]]
+Hooks
+~~~~~
+
+The configuration system supports hooks. They are used to initialize the
+configuration (if simple default value of variable is not enough) and
+to check the sanity of loaded data.
+
+Each hook is of type <<type_cf_hook,`cf_hook`>> and you can include
+them in configuration description using <<def_CF_INIT,`CF_INIT`>> and
+<<def_CF_COMMIT,`CF_COMMIT`>> macros.
+
+The hooks should follow similar guidelines as custom parsers (well,
+init hooks do not need to call @cf_journal_block()) to support
+journalling. If you change nothing in the commit hook, you do not need
+to care about the journalling either.
+
+You may use the return value to inform about errors. Just return the
+error message, or NULL if everything went well.
+
+Another similar function is a copy function. It is very similar to a
+hook and is used when the item is copied and is too complicated to use
+simple memcpy(). Its type is <<type_cf_copier,`cf_copier`>> and is
+specified by the <<def_CF_COPY,`CF_COPY`>> macro. It's return value is
+the same as the one of a hook.
+
+[[conf_h]]
+ucw/conf.h
+----------
+
+This header file contains the public interface of the configuration module.
+
+!!ucw/conf.h
+
+[[getopt_h]]
+ucw/getopt.h
+------------
+
+This header contains routines for parsing command line arguments and
+loading the default configuration.
+
+In new programs, please consider using the new <<opt:,option parser>>
+instead. The getopt interface is already considered obsolete and may
+be removed in the future.
+
+!!ucw/getopt.h
+
+Example
+~~~~~~~
+Typically, @cf_getopt() is used as follows: it works like
+the traditional @getopt_long() from the C library, but it also handles
+configuration files.
+
+  #include <ucw/lib.h>
+  #include <ucw/conf.h>
+  #include <ucw/getopt.h>
+
+  static char short_opts[] = CF_SHORT_OPTS "v";
+  static struct option long_opts[] = {
+    CF_LONG_OPTS
+    { "verbose", 0, 0, 'v' },
+    { NULL, 0, 0, 0 }
+  };
+
+  static int verbose;
+
+  int main(int argc, char *argv[]) {
+    cf_def_file = "default.cf";
+    int opt;
+    while((opt = cf_getopt(argc, argv, short_opts, long_opts, NULL)) >= 0)
+      switch(opt) {
+	case 'v': verbose = 1; break;
+	default: fprintf("Unknown option %c\n", opt); return 1;
+      }
+  }
+
+The `short_opts` and `long_opts` variables describe the command line
+arguments. Notice the `CF_SHORT_OPTS` and `CF_LONG_OPTS` macros. They
+add the `-S` and `-C` options for the configuration parser as described
+in <<config:>>. These options are handled internally by @cf_getopt().
+
+You can rely on the configuration files having been loaded before the
+first of your program's options is parsed.

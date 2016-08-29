@@ -1,0 +1,80 @@
+#!/usr/bin/perl
+
+my $found_bad = 0;
+my $filename;
+my $reported_filename = "";
+my $lineno;
+
+if (scalar @ARGV > 0) {
+	my $f;
+	foreach $f (@ARGV) {
+		check_file($f);
+	}
+} else {
+	exit(0) if (system("git-rev-parse --verify HEAD 2>/dev/null"));
+	open(PATCH, "git-diff-index -p -M --cached HEAD --|") ||
+		die("git-diff-index failed");
+	while (<PATCH>) {
+		check_file($1) if (m|^diff --git a/(.*\.[ch]) b/\1$|);
+	}
+	close(PATCH);
+	
+}
+exit($found_bad);
+
+sub bad_line {
+	my ($why, $line) = @_;
+	if (!$found_bad) {
+		print STDERR "*\n";
+		print STDERR "* You have some suspicious patch lines:\n";
+		print STDERR "*\n";
+		$found_bad = 1;
+	}
+	if ($reported_filename ne $filename) {
+		print STDERR "* In $filename\n";
+		$reported_filename = $filename;
+	}
+	print STDERR "* \t$why\n";
+	print STDERR "$lineno:$line\n" if ($line);
+}
+
+
+sub check_file {
+	($filename) = @_;
+        open(IN, "$filename") || die ("Cannot open $filename");
+	my $has_loc = 0;
+	my $has_glob = 0;
+	my $has_copy = 0;
+	my $empty = 0;
+
+	$lineno = 1;
+	while(<IN>) {
+		chomp;
+		if (/^\s*\#include\s+"/) {
+			bad_line("sherlock includes after global includes", $_) if (!$has_loc && $has_glob);
+			$has_loc++;
+		}
+		if (/\s$/) {
+			bad_line("trailing whitespace", $_);
+		}
+		if (/^\s* \t/) {
+			bad_line("indent SP followed by a TAB", $_);
+		}
+		if (/^\s*\#define\s+LOCAL_DEBUG/) {
+			bad_line("LOCAL_DEBUG left enabled", $_);
+		}
+		if (/^([<>])\1{6} |^={7}$/) {
+			bad_line("unresolved merge conflict", $_);
+		}
+
+		$has_glob++ if (/^\s*\#include\s+\</);
+		$has_copy++ if (/\([Cc]\)\s*\w/);
+		$empty = $_ =~ /^\s*$/;
+		$lineno++;
+	}
+	bad_line("empty lines at end of input") if ($empty);
+	bad_line("missing copyright") if (!$has_copy);
+	close(IN);
+}
+
+

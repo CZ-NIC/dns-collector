@@ -1,0 +1,15 @@
+#!/usr/bin/perl
+#
+#  Simply create a table of all 256 characters
+#  (c) 2003, Robert Spalek <robert@ucw.cz>
+#
+
+use open OUT => ":raw";
+
+open(fo, '>tmp/tab256') || die;
+for ($i=0; $i<256; $i++)
+{
+	next if $i==10 || $i==13;
+	printf fo "%02X\t%c\n", $i, $i;
+}
+close(fo);

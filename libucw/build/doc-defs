@@ -1,0 +1,64 @@
+#!/usr/bin/perl
+# Script for formatting documentation from definition lists
+# (they get out of extract-doc.pl as a side-product).
+# (c) 2008 Michal Vaner <vorner@ucw.cz>
+use strict;
+use warnings;
+
+my $head = shift;
+my $out = shift;
+
+open OUT, ">$out" or die "Could not write output $out ($!)\n";
+open HEAD, $head or die "Could not open head $head ($!)\n";
+print OUT foreach( <HEAD> );
+close HEAD;
+
+my $dir = $out;
+$dir =~ s/\/[^\/]+$//;
+
+my @dump;
+
+while( defined( my $line = <> ) ) {
+	chomp $line;
+	push @dump, [ split /,/, $line, 5 ];
+}
+
+my @types = (
+	[ 'enum', 'Enumerations' ],
+	[ 'struct', 'Structures' ],
+	[ 'type', 'Types' ],
+	[ 'fun', 'Functions' ],
+	[ 'var', 'Variables' ],
+	[ 'def', 'Preprocessor definitions' ]
+);
+
+my( $index, %groups, %heads ) = ( 0 );
+
+foreach( @types ) {
+	my( $name, $value ) = @{$_};
+	$groups{$name} = ++ $index;
+	$heads{$name} = $value;
+}
+
+my $lasttype = '';
+
+foreach( sort { ( $groups{$a->[2]} <=> $groups{$b->[2]} ) or ( $a->[3] cmp $b->[3] ); } @dump ) {
+	my( $file, $anchor, $type, $name, $text ) = @{$_};
+	if( $lasttype ne $type ) {
+		$lasttype = $type;
+		print OUT "\n== $heads{$type} [[$type]]\n\n";
+	}
+	my $dircp = $dir;
+	while( shift @{[ $dircp =~ /([^\/]+)/, "//" ]} eq shift @{[ $file =~ /([^\/]+)/, "///" ]} ) {
+		$dircp =~ s/[^\/]+\/?//;
+		$file =~ s/[^\/]+\/?//;
+	}
+	$dircp =~ s/[^\/]+/../g;
+	$file = $dircp."/".$file;
+	$file =~ s/^\///;
+	$file =~ s/\.[^.]+$//;
+	$text =~ s/(\.\.\.|\*|'|#|_)/\\$1/g;
+	print OUT "<<$file:$anchor,`$name`>>:: `$text`\n";
+}
+
+close OUT;

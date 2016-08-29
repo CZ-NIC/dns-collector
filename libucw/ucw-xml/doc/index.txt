@@ -1,0 +1,34 @@
+The UCW-XML library
+===================
+
+This library provides a light-weight XML parser built atop <<../ucw/index:,LibUCW>>.
+It is primarily intended for efficient parsing of huge data sets, where other
+parsers are too slow and cumbersome.
+
+Its features include:
+
+* High speed and low memory consumption, mainly thanks to efficient LibUCW
+  primitives like fastbufs and mempools.
+* Multiple interfaces:
+** SAX-like: callback functions called on various parser events
+** Pull: for each call of the parser, it returns the next node
+** DOM-like: returns a data structure describing the whole tree of nodes
+** Any combination of the above: For example, when given a database with millions
+   of records, you can pull on the top level and ask for DOM of each record
+   separately.
+* Support of namespaces.
+* Complies with W3C recommendations on XML 1.0, XML 1.1, and Namespaces in XML 1.0
+  as a non-validating parser, but does not aim to support all frills of other
+  XML-related standards.
+* Partial support for DTD-driven parsing: basic checks of document structure,
+  filling in default values, expanding user-defined entities.
+
+Modules
+-------
+- <<xml:,XML Parser>>
+
+Authors
+-------
+
+- Pavel Charvát <mailto:pchar\@ucw.cz[]> (main author)
+- Martin Mareš <mailto:mj\@ucw.cz[]> (minor hacking and support for namespaces)

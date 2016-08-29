@@ -1,0 +1,94 @@
+#!/bin/bash
+# A script for building of LibUCW packages
+# (c) 2013--2014 Pavel Charvat <pchar@ucw.cz>
+
+set -e
+. debian/pkg-lib
+
+function usage {
+	cat >&2 <<EOF
+Usage: $0 <options>
+Options:
+--archonly		Build only binary packages
+--no-source		Don't build source files
+--cleanup		Cleanup temporary files when finished
+--version=<ver>		Custom version number of resulting packages (default: autodetect from git-describe)
+--abi-version=<ver>	Custom version number of the LibUCW's ABI (default: defined in ucw/default.cfg)
+--gen-script=<script>	Custom script to postprocess
+--extra-conf=<args>	Add extra arguments to the configure script
+EOF
+	exit 1
+}
+
+function pkg-gen-debian {(
+	cd $BUILDDIR
+	echo "Configuring"
+	./configure debian/config VER="$VER" TREEHASH="$TREEHASH" $CONF \
+		PREFIX=/ \
+		INSTALL_INCLUDE_DIR=/usr/include/libucw \
+		INSTALL_DOC_DIR=/usr/share/doc/libucw/html \
+		INSTALL_CONFIG_DIR=/usr/share/doc/libucw/examples/etc
+
+	echo "Creating debian/control"
+	build/genconf debian/control.in debian/control obj/config.mk
+
+	if [ -n "$GEN_SCRIPT" ] ; then
+		echo "Executing $GEN_SCRIPT"
+		eval "$GEN_SCRIPT"
+	fi
+
+	echo "Creating debian/changelog"
+	export EDITOR=true
+	CL=debian/changelog
+	rm -f $CL
+	dch --changelog=$CL --create --package=$PKG --newversion=$VER "Automatic release."
+	dch --changelog=$CL --release
+	sed -i '/Initial release/d' $CL
+)}
+
+ROOT="`pwd`"
+PKG=libucw
+ARCHONLY=
+NO_SOURCE=
+CLEANUP=
+CONF=
+GEN_SCRIPT=
+while [ -n "$1" ] ; do
+	case "$1" in
+	--archonly)	ARCHONLY=1
+			;;
+	--no-source)	NO_SOURCE=1
+			;;
+	--cleanup)	CLEANUP=1
+			;;
+	--version=*)	PKGVER="${1:10}"
+			;;
+	--abi-version=*)CONF="$CONF UCW_ABI_SUFFIX=-${1:14}"
+			;;
+	--gen-script=*)	GEN_SCRIPT="${1:13}"
+			;;
+	--extra-conf=*)	CONF="$CONF ${1:13}"
+			;;
+        *)		usage
+			;;
+	esac
+	shift
+done
+
+pkg-git-version
+pkg-git-checkout
+
+echo $TREEVER >$BUILDDIR/UCW_VERSION
+pkg-gen-debian
+
+BUILDOPTS=
+if [ -n "$ARCHONLY" ] ; then
+	BUILDOPTS=-B
+elif [ -n "$NO_SOURCE" ] ; then
+	BUILDOPTS=-b
+fi
+(cd $BUILDDIR && dpkg-buildpackage -rfakeroot -us -uc $BUILDOPTS)
+[ -z "$ARCHONLY" ] || rm -f debian-tmp/*_all.deb
+pkg-get-files debian-tmp/*.{deb,dsc,changes,tar.gz}
+
+[ -z "$CLEANUP" ] || pkg-cleanup
