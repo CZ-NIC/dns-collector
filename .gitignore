@@ -1,5 +1,4 @@
 /dnscol
-/src/dnscol
 /out
 /misc
 /docs
@@ -7,11 +6,6 @@
 *.o
 *.pcap
 .*.swp
-*.pb-c.c
-*.pb-c.h
-*_pb2.py
-*.pyc
-__pycache__
 .gdb_history
 
 
