@@ -2,6 +2,8 @@
 
 A collector for DNS queries than matches observed queries with the responses. Released under [GNU GPL v3 or later](https://www.gnu.org/licenses/) (see `LICENSE`).
 
+Contact Tomáš Gavenčiak (tomas.gavenciak@nic.cz) with any questions.
+
 ## Features
 
 * Reading capture files and live traces that [libtrace reads](http://www.wand.net.nz/trac/libtrace/wiki/SupportedTraceFormats), including kernel ringbuffer. Configurable packet filter.
@@ -34,7 +36,7 @@ These are Ubuntu package names, but should be similar in other distros.
 * `libtrace-dev` 3.0.21+ (tested with 3.0.21 in xenial, 3.0.18 from trusty is not sufficient)
 * `libknot-dev` 2.3+ (tested with 2.3.0) Use [Knot PPA](https://launchpad.net/~cz.nic-labs/+archive/ubuntu/knot-dns) for Ubuntu (`libknot-dev 2.1.1` in Ubuntu multiverse is broken)
 * Optionally tcmalloc (from package `libgoogle-perftools-dev`, tested with ver 2.4) for faster allocation and cca 20% speedup (to use set `USE_TCMALLOC` in `src/Makefile`)
-* [LibUCW](http://www.ucw.cz/libucw/) 6.5+ is included as git submodule and fetched and built automatically
+* [LibUCW](http://www.ucw.cz/libucw/) 6.5+ is included as git subtree and is built automatically
 
 ## Building and running
 
