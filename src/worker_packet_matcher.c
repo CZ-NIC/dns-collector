@@ -84,8 +84,8 @@ dns_worker_packet_matcher_advance_time_to(struct dns_worker_packet_matcher *pm, 
 {
     assert(pm && time != DNS_NO_TIME && pm->current_time != DNS_NO_TIME);
     if (time < pm->current_time - 1000) { // TODO: configurable grace time (now 1 ms), or reorder packets?
-        msg(L_WARN | DNS_MSG_SPAM, "Not advancing matcher time back %f s (packets in the wrong order?)",
-            dns_us_time_to_fsec(pm->current_time - time));
+        msg(L_WARN | DNS_MSG_SPAM, "Not advancing matcher time back %f s from %f s (packets in the wrong order?)",
+            dns_us_time_to_fsec(pm->current_time - time), dns_us_time_to_fsec(pm->current_time));
         return;
     }
 
