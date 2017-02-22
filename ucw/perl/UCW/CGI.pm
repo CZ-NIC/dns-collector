@@ -1,6 +1,6 @@
 #	Poor Man's CGI Module for Perl
 #
-#	(c) 2002--2015 Martin Mares <mj@ucw.cz>
+#	(c) 2002--2017 Martin Mares <mj@ucw.cz>
 #	Slightly modified by Tomas Valla <tom@ucw.cz>
 #
 #	This software may be freely distributed and used according to the terms
@@ -35,6 +35,14 @@ sub url_escape($) {
 	utf8::encode($x) if $utf8_mode;
 	$x =~ s/([^-\$_.!*'(),0-9A-Za-z\x80-\xff])/"%".unpack('H2',$1)/ge;
 	utf8::decode($x) if $utf8_mode;
+	return $x;
+}
+
+sub url_strict_escape($) {
+	my $x = shift @_;
+	defined $x or return;
+	utf8::encode($x);
+	$x =~ s/([^-\$_.!*'(),0-9A-Za-z])/"%".unpack('H2',$1)/ge;
 	return $x;
 }
 
@@ -471,7 +479,7 @@ sub set_cookie($$@) {
 			$wdays[$wd], $d, $mons[$m], $y+1900, $H, $M, $S);
 	}
 
-	print "Set-Cookie: $key=", url_escape($value);
+	print "Set-Cookie: $key=", url_strict_escape($value);
 	foreach my $k (keys %other) {
 		print "; $k";
 		print "=", $other{$k} if defined $other{$k};
