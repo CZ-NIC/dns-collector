@@ -112,9 +112,11 @@ sub TestBool($$$) {
 
 sub TryFindFile($) {
 	my ($f) = @_;
-	if (-f $f) {
-		return $f;
-	} elsif ($f !~ /^\// && -f (Get("SRCDIR")."/$f")) {
+	if ($f =~ m{^/}) {
+		return (-f $f) ? $f : undef;
+	} elsif (-f $f) {
+		return "./$f";
+	} elsif (-f (Get("SRCDIR")."/$f")) {
 		return Get("SRCDIR")."/$f";
 	} else {
 		return undef;
