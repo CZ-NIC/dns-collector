@@ -14,7 +14,7 @@
 #include <ucw/fastbuf.h>
 #include <ucw/gary.h>
 
-static void show_version(struct opt_item * opt UNUSED, const char * value UNUSED, void * data UNUSED) {
+static void show_version(const struct opt_item * opt UNUSED, const char * value UNUSED, void * data UNUSED) {
   printf("This is a simple tea boiling console v0.1.\n");
   exit(EXIT_SUCCESS);
 }
@@ -56,7 +56,7 @@ static char * first_tea = NULL;
 #define MAX_TEA_COUNT 30
 static char * tea_list[MAX_TEA_COUNT];
 static int tea_num = 0;
-static void add_tea(struct opt_item * opt UNUSED, const char * name, void * data) {
+static void add_tea(const struct opt_item * opt UNUSED, const char * name, void * data) {
   char ** tea_list = data;
   if (tea_num >= MAX_TEA_COUNT) {
     fprintf(stderr, "Cannot boil more than %d teas.\n", MAX_TEA_COUNT);
@@ -100,7 +100,7 @@ static struct cf_user_type teapot_temperature_t = {
   .dumper = (cf_dumper1*) teapot_temperature_dumper
 };
 
-static void opt_test_hook(struct opt_item * opt, uint event UNUSED, const char * value, void * data) {
+static void opt_test_hook(const struct opt_item * opt, uint event UNUSED, const char * value, void * data) {
   if (!show_hooks)
     return;
   if (opt)
