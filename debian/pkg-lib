@@ -1,17 +1,22 @@
 # A library of shell functions for building of Debian packages
 # (c) 2008--2009 Martin Mares <mj@ucw.cz>
-# (c) 2009--2013 Pavel Charvat <pchar@ucw.cz>
+# (c) 2009--2017 Pavel Charvat <pchar@ucw.cz>
 
 # Expects:
 # PKG		name of the package
 # ROOT		absolute path to the root of the source tree
 # PKGVER	custom package version
 
-unset PKG ROOT SRCVER VER
+unset PKG ROOT SRCVER VER PKG_NO_CHECKOUT
 
 function pkg-git-version {
-	TREEVER=`git describe --tags | sed 's/^v//;s/[a-f]$/&-0/'`
-	TREEHASH=`git rev-parse --verify HEAD`
+	if [ -z "$PKG_NO_CHECKOUT" ] ; then
+		TREEVER=`git describe --tags | sed 's/^v//;s/[a-f]$/&-0/'`
+		TREEHASH=`git rev-parse --verify HEAD`
+	else
+		TREEVER=?
+		TREEHASH=?
+	fi
 	VER=${PKGVER:-$TREEVER}
 	SRCVER=${PKGVER:-$VER}
 	cat <<EOF
@@ -29,9 +34,11 @@ EOF
 
 function pkg-git-checkout {
 	BUILDDIR=debian-tmp/$PKG-$SRCVER
-	rm -rf debian-tmp
-	mkdir -p $BUILDDIR
-	git checkout-index -a --prefix=$BUILDDIR/
+	if [ -z "$PKG_NO_CHECKOUT" ] ; then
+		rm -rf debian-tmp
+		mkdir -p $BUILDDIR
+		git checkout-index -a --prefix=$BUILDDIR/
+	fi
 }
 
 function pkg-fake-changelog {
