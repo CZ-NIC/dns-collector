@@ -2,7 +2,8 @@
 
 DIRS+=ucw/perl/UCW
 EXTRA_RUNDIRS+=lib/perl5/UCW
-UCW_PERL_MODULES=$(addsuffix .pm,Config Log CGI Configure)
+UCW_PERL_MODULES=$(addsuffix .pm,Config Log CGI)
+# XXX: Configure.pm omitted intentionally, see install-perl-ucw-configure
 PROGS+=$(addprefix $(o)/ucw/perl/UCW/,$(UCW_PERL_MODULES))
 
 include $(s)/ucw/perl/UCW/CGI/Makefile

@@ -19,8 +19,8 @@ Description: LibUCW library
 Package: libucw-dev
 Section: libdevel
 Architecture: any
-Depends: libucw@UCW_ABI_SUFFIX@ (= @VER@), libucw-perl, ${shlibs:Depends}, ${misc:Depends}
-Description: LibUCW development files
+Depends: libucw@UCW_ABI_SUFFIX@ (= @VER@), ${shlibs:Depends}, ${misc:Depends}
+Description: LibUCW development files, including the build system
 
 Package: libucw-utils
 Section: misc
@@ -32,7 +32,7 @@ Package: libucw-perl
 Section: misc
 Architecture: any
 Depends: libucw@UCW_ABI_SUFFIX@, ${shlib:Depends}, ${misc:Depends}
-Description: Companion Perl scripts for LibUCW (UCW::Configure, UCW::CGI, UCW::Config, UCW::Log)
+Description: Companion Perl modules for LibUCW (UCW::CGI, UCW::Config, UCW::Log)
 
 #ifdef CONFIG_DOC
 Package: libucw-doc
