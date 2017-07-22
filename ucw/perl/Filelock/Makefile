@@ -23,7 +23,7 @@ $(o)/$(FILELOCK_DIR)/Filelock.xs: $(s)/$(FILELOCK_DIR)/Filelock.xs
 $(o)/$(FILELOCK_DIR)/Makefile.PL: $(s)/$(FILELOCK_DIR)/Makefile.PL
 	$(Q)cp $^ $@
 
-INSTALL_TARGETS+=install-perl-ucw-filelock
+UCW_PERL_INSTALL+=install-perl-ucw-filelock
 install-perl-ucw-filelock:
 	install -d -m 755 $(DESTDIR)$(INSTALL_PERL_DIR)/UCW/ $(DESTDIR)$(INSTALL_LIB_DIR)
 	install -m 644 $(s)/$(FILELOCK_DIR)/Filelock.pm $(DESTDIR)$(INSTALL_PERL_DIR)/UCW/

@@ -30,6 +30,7 @@ install: build
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw$(UCW_ABI_SUFFIX) install-libucw-lib
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-dev install-libucw-api
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-utils install-ucw-shell install-ucw-utils
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-perl install-perl-ucw
 ifdef CONFIG_DOC
 	$(MAKE) DESTDIR=$(CURDIR)/debian/libucw-doc install-libucw-docs install-libucw-man install-libucw-config
 	install -d -m 755 $(CURDIR)/debian/libucw-doc/usr/share/doc/libucw/examples
@@ -76,7 +77,7 @@ binary-arch: build install
 #	dh_strip
 	dh_compress -Xusr/share/doc/libucw/
 	dh_fixperms
-#	dh_perl
+	dh_perl
 #	dh_python
 	dh_makeshlibs -V
 	dh_installdeb

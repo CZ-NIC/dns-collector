@@ -15,4 +15,10 @@ UnSet("CONFIG_IMAGES_LIBUNGIF");
 Set("CONFIG_IMAGES_LIBGIF");
 UnSet("CONFIG_UCW_OBSOLETE_DAEMON_HELPER");
 
+# The basic Perl modules (UCW::Configure etc.) are installed,
+# but extensions involving XS code (UCW::FileLock, UCW::Ulimit)
+# aren't, because they are seldom used and their installation
+# rules are incompatible with Debian directory structure.
+UnSet("CONFIG_UCW_PERL_MODULES");
+
 1;
