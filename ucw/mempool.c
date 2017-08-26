@@ -2,7 +2,7 @@
  *	UCW Library -- Memory Pools (One-Time Allocation)
  *
  *	(c) 1997--2014 Martin Mares <mj@ucw.cz>
- *	(c) 2007--2015 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2007--2017 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -130,7 +130,7 @@ mp_new(size_t chunk_size)
   chunk_size = mp_align_size(MAX(sizeof(struct mempool), chunk_size));
   struct mempool_chunk *chunk = mp_new_chunk(NULL, chunk_size);
   struct mempool *pool = (void *)chunk - chunk_size;
-  DBG("Creating mempool %p with %u bytes long chunks", pool, chunk_size);
+  DBG("Creating mempool %p with %zu bytes long chunks", pool, chunk_size);
   chunk->next = NULL;
 #ifdef CONFIG_DEBUG
   chunk->pool = pool;
