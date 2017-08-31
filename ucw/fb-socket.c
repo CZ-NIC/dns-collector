@@ -2,6 +2,7 @@
  *	UCW Library -- Fast Buffered I/O on Sockets with Timeouts
  *
  *	(c) 2008 Martin Mares <mj@ucw.cz>
+ *	(c) 2017 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -73,6 +74,7 @@ fbs_spout(struct fastbuf *f)
 
   int l = f->bptr - f->bstop;
   f->bptr = f->bstop;
+  f->pos += l;
   char *buf = f->bstop;
 
   while (l)
