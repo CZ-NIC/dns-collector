@@ -8,6 +8,8 @@ PROGS+=$(CONFIGURE_MODULES)
 
 $(CONFIGURE_MODULES) : PERL_MODULE_DIR=UCW/Configure
 
+INSTALL_TARGETS+=install-perl-ucw-configure
+
 # XXX: This is a hack. UCW::Configure is a part of the build system,
 # not of LibUCW proper. Nevertheless, we should avoid moving things
 # around in point releases, so we are keeping it here with a special
