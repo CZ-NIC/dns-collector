@@ -413,8 +413,7 @@ struct fastbuf *fbmem_clone_read(struct fastbuf *f);	/** Given a writing fastbuf
  * of the buffer temporarily. In this case, set @can_overwrite as described
  * in <<internal,Internals>>. If you do not care, keep @can_overwrite zero.
  *
- * It is not possible to close this fastbuf. This implies that no tying to
- * resources takes place.
+ * A @bclose() on this fastbuf is allowed and it does nothing.
  */
 void fbbuf_init_read(struct fastbuf *f, byte *buffer, uint size, uint can_overwrite);
 
@@ -426,8 +425,7 @@ void fbbuf_init_read(struct fastbuf *f, byte *buffer, uint size, uint can_overwr
  * Data are written directly into the buffer, so it is not necessary to call @bflush()
  * at any moment.
  *
- * It is not possible to close this fastbuf. This implies that no tying to
- * resources takes place.
+ * A @bclose() on this fastbuf is allowed and it does nothing.
  */
 void fbbuf_init_write(struct fastbuf *f, byte *buffer, uint size);
 
@@ -473,8 +471,8 @@ struct fbpool { /** Structure for fastbufs & mempools. **/
 };
 
 /**
- * Initialize a new `fbpool`. The structure is allocated by the caller,
- * so @bclose() should not be called and no resource tying takes place.
+ * Initialize a new `fbpool`. The structure is allocated by the caller.
+ * Calling @bclose() is optional.
  **/
 void fbpool_init(struct fbpool *fb);	/** Initialize a new mempool fastbuf. **/
 /**
@@ -625,7 +623,8 @@ int bconfig(struct fastbuf *f, uint type, int data); /** Configure a fastbuf. Re
 
 /**
  * Close and free fastbuf.
- * Can not be used for fastbufs not returned from function (initialized in a parameter, for example the one from `fbbuf_init_read`).
+ * Some kinds of fastbufs are allocated by the caller (e.g., in @fbbuf_init_read());
+ * in such cases, @bclose() does not free any memory.
  */
 void bclose(struct fastbuf *f);
 void bthrow(struct fastbuf *f, const char *id, const char *fmt, ...) FORMAT_CHECK(printf,3,4) NONRET;	/** Throw exception on a given fastbuf **/
