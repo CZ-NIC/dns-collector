@@ -25,7 +25,7 @@ $(o)/$(ULIMIT_DIR)/Makefile.PL: $(s)/$(ULIMIT_DIR)/Makefile.PL
 
 UCW_PERL_INSTALL+=install-perl-ucw-ulimit
 install-perl-ucw-ulimit:
-	install -d -m 755 $(DESTDIR)$(INSTALL_PERL_DIR)/UCW/ $(DESTDIR)$(INSTALL_LIB_DIR)
-	install -m 644 $(s)/$(ULIMIT_DIR)/Ulimit.pm $(DESTDIR)$(INSTALL_PERL_DIR)/UCW/
-	install -m 644 $(o)/ucw/perl/Ulimit/arch/auto/UCW/Ulimit/Ulimit.$(SOEXT) $(DESTDIR)$(INSTALL_LIB_DIR)
+	install -d -m 755 $(DESTDIR)$(INSTALL_PERL_ARCH_DIR)/UCW/ $(DESTDIR)$(INSTALL_PERL_ARCH_DIR)/auto/UCW/
+	install -m 644 $(s)/$(ULIMIT_DIR)/Ulimit.pm $(DESTDIR)$(INSTALL_PERL_ARCH_DIR)/UCW/
+	install -m 644 $(o)/ucw/perl/Ulimit/arch/auto/UCW/Ulimit/Ulimit.$(SOEXT) $(DESTDIR)$(INSTALL_PERL_ARCH_DIR)/auto/UCW/
 .PHONY: install-perl-ucw-ulimit
