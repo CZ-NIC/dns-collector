@@ -82,8 +82,9 @@ ucw/fw-hex.h [[fwhex]]
 Exceptions [[fbexc]]
 --------------------
 
-All standard back-ends and front-ends raise exceptions on errors. All such
-exceptions live in the `ucw.fb` subtree. The following exceptions are defined:
+All standard back-ends and front-ends raise exceptions on errors if the fastbuf
+is tied to a resource pool by @fb_tie().
+All such exceptions live in the `ucw.fb` subtree. The following exceptions are defined:
 
 `ucw.fb.eof`:: Unexpected end of file (e.g., when the @FB_DIE_ON_EOF flag is set)
 `ucw.fb.mmap`:: Memory mapping failed (e.g., the `mmap` syscall has failed)
