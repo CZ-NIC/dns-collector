@@ -33,14 +33,17 @@ sub DebugDump() {
 
 sub Log($) {
 	print @_;
+	STDOUT->flush;
 }
 
 sub Notice($) {
 	print @_ if $vars{"VERBOSE"};
+	STDOUT->flush;
 }
 
 sub Warn($) {
 	print "WARNING: ", @_;
+	STDOUT->flush;
 }
 
 sub Fail($) {
