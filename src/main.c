@@ -18,6 +18,8 @@
 #include <assert.h>
 #include <execinfo.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "config.h"
@@ -34,8 +36,10 @@ sigsegv_handler(int sig UNUSED)
 {
     void *array[MAX_TRACE_SIZE];
     size_t size = backtrace(array, MAX_TRACE_SIZE);
+    msg(L_WARN | L_SIGHANDLER, "Received SEGV, printing trace and then running default SEGV action.");
     backtrace_symbols_fd(array, size, 2);
-    exit(1);
+    signal(SIGSEGV, SIG_DFL);
+    kill(getpid(), SIGSEGV);
 }
 
 static void
