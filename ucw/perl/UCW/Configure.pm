@@ -9,6 +9,7 @@ package UCW::Configure;
 
 use strict;
 use warnings;
+use IO::File;
 
 BEGIN {
 	# The somewhat hairy Perl export mechanism
