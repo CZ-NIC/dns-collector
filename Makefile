@@ -1,8 +1,6 @@
-.PHONY: all clean veryclean docs libucw
+.PHONY: all clean veryclean docs libucw install prog
 
-PROG=./dnscol
-
-all: $(PROG)
+all: prog
 
 
 ## Docs
@@ -30,7 +28,7 @@ veryclean::
 	cd $(LIBUCW_DIR)/ && make clean
 
 
-## dnscol
+## dns-collector
 
 LDLIBS?=
 LDFLAGS?=
@@ -49,4 +47,20 @@ ifdef USE_TCMALLOC
     LDLIBS+=-ltcmalloc
 endif
 
+PROG=./dns-collector
+
+prog: $(PROG)
+
 include src/Makefile
+
+## install
+
+
+PREFIX?=/usr/local
+DESTDIR?=$(PREFIX)
+CONFIG=./dns-collector.conf
+
+install: $(PROG)
+	install -m 755 -D $(PROG) $(DESTDIR)/usr/bin/dns-collector
+	install -m 644 -D $(CONFIG) $(DESTDIR)/etc/dns-collector/dns-collector.conf
+	
