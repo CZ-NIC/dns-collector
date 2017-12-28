@@ -89,7 +89,6 @@ put1: *p++ = 0x80 | (u & 0x3f);
 }
 
 #define UTF8_GET_NEXT if (unlikely((*p & 0xc0) != 0x80)) goto bad; u = (u << 6) | (*p++ & 0x3f)
-#define UTF8_CHECK_AVAIL(n) if (unlikely(avail < n)) goto bad
 #define UTF8_CHECK_RANGE(r) if (unlikely(u < r)) goto bad
 
 /**
@@ -176,75 +175,6 @@ get1: UTF8_GET_NEXT;
     }
   else
     goto bad;
-  *uu = u;
-  return (byte *)p;
-
-bad:
-  /* Incorrect byte sequence */
-  *uu = repl;
-  return (byte *)p;
-}
-
-/**
- * Decode a value from the range `[0, 0x7FFFFFFF]`
- * or return @repl if the encoding has been corrupted.
- * This function never reads behind @stop (including).
- * At least one byte must be available (@stop > @p).
- **/
-static inline byte *utf8_32_get_repl_safe(const byte *p, const byte *stop, uint *uu, uint repl)
-{
-  uint u = *p++;
-  if (u < 0x80)
-    goto ok;
-  else if (unlikely(u < 0xc0))
-    goto bad;
-  uint limit;
-  size_t avail = stop - p;
-  if (u < 0xe0)
-    {
-      UTF8_CHECK_AVAIL(1);
-      u &= 0x1f;
-      limit = 0x80;
-      goto get1;
-    }
-  else if (u < 0xf0)
-    {
-      UTF8_CHECK_AVAIL(2);
-      u &= 0x0f;
-      limit = 0x800;
-      goto get2;
-    }
-  else if (u < 0xf8)
-    {
-      UTF8_CHECK_AVAIL(3);
-      u &= 0x07;
-      limit = 1 << 16;
-      goto get3;
-    }
-  else if (u < 0xfc)
-    {
-      UTF8_CHECK_AVAIL(4);
-      u &= 0x03;
-      limit = 1 << 21;
-      goto get4;
-    }
-  else if (u < 0xfe)
-    {
-      UTF8_CHECK_AVAIL(5);
-      u &= 0x01;
-      limit = 1 << 26;
-      UTF8_GET_NEXT;
-get4: UTF8_GET_NEXT;
-get3: UTF8_GET_NEXT;
-get2: UTF8_GET_NEXT;
-get1: UTF8_GET_NEXT;
-      if (unlikely(u < limit))
-	goto bad;
-    }
-  else
-    goto bad;
-
-ok:
   *uu = u;
   return (byte *)p;
 
