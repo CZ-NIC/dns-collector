@@ -2,7 +2,7 @@
  *	UCW Library -- Fast Buffered I/O: Strings
  *
  *	(c) 1997--2006 Martin Mares <mj@ucw.cz>
- *	(c) 2006 Pavel Charvat <pchar@ucw.cz>
+ *	(c) 2006--2018 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -135,17 +135,11 @@ bgets_mp(struct fastbuf *f, struct mempool *mp)
   uint src_len = bdirect_read_prepare(f, &src);
   if (!src_len)
     return NULL;
-#define BLOCK_SIZE (4096 - sizeof(void *))
-  struct block {
-    struct block *prev;
-    byte data[BLOCK_SIZE];
-  } *blocks = NULL;
-  uint sum = 0, buf_len = BLOCK_SIZE, cnt;
-  struct block first_block, *new_block = &first_block;
-  byte *buf = new_block->data;
+  byte *buf = mp_start_noalign(mp, 1);
+  size_t buf_len = mp_avail(mp);
   do
     {
-      cnt = MIN(src_len, buf_len);
+      uint cnt = MIN(src_len, buf_len);
       for (uint i = cnt; i--;)
         {
 	  byte v = *src++;
@@ -165,29 +159,17 @@ bgets_mp(struct fastbuf *f, struct mempool *mp)
 	src_len -= cnt;
       if (cnt == buf_len)
         {
-          new_block->prev = blocks;
-          blocks = new_block;
-          sum += buf_len = BLOCK_SIZE;
-	  new_block = alloca(sizeof(struct block));
-	  buf = new_block->data;
+	  buf = mp_spread(mp, buf, 1);
+	  buf_len = mp_avail(mp) - (buf - (byte *)mp_ptr(mp));
 	}
       else
 	buf_len -= cnt;
     }
   while (src_len);
-exit: ;
-  uint len = buf - new_block->data;
-  byte *result = mp_alloc(mp, sum + len + 1) + sum;
-  result[len] = 0;
-  memcpy(result, new_block->data, len);
-  while (blocks)
-    {
-      result -= BLOCK_SIZE;
-      memcpy(result, blocks->data, BLOCK_SIZE);
-      blocks = blocks->prev;
-    }
-  return result;
-#undef BLOCK_SIZE
+exit:
+  buf = mp_spread(mp, buf, 1);
+  *buf++ = 0;
+  return mp_end(mp, buf);
 }
 
 char *

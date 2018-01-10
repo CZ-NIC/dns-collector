@@ -752,7 +752,6 @@ struct bb_t;
 uint bgets_bb(struct fastbuf *f, struct bb_t *b, uint limit);
 /**
  * Read a string, strip the trailing `\n` and store it into buffer allocated from a memory pool.
- * CAVEAT: Internally allocates the whole line on stack -> can segfault if too long.
  **/
 char *bgets_mp(struct fastbuf *f, struct mempool *mp);
 
