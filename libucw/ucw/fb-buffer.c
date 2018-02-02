@@ -47,13 +47,15 @@ fbbuf_init_read(struct fastbuf *f, byte *buf, uint size, uint can_overwrite)
     .pos = size,
     .refill = fbbuf_refill,
     .seek = fbbuf_seek,
-    .can_overwrite_buffer = can_overwrite };
+    .can_overwrite_buffer = can_overwrite
+  };
 }
 
 static void
 fbbuf_spout(struct fastbuf *f)
 {
-  bthrow(f, "write", "fbbuf: buffer overflow on write");
+  if (f->bptr >= f->bufend)
+    bthrow(f, "write", "fbbuf: buffer overflow on write");
 }
 
 void

@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 static char *options = CF_SHORT_OPTS "cdtx";
 static char *help = "\

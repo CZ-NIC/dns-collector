@@ -9,6 +9,7 @@ package UCW::Configure;
 
 use strict;
 use warnings;
+use IO::File;
 
 BEGIN {
 	# The somewhat hairy Perl export mechanism
@@ -33,14 +34,17 @@ sub DebugDump() {
 
 sub Log($) {
 	print @_;
+	STDOUT->flush;
 }
 
 sub Notice($) {
 	print @_ if $vars{"VERBOSE"};
+	STDOUT->flush;
 }
 
 sub Warn($) {
 	print "WARNING: ", @_;
+	STDOUT->flush;
 }
 
 sub Fail($) {
@@ -112,9 +116,11 @@ sub TestBool($$$) {
 
 sub TryFindFile($) {
 	my ($f) = @_;
-	if (-f $f) {
-		return $f;
-	} elsif ($f !~ /^\// && -f (Get("SRCDIR")."/$f")) {
+	if ($f =~ m{^/}) {
+		return (-f $f) ? $f : undef;
+	} elsif (-f $f) {
+		return "./$f";
+	} elsif (-f (Get("SRCDIR")."/$f")) {
 		return Get("SRCDIR")."/$f";
 	} else {
 		return undef;

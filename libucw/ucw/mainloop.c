@@ -183,9 +183,9 @@ main_destroy(struct main_context *m)
   main_prepare_delete(m);
 
   // Close all files
-  clist_insert_list_after(&m->file_active_list, m->file_list.head.prev);
+  clist_add_list_tail(&m->file_list, &m->file_active_list);
 #ifdef CONFIG_UCW_EPOLL
-  clist_insert_list_after(&m->file_recalc_list, m->file_list.head.prev);
+  clist_add_list_tail(&m->file_list, &m->file_recalc_list);
 #endif
   CLIST_FOR_EACH(struct main_file *, f, m->file_list)
     close(f->fd);

@@ -90,7 +90,7 @@ bopen_fd_internal(int fd, struct fb_params *params, uint mode, const char *name)
 	    params->buffer_size ? : fbpar_def.buffer_size,
 	    params->read_ahead ? : fbpar_def.read_ahead,
 	    params->write_back ? : fbpar_def.write_back);
-	if (!~mode && !fbdir_cheat && ((int)(mode = fcntl(fd, F_GETFL)) < 0 || fcntl(fd, F_SETFL, mode | O_DIRECT)) < 0)
+	if (!~mode && !fbdir_cheat && ((int)(mode = fcntl(fd, F_GETFL)) < 0 || fcntl(fd, F_SETFL, mode | O_DIRECT) < 0))
           msg(L_WARN, "Cannot set O_DIRECT on fd %d: %m", fd);
 	return fb;
 #endif

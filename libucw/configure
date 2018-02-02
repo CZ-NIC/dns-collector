@@ -30,6 +30,7 @@ require UCW::Configure::Paths;
 require UCW::Configure::C;
 require UCW::Configure::LibUCW;
 require UCW::Configure::Doc;
+require UCW::Configure::Perl;
 Finish();
 
 Log "\nConfigured, run `make' to build everything.\n";

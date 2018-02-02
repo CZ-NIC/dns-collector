@@ -2,6 +2,7 @@
  *	UCW Library -- Single-Linked Lists
  *
  *	(c) 2005 Martin Mares <mj@ucw.cz>
+ *	(c) 2017 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -171,6 +172,51 @@ void slist_remove(slist *l, snode *n);
 static inline void slist_remove_tail(slist *l)
 {
   slist_remove(l, l->last);
+}
+
+/**
+ * Merge two lists by inserting the list @what in front of all other nodes in a different list @l.
+ * The first list is then cleared.
+ **/
+static inline void slist_add_list_head(slist *l, slist *what)
+{
+  if (!slist_empty(what))
+    {
+      if (!slist_empty(l))
+	what->last->next = l->head.next;
+      else
+	l->last = what->last;
+      l->head.next = what->head.next;
+      slist_init(what);
+    }
+}
+
+/**
+ * Merge two lists by inserting the list @what after all other nodes in a different list @l.
+ * The first list is then cleared.
+ **/
+static inline void slist_add_list_tail(slist *l, slist *what)
+{
+  if (!slist_empty(what))
+    {
+      if (!slist_empty(l))
+	l->last->next = what->head.next;
+      else
+	l->head.next = what->head.next;
+      l->last = what->last;
+      slist_init(what);
+    }
+}
+
+/**
+ * Move all items from a source list to a destination list. The source list
+ * becomes empty, the original contents of the destination list are destroyed.
+ **/
+static inline void slist_move(slist *to, slist *from)
+{
+  to->head.next = from->head.next;
+  to->last = from->last;
+  slist_init(from);
 }
 
 /**

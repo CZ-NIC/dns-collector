@@ -1,6 +1,6 @@
 #!/bin/bash
 # A script for building of LibUCW packages
-# (c) 2013--2014 Pavel Charvat <pchar@ucw.cz>
+# (c) 2013--2017 Pavel Charvat <pchar@ucw.cz>
 
 set -e
 . debian/pkg-lib
@@ -16,6 +16,7 @@ Options:
 --abi-version=<ver>	Custom version number of the LibUCW's ABI (default: defined in ucw/default.cfg)
 --gen-script=<script>	Custom script to postprocess
 --extra-conf=<args>	Add extra arguments to the configure script
+--no-checkout		Expect manually checked out sources to build directory (useful for chrooted building; --version is mandatory)
 EOF
 	exit 1
 }
@@ -69,7 +70,9 @@ while [ -n "$1" ] ; do
 			;;
 	--extra-conf=*)	CONF="$CONF ${1:13}"
 			;;
-        *)		usage
+	--no-checkout)	PKG_NO_CHECKOUT=1
+			;;
+	*)		usage
 			;;
 	esac
 	shift
@@ -78,7 +81,7 @@ done
 pkg-git-version
 pkg-git-checkout
 
-echo $TREEVER >$BUILDDIR/UCW_VERSION
+echo $VER >$BUILDDIR/UCW_VERSION
 pkg-gen-debian
 
 BUILDOPTS=

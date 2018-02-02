@@ -2,6 +2,7 @@
  *	UCW Library -- Base 64 Encoding & Decoding
  *
  *	(c) 2002, Robert Spalek <robert@ucw.cz>
+ *	(c) 2018, Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -11,112 +12,116 @@
 
 #include <ucw/lib.h>
 #include <ucw/base64.h>
-#include <ucw/threads.h>
 
-#include <string.h>
+const byte base64_enc_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const byte base64_dec_table[256] = {
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x3e, 0x80, 0x80, 0x80, 0x3f,
+  0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x80, 0x80, 0x80, 0x40, 0x80, 0x80,
+  0x80, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
+  0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
+  0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+};
 
-static const byte base64_table[] =
-	{ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-	  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-	  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-	  'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-	  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/', '\0'
-	};
-static const byte base64_pad = '=';
-
-uint
-base64_encode(byte *dest, const byte *src, uint len)
+uint base64_encode(byte *dest, const byte *src, uint len)
 {
-	const byte *current = src;
-	uint i = 0;
+  const byte *ptr = src;
+  const byte *end = src + len;
+  byte *out = dest;
 
-	while (len > 2) { /* keep going until we have less than 24 bits */
-		dest[i++] = base64_table[current[0] >> 2];
-		dest[i++] = base64_table[((current[0] & 0x03) << 4) + (current[1] >> 4)];
-		dest[i++] = base64_table[((current[1] & 0x0f) << 2) + (current[2] >> 6)];
-		dest[i++] = base64_table[current[2] & 0x3f];
+  /* keep going until we have less than 24 bits */
+  if (end - ptr >= 3)
+    for (const byte *x = end - 2; ptr < x; )
+      {
+	out[0] = base64_enc_table[ptr[0] >> 2];
+	out[1] = base64_enc_table[((ptr[0] & 0x03) << 4) + (ptr[1] >> 4)];
+	out[2] = base64_enc_table[((ptr[1] & 0x0f) << 2) + (ptr[2] >> 6)];
+	out[3] = base64_enc_table[ptr[2] & 0x3f];
+	out += 4;
+	ptr += 3;
+      }
 
-		current += 3;
-		len -= 3; /* we just handle 3 octets of data */
+  /* now deal with the tail end of things */
+  if (ptr != end)
+    {
+      out[0] = base64_enc_table[ptr[0] >> 2];
+      out[3] = BASE64_PADDING;
+      if (end - ptr >= 2)
+	{
+	  out[1] = base64_enc_table[((ptr[0] & 0x03) << 4) + (ptr[1] >> 4)];
+	  out[2] = base64_enc_table[(ptr[1] & 0x0f) << 2];
 	}
-
-	/* now deal with the tail end of things */
-	if (len != 0) {
-		dest[i++] = base64_table[current[0] >> 2];
-		if (len > 1) {
-			dest[i++] = base64_table[((current[0] & 0x03) << 4) + (current[1] >> 4)];
-			dest[i++] = base64_table[(current[1] & 0x0f) << 2];
-			dest[i++] = base64_pad;
-		}
-		else {
-			dest[i++] = base64_table[(current[0] & 0x03) << 4];
-			dest[i++] = base64_pad;
-			dest[i++] = base64_pad;
-		}
+      else
+	{
+	  out[1] = base64_enc_table[(ptr[0] & 0x03) << 4];
+	  out[2] = BASE64_PADDING;
 	}
-	return i;
+      out += 4;
+    }
+
+  return out - dest;
 }
 
-/* as above, but backwards. :) */
-uint
-base64_decode(byte *dest, const byte *src, uint len)
+uint base64_decode(byte *dest, const byte *src, uint len)
 {
-	const byte *current = src;
-	uint ch;
-	uint i = 0, j = 0;
-	static byte reverse_table[256];
-	static uint table_built = 0;
-
-	if (table_built == 0) {
-		ucwlib_lock();
-		for(ch = 0; ch < 256; ch++) {
-			byte *chp = strchr(base64_table, ch);
-			if(chp) {
-				reverse_table[ch] = chp - base64_table;
-			} else {
-				reverse_table[ch] = 0xff;
-			}
-		}
-		table_built = 1;
-		ucwlib_unlock();
+  const byte *ptr = src;
+  const byte *end = src + len;
+  byte *out = dest;
+  while (1)
+    {
+      uint val, ch;
+      do
+	{
+	  if (ptr == end || (ch = base64_dec_table[*ptr++]) == BASE64_DEC_PADDING)
+	    goto end;
 	}
-
-	/* run through the whole string, converting as we go */
-	ch = 0;
-	while (len > 0) {
-		len--;
-		ch = *current++;
-		if (ch == base64_pad) break;
-
-		/* When Base64 gets POSTed, all pluses are interpreted as spaces.
-		   This line changes them back.  It's not exactly the Base64 spec,
-		   but it is completely compatible with it (the spec says that
-		   spaces are invalid).  This will also save many people considerable
-		   headache.  - Turadg Aleahmad <turadg@wise.berkeley.edu>
-		 */
-
-		if (ch == ' ') ch = '+';
-
-		ch = reverse_table[ch];
-		if (ch == 0xff) continue;
-
-		switch(i % 4) {
-		case 0:
-			dest[j] = ch << 2;
-			break;
-		case 1:
-			dest[j++] |= ch >> 4;
-			dest[j] = (ch & 0x0f) << 4;
-			break;
-		case 2:
-			dest[j++] |= ch >>2;
-			dest[j] = (ch & 0x03) << 6;
-			break;
-		case 3:
-			dest[j++] |= ch;
-			break;
-		}
-		i++;
+      while (ch > BASE64_DEC_PADDING);
+      val = ch;
+      do
+	{
+	  if (ptr == end || (ch = base64_dec_table[*ptr++]) == BASE64_DEC_PADDING)
+	    goto end; // Broken base64 encoding, we only have 6 bits
 	}
-	return j;
+      while (ch > BASE64_DEC_PADDING);
+      val = (val << 6) | ch;
+      do
+	{
+	  if (ptr == end || (ch = base64_dec_table[*ptr++]) == BASE64_DEC_PADDING)
+	    {
+	      out[0] = val >> 4;
+	      out += 1;
+	      goto end;
+	    }
+	}
+      while (ch > BASE64_DEC_PADDING);
+      val = (val << 6) | ch;
+      do
+	{
+	  if (ptr == end || (ch = base64_dec_table[*ptr++]) == BASE64_DEC_PADDING)
+	    {
+	      out[0] = val >> 10;
+	      out[1] = val >> 2;
+	      out += 2;
+	      goto end;
+	    }
+	}
+      while (ch > BASE64_DEC_PADDING);
+      val = (val << 6) | ch;
+      out[0] = val >> 16;
+      out[1] = val >> 8;
+      out[2] = val;
+      out += 3;
+    }
+end:
+  return out - dest;
 }

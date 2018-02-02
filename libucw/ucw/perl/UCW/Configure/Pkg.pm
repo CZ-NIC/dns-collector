@@ -1,5 +1,6 @@
 # UCW Library configuration system: pkg-config and friends
 # (c) 2008 Martin Mares <mj@ucw.cz>
+# (c) 2017 Pavel Charvat <pchar@ucw.cz>
 
 package UCW::Configure::Pkg;
 use UCW::Configure;
@@ -57,14 +58,21 @@ sub PkgConfig($@) {
 		Log("NONE: pkg-config missing\n");
 		return 0;
 	}
-	my $ver = TryCmd("pkg-config --modversion $pkg 2>/dev/null");
+	my $pc = "pkg-config";
+	if (defined($opts{path})) {
+		$pc = "PKG_CONFIG_PATH=$opts{path} $pc";
+	}
+	if (defined($opts{args})) {
+		$pc = "$pc $opts{args}";
+	}
+	my $ver = TryCmd("$pc --modversion $pkg 2>/dev/null");
 	if (!defined $ver) {
 		Log("NONE\n");
 		return 0;
 	}
 	if (defined($opts{minversion})) {
 		my $min = $opts{minversion};
-		if (!defined TryCmd("pkg-config --atleast-version=$min $pkg")) {
+		if (!defined TryCmd("$pc --atleast-version=$min $pkg")) {
 			Log("NO: version $ver is too old (need >= $min)\n");
 			return 0;
 		}
@@ -72,9 +80,9 @@ sub PkgConfig($@) {
 	Log("YES: version $ver\n");
 	Set("CONFIG_HAVE_$upper" => 1);
 	Set("CONFIG_VER_$upper" => $ver);
-	my $cf = TryCmd("pkg-config --cflags $pkg");
+	my $cf = TryCmd("$pc --cflags $pkg");
 	Set("${upper}_CFLAGS" => $cf) if defined $cf;
-	my $lf = TryCmd("pkg-config --libs $pkg");
+	my $lf = TryCmd("$pc --libs $pkg");
 	Set("${upper}_LIBS" => $lf) if defined $lf;
 	return 1;
 }

@@ -2,6 +2,7 @@
  *	UCW Library -- Circular Linked Lists
  *
  *	(c) 2003--2010 Martin Mares <mj@ucw.cz>
+ *	(c) 2017 Pavel Charvat <pchar@ucw.cz>
  *
  *	This software may be freely distributed and used according to the terms
  *	of the GNU Lesser General Public License.
@@ -187,6 +188,24 @@ static inline void clist_insert_list_after(clist *what, cnode *after)
       after->next = w->next;
       clist_init(what);
     }
+}
+
+/**
+ * Merge two lists by inserting the list @what in front of all other nodes in a different list @l.
+ * The first list is then cleared.
+ **/
+static inline void clist_add_list_head(clist *l, clist *what)
+{
+  clist_insert_list_after(what, &l->head);
+}
+
+/**
+ * Merge two lists by inserting the list @what after all other nodes in a different list @l.
+ * The first list is then cleared.
+ **/
+static inline void clist_add_list_tail(clist *l, clist *what)
+{
+  clist_insert_list_after(what, l->head.prev);
 }
 
 /**

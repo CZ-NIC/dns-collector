@@ -150,7 +150,7 @@ extern const struct xtype xt_uintmax;
 
 /**
  * Each unit is defined by a conversion ratio, which is a fraction with 64-bit numerator
- * and denominator. Therefore, a value of 'x' units is interpreted as 'x' * 'num' / 'denon'.
+ * and denominator. Therefore, a value of 'x' units is interpreted as 'x' * 'num' / 'denom'.
  **/
 struct unit_definition {
   const char *unit;		// Symbol (name of the unit, as appended to values)

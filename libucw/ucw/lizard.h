@@ -50,7 +50,7 @@
  * every lossless compression algorithm must have an input for which it produces a larger
  * output).
  *
- * Use this to compute the size of @out paramater of @lizard_compress().
+ * Use this to compute the size of @out parameter of @lizard_compress().
  **/
 #define LIZARD_MAX_LEN(LENGTH) ((LENGTH) * LIZARD_MAX_MULTIPLY + LIZARD_MAX_ADD)
 

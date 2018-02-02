@@ -34,6 +34,10 @@ static void crc32_update_by4(crc32_context *ctx, const byte *buf, uint len)
   u32 crc = ctx->state;
   u32 term1, term2, *buf32;
 
+  // Special case
+  if (len < 4)
+    goto small;
+
   // Align start address to a multiple of 4 bytes
   init_bytes = ((uintptr_t) buf) & 3;
   if (init_bytes)
@@ -60,6 +64,7 @@ static void crc32_update_by4(crc32_context *ctx, const byte *buf, uint len)
 
   // Process remaining up to 7 bytes
   buf = (byte *) buf32;
+small:
   while (len--)
     crc = crc_tableil8_o32[(crc ^ *buf++) & 0x000000FF] ^ (crc >> 8);
 
@@ -71,6 +76,10 @@ static void crc32_update_by8(crc32_context *ctx, const byte *buf, uint len)
   uint init_bytes, quads;
   u32 crc = ctx->state;
   u32 term1, term2, *buf32;
+
+  // Special case
+  if (len < 8)
+    goto small;
 
   // Align start address to a multiple of 8 bytes
   init_bytes = ((uintptr_t) buf) & 7;
@@ -108,6 +117,7 @@ static void crc32_update_by8(crc32_context *ctx, const byte *buf, uint len)
 
   // Process remaining up to 7 bytes
   buf = (byte *) buf32;
+small:
   while (len--)
     crc = crc_tableil8_o32[(crc ^ *buf++) & 0x000000FF] ^ (crc >> 8);
 
