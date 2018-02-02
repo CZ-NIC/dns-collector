@@ -91,7 +91,7 @@ dns_collector_conf_commit(void *data)
 }
 
 
-static const char const *dns_dump_compress_types[] = {
+static const char *dns_dump_compress_types[] = {
     "none",
     "gzip",
     "bz2",
