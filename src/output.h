@@ -67,6 +67,26 @@ struct dns_output {
      */
     void (*finish_file)(struct dns_output *out, dns_us_time_t time);
 
+    /**
+     * Hook to start the output thread.
+     * Normally you want this to call 'dns_output_start'.
+     */
+    void (*start_output)(struct dns_output *out);
+
+    /**
+     * Hook to wait for and join the output thread. 
+     * Normally you want this to call 'dns_output_finish'.
+     */
+    void (*finish_output)(struct dns_output *out);
+    
+    /**
+     * Hook to deinitialise the given output, freeing any owned objects.
+     * Must be called only after thread stopped and dns_output_finish() was called.
+     * Does NOT dealloc the output struct itself.
+     * Normally you want this to call 'dns_output_finalize'.
+     */
+    void (*finalize_output)(struct dns_output *out);
+
     /** Output rotation period in seconds. Zero or less means do not rotate.
      * The output is rotated whenever sec_since_midnight is divisible by period. */
     int period_sec;

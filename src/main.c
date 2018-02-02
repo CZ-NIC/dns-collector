@@ -26,6 +26,7 @@
 #include "frame_queue.h"
 #include "input.h"
 #include "output_csv.h"
+#include "output_cbor.h"
 #include "packet_frame.h"
 #include "worker_frame_logger.h"
 #include "worker_packet_matcher.h"
@@ -134,13 +135,19 @@ int main(int argc UNUSED, char **argv)
     struct dns_worker_packet_matcher *w_matcher =
         dns_worker_packet_matcher_create(conf, q_input_mathcher, q_matcher_output);
 
-    // No other output supported. This is also checked by the config system.
-    assert(strcasecmp(conf->output_type, "csv") == 0);
-    struct dns_output_csv *output =
-        dns_output_csv_create(conf, q_matcher_output);
+    struct dns_output *output;
+    switch (conf->output_type) {
+        case DNS_OUTPUT_TYPE_CSV:
+            output = (struct dns_output *)dns_output_csv_create(conf, q_matcher_output);
+            break;
+        case DNS_OUTPUT_TYPE_CBOR:
+            output = (struct dns_output *)dns_output_cbor_create(conf, q_matcher_output);
+            break;
+        default: die("Invalid output type");
+    }
 
     dns_worker_packet_matcher_start(w_matcher);
-    dns_output_csv_start(output);
+    output->start_output(output);
 
     // Main loop, start inputs
 
@@ -167,14 +174,14 @@ int main(int argc UNUSED, char **argv)
 
     dns_input_finish(input);
     dns_worker_packet_matcher_finish(w_matcher);
-    dns_output_csv_finish(output);
-
+    output->finish_output(output);
 
     // Dealloc and cleanup
 
     dns_input_destroy(input);
     dns_worker_packet_matcher_destroy(w_matcher);
-    dns_output_csv_destroy(output);
+    output->finalize_output(output);
+    free(output);
     dns_frame_queue_destroy(q_input_mathcher);
     dns_frame_queue_destroy(q_matcher_output);
 
