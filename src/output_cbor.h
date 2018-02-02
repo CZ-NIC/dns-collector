@@ -15,12 +15,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DNSCOL_OUTPUT_CSV_H
-#define DNSCOL_OUTPUT_CSV_H
+#ifndef DNSCOL_OUTPUT_CBOR_H
+#define DNSCOL_OUTPUT_CBOR_H
 
 /**
- * \file output_csv.h
- * Output to CSV files - configuration and writing.
+ * \file output_cbor.h
+ * Output to CBOR files - configuration and writing.
  */
 
 #include "output.h"
@@ -30,27 +30,16 @@
 /**
  * Configuration structure extending `struct dns_output`.
  */
-struct dns_output_csv {
+struct dns_output_cbor {
     struct dns_output base;
 
-    /** Separator character */
-    int separator;
-
-    /** Write header as the first line of the CSV */
-    int inline_header;
-
-    /** Write header into a separate file if not NULL,
-     * owned by output */
-    char *external_header_path_fmt;
-
-    /** CSV fields to write,
-     * bitmask of dns_output_field_flag_names */
-    uint32_t csv_fields;
+    /** Fields to write, bitmask of dns_output_field_flag_names */
+    uint32_t cbor_fields;
 };
 
-struct dns_output_csv *
-dns_output_csv_create(struct dns_config *conf, struct dns_frame_queue *in);
+struct dns_output_cbor *
+dns_output_cbor_create(struct dns_config *conf, struct dns_frame_queue *in);
 
-#endif /* DNSCOL_OUTPUT_CSV_H */
+#endif /* DNSCOL_OUTPUT_CBOR_H */
 
 

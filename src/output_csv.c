@@ -28,54 +28,14 @@
 #include "output_csv.h"
 
 
-// Forward declarations
-
 static void
-dns_output_csv_start_file(struct dns_output *out0, dns_us_time_t time);
-
-static dns_ret_t
-dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt);
-
-
-struct dns_output_csv *
-dns_output_csv_create(struct dns_config *conf, struct dns_frame_queue *in)
+dns_output_csv_finalize(struct dns_output *out0)
 {
-    struct dns_output_csv *out = xmalloc_zero(sizeof(struct dns_output_csv));
-
-    dns_output_init(&out->base, in, conf->output_path_fmt, conf->output_pipe_cmd, conf->output_period_sec);
-    out->base.start_file = dns_output_csv_start_file;
-    out->base.write_packet = dns_output_csv_write_packet;
-
-    out->separator = conf->csv_separator[0];
-    out->inline_header = conf->csv_inline_header;
-    out->csv_fields = conf->csv_fields;
-    msg(L_INFO, "Selected fields: %#x", out->csv_fields);
-    if (conf->csv_external_header_path_fmt)
-        out->external_header_path_fmt = strdup(conf->csv_external_header_path_fmt);
-    return out;
-}
-
-void
-dns_output_csv_start(struct dns_output_csv *out)
-{
-    dns_output_start(&out->base);
-}
-
-void
-dns_output_csv_finish(struct dns_output_csv *out)
-{
-    dns_output_finish(&out->base);
-}
-
-void
-dns_output_csv_destroy(struct dns_output_csv *out)
-{
+    struct dns_output_csv *out = (struct dns_output_csv *) out0;
     dns_output_finalize(&out->base);
     if (out->external_header_path_fmt)
         free(out->external_header_path_fmt);
-    free(out);
 }
-
 
 
 /**
@@ -411,4 +371,26 @@ dns_output_csv_write_packet(struct dns_output *out0, dns_packet_t *pkt)
         out->base.current_response_only ++;
 
     return DNS_RET_OK;
+}
+
+
+struct dns_output_csv *
+dns_output_csv_create(struct dns_config *conf, struct dns_frame_queue *in)
+{
+    struct dns_output_csv *out = xmalloc_zero(sizeof(struct dns_output_csv));
+
+    dns_output_init(&out->base, in, conf->output_path_fmt, conf->output_pipe_cmd, conf->output_period_sec);
+    out->base.start_file = dns_output_csv_start_file;
+    out->base.write_packet = dns_output_csv_write_packet;
+    out->base.start_output = dns_output_start;
+    out->base.finish_output = dns_output_finish;
+    out->base.finalize_output = dns_output_csv_finalize;
+
+    out->separator = conf->csv_separator[0];
+    out->inline_header = conf->csv_inline_header;
+    out->csv_fields = conf->csv_fields;
+    msg(L_INFO, "Selected CSV fields: %#x", out->csv_fields);
+    if (conf->csv_external_header_path_fmt)
+        out->external_header_path_fmt = strdup(conf->csv_external_header_path_fmt);
+    return out;
 }

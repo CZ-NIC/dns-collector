@@ -48,7 +48,7 @@ dns_collector_conf_init(void *data)
     conf->match_window_sec = 5.0;
 
     // General output
-    conf->output_type = "csv";
+    conf->output_type = DNS_OUTPUT_TYPE_CSV;
     conf->output_path_fmt = "";
     conf->output_pipe_cmd = "";
     conf->output_period_sec = 0;
@@ -58,7 +58,9 @@ dns_collector_conf_init(void *data)
     conf->csv_inline_header = 0;
     conf->csv_external_header_path_fmt = "";
     conf->csv_fields = 0; // No fields by default
-    // conf->csv_fields = (1 << dns_of_LAST) - 1; // All fields by default
+
+    // CBOR output
+    conf->cbor_fields = 0; // No fields by default
 
     return NULL;
 }
@@ -73,16 +75,22 @@ dns_collector_conf_commit(void *data)
         return "'max_frame_duration_sec' too small, minimum 0.001 sec";
     if (conf->max_queue_len < 1)
         return "'max_queue_len' must be at least 1";
-    if (strcasecmp(conf->output_type, "csv") == 0) {
-        if (strlen(conf->csv_separator) != 1)
-            return "'csv_separator' needs to be exactly one character";
-        if (isalnum(conf->csv_separator[0]) || strchr(".-#_\\\n/", conf->csv_separator[0]) 
-            || (conf->csv_separator[0] > 0x7f))
-            return "You shold use non-alphanumeric ASCII character for 'csv_separator', avoiding \".-#_\\/\" and newline.";
-        if (conf->csv_fields == 0)
-            return "'csv_fields' must have at least one field";
-    } else {
-        return "only 'output_type csv' currently supported";
+    switch (conf->output_type) {
+        case DNS_OUTPUT_TYPE_CSV:
+            if (strlen(conf->csv_separator) != 1)
+                return "'csv_separator' needs to be exactly one character";
+            if (isalnum(conf->csv_separator[0]) || strchr(".-#_\\\n/", conf->csv_separator[0]) 
+                || (conf->csv_separator[0] > 0x7f))
+                return "You shold use non-alphanumeric ASCII character for 'csv_separator', avoiding \".-#_\\/\" and newline.";
+            if (conf->csv_fields == 0)
+                return "'csv_fields' must have at least one field";
+            break;
+        case DNS_OUTPUT_TYPE_CBOR:
+            if (conf->cbor_fields == 0)
+                return "'cbor_fields' must have at least one field";
+            break;
+        default:
+            return "only output types 'csv' and 'cbor' currently supported";
     }
     if (conf->dump_compress_level < 0 || conf->dump_compress_level > 9)
         return "'dump_compress_level' must be 0..9";
@@ -90,6 +98,8 @@ dns_collector_conf_commit(void *data)
     return NULL;
 }
 
+static const char *dns_output_types[] = {
+    "csv", "cbor", NULL };
 
 static const char *dns_dump_compress_types[] = {
     "none",
@@ -111,17 +121,17 @@ struct cf_section dns_config_section = {
     CF_INIT(dns_collector_conf_init),
     CF_COMMIT(dns_collector_conf_commit),
     CF_ITEMS {
-	// Common
-	CF_DOUBLE("max_frame_duration", PTR_TO(struct dns_config, max_frame_duration_sec)),
-	CF_INT("max_frame_size", PTR_TO(struct dns_config, max_frame_size)),
-	CF_INT("max_queue_len", PTR_TO(struct dns_config, max_queue_len)),
-	CF_INT("report_period", PTR_TO(struct dns_config, report_period_sec)),
+        // Common
+        CF_DOUBLE("max_frame_duration", PTR_TO(struct dns_config, max_frame_duration_sec)),
+        CF_INT("max_frame_size", PTR_TO(struct dns_config, max_frame_size)),
+        CF_INT("max_queue_len", PTR_TO(struct dns_config, max_queue_len)),
+        CF_INT("report_period", PTR_TO(struct dns_config, report_period_sec)),
 
-	// Input
-	CF_STRING("input_uri", PTR_TO(struct dns_config, input_uri)),
-	CF_STRING("input_filter", PTR_TO(struct dns_config, input_filter)),
-	CF_INT("input_snaplen", PTR_TO(struct dns_config, input_snaplen)),
-	CF_INT("input_promiscuous", PTR_TO(struct dns_config, input_promiscuous)),
+        // Input
+        CF_STRING("input_uri", PTR_TO(struct dns_config, input_uri)),
+        CF_STRING("input_filter", PTR_TO(struct dns_config, input_filter)),
+        CF_INT("input_snaplen", PTR_TO(struct dns_config, input_snaplen)),
+        CF_INT("input_promiscuous", PTR_TO(struct dns_config, input_promiscuous)),
 
         // Packet dump options
         CF_STRING("dump_path_fmt", PTR_TO(struct dns_config, dump_path_fmt)),
@@ -130,20 +140,23 @@ struct cf_section dns_config_section = {
         CF_LOOKUP("dump_compress_type", PTR_TO(struct dns_config, dump_compress_type), dns_dump_compress_types),
         CF_DOUBLE("dump_rate_limit", PTR_TO(struct dns_config, dump_rate_limit)),
 
-	// Matching
-	CF_DOUBLE("match_window", PTR_TO(struct dns_config, match_window_sec)),
+        // Matching
+        CF_DOUBLE("match_window", PTR_TO(struct dns_config, match_window_sec)),
 
-	// General output options
-	CF_STRING("output_type", PTR_TO(struct dns_config, output_type)),
-	CF_STRING("output_path_fmt", PTR_TO(struct dns_config, output_path_fmt)),
-	CF_STRING("output_pipe_cmd", PTR_TO(struct dns_config, output_pipe_cmd)),
-	CF_INT("output_period", PTR_TO(struct dns_config, output_period_sec)),
+        // General output options
+        CF_LOOKUP("output_type", PTR_TO(struct dns_config, output_type), dns_output_types),
+        CF_STRING("output_path_fmt", PTR_TO(struct dns_config, output_path_fmt)),
+        CF_STRING("output_pipe_cmd", PTR_TO(struct dns_config, output_pipe_cmd)),
+        CF_INT("output_period", PTR_TO(struct dns_config, output_period_sec)),
 
-	// CSV output
-	CF_STRING("csv_separator", PTR_TO(struct dns_config, csv_separator)),
-	CF_INT("csv_inline_header", PTR_TO(struct dns_config, csv_inline_header)),
-	CF_STRING("csv_external_header_path_fmt", PTR_TO(struct dns_config, csv_external_header_path_fmt)),
-	CF_BITMAP_LOOKUP("csv_fields", PTR_TO(struct dns_config, csv_fields), dns_output_field_flag_names),
+        // CSV output
+        CF_STRING("csv_separator", PTR_TO(struct dns_config, csv_separator)),
+        CF_INT("csv_inline_header", PTR_TO(struct dns_config, csv_inline_header)),
+        CF_STRING("csv_external_header_path_fmt", PTR_TO(struct dns_config, csv_external_header_path_fmt)),
+        CF_BITMAP_LOOKUP("csv_fields", PTR_TO(struct dns_config, csv_fields), dns_output_field_flag_names),
+
+        // CBOR output
+        CF_BITMAP_LOOKUP("cbor_fields", PTR_TO(struct dns_config, cbor_fields), dns_output_field_flag_names),
         CF_END
     }
 };

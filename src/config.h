@@ -56,7 +56,7 @@ struct dns_config {
     double match_window_sec;
 
     // General output options
-    char *output_type;
+    int output_type;
     char *output_path_fmt;
     char *output_pipe_cmd;
     int output_period_sec;
@@ -66,11 +66,17 @@ struct dns_config {
     int csv_inline_header;
     char *csv_external_header_path_fmt;
     uint32_t csv_fields;
+
+    // CBOR output
+    uint32_t cbor_fields;
 };
 
 extern struct cf_section dns_config_section;
 
 /** TRACE_OPTION_COMPRESSTYPE_ corresponding to the values of dump_compress_type */
 extern trace_option_compresstype_t dns_dump_compress_types_num[];
+
+#define DNS_OUTPUT_TYPE_CSV 0
+#define DNS_OUTPUT_TYPE_CBOR 1
 
 #endif /* DNSCOL_COLLECTOR_CONFIG_H */

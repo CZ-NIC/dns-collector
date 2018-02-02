@@ -1,7 +1,15 @@
 .PHONY: all clean veryclean docs libucw install prog
 
 all: prog
+veryclean:: clean
 
+LDLIBS?=
+LDFLAGS?=
+CFLAGS?=-O2 -g -pedantic
+
+## Options
+
+# USE_TCMALLOC=1
 
 ## Docs
 
@@ -27,24 +35,39 @@ $(LIBUCW_LIBRARY):
 veryclean::
 	cd $(LIBUCW_DIR)/ && make clean
 
+LDLIBS+= $(LIBUCW_LIBRARY)
+CFLAGS+= -I$(LIBUCW_DIR)/run/include/
+
+## tinycbor
+
+TINYCBOR_DIR?=./tinycbor
+TINYCBOR_LIBRARY?=$(TINYCBOR_DIR)/lib/libtinycbor-freestanding.a
+
+tinycbor: $(TINYCBOR_LIBRARY)
+
+$(TINYCBOR_LIBRARY):
+	cd $(TINYCBOR_DIR)/ && make lib/libtinycbor-freestanding.a
+
+veryclean::
+	cd $(TINYCBOR_DIR)/ && make clean
+
+LDLIBS+= $(TINYCBOR_LIBRARY)
+CFLAGS+= -I$(TINYCBOR_DIR)/src/
 
 ## dns-collector
 
-LDLIBS?=
-LDFLAGS?=
-CFLAGS?=-O2 -g -pedantic
 WARNS?=-Wall -Wcast-align -Wunused-parameter -Wno-variadic-macros
 
 ifeq ($(CC),clang)
 WARNS+=-Wno-gnu-statement-expression -Wno-language-extension-token
 endif
 
-CFLAGS+=$(WARNS) -rdynamic -pthread -std=gnu11 -I$(LIBUCW_DIR)/run/include/
-LDLIBS+=-lknot -ltrace -lpthread $(LIBUCW_DIR)/run/lib/libucw-6.5.a
+CFLAGS+= $(WARNS) -rdynamic -pthread -std=gnu11
+LDLIBS+= -lknot -ltrace -lpthread
 
 ifdef USE_TCMALLOC
-    CFLAGS+=-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
-    LDLIBS+=-ltcmalloc
+    CFLAGS+= -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+    LDLIBS+= -ltcmalloc
 endif
 
 PROG=./dns-collector
@@ -54,7 +77,6 @@ prog: $(PROG)
 include src/Makefile
 
 ## install
-
 
 PREFIX?=/usr/local
 DESTDIR?=$(PREFIX)
