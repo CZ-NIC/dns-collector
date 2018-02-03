@@ -89,12 +89,34 @@ Packet statistics:
 However, the drop to 600 kq/s does not seem to come from dnscol CPU usage but rather the packet capture
 load on the kernel: the Knot speed drop is the same (to 600 kq/s) with dnscol cpulimited to just 0.5 CPU.
 
+## CBOR output
+
+CBOR output has been introduced in 0.1.3 to adress some of the encoding problems of CSV: representing binary data and structured elements. [CBOR format](http://cbor.io/)
+is defined in [RFC 7049](https://tools.ietf.org/html/rfc7049) and there are implementations for many common languages.
+
+The CBOR output file is a sequence of independent CBOR items. This was preferred to a one large CBOR item per file to avoid having to load the entire file with most (non-streaming) parsers. The file structure resembles a CSV file with a header row:
+
+The first item is an array of column names, corresponding to the present columns in order.
+Each subsequent item is array of attributes for one record. The meanings and types of the attributes are the same as for the CSV files below. The only exceptions are EDNS data
+with inner structure:
+
+| field name | format |
+| ---- | ---- |
+| `req_edns_dau` | array of DAU numbers |
+| `req_edns_dhu` | array of DHU numbers |
+| `req_edns_n3u` | array of N3U numbers |
+| `resp_edns_nsid` | raw NSID as a bytestring |
+| `edns_client_subnet` | *TODO* |
+| `edns_other` | *TODO* |
+
+Compared to CSV, CBOR output uses cca 10% CPU (user time), is 30% smaller uncompressed and 5% smmaller gziped.
+
 ## CSV output
 
 ### Escaping
 
 The output is primarily targetted for Impala import, so the CSV does NOT conform to RFC 4180.
-Instead of quoting, problematic characters are escaped with a backslash.
+Instead of quoting, problematic characters are escaped with a backslash. Every record is one line - all newlines are escaped.
 
 The escaped characters are: backslash (`\\`), newline (`\n`), the configured field separator (e.g. `\,`),
 all non-ASCII and most non-printable characters (`\ooo` with octal notation).
