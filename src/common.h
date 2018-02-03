@@ -133,7 +133,7 @@ enum dns_output_field {
     dns_field_req_edns_udp = dns_field_edns,
     dns_field_req_edns_do = dns_field_edns, 
     dns_field_resp_edns_rcode = dns_field_edns, 
-    dns_field_req_edns_ping = dns_field_edns,
+    dns_field_req_edns_ping = dns_field_edns, // Not implemented
     dns_field_req_edns_dau = dns_field_edns,
     dns_field_req_edns_dhu = dns_field_edns,
     dns_field_req_edns_n3u = dns_field_edns,
