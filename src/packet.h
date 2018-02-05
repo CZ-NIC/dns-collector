@@ -99,7 +99,7 @@ struct dns_packet {
 #define DNS_PACKET_IS_REQUEST(pkt) (! DNS_PACKET_IS_RESPONSE(pkt))
 
 /** Is the packet DNS response? */
-#define DNS_PACKET_IS_RESPONSE(pkt) (knot_wire_get_qr((pkt)->knot_packet->wire) == 0)
+#define DNS_PACKET_IS_RESPONSE(pkt) (knot_wire_get_qr((pkt)->knot_packet->wire) != 0)
 
 /** Return the request part of the query (or NULL if response-only) */
 #define DNS_PACKET_REQUEST(pkt) (DNS_PACKET_IS_REQUEST(pkt) ? (pkt) : NULL)
