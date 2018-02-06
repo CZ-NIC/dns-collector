@@ -23,20 +23,27 @@ Contact Tomáš Gavenčiak (tomas.gavenciak@nic.cz) with any questions.
 
 ### Not yet implemented
 
-* More EDNS features: Client subnet, other options, EDNS ping
-* TCP flow recoinstruction for reused streams (currently only single-query TCP connections are supported)
-* IP(4/6) fragmented packet reconstuction, DNS via ICMP
-* Idea: slightly delay the responses in the workflow (cca 10 us to remove capture timing jitter)
+* More EDNS features: Client subnet, other options (needs manual EDNS traversal), EDNS ping (ID conflicts with DAU).
+* TCP flow recoinstruction for reused streams (currently only single-query TCP connections are supported).
+* IP(4/6) fragmented packet reconstuction, DNS via ICMP. However, IP fragmentation and DNS via ICMP are uncommon.
+* Possible improvement: Delay the responses in the workflow (cca 10 us)to remove capture timing jitter (when response is mistakenly seen before request).
 
 ## Requirements
 
-These are Ubuntu package names, but should be similar in other distros.
+These are Ubuntu and Debian package names, but should be similar in other distros.
 
-* Clang or GCC build environmrnt, make
-* `libtrace-dev` 3.0.21+ (tested with 3.0.21 in xenial, 3.0.18 from trusty is not sufficient)
-* `libknot-dev` 2.3+ (tested with 2.3.0) Use [Knot PPA](https://launchpad.net/~cz.nic-labs/+archive/ubuntu/knot-dns) for Ubuntu (`libknot-dev 2.1.1` in Ubuntu multiverse is broken)
-* Optionally tcmalloc (from package `libgoogle-perftools-dev`, tested with ver 2.4) for faster allocation and cca 20% speedup (to use, set `USE_TCMALLOC`)
-* [LibUCW](http://www.ucw.cz/libucw/) 6.5+ is included as a git subtree and is built automatically
+* Clang or GCC build environmrnt, make.
+* `libtrace3-dev` 3.0.21+ (tested with 3.0.21 in Ubuntu Xenial to Artful, 3.0.18 from Ubuntu Trusty is not sufficient).
+* `libknot7` and `libknot-dev` 2.6.x (tested with 2.6.4). Use [Knot repositories](https://www.knot-dns.cz/download/) for Debian and Ubuntu.
+
+### Optional
+
+* Optionally tcmalloc (from package `libgoogle-perftools-dev`, tested with ver 2.4 and 2.5) for faster allocation and cca 20% speedup (to use, compile with `USE_TCMALLOC=1 make`)
+
+### Included
+
+* [LibUCW](http://www.ucw.cz/libucw/) 6.5+ is included as a git subtree and built automatically.
+* [TinyCBOR](https://github.com/intel/tinycbor) 0.5+ is included as a git subtree and built automatically.
 
 ## Building and running
 
@@ -91,7 +98,7 @@ load on the kernel: the Knot speed drop is the same (to 600 kq/s) with dnscol cp
 
 ## CBOR output
 
-CBOR output has been introduced in 0.1.3 to adress some of the encoding problems of CSV: representing binary data and structured elements. [CBOR format](http://cbor.io/)
+CBOR output has been introduced in 0.2 to adress some of the encoding problems of CSV: representing binary data and structured elements. [CBOR format](http://cbor.io/)
 is defined in [RFC 7049](https://tools.ietf.org/html/rfc7049) and there are implementations for many common languages.
 
 The CBOR output file is a sequence of independent CBOR items. This was preferred to a one large CBOR item per file to avoid having to load the entire file with most (non-streaming) parsers. The file structure resembles a CSV file with a header row:
