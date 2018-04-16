@@ -9,7 +9,11 @@ CFLAGS?=-O2 -g -pedantic
 
 ## Options
 
-# USE_TCMALLOC=1
+# For faster allocation:
+#USE_TCMALLOC=1
+
+# For debugging:
+#CFLAGS+= -fsanitize=address -fsanitize=undefined -fsanitize=bounds -fsanitize=alignment
 
 ## Docs
 
