@@ -73,19 +73,23 @@ signal_ignore_handler(int sig)
 }
 
 static char **main_inputs; // growing array of char*
+static char *main_interface = NULL; // pointer to static string
+static char *main_output_path = NULL; // pointer to static string
 
 static struct opt_section dns_options = {
     OPT_ITEMS {
         OPT_HELP("A collector of DNS queries."),
         OPT_HELP("Usage: main [options] [pcap-files...]"),
         OPT_HELP(""),
-        OPT_HELP("When no pcap-files are given, a live trace is run based on"),
+        OPT_HELP("When no pcap-files are given or with '-iIFACE', a live trace is run based on"),
         OPT_HELP("the config file. When pcap files are given, they are processed"),
-        OPT_HELP("offline in given order, ignoring any configured input uri."),
+        OPT_HELP("offline in the given order, ignoring any configured input uri."),
         OPT_HELP(""),
         OPT_HELP("Options:"),
         OPT_HELP_OPTION,
         OPT_CONF_OPTIONS,
+        OPT_STRING('i', "interface", main_interface, 0, "Runs a live capture on an interface, has the same semantics as 'input_uri'."),
+        OPT_STRING('o', "output", main_output_path, 0, "Output filename pattern, has the same semantics as 'output_path_fmt'."),
         OPT_STRING_MULTIPLE(OPT_POSITIONAL_TAIL, NULL, main_inputs, OPT_BEFORE_CONFIG, ""),
         OPT_END
     }
@@ -103,12 +107,16 @@ int main(int argc UNUSED, char **argv)
     signal(SIGPIPE, sigpipe_handler);
 
     // Configure
-    
     struct dns_config *conf = alloca(sizeof(struct dns_config));
 
     GARY_INIT(main_inputs, 0);
     dns_log_spam_type = log_register_type("spam");
     cf_declare_rel_section("dnscol", &dns_config_section, conf, 0);
+    // Pre-configure the logging system
+    cf_journal_new_transaction(1);
+    cf_set("logging { stream { name default; substream stderr; }; "
+        "stream { name stderr; filedesc 2; types:reset default; "
+        "levels:reset error fatal info warn; } }");
     opt_parse(&dns_options, argv + 1);
 
     #pragma GCC diagnostic push
@@ -117,10 +125,27 @@ int main(int argc UNUSED, char **argv)
     *(GARY_PUSH(main_inputs)) = NULL;
     #pragma GCC diagnostic pop
 
+    if (main_interface != NULL) {
+        conf->input_uri = strdup(main_interface);
+        if (*main_inputs != NULL) {
+            opt_failure("ERROR: Both input interface (-iIFACE) and input pcap files provided.");
+            return 2;
+        }
+    }
+
+    if (main_output_path != NULL) {
+        conf->output_path_fmt = strdup(main_output_path);
+    }
+
+    if (conf->output_path_fmt == NULL || strlen(conf->output_path_fmt) == 0) {
+        die("Configure the output with -oOUTPUT or config output_path_fmt.");
+    }
+
     if ((*main_inputs == NULL) && strlen(conf->input_uri) == 0) {
         opt_failure("ERROR: Provide at least one input capture filename or configure capture device in the config.");
         return 2;
     }
+
     log_configured("default");
     log_set_format(log_stream_by_flags(0), 0, LSFMT_LEVEL | LSFMT_TIME | LSFMT_TITLE | LSFMT_PID | LSFMT_USEC | LSFMT_TYPE);
 
@@ -155,6 +180,11 @@ int main(int argc UNUSED, char **argv)
         // offline pcaps
         for (char **in = main_inputs; *in; in++) {
             char fn[1024];
+            FILE *f = fopen(*in, "rb");
+            if (f == NULL) {
+                die("Error opening file \"%s\": %s", *in, strerror(errno));
+            }
+            fclose(f);
             snprintf(fn, sizeof(fn), "pcapfile:%s", *in);
             r = dns_input_process(input, fn);
             if (r != DNS_RET_OK) {

@@ -57,10 +57,10 @@ dns_collector_conf_init(void *data)
     conf->csv_separator = "|";
     conf->csv_inline_header = 0;
     conf->csv_external_header_path_fmt = "";
-    conf->csv_fields = 0; // No fields by default
+    conf->csv_fields = (1 << dns_of_LAST) - 1; // All fields by default
 
     // CBOR output
-    conf->cbor_fields = 0; // No fields by default
+    conf->cbor_fields = (1 << dns_of_LAST) - 1; // All fields by default
 
     return NULL;
 }
