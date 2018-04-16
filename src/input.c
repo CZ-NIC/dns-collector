@@ -290,9 +290,11 @@ dns_input_report(struct dns_input *input, int force)
         return;
 
     // Likely the only half-sane statistic from libtrace :-/
-    input->current_packets_dropped = trace_get_dropped_packets(input->trace);
-    if (input->current_packets_dropped == UINT64_MAX)
-        input->current_packets_dropped = 0;
+    if (input->trace) { // May have been called after trace open error
+        input->current_packets_dropped = trace_get_dropped_packets(input->trace);
+        if (input->current_packets_dropped == UINT64_MAX)
+            input->current_packets_dropped = 0;
+    }
 
 #define DOSTAT(stat) \
     double rate_ ## stat = 0.0; \
