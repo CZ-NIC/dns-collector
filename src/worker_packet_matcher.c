@@ -39,6 +39,7 @@ dns_worker_packet_matcher_create(struct dns_config *conf, struct dns_frame_queue
     pm->outframe = NULL;
     pm->current_time = DNS_NO_TIME;
     pm->matching_duration = dns_fsec_to_us_time(conf->match_window_sec);
+    pm->match_qname = conf->match_qname;
     pm->frame_max_duration = dns_fsec_to_us_time(conf->max_frame_duration_sec);
     pm->frame_max_size = conf->max_frame_size;
     assert(pm->matching_duration > 0);
@@ -175,7 +176,7 @@ dns_worker_packet_matcher_main(void *matcher)
             dns_packet_hash_insert_packet(pm->hash_table, pkt);
             clist_add_tail(&pm->packet_queue, &pkt->node); 
         } else {
-            struct dns_packet *req = dns_packet_hash_get_match(pm->hash_table, pkt);
+            struct dns_packet *req = dns_packet_hash_get_match(pm->hash_table, pkt, pm->match_qname);
             if (req) {
                 // Matched response to a request 
                 // - request removed from hash and left in the queue

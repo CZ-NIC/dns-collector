@@ -143,7 +143,7 @@ dns_packet_hash_remove_from_bucket(struct dns_packet_hash *h, struct dns_packet 
 }
 
 struct dns_packet *
-dns_packet_hash_get_match(struct dns_packet_hash *h, struct dns_packet *p)
+dns_packet_hash_get_match(struct dns_packet_hash *h, struct dns_packet *p, int match_qname)
 {
     dns_hash_value_t hash_value = dns_packet_primary_hash(p, h->seed);
     struct dns_packet_hash_bucket **bp = dns_packet_hash_find_bucket(h, p, hash_value);
@@ -155,7 +155,7 @@ dns_packet_hash_get_match(struct dns_packet_hash *h, struct dns_packet *p)
     cnode *secnode;
     CLIST_WALK(secnode, (*bp)->packets) {
         struct dns_packet *req = DNS_PACKET_FROM_SECNODE(secnode);
-        if (dns_packet_qname_match(req, p)) {
+        if ((!match_qname) || dns_packet_qname_match(req, p)) {
             dns_packet_hash_remove_from_bucket(h, req, bp);
             return req;
         }

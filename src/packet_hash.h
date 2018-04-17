@@ -100,9 +100,10 @@ dns_packet_hash_remove_packet(struct dns_packet_hash *h, struct dns_packet *p);
 /**
  * Find a matching request for the given response in the hash, returning the oldest
  * matching request and removing it from the table. Returns NULL when none found.
+ * QNAME is considered only with match_qname set.
  */
 struct dns_packet *
-dns_packet_hash_get_match(struct dns_packet_hash *h, struct dns_packet *p);
+dns_packet_hash_get_match(struct dns_packet_hash *h, struct dns_packet *p, int match_qname);
 
 /**
 * Remove the given packet from the hash, removing the bucket if empty.
