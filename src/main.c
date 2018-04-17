@@ -81,15 +81,15 @@ static struct opt_section dns_options = {
         OPT_HELP("A collector of DNS queries."),
         OPT_HELP("Usage: main [options] [pcap-files...]"),
         OPT_HELP(""),
-        OPT_HELP("When no pcap-files are given or with '-iIFACE', a live trace is run based on"),
+        OPT_HELP("When no pcap-files are given or with '-i', a live trace is run based on"),
         OPT_HELP("the config file. When pcap files are given, they are processed"),
         OPT_HELP("offline in the given order, ignoring any configured input uri."),
         OPT_HELP(""),
         OPT_HELP("Options:"),
         OPT_HELP_OPTION,
         OPT_CONF_OPTIONS,
-        OPT_STRING('i', "interface", main_interface, 0, "Runs a live capture on an interface, has the same semantics as 'input_uri'."),
-        OPT_STRING('o', "output", main_output_path, 0, "Output filename pattern, has the same semantics as 'output_path_fmt'."),
+        OPT_STRING('i', "interface", main_interface, OPT_REQUIRED_VALUE, "Runs a live capture on an interface, has the same semantics as 'input_uri'."),
+        OPT_STRING('o', "output", main_output_path, OPT_REQUIRED_VALUE, "Output filename pattern, has the same semantics as 'output_path_fmt'."),
         OPT_STRING_MULTIPLE(OPT_POSITIONAL_TAIL, NULL, main_inputs, OPT_BEFORE_CONFIG, ""),
         OPT_END
     }
@@ -128,7 +128,7 @@ int main(int argc UNUSED, char **argv)
     if (main_interface != NULL) {
         conf->input_uri = strdup(main_interface);
         if (*main_inputs != NULL) {
-            opt_failure("ERROR: Both input interface (-iIFACE) and input pcap files provided.");
+            opt_failure("ERROR: Both input interface (-i) and input pcap files provided.");
             return 2;
         }
     }
@@ -138,11 +138,11 @@ int main(int argc UNUSED, char **argv)
     }
 
     if (conf->output_path_fmt == NULL || strlen(conf->output_path_fmt) == 0) {
-        die("Configure the output with -oOUTPUT or config output_path_fmt.");
+        die("Configure the output with '-o' or config 'output_path_fmt'.");
     }
 
     if ((*main_inputs == NULL) && strlen(conf->input_uri) == 0) {
-        opt_failure("ERROR: Provide at least one input capture filename or configure capture device in the config.");
+        opt_failure("ERROR: Provide at least one of: input pcap filename, interface name (with '-i') or configure 'input_uri'.");
         return 2;
     }
 
@@ -182,13 +182,17 @@ int main(int argc UNUSED, char **argv)
             char fn[1024];
             FILE *f = fopen(*in, "rb");
             if (f == NULL) {
-                die("Error opening file \"%s\": %s", *in, strerror(errno));
+                msg(L_ERROR, "Error opening file '%s': %s", *in, strerror(errno));
+                if (in == main_inputs) {
+                    die("No output written.");
+                }
+                break;
             }
             fclose(f);
             snprintf(fn, sizeof(fn), "pcapfile:%s", *in);
             r = dns_input_process(input, fn);
             if (r != DNS_RET_OK) {
-                msg(L_INFO, "Processing of %s unsuccesfull (code %d)", fn, r);
+                msg(L_ERROR, "Processing of '%s' unsuccesfull (code %d)", fn, r);
             }
         }
     } else {
@@ -196,7 +200,7 @@ int main(int argc UNUSED, char **argv)
         input->online = 1;
         r = dns_input_process(input, NULL);
         if (r != DNS_RET_OK) {
-            msg(L_INFO, "Processing of %s unsuccesfull (code %d)", input->uri, r);
+            msg(L_ERROR, "Processing of '%s' unsuccesfull (code %d)", input->uri, r);
         }
     }
 
