@@ -9,24 +9,38 @@ Contact Tomáš Gavenčiak (tomas.gavenciak@nic.cz) with any questions.
 * Reading capture files and live traces that [libtrace reads](http://www.wand.net.nz/trac/libtrace/wiki/SupportedTraceFormats), including kernel ringbuffer. Configurable packet filter.
 * Fast multithreaded processing (3 threads): up to 150 000 queries/s offline and offline (on i5 2.4 GHz, see benchmarks below).
 * Pcap dumps of invalid packets with rate-limiting, compression and output file rotation.
-* Configurable CSV output compatible with Entrada packet parser, modular output allows easy implementation of other output formats.
-* Automatic output file rotation and compression or other post-processing (any pipe command).
-* Easy configuration via config files, periodic status and statistics logging, graceful shutdown on first SIGINT.
+* Configurable CSV output (targeted at Impala/hadoop import, *NOT* RFC 4180 compatible) and optional binary CBOR output. Modular output allows easy implementation of other output formats.
+* Automatic output file rotation and compression or other post-processing (any shell pipe command).
+* Easy configuration via config files, periodic status and statistics logging, graceful shutdown on SIGINT.
 * Well documented and clean code, [GNU GPL v3](https://www.gnu.org/licenses/).
 
-### Extracted DNS features 
+### Extracted DNS features
 
 * Timing of request and response (microsecond accuracy)
 * Network information (addresses, ports, protocols, TTL, packet and payload sizes)
 * DNS header information (query information, id, flags, rcode, opcode, RR counts)
 * EDNS information (version, extended flags and rcode, DAU, DHU, N3U, NSID)
 
-### Not yet implemented
+### Not implemented
 
 * More EDNS features: Client subnet, other options (needs manual EDNS traversal), EDNS ping (ID conflicts with DAU).
 * TCP flow recoinstruction for reused streams (currently only single-query TCP connections are supported).
 * IP(4/6) fragmented packet reconstuction, DNS via ICMP. However, IP fragmentation and DNS via ICMP are uncommon.
-* Possible improvement: Delay the responses in the workflow (cca 10 us)to remove capture timing jitter (when response is mistakenly seen before request).
+* Possible improvement: Delay the responses in the workflow (cca 10 us) to remove capture timing jitter (when response is mistakenly seen before request).
+
+## Building and running
+
+Run `make` to compile the `dns-collector` binary. Use `USE_TCMALLOC=1 make` instead to build with tcmalloc.
+
+Run `make docs` to generate developer Doxygen documentation in `docs/html`.
+
+### Running
+
+* `./dns-collector -i eth0 -oqueries.csv` runs a live trace with the default configuration. Ctrl+C (SIGINT) to gracefully stop. (See the config for automatical output rotation.)
+* `./dns-collector -o queries.csv capture1.pcap capture2.pcap ...` processes the given pcaps in the order given.
+* `./dns-collector -C dns-collector.conf` to use the given config file. Without any other parameters runs a live trace on the configured interface, may be combined with `-i` and `-o` overrides and offline pcap files as parameters.
+
+See the distributed `dns-collector.conf` for more options and their meaning.
 
 ## Requirements
 
@@ -44,15 +58,6 @@ These are Ubuntu and Debian package names, but should be similar in other distro
 
 * [LibUCW](http://www.ucw.cz/libucw/) 6.5+ is included as a git subtree and built automatically.
 * [TinyCBOR](https://github.com/intel/tinycbor) 0.5+ is included as a git subtree and built automatically.
-
-## Building and running
-
-* `make` to compile the `dnscol` binary
-* use `USE_TCMALLOC=1 make` instead to build with tcmalloc
-* `make docs` to generate developer Doxygen documentation in `docs/html`
-
-* `./dnscol -C dnscol.conf pcap_files ...` to process offline capture files in sequence.
-* `./dnscol -C dnscol.conf` to process a configured live trace, Ctrl+C (SIGINT) to gracefully stop.
 
 ## Memory footprint
 

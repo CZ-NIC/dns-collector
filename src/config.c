@@ -28,7 +28,7 @@ dns_collector_conf_init(void *data)
     conf->max_frame_duration_sec = 0.5;
     conf->max_frame_size = 1 << 18;
     conf->max_queue_len = 8;
-    conf->report_period_sec = 5;
+    conf->report_period_sec = 60;
 
     // Input
     conf->input_uri = "";
@@ -54,8 +54,8 @@ dns_collector_conf_init(void *data)
     conf->output_period_sec = 0;
 
     // CSV output
-    conf->csv_separator = "|";
-    conf->csv_inline_header = 0;
+    conf->csv_separator = ",";
+    conf->csv_inline_header = 1;
     conf->csv_external_header_path_fmt = "";
     conf->csv_fields = (1 << dns_of_LAST) - 1; // All fields by default
 
