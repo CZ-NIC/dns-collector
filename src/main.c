@@ -114,9 +114,6 @@ int main(int argc UNUSED, char **argv)
     cf_declare_rel_section("dnscol", &dns_config_section, conf, 0);
     // Pre-configure the logging system
     cf_journal_new_transaction(1);
-    cf_set("logging { stream { name default; substream stderr; }; "
-        "stream { name stderr; filedesc 2; types:reset default; "
-        "levels:reset error fatal info warn; } }");
     opt_parse(&dns_options, argv + 1);
 
     #pragma GCC diagnostic push
@@ -145,7 +142,11 @@ int main(int argc UNUSED, char **argv)
         opt_failure("ERROR: Provide at least one of: input pcap filename, interface name (with '-i') or configure 'input_uri'.");
         return 2;
     }
-
+    if(log_check_configured("stderr") != NULL)
+        cf_set("logging { stream { name stderr; filedesc 2; types:reset default; "
+            "levels:reset error fatal info warn; } }");
+    if(log_check_configured("default") != NULL)
+        cf_set("logging { stream { name default; substream stderr; } }");
     log_configured("default");
     log_set_format(log_stream_by_flags(0), 0, LSFMT_LEVEL | LSFMT_TIME | LSFMT_TITLE | LSFMT_PID | LSFMT_USEC | LSFMT_TYPE);
 
