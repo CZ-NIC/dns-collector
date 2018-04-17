@@ -46,6 +46,7 @@ dns_collector_conf_init(void *data)
 
     // Matching
     conf->match_window_sec = 5.0;
+    conf->match_qname = 0;
 
     // General output
     conf->output_type = DNS_OUTPUT_TYPE_CSV;
@@ -142,6 +143,7 @@ struct cf_section dns_config_section = {
 
         // Matching
         CF_DOUBLE("match_window", PTR_TO(struct dns_config, match_window_sec)),
+        CF_INT("match_qname", PTR_TO(struct dns_config, match_qname)),
 
         // General output options
         CF_LOOKUP("output_type", PTR_TO(struct dns_config, output_type), dns_output_types),

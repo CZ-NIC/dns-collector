@@ -8,6 +8,7 @@ Contact Tomáš Gavenčiak (tomas.gavenciak@nic.cz) with any questions.
 
 * Reading capture files and live traces that [libtrace reads](http://www.wand.net.nz/trac/libtrace/wiki/SupportedTraceFormats), including kernel ringbuffer. Configurable packet filter.
 * Fast multithreaded processing (3 threads): up to 150 000 queries/s offline and offline (on i5 2.4 GHz, see benchmarks below).
+* Matching requests to responses by (IPs, ports, transport, DNS ID), optionally also with QNAME. Matches the proposed [draft](https://tools.ietf.org/html/draft-ietf-dnsop-dns-capture-format-04#page-27).
 * Pcap dumps of invalid packets with rate-limiting, compression and output file rotation.
 * Configurable CSV output (targeted at Impala/hadoop import, *NOT* RFC 4180 compatible) and optional binary CBOR output. Modular output allows easy implementation of other output formats.
 * Automatic output file rotation and compression or other post-processing (any shell pipe command).

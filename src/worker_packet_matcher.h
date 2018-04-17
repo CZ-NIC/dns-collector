@@ -58,6 +58,9 @@ struct dns_worker_packet_matcher {
     /** Maximum packet frame duration */
     dns_us_time_t frame_max_duration;
 
+    /** Consider QNAMEs while matching. */
+    int match_qname;
+
     /** Maximum packet frame size in bytes */
     int frame_max_size;
 

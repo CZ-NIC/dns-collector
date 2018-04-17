@@ -54,6 +54,7 @@ struct dns_config {
 
     // Matching
     double match_window_sec;
+    int match_qname;
 
     // General output options
     int output_type;
