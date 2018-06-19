@@ -1,0 +1,25 @@
+################################################################################
+
+	The UCW Libraries @VERSION@
+
+	(c) 1997--2015 Martin Mares <mj@ucw.cz>
+	(c) 2006--2015 Pavel Charvat <pchar@ucw.cz>
+	(c) 2000--2009 Robert Spalek <robert@ucw.cz>
+
+	and other contributors listed in ucw/doc/index.txt
+
+################################################################################
+
+This package contains the LibUCW library and several other libraries,
+which have split off the Sherlock Holmes search engine project.
+
+See:
+
+   o  ucw/doc/install.txt for build requirements and instructions.
+   o  ucw/doc/relnotes.txt for release notes.
+   o  ucw/doc/index.txt for master index of documentation.
+
+For more information, take a look at http://www.ucw.cz/libucw/.
+
+If you have any suggestions or bug reports, please write to our
+mailing list libucw-devel@ucw.cz, or directly to mj@ucw.cz.

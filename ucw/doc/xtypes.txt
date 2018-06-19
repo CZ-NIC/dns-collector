@@ -1,0 +1,22 @@
+Extended types
+==============
+
+Extended types ('xtypes') are user-defined data types equipped with mechanisms
+for parsing and printing.
+
+Each xtype is described by a <<struct_xtype,`struct xtype`>>, which contains properties of the type
+and several pointers to callback functions.
+
+Xtypes are currently supported by the following modules:
+
+* <<table:,Table printer>>
+* <<opt:,Command-line option parser>>
+* <<conf:,Configuration parser>>
+
+ucw/xtypes.h
+------------
+!!ucw/xtypes.h
+
+ucw/xtypes-extra.h
+------------------
+!!ucw/xtypes-extra.h

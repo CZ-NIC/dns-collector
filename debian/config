@@ -1,0 +1,25 @@
+# Default configuration file for debian packages
+
+Include("default.cfg");
+
+UnSet("CONFIG_LOCAL");
+Set("CONFIG_INSTALL_API");
+
+Set("CONFIG_DOC");
+Set("CONFIG_CHARSET");
+Set("CONFIG_CHARSET_UTILS");
+Set("CONFIG_XML");
+Set("CONFIG_JSON");
+Set("CONFIG_IMAGES");
+UnSet("CONFIG_IMAGES_LIBUNGIF");
+Set("CONFIG_IMAGES_LIBGIF");
+UnSet("CONFIG_UCW_OBSOLETE_DAEMON_HELPER");
+
+# The basic Perl modules (UCW::Configure etc.) are installed,
+# but extensions involving XS code (UCW::FileLock, UCW::Ulimit)
+# aren't, because they are seldom used and their installation
+# rules used to be incompatible with Debian directory structure.
+# They should work now, so feel free to revive them if needed.
+UnSet("CONFIG_UCW_PERL_MODULES");
+
+1;

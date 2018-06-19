@@ -1,0 +1,107 @@
+Mainloop
+========
+
+Not every program is strictly sequential. Sometimes, an event-driven
+model is much easier to grasp. A fine example of such a program could
+be a railway server. It has a separate connection to each station
+and also to each train, so that it knows where each of them is (and
+that neither a train nor a station have got missing). So it has to wait
+for events coming from these connections and handle them appropriately.
+It also processes other events that it has itself generated -- for
+example various timers telling that a train is scheduled to depart
+from some station.
+
+The mainloop module takes care of the low-level part of event-driven
+programs: it provides an event loop (often called a main loop), which
+watches for events requested by the rest of the program and calls
+a supplied callback when an event happens.
+
+More precisely, for each type of an event (file descriptor activity,
+timer etc.), there is a +handler structure+, which contains the description
+of the event (e.g., the time where the timer should fire), a pointer to
+a +handler function+ (the event callback) and data for use by the handler
+function. The handler is then registered with the main loop.
+
+- <<simple,Simple use>>
+- <<contexts,Using multiple contexts>>
+- <<threads,Forking and threading>>
+- <<basic,Basic operations>>
+- <<time,Time and timers>>
+- <<hooks,Loop hooks>>
+- <<file,Activity on file descriptors>>
+- <<blockio,Asynchronous block I/O>>
+- <<recordio,Asynchronous record I/O>>
+- <<process,Child processes>>
+- <<signal,Synchronous delivery of signals>>
+
+[[contexts]]
+Simple use
+----------
+
+Simple programs usually employ the main loop in a straightforward way:
+
+- Call @main_init() to initialize the main loop machinery.
+- Add an initial set of event handers (@file_add(), @timer_add(), etc.).
+- Enter the event loop by calling @main_loop(). This function runs for
+  the rest of the lifetime of the program. It watches for events and
+  handles them by calling the appropriate handler functions. These functions
+  can of course add new events or modify/delete the existing ones.
+- When the program decides it wants to stop, it calls @main_shut_down(),
+  or alternatively it returns <<enum_main_hook_return,`HOOK_SHUTDOWN`>> from some hook functions.
+  Soon after that, @main_loop() returns.
+- Remove all event hooks and call @main_cleanup().
+
+The event structures (like <<struct_main_file,`struct main_file`>>) are
+always allocated by the user, but please touch only the fields marked
+in this documentation with `[*]`. The other fields are used internally;
+you should initialize them to zeroes before adding the event and avoid
+accessing them afterwards.
+
+[[contexts]]
+Using multiple contexts
+-----------------------
+
+In a more complex program, it can be useful to keep several sets of events
+and run a separate instance of the event loop for each such set. A typical
+example would be a multi-threaded program or a function which needs to
+communicate with a network server locally, ignoring all other events
+before the operation is finished.
+
+For such cases, you can create multiple instances of <<struct_main_context,`struct main_context`>>
+by calling @main_new(). Each thread then keeps its own current context,
+which can be changed by @main_switch_context(). All mainloop functions
+then either take an explicit pointer to a context or (more typically)
+they operate on the current context. When you no longer need the context, you
+can delete it by @main_delete().
+
+It is even possible to use nested main loops: in a hook called by the
+top-level instance of @main_loop(), you can switch to a different context,
+call @main_loop() recursively and when you are done, switch back and return
+to the top-level loop.
+
+*CAVEAT:* In the present implementation, only a single context per process
+can handle process exit events. If you use @process_add() in multiple contexts,
+it can happen that the current context catches the `SIGCHLD` signal and obtains
+information about a child process associated with another context, which it does
+not know how to handle. If you ever need this, please let us know.
+
+[[threads]]
+Forking and threading
+---------------------
+
+Using the event loop in a multi-threaded or multi-process program is possible,
+but it should be done very carefully.
+
+Multiple threads can use the main loop, but each of them must use a separate
+context (or contexts).
+
+When you fork() a child process, either the parent or the child must give up
+use of each main loop context. The @main_teardown() and @main_destroy() functions
+can be useful for that. (The reason is that some parts of the main loop context,
+like file descriptors used internally, become shared between the processes, so
+the processes could influence each other in crazy ways. You do not want to hunt
+for such bugs.)
+
+
+
+!!ucw/mainloop.h

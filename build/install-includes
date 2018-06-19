@@ -1,0 +1,16 @@
+#!/bin/sh
+# A simple installer of include files
+# (c) 2005--2007 Martin Mares <mj@ucw.cz>
+
+set -e
+SRC=$1
+DEST=$2
+shift 2
+while [ -n "$1" ] ; do
+	if [ ! -f "$DEST/$1" -o "$SRC/$1" -nt "$DEST/$1" ] ; then
+		echo "INC $SRC/$1 -> $DEST/$1"
+		mkdir -p $DEST/`dirname $1`
+		sed -e 's/^\(#include[	 ]*\)"\(.*\)"/\1<\2>/' <$SRC/$1 >$DEST/$1
+	fi
+	shift
+done
