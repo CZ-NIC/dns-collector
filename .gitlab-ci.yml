@@ -107,25 +107,30 @@ download_wandio:
     - download_wandio
   before_script:
     - yum install -y automake autoconf libtool gcc gcc-c++ bison flex libpcap-devel
-    - cd wandio-${WANDIO_VERSION}
+    - mv wandio-${WANDIO_VERSION} /tmp/wandio-${WANDIO_VERSION}
+    - cd /tmp/wandio-${WANDIO_VERSION}
     - ./configure
     - make
     - make install
-    - cd ../libtrace-${LIBTRACE_VERSION}
+    - cd $HOME
+    - mv libtrace-${LIBTRACE_VERSION} /tmp/libtrace-${LIBTRACE_VERSION}
+    - cd /tmp/libtrace-${LIBTRACE_VERSION}
     - ./bootstrap.sh
     - ./configure --prefix=$(pwd)/libtrace-root/usr
     - make
     - make install
     - cd libtrace-root
     - fpm -s dir -t rpm -n libtrace -v $LIBTRACE_VERSION -d libpcap .
-    - cd ..
 
 .deps_rpm: &deps_rpm
   <<: *build_libtrace_rpm
   stage: packages
   script:
-    - yum install -y knot-libs graphviz
+    - cd $HOME
+    - yum install -y graphviz
     - yum install -y ./libtrace-root/libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm
+    - if [[ $(grep -c Fedora /etc/redhat-release) -eq 1 ]]; then export KNOT_DEP=knot-libs; else export KNOT_DEP=knot; fi
+    - yum install -y $KNOT_DEP
     - make all
     - ls
     - mkdir -p root/etc/dns-collector
@@ -133,7 +138,7 @@ download_wandio:
     - cp dns-collector root/usr/bin/
     - cp dns-collector.conf root/etc/dns-collector
     - cd root
-    - fpm -s dir -t rpm -n $CI_PROJECT_NAME -v $VERSION --config-files /etc/dns-collector.conf -d knot-libs -d libtrace .
+    - fpm -s dir -t rpm -n $CI_PROJECT_NAME -v $VERSION --config-files /etc/dns-collector.conf -d $KNOT_DEP -d libtrace .
   artifacts:
     paths:
       - root/${CI_PROJECT_NAME}_${VERSION}_amd64.rpm
@@ -171,16 +176,14 @@ package_fedora_26:
   <<: *deps_rpm
   image: alanfranz/fpm-within-docker:fedora-26
 
-# KNOT has no CentOS packages, disabled for now:
+package_centos_7:
+  <<: *deps_rpm
+  image: alanfranz/fpm-within-docker:centos-7
 
-# package_centos_7:
-#   <<: *deps_rpm
-#   image: alanfranz/fpm-within-docker:centos-7
+package_centos_6:
+  <<: *deps_rpm
+  image: alanfranz/fpm-within-docker:centos-7
 
-# package_centos_6:
-#   <<: *deps_rpm
-#   image: alanfranz/fpm-within-docker:centos-7
-
-# package_centos_5:
-#   <<: *deps_rpm
-#   image: alanfranz/fpm-within-docker:centos-7
+package_centos_5:
+  <<: *deps_rpm
+  image: alanfranz/fpm-within-docker:centos-7
