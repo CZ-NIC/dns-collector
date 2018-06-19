@@ -124,10 +124,9 @@ download_wandio:
   <<: *build_libtrace_rpm
   stage: packages
   script:
-    - yum install -y knot-libs
+    - yum install -y knot-libs graphviz
     - yum install -y ./libtrace-root/libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm
     - make all
-    - ls -la
     - mkdir -p root/etc
     - mkdir -p root/usr/bin
     - cp dns-collector root/usr/bin/
