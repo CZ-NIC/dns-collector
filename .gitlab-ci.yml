@@ -51,9 +51,9 @@ test:
   <<: *deps_deb
   before_script:
     - apt-get update
-    - apt-get install -y wget lsb-release
+    - apt-get install -y wget lsb-release ca-certificates
     - wget -O - https://deb.knot-dns.cz/knot/apt.gpg | apt-key add -
-    - echo "deb https://deb.knot-dns.cz/knot/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/knot.list
+    - echo "deb https://deb.knot-dns.cz/knot/ $(lsb_release -sc) main" >> /etc/apt/sources.list
 
 package_ubuntu_1804:
   <<: *deps_ubuntu
