@@ -38,7 +38,7 @@ test:
     - fpm -s dir -t deb -n $CI_PROJECT_NAME -v $VERSION root
   artifacts:
     paths:
-      - $CI_PROJECT_NAME_$VERSION_amd64.deb
+      - ${CI_PROJECT_NAME}_${VERSION}_amd64.deb
 
 .deps_ubuntu: &deps_ubuntu
   <<: *deps_deb
