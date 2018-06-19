@@ -7,7 +7,7 @@ variables:
 
 stages:
   - build
-  - test
+  - test+dependencies
   - packages
 
 build:
@@ -64,9 +64,10 @@ test:
     - echo "deb https://deb.knot-dns.cz/knot/ $(lsb_release -sc) main" >> /etc/apt/sources.list
 
 download_libtrace:
+  stage: test+dependencies
   before_script:
     - apt-get update
-    - apt-get install wget
+    - apt-get install -y wget
   script:
     - wget https://github.com/LibtraceTeam/libtrace/archive/v${LIBTRACE_VERSION}.tar.gz -O libtrace.tgz
     - tar zxf libtrace.tgz
