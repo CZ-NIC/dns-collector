@@ -22,7 +22,7 @@ build:
       - dns-collector
 
 test:
-  stage: test
+  stage: test+dependencies
   dependencies:
     - build
   before_script:
