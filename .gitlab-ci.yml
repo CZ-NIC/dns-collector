@@ -59,6 +59,22 @@ test:
     - wget -O - https://deb.knot-dns.cz/knot/apt.gpg | apt-key add -
     - echo "deb https://deb.knot-dns.cz/knot/ $(lsb_release -sc) main" >> /etc/apt/sources.list
 
+.deps_fedora: &deps_fedora
+  stage: packages
+  script:
+    - dnf install @development-tools
+    - dnf install knot-libs libtrace-devel
+    - make all
+    - mkdir -p root/etc
+    - mkdir -p root/usr/bin
+    - cp dns-collector root/usr/bin/
+    - cp dns-collector.conf root/etc/
+    - cd root
+    - fpm -s dir -t rpm -n $CI_PROJECT_NAME -v $VERSION --config-files /etc/dns-collector.conf .
+  artifacts:
+    paths:
+      - root/${CI_PROJECT_NAME}_${VERSION}_amd64.rpm
+
 package_ubuntu_1804:
   <<: *deps_ubuntu
   image: helb/fwd-ubuntu-bionic
@@ -78,3 +94,15 @@ package_debian_jessie:
 package_debian_stretch:
   <<: *deps_debian
   image: helb/fwd-debian-stretch
+
+package_fedora_28:
+  <<: *deps_fedora
+  image: helb/fwd-fedora-28
+
+package_fedora_27:
+  <<: *deps_fedora
+  image: alanfranz/fpm-within-docker:fedora-27
+
+package_fedora_26:
+  <<: *deps_fedora
+  image: alanfranz/fpm-within-docker:fedora-26
