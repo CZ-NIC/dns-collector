@@ -9,7 +9,7 @@ build:
   stage: build
   before_script: 
     - apt update
-    - apt -y install make gcc build-essential libknot-dev
+    - apt -y install make gcc build-essential libknot-dev libtrace3-dev
   script: 
     - make all
   artifacts:
