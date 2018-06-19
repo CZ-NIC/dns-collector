@@ -45,7 +45,7 @@ test:
   before_script:
     - apt-get update
     - apt-get install -y software-properties-common
-    - add-apt-repository ppa:cz.nic-labs/knot-dns
+    - LC_ALL=C.UTF-8 add-apt-repository ppa:cz.nic-labs/knot-dns
 
 .deps_debian: &deps_debian
   <<: *deps_deb
