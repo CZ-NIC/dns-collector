@@ -139,7 +139,7 @@ download_wandio:
     - cp dns-collector root/usr/bin/
     - cp dns-collector.conf root/etc/dns-collector
     - cd root
-    - fpm -s dir -t rpm -n $CI_PROJECT_NAME -v $VERSION --config-files /etc/dns-collector.conf -d $KNOT_DEP -d libtrace .
+    - fpm -s dir -t rpm -n $CI_PROJECT_NAME -v $VERSION --config-files /etc/dns-collector/dns-collector.conf -d $KNOT_DEP -d libtrace .
   artifacts:
     paths:
       - root/${CI_PROJECT_NAME}_${VERSION}_amd64.rpm
