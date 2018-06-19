@@ -121,6 +121,7 @@ download_wandio:
     - make install
     - cd libtrace-root
     - fpm -s dir -t rpm -n libtrace -v $LIBTRACE_VERSION -d libpcap .
+    - mv libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm $HOME
 
 .deps_rpm: &deps_rpm
   <<: *build_libtrace_rpm
@@ -128,7 +129,7 @@ download_wandio:
   script:
     - cd $HOME
     - yum install -y graphviz
-    - yum install -y ./libtrace-root/libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm
+    - yum install -y $HOME/libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm
     - if [[ $(grep -c Fedora /etc/redhat-release) -eq 1 ]]; then export KNOT_DEP=knot-libs; else export KNOT_DEP=knot; fi
     - yum install -y $KNOT_DEP
     - make all
