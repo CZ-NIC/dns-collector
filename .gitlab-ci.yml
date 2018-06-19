@@ -20,19 +20,16 @@ build:
     paths:
       - dns-collector
 
-# test:
-#   stage: test
-#   before_script:
-#     - apt update
-#     - apt -y install make
-#   script:
-#     - make test
+test:
+  stage: test
+  script:
+    - echo "..."
 
 .deps_deb: &deps_deb
   stage: packages
   script:
     - apt-get update
-    - apt-get -y install wget make gcc build-essential libknot-dev libtrace3-dev
+    - apt-get -y install make gcc build-essential libknot-dev libtrace3-dev
     - make all
     - fpm -s dir -t deb -n $CI_PROJECT_NAME -v $VERSION --prefix /usr/bin dns-collector
   artifacts:
@@ -42,11 +39,15 @@ build:
 .deps_ubuntu: &deps_ubuntu
   <<: *deps_deb
   before_script:
+    - apt-get update
+    - apt-get install -y software-properties-common
     - add-apt-repository ppa:cz.nic-labs/knot-dns
 
 .deps_debian: &deps_debian
   <<: *deps_deb
   before_script:
+    - apt-get update
+    - apt-get install -y wget
     - wget -O - https://deb.knot-dns.cz/knot/apt.gpg | apt-key add -
     - echo "deb https://deb.knot-dns.cz/knot/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/knot.list
 
