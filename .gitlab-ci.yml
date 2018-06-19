@@ -35,4 +35,4 @@ package_ubuntu1804:
     - fpm -s dir -t deb -n dns-collector -v 1.0 --prefix /usr/bin dns-collector
   artifacts:
     paths:
-      - dns-collector-1.0.amd64.deb
+      - dns-collector_1.0_amd64.deb
