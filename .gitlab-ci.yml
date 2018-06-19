@@ -118,13 +118,14 @@ download_wandio:
     - make install
     - cd libtrace-root
     - fpm -s dir -t rpm -n libtrace -v $LIBTRACE_VERSION -d libpcap .
+    - cd ..
 
 .deps_rpm: &deps_rpm
   <<: *build_libtrace_rpm
   stage: packages
   script:
     - yum install -y knot-libs
-    - yum install -y libtrace-root/libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm
+    - yum install -y ./libtrace-root/libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm
     - make all
     - mkdir -p root/etc
     - mkdir -p root/usr/bin
