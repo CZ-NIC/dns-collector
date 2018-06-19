@@ -52,10 +52,10 @@ test_dumpconfig:
     - apt-get update
     - apt-get -y install make gcc build-essential libknot-dev libtrace3-dev
     - make all
-    - mkdir -p root/etc
+    - mkdir -p root/etc/dns-collector
     - mkdir -p root/usr/bin
     - cp dns-collector root/usr/bin/
-    - cp dns-collector.conf root/etc/
+    - cp dns-collector.conf root/etc/dns-collector
     - cd root
     - fpm -s dir -t deb -n $CI_PROJECT_NAME -v $VERSION -d libknot7 -d libtrace3 .
   artifacts:
@@ -127,10 +127,11 @@ download_wandio:
     - yum install -y knot-libs graphviz
     - yum install -y ./libtrace-root/libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm
     - make all
-    - mkdir -p root/etc
+    - ls
+    - mkdir -p root/etc/dns-collector
     - mkdir -p root/usr/bin
     - cp dns-collector root/usr/bin/
-    - cp dns-collector.conf root/etc/
+    - cp dns-collector.conf root/etc/dns-collector
     - cd root
     - fpm -s dir -t rpm -n $CI_PROJECT_NAME -v $VERSION --config-files /etc/dns-collector.conf -d knot-libs -d libtrace .
   artifacts:
