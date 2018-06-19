@@ -1,0 +1,9 @@
+/run
+/obj
+/charset/unidata
+TAGS
+*~
+_*
+*.swp
+.make.log
+/debian-tmp

@@ -1,0 +1,94 @@
+Daemon helpers
+==============
+
+Daemonization
+-------------
+
+When programs run as daemons, they frequently forget to detach themselves
+from the parent environment. LibUCW therefore offers a simple daemonization
+helper which performs the necessary actions. Namely:
+
+* Establishing a new session via a call to `setsid()`.
+* Switching the user and group ID if needed. The user and group can be specified
+  by either a name or `#uid`. If only the user is given, the relevant groups are
+  set according to `/etc/passwd` and `/etc/group`.
+* Redirecting standard input and output from `/dev/null`. Standard error
+  output is left open, so that error messages can be printed before you
+  set up proper <<log:,logging>>. If you are not sure that your log streams
+  replaced stderr, you can call <<log:log_drop_stderr()>> to do that.
+* Setting the `umask()` to a fixed value (022).
+* Switching from the current directory to `/`, so that it is not kept busy.
+* Writing a PID file. While the daemon is running, the PID file is kept locked
+  by `flock()`, so we can easily detect stale PID files.
+
+Example
+-------
+
+	#include <ucw/lib.h>
+	#include <ucw/daemon.h>
+
+	void daemon_body(struct daemon_params *dp)
+	{
+		// ... daemon's code ...
+		// When we are done, release the PID file and exit:
+		daemon_exit(dp);
+	}
+
+	int main(int argc, char **argv)
+	{
+		struct daemon_params dp = { .pid_file = "/var/run/example.pid" };
+		// ... parse arguments ...
+		daemon_init(&dp);
+		// ... initialize everything ...
+		// Let us fork off the daemon:
+		daemon_run(daemon_body);
+		// Here continues the parent process
+		return 0;
+	}
+
+Daemon control
+--------------
+
+Daemons using the LibUCW helpers can be controlled by traditional mechanisms present
+in most UNIX-like operating systems. These are usually based on PID files, but they
+are inherently racy, since they do not perform any locking. For example, attempts to
+start the daemon, while another process is trying to stop it often lead to undefined
+states. Also, detection of running daemons fails when the daemon dies and its PID
+is recycled. Checking of process name and similar tricks do not avoid the problem,
+since there can be multiple instances of the daemon running simultaneously.
+
+We therefore recommend the following daemon control protocol, which prevents all such
+race conditions. Its implementation is available in form of the @daemon_control() library
+function or the `ucw-daemon-control` stand-alone utility.
+
+* There exist two files:
+** PID file (usually `/var/run/daemon.pid`), which contains the PID of the daemon
+   process and when the daemon runs, it keeps the file locked by `flock()`.
+** Guard file (usually `/var/run/daemon.lock`), which is locked (again by `flock()`)
+   whenever we want to perform an action on the daemon.
+* When we want to start the daemon:
+** Lock the guard file, creating it if it did not exist.
+** Try to lock the PID file. If it fails, the daemon is already running, so we are done.
+** Unlock the PID file.
+** Run the daemon. The daemon locks the PID file and when it has everything initialized,
+   it forks and the parent process writes the child's PID and exits.
+** Unlock the guard file.
+* When we want to stop it:
+** Lock the guard file, creating it if it did not exist.
+** Try to lock the PID file. If it succeeds, the daemon is not running, so we are done.
+** Read the PID from the PID file.
+** Send a signal to the process. [This is the only place when we can race. The daemon could
+   have exited in the meantime and its PID could have been recycled. Hopefully, the time window
+   between checking the lock and sending the signal will be short enough. Using 32-bit PIDs
+   is advisable anyway.]
+** Lock the PID file. This will wait until the daemon finishes and releases the lock.
+** Unlock the guard file.
+* When we want to query the daemon's status:
+** Lock the guard file, creating it if it did not exist.
+** Try to lock the PID file. If it succeeds, the daemon was not running.
+** Unlock everything.
+
+ucw/daemon.h
+------------
+
+!!ucw/daemon.h

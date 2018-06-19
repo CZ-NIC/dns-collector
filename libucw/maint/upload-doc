@@ -1,0 +1,10 @@
+#!/bin/bash
+# Build and upload LibUCW documentation and web pages
+# (c) 2012--2015 Martin Mares <mj@ucw.cz>
+
+set -e
+rm -rf maint/tmp/doc
+mkdir -p maint/tmp/doc
+make install-libucw-docs install-libucw-json-docs install-libucw-xml-docs PREFIX=. INSTALL_DOC_DIR=maint/tmp/doc
+rsync -avz --delete maint/tmp/doc/ jw:/var/www/libucw/doc/
+rsync -avz --no-times --no-perms --executability --omit-dir-times WWW/ jw:/var/www/libucw/ --exclude=doc --exclude='*.swp'

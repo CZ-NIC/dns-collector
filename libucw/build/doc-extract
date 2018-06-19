@@ -1,0 +1,221 @@
+#!/usr/bin/perl
+# Script for extracting documentation out of header files
+# (c) 2008 Michal Vaner <vorner@ucw.cz>
+
+use strict;
+use warnings;
+
+my( $inname, $outname, $depname, $basedir, $defdump ) = @ARGV;
+if( defined $inname ) {
+	open IN, $inname or die "Could not read $inname ($!)\n";
+} else {
+	open IN, "<&STDIN" or die "Could not read stdin ($!)\n";
+}
+if( defined $outname ) {
+	open OUT, ">$outname" or die "Could not write $outname ($!)\n";
+} else {
+	open OUT, ">&STDOUT" or die "Could not write to stdout ($!)\n";
+}
+my $hasdump;
+if( defined $defdump ) {
+	open DUMP, ">$defdump" or die "Could not write definition dump $defdump ($!)\n";
+	$hasdump = 1;
+}
+
+# Function to guess type of statement
+sub detect( $ ) {
+	( $_ ) = @_;
+	# typedef struct|enum { something } name;
+	return( $1, 1, $2, "typedef $1 { ... } $2;" ) if /^\s*typedef\s+(struct|enum)\s*{.*}\s*(\w+)\s*;\s*$/s;
+	# struct|enum name { something };
+	return( $1, 1, $2, $_ ) if /^\s*(struct|enum)\s+(\w+)\s*;\s*$/s;
+	my $l = length;
+	s/\n.*//s;
+	# struct|enum name {
+	#   something
+	# };
+	return( $1, 0, $2, $_ ) if /(struct|enum)\s+(\w+)\s+{/;
+	return( 'def', 0, $1, $_ ) if /#define\s+(\w+)/;
+	if( $l > length ) {
+		warn( "Unknown multiline statement $_\n" );
+		return( '', 0, $_, $_ );
+	}
+	# typedef type (*function_type)(params);
+	return( 'type', 1, $2, $_ ) if /^\s*typedef[^()]+?(\(\s*?\*\s*?)?(\w+)(\s*\))?\s*\(.*\)/;
+	# type (*function_var)(params);
+	return( 'var', 1, $1, $_ ) if /^.*?\(\*(\w+)\)\(.*\)/;
+	# type function(name);
+	return( 'fun', 1, $2, $1 ) if /^(.*?(\w+)\([^{]*\)[^{]*)/;
+	# typedef something name;
+	return( 'type', 1, $1, $_ ) if /^\s*typedef.*?(\w+);/;
+	# type name;
+	return( 'var', 1, $1, $_ ) if /\s\**(\w+);/;
+	warn( "Unknown statement $_\n" );
+	return( '', 0, $_, $_ );
+}
+
+my @deps;
+my $id = 0;
+
+sub formatNote( $$ ) {
+	my( $head, $comment ) = @_;
+	$head =~ s/(\S)[ ]+/$1 /g;
+	print OUT "\n";
+	print OUT "''''\n";
+	chomp $head;
+	my( $type, $semicolon, $name, $oneline ) = detect( $head );
+	# Just few transformations of the result
+	$oneline =~ s/\s+$//;
+	$oneline =~ s/;?$/;/ if( $semicolon );
+	$head =~ s/;?\s*$/;/ if( $semicolon );
+	$head =~ s/(\s|,|\()(\.\.\.)/$1\\$2/g; # Do not convert tripple dot into ellipsis
+	print OUT "[[${type}_$name]]\n";
+	$head = $oneline if $type eq 'fun';#Remove { from inline functions
+	# Remove the generic hack markup
+	$head =~ s/_OPEN_PAREN_/(/g;
+	$head =~ s/_CLOSE_PAREN_/)/g;
+	print OUT "..................\n";
+	print OUT "$head\n";
+	print OUT "..................\n\n";
+	if( $hasdump ) {
+		$oneline =~ s/_OPEN_PAREN_/(/g;
+		$oneline =~ s/_CLOSE_PAREN_/)/g;
+		my $symname = $type.'_'.$name;
+		$name =~ s/_OPEN_PAREN_/(/g;
+		$name =~ s/_CLOSE_PAREN_/)/g;
+		print DUMP "$outname,$symname,$type,$name,$oneline\n";
+		$id ++;
+	}
+	$comment =~ s/_OPEN_PAREN_/(/g;
+	$comment =~ s/_CLOSE_PAREN_/)/g;
+	$comment =~ s/_GENERIC_LINK_\|([^|]+)\|([^|]+)\|/${1}_OPEN_PAREN_${2}_CLOSE_PAREN_/g;
+	print OUT "$comment\n\n";
+}
+
+sub process( $$ ) {
+	my( $file, $prefixes ) = @_;
+	open FILE, $file or die "Could nod read $file ($!)\n";
+	my $line;
+	my $active;
+	my $verbatim;
+	my $buff;
+	my $head;
+	my $struct;
+	my $def;
+	my $sdepth;
+	while( defined( $line = <FILE> ) ) {
+		chomp $line;
+		# Generic macro hack - replaces the parenthesis so it is valid identifier
+		$line =~ s/$_\(([^()]+)\)/${_}_OPEN_PAREN_${1}_CLOSE_PAREN_/g foreach @{$prefixes};
+		if( $def ) {
+			$head .= "\n".$line;
+			$line =~ s/(\/\*.*?\*\/|\/\/.*)//g;
+			if( $line !~ /\\\s*$/ ) {
+				formatNote( $head, $buff );
+				$def = 0;
+				$buff = $head = undef;
+			}
+		} elsif( $struct ) {
+			$head .= "\n".$line;
+			my $cp = $line;
+			$sdepth += ($cp =~ tr/{//);
+			$sdepth -= ($cp =~ tr/}//);
+			if( !$sdepth ) {
+				formatNote( $head, $buff );
+				$struct = 0;
+				$buff = undef;
+				$head = undef;
+			}
+		} elsif( $verbatim ) {
+			if( $line =~ /\*\// ) {
+				$verbatim = 0;
+				print OUT "\n";
+			} else {
+				$line =~ s/^\s*\* ?//;
+				print OUT "$line\n";
+			}
+		} elsif( $active ) {
+			if( $line =~ /\*\// ) {
+				$active = 0;
+			} else {
+				$line =~ s/^\s*\* ?//;
+				$buff .= "$line\n";
+			}
+		} else {
+			if( ( $line =~ /\S/ ) && ( defined $buff ) ) {
+				if( $line =~ /^\s*#define.*\\(\s*(\/\/.*|\/\*.*?\*\/|))*/ ) {
+					$head = $line;
+					$def = 1;
+				} elsif( $line =~ /\(/ || $line !~ /{/ || $line =~ /^\s*#define/ ) {
+					$_ = $line;
+					s/^\s*\s?//;
+					s/\/\/.*//;
+					s/\/\*.*?\*\///gs;
+					formatNote( $_, $buff );
+					$head = undef;
+					$buff = undef;
+				} else {
+					$head = $line;
+					$struct = $sdepth = 1;
+				}
+			} elsif( ( $buff ) = ( $line =~ /\/\*\*\*(.*)\*\*\*\// ) ) {
+				$buff =~ s/^\s?//;
+				print OUT "$buff\n\n";
+				$buff = undef;
+			} elsif( ( $buff ) = ( $line =~ /^\s*\/\*\*(.*)\*\*\// ) ) {
+				$buff =~ s/^\s*//;
+				$buff .= "\n";
+			} elsif( ( $head, $buff ) = ( $line =~ /^(.*)\/\*\*(.*)\*\*\// ) ) {
+				$buff =~ s/^\s*//;
+				$buff =~ s/\s*$//;
+				if( $head =~ /\(/ || $head !~ /{/ || $head =~/}/ ) {
+					$head =~ s/^\s*//;
+					$head =~ s/\/\*.*?\*\///gs;
+					formatNote( $head, $buff );
+					$head = undef;
+					$buff = undef;
+				} else {
+					$struct = $sdepth = 1;
+				}
+			} elsif( $line =~ /\/\*\*\*/ ) {
+				$verbatim = 1;
+			} elsif( $line =~ /\/\*\*/ ) {
+				$active = 1;
+			}
+		}
+	}
+	close FILE;
+}
+
+my $line;
+while( defined( $line = <IN> ) ) {
+	chomp $line;
+	my $prefixes;
+	if( my( $fname, $prefixes ) = ( $line =~ /^!!\s*(\S+)(.*)/ ) ) {
+		$fname = "$basedir/$fname" if( ( $fname !~ /^\// ) && defined $basedir );
+		process( $fname, [ ( map( {
+			my( $result ) = /^\s*(.*\S)\s*$/;
+			$result;
+		} ( split /,/, $prefixes ) ) ) ] );
+		push @deps, $fname;
+	} else {
+		print OUT "$line\n";
+	}
+}
+
+if( defined $depname ) {
+	open DEP, ">>$depname" or die "Could not write dep file $depname ($!)\n";
+	print DEP "$outname:";
+	print DEP " $_" foreach( @deps );
+	print DEP "\n";
+	if( $hasdump ) {
+		print DEP "$defdump:";
+		print DEP " $_" foreach( @deps );
+		print DEP "\n";
+	}
+	close DEP;
+}
+
+close IN;
+close OUT;
+close DUMP;

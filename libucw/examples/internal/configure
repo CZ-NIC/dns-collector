@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+# Configure script for the libucw example
+# (c) 2007 Martin Mares <mj@ucw.cz>
+
+use warnings;
+use strict;
+
+our $srcdir;
+BEGIN {
+	my $pkgfile = "ucw/wildmatch.c";
+	if (!defined ($srcdir = $ENV{"SRCDIR"})) {
+		if (-f $pkgfile) {
+			$srcdir=".";
+		} elsif ($0 =~ m@^(.*)/configure$@ && -f "$1/$pkgfile") {
+			$srcdir=$1;
+		} else {
+			die "Don't know how to find myself. Please set SRCDIR manually.\n";
+		}
+	}
+}
+
+use lib "$srcdir/ucw/perl/";
+use UCW::Configure;
+
+Init($srcdir, "default.cfg");
+Include "ucw/default.cfg";
+Log "### Configuring TestApp ###\n\n";
+Include Get("CONFIG");
+require UCW::Configure::Paths;
+require UCW::Configure::C;
+require UCW::Configure::LibUCW;
+Finish();
+
+Log "\nConfigured, run `make' to build everything.\n";

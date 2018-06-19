@@ -1,0 +1,28 @@
+#define LIG_HASH_SIZE 24
+
+static const u16 *_U_lig_hash[] = {
+	NULL,
+	NULL,
+	NULL,
+	/* FB13 */ (const u16 []) { 0x0574, 0x0576, 0 },
+	/* FB14 */ (const u16 []) { 0x0574, 0x0565, 0 },
+	/* FB15 */ (const u16 []) { 0x0574, 0x056B, 0 },
+	/* FB16 */ (const u16 []) { 0x057E, 0x0576, 0 },
+	/* FB17 */ (const u16 []) { 0x0574, 0x056D, 0 },
+	/* FB00 */ (const u16 []) { 0x0066, 0x0066, 0 },
+	/* FB01 */ (const u16 []) { 0x0066, 0x0069, 0 },
+	/* FB02 */ (const u16 []) { 0x0066, 0x006C, 0 },
+	/* FB03 */ (const u16 []) { 0x0066, 0x0066, 0x0069, 0 },
+	/* FB04 */ (const u16 []) { 0x0066, 0x0066, 0x006C, 0 },
+	/* FB05 */ (const u16 []) { 0x0073, 0x0074, 0 },
+	/* FB06 */ (const u16 []) { 0x0073, 0x0074, 0 },
+	/* FB4F */ (const u16 []) { 0x05D0, 0x05DC, 0 },
+	NULL,
+	NULL,
+	/* 0132 */ (const u16 []) { 0x0049, 0x004A, 0 },
+	/* 0133 */ (const u16 []) { 0x0069, 0x006A, 0 },
+	NULL,
+	NULL,
+	NULL,
+	/* 0587 */ (const u16 []) { 0x0565, 0x0582, 0 },
+};

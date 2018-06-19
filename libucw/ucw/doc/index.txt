@@ -1,0 +1,121 @@
+The UCW library
+===============
+
+The UCW library aims to provide a set general purpose tools for programming
+in the C language. It contains generic data structures (lists, trees, hash
+tables etc.), fast memory allocators optimized for various usage patterns,
+abstract I/O streams and optimized implementations of some common algorithms
+(e.g., sorting of arrays and files).
+
+Please note that this documentation is not yet complete. Many modules are
+not described, so you might need to look into the source code.
+
+You can see the index of <<def_index:,documented definitions>>.
+
+For news and incompatible changes in this version, see the <<relnotes:,Release notes>>.
+
+Modules
+-------
+- <<basics:,Basics>>
+- <<log:,Logging>>
+- <<fastbuf:,Fastbufs>>
+- <<basecode:,Base64 and Base224 encoding>>
+- <<hash:,Hashing routines>>
+- <<conf:,Configuration and command line parser>>
+- <<mempool:,Memory pools>>
+- <<eltpool:,Fixed-sized allocators>>
+- <<alloc:,Generic allocators>>
+- <<mainloop:,Mainloop>>
+- <<unaligned:,Unaligned data>>
+- <<lists:,Linked lists>>
+- <<gary:,Growing arrays>>
+- <<heap:,Binary heaps>>
+- <<binheap:,Binomial heaps>>
+- <<hashtable:,Hash tables>>
+- <<growbuf:,Growing buffers>> (obsolete)
+- <<chartype:,Single-byte characters>>
+- <<unicode:,Multi-byte characters>>
+- <<varint:,Encoding of integers>>
+- <<prime:,Prime numbers>>
+- <<sort:,Sorting>>
+- <<binsearch:,Binary search>>
+- <<compress:,Compression>>
+- <<trans:,Transactions and resource tracking>>
+- <<string:,String operations>>
+- <<time:,Time and timers>>
+- <<daemon:,Daemon helpers>>
+- <<signal:,Signal helpers>>
+- <<opt:,Command line parser>>
+- <<table:,Table printer>> and its <<ucw-tableprinter.5:,options>>
+- <<xtypes:,Extended data types>>
+
+Other features
+--------------
+- <<configure:,Compile time configuration>>
+- <<config:,Configuration file syntax>>
+- <<docsys:,Documentation system>>
+- <<generic:,Macro-generated generics>>
+
+Yet undocumented modules
+------------------------
+- Trie
+  * `trie.h`
+- Red-black trees
+  * `redblack.h`
+- Bit manipulation
+  * `bitarray.h`
+  * `bitops.h`
+  * `bitsig.h`
+- String manipulation
+  * `kmp.h`
+  * `kmp-search.h`
+  * `regex.h`
+  * `stkstring.h`
+  * `strtonum.h`
+  * `wildmatch.h`
+- File manipulation
+  * `asio.h`
+  * `io.h`
+  * `partmap.h`
+- Address manipulation
+  * `url.h`
+  * `ipaccess.h`
+- Threads
+  * `semaphore.h`
+  * `threads.h`
+  * `workqueue.h`
+- Miscellaneous
+  * `sighandler.h`
+  * `process.h`
+
+Companion libraries
+-------------------
+- <<../ucw-json/index:,LibUCW-JSON>> -- a JSON parser and formatter
+- <<../ucw-xml/index:,LibUCW-XML>> -- a XML parser
+- LibUCW-charset -- character set conversion (undocumented)
+- LibUCW-images -- loading and conversion of images (undocumented)
+
+License
+-------
+The UCW library is copyrighted by its authors.
+
+It can be freely distributed and used according to the terms of
+the GNU Lesser General Public License, either version 2 or any later
+version.
+
+Authors
+-------
+Primary authors and maintainers are:
+
+- Pavel Charvát <mailto:pchar\@ucw.cz[]>
+- Martin Mareš <mailto:mj\@ucw.cz[]>
+- Robert Špalek <mailto:robert\@ucw.cz[]>
+
+Several modules have been contributed by:
+
+- Daniel Fiala <mailto:danfiala\@ucw.cz[]> (strtonum)
+- Tomáš Gavenčiak <mailto:gavento\@ucw.cz[]> (logging system)
+- Robert Kessl <mailto:robert.kessl\@economia.cz[]> (table printer)
+- Jan Moskyto Matějka <mailto:mq\@ucw.cz[]> (option parser, fb-multi)
+- Tomáš Valla <mailto:tom\@ucw.cz[]> (varint)
+- Michal Vaner <mailto:vorner\@ucw.cz[]> (documentation system)

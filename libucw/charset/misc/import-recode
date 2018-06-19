@@ -1,0 +1,33 @@
+#!/usr/bin/perl
+#
+#  Use `recode` to create a translation table
+#  (c) 2003, Robert Spalek <robert@ucw.cz>
+#
+
+use open IN => ":utf8";
+
+foreach $charset (@ARGV)
+{
+	print "Charset: $charset\n";
+	open(fi, "recode -s -f $charset/..utf-8/ <tmp/tab256 |") || die "Recoding error";
+	open(fo, "| ./mkuni >tmp/$charset") || die;
+
+	while (<fi>)
+	{
+		chop;
+		(($number, $char) = /^([0-9A-F]{2})\t(.?)$/) || die "Cannot parse $_";
+		$recode[hex $number] = $char ne "" ? ord $char : -1;
+	}
+	$#recode >= 0 || die "Empty recoding table";
+	$recode[10] = 10;
+	$recode[13] = 13;
+
+	for ($i=0; $i<=$#recode; $i++)
+	{
+		printf fo "%02X\t%04X\n", $i, $recode[$i]
+			if $recode[$i] >= 0;
+	}
+
+	close(fo);
+	close(fi);
+}

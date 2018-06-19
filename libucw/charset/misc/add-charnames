@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+#
+#  Add Unicode Character Names to a character set table file
+#  (c) 1997 Martin Mares <mj@atrey.karlin.mff.cuni.cz>
+#
+
+open (UNI, "unidata/UnicodeData.txt") || die "No Unicode Data File";
+while (<UNI>) {
+	($num,$name) = split /;/;
+	$name{$num} = $name;
+}
+close UNI;
+
+while (<>) {
+	($code,$uni) = split /[ \t\n]+/;
+	$name = $name{$uni};
+	($name eq "") && ($name = "????");
+	print "$code\t$uni\t$name\n";
+}

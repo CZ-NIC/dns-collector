@@ -1,0 +1,145 @@
+Transactions and resource tracking
+==================================
+
+LibUCW is equipped with a general system for keeping track of resources
+(allocated memory, open files, ...) and freeing them when requested to.
+
+The resource tracker can be used either separately (in the form of explicitly
+managed resource pools) or within a transactional layer, which offers
+exceptions similar to those in higher-level languages. An exception
+then rolls back the transaction, freeing all temporary resources allocated
+within the transaction.
+
+- <<respools,Resource pools>>
+- <<trans,Transactions>>
+- <<exc,Exceptions>>
+- <<excnames,Exception names>>
+
+Resource pools: ucw/resource.h [[respools]]
+-------------------------------------------
+
+A resource pool contains a stack of resources. When a new resource
+is created, it is pushed onto the stack. When freeing the pool, the
+resources are freed in the opposite order, which allows a resource
+refer to data of previously created resources.
+
+A resource can be also freed separately (which unlinks it from the pool),
+or *detached* from the pool (which keeps the real resource, but forgets
+its meta-data, so the resource is no longer tracked).
+
+In many cases, a combination of both methods is needed: some resources
+are marked as temporary, while some others are permanent. When the
+an operation is completed successfully (and @rp_commit() is called),
+all temporary resources are freed and the permanent ones detached.
+When the operation fails, @rp_delete() deletes all resources. By default,
+all resources are created as temporary. You can make a resource permanent
+by calling @res_permanent(), or change the default in `resource->default_res_flags`.
+
+For each thread, LibUCW remembers the currently active resource pool.
+One pool can be used for at most one thread at a time. All functions
+which create resources do so in the active pool. All other functions
+operating on resources work on both active and in-active pools.
+
+!!ucw/resource.h
+
+Transactions: ucw/trans.h [[trans]]
+-----------------------------------
+
+Upon the resource pools, a transactional mechanism is built. A transaction
+consists of a piece of code and a resource pool for temporary objects created
+by the code. Whenever the transaction is running, this pool is set as current.
+You are allowed to switch to a different pool, but please do so carefully.
+
+When a transaction ends, the pool is destroyed and the previous active
+pool is popped off the transaction stack. The fate of the resources
+inside the pool depends on the operation used to end the transaction:
+
+* *commit* -- permanent resources are detached from the pool, temporary
+  resources are freed
+* *rollback* -- all resources are freed
+* *fold* -- instead of destroying the pool, it is added as a subpool
+  to the parent transaction (which must exist)
+
+A transaction is tied to a thread which has created it. A transaction
+can create a sub-transaction, so every thread keeps a stack of running
+transactions in its per-thread data. Calling @trans_init() is optional,
+but @trans_cleanup() should be used before a thread exits in order to
+free resources used by transaction system.
+
+Each transaction also includes a memory pool, from which all temporary
+structures (including all resources created by the transaction) are
+allocated. Feel free to allocate your temporary data from this pool, too;
+they will be freed when the transaction is committed or rolled back.
+When the transaction ends with a fold, this pool gets included inside
+the parent transaction's pool.
+
+(More precisely, there is actually a shared transaction pool per thread
+and the transaction logic uses @mp_push() and @mp_pop() to keep a stack
+of per-transaction data.)
+
+=== Exceptions [[exc]] ===
+
+Transactions are commonly used together with exceptions (which are similar
+to how exceptions work in other languages, but they differ in subtle details,
+so please read carefully). When a failure condition of some kind is detected,
+an exception is *raised* ("*thrown*" is also sometimes used). It involves
+creating an exception object and jumping out of the transaction by
+a `longjmp()`. The exception object (`struct exception`) contains an
+identification of the error and possibly additional data.
+
+Usually, creation of an transaction and handling of exceptions is done
+using *helper macros* (it is not strictly necessary, but highly recommended):
+
+	TRANS_TRY
+	  {
+	    // Code that runs inside the transaction.
+	  }
+	TRANS_CATCH(x)
+	  {
+	    // When an exception is raised, execution continues here.
+	  }
+	TRANS_END;
+
+The code inside the transaction ends with an implicit @trans_commit().
+If you want to end the transaction in a different way, you can do so,
+but you need to use a `break` statement to skip the implicit commit.
+
+The exception handling code gets a local variable `x` pointing to the
+exception object. When the exception is handled (for example, an error
+message is logged), @trans_caught() is called automatically, which rolls
+back the transaction and frees all its resources. Again, you can use the
+`break` statement to skip this.
+
+Alternatively, when you are in a *nested transaction*, you can throw a different
+exception or re-throw the original one. This raises an exception in the
+context of the parent transaction. In this case, the child transaction is
+not rolled back, but its pools are folded as sub-pools of the parent transaction
+and kept until @trans_caught() is called finally.
+
+When an exception is thrown *outside a transaction*, it is converted to
+a plain @die().
+
+*Memory management* and lifetime of various objects and pools deserve special
+attention, as usually when non-local jumps are taking place. When an exception
+is raised, the exception structure is allocated from the memory pool of the
+current transaction. When the exception is propagated through the stack of
+transactions, no transaction is ever rolled back -- all of them are folded
+and their pools remain accessible until @trans_caught() is called at the end.
+Therefore exceptions can carry pointers to the objects which have failed
+without a risk of the object becoming invalid. However, you need to avoid
+pointing to on-stack data like local variables of functions, because these
+are of course destroyed during the `longjmp()`.
+
+=== Functions and structures ===
+
+!!ucw/trans.h
+
+== Exception names [[excnames]] ==
+
+Exception identifiers form a hierarchy. Each identifier consists of dot-separated
+components with the most general component at the beginning.
+
+All exceptions raised by LibUCW reside in the `ucw` subtree. So far, the
+following exception types are defined:
+
+`ucw.fb`:: <<fastbuf:fbexc,Fastbufs>>
