@@ -2,22 +2,36 @@ image: ubuntu:bionic
 
 stages:
   - build
-  - test
+  # - test
   - packages
 
 build:
   stage: build
-  before_script: 
+  before_script:
     - apt update
     - apt -y install make gcc build-essential libknot-dev libtrace3-dev
-  script: 
+  script:
     - make all
   artifacts:
     paths:
       - dns-collector
 
-# run tests using the binary built before
-test:
-  stage: test
+# test:
+#   stage: test
+#   before_script:
+#     - apt update
+#     - apt -y install make
+#   script:
+#     - make test
+
+package_ubuntu1804:
+  stage: packages
+  image: helb/fwd-ubuntu-bionic
+  before_script:
+    - apt update
+    - apt -y install make gcc build-essential libknot-dev libtrace3-dev
   script:
-    - make test
+    - make all
+    - fpm -s dir -t deb -n dns-collector -v 1.0 --prefix /usr/bin dns-collector
+  artifacts:
+    - dns-collector-1.0.amd64.deb
