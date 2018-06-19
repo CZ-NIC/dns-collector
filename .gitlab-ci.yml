@@ -22,8 +22,11 @@ build:
 
 test:
   stage: test
+  dependencies:
+    - build
   script:
-    - echo "..."
+    - echo "Prints help without crashing:"
+    - ./dns-collector --help
 
 .deps_deb: &deps_deb
   stage: packages
