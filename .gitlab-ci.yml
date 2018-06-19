@@ -1,8 +1,8 @@
 image: ubuntu:bionic
 
 variables:
-  # VERSION: ${CI_COMMIT_TAG}
-  VERSION: 1.0
+  # - VERSION: ${CI_COMMIT_TAG}
+  - VERSION: 1.0
 
 stages:
   - build
