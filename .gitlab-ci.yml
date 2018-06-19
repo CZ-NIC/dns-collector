@@ -112,7 +112,7 @@ download_wandio:
     - ./configure
     - make
     - make install
-    - cd $HOME
+    - cd $HOME/dns-collector
     - mv libtrace-${LIBTRACE_VERSION} /tmp/libtrace-${LIBTRACE_VERSION}
     - cd /tmp/libtrace-${LIBTRACE_VERSION}
     - ./bootstrap.sh
