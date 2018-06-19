@@ -12,8 +12,8 @@ stages:
 build:
   stage: build
   before_script:
-    - apt update
-    - apt -y install make gcc build-essential libknot-dev libtrace3-dev
+    - apt-get update
+    - apt-get -y install make gcc build-essential libknot-dev libtrace3-dev
   script:
     - make all
   artifacts:
@@ -28,26 +28,48 @@ build:
 #   script:
 #     - make test
 
-.package_ubuntu: &package-ubuntu
+.deps_deb: &deps_deb
   stage: packages
-  before_script:
-    - apt update
-    - apt -y install make gcc build-essential libknot-dev libtrace3-dev
   script:
+    - apt-get update
+    - apt-get -y install wget make gcc build-essential libknot-dev libtrace3-dev
     - make all
     - fpm -s dir -t deb -n $CI_PROJECT_NAME -v $VERSION --prefix /usr/bin dns-collector
   artifacts:
     paths:
       - $CI_PROJECT_NAME_$VERSION_amd64.deb
 
+.deps_ubuntu: &deps_ubuntu
+  <<: *deps_deb
+  before_script:
+    - add-apt-repository ppa:cz.nic-labs/knot-dns
+
+.deps_debian: &deps_debian
+  <<: *deps_deb
+  before_script:
+    - wget -O - https://deb.knot-dns.cz/knot/apt.gpg | apt-key add -
+    - echo "deb https://deb.knot-dns.cz/knot/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/knot.list
+
 package_ubuntu_1804:
-  <<: *package-ubuntu
+  <<: *deps_ubuntu
   image: helb/fwd-ubuntu-bionic
 
 package_ubuntu_1710:
-  <<: *package-ubuntu
+  <<: *deps_ubuntu
   image: alanfranz/fpm-within-docker:ubuntu-artful
 
 package_ubuntu_1604:
-  <<: *package-ubuntu
+  <<: *deps_ubuntu
   image: alanfranz/fpm-within-docker:ubuntu-xenial
+
+package_debian_jessie:
+  <<: *deps_debian
+  image: alanfranz/fpm-within-docker:debian-jessie
+
+package_debian_wheezy:
+  <<: *deps_debian
+  image: alanfranz/fpm-within-docker:debian-wheezy
+
+package_debian_stretch:
+  <<: *deps_debian
+  image: alanfranz/fpm-within-docker:debian-stretch
