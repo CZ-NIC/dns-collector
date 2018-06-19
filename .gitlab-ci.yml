@@ -71,10 +71,6 @@ package_debian_jessie:
   <<: *deps_debian
   image: alanfranz/fpm-within-docker:debian-jessie
 
-package_debian_wheezy:
-  <<: *deps_debian
-  image: alanfranz/fpm-within-docker:debian-wheezy
-
 package_debian_stretch:
   <<: *deps_debian
   image: helb/fwd-debian-stretch
