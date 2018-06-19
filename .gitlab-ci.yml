@@ -36,7 +36,8 @@ test_help:
   <<: *test
   script:
     - echo "Prints help without crashing:"
-    - ./dns-collector --help
+    - ./dns-collector --help > help
+    - grep "A collector of DNS queries" help
 
 test_dumpconfig:
   <<: *test
