@@ -1,9 +1,15 @@
-image: ubuntu:xenial
+image: ubuntu:bionic
+
+stages:
+  - build
+  - test
+  - packages
 
 build:
   stage: build
   before_script: 
-    - apt update && apt -y install make gcc build-essential
+    - apt update
+    - apt -y install make gcc build-essential libknot-dev
   script: 
     - make all
   artifacts:
