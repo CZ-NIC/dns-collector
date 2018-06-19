@@ -4,10 +4,12 @@ variables:
   # VERSION: "$CI_COMMIT_TAG"
   VERSION: "1.0"
   LIBTRACE_VERSION: "4.0.3"
+  WANDIO_VERSION: "1.0.4"
 
 stages:
   - build
-  - test+dependencies
+  - test
+  - get_dependencies
   - packages
 
 build:
@@ -22,7 +24,7 @@ build:
       - dns-collector
 
 test:
-  stage: test+dependencies
+  stage: test
   dependencies:
     - build
   before_script:
@@ -64,7 +66,7 @@ test:
     - echo "deb https://deb.knot-dns.cz/knot/ $(lsb_release -sc) main" >> /etc/apt/sources.list
 
 download_libtrace:
-  stage: test+dependencies
+  stage: get_dependencies
   before_script:
     - apt-get update
     - apt-get install -y wget
@@ -75,12 +77,29 @@ download_libtrace:
     paths:
       - libtrace-${LIBTRACE_VERSION}
 
+download_wandio:
+  stage: get_dependencies
+  before_script:
+    - apt-get update
+    - apt-get install -y wget
+  script:
+    - wget https://research.wand.net.nz/software/wandio/wandio-${WANDIO_VERSION}.tar.gz -O wandio.tgz
+    - tar zxf wandio.tgz
+  artifacts:
+    paths:
+      - wandio-${WANDIO_VERSION}
+
 .build_libtrace_rpm: &build_libtrace_rpm
   dependencies:
     - download_libtrace
+    - download_wandio
   before_script:
     - yum install -y @development-tools bison flex libpcap-devel
-    - cd libtrace-${LIBTRACE_VERSION}
+    - cd wandio-${WANDIO_VERSION}
+    - ./configure
+    - make
+    - make install
+    - cd ../libtrace-${LIBTRACE_VERSION}
     - ./bootstrap.sh
     - ./configure --prefix=$(pwd)/libtrace-root/usr
     - make
