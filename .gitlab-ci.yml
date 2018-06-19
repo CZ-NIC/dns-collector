@@ -24,7 +24,7 @@ build:
       - dns-collector
       - dns-collector.conf
 
-test:
+test_help:
   stage: test
   dependencies:
     - build
@@ -34,6 +34,18 @@ test:
   script:
     - echo "Prints help without crashing:"
     - ./dns-collector --help
+
+test_loopback:
+  stage: test
+  dependencies:
+    - build
+  before_script:
+    - apt-get update
+    - apt-get -y install libknot7 libtrace3 timeout
+  script:
+    - echo "Launches correctly with output set to CSV:"
+    - timeout 5 ./dns-collector -o csv -i lo 2>&1 | grep "Selected CSV"
+    - grep "time,delay_us,req_dns_len,resp_dns_len,req_net_len" csv
 
 .deps_deb: &deps_deb
   stage: packages
