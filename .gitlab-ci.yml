@@ -47,7 +47,7 @@ test:
   <<: *deps_deb
   before_script:
     - apt-get update
-    - apt-get install -y wget
+    - apt-get install -y wget lsb-release
     - wget -O - https://deb.knot-dns.cz/knot/apt.gpg | apt-key add -
     - echo "deb https://deb.knot-dns.cz/knot/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/knot.list
 
@@ -73,4 +73,4 @@ package_debian_wheezy:
 
 package_debian_stretch:
   <<: *deps_debian
-  image: alanfranz/fpm-within-docker:debian-stretch
+  image: helb/fwd-debian-stretch
