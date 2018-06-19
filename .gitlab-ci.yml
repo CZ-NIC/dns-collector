@@ -2,7 +2,7 @@ image: ubuntu:bionic
 
 stages:
   - build
-  # - test
+  - test
   - packages
 
 build:
@@ -34,4 +34,5 @@ package_ubuntu1804:
     - make all
     - fpm -s dir -t deb -n dns-collector -v 1.0 --prefix /usr/bin dns-collector
   artifacts:
-    - dns-collector-1.0.amd64.deb
+    paths:
+      - dns-collector-1.0.amd64.deb
