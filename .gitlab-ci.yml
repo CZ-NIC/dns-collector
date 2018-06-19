@@ -130,7 +130,7 @@ download_wandio:
     - cd $CI_PROJECT_DIR
     - yum install -y graphviz
     - yum install -y libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm
-    - if [[ $(grep -c Fedora /etc/redhat-release) -eq 1 ]]; then export KNOT_DEP=knot-libs; else export KNOT_DEP=knot; fi
+    - if [[ $(grep -c Fedora /etc/redhat-release) -eq 1 ]]; then export KNOT_DEP=knot-devel; else export KNOT_DEP=knot; fi
     - yum install -y $KNOT_DEP
     - make all
     - ls
@@ -177,14 +177,14 @@ package_fedora_26:
   <<: *deps_rpm
   image: alanfranz/fpm-within-docker:fedora-26
 
-package_centos_7:
-  <<: *deps_rpm
-  image: alanfranz/fpm-within-docker:centos-7
-
-package_centos_6:
-  <<: *deps_rpm
-  image: alanfranz/fpm-within-docker:centos-7
-
-package_centos_5:
-  <<: *deps_rpm
-  image: alanfranz/fpm-within-docker:centos-7
+# package_centos_7:
+#   <<: *deps_rpm
+#   image: alanfranz/fpm-within-docker:centos-7
+#
+# package_centos_6:
+#   <<: *deps_rpm
+#   image: alanfranz/fpm-within-docker:centos-7
+#
+# package_centos_5:
+#   <<: *deps_rpm
+#   image: alanfranz/fpm-within-docker:centos-7
