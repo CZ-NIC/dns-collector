@@ -24,6 +24,9 @@ test:
   stage: test
   dependencies:
     - build
+  before_script:
+    - apt-get update
+    - apt-get -y install libknot
   script:
     - echo "Prints help without crashing:"
     - ./dns-collector --help
