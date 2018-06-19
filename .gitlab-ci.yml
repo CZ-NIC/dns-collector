@@ -170,14 +170,16 @@ package_fedora_26:
   <<: *deps_rpm
   image: alanfranz/fpm-within-docker:fedora-26
 
-package_centos_7:
-  <<: *deps_rpm
-  image: alanfranz/fpm-within-docker:centos-7
+# KNOT has no CentOS packages, disabled for now:
 
-package_centos_6:
-  <<: *deps_rpm
-  image: alanfranz/fpm-within-docker:centos-7
+# package_centos_7:
+#   <<: *deps_rpm
+#   image: alanfranz/fpm-within-docker:centos-7
 
-package_centos_5:
-  <<: *deps_rpm
-  image: alanfranz/fpm-within-docker:centos-7
+# package_centos_6:
+#   <<: *deps_rpm
+#   image: alanfranz/fpm-within-docker:centos-7
+
+# package_centos_5:
+#   <<: *deps_rpm
+#   image: alanfranz/fpm-within-docker:centos-7
