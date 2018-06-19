@@ -31,7 +31,7 @@ test:
     - apt-get update
     - apt-get -y install make gcc build-essential libknot-dev libtrace3-dev
     - make all
-    - fpm -s dir -t deb -n $CI_PROJECT_NAME -v $VERSION --prefix /usr/bin dns-collector
+    - fpm -s dir -t deb -n $CI_PROJECT_NAME -v $VERSION --prefix /usr/bin --config-files dns-collector.conf dns-collector
   artifacts:
     paths:
       - $CI_PROJECT_NAME_$VERSION_amd64.deb
