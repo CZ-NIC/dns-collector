@@ -1,6 +1,7 @@
 image: ubuntu:bionic
 
 variables:
+  # - VERSION: $CI_COMMIT_TAG
   - VERSION: "1.0"
 
 stages:
@@ -35,7 +36,7 @@ package_ubuntu1804:
     - apt -y install make gcc build-essential libknot-dev libtrace3-dev
   script:
     - make all
-    - fpm -s dir -t deb -n ${CI_PROJECT_NAME} -v ${VERSION} --prefix /usr/bin dns-collector
+    - fpm -s dir -t deb -n $CI_PROJECT_NAME -v $VERSION --prefix /usr/bin dns-collector
   artifacts:
     paths:
-      - ${CI_PROJECT_NAME}_${VERSION}_amd64.deb
+      - $CI_PROJECT_NAME_$VERSION_amd64.deb
