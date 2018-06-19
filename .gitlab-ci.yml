@@ -38,10 +38,11 @@ test:
     - mkdir -p root/usr/bin
     - cp dns-collector root/usr/bin/
     - cp dns-collector.conf root/etc/
-    - fpm -s dir -t deb -n $CI_PROJECT_NAME -v $VERSION root
+    - cd root
+    - fpm -s dir -t deb -n $CI_PROJECT_NAME -v $VERSION .
   artifacts:
     paths:
-      - ${CI_PROJECT_NAME}_${VERSION}_amd64.deb
+      - root/${CI_PROJECT_NAME}_${VERSION}_amd64.deb
 
 .deps_ubuntu: &deps_ubuntu
   <<: *deps_deb
