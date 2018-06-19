@@ -107,7 +107,7 @@ download_wandio:
     - download_libtrace
     - download_wandio
   before_script:
-    - yum install -y @development-tools bison flex libpcap-devel
+    - yum install -y @development-tools gcc-c++ bison flex libpcap-devel
     - cd wandio-${WANDIO_VERSION}
     - ./configure
     - make
