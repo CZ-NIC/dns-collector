@@ -28,9 +28,8 @@ build:
 #   script:
 #     - make test
 
-package_ubuntu1804:
+.package_ubuntu: &package-ubuntu
   stage: packages
-  image: helb/fwd-ubuntu-bionic
   before_script:
     - apt update
     - apt -y install make gcc build-essential libknot-dev libtrace3-dev
@@ -40,3 +39,15 @@ package_ubuntu1804:
   artifacts:
     paths:
       - $CI_PROJECT_NAME_$VERSION_amd64.deb
+
+package_ubuntu_1804:
+  <<: *package-ubuntu
+  image: helb/fwd-ubuntu-bionic
+
+package_ubuntu_1710:
+  <<: *package-ubuntu
+  image: alanfranz/fpm-within-docker:ubuntu-artful
+
+package_ubuntu_1604:
+  <<: *package-ubuntu
+  image: alanfranz/fpm-within-docker:ubuntu-xenial
