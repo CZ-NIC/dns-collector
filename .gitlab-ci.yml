@@ -22,6 +22,7 @@ build:
   artifacts:
     paths:
       - dns-collector
+      - dns-collector.conf
 
 test:
   stage: test
