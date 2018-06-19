@@ -26,7 +26,7 @@ test:
     - build
   before_script:
     - apt-get update
-    - apt-get -y install libknot7
+    - apt-get -y install libknot7 libtrace3
   script:
     - echo "Prints help without crashing:"
     - ./dns-collector --help
@@ -42,7 +42,7 @@ test:
     - cp dns-collector root/usr/bin/
     - cp dns-collector.conf root/etc/
     - cd root
-    - fpm -s dir -t deb -n $CI_PROJECT_NAME -v $VERSION .
+    - fpm -s dir -t deb -n $CI_PROJECT_NAME -v $VERSION -d libknot7 -d libtrace3 .
   artifacts:
     paths:
       - root/${CI_PROJECT_NAME}_${VERSION}_amd64.deb
@@ -73,7 +73,7 @@ test:
     - cp dns-collector root/usr/bin/
     - cp dns-collector.conf root/etc/
     - cd root
-    - fpm -s dir -t rpm -n $CI_PROJECT_NAME -v $VERSION --config-files /etc/dns-collector.conf .
+    - fpm -s dir -t rpm -n $CI_PROJECT_NAME -v $VERSION --config-files /etc/dns-collector.conf -d knot-libs -d libtrace .
   artifacts:
     paths:
       - root/${CI_PROJECT_NAME}_${VERSION}_amd64.rpm
