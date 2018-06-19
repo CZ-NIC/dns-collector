@@ -26,7 +26,7 @@ test:
     - build
   before_script:
     - apt-get update
-    - apt-get -y install libknot
+    - apt-get -y install libknot7
   script:
     - echo "Prints help without crashing:"
     - ./dns-collector --help
