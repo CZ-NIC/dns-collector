@@ -1,0 +1,17 @@
+image: ubuntu:xenial
+
+build:
+  stage: build
+  before_script: 
+    - apt update && apt -y install make gcc build-essential
+  script: 
+    - make all
+  artifacts:
+    paths:
+      - dns-collector
+
+# run tests using the binary built before
+test:
+  stage: test
+  script:
+    - make test
