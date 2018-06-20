@@ -50,7 +50,6 @@ test_dumpconfig:
   except:
     - branches
     - triggers
-    - pushes
 
 .build_deb: &build_deb
   <<: *only_tags
