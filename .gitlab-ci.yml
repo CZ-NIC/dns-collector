@@ -1,8 +1,6 @@
 image: ubuntu:bionic
 
 variables:
-  # VERSION: "$CI_COMMIT_TAG"
-  VERSION: "1.0"
   LIBTRACE_VERSION: "4.0.3"
   WANDIO_VERSION: "1.0.4"
 
@@ -46,9 +44,18 @@ test_dumpconfig:
     - ./dns-collector --dumpconfig > dumpconfig
     - grep "Logging" dumpconfig
 
-.deps_deb: &deps_deb
+.only_tags: &only_tags
+  only:
+    - tags
+  except:
+    variables:
+      - $CI_COMMIT_TAG =~ /^v([0-9]\.?)+$/ # matches v1.0 or v0.1.2, but not upstream/1.0
+
+.build_deb: &build_deb
+  <<: *only_tags
   stage: packages
   script:
+    - export VERSION=${CI_COMMIT_TAG#v}
     - apt-get update
     - apt-get -y install make gcc build-essential libknot-dev libtrace3-dev
     - make all
@@ -63,14 +70,14 @@ test_dumpconfig:
       - root/${CI_PROJECT_NAME}_${VERSION}_amd64.deb
 
 .deps_ubuntu: &deps_ubuntu
-  <<: *deps_deb
+  <<: *build_deb
   before_script:
     - apt-get update
     - apt-get install -y software-properties-common
     - LC_ALL=C.UTF-8 add-apt-repository ppa:cz.nic-labs/knot-dns
 
 .deps_debian: &deps_debian
-  <<: *deps_deb
+  <<: *build_deb
   before_script:
     - apt-get update
     - apt-get install -y wget lsb-release ca-certificates
@@ -123,10 +130,12 @@ download_wandio:
     - fpm -s dir -t rpm -n libtrace -v $LIBTRACE_VERSION -d libpcap .
     - mv libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm $CI_PROJECT_DIR
 
-.deps_rpm: &deps_rpm
+.build_rpm: &build_rpm
+  <<: *only_tags
   <<: *build_libtrace_rpm
   stage: packages
   script:
+    - export VERSION=${CI_COMMIT_TAG#v}
     - cd $CI_PROJECT_DIR
     - yum install -y graphviz
     - yum install -y libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm
@@ -166,25 +175,25 @@ package_debian_stretch:
   image: helb/fwd-debian-stretch
 
 package_fedora_28:
-  <<: *deps_rpm
+  <<: *build_rpm
   image: helb/fwd-fedora-28
 
 package_fedora_27:
-  <<: *deps_rpm
+  <<: *build_rpm
   image: alanfranz/fpm-within-docker:fedora-27
 
 package_fedora_26:
-  <<: *deps_rpm
+  <<: *build_rpm
   image: alanfranz/fpm-within-docker:fedora-26
 
 # package_centos_7:
-#   <<: *deps_rpm
+#   <<: *build_rpm
 #   image: alanfranz/fpm-within-docker:centos-7
 #
 # package_centos_6:
-#   <<: *deps_rpm
+#   <<: *build_rpm
 #   image: alanfranz/fpm-within-docker:centos-7
 #
 # package_centos_5:
-#   <<: *deps_rpm
+#   <<: *build_rpm
 #   image: alanfranz/fpm-within-docker:centos-7
