@@ -46,7 +46,11 @@ test_dumpconfig:
 
 .only_tags: &only_tags
   only:
-    - tags
+    - /^v([0-9]\.?)+$/
+  except:
+    - branches
+    - triggers
+    - pushes
 
 .build_deb: &build_deb
   <<: *only_tags
@@ -185,14 +189,16 @@ package_fedora_26:
   <<: *build_rpm
   image: alanfranz/fpm-within-docker:fedora-26
 
+# CentOS disabled for now (no Knot packages for it):
+
 # package_centos_7:
 #   <<: *build_rpm
 #   image: alanfranz/fpm-within-docker:centos-7
-#
+
 # package_centos_6:
 #   <<: *build_rpm
 #   image: alanfranz/fpm-within-docker:centos-7
-#
+
 # package_centos_5:
 #   <<: *build_rpm
 #   image: alanfranz/fpm-within-docker:centos-7
