@@ -47,9 +47,6 @@ test_dumpconfig:
 .only_tags: &only_tags
   only:
     - tags
-  except:
-    variables:
-      - $CI_COMMIT_TAG =~ /^v([0-9]\.?)+$/ # matches v1.0 or v0.1.2, but not upstream/1.0
 
 .build_deb: &build_deb
   <<: *only_tags
