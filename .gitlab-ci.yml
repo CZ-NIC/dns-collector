@@ -69,7 +69,7 @@ test_dumpconfig:
     - cd $CI_PROJECT_DIR
   artifacts:
     paths:
-      - ${CI_PROJECT_DIR}/${CI_PROJECT_NAME}_${VERSION}_amd64.deb
+      - ${CI_PROJECT_DIR}/*.deb
 
 .deps_ubuntu: &deps_ubuntu
   <<: *build_deb
@@ -157,8 +157,7 @@ download_wandio:
     - cd $CI_PROJECT_DIR
   artifacts:
     paths:
-      - ${CI_PROJECT_DIR}/${CI_PROJECT_NAME}_${VERSION}_amd64.rpm
-      - ${CI_PROJECT_DIR}/libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm
+      - ${CI_PROJECT_DIR}/*.rpm
 
 package_ubuntu_1804:
   <<: *deps_ubuntu
