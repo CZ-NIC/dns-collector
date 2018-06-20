@@ -82,6 +82,7 @@ test_dumpconfig:
     - echo "deb https://deb.knot-dns.cz/knot/ $(lsb_release -sc) main" >> /etc/apt/sources.list
 
 download_libtrace:
+  <<: *only_tags
   stage: get_dependencies
   before_script:
     - apt-get update
@@ -94,6 +95,7 @@ download_libtrace:
       - libtrace-${LIBTRACE_VERSION}
 
 download_wandio:
+  <<: *only_tags
   stage: get_dependencies
   before_script:
     - apt-get update
