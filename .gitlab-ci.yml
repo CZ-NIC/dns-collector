@@ -65,9 +65,11 @@ test_dumpconfig:
     - cp dns-collector.conf root/etc/dns-collector
     - cd root
     - fpm -s dir -t deb -n $CI_PROJECT_NAME -v $VERSION -d libknot7 -d libtrace3 .
+    - mv *.deb $CI_PROJECT_DIR
+    - cd $CI_PROJECT_DIR
   artifacts:
     paths:
-      - root/${CI_PROJECT_NAME}_${VERSION}_amd64.deb
+      - ${CI_PROJECT_DIR}/${CI_PROJECT_NAME}_${VERSION}_amd64.deb
 
 .deps_ubuntu: &deps_ubuntu
   <<: *build_deb
@@ -151,10 +153,12 @@ download_wandio:
     - cp dns-collector.conf root/etc/dns-collector
     - cd root
     - fpm -s dir -t rpm -n $CI_PROJECT_NAME -v $VERSION --config-files /etc/dns-collector/dns-collector.conf -d $KNOT_DEP -d libtrace .
+    - mv *.rpm $CI_PROJECT_DIR
+    - cd $CI_PROJECT_DIR
   artifacts:
     paths:
-      - root/${CI_PROJECT_NAME}_${VERSION}_amd64.rpm
-      - libtrace-root/libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm
+      - ${CI_PROJECT_DIR}/${CI_PROJECT_NAME}_${VERSION}_amd64.rpm
+      - ${CI_PROJECT_DIR}/libtrace-${LIBTRACE_VERSION}-1.x86_64.rpm
 
 package_ubuntu_1804:
   <<: *deps_ubuntu
