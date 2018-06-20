@@ -21,6 +21,7 @@ build:
     paths:
       - dns-collector
       - dns-collector.conf
+    expire_in: 10 mins
 
 .test: &test
   stage: test
@@ -70,6 +71,7 @@ test_dumpconfig:
   artifacts:
     paths:
       - ${CI_PROJECT_DIR}/*.deb
+    expire_in: 30 days
 
 .deps_ubuntu: &deps_ubuntu
   <<: *build_deb
@@ -98,6 +100,7 @@ download_libtrace:
   artifacts:
     paths:
       - libtrace-${LIBTRACE_VERSION}
+    expire_in: 10 mins
 
 download_wandio:
   <<: *only_tags
@@ -111,6 +114,7 @@ download_wandio:
   artifacts:
     paths:
       - wandio-${WANDIO_VERSION}
+    expire_in: 10 mins
 
 .build_libtrace_rpm: &build_libtrace_rpm
   dependencies:
@@ -158,6 +162,7 @@ download_wandio:
   artifacts:
     paths:
       - ${CI_PROJECT_DIR}/*.rpm
+    expire_in: 30 days
 
 package_ubuntu_1804:
   <<: *deps_ubuntu
