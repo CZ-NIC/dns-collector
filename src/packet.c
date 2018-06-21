@@ -217,11 +217,15 @@ dns_packet_qname_match(struct dns_packet *request, struct dns_packet *response)
     assert(request && response);
     assert(DNS_PACKET_IS_REQUEST(request) &&
            DNS_PACKET_IS_RESPONSE(response));
-    // TODO: Make robust to truncated QNAMEs, resolving issue #3
-    // Equal, or response empty (1 byte) (matches any request)
-    return ((response->knot_packet->qname_size == 1) || 
-            (request->knot_packet->qname_size == response->knot_packet->qname_size &&
-            knot_dname_is_equal(knot_pkt_qname(request->knot_packet), knot_pkt_qname(response->knot_packet))));
+    if (response->knot_packet->qname_size == 1)
+        return 1;
+    if (request->knot_packet->qname_size != response->knot_packet->qname_size)
+        return 0;
+    const knot_dname_t *req_q = knot_pkt_qname(request->knot_packet);
+    const knot_dname_t *res_q = knot_pkt_qname(response->knot_packet);
+    if (res_q == NULL && req_q == NULL)
+        return 1;
+    return (req_q && res_q && knot_dname_is_equal(res_q, req_q));
 }
 
 int
