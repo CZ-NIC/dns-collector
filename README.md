@@ -35,6 +35,12 @@ Run `make` to compile the `dns-collector` binary. Use `USE_TCMALLOC=1 make` inst
 
 Run `make docs` to generate developer Doxygen documentation in `docs/html`.
 
+Linux packages are built in GitLab CI for:
+
+- Ubuntu 16.04 LTS, 17.10, 18.04 LTS
+- Debian 8 (Jessie) and 9 (Stretch)
+- Fedora 26, 27, 28 
+
 ### Running
 
 * `./dns-collector -i eth0 -oqueries.csv` runs a live trace with the default configuration. Ctrl+C (SIGINT) to gracefully stop. (See the config for automatical output rotation.)
