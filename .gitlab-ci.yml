@@ -29,7 +29,7 @@ build:
     - build
   before_script:
     - apt-get update
-    - apt-get -y install libknot7 libtrace3
+    - apt-get -y install libknot7 libtrace3 gpg
 
 test_basic:
   <<: *test
@@ -44,8 +44,8 @@ test_basic:
 test_data:
   <<: *test
   script:
-      cd tests/data/ && echo $DATA_PASSWORD | gpg --passphrase-fd 0 --decrypt akuma-crash-fail.tar.bz2.gpg | tar xj
-      make test
+    - cd tests/data/ && echo $DATA_PASSWORD | gpg --pinentry-mode loopback --passphrase-fd 0 --decrypt akuma-crash-fail.tar.bz2.gpg | tar xj
+    - cd .. && ./run_tests.sh
 
 .only_tags: &only_tags
   only:
