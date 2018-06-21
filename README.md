@@ -198,9 +198,8 @@ Some fields have a common configuration flag, for most the flag is the same as t
 See [the wiki page on Impala and Entrada import](https://gitlab.labs.nic.cz/alan/dns-collector/wikis/import-to-impala) for more details
 and SQL commands. Note that Impala can read gzip, lzo and bzip2 compressed CSV files transparently.
 
-```
-
 The table for all features (in the right order) is created by:
+
 ```sql
 create table dnscol.csv_import (
   time DOUBLE, -- convert to timestamp
@@ -248,3 +247,36 @@ partitioned by (server STRING, batchname STRING)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' ESCAPED BY '\\';
 ```
 
+## Potential improvements
+
+* More EDNS features
+* Country/ASN detection (e.g. MaxMind integration?)
+* TCP SYN/ACK drops (and then better TCP integration)
+
+## Changelog
+
+### 1.1 (2018-06-22)
+
+* Better error messages and option defaults
+* EDNS Ping support
+* Option for QNAME matching
+* Bugfixes, testsuite, CI tests
+* Repo history cleanup, squash imported subtrees
+* Add CI build and OBS repository
+
+### 1.0 (2018-02-06)
+
+* Improve multiple output types support
+* Add CBOR output logging matching the CSV fields
+* Add tinycbor as a git subtree
+* Add simple CBOR-stream debugging utility
+* Fix a flipped request/response bit bug
+
+### 0.1.1 (2017-09-14)
+
+* Fix backtrace output preventing core dump in upstream
+* Updated distribution metadata and scripts, rename binaries
+
+### 0.1 (2017-09-07)
+
+* Initial release
