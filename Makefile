@@ -1,4 +1,4 @@
-.PHONY: all clean veryclean docs libucw install prog
+.PHONY: all clean veryclean docs libucw install prog test
 
 all: prog
 veryclean:: clean
@@ -90,3 +90,9 @@ install: $(PROG)
 	install -m 755 -D $(PROG) $(DESTDIR)/usr/bin/dns-collector
 	install -m 644 -D $(CONFIG) $(DESTDIR)/etc/dns-collector/dns-collector.conf
 	
+## test
+
+test: $(PROG)
+	$(PROG) --help
+	$(PROG) -C $(CONFIG) --dumpconfig
+	cd tests && ./run_tests.sh

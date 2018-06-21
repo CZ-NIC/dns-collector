@@ -14,7 +14,7 @@ build:
   stage: build
   before_script:
     - apt-get update
-    - apt-get -y install make gcc build-essential libknot-dev libtrace3-dev
+    - apt-get -y install make gcc build-essential libknot-dev libtrace3-dev gpg
   script:
     - make all
   artifacts:
@@ -31,19 +31,21 @@ build:
     - apt-get update
     - apt-get -y install libknot7 libtrace3
 
-test_help:
+test_basic:
   <<: *test
   script:
     - echo "Prints help without crashing:"
     - ./dns-collector --help > help
     - grep "A collector of DNS queries" help
-
-test_dumpconfig:
-  <<: *test
-  script:
     - echo "Dumps config:"
     - ./dns-collector --dumpconfig > dumpconfig
     - grep "Logging" dumpconfig
+
+test_data:
+  <<: *test
+  script:
+      cd tests/data/ && echo $DATA_PASSWORD | gpg --passphrase-fd 0 --decrypt akuma-crash-fail.tar.bz2.gpg | tar xj
+      make test
 
 .only_tags: &only_tags
   only:
