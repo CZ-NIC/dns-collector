@@ -14,7 +14,7 @@ build:
   stage: build
   before_script:
     - apt-get update
-    - apt-get -y install make gcc build-essential libknot-dev libtrace3-dev gpg2
+    - apt-get -y install make gcc build-essential libknot-dev libtrace3-dev gpg
   script:
     - make all
   artifacts:
@@ -44,7 +44,7 @@ test_basic:
 test_data:
   <<: *test
   script:
-      cd tests/data/ && echo $DATA_PASSWORD | gpg2 --passphrase-fd 0 --decrypt akuma-crash-fail.tar.bz2.gpg | tar xj
+      cd tests/data/ && echo $DATA_PASSWORD | gpg --passphrase-fd 0 --decrypt akuma-crash-fail.tar.bz2.gpg | tar xj
       make test
 
 .only_tags: &only_tags
