@@ -1,19 +1,21 @@
 # Dns Collector
 
-A collector for DNS queries than matches observed queries with the responses. Released under [GNU GPL v3](https://www.gnu.org/licenses/) (see `LICENSE`).
+A super-fast traffic collector and pre-processor for DNS queries,
+the first part of our DNS traffic analysis pipeline.
 
-Contact Tomáš Gavenčiak (tomas.gavenciak@nic.cz) with any questions.
+Released under [GNU GPL v3](https://www.gnu.org/licenses/) (see `LICENSE`).
+Contact Tomáš Gavenčiak (gavento@ucw.cz) with any questions.
 
 ## Features
 
-* Reading capture files and live traces that [libtrace reads](http://www.wand.net.nz/trac/libtrace/wiki/SupportedTraceFormats), including kernel ringbuffer. Configurable packet filter.
 * Fast multithreaded processing (3 threads): up to 150 000 queries/s offline and offline (on i5 2.4 GHz, see benchmarks below).
 * Matching requests to responses by (IPs, ports, transport, DNS ID), optionally also with QNAME. Matches the proposed [draft](https://tools.ietf.org/html/draft-ietf-dnsop-dns-capture-format-04#page-27).
+* Reading capture files and live traces that [libtrace reads](http://www.wand.net.nz/trac/libtrace/wiki/SupportedTraceFormats), including kernel ringbuffer. Configurable packet filter.
 * Pcap dumps of invalid packets with rate-limiting, compression and output file rotation.
-* Configurable CSV output (targeted at Impala/hadoop import, *NOT* RFC 4180 compatible) and optional binary CBOR output. Modular output allows easy implementation of other output formats.
+* Configurable CBOR and CSV output (targeted at Impala/hadoop import, *NOT* RFC 4180 compatible) and optional binary CBOR output. Modular output allows easy implementation of other output formats.
 * Automatic output file rotation and compression or other post-processing (any shell pipe command).
 * Easy configuration via config files, periodic status and statistics logging, graceful shutdown on SIGINT.
-* Well documented and clean code, [GNU GPL v3](https://www.gnu.org/licenses/).
+* Well documented and clean code, C99, [GNU GPL v3](https://www.gnu.org/licenses/).
 
 ### Extracted DNS features
 
@@ -21,10 +23,11 @@ Contact Tomáš Gavenčiak (tomas.gavenciak@nic.cz) with any questions.
 * Network information (addresses, ports, protocols, TTL, packet and payload sizes)
 * DNS header information (query information, id, flags, rcode, opcode, RR counts)
 * EDNS information (version, extended flags and rcode, DAU, DHU, N3U, NSID)
+* EDNS ping (NB: ID conflicts with DAU)
 
 ### Not implemented
 
-* More EDNS features: Client subnet, other options (needs manual EDNS traversal), EDNS ping (ID conflicts with DAU).
+* More EDNS features: Client subnet, other options (needs manual EDNS traversal).
 * TCP flow recoinstruction for reused streams (currently only single-query TCP connections are supported).
 * IP(4/6) fragmented packet reconstuction, DNS via ICMP. However, IP fragmentation and DNS via ICMP are uncommon.
 * Possible improvement: Delay the responses in the workflow (cca 10 us) to remove capture timing jitter (when response is mistakenly seen before request).
@@ -35,11 +38,7 @@ Run `make` to compile the `dns-collector` binary. Use `USE_TCMALLOC=1 make` inst
 
 Run `make docs` to generate developer Doxygen documentation in `docs/html`.
 
-Linux packages are built in GitLab CI for:
-
-- Ubuntu 16.04 LTS, 17.10, 18.04 LTS
-- Debian 8 (Jessie) and 9 (Stretch)
-- Fedora 26, 27, 28 
+Linux packages are built in [project GitLab CI](https://gitlab.labs.nic.cz/labs/dns-collector/pipelines?scope=tags) and in [OpenBuildServece repo](https://build.opensuse.org/project/show/home:CZ-NIC:adam).
 
 ### Running
 
