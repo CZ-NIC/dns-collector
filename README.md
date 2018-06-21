@@ -4,6 +4,7 @@ A super-fast traffic collector and pre-processor for DNS queries,
 the first part of our DNS traffic analysis pipeline.
 
 Released under [GNU GPL v3](https://www.gnu.org/licenses/) (see `LICENSE`).
+See also the public release [blog post]( http://en.blog.nic.cz/2018/06/22/dns-traffic-collector/‎).
 Contact Tomáš Gavenčiak (gavento@ucw.cz) with any questions.
 
 ## Features
@@ -32,7 +33,7 @@ Contact Tomáš Gavenčiak (gavento@ucw.cz) with any questions.
 * IP(4/6) fragmented packet reconstuction, DNS via ICMP. However, IP fragmentation and DNS via ICMP are uncommon.
 * Possible improvement: Delay the responses in the workflow (cca 10 us) to remove capture timing jitter (when response is mistakenly seen before request).
 
-## Building and running
+## Building and installation
 
 Run `make` to compile the `dns-collector` binary. Use `USE_TCMALLOC=1 make` instead to build with tcmalloc.
 
@@ -47,6 +48,10 @@ Linux packages are built in [project GitLab CI](https://gitlab.labs.nic.cz/labs/
 * `./dns-collector -C dns-collector.conf` to use the given config file. Without any other parameters runs a live trace on the configured interface, may be combined with `-i` and `-o` overrides and offline pcap files as parameters.
 
 See the distributed `dns-collector.conf` for more options and their meaning.
+
+**NB:** In offline mode (reading PCAPs), if no packets match the filter, *no output file is produced.*
+This is the only choice when the output filename depends on packet times, but this is not checked and
+applies also for fixed output filenames.
 
 ## Requirements
 
@@ -185,7 +190,7 @@ Some fields have a common configuration flag, for most the flag is the same as t
 | `req_edns_udp`| `edns`    | INT     |      |
 | `req_edns_do` | `edns`    | BOOLEAN |      |
 | `resp_edns_rcode`|`edns`  | INT     | extended part of `rcode` |
-| `req_edns_ping`|`edns`    | BOOLEAN |      |
+| `req_edns_ping`|`edns`    | BOOLEAN | currently never present (ID conflict with DAU) |
 | `req_edns_dau`| `edns`    | STRING  | comma-separated numbers, e.g. "1,3,5" |
 | `req_edns_dhu`| `edns`    | STRING  | comma-separated numbers, e.g. "1,3,5" |
 | `req_edns_n3u`| `edns`    | STRING  | comma-separated numbers, e.g. "1,3,5" |
@@ -236,7 +241,7 @@ create table dnscol.csv_import (
   req_edns_udp INT,
   req_edns_do INT, -- convert to boolean
   resp_edns_rcode INT,
-  req_edns_ping INT, -- convert to boolean
+  -- req_edns_ping INT, -- never present (conflict with DAU) (convert to boolean)
   req_edns_dau STRING,
   req_edns_dhu STRING,
   req_edns_n3u STRING,
@@ -258,7 +263,6 @@ ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' ESCAPED BY '\\';
 ### 1.1 (2018-06-22)
 
 * Better error messages and option defaults
-* EDNS Ping support
 * Option for QNAME matching
 * Bugfixes, testsuite, CI tests
 * Repo history cleanup, squash imported subtrees

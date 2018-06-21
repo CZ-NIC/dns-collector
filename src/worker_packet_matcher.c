@@ -137,12 +137,17 @@ dns_worker_packet_matcher_next_packet(struct dns_worker_packet_matcher *pm)
 {
     while(1) {
         // Load the first or next frame if not loaded
-        if (!pm->inframe) {
+        while (!pm->inframe) {
             pm->inframe = dns_frame_queue_dequeue(pm->in);
             if (pm->inframe->type == 1) {
                 dns_packet_frame_destroy(pm->inframe);
                 pm->inframe = NULL;
                 return NULL; // No more input packets, ever
+            }
+            if (pm->inframe->count == 0 && pm->inframe->time_start == DNS_NO_TIME) {
+                dns_packet_frame_destroy(pm->inframe);
+                pm->inframe = NULL;
+                continue; // Next frame
             }
             assert(pm->inframe->time_start != DNS_NO_TIME);
             if (!pm->outframe) { // In case thid was the first frame
@@ -189,7 +194,8 @@ dns_worker_packet_matcher_main(void *matcher)
         }
     }
     // Advance time for remaining unmatched packets
-    dns_worker_packet_matcher_advance_time_to(pm, pm->current_time + pm->matching_duration + 1);
+    if (pm->current_time != DNS_NO_TIME) 
+        dns_worker_packet_matcher_advance_time_to(pm, pm->current_time + pm->matching_duration + 1);
     if (pm->outframe) {
         dns_frame_queue_enqueue(pm->out, pm->outframe);
         pm->outframe = NULL;

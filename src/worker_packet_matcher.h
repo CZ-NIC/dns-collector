@@ -49,7 +49,7 @@ struct dns_worker_packet_matcher {
     /** The hash table with packets */
     struct dns_packet_hash *hash_table;
 
-    /** The hash table with packets */
+    /** The queue of packets in the hash table */
     clist packet_queue;
 
     /** The length of the window for finding matches */
