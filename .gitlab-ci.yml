@@ -45,7 +45,7 @@ test_data:
   <<: *test
   script:
     - cd tests/data/ && echo $DATA_PASSWORD | gpg --pinentry-mode loopback --passphrase-fd 0 --decrypt akuma-crash-fail.tar.bz2.gpg | tar xj
-    - cd tests/ && ./run_tests.sh
+    - cd .. && ./run_tests.sh
 
 .only_tags: &only_tags
   only:
