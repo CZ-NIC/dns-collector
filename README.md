@@ -24,7 +24,6 @@ Contact Tomáš Gavenčiak (gavento@ucw.cz) with any questions.
 * Network information (addresses, ports, protocols, TTL, packet and payload sizes)
 * DNS header information (query information, id, flags, rcode, opcode, RR counts)
 * EDNS information (version, extended flags and rcode, DAU, DHU, N3U, NSID)
-* EDNS ping (NB: ID conflicts with DAU)
 
 ### Not implemented
 
